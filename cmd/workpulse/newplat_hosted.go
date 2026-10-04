@@ -74,7 +74,7 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 	gate.OnConnect = orch.ReconcileNode // 节点重连对账（离线销毁补清——组长 7fabddb0 ⑤）
 
 	mux.HandleFunc("GET /api/node/connect", gate.Handler().ServeHTTP) // 节点代理拨入（Bearer 节点凭据）
-	registerHostedRoutes(mux, hostedDeps{
+	registerHostedRoutesAndEnablePage(mux, hub, hostedDeps{
 		orch: orch, life: life, qs: hosted.NewQuotaService(hst, idp),
 		actor: actor,
 		ownsAgent: func(r *http.Request, userLC, agentID string) bool {

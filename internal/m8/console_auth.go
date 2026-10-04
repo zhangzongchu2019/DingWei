@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -256,8 +257,12 @@ func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http
 func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	fmt.Fprint(w, renderConsolePage(dwversion.Version, dwversion.Commit))
+	fmt.Fprint(w, renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedEnabled))
 }
+
+// EnableConsoleHostedPage is called only by the same server-side assembly step that registers
+// the hosted routes. The browser never probes an endpoint to guess whether the feature exists.
+func (h *Hub) EnableConsoleHostedPage() { h.consoleHostedEnabled = true }
 
 // renderConsolePage 把版本号在【服务端】填进页面。
 //
@@ -273,7 +278,7 @@ func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 //	**commit 是新的、version 是旧的**。同理,同一版本号可以部署两次(修缺陷不抬号),
 //	那时只看版本号【分辨不出新旧两份制品】,而这正是本次要消灭的那类来回。
 //	commit 未注入时按 version.go 的既有口径只显版本号:宁可不显示,也不显示一个可能是错的来源。
-func renderConsolePage(appVersion, commit string) string {
+func renderConsolePage(appVersion, commit string, hostedEnabled bool) string {
 	text := appVersion
 	if commit != "" && commit != "unknown" {
 		short := commit
@@ -286,6 +291,7 @@ func renderConsolePage(appVersion, commit string) string {
 		"{{CONSOLE_VERSION_TEXT}}", htmlAttrEscape(text),
 		"{{CONSOLE_VERSION}}", htmlAttrEscape(appVersion),
 		"{{CONSOLE_COMMIT}}", htmlAttrEscape(commit),
+		"{{FEATURE_HOSTED}}", strconv.FormatBool(hostedEnabled),
 	).Replace(consolePageHTML)
 }
 
@@ -673,7 +679,7 @@ var FEATURE_SELFHOST_REVIEW=true;    // 第一版入网批准走这块(业主实
   try{var r=await fetch('/console/logout',{method:'POST'});if(r.ok||r.status===401){location.assign('/console/login');return;}}catch(_){}
   b.disabled=false;var st=document.getElementById('platform-status');if(st)st.textContent='退出失败,请重试';
 };})();
-var FEATURE_HOSTED=false;            // 托管区是第二版:第一版没有 G4 后端(选项接口 404),整块不渲染、不请求;第二版再开
+var FEATURE_HOSTED='{{FEATURE_HOSTED}}'==='true'; // 服务端按托管路由是否实际注册注入；源码夹具默认 false，页面不得探测 404 猜开关
 var ENROLL_API={
   list:'/api/console/enroll/applications',
   approve:function(id){return '/api/console/enroll/applications/'+encodeURIComponent(id)+'/approve';},

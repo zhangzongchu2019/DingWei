@@ -40,7 +40,7 @@ const MUTATIONS = ['mutation-anchor-selftest', 'seal-review', 'hosted-on-by-defa
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'seal-review') mutate('var FEATURE_SELFHOST_REVIEW=true;', 'var FEATURE_SELFHOST_REVIEW=false;');
-if (mutation === 'hosted-on-by-default') mutate('var FEATURE_HOSTED=false;', 'var FEATURE_HOSTED=true;');
+if (mutation === 'hosted-on-by-default') mutate("var FEATURE_HOSTED='{{FEATURE_HOSTED}}'==='true';", 'var FEATURE_HOSTED=true;');
 if (mutation === 'group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
 if (mutation === 'new-group-limit-9') mutate('NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,8}$/u,', 'NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,9}$/u,');
 if (mutation === 'new-group-ascii-only') mutate('NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,8}$/u,', 'NEW_GROUP_RE=/^[A-Za-z0-9]{1,8}$/,');

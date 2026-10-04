@@ -41,7 +41,7 @@ func TestConsolePageVersionFollowsProductVersionConstant(t *testing.T) {
 	const fakeVersion = "9.9.9.9-not-the-real-version"
 	const fakeCommit = "abcdef1234567890"
 
-	page := renderConsolePage(fakeVersion, fakeCommit)
+	page := renderConsolePage(fakeVersion, fakeCommit, false)
 	got := badgeText(t, page)
 	if want := fakeVersion + " · abcdef1"; got != want {
 		t.Fatalf("角标显示 %q,应为 %q —— 显示值没有跟着传入的版本变(硬编码?)", got, want)
@@ -51,7 +51,7 @@ func TestConsolePageVersionFollowsProductVersionConstant(t *testing.T) {
 	}
 
 	// commit 未注入时按 version.go 既有口径只显版本号:宁可不显示,也不显示可能是错的来源。
-	if got := badgeText(t, renderConsolePage(fakeVersion, "unknown")); got != fakeVersion {
+	if got := badgeText(t, renderConsolePage(fakeVersion, "unknown", false)); got != fakeVersion {
 		t.Fatalf("commit 未注入时角标为 %q,应只显版本号 %q", got, fakeVersion)
 	}
 }
@@ -99,7 +99,7 @@ func TestConsolePageHandlerFeedsTheProductConstant(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const want = "renderConsolePage(dwversion.Version, dwversion.Commit)"
+	const want = "renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedEnabled)"
 	if !strings.Contains(string(src), want) {
 		t.Fatalf("HandleConsolePage 没有把产品常量本身喂给渲染(应出现 %q)——"+
 			"喂字面量时今天一切正常,抬版本号那天页面才会落后", want)

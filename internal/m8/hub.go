@@ -67,6 +67,9 @@ type Hub struct {
 	L2Config           L2Config
 	ViewPageUnlocker   ViewPageUnlocker
 	consoleAuthEnabled bool
+	// consoleHostedEnabled 只在服务端实际挂载托管路由后置 true；页面据此决定是否渲染托管区。
+	// 未挂路由时保持 false，避免回滚/降级部署向用户暴露一个必然 404 的坏入口。
+	consoleHostedEnabled bool
 	// 统一登录的一次性登录票据(T-113)。仅内存、短 TTL、与页面写锁 code 池分开。
 	consoleLoginStore *consoleLoginStore
 	consoleLoginOnce  sync.Once

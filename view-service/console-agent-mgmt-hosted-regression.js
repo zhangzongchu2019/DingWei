@@ -10,16 +10,18 @@
 //    unverified-selectable · no-linkage · hardcoded-mask · destroy-no-confirm · drop-confirm-flag · show-secret · hosted-shows-revoke
 // 环境变量: PW_CHANNEL=chrome 用系统 Chrome;NODE_PATH 指向含 playwright 的 node_modules。
 const assert = require('assert');
-const fs = require('fs');
+const { execFileSync } = require('child_process');
 const http = require('http');
 const path = require('path');
 const { chromium } = require('playwright');
 
-const source = fs.readFileSync(path.join(__dirname, '..', 'internal/m8/console_auth.go'), 'utf8');
-const start = source.indexOf('const consolePageHTML = `');
-const end = source.indexOf('`\n\nfunc (h *Hub) HandleConsoleAgents', start);
-assert(start >= 0 && end > start, 'cannot extract consolePageHTML from production source');
-let html = source.slice(start + 'const consolePageHTML = `'.length, end);
+// 走生产 HandleConsolePage 的服务端注入路径取得页面；装置不得再把 false 改成 true。
+// Go 侧另有真 ServeMux 格守「只有实际注册 hosted routes 才启用页面」。
+let html = execFileSync('go', ['run', './view-service/console-hosted-page-fixture'], {
+  cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'],
+});
+assert(html.includes("var FEATURE_HOSTED='true'==='true';"), 'real server injection did not enable hosted UI');
+assert(!html.includes('{{FEATURE_HOSTED}}'), 'server left FEATURE_HOSTED placeholder unresolved');
 const mutation = process.env.MUTATION || '';
 // 变异开关形态：本脚本读【环境变量】MUTATION=<名>。给了 --mutate=<名>（argv 形态，别的脚本用它）会被静默忽略、跑成「未变异」而全绿——fail-closed。
 if (process.argv.some((a) => a.startsWith('--mutate'))) { console.error('MUTATION-SWITCH-WRONG-FORM: this script reads env MUTATION=<name>, not --mutate=<name> (the argv form would be silently ignored)'); process.exit(3); }
@@ -33,7 +35,6 @@ function mutate(from, to) {
   }
   html = html.replace(from, to);
 }
-mutate('var FEATURE_HOSTED=false;', 'var FEATURE_HOSTED=true;'); // 托管区第二版才开;本件测的就是它,装置里把开关打开
 const MUTATIONS = ['mutation-anchor-selftest', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped'];
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
@@ -494,7 +495,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.deepStrictEqual(states, [true, true, true, true]);
     });
 
-    await test('the self-hosted review area is offered by default alongside the hosted area (the hosted flag is switched on in this harness)', async () => {
+    await test('the self-hosted review area is offered by default alongside the hosted area (enabled by the real server injection path)', async () => {
       assert.strictEqual(await page.locator('#enrollReview').count(), 1);
       assert.ok(getPaths.includes('/api/console/enroll/applications'), 'the review list is requested');
       const heads = (await page.locator('.group-workspace h3').allTextContents()).map((t) => t.trim()).filter((t) => ['编组列表', '自备 Agent 审核', '托管 Agent 生成', 'Agent 列表'].includes(t));
