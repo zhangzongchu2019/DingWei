@@ -77,6 +77,9 @@ func main() {
 		// R-SEAT-MODEL-NODEAGENT（业主方案 1）：席位 Codex 模型指定；可空——空则不注入
 		//（与 597b4d93 逐字相同）；非空非法格式即拒启（RegisterDockerHandlers 内校验并报键名）。
 		os.Getenv("NODEAGENT_SEAT_CODEX_MODEL"),
+		// R-V2-HOSTED-DRIVER-IMPL（版本 2 指标 2）：cli｜driver；未设＝cli（逐字不变）；
+		// 非法值拒启报键名（RegisterDockerHandlers 内校验）。
+		os.Getenv("NODEAGENT_SEAT_MODE"),
 	); err != nil {
 		log.Fatalf("nodeagent: %v", err)
 	}
