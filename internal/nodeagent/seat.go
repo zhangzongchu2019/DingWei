@@ -249,9 +249,15 @@ func (d *dockerOps) seatEnv(credKind, cli string) []string {
 		"SH_CRED_KIND=" + credKind,
 		// 席位的 CLI 由 create／upgrade 参数 cli 定（组长 R-B12-SEATMODE 第 2 条取乙：基础镜像含多家 CLI，模式按席位定、不写死进镜像）。
 		// sessionHelper 未设 SH_MODE 时默认 echo（不起任何 CLI）；SH_CLI 选 CLI 档。
-		// SH_MODE：节点级开关 seatMode（R-V2-HOSTED-DRIVER-IMPL）——driver ⇒ driver＋事件键（下面追加）；否则 cli。
-		"SH_MODE=" + map[bool]string{true: "driver", false: "cli"}[d.seatMode == "driver"],
+		// SH_MODE：节点级开关 seatMode（R-V2-HOSTED-DRIVER-IMPL）——driver 且本席 cli=codex
+		// ⇒ driver（其余 CLI 与现行逐字相同，组长采纳 opus50tc2k 异议 1）；否则 cli。
+		"SH_MODE=" + map[bool]string{true: "driver", false: "cli"}[d.seatMode == "driver" && cli == "codex"],
 		"SH_CLI=" + cli,
+	}
+	if d.seatMode == "driver" && cli == "codex" {
+		// driver 两件套：SH_DRIVER 显式选 codex driver（driver_adapter 默认也是 codex，写明防漂移）、
+		// 事件键让 helper 产结构事件（view 才看得到 Agent 回复）。异议 1：仅 codex 席位。
+		env = append(env, "SH_DRIVER=codex", "SH_EMIT_SESSION_EVENT=1")
 	}
 	if d.seatProxy == "" {
 		return env
@@ -281,10 +287,6 @@ func (d *dockerOps) seatEnv(credKind, cli string) []string {
 		// 业主方案 1（R-SEAT-MODEL-NODEAGENT）：模型指定注入席位；镜像侧 start.py 同名读入
 		// 校验后写 config.toml 的 model。空 ⇒ 不注入（行为与 597b4d93 逐字相同）。
 		env = append(env, "CODEX_MODEL="+d.seatCodexModel)
-	}
-	if d.seatMode == "driver" {
-		// driver 模式配套（R-V2-HOSTED-DRIVER-IMPL）：让 helper 产出结构事件（view 才看得到 Agent 回复）。
-		env = append(env, "SH_EMIT_SESSION_EVENT=1")
 	}
 	return env
 }

@@ -1184,18 +1184,36 @@ func TestSeatModeSwitch(t *testing.T) {
 	if strings.Join(d2.seatEnv("api_key", "codex"), "|") != strings.Join(want, "|") {
 		t.Fatal("显式 cli 应同未设逐字")
 	}
-	// driver：SH_MODE=driver＋事件键，其余键不变
+	// driver＋codex 席位：SH_MODE=driver＋SH_DRIVER=codex＋事件键，其余键不变
 	d3 := f.ops(t.TempDir())
 	d3.seatMode = "driver"
 	env3 := d3.seatEnv("api_key", "codex")
 	joined := "\n" + strings.Join(env3, "\n") + "\n"
-	for _, w := range []string{"\nSH_MODE=driver\n", "\nSH_EMIT_SESSION_EVENT=1\n", "\nSH_CLI=codex\n"} {
+	for _, w := range []string{"\nSH_MODE=driver\n", "\nSH_DRIVER=codex\n", "\nSH_EMIT_SESSION_EVENT=1\n", "\nSH_CLI=codex\n"} {
 		if !strings.Contains(joined, w) {
 			t.Fatalf("driver ⇒ 缺 %q: %v", w, env3)
 		}
 	}
 	if strings.Contains(joined, "SH_MODE=cli") {
 		t.Fatalf("driver ⇒ 不得再含 SH_MODE=cli: %v", env3)
+	}
+	// 异议 1（组长采纳）：driver 对非 codex 席位不生效——claude 席位与现行逐字相同
+	d4 := f.ops(t.TempDir())
+	d4.seatMode = "driver"
+	env4 := d4.seatEnv("api_key", "claude")
+	wantClaude := []string{
+		"SH_WS_BASE=wss://hub.test",
+		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
+		"SH_CRED_FILE=/work/account-credential",
+		"SH_CRED_KIND=api_key",
+		"SH_MODE=cli",
+		"SH_CLI=claude",
+		"HTTP_PROXY=http://172.30.68.1:11080",
+		"HTTPS_PROXY=http://172.30.68.1:11080",
+		"NO_PROXY=localhost,127.0.0.1,hub.test",
+	}
+	if strings.Join(env4, "|") != strings.Join(wantClaude, "|") {
+		t.Fatalf("claude 席位 driver 下应与现行逐字相同:\n得 %v\n要 %v", env4, wantClaude)
 	}
 	// 非法值拒启报键名（注册前，不部分注册）
 	for _, bad := range []string{"echo", "DRIVER", " driver", "cli2"} {
