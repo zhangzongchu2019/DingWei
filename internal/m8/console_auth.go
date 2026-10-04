@@ -260,9 +260,9 @@ func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedEnabled))
 }
 
-// EnableConsoleHostedPage is called only by the same server-side assembly step that registers
-// the hosted routes. The browser never probes an endpoint to guess whether the feature exists.
-func (h *Hub) EnableConsoleHostedPage() { h.consoleHostedEnabled = true }
+// SetConsoleHostedPageEnabled receives the result of the server-side hosted assembly step.
+// The browser never probes an endpoint to guess whether the feature exists.
+func (h *Hub) SetConsoleHostedPageEnabled(enabled bool) { h.consoleHostedEnabled = enabled }
 
 // renderConsolePage 把版本号在【服务端】填进页面。
 //

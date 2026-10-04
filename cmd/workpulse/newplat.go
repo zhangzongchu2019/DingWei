@@ -146,11 +146,15 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	n3 := &httpapi.N3{OB: ob, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Secure: true}
 	// G4 托管装配（88928305）：pool 非 nil（PG 模式）才尝试；内部按 DW_G4_MASTER_KEY_FILE 开关。
 	// 须在 api 构造前——cfg.hosted 注入点（orch.HostedItem）在 api 上。
+	hostedOn := false
 	if pool != nil {
-		if _, err := wireHosted(ctx, mux, hub, &cfg, pool, store, svc, n3.Actor); err != nil {
+		hostedOn, err = wireHosted(ctx, mux, hub, &cfg, pool, store, svc, n3.Actor)
+		if err != nil {
 			return fmt.Errorf("newplat hosted wiring: %w", err)
 		}
 	}
+	// 页面只认真实装配结果；不能按 env、pool 非空或浏览器 404 猜测。
+	hub.SetConsoleHostedPageEnabled(hostedOn)
 	api := &httpapi.API{Svc: svc, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline, Hosted: cfg.hosted}
 	n3.Register(mux)
 	api.Register(mux)

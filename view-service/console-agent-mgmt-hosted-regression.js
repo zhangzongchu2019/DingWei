@@ -15,12 +15,14 @@ const http = require('http');
 const path = require('path');
 const { chromium } = require('playwright');
 
+const hostedRegistered = process.env.HOSTED_REGISTERED !== '0';
 // 走生产 HandleConsolePage 的服务端注入路径取得页面；装置不得再把 false 改成 true。
 // Go 侧另有真 ServeMux 格守「只有实际注册 hosted routes 才启用页面」。
 let html = execFileSync('go', ['run', './view-service/console-hosted-page-fixture'], {
   cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'],
+  env: { ...process.env, DW_CONSOLE_HOSTED_FIXTURE: hostedRegistered ? '1' : '0' },
 });
-assert(html.includes("var FEATURE_HOSTED='true'==='true';"), 'real server injection did not enable hosted UI');
+assert(html.includes(`var FEATURE_HOSTED='${hostedRegistered}'==='true';`), 'real server injection returned the wrong hosted feature value');
 assert(!html.includes('{{FEATURE_HOSTED}}'), 'server left FEATURE_HOSTED placeholder unresolved');
 const mutation = process.env.MUTATION || '';
 // 变异开关形态：本脚本读【环境变量】MUTATION=<名>。给了 --mutate=<名>（argv 形态，别的脚本用它）会被静默忽略、跑成「未变异」而全绿——fail-closed。
@@ -35,9 +37,11 @@ function mutate(from, to) {
   }
   html = html.replace(from, to);
 }
-const MUTATIONS = ['mutation-anchor-selftest', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped'];
+const MUTATIONS = ['mutation-anchor-selftest', 'ignore-hosted-disabled', 'always-hide-hosted', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped'];
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
+if (mutation === 'ignore-hosted-disabled') mutate('if(!FEATURE_HOSTED){var hc=', 'if(false){var hc=');
+if (mutation === 'always-hide-hosted') mutate('if(!FEATURE_HOSTED){var hc=', 'if(true){var hc=');
 if (mutation === 'hosted-group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
 if (mutation === 'hosted-new-group-no-check') mutate("if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};", '');
 if (mutation === 'backup-failed-unmapped') mutate("backup_failed:'销毁前备份数据卷失败,容器没有被删除,请稍后再试或联系管理员',", '');
@@ -194,6 +198,13 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await page.locator('#platform-items a[data-item-id="agent-groups"]').click();
     await page.evaluate(() => { hostedPollMs = 120; });
 
+    if (!hostedRegistered) {
+      await test('unregistered hosted routes remove the hosted panel and make zero hosted API requests', async () => {
+        assert.strictEqual(await page.locator('#hostedCreate').count(), 0);
+        await page.waitForTimeout(200);
+        assert.deepStrictEqual(getPaths.filter((p) => p.startsWith('/api/console/hosted/')), []);
+      });
+    } else {
     await test('options load failure shows the reason and a reachable retry; the form stays hidden; retry shows the form with the remaining quota', async () => {
       await page.locator('#hostedStatus').filter({ hasText: '托管选项加载失败' }).waitFor({ state: 'visible' });
       assert.match(await page.locator('#hostedStatus').textContent(), /503/);
@@ -532,6 +543,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(await page.locator('#groupAddOpen').count(), 1);
       assert.strictEqual(await page.locator('#groupCodeJoinOpen').count(), 0);
     });
+    }
 
     await test('no pageerror and no unexpected console error across the whole run', async () => {
       assert.deepStrictEqual(pageErrors, []);

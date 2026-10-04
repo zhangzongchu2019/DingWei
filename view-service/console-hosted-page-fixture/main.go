@@ -7,13 +7,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
 )
 
 func main() {
 	hub := &m8.Hub{}
-	hub.EnableConsoleHostedPage()
+	hub.SetConsoleHostedPageEnabled(os.Getenv("DW_CONSOLE_HOSTED_FIXTURE") != "0")
 	rr := httptest.NewRecorder()
 	hub.HandleConsolePage(rr, httptest.NewRequest(http.MethodGet, "/console", nil))
 	if rr.Code != http.StatusOK {

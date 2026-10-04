@@ -15,7 +15,6 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/hosted"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
-	"github.com/zhangzongchu2019/dingwei/internal/m8"
 )
 
 // hostedDeps 路由依赖（装配处注入；测试用桩）。
@@ -43,16 +42,6 @@ func registerHostedRoutes(mux interface {
 	mux.HandleFunc("POST /api/console/hosted/agents/{agentID}/{op}", d.handleLifecycle)
 	mux.HandleFunc("GET /api/console/admin/quotas", d.handleQuotaList)
 	mux.HandleFunc("PUT /api/console/admin/quotas/{userID}", d.handleQuotaPut)
-}
-
-// registerHostedRoutesAndEnablePage couples the UI feature bit to the real server-side route
-// registration. A rollback that omits this assembly step therefore also hides the hosted panel;
-// the browser never probes a route and guesses from a 404.
-func registerHostedRoutesAndEnablePage(mux interface {
-	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-}, hub *m8.Hub, d hostedDeps) {
-	registerHostedRoutes(mux, d)
-	hub.EnableConsoleHostedPage()
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
