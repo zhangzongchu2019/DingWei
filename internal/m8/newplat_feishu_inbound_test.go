@@ -40,7 +40,7 @@ func TestNewPlatformFeishuInboundSelectorAndDefaultUseIdentityBucket(t *testing.
 	defer conn.Close(websocket.StatusNormalClosure, "done")
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 
-	for i, tc := range []struct{ text, want string }{{"#opus50ts hello-selector", "hello-selector"}, {"hello-default", "hello-default"}} {
+	for i, tc := range []struct{ text, want string }{{"#opus50ts hello-selector", "hello-selector"}, {"#Opus50ts.zzc hello-full-name", "hello-full-name"}, {"hello-default", "hello-default"}} {
 		res, err := e.hub.Dispatch(e.ctx, feishuInboundMessage("np-feishu-"+string(rune('a'+i)), tc.text), tc.text)
 		if err != nil || res.Reply != "" {
 			t.Fatalf("dispatch %q: reply=%q err=%v", tc.text, res.Reply, err)
@@ -72,9 +72,46 @@ func TestNewPlatformFeishuInboundIsolationAndRevocation(t *testing.T) {
 	if got := e.hub.newPlatformOnlineSessions(e.ctx, "zzc"); len(got) != 0 {
 		t.Fatalf("revoked Agent remained routable: %v", got)
 	}
+	if got := e.hub.resolveNewPlatformFeishuSession(e.ctx, "zzc", "Opus50ts.zzc"); got.status != ownerSessionNoMatch {
+		t.Fatalf("revoked Agent full_name remained routable: %+v", got)
+	}
 	res, handled, err := e.hub.dispatchSelector(e.ctx, feishuInboundMessage("revoked", "#opus50ts blocked"), "#opus50ts blocked")
 	if err != nil || !handled || !strings.Contains(res.Reply, "未找到你名下") {
 		t.Fatalf("revoked selector: handled=%v reply=%q err=%v", handled, res.Reply, err)
+	}
+}
+
+func TestNewPlatformFullNameRejectsSuspendedAgentWithStaleSocket(t *testing.T) {
+	e := newAgentEnv(t)
+	hi, err := e.svc.IssueHostedAgentWithNewGroup(e.ctx, "zzc", "Pausy", tg(), "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.hub.mu.Lock()
+	e.hub.sessionClients[AgentKeyID("zzc")] = map[string]*sessionClient{"pausy": {keyID: AgentKeyID("zzc"), sessionName: "pausy"}}
+	e.hub.mu.Unlock()
+	if _, err := e.svc.Store.SetAgentSuspended(e.ctx, hi.Agent.ID, true, "zzc", e.svc.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if got := e.hub.resolveNewPlatformFeishuSession(e.ctx, "zzc", "Pausy.zzc"); got.status != ownerSessionNoMatch {
+		t.Fatalf("suspended Agent full_name remained routable through stale socket: %+v", got)
+	}
+	if got := e.hub.resolveOwnerSessionByShort(e.ctx, "zzc", "Pausy.zzc", ""); got.status != ownerSessionNoMatch {
+		t.Fatalf("suspended Agent full_name remained Agent-routable: %+v", got)
+	}
+}
+
+func TestNewPlatformFeishuFullNameOwnerMismatchLooksMissing(t *testing.T) {
+	v := newViewEnv(t)
+	bindFeishuForAgentEnv(t, v.agentEnv, "ou_alice")
+	v.hub.mu.Lock()
+	v.hub.sessionClients[AgentKeyID("lbl")] = map[string]*sessionClient{"kimi": {keyID: AgentKeyID("lbl"), sessionName: "kimi"}}
+	v.hub.mu.Unlock()
+	text := "#Kimi.lb must-not-cross-owner"
+	res, handled, err := v.hub.dispatchSelector(v.ctx, feishuInboundMessage("foreign-full-name", text), text)
+	want := "未找到你名下在线且可用的 Agent：Kimi.lb"
+	if err != nil || !handled || res.Reply != want {
+		t.Fatalf("foreign full_name did not use missing-target response: handled=%v reply=%q want=%q err=%v", handled, res.Reply, want, err)
 	}
 }
 
@@ -164,6 +201,11 @@ func TestNewPlatformFeishuMemberMentionRejectsCrossGroup(t *testing.T) {
 	if err != nil || !handled || res.Reply != groupAgentNotFoundText {
 		t.Fatalf("cross-group mention target=%s: handled=%v reply=%q err=%v", target.ID, handled, res.Reply, err)
 	}
+	mismatch := "@lb#Opus50ts.zzc owner-mismatch"
+	res, handled, err = v.hub.dispatchMemberMention(v.ctx, feishuInboundMessage("member-owner-mismatch", mismatch), mismatch)
+	if err != nil || !handled || !strings.Contains(res.Reply, "未找到该成员的在线 Agent") {
+		t.Fatalf("member full_name owner mismatch leaked target: handled=%v reply=%q err=%v", handled, res.Reply, err)
+	}
 }
 
 func TestNewPlatformFeishuMemberMentionDeliversWithinGroup(t *testing.T) {
@@ -193,14 +235,17 @@ func TestNewPlatformFeishuMemberMentionDeliversWithinGroup(t *testing.T) {
 	defer targetConn.CloseNow()
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 	waitSessionOnline(t, e.hub, AgentKeyID("lbl"), "kimi")
-	msg := feishuInboundMessage("member-positive", "@lb#kimi hello-member")
-	res, err := e.hub.Dispatch(e.ctx, msg, "@lb#kimi hello-member")
-	if err != nil || res.Reply != "" {
-		t.Fatalf("same-group member dispatch: %+v err=%v", res, err)
-	}
-	got := e.readEnvUntil(targetConn, envelopeReadTimeout, func(env model.Envelope) bool { return env.Body == "hello-member" })
-	if got == nil || got.To != sessionAddress("kimi", AgentKeyID("lbl")) {
-		t.Fatalf("same-group member delivery: %+v", got)
+	for i, tc := range []struct{ selector, body string }{{"@lb#kimi", "hello-member-short"}, {"@lb#Kimi.lb", "hello-member-full"}} {
+		text := tc.selector + " " + tc.body
+		msg := feishuInboundMessage("member-positive-"+string(rune('a'+i)), text)
+		res, err := e.hub.Dispatch(e.ctx, msg, text)
+		if err != nil || res.Reply != "" {
+			t.Fatalf("same-group member dispatch %q: %+v err=%v", tc.selector, res, err)
+		}
+		got := e.readEnvUntil(targetConn, envelopeReadTimeout, func(env model.Envelope) bool { return env.Body == tc.body })
+		if got == nil || got.To != sessionAddress("kimi", AgentKeyID("lbl")) {
+			t.Fatalf("same-group member delivery %q: %+v", tc.selector, got)
+		}
 	}
 }
 
@@ -283,6 +328,21 @@ func TestH17NewPlatformFeishuRosterAndSyncUseIdentityOwner(t *testing.T) {
 	mirror, handled, err := e.hub.dispatchMirrorCommand(e.ctx, msg, "mirror on opus50ts")
 	if err != nil || !handled || !strings.Contains(mirror.Reply, "镜像已开启") {
 		t.Fatalf("mirror did not resolve new-platform owner: %+v handled=%v err=%v", mirror, handled, err)
+	}
+	msg = feishuInboundMessage("h17-sync-full", "#sync Opus50ts.zzc")
+	sync, err = e.hub.Dispatch(e.ctx, msg, "#sync Opus50ts.zzc")
+	if err != nil || !sync.Matched || !strings.Contains(sync.Reply, "已开启同步 opus50ts") {
+		t.Fatalf("full_name sync did not normalize: %+v err=%v", sync, err)
+	}
+	msg = feishuInboundMessage("h17-unsync-full", "#unsync Opus50ts.zzc")
+	unsync, err = e.hub.Dispatch(e.ctx, msg, "#unsync Opus50ts.zzc")
+	if err != nil || !unsync.Matched || !strings.Contains(unsync.Reply, "已停止同步 opus50ts") {
+		t.Fatalf("full_name unsync did not normalize: %+v err=%v", unsync, err)
+	}
+	msg = feishuInboundMessage("mirror-full-name", "mirror off Opus50ts.zzc")
+	mirror, handled, err = e.hub.dispatchMirrorCommand(e.ctx, msg, "mirror off Opus50ts.zzc")
+	if err != nil || !handled || !strings.Contains(mirror.Reply, "镜像已关闭") {
+		t.Fatalf("full_name mirror did not normalize: %+v handled=%v err=%v", mirror, handled, err)
 	}
 }
 

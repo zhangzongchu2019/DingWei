@@ -2094,6 +2094,12 @@ func (h *Hub) resolveOwnerSessionByShort(ctx context.Context, ownerKey, requeste
 	if ownerKey == "" || requested == "" {
 		return ownerSessionResolveResult{status: ownerSessionNoMatch}
 	}
+	if full := h.resolveNewPlatformVisibleSession(ctx, requested); full.fullName {
+		if !full.found || full.ownerLC != identity.Lower(ownerKey) || !h.sessionOnline(full.keyID, full.sessionName) {
+			return ownerSessionResolveResult{status: ownerSessionNoMatch}
+		}
+		return ownerSessionResolveResult{keyID: full.keyID, sessionName: full.sessionName, status: ownerSessionUniqueHit}
+	}
 	h.mu.Lock()
 	type candidate struct {
 		keyID       string
@@ -2218,6 +2224,9 @@ func (h *Hub) dispatchMirrorCommand(ctx context.Context, msg model.Message, text
 		}
 		resolved := h.resolveNewPlatformFeishuSession(ctx, user.UserIDLC(), sessionName)
 		keyID, found = resolved.keyID, resolved.status == ownerSessionUniqueHit
+		if found {
+			sessionName = resolved.sessionName
+		}
 	} else if h.Identity != nil && msg.SenderOpenID != "" {
 		logFeishuDispatchRejected("sender_not_active_member", msg.SenderOpenID, sessionName, msg.BotChannelID)
 		return model.PrefixDispatchResult{Matched: true, Reply: "你的账号未绑定或已停用，无法控制会话"}, true, nil
@@ -2292,6 +2301,12 @@ func (h *Hub) dispatchFeishuSyncCommand(ctx context.Context, msg model.Message, 
 		ownerKey := h.controlOwnerKey(ctx, msg)
 		if hasNewUser {
 			ownerKey = newUser.UserIDLC()
+			if full := h.resolveNewPlatformVisibleSession(ctx, sessionName); full.fullName {
+				if !full.found || full.ownerLC != newUser.UserIDLC() {
+					return model.PrefixDispatchResult{Matched: true, Reply: "未找到该会话的同步登记（可能是从别的飞书会话开启的）"}, true, nil
+				}
+				sessionName = full.sessionName
+			}
 		}
 		var candidateKeys []string
 		if explicitKey != "" {
@@ -2332,6 +2347,9 @@ func (h *Hub) dispatchFeishuSyncCommand(ctx context.Context, msg model.Message, 
 			}
 			resolved := h.resolveNewPlatformFeishuSession(ctx, newUser.UserIDLC(), sessionName)
 			targetKey, found = resolved.keyID, resolved.status == ownerSessionUniqueHit
+			if found {
+				sessionName = resolved.sessionName
+			}
 		} else {
 			sourceOwner := h.controlOwnerKey(ctx, msg)
 			targetOwner := h.ownerKeyForKey(ctx, explicitKey)
@@ -2345,6 +2363,9 @@ func (h *Hub) dispatchFeishuSyncCommand(ctx context.Context, msg model.Message, 
 	} else if hasNewUser {
 		resolved := h.resolveNewPlatformFeishuSession(ctx, newUser.UserIDLC(), sessionName)
 		targetKey, found = resolved.keyID, resolved.status == ownerSessionUniqueHit
+		if found {
+			sessionName = resolved.sessionName
+		}
 	} else {
 		ownerKey := h.controlOwnerKey(ctx, msg)
 		targetKey, found = h.resolveOwnerSessionKey(ctx, ownerKey, sessionName, "")
@@ -3037,16 +3058,25 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 		if resolved.status != ownerSessionUniqueHit {
 			// Cross-owner addressing is deliberately exact-only: the sender must
 			// use the persisted FullSessionName, never a short/global fuzzy name.
-			full, found, lookupErr := h.resolveSessionByFullName(ctx, to.SessionName)
-			if lookupErr != nil {
-				return lookupErr
-			}
-			if found {
-				if err := h.enforceAgentGrouping(ctx, from, env, full.KeyID, full.SessionName); err != nil {
+			if full := h.resolveNewPlatformVisibleSession(ctx, to.SessionName); full.fullName && full.found {
+				if err := h.enforceAgentGrouping(ctx, from, env, full.keyID, full.sessionName); err != nil {
 					return err
 				}
-				env.To = sessionAddress(full.SessionName, full.KeyID)
-				return h.routeToSession(ctx, full.KeyID, full.SessionName, env, from.Kind == addressFeishu)
+				env.To = sessionAddress(full.sessionName, full.keyID)
+				return h.routeToSession(ctx, full.keyID, full.sessionName, env, from.Kind == addressFeishu)
+			}
+			if h.Identity == nil {
+				full, found, lookupErr := h.resolveSessionByFullName(ctx, to.SessionName)
+				if lookupErr != nil {
+					return lookupErr
+				}
+				if found {
+					if err := h.enforceAgentGrouping(ctx, from, env, full.KeyID, full.SessionName); err != nil {
+						return err
+					}
+					env.To = sessionAddress(full.SessionName, full.KeyID)
+					return h.routeToSession(ctx, full.KeyID, full.SessionName, env, from.Kind == addressFeishu)
+				}
 			}
 			if _, isAgent, identityErr := h.sourceAgentIdentity(ctx, from, env); identityErr != nil {
 				return identityErr

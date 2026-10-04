@@ -42,6 +42,12 @@ func (h *Hub) newPlatformOnlineSessions(ctx context.Context, ownerLC string) []s
 }
 
 func (h *Hub) resolveNewPlatformFeishuSession(ctx context.Context, ownerLC, requested string) ownerSessionResolveResult {
+	if full := h.resolveNewPlatformVisibleSession(ctx, requested); full.fullName {
+		if !full.found || full.ownerLC != identity.Lower(ownerLC) || !h.sessionOnline(full.keyID, full.sessionName) {
+			return ownerSessionResolveResult{status: ownerSessionNoMatch}
+		}
+		return ownerSessionResolveResult{keyID: full.keyID, sessionName: full.sessionName, status: ownerSessionUniqueHit}
+	}
 	sessions := h.newPlatformOnlineSessions(ctx, ownerLC)
 	if strings.TrimSpace(requested) == "" {
 		if len(sessions) == 1 {

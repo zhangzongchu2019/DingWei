@@ -145,6 +145,13 @@ func TestNewPlatformAgentOwnerResolutionSelectorIsolationAndRoster(t *testing.T)
 		t.Fatal(err)
 	}
 	credOther := e.enrollForOwner("lbl", "dev-other", "Outsider")
+	outsider, err := e.svc.Store.FindAgentByName(e.ctx, "lbl", "outsider")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := e.svc.JoinGroup(e.ctx, "lbl", codes[0], outsider.ID); err != nil {
+		t.Fatal(err)
+	}
 	a, _, _ := e.dial(e.cred, "")
 	b, _, _ := e.dial(credB, "")
 	other, _, _ := e.dial(credOther, "")
@@ -163,6 +170,14 @@ func TestNewPlatformAgentOwnerResolutionSelectorIsolationAndRoster(t *testing.T)
 	if got == nil || got.To != sessionAddress("kimi", AgentKeyID("zzc")) {
 		t.Fatalf("same-owner short selector was not delivered: %+v", got)
 	}
+	e.sendEnv(a, model.Envelope{From: "opus50ts#" + placeholderFromKey, To: "#Kimi.zzc", Body: "same-owner-full-selector"})
+	if got := e.readEnvUntil(b, envelopeReadTimeout, func(env model.Envelope) bool { return env.Body == "same-owner-full-selector" }); got == nil || got.To != sessionAddress("kimi", AgentKeyID("zzc")) {
+		t.Fatalf("same-owner full_name selector was not delivered: %+v", got)
+	}
+	e.sendEnv(a, model.Envelope{From: "opus50ts#" + placeholderFromKey, To: "Kimi.zzc#" + placeholderFromKey, Body: "same-owner-full-address"})
+	if got := e.readEnvUntil(b, envelopeReadTimeout, func(env model.Envelope) bool { return env.Body == "same-owner-full-address" }); got == nil || got.To != sessionAddress("kimi", AgentKeyID("zzc")) {
+		t.Fatalf("same-owner full_name address was not delivered: %+v", got)
+	}
 
 	items, owner, err := e.hub.onlineDirectory(e.ctx, "zzc")
 	if err != nil || owner.OwnerKey != "zzc" {
@@ -178,6 +193,12 @@ func TestNewPlatformAgentOwnerResolutionSelectorIsolationAndRoster(t *testing.T)
 	if strings.Join(names, ",") != "kimi,opus50ts" {
 		t.Fatalf("new-platform roster=%v", names)
 	}
+	// Exact-address send may cross owners only after the existing group policy
+	// approves it; unlike the selector shorthand it uses the RouteEnvelope fallback.
+	e.sendEnv(a, model.Envelope{From: "opus50ts#" + placeholderFromKey, To: "Outsider.lb#" + placeholderFromKey, Body: "group-approved-full-address"})
+	if got := e.readEnvUntil(other, envelopeReadTimeout, func(env model.Envelope) bool { return env.Body == "group-approved-full-address" }); got == nil || got.To != sessionAddress("outsider", AgentKeyID("lbl")) {
+		t.Fatalf("group-approved cross-owner full_name address was not delivered: %+v", got)
+	}
 
 	// A name that exists only under another owner must be rejected, not globally
 	// resolved to that owner's Agent.
@@ -190,6 +211,15 @@ func TestNewPlatformAgentOwnerResolutionSelectorIsolationAndRoster(t *testing.T)
 	}
 	if leaked := e.readEnvUntil(other, 250*time.Millisecond, func(env model.Envelope) bool { return env.Body == "must-not-cross-owner" }); leaked != nil {
 		t.Fatalf("short selector crossed owner boundary: %+v", leaked)
+	}
+	e.sendEnv(a, model.Envelope{From: "opus50ts#" + placeholderFromKey, To: "#Outsider.lb", Body: "full-name-must-not-cross-owner"})
+	if rejected := e.readEnvUntil(a, envelopeReadTimeout, func(env model.Envelope) bool {
+		return strings.Contains(env.Body, "目标会话无法补全为在线 canonical 地址")
+	}); rejected == nil {
+		t.Fatal("cross-owner full_name selector was not rejected like a missing target")
+	}
+	if leaked := e.readEnvUntil(other, 250*time.Millisecond, func(env model.Envelope) bool { return env.Body == "full-name-must-not-cross-owner" }); leaked != nil {
+		t.Fatalf("full_name selector crossed owner boundary: %+v", leaked)
 	}
 }
 

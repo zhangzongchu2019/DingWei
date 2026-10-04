@@ -28,18 +28,18 @@ import (
 
 // ---- envelope Meta 字段键(冻结命名) ----
 const (
-	metaKeyProtocolClass       = "protocol_class"
-	metaKeyKind                = "kind"
-	metaKeyReplyPolicy         = "reply_policy"
-	metaKeyConversationTermnl  = "conversation_terminal"
-	metaKeyConversationID      = "conversation_id"
-	metaKeyInReplyTo           = "in_reply_to"
-	metaKeyReplyTo             = "reply_to"
-	metaKeyOriginKind          = "origin_kind"
-	metaKeyOriginAddr          = "origin_addr"
-	metaKeyHopCount            = "hop_count"
-	metaKeyMaxHops             = "max_hops"
-	metaKeyDedupKey            = "dedup_key"
+	metaKeyProtocolClass      = "protocol_class"
+	metaKeyKind               = "kind"
+	metaKeyReplyPolicy        = "reply_policy"
+	metaKeyConversationTermnl = "conversation_terminal"
+	metaKeyConversationID     = "conversation_id"
+	metaKeyInReplyTo          = "in_reply_to"
+	metaKeyReplyTo            = "reply_to"
+	metaKeyOriginKind         = "origin_kind"
+	metaKeyOriginAddr         = "origin_addr"
+	metaKeyHopCount           = "hop_count"
+	metaKeyMaxHops            = "max_hops"
+	metaKeyDedupKey           = "dedup_key"
 )
 
 // ---- 枚举值(冻结) ----
