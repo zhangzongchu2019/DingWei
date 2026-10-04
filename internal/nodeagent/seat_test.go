@@ -779,7 +779,7 @@ func TestRegisterDockerHandlersRejectsBadAllowlist(t *testing.T) {
 		return (&Agent{handlers: map[string]Handler{}}).RegisterDockerHandlers(
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-			"http://172.30.68.1:11080", "wss://hub.test", csv, false, "",
+			"http://172.30.68.1:11080", "wss://hub.test", csv, false, "", "",
 		)
 	}
 	if err := register(strings.Repeat("ab", 32) + "f"); err == nil || !strings.Contains(err.Error(), "NODEAGENT_LOCAL_IMAGES") {
@@ -979,7 +979,7 @@ func TestHubViaProxyThroughRegisterDockerHandlers(t *testing.T) {
 	if err := ag.RegisterDockerHandlers(
 		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-		"http://172.30.68.1:11080", "wss://dw.cmjrt.com:55055", "", true, "",
+		"http://172.30.68.1:11080", "wss://dw.cmjrt.com:55055", "", true, "", "",
 	); err != nil {
 		t.Fatalf("register: %v", err)
 	}
@@ -1052,7 +1052,7 @@ func TestSeatCodexModelValidation(t *testing.T) {
 		return (&Agent{handlers: map[string]Handler{}}).RegisterDockerHandlers(
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-			"http://172.30.68.1:11080", "wss://hub.test", "", false, model,
+			"http://172.30.68.1:11080", "wss://hub.test", "", false, model, "",
 		)
 	}
 	for _, bad := range []string{
@@ -1075,7 +1075,7 @@ func TestSeatCodexModelValidation(t *testing.T) {
 		err := ag.RegisterDockerHandlers(
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-			"http://172.30.68.1:11080", "wss://hub.test", "", false, bad,
+			"http://172.30.68.1:11080", "wss://hub.test", "", false, bad, "",
 		)
 		if err == nil || !strings.Contains(err.Error(), "NODEAGENT_SEAT_CODEX_MODEL") {
 			t.Fatalf("%q 必须拒且报键名: %v", bad, err)
@@ -1109,7 +1109,7 @@ func TestSeatCodexModelThroughCreateSpec(t *testing.T) {
 			if err := ag.RegisterDockerHandlers(
 				newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 				t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-				"http://172.30.68.1:11080", "wss://hub.test", "", false, tc.model,
+				"http://172.30.68.1:11080", "wss://hub.test", "", false, tc.model, "",
 			); err != nil {
 				t.Fatalf("register: %v", err)
 			}
@@ -1141,7 +1141,7 @@ func TestSeatCodexModelThroughCreateSpec(t *testing.T) {
 	if err := ag.RegisterDockerHandlers(
 		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-		"http://172.30.68.1:11080", "wss://hub.test", "", false, "",
+		"http://172.30.68.1:11080", "wss://hub.test", "", false, "", "",
 	); err != nil {
 		t.Fatalf("register: %v", err)
 	}
@@ -1152,6 +1152,125 @@ func TestSeatCodexModelThroughCreateSpec(t *testing.T) {
 	for _, e := range f.specs[len(f.specs)-1]["Env"].([]any) {
 		if v, _ := e.(string); strings.HasPrefix(v, "CODEX_MODEL=") {
 			t.Fatalf("空态不得出现 CODEX_MODEL: %v", e)
+		}
+	}
+}
+
+// R-V2-HOSTED-DRIVER-IMPL-20261004143130（版本 2 指标 2：cli 模式不产结构事件、view 看不到回复）：
+// NODEAGENT_SEAT_MODE 未设/cli ⇒ 与现行逐字相同；driver ⇒ SH_MODE=driver＋SH_EMIT_SESSION_EVENT=1；
+// 非法值 ⇒ 拒启报键名。反向：吃掉模式值（注册层恒 cli）／删校验 ⇒ 各红。
+func TestSeatModeSwitch(t *testing.T) {
+	// 未设（＝cli）逐字现行
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	env := d.seatEnv("api_key", "codex")
+	want := []string{
+		"SH_WS_BASE=wss://hub.test",
+		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
+		"SH_CRED_FILE=/work/account-credential",
+		"SH_CRED_KIND=api_key",
+		"SH_MODE=cli",
+		"SH_CLI=codex",
+		"HTTP_PROXY=http://172.30.68.1:11080",
+		"HTTPS_PROXY=http://172.30.68.1:11080",
+		"NO_PROXY=localhost,127.0.0.1,hub.test",
+	}
+	if strings.Join(env, "|") != strings.Join(want, "|") {
+		t.Fatalf("未设 ⇒ 与现行逐字不同:\n得 %v\n要 %v", env, want)
+	}
+	// 显式 cli 同样逐字
+	d2 := f.ops(t.TempDir())
+	d2.seatMode = "cli"
+	if strings.Join(d2.seatEnv("api_key", "codex"), "|") != strings.Join(want, "|") {
+		t.Fatal("显式 cli 应同未设逐字")
+	}
+	// driver＋codex 席位：SH_MODE=driver＋SH_DRIVER=codex＋事件键，其余键不变
+	d3 := f.ops(t.TempDir())
+	d3.seatMode = "driver"
+	env3 := d3.seatEnv("api_key", "codex")
+	joined := "\n" + strings.Join(env3, "\n") + "\n"
+	for _, w := range []string{"\nSH_MODE=driver\n", "\nSH_DRIVER=codex\n", "\nSH_EMIT_SESSION_EVENT=1\n", "\nSH_CLI=codex\n"} {
+		if !strings.Contains(joined, w) {
+			t.Fatalf("driver ⇒ 缺 %q: %v", w, env3)
+		}
+	}
+	if strings.Contains(joined, "SH_MODE=cli") {
+		t.Fatalf("driver ⇒ 不得再含 SH_MODE=cli: %v", env3)
+	}
+	// 其余键逐项不变（复验 M5 存活刀：driver 丢掉 HTTPS_PROXY 之类须红）——
+	// driver env 去掉 SH_MODE 与两个新键后，与未设 env 逐项相同。
+	strip := func(env []string) []string {
+		out := []string{}
+		for _, e := range env {
+			if strings.HasPrefix(e, "SH_MODE=") || strings.HasPrefix(e, "SH_DRIVER=") || strings.HasPrefix(e, "SH_EMIT_SESSION_EVENT=") {
+				continue
+			}
+			out = append(out, e)
+		}
+		return out
+	}
+	if strings.Join(strip(env3), "|") != strings.Join(strip(env), "|") {
+		t.Fatalf("driver 的其余键必须与未设逐项相同:\n得 %v\n要 %v", strip(env3), strip(env))
+	}
+	// 异议 1（组长采纳）：driver 对非 codex 席位不生效——claude 席位与现行逐字相同
+	d4 := f.ops(t.TempDir())
+	d4.seatMode = "driver"
+	env4 := d4.seatEnv("api_key", "claude")
+	wantClaude := []string{
+		"SH_WS_BASE=wss://hub.test",
+		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
+		"SH_CRED_FILE=/work/account-credential",
+		"SH_CRED_KIND=api_key",
+		"SH_MODE=cli",
+		"SH_CLI=claude",
+		"HTTP_PROXY=http://172.30.68.1:11080",
+		"HTTPS_PROXY=http://172.30.68.1:11080",
+		"NO_PROXY=localhost,127.0.0.1,hub.test",
+	}
+	if strings.Join(env4, "|") != strings.Join(wantClaude, "|") {
+		t.Fatalf("claude 席位 driver 下应与现行逐字相同:\n得 %v\n要 %v", env4, wantClaude)
+	}
+	// 非法值拒启报键名（注册前，不部分注册）
+	for _, bad := range []string{"echo", "DRIVER", " driver", "cli2"} {
+		ag := &Agent{handlers: map[string]Handler{}}
+		err := ag.RegisterDockerHandlers(
+			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
+			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
+			"http://172.30.68.1:11080", "wss://hub.test", "", false, "", bad,
+		)
+		if err == nil || !strings.Contains(err.Error(), "NODEAGENT_SEAT_MODE") {
+			t.Fatalf("%q 必须拒且报键名: %v", bad, err)
+		}
+		if len(ag.handlers) != 0 {
+			t.Fatalf("%q 被拒后 handlers 应为空", bad)
+		}
+	}
+}
+
+// 透传层：RegisterDockerHandlers(..., "driver") → handlers[CmdCreateSeat] → spec Env 真含两键。
+func TestSeatModeDriverThroughCreateSpec(t *testing.T) {
+	f := newFakeDocker(t)
+	ag := &Agent{handlers: map[string]Handler{}}
+	if err := ag.RegisterDockerHandlers(
+		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
+		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
+		"http://172.30.68.1:11080", "wss://hub.test", "", false, "", "driver",
+	); err != nil {
+		t.Fatalf("register: %v", err)
+	}
+	raw := `{"seat_id":"ag_dm","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex"}`
+	if _, err := ag.handlers[CmdCreateSeat](context.Background(), json.RawMessage(raw)); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	envs, _ := f.specs[0]["Env"].([]any)
+	joined := "\n"
+	for _, e := range envs {
+		v, _ := e.(string)
+		joined += v + "\n"
+	}
+	for _, w := range []string{"\nSH_MODE=driver\n", "\nSH_EMIT_SESSION_EVENT=1\n"} {
+		if !strings.Contains(joined, w) {
+			t.Fatalf("透传后 spec Env 缺 %q: %v", w, envs)
 		}
 	}
 }

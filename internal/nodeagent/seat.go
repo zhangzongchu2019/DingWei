@@ -112,7 +112,12 @@ type dockerOps struct {
 	// 非空 ⇒ 注入 CODEX_MODEL=<值>；空 ⇒ 不注入（与 597b4d93 逐字相同）。
 	// 校验（字符集 [A-Za-z0-9._-]、≤64）在 RegisterDockerHandlers，非法即拒启。
 	seatCodexModel string
-	waitMax        time.Duration
+	// seatMode 席位 helper 模式（R-V2-HOSTED-DRIVER-IMPL-20261004143130，版本 2 指标 2）：
+	// "cli"｜"" ⇒ 现行为逐字不变（SH_MODE=cli）；driver ⇒ SH_MODE=driver＋SH_EMIT_SESSION_EVENT=1
+	//（cli 模式不产结构事件、view 看不到 Agent 回复——方案件 9b9bb1d9 取甲）。
+	// 非法值在 RegisterDockerHandlers 拒启报键名。
+	seatMode string
+	waitMax  time.Duration
 }
 
 func containerName(seatID string) string { return "seat-" + seatID }
@@ -244,8 +249,15 @@ func (d *dockerOps) seatEnv(credKind, cli string) []string {
 		"SH_CRED_KIND=" + credKind,
 		// 席位的 CLI 由 create／upgrade 参数 cli 定（组长 R-B12-SEATMODE 第 2 条取乙：基础镜像含多家 CLI，模式按席位定、不写死进镜像）。
 		// sessionHelper 未设 SH_MODE 时默认 echo（不起任何 CLI）；SH_CLI 选 CLI 档。
-		"SH_MODE=cli",
+		// SH_MODE：节点级开关 seatMode（R-V2-HOSTED-DRIVER-IMPL）——driver 且本席 cli=codex
+		// ⇒ driver（其余 CLI 与现行逐字相同，组长采纳 opus50tc2k 异议 1）；否则 cli。
+		"SH_MODE=" + map[bool]string{true: "driver", false: "cli"}[d.seatMode == "driver" && cli == "codex"],
 		"SH_CLI=" + cli,
+	}
+	if d.seatMode == "driver" && cli == "codex" {
+		// driver 两件套：SH_DRIVER 显式选 codex driver（driver_adapter 默认也是 codex，写明防漂移）、
+		// 事件键让 helper 产结构事件（view 才看得到 Agent 回复）。异议 1：仅 codex 席位。
+		env = append(env, "SH_DRIVER=codex", "SH_EMIT_SESSION_EVENT=1")
 	}
 	if d.seatProxy == "" {
 		return env
@@ -676,9 +688,13 @@ func isBareImageID(s string) bool {
 // 同时接上 T-G4-13 容量上报（真采集替换骨架桩，并注册心跳）。
 // cgroupParent 必填（eccc54bc）——create 的 --cgroup-parent 指向可配置父切片。
 // localImagesCSV 格式不对即报错（报键名），调用方拒启。
-func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string, seatHubViaProxy bool, seatCodexModel string) error {
+func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string, seatHubViaProxy bool, seatCodexModel, seatMode string) error {
 	if seatCodexModel != "" && !validModelName(seatCodexModel) {
 		return fmt.Errorf("NODEAGENT_SEAT_CODEX_MODEL %q 格式不对（须 1–64 位 [A-Za-z0-9._-]）", seatCodexModel)
+	}
+	// R-V2-HOSTED-DRIVER-IMPL：cli｜driver｜空（＝cli）；其它即拒启报键名（与 CODEX_MODEL 同款）。
+	if seatMode != "" && seatMode != "cli" && seatMode != "driver" {
+		return fmt.Errorf("NODEAGENT_SEAT_MODE %q 取值不对（只认 cli｜driver）", seatMode)
 	}
 	// SH_WS_BASE＝HubURL 的 ws 源（wss://host[:port]；路径剥掉）
 	base := hubWSS
@@ -693,7 +709,7 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 	if err != nil {
 		return err
 	}
-	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, localImages: allow, waitMax: 60 * time.Second, seatHubViaProxy: seatHubViaProxy, seatCodexModel: seatCodexModel}
+	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, localImages: allow, waitMax: 60 * time.Second, seatHubViaProxy: seatHubViaProxy, seatCodexModel: seatCodexModel, seatMode: seatMode}
 	a.Register(CmdPullImage, d.pull)
 	a.Register(CmdCreateSeat, d.create)
 	a.Register(CmdStopSeat, d.stop)
