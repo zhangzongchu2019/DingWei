@@ -1,6 +1,7 @@
 package m8
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
+	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
 type viewInputGateReader struct {
@@ -103,9 +105,11 @@ func TestNewPlatformOwnerInputThroughRealViewServiceModes(t *testing.T) {
 			internalMux.HandleFunc("POST /internal/view/{session}/input", e.hub.HandleInternalViewInput)
 			internalMux.HandleFunc("POST /internal/view/{session}/interrupt", e.hub.HandleInternalViewInterrupt)
 			internalMux.HandleFunc("POST /internal/view/{session}/cancel", e.hub.HandleInternalViewCancel)
+			internalMux.HandleFunc("GET /internal/view/{session}/events", e.hub.HandleInternalViewEvents)
 			internalMux.HandleFunc("POST /internal/view-v2/{session}/input", e.hub.HandleInternalViewV2Input)
 			internal := httptest.NewServer(internalMux)
 			defer internal.Close()
+			defer internal.CloseClientConnections()
 			vsURL := startRealViewService(t, internal.URL, v2, secretFile)
 
 			configFile := filepath.Join(t.TempDir(), "routes.json")
@@ -128,6 +132,7 @@ func TestNewPlatformOwnerInputThroughRealViewServiceModes(t *testing.T) {
 			frontMux.HandleFunc("POST /api/console/agents/{sessionName}/capability", e.hub.RequireConsoleAgent("interact", e.hub.HandleConsoleCapability))
 			front := httptest.NewServer(frontMux)
 			defer front.Close()
+			defer front.CloseClientConnections()
 			if !v2 {
 				for name, token := range map[string]string{"unauthenticated": "", "non-owner": e.tokLBL} {
 					req, _ := http.NewRequest(http.MethodGet, front.URL+"/view/kimi.zzc", nil)
@@ -174,6 +179,43 @@ func TestNewPlatformOwnerInputThroughRealViewServiceModes(t *testing.T) {
 				raw, _ := io.ReadAll(res.Body)
 				return res.StatusCode, raw
 			}
+			eventsCtx, cancelEvents := context.WithCancel(context.Background())
+			eventsReq, _ := http.NewRequestWithContext(eventsCtx, http.MethodGet, front.URL+"/view/kimi.zzc/events", nil)
+			eventsReq.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: e.tokZZC})
+			eventsRes, err := http.DefaultClient.Do(eventsReq)
+			if err != nil || eventsRes.StatusCode != http.StatusOK {
+				t.Fatalf("events subscribe: status=%v err=%v", func() int {
+					if eventsRes != nil {
+						return eventsRes.StatusCode
+					}
+					return 0
+				}(), err)
+			}
+			defer eventsRes.Body.Close()
+			defer cancelEvents()
+			eventLines := make(chan string, 16)
+			go func() {
+				scanner := bufio.NewScanner(eventsRes.Body)
+				for scanner.Scan() {
+					if strings.HasPrefix(scanner.Text(), "data: ") {
+						eventLines <- strings.TrimPrefix(scanner.Text(), "data: ")
+					}
+				}
+			}()
+			waitEvent := func(want string) {
+				t.Helper()
+				deadline := time.After(3 * time.Second)
+				for {
+					select {
+					case line := <-eventLines:
+						if strings.Contains(line, want) {
+							return
+						}
+					case <-deadline:
+						t.Fatalf("events stream did not contain %q", want)
+					}
+				}
+			}
 
 			if status, _ := do(http.MethodGet, "/view/kimi.zzc", nil, nil); status != http.StatusOK {
 				t.Fatalf("owner view page: %d", status)
@@ -218,6 +260,12 @@ func TestNewPlatformOwnerInputThroughRealViewServiceModes(t *testing.T) {
 			if env.Body != "owner via real view service\r" {
 				t.Fatalf("agent body=%q", env.Body)
 			}
+			waitEvent("input_posted")
+			eventJSON := `{"kind":"assistant_text","text":"assistant through events","delivery_id":"d1","turn_id":"t1"}`
+			if err := writeEnvelope(e.ctx, agent, model.Envelope{From: "kimi#enrolled", Body: eventJSON, Meta: map[string]any{"type": terminalSessionEventType}}); err != nil {
+				t.Fatal(err)
+			}
+			waitEvent("assistant through events")
 		})
 	}
 }

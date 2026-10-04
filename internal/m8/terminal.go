@@ -724,6 +724,32 @@ func (h *Hub) subscribeSessionEvents(keyID, sessionName, subID string) (replay [
 	return replay, ch, unsub
 }
 
+// subscribeExistingSessionEvents is the public view subscription boundary. Unlike the
+// internal test/helper primitive above, it must never manufacture a terminal for a bad key.
+func (h *Hub) subscribeExistingSessionEvents(keyID, sessionName, subID string) (replay []string, ch chan string, unsub func(), ok bool) {
+	ch = make(chan string, 256)
+	h.mu.Lock()
+	st := h.terminals[terminalKey(keyID, sessionName)]
+	if st == nil {
+		h.mu.Unlock()
+		return nil, nil, nil, false
+	}
+	if st.eventSubs == nil {
+		st.eventSubs = map[string]chan string{}
+	}
+	st.eventSubs[subID] = ch
+	replay = append([]string(nil), st.eventRing...)
+	h.mu.Unlock()
+	unsub = func() {
+		h.mu.Lock()
+		if cur := h.terminals[terminalKey(keyID, sessionName)]; cur != nil {
+			delete(cur.eventSubs, subID)
+		}
+		h.mu.Unlock()
+	}
+	return replay, ch, unsub, true
+}
+
 // HandleInternalViewEvents(C2):内网 SSE 口,View Service 订阅某会话的结构化事件流。
 // 先回放 eventRing,再挂实时流。**仅内网监听**(部署时绑 127.0.0.1,不上公网 mux)。
 func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
@@ -737,14 +763,8 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
 		return
 	}
-	// 解析 keyID:会话须在线且会话名唯一(与 view WS 同判据)
-	h.mu.Lock()
-	st, found := h.terminalBySessionNameLocked(sessionName)
-	var keyID string
-	if found {
-		keyID = st.keyID
-	}
-	h.mu.Unlock()
+	// Resolve the public full_name once, then use the exact internal key/session pair.
+	keyID, internalSession, found := h.viewInternalSession(r.Context(), sessionName)
 	if !found {
 		http.Error(w, "session offline or ambiguous", http.StatusNotFound)
 		return
@@ -757,7 +777,10 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 	flusher.Flush()
 
 	subID := randomHex(8)
-	replay, ch, unsub := h.subscribeSessionEvents(keyID, sessionName, subID)
+	replay, ch, unsub, ok := h.subscribeExistingSessionEvents(keyID, internalSession, subID)
+	if !ok {
+		return
+	}
 	defer unsub()
 
 	writeSSE := func(data string) bool {
