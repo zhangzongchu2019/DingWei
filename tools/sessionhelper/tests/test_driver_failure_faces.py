@@ -216,9 +216,6 @@ class DriverFailureFacesTest(unittest.TestCase):
             self.assertIn("terminal_timeout", reasons)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 class HubDeliveryPathTest(unittest.TestCase):
     """复验须改 2：经 handle_delivery（Hub 真投递路径 adapter.handle_delivery，app.py:765）的格。
     并在格内钉死 Hub 可见终态的事实口径：
@@ -325,3 +322,6 @@ class HubDeliveryPathTest(unittest.TestCase):
             while not adapter._event_q.empty():
                 events.append(adapter._event_q.get_nowait())
             self.assertIn("driver_start_failed", json.dumps(events, ensure_ascii=False))
+
+if __name__ == "__main__":
+    unittest.main()
