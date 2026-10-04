@@ -285,6 +285,24 @@ class HubDeliveryPathTest(unittest.TestCase):
             self.assertIn("failed", blob)
             # 复验指出断言太弱：必须钉到原因文字（原始通知的 params.turn.error.message 透传）
             self.assertIn("FAKE_TURN_BOOM", blob, "事件面须带原因文字（原始通知透传）")
+            # 复验第 1 件：turn/completed(failed) 即投递终态——投递应立即 failed 落账，
+            # 不得拖到 1s 后再补一条误导的 terminal_timeout（等收齐再判）。
+            state = ""
+            deadline2 = time.monotonic() + 3
+            while time.monotonic() < deadline2:
+                for c in list(adapter._commands._by_delivery.values()):
+                    if c.state == "failed":
+                        state = "failed"
+                if state:
+                    break
+                time.sleep(0.05)
+            self.assertEqual(state, "failed", "投递须立即落 failed（不等 terminal_timeout）")
+            time.sleep(1.5)  # 收齐 1s 超时窗内可能补的事件
+            events2 = []
+            while not adapter._event_q.empty():
+                events2.append(adapter._event_q.get_nowait())
+            blob2 = json.dumps(events2, ensure_ascii=False)
+            self.assertNotIn("terminal_timeout", blob2, "turn/completed(failed) 已终态 ⇒ 不得再补 terminal_timeout")
 
     def test_handle_delivery_start_failure_raises_for_app_catch(self):
         # 面 2 经 handle_delivery：start 失败原样抛出——app 层（delivery_worker_loop

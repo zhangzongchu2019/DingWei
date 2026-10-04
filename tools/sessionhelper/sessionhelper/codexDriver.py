@@ -490,6 +490,7 @@ class CodexProtocolDriver(Driver):
         self._envelope_states: dict[str, ReceiptState] = {}
         self._envelope_to_turn: dict[str, str] = {}
         self._turn_to_envelope: dict[str, str] = {}
+        self._failed_turns: dict[str, str] = {}  # turn/completed(failed) 通知先到时的暂存（竞态兜底）
         self._delivery_timestamps: dict[str, float] = {}
         self._delivery_last_event_at: dict[str, float] = {}
         self._delivery_pending_tools: dict[str, set[str]] = {}
@@ -675,6 +676,10 @@ class CodexProtocolDriver(Driver):
             )
 
         turn_id = self._envelope_to_turn.get(envelope_id) or (record.turn_id if record else "")
+        if turn_id and turn_id in self._failed_turns:
+            detail = self._failed_turns[turn_id]
+            self._mark_delivery(envelope_id, "failed", detail)
+            return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=detail)
         if turn_id:
             try:
                 state, detail = self._read_turn_state(turn_id)
@@ -935,6 +940,17 @@ class CodexProtocolDriver(Driver):
             cursor = self._turn_event_cursor(turn_id, "9999")
             status = turn.get("status", "")
             envelope_id = self._turn_to_envelope.get(turn_id)
+            if status == "failed":
+                # turn 失败即该投递的终态（泊车枝复验第 1 件）：落账标 failed ⇒ poll 立即返回，
+                # 不再拖到 terminal_timeout 补一条误导事件。
+                err = turn.get("error") or {}
+                detail = "turn failed: " + str(err.get("message") or err or "unknown")
+                if envelope_id:
+                    self._store.update_state(thread_id, envelope_id, "failed", detail)
+                    self._envelope_states[envelope_id] = "failed"
+                else:
+                    # 通知可能先于 deliver 的映射注册到达（泵线程竞态）⇒ 按 turn 暂存，poll 兜底
+                    self._failed_turns[turn_id] = detail
             if envelope_id:
                 self._delivery_pending_tools.pop(envelope_id, None)
                 self._delivery_anonymous_tools.pop(envelope_id, None)
