@@ -403,8 +403,12 @@ func TestNewPlatformEventsMissingSessionDoesNotCreateTerminal(t *testing.T) {
 	e.hub.mu.Lock()
 	before := len(e.hub.terminals)
 	e.hub.mu.Unlock()
-	req := httptest.NewRequest(http.MethodGet, "/internal/view/ghost.zzc/events", nil)
-	req.SetPathValue("session", "ghost.zzc")
+	// Kimi exists in the identity store but has never connected, so owner
+	// resolution succeeds while the terminal itself is absent.
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	req := httptest.NewRequest(http.MethodGet, "/internal/view/kimi.zzc/events", nil).WithContext(ctx)
+	req.SetPathValue("session", "kimi.zzc")
 	result := httptest.NewRecorder()
 	e.hub.HandleInternalViewEvents(result, req)
 	if result.Code != http.StatusNotFound {
@@ -412,7 +416,7 @@ func TestNewPlatformEventsMissingSessionDoesNotCreateTerminal(t *testing.T) {
 	}
 	e.hub.mu.Lock()
 	after := len(e.hub.terminals)
-	_, ghost := e.hub.terminals[terminalKey(AgentKeyID("zzc"), "ghost")]
+	_, ghost := e.hub.terminals[terminalKey(AgentKeyID("zzc"), "kimi")]
 	e.hub.mu.Unlock()
 	if after != before || ghost {
 		t.Fatalf("missing events subscription created terminal: before=%d after=%d ghost=%v", before, after, ghost)

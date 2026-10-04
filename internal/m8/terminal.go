@@ -769,19 +769,19 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "session offline or ambiguous", http.StatusNotFound)
 		return
 	}
+	subID := randomHex(8)
+	replay, ch, unsub, ok := h.subscribeExistingSessionEvents(keyID, internalSession, subID)
+	if !ok {
+		http.Error(w, "session offline or ambiguous", http.StatusNotFound)
+		return
+	}
+	defer unsub()
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Connection", "keep-alive")
 	w.WriteHeader(http.StatusOK)
 	flusher.Flush()
-
-	subID := randomHex(8)
-	replay, ch, unsub, ok := h.subscribeExistingSessionEvents(keyID, internalSession, subID)
-	if !ok {
-		return
-	}
-	defer unsub()
 
 	writeSSE := func(data string) bool {
 		if _, err := fmt.Fprintf(w, "data: %s\n\n", data); err != nil {
