@@ -269,3 +269,49 @@ func TestNewPlatformLegacyViewControlUsesInternalSession(t *testing.T) {
 	}
 
 }
+
+func TestNewPlatformViewServiceOwnerGrantIsIdempotentDuringInput(t *testing.T) {
+	e := newViewEnv(t)
+	agent, status, body := e.dial(e.zKimiCred, "")
+	if agent == nil {
+		t.Fatalf("agent dial: %d %s", status, body)
+	}
+	defer agent.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "kimi")
+	_, viewerID, _, err := e.hub.registerViewViewer("kimi.zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !e.hub.grantNewPlatformViewServiceInput(context.Background(), "kimi.zzc") {
+		t.Fatal("initial owner grant failed")
+	}
+	e.hub.mu.Lock()
+	st := e.hub.terminals[terminalKey(AgentKeyID("zzc"), "kimi")]
+	token := st.writerToken
+	e.hub.mu.Unlock()
+	for i := 0; i < 5; i++ {
+		if !e.hub.grantNewPlatformViewServiceInput(context.Background(), "kimi.zzc") {
+			t.Fatalf("grant refresh %d failed", i)
+		}
+	}
+	e.hub.mu.Lock()
+	gotToken := st.writerToken
+	e.hub.mu.Unlock()
+	if gotToken != token {
+		t.Fatalf("status-style grant refresh rotated writer token: before=%q after=%q", token, gotToken)
+	}
+
+	inputBody, _ := json.Marshal(viewInputRequest{ViewerID: viewerID, Token: token, Text: "input concurrent with status grant"})
+	input := httptest.NewRequest(http.MethodPost, "/internal/view/kimi.zzc/input", bytes.NewReader(inputBody))
+	input.SetPathValue("session", "kimi.zzc")
+	result := httptest.NewRecorder()
+	e.hub.HandleInternalViewInput(result, input)
+	if result.Code != http.StatusOK {
+		t.Fatalf("input using token held across status grants: %d %s", result.Code, result.Body.String())
+	}
+	readCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if env := readEnvelope(t, readCtx, agent); env.Body != "input concurrent with status grant" {
+		t.Fatalf("agent body=%q", env.Body)
+	}
+}

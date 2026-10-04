@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
@@ -88,6 +89,16 @@ func (h *Hub) grantNewPlatformViewServiceInput(ctx context.Context, fullName str
 		if target == nil || viewer.lastSeen.After(target.lastSeen) {
 			target = viewer
 		}
+	}
+	if target != nil && st.writerPage == target.id && st.writerToken != "" && time.Now().Before(st.writerUntil) {
+		// /status is polled every five seconds. Reissuing here would invalidate the
+		// token cached by View Service and recreate the intermittent 403 fixed by T-141.
+		st.writerUntil = time.Now().Add(terminalTokenTTL)
+		if st.cookieToken == st.writerToken {
+			st.cookieUntil = st.writerUntil
+		}
+		h.mu.Unlock()
+		return true
 	}
 	h.mu.Unlock()
 	if target == nil {
