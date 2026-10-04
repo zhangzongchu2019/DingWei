@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -42,6 +43,15 @@ func newShimEnv(t *testing.T) *shimEnv {
 	mux.HandleFunc("POST /api/console/specs", h.RequireConsolePrincipal(h.RequireConsolePlatformAction("submit", h.HandleConsoleSpecs)))
 	mux.HandleFunc("GET /api/console/spec-editors", h.RequireConsolePrincipal(h.HandleConsoleSpecEditors))
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/capability", h.RequireConsoleAgent("interact", h.HandleConsoleCapability))
+	mux.HandleFunc("POST /view/{sessionName}/{rest...}", h.RequireConsoleViewSubPath(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		verified := r.Header.Get("X-DW-Console-Capability-Verified")
+		principal := r.Header.Get("X-DW-Console-Principal")
+		if verified != "1" {
+			w.WriteHeader(http.StatusForbidden) // view-service 回落页面锁：无可信头即不可写
+		}
+		_ = json.NewEncoder(w).Encode(map[string]string{"ok": "true", "verified": verified, "principal": principal})
+	}))
 	mux.HandleFunc("POST /api/agent/console/specs", h.RequireConsoleSpecAgentCapability(func(*http.Request) string { return ConsoleAgentCapabilitySpecsNew }, h.HandleConsoleSpecs))
 	mux.HandleFunc("POST /api/console/files/{fileID}/archive", h.RequireConsolePrincipal(h.HandleConsoleFileArchive))
 	mux.HandleFunc("GET /console/admin/probe", h.RequireConsolePrincipal(h.RequireConsoleManagement(func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "door-b") })))
@@ -90,6 +100,35 @@ func (e *shimEnv) issue(tok, fullName, pageID string) (int, string) {
 		e.t.Fatalf("issued page_id=%q, want %q", out.PageID, pageID)
 	}
 	return st, out.Capability
+}
+
+func (e *shimEnv) viewInput(tok, fullName, pageID, capability, origin, forgedPrincipal string) (int, string) {
+	e.t.Helper()
+	req, _ := http.NewRequest(http.MethodPost, e.srv.URL+"/view/"+fullName+"/input", strings.NewReader(`{"text":"hello"}`))
+	req.Header.Set("Content-Type", "application/json")
+	if tok != "" {
+		req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: tok})
+	}
+	if origin != "" {
+		req.Header.Set("Origin", origin)
+	}
+	if pageID != "" {
+		req.Header.Set("X-DW-Console-Page", pageID)
+	}
+	if capability != "" {
+		req.Header.Set("X-DW-Console-Capability", capability)
+	}
+	if forgedPrincipal != "" {
+		req.Header.Set("X-DW-Console-Capability-Verified", "1")
+		req.Header.Set("X-DW-Console-Principal", forgedPrincipal)
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	defer res.Body.Close()
+	b, _ := io.ReadAll(res.Body)
+	return res.StatusCode, strings.TrimSpace(string(b))
 }
 
 func (e *shimEnv) agentID(owner, name string) string {
@@ -328,19 +367,16 @@ func TestShimU5_DisplayNameCollision(t *testing.T) {
 	}
 }
 
-// H17 签发口新平台分支：本人对本人 Agent 签三类页面 id ⇒ 200；他人 Agent、终端页 id、未登录 ⇒ 拒。
+// H17 签发口新平台分支：本人对本人 Agent 签 spec／任务与 opaque 终端页面 id ⇒ 200；他人 Agent、未登录 ⇒ 拒。
 func TestShimH17_CapabilityIssuance(t *testing.T) {
 	e := newShimEnv(t)
-	for _, page := range []string{ConsoleAgentCapabilitySpecsNew, ConsoleAgentCapabilityTasks, ConsoleAgentSpecCapabilityPage("spec-1")} {
+	for _, page := range []string{ConsoleAgentCapabilitySpecsNew, ConsoleAgentCapabilityTasks, ConsoleAgentSpecCapabilityPage("spec-1"), "view-page-random-id"} {
 		if st, raw := e.issue(e.tokZZC, "Kimi.zzc", page); st != 200 || raw == "" {
 			t.Errorf("owner signs %s: %d %q", page, st, raw)
 		}
 	}
 	if st, _ := e.issue(e.tokZZC, "kimi.lb", ConsoleAgentCapabilitySpecsNew); st != 404 {
 		t.Errorf("sign for another user's Agent: %d, want 404", st)
-	}
-	if st, _ := e.issue(e.tokZZC, "Kimi.zzc", "view-page-random-id"); st != 404 {
-		t.Errorf("terminal page id: %d, want 404 (view write stays on ＃unlock)", st)
 	}
 	if st, _ := e.issue("", "Kimi.zzc", ConsoleAgentCapabilitySpecsNew); st != 401 {
 		t.Errorf("no session: %d, want 401", st)
@@ -358,6 +394,120 @@ func TestShimH17_CapabilityIssuance(t *testing.T) {
 	}
 	if st, _ := e.issue(e.tokZZC, "Hosted1.zzc", ConsoleAgentCapabilitySpecsNew); st != 403 {
 		t.Errorf("suspended Agent: %d, want 403", st)
+	}
+}
+
+func TestNewPlatformTerminalCapabilityMakesOwnedViewWritable(t *testing.T) {
+	e := newShimEnv(t)
+	const pageID = "view-page-owned-1"
+	st, capability := e.issue(e.tokZZC, "Kimi.zzc", pageID)
+	if st != http.StatusOK || capability == "" {
+		t.Fatalf("owner terminal capability: %d %q", st, capability)
+	}
+	st, body := e.viewInput(e.tokZZC, "Kimi.zzc", pageID, capability, npOrigin, "")
+	if st != http.StatusOK || !strings.Contains(body, `"verified":"1"`) || !strings.Contains(body, `"principal":"zzc"`) {
+		t.Fatalf("owned view input not attested: %d %s", st, body)
+	}
+
+	for name, call := range map[string]func() (int, string){
+		"wrong page":  func() (int, string) { return e.viewInput(e.tokZZC, "Kimi.zzc", "other-page", capability, npOrigin, "") },
+		"wrong agent": func() (int, string) { return e.viewInput(e.tokZZC, "Opus50TS.zzc", pageID, capability, npOrigin, "") },
+		"other owner": func() (int, string) { return e.viewInput(e.tokLBL, "Kimi.zzc", pageID, capability, npOrigin, "") },
+		"no session":  func() (int, string) { return e.viewInput("", "Kimi.zzc", pageID, capability, npOrigin, "") },
+		"wrong origin": func() (int, string) {
+			return e.viewInput(e.tokZZC, "Kimi.zzc", pageID, capability, "https://evil.example", "")
+		},
+		"forged trust headers": func() (int, string) {
+			return e.viewInput(e.tokZZC, "Kimi.zzc", pageID, "", npOrigin, "lbl")
+		},
+	} {
+		got, raw := call()
+		switch name {
+		case "other owner":
+			if got != http.StatusNotFound {
+				t.Errorf("%s: %d %s, want 404", name, got, raw)
+			}
+		case "no session":
+			if got != http.StatusUnauthorized {
+				t.Errorf("%s: %d %s, want 401", name, got, raw)
+			}
+		case "wrong origin":
+			if got != http.StatusForbidden || !strings.Contains(raw, "origin_mismatch") {
+				t.Errorf("%s: %d %s", name, got, raw)
+			}
+		default:
+			if got != http.StatusForbidden || strings.Contains(raw, `"verified":"1"`) || strings.Contains(raw, `"principal":"lbl"`) {
+				t.Errorf("%s leaked write attestation: %d %s", name, got, raw)
+			}
+		}
+	}
+
+	// Capability expiry is checked at use time, not only when issued.
+	now := time.Now()
+	e.hub.NowFunc = func() time.Time { return now.Add(newPlatformCapabilityTTL + time.Second) }
+	if got, raw := e.viewInput(e.tokZZC, "Kimi.zzc", pageID, capability, npOrigin, ""); got != http.StatusForbidden || strings.Contains(raw, `"verified":"1"`) {
+		t.Fatalf("expired capability remained writable: %d %s", got, raw)
+	}
+	e.hub.NowFunc = nil
+
+	// Revoking the login session invalidates both the request and its previously issued capability.
+	if err := e.svc.Store.ResetPassword(e.ctx, "zzc", "replacement", e.svc.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if got, raw := e.viewInput(e.tokZZC, "Kimi.zzc", pageID, capability, npOrigin, ""); got != http.StatusUnauthorized || strings.Contains(raw, `"verified":"1"`) {
+		t.Fatalf("revoked session remained writable: %d %s", got, raw)
+	}
+	if err := e.svc.Store.CreateSession(e.ctx, identity.Session{TokenHash: identity.HashSecret("tok-zzc-fresh"), UserIDLC: "zzc", ExpiresAt: e.svc.Now().Add(identity.SessionTTL)}); err != nil {
+		t.Fatal(err)
+	}
+	_ = e.svc.Store.SetPassword(e.ctx, "zzc", "", false)
+	if got, raw := e.viewInput("tok-zzc-fresh", "Kimi.zzc", pageID, capability, npOrigin, ""); got != http.StatusForbidden || strings.Contains(raw, `"verified":"1"`) {
+		t.Fatalf("capability from revoked issuing session survived under a fresh login: %d %s", got, raw)
+	}
+}
+
+func TestNewPlatformTerminalCapabilityIssueRejectsCrossOrigin(t *testing.T) {
+	e := newShimEnv(t)
+	req, _ := http.NewRequest(http.MethodPost, e.srv.URL+"/api/console/agents/Kimi.zzc/capability", strings.NewReader(`{"page_id":"view-page-origin"}`))
+	req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: e.tokZZC})
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://evil.example")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusForbidden {
+		t.Fatalf("cross-origin capability issue status=%d, want 403", res.StatusCode)
+	}
+}
+
+// Browser fixture payload: the Playwright gate consumes the exact JSON emitted by the real
+// new-platform capability handler instead of teaching its HTTP stub to invent a 200 response.
+func TestNewPlatformViewCapabilityBrowserPayload(t *testing.T) {
+	out := os.Getenv("DW_VIEW_LOGIN_CAPABILITY_PAYLOAD_OUT")
+	if out == "" {
+		return // browser-only materializer; ordinary Go runs exercise the same handlers in the cells above
+	}
+	e := newShimEnv(t)
+	status, body := e.do(http.MethodPost, "/api/console/agents/Kimi.zzc/capability", e.tokZZC, "", "", `{"page_id":"browser-view-page"}`)
+	record := map[string]any{"status": status, "body": json.RawMessage(body)}
+	var issued struct {
+		Capability string `json:"capability"`
+	}
+	if status == http.StatusOK {
+		if json.Unmarshal([]byte(body), &issued) != nil || issued.Capability == "" {
+			t.Fatalf("invalid capability body: %s", body)
+		}
+		inputStatus, inputBody := e.viewInput(e.tokZZC, "Kimi.zzc", "browser-view-page", issued.Capability, npOrigin, "")
+		if inputStatus != http.StatusOK || !strings.Contains(inputBody, `"verified":"1"`) || !strings.Contains(inputBody, `"principal":"zzc"`) {
+			t.Fatalf("real subpath did not attest input: %d %s", inputStatus, inputBody)
+		}
+		record["input_status"], record["input_body"] = inputStatus, json.RawMessage(inputBody)
+	}
+	rawRecord, _ := json.Marshal(record)
+	if err := os.WriteFile(out, rawRecord, 0o600); err != nil {
+		t.Fatal(err)
 	}
 }
 

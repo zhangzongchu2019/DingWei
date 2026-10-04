@@ -24,7 +24,8 @@ const newPlatformCapabilityTTL = 5 * time.Minute
 
 // handleNewPlatformCapability POST /api/console/agents/{full_name}/capability 的新平台分支。
 // 前置：RequireConsoleAgent 新平台分支已按 cookie＋full_name 认过归属用户、校过 Origin。
-// 只签 ConsoleAgentCapabilityPageAllowed 的三类页面 id；终端页 id 仍 404（view 写权走飞书 ＃unlock，现状不动）。
+// spec／任务页与终端 view 页都签：终端 page_id 是 view-service 生成的 opaque id，
+// 与 0.2.1.95 一样由能力消费端按精确值核验，不能用 spec 路由白名单过滤。
 func (h *Hub) handleNewPlatformCapability(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		PageID string `json:"page_id"`
@@ -34,10 +35,6 @@ func (h *Hub) handleNewPlatformCapability(w http.ResponseWriter, r *http.Request
 		return
 	}
 	pageID := strings.TrimSpace(req.PageID)
-	if !ConsoleAgentCapabilityPageAllowed(pageID) {
-		writeAgentWSError(w, http.StatusNotFound, "capability_not_used")
-		return
-	}
 	repo, repoOK := h.Repo.(consoleAuthRepository)
 	ag, _, err := h.Identity.ResolveFullName(r.Context(), strings.TrimSpace(r.PathValue("sessionName")))
 	if !repoOK || err != nil {

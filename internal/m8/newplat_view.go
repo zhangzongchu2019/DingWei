@@ -32,6 +32,20 @@ func (h *Hub) newPlatformTerminalLocked(fullName string) (*terminalState, bool) 
 	return h.terminalForSession(keyID, session), true
 }
 
+// viewSessionNameAllowed keeps the legacy session-name grammar and, only in new-platform mode,
+// also accepts a canonical full_name that resolves to a current Agent. This is used by the
+// signed view-service callbacks; it does not turn arbitrary dotted strings into routable names.
+func (h *Hub) viewSessionNameAllowed(ctx context.Context, name string) bool {
+	if sessionNamePattern.MatchString(name) {
+		return true
+	}
+	if h.Identity == nil {
+		return false
+	}
+	_, _, err := h.Identity.ResolveFullName(ctx, name)
+	return err == nil
+}
+
 // newPlatformViewAuth 新平台 view 路由的认人与授权；通过返回 true，否则已写好拒绝应答。
 // 不是归属用户与 Agent 不存在回同一个 404，不泄露别人名下有没有这个 Agent。
 func (h *Hub) newPlatformViewAuth(w http.ResponseWriter, r *http.Request) bool {
@@ -57,6 +71,41 @@ func (h *Hub) newPlatformViewAuth(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 	return true
+}
+
+// newPlatformViewCapability verifies a console-issued terminal page capability and, on success,
+// writes only the attested principal header consumed by view-service. The caller strips both
+// trust headers before reaching here. Missing/invalid capabilities deliberately return false
+// without an HTTP error so view-service falls back to its existing #unlock page-lock path.
+func (h *Hub) newPlatformViewCapability(r *http.Request) (bool, error) {
+	repo, ok := h.Repo.(consoleAuthRepository)
+	if !ok {
+		return false, errors.New("console repository unavailable")
+	}
+	pageID := strings.TrimSpace(r.Header.Get("X-DW-Console-Page"))
+	raw := strings.TrimSpace(r.Header.Get("X-DW-Console-Capability"))
+	if pageID == "" || raw == "" {
+		return false, nil
+	}
+	ag, _, err := h.Identity.ResolveFullName(r.Context(), strings.TrimSpace(r.PathValue("sessionName")))
+	if err != nil {
+		return false, nil
+	}
+	sess, ok := h.newPlatformSessionProjection(r)
+	if !ok || sess.PrincipalID != ag.OwnerLC {
+		return false, nil
+	}
+	capability, err := repo.ResolveConsolePageCapability(r.Context(), hashConsoleToken(raw), ag.ID, pageID, h.now())
+	if err != nil {
+		return false, err
+	}
+	owner := identity.Lower(ag.OwnerLC)
+	if capability == nil || capability.PrincipalID != owner ||
+		!h.newPlatformSessionValid(r.Context(), capability.SessionID, owner) {
+		return false, nil
+	}
+	r.Header.Set("X-DW-Console-Principal", owner)
+	return true, nil
 }
 
 // dispatchNewPlatformTerminalInput 新平台的 ＃unlock／＃lock：发信人（信道给的飞书身份）映射成用户，

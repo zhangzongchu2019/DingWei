@@ -44,7 +44,7 @@ type viewV2RequestResult struct {
 
 func (h *Hub) HandleInternalViewV2Input(w http.ResponseWriter, r *http.Request) {
 	session := strings.TrimSpace(r.PathValue("session"))
-	if !sessionNamePattern.MatchString(session) {
+	if !h.viewSessionNameAllowed(r.Context(), session) {
 		http.Error(w, "invalid session", http.StatusBadRequest)
 		return
 	}
@@ -110,6 +110,12 @@ func (h *Hub) HandleInternalViewV2Input(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, requestID, text, principalID string) error {
+	routeSession := session
+	if h.Identity != nil {
+		if ag, _, err := h.Identity.ResolveFullName(ctx, session); err == nil {
+			routeSession = ag.NameLC()
+		}
+	}
 	h.mu.Lock()
 	st, found := h.terminalBySessionNameLocked(session)
 	var keyID string
@@ -138,13 +144,13 @@ func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, reques
 	env := model.Envelope{
 		// Stable request ID reaches the helper queue as the delivery identity, so a
 		// Hub restart between response loss and retry cannot create a second turn.
-		ID: requestID, To: sessionAddress(session, keyID), From: sessionAddress("workpulse", keyID),
+		ID: requestID, To: sessionAddress(routeSession, keyID), From: sessionAddress("workpulse", keyID),
 		Body: terminalSubmission(text), TS: time.Now().Unix(),
 		Meta: map[string]any{"source_kind": "user", "source_display_name": "View",
 			"auth_mode": "view_page_v2", "page_id": pageID, "request_id": requestID,
 			"console_principal_id": strings.TrimSpace(principalID), hubIngressMetaKey: hubIngressViewV2},
 	}
-	return h.routeToSession(ctx, keyID, session, env, false)
+	return h.routeToSession(ctx, keyID, routeSession, env, false)
 }
 
 func terminalSubmission(text string) string {

@@ -461,8 +461,8 @@ func TestNewPlatformConsoleUploadTicketAndCapability(t *testing.T) {
 	if st, _ := post(fmt.Sprintf(ticketPath, "Kimi.zzc"), v.tokZZC, `{"max_bytes":0}`); st != 400 || issuer.calls != 2 {
 		t.Fatalf("bad size: %d calls=%d", st, issuer.calls)
 	}
-	// capability：新平台不发（页面收 404 即按无 capability 处理）；认人仍在前面
-	if st, out := post("/api/console/agents/Kimi.zzc/capability", v.tokZZC, `{"page_id":"p1"}`); st != 404 || out["error"] != "capability_not_used" {
+	// R-V2-VIEW-LOGIN-WRITABLE：新平台属主对 opaque 终端 page id 恢复签发；认人仍在前面。
+	if st, out := post("/api/console/agents/Kimi.zzc/capability", v.tokZZC, `{"page_id":"p1"}`); st != 200 || out["page_id"] != "p1" || out["capability"] == "" {
 		t.Fatalf("owner capability: %d %v", st, out)
 	}
 	if st, out := post("/api/console/agents/Kimi.zzc/capability", v.tokLBL, `{"page_id":"p1"}`); st != 404 || out["error"] != "not_found" {
