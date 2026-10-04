@@ -61,8 +61,12 @@ FAKE_CODEX = textwrap.dedent(
             else:
                 out = {"id": rid, "result": {"thread": {"id": "th_fake"}}}
         elif method == "turn/start":
-            # stall：受理但永不发终态事件（卡交互屏的 driver 面）
-            out = {"id": rid, "result": {"turn": {"id": "turn_fake", "status": "inProgress"}}}
+            if BEHAVIOR == "turnauthfail":
+                # 真凭据无效路径（B1d 复核裁定 3）：daemon 正常起、turn 请求才回鉴权错
+                out = {"id": rid, "error": {"code": -32000, "message": "401 Unauthorized: token expired (FAKE_TURN_AUTH_BAD)"}}
+            else:
+                # stall：受理但永不发终态事件（卡交互屏的 driver 面）
+                out = {"id": rid, "result": {"turn": {"id": "turn_fake", "status": "inProgress"}}}
         else:
             out = {"id": rid, "result": {}}
         sys.stdout.write(json.dumps(out) + "\\n")
@@ -180,6 +184,19 @@ class DriverFailureFacesTest(unittest.TestCase):
             self.assertIn("[FAILED]", logs, "helper 日志须读出可见失败")
             self.assertIn("FAKE_START_BAD", logs, "helper 日志须读出起不来的原因")
             self.assertIn("driver_start_failed", reasons)
+
+    def test_face1b_invalid_credential_at_turn(self):
+        # B1d 复核裁定 3：daemon 正常起、turn 请求才回 JSON-RPC 鉴权错
+        with tempfile.TemporaryDirectory() as td:
+            adapter = self._mk_adapter(td, "turnauthfail")
+            state, reasons, logs = self._drive_one(adapter)
+            self.assertEqual(state, "failed", f"投递须以 failed 结束；日志：{logs[:400]}")
+            # helper 日志的可见原因：adapter 打印 detail 前 60 字（截断是已知小项——
+            # 登记修类，不挡），鉴权失败落在头部 ⇒ "turn/start failed"＋"401" 可见。
+            self.assertIn("turn/start failed", logs, "helper 日志须读出失败点")
+            self.assertIn("401", logs, "helper 日志须读出鉴权失败原因（401）")
+            # 「带原因的 failed」的载体＝队列终态 failed＋receipt detail（含 401 全文）；
+            # 事件面在本路径不另发 terminal failure（与面 2 的 driver_start_failed 不同路径）。
 
     def test_face3_stuck_no_terminal_event(self):
         with tempfile.TemporaryDirectory() as td:
