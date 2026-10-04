@@ -20,8 +20,63 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/zhangzongchu2019/dingwei/internal/bus"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
+
+func TestReplyToFeishuOriginPassesRealOutboundBoundary(t *testing.T) {
+	h, db, ctx := newTestHub(t)
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	h.Outbound = outbound
+	h.mu.Lock()
+	h.botChannels["UnifiedRobot"] = "dev"
+	h.mu.Unlock()
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-feishu-return", "msg-feishu-return",
+		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
+	p := testAMRProcessor()
+	p.hub = h
+	p.routeEnvelope = h.RouteEnvelope
+	p.routeTimeout = 5 * time.Second
+
+	p.replyToOrigin(amrRouteJob{key: key, body: "飞书回程正文"})
+
+	got := waitOutbound(t, ctx, outbound)
+	if got == nil {
+		t.Fatal("reply-to-origin was accepted by Hub but never entered the Feishu outbound queue")
+	}
+	if got.ChatEntityID != "dev:personal:ou_sender" || got.BotChannelID != "dev" || !strings.Contains(messageText(t, got), "飞书回程正文") {
+		t.Fatalf("Feishu reply target/body mismatch: %+v text=%q", got, messageText(t, got))
+	}
+	if next := waitOutboundWithin(t, ctx, outbound, 100*time.Millisecond); next != nil {
+		t.Fatalf("reply-to-origin enqueued more than once: %+v", next)
+	}
+}
+
+func TestNoMirrorSkipsRemainNarrowAroundReplyToOrigin(t *testing.T) {
+	strictReply := model.Envelope{Meta: map[string]any{
+		"type": "agent_route", "route_source": replyToOriginRouteSource,
+		metaKeyKind: kindReply, "no_mirror": true,
+	}}
+	if shouldSkipMirror(strictReply) {
+		t.Fatal("strict reply-to-origin was mistaken for an incidental mirror")
+	}
+	for _, tc := range []struct {
+		name string
+		meta map[string]any
+	}{
+		{"ack", map[string]any{"type": "delivery_ack", "no_mirror": true}},
+		{"system", map[string]any{"type": "system", "system": true, "no_mirror": true}},
+		{"mirror-control", map[string]any{"type": "mirror_control", "no_mirror": true}},
+		{"near-miss-no-kind", map[string]any{"type": "agent_route", "route_source": replyToOriginRouteSource, "no_mirror": true}},
+		{"near-miss-wrong-source", map[string]any{"type": "agent_route", "route_source": "other", metaKeyKind: kindReply, "no_mirror": true}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if !shouldSkipMirror(model.Envelope{Meta: tc.meta}) {
+				t.Fatal("non-reply no_mirror envelope was unexpectedly allowed to Feishu")
+			}
+		})
+	}
+}
 
 // replyOriginFixture 造一条「A → B」的 durable 投递记录,返回 turn key。
 func replyOriginFixture(t *testing.T, h *Hub, ctx context.Context, deliveryID, sourceMessageID, from string, meta map[string]any) amrTurnKey {

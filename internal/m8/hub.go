@@ -4403,6 +4403,14 @@ func shouldSkipMirror(env model.Envelope) bool {
 	if isProducerEnvelope(env) {
 		return false
 	}
+	// reply-to-origin is an explicit Feishu destination, not an incidental
+	// terminal mirror. Keep no_mirror on the envelope so every other reuse still
+	// suppresses mirroring, but do not let it cancel the requested return itself.
+	if metaString(env.Meta, "type") == "agent_route" &&
+		metaString(env.Meta, "route_source") == replyToOriginRouteSource &&
+		kindOf(env) == kindReply {
+		return false
+	}
 	// A channel route is already an explicit Feishu delivery, not an incidental
 	// mirror. Keep no_mirror on the envelope for every other reuse of this
 	// metadata, but do not let it cancel the requested channel delivery itself.
