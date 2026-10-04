@@ -17,7 +17,8 @@ const { chromium } = require('playwright');
 
 const hostedRegistered = process.env.HOSTED_REGISTERED !== '0';
 // 走生产 HandleConsolePage 的服务端注入路径取得页面；装置不得再把 false 改成 true。
-// Go 侧另有真 ServeMux 格守「只有实际注册 hosted routes 才启用页面」。
+// 本夹具只选择要验证的服务端渲染值，不证明路由联动；Go 真 PG 四子格另守
+//「wireHosted 实际注册成功 ⇒ true；未注册/失败/旧平台 ⇒ false」。
 let html = execFileSync('go', ['run', './view-service/console-hosted-page-fixture'], {
   cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'],
   env: { ...process.env, DW_CONSOLE_HOSTED_FIXTURE: hostedRegistered ? '1' : '0' },

@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,6 +16,53 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
+
+// The route registrar and the page setter each have one production caller. The
+// browser fixture is the sole non-production caller and is explicitly checked
+// here, so a future caller cannot silently split "routes exist" from "page true".
+func TestConsoleHostedFeatureHasSingleProductionWiringSource(t *testing.T) {
+	entries, err := filepath.Glob("*.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var routeCalls, setterCalls int
+	for _, name := range entries {
+		if strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		f, err := parser.ParseFile(token.NewFileSet(), name, nil, 0)
+		if err != nil {
+			t.Fatalf("parse %s: %v", name, err)
+		}
+		ast.Inspect(f, func(n ast.Node) bool {
+			call, ok := n.(*ast.CallExpr)
+			if !ok {
+				return true
+			}
+			switch fn := call.Fun.(type) {
+			case *ast.Ident:
+				if fn.Name == "registerHostedRoutes" {
+					routeCalls++
+				}
+			case *ast.SelectorExpr:
+				if fn.Sel.Name == "SetConsoleHostedPageEnabled" {
+					setterCalls++
+				}
+			}
+			return true
+		})
+	}
+	if routeCalls != 1 || setterCalls != 1 {
+		t.Fatalf("production wiring calls: registerHostedRoutes=%d SetConsoleHostedPageEnabled=%d, want 1/1", routeCalls, setterCalls)
+	}
+	fixture, err := os.ReadFile(filepath.Join("..", "..", "view-service", "console-hosted-page-fixture", "main.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(string(fixture), ".SetConsoleHostedPageEnabled(") != 1 {
+		t.Fatal("browser fixture must remain the single explicit non-production setter caller")
+	}
+}
 
 // R-V2-FEATURE-HOSTED-ON-20261004004703: the page feature bit follows the
 // real wireNewPlatform → wireHosted result. It is not inferred from config,
