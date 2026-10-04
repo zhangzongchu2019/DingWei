@@ -1,0 +1,194 @@
+"""R-V2-HOSTED-DRIVER-IMPL-AMEND-20261004143259 异议 2（kimi 侧）：driver 模式三失败面
+——凭据无效／codex app-server 起不来／首次运行卡死（无终态事件）——各须：
+helper 日志读出可见原因＋投递以带原因的 failed 结束（不得静默挂起）。
+
+真 helper 投递链（DriverAdapter＋真 CodexProtocolDriver）＋假 codex（SH_CODEX_BIN 指到
+本文件的假 app-server：行分隔 JSON-RPC，行为由 FAKE_CODEX_BEHAVIOR 选）。"""
+import contextlib
+import io
+import json
+import os
+import stat
+import sys
+import tempfile
+import textwrap
+import time
+import unittest
+from pathlib import Path
+
+from sessionhelper.config import load_config
+from sessionhelper.driver_adapter import DriverAdapter
+
+try:
+    from _home_isolation import HomeIsolation
+except ImportError:
+    from tests._home_isolation import HomeIsolation
+
+_HOME = HomeIsolation()
+
+
+def setUpModule():
+    _HOME.start()
+
+
+def tearDownModule():
+    _HOME.finish()
+
+
+FAKE_CODEX = textwrap.dedent(
+    """
+    import json, os, sys
+    BEHAVIOR = os.environ.get("FAKE_CODEX_BEHAVIOR", "ok")
+    if BEHAVIOR == "crash" and False:
+        pass
+    for line in sys.stdin:
+        try:
+            msg = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        rid = msg.get("id")
+        method = msg.get("method", "")
+        if rid is None:
+            continue  # notification（initialized 等）
+        if method == "initialize":
+            if BEHAVIOR == "crash":
+                out = {"id": rid, "error": {"code": -32001, "message": "app-server cannot start: config corrupt (FAKE_START_BAD)"}}
+            else:
+                out = {"id": rid, "result": {"serverInfo": {"name": "fake", "version": "0"}}}
+        elif method == "thread/start":
+            if BEHAVIOR == "authfail":
+                out = {"id": rid, "error": {"code": -32000, "message": "401 Unauthorized: invalid auth token (FAKE_AUTH_BAD)"}}
+            else:
+                out = {"id": rid, "result": {"thread": {"id": "th_fake"}}}
+        elif method == "turn/start":
+            # stall：受理但永不发终态事件（卡交互屏的 driver 面）
+            out = {"id": rid, "result": {"turn": {"id": "turn_fake", "status": "inProgress"}}}
+        else:
+            out = {"id": rid, "result": {}}
+        sys.stdout.write(json.dumps(out) + "\\n")
+        sys.stdout.flush()
+    """
+).lstrip()
+
+BASE_ENV = {
+    "SH_SESSION_NAME": "dev",
+    "SH_OWNER": "zzc",
+    "SH_KEY_ID": "FB-2642",
+    "SH_SECRET": "secret",
+    "SH_HUB_URL": "ws://127.0.0.1:1/ws",
+    "SH_TURN_TERMINAL_TIMEOUT_SECONDS": "1",  # 卡死面：1s 无终态即判（不真等 1800s）
+}
+
+
+class DriverFailureFacesTest(unittest.TestCase):
+    def _mk_fake_codex(self, td: str, behavior: str) -> str:
+        path = os.path.join(td, "fake_codex.py")
+        Path(path).write_text(FAKE_CODEX)
+        os.chmod(path, stat.S_IRUSR | stat.S_IXUSR)
+        return path
+
+    def _mk_adapter(self, td: str, behavior: str) -> DriverAdapter:
+        from unittest import mock
+
+        fake = self._mk_fake_codex(td, behavior)
+        # 本测试进程自己就泡在 SH_* env 里（helper 里跑 helper）——driver_adapter 的 env_get
+        # 直读 os.environ ⇒ 必须显式钉死相关键，否则读到本席真值（实测泄漏成 driver=claude）。
+        patcher = mock.patch.dict(os.environ, {
+            "SH_DRIVER": "codex",
+            "SH_CODEX_BIN": sys.executable,  # python 本体当"codex"（真命令经 _patch_cmd 换成脚本）
+            "FAKE_CODEX_BEHAVIOR": behavior,
+            "SH_CLI_CWD": td,
+            "SH_TURN_TERMINAL_TIMEOUT_SECONDS": "1",
+        })
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        env = dict(BASE_ENV, SH_MODE="driver", SH_CLI_CWD=td)
+        cfg = load_config(env)
+        adapter = DriverAdapter(cfg)
+        import sessionhelper.codexDriver as codex_mod
+
+        codex_mod._CODEX_BIN = sys.executable
+        # 直传 stdio（默认 daemon_ws 要起真 daemon）；假 codex 是脚本 ⇒ 命令换成 [python, fake_codex.py, ...]
+        adapter.driver._workdir = td
+        adapter.driver._transport_mode = "direct"
+        adapter.driver._manage_daemon = False
+        self._patch_cmd([sys.executable, fake])
+        self.addCleanup(self._unpatch_cmd)
+        return adapter
+
+    _orig_rpc_init = None
+
+    @classmethod
+    def _patch_cmd(cls, prefix):
+        """把 StdioJsonRpc 的 app-server 命令换成 [python, fake_codex.py, ...]（cmd[0] 是 _CODEX_BIN）。"""
+        import sessionhelper.codexDriver as codex_mod
+
+        if cls._orig_rpc_init is None:
+            cls._orig_rpc_init = codex_mod.StdioJsonRpc.__init__
+        def patched(self, cmd, *, cwd, env=None):
+            cls._orig_rpc_init(self, prefix + cmd[1:], cwd=cwd, env=env)
+        codex_mod.StdioJsonRpc.__init__ = patched
+
+    @classmethod
+    def _unpatch_cmd(cls):
+        import sessionhelper.codexDriver as codex_mod
+
+        if cls._orig_rpc_init is not None:
+            codex_mod.StdioJsonRpc.__init__ = cls._orig_rpc_init
+            cls._orig_rpc_init = None
+
+    def _drive_one(self, adapter: DriverAdapter) -> tuple[str, str, str]:
+        """投递一条，等到 failed；返回（终态, 事件面 reason, 捕获日志）。"""
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            adapter.enqueue_envelope({"body": "ping", "meta": {"source_kind": "user"}})
+            deadline = time.monotonic() + 15
+            state = ""
+            while time.monotonic() < deadline:
+                cur = adapter._commands._current
+                if cur is not None and cur.state == "failed":
+                    state = cur.state
+                    break
+                # 已完成的会从 _current 挪走——看 by_delivery
+                for c in list(adapter._commands._by_delivery.values()):
+                    if c.state == "failed":
+                        state = "failed"
+                if state:
+                    break
+                time.sleep(0.05)
+        logs = buf.getvalue()
+        # 事件面（session_event 里带原因的失败）
+        events = []
+        while not adapter._event_q.empty():
+            events.append(adapter._event_q.get_nowait())
+        reasons = json.dumps(events, ensure_ascii=False)
+        return state, reasons, logs
+
+    def test_face1_invalid_credentials(self):
+        with tempfile.TemporaryDirectory() as td:
+            adapter = self._mk_adapter(td, "authfail")
+            state, reasons, logs = self._drive_one(adapter)
+            self.assertEqual(state, "failed", f"投递须以 failed 结束；日志：{logs[:400]}")
+            self.assertIn("FAKE_AUTH_BAD", logs, "helper 日志须读出可见原因（401 无效凭据）")
+            self.assertIn("deliver_failed", reasons, "事件面须带原因（deliver_failed）")
+
+    def test_face2_appserver_wont_start(self):
+        with tempfile.TemporaryDirectory() as td:
+            adapter = self._mk_adapter(td, "crash")
+            state, reasons, logs = self._drive_one(adapter)
+            self.assertEqual(state, "failed", f"投递须以 failed 结束；日志：{logs[:400]}")
+            self.assertIn("[FAILED]", logs, "helper 日志须读出可见失败")
+            self.assertIn("FAKE_START_BAD", logs, "helper 日志须读出起不来的原因")
+            self.assertIn("driver_start_failed", reasons)
+
+    def test_face3_stuck_no_terminal_event(self):
+        with tempfile.TemporaryDirectory() as td:
+            adapter = self._mk_adapter(td, "stall")
+            state, reasons, logs = self._drive_one(adapter)
+            self.assertEqual(state, "failed", f"卡死须以 failed 结束（不是静默挂起）；日志：{logs[:400]}")
+            self.assertIn("TIMEOUT", logs, "helper 日志须读出 terminal timeout")
+            self.assertIn("terminal_timeout", reasons)
+
+
+if __name__ == "__main__":
+    unittest.main()

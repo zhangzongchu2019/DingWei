@@ -137,7 +137,20 @@ class DriverAdapter:
 
     def enqueue_envelope(self, env: dict) -> EnqueueResult:
         if not self._started:
-            self.start()
+            try:
+                self.start()
+            except Exception as exc:
+                # R-V2-HOSTED-DRIVER-IMPL-AMEND 异议 2：driver 起不来（如 codex app-server 启动失败）
+                # 时投递必须以带原因的 failed 结束——不静默挂起、也不把异常甩给调用方。
+                print(f"[driver-adapter][FAILED] driver start: {exc}", flush=True)
+                result = self._commands.enqueue(env)
+                self._publish_queue_event(result.event)
+                cmd = self._commands.start_next()
+                if cmd is not None:
+                    self._publish_terminal_failure(cmd, "driver_start_failed", str(exc))
+                    self._fail_admission(cmd.delivery_id)
+                    self._commands.finish(cmd.delivery_id, "failed")
+                return result
         result = self._commands.enqueue(env)
         self._publish_queue_event(result.event)
         if result.state == "queued":
@@ -146,6 +159,20 @@ class DriverAdapter:
 
     def enqueue_human(self, text: str) -> EnqueueResult:
         env = {"body": text, "meta": {"source_kind": "user"}}
+        if not self._started:
+            try:
+                self.start()
+            except Exception as exc:
+                # 同 enqueue_envelope 的失败面（异议 2）：带原因 failed 结束，不甩异常
+                print(f"[driver-adapter][FAILED] driver start: {exc}", flush=True)
+                result = self._commands.enqueue(env, source="user")
+                self._publish_queue_event(result.event)
+                cmd = self._commands.start_next()
+                if cmd is not None:
+                    self._publish_terminal_failure(cmd, "driver_start_failed", str(exc))
+                    self._fail_admission(cmd.delivery_id)
+                    self._commands.finish(cmd.delivery_id, "failed")
+                return result
         result = self._commands.enqueue(env, source="user")
         self._publish_queue_event(result.event)
         if result.state == "queued":
