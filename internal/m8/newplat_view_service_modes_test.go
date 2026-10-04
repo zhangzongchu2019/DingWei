@@ -14,12 +14,26 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/coder/websocket"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 )
+
+type viewInputGateReader struct {
+	started chan struct{}
+	release chan struct{}
+	once    sync.Once
+	data    *bytes.Reader
+}
+
+func (r *viewInputGateReader) Read(p []byte) (int, error) {
+	r.once.Do(func() { close(r.started) })
+	<-r.release
+	return r.data.Read(p)
+}
 
 func freeTCPPort(t *testing.T) int {
 	t.Helper()
@@ -287,31 +301,51 @@ func TestNewPlatformViewServiceOwnerGrantIsIdempotentDuringInput(t *testing.T) {
 	}
 	e.hub.mu.Lock()
 	st := e.hub.terminals[terminalKey(AgentKeyID("zzc"), "kimi")]
-	token := st.writerToken
 	e.hub.mu.Unlock()
-	for i := 0; i < 5; i++ {
-		if !e.hub.grantNewPlatformViewServiceInput(context.Background(), "kimi.zzc") {
-			t.Fatalf("grant refresh %d failed", i)
+	t.Run("repeated status keeps token", func(t *testing.T) {
+		e.hub.mu.Lock()
+		token := st.writerToken
+		e.hub.mu.Unlock()
+		for i := 0; i < 5; i++ {
+			if !e.hub.grantNewPlatformViewServiceInput(context.Background(), "kimi.zzc") {
+				t.Fatalf("grant refresh %d failed", i)
+			}
 		}
-	}
-	e.hub.mu.Lock()
-	gotToken := st.writerToken
-	e.hub.mu.Unlock()
-	if gotToken != token {
-		t.Fatalf("status-style grant refresh rotated writer token: before=%q after=%q", token, gotToken)
-	}
+		e.hub.mu.Lock()
+		gotToken := st.writerToken
+		e.hub.mu.Unlock()
+		if gotToken != token {
+			t.Fatalf("status-style grant refresh rotated writer token: before=%q after=%q", token, gotToken)
+		}
+	})
 
-	inputBody, _ := json.Marshal(viewInputRequest{ViewerID: viewerID, Token: token, Text: "input concurrent with status grant"})
-	input := httptest.NewRequest(http.MethodPost, "/internal/view/kimi.zzc/input", bytes.NewReader(inputBody))
-	input.SetPathValue("session", "kimi.zzc")
-	result := httptest.NewRecorder()
-	e.hub.HandleInternalViewInput(result, input)
-	if result.Code != http.StatusOK {
-		t.Fatalf("input using token held across status grants: %d %s", result.Code, result.Body.String())
-	}
-	readCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	if env := readEnvelope(t, readCtx, agent); env.Body != "input concurrent with status grant" {
-		t.Fatalf("agent body=%q", env.Body)
-	}
+	t.Run("in-flight input survives status grant", func(t *testing.T) {
+		e.hub.mu.Lock()
+		token := st.writerToken
+		e.hub.mu.Unlock()
+		inputBody, _ := json.Marshal(viewInputRequest{ViewerID: viewerID, Token: token, Text: "input concurrent with status grant"})
+		gate := &viewInputGateReader{started: make(chan struct{}), release: make(chan struct{}), data: bytes.NewReader(inputBody)}
+		input := httptest.NewRequest(http.MethodPost, "/internal/view/kimi.zzc/input", gate)
+		input.SetPathValue("session", "kimi.zzc")
+		result := httptest.NewRecorder()
+		done := make(chan struct{})
+		go func() {
+			e.hub.HandleInternalViewInput(result, input)
+			close(done)
+		}()
+		<-gate.started // input is in flight and blocked while decoding its old-token body
+		if !e.hub.grantNewPlatformViewServiceInput(context.Background(), "kimi.zzc") {
+			t.Fatal("concurrent status-style grant failed")
+		}
+		close(gate.release)
+		<-done
+		if result.Code != http.StatusOK {
+			t.Fatalf("input using token held across status grants: %d %s", result.Code, result.Body.String())
+		}
+		readCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		if env := readEnvelope(t, readCtx, agent); env.Body != "input concurrent with status grant" {
+			t.Fatalf("agent body=%q", env.Body)
+		}
+	})
 }
