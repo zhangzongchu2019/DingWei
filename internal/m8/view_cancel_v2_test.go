@@ -195,6 +195,14 @@ func TestCancelSessionDeliveryCoreForwardsSentDelivery(t *testing.T) {
 
 func TestNewPlatformViewV2CancelResolvesFullName(t *testing.T) {
 	e := newShimEnv(t)
+	e.hub.mu.Lock()
+	e.hub.terminalForSession(AgentKeyID("zzc"), "kimi")
+	e.hub.mu.Unlock()
+	_, events, unsubscribe, ok := e.hub.subscribeExistingSessionEvents(AgentKeyID("zzc"), "kimi", "cancel-test")
+	if !ok {
+		t.Fatal("subscribe internal session events")
+	}
+	defer unsubscribe()
 	if err := e.db.EnqueueSessionDelivery(e.ctx, model.SessionDelivery{
 		ID: "dlv-full-name", KeyID: AgentKeyID("zzc"), SessionName: "kimi", Envelope: `{}`,
 		SourceMessageID: "msg-full-name", SourceType: "view",
@@ -229,5 +237,17 @@ func TestNewPlatformViewV2CancelResolvesFullName(t *testing.T) {
 	e.hub.HandleInternalViewV2Cancel(result, req)
 	if result.Code != http.StatusOK {
 		t.Fatalf("full_name cancel: %d %s", result.Code, result.Body.String())
+	}
+	select {
+	case raw := <-events:
+		var event map[string]any
+		if err := json.Unmarshal([]byte(raw), &event); err != nil {
+			t.Fatal(err)
+		}
+		if event["kind"] != "delivery_update" || event["message_id"] != "msg-full-name" || event["delivery_status"] != "cancelled" {
+			t.Fatalf("cancel event on internal session=%s", raw)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("cancel status did not appear on the internal session event stream")
 	}
 }
