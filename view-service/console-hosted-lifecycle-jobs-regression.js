@@ -29,10 +29,14 @@ const M = {
   'button-text-unchanged': () => mutate("hostedOpInflight[a.agent_id]&&hostedOpInflight[a.agent_id].op===d[0]?HOSTED_OPS[d[0]]+'中':d[1]", 'd[1]'),
   'button-text-all': () => mutate("hostedOpInflight[a.agent_id]&&hostedOpInflight[a.agent_id].op===d[0]?", 'hostedOpInflight[a.agent_id]?'),
   'fail-drops-code': () => mutate("'（原因码 '+(reason||'未知')+'）'", "''"),
-  'fail-drops-reason-text': () => mutate("(HOSTED_FAIL_REASONS[reason]||'操作未成功')", "'操作未成功'"),
+  'fail-drops-reason-text': () => mutate("(Object.prototype.hasOwnProperty.call(HOSTED_FAIL_REASONS,reason)?HOSTED_FAIL_REASONS[reason]:'操作未成功')", "'操作未成功'"),
   'poll-error-is-failure': () => mutate('}catch(err){inf.timer=setTimeout(tick,hostedPollMs);return;}', "}catch(err){stage='failed';reason='x';}"),
   'sync-422-no-refetch': () => mutate("if(res.code==='invalid_state')refreshRoster();return;}", 'return;}'),
   'destroy-success-shown-failed': () => mutate("if(stage==='completed'){", "if(stage==='completed'&&op!=='destroy'){"),
+  'running-counts-unknown': () => mutate("HOSTED_OP_RUNNING=['queued','running']", "HOSTED_OP_RUNNING=['queued']"),
+  'queued-counts-unknown': () => mutate("HOSTED_OP_RUNNING=['queued','running']", "HOSTED_OP_RUNNING=['running']"),
+  'unknown-never-resets': () => mutate('}else inf.unknown=0;', '}'),
+  'reason-prototype-key': () => mutate('Object.prototype.hasOwnProperty.call(HOSTED_FAIL_REASONS,reason)?HOSTED_FAIL_REASONS[reason]:', "HOSTED_FAIL_REASONS[reason]||"),
   'unknown-stage-silent': () => mutate('if(inf.unknown>=HOSTED_OP_UNKNOWN_MAX){', 'if(false){'),
   'online-counts-as-done': () => mutate("if(stage==='completed'){", "if(stage==='completed'||stage==='online'){"),
   'reasons-missing-not-owner': () => mutate("not_owner:'这不是你名下的 Agent',confirm_required", 'confirm_required'),
@@ -49,7 +53,7 @@ const G = 'A'.repeat(32);
 let rows;
 function reset() {
   rows = {};
-  for (const n of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'kilo', 'lima']) rows[n] = { id: `ag-${n}`, state: 'running', upgradable: true, online: true };
+  for (const n of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'kilo', 'lima', 'mike', 'nancy']) rows[n] = { id: `ag-${n}`, state: 'running', upgradable: true, online: true };
 }
 reset();
 const jobs = {}; let jobSeq = 0; const writes = []; const getCounts = { agents: 0 }; const polls = {}; let pollFail = 0; let nextReason = '';
@@ -98,6 +102,10 @@ const server = http.createServer(async (req, res) => {
       steps = [finish('running')];
     } else if (name === 'kilo') {   // 契约十个失败码逐个出
       steps = [finish('queued'), finish('failed', nextReason)];
+    } else if (name === 'mike') {   // 契约：restart 的 running 含等重连，可以很久；queued 也可能排很久
+      steps = [...Array(6).fill(finish('queued')), ...Array(8).fill(finish('running')), finish('completed')];
+    } else if (name === 'nancy') {   // 未知与已知交替：从不「连续」
+      steps = [finish('weird'), finish('running'), finish('weird'), finish('queued'), finish('weird'), finish('running'), finish('weird'), finish('running'), finish('weird'), finish('completed')];
     } else if (name === 'lima') {   // 契约之外的状态名（含旧词 online/done）：永远不是成功
       steps = [finish('queued'), finish('online')];
     } else steps = [finish('failed', 'start_failed')];
@@ -177,6 +185,10 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       nextReason = 'something_new';
       await row('kilo').locator('[data-op="restart"]').click();
       await waitFeedback(/重启 kilo 失败：操作未成功（原因码 something_new）/);
+      nextReason = 'constructor';   // 原型键不是码：不得取到对象自带的函数
+      await page.evaluate(() => { document.getElementById('rosterFeedback').textContent = ''; });
+      await row('kilo').locator('[data-op="restart"]').click();
+      await waitFeedback(/重启 kilo 失败：操作未成功（原因码 constructor）/);
     });
 
     await test('a stage name outside the contract (even the old words online/done) is never success: after 5 polls the page says so visibly and stops spinning', async () => {
@@ -185,6 +197,22 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await waitFeedback(/重启 lima：收到无法识别的任务状态（online），请刷新页面查看结果/);
       assert.doesNotMatch(await feedback().textContent(), /已完成/);
       assert.deepStrictEqual(await opsDisabled('lima'), [false, false, false, false]);
+    });
+
+    await test('long legitimate waits are not unknown: queued x6 then running x8 then completed shows no 无法识别 at any point and completes', async () => {
+      await page.evaluate(() => { hostedPollMs = 40; document.getElementById('rosterFeedback').textContent = ''; });
+      await row('mike').locator('[data-op="restart"]').click();
+      await waitFeedback(/重启 mike (已完成|：收到无法识别)/);
+      assert.match(await feedback().textContent(), /重启 mike 已完成/);
+      await page.evaluate(() => { hostedPollMs = 250; });
+    });
+
+    await test('unknown / known alternation never reaches 5 in a row: the page keeps tracking and completes', async () => {
+      await page.evaluate(() => { hostedPollMs = 40; document.getElementById('rosterFeedback').textContent = ''; });
+      await row('nancy').locator('[data-op="restart"]').click();
+      await waitFeedback(/重启 nancy (已完成|：收到无法识别)/);
+      assert.match(await feedback().textContent(), /重启 nancy 已完成/);
+      await page.evaluate(() => { hostedPollMs = 250; });
     });
 
     await test('destroy: the job succeeds (A1 contract) ⇒ 已完成, the row is gone, never a failure text', async () => {

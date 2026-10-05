@@ -983,7 +983,7 @@ async function hostedTrackJob(jobId,name){
   tick();
 }
 // 托管生命周期操作 job 化（R-V2-SEAT-ITEMS 包 C2，Hub 侧 A1）：点升级／重启／停用／启用／销毁后，POST 返回 202＋{job_id}（入队前的非法状态仍是同步 422 invalid_state）；
-// 页面在该 Agent 行里显示「<操作>中…」并轮询 GET jobs/{job_id}：failed ⇒ 失败（中文原因＋原因码）；终态 ⇒ 成功并刷新；其余阶段一律当「处理中」，不替 Hub 编阶段名。
+// 页面在该 Agent 行里显示「<操作>中…」并轮询 GET jobs/{job_id}：failed ⇒ 失败（中文原因＋原因码）；completed ⇒ 成功并刷新；queued／running ⇒ 进行中；契约之外的状态名连续 5 次 ⇒ 可见提示并停止跟踪（不替 Hub 编阶段名，也不静默等满 15 分钟）。
 // 兼容：POST 若仍是同步成功（无 job_id），按旧口径直接刷新。进行中状态存在内存表里，行重绘（15 秒刷新、列表重取）不丢；单个 job 最多轮询 15 分钟。
 var HOSTED_OPS={upgrade:'升级',restart:'重启',disable:'停用',enable:'启用',destroy:'销毁'};
 // 状态名与失败码以 A1 契约为准（runbooks/CONTRACT-R-V2-SEAT-A1-JOBVIEW-*.md）：lifecycle job 只有 queued／running／completed／failed 四态；restart／enable 的 running 含等 Agent 重连。
@@ -993,7 +993,7 @@ function hostedOpInflightText(inf){
   return HOSTED_OPS[inf.op]+'中…'+(inf.stage==='queued'?'（排队）':'');
 }
 function hostedOpFail(inf,reason){
-  return HOSTED_OPS[inf.op]+' '+inf.name+' 失败：'+(HOSTED_FAIL_REASONS[reason]||'操作未成功')+'（原因码 '+(reason||'未知')+'）';
+  return HOSTED_OPS[inf.op]+' '+inf.name+' 失败：'+(Object.prototype.hasOwnProperty.call(HOSTED_FAIL_REASONS,reason)?HOSTED_FAIL_REASONS[reason]:'操作未成功')+'（原因码 '+(reason||'未知')+'）';
 }
 function hostedOpTrack(a,op,jobId){
   var inf={op:op,name:a.name||'',jobId:jobId,stage:'queued',started:Date.now(),timer:null};
