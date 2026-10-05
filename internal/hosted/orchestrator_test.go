@@ -770,7 +770,7 @@ func TestPickNodeStaleFrameTreatedOffline(t *testing.T) {
 		t.Fatal(err)
 	}
 	// 把帧龄回拨到 1 小时前（走 exec 包装，不直调 htx——边界闸纪律）
-	if err := s.exec(ctx, `UPDATE g4_node SET last_seen_at=now()-interval '1 hour' WHERE id='nd_free'`); err != nil {
+	if _, err := s.exec(ctx, `UPDATE g4_node SET last_seen_at=now()-interval '1 hour' WHERE id='nd_free'`); err != nil {
 		t.Fatal(err)
 	}
 	_, err := o.pickNode(ctx, "auto", "", Plan{ID: "2c4g", VCPU: 2, MemMB: 4096}, "gpt-6.1-sol")

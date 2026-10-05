@@ -131,7 +131,7 @@ func TestSchemaModelColumnMigration(t *testing.T) {
 	ctx := context.Background()
 	s := NewStore(pool)
 	// 旧形状（生产现状）：g4_hosted_seat 无 model 列
-	if err := s.exec(ctx, `CREATE TABLE g4_hosted_seat (
+	if _, err := s.exec(ctx, `CREATE TABLE g4_hosted_seat (
   agent_id    TEXT PRIMARY KEY,
   node_id     TEXT NOT NULL,
   cli         TEXT NOT NULL,
@@ -148,7 +148,7 @@ func TestSchemaModelColumnMigration(t *testing.T) {
 		t.Fatalf("旧形状建表: %v", err)
 	}
 	// 存量行（无 model 列时的形态）
-	if err := s.exec(ctx, `INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, plan, created_by)
+	if _, err := s.exec(ctx, `INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, plan, created_by)
 		VALUES ('ag_old', 'nd_a', 'codex', 'gpt', 'token_file', '2c4g', 'zzc')`); err != nil {
 		t.Fatalf("存量行: %v", err)
 	}
@@ -182,7 +182,7 @@ func TestSchemaModelColumnMigration(t *testing.T) {
 		t.Fatalf("model 列须存在: %v %q", err, col)
 	}
 	// 回滚兼容（裁定 3②）：旧 Hub 的 INSERT 形状（不含 model 列）在新表上仍成功（靠 DEFAULT ''）
-	if err := s.exec(ctx, `INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, plan, created_by)
+	if _, err := s.exec(ctx, `INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, plan, created_by)
 		VALUES ('ag_legacy', 'nd_a', 'codex', 'gpt', 'token_file', '2c4g', 'zzc')`); err != nil {
 		t.Fatalf("旧形状 INSERT 须仍成功: %v", err)
 	}
