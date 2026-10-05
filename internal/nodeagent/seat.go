@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 )
@@ -112,6 +113,9 @@ type dockerOps struct {
 	// 非空 ⇒ 注入 CODEX_MODEL=<值>；空 ⇒ 不注入（与 597b4d93 逐字相同）。
 	// 校验（字符集 [A-Za-z0-9._-]、≤64）在 RegisterDockerHandlers，非法即拒启。
 	seatCodexModel string
+	// seatModels 本节点可选模型清单（R-V2-SEAT-ITEMS 包 B2；NODEAGENT_SEAT_CODEX_MODELS，
+	// 运维配置——prodops 按业主要求设）。随容量帧上报；空＝不支持按席自选。
+	seatModels []string
 	// seatMode 席位 helper 模式（R-V2-HOSTED-DRIVER-IMPL-20261004143130，版本 2 指标 2）：
 	// "cli"｜"" ⇒ 现行为逐字不变（SH_MODE=cli）；driver ⇒ SH_MODE=driver＋SH_EMIT_SESSION_EVENT=1
 	//（cli 模式不产结构事件、view 看不到 Agent 回复——方案件 9b9bb1d9 取甲）。
@@ -200,12 +204,12 @@ func engineImage(ref string) string {
 // buildSpec 安全参数清单（白名单固定，不可被指令关改）。
 // 🔴 CgroupParent 必带（组长 eccc54bc：托管席位统一挂在可配置父切片下做资源切片；
 // 漏设＝席位逃逸出平台切片，故 create 在空值时直接拒）。
-func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources, credKind, cli string) map[string]any {
+func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources, credKind, cli, model string) map[string]any {
 	memBytes := res.MemoryMB * 1024 * 1024
 	return map[string]any{
 		"Image": engineImage(image),
-		"User":  "10001:10001",            // 非 root（隔离底线；与 seatRunUID 一致）
-		"Env":   d.seatEnv(credKind, cli), // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
+		"User":  "10001:10001",                   // 非 root（隔离底线；与 seatRunUID 一致）
+		"Env":   d.seatEnv(credKind, cli, model), // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
 		"HostConfig": map[string]any{
 			"ReadonlyRootfs": true,
 			"Tmpfs":          map[string]string{"/tmp": "size=8m"},
@@ -241,7 +245,7 @@ func chownForSeat(path string) error { return chownForSeatFn(path) }
 // seatEnv 席位容器环境变量。容器启动契约（R-G1-HOSTED-IMAGE-CONTRACT 一）：四个非凭据键
 // 由节点代理注入——SH_WS_BASE（Hub 的 ws 源）／SH_ENROLL_TOKEN_FILE／SH_CRED_FILE（均为路径）／
 // SH_CRED_KIND（api_key|token_file，create 参数 cred_kind 带入）。🔴 凭据内容永不进 env/日志。
-func (d *dockerOps) seatEnv(credKind, cli string) []string {
+func (d *dockerOps) seatEnv(credKind, cli, model string) []string {
 	env := []string{
 		"SH_WS_BASE=" + d.hubWSBase,
 		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
@@ -283,10 +287,14 @@ func (d *dockerOps) seatEnv(credKind, cli string) []string {
 		// 两个动作缺一不可：a 管 HTTP、b 管 WS。
 		env = append(env, "SH_PROXY="+d.seatProxy)
 	}
-	if d.seatCodexModel != "" {
-		// 业主方案 1（R-SEAT-MODEL-NODEAGENT）：模型指定注入席位；镜像侧 start.py 同名读入
-		// 校验后写 config.toml 的 model。空 ⇒ 不注入（行为与 597b4d93 逐字相同）。
-		env = append(env, "CODEX_MODEL="+d.seatCodexModel)
+	// 模型生效值（包 B2）：按席 model（create/upgrade 参数）＞节点默认 NODEAGENT_SEAT_CODEX_MODEL；
+	// 两皆空 ⇒ 不注入（与 597b4d93 逐字相同）。镜像侧 start.py 校验后写 config.toml 的 model。
+	effective := model
+	if effective == "" {
+		effective = d.seatCodexModel
+	}
+	if effective != "" {
+		env = append(env, "CODEX_MODEL="+effective)
 	}
 	return env
 }
@@ -377,12 +385,22 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 		Cred      *credentialFile `json:"credential_file"`
 		CredKind  string          `json:"cred_kind"` // api_key|token_file（容器启动契约：账号形态）
 		CLI       string          `json:"cli"`       // 席位 CLI（seatCLIs 白名单；漏设即拒）
+		Model     string          `json:"model"`     // 包 B2：按席模型（可空＝节点默认）
 	}
 	if err := strictDecode(params, &p); err != nil {
 		return nil, err
 	}
 	if !validSeatID(p.SeatID) {
 		return nil, fmt.Errorf("%w: seat_id %q", ErrParams, p.SeatID)
+	}
+	// 包 B2：按席模型校验——格式同 validModelName；本节点有清单时必须在清单内（Hub 已按清单选点，这里纵深）。
+	if p.Model != "" {
+		if !validModelName(p.Model) {
+			return nil, fmt.Errorf("%w: model %q 格式不对", ErrParams, p.Model)
+		}
+		if len(d.seatModels) > 0 && !slices.Contains(d.seatModels, p.Model) {
+			return nil, fmt.Errorf("%w: model %q 不在本节点可选清单", ErrParams, p.Model)
+		}
 	}
 	if err := validateImageRef(p.Image, d.registry); err != nil {
 		return nil, err
@@ -459,7 +477,7 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 		return fail(err, "")
 	}
 	// ④ 安全参数清单起容器
-	id, err := d.eng.containerCreate(ctx, name, d.buildSpec(p.Image, p.SeatID, netName, p.Resources, p.CredKind, p.CLI))
+	id, err := d.eng.containerCreate(ctx, name, d.buildSpec(p.Image, p.SeatID, netName, p.Resources, p.CredKind, p.CLI, p.Model))
 	if err != nil {
 		return fail(err, "")
 	}
@@ -539,7 +557,8 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 		Resources seatResources `json:"resources"`
 		Token     *tokenFile    `json:"token_file"` // 轮换的新令牌（Hub Reissue 先行；写新令牌文件再起新容器）
 		CredKind  string        `json:"cred_kind"`
-		CLI       string        `json:"cli"` // 与 create 同口径：升级后的新容器同一 CLI
+		CLI       string        `json:"cli"`   // 与 create 同口径：升级后的新容器同一 CLI
+		Model     string        `json:"model"` // 包 B2：Hub 按席位记录值下发（修订 3：不得因节点默认变化悄悄换模型）
 	}
 	if err := strictDecode(params, &p); err != nil {
 		return nil, err
@@ -587,7 +606,7 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 		return nil, err
 	}
 	newName := containerName(p.SeatID) + "-new"
-	newID, err := d.eng.containerCreate(ctx, newName, d.buildSpec(p.Image, p.SeatID, networkName(p.SeatID), p.Resources, p.CredKind, p.CLI))
+	newID, err := d.eng.containerCreate(ctx, newName, d.buildSpec(p.Image, p.SeatID, networkName(p.SeatID), p.Resources, p.CredKind, p.CLI, p.Model))
 	if err != nil {
 		return nil, err
 	}
@@ -688,9 +707,14 @@ func isBareImageID(s string) bool {
 // 同时接上 T-G4-13 容量上报（真采集替换骨架桩，并注册心跳）。
 // cgroupParent 必填（eccc54bc）——create 的 --cgroup-parent 指向可配置父切片。
 // localImagesCSV 格式不对即报错（报键名），调用方拒启。
-func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string, seatHubViaProxy bool, seatCodexModel, seatMode string) error {
+func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string, seatHubViaProxy bool, seatCodexModel, seatMode string, seatModels []string) error {
 	if seatCodexModel != "" && !validModelName(seatCodexModel) {
 		return fmt.Errorf("NODEAGENT_SEAT_CODEX_MODEL %q 格式不对（须 1–64 位 [A-Za-z0-9._-]）", seatCodexModel)
+	}
+	for _, m := range seatModels { // 清单逐项同校验（运维配置，坏值拒启报键名）
+		if !validModelName(m) {
+			return fmt.Errorf("NODEAGENT_SEAT_CODEX_MODELS 项 %q 格式不对（须 1–64 位 [A-Za-z0-9._-]）", m)
+		}
 	}
 	// R-V2-HOSTED-DRIVER-IMPL：cli｜driver｜空（＝cli）；其它即拒启报键名（与 CODEX_MODEL 同款）。
 	if seatMode != "" && seatMode != "cli" && seatMode != "driver" {
@@ -709,7 +733,7 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 	if err != nil {
 		return err
 	}
-	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, localImages: allow, waitMax: 60 * time.Second, seatHubViaProxy: seatHubViaProxy, seatCodexModel: seatCodexModel, seatMode: seatMode}
+	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, localImages: allow, waitMax: 60 * time.Second, seatHubViaProxy: seatHubViaProxy, seatCodexModel: seatCodexModel, seatMode: seatMode, seatModels: seatModels}
 	a.Register(CmdPullImage, d.pull)
 	a.Register(CmdCreateSeat, d.create)
 	a.Register(CmdStopSeat, d.stop)

@@ -701,3 +701,30 @@ func TestDestroyStopsBeforeBackup(t *testing.T) {
 		}
 	})
 }
+
+// 包 B2 修订 3：upgrade 用落库记录值，不随节点默认漂移。
+// 反向：upgrade 参数不带 seat.Model（或取节点默认）⇒ 红。
+func TestUpgradeUsesRecordedModel(t *testing.T) {
+	lc, _, _, gw, _, s, id := mkLifecycle(t)
+	// 把席位的生效模型改落库值（建席时定死语义）
+	if _, err := s.pool.Exec(context.Background(), htx(),
+		`UPDATE g4_hosted_seat SET model='gpt-6.1-sol' WHERE agent_id=$1`, id); err != nil {
+		t.Fatal(err)
+	}
+	if err := lc.Upgrade(context.Background(), id, "zzc", "v2", false); err != nil {
+		t.Fatalf("upgrade: %v", err)
+	}
+	var found bool
+	for _, c := range gw.sent {
+		if c.Type == "upgrade_seat" {
+			var p map[string]any
+			_ = json.Unmarshal(c.Params, &p)
+			if p["model"] == "gpt-6.1-sol" {
+				found = true
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("upgrade_seat 参数须带记录值 model: %+v", gw.sent)
+	}
+}

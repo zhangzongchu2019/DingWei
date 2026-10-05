@@ -25,6 +25,7 @@ type Capacity struct {
 	DiskTotalMB int64             `json:"disk_total_mb"`
 	DiskFreeMB  int64             `json:"disk_free_mb"`
 	Seats       []seatInfo        `json:"seats"`
+	Models      []string          `json:"models,omitempty"` // 包 B2：本节点可选模型清单（NODEAGENT_SEAT_CODEX_MODELS 上报；空＝不支持自选）
 	ImageCount  int               `json:"image_count"`
 	ImageSizeMB int64             `json:"image_size_mb"`
 }
@@ -48,6 +49,7 @@ func (d *dockerOps) collectCapacity(ctx context.Context) (Capacity, error) {
 		return c, err
 	}
 	c.DiskTotalMB, c.DiskFreeMB = dt, df
+	c.Models = d.seatModels
 
 	// 容器清单（seat- 前缀）
 	var containers []struct {

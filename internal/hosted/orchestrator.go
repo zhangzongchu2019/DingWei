@@ -94,6 +94,9 @@ var (
 	// 由接线适配器译成这两个哨兵——编组可缺省，给了才校验）。
 	ErrGroupNotFound = errors.New("group_not_found")
 	ErrGroupClosed   = errors.New("group_closed")
+	// 包 B2（建席可选模型；HTTP 422 同族，契约写明）
+	ErrModelNotAvailable = errors.New("model_not_available") // 清单外／无在线节点支持
+	ErrModelNotSupported = errors.New("model_not_supported") // 非 codex 席位带 model
 )
 
 // ---------- 编排器 ----------
@@ -161,6 +164,7 @@ type CreateRequest struct {
 	CredKind  string // api_key | token_file
 	AccountID string
 	Plan      string
+	Model     string // 包 B2：按席模型（可空＝节点默认；清单外/非 codex ⇒ 422）
 }
 
 type CreateOutcome struct {
@@ -180,6 +184,11 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 			return CreateOutcome{}, ErrAccountNotAllowed
 		}
 		req.CredKind = a.Kind
+	}
+	// ⓪b 模型形态闸（包 B2 修订 2）：非 codex 带 model ⇒ model_not_supported——
+	// 先于联动过滤（形态错比组合错更根本，机器码据此分流页面文案）。
+	if req.Model != "" && req.CLI != "codex" {
+		return CreateOutcome{}, ErrModelNotSupported
 	}
 	// ① 联动过滤＋逐家验通（B12：验通一家放开一家）
 	verified, ok := o.combos.Lookup(req.CLI, req.LLM, req.CredKind)
@@ -213,8 +222,9 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	if acct == nil {
 		return CreateOutcome{}, ErrAccountNotAllowed
 	}
-	// ⑤ 节点：指定或自动（余量最大）；容量须容得下套餐
-	node, err := o.pickNode(ctx, req.NodeID, req.Pool, plan)
+	// ⑤ 节点：指定或自动（余量最大）；容量须容得下套餐；带 model ⇒ 只在上报清单含它的在线节点里选
+	// （修订 1：有节点支持但被选中节点不支持 ⇒ 自动选别的，不报错；全部不支持才拒）
+	node, err := o.pickNode(ctx, req.NodeID, req.Pool, plan, req.Model)
 	if err != nil {
 		return CreateOutcome{}, err
 	}
@@ -238,7 +248,8 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	// ⑧ 席位落库（queued）＋事件
 	err = o.st.CreateSeat(ctx, Seat{
 		AgentID: ag.ID, NodeID: node.ID, CLI: req.CLI, LLM: req.LLM, CredKind: req.CredKind,
-		AccountRef: sql.NullString{String: req.AccountID, Valid: true}, Plan: req.Plan, ImageRef: imageRef, CreatedBy: req.By,
+		AccountRef: sql.NullString{String: req.AccountID, Valid: true}, Plan: req.Plan, ImageRef: imageRef,
+		Model: req.Model, CreatedBy: req.By, // 生效值即请求值（建席时定死；空＝未指定）
 	})
 	if err != nil {
 		_, _ = o.idp.RetireHostedAgent(ctx, ag.ID, req.By)
@@ -248,7 +259,7 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	return CreateOutcome{JobID: ag.ID, AgentID: ag.ID, State: "queued"}, nil
 }
 
-func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan Plan) (Node, error) {
+func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan Plan, model string) (Node, error) {
 	var n Node
 	var err error
 	if nodeID != "" && nodeID != "auto" {
@@ -256,16 +267,40 @@ func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan P
 		if err == nil && n.State != "online" {
 			err = ErrNoNodeCapacity
 		}
+	} else if model != "" {
+		// 包 B2：只在上报清单含该 model 的在线节点里选（清单以最近一次容量帧为准；
+		// 修订 4：帧龄超 3×心跳即视同下线——节点心跳 60s，宽限 180s）
+		n, err = o.st.PickNodeByPoolModel(ctx, pool, model, 180*time.Second)
 	} else {
 		n, err = o.st.PickNodeByPool(ctx, pool)
 	}
+	if errors.Is(err, ErrNotFound) && model != "" {
+		return n, ErrModelNotAvailable // 自动选：无在线节点清单含该 model
+	}
 	if err != nil {
 		return n, ErrNoNodeCapacity
+	}
+	if model != "" && !nodeHasModel(n, model) { // 指定节点不支持 ⇒ 用户选错，明拒
+		return n, ErrModelNotAvailable
 	}
 	if freeMB(n) < plan.MemMB {
 		return n, ErrNoNodeCapacity
 	}
 	return n, nil
+}
+
+// nodeHasModel 节点上报清单含该 model（capacity JSONB 的 models 数组）。
+func nodeHasModel(n Node, model string) bool {
+	var c struct {
+		Models []string `json:"models"`
+	}
+	_ = json.Unmarshal(n.Capacity, &c)
+	for _, m := range c.Models {
+		if m == model {
+			return true
+		}
+	}
+	return false
 }
 
 func freeMB(n Node) int64 {
@@ -340,6 +375,7 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 		"credential_file": map[string]string{"content": cred},
 		"cred_kind":       seat.CredKind, // 容器启动契约（R-G1-HOSTED-IMAGE-CONTRACT）：账号形态随参数下发
 		"cli":             seat.CLI,      // 节点代理据此注入 SH_MODE=cli、SH_CLI（组长 R-B12-SEATMODE 第 2 条）
+		"model":           seat.Model,    // 包 B2 修订 3：落库记录值（不随节点默认漂移）
 	})
 	if res, err := o.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "create_seat", Params: params}); err != nil || !res.OK {
 		fail("starting", "start_failed")

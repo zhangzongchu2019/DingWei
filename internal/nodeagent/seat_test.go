@@ -704,7 +704,7 @@ func TestSeatEnvNoProxyIncludesHubHost(t *testing.T) {
 			d := f.ops(t.TempDir())
 			d.hubWSBase = c.base
 			var noProxy string
-			for _, e := range d.seatEnv("api_key", "codex") {
+			for _, e := range d.seatEnv("api_key", "codex", "") {
 				if v, ok := strings.CutPrefix(e, "NO_PROXY="); ok {
 					noProxy = v
 				}
@@ -779,7 +779,7 @@ func TestRegisterDockerHandlersRejectsBadAllowlist(t *testing.T) {
 		return (&Agent{handlers: map[string]Handler{}}).RegisterDockerHandlers(
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-			"http://172.30.68.1:11080", "wss://hub.test", csv, false, "", "",
+			"http://172.30.68.1:11080", "wss://hub.test", csv, false, "", "", nil,
 		)
 	}
 	if err := register(strings.Repeat("ab", 32) + "f"); err == nil || !strings.Contains(err.Error(), "NODEAGENT_LOCAL_IMAGES") {
@@ -806,7 +806,7 @@ func TestSeatEnvHubViaProxyOn(t *testing.T) {
 			d.seatProxy = "http://172.30.68.1:11080"
 			d.hubWSBase = hubWSBase
 			d.seatHubViaProxy = true
-			env := d.seatEnv("api_key", "codex")
+			env := d.seatEnv("api_key", "codex", "")
 			joined := "\n" + strings.Join(env, "\n") + "\n"
 			for _, want := range []string{
 				"\nSH_PROXY=http://172.30.68.1:11080\n",
@@ -857,7 +857,7 @@ func TestSeatEnvHubViaProxyOffUnchanged(t *testing.T) {
 	d.seatProxy = "http://172.30.68.1:11080"
 	d.hubWSBase = "wss://dw.cmjrt.com:55055"
 	d.seatHubViaProxy = false
-	env := d.seatEnv("api_key", "codex")
+	env := d.seatEnv("api_key", "codex", "")
 	want := []string{
 		"SH_WS_BASE=wss://dw.cmjrt.com:55055",
 		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
@@ -979,7 +979,7 @@ func TestHubViaProxyThroughRegisterDockerHandlers(t *testing.T) {
 	if err := ag.RegisterDockerHandlers(
 		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-		"http://172.30.68.1:11080", "wss://dw.cmjrt.com:55055", "", true, "", "",
+		"http://172.30.68.1:11080", "wss://dw.cmjrt.com:55055", "", true, "", "", nil,
 	); err != nil {
 		t.Fatalf("register: %v", err)
 	}
@@ -1020,7 +1020,7 @@ func TestSeatCodexModelInject(t *testing.T) {
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
 	d.seatCodexModel = "gpt-6.1-sol"
-	env := d.seatEnv("api_key", "codex")
+	env := d.seatEnv("api_key", "codex", "")
 	joined := "\n" + strings.Join(env, "\n") + "\n"
 	if !strings.Contains(joined, "\nCODEX_MODEL=gpt-6.1-sol\n") {
 		t.Fatalf("开 ⇒ 必须含 CODEX_MODEL: %v", env)
@@ -1028,7 +1028,7 @@ func TestSeatCodexModelInject(t *testing.T) {
 
 	// 空 ⇒ 逐字不变（与 597b4d93 的期望切片逐字比对）
 	d2 := f.ops(t.TempDir())
-	env2 := d2.seatEnv("api_key", "codex")
+	env2 := d2.seatEnv("api_key", "codex", "")
 	want := []string{
 		"SH_WS_BASE=wss://hub.test",
 		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
@@ -1052,7 +1052,7 @@ func TestSeatCodexModelValidation(t *testing.T) {
 		return (&Agent{handlers: map[string]Handler{}}).RegisterDockerHandlers(
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-			"http://172.30.68.1:11080", "wss://hub.test", "", false, model, "",
+			"http://172.30.68.1:11080", "wss://hub.test", "", false, model, "", nil,
 		)
 	}
 	for _, bad := range []string{
@@ -1075,7 +1075,7 @@ func TestSeatCodexModelValidation(t *testing.T) {
 		err := ag.RegisterDockerHandlers(
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-			"http://172.30.68.1:11080", "wss://hub.test", "", false, bad, "",
+			"http://172.30.68.1:11080", "wss://hub.test", "", false, bad, "", nil,
 		)
 		if err == nil || !strings.Contains(err.Error(), "NODEAGENT_SEAT_CODEX_MODEL") {
 			t.Fatalf("%q 必须拒且报键名: %v", bad, err)
@@ -1109,7 +1109,7 @@ func TestSeatCodexModelThroughCreateSpec(t *testing.T) {
 			if err := ag.RegisterDockerHandlers(
 				newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 				t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-				"http://172.30.68.1:11080", "wss://hub.test", "", false, tc.model, "",
+				"http://172.30.68.1:11080", "wss://hub.test", "", false, tc.model, "", nil,
 			); err != nil {
 				t.Fatalf("register: %v", err)
 			}
@@ -1141,7 +1141,7 @@ func TestSeatCodexModelThroughCreateSpec(t *testing.T) {
 	if err := ag.RegisterDockerHandlers(
 		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-		"http://172.30.68.1:11080", "wss://hub.test", "", false, "", "",
+		"http://172.30.68.1:11080", "wss://hub.test", "", false, "", "", nil,
 	); err != nil {
 		t.Fatalf("register: %v", err)
 	}
@@ -1163,7 +1163,7 @@ func TestSeatModeSwitch(t *testing.T) {
 	// 未设（＝cli）逐字现行
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
-	env := d.seatEnv("api_key", "codex")
+	env := d.seatEnv("api_key", "codex", "")
 	want := []string{
 		"SH_WS_BASE=wss://hub.test",
 		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
@@ -1181,13 +1181,13 @@ func TestSeatModeSwitch(t *testing.T) {
 	// 显式 cli 同样逐字
 	d2 := f.ops(t.TempDir())
 	d2.seatMode = "cli"
-	if strings.Join(d2.seatEnv("api_key", "codex"), "|") != strings.Join(want, "|") {
+	if strings.Join(d2.seatEnv("api_key", "codex", ""), "|") != strings.Join(want, "|") {
 		t.Fatal("显式 cli 应同未设逐字")
 	}
 	// driver＋codex 席位：SH_MODE=driver＋SH_DRIVER=codex＋事件键，其余键不变
 	d3 := f.ops(t.TempDir())
 	d3.seatMode = "driver"
-	env3 := d3.seatEnv("api_key", "codex")
+	env3 := d3.seatEnv("api_key", "codex", "")
 	joined := "\n" + strings.Join(env3, "\n") + "\n"
 	for _, w := range []string{"\nSH_MODE=driver\n", "\nSH_DRIVER=codex\n", "\nSH_EMIT_SESSION_EVENT=1\n", "\nSH_CLI=codex\n"} {
 		if !strings.Contains(joined, w) {
@@ -1215,7 +1215,7 @@ func TestSeatModeSwitch(t *testing.T) {
 	// 异议 1（组长采纳）：driver 对非 codex 席位不生效——claude 席位与现行逐字相同
 	d4 := f.ops(t.TempDir())
 	d4.seatMode = "driver"
-	env4 := d4.seatEnv("api_key", "claude")
+	env4 := d4.seatEnv("api_key", "claude", "")
 	wantClaude := []string{
 		"SH_WS_BASE=wss://hub.test",
 		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
@@ -1236,7 +1236,7 @@ func TestSeatModeSwitch(t *testing.T) {
 		err := ag.RegisterDockerHandlers(
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-			"http://172.30.68.1:11080", "wss://hub.test", "", false, "", bad,
+			"http://172.30.68.1:11080", "wss://hub.test", "", false, "", bad, nil,
 		)
 		if err == nil || !strings.Contains(err.Error(), "NODEAGENT_SEAT_MODE") {
 			t.Fatalf("%q 必须拒且报键名: %v", bad, err)
@@ -1254,7 +1254,7 @@ func TestSeatModeDriverThroughCreateSpec(t *testing.T) {
 	if err := ag.RegisterDockerHandlers(
 		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-		"http://172.30.68.1:11080", "wss://hub.test", "", false, "", "driver",
+		"http://172.30.68.1:11080", "wss://hub.test", "", false, "", "driver", nil,
 	); err != nil {
 		t.Fatalf("register: %v", err)
 	}
@@ -1272,5 +1272,48 @@ func TestSeatModeDriverThroughCreateSpec(t *testing.T) {
 		if !strings.Contains(joined, w) {
 			t.Fatalf("透传后 spec Env 缺 %q: %v", w, envs)
 		}
+	}
+}
+
+// 包 B2 节点侧：按席 model 校验（格式＋清单纵深）与注入优先级（席＞节点默认＞不注）。
+// 反向：去清单校验 ⇒ 红；优先级颠倒 ⇒ 红。
+func TestSeatModelParamValidation(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	d.seatModels = []string{"gpt-6.1-sol", "gpt-5.5"}
+	mk := func(model string) json.RawMessage {
+		return json.RawMessage(`{"seat_id":"ag_m","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex","model":"` + model + `"}`)
+	}
+	if _, err := d.create(context.Background(), mk("gpt-6.1-sol")); err != nil {
+		t.Fatalf("清单内应过: %v", err)
+	}
+	if _, err := d.create(context.Background(), mk("gpt/6")); err == nil {
+		t.Fatal("格式坏应拒")
+	}
+	if _, err := d.create(context.Background(), mk("gpt-9")); err == nil {
+		t.Fatal("清单外应拒")
+	}
+	// 无清单节点（空清单＝不自选）：带 model 也放行（Hub 已校验；节点无清单即不纵深）
+	d2 := f.ops(t.TempDir())
+	d2.seatModels = nil
+	if _, err := d2.create(context.Background(), mk("gpt-9")); err != nil {
+		t.Fatalf("无清单节点不纵深: %v", err)
+	}
+}
+
+func TestSeatModelPriority(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	d.seatCodexModel = "gpt-6.1-sol" // 节点默认
+	// 席位值覆盖节点默认
+	env := d.seatEnv("api_key", "codex", "gpt-5.5")
+	joined := "\n" + strings.Join(env, "\n") + "\n"
+	if !strings.Contains(joined, "\nCODEX_MODEL=gpt-5.5\n") {
+		t.Fatalf("席位值应覆盖节点默认: %v", env)
+	}
+	// 席位空 ⇒ 节点默认
+	env2 := d.seatEnv("api_key", "codex", "")
+	if !strings.Contains("\n"+strings.Join(env2, "\n")+"\n", "\nCODEX_MODEL=gpt-6.1-sol\n") {
+		t.Fatalf("席位空应落节点默认: %v", env2)
 	}
 }

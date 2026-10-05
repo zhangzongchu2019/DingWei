@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS g4_hosted_seat (
   cred_kind   TEXT NOT NULL CHECK (cred_kind IN ('api_key','token_file')),
   account_ref TEXT REFERENCES g4_account_pool(id),
   plan        TEXT NOT NULL CHECK (plan IN ('2c4g','4c8g')),
+  model       TEXT NOT NULL DEFAULT '', -- 生效模型（包 B2 修订 3：建席时定死、落库；upgrade/restart 按记录值重算）
   state       TEXT NOT NULL DEFAULT 'queued'
               CHECK (state IN ('queued','pulling','starting','online','busy',
                                'disabled','stopped','error','destroyed')),

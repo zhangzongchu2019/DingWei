@@ -65,26 +65,37 @@ type OptionsView struct {
 	Accounts []AccountOption `json:"accounts"`
 	Plans    []PlanOption    `json:"plans"`
 	Quota    QuotaView       `json:"quota"`
+	Models   []string        `json:"models"` // 包 B2：在线节点上报清单的并集（节点下线即消失）
 }
 
 // Options 新建表单数据源（一次返回不拆；本期几十条级不分页——契约第一节）。
 // 账号＝本人被授权且未绑定（ListUsableAccounts 口径；席位创建后该账号即绑定，下拉开不出）。
 func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView, error) {
 	// 四个列表一律非 nil：空时序列化为 []，不是 null（页面按数组遍历）。
-	v := OptionsView{Nodes: []NodeOption{}, Combos: []ComboOption{}, Accounts: []AccountOption{}, Plans: []PlanOption{}}
+	v := OptionsView{Nodes: []NodeOption{}, Combos: []ComboOption{}, Accounts: []AccountOption{}, Plans: []PlanOption{}, Models: []string{}}
 
 	// 节点：剩余内存/磁盘来自容量上报（心跳真采集）；free_vcpu＝cpu_total−在席套餐占用
 	nodes, err := o.st.ListNodes(ctx)
 	if err != nil {
 		return v, err
 	}
+	modelsSeen := map[string]bool{}
 	for _, n := range nodes {
 		var c struct {
-			CPUTotal   int   `json:"cpu_total"`
-			MemFreeMB  int64 `json:"mem_free_mb"`
-			DiskFreeMB int64 `json:"disk_free_mb"`
+			CPUTotal   int      `json:"cpu_total"`
+			MemFreeMB  int64    `json:"mem_free_mb"`
+			DiskFreeMB int64    `json:"disk_free_mb"`
+			Models     []string `json:"models"`
 		}
 		_ = json.Unmarshal(n.Capacity, &c)
+		if n.State == "online" { // 修订 4：下线节点的清单不进并集
+			for _, m := range c.Models {
+				if !modelsSeen[m] {
+					modelsSeen[m] = true
+					v.Models = append(v.Models, m)
+				}
+			}
+		}
 		usedVCPU, uerr := o.st.NodeUsedVCPU(ctx, n.ID)
 		if uerr != nil {
 			return v, uerr

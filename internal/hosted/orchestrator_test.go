@@ -347,16 +347,16 @@ func TestPoolScheduling(t *testing.T) {
 		t.Fatal(err)
 	}
 	// 指定 pool=b ⇒ 必须落在 b（尽管 a 更闲）
-	n, err := o.pickNode(ctx, "auto", "b", Plan{ID: "2c4g", VCPU: 2, MemMB: 4096})
+	n, err := o.pickNode(ctx, "auto", "b", Plan{ID: "2c4g", VCPU: 2, MemMB: 4096}, "")
 	if err != nil || n.ID != "nd_pb" {
 		t.Fatalf("指定池应落 nd_pb: %+v err=%v", n, err)
 	}
 	// 指定不存在的池 ⇒ node_no_capacity
-	if _, err := o.pickNode(ctx, "auto", "no-such-pool", Plan{ID: "2c4g"}); err != ErrNoNodeCapacity {
+	if _, err := o.pickNode(ctx, "auto", "no-such-pool", Plan{ID: "2c4g"}, ""); err != ErrNoNodeCapacity {
 		t.Fatalf("空池应 node_no_capacity, 得 %v", err)
 	}
 	// 不指定 ⇒ 全池最闲（nd_pa 32768）
-	n, err = o.pickNode(ctx, "auto", "", Plan{ID: "2c4g"})
+	n, err = o.pickNode(ctx, "auto", "", Plan{ID: "2c4g"}, "")
 	if err != nil || n.ID != "nd_pa" {
 		t.Fatalf("不指定应全池最闲 nd_pa: %+v err=%v", n, err)
 	}
@@ -691,5 +691,72 @@ func TestNeverConnectsSweepedStartTimeout(t *testing.T) {
 	}
 	if len(idp.retired) != 1 {
 		t.Fatalf("应 Retire 释放名字: %v", idp.retired)
+	}
+}
+
+// 包 B2（建席可选模型，批准稿＋五修订）：
+// ① pickNode 只在上报清单含该 model 的在线节点里选（有节点支持但被选中节点不支持 ⇒ 自动选别的不报错）
+// ② 全部不支持 ⇒ model_not_available；非 codex 带 model ⇒ model_not_supported（均 422 族）
+// ③ 生效值落库（seat.Model），upgrade 用记录值
+// 反向：pickNode 去清单过滤 ⇒ ①红；去校验 ⇒ ②红。
+func TestCreateWithModelSelectsSupportingNode(t *testing.T) {
+	o, _, gw, s := mkOrch(t)
+	ctx := context.Background()
+	// nd_free 上报清单含 gpt-6.1-sol；nd_full 不含（修订 1 的错位形：余量大的不支持）
+	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol"]}`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetNodeOnline(ctx, "nd_full", json.RawMessage(`{"mem_free_mb":1024,"models":["gpt-4o"]}`)); err != nil {
+		t.Fatal(err)
+	}
+	acct := acctOf(t, o.pool)
+	out, err := o.Create(ctx, CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "m1", CLI: "codex", LLM: "gpt",
+		CredKind: "token_file", AccountID: acct, Plan: "2c4g", Model: "gpt-6.1-sol"})
+	if err != nil {
+		t.Fatalf("有节点支持应建成: %v", err)
+	}
+	seat, err := s.GetSeat(ctx, out.AgentID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if seat.NodeID != "nd_free" {
+		t.Fatalf("应落在清单含该模型的 nd_free，实 %s", seat.NodeID)
+	}
+	if seat.Model != "gpt-6.1-sol" {
+		t.Fatalf("生效值须落库: %q", seat.Model)
+	}
+	// create_seat 参数带记录值（RunJob 同步驱动后查指令流）
+	o.RunJob(ctx, out.AgentID)
+	var found bool
+	for _, c := range gw.sent {
+		if c.Type == "create_seat" {
+			var p map[string]any
+			_ = json.Unmarshal(c.Params, &p)
+			if p["model"] == "gpt-6.1-sol" {
+				found = true
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("create_seat 参数须带记录值 model: %+v", gw.sent)
+	}
+}
+
+func TestCreateModelRejections(t *testing.T) {
+	o, _, _, s := mkOrch(t)
+	ctx := context.Background()
+	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol"]}`)); err != nil {
+		t.Fatal(err)
+	}
+	acct := acctOf(t, o.pool)
+	// 清单外 ⇒ model_not_available
+	if _, err := o.Create(ctx, CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "m2", CLI: "codex", LLM: "gpt",
+		CredKind: "token_file", AccountID: acct, Plan: "2c4g", Model: "gpt-9"}); !errors.Is(err, ErrModelNotAvailable) {
+		t.Fatalf("清单外 ⇒ model_not_available: %v", err)
+	}
+	// 非 codex 带 model ⇒ model_not_supported
+	if _, err := o.Create(ctx, CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "m3", CLI: "claude", LLM: "claude",
+		CredKind: "token_file", AccountID: acct, Plan: "2c4g", Model: "gpt-6.1-sol"}); !errors.Is(err, ErrModelNotSupported) {
+		t.Fatalf("非 codex ⇒ model_not_supported: %v", err)
 	}
 }

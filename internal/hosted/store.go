@@ -121,6 +121,34 @@ func (s *Store) PickNodeAuto(ctx context.Context) (Node, error) {
 	return s.PickNodeByPool(ctx, "")
 }
 
+// PickNodeByPoolModel 包 B2：只在上报清单含 model 的在线节点里选（余量最大）；
+// 帧龄超 maxAge 视同下线（修订 4）。无候选 ⇒ ErrNotFound（编排层译 model_not_available）。
+func (s *Store) PickNodeByPoolModel(ctx context.Context, pool, model string, maxAge time.Duration) (Node, error) {
+	var n Node
+	sqlStr := `
+SELECT id, name, labels, state, capacity, docker_version, node_protocol_version, last_seen_at
+FROM g4_node WHERE state='online'
+  AND capacity->'models' ? $1
+  AND last_seen_at > now() - $2::interval`
+	args := []any{model, maxAge.String()}
+	if pool != "" {
+		sqlStr += ` AND labels->>'pool' = $3`
+		args = append(args, pool)
+	}
+	sqlStr += `
+ORDER BY COALESCE((capacity->>'mem_free_mb')::bigint, 0) DESC, id
+LIMIT 1`
+	row, err := s.qrow(ctx, sqlStr, args...)
+	if err != nil {
+		return n, err
+	}
+	err = row.Scan(&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return n, ErrNotFound
+	}
+	return n, err
+}
+
 // PickNodeByPool 多节点池调度（T-G4-52，V8-D1）：pool 非空 ⇒ 只在该标签池内按剩余内存最大落位；
 // pool 为空 ⇒ 全池最闲。池内无 online 节点 ⇒ ErrNotFound（上层译 node_no_capacity）。
 func (s *Store) PickNodeByPool(ctx context.Context, pool string) (Node, error) {
@@ -222,6 +250,7 @@ type Seat struct {
 	AgentID, NodeID, CLI, LLM, CredKind string
 	AccountRef                          sql.NullString
 	Plan, State, StateDetail, ImageRef  string
+	Model                               string // 生效模型（包 B2；建席时定死落库，空＝未指定）
 	CreatedBy                           string
 }
 
@@ -268,9 +297,9 @@ func (s *Store) CreateSeat(ctx context.Context, st Seat) error {
 		return fmt.Errorf("%w: plan %q", ErrInvalidState, st.Plan)
 	}
 	_, err := s.pool.Exec(ctx, htx(), `
-INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, account_ref, plan, state, image_ref, created_by)
-VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9)`,
-		st.AgentID, st.NodeID, st.CLI, st.LLM, st.CredKind, st.AccountRef, st.Plan, st.ImageRef, st.CreatedBy)
+INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, account_ref, plan, state, image_ref, model, created_by)
+VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9,$10)`,
+		st.AgentID, st.NodeID, st.CLI, st.LLM, st.CredKind, st.AccountRef, st.Plan, st.ImageRef, st.Model, st.CreatedBy)
 	return err
 }
 
@@ -279,7 +308,7 @@ func (s *Store) GetSeat(ctx context.Context, agentID string) (Seat, error) {
 	err := func() error {
 
 		row, err := s.qrow(ctx, `
-SELECT agent_id, node_id, cli, llm, cred_kind, account_ref, plan, state, state_detail, image_ref, created_by
+SELECT agent_id, node_id, cli, llm, cred_kind, account_ref, plan, state, state_detail, image_ref, model, created_by
 FROM g4_hosted_seat WHERE agent_id=$1`, agentID)
 
 		if err != nil {
@@ -290,7 +319,7 @@ FROM g4_hosted_seat WHERE agent_id=$1`, agentID)
 
 		return row.Scan(
 			&st.AgentID, &st.NodeID, &st.CLI, &st.LLM, &st.CredKind, &st.AccountRef,
-			&st.Plan, &st.State, &st.StateDetail, &st.ImageRef, &st.CreatedBy)
+			&st.Plan, &st.State, &st.StateDetail, &st.ImageRef, &st.Model, &st.CreatedBy)
 
 	}()
 	if errors.Is(err, sql.ErrNoRows) {

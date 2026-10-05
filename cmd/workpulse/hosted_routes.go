@@ -104,6 +104,9 @@ var hostedErrorCodes = []struct {
 	{hosted.ErrQuotaExceeded, "quota_exceeded", http.StatusConflict},
 	{hosted.ErrPlanExceedsQuota, "plan_exceeds_quota", http.StatusConflict},
 	{hosted.ErrGroupNotFound, "group_not_found", http.StatusUnprocessableEntity},
+	// 包 B2（修订 2：与 invalid_state 同族 422；C3 表单据此显示中文原因）
+	{hosted.ErrModelNotAvailable, "model_not_available", http.StatusUnprocessableEntity},
+	{hosted.ErrModelNotSupported, "model_not_supported", http.StatusUnprocessableEntity},
 	{hosted.ErrGroupClosed, "group_closed", http.StatusConflict},
 	{hosted.ErrParams, "params_invalid", http.StatusBadRequest},
 	// 操作
@@ -157,6 +160,7 @@ func (d hostedDeps) handleCreate(w http.ResponseWriter, r *http.Request) {
 		LLM       string `json:"llm"`
 		AccountID string `json:"account_id"`
 		PlanID    string `json:"plan_id"`
+		Model     string `json:"model"` // 包 B2：按席模型（可空）
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "name_invalid"})
@@ -164,7 +168,7 @@ func (d hostedDeps) handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	out, err := d.orch.Create(r.Context(), hosted.CreateRequest{
 		OwnerLC: actor, By: actor, Name: req.Name, GroupCode: req.GroupID,
-		NodeID: req.NodeID, CLI: req.CLI, LLM: req.LLM, AccountID: req.AccountID, Plan: req.PlanID,
+		NodeID: req.NodeID, CLI: req.CLI, LLM: req.LLM, AccountID: req.AccountID, Plan: req.PlanID, Model: req.Model,
 	})
 	if err != nil {
 		writeHostedError(w, err)
