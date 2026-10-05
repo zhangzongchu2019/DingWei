@@ -241,6 +241,23 @@ func TestLifecycleJobDuplicatePolicy(t *testing.T) {
 func TestConcurrentDestroyRequestsShareOneJobAndOneBackup(t *testing.T) {
 	lc, log, _, _, _, _, id := mkLifecycle(t)
 	ctx := context.Background()
+	// Force both requests past activeJobForSeat before either INSERT becomes
+	// visible.  Without this trigger the scheduler may serialize the two
+	// goroutines, letting the pre-check (rather than the partial unique index
+	// and ON CONFLICT path) make the test green.
+	if _, err := lc.st.exec(ctx, `
+CREATE FUNCTION g4_test_lifecycle_enqueue_delay() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  PERFORM pg_sleep(0.25);
+  RETURN NEW;
+END
+$$;
+CREATE TRIGGER g4_test_lifecycle_enqueue_delay
+BEFORE INSERT ON g4_lifecycle_job
+FOR EACH ROW EXECUTE FUNCTION g4_test_lifecycle_enqueue_delay()`); err != nil {
+		t.Fatal(err)
+	}
 	type result struct {
 		id  string
 		err error
