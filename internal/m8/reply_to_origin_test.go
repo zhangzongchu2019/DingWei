@@ -162,6 +162,79 @@ func TestReplyToOriginOtherSyncTargetDoesNotSuppressReturn(t *testing.T) {
 	}
 }
 
+func TestReplyToOriginGroupIsNotSuppressedBySenderPersonalSync(t *testing.T) {
+	h, db, ctx := newTestHub(t)
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	h.Outbound = outbound
+	h.mu.Lock()
+	h.botChannels["UnifiedRobot"] = "dev"
+	h.mu.Unlock()
+	// The owner has a personal sync subscription, but this turn originated in
+	// a group.  These are different Feishu conversations and must not de-dup.
+	h.addFeishuSyncTargetAndSnapshot("k1", "bee", feishuSyncTarget{
+		openID: "ou_sender", botChannelID: "dev", botName: "UnifiedRobot",
+	})
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-group-personal-sync", "msg-group-personal-sync",
+		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{
+			"type":                  "delivery",
+			"source_chat_type":      string(model.ChatGroup),
+			"source_chat_id":        "oc_group",
+			"source_sender_openid":  "ou_sender",
+			"source_open_id":        "ou_sender",
+			"source_bot_channel_id": "dev",
+		})
+	p := testAMRProcessor()
+	p.hub, p.routeEnvelope, p.routeTimeout = h, h.RouteEnvelope, 5*time.Second
+	p.replyToOrigin(amrRouteJob{key: key, body: "群回复正文"})
+
+	got := waitOutbound(t, ctx, outbound)
+	if got == nil || got.ChatEntityID != "dev:group:oc_group" || got.ChatType != model.ChatGroup {
+		t.Fatalf("group reply target = %+v, want dev:group:oc_group", got)
+	}
+	if text := messageText(t, got); !strings.HasPrefix(text, `<at user_id="ou_sender"></at> `) || !strings.Contains(text, "群回复正文") {
+		t.Fatalf("group reply mention/body = %q", text)
+	}
+	if p.stats.replyOriginRouted != 1 || p.stats.replyOriginSkipped != 0 {
+		t.Fatalf("group reply stats routed=%d skipped=%d", p.stats.replyOriginRouted, p.stats.replyOriginSkipped)
+	}
+	if duplicate := waitOutboundWithin(t, ctx, outbound, 200*time.Millisecond); duplicate != nil {
+		t.Fatalf("explicit group return duplicated: %+v", duplicate)
+	}
+}
+
+func TestReplyToOriginDefersToSameGroupSyncExactlyOnce(t *testing.T) {
+	h, db, ctx := newTestHub(t)
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	h.Outbound = outbound
+	h.mu.Lock()
+	h.botChannels["UnifiedRobot"] = "dev"
+	h.mu.Unlock()
+	target := feishuSyncTarget{openID: "oc_group", botChannelID: "dev", botName: "UnifiedRobot"}
+	h.addFeishuSyncTargetAndSnapshot("k1", "bee", target)
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-group-group-sync", "msg-group-group-sync",
+		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{
+			"type":                  "delivery",
+			"source_chat_type":      string(model.ChatGroup),
+			"source_chat_id":        "oc_group",
+			"source_sender_openid":  "ou_sender",
+			"source_bot_channel_id": "dev",
+		})
+	p := testAMRProcessor()
+	p.hub, p.routeEnvelope, p.routeTimeout = h, h.RouteEnvelope, 5*time.Second
+	p.replyToOrigin(amrRouteJob{key: key, body: "群回复正文"})
+	if p.stats.replyOriginSkipped != 1 || waitOutboundWithin(t, ctx, outbound, 100*time.Millisecond) != nil {
+		t.Fatal("same-group sync did not suppress explicit return")
+	}
+	h.queueFeishuSyncItem("k1", "bee", target, terminalSyncItem{TS: time.Now(), Text: "群回复正文"})
+	got := waitOutbound(t, ctx, outbound)
+	if got == nil || got.ChatEntityID != "dev:group:oc_group" {
+		t.Fatalf("same-group sync target = %+v", got)
+	}
+	if duplicate := waitOutboundWithin(t, ctx, outbound, 200*time.Millisecond); duplicate != nil {
+		t.Fatalf("same-group reply produced duplicate: %+v", duplicate)
+	}
+}
+
 // replyOriginFixture 造一条「A → B」的 durable 投递记录,返回 turn key。
 func replyOriginFixture(t *testing.T, h *Hub, ctx context.Context, deliveryID, sourceMessageID, from string, meta map[string]any) amrTurnKey {
 	t.Helper()
