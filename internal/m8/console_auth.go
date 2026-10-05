@@ -718,7 +718,8 @@ var CONSOLE_ERRORS={
 var HOSTED_FAIL_REASONS={
   queue_timeout:'排队超时（超过 10 分钟）',pull_timeout:'拉取镜像超时（超过 30 分钟）',start_timeout:'启动超时（超过 5 分钟）',
   image_pull_failed:'拉取镜像失败',start_failed:'启动失败',credential_inject_failed:'凭据写入失败',node_offline:'节点离线',
-  backup_failed:'销毁前备份数据卷失败，容器没有被删除',upgrade_failed_rolled_back:'升级失败，已自动回滚到原版本',invalid_state:'该 Agent 当前状态不允许这个操作'
+  backup_failed:'销毁前备份数据卷失败，容器没有被删除',upgrade_failed_rolled_back:'升级失败，已自动回滚到原版本',invalid_state:'该 Agent 当前状态不允许这个操作',
+  params_invalid:'提交的内容不完整或格式不对，请刷新页面后重试',not_owner:'这不是你名下的 Agent',confirm_required:'这个操作需要先确认',internal_error:'服务端出错了，请稍后再试'
 };
 function consoleErrorText(status,data){
   var code=data&&typeof data.error==='string'?data.error:'';
@@ -985,12 +986,11 @@ async function hostedTrackJob(jobId,name){
 // 页面在该 Agent 行里显示「<操作>中…」并轮询 GET jobs/{job_id}：failed ⇒ 失败（中文原因＋原因码）；终态 ⇒ 成功并刷新；其余阶段一律当「处理中」，不替 Hub 编阶段名。
 // 兼容：POST 若仍是同步成功（无 job_id），按旧口径直接刷新。进行中状态存在内存表里，行重绘（15 秒刷新、列表重取）不丢；单个 job 最多轮询 15 分钟。
 var HOSTED_OPS={upgrade:'升级',restart:'重启',disable:'停用',enable:'启用',destroy:'销毁'};
-var HOSTED_OP_STAGES={queued:'排队',pulling:'拉镜像',starting:'启动',running:'执行中',stopping:'停止中'};
-var HOSTED_OP_DONE=['done','succeeded','completed','online'];
+// 状态名与失败码以 A1 契约为准（runbooks/CONTRACT-R-V2-SEAT-A1-JOBVIEW-*.md）：lifecycle job 只有 queued／running／completed／failed 四态；restart／enable 的 running 含等 Agent 重连。
+var HOSTED_OP_RUNNING=['queued','running'],HOSTED_OP_UNKNOWN_MAX=5;   // 连续 5 次拿到契约之外的状态名 ⇒ 给可见提示并停止跟踪，不静默等满 15 分钟
 var hostedOpInflight={},HOSTED_OP_MAX_MS=15*60*1000;
 function hostedOpInflightText(inf){
-  var st=inf.stage&&inf.stage!=='queued'?'（'+(HOSTED_OP_STAGES[inf.stage]||inf.stage)+'）':'';
-  return HOSTED_OPS[inf.op]+'中…'+st;
+  return HOSTED_OPS[inf.op]+'中…'+(inf.stage==='queued'?'（排队）':'');
 }
 function hostedOpFail(inf,reason){
   return HOSTED_OPS[inf.op]+' '+inf.name+' 失败：'+(HOSTED_FAIL_REASONS[reason]||'操作未成功')+'（原因码 '+(reason||'未知')+'）';
@@ -1011,9 +1011,13 @@ function hostedOpTrack(a,op,jobId){
     }catch(err){inf.timer=setTimeout(tick,hostedPollMs);return;}   // 网络抖动：继续轮询，不当成失败
     if(hostedOpInflight[a.agent_id]!==inf)return;
     if(stage==='failed'){end();enrollFeedback('rosterFeedback',hostedOpFail(inf,reason));renderRoster();refreshRoster();return;}
-    if(HOSTED_OP_DONE.indexOf(stage)>=0){   // 成功终态只按 A1 契约判定（R-V2-SEAT-A1-JOBVIEW）：前端不猜、不替后端兜 busy／销毁的错
+    if(stage==='completed'){   // 成功终态只按 A1 契约判定：前端不猜、不替后端兜 busy／销毁的错
       end();enrollFeedback('rosterFeedback',HOSTED_OPS[op]+' '+inf.name+' 已完成');renderRoster();refreshRoster();refreshGroups('hosted-op');refreshAgents();return;
     }
+    if(HOSTED_OP_RUNNING.indexOf(stage)<0){
+      inf.unknown=(inf.unknown||0)+1;
+      if(inf.unknown>=HOSTED_OP_UNKNOWN_MAX){end();enrollFeedback('rosterFeedback',HOSTED_OPS[op]+' '+inf.name+'：收到无法识别的任务状态（'+(stage||'空')+'），请刷新页面查看结果');renderRoster();refreshRoster();return;}
+    }else inf.unknown=0;
     inf.stage=stage;renderRoster();inf.timer=setTimeout(tick,hostedPollMs);
   }
   tick();

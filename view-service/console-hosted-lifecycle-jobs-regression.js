@@ -25,14 +25,18 @@ const M = {
   'job-ignored': () => mutate('if(jobId){hostedOpTrack(a,d[0],jobId);return;}', ''),
   'no-inflight-lock': () => mutate("busy=hs.state==='busy'||!!hostedOpInflight[a.agent_id],list=[]", "busy=hs.state==='busy',list=[]"),
   'no-inflight-text': () => mutate('st.textContent=hostedOpInflight[a.agent_id]?hostedOpInflightText(hostedOpInflight[a.agent_id]):(hs?', 'st.textContent=(hs?'),
-  'no-stage-text': () => mutate("var st=inf.stage&&inf.stage!=='queued'?", "var st=false?"),
+  'no-queued-text': () => mutate("(inf.stage==='queued'?'（排队）':'')", "''"),
   'button-text-unchanged': () => mutate("hostedOpInflight[a.agent_id]&&hostedOpInflight[a.agent_id].op===d[0]?HOSTED_OPS[d[0]]+'中':d[1]", 'd[1]'),
   'button-text-all': () => mutate("hostedOpInflight[a.agent_id]&&hostedOpInflight[a.agent_id].op===d[0]?", 'hostedOpInflight[a.agent_id]?'),
   'fail-drops-code': () => mutate("'（原因码 '+(reason||'未知')+'）'", "''"),
   'fail-drops-reason-text': () => mutate("(HOSTED_FAIL_REASONS[reason]||'操作未成功')", "'操作未成功'"),
   'poll-error-is-failure': () => mutate('}catch(err){inf.timer=setTimeout(tick,hostedPollMs);return;}', "}catch(err){stage='failed';reason='x';}"),
   'sync-422-no-refetch': () => mutate("if(res.code==='invalid_state')refreshRoster();return;}", 'return;}'),
-  'destroy-success-shown-failed': () => mutate("if(HOSTED_OP_DONE.indexOf(stage)>=0){", "if(HOSTED_OP_DONE.indexOf(stage)>=0&&op!=='destroy'){"),
+  'destroy-success-shown-failed': () => mutate("if(stage==='completed'){", "if(stage==='completed'&&op!=='destroy'){"),
+  'unknown-stage-silent': () => mutate('if(inf.unknown>=HOSTED_OP_UNKNOWN_MAX){', 'if(false){'),
+  'online-counts-as-done': () => mutate("if(stage==='completed'){", "if(stage==='completed'||stage==='online'){"),
+  'reasons-missing-not-owner': () => mutate("not_owner:'这不是你名下的 Agent',confirm_required", 'confirm_required'),
+  'reasons-missing-internal': () => mutate(",internal_error:'服务端出错了，请稍后再试'\n};", '\n};'),
   'poll-no-cap': () => mutate('if(Date.now()-inf.started>HOSTED_OP_MAX_MS){', 'if(false){'),
   'reasons-missing-backup': () => mutate("backup_failed:'销毁前备份数据卷失败，容器没有被删除',", ''),
   'reasons-missing-rollback': () => mutate("容器没有被删除',upgrade_failed_rolled_back:'升级失败，已自动回滚到原版本',invalid_state", "容器没有被删除',invalid_state"),
@@ -45,10 +49,10 @@ const G = 'A'.repeat(32);
 let rows;
 function reset() {
   rows = {};
-  for (const n of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf']) rows[n] = { id: `ag-${n}`, state: 'running', upgradable: true, online: true };
+  for (const n of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'kilo', 'lima']) rows[n] = { id: `ag-${n}`, state: 'running', upgradable: true, online: true };
 }
 reset();
-const jobs = {}; let jobSeq = 0; const writes = []; const getCounts = { agents: 0 }; const polls = {}; let pollFail = 0;
+const jobs = {}; let jobSeq = 0; const writes = []; const getCounts = { agents: 0 }; const polls = {}; let pollFail = 0; let nextReason = '';
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
 function read(req) { return new Promise((r) => { let b = ''; req.on('data', (c) => { b += c; }); req.on('end', () => r(b ? JSON.parse(b) : {})); }); }
 // 每个 job 一份剧本：逐次轮询取下一步，最后一步停住；步里的 fn 在被取到时改桩状态
@@ -83,15 +87,19 @@ const server = http.createServer(async (req, res) => {
     let steps;
     if (name === 'alpha') {   // 重启
       r.state = 'busy';   // 终态名按 A1 契约（待板件）；这里先用 done 占位
-      steps = [finish('queued'), finish('starting'), finish('done', '', () => { r.state = 'running'; })];
+      steps = [finish('queued'), finish('running'), finish('running'), finish('completed', '', () => { r.state = 'running'; })];   // 契约：restart/enable 的 running 含等 Agent 重连
     } else if (name === 'charlie') {   // 升级失败回滚
       r.state = 'busy'; steps = [finish('queued'), finish('failed', 'upgrade_failed_rolled_back', () => { r.state = 'running'; })];
     } else if (name === 'delta') {   // 销毁：备份失败，行还在
       steps = [finish('queued'), finish('failed', 'backup_failed')];
     } else if (name === 'echo') {   // 销毁成功：A1 契约＝job 成功（不得报 failed），行没了
-      steps = [finish('queued'), finish('done', '', () => { delete rows.echo; })];
+      steps = [finish('queued'), finish('running'), finish('completed', '', () => { delete rows.echo; })];
     } else if (name === 'foxtrot') {   // 永远处理中
-      steps = [finish('pulling')];
+      steps = [finish('running')];
+    } else if (name === 'kilo') {   // 契约十个失败码逐个出
+      steps = [finish('queued'), finish('failed', nextReason)];
+    } else if (name === 'lima') {   // 契约之外的状态名（含旧词 online/done）：永远不是成功
+      steps = [finish('queued'), finish('online')];
     } else steps = [finish('failed', 'start_failed')];
     return json(res, 202, { job_id: newJob(steps) });
   }
@@ -129,7 +137,8 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.deepStrictEqual(await opsDisabled('alpha'), [true, true, true, true], 'buttons locked while in flight');
       assert.strictEqual(await row('alpha').locator('[data-op="restart"]').textContent(), '重启中', 'the clicked button reads 重启中');
       assert.strictEqual(await row('alpha').locator('[data-op="upgrade"]').textContent(), '升级', 'other buttons keep their words');
-      await waitStatus('alpha', /^重启中…（启动）/);   // 阶段随轮询变
+      await waitStatus('alpha', /^重启中…（排队）/);
+      await waitStatus('alpha', /^重启中…$/);   // queued 显示（排队），running 起不带阶段词
       await waitFeedback(/重启 alpha 已完成/);
       assert.match(await stText('alpha').textContent(), /^运行中/);
       assert.deepStrictEqual(await opsDisabled('alpha'), [false, false, false, false], 'buttons back after completion');
@@ -149,6 +158,33 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await waitFeedback(/销毁 delta 失败：销毁前备份数据卷失败，容器没有被删除（原因码 backup_failed）/);
       assert.strictEqual(await row('delta').count(), 1);
       assert.deepStrictEqual(writes.at(-1), { path: '/api/console/hosted/agents/ag-delta/destroy', body: { confirm: true } });
+    });
+
+    await test('every failure code of the A1 contract (ten) shows its own Chinese wording and the code; none falls back to the generic line', async () => {
+      const codes = { invalid_state: /当前状态不允许/, node_offline: /节点离线/, start_failed: /启动失败/, start_timeout: /启动超时/, upgrade_failed_rolled_back: /自动回滚/, backup_failed: /备份数据卷失败/, params_invalid: /不完整或格式不对/, not_owner: /不是你名下/, confirm_required: /需要先确认/, internal_error: /服务端出错/ };
+      for (const [code, re] of Object.entries(codes)) {
+        nextReason = code;
+        await page.evaluate(() => { document.getElementById('rosterFeedback').textContent = ''; });
+        await row('kilo').locator('[data-op="restart"]').click();
+        await waitFeedback(new RegExp(`原因码 ${code}`));
+        const t = await feedback().textContent();
+        assert.match(t, re, `${code}: ${t}`); assert.doesNotMatch(t, /操作未成功/, `${code} fell back to the generic line`);
+        assert.match(t, /^重启 kilo 失败：/);
+      }
+    });
+
+    await test('a failure code outside the contract falls back to the generic line but still shows the raw code', async () => {
+      nextReason = 'something_new';
+      await row('kilo').locator('[data-op="restart"]').click();
+      await waitFeedback(/重启 kilo 失败：操作未成功（原因码 something_new）/);
+    });
+
+    await test('a stage name outside the contract (even the old words online/done) is never success: after 5 polls the page says so visibly and stops spinning', async () => {
+      await page.evaluate(() => { document.getElementById('rosterFeedback').textContent = ''; });
+      await row('lima').locator('[data-op="restart"]').click();
+      await waitFeedback(/重启 lima：收到无法识别的任务状态（online），请刷新页面查看结果/);
+      assert.doesNotMatch(await feedback().textContent(), /已完成/);
+      assert.deepStrictEqual(await opsDisabled('lima'), [false, false, false, false]);
     });
 
     await test('destroy: the job succeeds (A1 contract) ⇒ 已完成, the row is gone, never a failure text', async () => {
@@ -173,9 +209,9 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await test('in-flight state survives a roster re-render (list refetch) and keeps the buttons locked', async () => {
       await page.evaluate(() => { HOSTED_OP_MAX_MS = 900; });
       await row('foxtrot').locator('[data-op="restart"]').click();
-      await waitStatus('foxtrot', /^重启中…（拉镜像）/);
+      await waitStatus('foxtrot', /^重启中…$/);
       await page.evaluate(() => refreshRoster()); await page.waitForTimeout(100);
-      assert.match(await stText('foxtrot').textContent(), /^重启中…（拉镜像）/);
+      assert.match(await stText('foxtrot').textContent(), /^重启中…$/);
       assert.deepStrictEqual(await opsDisabled('foxtrot'), [true, true, true, true]);
     });
 
