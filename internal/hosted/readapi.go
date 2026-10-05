@@ -152,10 +152,11 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 
 // ---------- jobs 进度（GET /api/console/hosted/jobs/{job_id}） ----------
 
-// JobView 进度蒙版读面（契约第一节）：stage＋失败机器码 reason；agent_id 仅 online 时给。
+// JobView 进度蒙版读面（契约第一节）：stage＋失败机器码 reason；创建完成为 online，
+// 生命周期完成为 completed；agent_id 仅完成时给。
 // 无 cancelled——排队不可取消、无取消端点。
 type JobView struct {
-	Stage   string `json:"stage"` // queued|pulling|starting|online|failed
+	Stage   string `json:"stage"` // queued|pulling|starting|running|online|completed|failed
 	Reason  string `json:"reason,omitempty"`
 	AgentID string `json:"agent_id,omitempty"`
 	Model   string `json:"model,omitempty"` // 包 B2 修订 3：席位生效模型（空＝节点默认，键缺席——旧客户端与既有精确体测试不受影响）

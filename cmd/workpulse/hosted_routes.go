@@ -185,7 +185,11 @@ func (d hostedDeps) handleJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 归属按席位 created_by（含 Agent 已吊销的失败任务），不走身份侧 ownsAgent —— 见 JobProgressFor。
-	jv, err := d.orch.JobProgressFor(r.Context(), r.PathValue("jobID"), actor)
+	jobID := r.PathValue("jobID")
+	jv, err := d.life.JobProgressFor(r.Context(), jobID, actor)
+	if errors.Is(err, hosted.ErrNotFound) {
+		jv, err = d.orch.JobProgressFor(r.Context(), jobID, actor)
+	}
 	if err != nil {
 		writeHostedError(w, err)
 		return
@@ -199,6 +203,10 @@ func (d hostedDeps) handleLifecycle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	agentID, op := r.PathValue("agentID"), r.PathValue("op")
+	if op != "upgrade" && op != "restart" && op != "disable" && op != "enable" && op != "destroy" {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "invalid_state"})
+		return
+	}
 	if !d.ownsAgent(r, actor, agentID) {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "not_owner"})
 		return
@@ -208,27 +216,15 @@ func (d hostedDeps) handleLifecycle(w http.ResponseWriter, r *http.Request) {
 		Version string `json:"version"`
 	}
 	_ = json.NewDecoder(r.Body).Decode(&body) // 空体合法（upgrade/restart/enable 无参）
-	var lerr error
-	switch op {
-	case "upgrade":
-		lerr = d.life.Upgrade(r.Context(), agentID, actor, body.Version, false)
-	case "restart":
-		lerr = d.life.Restart(r.Context(), agentID, actor, false)
-	case "disable":
-		lerr = d.life.Disable(r.Context(), agentID, actor, false, body.Confirm)
-	case "enable":
-		lerr = d.life.Enable(r.Context(), agentID, actor, false)
-	case "destroy":
-		lerr = d.life.Destroy(r.Context(), agentID, actor, false, body.Confirm)
-	default:
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "invalid_state"})
+	jobID, err := d.life.EnqueueJob(r.Context(), hosted.LifecycleJobRequest{
+		AgentID: agentID, Actor: actor, Op: op, Version: body.Version, Confirm: body.Confirm,
+	})
+	if err != nil {
+		writeHostedError(w, err)
 		return
 	}
-	if lerr != nil {
-		writeHostedError(w, lerr)
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]string{"state": "ok"})
+	go d.life.RunJob(context.Background(), jobID)
+	writeJSON(w, http.StatusAccepted, map[string]string{"job_id": jobID})
 }
 
 func (d hostedDeps) handleQuotaList(w http.ResponseWriter, r *http.Request) {

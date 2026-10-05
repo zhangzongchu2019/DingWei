@@ -94,6 +94,22 @@ class ProductionRendererTest(unittest.TestCase):
             handler._serve_status()
         handler.send_error.assert_called_once_with(400, "session required")
 
+    def test_events_disables_reverse_proxy_buffering(self):
+        handler = object.__new__(vs._Handler)
+        handler.path = "/events"
+        handler.headers = {"X-DW-Session": "zzc-tester-2642"}
+        handler.wfile = io.BytesIO()
+        handler.send_response = mock.Mock()
+        handler.send_header = mock.Mock()
+        handler.end_headers = mock.Mock()
+        response = mock.Mock()
+        response.readline.return_value = b""
+        conn = mock.Mock()
+        conn.getresponse.return_value = response
+        with mock.patch.object(vs, "_ensure_ready"), mock.patch.object(vs.http.client, "HTTPConnection", return_value=conn):
+            handler._serve_events()
+        handler.send_header.assert_any_call("X-Accel-Buffering", "no")
+
     def _render_for_public_base(self, public_base):
         handler = object.__new__(vs._Handler)
         handler.headers = {"X-DW-Session": "zzc-tester-2642"}

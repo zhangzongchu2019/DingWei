@@ -96,14 +96,29 @@ func (g *lcGw) Send(ctx context.Context, nodeID string, c NodeCommand) (NodeResu
 type lcBk struct {
 	log    *evLog
 	failOn bool
+	ctxErr error
 }
 
 func (b *lcBk) BackupSeatVolume(ctx context.Context, nodeID, seatID string) (string, error) {
 	b.log.add("backup")
+	b.ctxErr = ctx.Err()
 	if b.failOn {
 		return "", errors.New("injected backup")
 	}
 	return "bk://" + nodeID + "/" + seatID + "/v1", nil
+}
+
+type cancellingLifecycleGateway struct {
+	inner  *lcGw
+	cancel context.CancelFunc
+}
+
+func (g *cancellingLifecycleGateway) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
+	res, err := g.inner.Send(ctx, nodeID, cmd)
+	if cmd.Type == "stop_seat" {
+		g.cancel() // model the browser disconnecting after cleanup has begun
+	}
+	return res, err
 }
 
 // mkLifecycle 建在线席位＋全日志假件（创建期的节点指令清零后再进用例）。
@@ -142,6 +157,225 @@ func eqSeq(t *testing.T, name string, got, want []string) {
 }
 
 const newerImage = "hub.local/dingwei/base-codex@sha256:" + "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+
+func TestDestroyCleanupSurvivesClientCancellation(t *testing.T) {
+	lc, _, _, gw, bk, st, id := mkLifecycle(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	lc.gw = &cancellingLifecycleGateway{inner: gw, cancel: cancel}
+	if err := lc.Destroy(ctx, id, "zzc", false, true); err != nil {
+		t.Fatalf("destroy after client cancellation: %v", err)
+	}
+	if bk.ctxErr != nil {
+		t.Fatalf("backup inherited client cancellation: %v", bk.ctxErr)
+	}
+	seat, err := st.GetSeat(context.Background(), id)
+	if err != nil || seat.State != "destroyed" {
+		t.Fatalf("cleanup did not finish: seat=%+v err=%v", seat, err)
+	}
+}
+
+func TestLifecycleJobPersistsProgressAndMachineReason(t *testing.T) {
+	ctx := context.Background()
+	t.Run("completed", func(t *testing.T) {
+		lc, _, _, _, _, _, id := mkLifecycle(t)
+		jobID, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "disable", Confirm: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		lc.RunJob(ctx, jobID)
+		got, err := lc.JobProgressFor(ctx, jobID, "zzc")
+		if err != nil || got.Stage != "completed" || got.AgentID != id || got.Reason != "" {
+			t.Fatalf("completed job = %+v err=%v", got, err)
+		}
+	})
+	t.Run("failed", func(t *testing.T) {
+		lc, _, _, gw, _, _, id := mkLifecycle(t)
+		gw.downOn = "stop_seat"
+		jobID, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "disable", Confirm: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		lc.RunJob(ctx, jobID)
+		got, err := lc.JobProgressFor(ctx, jobID, "zzc")
+		if err != nil || got.Stage != "failed" || got.Reason != "node_offline" {
+			t.Fatalf("failed job = %+v err=%v", got, err)
+		}
+	})
+	t.Run("restart waits for reconnect", func(t *testing.T) {
+		lc, _, _, _, _, st, id := mkLifecycle(t)
+		jobID, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "restart"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		lc.RunJob(ctx, jobID)
+		got, err := lc.JobProgressFor(ctx, jobID, "zzc")
+		if err != nil || got.Stage != "running" {
+			t.Fatalf("pre-reconnect job = %+v err=%v", got, err)
+		}
+		if err := st.SetSeatState(ctx, id, "online", "", "online", nil); err != nil {
+			t.Fatal(err)
+		}
+		got, err = lc.JobProgressFor(ctx, jobID, "zzc")
+		if err != nil || got.Stage != "completed" || got.AgentID != id {
+			t.Fatalf("post-reconnect job = %+v err=%v", got, err)
+		}
+	})
+}
+
+func TestLifecycleJobDuplicatePolicy(t *testing.T) {
+	lc, _, _, _, _, _, id := mkLifecycle(t)
+	ctx := context.Background()
+	first, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "disable", Confirm: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "disable", Confirm: true})
+	if err != nil || second != first {
+		t.Fatalf("same operation retry = %q err=%v, want existing %q", second, err, first)
+	}
+	if _, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "restart"}); !errors.Is(err, ErrInvalidState) {
+		t.Fatalf("different active operation must be rejected: %v", err)
+	}
+}
+
+func TestConcurrentDestroyRequestsShareOneJobAndOneBackup(t *testing.T) {
+	lc, log, _, _, _, _, id := mkLifecycle(t)
+	ctx := context.Background()
+	// Force both requests past activeJobForSeat before either INSERT becomes
+	// visible.  Without this trigger the scheduler may serialize the two
+	// goroutines, letting the pre-check (rather than the partial unique index
+	// and ON CONFLICT path) make the test green.
+	if _, err := lc.st.exec(ctx, `
+CREATE FUNCTION g4_test_lifecycle_enqueue_delay() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  PERFORM pg_sleep(0.25);
+  RETURN NEW;
+END
+$$;
+CREATE TRIGGER g4_test_lifecycle_enqueue_delay
+BEFORE INSERT ON g4_lifecycle_job
+FOR EACH ROW EXECUTE FUNCTION g4_test_lifecycle_enqueue_delay()`); err != nil {
+		t.Fatal(err)
+	}
+	type result struct {
+		id  string
+		err error
+	}
+	results := make(chan result, 2)
+	start := make(chan struct{})
+	for i := 0; i < 2; i++ {
+		go func() {
+			<-start
+			jobID, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "destroy", Confirm: true})
+			results <- result{jobID, err}
+		}()
+	}
+	close(start)
+	a, b := <-results, <-results
+	if a.err != nil || b.err != nil || a.id == "" || a.id != b.id {
+		t.Fatalf("concurrent destroy enqueue: a=%+v b=%+v", a, b)
+	}
+	var wg sync.WaitGroup
+	wg.Add(2)
+	for i := 0; i < 2; i++ {
+		go func() { defer wg.Done(); lc.RunJob(ctx, a.id) }()
+	}
+	wg.Wait()
+	backups := 0
+	for _, event := range log.get() {
+		if event == "backup" {
+			backups++
+		}
+	}
+	if backups != 1 {
+		t.Fatalf("concurrent destroy ran %d backups, want exactly one; events=%v", backups, log.get())
+	}
+}
+
+func TestLifecycleJobRecoveryLeavesNoActiveRows(t *testing.T) {
+	ctx := context.Background()
+	for _, tc := range []struct {
+		name, op, initialStage, wantStage, wantReason string
+		prepare                                       func(*Lifecycle, string)
+	}{
+		{"queued restart already online", "restart", "queued", "completed", "", nil},
+		{"running enable already online", "enable", "running", "completed", "", func(lc *Lifecycle, id string) {
+			_ = lc.st.SetSeatState(ctx, id, "disabled", "", "disable", nil)
+		}},
+		{"ambiguous queued disable", "disable", "queued", "failed", "internal_error", nil},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			lc, _, _, _, _, _, id := mkLifecycle(t)
+			if tc.prepare != nil {
+				tc.prepare(lc, id)
+			}
+			jobID, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: tc.op, Confirm: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.initialStage == "running" {
+				if _, err := lc.st.exec(ctx, `UPDATE g4_lifecycle_job SET stage='running' WHERE id=$1`, jobID); err != nil {
+					t.Fatal(err)
+				}
+				if err := lc.st.SetSeatState(ctx, id, "online", "", "online", nil); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := lc.RecoverJobs(ctx); err != nil {
+				t.Fatal(err)
+			}
+			got, err := lc.JobProgressFor(ctx, jobID, "zzc")
+			if err != nil || got.Stage != tc.wantStage || got.Reason != tc.wantReason {
+				t.Fatalf("recovered job=%+v err=%v, want stage=%s reason=%s", got, err, tc.wantStage, tc.wantReason)
+			}
+			var active int
+			row, err := lc.st.qrow(ctx, `SELECT count(*) FROM g4_lifecycle_job WHERE stage IN ('queued','running')`)
+			if err != nil || row.Scan(&active) != nil || active != 0 {
+				t.Fatalf("active lifecycle jobs after recovery=%d err=%v", active, err)
+			}
+		})
+	}
+}
+
+func TestDestroyCanBeRetriedAfterHubDiesMidJob(t *testing.T) {
+	lc, log, _, _, _, _, id := mkLifecycle(t)
+	ctx := context.Background()
+	deadJob, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "destroy", Confirm: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Model the persisted state after the worker claimed the job and the Hub
+	// died before it could record a terminal result.
+	if _, err := lc.st.exec(ctx, `UPDATE g4_lifecycle_job SET stage='running' WHERE id=$1`, deadJob); err != nil {
+		t.Fatal(err)
+	}
+	if err := lc.RecoverJobs(ctx); err != nil {
+		t.Fatal(err)
+	}
+	dead, err := lc.JobProgressFor(ctx, deadJob, "zzc")
+	if err != nil || dead.Stage != "failed" || dead.Reason != "internal_error" {
+		t.Fatalf("dead job not released: %+v err=%v", dead, err)
+	}
+	retry, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "destroy", Confirm: true})
+	if err != nil || retry == deadJob {
+		t.Fatalf("destroy retry id=%q err=%v, old=%q", retry, err, deadJob)
+	}
+	lc.RunJob(ctx, retry)
+	got, err := lc.JobProgressFor(ctx, retry, "zzc")
+	if err != nil || got.Stage != "completed" {
+		t.Fatalf("destroy retry did not complete: %+v err=%v", got, err)
+	}
+	backups := 0
+	for _, event := range log.get() {
+		if event == "backup" {
+			backups++
+		}
+	}
+	if backups != 1 {
+		t.Fatalf("retry backup count=%d, want one: %v", backups, log.get())
+	}
+}
 
 // 四操作＋重启的跨系统先后：同一条日志逐项等于预期（复验 L1/L2/L3/L4/L5 删闸对应）。
 func TestLifecycleOrderOnOneLog(t *testing.T) {

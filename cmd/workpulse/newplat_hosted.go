@@ -71,6 +71,9 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 		}
 	}()
 	life := hosted.NewLifecycle(hst, poolSvc, idp, idp, gate, images, backups)
+	if err := life.RecoverJobs(ctx); err != nil {
+		return false, err
+	}
 	gate.OnConnect = orch.ReconcileNode // 节点重连对账（离线销毁补清——组长 7fabddb0 ⑤）
 
 	mux.HandleFunc("GET /api/node/connect", gate.Handler().ServeHTTP) // 节点代理拨入（Bearer 节点凭据）

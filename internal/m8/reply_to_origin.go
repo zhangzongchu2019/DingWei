@@ -119,6 +119,11 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 	} else {
 		env.Meta[metaKeyConversationID] = delivery.SourceMessageID
 	}
+	if p.hub.hasFeishuSyncOrMirror(ctx, job.key.KeyID, job.key.Session, origin) {
+		p.bumpReplyOrigin(&p.stats.replyOriginSkipped)
+		log.Printf("[reply-origin] 已由同步送达，跳过回程 session=%s to=%s delivery_id=%s", job.key.Session, origin, job.key.DeliveryID)
+		return
+	}
 
 	// 用可注入的 p.routeEnvelope(构造时 = h.RouteEnvelope),与 @提及 路由同一个出口 ——
 	// 测试据此捕获真实投出去的信封,而不是另造一个假出口。

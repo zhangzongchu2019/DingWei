@@ -36,6 +36,11 @@ import (
 // BackupTTL 备份保留期（业主 8971bddf：14 天到期删除）。
 const BackupTTL = 14 * 24 * time.Hour
 
+// PendingBackupTTL is deliberately longer than the 15 minute export command
+// timeout.  A pending row older than this cannot belong to a healthy in-flight
+// export and is safe for the periodic sweeper to reclaim.
+const PendingBackupTTL = time.Hour
+
 // BackupSHA256Trailer 节点回传流的 sha256（hex），随 HTTP 请求 trailer 送来（与 nodeagent 同名）。
 // 🔴 丙案后它只是旁证：到了就与落盘自算对一遍（不符即拒），不到不挡路（反代会丢）。
 const BackupSHA256Trailer = "X-Backup-Sha256"
@@ -274,6 +279,16 @@ func verifyTarGz(path string) error {
 
 // SweepExpiredBackups 到期删除（14 天）：删文件＋置 expired。由 Hub 侧周期任务驱动。
 func (b *HubBackuper) SweepExpiredBackups(ctx context.Context, now time.Time) error {
+	stale, err := b.st.ListStalePendingBackups(ctx, now.Add(-PendingBackupTTL))
+	if err != nil {
+		return err
+	}
+	for _, bk := range stale {
+		if err := b.st.FailBackup(ctx, bk.ID); err != nil {
+			return err
+		}
+		b.forget(bk.ID)
+	}
 	expired, err := b.st.ListExpiredBackups(ctx, now)
 	if err != nil {
 		return err
@@ -346,6 +361,23 @@ func (s *Store) CompleteBackup(ctx context.Context, id string, size int64) error
 
 func (s *Store) ListExpiredBackups(ctx context.Context, now time.Time) ([]Backup, error) {
 	rows, err := s.pool.Query(ctx, htx(), `SELECT id, path FROM g4_backup WHERE state='complete' AND expires_at<$1`, now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Backup
+	for rows.Next() {
+		var bk Backup
+		if err := rows.Scan(&bk.ID, &bk.Path); err != nil {
+			return nil, err
+		}
+		out = append(out, bk)
+	}
+	return out, rows.Err()
+}
+
+func (s *Store) ListStalePendingBackups(ctx context.Context, before time.Time) ([]Backup, error) {
+	rows, err := s.query(ctx, `SELECT id, path FROM g4_backup WHERE state='pending' AND created_at<$1`, before)
 	if err != nil {
 		return nil, err
 	}

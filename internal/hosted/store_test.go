@@ -51,9 +51,9 @@ func TestSchemaApplyRollbackRepeatable(t *testing.T) {
 	}
 }
 
-// TestSchemaDropLeavesNoG4Tables：DropSchema 必须把 g4_ 十表全拆净
+// TestSchemaDropLeavesNoG4Tables：DropSchema 必须把 g4_ 十一表全拆净
 // （R-V2-DEPLOY-ARTIFACTS 甲案：DropDDL 曾漏拆 g4_backup——反向：从 DropDDL 去掉
-// g4_backup ⇒ 本格红）。apply→drop→apply 全链后核两端：建后十表齐、拆后零残留。
+// g4_backup ⇒ 本格红）。apply→drop→apply 全链后核两端：建后十一表齐、拆后零残留。
 func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
 	pool := testpool(t)
 	ctx := context.Background()
@@ -74,8 +74,8 @@ func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
 		}
 		return n
 	}
-	if n := countG4(); n != 10 {
-		t.Fatalf("建后应有十张 g4_ 表，实得 %d", n)
+	if n := countG4(); n != 11 {
+		t.Fatalf("建后应有十一张 g4_ 表，实得 %d", n)
 	}
 	if err := s.DropSchema(ctx); err != nil {
 		t.Fatalf("drop: %v", err)
@@ -86,8 +86,40 @@ func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
 	if err := s.ApplySchema(ctx); err != nil { // 拆净后重建须绿
 		t.Fatalf("重建: %v", err)
 	}
-	if n := countG4(); n != 10 {
-		t.Fatalf("重建后应有十张 g4_ 表，实得 %d", n)
+	if n := countG4(); n != 11 {
+		t.Fatalf("重建后应有十一张 g4_ 表，实得 %d", n)
+	}
+}
+
+func TestApplySchemaUpgradesOldHostedShapeWithoutLosingSeats(t *testing.T) {
+	pool := testpool(t)
+	ctx := context.Background()
+	s := NewStore(pool)
+	if err := s.ApplySchema(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.exec(ctx, `INSERT INTO g4_node(id,name) VALUES('nd_old','old') ON CONFLICT DO NOTHING`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.exec(ctx, `INSERT INTO g4_hosted_seat(agent_id,node_id,cli,llm,cred_kind,plan,created_by)
+VALUES('ag_old','nd_old','codex','gpt','token_file','2c4g','zzc') ON CONFLICT DO NOTHING`); err != nil {
+		t.Fatal(err)
+	}
+	// This is the deployed pre-A1 shape: all existing hosted data remains, but
+	// the lifecycle-job table/index do not exist yet.
+	if _, err := s.exec(ctx, `DROP TABLE g4_lifecycle_job`); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.ApplySchema(ctx); err != nil {
+		t.Fatalf("upgrade old hosted shape: %v", err)
+	}
+	if seat, err := s.GetSeat(ctx, "ag_old"); err != nil || seat.CreatedBy != "zzc" {
+		t.Fatalf("old seat was not preserved: %+v err=%v", seat, err)
+	}
+	var exists bool
+	row, err := s.qrow(ctx, `SELECT to_regclass('g4_lifecycle_job') IS NOT NULL`)
+	if err != nil || row.Scan(&exists) != nil || !exists {
+		t.Fatalf("lifecycle job table missing after upgrade: exists=%t err=%v", exists, err)
 	}
 }
 

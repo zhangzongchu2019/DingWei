@@ -6763,6 +6763,9 @@ func TestInternalViewEventsReplaysOnSubscribe(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("online: got %d, want 200", resp.StatusCode)
 	}
+	if got := resp.Header.Get("X-Accel-Buffering"); got != "no" {
+		t.Fatalf("SSE X-Accel-Buffering = %q, want no", got)
+	}
 	buf := make([]byte, 0, 512)
 	tmp := make([]byte, 256)
 	deadline := time.Now().Add(envelopeReadTimeout)
@@ -7068,6 +7071,55 @@ func TestViewRoutingPrecedenceAndFallback(t *testing.T) {
 	if b := get("dead-one-3dd6"); strings.Contains(b, "VIEWSVC") || !strings.Contains(b, "<!doctype") {
 		t.Fatalf("unreachable target should fall back to legacy: %q", head(b))
 	}
+}
+
+func TestViewBackgroundTasksNeverReturns404(t *testing.T) {
+	t.Run("existing 095 data source", func(t *testing.T) {
+		hub, _, _ := newTestHub(t)
+		requests := 0
+		stub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requests++
+			if r.URL.Path != "/tasks" {
+				t.Fatalf("view-service path=%q, want /tasks", r.URL.Path)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			if requests == 1 {
+				_, _ = io.WriteString(w, `{"project":"p","tasks":[{"id":"t1"}]}`)
+				return
+			}
+			_, _ = io.WriteString(w, `{"project":"","tasks":[]}`)
+		}))
+		defer stub.Close()
+		cfg := `{"default":"v2","targets":{"v2":{"url":"` + stub.URL + `"}}}`
+		path := t.TempDir() + "/routing.json"
+		if err := os.WriteFile(path, []byte(cfg), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("VIEW_ROUTING_CONFIG", path)
+		resetViewRoutingCacheForTest()
+		defer resetViewRoutingCacheForTest()
+		rr := httptest.NewRecorder()
+		hub.HandleViewTasks(rr, httptest.NewRequest(http.MethodGet, "/tasks", nil))
+		if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"id":"t1"`) {
+			t.Fatalf("configured /tasks = %d %s", rr.Code, rr.Body.String())
+		}
+		rr = httptest.NewRecorder()
+		hub.HandleViewTasks(rr, httptest.NewRequest(http.MethodGet, "/tasks", nil))
+		if rr.Code != http.StatusOK || strings.TrimSpace(rr.Body.String()) != `{"tasks":[]}` {
+			t.Fatalf("unconfigured production view-service snapshot = %d %s", rr.Code, rr.Body.String())
+		}
+	})
+	t.Run("fail closed empty snapshot", func(t *testing.T) {
+		hub, _, _ := newTestHub(t)
+		t.Setenv("VIEW_ROUTING_CONFIG", "")
+		resetViewRoutingCacheForTest()
+		defer resetViewRoutingCacheForTest()
+		rr := httptest.NewRecorder()
+		hub.HandleViewTasks(rr, httptest.NewRequest(http.MethodGet, "/tasks", nil))
+		if rr.Code != http.StatusOK || strings.TrimSpace(rr.Body.String()) != `{"tasks":[]}` {
+			t.Fatalf("fallback /tasks = %d %s", rr.Code, rr.Body.String())
+		}
+	})
 }
 
 // 离线全链路集成(feat/view-service-dock C1..C5):真 WS 会话发 session_event(C5)
