@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
@@ -127,8 +128,10 @@ func TestHostedReissueTakeKicksOldConnection(t *testing.T) {
 	select {
 	case err := <-closed:
 		var ce websocket.CloseError
-		if !errorsAsClose(err, &ce) || ce.Code != StatusCredentialRevoked || ce.Reason != "credential_revoked" {
-			t.Fatalf("old connection close: %v, want 4401 credential_revoked", err)
+		// 轮换只断不删（R-V2-UPGRADE-CRED-FIX）：原因必须是 credential_suspended——客户端收 credential_revoked 会删本地凭据，
+		// 而托管升级新旧容器共用 /work，删掉的是新容器刚写下的新凭据。
+		if !errorsAsClose(err, &ce) || ce.Code != StatusCredentialRevoked || ce.Reason != "credential_suspended" {
+			t.Fatalf("old connection close: %v, want 4401 credential_suspended", err)
 		}
 	case <-time.After(time.Second):
 		t.Fatal("old connection still up after the new credential was taken")
@@ -141,5 +144,50 @@ func TestHostedReissueTakeKicksOldConnection(t *testing.T) {
 	waitSessionOnline(t, e.hub, "u_zzc", "codex2")
 	if _, st, body := e.dial(p1.Credential, ""); st != 401 || body != `{"error":"credential_invalid"}` {
 		t.Fatalf("old credential after rotation: %d %s", st, body)
+	}
+	// 轮换不改身份状态：Agent 仍 active（关闭帧里的 suspended 只是给客户端的处置提示，不是暂停）
+	if ag, err := e.svc.Store.GetAgent(e.ctx, hi.Agent.ID); err != nil || ag.State != identity.AgentActive {
+		t.Fatalf("agent after rotation: %+v %v, want active", ag, err)
+	}
+}
+
+// 真吊销（销毁席位 Retire）语义不变：在线连接仍以 4401＋credential_revoked 断开（客户端据此删本地凭据）。
+// 与上一格成对：轮换改了原因，吊销不得跟着改。
+func TestHostedRetireStillKicksWithRevoked(t *testing.T) {
+	e := newAgentEnv(t)
+	hi, err := e.svc.IssueHostedAgentWithNewGroup(e.ctx, "zzc", "Codex3", tg(), "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p1, err := e.svc.Poll(e.ctx, hi.Token.ApplicationID, hi.Token.PollToken)
+	if err != nil || p1.Credential == "" {
+		t.Fatalf("poll: %+v %v", p1, err)
+	}
+	c, st, body := e.dial(p1.Credential, "")
+	if c == nil {
+		t.Fatalf("dial: %d %s", st, body)
+	}
+	defer c.CloseNow()
+	closed := make(chan error, 1)
+	go func() {
+		for {
+			if _, _, err := c.Read(context.Background()); err != nil {
+				closed <- err
+				return
+			}
+		}
+	}()
+	waitSessionOnline(t, e.hub, "u_zzc", "codex3")
+	if _, err := e.svc.RetireHostedAgent(e.ctx, hi.Agent.ID, "g4"); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case err := <-closed:
+		var ce websocket.CloseError
+		if !errorsAsClose(err, &ce) || ce.Code != StatusCredentialRevoked || ce.Reason != "credential_revoked" {
+			t.Fatalf("retire close: %v, want 4401 credential_revoked", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("connection still up after retire")
 	}
 }

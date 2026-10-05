@@ -118,6 +118,23 @@ func (h *Hub) DisconnectAgent(agentID string) {
 	h.disconnectAgentSession(AgentKeyID(ag.OwnerLC), ag.NameLC(), reason)
 }
 
+// DisconnectAgentRotated 凭据轮换（新凭据被取走、旧凭据随之作废）后由 identity.Service.OnCredentialIssued 调用：
+// 在线则以 4401＋credential_suspended 断开旧连接——客户端只退出、不删本地凭据。
+// 🔴 不能用 DisconnectAgent：它对 active 的 Agent 给 credential_revoked，客户端会 revoke_local 删凭据文件；
+// 托管升级时新旧容器共用同一个 /work（状态目录同一路径），旧 helper 删掉的正是新 helper 刚写下的新凭据，
+// 新容器下次重启即读不到凭据、exit 2（R-V2-SEATBATCH-W1-DOWN-CAUSE）。
+// 真吊销（OnRevoked）与停用（OnSuspended）仍走 DisconnectAgent，语义不变。
+func (h *Hub) DisconnectAgentRotated(agentID string) {
+	if h.Identity == nil {
+		return
+	}
+	ag, err := h.Identity.Store.GetAgent(context.Background(), agentID)
+	if err != nil {
+		return
+	}
+	h.disconnectAgentSession(AgentKeyID(ag.OwnerLC), ag.NameLC(), "credential_suspended")
+}
+
 // disconnectAgentSession 以 4401＋reason 断开一个在线 Agent 会话（不在线即空操作）；最多等 agentDisconnectWait。
 // 用户停用（A11）也走这里，reason 用 credential_suspended：停用可恢复，客户端不得删凭据。
 func (h *Hub) disconnectAgentSession(keyID, sessionName, reason string) {
