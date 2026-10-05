@@ -218,6 +218,9 @@ func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources, 
 			"Privileged":     false,
 			"NetworkMode":    netName, // 每席独占网络
 			"Binds":          []string{seatDir(d.seatRoot, seatID) + ":/work"},
+			// B1（R-V2-SEAT-ITEMS-DISPATCH 包 B1）：tini 式 init 收孤儿＋转 SIGTERM——
+			// 席位主进程非 PID 1 时信号不到子进程，docker stop 白等 10s 再 SIGKILL（退出码 137）。
+			"Init": true,
 		},
 	}
 }

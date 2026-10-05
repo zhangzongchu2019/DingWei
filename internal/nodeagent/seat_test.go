@@ -1274,3 +1274,18 @@ func TestSeatModeDriverThroughCreateSpec(t *testing.T) {
 		}
 	}
 }
+
+// B1（包 B1）：席位容器 HostConfig.Init=true（tini 式 init——停席不再白等 10s 强杀）。
+// 反向：去掉该键 ⇒ 本格红。真机读数（docker stop<2s、退出码非 137）属部署验证格。
+func TestCreateSeatInitEnabled(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	raw := `{"seat_id":"ag_init","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex"}`
+	if _, err := d.create(context.Background(), json.RawMessage(raw)); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	hc, _ := f.specs[0]["HostConfig"].(map[string]any)
+	if hc["Init"] != true {
+		t.Fatalf("HostConfig.Init 必须 true: %v", hc["Init"])
+	}
+}
