@@ -1,7 +1,8 @@
 package hosted
 
 // T-G4-01 · G4 托管 PG 数据模型（新平台，直接生 PG——方法件 8.2：V1 起新表不再写 SQLite 版）。
-// 约定沿 internal/datad：SchemaDDL 常量＋CREATE IF NOT EXISTS 幂等 apply；
+// 约定沿 internal/datad：SchemaDDL 常量＋幂等 apply；建表 CREATE IF NOT EXISTS、
+// 加列 ALTER ADD COLUMN IF NOT EXISTS（g4_ 首次加列＝包 B2 的 model，R-V2-SEAT-B2-SCHEMA 裁定）；
 // 集成测试以 HUB_TEST_PG_DSN 门控（永不指生产库，与 DATAD_TEST_PG_DSN 同一纪律）。
 //
 // 命名：本包表一律 g4_ 前缀，避免与 Hub 主库（R0 迁移中）及 G3 identity 表冲突。

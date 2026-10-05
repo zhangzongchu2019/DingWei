@@ -140,6 +140,20 @@ func TestSchemaModelColumnMigration(t *testing.T) {
 	if newSeat.Model != "gpt-6.1-sol" {
 		t.Fatalf("新列须写入: %q", newSeat.Model)
 	}
+	// 列存在直断（信息模式）
+	var col string
+	row, err := s.qrow(ctx, "SELECT column_name FROM information_schema.columns WHERE table_name='g4_hosted_seat' AND column_name='model'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := row.Scan(&col); err != nil || col != "model" {
+		t.Fatalf("model 列须存在: %v %q", err, col)
+	}
+	// 回滚兼容（裁定 3②）：旧 Hub 的 INSERT 形状（不含 model 列）在新表上仍成功（靠 DEFAULT ''）
+	if err := s.exec(ctx, `INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, plan, created_by)
+		VALUES ('ag_legacy', 'nd_a', 'codex', 'gpt', 'token_file', '2c4g', 'zzc')`); err != nil {
+		t.Fatalf("旧形状 INSERT 须仍成功: %v", err)
+	}
 	// 幂等：再 apply 不出错
 	if err := s.ApplySchema(ctx); err != nil {
 		t.Fatalf("重复 apply: %v", err)
