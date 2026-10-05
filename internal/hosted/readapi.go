@@ -158,7 +158,7 @@ type JobView struct {
 	Stage   string `json:"stage"` // queued|pulling|starting|online|failed
 	Reason  string `json:"reason,omitempty"`
 	AgentID string `json:"agent_id,omitempty"`
-	Model   string `json:"model"` // 包 B2 修订 3：席位生效模型（落库记录值；console 列表/详情显示用）
+	Model   string `json:"model,omitempty"` // 包 B2 修订 3：席位生效模型（空＝节点默认，键缺席——旧客户端与既有精确体测试不受影响）
 }
 
 // JobProgressFor jobs 端点的读面，归属按席位 created_by 判（组长裁定 lead-g4-joint-run-1 第 2 条）：
