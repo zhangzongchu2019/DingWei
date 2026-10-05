@@ -110,7 +110,7 @@ pending:hosted 38  # 调用点单位（htx() 与 dtx/ftx 同型）
 #      main 侧 16→18（hosted ApplySchema/DropSchema 两处，上段 kimi30kqtuxerh 已登记）
 #      本分支侧 16→15（fanout 两处 DDL 合成一处，上面「12 → 16 → 15」那段已说清消失的是哪一处）
 #      ⇒ 18−1＝17＝15＋2。合并后按闸实数复跑 rc=0 才落这个值
-#      （实测：pending 92＝datad 25＋fanout 29＋hosted 39、system 17、open 5、escape 1）。
+#      （实测：pending 92＝datad 25＋fanout 29＋hosted 38、system 17、open 5、escape 1）。
 #    同批按组长 2026-10-02T12:44:05Z「boundary-baseline 注释指针更新准（数值不动）」把上面
 #    「12 → 16 → 15」那段里四处过期行号改成合并树实数：spool.go 68→103、49→55，
 #    migrate.go 303→332、258→277（migrate_test.go:54 与 datad／identity 各指针未位移）。

@@ -312,3 +312,59 @@ func TestAccessCtxValid(t *testing.T) {
 		t.Fatalf("htx 占位不可用: n=%d err=%v", n, err)
 	}
 }
+
+// 合并形态（复验建议入库，tosonnet55tc2k）：生产真实形态＝既无 model 列又无 g4_lifecycle_job 表
+// （包 A 与 B2 两处缺同存）。ApplySchema 两次（升级＋幂等重放）⇒ 席位可读且 model=”、
+// job 表与 model 列都在。反向：去 ALTER 或去 job 表 CREATE 各红。
+func TestApplySchemaUpgradesPreA1PreB2Shape(t *testing.T) {
+	pool := testpool(t)
+	ctx := context.Background()
+	s := NewStore(pool)
+	// 生产真实旧形状：g4_hosted_seat 无 model 列、无 g4_lifecycle_job 表
+	if _, err := s.exec(ctx, `CREATE TABLE g4_hosted_seat (
+  agent_id    TEXT PRIMARY KEY,
+  node_id     TEXT NOT NULL,
+  cli         TEXT NOT NULL,
+  llm         TEXT NOT NULL,
+  cred_kind   TEXT NOT NULL,
+  account_ref TEXT,
+  plan        TEXT NOT NULL,
+  state       TEXT NOT NULL DEFAULT 'queued',
+  state_detail TEXT NOT NULL DEFAULT '',
+  image_ref   TEXT NOT NULL DEFAULT '',
+  created_by  TEXT NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now())`); err != nil {
+		t.Fatalf("旧形状建表: %v", err)
+	}
+	if _, err := s.exec(ctx, `INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, plan, created_by)
+		VALUES ('ag_old', 'nd_a', 'codex', 'gpt', 'token_file', '2c4g', 'zzc')`); err != nil {
+		t.Fatalf("存量行: %v", err)
+	}
+	for i := 0; i < 2; i++ { // 升级＋幂等重放
+		if err := s.ApplySchema(ctx); err != nil {
+			t.Fatalf("apply #%d: %v", i, err)
+		}
+	}
+	seat, err := s.GetSeat(ctx, "ag_old")
+	if err != nil || seat.Model != "" {
+		t.Fatalf("存量行可读且 model 空: %+v %v", seat, err)
+	}
+	var col string
+	row, err := s.qrow(ctx, "SELECT column_name FROM information_schema.columns WHERE table_name='g4_hosted_seat' AND column_name='model'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := row.Scan(&col); err != nil || col != "model" {
+		t.Fatalf("model 列须在: %v %q", err, col)
+	}
+	// job 表在（包 A 面）
+	var tn string
+	row2, err := s.qrow(ctx, "SELECT table_name FROM information_schema.tables WHERE table_name='g4_lifecycle_job'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := row2.Scan(&tn); err != nil || tn != "g4_lifecycle_job" {
+		t.Fatalf("job 表须在: %v %q", err, tn)
+	}
+}
