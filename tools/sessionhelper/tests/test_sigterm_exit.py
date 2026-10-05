@@ -16,8 +16,12 @@ from pathlib import Path
 
 class SigtermExitTest(unittest.TestCase):
     def test_sigterm_exits_promptly(self):
+        try:
+            import websockets  # noqa: F401——缺则 helper 起不来；缺依赖时 skip 不误红
+        except ImportError:
+            raise unittest.SkipTest("websockets 未安装（helper 依赖）")
         with tempfile.TemporaryDirectory() as home:
-            env = dict(os.environ)
+            env = {k: v for k, v in os.environ.items() if not k.startswith("SH_")}  # 剔除本席的 SH_*（复验隔离提示）
             env.update({
                 "SH_SESSION_NAME": "sigprobe",
                 "SH_OWNER": "zzc",
