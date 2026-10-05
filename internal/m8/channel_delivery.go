@@ -108,15 +108,6 @@ type channelDeliveryResolution struct {
 	note     string
 }
 
-func ownerFeishuOpenIDFromMembers(members []model.Member, ownerKey string) string {
-	for _, member := range members {
-		if member.Active && member.OwnerKey == ownerKey && member.FeishuOpenID != "" {
-			return member.FeishuOpenID
-		}
-	}
-	return ""
-}
-
 // resolveFeishuName 在 active 成员和 active 群之间做同一轮精确名字匹配。
 // ID 形态在调用方先短路；成员表中“显示名就是 ID”的历史行也不得再次作为名字命中。
 func (h *Hub) resolveFeishuName(ctx context.Context, name string) ([]feishuNameMatch, []model.Member, error) {
@@ -183,16 +174,17 @@ func (h *Hub) channelDeliveryTarget(ctx context.Context, keyID, addr string) (ch
 		return channelDeliveryResolution{}, fmt.Errorf("resolve feishu name: repository unavailable")
 	}
 	name := strings.TrimSpace(addr)
-	matches, members, err := h.resolveFeishuName(ctx, name)
+	matches, _, err := h.resolveFeishuName(ctx, name)
 	if err != nil {
 		return channelDeliveryResolution{}, err
 	}
 	if len(matches) == 1 {
 		return channelDeliveryResolution{openID: matches[0].feishuID}, nil
 	}
-	ownerKey := h.ownerKeyForKey(ctx, keyID)
+	// 兜底与「只写 ＠飞书」同一个取法：ownerFeishuOpenID 新平台读身份库的飞书绑定（console「飞书已绑定」同源），
+	// 旧平台仍走 ownerKeyForKey＋成员表。原先这里只查旧平台成员表，新平台业主一律取不到（R-V2-FEISHU-OWNER-ID-DIAG）。
 	resolution := channelDeliveryResolution{
-		openID:   ownerFeishuOpenIDFromMembers(members, ownerKey),
+		openID:   h.ownerFeishuOpenID(ctx, keyID),
 		fellBack: true,
 	}
 	if len(matches) == 0 {
