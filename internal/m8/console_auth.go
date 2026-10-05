@@ -716,7 +716,8 @@ var CONSOLE_ERRORS={
 };
 var HOSTED_FAIL_REASONS={
   queue_timeout:'排队超时（超过 10 分钟）',pull_timeout:'拉取镜像超时（超过 30 分钟）',start_timeout:'启动超时（超过 5 分钟）',
-  image_pull_failed:'拉取镜像失败',start_failed:'启动失败',credential_inject_failed:'凭据写入失败',node_offline:'节点离线'
+  image_pull_failed:'拉取镜像失败',start_failed:'启动失败',credential_inject_failed:'凭据写入失败',node_offline:'节点离线',
+  backup_failed:'销毁前备份数据卷失败，容器没有被删除',upgrade_failed_rolled_back:'升级失败，已自动回滚到原版本',invalid_state:'该 Agent 当前状态不允许这个操作'
 };
 function consoleErrorText(status,data){
   var code=data&&typeof data.error==='string'?data.error:'';
@@ -849,7 +850,7 @@ function renderRoster(){
     var name=document.createElement('td');name.textContent=a.name||'';name.title=a.full_name||'';
     var hs=a.origin==='hosted'?Object.assign({online:a.online},a.hosted||{},a.state==='suspended'?{state:'disabled'}:{}):null,st=document.createElement('td');   // 「是否停用」以顶层 state 为准(G3 口径):suspended ⇒ 已停用,不论有没有 hosted 子对象,也不论它说 running;hosted.state 只补运行细节
        // 托管生命周期在行里的 hosted 子对象(契约 v2:过渡形态)
-    st.textContent=hs?hostedStateText(hs):(a.state==='suspended'?'已停用':(a.online?'在线':'离线'));
+    st.textContent=hostedOpInflight[a.agent_id]?hostedOpInflightText(hostedOpInflight[a.agent_id]):(hs?hostedStateText(hs):(a.state==='suspended'?'已停用':(a.online?'在线':'离线')));
     var action=document.createElement('td'),revoke=document.createElement('button');revoke.type='button';revoke.className='roster-revoke';revoke.textContent='吊销';revoke.hidden=a.origin==='hosted';
     if(hs)hostedOpButtons(a,hs).forEach(function(b){action.append(b);});
     revoke.onclick=async function(){
@@ -969,6 +970,53 @@ async function hostedTrackJob(jobId,name){
   }
   tick();
 }
+// 托管生命周期操作 job 化（R-V2-SEAT-ITEMS 包 C2，Hub 侧 A1）：点升级／重启／停用／启用／销毁后，POST 返回 202＋{job_id}（入队前的非法状态仍是同步 422 invalid_state）；
+// 页面在该 Agent 行里显示「<操作>中…」并轮询 GET jobs/{job_id}：failed ⇒ 失败（中文原因＋原因码）；终态 ⇒ 成功并刷新；其余阶段一律当「处理中」，不替 Hub 编阶段名。
+// 兼容：POST 若仍是同步成功（无 job_id），按旧口径直接刷新。进行中状态存在内存表里，行重绘（15 秒刷新、列表重取）不丢；单个 job 最多轮询 15 分钟。
+var HOSTED_OPS={upgrade:'升级',restart:'重启',disable:'停用',enable:'启用',destroy:'销毁'};
+var HOSTED_OP_STAGES={queued:'排队',pulling:'拉镜像',starting:'启动',running:'执行中',stopping:'停止中'};
+var HOSTED_OP_DONE=['done','succeeded','completed','online'];
+var hostedOpInflight={},HOSTED_OP_MAX_MS=15*60*1000;
+function hostedOpInflightText(inf){
+  var st=inf.stage&&inf.stage!=='queued'?'（'+(HOSTED_OP_STAGES[inf.stage]||inf.stage)+'）':'';
+  return HOSTED_OPS[inf.op]+'中…'+st;
+}
+function hostedOpFail(inf,reason){
+  return HOSTED_OPS[inf.op]+' '+inf.name+' 失败：'+(HOSTED_FAIL_REASONS[reason]||'操作未成功')+'（原因码 '+(reason||'未知')+'）';
+}
+function hostedOpTrack(a,op,jobId){
+  var inf={op:op,name:a.name||'',jobId:jobId,stage:'queued',started:Date.now(),timer:null};
+  hostedOpInflight[a.agent_id]=inf;renderRoster();
+  function end(){if(hostedOpInflight[a.agent_id]===inf)delete hostedOpInflight[a.agent_id];}
+  function rowOf(){return rosterAgents.filter(function(x){return x.agent_id===a.agent_id;})[0]||null;}
+  async function tick(){
+    if(hostedOpInflight[a.agent_id]!==inf)return;
+    if(!document.getElementById('rosterItems')){end();return;}   // 面板已关
+    if(Date.now()-inf.started>HOSTED_OP_MAX_MS){end();enrollFeedback('rosterFeedback',HOSTED_OPS[op]+' '+inf.name+'：仍在处理，请稍后刷新查看');renderRoster();return;}
+    var stage='',reason='';
+    try{
+      var r=await fetch(HOSTED_API.job(jobId),{cache:'no-store'});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      var d=await r.json();stage=String(d.stage||'');reason=String(d.reason||'');
+    }catch(err){inf.timer=setTimeout(tick,hostedPollMs);return;}   // 网络抖动：继续轮询，不当成失败
+    if(hostedOpInflight[a.agent_id]!==inf)return;
+    if(stage==='failed'){
+      await refreshRoster();
+      // 销毁成功后座位已不在，Hub 若仍把它报成 failed 而原因不在已知码里：以「行已不在」为准按成功处理（失败的销毁——例如备份失败——行还在）
+      if(op==='destroy'&&!rowOf()&&!HOSTED_FAIL_REASONS[reason]){end();enrollFeedback('rosterFeedback',HOSTED_OPS[op]+' '+inf.name+' 已完成');refreshGroups('hosted-op');refreshAgents();return;}
+      end();enrollFeedback('rosterFeedback',hostedOpFail(inf,reason));renderRoster();return;
+    }
+    if(HOSTED_OP_DONE.indexOf(stage)>=0){
+      await refreshRoster();
+      var cur=rowOf(),hs=cur&&cur.hosted;
+      // 升级／重启期间席位仍在线，Hub 的 job 视图可能先报 online：行里还是 busy 就继续等
+      if(op!=='destroy'&&hs&&hs.state==='busy'){inf.stage='running';renderRoster();inf.timer=setTimeout(tick,hostedPollMs);return;}
+      end();enrollFeedback('rosterFeedback',HOSTED_OPS[op]+' '+inf.name+' 已完成');renderRoster();refreshGroups('hosted-op');refreshAgents();return;
+    }
+    inf.stage=stage;renderRoster();inf.timer=setTimeout(tick,hostedPollMs);
+  }
+  tick();
+}
 async function hostedCreate(){
   var v=function(id){return document.getElementById(id).value.trim();};
   var body={name:v('hostedName'),node_id:v('hostedNode')||'auto',cli:v('hostedCli'),llm:v('hostedLlm'),account_id:v('hostedAccount'),plan_id:v('hostedPlan')};
@@ -984,7 +1032,7 @@ async function hostedCreate(){
   hostedTrackJob(String(res.data.job_id||''),body.name);
 }
 function hostedOpButtons(a,hs){
-  var name=a.name,busy=hs.state==='busy',list=[];
+  var name=a.name,busy=hs.state==='busy'||!!hostedOpInflight[a.agent_id],list=[];
   var ops=hs.state==='disabled'
     ?[['enable','启用',true],['destroy','销毁',true]]   // 停用中:容器已停,重启无意义;暂停中不能升级,须先启用(f0fe9794)——给了也只会被 Hub 拒绝
     :[['upgrade','升级',false],['restart','重启',false],['disable','停用',true],['destroy','销毁',true]];
@@ -996,8 +1044,11 @@ function hostedOpButtons(a,hs){
       if(d[0]==='disable'){if(!confirm('停用 '+name+'：容器将停止,数据卷保留,可再启用;该 Agent 离线且凭据暂停、无法再接入;停用期间仍计配额。确认停用？'))return;body.confirm=true;}
       list.forEach(function(x){x.disabled=true;});
       var res=await consolePost(HOSTED_API.op(a.agent_id,d[0]),body);
-      if(!res.ok){enrollFeedback('rosterFeedback',res.text);list.forEach(function(x){x.disabled=busy;});return;}
-      enrollFeedback('rosterFeedback','');refreshRoster();refreshGroups('hosted-op');refreshAgents();
+      if(!res.ok){enrollFeedback('rosterFeedback',res.text);list.forEach(function(x){x.disabled=busy;});if(res.code==='invalid_state')refreshRoster();return;}   // 状态在别处已变：重取，让按钮跟上真实状态
+      enrollFeedback('rosterFeedback','');
+      var jobId=res.data&&typeof res.data.job_id==='string'?res.data.job_id:'';
+      if(jobId){hostedOpTrack(a,d[0],jobId);return;}
+      refreshRoster();refreshGroups('hosted-op');refreshAgents();
     };
     list.push(b);
   });
