@@ -2873,31 +2873,42 @@ func (h *Hub) queueFeishuSyncItem(keyID, sessionName string, target feishuSyncTa
 	h.mu.Unlock()
 }
 
-// suppressPendingFeishuSyncTo drops only the buffered mirror for an explicit
-// reply-to-origin destination.  terminal_output is buffered for one second,
-// while the structured turn completion drives replyToOrigin; without this
-// handoff the same assistant answer is delivered once by each path whenever
-// the Feishu sender also has sync enabled.  The sync subscription itself stays
-// active and other destinations/buffers are untouched.
-func (h *Hub) suppressPendingFeishuSyncTo(keyID, sessionName, origin string) {
+// hasFeishuSyncOrMirror reports whether this session already has an effective
+// sync/mirror path to the exact Feishu origin. reply-to-origin must defer to
+// that path before sending; otherwise a later terminal flush duplicates the
+// same assistant answer regardless of how long after turn completion it lands.
+func (h *Hub) hasFeishuSyncOrMirror(ctx context.Context, keyID, sessionName, origin string) bool {
 	to, err := parseAddress(origin)
 	if err != nil || to.Kind != addressFeishu || to.OpenID == "" {
-		return
+		return false
 	}
 	h.mu.Lock()
-	defer h.mu.Unlock()
-	for bufferKey, buffer := range h.syncBuffers {
-		if buffer.keyID != keyID || buffer.sessionName != sessionName || buffer.target.openID != to.OpenID {
+	for _, target := range h.syncTargets[terminalKey(keyID, sessionName)] {
+		if target.openID != to.OpenID {
 			continue
 		}
-		if to.BotName != "" && buffer.target.botName != "" && !strings.EqualFold(to.BotName, buffer.target.botName) {
+		if to.BotName != "" && target.botName != "" && !strings.EqualFold(to.BotName, target.botName) {
 			continue
 		}
-		if buffer.timer != nil {
-			buffer.timer.Stop()
-		}
-		delete(h.syncBuffers, bufferKey)
+		h.mu.Unlock()
+		return true
 	}
+	h.mu.Unlock()
+	endpoints, err := h.Repo.ListSessionEndpoints(ctx)
+	if err != nil {
+		return false
+	}
+	for _, ep := range endpoints {
+		if ep.KeyID != keyID || ep.SessionName != sessionName || !ep.Active || !ep.MirrorEnabled {
+			continue
+		}
+		mirror, err := parseAddress(ep.MirrorTo)
+		if err == nil && mirror.Kind == addressFeishu && mirror.OpenID == to.OpenID &&
+			(to.BotName == "" || mirror.BotName == "" || strings.EqualFold(to.BotName, mirror.BotName)) {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *Hub) flushFeishuSyncBuffer(bufferKey string) {

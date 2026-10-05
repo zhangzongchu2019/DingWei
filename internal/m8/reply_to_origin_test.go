@@ -13,7 +13,6 @@ package m8
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -97,80 +96,69 @@ func TestNoMirrorSkipsRemainNarrowAroundReplyToOrigin(t *testing.T) {
 	}
 }
 
-func TestReplyToOriginDeduplicatesPendingSyncForSameFeishuTarget(t *testing.T) {
+func TestReplyToOriginDefersToSameTargetSyncEvenWhenOutputIsLate(t *testing.T) {
+	for _, delay := range []time.Duration{1500 * time.Millisecond, 2200 * time.Millisecond} {
+		t.Run(delay.String(), func(t *testing.T) {
+			h, db, ctx := newTestHub(t)
+			outbound := bus.NewDBQueue(db, model.DirectionOut)
+			h.Outbound = outbound
+			h.mu.Lock()
+			h.botChannels["UnifiedRobot"] = "dev"
+			h.mu.Unlock()
+			target := feishuSyncTarget{openID: "ou_sender", botChannelID: "dev", botName: "UnifiedRobot"}
+			h.addFeishuSyncTargetAndSnapshot("k1", "bee", target)
+			key := replyOriginFixture(t, h, ctx, "dw-dlv-late-"+delay.String(), "msg-late-"+delay.String(),
+				feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
+			p := testAMRProcessor()
+			p.hub, p.routeEnvelope, p.routeTimeout = h, h.RouteEnvelope, 5*time.Second
+			p.replyToOrigin(amrRouteJob{key: key, body: "飞书回程正文"})
+			if p.stats.replyOriginSkipped != 1 || waitOutboundWithin(t, ctx, outbound, 100*time.Millisecond) != nil {
+				t.Fatal("same-target sync subscription did not suppress explicit return")
+			}
+			time.Sleep(delay)
+			h.queueFeishuSyncItem("k1", "bee", target, terminalSyncItem{TS: time.Now(), Text: "飞书回程正文"})
+			if got := waitOutbound(t, ctx, outbound); got == nil {
+				t.Fatal("late sync output did not reach outbound")
+			}
+			if duplicate := waitOutboundWithin(t, ctx, outbound, 200*time.Millisecond); duplicate != nil {
+				t.Fatalf("late output produced duplicate: %+v", duplicate)
+			}
+		})
+	}
+}
+
+func TestReplyToOriginDefersToSameTargetMirror(t *testing.T) {
+	h, db, ctx := newTestHub(t)
+	h.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "k1", SessionName: "bee", Active: true,
+		MirrorEnabled: true, MirrorTo: feishuAddress("ou_sender", "k1", "UnifiedRobot")}); err != nil {
+		t.Fatal(err)
+	}
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-mirror", "msg-mirror",
+		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
+	p := testAMRProcessor()
+	p.hub, p.routeEnvelope = h, h.RouteEnvelope
+	p.replyToOrigin(amrRouteJob{key: key, body: "正文"})
+	if p.stats.replyOriginSkipped != 1 || p.stats.replyOriginRouted != 0 {
+		t.Fatalf("mirror subscription stats skipped=%d routed=%d", p.stats.replyOriginSkipped, p.stats.replyOriginRouted)
+	}
+}
+
+func TestReplyToOriginOtherSyncTargetDoesNotSuppressReturn(t *testing.T) {
 	h, db, ctx := newTestHub(t)
 	outbound := bus.NewDBQueue(db, model.DirectionOut)
 	h.Outbound = outbound
 	h.mu.Lock()
 	h.botChannels["UnifiedRobot"] = "dev"
 	h.mu.Unlock()
-	target := feishuSyncTarget{openID: "ou_sender", botChannelID: "dev", botName: "UnifiedRobot"}
-	if err := h.Repo.SetSessionMirror(ctx, "k1", "bee", true, feishuAddress("ou_sender", "k1", "UnifiedRobot")); err != nil {
-		t.Fatal(err)
-	}
-	h.addFeishuSyncTargetAndSnapshot("k1", "bee", target)
-	h.queueFeishuSyncItem("k1", "bee", target, terminalSyncItem{TS: time.Now(), Text: "飞书回程正文"})
-	key := replyOriginFixture(t, h, ctx, "dw-dlv-feishu-sync-dedup", "msg-feishu-sync-dedup",
+	h.addFeishuSyncTargetAndSnapshot("k1", "bee", feishuSyncTarget{openID: "ou_other", botChannelID: "dev", botName: "UnifiedRobot"})
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-other-sync", "msg-other-sync",
 		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
 	p := testAMRProcessor()
-	p.hub, p.routeEnvelope, p.routeTimeout = h, h.RouteEnvelope, 5*time.Second
-
-	p.replyToOrigin(amrRouteJob{key: key, body: "飞书回程正文"})
-	if got := waitOutbound(t, ctx, outbound); got == nil {
-		t.Fatal("explicit reply did not reach outbound")
-	}
-	if duplicate := waitOutboundWithin(t, ctx, outbound, 1200*time.Millisecond); duplicate != nil {
-		t.Fatalf("same reply was delivered twice with sync enabled: %+v", duplicate)
-	}
-}
-
-func TestReplyToOriginDedupKeepsOtherSyncTargets(t *testing.T) {
-	h, _, ctx := newTestHub(t)
-	same := feishuSyncTarget{openID: "ou_sender", botChannelID: "dev", botName: "UnifiedRobot"}
-	other := feishuSyncTarget{openID: "ou_other", botChannelID: "dev", botName: "UnifiedRobot"}
-	for _, target := range []feishuSyncTarget{same, other} {
-		h.addFeishuSyncTargetAndSnapshot("k1", "bee", target)
-		h.queueFeishuSyncItem("k1", "bee", target, terminalSyncItem{TS: time.Now(), Text: "正文"})
-	}
-	key := replyOriginFixture(t, h, ctx, "dw-dlv-feishu-sync-other", "msg-feishu-sync-other",
-		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
-	p, _ := replyOriginProcessor(h)
+	p.hub, p.routeEnvelope = h, h.RouteEnvelope
 	p.replyToOrigin(amrRouteJob{key: key, body: "正文"})
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if len(h.syncBuffers) != 1 {
-		t.Fatalf("sync buffers=%d, want only the unrelated target", len(h.syncBuffers))
-	}
-	for _, buffer := range h.syncBuffers {
-		if buffer.target.openID != "ou_other" {
-			t.Fatalf("wrong buffer survived: %+v", buffer.target)
-		}
-		if buffer.timer != nil {
-			buffer.timer.Stop()
-		}
-	}
-}
-
-func TestReplyToOriginFailureDoesNotConsumePendingSync(t *testing.T) {
-	h, _, ctx := newTestHub(t)
-	target := feishuSyncTarget{openID: "ou_sender", botChannelID: "dev", botName: "UnifiedRobot"}
-	h.addFeishuSyncTargetAndSnapshot("k1", "bee", target)
-	h.queueFeishuSyncItem("k1", "bee", target, terminalSyncItem{TS: time.Now(), Text: "正文"})
-	key := replyOriginFixture(t, h, ctx, "dw-dlv-feishu-sync-fail", "msg-feishu-sync-fail",
-		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
-	p := testAMRProcessor()
-	p.hub = h
-	p.routeEnvelope = func(context.Context, model.Envelope) error { return errors.New("injected route failure") }
-	p.replyToOrigin(amrRouteJob{key: key, body: "正文"})
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if len(h.syncBuffers) != 1 {
-		t.Fatalf("failed explicit reply consumed sync fallback: buffers=%d", len(h.syncBuffers))
-	}
-	for _, buffer := range h.syncBuffers {
-		if buffer.timer != nil {
-			buffer.timer.Stop()
-		}
+	if got := waitOutbound(t, ctx, outbound); got == nil || p.stats.replyOriginRouted != 1 {
+		t.Fatalf("unrelated sync target suppressed explicit return: msg=%+v routed=%d", got, p.stats.replyOriginRouted)
 	}
 }
 
