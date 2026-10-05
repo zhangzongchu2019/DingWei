@@ -340,7 +340,7 @@ main{display:flex;flex-direction:column;min-width:0}
 .group-workspace{position:absolute;inset:0;overflow:auto;padding:16px;background:inherit}
 .group-workspace label{display:block;margin:8px 0}.group-workspace input,.group-workspace select{min-width:320px;padding:5px}
 .group-workspace button{margin:4px;padding:5px 9px}.enroll-editor{border:1px solid #ccd;border-radius:6px;padding:10px;margin:8px 0}#hostedMask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:50}#hostedMask[hidden]{display:none}.hosted-mask-box{background:#fff;color:#222;border-radius:8px;padding:18px 24px;min-width:300px}html[data-theme="dark"] .hosted-mask-box{background:#222;color:#eee}.hosted-stage{margin:6px 0}.hosted-stage[data-state="done"]{color:#1a7f37}.hosted-stage[data-state="current"]{font-weight:bold}.hosted-stage[data-state="failed"]{color:#9d1b1b;font-weight:bold}.hosted-stage[data-state="todo"]{opacity:.55}html[data-theme="dark"] .enroll-editor{border-color:#445}.agent-group{border:1px solid #ddd;border-radius:6px;padding:10px;margin:8px 0}
-.group-toolbar{display:flex;align-items:center;justify-content:space-between}.group-table{width:100%;table-layout:fixed;border-collapse:collapse}#adminUsersTable{table-layout:auto}#adminUsersTable th:nth-child(n+4),#adminUsersTable td:nth-child(n+4){white-space:nowrap}.group-table th,.group-table td{padding:7px;border-bottom:1px solid #ddd;text-align:left}.group-table tbody tr:nth-child(even){background:var(--row-alt)}.group-table th:nth-child(1),.group-table td:nth-child(1){width:28%}.group-table th:nth-child(2),.group-table td:nth-child(2){width:28%}.group-table th:nth-child(3),.group-table td:nth-child(3){width:28%}.group-table th:nth-child(4),.group-table td:nth-child(4){width:16%}.group-row{cursor:pointer}.group-member-row{display:flex;align-items:center;gap:18px;max-width:520px;min-height:34px}.group-member-remove{visibility:hidden}.group-member-row:hover .group-member-remove,.group-member-row:focus-within .group-member-remove{visibility:visible}
+.group-toolbar{display:flex;align-items:center;justify-content:space-between}.group-table{width:100%;table-layout:fixed;border-collapse:collapse}#adminUsersTable{table-layout:auto}#quotaTable{table-layout:auto}#quotaTable td{vertical-align:top}.quota-limit{width:5.5em}.quota-note{font-size:12px;opacity:.85}#adminUsersTable th:nth-child(n+4),#adminUsersTable td:nth-child(n+4){white-space:nowrap}.group-table th,.group-table td{padding:7px;border-bottom:1px solid #ddd;text-align:left}.group-table tbody tr:nth-child(even){background:var(--row-alt)}.group-table th:nth-child(1),.group-table td:nth-child(1){width:28%}.group-table th:nth-child(2),.group-table td:nth-child(2){width:28%}.group-table th:nth-child(3),.group-table td:nth-child(3){width:28%}.group-table th:nth-child(4),.group-table td:nth-child(4){width:16%}.group-row{cursor:pointer}.group-member-row{display:flex;align-items:center;gap:18px;max-width:520px;min-height:34px}.group-member-remove{visibility:hidden}.group-member-row:hover .group-member-remove,.group-member-row:focus-within .group-member-remove{visibility:visible}
 .agent-tree-group{margin:5px 0}.agent-tree-group-label{display:block;font-weight:700;padding:4px 6px}.agent-tree-members{padding-left:10px}.agent-tree-agent{width:100%;text-align:left}
 .group-row .group-pick{margin-right:auto}.group-feedback{min-height:1.2em;color:#9d1b1b}.group-block{border-radius:7px;padding:12px;margin:10px 0}.group-block-list{background:#f4f7fb}.group-block-detail{background:#f8f5ff}.group-block-add{background:#eef8f1}
 #hint{padding:10px;color:#888}
@@ -1025,9 +1025,12 @@ function mountEnrollPanels(pane){
 // 不写 localStorage、不进日志。能力菜单只放已做的项(没有动作的假入口不放),以后每开放一项加一行。
 var ADMIN_API={
   users:'/api/console/platform/users',
-  regen:function(id){return '/api/console/platform/users/'+encodeURIComponent(id)+'/registration-code';}
+  regen:function(id){return '/api/console/platform/users/'+encodeURIComponent(id)+'/registration-code';},
+  quotas:'/api/console/admin/quotas',
+  quota:function(id){return '/api/console/admin/quotas/'+encodeURIComponent(id);}
 };
-var ADMIN_CAPABILITIES=[{id:'invite',title:'新用户注册邀请'}];
+// 能力菜单只放已做的项；「托管配额」随托管面一起开（FEATURE_HOSTED 由服务端按托管路由是否实际注册注入）。
+var ADMIN_CAPABILITIES=[{id:'invite',title:'新用户注册邀请'}].concat(FEATURE_HOSTED?[{id:'quota',title:'托管配额'}]:[]);
 var ADMIN_USER_STATE={pending_bind:'待绑定飞书',active:'正常',disabled:'已停用'};
 var ADMIN_USER_TYPE={member:'普通用户',manager:'管理用户',platform_admin:'平台管理员'};
 var adminUsersGeneration=0;
@@ -1115,6 +1118,76 @@ async function refreshAdminUsers(){
     return null;
   }finally{clearTimeout(timer);}
 }
+// 托管配额页（T-G4-41，契约 ae6b6443；「平台管理」Tab 的第二项）：入口随平台管理 Tab 只发给管理用户；可见面不是授权面——接口自己再按用户类型判，
+// 非管理用户 403 ⇒ 这里只说「没有权限」，不显示 Hub 原文。GET 返回数组，每行 user{id,short_name}＋四项 used/limit（agents／vcpu／mem_gb／disk_gb，
+// 内存与磁盘单位 GB）；PUT 四键齐全才收（agents_limit／vcpu_limit／mem_gb_limit／disk_gb_limit，整数 ≥0）。新上限低于已用量允许保存（只限制新建，
+// 已有 Agent 不动），页面在输入时就地提醒。已用量与上限一律以服务端为准：保存成功后重新取一遍。
+var QUOTA_KEYS=[['agents','agents_limit','Agent 数',''],['vcpu','vcpu_limit','vCPU',''],['mem_gb','mem_gb_limit','内存','G'],['disk_gb','disk_gb_limit','磁盘','G']];
+var quotaGeneration=0,quotaRows=[],quotaSavedId='',quotaSavedTimer=null;
+async function consolePut(path,body){
+  try{
+    var r=await fetch(path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var data=null;try{data=await r.json();}catch(_){}
+    if(r.ok)return {ok:true,text:'',data:data||{}};
+    return {ok:false,status:r.status,text:consoleErrorText(r.status,data),code:data&&data.error||'',data:data||{}};
+  }catch(err){return {ok:false,status:0,text:'请求失败: '+String(err&&err.message||err),code:''};}
+}
+function quotaNum(x){var n=Number(x);return Number.isFinite(n)?n:0;}
+async function refreshAdminQuotas(){
+  var status=document.getElementById('quotaStatus'),retry=document.getElementById('quotaRetry'),body=document.getElementById('quotaItems'),empty=document.getElementById('quotaEmpty');
+  if(!status||!retry||!body||!empty)return;
+  var generation=++quotaGeneration;status.textContent='配额加载中…';retry.hidden=true;
+  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);
+  try{
+    var r=await fetch(ADMIN_API.quotas,{cache:'no-store',signal:controller.signal});
+    var data=null;try{data=await r.json();}catch(_){}
+    if(!r.ok)throw new Error(r.status===403?'你没有管理用户的权限':(r.status===401?'登录已失效，请重新登录':consoleErrorText(r.status,data)));
+    if(!Array.isArray(data))throw new Error('响应格式无效');
+    if(generation!==quotaGeneration)return;
+    quotaRows=data;status.textContent='';renderAdminQuotas();
+  }catch(err){
+    if(generation===quotaGeneration){quotaRows=[];body.replaceChildren();empty.hidden=true;status.textContent='配额加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;}
+  }finally{clearTimeout(timer);}
+}
+function quotaNote(tr){
+  var low=[];QUOTA_KEYS.forEach(function(k){var inp=tr.querySelector('input[data-key='+k[1]+']'),used=quotaNum(inp.dataset.used),raw=inp.value.trim();if(/^\d{1,7}$/.test(raw)&&Number(raw)<used)low.push(k[2]);});
+  tr.querySelector('.quota-note').textContent=low.length?('上限低于已用量（'+low.join('、')+'）：已有 Agent 不受影响，只限制新建'):'';
+}
+function renderAdminQuotas(){
+  var body=document.getElementById('quotaItems'),empty=document.getElementById('quotaEmpty');if(!body||!empty)return;
+  body.replaceChildren();empty.hidden=quotaRows.length>0;
+  quotaRows.forEach(function(row){
+    var u=row.user||{},uid=String(u.id||''),tr=document.createElement('tr');tr.className='quota-row';tr.dataset.userId=uid;
+    var who=document.createElement('td');who.className='quota-user';who.textContent=(u.short_name?String(u.short_name)+'（'+uid+'）':uid);tr.append(who);
+    QUOTA_KEYS.forEach(function(k){
+      var cell=row[k[0]]||{},td=document.createElement('td'),used=document.createElement('span');used.className='quota-used';used.textContent='已用 '+quotaNum(cell.used)+k[3]+' / 上限 ';
+      var inp=document.createElement('input');inp.type='number';inp.min='0';inp.step='1';inp.required=true;inp.className='quota-limit';inp.dataset.key=k[1];inp.dataset.used=String(quotaNum(cell.used));inp.value=String(quotaNum(cell.limit));
+      inp.setAttribute('aria-label',(u.short_name||uid)+' 的'+k[2]+'上限'+(k[3]?'（'+k[3]+'B）':''));
+      inp.oninput=function(){quotaNote(tr);};inp.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();save.click();}};
+      td.append(used,inp);if(k[3]){var unit=document.createElement('span');unit.textContent=' GB';td.append(unit);}tr.append(td);
+    });
+    var act=document.createElement('td'),save=document.createElement('button');save.type='button';save.className='quota-save';save.textContent='保存';
+    var fb=document.createElement('span');fb.className='group-feedback quota-fb';var note=document.createElement('div');note.className='quota-note';note.setAttribute('role','status');
+    save.onclick=function(){adminQuotaSave(uid,tr);};act.append(save,fb,note);tr.append(act);body.append(tr);
+    quotaNote(tr);if(quotaSavedId&&quotaSavedId===uid)fb.textContent='已保存';
+  });
+}
+async function adminQuotaSave(uid,tr){
+  var fb=tr.querySelector('.quota-fb'),btn=tr.querySelector('.quota-save'),body={},bad='';
+  QUOTA_KEYS.forEach(function(k){var raw=tr.querySelector('input[data-key='+k[1]+']').value.trim();if(!bad&&!/^\d{1,7}$/.test(raw))bad=k[2]+'上限须为 0 或正整数';else if(!bad)body[k[1]]=Number(raw);});
+  if(bad){fb.textContent=bad;return;}
+  btn.disabled=true;fb.textContent='保存中…';
+  var res=await consolePut(ADMIN_API.quota(uid),body);btn.disabled=false;
+  if(!res.ok){fb.textContent=res.status===403?'你没有管理用户的权限':res.text;return;}
+  quotaSavedId=uid;clearTimeout(quotaSavedTimer);quotaSavedTimer=setTimeout(function(){quotaSavedId='';var f=document.querySelector('.quota-row[data-user-id="'+uid+'"] .quota-fb');if(f&&f.textContent==='已保存')f.textContent='';},5000);
+  refreshAdminQuotas();
+}
+function adminShowCapability(pane,id){
+  var inv=pane.querySelector('#adminInvite'),q=pane.querySelector('#adminQuota');
+  if(inv)inv.hidden=id!=='invite';if(q)q.hidden=id!=='quota';
+  pane.querySelectorAll('#adminMenu button').forEach(function(b){if(b.dataset.capability===id)b.setAttribute('aria-current','true');else b.removeAttribute('aria-current');});
+  if(id==='quota')refreshAdminQuotas();
+}
 function openPlatformAdminWorkspace(){
   if(tabs.has('__platform-admin')){activate('__platform-admin');return;}
   var tab=document.createElement('span');tab.className='tab';tab.title='平台管理';
@@ -1127,13 +1200,15 @@ function openPlatformAdminWorkspace(){
    +'<label>用户类型 <select id=inviteType><option value=member>普通用户</option><option value=manager>管理用户</option></select></label>'
    +'<button id=inviteCreate type=button>生成注册码</button><div id=inviteFeedback class=group-feedback></div>'
    +'<section id=inviteResult class=enroll-editor hidden><h4>注册码(只显示这一次)</h4><div>用户 <b id=inviteResultUser></b></div><div><code id=inviteCode></code> <button id=inviteCopy type=button>复制注册码</button><span id=inviteCopyFeedback class=group-feedback></span></div><div id=inviteExpiry></div><div>让该用户在飞书里向机器人发送：<code id=inviteCmd></code></div><button id=inviteDone type=button>完成,关闭</button></section></div>'
-   +'<h4>用户</h4><table id=adminUsersTable class=group-table><thead><tr><th>用户 ID</th><th>用户名</th><th>简称</th><th>类型</th><th>状态</th><th>操作</th></tr></thead><tbody id=adminUsersItems></tbody></table><div id=adminUsersEmpty hidden>暂无用户。</div><div id=adminUsersStatus role=status></div><button id=adminUsersRetry type=button hidden>重试加载</button><div id=adminUsersFeedback class=group-feedback></div></section>';
+   +'<h4>用户</h4><table id=adminUsersTable class=group-table><thead><tr><th>用户 ID</th><th>用户名</th><th>简称</th><th>类型</th><th>状态</th><th>操作</th></tr></thead><tbody id=adminUsersItems></tbody></table><div id=adminUsersEmpty hidden>暂无用户。</div><div id=adminUsersStatus role=status></div><button id=adminUsersRetry type=button hidden>重试加载</button><div id=adminUsersFeedback class=group-feedback></div></section>'
+   +(FEATURE_HOSTED?'<section id=adminQuota class="group-block" hidden><h3>托管配额</h3><p class=group-feedback>每个用户一行：「已用 / 上限」并排，改完点该行的「保存」。内存与磁盘单位为 GB。新上限低于已用量也可保存，只限制新建，已有 Agent 不受影响。</p><table id=quotaTable class=group-table><thead><tr><th>用户</th><th>Agent 数</th><th>vCPU</th><th>内存</th><th>磁盘</th><th>操作</th></tr></thead><tbody id=quotaItems></tbody></table><div id=quotaEmpty hidden>暂无用户。</div><div id=quotaStatus role=status></div><button id=quotaRetry type=button hidden>重试加载</button></section>':'');
   tab.onclick=function(e){if(e.target===x){e.stopPropagation();closeTab('__platform-admin');}else activate('__platform-admin');};
   document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__platform-admin',{tab:tab,pane:pane});
   var menu=pane.querySelector('#adminMenu');
-  ADMIN_CAPABILITIES.forEach(function(c,i){var b=document.createElement('button');b.type='button';b.dataset.capability=c.id;b.textContent=c.title;if(i===0)b.setAttribute('aria-current','true');menu.append(b);});
+  ADMIN_CAPABILITIES.forEach(function(c,i){var b=document.createElement('button');b.type='button';b.dataset.capability=c.id;b.textContent=c.title;if(i===0)b.setAttribute('aria-current','true');b.onclick=function(){adminShowCapability(pane,c.id);};menu.append(b);});
   document.getElementById('inviteToggle').onclick=adminToggleInvite;document.getElementById('inviteCreate').onclick=adminCreateUser;document.getElementById('inviteCopy').onclick=adminCopyCode;document.getElementById('inviteDone').onclick=adminClearCode;
   document.getElementById('adminUsersRetry').onclick=refreshAdminUsers;
+  var quotaRetryBtn=document.getElementById('quotaRetry');if(quotaRetryBtn)quotaRetryBtn.onclick=refreshAdminQuotas;
   activate('__platform-admin');refreshAdminUsers();
 }
 function openSpecsWorkspace(){if(tabs.has('__specs')){activate('__specs');return;}var tab=document.createElement('span');tab.className='tab';tab.title='Specs';var label=document.createElement('span');label.textContent='Specs';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='Specs workspace';pane.src='/console/specs?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__specs');}else activate('__specs');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__specs',{tab:tab,pane:pane});activate('__specs');}
