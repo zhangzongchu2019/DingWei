@@ -761,3 +761,29 @@ func TestCreateModelRejections(t *testing.T) {
 		t.Fatalf("非 codex ⇒ model_not_supported: %v", err)
 	}
 }
+
+// 帧龄（修订 4）：容量帧超龄（>180s）即视同下线——选点不含它 ⇒ model_not_available。
+func TestPickNodeStaleFrameTreatedOffline(t *testing.T) {
+	o, _, _, s := mkOrch(t)
+	ctx := context.Background()
+	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol"]}`)); err != nil {
+		t.Fatal(err)
+	}
+	// 把帧龄回拨到 1 小时前（走 exec 包装，不直调 htx——边界闸纪律）
+	if err := s.exec(ctx, `UPDATE g4_node SET last_seen_at=now()-interval '1 hour' WHERE id='nd_free'`); err != nil {
+		t.Fatal(err)
+	}
+	_, err := o.pickNode(ctx, "auto", "", Plan{ID: "2c4g", VCPU: 2, MemMB: 4096}, "gpt-6.1-sol")
+	if !errors.Is(err, ErrModelNotAvailable) {
+		t.Fatalf("超龄帧应视同下线 ⇒ model_not_available: %v", err)
+	}
+}
+
+// 容量帧无 models 键（老 Hub 读新帧／新 Hub 读老帧两向兼容）：nodeHasModel 不炸、得 false。
+func TestNodeHasModelToleratesMissingKey(t *testing.T) {
+	var n Node
+	n.Capacity = json.RawMessage(`{"mem_free_mb":1024}`)
+	if nodeHasModel(n, "gpt-6.1-sol") {
+		t.Fatal("无 models 键不得误中")
+	}
+}

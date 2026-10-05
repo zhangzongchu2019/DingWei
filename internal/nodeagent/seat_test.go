@@ -1293,11 +1293,18 @@ func TestSeatModelParamValidation(t *testing.T) {
 	if _, err := d.create(context.Background(), mk("gpt-9")); err == nil {
 		t.Fatal("清单外应拒")
 	}
-	// 无清单节点（空清单＝不自选）：带 model 也放行（Hub 已校验；节点无清单即不纵深）
+	// 口径 3（复验预审）：清单空＝不支持选型——带 model 一律拒（fail-closed，Hub 歪斜时兜住）
 	d2 := f.ops(t.TempDir())
 	d2.seatModels = nil
-	if _, err := d2.create(context.Background(), mk("gpt-9")); err != nil {
-		t.Fatalf("无清单节点不纵深: %v", err)
+	if _, err := d2.create(context.Background(), mk("gpt-9")); err == nil {
+		t.Fatal("无清单节点带 model 必须拒")
+	}
+	// 老形态请求（无 model 字段）仍成功（滚动发版：老 Hub 先发、新节点须兼容；strictDecode 不拒缺省）
+	d3 := f.ops(t.TempDir())
+	d3.seatModels = []string{"gpt-6.1-sol"}
+	oldShape := json.RawMessage(`{"seat_id":"ag_m","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex"}`)
+	if _, err := d3.create(context.Background(), oldShape); err != nil {
+		t.Fatalf("老形态（无 model）必须成功: %v", err)
 	}
 }
 
@@ -1315,5 +1322,26 @@ func TestSeatModelPriority(t *testing.T) {
 	env2 := d.seatEnv("api_key", "codex", "")
 	if !strings.Contains("\n"+strings.Join(env2, "\n")+"\n", "\nCODEX_MODEL=gpt-6.1-sol\n") {
 		t.Fatalf("席位空应落节点默认: %v", env2)
+	}
+}
+
+// 口径 3 启动期：清单非空时节点默认（NODEAGENT_SEAT_CODEX_MODEL）必须是清单成员，否则拒启报键名。
+func TestNodeDefaultMustBeInModelsList(t *testing.T) {
+	f := newFakeDocker(t)
+	err := (&Agent{handlers: map[string]Handler{}}).RegisterDockerHandlers(
+		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
+		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
+		"http://172.30.68.1:11080", "wss://hub.test", "", false, "gpt-6.1-sol", "", []string{"gpt-5.5"},
+	)
+	if err == nil || !strings.Contains(err.Error(), "NODEAGENT_SEAT_CODEX_MODEL") {
+		t.Fatalf("默认不在清单必须拒启报键名: %v", err)
+	}
+	// 在清单 ⇒ 过
+	if err := (&Agent{handlers: map[string]Handler{}}).RegisterDockerHandlers(
+		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
+		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
+		"http://172.30.68.1:11080", "wss://hub.test", "", false, "gpt-6.1-sol", "", []string{"gpt-6.1-sol"},
+	); err != nil {
+		t.Fatalf("在清单应过: %v", err)
 	}
 }

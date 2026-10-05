@@ -398,7 +398,11 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 		if !validModelName(p.Model) {
 			return nil, fmt.Errorf("%w: model %q 格式不对", ErrParams, p.Model)
 		}
-		if len(d.seatModels) > 0 && !slices.Contains(d.seatModels, p.Model) {
+		if len(d.seatModels) == 0 {
+			// 口径 3：清单空＝本节点不支持选型；带 model 一律拒（fail-closed，Hub 歪斜时兜住）
+			return nil, fmt.Errorf("%w: model 选型不受支持（本节点无清单）", ErrParams)
+		}
+		if !slices.Contains(d.seatModels, p.Model) {
 			return nil, fmt.Errorf("%w: model %q 不在本节点可选清单", ErrParams, p.Model)
 		}
 	}
@@ -715,6 +719,11 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 		if !validModelName(m) {
 			return fmt.Errorf("NODEAGENT_SEAT_CODEX_MODELS 项 %q 格式不对（须 1–64 位 [A-Za-z0-9._-]）", m)
 		}
+	}
+	// 口径（复验预审 3）：清单非空时，节点默认 NODEAGENT_SEAT_CODEX_MODEL 必须是清单成员
+	//（否则默认注出的值节点自己都不认账）⇒ 拒启报键名。
+	if len(seatModels) > 0 && seatCodexModel != "" && !slices.Contains(seatModels, seatCodexModel) {
+		return fmt.Errorf("NODEAGENT_SEAT_CODEX_MODEL %q 不在 NODEAGENT_SEAT_CODEX_MODELS 清单内", seatCodexModel)
 	}
 	// R-V2-HOSTED-DRIVER-IMPL：cli｜driver｜空（＝cli）；其它即拒启报键名（与 CODEX_MODEL 同款）。
 	if seatMode != "" && seatMode != "cli" && seatMode != "driver" {
