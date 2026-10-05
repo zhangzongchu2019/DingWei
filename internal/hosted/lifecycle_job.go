@@ -32,7 +32,7 @@ func (l *Lifecycle) EnqueueJob(ctx context.Context, req LifecycleJobRequest) (st
 		return "", err
 	}
 	args, _ := json.Marshal(map[string]any{"version": req.Version, "confirm": req.Confirm})
-	_, err = l.st.pool.Exec(ctx, htx(), `
+	_, err = l.st.exec(ctx, `
 INSERT INTO g4_lifecycle_job(id,agent_id,created_by,op,args) VALUES($1,$2,$3,$4,$5)`,
 		id, req.AgentID, req.Actor, req.Op, args)
 	return id, err
@@ -95,7 +95,7 @@ func (l *Lifecycle) RunJob(ctx context.Context, jobID string) {
 	if err != nil {
 		return
 	}
-	res, err := l.st.pool.Exec(ctx, htx(), `UPDATE g4_lifecycle_job SET stage='running',updated_at=now() WHERE id=$1 AND stage='queued'`, jobID)
+	res, err := l.st.exec(ctx, `UPDATE g4_lifecycle_job SET stage='running',updated_at=now() WHERE id=$1 AND stage='queued'`, jobID)
 	if err != nil {
 		return
 	}
@@ -130,7 +130,7 @@ func (l *Lifecycle) RunJob(ctx context.Context, jobID string) {
 		// MarkOnline (or the timeout sweeper) resolves it.
 		stage = "running"
 	}
-	_, _ = l.st.pool.Exec(context.WithoutCancel(ctx), htx(), `UPDATE g4_lifecycle_job SET stage=$2,reason=$3,updated_at=now() WHERE id=$1`, jobID, stage, reason)
+	_, _ = l.st.exec(context.WithoutCancel(ctx), `UPDATE g4_lifecycle_job SET stage=$2,reason=$3,updated_at=now() WHERE id=$1`, jobID, stage, reason)
 }
 
 func lifecycleJobReason(err error) string {
@@ -179,7 +179,7 @@ func (l *Lifecycle) JobProgressFor(ctx context.Context, id, actor string) (JobVi
 				j.Stage, j.Reason = "failed", lifecycleSeatFailureReason(seat.StateDetail)
 			}
 			if j.Stage != "running" {
-				_, _ = l.st.pool.Exec(ctx, htx(), `UPDATE g4_lifecycle_job SET stage=$2,reason=$3,updated_at=now() WHERE id=$1 AND stage='running'`, j.ID, j.Stage, j.Reason)
+				_, _ = l.st.exec(ctx, `UPDATE g4_lifecycle_job SET stage=$2,reason=$3,updated_at=now() WHERE id=$1 AND stage='running'`, j.ID, j.Stage, j.Reason)
 			}
 		}
 	}

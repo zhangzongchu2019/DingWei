@@ -377,7 +377,7 @@ func (s *Store) ListExpiredBackups(ctx context.Context, now time.Time) ([]Backup
 }
 
 func (s *Store) ListStalePendingBackups(ctx context.Context, before time.Time) ([]Backup, error) {
-	rows, err := s.pool.Query(ctx, htx(), `SELECT id, path FROM g4_backup WHERE state='pending' AND created_at<$1`, before)
+	rows, err := s.query(ctx, `SELECT id, path FROM g4_backup WHERE state='pending' AND created_at<$1`, before)
 	if err != nil {
 		return nil, err
 	}

@@ -50,6 +50,14 @@ func (s *Store) qrow(ctx context.Context, q string, args ...any) (*sql.Row, erro
 	return s.pool.QueryRow(ctx, htx(), q, args...)
 }
 
+func (s *Store) exec(ctx context.Context, q string, args ...any) (sql.Result, error) {
+	return s.pool.Exec(ctx, htx(), q, args...)
+}
+
+func (s *Store) query(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
+	return s.pool.Query(ctx, htx(), q, args...)
+}
+
 // ---------- 节点 ----------
 
 type Node struct {
@@ -63,7 +71,7 @@ type Node struct {
 }
 
 func (s *Store) UpsertNode(ctx context.Context, n Node) error {
-	_, err := s.pool.Exec(ctx, htx(), `
+	_, err := s.exec(ctx, `
 INSERT INTO g4_node (id, name, labels, state, docker_version, node_protocol_version)
 VALUES ($1,$2,$3,'offline',$4,$5)
 ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, labels=EXCLUDED.labels,
@@ -99,7 +107,7 @@ FROM g4_node WHERE id=$1`, id)
 
 // SetNodeOnline 节点心跳：上线＋容量＋last_seen；离线由 Hub 探测断连后调 SetNodeState。
 func (s *Store) SetNodeOnline(ctx context.Context, id string, capacity json.RawMessage) error {
-	_, err := s.pool.Exec(ctx, htx(), `
+	_, err := s.exec(ctx, `
 UPDATE g4_node SET state='online', capacity=$2, last_seen_at=now(), updated_at=now() WHERE id=$1`, id, capacity)
 	return err
 }
@@ -173,7 +181,7 @@ LIMIT 1`, pool)
 
 // ListNodes 节点清单（options 读模型用；本期节点个位数级）。
 func (s *Store) ListNodes(ctx context.Context) ([]Node, error) {
-	rows, err := s.pool.Query(ctx, htx(), `
+	rows, err := s.query(ctx, `
 SELECT id, name, labels, state, capacity, docker_version, node_protocol_version, last_seen_at FROM g4_node ORDER BY id`)
 	if err != nil {
 		return nil, err
