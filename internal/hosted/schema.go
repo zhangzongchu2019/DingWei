@@ -125,6 +125,10 @@ CREATE TABLE IF NOT EXISTS g4_backup (
   expires_at  timestamptz NOT NULL,         -- 保留 14 天到期删（业主 8971bddf）
   created_at  timestamptz NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS g4_backup_state_idx ON g4_backup(state, expires_at);
+
+-- 包 B2（R-V2-SEAT-B2-SCHEMA-20261005002126）：g4_ 首次加列。生产已有 g4_hosted_seat（托管面已开、
+-- 业主席位在跑）⇒ CREATE IF NOT EXISTS 不会加列，须幂等 ALTER；存量行 model='' ＝ 走节点默认。
+ALTER TABLE g4_hosted_seat ADD COLUMN IF NOT EXISTS model TEXT NOT NULL DEFAULT '';
 `
 
 // DropDDL 仅测试用：逆向拆除（rollback 的可重复性验证载体）。
