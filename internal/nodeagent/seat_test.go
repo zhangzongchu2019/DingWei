@@ -1343,6 +1343,8 @@ func TestNodeDefaultMustBeInModelsList(t *testing.T) {
 		"http://172.30.68.1:11080", "wss://hub.test", "", false, "gpt-6.1-sol", "", []string{"gpt-6.1-sol"},
 	); err != nil {
 		t.Fatalf("在清单应过: %v", err)
+	}
+}
 
 // B1（包 B1）：席位容器 HostConfig.Init=true（tini 式 init——停席不再白等 10s 强杀）。
 // 反向：去掉该键 ⇒ 本格红。真机读数（docker stop<2s、退出码非 137）属部署验证格。
