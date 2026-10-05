@@ -158,6 +158,7 @@ type JobView struct {
 	Stage   string `json:"stage"` // queued|pulling|starting|online|failed
 	Reason  string `json:"reason,omitempty"`
 	AgentID string `json:"agent_id,omitempty"`
+	Model   string `json:"model"` // 包 B2 修订 3：席位生效模型（落库记录值；console 列表/详情显示用）
 }
 
 // JobProgressFor jobs 端点的读面，归属按席位 created_by 判（组长裁定 lead-g4-joint-run-1 第 2 条）：
@@ -189,15 +190,16 @@ func (o *Orchestrator) JobProgress(ctx context.Context, jobID string) (JobView, 
 }
 
 func jobViewOf(seat Seat) JobView {
+	withModel := func(v JobView) JobView { v.Model = seat.Model; return v }
 	switch seat.State {
 	case "queued", "pulling", "starting":
-		return JobView{Stage: seat.State}
+		return withModel(JobView{Stage: seat.State})
 	case "online":
-		return JobView{Stage: "online", AgentID: seat.AgentID}
+		return withModel(JobView{Stage: "online", AgentID: seat.AgentID})
 	case "busy":
-		return JobView{Stage: "online", AgentID: seat.AgentID} // 升级/重启中：席位仍在线（蒙版用于创建链）
+		return withModel(JobView{Stage: "online", AgentID: seat.AgentID}) // 升级/重启中：席位仍在线（蒙版用于创建链）
 	default: // error/failed/destroyed 等 ⇒ failed，reason＝状态机记录的机器码
-		return JobView{Stage: "failed", Reason: jobFailReason(seat.StateDetail)}
+		return withModel(JobView{Stage: "failed", Reason: jobFailReason(seat.StateDetail)})
 	}
 }
 
