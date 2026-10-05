@@ -222,6 +222,11 @@ func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources, 
 			"Privileged":     false,
 			"NetworkMode":    netName, // 每席独占网络
 			"Binds":          []string{seatDir(d.seatRoot, seatID) + ":/work"},
+			// B1（R-V2-SEAT-ITEMS-DISPATCH 包 B1）：tini 式 init 收孤儿＋转 SIGTERM——
+			// 席位主进程非 PID 1 时信号不到子进程，docker stop 白等 10s 再 SIGKILL（退出码 137）。
+			// 🔴 前置闸（复验预审）：Init 依赖 dockerd 的 docker-init 二进制——部署前必须在节点
+			// 私有 dockerd 上核其在位（docker info），缺则停报（否则建席全挂、引擎报错）。
+			"Init": true,
 		},
 	}
 }
