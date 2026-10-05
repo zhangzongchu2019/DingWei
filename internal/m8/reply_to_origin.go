@@ -130,6 +130,7 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 		p.replyToOriginUnavailable(job, "自动回程投递失败:"+err.Error())
 		return
 	}
+	p.hub.suppressPendingFeishuSyncTo(job.key.KeyID, job.key.Session, origin)
 	p.bumpReplyOrigin(&p.stats.replyOriginRouted)
 	log.Printf("[reply-origin] R1 已回程 session=%s to=%s delivery_id=%s in_reply_to=%s hop=%d",
 		job.key.Session, origin, job.key.DeliveryID, delivery.SourceMessageID, hopCountOf(inbound))

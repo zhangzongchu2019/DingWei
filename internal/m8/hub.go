@@ -2873,6 +2873,33 @@ func (h *Hub) queueFeishuSyncItem(keyID, sessionName string, target feishuSyncTa
 	h.mu.Unlock()
 }
 
+// suppressPendingFeishuSyncTo drops only the buffered mirror for an explicit
+// reply-to-origin destination.  terminal_output is buffered for one second,
+// while the structured turn completion drives replyToOrigin; without this
+// handoff the same assistant answer is delivered once by each path whenever
+// the Feishu sender also has sync enabled.  The sync subscription itself stays
+// active and other destinations/buffers are untouched.
+func (h *Hub) suppressPendingFeishuSyncTo(keyID, sessionName, origin string) {
+	to, err := parseAddress(origin)
+	if err != nil || to.Kind != addressFeishu || to.OpenID == "" {
+		return
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for bufferKey, buffer := range h.syncBuffers {
+		if buffer.keyID != keyID || buffer.sessionName != sessionName || buffer.target.openID != to.OpenID {
+			continue
+		}
+		if to.BotName != "" && buffer.target.botName != "" && !strings.EqualFold(to.BotName, buffer.target.botName) {
+			continue
+		}
+		if buffer.timer != nil {
+			buffer.timer.Stop()
+		}
+		delete(h.syncBuffers, bufferKey)
+	}
+}
+
 func (h *Hub) flushFeishuSyncBuffer(bufferKey string) {
 	h.mu.Lock()
 	buffer := h.syncBuffers[bufferKey]
@@ -4292,6 +4319,13 @@ func (h *Hub) notifyDeliveryQueued(ctx context.Context, d model.SessionDelivery,
 func (h *Hub) routeToFeishu(ctx context.Context, to address, env model.Envelope) error {
 	if shouldSkipMirror(env) {
 		log.Printf("[feishu] skip_mirror env_id=%s to=%s type=%q", env.ID, env.To, metaString(env.Meta, "type"))
+		// An explicit reply-to-origin must never be reported as routed when the
+		// Feishu exit silently suppresses it. Preserve silent no_mirror semantics
+		// for unrelated mirror/system traffic, but surface this decision through
+		// replyToOrigin's visible unavailable path.
+		if metaString(env.Meta, "route_source") == replyToOriginRouteSource {
+			return errors.New("reply_origin_feishu_skipped")
+		}
 		return nil
 	}
 	if h.Outbound == nil {

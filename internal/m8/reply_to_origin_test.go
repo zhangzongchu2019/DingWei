@@ -13,6 +13,7 @@ package m8
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -23,6 +24,24 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/bus"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
+
+func TestReplyOriginFeishuSkipIsAnError(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	env := model.Envelope{ID: "reply-origin-skip", To: feishuAddress("ou_sender", "k1", "UnifiedRobot"), Meta: map[string]any{
+		"type": "agent_route", "route_source": replyToOriginRouteSource, "no_mirror": true,
+	}}
+	to, err := parseAddress(env.To)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := h.routeToFeishu(ctx, to, env); err == nil || !strings.Contains(err.Error(), "reply_origin_feishu_skipped") {
+		t.Fatalf("reply-origin skip error = %v, want visible unavailable cause", err)
+	}
+	env.Meta["route_source"] = "mirror"
+	if err := h.routeToFeishu(ctx, to, env); err != nil {
+		t.Fatalf("ordinary no_mirror must remain a silent skip: %v", err)
+	}
+}
 
 func TestReplyToFeishuOriginPassesRealOutboundBoundary(t *testing.T) {
 	h, db, ctx := newTestHub(t)
@@ -75,6 +94,80 @@ func TestNoMirrorSkipsRemainNarrowAroundReplyToOrigin(t *testing.T) {
 				t.Fatal("non-reply no_mirror envelope was unexpectedly allowed to Feishu")
 			}
 		})
+	}
+}
+
+func TestReplyToOriginDeduplicatesPendingSyncForSameFeishuTarget(t *testing.T) {
+	h, db, ctx := newTestHub(t)
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	h.Outbound = outbound
+	h.mu.Lock()
+	h.botChannels["UnifiedRobot"] = "dev"
+	h.mu.Unlock()
+	target := feishuSyncTarget{openID: "ou_sender", botChannelID: "dev", botName: "UnifiedRobot"}
+	h.addFeishuSyncTargetAndSnapshot("k1", "bee", target)
+	h.queueFeishuSyncItem("k1", "bee", target, terminalSyncItem{TS: time.Now(), Text: "飞书回程正文"})
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-feishu-sync-dedup", "msg-feishu-sync-dedup",
+		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
+	p := testAMRProcessor()
+	p.hub, p.routeEnvelope, p.routeTimeout = h, h.RouteEnvelope, 5*time.Second
+
+	p.replyToOrigin(amrRouteJob{key: key, body: "飞书回程正文"})
+	if got := waitOutbound(t, ctx, outbound); got == nil {
+		t.Fatal("explicit reply did not reach outbound")
+	}
+	if duplicate := waitOutboundWithin(t, ctx, outbound, 1200*time.Millisecond); duplicate != nil {
+		t.Fatalf("same reply was delivered twice with sync enabled: %+v", duplicate)
+	}
+}
+
+func TestReplyToOriginDedupKeepsOtherSyncTargets(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	same := feishuSyncTarget{openID: "ou_sender", botChannelID: "dev", botName: "UnifiedRobot"}
+	other := feishuSyncTarget{openID: "ou_other", botChannelID: "dev", botName: "UnifiedRobot"}
+	for _, target := range []feishuSyncTarget{same, other} {
+		h.addFeishuSyncTargetAndSnapshot("k1", "bee", target)
+		h.queueFeishuSyncItem("k1", "bee", target, terminalSyncItem{TS: time.Now(), Text: "正文"})
+	}
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-feishu-sync-other", "msg-feishu-sync-other",
+		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
+	p, _ := replyOriginProcessor(h)
+	p.replyToOrigin(amrRouteJob{key: key, body: "正文"})
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if len(h.syncBuffers) != 1 {
+		t.Fatalf("sync buffers=%d, want only the unrelated target", len(h.syncBuffers))
+	}
+	for _, buffer := range h.syncBuffers {
+		if buffer.target.openID != "ou_other" {
+			t.Fatalf("wrong buffer survived: %+v", buffer.target)
+		}
+		if buffer.timer != nil {
+			buffer.timer.Stop()
+		}
+	}
+}
+
+func TestReplyToOriginFailureDoesNotConsumePendingSync(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	target := feishuSyncTarget{openID: "ou_sender", botChannelID: "dev", botName: "UnifiedRobot"}
+	h.addFeishuSyncTargetAndSnapshot("k1", "bee", target)
+	h.queueFeishuSyncItem("k1", "bee", target, terminalSyncItem{TS: time.Now(), Text: "正文"})
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-feishu-sync-fail", "msg-feishu-sync-fail",
+		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
+	p := testAMRProcessor()
+	p.hub = h
+	p.routeEnvelope = func(context.Context, model.Envelope) error { return errors.New("injected route failure") }
+	p.replyToOrigin(amrRouteJob{key: key, body: "正文"})
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if len(h.syncBuffers) != 1 {
+		t.Fatalf("failed explicit reply consumed sync fallback: buffers=%d", len(h.syncBuffers))
+	}
+	for _, buffer := range h.syncBuffers {
+		if buffer.timer != nil {
+			buffer.timer.Stop()
+		}
 	}
 }
 
