@@ -97,6 +97,8 @@ CREATE TABLE IF NOT EXISTS g4_lifecycle_job (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS g4_lifecycle_job_agent_idx ON g4_lifecycle_job(agent_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS g4_lifecycle_job_one_active_idx ON g4_lifecycle_job(agent_id)
+  WHERE stage IN ('queued','running');
 
 -- 用户配额（管理层设；新上限低于已用量允许保存、只限新建——G6）
 CREATE TABLE IF NOT EXISTS g4_quota (

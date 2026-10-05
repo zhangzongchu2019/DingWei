@@ -24,6 +24,17 @@ type lifecycleJob struct {
 }
 
 func (l *Lifecycle) EnqueueJob(ctx context.Context, req LifecycleJobRequest) (string, error) {
+	if active, err := l.activeJobForSeat(ctx, req.AgentID); err == nil {
+		if req.Actor == "" || active.CreatedBy != req.Actor {
+			return "", ErrNotOwner
+		}
+		if active.Op == req.Op {
+			return active.ID, nil
+		}
+		return "", ErrInvalidState
+	} else if !errors.Is(err, ErrNotFound) {
+		return "", err
+	}
 	if err := l.validateJob(ctx, req); err != nil {
 		return "", err
 	}
@@ -32,10 +43,40 @@ func (l *Lifecycle) EnqueueJob(ctx context.Context, req LifecycleJobRequest) (st
 		return "", err
 	}
 	args, _ := json.Marshal(map[string]any{"version": req.Version, "confirm": req.Confirm})
-	_, err = l.st.exec(ctx, `
-INSERT INTO g4_lifecycle_job(id,agent_id,created_by,op,args) VALUES($1,$2,$3,$4,$5)`,
+	res, err := l.st.exec(ctx, `
+INSERT INTO g4_lifecycle_job(id,agent_id,created_by,op,args) VALUES($1,$2,$3,$4,$5)
+ON CONFLICT (agent_id) WHERE stage IN ('queued','running') DO NOTHING`,
 		id, req.AgentID, req.Actor, req.Op, args)
-	return id, err
+	if err != nil {
+		return "", err
+	}
+	if n, _ := res.RowsAffected(); n == 1 {
+		return id, nil
+	}
+	active, err := l.activeJobForSeat(ctx, req.AgentID)
+	if err != nil {
+		return "", err
+	}
+	if req.Actor == "" || active.CreatedBy != req.Actor {
+		return "", ErrNotOwner
+	}
+	if active.Op != req.Op {
+		return "", ErrInvalidState
+	}
+	return active.ID, nil
+}
+
+func (l *Lifecycle) activeJobForSeat(ctx context.Context, agentID string) (lifecycleJob, error) {
+	var j lifecycleJob
+	row, err := l.st.qrow(ctx, `SELECT id,agent_id,created_by,op,args,stage,reason FROM g4_lifecycle_job
+WHERE agent_id=$1 AND stage IN ('queued','running') ORDER BY created_at LIMIT 1`, agentID)
+	if err == nil {
+		err = row.Scan(&j.ID, &j.AgentID, &j.CreatedBy, &j.Op, &j.Args, &j.Stage, &j.Reason)
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return j, ErrNotFound
+	}
+	return j, err
 }
 
 func (l *Lifecycle) validateJob(ctx context.Context, req LifecycleJobRequest) error {

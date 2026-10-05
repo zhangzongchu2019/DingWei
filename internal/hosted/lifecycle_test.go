@@ -222,6 +222,22 @@ func TestLifecycleJobPersistsProgressAndMachineReason(t *testing.T) {
 	})
 }
 
+func TestLifecycleJobDuplicatePolicy(t *testing.T) {
+	lc, _, _, _, _, _, id := mkLifecycle(t)
+	ctx := context.Background()
+	first, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "disable", Confirm: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "disable", Confirm: true})
+	if err != nil || second != first {
+		t.Fatalf("same operation retry = %q err=%v, want existing %q", second, err, first)
+	}
+	if _, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "restart"}); !errors.Is(err, ErrInvalidState) {
+		t.Fatalf("different active operation must be rejected: %v", err)
+	}
+}
+
 // 四操作＋重启的跨系统先后：同一条日志逐项等于预期（复验 L1/L2/L3/L4/L5 删闸对应）。
 func TestLifecycleOrderOnOneLog(t *testing.T) {
 	ctx := context.Background()

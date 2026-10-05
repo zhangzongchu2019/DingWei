@@ -91,6 +91,38 @@ func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
 	}
 }
 
+func TestApplySchemaUpgradesOldHostedShapeWithoutLosingSeats(t *testing.T) {
+	pool := testpool(t)
+	ctx := context.Background()
+	s := NewStore(pool)
+	if err := s.ApplySchema(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.exec(ctx, `INSERT INTO g4_node(id,name) VALUES('nd_old','old') ON CONFLICT DO NOTHING`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.exec(ctx, `INSERT INTO g4_hosted_seat(agent_id,node_id,cli,llm,cred_kind,plan,created_by)
+VALUES('ag_old','nd_old','codex','gpt','token_file','2c4g','zzc') ON CONFLICT DO NOTHING`); err != nil {
+		t.Fatal(err)
+	}
+	// This is the deployed pre-A1 shape: all existing hosted data remains, but
+	// the lifecycle-job table/index do not exist yet.
+	if _, err := s.exec(ctx, `DROP TABLE g4_lifecycle_job`); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.ApplySchema(ctx); err != nil {
+		t.Fatalf("upgrade old hosted shape: %v", err)
+	}
+	if seat, err := s.GetSeat(ctx, "ag_old"); err != nil || seat.CreatedBy != "zzc" {
+		t.Fatalf("old seat was not preserved: %+v err=%v", seat, err)
+	}
+	var exists bool
+	row, err := s.qrow(ctx, `SELECT to_regclass('g4_lifecycle_job') IS NOT NULL`)
+	if err != nil || row.Scan(&exists) != nil || !exists {
+		t.Fatalf("lifecycle job table missing after upgrade: exists=%t err=%v", exists, err)
+	}
+}
+
 func TestNodeSeatPoolQuotaFlow(t *testing.T) {
 	pool := testpool(t)
 	ctx := context.Background()
