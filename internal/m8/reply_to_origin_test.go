@@ -105,6 +105,9 @@ func TestReplyToOriginDeduplicatesPendingSyncForSameFeishuTarget(t *testing.T) {
 	h.botChannels["UnifiedRobot"] = "dev"
 	h.mu.Unlock()
 	target := feishuSyncTarget{openID: "ou_sender", botChannelID: "dev", botName: "UnifiedRobot"}
+	if err := h.Repo.SetSessionMirror(ctx, "k1", "bee", true, feishuAddress("ou_sender", "k1", "UnifiedRobot")); err != nil {
+		t.Fatal(err)
+	}
 	h.addFeishuSyncTargetAndSnapshot("k1", "bee", target)
 	h.queueFeishuSyncItem("k1", "bee", target, terminalSyncItem{TS: time.Now(), Text: "飞书回程正文"})
 	key := replyOriginFixture(t, h, ctx, "dw-dlv-feishu-sync-dedup", "msg-feishu-sync-dedup",
