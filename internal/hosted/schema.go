@@ -1,7 +1,8 @@
 package hosted
 
 // T-G4-01 · G4 托管 PG 数据模型（新平台，直接生 PG——方法件 8.2：V1 起新表不再写 SQLite 版）。
-// 约定沿 internal/datad：SchemaDDL 常量＋CREATE IF NOT EXISTS 幂等 apply；
+// 约定沿 internal/datad：SchemaDDL 常量＋幂等 apply；建表 CREATE IF NOT EXISTS、
+// 加列 ALTER ADD COLUMN IF NOT EXISTS（g4_ 首次加列＝包 B2 的 model，R-V2-SEAT-B2-SCHEMA 裁定）；
 // 集成测试以 HUB_TEST_PG_DSN 门控（永不指生产库，与 DATAD_TEST_PG_DSN 同一纪律）。
 //
 // 命名：本包表一律 g4_ 前缀，避免与 Hub 主库（R0 迁移中）及 G3 identity 表冲突。
@@ -66,6 +67,7 @@ CREATE TABLE IF NOT EXISTS g4_hosted_seat (
   cred_kind   TEXT NOT NULL CHECK (cred_kind IN ('api_key','token_file')),
   account_ref TEXT REFERENCES g4_account_pool(id),
   plan        TEXT NOT NULL CHECK (plan IN ('2c4g','4c8g')),
+  model       TEXT NOT NULL DEFAULT '', -- 生效模型（包 B2 修订 3：建席时定死、落库；upgrade/restart 按记录值重算）
   state       TEXT NOT NULL DEFAULT 'queued'
               CHECK (state IN ('queued','pulling','starting','online','busy',
                                'disabled','stopped','error','destroyed')),
@@ -140,6 +142,10 @@ CREATE TABLE IF NOT EXISTS g4_backup (
   expires_at  timestamptz NOT NULL,         -- 保留 14 天到期删（业主 8971bddf）
   created_at  timestamptz NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS g4_backup_state_idx ON g4_backup(state, expires_at);
+
+-- 包 B2（R-V2-SEAT-B2-SCHEMA-20261005002126）：g4_ 首次加列。生产已有 g4_hosted_seat（托管面已开、
+-- 业主席位在跑）⇒ CREATE IF NOT EXISTS 不会加列，须幂等 ALTER；存量行 model='' ＝ 走节点默认。
+ALTER TABLE g4_hosted_seat ADD COLUMN IF NOT EXISTS model TEXT NOT NULL DEFAULT '';
 `
 
 // DropDDL 仅测试用：逆向拆除（rollback 的可重复性验证载体）。

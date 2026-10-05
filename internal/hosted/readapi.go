@@ -65,26 +65,37 @@ type OptionsView struct {
 	Accounts []AccountOption `json:"accounts"`
 	Plans    []PlanOption    `json:"plans"`
 	Quota    QuotaView       `json:"quota"`
+	Models   []string        `json:"models"` // 包 B2：在线节点上报清单的并集（节点下线即消失）
 }
 
 // Options 新建表单数据源（一次返回不拆；本期几十条级不分页——契约第一节）。
 // 账号＝本人被授权且未绑定（ListUsableAccounts 口径；席位创建后该账号即绑定，下拉开不出）。
 func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView, error) {
 	// 四个列表一律非 nil：空时序列化为 []，不是 null（页面按数组遍历）。
-	v := OptionsView{Nodes: []NodeOption{}, Combos: []ComboOption{}, Accounts: []AccountOption{}, Plans: []PlanOption{}}
+	v := OptionsView{Nodes: []NodeOption{}, Combos: []ComboOption{}, Accounts: []AccountOption{}, Plans: []PlanOption{}, Models: []string{}}
 
 	// 节点：剩余内存/磁盘来自容量上报（心跳真采集）；free_vcpu＝cpu_total−在席套餐占用
 	nodes, err := o.st.ListNodes(ctx)
 	if err != nil {
 		return v, err
 	}
+	modelsSeen := map[string]bool{}
 	for _, n := range nodes {
 		var c struct {
-			CPUTotal   int   `json:"cpu_total"`
-			MemFreeMB  int64 `json:"mem_free_mb"`
-			DiskFreeMB int64 `json:"disk_free_mb"`
+			CPUTotal   int      `json:"cpu_total"`
+			MemFreeMB  int64    `json:"mem_free_mb"`
+			DiskFreeMB int64    `json:"disk_free_mb"`
+			Models     []string `json:"models"`
 		}
 		_ = json.Unmarshal(n.Capacity, &c)
+		if n.State == "online" { // 修订 4：下线节点的清单不进并集
+			for _, m := range c.Models {
+				if !modelsSeen[m] {
+					modelsSeen[m] = true
+					v.Models = append(v.Models, m)
+				}
+			}
+		}
 		usedVCPU, uerr := o.st.NodeUsedVCPU(ctx, n.ID)
 		if uerr != nil {
 			return v, uerr
@@ -148,6 +159,7 @@ type JobView struct {
 	Stage   string `json:"stage"` // queued|pulling|starting|running|online|completed|failed
 	Reason  string `json:"reason,omitempty"`
 	AgentID string `json:"agent_id,omitempty"`
+	Model   string `json:"model,omitempty"` // 包 B2 修订 3：席位生效模型（空＝节点默认，键缺席——旧客户端与既有精确体测试不受影响）
 }
 
 // JobProgressFor jobs 端点的读面，归属按席位 created_by 判（组长裁定 lead-g4-joint-run-1 第 2 条）：
@@ -179,15 +191,16 @@ func (o *Orchestrator) JobProgress(ctx context.Context, jobID string) (JobView, 
 }
 
 func jobViewOf(seat Seat) JobView {
+	withModel := func(v JobView) JobView { v.Model = seat.Model; return v }
 	switch seat.State {
 	case "queued", "pulling", "starting":
-		return JobView{Stage: seat.State}
+		return withModel(JobView{Stage: seat.State})
 	case "online":
-		return JobView{Stage: "online", AgentID: seat.AgentID}
+		return withModel(JobView{Stage: "online", AgentID: seat.AgentID})
 	case "busy":
-		return JobView{Stage: "online", AgentID: seat.AgentID} // 升级/重启中：席位仍在线（蒙版用于创建链）
+		return withModel(JobView{Stage: "online", AgentID: seat.AgentID}) // 升级/重启中：席位仍在线（蒙版用于创建链）
 	default: // error/failed/destroyed 等 ⇒ failed，reason＝状态机记录的机器码
-		return JobView{Stage: "failed", Reason: jobFailReason(seat.StateDetail)}
+		return withModel(JobView{Stage: "failed", Reason: jobFailReason(seat.StateDetail)})
 	}
 }
 

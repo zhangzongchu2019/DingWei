@@ -123,6 +123,75 @@ VALUES('ag_old','nd_old','codex','gpt','token_file','2c4g','zzc') ON CONFLICT DO
 	}
 }
 
+// 包 B2（R-V2-SEAT-B2-SCHEMA 裁定）：旧形状表（无 model 列、有存量行）上 ApplySchema ⇒
+// 幂等 ALTER 加列、存量行可读（model=”＝节点默认）、新建写入新列。
+// 反向：去掉 SchemaDDL 里那行 ALTER ⇒ 本格红。
+func TestSchemaModelColumnMigration(t *testing.T) {
+	pool := testpool(t)
+	ctx := context.Background()
+	s := NewStore(pool)
+	// 旧形状（生产现状）：g4_hosted_seat 无 model 列
+	if _, err := s.exec(ctx, `CREATE TABLE g4_hosted_seat (
+  agent_id    TEXT PRIMARY KEY,
+  node_id     TEXT NOT NULL,
+  cli         TEXT NOT NULL,
+  llm         TEXT NOT NULL,
+  cred_kind   TEXT NOT NULL,
+  account_ref TEXT,
+  plan        TEXT NOT NULL,
+  state       TEXT NOT NULL DEFAULT 'queued',
+  state_detail TEXT NOT NULL DEFAULT '',
+  image_ref   TEXT NOT NULL DEFAULT '',
+  created_by  TEXT NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now())`); err != nil {
+		t.Fatalf("旧形状建表: %v", err)
+	}
+	// 存量行（无 model 列时的形态）
+	if _, err := s.exec(ctx, `INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, plan, created_by)
+		VALUES ('ag_old', 'nd_a', 'codex', 'gpt', 'token_file', '2c4g', 'zzc')`); err != nil {
+		t.Fatalf("存量行: %v", err)
+	}
+	// 其余九表＋ALTER（新 Hub 启动路径）
+	if err := s.ApplySchema(ctx); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	old2, err := s.GetSeat(ctx, "ag_old")
+	if err != nil {
+		t.Fatalf("存量行须可读: %v", err)
+	}
+	if old2.Model != "" {
+		t.Fatalf("存量行 model 应空（＝节点默认）: %q", old2.Model)
+	}
+	// 新建写入新列
+	if err := s.CreateSeat(ctx, Seat{AgentID: "ag_new", NodeID: "nd_a", CLI: "codex", LLM: "gpt",
+		CredKind: "token_file", Plan: "2c4g", Model: "gpt-6.1-sol", CreatedBy: "zzc"}); err != nil {
+		t.Fatalf("新建写入新列: %v", err)
+	}
+	newSeat, _ := s.GetSeat(ctx, "ag_new")
+	if newSeat.Model != "gpt-6.1-sol" {
+		t.Fatalf("新列须写入: %q", newSeat.Model)
+	}
+	// 列存在直断（信息模式）
+	var col string
+	row, err := s.qrow(ctx, "SELECT column_name FROM information_schema.columns WHERE table_name='g4_hosted_seat' AND column_name='model'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := row.Scan(&col); err != nil || col != "model" {
+		t.Fatalf("model 列须存在: %v %q", err, col)
+	}
+	// 回滚兼容（裁定 3②）：旧 Hub 的 INSERT 形状（不含 model 列）在新表上仍成功（靠 DEFAULT ''）
+	if _, err := s.exec(ctx, `INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, plan, created_by)
+		VALUES ('ag_legacy', 'nd_a', 'codex', 'gpt', 'token_file', '2c4g', 'zzc')`); err != nil {
+		t.Fatalf("旧形状 INSERT 须仍成功: %v", err)
+	}
+	// 幂等：再 apply 不出错
+	if err := s.ApplySchema(ctx); err != nil {
+		t.Fatalf("重复 apply: %v", err)
+	}
+}
+
 func TestNodeSeatPoolQuotaFlow(t *testing.T) {
 	pool := testpool(t)
 	ctx := context.Background()
@@ -241,5 +310,61 @@ func TestAccessCtxValid(t *testing.T) {
 	}
 	if err := row.Scan(&n); err != nil || n != 1 {
 		t.Fatalf("htx 占位不可用: n=%d err=%v", n, err)
+	}
+}
+
+// 合并形态（复验建议入库，tosonnet55tc2k）：生产真实形态＝既无 model 列又无 g4_lifecycle_job 表
+// （包 A 与 B2 两处缺同存）。ApplySchema 两次（升级＋幂等重放）⇒ 席位可读且 model=”、
+// job 表与 model 列都在。反向：去 ALTER 或去 job 表 CREATE 各红。
+func TestApplySchemaUpgradesPreA1PreB2Shape(t *testing.T) {
+	pool := testpool(t)
+	ctx := context.Background()
+	s := NewStore(pool)
+	// 生产真实旧形状：g4_hosted_seat 无 model 列、无 g4_lifecycle_job 表
+	if _, err := s.exec(ctx, `CREATE TABLE g4_hosted_seat (
+  agent_id    TEXT PRIMARY KEY,
+  node_id     TEXT NOT NULL,
+  cli         TEXT NOT NULL,
+  llm         TEXT NOT NULL,
+  cred_kind   TEXT NOT NULL,
+  account_ref TEXT,
+  plan        TEXT NOT NULL,
+  state       TEXT NOT NULL DEFAULT 'queued',
+  state_detail TEXT NOT NULL DEFAULT '',
+  image_ref   TEXT NOT NULL DEFAULT '',
+  created_by  TEXT NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now())`); err != nil {
+		t.Fatalf("旧形状建表: %v", err)
+	}
+	if _, err := s.exec(ctx, `INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, plan, created_by)
+		VALUES ('ag_old', 'nd_a', 'codex', 'gpt', 'token_file', '2c4g', 'zzc')`); err != nil {
+		t.Fatalf("存量行: %v", err)
+	}
+	for i := 0; i < 2; i++ { // 升级＋幂等重放
+		if err := s.ApplySchema(ctx); err != nil {
+			t.Fatalf("apply #%d: %v", i, err)
+		}
+	}
+	seat, err := s.GetSeat(ctx, "ag_old")
+	if err != nil || seat.Model != "" {
+		t.Fatalf("存量行可读且 model 空: %+v %v", seat, err)
+	}
+	var col string
+	row, err := s.qrow(ctx, "SELECT column_name FROM information_schema.columns WHERE table_name='g4_hosted_seat' AND column_name='model'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := row.Scan(&col); err != nil || col != "model" {
+		t.Fatalf("model 列须在: %v %q", err, col)
+	}
+	// job 表在（包 A 面）
+	var tn string
+	row2, err := s.qrow(ctx, "SELECT table_name FROM information_schema.tables WHERE table_name='g4_lifecycle_job'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := row2.Scan(&tn); err != nil || tn != "g4_lifecycle_job" {
+		t.Fatalf("job 表须在: %v %q", err, tn)
 	}
 }

@@ -80,6 +80,8 @@ func main() {
 		// R-V2-HOSTED-DRIVER-IMPL（版本 2 指标 2）：cli｜driver；未设＝cli（逐字不变）；
 		// 非法值拒启报键名（RegisterDockerHandlers 内校验）。
 		os.Getenv("NODEAGENT_SEAT_MODE"),
+		// 包 B2：本节点可选模型清单（运维配置；逐项格式校验在 RegisterDockerHandlers）。
+		csvList("NODEAGENT_SEAT_CODEX_MODELS"),
 	); err != nil {
 		log.Fatalf("nodeagent: %v", err)
 	}
@@ -94,6 +96,17 @@ func main() {
 	if err := ag.Run(ctx); err != nil && ctx.Err() == nil {
 		log.Fatalf("nodeagent: %v", err)
 	}
+}
+
+// csvList 读 CSV 列表 env（逐项 TrimSpace、去空项；空＝nil）。
+func csvList(key string) []string {
+	var out []string
+	for _, it := range strings.Split(os.Getenv(key), ",") {
+		if it = strings.TrimSpace(it); it != "" {
+			out = append(out, it)
+		}
+	}
+	return out
 }
 
 // envTruthy 开关解析：1/true/yes/on（大小写不敏感）为真，其余（含未设）为假——缺省即关， fail-closed 到旧行为。

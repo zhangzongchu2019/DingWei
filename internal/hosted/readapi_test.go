@@ -72,7 +72,7 @@ func TestOptionsJSONMatchesContract(t *testing.T) {
 	}
 
 	raw, m := optionsJSON(t, o, "zzc")
-	if got, want := keysOf(t, m), []string{"accounts", "combos", "nodes", "plans", "quota"}; !reflect.DeepEqual(got, want) {
+	if got, want := keysOf(t, m), []string{"accounts", "combos", "models", "nodes", "plans", "quota"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("top-level keys %v, want %v", got, want)
 	}
 	// quota：契约原文 quota: {remaining:{agents, vcpu, mem_gb, disk_gb}}；配额 2/4/8G/1T（R-G4-DISK-TIER 后磁盘档定 8192），已占一席 2C/4G/8G。
@@ -246,5 +246,36 @@ func TestJobProgressForOwnerBySeat(t *testing.T) {
 		if _, err := o.JobProgressFor(ctx, c.job, c.actor); !errors.Is(err, ErrNotOwner) {
 			t.Errorf("job %s as %q: %v, want not_owner", c.job, c.actor, err)
 		}
+	}
+}
+
+// 包 B2：options.models＝在线节点上报清单的并集；节点下线即从并集消失（修订 4）。
+func TestOptionsModelsUnionOnlineOnly(t *testing.T) {
+	o, _, _, s := mkOrch(t)
+	ctx := context.Background()
+	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol","gpt-5.5"]}`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetNodeOnline(ctx, "nd_full", json.RawMessage(`{"mem_free_mb":1024,"models":["gpt-4o"]}`)); err != nil {
+		t.Fatal(err)
+	}
+	_, m := optionsJSON(t, o, "zzc")
+	models := m["models"].([]any)
+	if len(models) != 3 {
+		t.Fatalf("两在线节点并集应 3 个: %v", models)
+	}
+	// 下线 nd_full ⇒ gpt-4o 消失
+	if err := s.SetNodeState(ctx, "nd_full", "offline"); err != nil {
+		t.Fatal(err)
+	}
+	_, m2 := optionsJSON(t, o, "zzc")
+	models2 := m2["models"].([]any)
+	for _, mm := range models2 {
+		if mm == "gpt-4o" {
+			t.Fatalf("下线节点的模型应消失: %v", models2)
+		}
+	}
+	if len(models2) != 2 {
+		t.Fatalf("并集应剩 2: %v", models2)
 	}
 }

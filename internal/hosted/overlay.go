@@ -72,7 +72,7 @@ func (o *Orchestrator) hostedItem(ctx context.Context, agentID string) (map[stri
 	if seat.State == "destroyed" {
 		return nil, false, nil
 	}
-	m := map[string]any{"plan": seat.Plan, "image_version": seat.ImageRef}
+	m := map[string]any{"plan": seat.Plan, "image_version": seat.ImageRef, "model": seat.Model} // 包 B2 修订 3：生效模型（空串＝节点默认）
 
 	node, nerr := o.st.GetNode(ctx, seat.NodeID)
 	if nerr == nil {

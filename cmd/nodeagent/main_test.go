@@ -28,3 +28,16 @@ func TestEnvTruthy(t *testing.T) {
 		}
 	}
 }
+
+// 包 B2：NODEAGENT_SEAT_CODEX_MODELS CSV 解析（逐项 TrimSpace、去空、空＝nil）。
+func TestCsvList(t *testing.T) {
+	t.Setenv("NODEAGENT_SEAT_CODEX_MODELS", "gpt-6.1-sol, gpt-5.5 ,,")
+	got := csvList("NODEAGENT_SEAT_CODEX_MODELS")
+	if len(got) != 2 || got[0] != "gpt-6.1-sol" || got[1] != "gpt-5.5" {
+		t.Fatalf("解析: %v", got)
+	}
+	t.Setenv("NODEAGENT_SEAT_CODEX_MODELS", "")
+	if got := csvList("NODEAGENT_SEAT_CODEX_MODELS"); got != nil {
+		t.Fatalf("空应 nil: %v", got)
+	}
+}

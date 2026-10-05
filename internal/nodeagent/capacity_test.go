@@ -110,3 +110,17 @@ func TestReportCapacityHandler(t *testing.T) {
 		t.Fatalf("采集内容: %s", out)
 	}
 }
+
+// 包 B2：容量帧必须带可选模型清单（HOSTED 侧选点的事实源；反向：不上报 ⇒ 红）。
+func TestCapacityCarriesModels(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	d.seatModels = []string{"gpt-6.1-sol"}
+	c, err := d.collectCapacity(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.Models) != 1 || c.Models[0] != "gpt-6.1-sol" {
+		t.Fatalf("容量帧须带清单: %v", c.Models)
+	}
+}

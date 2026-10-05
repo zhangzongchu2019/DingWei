@@ -35,7 +35,7 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 		return false, nil
 	}
 	hst := hosted.NewStore(pool)
-	if err := hst.ApplySchema(ctx); err != nil { // 幂等 SchemaDDL（迁移账本：一次性变更无 ALTER）
+	if err := hst.ApplySchema(ctx); err != nil { // 幂等 SchemaDDL（建表 CREATE IF NOT EXISTS；加列用幂等 ALTER ADD COLUMN IF NOT EXISTS——g4_ 首次加列起）
 		return false, err
 	}
 	poolSvc, err := hosted.NewPoolService(hst, mkPath)
