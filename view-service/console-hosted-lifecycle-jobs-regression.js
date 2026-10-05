@@ -27,6 +27,8 @@ const M = {
   'no-inflight-text': () => mutate('st.textContent=hostedOpInflight[a.agent_id]?hostedOpInflightText(hostedOpInflight[a.agent_id]):(hs?', 'st.textContent=(hs?'),
   'no-stage-text': () => mutate("var st=inf.stage&&inf.stage!=='queued'?", "var st=false?"),
   'online-while-busy-is-done': () => mutate("if(op!=='destroy'&&hs&&hs.state==='busy'){", 'if(false){'),
+  'button-text-unchanged': () => mutate("hostedOpInflight[a.agent_id]&&hostedOpInflight[a.agent_id].op===d[0]?HOSTED_OPS[d[0]]+'中':d[1]", 'd[1]'),
+  'button-text-all': () => mutate("hostedOpInflight[a.agent_id]&&hostedOpInflight[a.agent_id].op===d[0]?", 'hostedOpInflight[a.agent_id]?'),
   'fail-drops-code': () => mutate("'（原因码 '+(reason||'未知')+'）'", "''"),
   'fail-drops-reason-text': () => mutate("(HOSTED_FAIL_REASONS[reason]||'操作未成功')", "'操作未成功'"),
   'poll-error-is-failure': () => mutate('}catch(err){inf.timer=setTimeout(tick,hostedPollMs);return;}', "}catch(err){stage='failed';reason='x';}"),
@@ -127,6 +129,8 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await row('alpha').locator('[data-op="restart"]').click();
       await waitStatus('alpha', /^重启中…/);
       assert.deepStrictEqual(await opsDisabled('alpha'), [true, true, true, true], 'buttons locked while in flight');
+      assert.strictEqual(await row('alpha').locator('[data-op="restart"]').textContent(), '重启中', 'the clicked button reads 重启中');
+      assert.strictEqual(await row('alpha').locator('[data-op="upgrade"]').textContent(), '升级', 'other buttons keep their words');
       await waitStatus('alpha', /^重启中…（启动）/);   // 阶段随轮询变
       await page.waitForTimeout(600);   // 此时 job 视图已报 online，但席位行还是 busy
       assert.match(await stText('alpha').textContent(), /^重启中…/, 'online from the job view while the row is busy is not completion');

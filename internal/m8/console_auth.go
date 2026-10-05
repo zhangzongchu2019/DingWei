@@ -1037,7 +1037,8 @@ function hostedOpButtons(a,hs){
     ?[['enable','启用',true],['destroy','销毁',true]]   // 停用中:容器已停,重启无意义;暂停中不能升级,须先启用(f0fe9794)——给了也只会被 Hub 拒绝
     :[['upgrade','升级',false],['restart','重启',false],['disable','停用',true],['destroy','销毁',true]];
   ops.forEach(function(d){
-    var b=document.createElement('button');b.type='button';b.className='hosted-op';b.dataset.op=d[0];b.textContent=d[1];b.disabled=busy;
+    var b=document.createElement('button');b.type='button';b.className='hosted-op';b.dataset.op=d[0];b.textContent=hostedOpInflight[a.agent_id]&&hostedOpInflight[a.agent_id].op===d[0]?HOSTED_OPS[d[0]]+'中':d[1];b.disabled=busy;   // 进行中态按钮字（占位，业主确认后替换）：被点的那个按钮写「停用中／启用中／重启中／升级中／销毁中」
+   
     b.onclick=async function(){
       var body={};
       if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器将被删除,凭据立即吊销;数据卷会先备份一次并保留 14 天,到期删除;备份不占你的配额。确认销毁？'))return;body.confirm=true;}
