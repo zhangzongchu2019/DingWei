@@ -6763,6 +6763,9 @@ func TestInternalViewEventsReplaysOnSubscribe(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("online: got %d, want 200", resp.StatusCode)
 	}
+	if got := resp.Header.Get("X-Accel-Buffering"); got != "no" {
+		t.Fatalf("SSE X-Accel-Buffering = %q, want no", got)
+	}
 	buf := make([]byte, 0, 512)
 	tmp := make([]byte, 256)
 	deadline := time.Now().Add(envelopeReadTimeout)
@@ -7067,6 +7070,33 @@ func TestViewRoutingPrecedenceAndFallback(t *testing.T) {
 	// 目标不可达 → fail-safe 回退老页
 	if b := get("dead-one-3dd6"); strings.Contains(b, "VIEWSVC") || !strings.Contains(b, "<!doctype") {
 		t.Fatalf("unreachable target should fall back to legacy: %q", head(b))
+	}
+}
+
+func TestViewTasksSubPathIsNotProxied(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	proxied := 0
+	stub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		proxied++
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer stub.Close()
+	cfg := `{"default":"v2","targets":{"v2":{"url":"` + stub.URL + `"}}}`
+	path := t.TempDir() + "/routing.json"
+	if err := os.WriteFile(path, []byte(cfg), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("VIEW_ROUTING_CONFIG", path)
+	resetViewRoutingCacheForTest()
+	t.Cleanup(resetViewRoutingCacheForTest)
+
+	req := httptest.NewRequest(http.MethodGet, "/view/timer.zzc/tasks", nil)
+	req.SetPathValue("sessionName", "timer.zzc")
+	req.SetPathValue("rest", "tasks")
+	rr := httptest.NewRecorder()
+	hub.HandleViewSubPath(rr, req)
+	if rr.Code != http.StatusNotFound || proxied != 0 {
+		t.Fatalf("/tasks status=%d proxied=%d, want 404/0", rr.Code, proxied)
 	}
 }
 

@@ -84,6 +84,20 @@ CREATE TABLE IF NOT EXISTS g4_seat_event (
   at       timestamptz NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS g4_seat_event_agent_idx ON g4_seat_event(agent_id, id);
 
+-- 生命周期异步任务：独立 job_id 防止同一席位的多轮操作互相串读。
+CREATE TABLE IF NOT EXISTS g4_lifecycle_job (
+  id         TEXT PRIMARY KEY,
+  agent_id   TEXT NOT NULL REFERENCES g4_hosted_seat(agent_id),
+  created_by TEXT NOT NULL,
+  op         TEXT NOT NULL CHECK (op IN ('upgrade','restart','disable','enable','destroy')),
+  args       JSONB NOT NULL DEFAULT '{}',
+  stage      TEXT NOT NULL DEFAULT 'queued'
+             CHECK (stage IN ('queued','running','completed','failed')),
+  reason     TEXT NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS g4_lifecycle_job_agent_idx ON g4_lifecycle_job(agent_id, created_at DESC);
+
 -- 用户配额（管理层设；新上限低于已用量允许保存、只限新建——G6）
 CREATE TABLE IF NOT EXISTS g4_quota (
   user_lc       TEXT PRIMARY KEY,
@@ -130,6 +144,6 @@ CREATE INDEX IF NOT EXISTS g4_backup_state_idx ON g4_backup(state, expires_at);
 // 🔴 表名集合必须与 SchemaDDL 一致（R-V2-DEPLOY-ARTIFACTS 甲案补拆 g4_backup；
 // 漏拆由 TestSchemaDropLeavesNoG4Tables 钉住——少一张即红）。
 const DropDDL = `
-DROP TABLE IF EXISTS g4_audit, g4_team_key, g4_quota, g4_backup, g4_account_grant, g4_account_pool,
+DROP TABLE IF EXISTS g4_audit, g4_team_key, g4_quota, g4_backup, g4_lifecycle_job, g4_account_grant, g4_account_pool,
   g4_seat_event, g4_hosted_seat, g4_node_credential, g4_node CASCADE;
 `

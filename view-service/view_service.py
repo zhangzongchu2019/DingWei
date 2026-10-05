@@ -605,6 +605,7 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Accel-Buffering", "no")
         self.end_headers()
         # 转发 hub 的内网 SSE(C2),逐行透传,并记成本
         u = urlparse(HUB_INTERNAL)

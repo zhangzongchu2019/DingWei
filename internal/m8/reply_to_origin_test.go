@@ -23,6 +23,40 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
+func TestReplyOriginFeishuSkipIsAnError(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	env := model.Envelope{ID: "reply-origin-skip", To: feishuAddress("ou_sender", "k1", "UnifiedRobot"), Meta: map[string]any{
+		"type": "agent_route", "route_source": replyToOriginRouteSource, "no_mirror": true,
+	}}
+	to, err := parseAddress(env.To)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := h.routeToFeishu(ctx, to, env); err == nil || !strings.Contains(err.Error(), "reply_origin_feishu_skipped") {
+		t.Fatalf("reply-origin skip error = %v, want visible unavailable cause", err)
+	}
+
+	// Silent no_mirror remains unchanged for non-reply-origin traffic.
+	env.Meta["route_source"] = "mirror"
+	if err := h.routeToFeishu(ctx, to, env); err != nil {
+		t.Fatalf("ordinary no_mirror must remain a silent skip: %v", err)
+	}
+}
+
+func TestReplyOriginFeishuSkipBecomesVisibleUnavailable(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-skipped-return", "msg-skipped-return",
+		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
+	p := testAMRProcessor()
+	p.hub = h
+	p.routeEnvelope = h.RouteEnvelope
+	p.routeTimeout = time.Second
+	p.replyToOrigin(amrRouteJob{key: key, body: "这条不能被冒记为已回程"})
+	if p.stats.replyOriginRouted != 0 || p.stats.replyOriginUnavailable != 1 {
+		t.Fatalf("reply stats routed=%d unavailable=%d, want 0/1", p.stats.replyOriginRouted, p.stats.replyOriginUnavailable)
+	}
+}
+
 // replyOriginFixture 造一条「A → B」的 durable 投递记录,返回 turn key。
 func replyOriginFixture(t *testing.T, h *Hub, ctx context.Context, deliveryID, sourceMessageID, from string, meta map[string]any) amrTurnKey {
 	t.Helper()

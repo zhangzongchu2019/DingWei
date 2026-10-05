@@ -301,6 +301,10 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 	if seat.State == "destroyed" {
 		return nil // 幂等
 	}
+	// From the first destructive side effect onward this is server-owned cleanup.
+	// A browser closing its lifecycle request must not cancel backup bookkeeping,
+	// credential retirement, volume removal, or account release halfway through.
+	ctx = context.WithoutCancel(ctx)
 	node, nerr := l.st.GetNode(ctx, seat.NodeID)
 	if nerr != nil || node.State != "online" {
 		return l.destroyOffline(ctx, seat, actorLC)

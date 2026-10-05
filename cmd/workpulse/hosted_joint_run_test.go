@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/hosted"
 )
@@ -193,13 +194,29 @@ func TestHostedQuotaCodesOverHTTP(t *testing.T) {
 	}
 }
 
-// 第 7 条在真路由上：节点发不到 ⇒ 503 node_offline，席位状态不变。
+// 第 7 条在真路由上：节点发不到 ⇒ 入队 202，jobs 最终给出 node_offline，席位状态不变。
 func TestHostedLifecycleNodeDown(t *testing.T) {
 	h, deps, st, _, gw := mkHostedHTTP(t)
 	id := onlineSeat(t, deps, st)
 	gw.downOn = "stop_seat"
-	if code, body, m := h.do("zzc", "POST", "/api/console/hosted/agents/"+id+"/disable", `{"confirm":true}`); code != 503 || m["error"] != "node_offline" {
-		t.Fatalf("%d %s", code, body)
+	code, body, m := h.do("zzc", "POST", "/api/console/hosted/agents/"+id+"/disable", `{"confirm":true}`)
+	jobID, _ := m["job_id"].(string)
+	if code != http.StatusAccepted || jobID == "" {
+		t.Fatalf("enqueue: %d %s", code, body)
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		code, body, m = h.do("zzc", "GET", "/api/console/hosted/jobs/"+jobID, "")
+		if m["stage"] == "failed" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("job did not fail: %d %s", code, body)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if code != http.StatusOK || m["reason"] != "node_offline" {
+		t.Fatalf("job result: %d %s", code, body)
 	}
 	if seat, _ := st.GetSeat(context.Background(), id); seat.State != "online" {
 		t.Fatalf("seat state must not change: %+v", seat)

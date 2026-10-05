@@ -22,6 +22,13 @@ import (
 	"time"
 )
 
+type cancelBackupGateway struct{ cancel context.CancelFunc }
+
+func (g cancelBackupGateway) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
+	g.cancel()
+	return NodeResult{}, ctx.Err()
+}
+
 // mkTarGz 造一个真 tar.gz（条目名→内容）。
 func mkTarGz(t *testing.T, files map[string]string) []byte {
 	t.Helper()
@@ -280,6 +287,72 @@ func TestBackupHandlerAuthAndStates(t *testing.T) {
 	}
 	if c := post(bad, secret); c != 404 {
 		t.Fatalf("rejected record must be void, later upload got %d", c)
+	}
+}
+
+func TestSweepExpiredBackupsReclaimsOnlyStalePending(t *testing.T) {
+	_, s := mkPoolSvc(t)
+	ctx := context.Background()
+	dir := t.TempDir()
+	now := time.Now().UTC()
+	oldPath := dir + "/old.tar.gz"
+	freshPath := dir + "/fresh.tar.gz"
+	for _, path := range []string{oldPath, oldPath + ".tmp", freshPath} {
+		if err := os.WriteFile(path, []byte("partial"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, bk := range []Backup{
+		{ID: "bk_stale_pending", NodeID: "nd", SeatID: "ag", State: "pending", Path: oldPath, ExpiresAt: now.Add(BackupTTL)},
+		{ID: "bk_fresh_pending", NodeID: "nd", SeatID: "ag", State: "pending", Path: freshPath, ExpiresAt: now.Add(BackupTTL)},
+	} {
+		if err := s.CreateBackup(ctx, bk); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := s.pool.Exec(ctx, htx(), `UPDATE g4_backup SET created_at=$2 WHERE id=$1`, "bk_stale_pending", now.Add(-PendingBackupTTL-time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	b := NewHubBackuper(s, nil, "", dir)
+	if err := b.SweepExpiredBackups(ctx, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.GetBackup(ctx, "bk_stale_pending"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("stale pending row survived: %v", err)
+	}
+	for _, path := range []string{oldPath, oldPath + ".tmp"} {
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			t.Fatalf("stale pending artifact survived: %s err=%v", path, err)
+		}
+	}
+	if _, err := s.GetBackup(ctx, "bk_fresh_pending"); err != nil {
+		t.Fatalf("fresh pending row was swept: %v", err)
+	}
+	if _, err := os.Stat(freshPath); err != nil {
+		t.Fatalf("fresh pending artifact was swept: %v", err)
+	}
+}
+
+func TestClientCancellationOrphanPendingIsEventuallySwept(t *testing.T) {
+	_, s := mkPoolSvc(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	now := time.Now().UTC()
+	b := NewHubBackuper(s, cancelBackupGateway{cancel: cancel}, "https://hub.invalid", t.TempDir())
+	b.now = func() time.Time { return now }
+	if _, err := b.BackupSeatVolume(ctx, "nd_cancel", "ag_cancel"); err == nil {
+		t.Fatal("cancelled export unexpectedly succeeded")
+	}
+	var pending int
+	row, err := s.qrow(context.Background(), `SELECT count(*) FROM g4_backup WHERE state='pending'`)
+	if err != nil || row.Scan(&pending) != nil || pending != 1 {
+		t.Fatalf("client cancellation did not reproduce orphan pending: count=%d err=%v", pending, err)
+	}
+	if err := b.SweepExpiredBackups(context.Background(), now.Add(PendingBackupTTL+time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	row, err = s.qrow(context.Background(), `SELECT count(*) FROM g4_backup WHERE state='pending'`)
+	if err != nil || row.Scan(&pending) != nil || pending != 0 {
+		t.Fatalf("orphan pending survived age sweep: count=%d err=%v", pending, err)
 	}
 }
 

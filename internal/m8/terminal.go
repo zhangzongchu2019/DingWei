@@ -172,6 +172,13 @@ func (h *Hub) HandleViewSubPath(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid session name", http.StatusBadRequest)
 		return
 	}
+	// /tasks belongs to the console task board, never to an Agent view.  Do not
+	// proxy this spelling to view-service: doing so turns a stale/guessed view
+	// URL into a misleading application page instead of an honest 404.
+	if strings.Trim(strings.TrimSpace(r.PathValue("rest")), "/") == "tasks" {
+		http.NotFound(w, r)
+		return
+	}
 	name, tgt := loadViewRouting().resolve(sessionName, ownerFromSessionName(sessionName))
 	if !tgt.Builtin && tgt.URL != "" {
 		if h.proxyToViewService(w, r, sessionName, tgt.URL) {
@@ -780,6 +787,7 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
 	w.WriteHeader(http.StatusOK)
 	flusher.Flush()
 

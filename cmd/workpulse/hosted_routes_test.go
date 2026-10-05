@@ -257,6 +257,10 @@ func TestHostedRoutesContractCodes(t *testing.T) {
 	if rec := as("eve", "POST", "/api/console/hosted/agents/ag_rt1/restart", `{}`); codeOf(rec) != "not_owner" {
 		t.Fatalf("非本人操作: %d %s", rec.Code, rec.Body)
 	}
+	// invalid_state/不存在托管席位必须在入队前同步 422，不能造一个必败 job。
+	if rec := as("zzc", "POST", "/api/console/hosted/agents/ag_missing/restart", `{}`); rec.Code != http.StatusUnprocessableEntity || codeOf(rec) != "invalid_state" {
+		t.Fatalf("invalid_state must be synchronous: %d %s", rec.Code, rec.Body)
+	}
 
 	// 配额：非管理 ⇒ forbidden_role；管理 ⇒ GET 200／PUT 缺键 name_invalid／四键齐 200
 	if rec := as("zzc", "GET", "/api/console/admin/quotas", ""); codeOf(rec) != "forbidden_role" {

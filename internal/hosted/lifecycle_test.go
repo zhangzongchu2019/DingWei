@@ -96,14 +96,29 @@ func (g *lcGw) Send(ctx context.Context, nodeID string, c NodeCommand) (NodeResu
 type lcBk struct {
 	log    *evLog
 	failOn bool
+	ctxErr error
 }
 
 func (b *lcBk) BackupSeatVolume(ctx context.Context, nodeID, seatID string) (string, error) {
 	b.log.add("backup")
+	b.ctxErr = ctx.Err()
 	if b.failOn {
 		return "", errors.New("injected backup")
 	}
 	return "bk://" + nodeID + "/" + seatID + "/v1", nil
+}
+
+type cancellingLifecycleGateway struct {
+	inner  *lcGw
+	cancel context.CancelFunc
+}
+
+func (g *cancellingLifecycleGateway) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
+	res, err := g.inner.Send(ctx, nodeID, cmd)
+	if cmd.Type == "stop_seat" {
+		g.cancel() // model the browser disconnecting after cleanup has begun
+	}
+	return res, err
 }
 
 // mkLifecycle 建在线席位＋全日志假件（创建期的节点指令清零后再进用例）。
@@ -142,6 +157,70 @@ func eqSeq(t *testing.T, name string, got, want []string) {
 }
 
 const newerImage = "hub.local/dingwei/base-codex@sha256:" + "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+
+func TestDestroyCleanupSurvivesClientCancellation(t *testing.T) {
+	lc, _, _, gw, bk, st, id := mkLifecycle(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	lc.gw = &cancellingLifecycleGateway{inner: gw, cancel: cancel}
+	if err := lc.Destroy(ctx, id, "zzc", false, true); err != nil {
+		t.Fatalf("destroy after client cancellation: %v", err)
+	}
+	if bk.ctxErr != nil {
+		t.Fatalf("backup inherited client cancellation: %v", bk.ctxErr)
+	}
+	seat, err := st.GetSeat(context.Background(), id)
+	if err != nil || seat.State != "destroyed" {
+		t.Fatalf("cleanup did not finish: seat=%+v err=%v", seat, err)
+	}
+}
+
+func TestLifecycleJobPersistsProgressAndMachineReason(t *testing.T) {
+	ctx := context.Background()
+	t.Run("completed", func(t *testing.T) {
+		lc, _, _, _, _, _, id := mkLifecycle(t)
+		jobID, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "disable", Confirm: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		lc.RunJob(ctx, jobID)
+		got, err := lc.JobProgressFor(ctx, jobID, "zzc")
+		if err != nil || got.Stage != "completed" || got.AgentID != id || got.Reason != "" {
+			t.Fatalf("completed job = %+v err=%v", got, err)
+		}
+	})
+	t.Run("failed", func(t *testing.T) {
+		lc, _, _, gw, _, _, id := mkLifecycle(t)
+		gw.downOn = "stop_seat"
+		jobID, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "disable", Confirm: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		lc.RunJob(ctx, jobID)
+		got, err := lc.JobProgressFor(ctx, jobID, "zzc")
+		if err != nil || got.Stage != "failed" || got.Reason != "node_offline" {
+			t.Fatalf("failed job = %+v err=%v", got, err)
+		}
+	})
+	t.Run("restart waits for reconnect", func(t *testing.T) {
+		lc, _, _, _, _, st, id := mkLifecycle(t)
+		jobID, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "restart"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		lc.RunJob(ctx, jobID)
+		got, err := lc.JobProgressFor(ctx, jobID, "zzc")
+		if err != nil || got.Stage != "running" {
+			t.Fatalf("pre-reconnect job = %+v err=%v", got, err)
+		}
+		if err := st.SetSeatState(ctx, id, "online", "", "online", nil); err != nil {
+			t.Fatal(err)
+		}
+		got, err = lc.JobProgressFor(ctx, jobID, "zzc")
+		if err != nil || got.Stage != "completed" || got.AgentID != id {
+			t.Fatalf("post-reconnect job = %+v err=%v", got, err)
+		}
+	})
+}
 
 // 四操作＋重启的跨系统先后：同一条日志逐项等于预期（复验 L1/L2/L3/L4/L5 删闸对应）。
 func TestLifecycleOrderOnOneLog(t *testing.T) {
