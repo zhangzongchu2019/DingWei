@@ -200,6 +200,51 @@ func TestReplyToOriginGroupIsNotSuppressedBySenderPersonalSync(t *testing.T) {
 	if duplicate := waitOutboundWithin(t, ctx, outbound, 200*time.Millisecond); duplicate != nil {
 		t.Fatalf("explicit group return duplicated: %+v", duplicate)
 	}
+	// The independent personal sync path may still deliver the same terminal
+	// output to the owner's private chat.  It is a different conversation, so
+	// the correct result is one group return plus one personal sync -- never two
+	// copies to either destination.
+	h.queueFeishuSyncItem("k1", "bee", feishuSyncTarget{
+		openID: "ou_sender", botChannelID: "dev", botName: "UnifiedRobot",
+	}, terminalSyncItem{TS: time.Now(), Text: "群回复正文"})
+	personal := waitOutbound(t, ctx, outbound)
+	if personal == nil || personal.ChatEntityID != "dev:personal:ou_sender" || personal.ChatType != model.ChatPersonal {
+		t.Fatalf("personal sync target = %+v, want dev:personal:ou_sender", personal)
+	}
+	if duplicate := waitOutboundWithin(t, ctx, outbound, 200*time.Millisecond); duplicate != nil {
+		t.Fatalf("group plus personal sync produced a third copy: %+v", duplicate)
+	}
+}
+
+func TestReplyToOriginGroupWithoutSyncUsesGroupConversation(t *testing.T) {
+	h, db, ctx := newTestHub(t)
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	h.Outbound = outbound
+	h.mu.Lock()
+	h.botChannels["UnifiedRobot"] = "dev"
+	h.mu.Unlock()
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-group-no-sync", "msg-group-no-sync",
+		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{
+			"type":                  "delivery",
+			"source_chat_type":      string(model.ChatGroup),
+			"source_chat_id":        "oc_group",
+			"source_sender_openid":  "ou_sender",
+			"source_bot_channel_id": "dev",
+		})
+	p := testAMRProcessor()
+	p.hub, p.routeEnvelope, p.routeTimeout = h, h.RouteEnvelope, 5*time.Second
+	p.replyToOrigin(amrRouteJob{key: key, body: "无同步群回复"})
+
+	got := waitOutbound(t, ctx, outbound)
+	if got == nil || got.ChatEntityID != "dev:group:oc_group" || got.ChatType != model.ChatGroup {
+		t.Fatalf("group no-sync target = %+v, want dev:group:oc_group", got)
+	}
+	if text := messageText(t, got); !strings.HasPrefix(text, `<at user_id="ou_sender"></at> `) || !strings.Contains(text, "无同步群回复") {
+		t.Fatalf("group no-sync mention/body = %q", text)
+	}
+	if duplicate := waitOutboundWithin(t, ctx, outbound, 200*time.Millisecond); duplicate != nil {
+		t.Fatalf("group no-sync return duplicated: %+v", duplicate)
+	}
 }
 
 func TestReplyToOriginDefersToSameGroupSyncExactlyOnce(t *testing.T) {
