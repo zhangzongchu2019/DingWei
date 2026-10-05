@@ -702,11 +702,12 @@ func TestNeverConnectsSweepedStartTimeout(t *testing.T) {
 func TestCreateWithModelSelectsSupportingNode(t *testing.T) {
 	o, _, gw, s := mkOrch(t)
 	ctx := context.Background()
-	// nd_free 上报清单含 gpt-6.1-sol；nd_full 不含（修订 1 的错位形：余量大的不支持）
+	// nd_free 上报清单含 gpt-6.1-sol；nd_full 不含。🔴 错位须钉在容量上：nd_full 余量
+	// 更大（32768＞16384）——不按清单过滤时自动选点会选 nd_full（反向刀才能红）。
 	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol"]}`)); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(ctx, "nd_full", json.RawMessage(`{"mem_free_mb":1024,"models":["gpt-4o"]}`)); err != nil {
+	if err := s.SetNodeOnline(ctx, "nd_full", json.RawMessage(`{"mem_free_mb":32768,"models":["gpt-4o"]}`)); err != nil {
 		t.Fatal(err)
 	}
 	acct := acctOf(t, o.pool)
