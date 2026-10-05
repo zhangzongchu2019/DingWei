@@ -183,23 +183,6 @@ func (h *Hub) HandleViewSubPath(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
-// HandleViewTasks serves the renderer's legacy global GET /tasks poll.  The
-// 0.2.1.95 view-service has the real snapshot handler at this root path; it is
-// not a /view/<session>/ subpath.  Production historically relied on nginx to
-// route it directly.  Hub now wires that existing data source itself, and
-// fails closed to an empty 200 snapshot when no view-service is configured or
-// reachable so a background poll never produces a permanent 404.
-func (h *Hub) HandleViewTasks(w http.ResponseWriter, r *http.Request) {
-	_, tgt := loadViewRouting().resolve("", "")
-	if !tgt.Builtin && tgt.URL != "" && proxyViewTasks(w, r, tgt.URL) {
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(http.StatusOK)
-	_, _ = io.WriteString(w, `{"project":"","tasks":[]}`)
-}
-
 func (h *Hub) HandleTerminalViewCookie(w http.ResponseWriter, r *http.Request) {
 	sessionName := strings.TrimSpace(r.PathValue("sessionName"))
 	if sessionName == "" || strings.Contains(sessionName, "#") {
@@ -974,6 +957,23 @@ func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, session
 	}
 	rp.ServeHTTP(w, r)
 	return reached
+}
+
+// HandleViewTasks serves the renderer's legacy global GET /tasks poll.  The
+// 0.2.1.95 view-service has the real snapshot handler at this root path; it is
+// not a /view/<session>/ subpath.  Production historically relied on nginx to
+// route it directly.  Hub now wires that existing data source itself, and
+// fails closed to an empty 200 snapshot when no view-service is configured or
+// reachable so a background poll never produces a permanent 404.
+func (h *Hub) HandleViewTasks(w http.ResponseWriter, r *http.Request) {
+	_, tgt := loadViewRouting().resolve("", "")
+	if !tgt.Builtin && tgt.URL != "" && proxyViewTasks(w, r, tgt.URL) {
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusOK)
+	_, _ = io.WriteString(w, `{"project":"","tasks":[]}`)
 }
 
 func proxyViewTasks(w http.ResponseWriter, r *http.Request, target string) bool {
