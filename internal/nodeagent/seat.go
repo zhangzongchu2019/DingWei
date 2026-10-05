@@ -575,6 +575,11 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	if !validSeatID(p.SeatID) {
 		return nil, fmt.Errorf("%w: seat_id %q", ErrParams, p.SeatID)
 	}
+	// 复验缺口（tosonnet55tc2k）：upgrade 的 model 至少过格式校验（成员关系不查——
+	// 记录值可能早于清单变更；Hub 下发是记录值，格式纵深仍在）。
+	if p.Model != "" && !validModelName(p.Model) {
+		return nil, fmt.Errorf("%w: model %q 格式不对", ErrParams, p.Model)
+	}
 	if err := validateImageRef(p.Image, d.registry); err != nil {
 		return nil, err
 	}

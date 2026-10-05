@@ -350,7 +350,7 @@ func (s *Store) FailBackup(ctx context.Context, id string) error {
 		_ = os.Remove(path)
 		_ = os.Remove(path + ".tmp")
 	}
-	err = s.exec(ctx, `DELETE FROM g4_backup WHERE id=$1 AND state='pending'`, id)
+	_, err = s.exec(ctx, `DELETE FROM g4_backup WHERE id=$1 AND state='pending'`, id)
 	return err
 }
 

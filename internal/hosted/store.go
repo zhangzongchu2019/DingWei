@@ -44,13 +44,6 @@ func (s *Store) DropSchema(ctx context.Context) error {
 	return err
 }
 
-// exec 统一写入口（与 qrow 同族）：新增写路径走这里——htx 直调点在边界闸按效果计债，
-// 包装层集中一处，新增调用点零增债（R-BOUNDARY-GATE-REGRESS 教训）。
-func (s *Store) exec(ctx context.Context, q string, args ...any) error {
-	_, err := s.pool.Exec(ctx, htx(), q, args...)
-	return err
-}
-
 // qrow 统一取行并如实上交错误（M1 返修：不得丢 QueryRow 的 error——
 // htx 调用点若哪天构造失效，拒绝必须当场可见，不能推迟到 Scan 变成"扫不出行"）。
 func (s *Store) qrow(ctx context.Context, q string, args ...any) (*sql.Row, error) {
@@ -345,7 +338,8 @@ FROM g4_hosted_seat WHERE agent_id=$1`, agentID)
 
 // SetSeatModel 写席位生效模型（包 B2；建席时 CreateSeat 已带，本方法供升级口径调整与测试）。
 func (s *Store) SetSeatModel(ctx context.Context, agentID, model string) error {
-	return s.exec(ctx, `UPDATE g4_hosted_seat SET model=$2, updated_at=now() WHERE agent_id=$1`, agentID, model)
+	_, err := s.exec(ctx, `UPDATE g4_hosted_seat SET model=$2, updated_at=now() WHERE agent_id=$1`, agentID, model)
+	return err
 }
 
 // SetSeatState 状态机迁移＋事件一条（同事务，InTx 回调——句柄不出 repo 包）。

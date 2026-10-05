@@ -3,6 +3,7 @@ package nodeagent
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -1358,5 +1359,37 @@ func TestCreateSeatInitEnabled(t *testing.T) {
 	hc, _ := f.specs[0]["HostConfig"].(map[string]any)
 	if hc["Init"] != true {
 		t.Fatalf("HostConfig.Init 必须 true: %v", hc["Init"])
+	}
+}
+
+// 复验缺口（tosonnet55tc2k）：upgrade 带 model ⇒ spec Env 含 CODEX_MODEL＝该值；坏格式 ⇒ ErrParams。
+// 反向：去注入／去校验各红。
+func TestUpgradeModelInjectAndValidate(t *testing.T) {
+	f := newFakeDocker(t)
+	// 好值：upgrade 后新容器 spec 带 CODEX_MODEL
+	d := f.ops(t.TempDir())
+	// 先建一席（upgrade 需要旧容器存在）
+	create := `{"seat_id":"ag_up","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex"}`
+	if _, err := d.create(context.Background(), json.RawMessage(create)); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	up := `{"seat_id":"ag_up","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex","model":"gpt-6.1-sol"}`
+	if _, err := d.upgrade(context.Background(), json.RawMessage(up)); err != nil {
+		t.Fatalf("upgrade: %v", err)
+	}
+	last := f.specs[len(f.specs)-1]
+	envs, _ := last["Env"].([]any)
+	joined := "\n"
+	for _, e := range envs {
+		v, _ := e.(string)
+		joined += v + "\n"
+	}
+	if !strings.Contains(joined, "\nCODEX_MODEL=gpt-6.1-sol\n") {
+		t.Fatalf("upgrade 后 spec Env 须含 CODEX_MODEL＝记录值: %v", envs)
+	}
+	// 坏格式 ⇒ ErrParams
+	bad := `{"seat_id":"ag_up","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex","model":"gpt/6"}`
+	if _, err := d.upgrade(context.Background(), json.RawMessage(bad)); !errors.Is(err, ErrParams) {
+		t.Fatalf("坏格式应 ErrParams: %v", err)
 	}
 }
