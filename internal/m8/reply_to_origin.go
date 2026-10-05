@@ -85,6 +85,16 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 	if origin == "" {
 		origin = inbound.From
 	}
+	// Feishu group ingress deliberately uses the sender's personal ou_ address
+	// in From (ownership/routing identity), while the actual conversation to
+	// reply to lives in source_chat_type/source_chat_id.  Restore that target
+	// before sync/mirror de-duplication; otherwise a group reply is mistaken for
+	// the sender's personal sync and is silently diverted to private chat.
+	if from, e := parseAddress(inbound.From); e == nil && from.Kind == addressFeishu {
+		if target, ok := replySourceAddress(inbound.Meta); ok {
+			origin = feishuAddress(target, from.KeyID, from.BotName)
+		}
+	}
 	self := sessionAddress(job.key.Session, job.key.KeyID)
 	if origin == "" || origin == self {
 		p.replyToOriginUnavailable(job, "本轮没有可回程的来源地址,内容未自动回程")
@@ -108,6 +118,13 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 			"source_turn_id":     job.key.TurnID,
 			"route_source":       replyToOriginRouteSource,
 		},
+	}
+	// Preserve the source conversation context used by routeToFeishu to choose
+	// group vs personal delivery and to mention the original group sender.
+	for _, key := range []string{"source_chat_type", "source_chat_id", "source_sender_openid", "source_open_id", "source_bot_channel_id"} {
+		if value, ok := inbound.Meta[key]; ok {
+			env.Meta[key] = value
+		}
 	}
 	// hop 沿链累加:RouteEnvelope 里的 R4 兜底靠它计数。不带的话每一跳都从 0 起算,兜底永远够不着。
 	env.Meta[metaKeyHopCount] = hopCountOf(inbound)
