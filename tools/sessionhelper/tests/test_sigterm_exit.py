@@ -3,7 +3,10 @@
 背景：B1 给席位容器加了 Init:true（tini 式 init 收孤儿＋转 SIGTERM）——helper 变成
 init 的子进程，SIGTERM 会被转发到它。本格钉：helper 收到 SIGTERM 须迅速退出
 （不卡到 docker stop 的 10s 强杀窗、不被 SIGKILL）。
-真 helper 子进程（echo 模式、死 Hub＝重连退避中）。"""
+真 helper 子进程（echo 模式、死 Hub＝重连退避中）。
+语义（复验说明，防误读）：本格防的是「以后有人给 helper 装忽略或阻塞 SIGTERM 的代码」——
+Python 默认处理器本来就会终止进程；PID1 场景（容器内无 init 时信号被内核忽略）
+只能由部署窗口的真机读数证（docker stop<2s、ExitCode 143 或 0，见 B1 交付说明）。"""
 import os
 import signal
 import subprocess
