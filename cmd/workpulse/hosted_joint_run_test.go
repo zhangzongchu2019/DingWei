@@ -134,13 +134,28 @@ func TestHostedCreateNameInvalidCode(t *testing.T) {
 	}
 }
 
-// 第 4 条：销毁时备份不可用 ⇒ 503 {"error":"backup_failed","detail":原因}；席位不动。
+// 第 4 条：销毁时备份不可用 ⇒ 入队成功，job 最终 failed/backup_failed；席位不动。
 func TestHostedDestroyBackupFailed(t *testing.T) {
 	h, deps, st, _, _ := mkHostedHTTP(t)
 	id := onlineSeat(t, deps, st)
 	code, body, m := h.do("zzc", "POST", "/api/console/hosted/agents/"+id+"/destroy", `{"confirm":true}`)
-	if code != 503 || m["error"] != "backup_failed" || m["detail"] != "backup_pipeline_not_ready" || len(m) != 2 {
-		t.Fatalf("%d %s", code, body)
+	jobID, _ := m["job_id"].(string)
+	if code != http.StatusAccepted || jobID == "" {
+		t.Fatalf("enqueue: %d %s", code, body)
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		code, body, m = h.do("zzc", "GET", "/api/console/hosted/jobs/"+jobID, "")
+		if m["stage"] == "failed" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("job did not fail: %d %s", code, body)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if code != http.StatusOK || m["reason"] != "backup_failed" {
+		t.Fatalf("job result: %d %s", code, body)
 	}
 	// 组长取甲（2026-10-02）：在线销毁先停容器再备份；备份不成 ⇒ 不吊销、不删，席位如实记 error／backup_failed。
 	if seat, _ := st.GetSeat(context.Background(), id); seat.State != "error" || seat.StateDetail != "backup_failed" {
