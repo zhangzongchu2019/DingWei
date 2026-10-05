@@ -999,7 +999,6 @@ function hostedOpTrack(a,op,jobId){
   var inf={op:op,name:a.name||'',jobId:jobId,stage:'queued',started:Date.now(),timer:null};
   hostedOpInflight[a.agent_id]=inf;renderRoster();
   function end(){if(hostedOpInflight[a.agent_id]===inf)delete hostedOpInflight[a.agent_id];}
-  function rowOf(){return rosterAgents.filter(function(x){return x.agent_id===a.agent_id;})[0]||null;}
   async function tick(){
     if(hostedOpInflight[a.agent_id]!==inf)return;
     if(!document.getElementById('rosterItems')){end();return;}   // 面板已关
@@ -1011,19 +1010,9 @@ function hostedOpTrack(a,op,jobId){
       var d=await r.json();stage=String(d.stage||'');reason=String(d.reason||'');
     }catch(err){inf.timer=setTimeout(tick,hostedPollMs);return;}   // 网络抖动：继续轮询，不当成失败
     if(hostedOpInflight[a.agent_id]!==inf)return;
-    if(stage==='failed'){
-      var listed=op==='destroy'&&!HOSTED_FAIL_REASONS[reason]?await refreshRoster():true;
-      if(!listed){inf.timer=setTimeout(tick,hostedPollMs);return;}   // 销毁的权宜判定要靠「行已不在」：没读到列表就不下结论，继续轮询（有上限），不当成功也不当失败
-      // 销毁成功后座位已不在，Hub 若仍把它报成 failed 而原因不在已知码里：以「行已不在」为准按成功处理（失败的销毁——例如备份失败——行还在）
-      if(op==='destroy'&&!rowOf()&&!HOSTED_FAIL_REASONS[reason]){end();enrollFeedback('rosterFeedback',HOSTED_OPS[op]+' '+inf.name+' 已完成');refreshGroups('hosted-op');refreshAgents();return;}
-      end();enrollFeedback('rosterFeedback',hostedOpFail(inf,reason));renderRoster();if(listed&&!(op==='destroy'&&!HOSTED_FAIL_REASONS[reason]))refreshRoster();return;
-    }
-    if(HOSTED_OP_DONE.indexOf(stage)>=0){
-      if(!await refreshRoster()){inf.stage='running';renderRoster();inf.timer=setTimeout(tick,hostedPollMs);return;}   // 没读到列表就判不了「行还是不是 busy」：继续等
-      var cur=rowOf(),hs=cur&&cur.hosted;
-      // 升级／重启期间席位仍在线，Hub 的 job 视图可能先报 online：行里还是 busy 就继续等
-      if(op!=='destroy'&&hs&&hs.state==='busy'){inf.stage='running';renderRoster();inf.timer=setTimeout(tick,hostedPollMs);return;}
-      end();enrollFeedback('rosterFeedback',HOSTED_OPS[op]+' '+inf.name+' 已完成');renderRoster();refreshGroups('hosted-op');refreshAgents();return;
+    if(stage==='failed'){end();enrollFeedback('rosterFeedback',hostedOpFail(inf,reason));renderRoster();refreshRoster();return;}
+    if(HOSTED_OP_DONE.indexOf(stage)>=0){   // 成功终态只按 A1 契约判定（R-V2-SEAT-A1-JOBVIEW）：前端不猜、不替后端兜 busy／销毁的错
+      end();enrollFeedback('rosterFeedback',HOSTED_OPS[op]+' '+inf.name+' 已完成');renderRoster();refreshRoster();refreshGroups('hosted-op');refreshAgents();return;
     }
     inf.stage=stage;renderRoster();inf.timer=setTimeout(tick,hostedPollMs);
   }

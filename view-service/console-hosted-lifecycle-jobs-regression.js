@@ -26,18 +26,14 @@ const M = {
   'no-inflight-lock': () => mutate("busy=hs.state==='busy'||!!hostedOpInflight[a.agent_id],list=[]", "busy=hs.state==='busy',list=[]"),
   'no-inflight-text': () => mutate('st.textContent=hostedOpInflight[a.agent_id]?hostedOpInflightText(hostedOpInflight[a.agent_id]):(hs?', 'st.textContent=(hs?'),
   'no-stage-text': () => mutate("var st=inf.stage&&inf.stage!=='queued'?", "var st=false?"),
-  'online-while-busy-is-done': () => mutate("if(op!=='destroy'&&hs&&hs.state==='busy'){", 'if(false){'),
   'button-text-unchanged': () => mutate("hostedOpInflight[a.agent_id]&&hostedOpInflight[a.agent_id].op===d[0]?HOSTED_OPS[d[0]]+'中':d[1]", 'd[1]'),
   'button-text-all': () => mutate("hostedOpInflight[a.agent_id]&&hostedOpInflight[a.agent_id].op===d[0]?", 'hostedOpInflight[a.agent_id]?'),
   'fail-drops-code': () => mutate("'（原因码 '+(reason||'未知')+'）'", "''"),
   'fail-drops-reason-text': () => mutate("(HOSTED_FAIL_REASONS[reason]||'操作未成功')", "'操作未成功'"),
   'poll-error-is-failure': () => mutate('}catch(err){inf.timer=setTimeout(tick,hostedPollMs);return;}', "}catch(err){stage='failed';reason='x';}"),
   'sync-422-no-refetch': () => mutate("if(res.code==='invalid_state')refreshRoster();return;}", 'return;}'),
-  'list-read-failure-no-wait': () => mutate('if(!listed){inf.timer=setTimeout(tick,hostedPollMs);return;}', ''),
-  'done-list-read-failure-no-wait': () => mutate("if(!await refreshRoster()){inf.stage='running';renderRoster();inf.timer=setTimeout(tick,hostedPollMs);return;}", 'await refreshRoster();'),
+  'destroy-success-shown-failed': () => mutate("if(HOSTED_OP_DONE.indexOf(stage)>=0){", "if(HOSTED_OP_DONE.indexOf(stage)>=0&&op!=='destroy'){"),
   'poll-no-cap': () => mutate('if(Date.now()-inf.started>HOSTED_OP_MAX_MS){', 'if(false){'),
-  'destroy-gone-ignored': () => mutate("if(op==='destroy'&&!rowOf()&&!HOSTED_FAIL_REASONS[reason]){", 'if(false){'),
-  'destroy-failed-as-success': () => mutate("if(op==='destroy'&&!rowOf()&&!HOSTED_FAIL_REASONS[reason]){", "if(op==='destroy'){"),
   'reasons-missing-backup': () => mutate("backup_failed:'销毁前备份数据卷失败，容器没有被删除',", ''),
   'reasons-missing-rollback': () => mutate("容器没有被删除',upgrade_failed_rolled_back:'升级失败，已自动回滚到原版本',invalid_state", "容器没有被删除',invalid_state"),
   'legacy-sync-broken': () => mutate("      refreshRoster();refreshGroups('hosted-op');refreshAgents();\n    };", '    };'),
@@ -49,10 +45,10 @@ const G = 'A'.repeat(32);
 let rows;
 function reset() {
   rows = {};
-  for (const n of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel', 'india']) rows[n] = { id: `ag-${n}`, state: 'running', upgradable: true, online: true };
+  for (const n of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf']) rows[n] = { id: `ag-${n}`, state: 'running', upgradable: true, online: true };
 }
 reset();
-const jobs = {}; let jobSeq = 0; const writes = []; const getCounts = { agents: 0 }; let listFail = 0; const polls = {}; let pollFail = 0;
+const jobs = {}; let jobSeq = 0; const writes = []; const getCounts = { agents: 0 }; const polls = {}; let pollFail = 0;
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
 function read(req) { return new Promise((r) => { let b = ''; req.on('data', (c) => { b += c; }); req.on('end', () => r(b ? JSON.parse(b) : {})); }); }
 // 每个 job 一份剧本：逐次轮询取下一步，最后一步停住；步里的 fn 在被取到时改桩状态
@@ -62,7 +58,6 @@ const server = http.createServer(async (req, res) => {
   if (p === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
   if (p === '/api/console/agents') {
     getCounts.agents++;
-    if (listFail > 0) { listFail--; res.writeHead(500); return res.end('list boom'); }
     return json(res, 200, { agents: Object.entries(rows).map(([n, r]) => ({ state: 'active', online: r.online, agent_id: r.id, name: n, full_name: `${n}.zzc`, origin: 'hosted', group_code: G, hosted: { state: r.state, upgradable: r.upgradable, node_name: 'node-a' } })) });
   }
   if (p === '/api/console/platform') return json(res, 200, { role: 'owner', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'ready' }] });
@@ -86,19 +81,15 @@ const server = http.createServer(async (req, res) => {
     if (name === 'golf') { r.state = 'running'; return json(res, 200, { state: 'running' }); }   // 旧的同步成功
     const finish = (stage, reason, fn) => ({ stage, reason, fn });
     let steps;
-    if (name === 'alpha') {   // 重启：升级/重启中 Hub 的 job 视图把 busy 报成 online
-      r.state = 'busy';
-      steps = [finish('queued'), finish('starting'), finish('online'), finish('online'), finish('online', '', () => { r.state = 'running'; })];
+    if (name === 'alpha') {   // 重启
+      r.state = 'busy';   // 终态名按 A1 契约（待板件）；这里先用 done 占位
+      steps = [finish('queued'), finish('starting'), finish('done', '', () => { r.state = 'running'; })];
     } else if (name === 'charlie') {   // 升级失败回滚
       r.state = 'busy'; steps = [finish('queued'), finish('failed', 'upgrade_failed_rolled_back', () => { r.state = 'running'; })];
     } else if (name === 'delta') {   // 销毁：备份失败，行还在
       steps = [finish('queued'), finish('failed', 'backup_failed')];
-    } else if (name === 'echo') {   // 销毁成功：行没了；Hub 把销毁完的座位报成 failed 且无已知原因
-      steps = [finish('queued'), finish('failed', '', () => { delete rows.echo; })];
-    } else if (name === 'india') {   // 重启已完成，但列表读先失败几次：没读到列表不能判完成
-      steps = [finish('online')];
-    } else if (name === 'hotel') {   // 销毁真的失败（行还在、原因码未知），而列表读恰好失败几次
-      steps = [finish('queued'), finish('failed', '')];
+    } else if (name === 'echo') {   // 销毁成功：A1 契约＝job 成功（不得报 failed），行没了
+      steps = [finish('queued'), finish('done', '', () => { delete rows.echo; })];
     } else if (name === 'foxtrot') {   // 永远处理中
       steps = [finish('pulling')];
     } else steps = [finish('failed', 'start_failed')];
@@ -132,16 +123,13 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await row('alpha').waitFor({ state: 'visible' });
     await page.evaluate(() => { hostedPollMs = 250; });
 
-    await test('restart returns 202+job: the row shows 重启中… with the stage, every button is locked; Hub reporting online while the row is still busy is NOT done; done only when the row is no longer busy, then 已完成', async () => {
+    await test('restart returns 202+job: the row shows 重启中… with the stage, every button is locked, the job reaching its success terminal gives 已完成 and a refreshed row', async () => {
       await row('alpha').locator('[data-op="restart"]').click();
       await waitStatus('alpha', /^重启中…/);
       assert.deepStrictEqual(await opsDisabled('alpha'), [true, true, true, true], 'buttons locked while in flight');
       assert.strictEqual(await row('alpha').locator('[data-op="restart"]').textContent(), '重启中', 'the clicked button reads 重启中');
       assert.strictEqual(await row('alpha').locator('[data-op="upgrade"]').textContent(), '升级', 'other buttons keep their words');
       await waitStatus('alpha', /^重启中…（启动）/);   // 阶段随轮询变
-      await page.waitForTimeout(600);   // 此时 job 视图已报 online，但席位行还是 busy
-      assert.match(await stText('alpha').textContent(), /^重启中…/, 'online from the job view while the row is busy is not completion');
-      assert.doesNotMatch(await feedback().textContent(), /已完成/);
       await waitFeedback(/重启 alpha 已完成/);
       assert.match(await stText('alpha').textContent(), /^运行中/);
       assert.deepStrictEqual(await opsDisabled('alpha'), [false, false, false, false], 'buttons back after completion');
@@ -163,34 +151,12 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.deepStrictEqual(writes.at(-1), { path: '/api/console/hosted/agents/ag-delta/destroy', body: { confirm: true } });
     });
 
-    await test('destroy that succeeded (row gone) is not shown as a failure even if the Hub job view says failed without a known reason', async () => {
+    await test('destroy: the job succeeds (A1 contract) ⇒ 已完成, the row is gone, never a failure text', async () => {
+      await page.evaluate(() => { document.getElementById('rosterFeedback').textContent = ''; });
       await row('echo').locator('[data-op="destroy"]').click();
       await waitFeedback(/销毁 echo 已完成/);
       assert.strictEqual(await row('echo').count(), 0);
       assert.doesNotMatch(await feedback().textContent(), /失败/);
-    });
-
-    await test('destroy failed with an unknown reason while the roster read fails: no conclusion is drawn from the missing list (not success, not failure) until the list is read; the row is still there ⇒ failure', async () => {
-      await page.evaluate(() => { document.getElementById('rosterFeedback').textContent = ''; });
-      listFail = 3;
-      await row('hotel').locator('[data-op="destroy"]').click();
-      await page.waitForFunction(() => /失败|已完成/.test(document.getElementById('rosterFeedback')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
-      const t = await feedback().textContent();
-      assert.strictEqual(listFail, 0, 'the failure verdict only came after the list reads recovered');
-      assert.doesNotMatch(t, /已完成/);
-      assert.match(t, /销毁 hotel 失败：.*（原因码 未知）/);
-      assert.strictEqual(await row('hotel').count(), 1);
-    });
-
-    await test('job says online but the roster read fails: completion is only declared after the list was actually read', async () => {
-      await page.evaluate(() => { document.getElementById('rosterFeedback').textContent = ''; });
-      listFail = 1000;   // 列表一直读不到
-      await row('india').locator('[data-op="restart"]').click();
-      await page.waitForTimeout(1200);
-      assert.doesNotMatch(await feedback().textContent(), /已完成/, 'no completion without having read the list');
-      assert.match(await stText('india').textContent(), /^重启中…/);
-      listFail = 0;   // 列表恢复
-      await waitFeedback(/重启 india 已完成/);
     });
 
     await test('synchronous 422 invalid_state: shown at once in our wording, no job polled, the roster is refetched', async () => {
