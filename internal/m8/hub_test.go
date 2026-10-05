@@ -7076,12 +7076,18 @@ func TestViewRoutingPrecedenceAndFallback(t *testing.T) {
 func TestViewBackgroundTasksNeverReturns404(t *testing.T) {
 	t.Run("existing 095 data source", func(t *testing.T) {
 		hub, _, _ := newTestHub(t)
+		requests := 0
 		stub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requests++
 			if r.URL.Path != "/tasks" {
 				t.Fatalf("view-service path=%q, want /tasks", r.URL.Path)
 			}
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = io.WriteString(w, `{"project":"p","tasks":[{"id":"t1"}]}`)
+			if requests == 1 {
+				_, _ = io.WriteString(w, `{"project":"p","tasks":[{"id":"t1"}]}`)
+				return
+			}
+			_, _ = io.WriteString(w, `{"project":"","tasks":[]}`)
 		}))
 		defer stub.Close()
 		cfg := `{"default":"v2","targets":{"v2":{"url":"` + stub.URL + `"}}}`
@@ -7097,6 +7103,11 @@ func TestViewBackgroundTasksNeverReturns404(t *testing.T) {
 		if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"id":"t1"`) {
 			t.Fatalf("configured /tasks = %d %s", rr.Code, rr.Body.String())
 		}
+		rr = httptest.NewRecorder()
+		hub.HandleViewTasks(rr, httptest.NewRequest(http.MethodGet, "/tasks", nil))
+		if rr.Code != http.StatusOK || strings.TrimSpace(rr.Body.String()) != `{"tasks":[]}` {
+			t.Fatalf("unconfigured production view-service snapshot = %d %s", rr.Code, rr.Body.String())
+		}
 	})
 	t.Run("fail closed empty snapshot", func(t *testing.T) {
 		hub, _, _ := newTestHub(t)
@@ -7105,7 +7116,7 @@ func TestViewBackgroundTasksNeverReturns404(t *testing.T) {
 		defer resetViewRoutingCacheForTest()
 		rr := httptest.NewRecorder()
 		hub.HandleViewTasks(rr, httptest.NewRequest(http.MethodGet, "/tasks", nil))
-		if rr.Code != http.StatusOK || strings.TrimSpace(rr.Body.String()) != `{"project":"","tasks":[]}` {
+		if rr.Code != http.StatusOK || strings.TrimSpace(rr.Body.String()) != `{"tasks":[]}` {
 			t.Fatalf("fallback /tasks = %d %s", rr.Code, rr.Body.String())
 		}
 	})

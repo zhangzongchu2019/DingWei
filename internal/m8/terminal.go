@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -973,7 +974,7 @@ func (h *Hub) HandleViewTasks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
-	_, _ = io.WriteString(w, `{"project":"","tasks":[]}`)
+	_, _ = io.WriteString(w, `{"tasks":[]}`)
 }
 
 func proxyViewTasks(w http.ResponseWriter, r *http.Request, target string) bool {
@@ -987,6 +988,30 @@ func proxyViewTasks(w http.ResponseWriter, r *http.Request, target string) bool 
 		req.URL.Path = strings.TrimRight(u.Path, "/") + "/tasks"
 		req.Host = u.Host
 	}}
+	// The renderer contract for an empty snapshot is exact {"tasks":[]}.
+	// 0.2.1.95 view-service also emits an empty project field when
+	// VS_TASKS_FILE is unset; normalize only that empty case at the Hub edge and
+	// leave non-empty snapshots byte-for-byte under view-service ownership.
+	rp.ModifyResponse = func(resp *http.Response) error {
+		if resp.StatusCode != http.StatusOK {
+			return nil
+		}
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		_ = resp.Body.Close()
+		var snapshot struct {
+			Tasks []json.RawMessage `json:"tasks"`
+		}
+		if json.Unmarshal(body, &snapshot) == nil && snapshot.Tasks != nil && len(snapshot.Tasks) == 0 {
+			body = []byte(`{"tasks":[]}`)
+		}
+		resp.Body = io.NopCloser(strings.NewReader(string(body)))
+		resp.ContentLength = int64(len(body))
+		resp.Header.Set("Content-Length", strconv.Itoa(len(body)))
+		return nil
+	}
 	reached := true
 	rp.ErrorHandler = func(http.ResponseWriter, *http.Request, error) { reached = false }
 	rp.ServeHTTP(w, r)
