@@ -123,7 +123,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	svc.OnSuspended = hub.NewPlatformAgentGone
 	// 用户停用／恢复／改类型（A11）：立即重投影；停用时断开其全部 Agent。
 	svc.OnUserChanged = hub.NewPlatformUserChanged
-	svc.OnCredentialIssued = hub.DisconnectAgent
+	svc.OnCredentialIssued = hub.DisconnectAgentRotated // 轮换只断不删：旧 helper 收 credential_suspended，不删共用 /work 里的新凭据
 	svc.NameAllowed = m8.AgentNameAllowed
 	ob := identity.NewOnboarding(svc)
 	ob.CodeKey = cfg.codeKey
