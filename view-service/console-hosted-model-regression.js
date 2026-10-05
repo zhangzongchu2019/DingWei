@@ -1,5 +1,5 @@
 // 包 C3 · 建席表单「模型」下拉（接 B2）与席位列表显示生效模型的浏览器闸。派工 R-V2-SEAT-ITEMS-DISPATCH-20261005000613 · B2 批 R-V2-SEAT-B2-DESIGN-APPROVE-20261005000917。
-// 线上形状（待 kimi30kqtuxerh 确认，请求 efbda2642291）：options.models＝字符串数组（兼容 [{id}]）；建席请求可选 model（选默认＝不带键）；
+// 线上形状（待 kimi30kqtuxerh 确认，请求 efbda2642291）：options.models＝字符串数组（kimi 已确认，efbda2642291）；建席请求可选 model（选默认＝不带键）；
 //   422 model_not_available / model_not_supported；GET /api/console/agents 托管行 hosted.model（空串＝节点默认）。文案为占位。
 // MUTATION=<名>：同 console-quota-regression.js 约定（退出码 1 红·0 绿·2 崩·3 变异无效）。
 const assert = require('assert');
@@ -23,8 +23,7 @@ const M = {
   'mutation-anchor-selftest': () => mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'),
   'model-always-sent': () => mutate('var model=v(\'hostedModel\');if(model)body.model=model;', "var model=v('hostedModel');body.model=model;"),
   'model-never-sent': () => mutate('var model=v(\'hostedModel\');if(model)body.model=model;', "var model=v('hostedModel');"),
-  'models-not-deduped': () => mutate('if(id&&out.indexOf(id)<0)out.push(id);', 'if(id)out.push(id);'),
-  'models-object-form-ignored': () => mutate("var id=typeof m==='string'?m:(m&&typeof m.id==='string'?m.id:'');", "var id=typeof m==='string'?m:'';"),
+  'models-not-deduped': () => mutate("if(typeof m==='string'&&m&&out.indexOf(m)<0)out.push(m);", "if(typeof m==='string'&&m)out.push(m);"),
   'empty-models-no-note': () => mutate("models.length?'默认':'默认（当前没有可选模型）'", "'默认'"),
   'err-not-available-missing': () => mutate("model_not_available:'所选模型当前没有在线节点支持，请换一个模型或稍后再试',", ''),
   'err-not-supported-missing': () => mutate("model_not_supported:'这个 CLI 不支持指定模型，请选「默认」',", ''),
@@ -36,7 +35,7 @@ if (mutation && !M[mutation]) { console.error(`MUTATION-UNKNOWN: ${mutation}`); 
 if (mutation) M[mutation]();
 
 const G = 'A'.repeat(32);
-let optModels = ['gpt-a', 'gpt-b', 'gpt-a', { id: 'gpt-c' }];
+let optModels = ['gpt-a', 'gpt-b', 'gpt-a', 'gpt-c'];
 const writes = [];
 function options() {
   return {
@@ -96,7 +95,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await page.locator('#platform-items a[data-item-id="agent-groups"]').click();
     await page.locator('#hostedForm').waitFor({ state: 'visible' });
 
-    await test('the model dropdown lists 默认 first then the Hub-aggregated models, de-duplicated, string or {id} form', async () => {
+    await test('the model dropdown lists 默认 first then the Hub-aggregated models, de-duplicated strings', async () => {
       assert.deepStrictEqual(await modelOpts(), [['', '默认'], ['gpt-a', 'gpt-a'], ['gpt-b', 'gpt-b'], ['gpt-c', 'gpt-c']]);
     });
 

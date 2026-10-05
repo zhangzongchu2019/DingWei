@@ -893,8 +893,7 @@ function hostedFill(id,items,placeholder){
 }
 function hostedModelList(opts){
   var out=[];(Array.isArray(opts.models)?opts.models:[]).forEach(function(m){
-    var id=typeof m==='string'?m:(m&&typeof m.id==='string'?m.id:'');
-    if(id&&out.indexOf(id)<0)out.push(id);});
+    if(typeof m==='string'&&m&&out.indexOf(m)<0)out.push(m);});   // B2 契约：options.models＝字符串数组（在线节点并集、已去重；无则 []）；只认字符串
   return out;
 }
 function renderHostedForm(){
