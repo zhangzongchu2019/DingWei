@@ -27,6 +27,6 @@
 
 ## 读数
 
-- 目标格：OK；PG strict 整包在终尖重跑。
+- `HUB_TEST_PG_STRICT=1 go test -p 1 ./internal/m8 -count=1`：OK，81.854s。
 - 三道仓闸：全绿；repo-boundary 为建库 5、逃逸 1、hosted 债 39，均与基线持平。
 - `git diff --check`：净。
