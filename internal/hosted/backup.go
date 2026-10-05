@@ -335,7 +335,7 @@ func (s *Store) FailBackup(ctx context.Context, id string) error {
 		_ = os.Remove(path)
 		_ = os.Remove(path + ".tmp")
 	}
-	_, err = s.pool.Exec(ctx, htx(), `DELETE FROM g4_backup WHERE id=$1 AND state='pending'`, id)
+	err = s.exec(ctx, `DELETE FROM g4_backup WHERE id=$1 AND state='pending'`, id)
 	return err
 }
 

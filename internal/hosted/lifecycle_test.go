@@ -707,8 +707,7 @@ func TestDestroyStopsBeforeBackup(t *testing.T) {
 func TestUpgradeUsesRecordedModel(t *testing.T) {
 	lc, _, _, gw, _, s, id := mkLifecycle(t)
 	// 把席位的生效模型改落库值（建席时定死语义）
-	if _, err := s.pool.Exec(context.Background(), htx(),
-		`UPDATE g4_hosted_seat SET model='gpt-6.1-sol' WHERE agent_id=$1`, id); err != nil {
+	if err := s.SetSeatModel(context.Background(), id, "gpt-6.1-sol"); err != nil {
 		t.Fatal(err)
 	}
 	if err := lc.Upgrade(context.Background(), id, "zzc", "v2", false); err != nil {
