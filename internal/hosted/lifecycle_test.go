@@ -321,6 +321,45 @@ func TestLifecycleJobRecoveryLeavesNoActiveRows(t *testing.T) {
 	}
 }
 
+func TestDestroyCanBeRetriedAfterHubDiesMidJob(t *testing.T) {
+	lc, log, _, _, _, _, id := mkLifecycle(t)
+	ctx := context.Background()
+	deadJob, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "destroy", Confirm: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Model the persisted state after the worker claimed the job and the Hub
+	// died before it could record a terminal result.
+	if _, err := lc.st.exec(ctx, `UPDATE g4_lifecycle_job SET stage='running' WHERE id=$1`, deadJob); err != nil {
+		t.Fatal(err)
+	}
+	if err := lc.RecoverJobs(ctx); err != nil {
+		t.Fatal(err)
+	}
+	dead, err := lc.JobProgressFor(ctx, deadJob, "zzc")
+	if err != nil || dead.Stage != "failed" || dead.Reason != "internal_error" {
+		t.Fatalf("dead job not released: %+v err=%v", dead, err)
+	}
+	retry, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "destroy", Confirm: true})
+	if err != nil || retry == deadJob {
+		t.Fatalf("destroy retry id=%q err=%v, old=%q", retry, err, deadJob)
+	}
+	lc.RunJob(ctx, retry)
+	got, err := lc.JobProgressFor(ctx, retry, "zzc")
+	if err != nil || got.Stage != "completed" {
+		t.Fatalf("destroy retry did not complete: %+v err=%v", got, err)
+	}
+	backups := 0
+	for _, event := range log.get() {
+		if event == "backup" {
+			backups++
+		}
+	}
+	if backups != 1 {
+		t.Fatalf("retry backup count=%d, want one: %v", backups, log.get())
+	}
+}
+
 // 四操作＋重启的跨系统先后：同一条日志逐项等于预期（复验 L1/L2/L3/L4/L5 删闸对应）。
 func TestLifecycleOrderOnOneLog(t *testing.T) {
 	ctx := context.Background()
