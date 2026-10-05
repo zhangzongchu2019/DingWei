@@ -238,6 +238,44 @@ func TestLifecycleJobDuplicatePolicy(t *testing.T) {
 	}
 }
 
+func TestConcurrentDestroyRequestsShareOneJobAndOneBackup(t *testing.T) {
+	lc, log, _, _, _, _, id := mkLifecycle(t)
+	ctx := context.Background()
+	type result struct {
+		id  string
+		err error
+	}
+	results := make(chan result, 2)
+	start := make(chan struct{})
+	for i := 0; i < 2; i++ {
+		go func() {
+			<-start
+			jobID, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "destroy", Confirm: true})
+			results <- result{jobID, err}
+		}()
+	}
+	close(start)
+	a, b := <-results, <-results
+	if a.err != nil || b.err != nil || a.id == "" || a.id != b.id {
+		t.Fatalf("concurrent destroy enqueue: a=%+v b=%+v", a, b)
+	}
+	var wg sync.WaitGroup
+	wg.Add(2)
+	for i := 0; i < 2; i++ {
+		go func() { defer wg.Done(); lc.RunJob(ctx, a.id) }()
+	}
+	wg.Wait()
+	backups := 0
+	for _, event := range log.get() {
+		if event == "backup" {
+			backups++
+		}
+	}
+	if backups != 1 {
+		t.Fatalf("concurrent destroy ran %d backups, want exactly one; events=%v", backups, log.get())
+	}
+}
+
 func TestLifecycleJobRecoveryLeavesNoActiveRows(t *testing.T) {
 	ctx := context.Background()
 	for _, tc := range []struct {
