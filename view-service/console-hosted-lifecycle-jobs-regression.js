@@ -33,6 +33,8 @@ const M = {
   'fail-drops-reason-text': () => mutate("(HOSTED_FAIL_REASONS[reason]||'操作未成功')", "'操作未成功'"),
   'poll-error-is-failure': () => mutate('}catch(err){inf.timer=setTimeout(tick,hostedPollMs);return;}', "}catch(err){stage='failed';reason='x';}"),
   'sync-422-no-refetch': () => mutate("if(res.code==='invalid_state')refreshRoster();return;}", 'return;}'),
+  'list-read-failure-no-wait': () => mutate('if(!listed){inf.timer=setTimeout(tick,hostedPollMs);return;}', ''),
+  'done-list-read-failure-no-wait': () => mutate("if(!await refreshRoster()){inf.stage='running';renderRoster();inf.timer=setTimeout(tick,hostedPollMs);return;}", 'await refreshRoster();'),
   'poll-no-cap': () => mutate('if(Date.now()-inf.started>HOSTED_OP_MAX_MS){', 'if(false){'),
   'destroy-gone-ignored': () => mutate("if(op==='destroy'&&!rowOf()&&!HOSTED_FAIL_REASONS[reason]){", 'if(false){'),
   'destroy-failed-as-success': () => mutate("if(op==='destroy'&&!rowOf()&&!HOSTED_FAIL_REASONS[reason]){", "if(op==='destroy'){"),
@@ -47,10 +49,10 @@ const G = 'A'.repeat(32);
 let rows;
 function reset() {
   rows = {};
-  for (const n of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf']) rows[n] = { id: `ag-${n}`, state: 'running', upgradable: true, online: true };
+  for (const n of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel', 'india']) rows[n] = { id: `ag-${n}`, state: 'running', upgradable: true, online: true };
 }
 reset();
-const jobs = {}; let jobSeq = 0; const writes = []; const getCounts = { agents: 0 }; const polls = {}; let pollFail = 0;
+const jobs = {}; let jobSeq = 0; const writes = []; const getCounts = { agents: 0 }; let listFail = 0; const polls = {}; let pollFail = 0;
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
 function read(req) { return new Promise((r) => { let b = ''; req.on('data', (c) => { b += c; }); req.on('end', () => r(b ? JSON.parse(b) : {})); }); }
 // 每个 job 一份剧本：逐次轮询取下一步，最后一步停住；步里的 fn 在被取到时改桩状态
@@ -60,6 +62,7 @@ const server = http.createServer(async (req, res) => {
   if (p === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
   if (p === '/api/console/agents') {
     getCounts.agents++;
+    if (listFail > 0) { listFail--; res.writeHead(500); return res.end('list boom'); }
     return json(res, 200, { agents: Object.entries(rows).map(([n, r]) => ({ state: 'active', online: r.online, agent_id: r.id, name: n, full_name: `${n}.zzc`, origin: 'hosted', group_code: G, hosted: { state: r.state, upgradable: r.upgradable, node_name: 'node-a' } })) });
   }
   if (p === '/api/console/platform') return json(res, 200, { role: 'owner', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'ready' }] });
@@ -92,6 +95,10 @@ const server = http.createServer(async (req, res) => {
       steps = [finish('queued'), finish('failed', 'backup_failed')];
     } else if (name === 'echo') {   // 销毁成功：行没了；Hub 把销毁完的座位报成 failed 且无已知原因
       steps = [finish('queued'), finish('failed', '', () => { delete rows.echo; })];
+    } else if (name === 'india') {   // 重启已完成，但列表读先失败几次：没读到列表不能判完成
+      steps = [finish('online')];
+    } else if (name === 'hotel') {   // 销毁真的失败（行还在、原因码未知），而列表读恰好失败几次
+      steps = [finish('queued'), finish('failed', '')];
     } else if (name === 'foxtrot') {   // 永远处理中
       steps = [finish('pulling')];
     } else steps = [finish('failed', 'start_failed')];
@@ -161,6 +168,29 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await waitFeedback(/销毁 echo 已完成/);
       assert.strictEqual(await row('echo').count(), 0);
       assert.doesNotMatch(await feedback().textContent(), /失败/);
+    });
+
+    await test('destroy failed with an unknown reason while the roster read fails: no conclusion is drawn from the missing list (not success, not failure) until the list is read; the row is still there ⇒ failure', async () => {
+      await page.evaluate(() => { document.getElementById('rosterFeedback').textContent = ''; });
+      listFail = 3;
+      await row('hotel').locator('[data-op="destroy"]').click();
+      await page.waitForFunction(() => /失败|已完成/.test(document.getElementById('rosterFeedback')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
+      const t = await feedback().textContent();
+      assert.strictEqual(listFail, 0, 'the failure verdict only came after the list reads recovered');
+      assert.doesNotMatch(t, /已完成/);
+      assert.match(t, /销毁 hotel 失败：.*（原因码 未知）/);
+      assert.strictEqual(await row('hotel').count(), 1);
+    });
+
+    await test('job says online but the roster read fails: completion is only declared after the list was actually read', async () => {
+      await page.evaluate(() => { document.getElementById('rosterFeedback').textContent = ''; });
+      listFail = 1000;   // 列表一直读不到
+      await row('india').locator('[data-op="restart"]').click();
+      await page.waitForTimeout(1200);
+      assert.doesNotMatch(await feedback().textContent(), /已完成/, 'no completion without having read the list');
+      assert.match(await stText('india').textContent(), /^重启中…/);
+      listFail = 0;   // 列表恢复
+      await waitFeedback(/重启 india 已完成/);
     });
 
     await test('synchronous 422 invalid_state: shown at once in our wording, no job polled, the roster is refetched', async () => {

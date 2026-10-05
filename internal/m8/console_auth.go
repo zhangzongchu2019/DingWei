@@ -837,10 +837,11 @@ async function refreshRoster(){
     var r=await fetch(ENROLL_API.agents,{cache:'no-store',signal:controller.signal});
     if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}
     var d=await r.json();if(!d||!Array.isArray(d.agents))throw new Error('响应格式无效');
-    if(generation!==rosterGeneration)return;
-    rosterAgents=d.agents.filter(function(a){return a&&a.agent_id;});renderRoster();enrollFeedback('rosterStatus','');
+    if(generation!==rosterGeneration)return false;
+    rosterAgents=d.agents.filter(function(a){return a&&a.agent_id;});renderRoster();enrollFeedback('rosterStatus','');return true;   // true＝这次读到并采用了最新列表；job 跟踪据此区分「行已不在」与「没读到列表」
   }catch(err){
     if(generation===rosterGeneration)enrollFeedback('rosterStatus','Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err));
+    return false;
   }finally{clearTimeout(timer);}
 }
 function renderRoster(){
@@ -1011,13 +1012,14 @@ function hostedOpTrack(a,op,jobId){
     }catch(err){inf.timer=setTimeout(tick,hostedPollMs);return;}   // 网络抖动：继续轮询，不当成失败
     if(hostedOpInflight[a.agent_id]!==inf)return;
     if(stage==='failed'){
-      await refreshRoster();
+      var listed=op==='destroy'&&!HOSTED_FAIL_REASONS[reason]?await refreshRoster():true;
+      if(!listed){inf.timer=setTimeout(tick,hostedPollMs);return;}   // 销毁的权宜判定要靠「行已不在」：没读到列表就不下结论，继续轮询（有上限），不当成功也不当失败
       // 销毁成功后座位已不在，Hub 若仍把它报成 failed 而原因不在已知码里：以「行已不在」为准按成功处理（失败的销毁——例如备份失败——行还在）
       if(op==='destroy'&&!rowOf()&&!HOSTED_FAIL_REASONS[reason]){end();enrollFeedback('rosterFeedback',HOSTED_OPS[op]+' '+inf.name+' 已完成');refreshGroups('hosted-op');refreshAgents();return;}
-      end();enrollFeedback('rosterFeedback',hostedOpFail(inf,reason));renderRoster();return;
+      end();enrollFeedback('rosterFeedback',hostedOpFail(inf,reason));renderRoster();if(listed&&!(op==='destroy'&&!HOSTED_FAIL_REASONS[reason]))refreshRoster();return;
     }
     if(HOSTED_OP_DONE.indexOf(stage)>=0){
-      await refreshRoster();
+      if(!await refreshRoster()){inf.stage='running';renderRoster();inf.timer=setTimeout(tick,hostedPollMs);return;}   // 没读到列表就判不了「行还是不是 busy」：继续等
       var cur=rowOf(),hs=cur&&cur.hosted;
       // 升级／重启期间席位仍在线，Hub 的 job 视图可能先报 online：行里还是 busy 就继续等
       if(op!=='destroy'&&hs&&hs.state==='busy'){inf.stage='running';renderRoster();inf.timer=setTimeout(tick,hostedPollMs);return;}
