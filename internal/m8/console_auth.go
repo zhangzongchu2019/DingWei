@@ -709,6 +709,7 @@ var CONSOLE_ERRORS={
   unauthenticated:'登录已失效，请重新登录',origin_mismatch:'请求来源不符，请刷新页面',
   combo_incompatible:'所选 CLI、LLM 和账号类型不兼容',combo_not_verified:'这个 CLI 与 LLM 的组合还没有验通，暂不能创建',forbidden_role:'你的角色不足以执行这个操作',plan_exceeds_quota:'所选资源套餐超出剩余额度',
   quota_exceeded:'配额不足，请联系管理员调整配额',node_no_capacity:'没有节点有足够的剩余资源',account_not_allowed:'你不能使用这个 LLM 账号',
+  model_not_available:'所选模型当前没有在线节点支持，请换一个模型或稍后再试',model_not_supported:'这个 CLI 不支持指定模型，请选「默认」',   // 占位文案（B2，422），业主确认后替换
   node_offline:'该 Agent 所在节点离线，操作无法执行',invalid_state:'该 Agent 当前状态不允许这个操作',confirm_required:'这个操作需要先确认',
   upgrade_failed_rolled_back:'升级失败，已自动回滚到原版本',
   user_exists:'该用户 ID 或简称已被使用，请换一个',bad_request:'填写的内容不符合规则：用户 ID 2～32 位字母数字，简称 2～16 位字母数字',
@@ -848,6 +849,7 @@ function renderRoster(){
   rosterAgents.forEach(function(a){
     var row=document.createElement('tr');row.className='roster-row';row.dataset.agentId=a.agent_id;
     var name=document.createElement('td');name.textContent=a.name||'';name.title=a.full_name||'';
+    if(a.origin==='hosted'&&a.hosted&&typeof a.hosted.model==='string'){var ms=document.createElement('span');ms.className='roster-model';ms.textContent=' 模型：'+(a.hosted.model||'默认');name.append(ms);}   // B2：席位实际生效的模型（空串＝节点默认）
     var hs=a.origin==='hosted'?Object.assign({online:a.online},a.hosted||{},a.state==='suspended'?{state:'disabled'}:{}):null,st=document.createElement('td');   // 「是否停用」以顶层 state 为准(G3 口径):suspended ⇒ 已停用,不论有没有 hosted 子对象,也不论它说 running;hosted.state 只补运行细节
        // 托管生命周期在行里的 hosted 子对象(契约 v2:过渡形态)
     st.textContent=hostedOpInflight[a.agent_id]?hostedOpInflightText(hostedOpInflight[a.agent_id]):(hs?hostedStateText(hs):(a.state==='suspended'?'已停用':(a.online?'在线':'离线')));
@@ -887,6 +889,12 @@ function hostedFill(id,items,placeholder){
   items.forEach(function(it){var o=document.createElement('option');o.value=it.value;o.textContent=it.text;o.disabled=!!it.disabled;sel.append(o);});
   if(keep&&items.some(function(it){return it.value===keep&&!it.disabled;}))sel.value=keep;
 }
+function hostedModelList(opts){
+  var out=[];(Array.isArray(opts.models)?opts.models:[]).forEach(function(m){
+    var id=typeof m==='string'?m:(m&&typeof m.id==='string'?m.id:'');
+    if(id&&out.indexOf(id)<0)out.push(id);});
+  return out;
+}
 function renderHostedForm(){
   var opts=hostedOptions;if(!opts)return;
   var combos=opts.combos||[],clis=[];combos.forEach(function(c){if(clis.indexOf(c.cli)<0)clis.push(c.cli);});
@@ -894,6 +902,8 @@ function renderHostedForm(){
   hostedFill('hostedCli',clis.map(function(c){var ok=combos.some(function(x){return x.cli===c&&x.verified;});return {value:c,text:c+(ok?'':'（未验通）'),disabled:!ok};}),'请选择 CLI');
   renderHostedLlm();
   hostedFill('hostedPlan',(opts.plans||[]).map(function(p){return {value:p.id,text:p.name+(p.fits?'':'（超出剩余额度）'),disabled:!p.fits};}),'请选择资源套餐');
+  var models=hostedModelList(opts);   // B2：可选模型由节点上报、Hub 汇总进 options.models；选「默认」＝请求不带 model，沿用节点默认（占位文案，业主确认后替换）
+  hostedFill('hostedModel',models.map(function(m){return {value:m,text:m};}),models.length?'默认':'默认（当前没有可选模型）');
   var own=(groupSnapshot.groups||[]).filter(function(g){return g.can_manage;});
   var hg=document.getElementById('hostedGroup'),wasNew=hg&&hg.value===NEW_GROUP;
   hostedFill('hostedGroup',own.map(function(g){return {value:g.code,text:g.short_name||'历史组'};}),'不加入编组');
@@ -1020,6 +1030,7 @@ function hostedOpTrack(a,op,jobId){
 async function hostedCreate(){
   var v=function(id){return document.getElementById(id).value.trim();};
   var body={name:v('hostedName'),node_id:v('hostedNode')||'auto',cli:v('hostedCli'),llm:v('hostedLlm'),account_id:v('hostedAccount'),plan_id:v('hostedPlan')};
+  var model=v('hostedModel');if(model)body.model=model;   // 不选＝不带键（老形态）
   var fillMsg='请填写名称并选择 CLI、LLM、账号和资源套餐';
   if(!body.name||!body.cli||!body.llm||!body.account_id||!body.plan_id){enrollFeedback('hostedFeedback',fillMsg);return;}
   var gc=groupChoice('hostedGroup','hostedNewGroup','group_id');
@@ -1057,7 +1068,7 @@ function hostedOpButtons(a,hs){
 }
 function mountEnrollPanels(pane){
   var anchor=pane.querySelector('#group-status');if(!anchor)return;
-  anchor.insertAdjacentHTML('beforebegin',(FEATURE_SELFHOST_REVIEW?'<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><label id=enrollNewGroupBox hidden>新编组名 <input id=enrollNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section>':'')+'<section id=hostedCreate class="group-block"><div class=group-toolbar><h3>托管 Agent 生成</h3><span><button id=hostedRefresh type=button>刷新</button></span></div><div id=hostedStatus role=status></div><button id=hostedRetry type=button hidden>重试加载</button><div id=hostedForm hidden><label>节点 <select id=hostedNode></select></label><label>CLI <select id=hostedCli></select></label><label>LLM <select id=hostedLlm></select></label><label>LLM 账号 <select id=hostedAccount></select></label><label>运行资源套餐 <select id=hostedPlan></select></label><label>Agent 名称 <input id=hostedName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=hostedGroup></select></label><label id=hostedNewGroupBox hidden>新编组名 <input id=hostedNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=hostedCreateBtn type=button>创建</button><div id=hostedQuota role=status></div><div id=hostedFeedback class=group-feedback></div></div></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterStatus role=status></div><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
+  anchor.insertAdjacentHTML('beforebegin',(FEATURE_SELFHOST_REVIEW?'<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><label id=enrollNewGroupBox hidden>新编组名 <input id=enrollNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section>':'')+'<section id=hostedCreate class="group-block"><div class=group-toolbar><h3>托管 Agent 生成</h3><span><button id=hostedRefresh type=button>刷新</button></span></div><div id=hostedStatus role=status></div><button id=hostedRetry type=button hidden>重试加载</button><div id=hostedForm hidden><label>节点 <select id=hostedNode></select></label><label>CLI <select id=hostedCli></select></label><label>LLM <select id=hostedLlm></select></label><label>LLM 账号 <select id=hostedAccount></select></label><label>运行资源套餐 <select id=hostedPlan></select></label><label>模型 <select id=hostedModel></select></label><label>Agent 名称 <input id=hostedName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=hostedGroup></select></label><label id=hostedNewGroupBox hidden>新编组名 <input id=hostedNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=hostedCreateBtn type=button>创建</button><div id=hostedQuota role=status></div><div id=hostedFeedback class=group-feedback></div></div></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterStatus role=status></div><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
   if(FEATURE_SELFHOST_REVIEW){
     document.getElementById('enrollRefresh').onclick=refreshEnroll;document.getElementById('enrollRetry').onclick=refreshEnroll;
     document.getElementById('enrollApprove').onclick=enrollApprove;document.getElementById('enrollReject').onclick=enrollReject;
