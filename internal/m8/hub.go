@@ -4292,14 +4292,6 @@ func (h *Hub) notifyDeliveryQueued(ctx context.Context, d model.SessionDelivery,
 func (h *Hub) routeToFeishu(ctx context.Context, to address, env model.Envelope) error {
 	if shouldSkipMirror(env) {
 		log.Printf("[feishu] skip_mirror env_id=%s to=%s type=%q", env.ID, env.To, metaString(env.Meta, "type"))
-		// A reply-origin route is an explicit delivery attempt.  Treating a
-		// no_mirror decision as success makes replyToOrigin log "已回程" while
-		// nothing entered Outbound.  Preserve the silent-skip contract for every
-		// other mirror/system envelope, but surface this failed explicit return so
-		// replyToOrigin can emit its visible unavailable notification.
-		if metaString(env.Meta, "route_source") == replyToOriginRouteSource {
-			return errors.New("reply_origin_feishu_skipped")
-		}
 		return nil
 	}
 	if h.Outbound == nil {
