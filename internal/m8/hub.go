@@ -2873,6 +2873,44 @@ func (h *Hub) queueFeishuSyncItem(keyID, sessionName string, target feishuSyncTa
 	h.mu.Unlock()
 }
 
+// hasFeishuSyncOrMirror reports whether this session already has an effective
+// sync/mirror path to the exact Feishu origin. reply-to-origin must defer to
+// that path before sending; otherwise a later terminal flush duplicates the
+// same assistant answer regardless of how long after turn completion it lands.
+func (h *Hub) hasFeishuSyncOrMirror(ctx context.Context, keyID, sessionName, origin string) bool {
+	to, err := parseAddress(origin)
+	if err != nil || to.Kind != addressFeishu || to.OpenID == "" {
+		return false
+	}
+	h.mu.Lock()
+	for _, target := range h.syncTargets[terminalKey(keyID, sessionName)] {
+		if target.openID != to.OpenID {
+			continue
+		}
+		if to.BotName != "" && target.botName != "" && !strings.EqualFold(to.BotName, target.botName) {
+			continue
+		}
+		h.mu.Unlock()
+		return true
+	}
+	h.mu.Unlock()
+	endpoints, err := h.Repo.ListSessionEndpoints(ctx)
+	if err != nil {
+		return false
+	}
+	for _, ep := range endpoints {
+		if ep.KeyID != keyID || ep.SessionName != sessionName || !ep.Active || !ep.MirrorEnabled {
+			continue
+		}
+		mirror, err := parseAddress(ep.MirrorTo)
+		if err == nil && mirror.Kind == addressFeishu && mirror.OpenID == to.OpenID &&
+			(to.BotName == "" || mirror.BotName == "" || strings.EqualFold(to.BotName, mirror.BotName)) {
+			return true
+		}
+	}
+	return false
+}
+
 func (h *Hub) flushFeishuSyncBuffer(bufferKey string) {
 	h.mu.Lock()
 	buffer := h.syncBuffers[bufferKey]
@@ -4292,6 +4330,13 @@ func (h *Hub) notifyDeliveryQueued(ctx context.Context, d model.SessionDelivery,
 func (h *Hub) routeToFeishu(ctx context.Context, to address, env model.Envelope) error {
 	if shouldSkipMirror(env) {
 		log.Printf("[feishu] skip_mirror env_id=%s to=%s type=%q", env.ID, env.To, metaString(env.Meta, "type"))
+		// An explicit reply-to-origin must never be reported as routed when the
+		// Feishu exit silently suppresses it. Preserve silent no_mirror semantics
+		// for unrelated mirror/system traffic, but surface this decision through
+		// replyToOrigin's visible unavailable path.
+		if metaString(env.Meta, "route_source") == replyToOriginRouteSource {
+			return errors.New("reply_origin_feishu_skipped")
+		}
 		return nil
 	}
 	if h.Outbound == nil {
@@ -4401,6 +4446,14 @@ func shouldSkipMirror(env model.Envelope) bool {
 		return false
 	}
 	if isProducerEnvelope(env) {
+		return false
+	}
+	// reply-to-origin is an explicit Feishu destination, not an incidental
+	// terminal mirror. Keep no_mirror on the envelope so every other reuse still
+	// suppresses mirroring, but do not let it cancel the requested return itself.
+	if metaString(env.Meta, "type") == "agent_route" &&
+		metaString(env.Meta, "route_source") == replyToOriginRouteSource &&
+		kindOf(env) == kindReply {
 		return false
 	}
 	// A channel route is already an explicit Feishu delivery, not an incidental

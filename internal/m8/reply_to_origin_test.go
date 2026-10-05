@@ -20,8 +20,147 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/zhangzongchu2019/dingwei/internal/bus"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
+
+func TestReplyOriginFeishuSkipIsAnError(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	env := model.Envelope{ID: "reply-origin-skip", To: feishuAddress("ou_sender", "k1", "UnifiedRobot"), Meta: map[string]any{
+		"type": "agent_route", "route_source": replyToOriginRouteSource, "no_mirror": true,
+	}}
+	to, err := parseAddress(env.To)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := h.routeToFeishu(ctx, to, env); err == nil || !strings.Contains(err.Error(), "reply_origin_feishu_skipped") {
+		t.Fatalf("reply-origin skip error = %v, want visible unavailable cause", err)
+	}
+	env.Meta["route_source"] = "mirror"
+	if err := h.routeToFeishu(ctx, to, env); err != nil {
+		t.Fatalf("ordinary no_mirror must remain a silent skip: %v", err)
+	}
+}
+
+func TestReplyToFeishuOriginPassesRealOutboundBoundary(t *testing.T) {
+	h, db, ctx := newTestHub(t)
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	h.Outbound = outbound
+	h.mu.Lock()
+	h.botChannels["UnifiedRobot"] = "dev"
+	h.mu.Unlock()
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-feishu-return", "msg-feishu-return",
+		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
+	p := testAMRProcessor()
+	p.hub = h
+	p.routeEnvelope = h.RouteEnvelope
+	p.routeTimeout = 5 * time.Second
+
+	p.replyToOrigin(amrRouteJob{key: key, body: "飞书回程正文"})
+
+	got := waitOutbound(t, ctx, outbound)
+	if got == nil {
+		t.Fatal("reply-to-origin was accepted by Hub but never entered the Feishu outbound queue")
+	}
+	if got.ChatEntityID != "dev:personal:ou_sender" || got.BotChannelID != "dev" || !strings.Contains(messageText(t, got), "飞书回程正文") {
+		t.Fatalf("Feishu reply target/body mismatch: %+v text=%q", got, messageText(t, got))
+	}
+	if next := waitOutboundWithin(t, ctx, outbound, 100*time.Millisecond); next != nil {
+		t.Fatalf("reply-to-origin enqueued more than once: %+v", next)
+	}
+}
+
+func TestNoMirrorSkipsRemainNarrowAroundReplyToOrigin(t *testing.T) {
+	strictReply := model.Envelope{Meta: map[string]any{
+		"type": "agent_route", "route_source": replyToOriginRouteSource,
+		metaKeyKind: kindReply, "no_mirror": true,
+	}}
+	if shouldSkipMirror(strictReply) {
+		t.Fatal("strict reply-to-origin was mistaken for an incidental mirror")
+	}
+	for _, tc := range []struct {
+		name string
+		meta map[string]any
+	}{
+		{"ack", map[string]any{"type": "delivery_ack", "no_mirror": true}},
+		{"system", map[string]any{"type": "system", "system": true, "no_mirror": true}},
+		{"mirror-control", map[string]any{"type": "mirror_control", "no_mirror": true}},
+		{"near-miss-no-kind", map[string]any{"type": "agent_route", "route_source": replyToOriginRouteSource, "no_mirror": true}},
+		{"near-miss-wrong-source", map[string]any{"type": "agent_route", "route_source": "other", metaKeyKind: kindReply, "no_mirror": true}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if !shouldSkipMirror(model.Envelope{Meta: tc.meta}) {
+				t.Fatal("non-reply no_mirror envelope was unexpectedly allowed to Feishu")
+			}
+		})
+	}
+}
+
+func TestReplyToOriginDefersToSameTargetSyncEvenWhenOutputIsLate(t *testing.T) {
+	for _, delay := range []time.Duration{1500 * time.Millisecond, 2200 * time.Millisecond} {
+		t.Run(delay.String(), func(t *testing.T) {
+			h, db, ctx := newTestHub(t)
+			outbound := bus.NewDBQueue(db, model.DirectionOut)
+			h.Outbound = outbound
+			h.mu.Lock()
+			h.botChannels["UnifiedRobot"] = "dev"
+			h.mu.Unlock()
+			target := feishuSyncTarget{openID: "ou_sender", botChannelID: "dev", botName: "UnifiedRobot"}
+			h.addFeishuSyncTargetAndSnapshot("k1", "bee", target)
+			key := replyOriginFixture(t, h, ctx, "dw-dlv-late-"+delay.String(), "msg-late-"+delay.String(),
+				feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
+			p := testAMRProcessor()
+			p.hub, p.routeEnvelope, p.routeTimeout = h, h.RouteEnvelope, 5*time.Second
+			p.replyToOrigin(amrRouteJob{key: key, body: "飞书回程正文"})
+			if p.stats.replyOriginSkipped != 1 || waitOutboundWithin(t, ctx, outbound, 100*time.Millisecond) != nil {
+				t.Fatal("same-target sync subscription did not suppress explicit return")
+			}
+			time.Sleep(delay)
+			h.queueFeishuSyncItem("k1", "bee", target, terminalSyncItem{TS: time.Now(), Text: "飞书回程正文"})
+			if got := waitOutbound(t, ctx, outbound); got == nil {
+				t.Fatal("late sync output did not reach outbound")
+			}
+			if duplicate := waitOutboundWithin(t, ctx, outbound, 200*time.Millisecond); duplicate != nil {
+				t.Fatalf("late output produced duplicate: %+v", duplicate)
+			}
+		})
+	}
+}
+
+func TestReplyToOriginDefersToSameTargetMirror(t *testing.T) {
+	h, db, ctx := newTestHub(t)
+	h.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "k1", SessionName: "bee", Active: true,
+		MirrorEnabled: true, MirrorTo: feishuAddress("ou_sender", "k1", "UnifiedRobot")}); err != nil {
+		t.Fatal(err)
+	}
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-mirror", "msg-mirror",
+		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
+	p := testAMRProcessor()
+	p.hub, p.routeEnvelope = h, h.RouteEnvelope
+	p.replyToOrigin(amrRouteJob{key: key, body: "正文"})
+	if p.stats.replyOriginSkipped != 1 || p.stats.replyOriginRouted != 0 {
+		t.Fatalf("mirror subscription stats skipped=%d routed=%d", p.stats.replyOriginSkipped, p.stats.replyOriginRouted)
+	}
+}
+
+func TestReplyToOriginOtherSyncTargetDoesNotSuppressReturn(t *testing.T) {
+	h, db, ctx := newTestHub(t)
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	h.Outbound = outbound
+	h.mu.Lock()
+	h.botChannels["UnifiedRobot"] = "dev"
+	h.mu.Unlock()
+	h.addFeishuSyncTargetAndSnapshot("k1", "bee", feishuSyncTarget{openID: "ou_other", botChannelID: "dev", botName: "UnifiedRobot"})
+	key := replyOriginFixture(t, h, ctx, "dw-dlv-other-sync", "msg-other-sync",
+		feishuAddress("ou_sender", "k1", "UnifiedRobot"), map[string]any{"type": "delivery"})
+	p := testAMRProcessor()
+	p.hub, p.routeEnvelope = h, h.RouteEnvelope
+	p.replyToOrigin(amrRouteJob{key: key, body: "正文"})
+	if got := waitOutbound(t, ctx, outbound); got == nil || p.stats.replyOriginRouted != 1 {
+		t.Fatalf("unrelated sync target suppressed explicit return: msg=%+v routed=%d", got, p.stats.replyOriginRouted)
+	}
+}
 
 // replyOriginFixture 造一条「A → B」的 durable 投递记录,返回 turn key。
 func replyOriginFixture(t *testing.T, h *Hub, ctx context.Context, deliveryID, sourceMessageID, from string, meta map[string]any) amrTurnKey {
