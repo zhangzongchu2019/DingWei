@@ -35,6 +35,12 @@ HTTP 状态为 `202 Accepted`。`invalid_state`（含非托管席位）在入队
 
 restart／enable 的五分钟 `starting` 超时由既有席位清扫器写 `error/start_timeout`，jobs 读面随即收敛为 `failed/start_timeout`，不会过早报 completed。
 
+Hub 启动时会一次性收敛上个进程遗留的 `queued|running` lifecycle job，保证轮询不永挂：
+
+- `restart`／`enable` 且席位已经 `online`：`completed`；
+- 其余遗留 active job（包括终态无法可靠还原的 upgrade／disable／destroy）：`failed/internal_error`；
+- 不重新执行可能已有部分副作用的生命周期命令；业主可在看到失败后按当前席位状态重新发起。
+
 ## 3. 失败机器码全集
 
 `failed.reason` 只出以下机器码；Go/数据库/节点原始错误不进入页面：
@@ -49,6 +55,8 @@ restart／enable 的五分钟 `starting` 超时由既有席位清扫器写 `erro
 - `not_owner`
 - `confirm_required`
 - `internal_error`（无法归入上述已知码的兜底）
+
+其中 Hub 重启后无法证明成功终态的遗留 job 也使用 `internal_error`，不增加第十一个机器码。
 
 能在入队前确定的 `invalid_state`、`not_owner`、`confirm_required`、`params_invalid`、节点当前离线等，仍走同步错误；机器码全集也覆盖“预检后到 worker 执行前状态发生变化”的竞态。
 
@@ -95,4 +103,3 @@ CREATE UNIQUE INDEX IF NOT EXISTS g4_lifecycle_job_one_active_idx
 2. 核 `g4_lifecycle_job` 三个索引存在，旧席位数与升级前一致。
 3. 回滚只换回旧 Hub；新表保留，不执行 destructive DDL。
 4. 新旧 Hub 不应长时间并跑；旧 Hub 不产生 lifecycle job，切回后生命周期接口恢复旧同步语义。
-

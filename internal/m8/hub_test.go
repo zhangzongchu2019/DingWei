@@ -7073,31 +7073,42 @@ func TestViewRoutingPrecedenceAndFallback(t *testing.T) {
 	}
 }
 
-func TestViewTasksSubPathIsNotProxied(t *testing.T) {
-	hub, _, _ := newTestHub(t)
-	proxied := 0
-	stub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		proxied++
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer stub.Close()
-	cfg := `{"default":"v2","targets":{"v2":{"url":"` + stub.URL + `"}}}`
-	path := t.TempDir() + "/routing.json"
-	if err := os.WriteFile(path, []byte(cfg), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("VIEW_ROUTING_CONFIG", path)
-	resetViewRoutingCacheForTest()
-	t.Cleanup(resetViewRoutingCacheForTest)
-
-	req := httptest.NewRequest(http.MethodGet, "/view/timer.zzc/tasks", nil)
-	req.SetPathValue("sessionName", "timer.zzc")
-	req.SetPathValue("rest", "tasks")
-	rr := httptest.NewRecorder()
-	hub.HandleViewSubPath(rr, req)
-	if rr.Code != http.StatusNotFound || proxied != 0 {
-		t.Fatalf("/tasks status=%d proxied=%d, want 404/0", rr.Code, proxied)
-	}
+func TestViewBackgroundTasksNeverReturns404(t *testing.T) {
+	t.Run("existing 095 data source", func(t *testing.T) {
+		hub, _, _ := newTestHub(t)
+		stub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/tasks" {
+				t.Fatalf("view-service path=%q, want /tasks", r.URL.Path)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(w, `{"project":"p","tasks":[{"id":"t1"}]}`)
+		}))
+		defer stub.Close()
+		cfg := `{"default":"v2","targets":{"v2":{"url":"` + stub.URL + `"}}}`
+		path := t.TempDir() + "/routing.json"
+		if err := os.WriteFile(path, []byte(cfg), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("VIEW_ROUTING_CONFIG", path)
+		resetViewRoutingCacheForTest()
+		defer resetViewRoutingCacheForTest()
+		rr := httptest.NewRecorder()
+		hub.HandleViewTasks(rr, httptest.NewRequest(http.MethodGet, "/tasks", nil))
+		if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"id":"t1"`) {
+			t.Fatalf("configured /tasks = %d %s", rr.Code, rr.Body.String())
+		}
+	})
+	t.Run("fail closed empty snapshot", func(t *testing.T) {
+		hub, _, _ := newTestHub(t)
+		t.Setenv("VIEW_ROUTING_CONFIG", "")
+		resetViewRoutingCacheForTest()
+		defer resetViewRoutingCacheForTest()
+		rr := httptest.NewRecorder()
+		hub.HandleViewTasks(rr, httptest.NewRequest(http.MethodGet, "/tasks", nil))
+		if rr.Code != http.StatusOK || strings.TrimSpace(rr.Body.String()) != `{"project":"","tasks":[]}` {
+			t.Fatalf("fallback /tasks = %d %s", rr.Code, rr.Body.String())
+		}
+	})
 }
 
 // 离线全链路集成(feat/view-service-dock C1..C5):真 WS 会话发 session_event(C5)

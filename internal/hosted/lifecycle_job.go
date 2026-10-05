@@ -239,3 +239,44 @@ func lifecycleSeatFailureReason(detail string) string {
 		return "start_failed"
 	}
 }
+
+// RecoverJobs is run once during Hub startup.  A lifecycle worker is an
+// in-process goroutine, so a process exit can leave its durable row active.
+// Never leave the console polling forever: restart/enable are complete only
+// when their externally observable end state (online) already holds; every
+// other ambiguous active row fails closed with the existing internal_error
+// machine code and may be retried as a fresh job.
+func (l *Lifecycle) RecoverJobs(ctx context.Context) error {
+	rows, err := l.st.query(ctx, `SELECT id,agent_id,op FROM g4_lifecycle_job WHERE stage IN ('queued','running') ORDER BY created_at`)
+	if err != nil {
+		return err
+	}
+	type activeJob struct{ id, agentID, op string }
+	var jobs []activeJob
+	for rows.Next() {
+		var j activeJob
+		if err := rows.Scan(&j.id, &j.agentID, &j.op); err != nil {
+			rows.Close()
+			return err
+		}
+		jobs = append(jobs, j)
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
+	rows.Close()
+	for _, j := range jobs {
+		stage, reason := "failed", "internal_error"
+		if j.op == "restart" || j.op == "enable" {
+			if seat, seatErr := l.st.GetSeat(ctx, j.agentID); seatErr == nil && seat.State == "online" {
+				stage, reason = "completed", ""
+			}
+		}
+		if _, err := l.st.exec(ctx, `UPDATE g4_lifecycle_job SET stage=$2,reason=$3,updated_at=now()
+	WHERE id=$1 AND stage IN ('queued','running')`, j.id, stage, reason); err != nil {
+			return err
+		}
+	}
+	return nil
+}

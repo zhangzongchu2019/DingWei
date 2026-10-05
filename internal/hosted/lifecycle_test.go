@@ -238,6 +238,51 @@ func TestLifecycleJobDuplicatePolicy(t *testing.T) {
 	}
 }
 
+func TestLifecycleJobRecoveryLeavesNoActiveRows(t *testing.T) {
+	ctx := context.Background()
+	for _, tc := range []struct {
+		name, op, initialStage, wantStage, wantReason string
+		prepare                                       func(*Lifecycle, string)
+	}{
+		{"queued restart already online", "restart", "queued", "completed", "", nil},
+		{"running enable already online", "enable", "running", "completed", "", func(lc *Lifecycle, id string) {
+			_ = lc.st.SetSeatState(ctx, id, "disabled", "", "disable", nil)
+		}},
+		{"ambiguous queued disable", "disable", "queued", "failed", "internal_error", nil},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			lc, _, _, _, _, _, id := mkLifecycle(t)
+			if tc.prepare != nil {
+				tc.prepare(lc, id)
+			}
+			jobID, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: tc.op, Confirm: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.initialStage == "running" {
+				if _, err := lc.st.exec(ctx, `UPDATE g4_lifecycle_job SET stage='running' WHERE id=$1`, jobID); err != nil {
+					t.Fatal(err)
+				}
+				if err := lc.st.SetSeatState(ctx, id, "online", "", "online", nil); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := lc.RecoverJobs(ctx); err != nil {
+				t.Fatal(err)
+			}
+			got, err := lc.JobProgressFor(ctx, jobID, "zzc")
+			if err != nil || got.Stage != tc.wantStage || got.Reason != tc.wantReason {
+				t.Fatalf("recovered job=%+v err=%v, want stage=%s reason=%s", got, err, tc.wantStage, tc.wantReason)
+			}
+			var active int
+			row, err := lc.st.qrow(ctx, `SELECT count(*) FROM g4_lifecycle_job WHERE stage IN ('queued','running')`)
+			if err != nil || row.Scan(&active) != nil || active != 0 {
+				t.Fatalf("active lifecycle jobs after recovery=%d err=%v", active, err)
+			}
+		})
+	}
+}
+
 // 四操作＋重启的跨系统先后：同一条日志逐项等于预期（复验 L1/L2/L3/L4/L5 删闸对应）。
 func TestLifecycleOrderOnOneLog(t *testing.T) {
 	ctx := context.Background()

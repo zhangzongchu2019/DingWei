@@ -13,6 +13,7 @@ import (
 func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	mux.HandleFunc("GET /ws/view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewWS))
 	mux.HandleFunc("GET /view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewPage))
+	mux.HandleFunc("GET /tasks", prefixHub.HandleViewTasks)
 	mux.HandleFunc("GET /console", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsolePage))
 	if !newplat {
 		// 新平台下这三条由 wireNewPlatform 的新实现替换，不并存（同路径重复注册会 panic）。

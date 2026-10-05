@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -172,13 +173,6 @@ func (h *Hub) HandleViewSubPath(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid session name", http.StatusBadRequest)
 		return
 	}
-	// /tasks belongs to the console task board, never to an Agent view.  Do not
-	// proxy this spelling to view-service: doing so turns a stale/guessed view
-	// URL into a misleading application page instead of an honest 404.
-	if strings.Trim(strings.TrimSpace(r.PathValue("rest")), "/") == "tasks" {
-		http.NotFound(w, r)
-		return
-	}
 	name, tgt := loadViewRouting().resolve(sessionName, ownerFromSessionName(sessionName))
 	if !tgt.Builtin && tgt.URL != "" {
 		if h.proxyToViewService(w, r, sessionName, tgt.URL) {
@@ -187,6 +181,23 @@ func (h *Hub) HandleViewSubPath(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[view-routing] subpath target %s (%s) unreachable for %s", name, tgt.URL, sessionName)
 	}
 	http.NotFound(w, r)
+}
+
+// HandleViewTasks serves the renderer's legacy global GET /tasks poll.  The
+// 0.2.1.95 view-service has the real snapshot handler at this root path; it is
+// not a /view/<session>/ subpath.  Production historically relied on nginx to
+// route it directly.  Hub now wires that existing data source itself, and
+// fails closed to an empty 200 snapshot when no view-service is configured or
+// reachable so a background poll never produces a permanent 404.
+func (h *Hub) HandleViewTasks(w http.ResponseWriter, r *http.Request) {
+	_, tgt := loadViewRouting().resolve("", "")
+	if !tgt.Builtin && tgt.URL != "" && proxyViewTasks(w, r, tgt.URL) {
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusOK)
+	_, _ = io.WriteString(w, `{"project":"","tasks":[]}`)
 }
 
 func (h *Hub) HandleTerminalViewCookie(w http.ResponseWriter, r *http.Request) {
@@ -961,6 +972,23 @@ func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, session
 	rp.ErrorHandler = func(rw http.ResponseWriter, req *http.Request, e error) {
 		reached = false // 连接失败:不写响应,交给调用方兜底
 	}
+	rp.ServeHTTP(w, r)
+	return reached
+}
+
+func proxyViewTasks(w http.ResponseWriter, r *http.Request, target string) bool {
+	u, err := url.Parse(target)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return false
+	}
+	rp := &httputil.ReverseProxy{Director: func(req *http.Request) {
+		req.URL.Scheme = u.Scheme
+		req.URL.Host = u.Host
+		req.URL.Path = strings.TrimRight(u.Path, "/") + "/tasks"
+		req.Host = u.Host
+	}}
+	reached := true
+	rp.ErrorHandler = func(http.ResponseWriter, *http.Request, error) { reached = false }
 	rp.ServeHTTP(w, r)
 	return reached
 }
