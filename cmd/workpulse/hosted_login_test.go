@@ -157,12 +157,19 @@ func TestLoginHTTPGuards(t *testing.T) {
 	if c := r.upload(id2, other, loginCred("bob@example.com")); c != 401 {
 		t.Fatalf("他节点密钥应 401, 得 %d", c)
 	}
-	big := bytes.Repeat([]byte("a"), hosted.LoginUploadMax+1)
+	// 复核第 2 批 M17：用字面量钉住上传上限（64KiB＋4KiB＋1KiB＝70656 字节）——测试若引用常量本身，放大常量的变异会一起放大输入而存活
+	if hosted.LoginUploadMax != 70656 {
+		t.Fatalf("上传上限应为 70656 字节, 得 %d", hosted.LoginUploadMax)
+	}
+	big := bytes.Repeat([]byte("a"), 70657)
 	if c := r.upload(id2, r.secret, big); c != 413 {
 		t.Fatalf("超长应 413, 得 %d", c)
 	}
 	if _, raw := r.req("bob", "GET", "/api/console/llm-account-logins/"+id2, "", ""); !strings.Contains(raw, `"state":"failed"`) || !strings.Contains(raw, "too_large") {
 		t.Fatalf("超长后会话应 failed/too_large: %s", raw)
+	}
+	if n, _ := r.st.CountOwnedAccounts(context.Background(), "bob"); n != 0 {
+		t.Fatalf("超长上传不得入池: %d", n)
 	}
 }
 

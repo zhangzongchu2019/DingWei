@@ -478,3 +478,54 @@ func TestDemuxReader(t *testing.T) {
 		t.Fatalf("%q", got)
 	}
 }
+
+// 复核第 2 批 L12 存活刀补格：登录容器规格的安全字段逐项钉住（Privileged 改 true 等任一放宽即红）。
+func TestLoginContainerSpecSecurityFields(t *testing.T) {
+	f := newLFEngine(t, lfOutput)
+	h := newLFHub(t)
+	l := mkLoginOps(t, f, h)
+	if _, err := l.start(context.Background(), lfParams(l, lfID)); err != nil {
+		t.Fatal(err)
+	}
+	defer f.letExit()
+	spec := f.specs[0]
+	hc, _ := spec["HostConfig"].(map[string]any)
+	if hc == nil {
+		t.Fatal("缺 HostConfig")
+	}
+	want := map[string]any{
+		"Privileged": false, "ReadonlyRootfs": true, "Init": true,
+		"NetworkMode": "loginnet-" + lfID, "CgroupParent": "dingwei-hosted.slice",
+		"Memory": float64(loginMemBytes), "MemorySwap": float64(loginMemBytes), "CpuShares": float64(256),
+	}
+	for k, v := range want {
+		if hc[k] != v {
+			t.Fatalf("HostConfig.%s = %v, 期望 %v", k, hc[k], v)
+		}
+	}
+	if caps, _ := json.Marshal(hc["CapDrop"]); string(caps) != `["ALL"]` {
+		t.Fatalf("CapDrop 须 [ALL]: %s", caps)
+	}
+	if so, _ := json.Marshal(hc["SecurityOpt"]); string(so) != `["no-new-privileges"]` {
+		t.Fatalf("SecurityOpt 须 no-new-privileges: %s", so)
+	}
+	if lc, _ := hc["LogConfig"].(map[string]any); lc == nil || lc["Type"] != "none" || len(lc) != 1 {
+		t.Fatalf("LogConfig 须只为 none: %v", hc["LogConfig"])
+	}
+	binds, _ := hc["Binds"].([]any)
+	if len(binds) != 1 || binds[0] != l.dir(lfID)+":/h" {
+		t.Fatalf("Binds 只许登录私有目录一条: %v", binds)
+	}
+	for _, k := range []string{"PortBindings", "Devices", "CapAdd", "PidMode", "IpcMode", "UsernsMode"} {
+		if _, ok := hc[k]; ok {
+			t.Fatalf("不得设置 HostConfig.%s", k)
+		}
+	}
+	if spec["User"] != "10001:10001" {
+		t.Fatalf("User 须 10001:10001: %v", spec["User"])
+	}
+	env, _ := json.Marshal(spec["Env"])
+	if !strings.Contains(string(env), `"CODEX_HOME=/h/.codex"`) || !strings.Contains(string(env), `"HOME=/h"`) {
+		t.Fatalf("Env 须指 CODEX_HOME=/h/.codex、HOME=/h: %s", env)
+	}
+}
