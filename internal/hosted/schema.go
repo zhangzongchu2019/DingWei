@@ -187,7 +187,16 @@ CREATE INDEX IF NOT EXISTS g4_account_login_owner ON g4_account_login(owner_lc, 
 CREATE INDEX IF NOT EXISTS g4_account_login_active ON g4_account_login(state) WHERE state IN ('starting','waiting_user','completing');
 -- 每人同一时刻至多 1 个进行中登录（库层保证，不靠先查后插）。
 CREATE UNIQUE INDEX IF NOT EXISTS g4_account_login_one_active ON g4_account_login(owner_lc) WHERE state IN ('starting','waiting_user','completing');
--- completing＝上传已被原子认领、正在入池（清扫与取消不碰它；Hub 重启时收为 failed/interrupted）。
+-- completing＝上传已被原子认领、正在入池（清扫与取消不碰它；认领超过 2 分钟仍未收尾或 Hub 重启 ⇒ failed/interrupted）。
+ALTER TABLE g4_account_login ADD COLUMN IF NOT EXISTS claimed_at timestamptz;
+-- 幂等升级（复核第 4 批建议 2）：若某库曾应用过早期定义（CHECK 无 completing、索引旧谓词），在此换新；同一隐式事务。
+ALTER TABLE g4_account_login DROP CONSTRAINT IF EXISTS g4_account_login_state_check;
+ALTER TABLE g4_account_login ADD CONSTRAINT g4_account_login_state_check
+  CHECK (state IN ('starting','waiting_user','completing','done','failed','expired','cancelled'));
+DROP INDEX IF EXISTS g4_account_login_one_active;
+CREATE UNIQUE INDEX g4_account_login_one_active ON g4_account_login(owner_lc) WHERE state IN ('starting','waiting_user','completing');
+DROP INDEX IF EXISTS g4_account_login_active;
+CREATE INDEX g4_account_login_active ON g4_account_login(state) WHERE state IN ('starting','waiting_user','completing');
 -- 账号登录入池的账号记邮箱（显示用；个人信息——只给属主本人，管理员列表不给）。
 ALTER TABLE g4_account_pool ADD COLUMN IF NOT EXISTS email TEXT NOT NULL DEFAULT '';
 `

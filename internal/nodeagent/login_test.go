@@ -579,6 +579,10 @@ func TestLoginParses0159ShapeWithANSI(t *testing.T) {
 		"same_line_as_hints": "1. Open this link in your browser and sign in to your account: " + esc + "[4m" + lfURL + esc + "[0m\n" +
 			"2. Enter this one-time code " + esc + "[90m(expires in 15 minutes)" + esc + "[0m: " + esc + "[1m" + lfCode + esc + "[0m\n",
 		"plain_0145": lfOutput,
+		// 复核第 4 批 R12b：提示行之前的码形诱饵（如版本号、别的编号）不得被当成设备码
+		"decoy_before_hints": "Session ZZZZ-99999 starting; ref https://decoy.example.test/x\n" +
+			"1. Open this link in your browser and sign in to your account\n   " + lfURL + "\n" +
+			"2. Enter this one-time code " + esc + "[90m(expires in 15 minutes)" + esc + "[0m\n   " + lfCode + "\n",
 	}
 	for name, out := range shapes {
 		t.Run(name, func(t *testing.T) {

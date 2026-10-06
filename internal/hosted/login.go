@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"regexp"
 	"strings"
 	"sync"
@@ -27,6 +28,7 @@ import (
 
 const (
 	LoginTTL          = 15 * time.Minute // = codex 一次性码有效期
+	LoginClaimStale   = 2 * time.Minute  // completing 超过此时长仍未收尾 ⇒ 清扫收为 failed/interrupted（复核第 4 批建议 1）
 	LoginCooldown     = 30 * time.Second // 每人发起冷却（组长裁定）
 	LoginPerNodeMax   = 2                // 每节点并发（组长裁定）
 	LoginTotalMax     = 4                // 全平台总并发（组长裁定）
@@ -323,12 +325,20 @@ func (l *LoginService) Complete(ctx context.Context, id string, body []byte) err
 	cred = ""
 	if err != nil {
 		reason := poolFailReason(err)
-		if moved, _ := l.st.finishCompleting(ctx, id, "failed", reason, ""); moved {
+		moved, ferr := l.st.finishCompleting(ctx, id, "failed", reason, "")
+		if ferr != nil {
+			log.Printf("hosted login %s: finish failed: %v", id, ferr) // 收尾写库失败：留给清扫按 LoginClaimStale 收为 interrupted
+		}
+		if moved {
 			_ = l.st.AddAudit(ctx, r.OwnerLC, "account.login_failed", id, jsonRaw(`{"reason":`+jsonStr(reason)+`}`))
 		}
 		return nil
 	}
-	if moved, _ := l.st.finishCompleting(ctx, id, "done", note, acctID); moved {
+	moved, ferr := l.st.finishCompleting(ctx, id, "done", note, acctID)
+	if ferr != nil {
+		log.Printf("hosted login %s: finish done failed: %v", id, ferr)
+	}
+	if moved {
 		_ = l.st.AddAudit(ctx, r.OwnerLC, "account.login_complete", id, jsonRaw(`{"account":`+jsonStr(acctID)+`}`))
 	}
 	return nil
@@ -465,7 +475,13 @@ func (l *LoginService) Sweep(ctx context.Context) error {
 			l.expireSerialized(ctx, r.ID)
 		}
 	}
-	return nil
+	// 认领后长时间未收尾的 completing（收尾写库失败、入池途中挂住）：与 Complete 同锁，收为 failed/interrupted，
+	// 否则它一直占着「每人一个进行中」，用户在 Hub 重启前无法再发起。
+	l.mu.Lock()
+	_, err = l.st.exec(ctx, `UPDATE g4_account_login SET state='failed', reason='interrupted', finished_at=now()
+WHERE state='completing' AND claimed_at < $1`, now.Add(-LoginClaimStale))
+	l.mu.Unlock()
+	return err
 }
 
 // RecoverOnStart Hub 启动：上次进程留下的进行中会话一律 expired（节点侧容器由 cancel／节点清扫收尾）；
@@ -545,7 +561,7 @@ WHERE id=$1 AND state IN ('starting','waiting_user')`, id, state, reason, acct)
 // claimLoginCompleting 上传认领：waiting_user 且未过期 ⇒ completing（清链接与码）；一次性。
 func (s *Store) claimLoginCompleting(ctx context.Context, id string, now time.Time) (bool, error) {
 	res, err := s.exec(ctx, `
-UPDATE g4_account_login SET state='completing', url='', user_code=''
+UPDATE g4_account_login SET state='completing', url='', user_code='', claimed_at=$2
 WHERE id=$1 AND state='waiting_user' AND expires_at > $2`, id, now)
 	if err != nil {
 		return false, err

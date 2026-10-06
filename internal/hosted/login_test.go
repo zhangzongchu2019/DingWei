@@ -588,13 +588,14 @@ func TestLoginClaimCompletingIsAtomic(t *testing.T) {
 	r := mkLogin(t)
 	ctx := context.Background()
 	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
+	r.advance(LoginTTL - 30*time.Second) // 临近到期才认领：下面越过会话时限时，认领本身仍新（< LoginClaimStale）
 	if ok, err := r.s.claimLoginCompleting(ctx, v.ID, r.clock); err != nil || !ok {
 		t.Fatalf("认领: %v %v", ok, err)
 	}
 	if ok, _ := r.s.claimLoginCompleting(ctx, v.ID, r.clock); ok {
 		t.Fatal("同一会话不得被认领两次")
 	}
-	r.advance(LoginTTL + time.Minute)
+	r.advance(time.Minute) // 已过会话时限，认领才 1 分钟：时限清扫不得碰 completing
 	r.l.Sweep(ctx)
 	r.l.Cancel(ctx, "zzc", v.ID)
 	if row := r.row(t, v.ID); row.State != "completing" || row.URL != "" || row.UserCode != "" {
@@ -660,5 +661,65 @@ func TestLoginTerminalStatesClearLinkAndCode(t *testing.T) {
 				t.Fatal("库里仍留链接或码")
 			}
 		})
+	}
+}
+
+// 复核第 4 批建议 1：认领后迟迟不收尾的 completing（收尾写库失败、入池途中挂住）——2 分钟内不动，超过即被清扫收为
+// failed/interrupted，释放「每人一个进行中」，用户可再发起。
+func TestLoginStaleCompletingIsSwept(t *testing.T) {
+	r := mkLogin(t)
+	ctx := context.Background()
+	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
+	if ok, err := r.s.claimLoginCompleting(ctx, v.ID, r.clock); err != nil || !ok {
+		t.Fatalf("认领: %v %v", ok, err)
+	}
+	r.advance(LoginClaimStale - time.Second)
+	if err := r.l.Sweep(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if row := r.row(t, v.ID); row.State != "completing" {
+		t.Fatalf("未超时不得收: %+v", row)
+	}
+	r.advance(2 * time.Second)
+	r.l.Sweep(ctx)
+	if row := r.row(t, v.ID); row.State != "failed" || row.Reason != "interrupted" {
+		t.Fatalf("超时应收为 failed/interrupted: %+v", row)
+	}
+	r.advance(LoginCooldown)
+	if _, err := r.l.Start(ctx, "zzc", "gpt", "me2@example.com", ""); err != nil {
+		t.Fatalf("收尾后应可再发起: %v", err)
+	}
+}
+
+// 复核第 4 批建议 2：某库若曾应用早期定义（CHECK 无 completing、唯一索引旧谓词），ApplySchema 幂等换新。
+func TestLoginSchemaUpgradesOldDefinition(t *testing.T) {
+	r := mkLogin(t)
+	ctx := context.Background()
+	for _, q := range []string{
+		`ALTER TABLE g4_account_login DROP CONSTRAINT g4_account_login_state_check`,
+		`ALTER TABLE g4_account_login ADD CONSTRAINT g4_account_login_state_check CHECK (state IN ('starting','waiting_user','done','failed','expired','cancelled'))`,
+		`DROP INDEX g4_account_login_one_active`,
+		`CREATE UNIQUE INDEX g4_account_login_one_active ON g4_account_login(owner_lc) WHERE state IN ('starting','waiting_user')`,
+	} {
+		if _, err := r.s.exec(ctx, q); err != nil {
+			t.Fatalf("造旧定义: %v", err)
+		}
+	}
+	if err := r.s.ApplySchema(ctx); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if err := r.s.ApplySchema(ctx); err != nil {
+		t.Fatalf("二次 apply 须幂等: %v", err)
+	}
+	v, err := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := r.s.claimLoginCompleting(ctx, v.ID, r.clock); err != nil || !ok {
+		t.Fatalf("升级后应可进 completing: %v %v", ok, err)
+	}
+	r.advance(LoginCooldown)
+	if _, err := r.l.Start(ctx, "zzc", "gpt", "x@example.com", ""); err != ErrLoginInProgress {
+		t.Fatalf("升级后 completing 应计入每人一个, 得 %v", err)
 	}
 }
