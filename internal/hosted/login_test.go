@@ -673,14 +673,18 @@ func TestLoginStaleCompletingIsSwept(t *testing.T) {
 	if ok, err := r.s.claimLoginCompleting(ctx, v.ID, r.clock); err != nil || !ok {
 		t.Fatalf("认领: %v %v", ok, err)
 	}
-	r.advance(LoginClaimStale - time.Second)
+	// 复核 S1b：用字面量钉住 2 分钟（测试若引用常量本身，放大常量的变异会一起放大推进时长而存活）
+	if LoginClaimStale != 2*time.Minute {
+		t.Fatalf("completing 超时应为 2 分钟, 得 %v", LoginClaimStale)
+	}
+	r.advance(119 * time.Second)
 	if err := r.l.Sweep(ctx); err != nil {
 		t.Fatal(err)
 	}
 	if row := r.row(t, v.ID); row.State != "completing" {
-		t.Fatalf("未超时不得收: %+v", row)
+		t.Fatalf("119 秒未超时不得收: %+v", row)
 	}
-	r.advance(2 * time.Second)
+	r.advance(2 * time.Second) // 共 121 秒
 	r.l.Sweep(ctx)
 	if row := r.row(t, v.ID); row.State != "failed" || row.Reason != "interrupted" {
 		t.Fatalf("超时应收为 failed/interrupted: %+v", row)
@@ -721,5 +725,19 @@ func TestLoginSchemaUpgradesOldDefinition(t *testing.T) {
 	r.advance(LoginCooldown)
 	if _, err := r.l.Start(ctx, "zzc", "gpt", "x@example.com", ""); err != ErrLoginInProgress {
 		t.Fatalf("升级后 completing 应计入每人一个, 得 %v", err)
+	}
+}
+
+// 复核读码提示 1：claimed_at 为空的 completing（只可能来自旧版本留下的行）按 created_at 兜底，同样会被收。
+func TestLoginStaleCompletingWithoutClaimedAt(t *testing.T) {
+	r := mkLogin(t)
+	ctx := context.Background()
+	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
+	if _, err := r.s.exec(ctx, `UPDATE g4_account_login SET state='completing', claimed_at=NULL, created_at=$2 WHERE id=$1`, v.ID, r.clock.Add(-3*time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	r.l.Sweep(ctx)
+	if row := r.row(t, v.ID); row.State != "failed" || row.Reason != "interrupted" {
+		t.Fatalf("无 claimed_at 的陈旧 completing 应按 created_at 兜底收为 interrupted: %+v", row)
 	}
 }

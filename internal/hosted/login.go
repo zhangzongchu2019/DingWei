@@ -479,7 +479,7 @@ func (l *LoginService) Sweep(ctx context.Context) error {
 	// 否则它一直占着「每人一个进行中」，用户在 Hub 重启前无法再发起。
 	l.mu.Lock()
 	_, err = l.st.exec(ctx, `UPDATE g4_account_login SET state='failed', reason='interrupted', finished_at=now()
-WHERE state='completing' AND claimed_at < $1`, now.Add(-LoginClaimStale))
+WHERE state='completing' AND COALESCE(claimed_at, created_at) < $1`, now.Add(-LoginClaimStale))
 	l.mu.Unlock()
 	return err
 }
