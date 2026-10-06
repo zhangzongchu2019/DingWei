@@ -13,6 +13,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -237,6 +238,68 @@ func (e *engine) networkRemove(ctx context.Context, name string) error {
 		return nil
 	}
 	return err
+}
+
+// streamClient 长连接用（attach／wait 可持续到登录时限）：同一拨号器、不设整体超时，由调用方 ctx 控制。
+func (e *engine) streamClient() *http.Client { return &http.Client{Transport: e.hc.Transport} }
+
+// containerAttach 附着容器 stdout／stderr（Tty=false ⇒ 多路复用帧，见 demuxLines）。须在 start 之前附着以免漏输出。
+// 登录容器 LogConfig=none，Docker 不落盘任何输出——这条流是唯一读口（R-V2-ACCOUNT-LOGIN-FLOW 必补 2）。
+func (e *engine) containerAttach(ctx context.Context, id string) (io.ReadCloser, error) {
+	req, err := http.NewRequestWithContext(ctx, "POST", e.base+"/containers/"+id+"/attach?stream=1&stdout=1&stderr=1", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Connection", "Upgrade")
+	req.Header.Set("Upgrade", "tcp")
+	resp, err := e.streamClient().Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusSwitchingProtocols && resp.StatusCode != http.StatusOK {
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		resp.Body.Close()
+		return nil, &engineError{Status: resp.StatusCode, Message: strings.TrimSpace(string(raw))}
+	}
+	return resp.Body, nil
+}
+
+// containerWait 等容器退出，返回退出码（ctx 取消即返回错误）。
+func (e *engine) containerWait(ctx context.Context, id string) (int, error) {
+	req, err := http.NewRequestWithContext(ctx, "POST", e.base+"/containers/"+id+"/wait", nil)
+	if err != nil {
+		return -1, err
+	}
+	resp, err := e.streamClient().Do(req)
+	if err != nil {
+		return -1, err
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+	if resp.StatusCode >= 300 {
+		return -1, &engineError{Status: resp.StatusCode, Message: strings.TrimSpace(string(raw))}
+	}
+	var out struct {
+		StatusCode int `json:"StatusCode"`
+	}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return -1, fmt.Errorf("docker wait %s: %v", id, err)
+	}
+	return out.StatusCode, nil
+}
+
+// containersByLabel 列出带某标签的容器（含已停）——启动清扫用。
+func (e *engine) containersByLabel(ctx context.Context, label string) ([]containerListItem, error) {
+	f, _ := json.Marshal(map[string][]string{"label": {label}})
+	var out []containerListItem
+	err := e.call(ctx, "GET", "/containers/json?all=1&filters="+url.QueryEscape(string(f)), nil, &out)
+	return out, err
+}
+
+type containerListItem struct {
+	ID     string            `json:"Id"`
+	Names  []string          `json:"Names"`
+	Labels map[string]string `json:"Labels"`
 }
 
 // NewEngine 真机 Engine（unix socket；cmd/nodeagent 用）。

@@ -872,6 +872,172 @@ function renderRoster(){
 //    在 GET /api/console/agents 每行的 hosted 子对象里 {node_name,state,upgradable}(组长裁定:不另开读接口);Hub 掌握事实:
 //    CLI×LLM 兼容与验通、套餐是否超额、节点可用与否都由应答给出,页面只据此置灰,不自己判定。
 //    密钥永不出现:账号只显示名称与后四位。错误一律机器码,页面写中文。
+// 0.2.1.101「我的 LLM 账号」（R-V2-ACCOUNT-PER-USER＋R-V2-ACCOUNT-LOGIN-FLOW；业主文字即示意图）：
+//    新增一行（LLM、方式＝账号登录或 API Key、邮箱或 Key）；列表（邮箱或 Key 末四位、LLM、方式、在用、状态、换 Key／重新登录、停用启用）。
+//    账号登录＝codex 设备码：页面只显示可复制的链接与一次性码，用户自己在浏览器完成；凭证永不到浏览器。
+var LLM_API={
+  list:'/api/console/llm-accounts',register:'/api/console/llm-accounts',
+  secret:function(id){return '/api/console/llm-accounts/'+encodeURIComponent(id)+'/secret';},
+  state:function(id,on){return '/api/console/llm-accounts/'+encodeURIComponent(id)+(on?'/enable':'/disable');},
+  login:'/api/console/llm-account-logins',
+  loginGet:function(id){return '/api/console/llm-account-logins/'+encodeURIComponent(id);},
+  loginCancel:function(id){return '/api/console/llm-account-logins/'+encodeURIComponent(id)+'/cancel';}
+};
+var LLM_ERRORS={
+  account_name_taken:'你名下已有同名账号；要换凭据请在列表里点「重新登录」或「换 Key」',account_limit:'每人最多 20 个 LLM 账号',
+  account_in_use:'该账号仍有 Agent 在用，不能停用',too_large:'内容过长',params_invalid:'填写的内容不完整或格式不对',
+  email_invalid:'账号邮箱格式不对',login_in_progress:'你已有一个进行中的账号登录，请先完成或取消',
+  login_rate_limited:'操作过于频繁，请 30 秒后再试',login_busy:'当前账号登录人数已满，请稍后再试',
+  login_start_failed:'发起账号登录失败，请稍后再试',login_unavailable:'暂不支持账号登录',node_unsupported:'节点尚未升级，暂不支持账号登录',
+  node_offline:'没有可用的节点，请稍后再试',not_found:'账号不存在或不是你名下的',combo_incompatible:'这个 LLM 不支持该方式'
+};
+var LLM_LOGIN_END={
+  done:'已登录，账号已入池',expired:'已超时（15 分钟），请重新发起',cancelled:'已取消',
+  failed:'登录未完成'
+};
+var LLM_LOGIN_REASONS={
+  login_timeout:'登录超时',account_name_taken:'你名下已有同名账号，请在列表里对它点「重新登录」',account_limit:'账号数已达上限',
+  node_offline:'节点离线',node_unsupported:'节点尚未升级',login_busy:'登录人数已满',credential_not_json:'登录结果格式不对',too_large:'登录结果过大'
+};
+var llmOpts=null,llmLoginId='',llmLoginTimer=null;
+function llmErr(res){return LLM_ERRORS[res.code]||res.text;}
+async function llmSend(method,path,body){
+  try{
+    var r=await fetch(path,{method:method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+    var data=null;try{data=await r.json();}catch(_){}
+    if(r.ok)return {ok:true,data:data||{}};
+    return {ok:false,status:r.status,code:data&&data.error||'',text:consoleErrorText(r.status,data)};
+  }catch(err){return {ok:false,status:0,code:'',text:'请求失败: '+String(err&&err.message||err)};}
+}
+function llmMethods(llm){   // 方式＝该 LLM 在组合表里有的凭据形态：token_file＝账号登录（codex 设备码），api_key＝API Key
+  var out=[];((llmOpts&&llmOpts.combos)||[]).forEach(function(c){
+    if(c.llm!==llm)return;
+    if(c.cred_kind==='token_file'&&c.cli==='codex'&&!out.some(function(x){return x.value==='account_login';}))out.push({value:'account_login',text:'账号登录'});
+    if(c.cred_kind==='api_key'&&!out.some(function(x){return x.value==='api_key';}))out.push({value:'api_key',text:'API Key',cli:c.cli});
+  });
+  return out;
+}
+function llmRenderAdd(){
+  var llms=[];((llmOpts&&llmOpts.combos)||[]).forEach(function(c){if(llms.indexOf(c.llm)<0)llms.push(c.llm);});
+  hostedFill('llmAddLlm',llms.map(function(l){return {value:l,text:l};}),'请选择 LLM');
+  llmRenderMethod();
+}
+function llmRenderMethod(){
+  var llm=document.getElementById('llmAddLlm').value,ms=llmMethods(llm);
+  hostedFill('llmAddMethod',ms.map(function(m){return {value:m.value,text:m.text};}),llm?'请选择方式':'请先选择 LLM');
+  var m=document.getElementById('llmAddMethod').value;
+  document.getElementById('llmAddEmailBox').hidden=m==='api_key';
+  document.getElementById('llmAddKeyBox').hidden=m!=='api_key';
+  document.getElementById('llmAddLabelBox').hidden=m!=='api_key';
+  document.getElementById('llmTermsNote').hidden=m!=='account_login';
+}
+function llmRow(a){
+  var tr=document.createElement('tr'),td=function(t){var c=document.createElement('td');c.textContent=t;tr.append(c);return c;};
+  var login=a.method==='account_login';
+  td(login?(a.email||a.name):(a.last4?'…'+a.last4:a.name));
+  td(a.llm);td(login?'账号登录':'API Key');td(String(a.in_use||0));td(a.state==='disabled'?'已停用':'可用');
+  var ops=td(''),mk=function(text,fn){var b=document.createElement('button');b.type='button';b.textContent=text;b.onclick=fn;ops.append(b);return b;};
+  if(login)mk('重新登录',function(){llmStartLogin({account_id:a.id,email:a.email||''});});
+  else mk('换 Key',function(){   // 页内密码框（组长 LOGIN-IMPL-R1 第 9 条：不用 window.prompt 明文）
+    if(ops.querySelector('.llm-rekey'))return;
+    var box=document.createElement('span');box.className='llm-rekey';
+    var inp=document.createElement('input');inp.type='password';inp.autocomplete='off';inp.placeholder='新的 API Key';
+    var ok=document.createElement('button');ok.type='button';ok.textContent='确定';
+    var no=document.createElement('button');no.type='button';no.textContent='取消';no.onclick=function(){inp.value='';box.remove();};
+    ok.onclick=async function(){
+      var k=inp.value.trim();if(!k){enrollFeedback('llmFeedback','请填写新的 API Key');return;}
+      ok.disabled=true;var res=await llmSend('PUT',LLM_API.secret(a.id),{secret:k});k='';inp.value='';ok.disabled=false;
+      if(!res.ok){enrollFeedback('llmFeedback',llmErr(res));return;}
+      box.remove();var n=res.data&&res.data.in_use||0;
+      enrollFeedback('llmFeedback','已换 Key'+(n>0?'；在跑的 '+n+' 个 Agent 须逐个「刷新凭据」才生效':''));llmRefresh();
+    };
+    box.append(inp,ok,no);ops.append(box);inp.focus();
+  });
+  mk(a.state==='disabled'?'启用':'停用',async function(){
+    var res=await llmSend('POST',LLM_API.state(a.id,a.state==='disabled'));
+    enrollFeedback('llmFeedback',res.ok?'':llmErr(res));llmRefresh();if(res.ok)refreshHostedOptions();
+  });
+  return tr;
+}
+async function llmRefresh(){
+  var tb=document.getElementById('llmItems');if(!tb)return;
+  try{
+    var r=await fetch(LLM_API.list,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);
+    var list=await r.json();if(!Array.isArray(list))throw new Error('响应格式无效');window.llmLast=list;
+    tb.replaceChildren.apply(tb,list.map(llmRow));
+    document.getElementById('llmEmpty').hidden=list.length>0;enrollFeedback('llmStatus','');
+  }catch(err){enrollFeedback('llmStatus','加载 LLM 账号失败：'+String(err&&err.message||err));}
+}
+function llmShowLogin(v){
+  var box=document.getElementById('llmLoginBox');if(!box)return;
+  var active=v&&(v.state==='starting'||v.state==='waiting_user');
+  box.hidden=!active;
+  if(active){
+    var a=document.getElementById('llmLoginUrl');a.textContent=v.url||'';a.href=(v.url&&v.url.indexOf('https://')===0)?v.url:'#';
+    document.getElementById('llmLoginCode').textContent=v.user_code||'';
+  }
+}
+function llmLoginStop(){if(llmLoginTimer){clearInterval(llmLoginTimer);llmLoginTimer=null;}llmLoginId='';}
+function llmLoginEnded(v){
+  llmShowLogin(null);llmLoginStop();
+  var msg=LLM_LOGIN_END[v.state]||v.state;
+  if(v.state==='failed'&&v.reason)msg+='：'+(LLM_LOGIN_REASONS[v.reason]||v.reason);
+  if(v.state==='done'&&v.reason==='email_mismatch')msg+='（注意：实际登录的账号与填写的邮箱不一致）';
+  enrollFeedback('llmFeedback',msg);
+  if(v.state==='done'){llmRefresh();refreshHostedOptions();}
+}
+async function llmPollLogin(){
+  if(!llmLoginId)return;
+  if(!document.getElementById('llmLoginBox')){llmLoginStop();return;}
+  try{
+    var r=await fetch(LLM_API.loginGet(llmLoginId),{cache:'no-store'});if(!r.ok)return;
+    var v=await r.json();
+    if(v.state==='starting'||v.state==='waiting_user')llmShowLogin(v);else if(v.state==='completing'){llmShowLogin(null);enrollFeedback('llmFeedback','登录完成，正在入池…');}else llmLoginEnded(v);
+  }catch(_){}
+}
+async function llmStartLogin(body){
+  if(body.account_id&&!body.email){var e=prompt('输入要登录的账号邮箱');if(!e)return;body.email=e;}
+  var res=await llmSend('POST',LLM_API.login,body);
+  if(!res.ok){enrollFeedback('llmFeedback',llmErr(res));return;}
+  enrollFeedback('llmFeedback','');llmLoginId=String(res.data.id||'');llmShowLogin(res.data);
+  if(llmLoginTimer)clearInterval(llmLoginTimer);llmLoginTimer=setInterval(llmPollLogin,3000);
+}
+async function llmAdd(){
+  var llm=document.getElementById('llmAddLlm').value,m=document.getElementById('llmAddMethod').value;
+  if(!llm||!m){enrollFeedback('llmFeedback','请选择 LLM 和方式');return;}
+  if(m==='account_login'){
+    var email=document.getElementById('llmAddEmail').value.trim();
+    if(!email){enrollFeedback('llmFeedback','请填写账号邮箱');return;}
+    await llmStartLogin({llm:llm,email:email});return;
+  }
+  var ki=document.getElementById('llmAddKey'),key=ki.value.trim();
+  if(!key){enrollFeedback('llmFeedback','请填写 API Key');return;}
+  var cli=(llmMethods(llm).filter(function(x){return x.value==='api_key';})[0]||{}).cli||'';
+  // 名字不含任何密钥内容（管理员看得到名字；组长 LOGIN-IMPL-R1 第 1 条）：用户自填标签，不填则「LLM＋序号」
+  var li=document.getElementById('llmAddLabel'),label=li.value.trim();
+  if(!label){var n=1,names={};((window.llmLast||[])).forEach(function(a){names[a.name]=1;});while(names[llm+' API Key '+n])n++;label=llm+' API Key '+n;}
+  var res=await llmSend('POST',LLM_API.register,{name:label,kind:'api_key',cli:cli,llm:llm,secret:key});
+  ki.value='';key='';if(res.ok)li.value='';
+  if(!res.ok){enrollFeedback('llmFeedback',llmErr(res));return;}
+  enrollFeedback('llmFeedback','已新增');llmRefresh();refreshHostedOptions();
+}
+function llmCopy(id){
+  var t=document.getElementById(id);var text=t?t.textContent:'';if(!text)return;
+  if(navigator.clipboard)navigator.clipboard.writeText(text).then(function(){enrollFeedback('llmFeedback','已复制');},function(){enrollFeedback('llmFeedback','复制失败，请手动选中复制');});
+}
+function llmAcctMount(){
+  if(!document.getElementById('llmAccounts'))return;
+  document.getElementById('llmRefresh').onclick=function(){llmRefresh();refreshHostedOptions();};   // 选项与托管生成区共用一次加载（不另取）
+  document.getElementById('llmAddLlm').onchange=llmRenderMethod;document.getElementById('llmAddMethod').onchange=llmRenderMethod;
+  document.getElementById('llmAddBtn').onclick=llmAdd;
+  document.getElementById('llmLoginUrlCopy').onclick=function(){llmCopy('llmLoginUrl');};
+  document.getElementById('llmLoginCodeCopy').onclick=function(){llmCopy('llmLoginCode');};
+  document.getElementById('llmLoginCancel').onclick=async function(){
+    if(!llmLoginId)return;var id=llmLoginId;var res=await llmSend('POST',LLM_API.loginCancel(id));
+    if(res.ok)llmLoginEnded(res.data);else enrollFeedback('llmFeedback',llmErr(res));
+  };
+  if(hostedOptions){llmOpts=hostedOptions;llmRenderAdd();}llmRefresh();
+}
 var HOSTED_API={
   options:'/api/console/hosted/options',
   create:'/api/console/hosted/agents',
@@ -940,7 +1106,7 @@ async function refreshHostedOptions(){
     if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}
     var data=await r.json();if(!data||!Array.isArray(data.combos)||!Array.isArray(data.plans))throw new Error('响应格式无效');
     if(generation!==hostedOptionsGeneration)return null;
-    hostedOptions=data;form.hidden=false;status.textContent='';renderHostedForm();return data;
+    hostedOptions=data;form.hidden=false;status.textContent='';renderHostedForm();llmOpts=data;if(document.getElementById('llmAddLlm'))llmRenderAdd();return data;
   }catch(err){
     if(generation===hostedOptionsGeneration){hostedOptions=null;form.hidden=true;status.textContent='托管选项加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;}
     return null;
@@ -1063,17 +1229,18 @@ function hostedOpButtons(a,hs){
 }
 function mountEnrollPanels(pane){
   var anchor=pane.querySelector('#group-status');if(!anchor)return;
-  anchor.insertAdjacentHTML('beforebegin',(FEATURE_SELFHOST_REVIEW?'<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><label id=enrollNewGroupBox hidden>新编组名 <input id=enrollNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section>':'')+'<section id=hostedCreate class="group-block"><div class=group-toolbar><h3>托管 Agent 生成</h3><span><button id=hostedRefresh type=button>刷新</button></span></div><div id=hostedStatus role=status></div><button id=hostedRetry type=button hidden>重试加载</button><div id=hostedForm hidden><label>节点 <select id=hostedNode></select></label><label>CLI <select id=hostedCli></select></label><label>LLM <select id=hostedLlm></select></label><label>LLM 账号 <select id=hostedAccount></select></label><label>运行资源套餐 <select id=hostedPlan></select></label><label>模型 <select id=hostedModel></select></label><label>Agent 名称 <input id=hostedName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=hostedGroup></select></label><label id=hostedNewGroupBox hidden>新编组名 <input id=hostedNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=hostedCreateBtn type=button>创建</button><div id=hostedQuota role=status></div><div id=hostedFeedback class=group-feedback></div></div></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterStatus role=status></div><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
+  anchor.insertAdjacentHTML('beforebegin',(FEATURE_SELFHOST_REVIEW?'<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><label id=enrollNewGroupBox hidden>新编组名 <input id=enrollNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section>':'')+'<section id=hostedCreate class="group-block"><div class=group-toolbar><h3>托管 Agent 生成</h3><span><button id=hostedRefresh type=button>刷新</button></span></div><div id=hostedStatus role=status></div><button id=hostedRetry type=button hidden>重试加载</button><div id=hostedForm hidden><label>节点 <select id=hostedNode></select></label><label>CLI <select id=hostedCli></select></label><label>LLM <select id=hostedLlm></select></label><label>LLM 账号 <select id=hostedAccount></select></label><label>运行资源套餐 <select id=hostedPlan></select></label><label>模型 <select id=hostedModel></select></label><label>Agent 名称 <input id=hostedName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=hostedGroup></select></label><label id=hostedNewGroupBox hidden>新编组名 <input id=hostedNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=hostedCreateBtn type=button>创建</button><div id=hostedQuota role=status></div><div id=hostedFeedback class=group-feedback></div></div></section><section id=llmAccounts class="group-block"><div class=group-toolbar><h3>我的 LLM 账号</h3><span><button id=llmRefresh type=button>刷新</button></span></div><div id=llmAddRow><label>LLM <select id=llmAddLlm></select></label><label>方式 <select id=llmAddMethod></select></label><label id=llmAddEmailBox>账号邮箱 <input id=llmAddEmail autocomplete=off placeholder="登录用的账号邮箱"></label><label id=llmAddKeyBox hidden>API Key <input id=llmAddKey type=password autocomplete=off></label><label id=llmAddLabelBox hidden>标签（可选） <input id=llmAddLabel maxlength=64 autocomplete=off placeholder="不填则按 LLM＋序号"></label><button id=llmAddBtn type=button>新增</button></div><p class=group-feedback id=llmTermsNote hidden>账号登录使用你自己的订阅账号；订阅类账号用于平台的条款由你自行判断。同一账号被多个 Agent 共用时可能互相顶掉登录，建议一号一席。</p><section id=llmLoginBox class="group-block" hidden><div>1. 在你自己的浏览器打开：<a id=llmLoginUrl target=_blank rel="noopener noreferrer"></a> <button id=llmLoginUrlCopy type=button>复制链接</button></div><div>2. 登录后输入一次性码：<code id=llmLoginCode></code> <button id=llmLoginCodeCopy type=button>复制码</button></div><div id=llmLoginNote style="font-size:12px;color:#666">链接与码 15 分钟内有效，只显示给你本人；完成后此处会自动更新。</div><button id=llmLoginCancel type=button>取消登录</button></section><table id=llmTable class=group-table><thead><tr><th>邮箱 / Key</th><th>LLM</th><th>方式</th><th>在用</th><th>状态</th><th>操作</th></tr></thead><tbody id=llmItems></tbody></table><div id=llmEmpty hidden>还没有 LLM 账号。</div><div id=llmStatus role=status></div><div id=llmFeedback class=group-feedback role=status></div></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterStatus role=status></div><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
   if(FEATURE_SELFHOST_REVIEW){
     document.getElementById('enrollRefresh').onclick=refreshEnroll;document.getElementById('enrollRetry').onclick=refreshEnroll;
     document.getElementById('enrollApprove').onclick=enrollApprove;document.getElementById('enrollReject').onclick=enrollReject;
     document.getElementById('enrollCancel').onclick=enrollCloseEditor;
   }
-  if(!FEATURE_HOSTED){var hc=pane.querySelector('#hostedCreate');if(hc)hc.remove();refreshRoster();if(FEATURE_SELFHOST_REVIEW)refreshEnroll();var rt0=setInterval(function(){if(!document.getElementById('rosterItems')){clearInterval(rt0);return;}refreshRoster();},15000);return;}
+  if(!FEATURE_HOSTED){var hc=pane.querySelector('#hostedCreate');if(hc)hc.remove();var la=pane.querySelector('#llmAccounts');if(la)la.remove();refreshRoster();if(FEATURE_SELFHOST_REVIEW)refreshEnroll();var rt0=setInterval(function(){if(!document.getElementById('rosterItems')){clearInterval(rt0);return;}refreshRoster();},15000);return;}
   var mask=document.createElement('div');mask.id='hostedMask';mask.hidden=true;mask.innerHTML='<div id=hostedMaskBox class=hosted-mask-box></div>';mask.onclick=hostedMaskHide;pane.append(mask);
   document.getElementById('hostedRefresh').onclick=refreshHostedOptions;document.getElementById('hostedRetry').onclick=refreshHostedOptions;
   document.getElementById('hostedCli').onchange=renderHostedLlm;document.getElementById('hostedLlm').onchange=renderHostedAccounts;
   document.getElementById('hostedCreateBtn').onclick=hostedCreate;
+  llmAcctMount();
   refreshRoster();if(FEATURE_SELFHOST_REVIEW)refreshEnroll();refreshHostedOptions();
   var rosterTimer=setInterval(function(){if(!document.getElementById('rosterItems')){clearInterval(rosterTimer);return;}refreshRoster();},15000);
 }

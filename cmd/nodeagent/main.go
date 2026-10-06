@@ -62,11 +62,13 @@ func main() {
 		log.Fatal("nodeagent: NODEAGENT_SEAT_PROXY 必填（席位代理，如 http://172.30.68.1:11080）")
 	}
 	seatRoot := envOr("NODEAGENT_SEAT_ROOT", "/data/dingwei-newplat/agents")
+	eng := nodeagent.NewEngine(sockPath)
+	registry := envOr("NODEAGENT_IMAGE_REGISTRY", "hub.local/dingwei")
 	if err := ag.RegisterDockerHandlers(
-		nodeagent.NewEngine(sockPath),
+		eng,
 		nodeagent.XFSQuota(),
 		seatRoot,
-		envOr("NODEAGENT_IMAGE_REGISTRY", "hub.local/dingwei"),
+		registry,
 		cgroupParent,
 		seatProxy,
 		cfg.HubURL,
@@ -91,6 +93,11 @@ func main() {
 		log.Fatalf("nodeagent: export_seat: %v", err)
 	}
 	ag.Register(nodeagent.CmdExportSeat, exportH)
+	// R-V2-ACCOUNT-LOGIN-FLOW：账号登录（codex 设备码）一次性容器；凭证目录在宿主内存盘（默认 /dev/shm），读后即删。
+	if err := ag.RegisterLoginHandlers(eng, registry, os.Getenv("NODEAGENT_LOCAL_IMAGES"), cgroupParent, seatProxy,
+		cfg.HubURL, os.Getenv("NODEAGENT_LOGIN_ROOT"), cfg.Secret, cfg.HubCertSHA256); err != nil {
+		log.Fatalf("nodeagent: login: %v", err)
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	if err := ag.Run(ctx); err != nil && ctx.Err() == nil {

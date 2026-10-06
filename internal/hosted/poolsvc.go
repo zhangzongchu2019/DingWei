@@ -103,11 +103,23 @@ func validateSecret(kind, secret string) error {
 // 每人上限 MaxAccountsPerOwner（停用的也计入）；本人内同名 ⇒ ErrAccountNameTaken。
 // (cli,llm,kind) 是否在联动表内由调用方（编排层 combos）先判。
 func (p *PoolService) RegisterOwned(ctx context.Context, owner, name, kind, cli, llm, secret string) (Account, error) {
+	return p.registerOwned(ctx, owner, name, kind, cli, llm, secret, "")
+}
+
+// RegisterOwnedLogin 账号登录入池：同 RegisterOwned，邮箱随同一条 INSERT 落库（不留「名字＝邮箱、email 为空」的孤儿行）。
+func (p *PoolService) RegisterOwnedLogin(ctx context.Context, owner, email, llm, cred string) (Account, error) {
+	return p.registerOwned(ctx, owner, email, loginCredKind, loginCLI, llm, cred, email)
+}
+
+// AccountNameMaxLen 账号名（本人内唯一）长度上限；账号登录以邮箱作名，发起时即按它预查。
+const AccountNameMaxLen = 64
+
+func (p *PoolService) registerOwned(ctx context.Context, owner, name, kind, cli, llm, secret, email string) (Account, error) {
 	if owner == "" {
 		return Account{}, fmt.Errorf("%w: owner 为空", ErrParams)
 	}
 	name = strings.TrimSpace(name)
-	if name == "" || len(name) > 64 || (kind != "api_key" && kind != "token_file") || cli == "" || llm == "" {
+	if name == "" || len(name) > AccountNameMaxLen || (kind != "api_key" && kind != "token_file") || cli == "" || llm == "" {
 		return Account{}, fmt.Errorf("%w: name/kind/cli/llm 均必填", ErrParams)
 	}
 	if err := validateSecret(kind, secret); err != nil {
@@ -131,7 +143,7 @@ func (p *PoolService) RegisterOwned(ctx context.Context, owner, name, kind, cli,
 	if err != nil {
 		return Account{}, err
 	}
-	a := Account{ID: id, Name: name, Kind: kind, CLI: cli, LLM: llm, KeyVersion: kv, Last4: displayLast4(kind, secret), OwnerLC: owner, State: "available"}
+	a := Account{ID: id, Name: name, Kind: kind, CLI: cli, LLM: llm, KeyVersion: kv, Last4: displayLast4(kind, secret), OwnerLC: owner, State: "available", Email: email}
 	if err := p.st.CreateAccount(ctx, a, enc, owner); err != nil {
 		return Account{}, err
 	}

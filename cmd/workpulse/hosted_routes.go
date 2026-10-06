@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -29,6 +30,8 @@ type hostedDeps struct {
 	// 0.2.1.101 账号包（R-V2-ACCOUNT-PER-USER）
 	pool         *hosted.PoolService
 	publicOrigin string // 写接口 Origin 守卫（与 N3 同口径：Origin 须＝PublicOrigin，否则 403 origin_mismatch）
+	// 0.2.1.101 账号登录（R-V2-ACCOUNT-LOGIN-FLOW，codex 设备码）；nil ⇒ 不注册登录路由
+	login *hosted.LoginService
 }
 
 // hostedUser 管理配额页一行的用户身份：ID 原样展示，IDLC 是配额行的键（g4_quota.user_lc）。
@@ -55,6 +58,12 @@ func registerHostedRoutes(mux interface {
 	mux.HandleFunc("GET /api/console/admin/llm-accounts", d.handleAdminAccountList)
 	mux.HandleFunc("POST /api/console/admin/llm-accounts/{id}/disable", d.handleAdminAccountState(true))
 	mux.HandleFunc("POST /api/console/admin/llm-accounts/{id}/enable", d.handleAdminAccountState(false))
+	if d.login != nil { // 账号登录：会话路由单独前缀（与 /llm-accounts/{id}/… 不冲突）；节点上传端点另走节点密钥
+		mux.HandleFunc("POST /api/console/llm-account-logins", d.handleLoginStart)
+		mux.HandleFunc("GET /api/console/llm-account-logins/{loginID}", d.handleLoginGet)
+		mux.HandleFunc("POST /api/console/llm-account-logins/{loginID}/cancel", d.handleLoginCancel)
+		mux.HandleFunc("POST /api/node/login/{loginID}", d.handleLoginUpload)
+	}
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -138,6 +147,13 @@ var hostedErrorCodes = []struct {
 	{hosted.ErrSecretTooLarge, "too_large", http.StatusRequestEntityTooLarge},
 	{hosted.ErrNodeUnsupported, "node_unsupported", http.StatusConflict},
 	{hosted.ErrCredInjectFailed, "credential_inject_failed", http.StatusBadGateway},
+	// 0.2.1.101 账号登录
+	{hosted.ErrLoginInProgress, "login_in_progress", http.StatusConflict},
+	{hosted.ErrLoginRateLimited, "login_rate_limited", http.StatusTooManyRequests},
+	{hosted.ErrLoginBusy, "login_busy", http.StatusTooManyRequests},
+	{hosted.ErrEmailInvalid, "email_invalid", http.StatusBadRequest},
+	{hosted.ErrLoginStartFailed, "login_start_failed", http.StatusBadGateway},
+	{hosted.ErrLoginUnavailable, "login_unavailable", http.StatusServiceUnavailable},
 }
 
 // actorOf 认人；失败按新平台 N3 统一口径答：无会话 401 unauthenticated，必须改密 403 must_change_password。
@@ -363,6 +379,9 @@ type accountView struct {
 	InUse     int    `json:"in_use"`
 	CreatedAt string `json:"created_at"`
 	Owner     string `json:"owner,omitempty"` // 只在管理视图出
+	// 0.2.1.101 账号登录：方式（account_login｜api_key）与邮箱（个人信息——只给属主本人；管理视图恒空）
+	Method string `json:"method"`
+	Email  string `json:"email,omitempty"`
 }
 
 func toAccountView(a hosted.Account, withOwner bool) accountView {
@@ -372,9 +391,19 @@ func toAccountView(a hosted.Account, withOwner bool) accountView {
 	}
 	v := accountView{ID: a.ID, Name: a.Name, Kind: a.Kind, CLI: a.CLI, LLM: a.LLM, Last4: a.Last4, State: st,
 		InUse: a.InUse, CreatedAt: a.CreatedAt.UTC().Format("2006-01-02T15:04:05Z")}
+	v.Method = "api_key"
+	if a.Kind == "token_file" {
+		v.Method = "account_login"
+	}
+	v.Email = a.Email
 	if withOwner { // 管理视图：带属主、**不带 last4**——api_key 的后四位也是密钥片段，只给属主本人看（复核 tosonnet55tc2k）
 		v.Owner = a.OwnerLC
 		v.Last4 = ""
+		// 账号登录入池的账号名称就是邮箱（个人信息）：管理视图不给邮箱，名称以方式代称（LOGIN-FLOW 设计第十一节第 4 条）
+		if a.Email != "" {
+			v.Email = ""
+			v.Name = "（账号登录）"
+		}
 	}
 	return v
 }
@@ -519,5 +548,91 @@ func (d hostedDeps) handleAdminAccountState(disable bool) func(http.ResponseWrit
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// ---------- 账号登录（0.2.1.101，R-V2-ACCOUNT-LOGIN-FLOW） ----------
+
+// handleLoginStart 发起：{llm, email} 新登记；{account_id, email?} 对本人已有账号重新登录。
+// 应答＝会话（含可复制的链接与一次性码，只给发起人本人）。邮箱校验失败不回显输入。
+func (d hostedDeps) handleLoginStart(w http.ResponseWriter, r *http.Request) {
+	actor, ok := d.actorOf(w, r)
+	if !ok || !d.sameOrigin(w, r) {
+		return
+	}
+	var body struct {
+		LLM       string `json:"llm"`
+		Email     string `json:"email"`
+		AccountID string `json:"account_id"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "params_invalid"})
+		return
+	}
+	v, err := d.login.Start(r.Context(), actor, body.LLM, body.Email, body.AccountID)
+	if err != nil {
+		writeAccountError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, v)
+}
+
+func (d hostedDeps) handleLoginGet(w http.ResponseWriter, r *http.Request) {
+	actor, ok := d.actorOf(w, r)
+	if !ok {
+		return
+	}
+	v, err := d.login.Get(r.Context(), actor, r.PathValue("loginID"))
+	if err != nil {
+		writeAccountError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
+}
+
+func (d hostedDeps) handleLoginCancel(w http.ResponseWriter, r *http.Request) {
+	actor, ok := d.actorOf(w, r)
+	if !ok || !d.sameOrigin(w, r) {
+		return
+	}
+	v, err := d.login.Cancel(r.Context(), actor, r.PathValue("loginID"))
+	if err != nil {
+		writeAccountError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
+}
+
+// handleLoginUpload 节点上传登录结果：节点密钥须鉴权到**会话记录的执行节点**；限长；一次性。🔴 请求体不进任何日志。
+func (d hostedDeps) handleLoginUpload(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("loginID")
+	secret := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if err := d.login.AuthorizeUpload(r.Context(), id, secret); err != nil {
+		if errors.Is(err, hosted.ErrNotFound) {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "not_found"})
+			return
+		}
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "node_auth_failed"})
+		return
+	}
+	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, hosted.LoginUploadMax))
+	if err != nil {
+		d.login.FailUpload(r.Context(), id, "too_large")
+		writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "too_large"})
+		return
+	}
+	err = d.login.Complete(r.Context(), id, raw)
+	for i := range raw {
+		raw[i] = 0
+	}
+	switch {
+	case err == nil:
+		w.WriteHeader(http.StatusNoContent)
+	case errors.Is(err, hosted.ErrLoginNotActive):
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "login_not_active"})
+	case errors.Is(err, hosted.ErrNotFound):
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not_found"})
+	default:
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "params_invalid"})
 	}
 }

@@ -468,6 +468,7 @@ type Account struct {
 	State                    string
 	BoundAgentID             sql.NullString // 历史列，只读
 	OwnerLC                  string
+	Email                    string    // 账号登录入池的邮箱（API Key 与手工登记为空）；个人信息，只给属主
 	InUse                    int       // 未销毁席位对本号的引用数（列表类查询填；GetAccount 不填）
 	CreatedAt                time.Time // 登记时间（token_file 类账号的 console 显示用——无后四位）
 }
@@ -476,21 +477,21 @@ type Account struct {
 // 新代码释放时另把 account_ref 置 NULL——两道并用，历史 destroyed 行靠状态过滤）。
 const accountInUseSQL = `(SELECT count(*) FROM g4_hosted_seat s WHERE s.account_ref = p.id AND s.state <> 'destroyed')`
 
-const accountCols = `p.id, p.name, p.kind, p.cli, p.llm, p.key_version, p.last4, p.state, p.bound_agent_id, p.owner_lc, p.created_at`
+const accountCols = `p.id, p.name, p.kind, p.cli, p.llm, p.key_version, p.last4, p.state, p.bound_agent_id, p.owner_lc, p.email, p.created_at`
 
 func scanAccount(sc interface{ Scan(...any) error }, a *Account, withInUse bool) error {
 	if withInUse {
-		return sc.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.OwnerLC, &a.CreatedAt, &a.InUse)
+		return sc.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.OwnerLC, &a.Email, &a.CreatedAt, &a.InUse)
 	}
-	return sc.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.OwnerLC, &a.CreatedAt)
+	return sc.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.OwnerLC, &a.Email, &a.CreatedAt)
 }
 
 // CreateAccount 登记一行（归属 a.OwnerLC）。同一属主内同名 ⇒ ErrAccountNameTaken（唯一索引 g4_account_pool_owner_name）。
 func (s *Store) CreateAccount(ctx context.Context, a Account, secretEnc []byte, by string) error {
 	_, err := s.pool.Exec(ctx, htx(), `
-INSERT INTO g4_account_pool (id, name, kind, cli, llm, secret_enc, key_version, last4, created_by, owner_lc)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-		a.ID, a.Name, a.Kind, a.CLI, a.LLM, secretEnc, a.KeyVersion, a.Last4, by, a.OwnerLC)
+INSERT INTO g4_account_pool (id, name, kind, cli, llm, secret_enc, key_version, last4, created_by, owner_lc, email)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+		a.ID, a.Name, a.Kind, a.CLI, a.LLM, secretEnc, a.KeyVersion, a.Last4, by, a.OwnerLC, a.Email)
 	if err != nil && isUniqueViolation(err, "g4_account_pool_owner_name") {
 		return ErrAccountNameTaken
 	}
@@ -839,4 +840,17 @@ func (s *Store) AddAudit(ctx context.Context, actor, action, target string, deta
 INSERT INTO g4_audit (actor, action, target, detail) VALUES ($1,$2,$3,$4)`,
 		actor, action, target, detail)
 	return err
+}
+
+// OwnedAccountNameTaken 本人名下是否已有该名字（账号登录发起时预查，免得用户在浏览器登完才被拒）。
+func (s *Store) OwnedAccountNameTaken(ctx context.Context, ownerLC, name string) (bool, error) {
+	var n int
+	row, err := s.qrow(ctx, `SELECT count(*) FROM g4_account_pool WHERE owner_lc=$1 AND name=$2`, ownerLC, name)
+	if err != nil {
+		return false, err
+	}
+	if err := row.Scan(&n); err != nil {
+		return false, err
+	}
+	return n > 0, nil
 }

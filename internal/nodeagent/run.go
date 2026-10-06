@@ -188,8 +188,11 @@ func (a *Agent) execute(ctx context.Context, cmd Command) Result {
 	if !commandWhitelist[cmd.Type] {
 		return Result{CommandID: cmd.CommandID, OK: false, Error: "unknown_command_type"}
 	}
-	if r, ok := a.ledger.Get(cmd.CommandID); ok {
-		return r // 幂等重报：重发与重连重放都走这条
+	skipLedger := noLedgerCommands[cmd.Type]
+	if !skipLedger {
+		if r, ok := a.ledger.Get(cmd.CommandID); ok {
+			return r // 幂等重报：重发与重连重放都走这条
+		}
 	}
 	h, ok := a.handlers[cmd.Type]
 	var r Result
@@ -202,6 +205,9 @@ func (a *Agent) execute(ctx context.Context, cmd Command) Result {
 		} else {
 			r = Result{CommandID: cmd.CommandID, OK: true, Payload: payload}
 		}
+	}
+	if skipLedger {
+		return r
 	}
 	if err := a.ledger.Put(r); err != nil {
 		return Result{CommandID: cmd.CommandID, OK: false, Error: "ledger_write_failed"}
