@@ -4,7 +4,7 @@ package hosted
 //
 // 既有件复用：令牌件入池＝PoolService.Register（kind=token_file——管理者在有浏览器处
 // 登录一次后把令牌文件内容登记进来，加密入库）；创建时写入容器＝席位经 V4 通道自取
-// （DecryptForSeat，T-G4-32）；一账号一时刻只绑一席＝BindAccount 的 CAS（T-G4-21）。
+// （DecryptForSeat，T-G4-32）；0.2.1.101 起同一账号可被属主本人多个席位共用（不再 CAS 独占）。
 //
 // 本件补的一环：🔴 令牌续期回写——令牌会在容器内自动续期并改写文件，续期后的令牌
 // 以容器内为准 ⇒ 席位周期上送最新令牌件，本层以 active 团队密钥重新加密回写池内副本
@@ -44,21 +44,10 @@ func (p *PoolService) PrepareUnbind(ctx context.Context, agentID string) (string
 }
 
 func (p *PoolService) boundAccountOf(ctx context.Context, agentID string) (string, error) {
-	var id string
-	err := func() error {
-
-		row, err := p.st.qrow(ctx, `
-SELECT id FROM g4_account_pool WHERE bound_agent_id=$1 AND state='bound'`, agentID)
-
-		if err != nil {
-
-			return err
-
-		}
-
-		return row.Scan(&id)
-
-	}()
+	// 0.2.1.101：占用以席位行 account_ref 为准（共用后一号可被多席引用，bound_agent_id 放不下）。
+	// 🔴 本函数与 WriteBackRenewedToken／PrepareUnbind 目前**无生产调用点**（回写未接线）；接线后共用账号
+	// 为「最后上送者胜」（审计带上送席 agent_id）。
+	id, err := p.st.SeatAccountOf(ctx, agentID)
 	if err != nil {
 		return "", ErrNoBoundAccount
 	}

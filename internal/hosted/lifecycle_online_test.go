@@ -61,9 +61,9 @@ func TestRestartTimeoutKeepsExistingSeat(t *testing.T) {
 	if len(idp.retired) != retiredBefore {
 		t.Fatalf("existing seat's agent must not be retired on restart timeout: %v", idp.retired)
 	}
-	a, err := s.GetAccount(ctx, before.AccountRef.String)
-	if err != nil || a.State != "bound" || !a.BoundAgentID.Valid || a.BoundAgentID.String != id {
-		t.Fatalf("existing seat's account must stay bound: %+v %v", a, err)
+	// 0.2.1.101：占用以席位 account_ref 为准——既有席位超时后仍引用原账号（不释放）
+	if ref, err := s.SeatAccountOf(ctx, id); err != nil || ref != before.AccountRef.String {
+		t.Fatalf("existing seat's account reference must stay: %q %v", ref, err)
 	}
 	// 仍可再重启（guard 放行 error 态）
 	if err := lc.Restart(ctx, id, "zzc", false); err != nil {

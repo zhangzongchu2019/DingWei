@@ -38,7 +38,7 @@ function mutate(from, to) {
   }
   html = html.replace(from, to);
 }
-const MUTATIONS = ['mutation-anchor-selftest', 'ignore-hosted-disabled', 'always-hide-hosted', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped'];
+const MUTATIONS = ['mutation-anchor-selftest', 'ignore-hosted-disabled', 'always-hide-hosted', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped', 'drop-in-use'];
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'ignore-hosted-disabled') mutate('if(!FEATURE_HOSTED){var hc=', 'if(false){var hc=');
@@ -61,6 +61,7 @@ if (mutation === 'no-linkage') mutate("var rows=(opts.accounts||[]).filter(funct
 if (mutation === 'hardcoded-mask') mutate("hostedMaskRender(name,stage,'',lastStage);\n    if(stage==='online')", "hostedMaskRender(name,'online','',lastStage);\n    if(stage==='online')");
 if (mutation === 'destroy-no-confirm') mutate("if(!confirm('销毁 '+name+'：容器将被删除,凭据立即吊销;数据卷会先备份一次并保留 14 天,到期删除;备份不占你的配额。确认销毁？'))return;", '');
 if (mutation === 'drop-confirm-flag') mutate("if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器将被删除,凭据立即吊销;数据卷会先备份一次并保留 14 天,到期删除;备份不占你的配额。确认销毁？'))return;body.confirm=true;}", "if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器将被删除,凭据立即吊销;数据卷会先备份一次并保留 14 天,到期删除;备份不占你的配额。确认销毁？'))return;}");
+if (mutation === 'drop-in-use') mutate("+(a.in_use>0?'（已被 '+a.in_use+' 个 Agent 使用）':'')", '');
 if (mutation === 'show-secret') mutate("text:a.name+'（…'+a.last4+'）'", "text:a.name+'（'+a.secret+'）'");
 if (mutation === 'hosted-shows-revoke') mutate("revoke.hidden=a.origin==='hosted';", 'revoke.hidden=false;');
 
@@ -86,7 +87,7 @@ function options() {
     ],
     accounts: [
       { id: 'acc1', name: '团队主账号', llm: 'openai', kind: 'api_key', last4: '7f3a', secret: 'SK-LEAK-1' },
-      { id: 'acc2', name: '备用账号', llm: 'openai', kind: 'api_key', last4: '91bc', secret: 'SK-LEAK-2' },
+      { id: 'acc2', name: '备用账号', llm: 'openai', kind: 'api_key', last4: '91bc', secret: 'SK-LEAK-2', in_use: 2 },
       { id: 'acc4', name: '订阅令牌账号', llm: 'openai', kind: 'token_file', last4: 'aa11', secret: 'SK-LEAK-4' },
       { id: 'acc3', name: '团队 anthropic', llm: 'anthropic', kind: 'api_key', last4: '0d2e', secret: 'SK-LEAK-3' },
     ],
@@ -234,6 +235,8 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       const acc = await opts('#hostedAccount');
       assert.deepStrictEqual(acc.map((o) => [o.value, o.disabled]), [['', false], ['acc1', false], ['acc2', false], ['acc4', true]], 'accounts of the chosen LLM; the token_file one needs a verified token_file combo, which does not exist yet');
       assert.strictEqual(acc[1].text, '团队主账号（…7f3a）');
+      assert.strictEqual(acc[2].text, '备用账号（…91bc）（已被 2 个 Agent 使用）', 'shared account shows how many Agents already use it (hint only; still selectable)');
+      assert.strictEqual(acc[2].disabled, false, 'in_use never disables the option');
       assert.match(acc[3].text, /未验通/);
       await page.locator('#hostedAccount').selectOption('acc1');
       await page.locator('#hostedCli').selectOption('claude');

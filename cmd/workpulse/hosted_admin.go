@@ -6,11 +6,15 @@ package main
 // 用法：
 //   workpulse hosted-admin register-node --id nd_106 --name 106 [--labels '{"pool":"x"}']
 //     ⇒ 打印一次性节点凭据（只此一次；落库只存哈希）
-//   workpulse hosted-admin seed-account --name team-codex --kind token_file --cli codex --llm gpt \
-//       --grant-to <user_lc> --secret-stdin  < 凭据件
-//     ⇒ 凭据从标准输入读（不进命令行、不进 shell 历史）；按用户授权（grant-to 可省）
+//   workpulse hosted-admin assign-owner --account <acct_id> --owner <user_lc>
+//     ⇒ 只给无主存量账号指派属主（已有主不可改）
+//   workpulse hosted-admin account-disable|account-enable --account <acct_id>
+//     ⇒ 管理停用／启用（停用受「无存活引用」守卫）
 //
-// 环境：DW_NEWPLAT_PG_DSN（同一测试/生产库）；seed-account 另需 DW_G4_MASTER_KEY_FILE。
+// 0.2.1.101（R-V2-ACCOUNT-SEED-CLI）：seed-account（管理员代人登记）已删除——登记一律由属主本人走
+// POST /api/console/llm-accounts；管理员不碰密钥、不能换密。
+//
+// 环境：DW_NEWPLAT_PG_DSN（同一测试/生产库）；账号子命令另需 DW_G4_MASTER_KEY_FILE（PoolService 装配所需，不解密）。
 //
 // 注意：本工具每次运行先 openNewPlatformStore（含迁移账本）再 ApplySchema——对生产库同样会执行，
 // 与 Hub 启动同行为，运维须知（tosonnet55tc2k 复验观察）。
@@ -19,19 +23,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
 	"github.com/zhangzongchu2019/dingwei/internal/hosted"
 )
 
-// maxSecretStdinBytes 凭据 stdin 读入上限（1MiB；凭据件 KB 级，超限即拒）。
-const maxSecretStdinBytes = 1 << 20
-
 func runHostedAdmin(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("用法: hosted-admin register-node|seed-account ...")
+		return fmt.Errorf("用法: hosted-admin register-node|assign-owner|account-disable|account-enable ...")
 	}
 	ctx := context.Background()
 	dsn := os.Getenv("DW_NEWPLAT_PG_DSN")
@@ -66,43 +66,32 @@ func runHostedAdmin(args []string) error {
 		}
 		fmt.Printf("节点凭据（只显示这一次，落节点 0600 文件后即弃）: %s\n", secret)
 		return nil
-	case "seed-account":
-		fs := flag.NewFlagSet("seed-account", flag.ContinueOnError)
-		fs.Bool("secret-stdin", true, "凭据从标准输入读（唯一通道；该开关只是显式标记）")
-		name := fs.String("name", "", "账号名")
-		kind := fs.String("kind", "", "api_key|token_file")
-		cli := fs.String("cli", "", "如 codex")
-		llm := fs.String("llm", "", "如 gpt")
-		grantTo := fs.String("grant-to", "", "授权给该用户（可省）")
+	case "assign-owner", "account-disable", "account-enable":
+		fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
+		acct := fs.String("account", "", "账号 ID（acct_ 前缀）")
+		owner := fs.String("owner", "", "属主小写用户 ID（只 assign-owner 用）")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
 		}
-		if *name == "" || *cli == "" || *llm == "" || (*kind != "api_key" && *kind != "token_file") {
-			return fmt.Errorf("--name/--cli/--llm 必填，--kind 须 api_key|token_file")
+		if *acct == "" || (args[0] == "assign-owner" && *owner == "") {
+			return fmt.Errorf("--account 必填；assign-owner 另需 --owner")
 		}
 		svc, err := hosted.NewPoolService(st, os.Getenv("DW_G4_MASTER_KEY_FILE"))
 		if err != nil {
 			return err
 		}
-		// R-G4-HOSTED-ADMIN-TESTS：stdin 读入限 1MiB（凭据件 KB 级，1MiB 已极宽；
-		// 超限即拒——LimitReader 多读一字节探溢出，不静默截断）。
-		raw, err := io.ReadAll(io.LimitReader(os.Stdin, maxSecretStdinBytes+1))
+		switch args[0] {
+		case "assign-owner":
+			err = svc.AssignOwner(ctx, "hosted-admin", true, *acct, strings.ToLower(strings.TrimSpace(*owner)))
+		case "account-disable":
+			err = svc.SetStateAdmin(ctx, "hosted-admin", true, *acct, true)
+		default:
+			err = svc.SetStateAdmin(ctx, "hosted-admin", true, *acct, false)
+		}
 		if err != nil {
 			return err
 		}
-		if int64(len(raw)) > maxSecretStdinBytes {
-			return fmt.Errorf("凭据超长（上限 %d 字节）", maxSecretStdinBytes)
-		}
-		a, err := svc.Register(ctx, "hosted-admin", true, *name, *kind, *cli, *llm, strings.TrimSpace(string(raw)))
-		if err != nil {
-			return err
-		}
-		if *grantTo != "" {
-			if err := svc.Grant(ctx, "hosted-admin", true, a.ID, *grantTo); err != nil {
-				return err
-			}
-		}
-		fmt.Printf("账号已入池：%s（%s/%s/%s）\n", a.Name, a.Kind, a.CLI, a.LLM)
+		fmt.Printf("%s 完成\n", args[0])
 		return nil
 	default:
 		return fmt.Errorf("未知子命令 %q", args[0])

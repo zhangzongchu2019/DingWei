@@ -207,7 +207,7 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	if err := NewQuotaService(o.st, o.idp).CheckCreate(ctx, req.OwnerLC, plan); err != nil {
 		return CreateOutcome{}, err
 	}
-	// ④ 账号：本人可用（授权）＋未绑定＋CLI/LLM 匹配＋凭据形态匹配
+	// ④ 账号：属主本人＋未停用＋CLI/LLM 匹配＋凭据形态匹配（0.2.1.101：按人隔离，共用不拦）
 	usable, err := o.st.ListUsableAccounts(ctx, req.OwnerLC, req.CLI, req.LLM)
 	if err != nil {
 		return CreateOutcome{}, err
@@ -240,12 +240,9 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 		return CreateOutcome{}, err
 	}
 	o.stashToken(ag.ID, tok) // T-G4-32：RunJob 的 create_seat 随参数下发后清除
-	// ⑦ 绑定账号（CAS）；失败 ⇒ 一律 Retire 释放名字
-	if err := o.pool.Bind(ctx, req.By, true, req.AccountID, ag.ID); err != nil {
-		_, _ = o.idp.RetireHostedAgent(ctx, ag.ID, req.By)
-		return CreateOutcome{}, ErrAccountNotAllowed
-	}
-	// ⑧ 席位落库（queued）＋事件
+	// ⑦⑧ 席位落库（queued）＝引用账号：0.2.1.101 起不再独占绑定（本人多席共用，不拦）。
+	// CreateSeat 在同一事务内 FOR SHARE 锁账号行并复核「未停用、属主＝建席人」，与停用串行化；
+	// 失败 ⇒ 一律 Retire 释放名字（席位行未落，无引用要释放）。账号错误与存储错误分开返回。
 	err = o.st.CreateSeat(ctx, Seat{
 		AgentID: ag.ID, NodeID: node.ID, CLI: req.CLI, LLM: req.LLM, CredKind: req.CredKind,
 		AccountRef: sql.NullString{String: req.AccountID, Valid: true}, Plan: req.Plan, ImageRef: imageRef,
@@ -253,10 +250,16 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	})
 	if err != nil {
 		_, _ = o.idp.RetireHostedAgent(ctx, ag.ID, req.By)
-		_ = o.pool.Unbind(ctx, req.By, true, req.AccountID)
 		return CreateOutcome{}, err
 	}
+	_ = o.st.AddAudit(ctx, req.By, "account.bind", req.AccountID, jsonRaw(`{"agent":"`+ag.ID+`"}`))
 	return CreateOutcome{JobID: ag.ID, AgentID: ag.ID, State: "queued"}, nil
+}
+
+// AccountComboKnown 登记账号时的联动校验：(cli,llm,kind) 须在联动表里（验通与否不论——验通卡在建席）。
+func (o *Orchestrator) AccountComboKnown(cli, llm, kind string) bool {
+	_, ok := o.combos.Lookup(cli, llm, kind)
+	return ok
 }
 
 func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan Plan, model string) (Node, error) {
@@ -322,7 +325,7 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 		if err == nil {
 			_ = o.st.SetSeatState(ctx, agentID, "error", reason, "fail", json.RawMessage(`{"stage":"`+stage+`"}`))
 			if seat.AccountRef.Valid {
-				_ = o.pool.Unbind(ctx, "system", true, seat.AccountRef.String)
+				_ = o.pool.Release(ctx, "system", agentID)
 			}
 		}
 		_, _ = o.idp.RetireHostedAgent(ctx, agentID, "system")
@@ -405,7 +408,13 @@ func (o *Orchestrator) MarkOnline(ctx context.Context, agentID string) error {
 const (
 	seatStartingRestart = "restart"
 	seatStartingEnable  = "enable"
+	seatStartingRefresh = "refresh" // 0.2.1.101 刷新凭据：既有席位，超时只记错、不回收
 )
+
+// existingSeatStarting 既有席位（重启／启用／刷新凭据）的 starting：超时只记 error/start_timeout，不吊销不解绑。
+func existingSeatStarting(detail string) bool {
+	return detail == seatStartingRestart || detail == seatStartingEnable || detail == seatStartingRefresh
+}
 
 // SweepTimeouts 超时清扫（排队 10 分钟不可取消／拉镜像 30m／启动 5m；超时即失败不留半成品）。
 func (o *Orchestrator) SweepTimeouts(ctx context.Context, now time.Time) {
@@ -440,7 +449,7 @@ WHERE state IN ('queued','pulling','starting')`)
 			limit, reason = 5*time.Minute, "start_timeout"
 		}
 		if now.Sub(updated) > limit {
-			existing := state == "starting" && (detail == seatStartingRestart || detail == seatStartingEnable)
+			existing := state == "starting" && existingSeatStarting(detail)
 			timedOut = append(timedOut, pending{id: id, state: reason, existing: existing})
 		}
 	}
@@ -455,7 +464,7 @@ WHERE state IN ('queued','pulling','starting')`)
 		o.dropToken(p.id)
 		seat, err := o.st.GetSeat(ctx, p.id)
 		if err == nil && seat.AccountRef.Valid {
-			_ = o.pool.Unbind(ctx, "system", true, seat.AccountRef.String)
+			_ = o.pool.Release(ctx, "system", p.id)
 		}
 		_ = o.st.SetSeatState(ctx, p.id, "error", p.state, "fail", json.RawMessage(`{"reason":"`+p.state+`"}`))
 		_, _ = o.idp.RetireHostedAgent(ctx, p.id, "system")

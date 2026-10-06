@@ -93,12 +93,14 @@ const (
 	CmdDestroySeat    = "destroy_seat"
 	CmdReportCapacity = "report_capacity"
 	CmdExportSeat     = "export_seat" // T-G4-53：席位卷备份回传
+	// CmdRefreshCredSeat 刷新凭据（0.2.1.101，R-V2-ACCOUNT-REFRESH-CRED）：原子覆写 account-credential 后重启席位。
+	CmdRefreshCredSeat = "refresh_cred_seat"
 )
 
 var commandWhitelist = map[string]bool{
 	CmdPullImage: true, CmdCreateSeat: true, CmdStopSeat: true, CmdStartSeat: true,
 	CmdRestartSeat: true, CmdUpgradeSeat: true, CmdDestroySeat: true, CmdReportCapacity: true,
-	CmdExportSeat: true,
+	CmdExportSeat: true, CmdRefreshCredSeat: true,
 }
 
 const reconnectBase = 2 * time.Second

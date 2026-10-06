@@ -40,6 +40,9 @@ func mkRig(t *testing.T) *integRig {
 func (r *integRig) call(actor, method, path, body string) (int, map[string]any) {
 	req := httptest.NewRequest(method, path, strings.NewReader(body))
 	req.Header.Set("X-Test-Actor", actor)
+	if method != http.MethodGet {
+		req.Header.Set("Origin", testRouteOrigin)
+	}
 	rec := httptest.NewRecorder()
 	r.mux.ServeHTTP(rec, req)
 	var v map[string]any
@@ -161,11 +164,8 @@ func TestB4B5ComboAndPlanGuards(t *testing.T) {
 	// B5：套餐超剩余额度——占满两席后第三席 quota_exceeded 且带 remaining
 	r.createAndDrive(t, "b5a", acctID)
 	// 第二枚账号给第二席
-	a2, err := r.pool.Register(context.Background(), "admin", true, "team-codex-b5", "token_file", "codex", "gpt", "sk-y")
+	a2, err := r.pool.RegisterOwned(context.Background(), "zzc", "team-codex-b5", "token_file", "codex", "gpt", `{"access_token":"sk-y"}`)
 	if err != nil {
-		t.Fatal(err)
-	}
-	if err := r.pool.Grant(context.Background(), "admin", true, a2.ID, "zzc"); err != nil {
 		t.Fatal(err)
 	}
 	r.createAndDrive(t, "b5b", a2.ID)
@@ -225,7 +225,7 @@ func TestB7CredentialExposureSurface(t *testing.T) {
 	for _, c := range r.gw.sent {
 		raw := string(c.Params)
 		if c.Type == "create_seat" {
-			if !strings.Contains(raw, `"credential_file":{"content":"sk-x"}`) {
+			if !strings.Contains(raw, `"credential_file":{"content":"{\"access_token\":\"sk-x\"}"}`) {
 				t.Fatalf("B7 凭据件应在 credential_file: %s", raw)
 			}
 			if !strings.Contains(raw, `"token_file":{`) {

@@ -33,10 +33,11 @@ CREATE TABLE IF NOT EXISTS g4_node_credential (
   rotated_at  timestamptz,
   revoked_at  timestamptz);
 
--- 团队 LLM 账号池（C1：团队资源；个人凭据不进平台）
+-- LLM 账号池。🔴 0.2.1.101 业主新裁（10-06，R-V2-ACCOUNT-PER-USER）：账号按人隔离（owner_lc），个人凭据进平台，
+-- 以团队数据密钥加密——平台持有者（主密钥持有人）技术上可解密；原「团队资源；个人凭据不进平台」作废。
 CREATE TABLE IF NOT EXISTS g4_account_pool (
   id         TEXT PRIMARY KEY,            -- acct_<hex16>
-  name       TEXT NOT NULL UNIQUE,
+  name       TEXT NOT NULL,                -- 本人内唯一（g4_account_pool_owner_name），不再全局唯一
   kind       TEXT NOT NULL CHECK (kind IN ('api_key','token_file')),
   cli        TEXT NOT NULL,
   llm        TEXT NOT NULL,
@@ -45,12 +46,12 @@ CREATE TABLE IF NOT EXISTS g4_account_pool (
   last4      TEXT NOT NULL DEFAULT '',    -- 登记时算好存下——console 只显示后四位，永不为此解密
   state      TEXT NOT NULL DEFAULT 'available'
              CHECK (state IN ('available','bound','disabled')),
-  bound_agent_id TEXT,                    -- 一席一账号；NULL＝在池可分配
+  bound_agent_id TEXT,                    -- 历史列（0.2.1.101 起不再写）：占用改以 g4_hosted_seat.account_ref 为准
   created_by TEXT NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now());
 
--- 账号可用范围：按用户授权（组长定 da622016）
+-- 账号可用范围：按用户授权（组长定 da622016）。0.2.1.101 起不再读写（归属改 owner_lc），留作历史与回退兼容
 CREATE TABLE IF NOT EXISTS g4_account_grant (
   account_id TEXT NOT NULL REFERENCES g4_account_pool(id),
   user_lc    TEXT NOT NULL,
@@ -91,7 +92,7 @@ CREATE TABLE IF NOT EXISTS g4_lifecycle_job (
   id         TEXT PRIMARY KEY,
   agent_id   TEXT NOT NULL REFERENCES g4_hosted_seat(agent_id),
   created_by TEXT NOT NULL,
-  op         TEXT NOT NULL CHECK (op IN ('upgrade','restart','disable','enable','destroy')),
+  op         TEXT NOT NULL CHECK (op IN ('upgrade','restart','disable','enable','destroy','refresh_cred')),
   args       JSONB NOT NULL DEFAULT '{}',
   stage      TEXT NOT NULL DEFAULT 'queued'
              CHECK (stage IN ('queued','running','completed','failed')),
@@ -146,6 +147,23 @@ CREATE INDEX IF NOT EXISTS g4_backup_state_idx ON g4_backup(state, expires_at);
 -- 包 B2（R-V2-SEAT-B2-SCHEMA-20261005002126）：g4_ 首次加列。生产已有 g4_hosted_seat（托管面已开、
 -- 业主席位在跑）⇒ CREATE IF NOT EXISTS 不会加列，须幂等 ALTER；存量行 model='' ＝ 走节点默认。
 ALTER TABLE g4_hosted_seat ADD COLUMN IF NOT EXISTS model TEXT NOT NULL DEFAULT '';
+
+-- 0.2.1.101 账号包（R-V2-ACCOUNT-PER-USER）。整段 SchemaDDL 以单条多语句执行＝PG 隐式单事务：
+-- 下面的 DROP＋ADD 不会留下「无约束」窗口。全部幂等，每次启动执行。
+-- ① 归属：owner_lc＝identity.User.UserIDLC()（与 N3.Actor、席位 created_by 同形）；无主行＝''（任何人不可见）。
+ALTER TABLE g4_account_pool ADD COLUMN IF NOT EXISTS owner_lc TEXT NOT NULL DEFAULT '';
+-- ② 名字：全局唯一 → 本人内唯一（全局唯一会让「名称已存在」泄露他人账号名）。
+ALTER TABLE g4_account_pool DROP CONSTRAINT IF EXISTS g4_account_pool_name_key;
+CREATE UNIQUE INDEX IF NOT EXISTS g4_account_pool_owner_name ON g4_account_pool(owner_lc, name);
+CREATE INDEX IF NOT EXISTS g4_account_pool_owner ON g4_account_pool(owner_lc);
+-- ③ 存量回填：恰有一条授权的账号 ⇒ 归该用户；已有属主的行不动（owner_lc='' 条件）；多授权／无授权保持无主。
+UPDATE g4_account_pool p SET owner_lc = g.user_lc
+  FROM (SELECT account_id, min(user_lc) AS user_lc, count(*) AS n FROM g4_account_grant GROUP BY account_id) g
+ WHERE p.id = g.account_id AND g.n = 1 AND p.owner_lc = '';
+-- ④ 生命周期 job 加 refresh_cred（刷新凭据，R-V2-ACCOUNT-REFRESH-CRED）：存量表的内联 CHECK 换新。
+ALTER TABLE g4_lifecycle_job DROP CONSTRAINT IF EXISTS g4_lifecycle_job_op_check;
+ALTER TABLE g4_lifecycle_job ADD CONSTRAINT g4_lifecycle_job_op_check
+  CHECK (op IN ('upgrade','restart','disable','enable','destroy','refresh_cred'));
 `
 
 // DropDDL 仅测试用：逆向拆除（rollback 的可重复性验证载体）。
