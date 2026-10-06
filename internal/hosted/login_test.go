@@ -631,8 +631,10 @@ func TestLoginClaimCompletingIsAtomic(t *testing.T) {
 func TestLoginTerminalStatesClearLinkAndCode(t *testing.T) {
 	ctx := context.Background()
 	end := map[string]func(r *ldRig, id string){
-		"done":      func(r *ldRig, id string) { r.l.Complete(ctx, id, uploadOK(authJSON("me@example.com"))) },
-		"failed":    func(r *ldRig, id string) { r.l.Complete(ctx, id, []byte(`{"status":"failed","reason":"login_exit_1"}`)) },
+		"done": func(r *ldRig, id string) { r.l.Complete(ctx, id, uploadOK(authJSON("me@example.com"))) },
+		"failed": func(r *ldRig, id string) {
+			r.l.Complete(ctx, id, []byte(`{"status":"failed","reason":"login_exit_1"}`))
+		},
 		"expired":   func(r *ldRig, id string) { r.advance(LoginTTL + time.Second); r.l.Sweep(ctx) },
 		"cancelled": func(r *ldRig, id string) { r.l.Cancel(ctx, "zzc", id) },
 	}
