@@ -62,6 +62,7 @@ const server = http.createServer(async (req, res) => {
   if (p === '/api/console/platform') return json(res, 200, { role: 'owner', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'ready' }] });
   if (p === '/api/console/agent-groups') return json(res, 200, { principal: 'owner', owned_agents: [], groups: [] });
   if (p === '/api/console/enroll/applications') return json(res, 200, { applications: [] });
+  if (p === '/api/console/llm-accounts' && req.method === 'GET') return json(res, 200, []); // 0.2.1.101「我的 LLM 账号」区首载
   if (p === '/api/console/hosted/options') return json(res, 200, options());
   if (p === '/api/console/hosted/agents' && req.method === 'POST') {
     const body = await read(req); writes.push(body);

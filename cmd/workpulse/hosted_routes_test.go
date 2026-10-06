@@ -100,6 +100,9 @@ func (g *fakeGW) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand
 		_ = json.Unmarshal(cmd.Params, &p)
 		g.onCreated(p.SeatID)
 	}
+	if cmd.Type == "login_start" { // 账号登录：节点回链接与一次性码（形状同 codex 设备码）
+		return hosted.NodeResult{OK: true, Payload: json.RawMessage(`{"url":"https://auth.example.test/device","user_code":"WXYZ-98765"}`)}, nil
+	}
 	return hosted.NodeResult{OK: true}, nil
 }
 
