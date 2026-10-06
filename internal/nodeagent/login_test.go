@@ -180,9 +180,10 @@ func TestLoginStartUploadsCredentialAndCleansUp(t *testing.T) {
 	prev := log.Writer()
 	log.SetOutput(&logBuf)
 	defer log.SetOutput(prev)
-	f.onStart = func() {
+	var homeAtStart os.FileInfo
+	f.onStart = func() { // 起容器那一刻 CODEX_HOME 必须已存在且 0700（0.159.2 不存在即拒启）；CLI 随后才写 auth.json
 		dir := filepath.Join(l.dir(lfID), ".codex")
-		_ = os.MkdirAll(dir, 0o700)
+		homeAtStart, _ = os.Stat(dir)
 		_ = os.WriteFile(filepath.Join(dir, "auth.json"), []byte(lfCred), 0o600)
 	}
 
@@ -200,6 +201,9 @@ func TestLoginStartUploadsCredentialAndCleansUp(t *testing.T) {
 	}
 	if fi, err := os.Stat(l.dir(lfID)); err != nil || fi.Mode().Perm() != 0o700 {
 		t.Fatalf("内存盘目录应 0700: %v %v", fi, err)
+	}
+	if homeAtStart == nil || !homeAtStart.IsDir() || homeAtStart.Mode().Perm() != 0o700 {
+		t.Fatalf("起容器前须已建 CODEX_HOME（.codex，0700）: %v", homeAtStart)
 	}
 	spec := f.specs[0]
 	hc := spec["HostConfig"].(map[string]any)

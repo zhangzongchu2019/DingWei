@@ -170,6 +170,15 @@ func (l *loginOps) launch(ctx context.Context, id, image, uploadURL string, sess
 	if err := chownForSeat(dir); err != nil {
 		return "", "", fmt.Errorf("login_start_failed: workdir owner: %v", err)
 	}
+	// codex 0.159.2 起 CODEX_HOME 不存在即拒启（「CODEX_HOME points to … but that path does not exist」，prodops 实测板 28152cb0；
+	// 0.145.0 只告警）⇒ 先建 .codex（0700、属主 10001）再起容器。
+	codexHome := filepath.Join(dir, ".codex")
+	if err := os.Mkdir(codexHome, 0o700); err != nil && !os.IsExist(err) {
+		return "", "", fmt.Errorf("login_start_failed: codex home: %v", err)
+	}
+	if err := chownForSeat(codexHome); err != nil {
+		return "", "", fmt.Errorf("login_start_failed: codex home owner: %v", err)
+	}
 	cname, nname := loginNames(id)
 	if err := l.d.eng.networkCreate(ctx, nname); err != nil {
 		return "", "", fmt.Errorf("login_start_failed: network: %v", err)
