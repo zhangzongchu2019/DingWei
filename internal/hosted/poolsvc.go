@@ -43,9 +43,10 @@ func newID(prefix string) (string, error) {
 	return prefix + hex.EncodeToString(raw), nil
 }
 
+// 短于 MinAPIKeyBytes 的不落（纵深：登记口已拒短 api_key；否则「后四位」会是整串密钥）。
 func last4Of(secret string) string {
-	if len(secret) <= 4 {
-		return secret
+	if len(secret) < MinAPIKeyBytes {
+		return ""
 	}
 	return secret[len(secret)-4:]
 }
@@ -75,6 +76,9 @@ const MaxSecretBytes = 64 << 10
 var ErrSecretTooLarge = errors.New("hosted: secret too large")
 
 // validateSecret 登记／换密共用：非空、不超限、无 NUL；token_file 须为合法 JSON。错误文本不含输入内容。
+// MinAPIKeyBytes api_key 最短长度（复核 tosonnet55tc2k 第 1 批提示 3：防「后四位」即整串）。
+const MinAPIKeyBytes = 8
+
 func validateSecret(kind, secret string) error {
 	if secret == "" {
 		return fmt.Errorf("%w: secret 必填", ErrParams)
@@ -84,6 +88,9 @@ func validateSecret(kind, secret string) error {
 	}
 	if strings.ContainsRune(secret, 0) {
 		return fmt.Errorf("%w: secret 含非法字符", ErrParams)
+	}
+	if kind == "api_key" && len(secret) < MinAPIKeyBytes {
+		return fmt.Errorf("%w: api_key 过短", ErrParams)
 	}
 	if kind == "token_file" && !json.Valid([]byte(secret)) {
 		return fmt.Errorf("%w: token_file 须为 JSON", ErrParams)

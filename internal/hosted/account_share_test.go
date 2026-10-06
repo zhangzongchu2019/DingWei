@@ -39,7 +39,7 @@ func TestAccountNameUniquePerOwner(t *testing.T) {
 	svc, _ := mkPoolSvc(t)
 	mkAcct(t, svc, "zzc", "my-key")
 	mkAcct(t, svc, "bob", "my-key")
-	if _, err := svc.RegisterOwned(context.Background(), "zzc", "my-key", "api_key", "codex", "gpt", "sk-1234"); err != ErrAccountNameTaken {
+	if _, err := svc.RegisterOwned(context.Background(), "zzc", "my-key", "api_key", "codex", "gpt", "sk-12345678"); err != ErrAccountNameTaken {
 		t.Fatalf("本人重名应 ErrAccountNameTaken, 得 %v", err)
 	}
 }
@@ -55,7 +55,7 @@ func TestAccountLimitPerOwner(t *testing.T) {
 	if err := svc.SetOwnedState(ctx, "zzc", last.ID, true); err != nil { // 停用不释放名额
 		t.Fatal(err)
 	}
-	if _, err := svc.RegisterOwned(ctx, "zzc", "one-more", "api_key", "codex", "gpt", "sk-1234"); err != ErrAccountLimit {
+	if _, err := svc.RegisterOwned(ctx, "zzc", "one-more", "api_key", "codex", "gpt", "sk-12345678"); err != ErrAccountLimit {
 		t.Fatalf("第 21 个应 ErrAccountLimit, 得 %v", err)
 	}
 	if l, _ := svc.ListOwned(ctx, "zzc"); len(l) != MaxAccountsPerOwner {
@@ -76,6 +76,12 @@ func TestAccountSecretValidation(t *testing.T) {
 	big := `{"x":"` + strings.Repeat("a", MaxSecretBytes) + `"}`
 	if _, err := svc.RegisterOwned(ctx, "zzc", "too-big", "token_file", "codex", "gpt", big); err != ErrSecretTooLarge {
 		t.Fatalf("超限应 ErrSecretTooLarge, 得 %v", err)
+	}
+	if _, err := svc.RegisterOwned(ctx, "zzc", "short", "api_key", "codex", "gpt", "sk-1234"); !errors.Is(err, ErrParams) {
+		t.Fatalf("短于 %d 的 api_key 应拒（否则后四位即整串）, 得 %v", MinAPIKeyBytes, err)
+	}
+	if last4Of("abc") != "" || last4Of("sk-12345678") != "5678" {
+		t.Fatalf("last4Of 纵深: %q %q", last4Of("abc"), last4Of("sk-12345678"))
 	}
 	if _, err := svc.RegisterOwned(ctx, "zzc", "empty", "api_key", "codex", "gpt", ""); !errors.Is(err, ErrParams) {
 		t.Fatalf("空密钥应 ErrParams, 得 %v", err)
@@ -368,5 +374,43 @@ VALUES('acct_legacy','legacy','token_file','codex','gpt','\x00',1,'x','zzc','bou
 	}
 	if n, _ := s.AccountInUse(ctx, "acct_legacy"); n != 2 {
 		t.Fatalf("in_use 应 2, 得 %d", n)
+	}
+}
+
+// 复核第 1 批存活刀补格（纵深层各自钉住，不依赖上层过滤）：
+// ① 解密边界 SeatMayUseAccount：他人席位引用本号 ⇒ false；本人席位未引用 ⇒ false；本人引用 ⇒ true；
+// ② Store.CreateSeat 直接用他人账号／无主账号 ⇒ ErrAccountNotAllowed；
+// ③ 列表与下拉的 in_use 不计已销毁席位。
+func TestDefenseInDepthAccountBoundaries(t *testing.T) {
+	svc, s := mkPoolSvc(t)
+	ctx := context.Background()
+	ensureNode(t, s)
+	a := mkAcct(t, svc, "zzc", "mine")
+	mkSeatRow(t, s, "ag_own", "zzc", a.ID, "online")
+	mkSeatRow(t, s, "ag_noref", "zzc", "", "online")
+	mkSeatRow(t, s, "ag_other", "bob", a.ID, "online")
+	for id, want := range map[string]bool{"ag_own": true, "ag_noref": false, "ag_other": false} {
+		if got, err := s.SeatMayUseAccount(ctx, id, a.ID); err != nil || got != want {
+			t.Fatalf("SeatMayUseAccount(%s)=%v want %v (%v)", id, got, want, err)
+		}
+	}
+
+	if err := s.CreateSeat(ctx, seatWith("ag_bobnew", "bob", a.ID)); err != ErrAccountNotAllowed {
+		t.Fatalf("Store.CreateSeat 用他人账号应 ErrAccountNotAllowed, 得 %v", err)
+	}
+	if _, err := s.exec(ctx, `INSERT INTO g4_account_pool(id,name,kind,cli,llm,secret_enc,key_version,created_by,owner_lc)
+VALUES('acct_orphan','orphan','api_key','codex','gpt','\x00',1,'x','')`); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.CreateSeat(ctx, seatWith("ag_orphan", "zzc", "acct_orphan")); err != ErrAccountNotAllowed {
+		t.Fatalf("Store.CreateSeat 用无主账号应 ErrAccountNotAllowed, 得 %v", err)
+	}
+
+	mkSeatRow(t, s, "ag_gone", "zzc", a.ID, "destroyed")
+	if l, _ := s.ListOwnedAccounts(ctx, "zzc"); len(l) != 1 || l[0].InUse != 2 {
+		t.Fatalf("列表 in_use 应 2（ag_own、ag_other；不计 destroyed）: %+v", l)
+	}
+	if u, _ := s.ListUsableAccounts(ctx, "zzc", "codex", "gpt"); len(u) != 1 || u[0].InUse != 2 {
+		t.Fatalf("下拉 in_use 应 2（不计 destroyed）: %+v", u)
 	}
 }

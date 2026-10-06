@@ -240,12 +240,24 @@ func (l *Lifecycle) RefreshCred(ctx context.Context, agentID, actorLC string) er
 	if err != nil || acct.State == "disabled" || acct.OwnerLC == "" || acct.OwnerLC != seat.CreatedBy {
 		return ErrAccountNotAllowed
 	}
+	// 同 Restart「复验阻断 3」：凭据暂停中的席位（如 Disable 停容器失败落 error、凭据仍暂停）刷新后若不 Resume，
+	// 容器重启而平台凭据仍 4401 ⇒ 永远连不上、5 分钟后 start_timeout。Resume 幂等；席位回原状态的分支一律撤回本次 Resume。
+	alreadyActive, err := l.susp.ResumeHostedAgent(ctx, agentID, actorLC)
+	if err != nil {
+		return err
+	}
 	prevState, prevDetail := seat.State, seat.StateDetail
 	back := func(kind string) {
-		_, _ = l.st.TransitionSeatState(ctx, agentID, "starting", prevState, prevDetail, kind, json.RawMessage(`{"op":"refresh_cred"}`))
+		moved, _ := l.st.TransitionSeatState(ctx, agentID, "starting", prevState, prevDetail, kind, json.RawMessage(`{"op":"refresh_cred"}`))
+		if moved && !alreadyActive {
+			l.undo(ctx, agentID, actorLC, "suspend")
+		}
 	}
 	// 先置 starting（detail=refresh）再发命令（同 Restart：防 MarkOnline 早到丢失，lead-enable-restart-race ①）。
 	if err := l.st.SetSeatState(ctx, agentID, "starting", seatStartingRefresh, "refresh_cred", nil); err != nil {
+		if !alreadyActive {
+			l.undo(ctx, agentID, actorLC, "suspend")
+		}
 		return err
 	}
 	cred, err := l.pool.decryptForSeat(ctx, actorLC, seat.AccountRef.String, agentID, "refresh")

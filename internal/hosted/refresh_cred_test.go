@@ -258,3 +258,80 @@ func TestRefreshCredRecoverJobs(t *testing.T) {
 		t.Fatalf("席位 online ⇒ completed: %+v", j)
 	}
 }
+
+// 复核 tosonnet55tc2k 第 1 批必改 1／2：刷新同 Restart「复验阻断 3」——凭据暂停中的 error 席位刷新须先 Resume；
+// 席位回原状态的分支（旧节点、写失败、节点不通、置 starting 写库失败）撤回本次 Resume；凭据本就活着则不动；Resume 失败 ⇒ 拒、零指令。
+func TestRefreshCredResumesSuspendedCredential(t *testing.T) {
+	ctx := context.Background()
+	prep := func(t *testing.T, suspended bool) (*Lifecycle, *rcGw, *lcSusp, *Store, string) {
+		lc, gw, s, id, _ := mkRefresh(t)
+		if err := s.SetSeatState(ctx, id, "error", "start_failed", "fail", nil); err != nil {
+			t.Fatal(err)
+		}
+		susp := lc.susp.(*lcSusp)
+		susp.suspended = suspended
+		return lc, gw, susp, s, id
+	}
+	t.Run("success_resumes", func(t *testing.T) {
+		lc, gw, susp, s, id := prep(t, true)
+		if err := lc.RefreshCred(ctx, id, "zzc"); err != nil {
+			t.Fatalf("refresh: %v", err)
+		}
+		if susp.suspended {
+			t.Fatal("刷新成功后凭据必须已恢复（否则容器重启也连不上）")
+		}
+		if seat, _ := s.GetSeat(ctx, id); seat.State != "starting" || len(gw.sent) != 1 {
+			t.Fatalf("应停 starting 并发一次指令: %+v %d", seat, len(gw.sent))
+		}
+	})
+	for _, c := range []struct {
+		name, errText string
+		down          bool
+	}{
+		{"old_node", "unknown_command_type: refresh_cred_seat", false},
+		{"write_failed", "credential_write_failed: injected", false},
+		{"node_offline", "", true},
+	} {
+		t.Run(c.name+"_undoes_resume", func(t *testing.T) {
+			lc, gw, susp, s, id := prep(t, true)
+			gw.errText, gw.down = c.errText, c.down
+			if err := lc.RefreshCred(ctx, id, "zzc"); err == nil {
+				t.Fatal("应失败")
+			}
+			if seat, _ := s.GetSeat(ctx, id); seat.State != "error" || seat.StateDetail != "start_failed" {
+				t.Fatalf("席位应回原状态 error/start_failed: %+v", seat)
+			}
+			if !susp.suspended {
+				t.Fatal("席位回原状态时本次 Resume 必须撤回（凭据回暂停）")
+			}
+		})
+	}
+	t.Run("starting_write_failed_undoes_resume", func(t *testing.T) {
+		lc, gw, susp, _, id := prep(t, true)
+		failStartingWrite(t, lc.st, id)
+		if err := lc.RefreshCred(ctx, id, "zzc"); err == nil {
+			t.Fatal("置 starting 写库失败应报错")
+		}
+		if !susp.suspended || len(gw.sent) != 0 {
+			t.Fatalf("应撤回 Resume、零指令: suspended=%v sent=%d", susp.suspended, len(gw.sent))
+		}
+	})
+	t.Run("already_active_not_suspended_on_failure", func(t *testing.T) {
+		lc, gw, susp, _, id := prep(t, false)
+		gw.errText = "unknown_command_type: refresh_cred_seat"
+		_ = lc.RefreshCred(ctx, id, "zzc")
+		if susp.suspended {
+			t.Fatal("凭据本就活着：失败回滚不得把它暂停")
+		}
+	})
+	t.Run("resume_failure_refuses", func(t *testing.T) {
+		lc, gw, susp, s, id := prep(t, true)
+		susp.failOn = "resume"
+		if err := lc.RefreshCred(ctx, id, "zzc"); err == nil {
+			t.Fatal("Resume 失败必须拒")
+		}
+		if seat, _ := s.GetSeat(ctx, id); seat.State != "error" || len(gw.sent) != 0 {
+			t.Fatalf("应零改动零指令: %+v %d", seat, len(gw.sent))
+		}
+	})
+}
