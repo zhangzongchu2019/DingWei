@@ -27,6 +27,9 @@ func (h hostedHTTP) do(actor, method, path, body string) (int, string, map[strin
 	if actor != "" {
 		req.Header.Set("X-Test-Actor", actor)
 	}
+	if method != http.MethodGet {
+		req.Header.Set("Origin", testRouteOrigin) // 0.2.1.101：hosted 写路由加 Origin 守卫
+	}
 	rec := httptest.NewRecorder()
 	h.mux.ServeHTTP(rec, req)
 	var m map[string]any

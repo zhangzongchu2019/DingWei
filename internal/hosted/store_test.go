@@ -2,6 +2,7 @@ package hosted
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"testing"
@@ -237,33 +238,35 @@ func TestNodeSeatPoolQuotaFlow(t *testing.T) {
 		t.Fatalf("非法状态应 ErrInvalidState, 得 %v", err)
 	}
 
-	// 账号池：一席一账号（并发安全的反向锚）
-	acct := Account{ID: "acct_1", Name: "team-codex", Kind: "token_file", CLI: "codex", LLM: "gpt", KeyVersion: 1}
-	if err := s.CreateAccount(ctx, acct, []byte("enc"), "tester"); err != nil {
+	// 账号池（0.2.1.101 按人隔离＋共用）：属主本人可见、两席同号都能建、释放一席不影响另一席
+	acct := Account{ID: "acct_1", Name: "team-codex", Kind: "token_file", CLI: "codex", LLM: "gpt", KeyVersion: 1, OwnerLC: "zzc"}
+	if err := s.CreateAccount(ctx, acct, []byte("enc"), "zzc"); err != nil {
 		t.Fatalf("create account: %v", err)
 	}
-	if err := s.GrantAccount(ctx, "acct_1", "zzc", "tester"); err != nil {
-		t.Fatalf("grant: %v", err)
-	}
-	if err := s.BindAccount(ctx, "acct_1", "ag_1"); err != nil {
-		t.Fatalf("bind: %v", err)
-	}
-	if err := s.BindAccount(ctx, "acct_1", "ag_2"); err != ErrAccountBound {
-		t.Fatalf("一席一账号反向应 ErrAccountBound, 得 %v", err)
+	for _, id := range []string{"ag_s1", "ag_s2"} {
+		if err := s.CreateSeat(ctx, Seat{AgentID: id, NodeID: picked.ID, CLI: "codex", LLM: "gpt", CredKind: "token_file",
+			AccountRef: sql.NullString{String: "acct_1", Valid: true}, Plan: "2c4g", ImageRef: "hub/base@sha256:x", CreatedBy: "zzc"}); err != nil {
+			t.Fatalf("同号建席 %s: %v", id, err)
+		}
 	}
 	usable, err := s.ListUsableAccounts(ctx, "zzc", "codex", "gpt")
-	if err != nil {
-		t.Fatalf("list usable: %v", err)
+	if err != nil || len(usable) != 1 || usable[0].InUse != 2 {
+		t.Fatalf("共用后仍可选、in_use=2, 得 %+v err=%v", usable, err)
 	}
-	if len(usable) != 0 { // 已绑定账号不再可选（V6 表单事实源）
-		t.Fatalf("绑定后不应再出现在下拉, 得 %+v", usable)
-	}
-	if err := s.UnbindAccount(ctx, "acct_1"); err != nil {
-		t.Fatalf("unbind: %v", err)
+	if prev, err := s.ReleaseSeatAccount(ctx, "ag_s1"); err != nil || prev != "acct_1" {
+		t.Fatalf("release: %q %v", prev, err)
 	}
 	usable, err = s.ListUsableAccounts(ctx, "zzc", "codex", "gpt")
-	if err != nil || len(usable) != 1 {
-		t.Fatalf("回池后应重新可选, 得 %+v err=%v", usable, err)
+	if err != nil || len(usable) != 1 || usable[0].InUse != 1 {
+		t.Fatalf("释放一席后 in_use=1, 得 %+v err=%v", usable, err)
+	}
+	if ref, err := s.SeatAccountOf(ctx, "ag_s2"); err != nil || ref != "acct_1" {
+		t.Fatalf("另一席引用不变: %q %v", ref, err)
+	}
+	// 他人席位引用本号 ⇒ 建席拒（属主＝建席人）
+	if err := s.CreateSeat(ctx, Seat{AgentID: "ag_s3", NodeID: picked.ID, CLI: "codex", LLM: "gpt", CredKind: "token_file",
+		AccountRef: sql.NullString{String: "acct_1", Valid: true}, Plan: "2c4g", ImageRef: "hub/base@sha256:x", CreatedBy: "bob"}); err != ErrAccountNotAllowed {
+		t.Fatalf("他人用本号建席应 ErrAccountNotAllowed, 得 %v", err)
 	}
 
 	// 配额：业主裁定默认值→设上限→已用聚合（disabled 计入）

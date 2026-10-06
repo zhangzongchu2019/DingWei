@@ -141,15 +141,12 @@ func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP, *fakeGW, *
 	if err := st.PutQuota(ctx, hosted.Quota{UserLC: "zzc", AgentsLimit: 2, VCPULimit: 4, MemMBLimit: 8192, DiskMBLimit: 1 << 20}, "admin"); err != nil {
 		t.Fatal(err)
 	}
-	a, err := poolSvc.Register(ctx, "admin", true, "team-codex", "token_file", "codex", "gpt", "sk-x")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := poolSvc.Grant(ctx, "admin", true, a.ID, "zzc"); err != nil {
+	if _, err := poolSvc.RegisterOwned(ctx, "zzc", "team-codex", "token_file", "codex", "gpt", `{"access_token":"sk-x"}`); err != nil {
 		t.Fatal(err)
 	}
 	deps := hostedDeps{
 		orch: orch, life: life, qs: hosted.NewQuotaService(st, idp),
+		pool: poolSvc, publicOrigin: testRouteOrigin,
 		actor: func(r *http.Request) (string, error) {
 			a := r.Header.Get("X-Test-Actor")
 			if a == "" {
@@ -168,6 +165,9 @@ func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP, *fakeGW, *
 	}
 	return deps, st, idp, gw, poolSvc
 }
+
+// testRouteOrigin 路由测试的同源 Origin（hostedDeps.publicOrigin）。
+const testRouteOrigin = "https://rt.test"
 
 type idpSusp struct{ fakeIDP }
 
@@ -194,6 +194,9 @@ func TestHostedRoutesContractCodes(t *testing.T) {
 		}
 		req := httptest.NewRequest(method, path, rdr)
 		req.Header.Set("X-Test-Actor", actor)
+		if method != http.MethodGet {
+			req.Header.Set("Origin", testRouteOrigin) // 0.2.1.101：hosted 写路由加 Origin 守卫
+		}
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
 		return rec

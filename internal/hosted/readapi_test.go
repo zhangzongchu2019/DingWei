@@ -59,16 +59,8 @@ func TestOptionsJSONMatchesContract(t *testing.T) {
 	if err := s.SetNodeState(ctx, "nd_full", "offline"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := o.pool.Register(ctx, "admin", true, "team-glm", "api_key", "claude", "glm", "sk-abcd9z8y"); err != nil {
+	if _, err := o.pool.RegisterOwned(ctx, "zzc", "team-glm", "api_key", "claude", "glm", "sk-abcd9z8y"); err != nil {
 		t.Fatal(err)
-	}
-	lst, _ := o.pool.ListAdmin(ctx, "admin", true)
-	for _, a := range lst {
-		if a.Name == "team-glm" {
-			if err := o.pool.Grant(ctx, "admin", true, a.ID, "zzc"); err != nil {
-				t.Fatal(err)
-			}
-		}
 	}
 
 	raw, m := optionsJSON(t, o, "zzc")
@@ -82,7 +74,7 @@ func TestOptionsJSONMatchesContract(t *testing.T) {
 	elemKeys := map[string][]string{
 		"nodes":    {"free_disk_gb", "free_mem_gb", "free_vcpu", "id", "name", "online", "pool"},
 		"combos":   {"cli", "cred_kind", "llm", "verified"},
-		"accounts": {"id", "kind", "last4", "llm", "name"},
+		"accounts": {"id", "in_use", "kind", "last4", "llm", "name"}, // 0.2.1.101 加 in_use（共用提示）
 		"plans":    {"fits", "id", "mem_gb", "name", "vcpu"},
 	}
 	for list, want := range elemKeys {

@@ -9,13 +9,12 @@ func TestTokenWriteBackAndUnbindPrep(t *testing.T) {
 	svc, s := mkPoolSvc(t)
 	ctx := context.Background()
 
-	a, err := svc.Register(ctx, "admin", true, "team-codex", "token_file", "codex", "gpt", `{"token":"v1-old"}`)
+	a, err := svc.RegisterOwned(ctx, "zzc", "team-codex", "token_file", "codex", "gpt", `{"token":"v1-old"}`)
 	if err != nil {
 		t.Fatalf("register: %v", err)
 	}
-	if err := svc.Bind(ctx, "admin", true, a.ID, "ag_1"); err != nil {
-		t.Fatalf("bind: %v", err)
-	}
+	// 0.2.1.101：占用以席位 account_ref 为准（回写目前未接线，本格测函数本身）
+	mkSeatRow(t, s, "ag_1", "zzc", a.ID, "online")
 
 	// 未绑定席位上送必拒（反向）
 	if err := svc.WriteBackRenewedToken(ctx, "ag_ghost", `{"token":"v2"}`, "ag_ghost"); err != ErrNoBoundAccount {
@@ -64,8 +63,8 @@ func TestTokenWriteBackAndUnbindPrep(t *testing.T) {
 	if err != nil || acctID != a.ID {
 		t.Fatalf("PrepareUnbind: %v", err)
 	}
-	if err := svc.Unbind(ctx, "admin", true, a.ID); err != nil {
-		t.Fatalf("unbind: %v", err)
+	if err := svc.Release(ctx, "system", "ag_1"); err != nil {
+		t.Fatalf("release: %v", err)
 	}
 	if _, err := svc.PrepareUnbind(ctx, "ag_1"); err != ErrNoBoundAccount {
 		t.Fatalf("解绑后应无绑定: %v", err)

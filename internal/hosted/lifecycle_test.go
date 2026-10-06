@@ -913,8 +913,8 @@ func TestDestroyStopsBeforeBackup(t *testing.T) {
 			if seat.State != "online" {
 				t.Fatalf("seat changed: %+v", seat)
 			}
-			if a, _ := s.GetAccount(ctx, seat.AccountRef.String); a.State != "bound" {
-				t.Fatalf("account must stay bound: %+v", a)
+			if !seat.AccountRef.Valid { // 0.2.1.101：未销毁 ⇒ 本席仍引用账号（不释放）
+				t.Fatalf("account reference must stay: %+v", seat)
 			}
 		})
 	}
@@ -930,8 +930,8 @@ func TestDestroyStopsBeforeBackup(t *testing.T) {
 		if seat.State != "error" || seat.StateDetail != "backup_failed" {
 			t.Fatalf("stopped but not backed up: %+v, want error/backup_failed", seat)
 		}
-		if a, _ := s.GetAccount(ctx, seat.AccountRef.String); a.State != "bound" {
-			t.Fatalf("account must stay bound: %+v", a)
+		if !seat.AccountRef.Valid { // 0.2.1.101：未销毁 ⇒ 本席仍引用账号（不释放）
+			t.Fatalf("account reference must stay: %+v", seat)
 		}
 	})
 }

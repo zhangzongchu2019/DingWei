@@ -66,6 +66,20 @@ func hostedAdminDump(t *testing.T, dsn, q string) string {
 	return b.String()
 }
 
+func hostedAdminExec(t *testing.T, dsn, q string, args ...any) {
+	t.Helper()
+	ctx := context.Background()
+	pool, err := repo.OpenPG(ctx, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	tc, _ := repo.NewAccessCtx("test", "zz-hosted-admin")
+	if _, err := pool.Exec(ctx, tc, q, args...); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestHostedAdminScenarios(t *testing.T) {
 	dsn := pgtest.DSN(t)
 	mk := filepath.Join(t.TempDir(), "master.key")
@@ -73,7 +87,6 @@ func TestHostedAdminScenarios(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("DW_G4_MASTER_KEY_FILE", mk)
-	const sec = "sk-zzhostedadmin-SECRETVALUE-123456"
 
 	// S1 register-node：凭据只在 stdout 出现一次，库里无明文
 	out, err := hostedAdminRun(t, dsn, "", "register-node", "--id", "nd_zz", "--name", "zz")
@@ -87,74 +100,49 @@ func TestHostedAdminScenarios(t *testing.T) {
 	if d := hostedAdminDump(t, dsn, `SELECT row_to_json(c)::text FROM g4_node_credential c`); strings.Contains(d, nodeSecret) {
 		t.Fatalf("S1 node credential stored in plaintext: %s", d)
 	}
-	// S2 seed-account：口令走 stdin、stdout 不回显、库里是密文
-	out, err = hostedAdminRun(t, dsn, sec+"\n", "seed-account", "--name", "zz-key", "--kind", "api_key", "--cli", "codex", "--llm", "gpt", "--secret-stdin")
-	if err != nil || strings.Contains(out, sec) {
-		t.Fatalf("S2 seed-account: %v out=%q", err, out)
+	// S2 0.2.1.101（R-V2-ACCOUNT-SEED-CLI）：seed-account 已删除——管理员不代人登记、不碰密钥
+	const sec = "sk-zzhostedadmin-SECRETVALUE-123456"
+	_, err = hostedAdminRun(t, dsn, sec+"\n", "seed-account", "--name", "zz-key", "--kind", "api_key", "--cli", "codex", "--llm", "gpt", "--secret-stdin")
+	if err == nil || !strings.Contains(err.Error(), "未知子命令") || strings.Contains(err.Error(), sec) {
+		t.Fatalf("S2 seed-account must be gone (unknown subcommand, no echo): %v", err)
 	}
-	if d := hostedAdminDump(t, dsn, `SELECT row_to_json(a)::text FROM g4_account_pool a`); strings.Contains(d, sec) || strings.Contains(d, "SECRETVALUE") {
-		t.Fatalf("S2 secret stored in plaintext: %s", d)
+	if d := hostedAdminDump(t, dsn, `SELECT row_to_json(a)::text FROM g4_account_pool a`); strings.Contains(d, "zz-key") || strings.Contains(d, "SECRETVALUE") {
+		t.Fatalf("S2 nothing may be stored: %s", d)
 	}
-	t.Logf("S2 ok; account row: %.200s", hostedAdminDump(t, dsn, `SELECT row_to_json(a)::text FROM g4_account_pool a`))
-	// S3 把口令放命令行：未注册的旗标必须被拒，错误里不得回显口令
-	out, err = hostedAdminRun(t, dsn, "", "seed-account", "--name", "zz-cli", "--kind", "api_key", "--cli", "codex", "--llm", "gpt", "--secret", sec)
-	if err == nil || strings.Contains(out+err.Error(), sec) {
-		t.Fatalf("S3 --secret on the command line must be rejected without echo: err=%v out=%q", err, out)
+	// S3 assign-owner：只给无主存量行指派；已有主拒
+	hostedAdminExec(t, dsn, `INSERT INTO g4_account_pool(id,name,kind,cli,llm,secret_enc,key_version,created_by) VALUES('acct_zzlegacy','legacy','token_file','codex','gpt','\x00',1,'hosted-admin')`)
+	if _, err := hostedAdminRun(t, dsn, "", "assign-owner", "--account", "acct_zzlegacy", "--owner", "ZZC"); err != nil {
+		t.Fatalf("S3 assign-owner: %v", err)
 	}
-	// S4 缺主密钥文件：拒绝且不读 stdin 里的口令入库
-	t.Setenv("DW_G4_MASTER_KEY_FILE", filepath.Join(t.TempDir(), "absent.key"))
-	_, err = hostedAdminRun(t, dsn, "sk-should-not-be-stored-9999\n", "seed-account", "--name", "zz-nokey", "--kind", "api_key", "--cli", "codex", "--llm", "gpt", "--secret-stdin")
-	if err == nil {
-		t.Fatal("S4 missing master key must fail")
+	if d := hostedAdminDump(t, dsn, `SELECT owner_lc FROM g4_account_pool WHERE id='acct_zzlegacy'`); strings.TrimSpace(d) != "zzc" {
+		t.Fatalf("S3 owner must be zzc (lower-cased): %q", d)
 	}
-	if d := hostedAdminDump(t, dsn, `SELECT row_to_json(a)::text FROM g4_account_pool a`); strings.Contains(d, "zz-nokey") {
-		t.Fatalf("S4 account stored despite missing master key: %s", d)
+	if _, err := hostedAdminRun(t, dsn, "", "assign-owner", "--account", "acct_zzlegacy", "--owner", "bob"); err == nil {
+		t.Fatal("S3 re-assigning an owned account must be rejected")
 	}
-	// S5 非法 kind
-	t.Setenv("DW_G4_MASTER_KEY_FILE", mk)
-	_, err = hostedAdminRun(t, dsn, "x\n", "seed-account", "--name", "zz-bad", "--kind", "password", "--cli", "codex", "--llm", "gpt", "--secret-stdin")
-	if err == nil {
-		t.Fatal("S5 invalid kind must be rejected")
+	// S4 account-disable／enable；有存活引用不许停
+	if _, err := hostedAdminRun(t, dsn, "", "account-disable", "--account", "acct_zzlegacy"); err != nil {
+		t.Fatalf("S4 disable: %v", err)
 	}
-	// S6 授权给用户
-	out, err = hostedAdminRun(t, dsn, "{\"tokens\":{\"access_token\":\"tok-zz\"}}\n", "seed-account", "--name", "zz-sub", "--kind", "token_file", "--cli", "codex", "--llm", "gpt", "--grant-to", "b12admin", "--secret-stdin")
-	if err != nil {
-		t.Fatalf("S6: %v", err)
+	if d := hostedAdminDump(t, dsn, `SELECT state FROM g4_account_pool WHERE id='acct_zzlegacy'`); strings.TrimSpace(d) != "disabled" {
+		t.Fatalf("S4 state: %q", d)
 	}
-	if d := hostedAdminDump(t, dsn, `SELECT row_to_json(g)::text FROM g4_account_grant g`); !strings.Contains(d, "b12admin") {
-		t.Fatalf("S6 grant missing: %q", d)
+	if _, err := hostedAdminRun(t, dsn, "", "account-enable", "--account", "acct_zzlegacy"); err != nil {
+		t.Fatalf("S4 enable: %v", err)
 	}
-	// S7 空口令
-	_, err = hostedAdminRun(t, dsn, "\n", "seed-account", "--name", "zz-empty", "--kind", "api_key", "--cli", "codex", "--llm", "gpt", "--secret-stdin")
-	t.Logf("S7 empty stdin err=%v", err)
-	if err == nil {
-		t.Fatal("S7 empty secret must be rejected")
+	hostedAdminExec(t, dsn, `INSERT INTO g4_hosted_seat(agent_id,node_id,cli,llm,cred_kind,account_ref,plan,state,created_by) VALUES('ag_zzref','nd_zz','codex','gpt','token_file','acct_zzlegacy','2c4g','online','zzc')`)
+	if _, err := hostedAdminRun(t, dsn, "", "account-disable", "--account", "acct_zzlegacy"); err == nil {
+		t.Fatal("S4 disabling an in-use account must be rejected")
+	}
+	// S5 缺 --account
+	if _, err := hostedAdminRun(t, dsn, "", "account-disable"); err == nil {
+		t.Fatal("S5 missing --account must be rejected")
 	}
 }
 
-// S8：stdin 超上限（1MiB）即拒，不静默截断；S9：register-node 的版本旗标落库（默认仅联调）。
-func TestHostedAdminLimitsAndVersionFlags(t *testing.T) {
+// S9：register-node 的版本旗标落库（默认仅联调）；L5 默认值。
+func TestHostedAdminVersionFlagsAndDefaults(t *testing.T) {
 	dsn := pgtest.DSN(t)
-	mk := filepath.Join(t.TempDir(), "master.key")
-	if err := os.WriteFile(mk, []byte(strings.Repeat("ab", 32)+"\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("DW_G4_MASTER_KEY_FILE", mk)
-
-	// S8 超限 stdin（1MiB+2）⇒ 拒，账号不入库，错误不含 stdin 内容
-	huge := strings.Repeat("x", maxSecretStdinBytes+2)
-	_, err := hostedAdminRun(t, dsn, huge, "seed-account", "--name", "zz-huge", "--kind", "api_key", "--cli", "codex", "--llm", "gpt", "--secret-stdin")
-	if err == nil || !strings.Contains(err.Error(), "超长") {
-		t.Fatalf("S8 oversized stdin must be rejected: %v", err)
-	}
-	if strings.Contains(err.Error(), huge[:64]) {
-		t.Fatalf("S8 error must not echo stdin content: %v", err)
-	}
-	if d := hostedAdminDump(t, dsn, `SELECT row_to_json(a)::text FROM g4_account_pool a`); strings.Contains(d, "zz-huge") {
-		t.Fatalf("S8 oversized secret must not be stored: %s", d)
-	}
-
-	// S9 显式版本旗标落库
 	if _, err := hostedAdminRun(t, dsn, "", "register-node", "--id", "nd_ver", "--name", "ver", "--docker-version", "28", "--protocol-version", "2"); err != nil {
 		t.Fatalf("S9 register-node with version flags: %v", err)
 	}
@@ -162,29 +150,6 @@ func TestHostedAdminLimitsAndVersionFlags(t *testing.T) {
 	if strings.TrimSpace(d) != "28/2" {
 		t.Fatalf("S9 versions must land: %q", d)
 	}
-}
-
-// 复验存活刀补格（L3/L5）：上限边界与旗标默认值钉住。
-func TestHostedAdminBoundaryAndDefaults(t *testing.T) {
-	dsn := pgtest.DSN(t)
-	mk := filepath.Join(t.TempDir(), "master.key")
-	if err := os.WriteFile(mk, []byte(strings.Repeat("ab", 32)+"\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("DW_G4_MASTER_KEY_FILE", mk)
-
-	// L3 边界：恰好 1MiB（含末尾换行——TrimSpace 后净长上限内）的凭据必须被接受
-	exact := strings.Repeat("k", maxSecretStdinBytes-1) + "\n"
-	if _, err := hostedAdminRun(t, dsn, exact, "seed-account", "--name", "zz-exact", "--kind", "api_key", "--cli", "codex", "--llm", "gpt", "--secret-stdin"); err != nil {
-		t.Fatalf("L3 exactly-1MiB secret must be accepted: %v", err)
-	}
-	// 1MiB+1（净长超上限）必须拒
-	over := strings.Repeat("k", maxSecretStdinBytes) + "\n"
-	if _, err := hostedAdminRun(t, dsn, over, "seed-account", "--name", "zz-over", "--kind", "api_key", "--cli", "codex", "--llm", "gpt", "--secret-stdin"); err == nil || !strings.Contains(err.Error(), "超长") {
-		t.Fatalf("L3 1MiB+1 must be rejected: %v", err)
-	}
-
-	// L5 默认值：不带版本旗标 ⇒ 落库 29/1
 	if _, err := hostedAdminRun(t, dsn, "", "register-node", "--id", "nd_def", "--name", "def"); err != nil {
 		t.Fatalf("L5 register-node defaults: %v", err)
 	}

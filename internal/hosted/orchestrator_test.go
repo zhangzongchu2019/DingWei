@@ -101,11 +101,8 @@ func mkOrch(t *testing.T) (*Orchestrator, *fakeIdentity, *fakeGateway, *Store) {
 	if err := s.PutQuota(context.Background(), Quota{UserLC: "zzc", AgentsLimit: 2, VCPULimit: 4, MemMBLimit: 8192, DiskMBLimit: 1 << 20}, "admin"); err != nil {
 		t.Fatal(err)
 	}
-	a, err := svc.Register(context.Background(), "admin", true, "team-codex", "token_file", "codex", "gpt", "sk-x")
+	a, err := svc.RegisterOwned(context.Background(), "zzc", "team-codex", "token_file", "codex", "gpt", `{"access_token":"sk-x"}`)
 	if err != nil {
-		t.Fatal(err)
-	}
-	if err := svc.Grant(context.Background(), "admin", true, a.ID, "zzc"); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = a })
@@ -195,7 +192,7 @@ func TestCreateHappyPathCodexFirst(t *testing.T) {
 	if cp.Token.ApplicationID != "app1" || cp.Token.PollToken != "tok" || cp.Token.ExpiresAt == "" {
 		t.Fatalf("token_file: %+v", cp.Token)
 	}
-	if cp.Cred.Content != "sk-x" {
+	if cp.Cred.Content != `{"access_token":"sk-x"}` {
 		t.Fatalf("credential_file 应是解密明文一次下发: %q", cp.Cred.Content)
 	}
 	if cp.CredKind != "token_file" { // 容器启动契约：账号形态随参数下发
@@ -247,23 +244,34 @@ func TestCreateRejections(t *testing.T) {
 			}
 		}
 	}
-	// 第二席账号已被绑定 ⇒ account_not_allowed；且在账号预检（步骤④）就拒——
-	// 根本不签发、不占名字（比"签了再 Retire"更好；Retire 兜底留给签发后的真竞态/落库失败）
+	// 0.2.1.101（R-V2-ACCOUNT-SHARE）：同一账号本人可多席共用——第二席用同号**成功**（原「已绑即拒」作废）。
 	r2 := base
 	r2.Name = "w1"
+	if _, err := o.Create(context.Background(), r2); err != nil {
+		t.Fatalf("同号第二席应成功（共用不拦）, 得 %v", err)
+	}
+	// 他人账号 ⇒ account_not_allowed，且在账号预检（步骤④）就拒——不签发、不占名字
+	other, err := o.pool.RegisterOwned(context.Background(), "bob", "bob-codex", "token_file", "codex", "gpt", `{"access_token":"sk-bob"}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.PutQuota(context.Background(), Quota{UserLC: "zzc", AgentsLimit: 4, VCPULimit: 16, MemMBLimit: 1 << 20, DiskMBLimit: 1 << 20}, "admin"); err != nil {
+		t.Fatal(err)
+	}
+	r2b := base
+	r2b.Name = "w2"
+	r2b.AccountID = other.ID
 	issuedBefore := len(idp.issued)
-	if _, err := o.Create(context.Background(), r2); err != ErrAccountNotAllowed {
-		t.Fatalf("账号已绑应 account_not_allowed, 得 %v", err)
+	if _, err := o.Create(context.Background(), r2b); err != ErrAccountNotAllowed {
+		t.Fatalf("他人账号应 account_not_allowed, 得 %v", err)
 	}
 	if len(idp.issued) != issuedBefore {
 		t.Fatal("账号预检拒绝不应签发（不占名字）")
 	}
+
 	// 指定离线节点 ⇒ node_no_capacity（需一个能过账号预检的新账号，才能走到节点格）
-	a2, err := o.pool.Register(context.Background(), "admin", true, "team-codex-2", "token_file", "codex", "gpt", "sk-y")
+	a2, err := o.pool.RegisterOwned(context.Background(), "zzc", "team-codex-2", "token_file", "codex", "gpt", `{"access_token":"sk-y"}`)
 	if err != nil {
-		t.Fatal(err)
-	}
-	if err := o.pool.Grant(context.Background(), "admin", true, a2.ID, "zzc"); err != nil {
 		t.Fatal(err)
 	}
 	r3 := base
@@ -427,9 +435,6 @@ func TestHostedOverlay(t *testing.T) {
 		"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef") // 已最新
 	// 账号两形态：token_file（池里那枚）绑 ag_run；另登记一枚 api_key 绑 ag_dis
 	acctID := acctOf(t, o.pool)
-	if err := s.BindAccount(ctx, acctID, "ag_run"); err != nil {
-		t.Fatal(err)
-	}
 	if err := s.SetSeatState(ctx, "ag_run", "online", "", "", nil); err != nil {
 		t.Fatal(err)
 	}
@@ -437,7 +442,7 @@ func TestHostedOverlay(t *testing.T) {
 	if _, err := s.pool.Exec(ctx, htx(), `UPDATE g4_hosted_seat SET account_ref=$1 WHERE agent_id='ag_run'`, acctID); err != nil {
 		t.Fatal(err)
 	}
-	apiAcct, err := o.pool.Register(ctx, "admin", true, "team-deepseek", "api_key", "codex", "gpt", "sk-1234567890abcd")
+	apiAcct, err := o.pool.RegisterOwned(ctx, "zzc", "team-deepseek", "api_key", "codex", "gpt", "sk-1234567890abcd")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -559,9 +564,9 @@ func TestOptionsViewAndJobProgress(t *testing.T) {
 	if free == nil || !free.Online || free.FreeVCPU != 14 || free.FreeMemGB != 15 || free.FreeDiskGB != 100 {
 		t.Fatalf("节点格: %+v", free)
 	}
-	// 账号：唯一一枚已绑定 ⇒ 下拉开不出（一席一账号）
-	if len(v.Accounts) != 0 {
-		t.Fatalf("已绑账号不得再出现: %+v", v.Accounts)
+	// 账号：0.2.1.101 共用——已被一席引用的账号仍可选，in_use=1（页面提示「已被 1 个 Agent 使用」，不拦）
+	if len(v.Accounts) != 1 || v.Accounts[0].InUse != 1 {
+		t.Fatalf("已引用账号仍应出现且 in_use=1: %+v", v.Accounts)
 	}
 	// 配额剩余：agents 2−1＝1、vcpu 4−2＝2、mem 8−4＝4G（mkOrch 配额 2/4/8192）
 	if r := v.Quota.Remaining; r.Agents != 1 || r.VCPU != 2 || r.MemGB != 4 {
@@ -598,11 +603,8 @@ func TestOptionsViewAndJobProgress(t *testing.T) {
 		t.Fatalf("online 格: %+v", jv)
 	}
 	// failed 格：另一席制造失败
-	acct2, err := o.pool.Register(ctx, "admin", true, "team-codex-2", "token_file", "codex", "gpt", "sk-y")
+	acct2, err := o.pool.RegisterOwned(ctx, "zzc", "team-codex-2", "token_file", "codex", "gpt", `{"access_token":"sk-y"}`)
 	if err != nil {
-		t.Fatal(err)
-	}
-	if err := o.pool.Grant(ctx, "admin", true, acct2.ID, "zzc"); err != nil {
 		t.Fatal(err)
 	}
 	out2, err := o.Create(ctx, CreateRequest{
