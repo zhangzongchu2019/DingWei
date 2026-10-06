@@ -164,12 +164,37 @@ UPDATE g4_account_pool p SET owner_lc = g.user_lc
 ALTER TABLE g4_lifecycle_job DROP CONSTRAINT IF EXISTS g4_lifecycle_job_op_check;
 ALTER TABLE g4_lifecycle_job ADD CONSTRAINT g4_lifecycle_job_op_check
   CHECK (op IN ('upgrade','restart','disable','enable','destroy','refresh_cred'));
+
+-- 0.2.1.101 账号登录（R-V2-ACCOUNT-LOGIN-FLOW，codex 设备码）：登录会话。链接与码只在进行中保留，结束即清空；
+-- 凭证永不入本表（节点主动上传后直接加密入池）。id＝32 位十六进制随机（上传端点的不可猜部分）。
+CREATE TABLE IF NOT EXISTS g4_account_login (
+  id          TEXT PRIMARY KEY,
+  owner_lc    TEXT NOT NULL,
+  cli         TEXT NOT NULL,
+  llm         TEXT NOT NULL,
+  email       TEXT NOT NULL,
+  account_id  TEXT,                       -- 重新登录的目标账号（新登记为 NULL）
+  node_id     TEXT NOT NULL,              -- 执行节点（上传只认它）
+  state       TEXT NOT NULL CHECK (state IN ('starting','waiting_user','done','failed','expired','cancelled')),
+  url         TEXT NOT NULL DEFAULT '',
+  user_code   TEXT NOT NULL DEFAULT '',
+  reason      TEXT NOT NULL DEFAULT '',
+  result_account_id TEXT,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  expires_at  timestamptz NOT NULL,
+  finished_at timestamptz);
+CREATE INDEX IF NOT EXISTS g4_account_login_owner ON g4_account_login(owner_lc, created_at);
+CREATE INDEX IF NOT EXISTS g4_account_login_active ON g4_account_login(state) WHERE state IN ('starting','waiting_user');
+-- 每人同一时刻至多 1 个进行中登录（库层保证，不靠先查后插）。
+CREATE UNIQUE INDEX IF NOT EXISTS g4_account_login_one_active ON g4_account_login(owner_lc) WHERE state IN ('starting','waiting_user');
+-- 账号登录入池的账号记邮箱（显示用；个人信息——只给属主本人，管理员列表不给）。
+ALTER TABLE g4_account_pool ADD COLUMN IF NOT EXISTS email TEXT NOT NULL DEFAULT '';
 `
 
 // DropDDL 仅测试用：逆向拆除（rollback 的可重复性验证载体）。
 // 🔴 表名集合必须与 SchemaDDL 一致（R-V2-DEPLOY-ARTIFACTS 甲案补拆 g4_backup；
 // 漏拆由 TestSchemaDropLeavesNoG4Tables 钉住——少一张即红）。
 const DropDDL = `
-DROP TABLE IF EXISTS g4_audit, g4_team_key, g4_quota, g4_backup, g4_lifecycle_job, g4_account_grant, g4_account_pool,
+DROP TABLE IF EXISTS g4_account_login, g4_audit, g4_team_key, g4_quota, g4_backup, g4_lifecycle_job, g4_account_grant, g4_account_pool,
   g4_seat_event, g4_hosted_seat, g4_node_credential, g4_node CASCADE;
 `

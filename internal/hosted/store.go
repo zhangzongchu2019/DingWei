@@ -468,6 +468,7 @@ type Account struct {
 	State                    string
 	BoundAgentID             sql.NullString // 历史列，只读
 	OwnerLC                  string
+	Email                    string    // 账号登录入池的邮箱（API Key 与手工登记为空）；个人信息，只给属主
 	InUse                    int       // 未销毁席位对本号的引用数（列表类查询填；GetAccount 不填）
 	CreatedAt                time.Time // 登记时间（token_file 类账号的 console 显示用——无后四位）
 }
@@ -476,13 +477,13 @@ type Account struct {
 // 新代码释放时另把 account_ref 置 NULL——两道并用，历史 destroyed 行靠状态过滤）。
 const accountInUseSQL = `(SELECT count(*) FROM g4_hosted_seat s WHERE s.account_ref = p.id AND s.state <> 'destroyed')`
 
-const accountCols = `p.id, p.name, p.kind, p.cli, p.llm, p.key_version, p.last4, p.state, p.bound_agent_id, p.owner_lc, p.created_at`
+const accountCols = `p.id, p.name, p.kind, p.cli, p.llm, p.key_version, p.last4, p.state, p.bound_agent_id, p.owner_lc, p.email, p.created_at`
 
 func scanAccount(sc interface{ Scan(...any) error }, a *Account, withInUse bool) error {
 	if withInUse {
-		return sc.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.OwnerLC, &a.CreatedAt, &a.InUse)
+		return sc.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.OwnerLC, &a.Email, &a.CreatedAt, &a.InUse)
 	}
-	return sc.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.OwnerLC, &a.CreatedAt)
+	return sc.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.OwnerLC, &a.Email, &a.CreatedAt)
 }
 
 // CreateAccount 登记一行（归属 a.OwnerLC）。同一属主内同名 ⇒ ErrAccountNameTaken（唯一索引 g4_account_pool_owner_name）。

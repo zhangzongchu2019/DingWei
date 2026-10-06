@@ -53,6 +53,7 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 	gate := nodegate.New(hst)
 	idp := newHostedIdentity[hosted.EnrollToken, hosted.IssuedAgent](svc, hosted.ErrGroupNotFound, hosted.ErrGroupClosed)
 	orch := hosted.NewOrchestrator(hst, poolSvc, idp, gate, combos, images)
+	loginSvc := hosted.NewLoginService(hst, poolSvc, gate, images, orch.AccountComboKnown, cfg.publicOrigin)
 	// T-G4-53 备份管线（真实现）：销毁先备份——节点出卷流式回传，落 dw 的 /data，14 天到期删
 	backupDir := os.Getenv("DW_G4_BACKUP_DIR")
 	if backupDir == "" {
@@ -75,11 +76,29 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 		return false, err
 	}
 	gate.OnConnect = orch.ReconcileNode // 节点重连对账（离线销毁补清——组长 7fabddb0 ⑤）
+	// 0.2.1.101 账号登录（R-V2-ACCOUNT-LOGIN-FLOW）：上次进程留下的进行中会话一律 expired；周期到期清扫
+	if err := loginSvc.RecoverOnStart(ctx); err != nil {
+		return false, err
+	}
+	go func() {
+		t := time.NewTicker(hostedSweepEvery)
+		defer t.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				if err := loginSvc.Sweep(ctx); err != nil {
+					log.Printf("hosted login sweep: %v", err)
+				}
+			}
+		}
+	}()
 
 	mux.HandleFunc("GET /api/node/connect", gate.Handler().ServeHTTP) // 节点代理拨入（Bearer 节点凭据）
 	registerHostedRoutes(mux, hostedDeps{
 		orch: orch, life: life, qs: hosted.NewQuotaService(hst, idp),
-		actor: actor, pool: poolSvc, publicOrigin: cfg.publicOrigin,
+		actor: actor, pool: poolSvc, publicOrigin: cfg.publicOrigin, login: loginSvc,
 		ownsAgent: func(r *http.Request, userLC, agentID string) bool {
 			ags, err := svc.ListAgents(r.Context(), userLC)
 			if err != nil {
