@@ -358,8 +358,8 @@ type accountView struct {
 	Kind      string `json:"kind"`
 	CLI       string `json:"cli"`
 	LLM       string `json:"llm"`
-	Last4     string `json:"last4"`
-	State     string `json:"state"` // available｜disabled（存量 bound 显示为 available）
+	Last4     string `json:"last4,omitempty"` // 只给属主本人；管理视图恒空（不序列化）
+	State     string `json:"state"`           // available｜disabled（存量 bound 显示为 available）
 	InUse     int    `json:"in_use"`
 	CreatedAt string `json:"created_at"`
 	Owner     string `json:"owner,omitempty"` // 只在管理视图出
@@ -372,8 +372,9 @@ func toAccountView(a hosted.Account, withOwner bool) accountView {
 	}
 	v := accountView{ID: a.ID, Name: a.Name, Kind: a.Kind, CLI: a.CLI, LLM: a.LLM, Last4: a.Last4, State: st,
 		InUse: a.InUse, CreatedAt: a.CreatedAt.UTC().Format("2006-01-02T15:04:05Z")}
-	if withOwner {
+	if withOwner { // 管理视图：带属主、**不带 last4**——api_key 的后四位也是密钥片段，只给属主本人看（复核 tosonnet55tc2k）
 		v.Owner = a.OwnerLC
+		v.Last4 = ""
 	}
 	return v
 }

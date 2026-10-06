@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -63,6 +64,7 @@ func (f *fakeIDP) ListHostedAgentIDsByOwner(ctx context.Context, ownerLC string)
 }
 
 type fakeGW struct {
+	mu     sync.Mutex // RunJob 在别的 goroutine 里调 Send：并发读 sent 走 types()
 	sent   []hosted.NodeCommand
 	failOn string // 命中该 Type 即失败（故障注入）
 	downOn string // 命中该 Type 即发不到节点（传输错误）
@@ -70,8 +72,21 @@ type fakeGW struct {
 	onCreated func(seatID string)
 }
 
+// types 已发指令类型的快照（加锁，供并发读）。
+func (g *fakeGW) types() []string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	out := make([]string, len(g.sent))
+	for i, c := range g.sent {
+		out[i] = c.Type
+	}
+	return out
+}
+
 func (g *fakeGW) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand) (hosted.NodeResult, error) {
+	g.mu.Lock()
 	g.sent = append(g.sent, cmd)
+	g.mu.Unlock()
 	if cmd.Type == g.downOn {
 		return hosted.NodeResult{}, errors.New("injected: node unreachable")
 	}

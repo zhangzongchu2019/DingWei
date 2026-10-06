@@ -35,8 +35,8 @@ type AccountOption struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	LLM   string `json:"llm"`
-	Kind  string `json:"kind"`  // api_key|token_file
-	Last4 string `json:"last4"` // token_file 类为空串（页面改显示类别＋登记时间——见 HostedItem 同口径）
+	Kind  string `json:"kind"`   // api_key|token_file
+	Last4 string `json:"last4"`  // token_file 类为空串（页面改显示类别＋登记时间——见 HostedItem 同口径）
 	InUse int    `json:"in_use"` // 0.2.1.101：本号已被本人多少个未销毁 Agent 引用（>0 时页面提示「（已被 N 个 Agent 使用）」，不拦）
 }
 
