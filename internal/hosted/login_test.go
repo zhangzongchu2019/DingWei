@@ -473,3 +473,43 @@ func TestIDTokenEmail(t *testing.T) {
 		}
 	}
 }
+
+// H4b：全平台上限单独咬——三个在线节点（每节点上限合计 6）时，第 5 个仍 ErrLoginBusy。
+func TestLoginTotalCapBindsWithThreeNodes(t *testing.T) {
+	r := mkLogin(t)
+	ctx := context.Background()
+	if _, err := r.s.RegisterNode(ctx, Node{ID: "nd_c", Name: "nd_c", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.s.SetNodeOnline(ctx, "nd_c", json.RawMessage(`{}`)); err != nil {
+		t.Fatal(err)
+	}
+	for _, u := range []string{"u1", "u2", "u3", "u4"} {
+		if _, err := r.l.Start(ctx, u, "gpt", u+"@example.com", ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := r.l.Start(ctx, "u5", "gpt", "u5@example.com", ""); err != ErrLoginBusy {
+		t.Fatalf("三节点时第 5 个应被全平台上限挡住, 得 %v", err)
+	}
+}
+
+// H4c：每节点上限单独咬——只有一个在线节点时，第 3 个 ErrLoginBusy。
+func TestLoginPerNodeCapBindsWithOneNode(t *testing.T) {
+	r := mkLogin(t)
+	ctx := context.Background()
+	if _, err := r.s.exec(ctx, `UPDATE g4_node SET state='offline' WHERE id='nd_b'`); err != nil {
+		t.Fatal(err)
+	}
+	for _, u := range []string{"u1", "u2"} {
+		if _, err := r.l.Start(ctx, u, "gpt", u+"@example.com", ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := r.l.Start(ctx, "u3", "gpt", "u3@example.com", ""); err != ErrLoginBusy {
+		t.Fatalf("单节点时第 3 个应被每节点上限挡住, 得 %v", err)
+	}
+	if _, total, _ := r.s.activeLoginsByNode(ctx); total != 2 {
+		t.Fatalf("应只有 2 个进行中: %d", total)
+	}
+}
