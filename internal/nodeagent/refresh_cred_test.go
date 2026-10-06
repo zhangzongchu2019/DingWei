@@ -170,3 +170,78 @@ func TestRefreshCredSameContentStillRestarts(t *testing.T) {
 	}
 	rcNoTemp(t, cred)
 }
+
+// 镜像 r4 摘要标记（R4-ADDENDUM 必改 1 取 A）：刷新先删 .codex 下的标记 ⇒ 下次启动 start.py 必重写 auth.json。
+func TestRefreshCredClearsAppliedMarker(t *testing.T) {
+	f, d, cred := rcSetup(t)
+	codex := filepath.Join(filepath.Dir(cred), ".codex")
+	if err := os.MkdirAll(codex, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	marker := filepath.Join(codex, appliedMarkerName)
+	if err := os.WriteFile(marker, []byte("deadbeef"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d.refreshCred(context.Background(), rcParams(`{"old":"OLD-SECRET"}`)); err != nil {
+		t.Fatalf("refresh: %v", err)
+	}
+	if _, err := os.Lstat(marker); !os.IsNotExist(err) {
+		t.Fatalf("刷新后标记必须已删, lstat=%v", err)
+	}
+	if rcRestarts(f) != 1 {
+		t.Fatalf("应重启一次: %v", f.calls)
+	}
+}
+
+// .codex 不存在（席位从未起过 Codex）⇒ 照常刷新。
+func TestRefreshCredNoCodexHomeOK(t *testing.T) {
+	_, d, _ := rcSetup(t)
+	if _, err := d.refreshCred(context.Background(), rcParams(`{"new":"N"}`)); err != nil {
+		t.Fatalf("无 .codex 应照常: %v", err)
+	}
+}
+
+// 不跟随链接：.codex 是指向别处的链接 ⇒ 拒（credential_write_failed），别处同名文件不动、凭据件不写、不重启；
+// 标记本身是链接 ⇒ 只删链接，链接目标不动。
+func TestRefreshCredMarkerNoFollow(t *testing.T) {
+	f, d, cred := rcSetup(t)
+	outside := t.TempDir()
+	victim := filepath.Join(outside, appliedMarkerName)
+	if err := os.WriteFile(victim, []byte("host"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	codex := filepath.Join(filepath.Dir(cred), ".codex")
+	if err := os.Symlink(outside, codex); err != nil {
+		t.Fatal(err)
+	}
+	_, err := d.refreshCred(context.Background(), rcParams(`{"new":"NEW-SECRET"}`))
+	if err == nil || !strings.HasPrefix(err.Error(), "credential_write_failed") {
+		t.Fatalf(".codex 为链接应 credential_write_failed, 得 %v", err)
+	}
+	if _, err := os.Stat(victim); err != nil {
+		t.Fatalf("链接目标处文件不得被删: %v", err)
+	}
+	if b, _ := os.ReadFile(cred); string(b) != `{"old":"OLD-SECRET"}` {
+		t.Fatalf("拒绝时凭据件不得改: %q", b)
+	}
+	if rcRestarts(f) != 0 {
+		t.Fatalf("拒绝时不得重启: %v", f.calls)
+	}
+
+	_ = os.Remove(codex)
+	if err := os.MkdirAll(codex, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(victim, filepath.Join(codex, appliedMarkerName)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d.refreshCred(context.Background(), rcParams(`{"new":"NEW-SECRET"}`)); err != nil {
+		t.Fatalf("标记为链接时应只删链接并照常: %v", err)
+	}
+	if b, err := os.ReadFile(victim); err != nil || string(b) != "host" {
+		t.Fatalf("链接目标不得动: %q %v", b, err)
+	}
+	if _, err := os.Lstat(filepath.Join(codex, appliedMarkerName)); !os.IsNotExist(err) {
+		t.Fatalf("链接本身应已删: %v", err)
+	}
+}

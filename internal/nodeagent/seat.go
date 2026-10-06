@@ -23,6 +23,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -566,6 +567,11 @@ func (d *dockerOps) refreshCred(ctx context.Context, params json.RawMessage) (js
 	if err != nil {
 		return nil, err
 	}
+	// 先撤摘要标记再写凭据件（镜像 r4 判据，R4-ADDENDUM 复核必改 1 取 A）：下次启动无标记且凭据件较新 ⇒ 必重写 auth.json，
+	// 「刷新＝以池内副本覆盖登录态」不因内容未变而落空。先撤后写：中途失败只会落到「无标记、凭据件较旧」⇒ 不重写（同 r3→r4 首升）。
+	if err := clearAppliedMarker(seatDir(d.seatRoot, p.SeatID)); err != nil {
+		return nil, fmt.Errorf("credential_write_failed: marker: %v", err)
+	}
 	if err := d.writeCredentialFileAtomic(p.SeatID, p.Cred); err != nil {
 		return nil, fmt.Errorf("credential_write_failed: %v", err)
 	}
@@ -573,6 +579,27 @@ func (d *dockerOps) refreshCred(ctx context.Context, params json.RawMessage) (js
 		return nil, fmt.Errorf("restart_failed: %v", err)
 	}
 	return json.Marshal(map[string]string{"seat_id": p.SeatID, "state": "running"})
+}
+
+// appliedMarkerName 镜像 r4 start.py 记录「上次写 auth.json 所用凭据摘要」的文件（在 CODEX_HOME＝/work/.codex 下）。
+const appliedMarkerName = ".dw-applied-credential.sha256"
+
+// clearAppliedMarker 删除席位 .codex 下的摘要标记。.codex 由容器内进程可写 ⇒ 不跟随符号链接：
+// 以 O_NOFOLLOW|O_DIRECTORY 打开 .codex，再相对该句柄 unlinkat（标记本身是链接也只删链接）。
+// .codex 或标记不存在 ⇒ 无事可做；.codex 是链接或非目录 ⇒ 报错（不碰宿主别处文件）。
+func clearAppliedMarker(seatDirPath string) error {
+	fd, err := syscall.Open(filepath.Join(seatDirPath, ".codex"), syscall.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
+	if err == syscall.ENOENT {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("open .codex: %w", err)
+	}
+	defer syscall.Close(fd)
+	if err := syscall.Unlinkat(fd, appliedMarkerName); err != nil && err != syscall.ENOENT {
+		return fmt.Errorf("unlink marker: %w", err)
+	}
+	return nil
 }
 
 // writeCredentialFileAtomic 刷新路径的原子写：写到一半失败不留残缺件（旧件保持原样）。错误不含内容。
