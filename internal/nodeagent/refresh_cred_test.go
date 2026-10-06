@@ -155,3 +155,18 @@ func TestRefreshCredRestartFailure(t *testing.T) {
 	}
 	rcNoTemp(t, cred)
 }
+
+// C1 增格（节点侧）：下发内容与现有凭据件相同 ⇒ 照常原子写＋重启、不报错（无「内容未变就跳过」捷径）。
+func TestRefreshCredSameContentStillRestarts(t *testing.T) {
+	f, d, cred := rcSetup(t)
+	if _, err := d.refreshCred(context.Background(), rcParams(`{"old":"OLD-SECRET"}`)); err != nil {
+		t.Fatalf("同内容刷新不应报错: %v", err)
+	}
+	if b, _ := os.ReadFile(cred); string(b) != `{"old":"OLD-SECRET"}` {
+		t.Fatalf("内容: %q", b)
+	}
+	if rcRestarts(f) != 1 {
+		t.Fatalf("同内容仍应重启一次: %v", f.calls)
+	}
+	rcNoTemp(t, cred)
+}
