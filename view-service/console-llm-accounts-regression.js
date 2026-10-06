@@ -28,7 +28,9 @@ const M = {
   'no-poll': () => mutate('llmLoginTimer=setInterval(llmPollLogin,3000);', ''),
   'login-err-raw': () => mutate("login_in_progress:'你已有一个进行中的账号登录，请先完成或取消',", ''),
   'apikey-offered-for-login-only': () => mutate("if(c.cred_kind==='api_key'&&", "if(false&&c.cred_kind==='api_key'&&"),
-  'name-carries-key-tail': () => mutate("name:llm+' API Key '+n,", "name:llm+' …'+key.slice(-4),"),
+  'name-carries-key-tail': () => mutate("label=llm+' API Key '+n;}", "label=llm+' …'+key.slice(-4);}"),
+  'rekey-uses-prompt': () => mutate("var inp=document.createElement('input');inp.type='password';", "var inp=document.createElement('input');inp.type='text';"),
+  'label-ignored': () => mutate("var li=document.getElementById('llmAddLabel'),label=li.value.trim();", "var li=document.getElementById('llmAddLabel'),label='';"),
   'rekey-no-inuse-note': () => mutate("(n>0?'；在跑的 '+n+' 个 Agent 须逐个「刷新凭据」才生效':'')", "''"),
 };
 if (mutation && !M[mutation]) { console.error(`MUTATION-UNKNOWN: ${mutation}`); process.exit(3); }
@@ -189,13 +191,27 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.ok(!(await page.content()).includes('LEAKMARK'), 'key leaked into the DOM');
     });
 
-    await test('换 Key: PUT secret, then the in-use note says the running Agents must each be refreshed', async () => {
-      page.once('dialog', (d) => d.accept('sk-NEWKEY-12345678'));
+    await test('换 Key: an in-page password box (no window.prompt) → PUT secret, then the in-use note says the running Agents must each be refreshed', async () => {
+      let dialogs = 0; const onDialog = (d) => { dialogs++; d.dismiss(); }; page.on('dialog', onDialog);
       const row = page.locator('#llmItems tr', { hasText: '…abcd' });
-      const n = writes.length; await row.locator('button', { hasText: '换 Key' }).click();
+      await row.locator('button', { hasText: '换 Key' }).click();
+      const inp = row.locator('.llm-rekey input');
+      assert.strictEqual(await inp.getAttribute('type'), 'password');
+      await inp.click(); await page.keyboard.type('sk-NEWKEY-12345678');
+      const n = writes.length; await row.locator('.llm-rekey button', { hasText: '确定' }).click();
+      page.off('dialog', onDialog); assert.strictEqual(dialogs, 0, 'no browser dialog may be used');
       await page.locator('#llmFeedback').filter({ hasText: '刷新凭据' }).waitFor();
       assert.strictEqual(writes[n].method, 'PUT'); assert.deepStrictEqual(writes[n].b, { secret: 'sk-NEWKEY-12345678' });
       assert.match(await page.locator('#llmFeedback').textContent(), /在跑的 3 个 Agent/);
+    });
+
+    await test('API key with a user label: the label is the name verbatim (no key material)', async () => {
+      await page.locator('#llmAddLlm').selectOption('openai'); await page.locator('#llmAddMethod').selectOption('api_key');
+      await type('#llmAddKey', 'sk-LABELKEY-0000aaaa'); await type('#llmAddLabel', '我的备用key');
+      const n = writes.length; await page.locator('#llmAddBtn').click();
+      await page.locator('#llmFeedback').filter({ hasText: '已新增' }).waitFor();
+      assert.strictEqual(writes[n].b.name, '我的备用key');
+      assert.strictEqual(await page.locator('#llmAddLabel').inputValue(), '');
     });
 
     await test('停用／启用 posts to the state endpoint and the row follows', async () => {

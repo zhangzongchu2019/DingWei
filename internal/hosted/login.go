@@ -314,13 +314,21 @@ func (l *LoginService) Complete(ctx context.Context, id string, body []byte) err
 		l.fail(ctx, id, r.OwnerLC, "credential_not_json")
 		return ErrParams
 	}
+	// 🔴 先原子认领（waiting_user → completing，且未过期）再入池（组长 LOGIN-IMPL-R1 建议 7）：
+	//    清扫、取消只动 starting／waiting_user，不会把「已入池」的会话改成过期或取消；认领不到 ⇒ 不入池。
+	if ok, err := l.st.claimLoginCompleting(ctx, id, l.now()); err != nil || !ok {
+		return ErrLoginNotActive
+	}
 	acctID, note, err := l.intoPool(ctx, r, cred)
 	cred = ""
 	if err != nil {
-		l.fail(ctx, id, r.OwnerLC, poolFailReason(err))
+		reason := poolFailReason(err)
+		if moved, _ := l.st.finishCompleting(ctx, id, "failed", reason, ""); moved {
+			_ = l.st.AddAudit(ctx, r.OwnerLC, "account.login_failed", id, jsonRaw(`{"reason":`+jsonStr(reason)+`}`))
+		}
 		return nil
 	}
-	if moved, _ := l.st.finishLogin(ctx, id, "done", note, acctID); moved {
+	if moved, _ := l.st.finishCompleting(ctx, id, "done", note, acctID); moved {
 		_ = l.st.AddAudit(ctx, r.OwnerLC, "account.login_complete", id, jsonRaw(`{"account":`+jsonStr(acctID)+`}`))
 	}
 	return nil
@@ -460,8 +468,12 @@ func (l *LoginService) Sweep(ctx context.Context) error {
 	return nil
 }
 
-// RecoverOnStart Hub 启动：上次进程留下的进行中会话一律 expired（节点侧容器由 cancel／节点清扫收尾）。
+// RecoverOnStart Hub 启动：上次进程留下的进行中会话一律 expired（节点侧容器由 cancel／节点清扫收尾）；
+// 入池途中被打断的（completing）收为 failed/interrupted——入池或已成功，页面提示看账号列表。
 func (l *LoginService) RecoverOnStart(ctx context.Context) error {
+	if _, err := l.st.exec(ctx, `UPDATE g4_account_login SET state='failed', reason='interrupted', finished_at=now() WHERE state='completing'`); err != nil {
+		return err
+	}
 	rows, err := l.st.activeLogins(ctx)
 	if err != nil {
 		return err
@@ -530,6 +542,34 @@ WHERE id=$1 AND state IN ('starting','waiting_user')`, id, state, reason, acct)
 	return n == 1, nil
 }
 
+// claimLoginCompleting 上传认领：waiting_user 且未过期 ⇒ completing（清链接与码）；一次性。
+func (s *Store) claimLoginCompleting(ctx context.Context, id string, now time.Time) (bool, error) {
+	res, err := s.exec(ctx, `
+UPDATE g4_account_login SET state='completing', url='', user_code=''
+WHERE id=$1 AND state='waiting_user' AND expires_at > $2`, id, now)
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n == 1, nil
+}
+
+// finishCompleting 只从 completing 收到终态。
+func (s *Store) finishCompleting(ctx context.Context, id, state, reason, accountID string) (bool, error) {
+	var acct any
+	if accountID != "" {
+		acct = accountID
+	}
+	res, err := s.exec(ctx, `
+UPDATE g4_account_login SET state=$2, reason=$3, result_account_id=$4, finished_at=now()
+WHERE id=$1 AND state='completing'`, id, state, reason, acct)
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n == 1, nil
+}
+
 func (s *Store) lastLoginStart(ctx context.Context, owner string) (time.Time, error) {
 	var t sql.NullTime
 	row, err := s.qrow(ctx, `SELECT max(created_at) FROM g4_account_login WHERE owner_lc=$1`, owner)
@@ -543,7 +583,7 @@ func (s *Store) lastLoginStart(ctx context.Context, owner string) (time.Time, er
 }
 
 func (s *Store) activeLoginsByNode(ctx context.Context) (map[string]int, int, error) {
-	rows, err := s.query(ctx, `SELECT node_id, count(*) FROM g4_account_login WHERE state IN ('starting','waiting_user') GROUP BY node_id`)
+	rows, err := s.query(ctx, `SELECT node_id, count(*) FROM g4_account_login WHERE state IN ('starting','waiting_user','completing') GROUP BY node_id`)
 	if err != nil {
 		return nil, 0, err
 	}

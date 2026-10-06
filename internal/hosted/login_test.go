@@ -581,3 +581,48 @@ func TestLoginDoneNotOverwrittenBySweepOrCancel(t *testing.T) {
 		t.Fatalf("done 不得被清扫或取消改写: %+v", row)
 	}
 }
+
+// 组长 LOGIN-IMPL-R1 建议 7：上传先原子认领（waiting_user→completing）再入池——
+// completing 期间清扫、取消都不碰它；同会话再上传认领不到 ⇒ 拒、不重复入池；过期会话认领不到；Hub 重启把 completing 收为 failed/interrupted。
+func TestLoginClaimCompletingIsAtomic(t *testing.T) {
+	r := mkLogin(t)
+	ctx := context.Background()
+	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
+	if ok, err := r.s.claimLoginCompleting(ctx, v.ID, r.clock); err != nil || !ok {
+		t.Fatalf("认领: %v %v", ok, err)
+	}
+	if ok, _ := r.s.claimLoginCompleting(ctx, v.ID, r.clock); ok {
+		t.Fatal("同一会话不得被认领两次")
+	}
+	r.advance(LoginTTL + time.Minute)
+	r.l.Sweep(ctx)
+	r.l.Cancel(ctx, "zzc", v.ID)
+	if row := r.row(t, v.ID); row.State != "completing" || row.URL != "" || row.UserCode != "" {
+		t.Fatalf("completing 不得被清扫或取消改写，且已清链接与码: %+v", row)
+	}
+	if err := r.l.Complete(ctx, v.ID, uploadOK(authJSON("me@example.com"))); err != ErrLoginNotActive {
+		t.Fatalf("completing 时再上传应拒, 得 %v", err)
+	}
+	if n, _ := r.s.CountOwnedAccounts(ctx, "zzc"); n != 0 {
+		t.Fatalf("认领不到不得入池: %d", n)
+	}
+	if _, err := r.l.Start(ctx, "zzc", "gpt", "x@example.com", ""); err != ErrLoginInProgress {
+		t.Fatalf("completing 仍算进行中（每人 1 个）, 得 %v", err)
+	}
+	if err := r.l.RecoverOnStart(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if row := r.row(t, v.ID); row.State != "failed" || row.Reason != "interrupted" {
+		t.Fatalf("重启应把 completing 收为 failed/interrupted: %+v", row)
+	}
+
+	// 过期会话认领不到
+	r.advance(31 * time.Second)
+	v2, err := r.l.Start(ctx, "zzc", "gpt", "late@example.com", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok, _ := r.s.claimLoginCompleting(ctx, v2.ID, r.clock.Add(LoginTTL+time.Second)); ok {
+		t.Fatal("过期会话不得被认领")
+	}
+}

@@ -50,8 +50,7 @@ var loginStartWait = 30 * time.Second
 
 type loginSession struct {
 	url, code string
-	startErr  error
-	ready     chan struct{} // 启动阶段结束（拿到链接与码或失败）即关闭；重放据此等待，不回空链接
+	ready     chan struct{} // 启动阶段结束（拿到链接与码或失败）即关闭；未关闭时重放回 busy
 	cancel    context.CancelFunc
 	done      chan struct{}
 }
@@ -138,18 +137,16 @@ func (l *loginOps) start(ctx context.Context, params json.RawMessage) (json.RawM
 	}
 
 	l.mu.Lock()
-	if s, ok := l.sessions[p.LoginID]; ok { // 重放：返回现状，不起第二个；仍在启动中 ⇒ 等启动结束（不回空链接与码）
-		l.mu.Unlock()
+	if s, ok := l.sessions[p.LoginID]; ok { // 重放：返回现状，不起第二个；仍在启动中 ⇒ busy（组长 LOGIN-IMPL-R1 建议 5：不回空链接与码）
+		url, code, ready := s.url, s.code, false
 		select {
 		case <-s.ready:
-		case <-ctx.Done():
-			return nil, ctx.Err()
+			ready = true
+		default:
 		}
-		l.mu.Lock()
-		url, code, serr := s.url, s.code, s.startErr
 		l.mu.Unlock()
-		if serr != nil {
-			return nil, serr
+		if !ready || url == "" {
+			return nil, ErrLoginBusy
 		}
 		return loginStartResult(url, code)
 	}
@@ -163,9 +160,6 @@ func (l *loginOps) start(ctx context.Context, params json.RawMessage) (json.RawM
 
 	url, code, err := l.launch(ctx, p.LoginID, p.Image, p.UploadURL, sess)
 	if err != nil {
-		l.mu.Lock()
-		sess.startErr = err
-		l.mu.Unlock()
 		close(sess.ready)
 		l.forget(p.LoginID)
 		l.cleanup(context.Background(), p.LoginID)

@@ -432,31 +432,33 @@ func TestReadLoginCredentialGuards(t *testing.T) {
 	}
 }
 
-// L2b：同 login_id 的重放落在首次还在启动期间 ⇒ 等启动结束，返回同一链接与码（不回空）；只起一个容器。
-func TestLoginReplayDuringStartupWaits(t *testing.T) {
+// L2b：同 login_id 的重放落在首次还在启动期间 ⇒ login_busy（不回空链接与码）；首次照常拿到链接与码；只起一个容器。
+func TestLoginReplayDuringStartupBusy(t *testing.T) {
 	f := newLFEngine(t, lfOutput)
 	h := newLFHub(t)
 	l := mkLoginOps(t, f, h)
 	f.onStart = func() { time.Sleep(200 * time.Millisecond) }
-	type res struct {
-		raw json.RawMessage
-		err error
+	first := make(chan error, 1)
+	var firstRaw json.RawMessage
+	go func() {
+		raw, err := l.start(context.Background(), lfParams(l, lfID))
+		firstRaw = raw
+		first <- err
+	}()
+	time.Sleep(50 * time.Millisecond)
+	if raw, err := l.start(context.Background(), lfParams(l, lfID)); !errors.Is(err, ErrLoginBusy) || raw != nil {
+		t.Fatalf("启动中的重放应 login_busy 且无载荷, 得 %s %v", raw, err)
 	}
-	ch := make(chan res, 2)
-	for i := 0; i < 2; i++ {
-		go func() {
-			raw, err := l.start(context.Background(), lfParams(l, lfID))
-			ch <- res{raw, err}
-		}()
-		time.Sleep(50 * time.Millisecond)
+	if err := <-first; err != nil {
+		t.Fatal(err)
 	}
-	for i := 0; i < 2; i++ {
-		r := <-ch
-		var m map[string]string
-		json.Unmarshal(r.raw, &m)
-		if r.err != nil || m["url"] != lfURL || m["user_code"] != lfCode {
-			t.Fatalf("重放应等启动结束并得同一链接与码: %v %v", m, r.err)
-		}
+	var m map[string]string
+	json.Unmarshal(firstRaw, &m)
+	if m["url"] != lfURL || m["user_code"] != lfCode {
+		t.Fatalf("首次应得链接与码: %v", m)
+	}
+	if raw, err := l.start(context.Background(), lfParams(l, lfID)); err != nil || !strings.Contains(string(raw), lfCode) {
+		t.Fatalf("启动完成后的重放应返回现状: %s %v", raw, err)
 	}
 	if n := f.count("POST /containers/create"); n != 1 {
 		t.Fatalf("只应起一个容器: %d", n)

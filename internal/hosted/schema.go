@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS g4_account_login (
   email       TEXT NOT NULL,
   account_id  TEXT,                       -- 重新登录的目标账号（新登记为 NULL）
   node_id     TEXT NOT NULL,              -- 执行节点（上传只认它）
-  state       TEXT NOT NULL CHECK (state IN ('starting','waiting_user','done','failed','expired','cancelled')),
+  state       TEXT NOT NULL CHECK (state IN ('starting','waiting_user','completing','done','failed','expired','cancelled')),
   url         TEXT NOT NULL DEFAULT '',
   user_code   TEXT NOT NULL DEFAULT '',
   reason      TEXT NOT NULL DEFAULT '',
@@ -184,9 +184,10 @@ CREATE TABLE IF NOT EXISTS g4_account_login (
   expires_at  timestamptz NOT NULL,
   finished_at timestamptz);
 CREATE INDEX IF NOT EXISTS g4_account_login_owner ON g4_account_login(owner_lc, created_at);
-CREATE INDEX IF NOT EXISTS g4_account_login_active ON g4_account_login(state) WHERE state IN ('starting','waiting_user');
+CREATE INDEX IF NOT EXISTS g4_account_login_active ON g4_account_login(state) WHERE state IN ('starting','waiting_user','completing');
 -- 每人同一时刻至多 1 个进行中登录（库层保证，不靠先查后插）。
-CREATE UNIQUE INDEX IF NOT EXISTS g4_account_login_one_active ON g4_account_login(owner_lc) WHERE state IN ('starting','waiting_user');
+CREATE UNIQUE INDEX IF NOT EXISTS g4_account_login_one_active ON g4_account_login(owner_lc) WHERE state IN ('starting','waiting_user','completing');
+-- completing＝上传已被原子认领、正在入池（清扫与取消不碰它；Hub 重启时收为 failed/interrupted）。
 -- 账号登录入池的账号记邮箱（显示用；个人信息——只给属主本人，管理员列表不给）。
 ALTER TABLE g4_account_pool ADD COLUMN IF NOT EXISTS email TEXT NOT NULL DEFAULT '';
 `
