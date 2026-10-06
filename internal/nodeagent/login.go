@@ -39,8 +39,10 @@ const (
 var (
 	loginIDPattern   = regexp.MustCompile(`^[0-9a-f]{32}$`)
 	loginDirPattern  = regexp.MustCompile(`^login-[0-9a-f]{32}$`)
-	loginURLPattern  = regexp.MustCompile(`^https://\S+$`)
-	loginCodePattern = regexp.MustCompile(`^[A-Z0-9]{4,}-[A-Z0-9]{4,}$`)
+	loginURLPattern  = regexp.MustCompile(`https://[^\s\x1b]+`)
+	loginCodePattern = regexp.MustCompile(`\b[A-Z0-9]{4,}-[A-Z0-9]{4,}\b`)
+	// ansiPattern 终端控制序列（CSI／OSC）。codex 0.159.2 非 TTY 下也带颜色（prodops 65be17d6：「2. Enter this one-time code \x1b[90m(expires…)\x1b[0m」）。
+	ansiPattern = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)`)
 	// ErrLoginBusy 本节点进行中的登录已达上限。
 	ErrLoginBusy = errors.New("login_busy")
 )
@@ -213,15 +215,25 @@ func (l *loginOps) launch(ctx context.Context, id, image, uploadURL string, sess
 	found := make(chan [2]string, 1)
 	go func() { // 读输出：只认固定模式的链接行与码行；原文不留、不打日志；读完继续排空直到流结束
 		var url, code string
-		sent := false
+		sent, linkHint, codeHint := false, false, false
 		sc := bufio.NewScanner(demuxReader(stream))
 		sc.Buffer(make([]byte, 0, 4096), 64<<10)
 		for sc.Scan() {
-			line := strings.TrimSpace(sc.Text())
-			if url == "" && loginURLPattern.MatchString(line) {
-				url = line
-			} else if code == "" && loginCodePattern.MatchString(line) {
-				code = line
+			// 先去终端控制序列；只在提示行之后取：链接＝「Open this link」之后第一个 https URL，
+			// 码＝「one-time code」之后第一个 XXXX-XXXXX 形 token（容忍缩进、颜色、与说明同行）。
+			line := strings.TrimSpace(ansiPattern.ReplaceAllString(sc.Text(), ""))
+			low := strings.ToLower(line)
+			if strings.Contains(low, "open this link") {
+				linkHint = true
+			}
+			if strings.Contains(low, "one-time code") {
+				codeHint = true
+			}
+			if url == "" && linkHint {
+				url = loginURLPattern.FindString(line)
+			}
+			if code == "" && codeHint {
+				code = loginCodePattern.FindString(line)
 			}
 			if !sent && url != "" && code != "" {
 				found <- [2]string{url, code}

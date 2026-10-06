@@ -529,3 +529,34 @@ func TestLoginContainerSpecSecurityFields(t *testing.T) {
 		t.Fatalf("Env 须指 CODEX_HOME=/h/.codex、HOME=/h: %s", env)
 	}
 }
+
+// 0.159.2 回放夹具（prodops 65be17d6 打码输出；码提示行逐字含 ANSI 颜色）。链接行与码行原文未取到（grep 未保留），
+// 按「可能也带颜色」与「可能与提示同行」两种保守变体都钉住；提示行之前出现的别的 https 链接不得被取。
+func TestLoginParses0159ShapeWithANSI(t *testing.T) {
+	const esc = "\x1b"
+	shapes := map[string]string{
+		"separate_lines_colored": "Welcome to Codex\nSee " + "https://developers.example.test/codex/security" + " before you start\n" +
+			"1. Open this link in your browser and sign in to your account\n   " + esc + "[94m" + lfURL + esc + "[0m\n\n" +
+			"2. Enter this one-time code " + esc + "[90m(expires in 15 minutes)" + esc + "[0m\n   " + esc + "[94m" + lfCode + esc + "[0m\n",
+		"same_line_as_hints": "1. Open this link in your browser and sign in to your account: " + esc + "[4m" + lfURL + esc + "[0m\n" +
+			"2. Enter this one-time code " + esc + "[90m(expires in 15 minutes)" + esc + "[0m: " + esc + "[1m" + lfCode + esc + "[0m\n",
+		"plain_0145": lfOutput,
+	}
+	for name, out := range shapes {
+		t.Run(name, func(t *testing.T) {
+			f := newLFEngine(t, out)
+			h := newLFHub(t)
+			l := mkLoginOps(t, f, h)
+			raw, err := l.start(context.Background(), lfParams(l, lfID))
+			if err != nil {
+				t.Fatalf("start: %v", err)
+			}
+			var m map[string]string
+			json.Unmarshal(raw, &m)
+			if m["url"] != lfURL || m["user_code"] != lfCode {
+				t.Fatalf("应取到干净的链接与码（无控制序列、不取提示前的别的链接）: %q", m)
+			}
+			f.letExit()
+		})
+	}
+}
