@@ -49,6 +49,7 @@ type lfEngine struct {
 	output   string // attach 流内容（多路复用帧之前的原文）
 	exitCode int
 	release  chan struct{}
+	relOnce  sync.Once
 	onStart  func()
 	labeled  []containerListItem
 	srv      *httptest.Server
@@ -94,8 +95,12 @@ func newLFEngine(t *testing.T, output string) *lfEngine {
 		}
 	}))
 	t.Cleanup(f.srv.Close)
+	t.Cleanup(f.letExit) // 先于 srv.Close 执行（LIFO）：断言失败时阻塞中的 /wait 也得放行，否则关服务器会卡到超时
 	return f
 }
+
+// letExit 放行所有 /wait（幂等）。
+func (f *lfEngine) letExit() { f.relOnce.Do(func() { close(f.release) }) }
 
 func (f *lfEngine) count(prefix string) int {
 	f.mu.Lock()
@@ -198,7 +203,7 @@ func TestLoginStartUploadsCredentialAndCleansUp(t *testing.T) {
 	}
 	spec := f.specs[0]
 	hc := spec["HostConfig"].(map[string]any)
-	if lc := hc["LogConfig"].(map[string]any); lc["Type"] != "none" {
+	if lc, _ := hc["LogConfig"].(map[string]any); lc == nil || lc["Type"] != "none" {
 		t.Fatalf("日志驱动须 none: %v", lc)
 	}
 	binds := hc["Binds"].([]any)
@@ -213,7 +218,7 @@ func TestLoginStartUploadsCredentialAndCleansUp(t *testing.T) {
 		t.Fatalf("命令: %s", cmd)
 	}
 
-	close(f.release)
+	f.letExit()
 	waitFor(t, "上传", func() bool { return len(h.uploads()) == 1 })
 	up := h.uploads()[0]
 	if up["status"] != "ok" || up["credential"] != lfCred {
@@ -301,7 +306,7 @@ func TestLoginExitNonZeroUploadsFailure(t *testing.T) {
 	if _, err := l.start(context.Background(), lfParams(l, lfID)); err != nil {
 		t.Fatal(err)
 	}
-	close(f.release)
+	f.letExit()
 	waitFor(t, "失败上传", func() bool { return len(h.uploads()) == 1 })
 	if up := h.uploads()[0]; up["status"] != "failed" || up["reason"] != "login_exit_1" || up["credential"] != "" {
 		t.Fatalf("应上传 failed/login_exit_1: %v", up)
@@ -332,7 +337,7 @@ func TestLoginBusyAndParamGuards(t *testing.T) {
 			t.Fatalf("%s 应 ErrParams, 得 %v", raw, err)
 		}
 	}
-	close(f.release)
+	f.letExit()
 }
 
 // L8：登录指令不入账本（结果含一次性链接与码）；其它指令照旧入账本。
