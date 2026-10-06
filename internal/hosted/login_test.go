@@ -151,6 +151,30 @@ func TestLoginStartHappy(t *testing.T) {
 	if _, err := r.l.Cancel(ctx, "bob", v.ID); err != ErrNotFound {
 		t.Fatalf("他人取消应 ErrNotFound, 得 %v", err)
 	}
+	if row := r.row(t, v.ID); row.State != "waiting_user" || row.URL != ldURL {
+		t.Fatalf("他人取消不得改动本人会话: %+v", row)
+	}
+}
+
+// H2b：本人会话已到期但无人上传、清扫未轮到 ⇒ 本人再发起照常成功（不被部分唯一索引误判「进行中」），旧会话收尾为 expired。
+func TestLoginStartExpiresOwnStaleSession(t *testing.T) {
+	r := mkLogin(t)
+	ctx := context.Background()
+	v, err := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.advance(LoginTTL + time.Second)
+	v2, err := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
+	if err != nil {
+		t.Fatalf("旧会话已到期，应可再发起: %v", err)
+	}
+	if row := r.row(t, v.ID); row.State != "expired" || row.URL != "" {
+		t.Fatalf("旧会话应收尾为 expired: %+v", row)
+	}
+	if v2.ID == v.ID || v2.State != "waiting_user" {
+		t.Fatalf("新会话: %+v", v2)
+	}
 }
 
 // H2／H3：每人 1 个进行中（库层唯一）；冷却 30 秒；取消后清链接与码并通知节点。
