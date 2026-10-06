@@ -568,14 +568,21 @@ func TestLoginContainerSpecSecurityFields(t *testing.T) {
 	}
 }
 
-// 0.159.2 回放夹具（prodops 65be17d6 打码输出；码提示行逐字含 ANSI 颜色）。链接行与码行原文未取到（grep 未保留），
-// 按「可能也带颜色」与「可能与提示同行」两种保守变体都钉住；提示行之前出现的别的 https 链接不得被取。
+// 0.159.2 回放夹具：real_0159_fullcapture 逐字取自真输出（prodops 板 10868257，全文原位打码）；另留「与提示同行」「提示前诱饵」
+// 两种防御变体与 0.145.0 原样，提示行之前出现的别的 https 链接与码形 token 不得被取。
 func TestLoginParses0159ShapeWithANSI(t *testing.T) {
 	const esc = "\x1b"
 	shapes := map[string]string{
-		"separate_lines_colored": "Welcome to Codex\nSee " + "https://developers.example.test/codex/security" + " before you start\n" +
-			"1. Open this link in your browser and sign in to your account\n   " + esc + "[94m" + lfURL + esc + "[0m\n\n" +
-			"2. Enter this one-time code " + esc + "[90m(expires in 15 minutes)" + esc + "[0m\n   " + esc + "[94m" + lfCode + esc + "[0m\n",
+		// 逐字取自 0.159.2 真输出（prodops 板 10868257 p3-full-masked.txt：落盘前原位替换），只把 <URL>／<CODE> 占位换回测试值；
+		// 转义序列、缩进、空行全按原样。
+		"real_0159_fullcapture": "Welcome to Codex [v" + esc + "[90m0.159.2" + esc + "[0m]\n" +
+			esc + "[90mOpenAI's command-line coding agent" + esc + "[0m\n\n" +
+			"Follow these steps to sign in with ChatGPT using device code authorization:\n\n" +
+			"1. Open this link in your browser and sign in to your account\n" +
+			"   " + esc + "[94m" + lfURL + esc + "[0m\n\n" +
+			"2. Enter this one-time code " + esc + "[90m(expires in 15 minutes)" + esc + "[0m\n" +
+			"   " + esc + "[94m" + lfCode + esc + "[0m\n\n" +
+			esc + "[90mContinue only if you started this login in Codex. If a website or another person gave you this code, cancel." + esc + "[0m\n\n",
 		"same_line_as_hints": "1. Open this link in your browser and sign in to your account: " + esc + "[4m" + lfURL + esc + "[0m\n" +
 			"2. Enter this one-time code " + esc + "[90m(expires in 15 minutes)" + esc + "[0m: " + esc + "[1m" + lfCode + esc + "[0m\n",
 		"plain_0145": lfOutput,
