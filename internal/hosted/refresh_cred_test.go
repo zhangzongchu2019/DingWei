@@ -283,6 +283,14 @@ func TestRefreshCredResumesSuspendedCredential(t *testing.T) {
 		if seat, _ := s.GetSeat(ctx, id); seat.State != "starting" || len(gw.sent) != 1 {
 			t.Fatalf("应停 starting 并发一次指令: %+v %d", seat, len(gw.sent))
 		}
+		// 能连回：凭据已活、Agent 以专属凭据连入 ⇒ MarkOnline（只认 starting）⇒ online
+		o := &Orchestrator{st: s}
+		if err := o.MarkOnline(ctx, id); err != nil {
+			t.Fatalf("凭据恢复后应能连回: %v", err)
+		}
+		if seat, _ := s.GetSeat(ctx, id); seat.State != "online" {
+			t.Fatalf("连回后应 online: %+v", seat)
+		}
 	})
 	for _, c := range []struct {
 		name, errText string

@@ -925,7 +925,8 @@ function renderHostedAccounts(){
   var opts=hostedOptions||{},cli=document.getElementById('hostedCli').value,llm=document.getElementById('hostedLlm').value;
   var rows=(opts.accounts||[]).filter(function(a){return a.llm===llm;});
   // 账号可选 ⇔ 存在 (该 CLI, 该 LLM, 该账号的凭据形态) 且已验通的组合
-  var items=rows.map(function(a){var ok=(opts.combos||[]).some(function(c){return c.cli===cli&&c.llm===llm&&c.verified&&(!a.kind||c.cred_kind===a.kind);});return {value:a.id,text:a.name+'（…'+a.last4+'）'+(ok?'':'（未验通）'),disabled:!ok};});
+  // 0.2.1.101：同一账号本人可多席共用——in_use>0 时选项末尾提示「（已被 N 个 Agent 使用）」，只提示不拦（组长 IMPL-R1 第 5 条）
+  var items=rows.map(function(a){var ok=(opts.combos||[]).some(function(c){return c.cli===cli&&c.llm===llm&&c.verified&&(!a.kind||c.cred_kind===a.kind);});return {value:a.id,text:a.name+'（…'+a.last4+'）'+(ok?'':'（未验通）')+(a.in_use>0?'（已被 '+a.in_use+' 个 Agent 使用）':''),disabled:!ok};});
   hostedFill('hostedAccount',items,!llm?'请先选择 LLM':(rows.length?'请选择账号':'（该 LLM 暂无可用团队账号）'));
 }
 async function refreshHostedOptions(){
