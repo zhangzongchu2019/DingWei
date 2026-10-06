@@ -489,9 +489,9 @@ func scanAccount(sc interface{ Scan(...any) error }, a *Account, withInUse bool)
 // CreateAccount 登记一行（归属 a.OwnerLC）。同一属主内同名 ⇒ ErrAccountNameTaken（唯一索引 g4_account_pool_owner_name）。
 func (s *Store) CreateAccount(ctx context.Context, a Account, secretEnc []byte, by string) error {
 	_, err := s.pool.Exec(ctx, htx(), `
-INSERT INTO g4_account_pool (id, name, kind, cli, llm, secret_enc, key_version, last4, created_by, owner_lc)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-		a.ID, a.Name, a.Kind, a.CLI, a.LLM, secretEnc, a.KeyVersion, a.Last4, by, a.OwnerLC)
+INSERT INTO g4_account_pool (id, name, kind, cli, llm, secret_enc, key_version, last4, created_by, owner_lc, email)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+		a.ID, a.Name, a.Kind, a.CLI, a.LLM, secretEnc, a.KeyVersion, a.Last4, by, a.OwnerLC, a.Email)
 	if err != nil && isUniqueViolation(err, "g4_account_pool_owner_name") {
 		return ErrAccountNameTaken
 	}
@@ -840,4 +840,17 @@ func (s *Store) AddAudit(ctx context.Context, actor, action, target string, deta
 INSERT INTO g4_audit (actor, action, target, detail) VALUES ($1,$2,$3,$4)`,
 		actor, action, target, detail)
 	return err
+}
+
+// OwnedAccountNameTaken 本人名下是否已有该名字（账号登录发起时预查，免得用户在浏览器登完才被拒）。
+func (s *Store) OwnedAccountNameTaken(ctx context.Context, ownerLC, name string) (bool, error) {
+	var n int
+	row, err := s.qrow(ctx, `SELECT count(*) FROM g4_account_pool WHERE owner_lc=$1 AND name=$2`, ownerLC, name)
+	if err != nil {
+		return false, err
+	}
+	if err := row.Scan(&n); err != nil {
+		return false, err
+	}
+	return n > 0, nil
 }

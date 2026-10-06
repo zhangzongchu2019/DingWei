@@ -50,6 +50,8 @@ var loginStartWait = 30 * time.Second
 
 type loginSession struct {
 	url, code string
+	startErr  error
+	ready     chan struct{} // 启动阶段结束（拿到链接与码或失败）即关闭；重放据此等待，不回空链接
 	cancel    context.CancelFunc
 	done      chan struct{}
 }
@@ -136,24 +138,40 @@ func (l *loginOps) start(ctx context.Context, params json.RawMessage) (json.RawM
 	}
 
 	l.mu.Lock()
-	if s, ok := l.sessions[p.LoginID]; ok { // 重放：返回现状，不起第二个
+	if s, ok := l.sessions[p.LoginID]; ok { // 重放：返回现状，不起第二个；仍在启动中 ⇒ 等启动结束（不回空链接与码）
 		l.mu.Unlock()
-		return loginStartResult(s.url, s.code)
+		select {
+		case <-s.ready:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+		l.mu.Lock()
+		url, code, serr := s.url, s.code, s.startErr
+		l.mu.Unlock()
+		if serr != nil {
+			return nil, serr
+		}
+		return loginStartResult(url, code)
 	}
 	if len(l.sessions) >= loginPerNodeMax {
 		l.mu.Unlock()
 		return nil, ErrLoginBusy
 	}
-	sess := &loginSession{done: make(chan struct{})}
+	sess := &loginSession{done: make(chan struct{}), ready: make(chan struct{})}
 	l.sessions[p.LoginID] = sess
 	l.mu.Unlock()
 
 	url, code, err := l.launch(ctx, p.LoginID, p.Image, p.UploadURL, sess)
 	if err != nil {
+		l.mu.Lock()
+		sess.startErr = err
+		l.mu.Unlock()
+		close(sess.ready)
 		l.forget(p.LoginID)
 		l.cleanup(context.Background(), p.LoginID)
 		return nil, err
 	}
+	close(sess.ready)
 	return loginStartResult(url, code)
 }
 
@@ -291,7 +309,7 @@ func (l *loginOps) finish(ctx context.Context, id, cid, uploadURL string, stream
 	case code != 0:
 		outcome["reason"] = fmt.Sprintf("login_exit_%d", code)
 	default:
-		cred, rerr := readLoginCredential(filepath.Join(l.dir(id), ".codex", "auth.json"))
+		cred, rerr := readLoginCredential(l.dir(id))
 		if rerr != nil {
 			outcome["reason"] = rerr.Error()
 		} else {
@@ -303,16 +321,28 @@ func (l *loginOps) finish(ctx context.Context, id, cid, uploadURL string, stream
 	}
 }
 
-// readLoginCredential 只认常规文件（不跟随链接）、限长、须为 JSON。错误文本不含内容。
-func readLoginCredential(path string) (string, error) {
-	fi, err := os.Lstat(path)
+// readLoginCredential 读 <dir>/.codex/auth.json：.codex 与 auth.json 都不跟随链接（容器内进程可写 .codex——同账号包
+// clearAppliedMarker 口径：O_NOFOLLOW|O_DIRECTORY 打开目录，再 openat O_NOFOLLOW 读文件）；只认常规文件、限长、须 JSON。错误不含内容。
+func readLoginCredential(dir string) (string, error) {
+	dfd, err := syscall.Open(filepath.Join(dir, ".codex"), syscall.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
+	if err != nil {
+		return "", errors.New("credential_missing")
+	}
+	defer syscall.Close(dfd)
+	fd, err := syscall.Openat(dfd, "auth.json", syscall.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
+	if err != nil {
+		return "", errors.New("credential_missing")
+	}
+	f := os.NewFile(uintptr(fd), "auth.json")
+	defer f.Close()
+	fi, err := f.Stat()
 	if err != nil || !fi.Mode().IsRegular() {
 		return "", errors.New("credential_missing")
 	}
 	if fi.Size() == 0 || fi.Size() > loginMaxCredSize {
 		return "", errors.New("credential_size")
 	}
-	raw, err := os.ReadFile(path)
+	raw, err := io.ReadAll(io.LimitReader(f, loginMaxCredSize+1))
 	if err != nil {
 		return "", errors.New("credential_unreadable")
 	}

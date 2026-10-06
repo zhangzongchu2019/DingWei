@@ -399,26 +399,69 @@ func TestLoginCleanupLeftovers(t *testing.T) {
 	}
 }
 
-// L10：凭证文件只认常规文件、须 JSON、限长；错误不含内容。
+// L10：凭证读取——.codex 与 auth.json 都不跟随链接（目标处文件不读）、只认常规文件、须 JSON、限长；错误不含内容。
 func TestReadLoginCredentialGuards(t *testing.T) {
-	d := t.TempDir()
-	good := filepath.Join(d, "good")
-	os.WriteFile(good, []byte(lfCred), 0o600)
+	mk := func(t *testing.T) string {
+		d := t.TempDir()
+		os.Mkdir(filepath.Join(d, ".codex"), 0o700)
+		return d
+	}
+	good := mk(t)
+	os.WriteFile(filepath.Join(good, ".codex", "auth.json"), []byte(lfCred), 0o600)
 	if s, err := readLoginCredential(good); err != nil || s != lfCred {
 		t.Fatalf("good: %v", err)
 	}
-	link := filepath.Join(d, "link")
-	os.Symlink(good, link)
-	bad := filepath.Join(d, "bad")
-	os.WriteFile(bad, []byte("NOT-JSON-MARKER"), 0o600)
-	big := filepath.Join(d, "big")
-	os.WriteFile(big, bytes.Repeat([]byte("a"), loginMaxCredSize+1), 0o600)
-	for p, want := range map[string]string{link: "credential_missing", bad: "credential_not_json", big: "credential_size", filepath.Join(d, "none"): "credential_missing"} {
-		_, err := readLoginCredential(p)
-		if err == nil || err.Error() != want || strings.Contains(err.Error(), "MARKER") {
-			t.Fatalf("%s: 得 %v 期望 %s", filepath.Base(p), err, want)
+	outside := t.TempDir()
+	os.WriteFile(filepath.Join(outside, "auth.json"), []byte(`{"host":"HOST-FILE-MARKER"}`), 0o600)
+	dirLink := t.TempDir()
+	os.Symlink(outside, filepath.Join(dirLink, ".codex")) // .codex 本身是链接
+	fileLink := mk(t)
+	os.Symlink(filepath.Join(outside, "auth.json"), filepath.Join(fileLink, ".codex", "auth.json")) // auth.json 是链接
+	bad := mk(t)
+	os.WriteFile(filepath.Join(bad, ".codex", "auth.json"), []byte("NOT-JSON-MARKER"), 0o600)
+	big := mk(t)
+	os.WriteFile(filepath.Join(big, ".codex", "auth.json"), bytes.Repeat([]byte("a"), loginMaxCredSize+1), 0o600)
+	for name, c := range map[string]struct{ dir, want string }{
+		"codex_dir_symlink": {dirLink, "credential_missing"}, "auth_symlink": {fileLink, "credential_missing"},
+		"not_json": {bad, "credential_not_json"}, "too_big": {big, "credential_size"}, "absent": {mk(t), "credential_missing"},
+	} {
+		got, err := readLoginCredential(c.dir)
+		if err == nil || err.Error() != c.want || strings.Contains(err.Error(), "MARKER") || strings.Contains(got, "HOST-FILE") {
+			t.Fatalf("%s: 得 %q %v 期望 %s", name, got, err, c.want)
 		}
 	}
+}
+
+// L2b：同 login_id 的重放落在首次还在启动期间 ⇒ 等启动结束，返回同一链接与码（不回空）；只起一个容器。
+func TestLoginReplayDuringStartupWaits(t *testing.T) {
+	f := newLFEngine(t, lfOutput)
+	h := newLFHub(t)
+	l := mkLoginOps(t, f, h)
+	f.onStart = func() { time.Sleep(200 * time.Millisecond) }
+	type res struct {
+		raw json.RawMessage
+		err error
+	}
+	ch := make(chan res, 2)
+	for i := 0; i < 2; i++ {
+		go func() {
+			raw, err := l.start(context.Background(), lfParams(l, lfID))
+			ch <- res{raw, err}
+		}()
+		time.Sleep(50 * time.Millisecond)
+	}
+	for i := 0; i < 2; i++ {
+		r := <-ch
+		var m map[string]string
+		json.Unmarshal(r.raw, &m)
+		if r.err != nil || m["url"] != lfURL || m["user_code"] != lfCode {
+			t.Fatalf("重放应等启动结束并得同一链接与码: %v %v", m, r.err)
+		}
+	}
+	if n := f.count("POST /containers/create"); n != 1 {
+		t.Fatalf("只应起一个容器: %d", n)
+	}
+	f.letExit()
 }
 
 // 帧解复用：stdout／stderr 两路帧合并、长度精确。

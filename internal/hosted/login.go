@@ -135,7 +135,15 @@ func (l *LoginService) Start(ctx context.Context, owner, llm, email, reloginID s
 	if llm == "" || !l.comboOK(loginCLI, llm, loginCredKind) {
 		return LoginView{}, ErrComboIncompatible
 	}
-	if !target.Valid {
+	if !target.Valid { // 新登记：发起时即预查入池会被拒的条件（名字＝邮箱：长度与本人内重名、账号数上限），免得用户在浏览器登完才失败
+		if len(email) > AccountNameMaxLen {
+			return LoginView{}, ErrEmailInvalid
+		}
+		if taken, err := l.st.OwnedAccountNameTaken(ctx, owner, email); err != nil {
+			return LoginView{}, err
+		} else if taken {
+			return LoginView{}, ErrAccountNameTaken
+		}
 		if n, err := l.st.CountOwnedAccounts(ctx, owner); err == nil && n >= MaxAccountsPerOwner {
 			return LoginView{}, ErrAccountLimit
 		}
@@ -149,7 +157,7 @@ func (l *LoginService) Start(ctx context.Context, owner, llm, email, reloginID s
 	if rows, err := l.st.activeLogins(ctx); err == nil {
 		for _, r := range rows {
 			if r.OwnerLC == owner && !now.Before(r.ExpiresAt) {
-				l.expire(ctx, r)
+				l.expireSerialized(ctx, r.ID)
 			}
 		}
 	}
@@ -173,11 +181,14 @@ func (l *LoginService) Start(ctx context.Context, owner, llm, email, reloginID s
 
 	params, _ := json.Marshal(map[string]string{"login_id": id, "image": image, "upload_url": l.origin + "/api/node/login/" + id})
 	res, err := l.gw.Send(ctx, node, NodeCommand{Type: "login_start", Params: params})
+	// 命令已发出之后的任何失败（含网关超时、请求取消）：节点上可能已起容器 ⇒ 一律通知节点撤（幂等），不占并发名额到 15 分钟
 	switch {
 	case err != nil:
 		l.fail(ctx, id, owner, "node_offline")
+		l.cancelOnNode(node, id)
 		return LoginView{}, ErrNodeOffline
 	case !res.OK:
+		l.cancelOnNode(node, id)
 		switch {
 		case strings.HasPrefix(res.Error, "unknown_command_type"):
 			l.fail(ctx, id, owner, "node_unsupported")
@@ -200,6 +211,8 @@ func (l *LoginService) Start(ctx context.Context, owner, llm, email, reloginID s
 		return LoginView{}, ErrLoginStartFailed
 	}
 	if err := l.st.setLoginWaiting(ctx, id, out.URL, out.UserCode); err != nil {
+		l.fail(ctx, id, owner, "login_start_failed")
+		l.cancelOnNode(node, id)
 		return LoginView{}, err
 	}
 	return l.Get(ctx, owner, id)
@@ -240,7 +253,7 @@ func (l *LoginService) Get(ctx context.Context, owner, id string) (LoginView, er
 		return LoginView{}, ErrNotFound
 	}
 	if loginActive(r.State) && !l.now().Before(r.ExpiresAt) {
-		l.expire(ctx, r)
+		l.expireSerialized(ctx, id)
 		r, _ = l.st.getLogin(ctx, id)
 	}
 	return r.LoginView, nil
@@ -252,7 +265,10 @@ func (l *LoginService) Cancel(ctx context.Context, owner, id string) (LoginView,
 	if err != nil || r.OwnerLC != owner {
 		return LoginView{}, ErrNotFound
 	}
-	if moved, _ := l.st.finishLogin(ctx, id, "cancelled", "cancelled", ""); moved {
+	l.mu.Lock() // 与上传收尾（Complete）串行：不出现「已入池却显示已取消」
+	moved, _ := l.st.finishLogin(ctx, id, "cancelled", "cancelled", "")
+	l.mu.Unlock()
+	if moved {
 		_ = l.st.AddAudit(ctx, owner, "account.login_cancel", id, nil)
 		l.cancelOnNode(r.NodeID, id)
 	}
@@ -342,11 +358,8 @@ func (l *LoginService) intoPool(ctx context.Context, r loginRow, cred string) (s
 		}
 		return r.TargetAccount.String, note, nil
 	}
-	a, err := l.pool.RegisterOwned(ctx, r.OwnerLC, r.Email, loginCredKind, loginCLI, r.LLM, cred)
+	a, err := l.pool.RegisterOwnedLogin(ctx, r.OwnerLC, r.Email, r.LLM, cred) // 邮箱随同一条 INSERT 落库
 	if err != nil {
-		return "", "", err
-	}
-	if err := l.st.setAccountEmail(ctx, a.ID, r.Email); err != nil {
 		return "", "", err
 	}
 	return a.ID, note, nil
@@ -402,6 +415,19 @@ func (l *LoginService) fail(ctx context.Context, id, owner, reason string) {
 	}
 }
 
+// expireSerialized 到期收尾与上传收尾（Complete 持 l.mu）串行，并在锁内重读：
+// 上传刚把会话收成 done 的，不会再被清扫改成 expired（复核 tosonnet55tc2k 建议 7）。
+func (l *LoginService) expireSerialized(ctx context.Context, id string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	r, err := l.st.getLogin(ctx, id)
+	if err != nil || !loginActive(r.State) || l.now().Before(r.ExpiresAt) {
+		return
+	}
+	l.expire(ctx, r)
+}
+
+// expire 调用方须持 l.mu（或在 Complete 内）。
 func (l *LoginService) expire(ctx context.Context, r loginRow) {
 	if moved, _ := l.st.finishLogin(ctx, r.ID, "expired", "expired", ""); moved {
 		_ = l.st.AddAudit(ctx, r.OwnerLC, "account.login_expired", r.ID, nil)
@@ -428,7 +454,7 @@ func (l *LoginService) Sweep(ctx context.Context) error {
 	now := l.now()
 	for _, r := range rows {
 		if !now.Before(r.ExpiresAt) {
-			l.expire(ctx, r)
+			l.expireSerialized(ctx, r.ID)
 		}
 	}
 	return nil
@@ -441,7 +467,9 @@ func (l *LoginService) RecoverOnStart(ctx context.Context) error {
 		return err
 	}
 	for _, r := range rows {
+		l.mu.Lock()
 		l.expire(ctx, r)
+		l.mu.Unlock()
 	}
 	return nil
 }
@@ -548,9 +576,4 @@ func (s *Store) activeLogins(ctx context.Context) ([]loginRow, error) {
 		out = append(out, r)
 	}
 	return out, rows.Err()
-}
-
-func (s *Store) setAccountEmail(ctx context.Context, id, email string) error {
-	_, err := s.exec(ctx, `UPDATE g4_account_pool SET email=$2, updated_at=now() WHERE id=$1`, id, email)
-	return err
 }

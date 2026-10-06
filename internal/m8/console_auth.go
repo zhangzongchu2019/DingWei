@@ -954,7 +954,7 @@ async function llmRefresh(){
   var tb=document.getElementById('llmItems');if(!tb)return;
   try{
     var r=await fetch(LLM_API.list,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);
-    var list=await r.json();if(!Array.isArray(list))throw new Error('响应格式无效');
+    var list=await r.json();if(!Array.isArray(list))throw new Error('响应格式无效');window.llmLast=list;
     tb.replaceChildren.apply(tb,list.map(llmRow));
     document.getElementById('llmEmpty').hidden=list.length>0;enrollFeedback('llmStatus','');
   }catch(err){enrollFeedback('llmStatus','加载 LLM 账号失败：'+String(err&&err.message||err));}
@@ -1004,7 +1004,8 @@ async function llmAdd(){
   var ki=document.getElementById('llmAddKey'),key=ki.value.trim();
   if(!key){enrollFeedback('llmFeedback','请填写 API Key');return;}
   var cli=(llmMethods(llm).filter(function(x){return x.value==='api_key';})[0]||{}).cli||'';
-  var res=await llmSend('POST',LLM_API.register,{name:llm+' …'+key.slice(-4),kind:'api_key',cli:cli,llm:llm,secret:key});
+  var n=1,names={};((window.llmLast||[])).forEach(function(a){names[a.name]=1;});while(names[llm+' API Key '+n])n++;   // 名字不含任何密钥内容（管理员看得到名字；复核 tosonnet55tc2k 必改 1）
+  var res=await llmSend('POST',LLM_API.register,{name:llm+' API Key '+n,kind:'api_key',cli:cli,llm:llm,secret:key});
   ki.value='';key='';
   if(!res.ok){enrollFeedback('llmFeedback',llmErr(res));return;}
   enrollFeedback('llmFeedback','已新增');llmRefresh();refreshHostedOptions();

@@ -413,9 +413,7 @@ func TestLoginStartNodeOutcomes(t *testing.T) {
 			if st != "failed" || rs != c.reason || u != "" || uc != "" {
 				t.Fatalf("会话应 failed/%s 且无链接码: %s/%s %q %q", c.reason, st, rs, u, uc)
 			}
-			if c.name == "bad_payload" {
-				waitTypes(t, r.gw, "login_cancel")
-			}
+			waitTypes(t, r.gw, "login_cancel") // 命令发出后的任何失败（含网关超时）都通知节点撤（复核必改 2）
 		})
 	}
 }
@@ -535,5 +533,51 @@ func TestLoginPerNodeCapBindsWithOneNode(t *testing.T) {
 	}
 	if _, total, _ := r.s.activeLoginsByNode(ctx); total != 2 {
 		t.Fatalf("应只有 2 个进行中: %d", total)
+	}
+}
+
+// 复核必改 3：入池会被拒的条件在发起时即拒（用户不必先去浏览器登完）——邮箱超过账号名长度、本人已有同名账号；
+// 邮箱随同一条 INSERT 落库（入池即带 email，不存在「名字＝邮箱、email 为空」的中间态）。
+func TestLoginPrechecksAndEmailInSameInsert(t *testing.T) {
+	r := mkLogin(t)
+	ctx := context.Background()
+	long := strings.Repeat("a", AccountNameMaxLen-len("@example.com")+1) + "@example.com"
+	if _, err := r.l.Start(ctx, "zzc", "gpt", long, ""); err != ErrEmailInvalid {
+		t.Fatalf("超过账号名长度的邮箱应在发起时拒, 得 %v", err)
+	}
+	if _, err := r.svc.RegisterOwned(ctx, "zzc", "dup@example.com", "token_file", "codex", "gpt", `{"t":1}`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.l.Start(ctx, "zzc", "gpt", "dup@example.com", ""); err != ErrAccountNameTaken {
+		t.Fatalf("同名应在发起时拒, 得 %v", err)
+	}
+	if len(r.gw.types()) != 0 {
+		t.Fatalf("预查不过不得起节点容器: %v", r.gw.types())
+	}
+	a, err := r.svc.RegisterOwnedLogin(ctx, "zzc", "one@example.com", "gpt", authJSON("one@example.com"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var email string
+	row, _ := r.s.qrow(ctx, `SELECT email FROM g4_account_pool WHERE id=$1`, a.ID)
+	row.Scan(&email)
+	if email != "one@example.com" || a.Name != "one@example.com" || a.Kind != "token_file" || a.CLI != "codex" {
+		t.Fatalf("登录入池须一条 INSERT 带 email: %q %+v", email, a)
+	}
+}
+
+// 复核建议 7：上传已收成 done 的会话，之后到期清扫与取消都不得改动它。
+func TestLoginDoneNotOverwrittenBySweepOrCancel(t *testing.T) {
+	r := mkLogin(t)
+	ctx := context.Background()
+	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
+	if err := r.l.Complete(ctx, v.ID, uploadOK(authJSON("me@example.com"))); err != nil {
+		t.Fatal(err)
+	}
+	r.advance(LoginTTL + time.Minute)
+	r.l.Sweep(ctx)
+	r.l.Cancel(ctx, "zzc", v.ID)
+	if row := r.row(t, v.ID); row.State != "done" || row.AccountID == "" {
+		t.Fatalf("done 不得被清扫或取消改写: %+v", row)
 	}
 }

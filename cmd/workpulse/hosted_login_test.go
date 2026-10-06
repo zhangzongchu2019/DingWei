@@ -165,3 +165,19 @@ func TestLoginHTTPGuards(t *testing.T) {
 		t.Fatalf("超长后会话应 failed/too_large: %s", raw)
 	}
 }
+
+// 复核必改 1：页面登记 API Key 的名字不含密钥内容；管理员列表里不出现任何 Key 末四位。
+func TestAdminListCarriesNoKeyTail(t *testing.T) {
+	r := mkLoginRig(t)
+	// 路由桩的组合表只有 token_file；api_key 走服务层登记（名字照页面口径，不含密钥内容）
+	if _, err := r.pool.RegisterOwned(context.Background(), "zzc", "gpt API Key 1", "api_key", "codex", "gpt", "sk-ADMINVIEW-TAIL-7q7q"); err != nil {
+		t.Fatal(err)
+	}
+	_, adminRaw := r.req("admin", "GET", "/api/console/admin/llm-accounts", "", "")
+	if strings.Contains(adminRaw, "7q7q") || strings.Contains(adminRaw, "ADMINVIEW") {
+		t.Fatalf("管理视图出现了密钥片段: %s", adminRaw)
+	}
+	if !strings.Contains(adminRaw, "gpt API Key 1") {
+		t.Fatalf("管理视图应见账号名: %s", adminRaw)
+	}
+}

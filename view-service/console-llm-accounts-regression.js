@@ -28,6 +28,7 @@ const M = {
   'no-poll': () => mutate('llmLoginTimer=setInterval(llmPollLogin,3000);', ''),
   'login-err-raw': () => mutate("login_in_progress:'你已有一个进行中的账号登录，请先完成或取消',", ''),
   'apikey-offered-for-login-only': () => mutate("if(c.cred_kind==='api_key'&&", "if(false&&c.cred_kind==='api_key'&&"),
+  'name-carries-key-tail': () => mutate("name:llm+' API Key '+n,", "name:llm+' …'+key.slice(-4),"),
   'rekey-no-inuse-note': () => mutate("(n>0?'；在跑的 '+n+' 个 Agent 须逐个「刷新凭据」才生效':'')", "''"),
 };
 if (mutation && !M[mutation]) { console.error(`MUTATION-UNKNOWN: ${mutation}`); process.exit(3); }
@@ -175,14 +176,15 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       loginStartErr = '';
     });
 
-    await test('API key: body kind=api_key with the combo CLI and a name ending in the last four; the input is cleared and the key is nowhere in the page', async () => {
+    await test('API key: body kind=api_key with the combo CLI and a name with no key material; the input is cleared and the key is nowhere in the page', async () => {
       await page.locator('#llmAddLlm').selectOption('openai'); await page.locator('#llmAddMethod').selectOption('api_key');
       await type('#llmAddKey', KEY);
       const n = writes.length; await page.locator('#llmAddBtn').click();
       await page.locator('#llmFeedback').filter({ hasText: '已新增' }).waitFor();
       const w = writes[n].b;
       assert.strictEqual(w.kind, 'api_key'); assert.strictEqual(w.cli, 'codex'); assert.strictEqual(w.llm, 'openai'); assert.strictEqual(w.secret, KEY);
-      assert.ok(w.name.endsWith('9z8y') && !w.name.includes('LEAKMARK'), w.name);
+      assert.strictEqual(w.name, 'openai API Key 1', 'the account name must carry no key material (admins can see names)');
+      assert.ok(!w.name.includes('9z8y') && !w.name.includes('LEAKMARK'), w.name);
       assert.strictEqual(await page.locator('#llmAddKey').inputValue(), '');
       assert.ok(!(await page.content()).includes('LEAKMARK'), 'key leaked into the DOM');
     });
