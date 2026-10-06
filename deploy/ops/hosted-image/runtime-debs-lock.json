@@ -1,0 +1,20 @@
+[
+  {
+    "file": "libproc2-0_2%3a4.0.2-3_amd64.deb",
+    "sha256": "e82ba5d01929eafb8b9954606a3c38b0332a987c2b3432388b4ee7365e54deae",
+    "package_fields": [
+      "Package: libproc2-0",
+      "Version: 2:4.0.2-3",
+      "Architecture: amd64"
+    ]
+  },
+  {
+    "file": "procps_2%3a4.0.2-3_amd64.deb",
+    "sha256": "d9d0e75779cb79af869181f17b93c5c263a2b89cac6a0193c436160a4483ddc1",
+    "package_fields": [
+      "Package: procps",
+      "Version: 2:4.0.2-3",
+      "Architecture: amd64"
+    ]
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "file": "libpcre2-8-0_10.42-1+deb12u2_amd64.deb",
+    "sha256": "d2f7edfcc7689b9e0761c2742cc824ac86a20768bc5e8057818dc6875291fe76",
+    "package_fields": [
+      "Package: libpcre2-8-0",
+      "Version: 10.42-1+deb12u2",
+      "Architecture: amd64"
+    ],
+    "source": "http://deb.debian.org/debian-security",
+    "suite": "bookworm-security",
+    "component": "main"
+  }
+]
