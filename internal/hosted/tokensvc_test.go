@@ -35,13 +35,13 @@ func TestTokenWriteBackAndUnbindPrep(t *testing.T) {
 	}
 	var n int
 	if err := func() error {
-		row, err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action='account.token_writeback' AND target=$1`, a.ID)
+		row, err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action='account.token_writeback' AND target=$1 AND detail->>'agent'='ag_1'`, a.ID)
 		if err != nil {
 			return err
 		}
 		return row.Scan(&n)
 	}(); err != nil || n != 1 {
-		t.Fatalf("回写审计应恰好一条: n=%d err=%v", n, err)
+		t.Fatalf("回写审计应恰好一条且带上送席 agent（共用账号「最后上送者胜」须可溯到席，R9）: n=%d err=%v", n, err)
 	}
 
 	// 空内容不回写（席位侧异常防护）
