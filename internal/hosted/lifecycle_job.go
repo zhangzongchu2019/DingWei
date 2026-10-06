@@ -114,6 +114,10 @@ func (l *Lifecycle) validateJob(ctx context.Context, req LifecycleJobRequest) er
 		if seat.State != "online" && seat.State != "error" {
 			return ErrInvalidState
 		}
+	case "refresh_cred":
+		if seat.State != "online" && seat.State != "error" {
+			return ErrInvalidState
+		}
 	case "disable":
 		if !req.Confirm {
 			return ErrConfirmRequired
@@ -153,6 +157,8 @@ func (l *Lifecycle) RunJob(ctx context.Context, jobID string) {
 		err = l.Upgrade(ctx, job.AgentID, job.CreatedBy, args.Version, false)
 	case "restart":
 		err = l.Restart(ctx, job.AgentID, job.CreatedBy, false)
+	case "refresh_cred":
+		err = l.RefreshCred(ctx, job.AgentID, job.CreatedBy)
 	case "disable":
 		err = l.Disable(ctx, job.AgentID, job.CreatedBy, false, args.Confirm)
 	case "enable":
@@ -165,7 +171,7 @@ func (l *Lifecycle) RunJob(ctx context.Context, jobID string) {
 	stage, reason := "completed", ""
 	if err != nil {
 		stage, reason = "failed", lifecycleJobReason(err)
-	} else if job.Op == "restart" || job.Op == "enable" {
+	} else if waitsForOnline(job.Op) {
 		// These operations only become complete when the Agent reconnects.
 		// Their state machine deliberately leaves the seat in starting until
 		// MarkOnline (or the timeout sweeper) resolves it.
@@ -173,6 +179,9 @@ func (l *Lifecycle) RunJob(ctx context.Context, jobID string) {
 	}
 	_, _ = l.st.exec(context.WithoutCancel(ctx), `UPDATE g4_lifecycle_job SET stage=$2,reason=$3,updated_at=now() WHERE id=$1`, jobID, stage, reason)
 }
+
+// waitsForOnline 结果要等 Agent 连回（MarkOnline）才算完成的 op：重启、启用、刷新凭据。
+func waitsForOnline(op string) bool { return op == "restart" || op == "enable" || op == "refresh_cred" }
 
 func lifecycleJobReason(err error) string {
 	for _, item := range []struct {
@@ -183,6 +192,8 @@ func lifecycleJobReason(err error) string {
 		{ErrStartFailed, "start_failed"}, {ErrRolledBack, "upgrade_failed_rolled_back"},
 		{ErrBackupFailed, "backup_failed"}, {ErrParams, "params_invalid"},
 		{ErrNotOwner, "not_owner"}, {ErrConfirmRequired, "confirm_required"},
+		{ErrNodeUnsupported, "node_unsupported"}, {ErrCredInjectFailed, "credential_inject_failed"},
+		{ErrAccountNotAllowed, "account_not_allowed"},
 	} {
 		if errors.Is(err, item.err) {
 			return item.code
@@ -211,7 +222,7 @@ func (l *Lifecycle) JobProgressFor(ctx context.Context, id, actor string) (JobVi
 	if actor == "" || actor != j.CreatedBy {
 		return JobView{}, ErrNotOwner
 	}
-	if j.Stage == "running" && (j.Op == "restart" || j.Op == "enable") {
+	if j.Stage == "running" && waitsForOnline(j.Op) {
 		if seat, seatErr := l.st.GetSeat(ctx, j.AgentID); seatErr == nil {
 			switch seat.State {
 			case "online":
@@ -268,7 +279,7 @@ func (l *Lifecycle) RecoverJobs(ctx context.Context) error {
 	rows.Close()
 	for _, j := range jobs {
 		stage, reason := "failed", "internal_error"
-		if j.op == "restart" || j.op == "enable" {
+		if waitsForOnline(j.op) {
 			if seat, seatErr := l.st.GetSeat(ctx, j.agentID); seatErr == nil && seat.State == "online" {
 				stage, reason = "completed", ""
 			}

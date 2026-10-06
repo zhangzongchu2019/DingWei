@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -30,6 +31,9 @@ var (
 	ErrRolledBack      = errors.New("upgrade_failed_rolled_back")
 	ErrStartFailed     = errors.New("start_failed")  // 节点在线、但报告起容器失败（契约第四节「进度/操作」）
 	ErrBackupFailed    = errors.New("backup_failed") // 销毁前备份不可用（组长裁定 lead-g4-joint-run-1 第 4 条）
+	// 刷新凭据（0.2.1.101）：节点未升级（不认识 refresh_cred_seat）／节点写凭据件失败——两者均未重启，席位回原状态。
+	ErrNodeUnsupported  = errors.New("node_unsupported")
+	ErrCredInjectFailed = errors.New("credential_inject_failed")
 	// invalid_state 复用包级 ErrInvalidState（store.go）。
 )
 
@@ -215,6 +219,63 @@ func (l *Lifecycle) Restart(ctx context.Context, agentID, actorLC string, isAdmi
 	return nil
 }
 
+// RefreshCred 刷新凭据（R-V2-ACCOUNT-REFRESH-CRED）：解密本席所引用账号的**池内副本**（属主最近一次登记／换密的那份，
+// 不是容器内 Codex 续期后的件）→ 节点原子覆写 /work/account-credential → 重启本席。
+// 🔴 对 token_file：即使账号密钥未改，也会以池内副本覆盖本席登录态（容器内续期后的令牌被换回）。
+// 只限席位属主本人（isAdmin 不豁免——管理员不能代刷）；席位须 online 或 error；账号须同属主、未停用。
+// 节点回报三分：unknown_command_type（旧节点）／credential_write_failed —— 未重启，席位回原状态；
+// 其余失败（restart_failed 等）—— 凭据件可能已换、容器状态未知，记 error/start_failed。成功则停 starting 等 MarkOnline。
+func (l *Lifecycle) RefreshCred(ctx context.Context, agentID, actorLC string) error {
+	seat, err := l.guard(ctx, agentID, actorLC, false)
+	if err != nil {
+		return err
+	}
+	if seat.State != "online" && seat.State != "error" {
+		return ErrInvalidState
+	}
+	if !seat.AccountRef.Valid {
+		return ErrAccountNotAllowed
+	}
+	acct, err := l.st.GetAccount(ctx, seat.AccountRef.String)
+	if err != nil || acct.State == "disabled" || acct.OwnerLC == "" || acct.OwnerLC != seat.CreatedBy {
+		return ErrAccountNotAllowed
+	}
+	prevState, prevDetail := seat.State, seat.StateDetail
+	back := func(kind string) {
+		_, _ = l.st.TransitionSeatState(ctx, agentID, "starting", prevState, prevDetail, kind, json.RawMessage(`{"op":"refresh_cred"}`))
+	}
+	// 先置 starting（detail=refresh）再发命令（同 Restart：防 MarkOnline 早到丢失，lead-enable-restart-race ①）。
+	if err := l.st.SetSeatState(ctx, agentID, "starting", seatStartingRefresh, "refresh_cred", nil); err != nil {
+		return err
+	}
+	cred, err := l.pool.decryptForSeat(ctx, actorLC, seat.AccountRef.String, agentID, "refresh")
+	if err != nil {
+		back("fail")
+		return ErrAccountNotAllowed
+	}
+	params, _ := json.Marshal(map[string]any{"seat_id": agentID, "credential_file": map[string]string{"content": cred}})
+	cred = ""
+	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "refresh_cred_seat", Params: params})
+	if err != nil {
+		back("node_offline")
+		return ErrNodeOffline
+	}
+	if !res.OK {
+		switch {
+		case strings.HasPrefix(res.Error, "unknown_command_type"):
+			back("fail")
+			return ErrNodeUnsupported
+		case strings.HasPrefix(res.Error, "credential_write_failed"):
+			back("fail")
+			return ErrCredInjectFailed
+		default:
+			_, _ = l.st.TransitionSeatState(ctx, agentID, "starting", "error", "start_failed", "fail", json.RawMessage(`{"op":"refresh_cred"}`))
+			return ErrStartFailed
+		}
+	}
+	return nil
+}
+
 // Disable 停用：confirm 必带（D8）；先 Suspend 凭据（4401 断开）再停容器。
 func (l *Lifecycle) Disable(ctx context.Context, agentID, actorLC string, isAdmin, confirm bool) error {
 	if !confirm {
@@ -333,9 +394,9 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 		_ = l.st.SetSeatState(ctx, agentID, "error", "node_offline", "fail", json.RawMessage(`{"after":"retired"}`))
 		return ErrNodeOffline
 	}
-	// ④ 账号回池（组长定：自动回池＋审计）
+	// ④ 释放本席对账号的引用（0.2.1.101：只动本席，账号仍可被本人其他席位共用；审计照记）
 	if seat.AccountRef.Valid {
-		if err := l.pool.Unbind(ctx, actorLC, true, seat.AccountRef.String); err != nil {
+		if err := l.pool.Release(ctx, actorLC, agentID); err != nil {
 			return err
 		}
 	}
@@ -356,7 +417,7 @@ func (l *Lifecycle) destroyOffline(ctx context.Context, seat Seat, actorLC strin
 	_ = l.st.AddAudit(ctx, actorLC, "seat.destroy_degraded", seat.AgentID,
 		json.RawMessage(`{"node":`+jsonStr(seat.NodeID)+`,"reason":"node_offline","reconcile":"pending","backup":"pending"}`))
 	if seat.AccountRef.Valid {
-		if err := l.pool.Unbind(ctx, actorLC, true, seat.AccountRef.String); err != nil {
+		if err := l.pool.Release(ctx, actorLC, seat.AgentID); err != nil {
 			return err
 		}
 	}

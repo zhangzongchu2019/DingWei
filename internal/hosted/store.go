@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"time"
 )
@@ -28,7 +29,13 @@ func htx() repo.AccessCtx {
 	return repo.PendingCtx("hosted", "SP7b", "hosted 域双轴化占位——user_lc 是否算租户列待 SP7b 定（已问 qwen38maxkhovvob4）")
 }
 
-type Store struct{ pool *repo.Pool }
+type Store struct {
+	pool *repo.Pool
+	// beforeDisableCount 只供测试：停用事务已持 FOR UPDATE、尚未数引用时调用（确定性造「建席／停用」交错）。
+	beforeDisableCount func()
+	// afterSeatAccountLock 只供测试：建席事务已持账号行 FOR SHARE、尚未插席位行时调用。
+	afterSeatAccountLock func()
+}
 
 func NewStore(pool *repo.Pool) *Store { return &Store{pool: pool} }
 
@@ -304,11 +311,36 @@ func (s *Store) CreateSeat(ctx context.Context, st Seat) error {
 	if _, ok := PlanByID(st.Plan); !ok {
 		return fmt.Errorf("%w: plan %q", ErrInvalidState, st.Plan)
 	}
-	_, err := s.pool.Exec(ctx, htx(), `
+	const ins = `
 INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, account_ref, plan, state, image_ref, model, created_by)
-VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9,$10)`,
-		st.AgentID, st.NodeID, st.CLI, st.LLM, st.CredKind, st.AccountRef, st.Plan, st.ImageRef, st.Model, st.CreatedBy)
-	return err
+VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9,$10)`
+	if !st.AccountRef.Valid {
+		_, err := s.pool.Exec(ctx, htx(), ins,
+			st.AgentID, st.NodeID, st.CLI, st.LLM, st.CredKind, st.AccountRef, st.Plan, st.ImageRef, st.Model, st.CreatedBy)
+		return err
+	}
+	// 带账号：同一事务内先 FOR SHARE 锁账号行并校验「未停用、属主＝建席人」，再插席位行——
+	// 与停用（SetAccountState 的 FOR UPDATE＋另句数引用）串行化，不会出现「已停用账号被新席引用」。
+	// 0 行／不合 ⇒ ErrAccountNotAllowed；席位主键冲突等存储错误原样返回（不映射成账号错误）。
+	return s.pool.InTx(ctx, htx(), nil, func(tx repo.Tx) error {
+		var state, owner string
+		err := tx.QueryRow(ctx, `SELECT state, owner_lc FROM g4_account_pool WHERE id=$1 FOR SHARE`, st.AccountRef.String).Scan(&state, &owner)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrAccountNotAllowed
+		}
+		if err != nil {
+			return err
+		}
+		if state == "disabled" || owner == "" || owner != st.CreatedBy {
+			return ErrAccountNotAllowed
+		}
+		if s.afterSeatAccountLock != nil {
+			s.afterSeatAccountLock()
+		}
+		_, err = tx.Exec(ctx, ins,
+			st.AgentID, st.NodeID, st.CLI, st.LLM, st.CredKind, st.AccountRef, st.Plan, st.ImageRef, st.Model, st.CreatedBy)
+		return err
+	})
 }
 
 func (s *Store) GetSeat(ctx context.Context, agentID string) (Seat, error) {
@@ -413,46 +445,106 @@ INSERT INTO g4_seat_event (agent_id, kind, detail) VALUES ($1,'online','{"after"
 	return moved, err
 }
 
-// ---------- 团队账号池 ----------
+// ---------- LLM 账号池（0.2.1.101：按人隔离＋本人共用，R-V2-ACCOUNT-PER-USER） ----------
+//
+// 归属：owner_lc（＝identity.User.UserIDLC()）。可见、可选、可改、可停用一律按 owner_lc 判；
+// 管理用户只能看元数据、停用、启用（不见密钥、不能换密）。
+// 占用：以 g4_hosted_seat.account_ref 为准（同一账号可被本人多个席位共用，不拦——业主 10-06 裁定）；
+// g4_account_pool.state 只剩 available／disabled 两义（存量 'bound' 视同可用），bound_agent_id 不再写。
+
+// MaxAccountsPerOwner 每人账号数上限（R-V2-ACCOUNT-PLAN-FINAL-ASKS：20；停用的也计入）。
+const MaxAccountsPerOwner = 20
+
+var (
+	ErrAccountNameTaken = errors.New("hosted: account name taken") // 本人内同名
+	ErrAccountLimit     = errors.New("hosted: account limit reached")
+	ErrAccountInUse     = errors.New("hosted: account in use") // 停用守卫：仍有未销毁席位引用
+)
 
 type Account struct {
 	ID, Name, Kind, CLI, LLM string
 	KeyVersion               int
 	Last4                    string
 	State                    string
-	BoundAgentID             sql.NullString
+	BoundAgentID             sql.NullString // 历史列，只读
+	OwnerLC                  string
+	InUse                    int       // 未销毁席位对本号的引用数（列表类查询填；GetAccount 不填）
 	CreatedAt                time.Time // 登记时间（token_file 类账号的 console 显示用——无后四位）
 }
 
+// accountInUseSQL 引用计数口径：account_ref 指向本号且席位未销毁（销毁不删行，置 destroyed；
+// 新代码释放时另把 account_ref 置 NULL——两道并用，历史 destroyed 行靠状态过滤）。
+const accountInUseSQL = `(SELECT count(*) FROM g4_hosted_seat s WHERE s.account_ref = p.id AND s.state <> 'destroyed')`
+
+const accountCols = `p.id, p.name, p.kind, p.cli, p.llm, p.key_version, p.last4, p.state, p.bound_agent_id, p.owner_lc, p.created_at`
+
+func scanAccount(sc interface{ Scan(...any) error }, a *Account, withInUse bool) error {
+	if withInUse {
+		return sc.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.OwnerLC, &a.CreatedAt, &a.InUse)
+	}
+	return sc.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.OwnerLC, &a.CreatedAt)
+}
+
+// CreateAccount 登记一行（归属 a.OwnerLC）。同一属主内同名 ⇒ ErrAccountNameTaken（唯一索引 g4_account_pool_owner_name）。
 func (s *Store) CreateAccount(ctx context.Context, a Account, secretEnc []byte, by string) error {
 	_, err := s.pool.Exec(ctx, htx(), `
-INSERT INTO g4_account_pool (id, name, kind, cli, llm, secret_enc, key_version, last4, created_by)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-		a.ID, a.Name, a.Kind, a.CLI, a.LLM, secretEnc, a.KeyVersion, a.Last4, by)
+INSERT INTO g4_account_pool (id, name, kind, cli, llm, secret_enc, key_version, last4, created_by, owner_lc)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+		a.ID, a.Name, a.Kind, a.CLI, a.LLM, secretEnc, a.KeyVersion, a.Last4, by, a.OwnerLC)
+	if err != nil && isUniqueViolation(err, "g4_account_pool_owner_name") {
+		return ErrAccountNameTaken
+	}
 	return err
+}
+
+// isUniqueViolation 按约束名识别唯一冲突（驱动无关：错误文本含约束名）。
+func isUniqueViolation(err error, constraint string) bool {
+	msg := err.Error()
+	return containsAll(msg, "duplicate key", constraint) || containsAll(msg, "23505", constraint)
+}
+
+func containsAll(s string, subs ...string) bool {
+	for _, x := range subs {
+		if !strings.Contains(s, x) {
+			return false
+		}
+	}
+	return true
+}
+
+// CountOwnedAccounts 属主名下账号数（含停用；上限判定用）。
+func (s *Store) CountOwnedAccounts(ctx context.Context, ownerLC string) (int, error) {
+	var n int
+	row, err := s.qrow(ctx, `SELECT count(*) FROM g4_account_pool WHERE owner_lc=$1`, ownerLC)
+	if err != nil {
+		return 0, err
+	}
+	err = row.Scan(&n)
+	return n, err
 }
 
 func (s *Store) GetAccount(ctx context.Context, id string) (Account, error) {
 	var a Account
-	err := func() error {
-
-		row, err := s.qrow(ctx, `
-SELECT id, name, kind, cli, llm, key_version, last4, state, bound_agent_id, created_at FROM g4_account_pool WHERE id=$1`, id)
-
-		if err != nil {
-
-			return err
-
-		}
-
-		return row.Scan(
-			&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.CreatedAt)
-
-	}()
+	row, err := s.qrow(ctx, `SELECT `+accountCols+` FROM g4_account_pool p WHERE p.id=$1`, id)
+	if err == nil {
+		err = scanAccount(row, &a, false)
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return a, ErrNotFound
 	}
 	return a, err
+}
+
+// GetOwnedAccount 只取属主本人的账号；他人或不存在一律 ErrNotFound（不区分，防探测）。
+func (s *Store) GetOwnedAccount(ctx context.Context, ownerLC, id string) (Account, error) {
+	a, err := s.GetAccount(ctx, id)
+	if err != nil {
+		return Account{}, err
+	}
+	if ownerLC == "" || a.OwnerLC != ownerLC {
+		return Account{}, ErrNotFound
+	}
+	return a, nil
 }
 
 // UpdateAccountSecret 换密：新密文与后四位一并更新（key_version 取当前 active——调用方给）。
@@ -469,41 +561,63 @@ UPDATE g4_account_pool SET secret_enc=$2, key_version=$3, last4=$4, updated_at=n
 	return nil
 }
 
-// SetAccountState 停用/恢复 available（disabled 的账号不可选不可绑）。
+// AccountInUse 本号的存活引用数。
+func (s *Store) AccountInUse(ctx context.Context, accountID string) (int, error) {
+	var n int
+	row, err := s.qrow(ctx, `SELECT count(*) FROM g4_hosted_seat WHERE account_ref=$1 AND state <> 'destroyed'`, accountID)
+	if err != nil {
+		return 0, err
+	}
+	err = row.Scan(&n)
+	return n, err
+}
+
+// SetAccountState 停用（disabled）／启用（available）。
+// 停用守卫＝无存活引用；与建席（CreateSeatWithAccount 的 FOR SHARE）串行化：先 FOR UPDATE 锁账号行，
+// 再**另起一条语句**数引用（READ COMMITTED 下新语句取新快照——不能合成一句 UPDATE … WHERE NOT EXISTS，
+// 等锁后的重检不会以新快照重算子查询；复核 tosonnet55tc2k）。
 func (s *Store) SetAccountState(ctx context.Context, accountID, state string) error {
 	switch state {
 	case "available", "disabled":
 	default:
 		return ErrInvalidState
 	}
-	res, err := s.pool.Exec(ctx, htx(), `
-UPDATE g4_account_pool SET state=$2, updated_at=now() WHERE id=$1 AND state <> 'bound'`, accountID, state)
-	if err != nil {
+	return s.pool.InTx(ctx, htx(), nil, func(tx repo.Tx) error {
+		var cur string
+		if err := tx.QueryRow(ctx, `SELECT state FROM g4_account_pool WHERE id=$1 FOR UPDATE`, accountID).Scan(&cur); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return ErrNotFound
+			}
+			return err
+		}
+		if state == "disabled" {
+			if s.beforeDisableCount != nil {
+				s.beforeDisableCount()
+			}
+			var n int
+			if err := tx.QueryRow(ctx, `SELECT count(*) FROM g4_hosted_seat WHERE account_ref=$1 AND state <> 'destroyed'`, accountID).Scan(&n); err != nil {
+				return err
+			}
+			if n > 0 {
+				return ErrAccountInUse
+			}
+		}
+		_, err := tx.Exec(ctx, `UPDATE g4_account_pool SET state=$2, updated_at=now() WHERE id=$1`, accountID, state)
 		return err
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return ErrInvalidState // 不存在或处于 bound（须先解绑）
-	}
-	return nil
+	})
 }
 
-// ListUsableAccounts 新建表单账号下拉：本人被授权（grant）＋未绑定＋CLI/LLM 匹配。
-// 永不返回 secret_enc（B7：密钥不出现在任何应答里）。
-func (s *Store) ListUsableAccounts(ctx context.Context, userLC, cli, llm string) ([]Account, error) {
-	rows, err := s.pool.Query(ctx, htx(), `
-SELECT p.id, p.name, p.kind, p.cli, p.llm, p.key_version, p.last4, p.state, p.bound_agent_id, p.created_at
-FROM g4_account_pool p
-JOIN g4_account_grant g ON g.account_id = p.id AND g.user_lc = $1
-WHERE p.state = 'available' AND ($2 = '' OR p.cli = $2) AND ($3 = '' OR p.llm = $3)
-ORDER BY p.name`, userLC, cli, llm)
+// listAccounts 公共列表（带 in_use），where 只用于本文件内固定片段。
+func (s *Store) listAccounts(ctx context.Context, where string, args ...any) ([]Account, error) {
+	rows, err := s.pool.Query(ctx, htx(), `SELECT `+accountCols+`, `+accountInUseSQL+` FROM g4_account_pool p `+where+` ORDER BY p.name, p.id`, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []Account
+	out := []Account{}
 	for rows.Next() {
 		var a Account
-		if err := rows.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.CreatedAt); err != nil {
+		if err := scanAccount(rows, &a, true); err != nil {
 			return nil, err
 		}
 		out = append(out, a)
@@ -511,34 +625,95 @@ ORDER BY p.name`, userLC, cli, llm)
 	return out, rows.Err()
 }
 
-// BindAccount 一席一账号：仅当 available 才绑定成功（并发安全，反向用例的锚）。
-func (s *Store) BindAccount(ctx context.Context, accountID, agentID string) error {
-	res, err := s.pool.Exec(ctx, htx(), `
-UPDATE g4_account_pool SET state='bound', bound_agent_id=$2, updated_at=now()
-WHERE id=$1 AND state='available'`, accountID, agentID)
+// ListUsableAccounts 新建表单账号下拉：**属主本人**＋未停用（存量 'bound' 视同可用）＋CLI/LLM 匹配，带 in_use。
+// 永不返回 secret_enc（B7：密钥不出现在任何应答里）。
+func (s *Store) ListUsableAccounts(ctx context.Context, userLC, cli, llm string) ([]Account, error) {
+	if userLC == "" {
+		return []Account{}, nil
+	}
+	return s.listAccounts(ctx, `WHERE p.owner_lc = $1 AND p.state <> 'disabled' AND ($2 = '' OR p.cli = $2) AND ($3 = '' OR p.llm = $3)`, userLC, cli, llm)
+}
+
+// ListOwnedAccounts 「我的 LLM 账号」：属主本人全部（含停用）。
+func (s *Store) ListOwnedAccounts(ctx context.Context, ownerLC string) ([]Account, error) {
+	if ownerLC == "" {
+		return []Account{}, nil
+	}
+	return s.listAccounts(ctx, `WHERE p.owner_lc = $1`, ownerLC)
+}
+
+// ListAllAccounts 管理视图：全部账号元数据（含属主、在用数；无密钥）。
+func (s *Store) ListAllAccounts(ctx context.Context) ([]Account, error) {
+	return s.listAccounts(ctx, ``)
+}
+
+// AssignAccountOwner 只给无主存量行指派属主（宿主命令行 assign-owner）；已有主 ⇒ ErrInvalidState。
+func (s *Store) AssignAccountOwner(ctx context.Context, accountID, ownerLC string) error {
+	if ownerLC == "" {
+		return fmt.Errorf("%w: owner 必填", ErrParams)
+	}
+	res, err := s.pool.Exec(ctx, htx(), `UPDATE g4_account_pool SET owner_lc=$2, updated_at=now() WHERE id=$1 AND owner_lc=''`, accountID, ownerLC)
 	if err != nil {
+		if isUniqueViolation(err, "g4_account_pool_owner_name") {
+			return ErrAccountNameTaken
+		}
 		return err
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
-		return ErrAccountBound
+		return ErrInvalidState
 	}
 	return nil
 }
 
-// UnbindAccount 销毁/解绑回池（组长定：自动回池）。
-func (s *Store) UnbindAccount(ctx context.Context, accountID string) error {
-	_, err := s.pool.Exec(ctx, htx(), `
-UPDATE g4_account_pool SET state='available', bound_agent_id=NULL, updated_at=now()
-WHERE id=$1 AND state='bound'`, accountID)
-	return err
+// ReleaseSeatAccount 释放本席对账号的引用（销毁／建席失败回滚／RunJob 失败／新建超时）：
+// 只把本席 account_ref 置 NULL；账号行与其他席位不动（共用）。返回被释放的账号 ID（无则空）。
+func (s *Store) ReleaseSeatAccount(ctx context.Context, agentID string) (string, error) {
+	var prev sql.NullString
+	err := s.pool.InTx(ctx, htx(), nil, func(tx repo.Tx) error {
+		if err := tx.QueryRow(ctx, `SELECT account_ref FROM g4_hosted_seat WHERE agent_id=$1 FOR UPDATE`, agentID).Scan(&prev); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil
+			}
+			return err
+		}
+		if !prev.Valid {
+			return nil
+		}
+		_, err := tx.Exec(ctx, `UPDATE g4_hosted_seat SET account_ref=NULL, updated_at=now() WHERE agent_id=$1`, agentID)
+		return err
+	})
+	if err != nil {
+		return "", err
+	}
+	return prev.String, nil
 }
 
-// GrantAccount 按用户授权（组长定 da622016；幂等）。
-func (s *Store) GrantAccount(ctx context.Context, accountID, userLC, by string) error {
-	_, err := s.pool.Exec(ctx, htx(), `
-INSERT INTO g4_account_grant (account_id, user_lc, granted_by) VALUES ($1,$2,$3)
-ON CONFLICT (account_id, user_lc) DO NOTHING`, accountID, userLC, by)
-	return err
+// SeatAccountOf 席位所引用的账号（无则 ErrNotFound）。
+func (s *Store) SeatAccountOf(ctx context.Context, agentID string) (string, error) {
+	var ref sql.NullString
+	row, err := s.qrow(ctx, `SELECT account_ref FROM g4_hosted_seat WHERE agent_id=$1`, agentID)
+	if err == nil {
+		err = row.Scan(&ref)
+	}
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && !ref.Valid) {
+		return "", ErrNotFound
+	}
+	return ref.String, err
+}
+
+// SeatMayUseAccount 解密下发的边界：席位行引用本号，且账号属主＝席位属主（纵深：防凭 account_id 构造取他人凭据）。
+func (s *Store) SeatMayUseAccount(ctx context.Context, agentID, accountID string) (bool, error) {
+	var n int
+	row, err := s.qrow(ctx, `
+SELECT count(*) FROM g4_hosted_seat s JOIN g4_account_pool p ON p.id = s.account_ref
+WHERE s.agent_id=$1 AND s.account_ref=$2 AND p.owner_lc <> '' AND p.owner_lc = s.created_by`, agentID, accountID)
+	if err != nil {
+		return false, err
+	}
+	if err := row.Scan(&n); err != nil {
+		return false, err
+	}
+	return n == 1, nil
 }
 
 // ---------- 配额 ----------

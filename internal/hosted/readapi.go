@@ -37,6 +37,7 @@ type AccountOption struct {
 	LLM   string `json:"llm"`
 	Kind  string `json:"kind"`  // api_key|token_file
 	Last4 string `json:"last4"` // token_file 类为空串（页面改显示类别＋登记时间——见 HostedItem 同口径）
+	InUse int    `json:"in_use"` // 0.2.1.101：本号已被本人多少个未销毁 Agent 引用（>0 时页面提示「（已被 N 个 Agent 使用）」，不拦）
 }
 
 type PlanOption struct {
@@ -69,7 +70,7 @@ type OptionsView struct {
 }
 
 // Options 新建表单数据源（一次返回不拆；本期几十条级不分页——契约第一节）。
-// 账号＝本人被授权且未绑定（ListUsableAccounts 口径；席位创建后该账号即绑定，下拉开不出）。
+// 账号＝属主本人且未停用（ListUsableAccounts 口径；0.2.1.101 起本人多席共用、不再因已绑而消失）。
 func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView, error) {
 	// 四个列表一律非 nil：空时序列化为 []，不是 null（页面按数组遍历）。
 	v := OptionsView{Nodes: []NodeOption{}, Combos: []ComboOption{}, Accounts: []AccountOption{}, Plans: []PlanOption{}, Models: []string{}}
@@ -116,13 +117,13 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 		v.Combos = append(v.Combos, ComboOption{CLI: c.CLI, LLM: c.LLM, CredKind: c.CredKind, Verified: c.Verified})
 	}
 
-	// 账号：本人可用范围（永不带 secret——B7）
+	// 账号：属主本人（永不带 secret——B7）
 	accts, err := o.st.ListUsableAccounts(ctx, ownerLC, "", "")
 	if err != nil {
 		return v, err
 	}
 	for _, a := range accts {
-		v.Accounts = append(v.Accounts, AccountOption{ID: a.ID, Name: a.Name, LLM: a.LLM, Kind: a.Kind, Last4: a.Last4})
+		v.Accounts = append(v.Accounts, AccountOption{ID: a.ID, Name: a.Name, LLM: a.LLM, Kind: a.Kind, Last4: a.Last4, InUse: a.InUse})
 	}
 
 	// 套餐 fits＋剩余额度（同一读数，免两次取）
