@@ -626,3 +626,37 @@ func TestLoginClaimCompletingIsAtomic(t *testing.T) {
 		t.Fatal("过期会话不得被认领")
 	}
 }
+
+// 组长 LOGIN-IMPL-R2 第 3 条（复核 M3）：会话一旦结束（done／failed／expired／cancelled），库里链接与码一律清空。
+func TestLoginTerminalStatesClearLinkAndCode(t *testing.T) {
+	ctx := context.Background()
+	end := map[string]func(r *ldRig, id string){
+		"done":      func(r *ldRig, id string) { r.l.Complete(ctx, id, uploadOK(authJSON("me@example.com"))) },
+		"failed":    func(r *ldRig, id string) { r.l.Complete(ctx, id, []byte(`{"status":"failed","reason":"login_exit_1"}`)) },
+		"expired":   func(r *ldRig, id string) { r.advance(LoginTTL + time.Second); r.l.Sweep(ctx) },
+		"cancelled": func(r *ldRig, id string) { r.l.Cancel(ctx, "zzc", id) },
+	}
+	for want, do := range end {
+		t.Run(want, func(t *testing.T) {
+			r := mkLogin(t)
+			v, err := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if row := r.row(t, v.ID); row.URL != ldURL || row.UserCode != ldCode {
+				t.Fatalf("进行中应有链接与码: %+v", row)
+			}
+			do(r, v.ID)
+			row := r.row(t, v.ID)
+			if row.State != want || row.URL != "" || row.UserCode != "" {
+				t.Fatalf("结束为 %s 后链接与码须清空: %+v", want, row)
+			}
+			var leak int
+			q, _ := r.s.qrow(ctx, `SELECT count(*) FROM g4_account_login WHERE id=$1 AND (url LIKE '%auth.example%' OR user_code=$2)`, v.ID, ldCode)
+			q.Scan(&leak)
+			if leak != 0 {
+				t.Fatal("库里仍留链接或码")
+			}
+		})
+	}
+}

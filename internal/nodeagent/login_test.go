@@ -77,6 +77,11 @@ func newLFEngine(t *testing.T, output string) *lfEngine {
 			w.WriteHeader(200)
 			w.Write(frame(f.output))
 		case strings.HasSuffix(key, "/start"):
+			// 组长 LOGIN-IMPL-R2 第 1 条：同 codex 0.159.2——CODEX_HOME 指向的宿主路径（经 Binds 换算）不存在即起容器失败
+			if msg := f.codexHomeMissing(); msg != "" {
+				http.Error(w, `{"message":"`+msg+`"}`, 500)
+				return
+			}
 			if f.onStart != nil {
 				f.onStart()
 			}
@@ -97,6 +102,39 @@ func newLFEngine(t *testing.T, output string) *lfEngine {
 	t.Cleanup(f.srv.Close)
 	t.Cleanup(f.letExit) // 先于 srv.Close 执行（LIFO）：断言失败时阻塞中的 /wait 也得放行，否则关服务器会卡到超时
 	return f
+}
+
+// codexHomeMissing 按最近一次 create 的规格：Env 里的 CODEX_HOME 经 Binds（宿主:容器）换算回宿主路径，不存在 ⇒ 返回原因。
+func (f *lfEngine) codexHomeMissing() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if len(f.specs) == 0 {
+		return ""
+	}
+	spec := f.specs[len(f.specs)-1]
+	home := ""
+	envs, _ := spec["Env"].([]any)
+	for _, e := range envs {
+		if s, _ := e.(string); strings.HasPrefix(s, "CODEX_HOME=") {
+			home = strings.TrimPrefix(s, "CODEX_HOME=")
+		}
+	}
+	if home == "" {
+		return ""
+	}
+	hc, _ := spec["HostConfig"].(map[string]any)
+	binds, _ := hc["Binds"].([]any)
+	for _, b := range binds {
+		hostDir, ctrDir, _ := strings.Cut(b.(string), ":")
+		if home == ctrDir || strings.HasPrefix(home, ctrDir+"/") {
+			hostPath := hostDir + strings.TrimPrefix(home, ctrDir)
+			if fi, err := os.Stat(hostPath); err != nil || !fi.IsDir() {
+				return "CODEX_HOME points to " + home + ", but that path does not exist"
+			}
+			return ""
+		}
+	}
+	return "CODEX_HOME not under any bind"
 }
 
 // letExit 放行所有 /wait（幂等）。
