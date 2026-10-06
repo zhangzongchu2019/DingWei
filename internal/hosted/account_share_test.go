@@ -347,3 +347,26 @@ func TestRefreshStartingTimeoutIsExistingSeat(t *testing.T) {
 		t.Fatalf("既有席位不得释放账号引用: %q %v", ref, err)
 	}
 }
+
+// T13：存量形态（旧版独占留下的 state='bound'、bound_agent_id 指向旧席）仍可被本人第二席共用——
+// 可选只排除 disabled，不认 bound；R2（下拉恢复只认 available）⇒ 本格红。
+func TestLegacyBoundAccountSharable(t *testing.T) {
+	_, s := mkPoolSvc(t)
+	ctx := context.Background()
+	ensureNode(t, s)
+	if _, err := s.exec(ctx, `INSERT INTO g4_account_pool(id,name,kind,cli,llm,secret_enc,key_version,created_by,owner_lc,state,bound_agent_id)
+VALUES('acct_legacy','legacy','token_file','codex','gpt','\x00',1,'x','zzc','bound','ag_old')`); err != nil {
+		t.Fatal(err)
+	}
+	mkSeatRow(t, s, "ag_old", "zzc", "acct_legacy", "online")
+	u, err := s.ListUsableAccounts(ctx, "zzc", "codex", "gpt")
+	if err != nil || len(u) != 1 || u[0].InUse != 1 {
+		t.Fatalf("存量 bound 号应仍可选、in_use=1: %+v %v", u, err)
+	}
+	if err := s.CreateSeat(ctx, seatWith("ag_new", "zzc", "acct_legacy")); err != nil {
+		t.Fatalf("存量 bound 号建第二席: %v", err)
+	}
+	if n, _ := s.AccountInUse(ctx, "acct_legacy"); n != 2 {
+		t.Fatalf("in_use 应 2, 得 %d", n)
+	}
+}
