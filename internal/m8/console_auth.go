@@ -872,7 +872,7 @@ function renderRoster(){
 //    在 GET /api/console/agents 每行的 hosted 子对象里 {node_name,state,upgradable}(组长裁定:不另开读接口);Hub 掌握事实:
 //    CLI×LLM 兼容与验通、套餐是否超额、节点可用与否都由应答给出,页面只据此置灰,不自己判定。
 //    密钥永不出现:账号只显示名称与后四位。错误一律机器码,页面写中文。
-// 0.2.1.101「我的 LLM 账号」（R-V2-ACCOUNT-PER-USER＋R-V2-ACCOUNT-LOGIN-FLOW；业主文字即示意图）：
+// 账号包与账号登录「我的 LLM 账号」（R-V2-ACCOUNT-PER-USER＋R-V2-ACCOUNT-LOGIN-FLOW；业主文字即示意图）：
 //    新增一行（LLM、方式＝账号登录或 API Key、邮箱或 Key）；列表（邮箱或 Key 末四位、LLM、方式、在用、状态、换 Key／重新登录、停用启用）。
 //    账号登录＝codex 设备码：页面只显示可复制的链接与一次性码，用户自己在浏览器完成；凭证永不到浏览器。
 var LLM_API={
@@ -1091,7 +1091,7 @@ function renderHostedAccounts(){
   var opts=hostedOptions||{},cli=document.getElementById('hostedCli').value,llm=document.getElementById('hostedLlm').value;
   var rows=(opts.accounts||[]).filter(function(a){return a.llm===llm;});
   // 账号可选 ⇔ 存在 (该 CLI, 该 LLM, 该账号的凭据形态) 且已验通的组合
-  // 0.2.1.101：同一账号本人可多席共用——in_use>0 时选项末尾提示「（已被 N 个 Agent 使用）」，只提示不拦（组长 IMPL-R1 第 5 条）
+  // 账号包：同一账号本人可多席共用——in_use>0 时选项末尾提示「（已被 N 个 Agent 使用）」，只提示不拦（组长 IMPL-R1 第 5 条）
   var items=rows.map(function(a){var ok=(opts.combos||[]).some(function(c){return c.cli===cli&&c.llm===llm&&c.verified&&(!a.kind||c.cred_kind===a.kind);});return {value:a.id,text:a.name+'（…'+a.last4+'）'+(ok?'':'（未验通）')+(a.in_use>0?'（已被 '+a.in_use+' 个 Agent 使用）':''),disabled:!ok};});
   hostedFill('hostedAccount',items,!llm?'请先选择 LLM':(rows.length?'请选择账号':'（该 LLM 暂无可用团队账号）'));
 }
