@@ -68,7 +68,9 @@ class BuildEntrypointContractTest(unittest.TestCase):
     def test_view_page_store_has_one_configurable_timeout(self):
         text = self.read("view-service/test_view_page_store.py")
         self.assertIn('TEST_TIMEOUT = float(os.environ.get("VPS_TEST_TIMEOUT", "2"))', text)
-        self.assertEqual(text.count("timeout=TEST_TIMEOUT"), 7)
+        # 7 → 9：R-V2-0102-VIEW-MENTION-ROUTE（e71d45d9）的 test_mentions_pass_through_and_receipts_return
+        # 新增两处（urlopen 与 thread.join），同用可配置超时；漏改此计数致 build.sh 测试门红（tosonnet55tc2k 发现）。
+        self.assertEqual(text.count("timeout=TEST_TIMEOUT"), 9)
         self.assertNotIn("timeout=1", text)
         self.assertNotIn("timeout=2", text)
         self.assertIn("time.sleep(0.005)", text)
