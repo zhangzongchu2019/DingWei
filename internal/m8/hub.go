@@ -1190,6 +1190,11 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "当前连接尚未完成 sessionHelper capabilities 握手"))
 			continue
 		}
+		// R-V2-AGENT-FILE-UPLOAD：取文件票原先只在带 target_bot 的连接上分派（见上）；托管席与多数自备 helper 不带 target_bot，
+		// 取票信封会落进普通路由。这里对其余已认证会话同样就地应答（票绑定本连接的 owner／会话，信封自报的身份一律不看）。
+		if h.handleFileCapabilityRequest(r.Context(), c, env) {
+			continue
+		}
 		// Reserved attestation fields are never accepted from a session. The
 		// authenticated WS admission below derives the canonical agent channel.
 		if _, claimed := env.Meta["provenance"]; claimed {
@@ -4064,6 +4069,10 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	c.helperReady = true
 	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
 	c.stateMu.Unlock()
+	if metaBool(env.Meta, "file_upload_v1") {
+		// 只作统计（组长裁定 C）：上传说明由 helper 自行附加，Hub 不据此下发任何内容。
+		log.Printf("session capability file_upload_v1=true key_id=%s session=%s conn_seq=%d", c.keyID, c.sessionName, c.connSeq)
+	}
 	if h.Repo != nil {
 		if err := h.Repo.SetSessionEndpointDeliveryACK(context.Background(), c.keyID, c.sessionName, c.deliveryACKV1); err != nil {
 			log.Printf("session capability persist failed key_id=%s session=%s conn_seq=%d delivery_ack_v1=%t err=%v",
