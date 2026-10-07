@@ -573,7 +573,7 @@ class SessionHelper:
                                   file_handler=self._make_file_handler(ws),
                                   allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock),
                                   upload_handler=self._make_upload_handler(ws) if self.upload_policy.enabled else None,
-                                  bound=self.ipc_bound))
+                                  bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only))
 
                 try:
                     await supervise_connection_loops([

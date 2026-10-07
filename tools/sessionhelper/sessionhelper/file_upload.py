@@ -31,7 +31,8 @@ READ_CHUNK = 1024 * 1024
 MIN_SECRET_LEN = 20
 SECRET_SOURCE_MAX_BYTES = 1024 * 1024
 SYSTEM_PREFIXES = ("/proc", "/sys", "/dev", "/etc", "/run")
-PROTECTED_NAME_PATTERNS = ("inbox.sqlite3", "inbox.sqlite3-wal", "inbox.sqlite3-shm", "*.env", ".env*",
+# inbox.sqlite3*：含 -wal、-shm 与非 WAL 模式的 -journal（托管布局收件库在 /work 根、非点目录；r5 复核补写 4）。
+PROTECTED_NAME_PATTERNS = ("inbox.sqlite3*", "*.env", ".env*",
                            "*.pem", "*.key", "id_rsa*", "id_ed25519*")
 
 

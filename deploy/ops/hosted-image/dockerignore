@@ -19,6 +19,7 @@
 !Dockerfile
 !start.py
 !codex.py
+!dingwei-file
 
 !runtime-debs/
 !runtime-debs/**

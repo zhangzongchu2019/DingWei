@@ -20,6 +20,10 @@ CODEX_BIN = '/opt/codex/codex'
 # 与节点 internal/nodeagent/seat.go appliedMarkerName 同名同值（Go 用例钉住）；节点刷新凭据时先删它再写凭据件。
 MARKER_NAME = '.dw-applied-credential.sha256'
 _HEX64 = re.compile(r'[0-9a-f]{64}')
+# r5（R-V2-IMAGE-R5；要点 runbooks/PLAN-R-V2-IMAGE-R5-opus50tc2k.md 第一、七节）：helper 本机 IPC 只开上传。
+# 独立子目录：既有 mcp_send 的 file 模式只许读 socket 所在目录，放在 /work/.dingwei 本身会让 Agent 经发信读出状态件。
+IPC_DIR = '/work/.dingwei/ipc'
+IPC_SOCK_NAME = 'helper.sock'
 
 
 def fail(key):
@@ -116,6 +120,11 @@ def prepare(env):
         home.mkdir(mode=0o700, parents=True, exist_ok=True)
         if home.is_symlink() or home.stat().st_uid != SEAT_UID:
             fail('CODEX_HOME')
+        ipc_dir = Path(IPC_DIR)
+        ipc_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        if ipc_dir.is_symlink() or ipc_dir.stat().st_uid != SEAT_UID:
+            fail('SH_MCP_IPC_SOCK')
+        ipc_dir.chmod(0o700)
         auth = home / 'auth.json'
         digest = hashlib.sha256(content).hexdigest()
         if need_rewrite(home, info, digest):
@@ -147,7 +156,9 @@ def prepare(env):
     env.pop('OPENAI_API_KEY', None)
     env.update(CODEX_HOME=str(home), SH_ENROLL='1', SH_STATE_DIR='/work/.dingwei',
                SH_MODE=env.get('SH_MODE', 'cli'), SH_CLI='codex', SH_CLI_CMD='/usr/local/bin/codex',
-               SH_CLI_CWD='/work', SH_COLLECT='0', SH_INBOX_DB='/work/inbox.sqlite3')
+               SH_CLI_CWD='/work', SH_COLLECT='0', SH_INBOX_DB='/work/inbox.sqlite3',
+               SH_MCP_IPC_SOCK=str(ipc_dir / IPC_SOCK_NAME), DINGWEI_MCP_IPC_SOCK=str(ipc_dir / IPC_SOCK_NAME),
+               SH_IPC_UPLOAD_ONLY='1')  # 组长 R-V2-IMAGE-R5-UPLOAD-ONLY：托管席 socket 只接上传，发信另立件
     return env
 
 
