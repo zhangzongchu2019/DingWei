@@ -311,24 +311,17 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 		t.systemNotification = true
 	}
 	if ev.Kind == "assistant_text" && ev.Text != "" {
-		switch {
-		case t.text == "":
-			t.observed = len(ev.Text)
-			t.text, t.truncated = amrKeepHead(ev.Text, p.routeBodyMax, t.truncated)
-			p.stats.fragmentAppend++
-		case ev.Text == t.text:
+		var kind turnFragmentKind
+		t.text, t.observed, t.truncated, kind = accumulateTurnText(t.text, t.observed, ev.Text, p.routeBodyMax, t.truncated)
+		switch kind {
+		case turnFragmentDuplicate:
 			p.stats.fragmentDuplicate++
-		case strings.HasPrefix(ev.Text, t.text):
-			if len(ev.Text) > t.observed {
-				t.observed = len(ev.Text)
-			}
-			t.text, t.truncated = amrKeepHead(ev.Text, p.routeBodyMax, t.truncated)
+		case turnFragmentSnapshot:
 			p.stats.fragmentSnapshot++
 		default:
-			t.observed += len(ev.Text)
-			t.text, t.truncated = amrKeepHead(t.text+ev.Text, p.routeBodyMax, t.truncated)
 			p.stats.fragmentAppend++
 		}
+		// maxBytes 是 AMR 自己的另一道上限（与 routeBodyMax 不同），留在调用处、不进纯函数（复核提醒 1）。
 		if t.observed > p.maxBytes {
 			t.truncated = true
 		}
@@ -452,6 +445,39 @@ func (p *amrProcessor) countUnknownTerminalLocked(label string) {
 		label = "other"
 	}
 	p.stats.terminalUnknown[label]++
+}
+
+// turnFragmentKind 一段 assistant_text 并入本轮文本的方式。
+type turnFragmentKind int
+
+const (
+	turnFragmentFirst     turnFragmentKind = iota // 本轮第一段
+	turnFragmentDuplicate                         // 与已有全文相同：丢弃
+	turnFragmentSnapshot                          // 以已有全文为前缀：快照覆盖
+	turnFragmentAppend                            // 其余：追加
+)
+
+// accumulateTurnText 一轮 assistant_text 的累计规则（AMR 与 view 提及回流共用一份，R-V2-0103-MENTION-REPLY-MIRROR）。
+// 四分支与原 amrProcessor.ingest 内联那段逐行相同：首段／重复／快照覆盖／追加；observed 计入观察到的字节数，
+// 超出 limit 时用 amrKeepHead 截头并置 truncated。调用方自己的其它上限（如 AMR 的 maxBytes）留在调用处判。
+func accumulateTurnText(text string, observed int, frag string, limit int, truncated bool) (string, int, bool, turnFragmentKind) {
+	switch {
+	case text == "":
+		text, truncated = amrKeepHead(frag, limit, truncated)
+		return text, len(frag), truncated, turnFragmentFirst
+	case frag == text:
+		return text, observed, truncated, turnFragmentDuplicate
+	case strings.HasPrefix(frag, text):
+		if len(frag) > observed {
+			observed = len(frag)
+		}
+		text, truncated = amrKeepHead(frag, limit, truncated)
+		return text, observed, truncated, turnFragmentSnapshot
+	default:
+		observed += len(frag)
+		text, truncated = amrKeepHead(text+frag, limit, truncated)
+		return text, observed, truncated, turnFragmentAppend
+	}
 }
 
 func amrKeepHead(text string, limit int, alreadyTruncated bool) (string, bool) {

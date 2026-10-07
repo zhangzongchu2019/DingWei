@@ -142,6 +142,7 @@ type Hub struct {
 	viewV2Requests        map[string]viewV2RequestResult
 	deliveryNotices       map[string]time.Time
 	amr                   *amrProcessor
+	mentionMirror         *mentionMirror // R-V2-0103：view 提及的回复回流（只显示）
 	startedAt             time.Time
 	restartWindow         time.Duration
 	fileIssuer            FileTicketIssuer
@@ -321,6 +322,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 		},
 	}
 	h.amr = newAMRProcessor(h)
+	h.mentionMirror = newMentionMirror(h)
 	return h
 }
 
@@ -4211,6 +4213,9 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 
 func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, deliveryState, stage, status, reason string) {
 	h.publishDeliveryUpdate(d.KeyID, d.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason)
+	if deliveryState == "dead" {
+		h.mentionMirror.deliveryDead(d, reason) // R-V2-0103：view 提及转来的那封终未处理 ⇒ 发起页一行状态
+	}
 	var original model.Envelope
 	if json.Unmarshal([]byte(d.Envelope), &original) != nil {
 		return

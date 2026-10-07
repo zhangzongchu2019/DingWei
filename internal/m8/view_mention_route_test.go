@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -53,6 +54,7 @@ func vmCollect(conn *websocket.Conn) *vmFrames {
 func (f *vmFrames) next(t *testing.T, body string) model.Envelope {
 	t.Helper()
 	deadline := time.After(3 * time.Second)
+	var skipped []string
 	for {
 		select {
 		case env, ok := <-f.ch:
@@ -62,8 +64,9 @@ func (f *vmFrames) next(t *testing.T, body string) model.Envelope {
 			if strings.HasPrefix(env.Body, body) {
 				return env
 			}
+			skipped = append(skipped, fmt.Sprintf("%s|%.40q", metaString(env.Meta, "type"), env.Body))
 		case <-deadline:
-			t.Fatalf("3s 内未收到 %q", body)
+			t.Fatalf("3s 内未收到 %q；其间收到并跳过：%v", body, skipped)
 		}
 	}
 }
@@ -94,6 +97,7 @@ type vmEnv struct {
 	a, x, q, z, y *vmFrames
 	n             *vmFrames // Nack：在线但不报 delivery_ack_v1（组长 NOACK 050053）
 	qConn         *websocket.Conn
+	xConn         *websocket.Conn // Beta 的连接（R-V2-0103 回流用例从这里发回合事件）
 	qCred         string
 }
 
@@ -145,6 +149,7 @@ func newVMEnv(t *testing.T) *vmEnv {
 	}
 	_, e.a = dial(v.zKimiCred, "zzc", "kimi")
 	xConn, xFrames := dial(xCred, "zzc", "beta")
+	e.xConn = xConn
 	e.x = xFrames
 	_, e.n = dial(nCred, "zzc", "nack") // 不发 session_capabilities ⇒ 不报 ack
 	_, e.z = dial(zCred, "zzc", "outsider")

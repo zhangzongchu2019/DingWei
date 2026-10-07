@@ -903,6 +903,11 @@
       border-radius: 10px; box-shadow: var(--shadow); padding: 6px;
     }
     .mention-popup[hidden] { display: none; }
+    /* R-V2-0103:被提及 Agent 的回复回流卡——左色条＋头行,与本页 Agent 的回复区分 */
+    .message-card.mention-reply { border-left: 4px solid #0d9488; background: var(--panel-2); }
+    .message-card.mention-reply-failed { border-left-color: #b45309; }
+    .mention-reply-head { font-size: 12px; font-weight: 600; color: #0d9488; margin-bottom: 4px; }
+    .mention-reply-failed .mention-reply-head { color: #b45309; }
     /* R-V2-0102-VIEW-MENTION-ROUTE:提及投递回执,紧贴输入框下方,下一次发送时替换 */
     .mention-receipt { padding: 4px 10px 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
     .mention-receipt[hidden] { display: none; }
@@ -2363,6 +2368,12 @@
       }
       const shouldFollow = replayInProgress || timelineAtBottom;
       scheduleTimelineReplayEnd();
+      // R-V2-0103-MENTION-REPLY-MIRROR:被提及 Agent 那一轮的回复,只显示回来;不进回合分流、不进本页 Agent 的上下文。
+      if (ev.kind === 'mention_reply') {
+        if (renderMentionReply(ev)) rendered += 1;
+        if (shouldFollow) scheduleTimelineToBottom();
+        return;
+      }
       // delivery_update / copy 事件:原位更新输入卡,不产生新条目
       // display v1 归并去重:route_observation 带 observed_delivery_id(链 primary)时走归并分支;无链=独立占位卡(现状回落)
       const copyMergable = provFlagOn() && ev._norm.copyKind === 'route_observation' && !!(ev.observed_delivery_id || (ev.data && ev.data.observed_delivery_id));
@@ -3494,6 +3505,31 @@
         for (const rec of mergeNotes) { clearTimeout(rec.timer); c1Footnote(entry, rec.footKey || 'echo_merge', '已回显'); }
         if (!isCopy) c1ApplyToEntry(entry, norm);
       }
+    }
+
+    // R-V2-0103-MENTION-REPLY-MIRROR:独立卡片(左色条＋「来自 X 的回复」头),与本页 Agent 的回复在样式上区分;
+    // 正文走与 assistant 同一个 renderMarkdown(先转义再排版,不执行 HTML);失败／未处理只画一行状态文字。
+    // 按 message_id 去重:Hub 给的号稳定(mreply-<delivery_id>-<turn 短哈希>),重连回放同一条只画一张。
+    const mentionReplySeen = new Set();
+    function renderMentionReply(ev) {
+      const id = String(ev.message_id || '');
+      if (id && mentionReplySeen.has(id)) return false;
+      if (id) mentionReplySeen.add(id);
+      const data = ev.data || {};
+      const label = String(data.from_label || data.from_full_name || '');
+      const failed = data.status === 'failed';
+      const { card, body, content } = baseCard(ev, `mention-reply${failed ? ' mention-reply-failed' : ''}`);
+      if (id) card.dataset.messageId = id;
+      card.dataset.status = failed ? 'failed' : 'ok';
+      const head = document.createElement('div');
+      head.className = 'mention-reply-head';
+      head.textContent = `来自 ${label} 的回复`;
+      body.insertBefore(head, content);
+      const text = String(ev.text || '');
+      if (failed) content.textContent = text;
+      else content.innerHTML = renderMarkdown(text);
+      timeline.appendChild(card);
+      return true;
     }
 
     function renderAssistant(ev) {
