@@ -580,6 +580,22 @@ class PolicyUnitTest(unittest.TestCase):
             self.assertIn(AUTH_TOKEN.encode(), scanner.needles())
             self.assertIn(CRED_TOKEN.encode(), scanner.needles(), "tokens seen earlier stay in the set (S2)")
 
+    def test_seen_token_history_is_capped(self):
+        # 复核 V4：去掉上限仍绿 ⇒ 补格。逐次续期灌入远超上限的不同令牌，历史条数不得超过 HISTORY_MAX，
+        # 且淘汰的是最旧的、最新的仍在。
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "auth.json"
+            scanner = SecretScanner((str(src),))
+            total = SecretScanner.HISTORY_MAX + 40
+            tokens = [f"rotating-token-{i:05d}-abcdefghijklmnop" for i in range(total)]
+            for i, token in enumerate(tokens):
+                src.write_text(json.dumps({"t": token}))
+                os.utime(src, ns=(i + 1, (i + 1) * 1_000_000_000))  # 每次签名不同，保证重读
+                needles = scanner.needles()
+            self.assertLessEqual(len(scanner._history), SecretScanner.HISTORY_MAX)
+            self.assertIn(tokens[-1].encode(), needles)
+            self.assertNotIn(tokens[0].encode(), needles)
+
     def test_upload_limit_matches_go_filepolicy(self):
         go = (Path(__file__).resolve().parents[3] / "internal/filepolicy/policy.go").read_text()
         match = re.search(r"MaxUploadBytes\s+int64\s*=\s*(\d+)\s*<<\s*(\d+)", go)
