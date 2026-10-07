@@ -87,6 +87,8 @@ class Config:
     enroll_token_file: str = ""
     upload_max_per_hour: int = 20
     upload_max_bytes_per_hour: int = 1024 * 1024 * 1024
+    # R-V2-IMAGE-R5（组长 UPLOAD-ONLY 裁定）：托管镜像设 1 ⇒ 本机 IPC 只接 file_upload_v1；缺省＝完整 IPC（自备 helper 不变）。
+    ipc_upload_only: bool = False
 
     @property
     def registered_session_name(self) -> str:
@@ -216,6 +218,7 @@ def load_config(env: dict[str, str] | None = None) -> Config:
                                       or os.path.join(env.get("SH_STATE_DIR", "~/.dingwei"), "enroll-token.json")),
         upload_max_per_hour=int(env.get("SH_UPLOAD_MAX_PER_HOUR", "20")),
         upload_max_bytes_per_hour=int(env.get("SH_UPLOAD_MAX_BYTES_PER_HOUR", str(1024 * 1024 * 1024))),
+        ipc_upload_only=truthy(env.get("SH_IPC_UPLOAD_ONLY", "0")),
     )
 
 

@@ -18,9 +18,10 @@ COPY --from=builder /client /opt/client
 COPY native/package/ /opt/codex/
 COPY start.py /usr/local/bin/hosted-start
 COPY codex.py /usr/local/bin/codex
+COPY dingwei-file /usr/local/bin/dingwei-file
 RUN ln -s vendor/x86_64-unknown-linux-musl/bin/codex /opt/codex/codex \
     && test -f /opt/codex/vendor/x86_64-unknown-linux-musl/codex-package.json \
-    && chmod 755 /usr/local/bin/hosted-start /usr/local/bin/codex \
+    && chmod 755 /usr/local/bin/hosted-start /usr/local/bin/codex /usr/local/bin/dingwei-file \
     && rm -rf /usr/local/bin/pip* /usr/local/lib/python3.12/ensurepip \
        /usr/local/lib/python3.12/site-packages/pip* \
        /usr/local/lib/python3.12/site-packages/setuptools* \

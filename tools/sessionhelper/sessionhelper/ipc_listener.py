@@ -91,6 +91,7 @@ async def _handle_connection(
     allowed_socket_dir: str | None = None,
     upload_handler: _UploadHandler | None = None,
     passed_fds: list[int] | None = None,
+    upload_only: bool = False,
 ) -> None:
     """Serve a single Unix-socket connection: read one request, dispatch by type, ack.
 
@@ -106,6 +107,10 @@ async def _handle_connection(
 
     if msg_type == IPC_UPLOAD:
         return await _handle_upload(writer, msg, upload_handler, passed_fds or [])
+    if upload_only:
+        # 托管席（组长 R-V2-IMAGE-R5-UPLOAD-ONLY）：本 socket 只为上传而开；发信／vsapi／读文件不经此提供。
+        await _write_one(writer, {"ok": False, "error": "unavailable: this socket accepts file_upload_v1 only"})
+        return
     if passed_fds:
         await _write_one(writer, {"ok": False, "error": "file descriptors are only accepted for file_upload_v1"})
         return
@@ -367,6 +372,7 @@ async def serve_ipc(
     allowed_socket_dir: str | None = None,
     upload_handler: _UploadHandler | None = None,
     bound: asyncio.Event | None = None,
+    upload_only: bool = False,
 ) -> None:
     """Start a Unix-domain socket server.
 
@@ -381,6 +387,8 @@ async def serve_ipc(
                        bearer inside helper, returning only bounded metadata/bytes.
     *upload_handler* – async callable ``(fd, name, media_type) -> dict`` for
                        file_upload_v1; *fd* arrives via SCM_RIGHTS.
+    *upload_only*    – accept only file_upload_v1; every other type answers "unavailable"
+                       (hosted seats, SH_IPC_UPLOAD_ONLY=1).
     *bound*          – set once the socket is listening, cleared when the server stops
                        (a leftover socket file is not proof that anyone is listening).
 
@@ -393,7 +401,7 @@ async def serve_ipc(
     async def dispatch(reader, writer, fds):
         await _handle_connection(reader, writer, send_handler, vsapi_handler, file_handler,
                                  allowed_socket_dir=allowed_socket_dir,
-                                 upload_handler=upload_handler, passed_fds=fds)
+                                 upload_handler=upload_handler, passed_fds=fds, upload_only=upload_only)
 
     loop = asyncio.get_running_loop()
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

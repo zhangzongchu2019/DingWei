@@ -1,0 +1,3 @@
+#!/bin/sh
+# r5：托管镜像内的 dingwei-file 入口（R-V2-IMAGE-R5）。socket 缺省与 start.py 的 IPC_DIR/IPC_SOCK_NAME 相同（test_start.py 钉住）。
+PYTHONPATH=/opt/python:/opt/client exec /usr/local/bin/python -m sessionhelper.dingwei_file --socket "${DINGWEI_MCP_IPC_SOCK:-/work/.dingwei/ipc/helper.sock}" "$@"

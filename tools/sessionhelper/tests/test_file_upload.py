@@ -28,7 +28,6 @@ from sessionhelper.config import load_config
 from sessionhelper.file_upload import (UPLOAD_MAX_BYTES, RateLimiter, SecretScanner, UploadPolicy, UploadRejected,
                                        iter_exact, scan_and_digest)
 from sessionhelper.guide_state import GUIDE_CONTEXT_FOOTER, GUIDE_CONTEXT_HEADER, StagedGuideStore
-from sessionhelper.ipc_listener import serve_ipc
 
 try:
     from _home_isolation import HomeIsolation
@@ -208,7 +207,7 @@ def raw_ipc(sock_path, payload, fd=None):
 class UploadHarness:
     """Runs serve_ipc with the helper's real upload handler on an event loop thread."""
 
-    def __init__(self, helper, ws):
+    def __init__(self, helper, ws, send_handler=None):
         self.helper, self.ws = helper, ws
         self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=self.loop.run_forever, daemon=True)
@@ -217,10 +216,8 @@ class UploadHarness:
         async def start():
             async def no_send(*_a):
                 raise AssertionError("send handler must not be used")
-            self.task = asyncio.ensure_future(serve_ipc(
-                helper.cfg.mcp_ipc_sock, no_send,
-                upload_handler=helper._make_upload_handler(ws) if helper.upload_policy.enabled else None,
-                bound=helper.ipc_bound))
+            # 经 app 的同一入口起服务（接线：upload_handler、bound、upload_only 全由 helper 决定）。
+            self.task = asyncio.ensure_future(helper._ipc_server(ws, send_handler or no_send))
             await asyncio.wait_for(helper.ipc_bound.wait(), 5)
 
         asyncio.run_coroutine_threadsafe(start(), self.loop).result(10)
@@ -512,6 +509,108 @@ class ReviewFollowupTest(UploadCase):
         self.assertRejected(self.upload_fd(original), "hard_linked")
 
 
+class HostedLayout(Layout):
+    """r5 托管布局：凭据件、入网令牌、收件库都在工作区根（非点目录），同 seat.go／start.py。"""
+
+    def __init__(self, tmp: Path):
+        super().__init__(tmp, dot=True, root_name="work")
+        self.cred = self.root / "account-credential"
+        self.cred.write_text(json.dumps({"tokens": {"access_token": CRED_TOKEN}}))
+        self.token = self.root / "enroll-token.json"
+        self.token.write_text('{"token":"enroll-one-time-token-abcdefghijkl"}')
+        self.inbox = self.root / "inbox.sqlite3"
+
+    def env(self, **overrides):
+        return super().env(SH_IPC_UPLOAD_ONLY="1", **overrides)
+
+
+class HostedR5Test(UploadCase):
+    """r5：托管布局直测＋仅上传模式（组长 R-V2-IMAGE-R5-UPLOAD-ONLY）。"""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.layout = HostedLayout(Path(self._tmp.name))
+        self.service = FakeFileService()
+        self.helper = make_helper(self.layout)
+        self.ws = TicketWS(self.helper, self.service.base)
+        self.sent = []
+        self.out = io.StringIO()
+        self._redirect = contextlib.redirect_stdout(self.out)
+        self._redirect.__enter__()
+
+        async def recording_send(to, body, meta):
+            self.sent.append((to, body))
+            return {"to": to}
+
+        self.harness = UploadHarness(self.helper, self.ws, recording_send)
+
+    def test_hosted_protected_files_at_workspace_root_are_refused(self):
+        Path(str(self.layout.inbox) + "-journal").write_bytes(b"journal")
+        for path in (self.layout.cred, self.layout.token, self.layout.inbox,
+                     Path(str(self.layout.inbox) + "-wal"), Path(str(self.layout.inbox) + "-journal"),
+                     self.layout.auth):
+            if not path.exists():
+                path.write_bytes(b"x")
+            with self.subTest(path=path.name):
+                self.assertRejected(self.upload_fd(path), "protected_path", "protected_name", "protected_inode",
+                                    "dot_segment")
+        self.assertRejected(self.upload_fd(self.work_file("x.json", self.layout.auth.read_bytes())), "secret_content")
+        self.assertTrue(self.upload_fd(self.work_file("ok.txt"))["ok"])
+
+    def test_journal_name_alone_is_refused(self):
+        # 名字模式本身（不靠精确路径）：别处的 inbox.sqlite3-journal 也拒。
+        self.assertRejected(self.upload_fd(self.work_file("sub/inbox.sqlite3-journal", b"j")), "protected_name")
+
+    def test_upload_only_refuses_send_vsapi_and_file_access(self):
+        self.assertTrue(self.helper.cfg.ipc_upload_only)
+        for payload in ({"type": "mcp_send", "to": "peer", "body": "hi"},
+                        {"type": "vsapi_v1", "method": "GET", "path": "/v1/sessions"},
+                        {"type": "file_access_v1", "file_ref": "dwfile:" + "0" * 32, "method": "HEAD"}):
+            with self.subTest(kind=payload["type"]):
+                response = raw_ipc(self.layout.sock, payload)
+                self.assertFalse(response["ok"])
+                self.assertIn("unavailable", response["error"])
+        self.assertEqual(self.sent, [])
+        self.assertTrue(self.upload_fd(self.work_file("still-ok.txt"))["ok"], "upload stays available")
+
+    def test_upload_only_send_py_real_run_fails(self):
+        script = Path(app_module.__file__).with_name("send_dingwei.py")
+        env = {"PATH": "/usr/bin:/bin", "HOME": self._tmp.name, "SH_MCP_IPC_SOCK": self.layout.sock}
+        res = __import__("subprocess").run([__import__("sys").executable, str(script), "peer", "hello"],
+                                           env=env, capture_output=True, text=True, timeout=30)
+        self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+        self.assertIn("unavailable", res.stderr)
+        self.assertEqual(self.sent, [])
+
+
+class DefaultIPCModeTest(UploadCase):
+    """SH_IPC_UPLOAD_ONLY 未设 ⇒ 完整 IPC（自备 helper 与旧行为不变）。"""
+
+    def setUp(self):
+        super().setUp()
+        self.harness.close()
+        self.helper.ipc_bound = asyncio.Event()  # 换新事件循环跑 harness（生产里一进程一循环）
+        self.sent = []
+
+        async def recording_send(to, body, meta):
+            self.sent.append((to, body))
+            return {"to": to}
+
+        self.harness = UploadHarness(self.helper, self.ws, recording_send)
+
+    def test_default_is_full_ipc(self):
+        self.assertFalse(self.helper.cfg.ipc_upload_only)
+        response = raw_ipc(self.layout.sock, {"type": "mcp_send", "to": "peer", "body": "hi"})
+        self.assertTrue(response["ok"], response)
+        self.assertEqual(self.sent, [("peer", "hi")])
+        self.assertTrue(self.upload_fd(self.work_file())["ok"])
+
+    def test_config_flag_parsing(self):
+        self.assertFalse(load_config(self.layout.env()).ipc_upload_only)
+        self.assertTrue(load_config(self.layout.env(SH_IPC_UPLOAD_ONLY="1")).ipc_upload_only)
+        self.assertFalse(load_config(self.layout.env(SH_IPC_UPLOAD_ONLY="0")).ipc_upload_only)
+
+
 class BackendFailureTicketDeniedTest(UploadCase):
     ticket_ok = False
 
@@ -579,6 +678,22 @@ class PolicyUnitTest(unittest.TestCase):
             src.write_text(json.dumps({"b": AUTH_TOKEN}))
             self.assertIn(AUTH_TOKEN.encode(), scanner.needles())
             self.assertIn(CRED_TOKEN.encode(), scanner.needles(), "tokens seen earlier stay in the set (S2)")
+
+    def test_seen_token_history_is_capped(self):
+        # 复核 V4：去掉上限仍绿 ⇒ 补格。逐次续期灌入远超上限的不同令牌，历史条数不得超过 HISTORY_MAX，
+        # 且淘汰的是最旧的、最新的仍在。
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "auth.json"
+            scanner = SecretScanner((str(src),))
+            total = SecretScanner.HISTORY_MAX + 40
+            tokens = [f"rotating-token-{i:05d}-abcdefghijklmnop" for i in range(total)]
+            for i, token in enumerate(tokens):
+                src.write_text(json.dumps({"t": token}))
+                os.utime(src, ns=(i + 1, (i + 1) * 1_000_000_000))  # 每次签名不同，保证重读
+                needles = scanner.needles()
+            self.assertLessEqual(len(scanner._history), SecretScanner.HISTORY_MAX)
+            self.assertIn(tokens[-1].encode(), needles)
+            self.assertNotIn(tokens[0].encode(), needles)
 
     def test_upload_limit_matches_go_filepolicy(self):
         go = (Path(__file__).resolve().parents[3] / "internal/filepolicy/policy.go").read_text()

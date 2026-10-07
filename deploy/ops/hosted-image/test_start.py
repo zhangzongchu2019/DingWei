@@ -22,6 +22,7 @@ import json, os, sys
 sys.path.insert(0, sys.argv[1])
 import start
 start.SEAT_UID = os.getuid()
+start.IPC_DIR = os.environ['R5_TEST_IPC_DIR']  # r5：离线格不碰真 /work
 if sys.argv[2]:
     start.CODEX_BIN = sys.argv[2]
 if sys.argv[3] == 'fail-auth-write':
@@ -31,7 +32,9 @@ if sys.argv[3] == 'fail-auth-write':
             raise OSError('injected auth.json write failure')
         return orig(home, name, data, prefix)
     start._write_atomic = failing
-start.prepare(json.loads(sys.stdin.read()))
+out = start.prepare(json.loads(sys.stdin.read()))
+if sys.argv[3] == 'print-env':
+    print('R5ENV=' + json.dumps({k: out.get(k) for k in ('SH_MCP_IPC_SOCK', 'DINGWEI_MCP_IPC_SOCK', 'SH_IPC_UPLOAD_ONLY')}))
 '''
 
 # 登录桩：把收到的 stdin 原样回显到 stdout／stderr（若 start.py 不屏蔽就会漏出），计数，再写 auth.json。
@@ -54,7 +57,9 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
-class StartR4Test(unittest.TestCase):
+class _StartCase(unittest.TestCase):
+    """夹具与入口（r4、r5 共用）。"""
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         root = Path(self.tmp.name)
@@ -67,6 +72,7 @@ class StartR4Test(unittest.TestCase):
         self.stub.chmod(0o755)
         self.auth = self.home / 'auth.json'
         self.marker = self.home / MARKER
+        self.ipc = self.work / '.dingwei' / 'ipc'
 
     def tearDown(self):
         for p in self.home.rglob('*'):
@@ -95,7 +101,8 @@ class StartR4Test(unittest.TestCase):
             env['CODEX_MODEL'] = model
         env.update(extra_env or {})  # 进 prepare 的 env（登录桩收到的就是它派生的 env）
         return subprocess.run([sys.executable, '-c', RUNNER, str(HERE), str(self.stub), hook],
-                              input=json.dumps(env), capture_output=True, text=True, timeout=60)
+                              input=json.dumps(env), capture_output=True, text=True, timeout=60,
+                              env=dict(os.environ, R5_TEST_IPC_DIR=str(self.ipc)))
 
     def assert_ok(self, res):
         self.assertEqual(res.returncode, 0, res.stderr)
@@ -103,6 +110,8 @@ class StartR4Test(unittest.TestCase):
     def marker_text(self):
         return self.marker.read_text().strip()
 
+
+class StartR4Test(_StartCase):
     # M1：无 auth.json ⇒ 写 auth.json、写标记、写 config.toml
     def test_m1_no_auth_writes_everything(self):
         self.put_cred(TOKEN)
@@ -290,6 +299,55 @@ class StartR4Test(unittest.TestCase):
         self.assert_ok(self.run_prepare())
         self.assertRegex(self.marker.read_text(), r'^[0-9a-f]{64}\n$')
         self.assertNotIn('SECRET', (self.home / 'config.toml').read_text())
+
+
+class StartR5Test(_StartCase):
+    """r5（R-V2-IMAGE-R5）：托管席 IPC 只开上传；独立 ipc/ 目录；dingwei-file 包装缺省 socket 与此一致。"""
+
+    def r5_env(self, res):
+        line = next((l for l in res.stdout.splitlines() if l.startswith('R5ENV=')), None)
+        self.assertIsNotNone(line, res.stdout + res.stderr)
+        return json.loads(line[len('R5ENV='):])
+
+    def test_r5_ipc_dir_created_private_and_env_set_upload_only(self):
+        self.put_cred(TOKEN)
+        res = self.run_prepare(hook='print-env')
+        self.assert_ok(res)
+        self.assertTrue(self.ipc.is_dir())
+        self.assertEqual(self.ipc.stat().st_mode & 0o777, 0o700)
+        sock = str(self.ipc / 'helper.sock')
+        self.assertEqual(self.r5_env(res), {'SH_MCP_IPC_SOCK': sock, 'DINGWEI_MCP_IPC_SOCK': sock,
+                                            'SH_IPC_UPLOAD_ONLY': '1'})
+
+    def test_r5_ipc_dir_mode_tightened_when_preexisting_loose(self):
+        self.put_cred(TOKEN)
+        self.ipc.mkdir(parents=True)
+        self.ipc.chmod(0o755)
+        self.assert_ok(self.run_prepare())
+        self.assertEqual(self.ipc.stat().st_mode & 0o777, 0o700)
+
+    def test_r5_ipc_dir_symlink_refused(self):
+        self.put_cred(TOKEN)
+        elsewhere = Path(self.tmp.name) / 'elsewhere'
+        elsewhere.mkdir()
+        self.ipc.parent.mkdir(parents=True)
+        self.ipc.symlink_to(elsewhere, target_is_directory=True)
+        res = self.run_prepare()
+        self.assertEqual(res.returncode, 2, res.stderr)
+        self.assertIn('SH_MCP_IPC_SOCK', res.stderr)
+
+    def test_r5_production_constants_and_wrapper_default_socket_agree(self):
+        src = (HERE / 'start.py').read_text()
+        self.assertIn("IPC_DIR = '/work/.dingwei/ipc'", src)
+        self.assertIn("IPC_SOCK_NAME = 'helper.sock'", src)
+        wrapper = (HERE / 'dingwei-file').read_text()
+        self.assertIn('${DINGWEI_MCP_IPC_SOCK:-/work/.dingwei/ipc/helper.sock}', wrapper)
+        self.assertIn('-m sessionhelper.dingwei_file', wrapper)
+        self.assertTrue(os.access(HERE / 'dingwei-file', os.X_OK))
+        dockerfile = (HERE / 'Dockerfile').read_text()
+        self.assertIn('COPY dingwei-file /usr/local/bin/dingwei-file', dockerfile)
+        self.assertIn('/usr/local/bin/dingwei-file', dockerfile.split('chmod 755', 1)[1].split('\\', 1)[0])
+        self.assertIn('!dingwei-file', (HERE / 'dockerignore').read_text().splitlines())
 
 
 if __name__ == '__main__':
