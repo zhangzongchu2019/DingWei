@@ -113,7 +113,7 @@ func TestNewPlatformAgentGroupsHTTP(t *testing.T) {
 	if st, body := call("POST", "/api/console/agent-groups", v.tokZZC, `{"agent_id":"`+zID+`","short_name":"开发组"}`, false); st != 403 || body != `{"error":"origin_mismatch"}` {
 		t.Fatalf("create without Origin: %d %s", st, body)
 	}
-	if st, body := call("POST", "/api/console/agent-groups", v.tokZZC, `{"agent_id":"`+zID+`","short_name":"九个字九个字九个字"}`, true); st != 400 || body != "group name must be 1 to 8 letters or numbers" {
+	if st, body := call("POST", "/api/console/agent-groups", v.tokZZC, `{"agent_id":"`+zID+`","short_name":"九个字九个字九个字"}`, true); st != 400 || body != `{"error":"group_name_invalid","message":"`+groupNameInvalidText+`"}` {
 		t.Fatalf("bad name: %d %s", st, body)
 	}
 	if st, body := call("POST", "/api/console/agent-groups", v.tokZZC, `{"agent_id":"`+lID+`","short_name":"开发组"}`, true); st != 404 || body != "owned agent not found" {

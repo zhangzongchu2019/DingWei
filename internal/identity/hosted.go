@@ -123,6 +123,42 @@ func (s *Service) RetireHostedAgent(ctx context.Context, agentID, by string) (bo
 	return false, nil
 }
 
+// AbortHostedIssue 撤销一次没建成的托管席位（建席落库／拉镜像／启动失败或超时；R-V2-0102-GROUP-FIXES A）：
+// 吊销 Agent（同 RetireHostedAgent），并删除【随本次签发新建】的编组——判据：该 Agent 入的组、组长就是它、
+// 且组里没有其他未吊销成员。既有编组（组长不是它）一律不动；别人已加入的也不动。重复调用幂等。
+// 🟡 剩余窗口：查成员与删组之间若恰有人入组，会连同删掉（建席失败到回收通常在秒级，登记不另加锁）。
+func (s *Service) AbortHostedIssue(ctx context.Context, agentID, by string) (bool, error) {
+	already, err := s.RetireHostedAgent(ctx, agentID, by)
+	if err != nil {
+		return already, err
+	}
+	ag, err := s.Store.GetAgent(ctx, agentID)
+	if err != nil || ag.GroupID == "" {
+		return already, nil
+	}
+	g, err := s.Store.GetGroup(ctx, ag.GroupID)
+	if err != nil || g.LeaderAgentID != agentID {
+		return already, nil
+	}
+	members, err := s.Store.ListGroupMembers(ctx, g.Code)
+	if err != nil {
+		return already, err
+	}
+	for _, m := range members {
+		if m.AgentID == agentID {
+			continue
+		}
+		if other, err := s.Store.GetAgent(ctx, m.AgentID); err == nil && other.Current() {
+			return already, nil
+		}
+	}
+	if err := s.Store.DeleteGroup(ctx, g.Code, g.CreatorLC); err != nil && !errors.Is(err, ErrNotFound) {
+		return already, err
+	}
+	s.audit(ctx, Lower(by), "group.delete_abandoned", g.Code, "leader="+agentID)
+	return already, nil
+}
+
 // SuspendHostedAgent 停用托管席位（组长裁定 2026-10-01：停用期间凭据拒连）。
 // 先暂停凭据、再由调用方停容器；在线连接经 OnSuspended 以 4401（credential_suspended）断开。
 // 凭据不作废：ResumeHostedAgent 后原凭据照常可用，客户端收到暂停时不得删本地凭据。重复调用 already=true。

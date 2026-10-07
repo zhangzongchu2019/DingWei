@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -63,6 +64,7 @@ func (s *Service) resolveGroupChoice(c GroupChoice, ownerLC, agentID string, now
 	case c.Code != "":
 		return c.Code, nil, nil
 	}
+	c.NewName = NormalizeGroupName(c.NewName)
 	if !ValidGroupName(c.NewName) {
 		return "", nil, ErrGroupNameInvalid
 	}
@@ -79,6 +81,18 @@ const (
 	GroupCodeLen      = 32
 	groupCodeAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
 )
+
+// NormalizeGroupName 编组名清洗（R-V2-0102-GROUP-FIXES B）：去掉 Unicode 格式类字符（\p{Cf}：零宽空格／连接符、BOM、U+2060 等，
+// 输入法与粘贴常带入、肉眼不可见），再去首尾空白。三个建组入口（编组页、入网审批、托管建席）与 identity 内部都用它，
+// 校验与落库用同一个清洗后的值。规则本身（ValidGroupName）不变。
+func NormalizeGroupName(s string) string {
+	return strings.TrimSpace(strings.Map(func(r rune) rune {
+		if unicode.Is(unicode.Cf, r) {
+			return -1
+		}
+		return r
+	}, s))
+}
 
 // ValidGroupName 组名：1～8 个字母或数字（含中文等 Unicode 字母），首尾不留空白（与旧平台 validConsoleAgentGroupName 同）。
 func ValidGroupName(name string) bool {
@@ -112,6 +126,7 @@ type GroupInfo struct {
 
 // CreateGroup 以 leaderAgentID（须属 actorLC 且未吊销）为组长建组；组名冲突 ⇒ ErrGroupNameTaken。
 func (s *Service) CreateGroup(ctx context.Context, actorLC, leaderAgentID, shortName string) (*Group, error) {
+	shortName = NormalizeGroupName(shortName)
 	if !ValidGroupName(shortName) {
 		return nil, ErrBadRequest
 	}

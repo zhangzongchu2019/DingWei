@@ -64,13 +64,17 @@ function consoleHTMLFromProductionSource() {
   }
   // 🔴 阴性对照:把角标显示值写死。写死之后页面显示的就不再是服务端喂进来的那一版,
   //    下面那条断言必须红 —— 否则这条判据等于没立。
+  // R-V2-0102-GROUP-FIXES B 三刀：去添加编组预检／去清洗／groupAction 不读 JSON 的 message。
+  if (MUTATION === 'group-no-precheck') mutate("if(!NEW_GROUP_RE.test(name)){groupFeedback('groupNameFeedback',GROUP_NAME_RULE_TEXT);return;}", '');
+  if (MUTATION === 'group-no-normalize') mutate("name=normalizeGroupName(input.value),", "name=input.value.trim(),");
+  if (MUTATION === 'group-json-message-ignored') mutate("if(j&&typeof j.message==='string'&&j.message)msg=j.message;", '');
   if (MUTATION === 'hardcoded-version') mutate('>{{CONSOLE_VERSION_TEXT}}<', '>0.2.1.68<');
   // 🔴 版本角标由服务端填值。夹具在这里【故意喂一个不可能是真版本的号】:
   //    若哪天有人把版本号写死在模板里,页面显示的就不会是这个号 ⇒ 下面那条断言会红。
   html = html.split('{{CONSOLE_VERSION_TEXT}}').join(HARNESS_VERSION + ' · ' + HARNESS_COMMIT.slice(0, 7))
     .split('{{CONSOLE_VERSION}}').join(HARNESS_VERSION)
     .split('{{CONSOLE_COMMIT}}').join(HARNESS_COMMIT);
-  if (MUTATION && !['hardcoded-version','stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','filter-offline-group-candidates','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty','restore-inert-agents-entry','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['group-no-precheck','group-no-normalize','group-json-message-ignored','hardcoded-version','stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','filter-offline-group-candidates','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty','restore-inert-agents-entry','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -149,6 +153,7 @@ async function main() {
     if (req.url === '/api/console/agent-groups') {
       if (req.method === 'POST') {
         if (failGroupAction === 'network') { req.socket.destroy(); return; }
+        if (failGroupAction === 'json400') { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({error:'group_name_invalid',message:'桩：服务端给的中文原因'})); return; }
         if (failGroupAction === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture create denied'); return; }
         let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{const body=JSON.parse(raw);groupWrites.push({url:req.url,body});if(auditGroupMode&&auditGroup&&body.short_name===auditGroup.short_name){res.writeHead(409,{'Content-Type':'text/plain; charset=utf-8'});res.end(`团队名称不可用；建议名称：${body.short_name}1、${body.short_name}2`);return;}if(auditGroupMode){auditGroup={...groupPayload(false).groups[0],short_name:body.short_name,members:[groupPayload(false).groups[0].members[0]]};}res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(auditGroupMode?auditGroup:groupPayload(false).groups[0]));}); return;
       }
@@ -654,6 +659,32 @@ async function main() {
       failGroupAction = 'network';
       await page.locator('#createGroup').click();
       await page.locator('#groupNameFeedback').filter({hasText:'请求失败:'}).waitFor({state:'visible'});
+      failGroupAction = '';
+    });
+
+    // R-V2-0102-GROUP-FIXES B。断言面＝添加编组面板（发不发请求、发出的 short_name、显示的文字）；
+    // 实现承诺＝normalizeGroupName＋NEW_GROUP_RE 预检＋groupAction 读 JSON message、纯文本照旧（上一格已钉纯文本）。
+    await test('group name: malformed names are explained locally in the shared sentence; invisible characters are stripped; a JSON error shows its message', async () => {
+      const RULE = '编组名只能用 1～8 位字母或数字（不含空格、连字符、符号）';
+      assert.strictEqual(await page.evaluate(() => GROUP_NAME_RULE_TEXT), RULE);
+      if (await page.locator('#groupAddPanel').isHidden()) await page.locator('#groupAddOpen').click();
+      groupWrites.length = 0;
+      for (const bad of ['te st', 'test-1', '九个字九个字九个字']) {   // 9 字绕过 maxlength 直接赋值（粘贴等场景）
+        await page.evaluate((v) => { document.getElementById('groupShortName').value = v; }, bad);
+        await page.locator('#createGroup').click();
+        assert.strictEqual(await page.locator('#groupNameFeedback').textContent(), RULE, `local precheck for ${bad}`);
+      }
+      assert.strictEqual(groupWrites.length, 0, 'malformed names are not sent');
+      await page.evaluate(() => { document.getElementById('groupShortName').value = '\u200btest\u2060 '; });
+      await page.locator('#createGroup').click();
+      await page.waitForFunction(() => document.getElementById('groupAddPanel').hidden);
+      assert.strictEqual(groupWrites.at(-1).body.short_name, 'test', 'invisible characters stripped before sending');
+      await page.locator('#groupAddOpen').click();
+      failGroupAction = 'json400';
+      await page.locator('#groupShortName').fill('okname');
+      await page.locator('#createGroup').click();
+      await page.locator('#groupNameFeedback').filter({hasText:'桩：服务端给的中文原因'}).waitFor({state:'visible'});
+      assert.strictEqual(await page.locator('#groupNameFeedback').textContent(), '桩：服务端给的中文原因');
       failGroupAction = '';
     });
 

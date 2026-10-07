@@ -38,13 +38,14 @@ function mutate(from, to) {
   }
   html = html.replace(from, to);
 }
-const MUTATIONS = ['mutation-anchor-selftest', 'ignore-hosted-disabled', 'always-hide-hosted', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped', 'drop-in-use'];
+const MUTATIONS = ['mutation-anchor-selftest', 'hosted-online-no-group-refresh', 'ignore-hosted-disabled', 'always-hide-hosted', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped', 'drop-in-use'];
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'ignore-hosted-disabled') mutate('if(!FEATURE_HOSTED){var hc=', 'if(false){var hc=');
 if (mutation === 'always-hide-hosted') mutate('if(!FEATURE_HOSTED){var hc=', 'if(true){var hc=');
 if (mutation === 'hosted-group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
-if (mutation === 'hosted-new-group-no-check') mutate("if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};", '');
+if (mutation === 'hosted-online-no-group-refresh') mutate("enrollFeedback('hostedFeedback',name+' 已上线');refreshGroups('hosted');", "enrollFeedback('hostedFeedback',name+' 已上线');");
+if (mutation === 'hosted-new-group-no-check') mutate("if(!NEW_GROUP_RE.test(n))return {error:GROUP_NAME_RULE_TEXT};", '');
 if (mutation === 'backup-failed-unmapped') mutate("backup_failed:'销毁前备份数据卷失败,容器没有被删除,请稍后再试或联系管理员',", '');
 if (mutation === 'quota-only-zero') mutate('&&data.remaining[d[0]]<=0)used.push', '&&data.remaining[d[0]]===0)used.push');
 if (mutation === 'quota-old-fallback') mutate("quota_exceeded:'配额不足，请联系管理员调整配额',", "quota_exceeded:'Agent 数量已达上限',");
@@ -73,6 +74,7 @@ let planBigFits = false;
 let failOptions = 1;
 const writes = [];
 const jobs = {};
+const extraGroups = [];   // R-V2-0102-GROUP-FIXES A：桩照 Hub 行为——带 new_group_name 的建席上线后，该组出现、新席为组长
 let jobSeq = 0;
 function options() {
   return {
@@ -99,10 +101,10 @@ function options() {
   };
 }
 function groupsPayload() {
-  return { principal: 'owner', owned_agents: agents, groups: [
+  return { principal: 'owner', owned_agents: agents, groups: extraGroups.concat([
     { code: GROUP_MINE, short_name: '团队甲', creator_principal: 'owner', can_manage: true, owner_display_name: '业主甲', leader_key_id: 'key-leader', leader_session_name: 'zzc-leader-2642', additions_closed: false,
       members: agents.map((a) => ({ agent_id: a.id, key_id: a.key_id, session_name: a.session_name, online: a.online })) },
-  ] };
+  ]) };
 }
 function read(req) { return new Promise((resolve) => { let body = ''; req.on('data', (c) => { body += c; }); req.on('end', () => resolve(body ? JSON.parse(body) : {})); }); }
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
@@ -141,7 +143,7 @@ const server = http.createServer(async (req, res) => {
     const o = options(); const acct = o.accounts.find((a) => a.id === body.account_id);
     if (!o.combos.some((c) => c.cli === body.cli && c.llm === body.llm)) return err(res, 422, 'combo_incompatible');
     if (!o.combos.some((c) => c.cli === body.cli && c.llm === body.llm && c.verified && (!acct || c.cred_kind === acct.kind))) return err(res, 422, 'combo_not_verified');
-    const id = `j${++jobSeq}`; jobs[id] = { stage: 'queued', reason: '', name: body.name, made: false };
+    const id = `j${++jobSeq}`; jobs[id] = { stage: 'queued', reason: '', name: body.name, made: false, newGroup: body.new_group_name || '' };
     return json(res, 202, { job_id: id });
   }
   const j = p.match(/^\/api\/console\/hosted\/jobs\/([^/]+)$/);
@@ -151,6 +153,12 @@ const server = http.createServer(async (req, res) => {
       job.made = true; const id = `ag-${job.name.toLowerCase()}`;
       agents.push({ id, key_id: `key-${job.name}`, session_name: `zzc-${job.name.toLowerCase()}-2642`, online: true, origin: 'hosted' });
       hostedAgents.push({ agent_id: id, state: 'running', upgradable: true, node_name: 'node-a' });
+      if (job.newGroup) {
+        const sess = `zzc-${job.name.toLowerCase()}-2642`;
+        extraGroups.push({ code: 'N'.repeat(31) + String(jobSeq), short_name: job.newGroup, creator_principal: 'owner', can_manage: true, owner_display_name: '业主甲',
+          leader_key_id: `key-${job.name}`, leader_session_name: sess, additions_closed: false,
+          members: [{ agent_id: id, key_id: `key-${job.name}`, session_name: sess, online: true }] });
+      }
     }
     return json(res, 200, { stage: job.stage, reason: job.reason });
   }
@@ -549,6 +557,27 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(await page.locator('#groupCodeJoinOpen').count(), 0);
     });
     }
+
+    // 断言面＝页面：建席上线后编组列表按 Hub 回的数据刷新，新组出现、组长是新席；实现承诺（Hub 真建组、新席为组长）
+    // 在 cmd/workpulse/hosted_new_group_test.go 用真 identity＋真存储钉，本格只钉页面这一侧不丢。
+    await test('a create with a new group shows that group in the group list once online, led by the new agent', async () => {
+      await fillValid('Kilo');
+      await page.locator('#hostedGroup').selectOption('__new__');
+      await page.locator('#hostedNewGroupBox').waitFor({ state: 'visible' });
+      await page.locator('#hostedNewGroup').fill('Kilogrp');
+      await page.locator('#hostedCreateBtn').click();
+      await page.locator('#hostedMask').waitFor({ state: 'visible' });
+      const sent = writes.at(-1).body;
+      assert.strictEqual(sent.new_group_name, 'Kilogrp'); assert.ok(!('group_id' in sent));
+      const jid = Object.keys(jobs).find((k) => jobs[k].name === 'Kilo');
+      await page.mouse.click(5, 5); await page.locator('#hostedMask').waitFor({ state: 'hidden' });
+      jobs[jid].stage = 'online';
+      await page.locator('#hostedFeedback').filter({ hasText: 'Kilo 已上线' }).waitFor({ state: 'visible' });
+      await page.waitForFunction(() => Array.from(document.querySelectorAll('.group-row')).some((r) => r.cells[0]?.textContent === 'Kilogrp'));
+      const row = await page.locator('.group-row').evaluateAll((els) => els.map((r) => Array.from(r.cells).slice(0, 2).map((c) => c.textContent)).find((c) => c[0] === 'Kilogrp'));
+      assert.deepStrictEqual(row, ['Kilogrp', 'kilo'], 'new group listed with the new seat as leader');
+      await page.locator('#hostedGroup').selectOption(GROUP_MINE);
+    });
 
     await test('no pageerror and no unexpected console error across the whole run', async () => {
       assert.deepStrictEqual(pageErrors, []);
