@@ -67,6 +67,18 @@ def _read_marker(home):
     return text if _HEX64.fullmatch(text) else None
 
 
+def _write_marker(home, digest):
+    """标记是尽力而为（复核必改）：auth.json 此时已就绪，写不成（含非空目录占位清不掉）只打一行不含凭据的提示、
+    继续启动；下一次启动无标记 ⇒ 落第 3 条（凭据件不晚于 auth.json 就不重写），安全。"""
+    marker_path = home / MARKER_NAME
+    try:
+        if not marker_path.is_symlink() and marker_path.is_dir():
+            marker_path.rmdir()  # 空目录占位 ⇒ 清掉再写；非空 ⇒ OSError ⇒ 下面只提示
+        _write_atomic(home, MARKER_NAME, (digest + '\n').encode('ascii'), '.dw-marker-')
+    except OSError:
+        print('hosted-start: marker not written', file=sys.stderr)
+
+
 def need_rewrite(home, source_info, digest):
     """15.1：任一成立即重写——① auth.json 缺／空／非法 JSON；② 标记存在且≠当前凭据摘要；
     ③ 无标记且凭据件 st_mtime_ns 严格大于 auth.json（相等不重写）。"""
@@ -123,10 +135,7 @@ def prepare(env):
             fail('CODEX_HOME')
         # 🔴 顺序固定：auth.json（需要时）先写好，再原子写标记——反过来，崩溃会留下「标记说已应用、auth.json 却是旧的」。
         # 不论是否重写都写／更新标记；标记里只有摘要，无凭据值。
-        marker_path = home / MARKER_NAME
-        if not marker_path.is_symlink() and marker_path.is_dir():
-            marker_path.rmdir()  # 空目录占位（异常）⇒ 清掉再写；非空则 OSError ⇒ 下面 fail，不吞
-        _write_atomic(home, MARKER_NAME, (digest + '\n').encode('ascii'), '.dw-marker-')
+        _write_marker(home, digest)
         config = 'check_for_update_on_startup = false\n'
         if model:
             config += 'model = "' + model + '"\n'

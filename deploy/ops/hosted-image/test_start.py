@@ -246,6 +246,22 @@ class StartR4Test(unittest.TestCase):
                 self.assertTrue(self.marker.is_file())
                 self.assertEqual(self.marker_text(), sha(TOKEN))
 
+    # 复核必改：标记路径被非空目录占位 ⇒ 写不成标记，但 auth.json 已就绪，不退出、只提示（不含凭据）、auth.json 不变；
+    # 下一次启动仍无标记 ⇒ 第 3 条（凭据件较旧）⇒ 不重写。反向「写标记失败即 exit 2」⇒ 本格红。
+    def test_marker_write_failure_does_not_block_boot(self):
+        self.put_cred(TOKEN, 1_000_000_000_000)
+        self.put_auth(RENEWED, 2_000_000_000_000)
+        self.marker.mkdir()
+        (self.marker / 'squatter').write_text('x')
+        res = self.run_prepare()
+        self.assert_ok(res)
+        self.assertIn('hosted-start: marker not written', res.stderr)
+        self.assertNotIn('SECRET', res.stdout + res.stderr)
+        self.assertEqual(self.auth.read_bytes(), RENEWED)
+        self.assertTrue(self.marker.is_dir(), 'non-empty squatter is left alone')
+        self.assert_ok(self.run_prepare())
+        self.assertEqual(self.auth.read_bytes(), RENEWED, 'next boot still keeps the login')
+
     # M13：无标记、st_mtime_ns 相等 ⇒ 不写、补标记
     def test_m13_equal_mtime_does_not_rewrite(self):
         self.put_cred(TOKEN, 2_000_000_000_000)
