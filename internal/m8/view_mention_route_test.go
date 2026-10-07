@@ -462,3 +462,67 @@ func TestViewMentionRouteLegacyInput(t *testing.T) {
 	}
 	e.y.none(t, "格十一", 300*time.Millisecond)
 }
+
+// 格 13（tosonnet55tc2k 复核必补 1）：对端在线但本次连接尚未发 session_capabilities，而端点登记曾报 ack ⇒
+// 与 routeToSession 同判据走持久投递，应投递、不得误判 no_ack。反向 MN2「只看在线会话自报、不查端点登记」⇒ 本格红。
+// 断言面＝回执与对端是否收到带 delivery_id 的信封；实现承诺＝viewMentionPeerACK 回落 Repo.SessionEndpointDeliveryACK。
+func TestViewMentionRouteFallsBackToRegisteredACK(t *testing.T) {
+	e := newVMEnv(t)
+	rCred, rID := e.enrollFor("zzc", "dev-r", "Relink")
+	g, err := e.svc.Store.ListAgentGroups(e.ctx, e.ids["Kimi"])
+	if err != nil || len(g) == 0 {
+		t.Fatalf("Kimi 的编组：%v %v", g, err)
+	}
+	var code string
+	for _, c := range g {
+		if gr, _ := e.svc.Store.GetGroup(e.ctx, c); gr != nil && gr.ShortName == "testa01" {
+			code = c
+		}
+	}
+	if err := e.svc.JoinGroup(e.ctx, "zzc", code, rID); err != nil {
+		t.Fatal(err)
+	}
+	// 第一次连接：报 ack ⇒ 端点登记 delivery_ack_v1=1
+	first, st, body := e.dial(rCred, "")
+	if first == nil {
+		t.Fatalf("dial: %d %s", st, body)
+	}
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "relink")
+	if err := writeEnvelope(e.ctx, first, model.Envelope{ID: "caps-r", To: "workpulse#" + AgentKeyID("zzc"),
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, "端点登记 ack", func() bool {
+		ack, known, err := e.hub.Repo.SessionEndpointDeliveryACK(e.ctx, AgentKeyID("zzc"), "relink")
+		return err == nil && known && ack
+	})
+	_ = first.Close(websocket.StatusNormalClosure, "reconnect")
+	waitFor(t, 2*time.Second, "Relink 下线", func() bool { return !e.hub.AgentOnline(rID) })
+	// 第二次连接：不发 capabilities（模拟 capabilities 帧还没到）
+	second, st, body := e.dial(rCred, "")
+	if second == nil {
+		t.Fatalf("redial: %d %s", st, body)
+	}
+	defer second.Close(websocket.StatusNormalClosure, "done")
+	frames := vmCollect(second)
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "relink")
+	e.hub.mu.Lock()
+	c := e.hub.sessionClients[AgentKeyID("zzc")]["relink"]
+	e.hub.mu.Unlock()
+	if c == nil || e.hub.sessionSupportsDeliveryACK(c) {
+		t.Fatal("前提：本次连接在线且尚未自报 ack")
+	}
+	_, _, r := e.post(t, "13131313131313131313131313131313", "格十三", []string{"Relink.zzc"})
+	want := []string{"Relink.zzc|delivered||已转给 Relink，回复请到 Relink 的页面查看"}
+	if got := vmReceipts(r); strings.Join(got, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("回执=%q", got)
+	}
+	// 已进持久投递；真 helper 连上后随即发 capabilities，Hub 据此排空队列——照做后应收到带 delivery_id 的那封。
+	if err := writeEnvelope(e.ctx, second, model.Envelope{ID: "caps-r2", To: "workpulse#" + AgentKeyID("zzc"),
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	if env := frames.next(t, "格十三"); metaString(env.Meta, "delivery_id") == "" {
+		t.Fatalf("应走持久投递（有 delivery_id）：meta=%v", env.Meta)
+	}
+}
