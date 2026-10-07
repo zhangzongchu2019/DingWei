@@ -18,7 +18,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
-	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
 
 const (
@@ -1092,20 +1091,28 @@ func amrClientTooOldForNoDisplayNotice(version string) bool {
 	return !amrVersionAtLeast(current, minimum)
 }
 
-// amrNoDisplayNoticeMinVersion 默认取 **Hub 自己的构建版本**,可用 env 覆盖。
+// amrNoDisplayNoticeDefaultMinVersion 「发送方失败通知（display=none）」默认门槛＝helper 开始能正确处理它的那个
+// 固定版本（R-V2-0103-SMALLFIXES A，组长 R-V2-0102-AMR-NOTICE-THRESHOLD；板 runbooks/PLAN-R-V2-0103-SMALLFIXES-opus50tc2k.md）。
 //
-// 🔴 理由(不是随手挑的):本仓 Hub 与 sessionHelper **共用同一个 VERSION 文件**
-// ⇒ 「带 S-HELPER-NOTICE-NO-INJECT 的 helper」自报的版本**必然 ≥** 与它同批或更晚的 Hub 版本;
-// 而升级前在跑的 helper 自报的是旧版本(实测本机 0.2.0.5)⇒ 远低于门槛。
-// ⇒ 这个默认值**自动**实现了「Hub 批先上、helper 批后上」期间**不误开**:
-// Hub 批上线那一刻门槛就等于它自己的新版本,老 helper 一律不发(符合业主「可以不发」);
-// helper 批一上线自动打开,**不需要人去改配置**,也就不会因为忘了改而长期关着(靠记得 = 没有)。
-// 🔴 代价(已在板件 DESIGN-S-MENTION-ERRORDOCK-NODISPLAY §六-1 明说,待组长裁):
-// 那个窗口期内**发送方 Agent 收不到失败通知**;人仍能在错误看板看到
-// (publishFailureDockEvent 是 Hub 侧的,不依赖 helper 版本)。
-// 若要把门常开(行为与今天相同),部署时设 WP_AMR_NO_DISPLAY_NOTICE_MIN_VERSION=0.0.0.0 即可。
+// 依据（git 实核，作者与复核方各自核过）：
+//   - helper 侧能力出自 75d5dfc7「S-HELPER-NOTICE-NO-INJECT」（2026-09-29）：按 Envelope.Meta["type"]（hub_meta.py，
+//     真源 internal/model/model.go 的 hub-meta-types 块）认出 Hub 自发通知、不注入 CLI。
+//   - 0.2.1.95 有歧义：把 VERSION 定为 0.2.1.95 的提交 d1d2c824 **不含** 75d5dfc7，已发布的 875235e4 含 ⇒ 不能当门槛。
+//   - VERSION 序：0.2.1.95（d1d2c824）之后直接是 0.2.1.100（ebd17f43，含 75d5dfc7）；0.2.1.96–99 从未出现
+//     ⇒ 自报 ≥ 0.2.1.100 的 helper 必含 75d5dfc7 的通知处理（不是说 0.2.1.100 只对应一份 helper 代码——
+//     其后 codexDriver.py 等仍有改动、仍自报 0.2.1.100；通知处理所在的 app.py／routing.py／hub_meta.py 未变）。
+//   - 在 ebd17f43 隔离环境跑 tests.test_hub_notice_no_inject：13 项全过；ebd17f43 至今 hub_meta.py、gen_hub_meta.py、
+//     该测试与 model.go 逐字节未变 ⇒ 现 Hub 发的通知与 0.2.1.100 helper 认的是同一份契约。
+//   - 安全性取决于 helper 按信封 type 判 no-inject（已测），不取决于 display 键（helper 不消费 display）。
+//
+// 🔴 原先默认取 Hub 自身版本：Hub 每升一版就把所有旧 helper 关掉（0.2.1.102 上线后两托管席 0.2.1.100 被关）。
+// 改为固定常量后两托管席重新收到该通知；自报 0.2.1.95 的保守地仍不发。
+const amrNoDisplayNoticeDefaultMinVersion = "0.2.1.100"
+
+// amrNoDisplayNoticeMinVersion 门槛：env WP_AMR_NO_DISPLAY_NOTICE_MIN_VERSION 覆盖（口径不变；设 0.0.0.0 即常开），
+// 否则取上面的固定常量——与 Hub 自身版本无关。
 func amrNoDisplayNoticeMinVersion() string {
-	return firstNonEmpty(os.Getenv("WP_AMR_NO_DISPLAY_NOTICE_MIN_VERSION"), dwversion.Version)
+	return firstNonEmpty(os.Getenv("WP_AMR_NO_DISPLAY_NOTICE_MIN_VERSION"), amrNoDisplayNoticeDefaultMinVersion)
 }
 
 func amrVersionAtLeast(current, minimum [4]int) bool {

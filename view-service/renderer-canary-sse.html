@@ -5031,17 +5031,32 @@
     // R-V2-0102-VIEW-MENTION-ROUTE:选中的候选记下 full_name,发送时交给 Hub 投递(Hub 只认这份结构化名单,不解析正文)。
     // 正文里那段「@insert」被删掉 ⇒ 不再带上;手打的同样文字不算(组长 NOFALLBACK 035027)。
     const mentionPicked = [];
+    // 正文里是否还有「@insert」独立一段(前为行首或空白,后不接名字字符)——发送取目标与输入时剔除共用这一个判据。
+    function mentionInsertPresent(text, insert) {
+      const at = '@' + insert;
+      for (let i = text.indexOf(at); i >= 0; i = text.indexOf(at, i + 1)) {
+        const before = i === 0 ? '' : text[i - 1]; const after = text.charAt(i + at.length);
+        if ((i === 0 || /\s/.test(before)) && !/[A-Za-z0-9.]/.test(after)) return true;
+      }
+      return false;
+    }
     function mentionTargetsFor(text) {
       const out = [];
       for (const p of mentionPicked) {
-        const at = '@' + p.insert;
-        for (let i = text.indexOf(at); i >= 0; i = text.indexOf(at, i + 1)) {
-          const before = i === 0 ? '' : text[i - 1]; const after = text.charAt(i + at.length);
-          if ((i === 0 || /\s/.test(before)) && !/[A-Za-z0-9.]/.test(after)) { if (!out.includes(p.full_name)) out.push(p.full_name); break; }
-        }
+        if (mentionInsertPresent(text, p.insert) && !out.includes(p.full_name)) out.push(p.full_name);
       }
       return out;
     }
+    // 0.2.1.103 C(R-V2-0103-SMALLFIXES):正文里已不再有某个已选的「@insert」⇒ 立刻从已选集合剔除;
+    // 之后手打同样文字不算已选(组长 NOFALLBACK:手打不转发)。输入法组字中的 input 不剔除,组字结束(compositionend)再判。
+    function mentionPrunePicked() {
+      const text = humanInput.value;
+      for (let i = mentionPicked.length - 1; i >= 0; i--) {
+        if (!mentionInsertPresent(text, mentionPicked[i].insert)) mentionPicked.splice(i, 1);
+      }
+    }
+    humanInput.addEventListener('input', (e) => { if (!e.isComposing) mentionPrunePicked(); });
+    humanInput.addEventListener('compositionend', () => mentionPrunePicked());
     const mentionReceipt = document.createElement('div');
     mentionReceipt.id = 'mentionReceipt'; mentionReceipt.className = 'mention-receipt'; mentionReceipt.setAttribute('role', 'status'); mentionReceipt.hidden = true;
     composerInner.after(mentionReceipt);

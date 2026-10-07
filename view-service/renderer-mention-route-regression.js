@@ -22,12 +22,14 @@ function mutate(from, to) {
   if (hits !== 1) { console.error(`MUTATION-ANCHOR-STALE: mutation ${mutation} anchor must match exactly once, hits=${hits}: ${from.slice(0, 160)}`); process.exit(3); }
   html = html.replace(from, to);
 }
-const MUTATIONS = ['mutation-anchor-selftest', 'no-mentions-sent', 'no-text-check', 'no-receipt', 'receipt-as-html'];
+const MUTATIONS = ['mutation-anchor-selftest', 'no-mentions-sent', 'no-text-check', 'no-receipt', 'receipt-as-html', 'no-prune', 'prune-during-ime'];
 if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation}`); process.exit(3); }
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x');
 if (mutation === 'no-mentions-sent') mutate('const withMentions = (o) => (mentions.length ? { ...o, mentions } : o);', 'const withMentions = (o) => o;');
-if (mutation === 'no-text-check') mutate("if ((i === 0 || /\\s/.test(before)) && !/[A-Za-z0-9.]/.test(after)) {", 'if (true) {');
+if (mutation === 'no-text-check') mutate("if ((i === 0 || /\\s/.test(before)) && !/[A-Za-z0-9.]/.test(after)) return true;", 'if (true) return true;');
 if (mutation === 'no-receipt') mutate('        renderMentionReceipts(result && result.mentions);\n', '');
+if (mutation === 'no-prune') mutate("humanInput.addEventListener('input', (e) => { if (!e.isComposing) mentionPrunePicked(); });", '');
+if (mutation === 'prune-during-ime') mutate("humanInput.addEventListener('input', (e) => { if (!e.isComposing) mentionPrunePicked(); });", "humanInput.addEventListener('input', () => mentionPrunePicked());");
 if (mutation === 'receipt-as-html') mutate('row.dataset.status = String(m.status || \'\'); row.textContent = m.message;', 'row.dataset.status = String(m.status || \'\'); row.innerHTML = m.message;');
 
 const NAME = 'dev.zzc';
@@ -106,6 +108,37 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.keyboard.press('Escape');
       body = await send();
       assert.ok(!('mentions' in body), `hand-typed only must not carry mentions: ${JSON.stringify(body)}`);
+    });
+
+    // 0.2.1.103 C（R-V2-0103-SMALLFIXES）：选后删掉、再手打同名 ⇒ 不转发；选后接着输入 ⇒ 仍转发；输入法组字中途不误剔除。
+    // 断言面＝发送体 mentions；实现承诺＝mentionPrunePicked（与 mentionTargetsFor 同一判据）。
+    await test('picked then deleted, then hand-typed again ⇒ not forwarded', async () => {
+      await reset(); await input.click();
+      await pick('be', 'beta（beta.zzc）');                       // 「@beta 」
+      for (let i = 0; i < 6; i++) await page.keyboard.press('Backspace');   // 删掉整段 → 已选集合剔除 beta
+      assert.strictEqual(await input.inputValue(), '');
+      await page.keyboard.type('@beta 你好'); await page.keyboard.press('Escape');   // 手打同名，不从浮层选
+      const body = await send();
+      assert.ok(!('mentions' in body), `retyped by hand after deleting must not forward: ${JSON.stringify(body)}`);
+    });
+
+    await test('picked and kept while typing on ⇒ still forwarded', async () => {
+      await reset(); await input.click();
+      await pick('be', 'beta（beta.zzc）'); await page.keyboard.type('接着写一段 ');
+      const body = await send();
+      assert.deepStrictEqual(body.mentions, ['beta.zzc']);
+    });
+
+    await test('an input event during IME composition does not drop a pick', async () => {
+      await reset(); await input.click();
+      await pick('be', 'beta（beta.zzc）');
+      await page.evaluate(() => {   // 组字中途正文暂时不含「@beta」（如输入法替换选区），随后恢复
+        const el = document.getElementById('humanInput'); const keep = el.value;
+        el.value = '拼'; el.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }));
+        el.value = keep + '你好'; el.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }));
+      });
+      const body = await send();
+      assert.deepStrictEqual(body.mentions, ['beta.zzc'], 'composition input must not prune');
     });
 
     await test('no mention picked ⇒ the request body has exactly the old shape', async () => {
