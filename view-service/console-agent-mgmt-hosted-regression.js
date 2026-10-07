@@ -38,13 +38,16 @@ function mutate(from, to) {
   }
   html = html.replace(from, to);
 }
-const MUTATIONS = ['mutation-anchor-selftest', 'hosted-online-no-group-refresh', 'ignore-hosted-disabled', 'always-hide-hosted', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped', 'drop-in-use'];
+const MUTATIONS = ['mutation-anchor-selftest', 'shared-warn-always', 'shared-warn-never', 'shared-warn-ignores-kind', 'hosted-online-no-group-refresh', 'ignore-hosted-disabled', 'always-hide-hosted', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped', 'drop-in-use'];
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'ignore-hosted-disabled') mutate('if(!FEATURE_HOSTED){var hc=', 'if(false){var hc=');
 if (mutation === 'always-hide-hosted') mutate('if(!FEATURE_HOSTED){var hc=', 'if(true){var hc=');
 if (mutation === 'hosted-group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
 if (mutation === 'hosted-online-no-group-refresh') mutate("enrollFeedback('hostedFeedback',name+' 已上线');refreshGroups('hosted');", "enrollFeedback('hostedFeedback',name+' 已上线');");
+if (mutation === 'shared-warn-always') mutate("var show=!!a&&a.kind==='token_file'&&a.in_use>0;", 'var show=true;');
+if (mutation === 'shared-warn-never') mutate("var show=!!a&&a.kind==='token_file'&&a.in_use>0;", 'var show=false;');
+if (mutation === 'shared-warn-ignores-kind') mutate("var show=!!a&&a.kind==='token_file'&&a.in_use>0;", 'var show=!!a&&a.in_use>0;');
 if (mutation === 'hosted-new-group-no-check') mutate("if(!NEW_GROUP_RE.test(n))return {error:GROUP_NAME_RULE_TEXT};", '');
 if (mutation === 'backup-failed-unmapped') mutate("backup_failed:'销毁前备份数据卷失败,容器没有被删除,请稍后再试或联系管理员',", '');
 if (mutation === 'quota-only-zero') mutate('&&data.remaining[d[0]]<=0)used.push', '&&data.remaining[d[0]]===0)used.push');
@@ -577,6 +580,29 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       const row = await page.locator('.group-row').evaluateAll((els) => els.map((r) => Array.from(r.cells).slice(0, 2).map((c) => c.textContent)).find((c) => c[0] === 'Kilogrp'));
       assert.deepStrictEqual(row, ['Kilogrp', 'kilo'], 'new group listed with the new seat as leader');
       await page.locator('#hostedGroup').selectOption(GROUP_MINE);
+    });
+
+    // 0.2.1.103 B（R-V2-0103-SMALLFIXES）：所选账号 token_file 且 in_use>0 ⇒ 账号下方一行共用提示；其余不显示；只提示不拦。
+    // 断言面＝#hostedAccountWarn 的显隐与文字；实现承诺＝renderHostedAccountWarn。token_file 组合在本夹具里未验通（选项灰），
+    // 故用程序方式选中并派发 change——验的是提示逻辑本身，不是可选性。
+    await test('a token_file account already in use shows the shared-login warning; others do not; nothing is blocked', async () => {
+      const WARN = '同一登录态多个 Agent 共用可能互相顶掉，建议一号一席';
+      // 共用中的 token_file 账号只在本格注入（不改共享夹具，免得牵动账号联动那格的逐项清单）。
+      await page.evaluate(() => { hostedOptions.accounts.push({ id: 'acc5', name: '共用令牌账号', llm: 'openai', kind: 'token_file', last4: 'bb22', in_use: 1 }); });
+      await page.evaluate(() => { const c = document.getElementById('hostedCli'); c.value = 'codex'; c.dispatchEvent(new Event('change')); const l = document.getElementById('hostedLlm'); l.value = 'openai'; l.dispatchEvent(new Event('change')); });
+      const pick = (id) => page.evaluate((v) => { const s = document.getElementById('hostedAccount'); s.value = v; s.dispatchEvent(new Event('change')); }, id);
+      const warn = () => page.locator('#hostedAccountWarn').evaluate((e) => ({ hidden: e.hidden, text: e.textContent }));
+      await pick('acc5');
+      assert.deepStrictEqual(await warn(), { hidden: false, text: WARN }, 'token_file + in_use>0 ⇒ warning');
+      await pick('acc4');
+      assert.deepStrictEqual(await warn(), { hidden: true, text: '' }, 'token_file + in_use 0 ⇒ no warning');
+      await pick('acc2');
+      assert.deepStrictEqual(await warn(), { hidden: true, text: '' }, 'api_key + in_use>0 ⇒ no warning');
+      await pick('acc5');
+      assert.strictEqual((await warn()).hidden, false);
+      await page.evaluate(() => { const l = document.getElementById('hostedLlm'); l.value = 'anthropic'; l.dispatchEvent(new Event('change')); });   // 换 LLM 重建账号列表 ⇒ 提示随之刷新
+      assert.strictEqual((await warn()).hidden, true, 'rebuilding the account list refreshes the warning');
+      assert.strictEqual(await page.locator('#hostedCreateBtn').evaluate((b) => b.disabled), false, 'the warning never blocks the form');
     });
 
     await test('no pageerror and no unexpected console error across the whole run', async () => {
