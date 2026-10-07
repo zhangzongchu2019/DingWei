@@ -23,6 +23,9 @@ import (
 const (
 	ipcBodyAMRMetaKey = "ipc_body_amr_v1"
 	amrRouteBodyMax   = 100_000
+
+	// R-V2-0105 件三：落在已完成回合上的事件，每会话至多每 10 s 打一行聚合日志。
+	amrIgnoredLogInterval = 10 * time.Second
 )
 
 func (h *Hub) routeIPCSendBodyAMR(ctx context.Context, c *sessionClient, original model.Envelope) {
@@ -201,6 +204,14 @@ type amrProcessor struct {
 	turnTTL       time.Duration
 	routeTimeout  time.Duration
 	maxTargets    int
+
+	// R-V2-0105 件三：已完成回合记忆独立于在途回合空闲超时 turnTTL。旧 helper 事件桥会整份重放缓冲，
+	// 完成记忆若短于 R5 去重窗（原 5 分钟＜10 分钟），过期的旧回合会被重开、重路由（dw2 每 720 s 一次）。
+	completedTTL      time.Duration
+	maxCompletedTotal int
+	// 落在已完成回合上的事件按会话聚合计数、限频打印（原为逐条一行，洪流时每秒数千行，dw2 容器日志 78GB 的主因）。
+	ignoredCompleted    map[string]int
+	ignoredCompletedLog map[string]time.Time
 }
 
 func newAMRProcessor(h *Hub) *amrProcessor {
@@ -215,12 +226,17 @@ func newAMRProcessor(h *Hub) *amrProcessor {
 		maxTurnAge:   envDuration("WP_AMR_MAX_TURN_AGE", 6*time.Hour),
 		maxBytes:     envInt("WP_AMR_MAX_TURN_BYTES", 256<<10),
 		routeBodyMax: amrRouteBodyMax,
-		maxCompleted: envInt("WP_AMR_MAX_COMPLETED_PER_SESSION", 64),
+		maxCompleted: envInt("WP_AMR_MAX_COMPLETED_PER_SESSION", 4096),
 		turnTTL:      envDuration("WP_AMR_TURN_TTL", 5*time.Minute),
 		routeTimeout: envDuration("WP_AMR_ROUTE_TIMEOUT", 5*time.Second),
 		maxTargets:   envInt("WP_AMR_MAX_TARGETS", 20),
 		stop:         make(chan struct{}),
 		done:         make(chan struct{}),
+
+		completedTTL:        envDuration("WP_AMR_COMPLETED_TTL", 24*time.Hour),
+		maxCompletedTotal:   envInt("WP_AMR_MAX_COMPLETED_TOTAL", 100000),
+		ignoredCompleted:    map[string]int{},
+		ignoredCompletedLog: map[string]time.Time{},
 	}
 	p.stats.terminalUnknown = map[string]uint64{}
 	p.routeEnvelope = h.RouteEnvelope
@@ -284,9 +300,23 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 		if late {
 			p.stats.lateAfterTerminal++
 		}
+		// R-V2-0105 件三：按会话聚合，每会话至多每 amrIgnoredLogInterval 打一行（带区间内条数）。
+		sessionKey := keyID + "\x00" + sessionName
+		if p.ignoredCompleted == nil {
+			p.ignoredCompleted, p.ignoredCompletedLog = map[string]int{}, map[string]time.Time{}
+		}
+		p.ignoredCompleted[sessionKey]++
+		emit := now.Sub(p.ignoredCompletedLog[sessionKey]) >= amrIgnoredLogInterval
+		count := p.ignoredCompleted[sessionKey]
+		if emit {
+			p.ignoredCompletedLog[sessionKey] = now
+			p.ignoredCompleted[sessionKey] = 0
+		}
 		p.mu.Unlock()
-		log.Printf("amr decision=ignored reason=completed_turn counted_late=%t session=%s delivery_id=%s turn_id=%s kind=%s text_len=%d",
-			late, sessionName, ev.DeliveryID, ev.TurnID, ev.Kind, len(ev.Text))
+		if emit {
+			log.Printf("amr decision=ignored reason=completed_turn counted_late=%t session=%s delivery_id=%s turn_id=%s kind=%s text_len=%d aggregated=%d",
+				late, sessionName, ev.DeliveryID, ev.TurnID, ev.Kind, len(ev.Text), count)
+		}
 		return
 	}
 	t := p.turns[key]
@@ -583,12 +613,22 @@ func (p *amrProcessor) expireLocked(now time.Time) {
 			p.queueNoticeLocked(amrNoticeJob{key: key, target: "", reason: "本轮未收到可靠终态，已按 TTL 关闭且不会派送", failure: true})
 		}
 	}
+	completedTTL := p.completedTTL
+	if completedTTL <= 0 {
+		completedTTL = p.turnTTL // 未配置（如字面量构造）时保持旧行为
+	}
 	for key, at := range p.completed {
-		if now.Sub(at) > p.turnTTL {
+		if now.Sub(at) > completedTTL {
 			delete(p.completed, key)
 		}
 	}
 	p.capCompletedLocked()
+	for session, at := range p.ignoredCompletedLog {
+		if now.Sub(at) > completedTTL {
+			delete(p.ignoredCompletedLog, session)
+			delete(p.ignoredCompleted, session)
+		}
+	}
 }
 
 func (p *amrProcessor) capCompletedLocked() {
@@ -605,6 +645,7 @@ func (p *amrProcessor) capCompletedLocked() {
 			}
 		}
 		if over == "" {
+			p.capCompletedTotalLocked()
 			return
 		}
 		var oldestKey amrTurnKey
@@ -618,6 +659,24 @@ func (p *amrProcessor) capCompletedLocked() {
 		if found {
 			delete(p.completed, oldestKey)
 		}
+	}
+}
+
+// capCompletedTotalLocked 全局封顶（每会话上限之外的第二道；要点第十二节：约 300 B／条，10 万条约 30 MB）。
+func (p *amrProcessor) capCompletedTotalLocked() {
+	for p.maxCompletedTotal > 0 && len(p.completed) > p.maxCompletedTotal {
+		var oldestKey amrTurnKey
+		var oldestAt time.Time
+		found := false
+		for key, at := range p.completed {
+			if !found || at.Before(oldestAt) {
+				oldestKey, oldestAt, found = key, at, true
+			}
+		}
+		if !found {
+			return
+		}
+		delete(p.completed, oldestKey)
 	}
 }
 
