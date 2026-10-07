@@ -95,6 +95,13 @@ func (h *Hub) routeViewMentions(ctx context.Context, selfFullName, requestID, te
 func (h *Hub) deliverViewMention(ctx context.Context, self *identity.Agent, selfFull string, c identity.MentionCandidate, label, requestID, text, principalID string) viewMentionResult {
 	keyID := AgentKeyID(c.Agent.OwnerLC)
 	online := h.AgentOnline(c.Agent.ID)
+	// 🔴 组长 NOACK 050053（tosonnet55tc2k 复现）：对端不报 delivery_ack_v1 ⇒ 派生信封会直写、没有 delivery_id，
+	//    amr.go process 的一跳封顶查不回入站、不生效 ⇒ 不投，回执写明。判据与 routeToSession 相同：在线会话自报，
+	//    否则看已登记端点；从未连过（端点未知）仍走下面的离线失败。
+	if ack, known := h.viewMentionPeerACK(ctx, keyID, c.Agent.NameLC()); known && !ack {
+		log.Printf("view mention decision=no_ack from=%s to=%s online=%t", selfFull, c.FullName, online)
+		return viewMentionResult{FullName: c.FullName, Status: "failed", Reason: "no_ack", Message: label + " 暂不支持可靠转发，未转"}
+	}
 	env := model.Envelope{
 		ID:   viewMentionEnvelopeID(requestID, c.Agent.ID),
 		To:   sessionAddress(c.Agent.NameLC(), keyID),
@@ -122,6 +129,26 @@ func (h *Hub) deliverViewMention(ctx context.Context, self *identity.Agent, self
 		return viewMentionResult{FullName: c.FullName, Status: "queued", Message: label + " 不在线，已排队；回复请到 " + label + " 的页面查看"}
 	}
 	return viewMentionResult{FullName: c.FullName, Status: "delivered", Message: "已转给 " + label + "，回复请到 " + label + " 的页面查看"}
+}
+
+// viewMentionPeerACK 对端是否报 delivery_ack_v1（ack），以及是否已知该端点（known＝在线，或曾登记过端点）。
+// 与 routeToSession 走持久投递的判据同源：会话在线且自报 ⇒ true；否则查端点登记。
+func (h *Hub) viewMentionPeerACK(ctx context.Context, keyID, sessionName string) (ack, known bool) {
+	h.mu.Lock()
+	c := h.sessionClients[keyID][sessionName]
+	h.mu.Unlock()
+	if c != nil && h.sessionSupportsDeliveryACK(c) {
+		return true, true
+	}
+	known = c != nil
+	if h.Repo != nil {
+		repoACK, endpointKnown, err := h.Repo.SessionEndpointDeliveryACK(ctx, keyID, sessionName)
+		if err != nil {
+			return false, known
+		}
+		return repoACK, known || endpointKnown
+	}
+	return false, known
 }
 
 // viewMentionEnvelopeID 派生号＝请求号＋目标短哈希：同一请求重试得同号（claimEnvelope 去重），不同目标互不相同。

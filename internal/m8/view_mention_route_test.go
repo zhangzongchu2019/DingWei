@@ -25,6 +25,7 @@ import (
 type vmFrames struct{ ch chan model.Envelope }
 
 // collect 后台持续读，避免带超时的 Read 在超时时把连接关掉（coder/websocket 语义）。
+// 持久投递（带 delivery_id）照真 helper 回 processed 回执，免得租约到期重投、干扰「不得再收到」类断言。
 func vmCollect(conn *websocket.Conn) *vmFrames {
 	f := &vmFrames{ch: make(chan model.Envelope, 64)}
 	go func() {
@@ -35,9 +36,14 @@ func vmCollect(conn *websocket.Conn) *vmFrames {
 				return
 			}
 			var env model.Envelope
-			if json.Unmarshal(data, &env) == nil && metaString(env.Meta, "type") != agentNetworkSkillPushType {
-				f.ch <- env
+			if json.Unmarshal(data, &env) != nil || metaString(env.Meta, "type") == agentNetworkSkillPushType {
+				continue
 			}
+			if dlv := metaString(env.Meta, "delivery_id"); dlv != "" {
+				_ = writeEnvelope(context.Background(), conn, model.Envelope{ID: "ack-" + dlv, To: env.From,
+					Meta: map[string]any{"type": "delivery_ack", "delivery_id": dlv, "state": "processed"}})
+			}
+			f.ch <- env
 		}
 	}()
 	return f
@@ -86,6 +92,7 @@ type vmEnv struct {
 	secret        []byte
 	ids           map[string]string
 	a, x, q, z, y *vmFrames
+	n             *vmFrames // Nack：在线但不报 delivery_ack_v1（组长 NOACK 050053）
 	qConn         *websocket.Conn
 	qCred         string
 }
@@ -110,6 +117,8 @@ func newVMEnv(t *testing.T) *vmEnv {
 	zCred, zID := v.enrollFor("zzc", "dev-z", "Outsider")
 	yCred, yID := v.enrollFor("lbl", "dev-y", "Gamma")
 	e.ids["Beta"], e.ids["Outsider"], e.ids["Gamma"] = xID, zID, yID
+	nCred, nID := v.enrollFor("zzc", "dev-n", "Nack")
+	e.ids["Nack"] = nID
 	for _, n := range []string{"W1", "W2", "W3"} {
 		_, e.ids[n] = v.enrollFor("zzc", "dev-"+n, n)
 	}
@@ -117,7 +126,7 @@ func newVMEnv(t *testing.T) *vmEnv {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, n := range []string{"Beta", "Quill", "Opus50TS", "W1", "W2", "W3"} {
+	for _, n := range []string{"Beta", "Quill", "Opus50TS", "W1", "W2", "W3", "Nack"} {
 		if err := v.svc.JoinGroup(ctx, "zzc", g.Code, e.ids[n]); err != nil {
 			t.Fatalf("join %s: %v", n, err)
 		}
@@ -135,7 +144,9 @@ func newVMEnv(t *testing.T) *vmEnv {
 		return conn, vmCollect(conn)
 	}
 	_, e.a = dial(v.zKimiCred, "zzc", "kimi")
-	_, e.x = dial(xCred, "zzc", "beta")
+	xConn, xFrames := dial(xCred, "zzc", "beta")
+	e.x = xFrames
+	_, e.n = dial(nCred, "zzc", "nack") // 不发 session_capabilities ⇒ 不报 ack
 	_, e.z = dial(zCred, "zzc", "outsider")
 	_, e.y = dial(yCred, "lbl", "gamma")
 	// Quill 自报 delivery_ack_v1 ⇒ 走持久投递（有 delivery_id，可查回入站）
@@ -144,12 +155,19 @@ func newVMEnv(t *testing.T) *vmEnv {
 		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, "Quill 支持 delivery_ack", func() bool {
-		v.hub.mu.Lock()
-		c := v.hub.sessionClients[AgentKeyID("zzc")]["quill"]
-		v.hub.mu.Unlock()
-		return c != nil && v.hub.sessionSupportsDeliveryACK(c)
-	})
+	// Beta 同样自报 ack（现行 helper 无条件报，app.py:475）；只有 Nack 不报
+	if err := writeEnvelope(ctx, xConn, model.Envelope{ID: "caps-x", To: "workpulse#" + AgentKeyID("zzc"),
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"quill", "beta"} {
+		waitFor(t, time.Second, name+" 支持 delivery_ack", func() bool {
+			v.hub.mu.Lock()
+			c := v.hub.sessionClients[AgentKeyID("zzc")][name]
+			v.hub.mu.Unlock()
+			return c != nil && v.hub.sessionSupportsDeliveryACK(c)
+		})
+	}
 
 	e.secret = []byte("abcdef0123456789abcdef0123456789")
 	tmp := t.TempDir()
@@ -362,6 +380,18 @@ func TestViewMentionRoute(t *testing.T) {
 		if got := frames.next(t, "格五"); metaString(got.Meta, "mentioned_from") != "Kimi.zzc" {
 			t.Fatalf("重连后收到的信封 meta=%v", got.Meta)
 		}
+	})
+
+	// 格 12（组长 NOACK 050053）：对端在线但不报 delivery_ack_v1 ⇒ 不投（直写会拿不到 delivery_id，一跳封顶失效），
+	// 回执 failed 逐字；当前会话照收原文。反向去掉该判断 ⇒ 本格红（即 tosonnet55tc2k 的 TestRevNoAckPeerOneHopCap 情形）。
+	t.Run("a peer without delivery_ack_v1 is not sent to", func(t *testing.T) {
+		_, _, r := e.post(t, "12121212121212121212121212121212", "格十二", []string{"Nack.zzc"})
+		want := []string{"Nack.zzc|failed|no_ack|Nack 暂不支持可靠转发，未转"}
+		if got := vmReceipts(r); strings.Join(got, "\n") != strings.Join(want, "\n") {
+			t.Fatalf("回执=%q", got)
+		}
+		e.a.next(t, "格十二")
+		e.n.none(t, "格十二", 400*time.Millisecond)
 	})
 
 	// 提示 a：request_id 只收 32 位 hex 或 UUID；超长 ⇒ 400、谁都不投。派生号长度有界。
