@@ -30,6 +30,7 @@ const (
 	mentionReplyMaxInflight = 256              // 在途累计表上限
 	mentionReplyTurnTTL     = 30 * time.Minute // 30 分钟未结束的回合丢弃
 	mentionReplyLookupCap   = 1024             // 入站查询结果（是／不是 view_mention）LRU 上限
+	mentionReplyDoneCap     = 1024             // 已结束回合集合上限（复核必改：终态后同键事件一律忽略）
 )
 
 // mentionReplyLongNote 截断后卡片正文末尾的说明（组长 075655 第 2 条，逐字）。%s＝X 的显示名。
@@ -58,6 +59,10 @@ type mentionMirror struct {
 	turns   map[amrTurnKey]*mentionReplyTurn
 	lookups map[string]*list.Element // delivery_id → *mentionReplyLookup（LRU）
 	order   *list.List
+	// done 已发出（或已放弃）的回合：终态后同键的重复终态、迟到文本一律忽略——一轮只发一张，
+	// 也不留永不结束的在途轮（同 AMR 的 completed，amr.go F8/T-040；tosonnet55tc2k 复核必改）。
+	done      map[amrTurnKey]*list.Element
+	doneOrder *list.List
 }
 
 type mentionReplyLookup struct {
@@ -66,7 +71,8 @@ type mentionReplyLookup struct {
 }
 
 func newMentionMirror(h *Hub) *mentionMirror {
-	return &mentionMirror{hub: h, now: time.Now, turns: map[amrTurnKey]*mentionReplyTurn{}, lookups: map[string]*list.Element{}, order: list.New()}
+	return &mentionMirror{hub: h, now: time.Now, turns: map[amrTurnKey]*mentionReplyTurn{}, lookups: map[string]*list.Element{}, order: list.New(),
+		done: map[amrTurnKey]*list.Element{}, doneOrder: list.New()}
 }
 
 // observe 在 Hub 收到某会话（X）的 session_event 时调用（terminal.go，紧随 AMR ingest）。
@@ -85,6 +91,11 @@ func (m *mentionMirror) observe(keyID, sessionName, raw string) {
 	key := amrTurnKey{KeyID: keyID, Session: sessionName, DeliveryID: ev.DeliveryID, TurnID: ev.TurnID}
 	now := m.now()
 	m.mu.Lock()
+	if _, finished := m.done[key]; finished {
+		m.mu.Unlock()
+		log.Printf("mention reply decision=ignored reason=completed_turn session=%s delivery_id=%s kind=%s", sessionName, ev.DeliveryID, ev.Kind)
+		return
+	}
 	m.expireLocked(now)
 	t := m.turns[key]
 	if t == nil {
@@ -107,6 +118,7 @@ func (m *mentionMirror) observe(keyID, sessionName, raw string) {
 		return
 	}
 	delete(m.turns, key)
+	m.markDoneLocked(key)
 	m.mu.Unlock()
 	succeeded, reason := amrTerminalOutcome(ev.Data)
 	m.publish(keyID, sessionName, ev.DeliveryID, ev.TurnID, t, succeeded, reason)
@@ -169,10 +181,24 @@ func (m *mentionMirror) remember(deliveryID string, src mentionReplySource) {
 	}
 }
 
+// markDoneLocked 记一轮为已结束（有界，最早的先出；淘汰后同键再来只会在下一个终态多发一次，属可接受的退化）。
+func (m *mentionMirror) markDoneLocked(key amrTurnKey) {
+	if _, hit := m.done[key]; hit {
+		return
+	}
+	m.done[key] = m.doneOrder.PushFront(key)
+	for m.doneOrder.Len() > mentionReplyDoneCap {
+		oldest := m.doneOrder.Back()
+		m.doneOrder.Remove(oldest)
+		delete(m.done, oldest.Value.(amrTurnKey))
+	}
+}
+
 func (m *mentionMirror) expireLocked(now time.Time) {
 	for k, t := range m.turns {
 		if now.Sub(t.started) > mentionReplyTurnTTL {
 			delete(m.turns, k)
+			m.markDoneLocked(k) // 已放弃：迟到的终态不再发半截
 			log.Printf("mention reply decision=expired session=%s delivery_id=%s", k.Session, k.DeliveryID)
 		}
 	}
@@ -189,6 +215,7 @@ func (m *mentionMirror) evictOldestLocked() {
 	}
 	if !first {
 		delete(m.turns, oldestKey)
+		m.markDoneLocked(oldestKey)
 		log.Printf("mention reply decision=evicted session=%s delivery_id=%s", oldestKey.Session, oldestKey.DeliveryID)
 	}
 }

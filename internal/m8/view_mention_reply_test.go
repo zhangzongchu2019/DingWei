@@ -251,6 +251,42 @@ func TestMentionReplyMirror(t *testing.T) {
 		}
 	})
 
+	// 格 12（tosonnet55tc2k 复核必改）：终态后重复终态、迟到文本＋终态 ⇒ 该轮在 A 事件流里仍只有 1 条（Hub 侧一轮一卡，
+	// 不靠页面去重兜着），也不留在途轮。反向去掉 done 集合 ⇒ 本格红。
+	t.Run("events after the turn completed never publish again", func(t *testing.T) {
+		dlv := e.mentionBeta(t, "a2b2a2b2a2b2a2b2a2b2a2b2a2b2a2b2", "回流十二")
+		emitTurnEvent(t, ctx, e.xConn, textEv(dlv, "t12", "正文一", nil))
+		emitTurnEvent(t, ctx, e.xConn, doneEv(dlv, "t12", nil))
+		waitFor(t, 2*time.Second, "首张回流到达", func() bool { return countMessage(e.aReplies(t), dlv) == 1 })
+		emitTurnEvent(t, ctx, e.xConn, doneEv(dlv, "t12", nil))         // 重复终态
+		emitTurnEvent(t, ctx, e.xConn, textEv(dlv, "t12", "迟到文本", nil)) // 终态后迟到
+		emitTurnEvent(t, ctx, e.xConn, doneEv(dlv, "t12", nil))
+		time.Sleep(400 * time.Millisecond)
+		if n := countMessage(e.aReplies(t), dlv); n != 1 {
+			t.Fatalf("该轮在 A 事件流里应只有 1 条，实得 %d", n)
+		}
+		e.hub.mentionMirror.mu.Lock()
+		_, inflight := e.hub.mentionMirror.turns[amrTurnKey{KeyID: AgentKeyID("zzc"), Session: "beta", DeliveryID: dlv, TurnID: "t12"}]
+		e.hub.mentionMirror.mu.Unlock()
+		if inflight {
+			t.Fatal("终态后不得留在途轮")
+		}
+	})
+
+	// 格 13（复核测试缺口）：经 observe 灌入 256＋1 个不同投递的在途轮 ⇒ 在途表不超过上限。反向去掉 observe 里的淘汰 ⇒ 红。
+	t.Run("the in-flight table stays bounded through observe", func(t *testing.T) {
+		for i := 0; i <= mentionReplyMaxInflight; i++ {
+			dlv := seedDeliveryToBetaNoDrain(t, e, map[string]any{"route_source": "view_mention", "mentioned_from": "Kimi.zzc"})
+			e.hub.mentionMirror.observe(AgentKeyID("zzc"), "beta", mustJSON(textEv(dlv, "fill", "x", nil)))
+		}
+		e.hub.mentionMirror.mu.Lock()
+		n := len(e.hub.mentionMirror.turns)
+		e.hub.mentionMirror.mu.Unlock()
+		if n > mentionReplyMaxInflight {
+			t.Fatalf("在途表 %d 超过上限 %d", n, mentionReplyMaxInflight)
+		}
+	})
+
 	// 格 11：X 离线时被提及（持久排队），上线后处理那一轮 ⇒ 照样回流。
 	t.Run("a reply after the target comes back online is still mirrored", func(t *testing.T) {
 		before := len(e.aReplies(t))
@@ -304,6 +340,31 @@ func seedDeliveryToBeta(t *testing.T, e *vmEnv, meta map[string]any) string {
 	payload, _ := json.Marshal(env)
 	if err := e.hub.Repo.EnqueueSessionDelivery(e.ctx, model.SessionDelivery{ID: dlv, KeyID: AgentKeyID("zzc"), SessionName: "beta",
 		Envelope: string(payload), SourceMessageID: env.ID, SourceType: "view_inbound"}); err != nil {
+		t.Fatal(err)
+	}
+	return dlv
+}
+
+func countMessage(evs []map[string]any, dlv string) int {
+	n := 0
+	for _, ev := range evs {
+		if strings.HasPrefix(fmt.Sprint(ev["message_id"]), "mreply-"+dlv+"-") {
+			n++
+		}
+	}
+	return n
+}
+
+func mustJSON(v any) string {
+	raw, _ := json.Marshal(v)
+	return string(raw)
+}
+
+// seedDeliveryToBetaNoDrain 同 seedDeliveryToBeta，但直接标为已处理（不进 Beta 的排空队列），只供 observe 的入站查询用。
+func seedDeliveryToBetaNoDrain(t *testing.T, e *vmEnv, meta map[string]any) string {
+	t.Helper()
+	dlv := seedDeliveryToBeta(t, e, meta)
+	if err := e.hub.Repo.UpdateSessionDelivery(e.ctx, dlv, "processed", "", time.Now().UTC()); err != nil {
 		t.Fatal(err)
 	}
 	return dlv
