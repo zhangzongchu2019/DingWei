@@ -1101,7 +1101,7 @@ function renderHostedAccounts(){
   hostedFill('hostedAccount',items,!llm?'请先选择 LLM':(rows.length?'请选择账号':'（该 LLM 暂无可用团队账号）'));
   renderHostedAccountWarn();
 }
-// 0.2.1.103 B（R-V2-0103-SMALLFIXES）：所选账号是 token_file 且已有 Agent 在用 ⇒ 提示同一登录态共用会互相顶掉；只提示不拦、不改请求体。
+// R-V2-0103-SMALLFIXES B：所选账号是 token_file 且已有 Agent 在用 ⇒ 提示同一登录态共用会互相顶掉；只提示不拦、不改请求体。
 var HOSTED_SHARED_LOGIN_WARN='同一登录态多个 Agent 共用可能互相顶掉，建议一号一席';
 function renderHostedAccountWarn(){
   var el=document.getElementById('hostedAccountWarn'),sel=document.getElementById('hostedAccount');if(!el||!sel)return;
