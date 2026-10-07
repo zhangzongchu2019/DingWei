@@ -3206,6 +3206,36 @@
     // V8 的字符串上限抛 RangeError(Invalid string length),此后该回合再也渲染不出来。
     // 节流只降渲染**频次**,治不了内容**无界增长**,故必须在追加入口做幂等。
     //
+    // R-V2-0105 件一：回合组上限。到软上限时把【按 cursor 排序后较旧一半】里连续的 assistant_text 合并为一条
+    // （文本按序拼接、cursor 取首条）——rebuildTurn 的正文就是排序后 assistant_text 文本的拼接，合并不改正文；
+    // 只合并较旧一半，免得后到事件的 cursor 落进已合并区间。合并后仍超硬上限才停止追加并提示（第八、十六节）。
+    const TURN_EVENTS_SOFT_CAP = (typeof window !== 'undefined' && window.TURN_EVENTS_SOFT_CAP) || 20000;
+    const TURN_EVENTS_HARD_CAP = (typeof window !== 'undefined' && window.TURN_EVENTS_HARD_CAP) || 100000;
+    function compactTurnGroup(group) {
+      group.events.sort(compareCursor);
+      group.sorted = true;
+      const half = Math.floor(group.events.length / 2);
+      const merged = [];
+      for (let i = 0; i < half; i++) {
+        const ev = group.events[i];
+        const prev = merged[merged.length - 1];
+        if (prev && prev.kind === 'assistant_text' && ev.kind === 'assistant_text') {
+          merged[merged.length - 1] = { ...prev, text: (prev.text || '') + (ev.text || '') };
+        } else {
+          merged.push(ev);
+        }
+      }
+      group.events = merged.concat(group.events.slice(half));
+      if (group.events.length > TURN_EVENTS_HARD_CAP && !group.overCap) {
+        group.overCap = true;
+        const note = document.createElement('div');
+        note.className = 'turn-overcap-note';
+        note.textContent = '本回合事件过多,后续未显示(刷新页面重建)';
+        group.node._overCapNote = note;   // rebuildTurn 用 innerHTML 重写，故与附件区同法接回
+        group.node.appendChild(note);
+      }
+    }
+
     function renderTurnEvent(turnKey, ev) {
       let group = turnGroups.get(turnKey);
       if (!group) {
@@ -3217,8 +3247,10 @@
         group = { node, events: [], kind: 'turn', dirty: false, sorted: true, lastRender: 0, detached: false };
         turnGroups.set(turnKey, group);
       }
+      if (group.overCap) return;   // R-V2-0105 件一：已到硬上限并已提示
       group.events.push(ev);   // 不做 cursor 去重:同一 item 的多片 delta 共用 cursor,去重会吞正文
       group.sorted = false;
+      if (group.events.length > TURN_EVENTS_SOFT_CAP) compactTurnGroup(group);
       // turn_completed 强制终渲:终态文案与 renderState 的状态栏/成本副作用不可被节流推迟
       const completed = ev.kind === 'state_change' && ev.data && ev.data.change === 'turn_completed';
       scheduleRender(group, completed);
@@ -3364,6 +3396,7 @@
       group.node.innerHTML = html;
       // 0.2.0.6 A：innerHTML 会连附件一起抹掉 ⇒ 重渲后把附件区接回去，已渲染过的不重建。
       if (group.node._fileHost) group.node.appendChild(group.node._fileHost);
+      if (group.node._overCapNote) group.node.appendChild(group.node._overCapNote);
       attachFileRenders(group.node, `${users.map(ev => ev.text || '').join('')}\n${eventsTextFull(assistants)}`);
       group.node.querySelectorAll('.turn-assistant .event-content').forEach(content => {
         mergeMetaIntoMarkdown(content);
@@ -3965,15 +3998,17 @@
     const STREAM_ALERT_TEXT = {
       conn: streamAlertText.textContent.trim(),
       replay: '⚠️ 重连后 1 秒内没等到历史重放:屏幕上的正文可能已过期,或与随后到达的重放重复。点【刷新】可恢复。',
+      gap: '⚠️ 有较早或未送达的事件没能补齐,显示可能不全。点【刷新】可重建。',
     };
-    const STREAM_ALERT_ACTION = { conn: '重试', replay: '刷新' };
+    const STREAM_ALERT_ACTION = { conn: '重试', replay: '刷新', gap: '刷新' };
     let streamAlertMode = 'conn';
     function hideStreamAlert() {
       // 🔴 重放超时告警**不许**被 onopen / onmessage 的常规 hide 抹掉:它出现的那一刻(arm+1s)
       //    之后约 300ms 就会来一条迟到的重放事件 ⇒ 没有这一句,告警只显示 300ms,业主根本看不见,
       //    (c) 等于没做。端到端闸那条"可见性"断言(要求某次采样里 hidden=false · 文本非空 · 盒子非零)
       //    钉的就是这件事。清它只有一条正路:clearReplayTimeoutAlert()。
-      if (streamAlertMode === 'replay' && !streamAlert.hidden) return;
+      // R-V2-0105 件一：'gap'（显示可能不全）同理不得被常规 hide 抹掉，只有刷新才算处理了它。
+      if ((streamAlertMode === 'replay' || streamAlertMode === 'gap') && !streamAlert.hidden) return;
       streamAlert.hidden = true;
     }
     function showStreamAlert(mode) {
@@ -4075,6 +4110,74 @@
       beginTimelineReplay();
     }
 
+    // ── R-V2-0105 件一：按服务端逐事件序号去重（要点第一至五、八、十六节）──────────────
+    // Hub 每条事件带 SSE id「<纪元>-<seq>」；纪元挂在 Hub 的会话终端状态上（Hub 重启或 helper 重连即换）。
+    // 已见判定：同纪元下 seq ≤ lastContiguousSeq，或在 seenAboveSeq 里。重连带 after=<纪元>-<lastContiguousSeq>，
+    // Hub 只补其后 ⇒ 不再依赖「1 秒清空窗口」。无 id（旧 Hub）⇒ 完全退回现行为。
+    const GAP_COALESCE_MS = 2000, GAP_REFILL_WINDOW_MS = 5 * 60 * 1000, GAP_REFILL_MAX = 3, SEEN_ABOVE_MAX = 5000;
+    let lastEventEpoch = '', lastContiguousSeq = 0, seqStreamSeen = false;
+    let seenAboveSeq = new Set();
+    let gapRefillTimes = [], gapRefillTimer = null, gapRefillStopped = false;
+    function parseEventId(id) {
+      const m = /^([0-9a-f]{1,32})-([0-9]{1,20})$/.exec(id || '');
+      return m ? { epoch: m[1], seq: Number(m[2]) } : null;
+    }
+    function eventsStreamUrl() {
+      const base = apiEp('events');
+      if (!lastEventEpoch) return base;
+      return base + (base.includes('?') ? '&' : '?') + 'after=' + encodeURIComponent(`${lastEventEpoch}-${lastContiguousSeq}`);
+    }
+    // 返回 true 表示该事件应渲染；false 表示已见（跳过）。必要时排定补缺。
+    function admitEventId(id) {
+      const p = parseEventId(id);
+      if (!p) return true;                       // 无 id：旧 Hub，照旧
+      seqStreamSeen = true;
+      if (p.epoch !== lastEventEpoch) {          // 首次或换纪元：保留现有内容，以本条为基线
+        lastEventEpoch = p.epoch;
+        lastContiguousSeq = p.seq - 1;
+        seenAboveSeq = new Set();
+      }
+      if (p.seq <= lastContiguousSeq || seenAboveSeq.has(p.seq)) return false;
+      if (p.seq === lastContiguousSeq + 1) {
+        lastContiguousSeq = p.seq;
+        while (seenAboveSeq.has(lastContiguousSeq + 1)) { seenAboveSeq.delete(lastContiguousSeq + 1); lastContiguousSeq += 1; }
+        return true;
+      }
+      seenAboveSeq.add(p.seq);                   // 跳号：先显示，after 仍停在缺口前，补缺不重复
+      if (seenAboveSeq.size > SEEN_ABOVE_MAX) {  // 缺口长期补不上：放弃补缺，向前对齐并提示
+        lastContiguousSeq = Math.max(...seenAboveSeq);
+        seenAboveSeq = new Set();
+        showStreamAlert('gap');
+        return true;
+      }
+      scheduleGapRefill();
+      return true;
+    }
+    // 补缺：合并等待 2 s；与断线重连共用 scheduleReconnect 的退避；同纪元每 5 分钟至多 3 次，超出只提示。
+    function scheduleGapRefill() {
+      if (gapRefillTimer || gapRefillStopped) return;
+      gapRefillTimer = setTimeout(() => {
+        gapRefillTimer = null;
+        if (!seenAboveSeq.size) return;          // 等待期间已自然补齐
+        if (reconnectTimer) return;              // 已有重连在途，不叠加（它本就带 after）
+        const now = Date.now();
+        gapRefillTimes = gapRefillTimes.filter(t => now - t < GAP_REFILL_WINDOW_MS);
+        if (gapRefillTimes.length >= GAP_REFILL_MAX) {
+          gapRefillStopped = true;
+          showStreamAlert('gap');
+          return;
+        }
+        gapRefillTimes.push(now);
+        scheduleReconnect();
+      }, GAP_COALESCE_MS);
+    }
+    function handleReplayGap(msg) {
+      let reason = '';
+      try { reason = JSON.parse(msg.data).reason || ''; } catch (_) {}
+      // epoch_changed：Hub 重启或会话终端重建 ⇒ 保留现有内容，随后到达的新纪元事件按基线收；不提示。
+      if (reason === 'overflow') showStreamAlert('gap');
+    }
+
     function connectEventStream() {
       closeEventStream();
       const generation = eventSourceGeneration;
@@ -4082,14 +4185,19 @@
       let receivedFirstEvent = false;
       beginTimelineReplay();
       setStatus('idle');
-      eventSource = new EventSource(apiEp('events'));
+      eventSource = new EventSource(eventsStreamUrl());
+      eventSource.addEventListener('replay_gap', msg => {
+        if (generation !== eventSourceGeneration) return;
+        handleReplayGap(msg);
+      });
       eventSource.onopen = () => {
         if (generation !== eventSourceGeneration) return;
         // 第二次及以后的 open = 断线重连:hub 会重放 ring,先 arm 延迟清空避免与已有内容叠加。
         // 🔴 arm 的时机必须在 **open**,不能提前到 scheduleReconnect:延迟清空窗口
         //    (REPLAY_HARD_LIMIT_MS)是从 arm 那一刻起算的,而 backoff 最长 30s ⇒
         //    提前 arm 会让窗口在重放到达之前就过期,等于没修。
-        if (streamEverOpened) markStreamReconnect();
+        // R-V2-0105 件一：已收到过带序号的事件 ⇒ 本次连接带 after、Hub 只补缺口，不需要清空窗口。
+        if (streamEverOpened && !seqStreamSeen) markStreamReconnect();
         streamEverOpened = true;
         opened = true;
         clearStreamConnectTimer();
@@ -4105,6 +4213,7 @@
         // T-086:重放的第一条到达了 ⇒ 此刻才清空(与旧行为等价);ring 空则永远走不到这里。
         // 🔴 (c):清空 = 内容马上由 ring 重建 ⇒ "可能与重放重复"的风险过去了,重放超时告警可以撤。
         if (consumeReconnectClear()) { resetConversation(); clearReplayTimeoutAlert(); }
+        if (!admitEventId(msg.lastEventId)) return;   // R-V2-0105 件一：已见事件不再渲染
         try {
           handleIncomingEvent(JSON.parse(msg.data));
         } catch (err) {
@@ -4441,7 +4550,7 @@
       hideStreamAlert();
       // 🔴 (c):重放超时那条的恢复动作是**刷新**,不是重连 —— 重连只会再 arm 一次窗口,
       //    治不了屏幕上已经叠起来的内容;刷新让整页从 hub 重新取一份完整状态。
-      if (mode === 'replay') { window.location.reload(); return; }
+      if (mode === 'replay' || mode === 'gap') { window.location.reload(); return; }
       connectEventStream();
     });
     async function doSend() {
