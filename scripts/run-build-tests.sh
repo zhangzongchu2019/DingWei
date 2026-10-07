@@ -12,6 +12,7 @@ export PYTHONPATH
 
 PYTHON_TESTS='
 deploy/image/supervisord/test_verify_supervisor_template.py
+deploy/ops/hosted-image/test_start.py
 deploy/test_build_entrypoints.py
 deploy/test_file_service_deploy.py
 deploy/test_generate_console_seed.py
@@ -37,4 +38,4 @@ done
 
 echo "TEST shell $SHELL_TEST"
 bash "$SHELL_TEST"
-echo 'BUILD_TESTS_OK python=15 shell=1'
+echo 'BUILD_TESTS_OK python=16 shell=1'
