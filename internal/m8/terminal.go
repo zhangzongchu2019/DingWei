@@ -1039,6 +1039,8 @@ type viewInputRequest struct {
 	ViewerID string `json:"viewer_id"`
 	Token    string `json:"token"`
 	Text     string `json:"text"`
+	// Mentions 同 viewV2InputRequest.Mentions（旧口径入口，共用 routeViewMentions）。
+	Mentions []string `json:"mentions,omitempty"`
 }
 
 // registerViewViewer 为 View Service 注册一个虚拟 viewer(conn=nil),
@@ -1175,8 +1177,13 @@ func (h *Hub) HandleInternalViewInput(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
+	results := h.routeViewMentions(r.Context(), sessionName, "", strings.TrimRight(req.Text, "\r\n"), "", req.Mentions)
 	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write([]byte(`{"ok":true}`))
+	if len(results) == 0 {
+		_, _ = w.Write([]byte(`{"ok":true}`))
+		return
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "mentions": results})
 }
 
 // HandleInternalViewInterrupt validates only the view write grant, then

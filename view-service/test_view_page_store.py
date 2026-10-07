@@ -340,6 +340,79 @@ class ControlHMACTest(unittest.TestCase):
             server.server_close()
             thread.join(timeout=TEST_TIMEOUT)
 
+    # R-V2-0102-VIEW-MENTION-ROUTE：mentions 原样透传给 Hub、Hub 回执原样回页面；正文不被改写、不在本服务解析。
+    def test_mentions_pass_through_and_receipts_return(self):
+        captured = {}
+
+        class Response:
+            status = 200
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return b'{"ok":true}'
+
+        def fake_urlopen(request, timeout):
+            captured["request"] = request
+            return Response()
+
+        with mock.patch.multiple(
+            vs, VIEW_TARGET_NAME="canary", VS_TO_HUB_SECRET_FILE=self.secret_path,
+            HUB_INTERNAL="http://hub.internal",
+        ), mock.patch.object(vs.urllib.request, "urlopen", side_effect=fake_urlopen):
+            vs._hub_v2_input("kimi.zzc", "page-1", "req-1", "@Beta hi", "zzc", mentions=["Beta.zzc"])
+            sent = json.loads(captured["request"].data)
+            self.assertEqual(sent["mentions"], ["Beta.zzc"])
+            self.assertEqual(sent["text"], "@Beta hi")
+            vs._hub_v2_input("kimi.zzc", "page-1", "req-2", "@Beta hi", "zzc")
+            self.assertNotIn("mentions", json.loads(captured["request"].data))   # 无提及：请求体与之前同形
+
+        self.assertEqual(vs._sanitize_mentions(["Beta.zzc", 7, "", None, "x" * 129, {"a": 1}, "Quill.zzc"]),
+                         ["Beta.zzc", "Quill.zzc"])
+        self.assertEqual(vs._sanitize_mentions("Beta.zzc"), [])
+        self.assertEqual(len(vs._sanitize_mentions([f"a{i}.zzc" for i in range(40)])), vs.VIEW_MENTIONS_MAX)
+
+        page = self.store.create_page("kimi.zzc")
+        server = vs.ThreadingHTTPServer(("127.0.0.1", 0), vs._Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        old_store = vs._page_store
+        vs._page_store = self.store
+        receipts = [{"full_name": "Beta.zzc", "status": "delivered", "message": "已转给 Beta，回复请到 Beta 的页面查看"}]
+
+        def post(payload):
+            body = json.dumps(payload).encode()
+            headers = {"Content-Type": "application/json", "X-DW-Session": "kimi.zzc",
+                       "X-DW-Console-Capability-Verified": "1", "X-DW-Console-Principal": "zzc"}
+            req = urllib.request.Request(f"http://127.0.0.1:{server.server_port}/input", body, headers, method="POST")
+            with urllib.request.urlopen(req, timeout=TEST_TIMEOUT) as response:
+                return json.loads(response.read())
+
+        try:
+            base = {"text": "@Beta hi", "page_id": page["page_id"], "page_token": page["page_token"], "request_id": "req-m"}
+            with mock.patch.multiple(vs, VIEW_UNLOCK_V2=True), \
+                    mock.patch.object(vs, "_hub_v2_input", return_value=(200, {"ok": True, "mentions": receipts})) as fwd:
+                self.assertEqual(post({**base, "mentions": ["Beta.zzc", 3]}), {"ok": True, "mentions": receipts})
+                fwd.assert_called_once_with("kimi.zzc", page["page_id"], "req-m", "@Beta hi", "zzc", mentions=["Beta.zzc"])
+            with mock.patch.multiple(vs, VIEW_UNLOCK_V2=True), \
+                    mock.patch.object(vs, "_hub_v2_input", return_value=(200, {"ok": True})) as fwd:
+                self.assertEqual(post(base), {"ok": True})
+                fwd.assert_called_once_with("kimi.zzc", page["page_id"], "req-m", "@Beta hi", "zzc")
+            with mock.patch.multiple(vs, VIEW_UNLOCK_V2=False), \
+                    mock.patch.object(vs, "_ensure_ready", return_value={"viewer_id": "v1", "token": "t1"}), \
+                    mock.patch.object(vs, "_hub_post", return_value=(200, {"ok": True, "mentions": receipts})) as legacy:
+                self.assertEqual(post({"text": "@Beta hi", "mentions": ["Beta.zzc"]}), {"ok": True, "mentions": receipts})
+                self.assertEqual(legacy.call_args[0][2], {"viewer_id": "v1", "token": "t1", "text": "@Beta hi\r", "mentions": ["Beta.zzc"]})
+        finally:
+            vs._page_store = old_store
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=TEST_TIMEOUT)
+
 
 if __name__ == "__main__":
     unittest.main()
