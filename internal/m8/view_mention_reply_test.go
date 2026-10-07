@@ -169,18 +169,17 @@ func TestMentionReplyMirror(t *testing.T) {
 		}
 	})
 
-	// 格 5：回放事件（data.replay=true）不看——重连回放同一轮不出第二张卡。
-	t.Run("replayed events do not mirror twice", func(t *testing.T) {
+	// 格 5：回放事件（data.replay=true）不看。重放的是 Hub【从没见过】的一轮（全新 turn_id）——
+	// 即 Hub 重启或已结束集合淘汰该键后、helper 重连回放整轮的情形；已结束集合挡不住它，只能靠回放判断
+	// （tosonnet55tc2k：原格重放已结束的轮，被已结束集合先挡住，回放判断成了测试上的死代码）。
+	t.Run("a replayed turn the Hub never saw does not mirror", func(t *testing.T) {
 		before := len(e.aReplies(t))
 		dlv := e.mentionBeta(t, "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5", "回流五")
-		emitTurnEvent(t, ctx, e.xConn, textEv(dlv, "t5", "一次", nil))
-		emitTurnEvent(t, ctx, e.xConn, doneEv(dlv, "t5", nil))
-		e.waitReplies(t, before+1)
-		emitTurnEvent(t, ctx, e.xConn, textEv(dlv, "t5", "一次", map[string]any{"replay": true}))
-		emitTurnEvent(t, ctx, e.xConn, doneEv(dlv, "t5", map[string]any{"replay": true}))
-		time.Sleep(300 * time.Millisecond)
-		if got := len(e.aReplies(t)); got != before+1 {
-			t.Fatalf("回放不得再出卡（%d 条）", got-before)
+		emitTurnEvent(t, ctx, e.xConn, textEv(dlv, "t5-replay-only", "回放来的", map[string]any{"replay": true}))
+		emitTurnEvent(t, ctx, e.xConn, doneEv(dlv, "t5-replay-only", map[string]any{"replay": true}))
+		time.Sleep(400 * time.Millisecond)
+		if got := len(e.aReplies(t)); got != before {
+			t.Fatalf("回放的一轮不得出卡（多了 %d 条）", got-before)
 		}
 	})
 
@@ -437,5 +436,57 @@ func TestMentionMirrorBounds(t *testing.T) {
 	m.evictOldestLocked()
 	if _, gone := m.turns[amrTurnKey{DeliveryID: "new"}]; gone {
 		t.Fatal("在途满时应先淘汰最早开始的那一轮")
+	}
+	// 已结束集合三条边（复核建议 2）：过期与淘汰的轮都记为已结束（迟到终态不发半截）；集合本身有上限。
+	if _, done := m.done[amrTurnKey{DeliveryID: "old"}]; !done {
+		t.Fatal("过期的在途轮应记为已结束")
+	}
+	if _, done := m.done[amrTurnKey{DeliveryID: "new"}]; !done {
+		t.Fatal("被淘汰的在途轮应记为已结束")
+	}
+	m.mu.Lock()
+	for i := 0; i < mentionReplyDoneCap+10; i++ {
+		m.markDoneLocked(amrTurnKey{DeliveryID: fmt.Sprintf("done%d", i)})
+	}
+	m.mu.Unlock()
+	if len(m.done) != mentionReplyDoneCap || m.doneOrder.Len() != mentionReplyDoneCap {
+		t.Fatalf("已结束集合应封顶 %d：map=%d list=%d", mentionReplyDoneCap, len(m.done), m.doneOrder.Len())
+	}
+	if _, kept := m.done[amrTurnKey{DeliveryID: "done0"}]; kept {
+		t.Fatal("已结束集合满时最早的应先出")
+	}
+}
+
+// 过期与淘汰之后迟到的终态不发（经 observe 走真路径；已结束集合在这两处的承诺）。
+func TestMentionMirrorLateTerminalAfterExpiryOrEviction(t *testing.T) {
+	e := newVMEnv(t)
+	for _, c := range []struct {
+		name string
+		drop func(m *mentionMirror, key amrTurnKey)
+	}{
+		{"expired", func(m *mentionMirror, key amrTurnKey) {
+			m.mu.Lock()
+			m.turns[key].started = m.now().Add(-mentionReplyTurnTTL - time.Minute)
+			m.expireLocked(m.now())
+			m.mu.Unlock()
+		}},
+		{"evicted", func(m *mentionMirror, key amrTurnKey) {
+			m.mu.Lock()
+			m.turns[key].started = m.now().Add(-time.Hour) // 最早 ⇒ 先被淘汰
+			m.evictOldestLocked()
+			m.mu.Unlock()
+		}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			before := len(e.aReplies(t))
+			dlv := seedDeliveryToBetaNoDrain(t, e, map[string]any{"route_source": "view_mention", "mentioned_from": "Kimi.zzc"})
+			m := e.hub.mentionMirror
+			m.observe(AgentKeyID("zzc"), "beta", mustJSON(textEv(dlv, "late", "半截", nil)))
+			c.drop(m, amrTurnKey{KeyID: AgentKeyID("zzc"), Session: "beta", DeliveryID: dlv, TurnID: "late"})
+			m.observe(AgentKeyID("zzc"), "beta", mustJSON(doneEv(dlv, "late", nil)))
+			if got := len(e.aReplies(t)); got != before {
+				t.Fatalf("%s 之后迟到的终态不得发出（多了 %d 条）", c.name, got-before)
+			}
+		})
 	}
 }
