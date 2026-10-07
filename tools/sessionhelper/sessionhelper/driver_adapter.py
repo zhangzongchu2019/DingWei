@@ -15,6 +15,7 @@ import os
 import queue
 import threading
 import time
+import weakref
 
 from .contract import SessionEvent
 from .unified_queue import EnqueueResult, QueuedCommand, UnifiedCommandQueue
@@ -36,6 +37,11 @@ class DriverAdapter:
         self._turn_progress: dict[tuple[str, str], float] = {}
         self._admission_callbacks: dict[str, tuple[object | None, object | None]] = {}
         self._timed_out_turns: set[tuple[str, str]] = set()
+        # R-V2-0105 件二：事件桥已处理（已入 _event_q，或有意不发）的事件对象，按 id 记、值为对象本身。
+        # 驱动无游标重订阅时会把缓冲里的【同一批对象】整份重放；见过的直接跳过，不再发给 Hub。
+        # SessionEvent 是可比较的非冻结 dataclass、不可哈希，故不用 WeakSet；判定须 get(id(ev)) is ev 防 id 复用。
+        # 对象被驱动缓冲截掉并回收后条目自动消失，不膨胀。队列满被丢的事件不登记，重放时可补发。
+        self._bridged: "weakref.WeakValueDictionary[int, SessionEvent]" = weakref.WeakValueDictionary()
         self._interrupt_confirmed: set[tuple[str, str]] = set()
         self._terminal_timeout = max(0.1, float(cfg.turn_terminal_timeout_seconds))
         self._input_buf = ""          # view 输入的行缓冲
@@ -321,10 +327,16 @@ class DriverAdapter:
         # (opencode 是懒建 session —— 第一条消息到了才建)。事件桥是 start() 后马上起的,
         # 只订阅一次的话 for 循环当场跑完、线程静静退出,此后整个 helper 生命周期内一个事件都不发,
         # view 页永远空白且无任何报错。见 2026-07-14 reviewer view 事件流为空。
+        subscriptions = 0
         while True:
+            subscriptions += 1
+            skipped = 0
             try:
                 for ev in self.driver.events():
                     if ev is None:
+                        continue
+                    if self._bridged.get(id(ev)) is ev:
+                        skipped += 1  # 重订阅重放的已处理对象：不再发（R-V2-0105 件二）
                         continue
                     event_key = (ev.delivery_id, ev.turn_id)
                     if (
@@ -336,6 +348,7 @@ class DriverAdapter:
                             f"[delivery][LATE_TERMINAL] id={ev.delivery_id} turn={ev.turn_id}",
                             flush=True,
                         )
+                        self._bridged[id(ev)] = ev  # 有意不发，也算已处理（重放时不再重复记日志）
                         continue
                     if ev.delivery_id and ev.turn_id:
                         self._turn_progress[event_key] = time.monotonic()
@@ -344,7 +357,9 @@ class DriverAdapter:
                     try:
                         self._event_q.put_nowait(self._event_json(ev))
                     except queue.Full:
-                        pass
+                        pass  # 未入队 ⇒ 不登记，重订阅重放时可补发
+                    else:
+                        self._bridged[id(ev)] = ev
                     text = self._format_event(ev)
                     if text:
                         try:
@@ -353,6 +368,8 @@ class DriverAdapter:
                             pass
             except Exception as exc:
                 print(f"[driver-adapter] event bridge error: {exc}", flush=True)
+            if skipped:
+                print(f"[driver-adapter] bridge resubscribe skipped={skipped} subscription={subscriptions}", flush=True)
             time.sleep(1.0)  # 迭代器耗尽(通常=还没建 session)→ 稍后重订阅
 
     def _track_cost(self, ev: SessionEvent) -> None:
