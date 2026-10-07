@@ -501,8 +501,7 @@ class ReviewFollowupTest(UploadCase):
         old_token = "start-time-token-abcdefghijklmnopqrstuv"
         self.layout.auth.write_text(json.dumps({"tokens": {"access_token": old_token}}))
         fresh = make_helper(self.layout)
-        self.assertIn(old_token.encode(), fresh.secret_scanner.needles())
-        self.renew_auth(AUTH_TOKEN)
+        self.renew_auth(AUTH_TOKEN)  # no needles() call in between: only the start-up read can know old_token
         needles = fresh.secret_scanner.needles()
         self.assertIn(old_token.encode(), needles)
         self.assertIn(AUTH_TOKEN.encode(), needles)
