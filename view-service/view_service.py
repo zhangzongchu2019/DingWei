@@ -144,8 +144,24 @@ def _verify_control_request(headers, method: str, path: str, body: bytes,
     return True, 200
 
 
+# R-V2-0102-VIEW-MENTION-ROUTE：页面候选浮层选中的目标 full_name，原样透传给 Hub（不解析正文、不判成员关系——
+# 同组同 owner 校验在 Hub）。只收字符串数组，最多 16 项、单项 ≤128 字节；其余丢弃。每条最多投 5 个由 Hub 判并回执。
+VIEW_MENTIONS_MAX = 16
+VIEW_MENTION_MAX_BYTES = 128
+
+
+def _sanitize_mentions(raw) -> list[str]:
+    if not isinstance(raw, list):
+        return []
+    out = []
+    for item in raw[:VIEW_MENTIONS_MAX]:
+        if isinstance(item, str) and item and len(item.encode("utf-8")) <= VIEW_MENTION_MAX_BYTES:
+            out.append(item)
+    return out
+
+
 def _hub_v2_input(session: str, page_id: str, request_id: str, text: str,
-                  principal_id: str = "") -> tuple[int, dict]:
+                  principal_id: str = "", mentions: list[str] | None = None) -> tuple[int, dict]:
     if not VIEW_TARGET_NAME or not VS_TO_HUB_SECRET_FILE:
         return 0, {"error": "v2 input auth unavailable"}
     try:
@@ -156,9 +172,11 @@ def _hub_v2_input(session: str, page_id: str, request_id: str, text: str,
     if len(secret) < 32:
         return 0, {"error": "v2 input secret too short"}
     path = f"/internal/view-v2/{session}/input"
-    body = json.dumps({"session": session, "page_id": page_id, "request_id": request_id, "text": text,
-                       "principal_id": principal_id},
-                      ensure_ascii=False, separators=(",", ":")).encode()
+    payload = {"session": session, "page_id": page_id, "request_id": request_id, "text": text,
+               "principal_id": principal_id}
+    if mentions:
+        payload["mentions"] = mentions   # 无提及时请求体与之前逐字节相同
+    body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
     timestamp = str(int(time.time()))
     nonce = secrets.token_hex(16)
     signature = _control_signature(secret, "POST", path, timestamp, nonce, body,
@@ -728,6 +746,8 @@ class _Handler(BaseHTTPRequestHandler):
             incoming = {}
             text = ""
         ok = False
+        mentions = _sanitize_mentions(incoming.get("mentions"))
+        receipts = None
         if isinstance(text, str) and text:
             if VIEW_UNLOCK_V2:
                 page_id = str(incoming.get("page_id", ""))
@@ -737,8 +757,11 @@ class _Handler(BaseHTTPRequestHandler):
                 console_verified = self.headers.get("X-DW-Console-Capability-Verified") == "1"
                 if page_id and page_token and request_id and (console_verified or store.authorize_page(page_id, page_token, session)):
                     principal_id = self.headers.get("X-DW-Console-Principal", "") if console_verified else ""
-                    code, _ = _hub_v2_input(session, page_id, request_id, text, principal_id)
+                    extra = {"mentions": mentions} if mentions else {}   # 无提及时调用形状与之前相同
+                    code, hub_body = _hub_v2_input(session, page_id, request_id, text, principal_id, **extra)
                     ok = code == 200
+                    if ok and isinstance(hub_body, dict) and isinstance(hub_body.get("mentions"), list):
+                        receipts = hub_body["mentions"]
                     if ok and not console_verified:
                         store.record_successful_write(page_id, page_token)
             else:
@@ -746,10 +769,17 @@ class _Handler(BaseHTTPRequestHandler):
                 if st.get("viewer_id") and st.get("token"):
                     # pilot 按键式输入以末尾 CR 提交；内嵌 LF 由 adapter 保留为消息换行。
                     payload_text = text.replace("\r\n", "\n").replace("\r", "\n") + "\r"
-                    code, _ = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/input",
-                                        {"viewer_id": st["viewer_id"], "token": st["token"], "text": payload_text})
+                    legacy = {"viewer_id": st["viewer_id"], "token": st["token"], "text": payload_text}
+                    if mentions:
+                        legacy["mentions"] = mentions
+                    code, hub_body = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/input", legacy)
                     ok = (code == 200)
-        return self._json_response(200 if ok else 403, {"ok": ok})
+                    if ok and isinstance(hub_body, dict) and isinstance(hub_body.get("mentions"), list):
+                        receipts = hub_body["mentions"]
+        result = {"ok": ok}
+        if receipts is not None:
+            result["mentions"] = receipts   # Hub 逐目标回执原样回页面
+        return self._json_response(200 if ok else 403, result)
 
     def _control_unlock(self):
         length = int(self.headers.get("Content-Length") or 0)

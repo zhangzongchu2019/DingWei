@@ -34,6 +34,8 @@ type viewV2InputRequest struct {
 	RequestID   string `json:"request_id"`
 	Text        string `json:"text"`
 	PrincipalID string `json:"principal_id,omitempty"`
+	// Mentions 页面候选浮层选中的目标 full_name（R-V2-0102-VIEW-MENTION-ROUTE）；空 ⇒ 行为与之前逐字节相同。
+	Mentions []string `json:"mentions,omitempty"`
 }
 
 type viewV2RequestResult struct {
@@ -105,8 +107,13 @@ func (h *Hub) HandleInternalViewV2Input(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "session unavailable", status)
 		return
 	}
+	results := h.routeViewMentions(r.Context(), session, req.RequestID, req.Text, req.PrincipalID, req.Mentions)
 	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write([]byte(`{"ok":true}`))
+	if len(results) == 0 {
+		_, _ = w.Write([]byte(`{"ok":true}`))
+		return
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "mentions": results})
 }
 
 func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, requestID, text, principalID string) error {
