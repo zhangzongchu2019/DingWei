@@ -80,6 +80,13 @@ class Config:
     mcp_ipc_sock: str = ""       # B3: Unix socket path for MCP-shim→helper IPC
     datad_url: str = ""          # T18: datad VS API base URL (e.g. http://127.0.0.1:8796)
     datad_token: str = ""        # T18: per-session token (DATAD_TOKEN, prodops 签发)
+    # R-V2-AGENT-FILE-UPLOAD：上传策略要知道哪些文件受保护（凭据件、入网令牌、状态目录、CODEX_HOME）与限额。
+    state_dir: str = ""
+    codex_home: str = ""
+    cred_file: str = ""
+    enroll_token_file: str = ""
+    upload_max_per_hour: int = 20
+    upload_max_bytes_per_hour: int = 1024 * 1024 * 1024
 
     @property
     def registered_session_name(self) -> str:
@@ -202,6 +209,13 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         # DATAD_TOKEN=prodops签发的既定env名,SH_前缀同款兼容
         datad_url=env.get("SH_DATAD_URL", env.get("DATAD_URL", "")).strip(),
         datad_token=env.get("SH_DATAD_TOKEN", env.get("DATAD_TOKEN", "")).strip(),
+        state_dir=expand_path(env.get("SH_STATE_DIR", "~/.dingwei")),
+        codex_home=expand_path(env.get("CODEX_HOME", "~/.codex")),
+        cred_file=expand_path(env.get("SH_CRED_FILE", "")),
+        enroll_token_file=expand_path(env.get("SH_ENROLL_TOKEN_FILE", "")
+                                      or os.path.join(env.get("SH_STATE_DIR", "~/.dingwei"), "enroll-token.json")),
+        upload_max_per_hour=int(env.get("SH_UPLOAD_MAX_PER_HOUR", "20")),
+        upload_max_bytes_per_hour=int(env.get("SH_UPLOAD_MAX_BYTES_PER_HOUR", str(1024 * 1024 * 1024))),
     )
 
 

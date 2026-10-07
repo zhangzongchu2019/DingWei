@@ -6,8 +6,10 @@ import asyncio
 import base64
 import inspect
 import json
+import mimetypes
 import os
 import re
+import shutil
 import sys
 import time
 from collections import deque
@@ -21,6 +23,8 @@ from .llm import LLMProvider
 from .config import env_get
 from .inbox import DeliveryInbox
 from .guide_state import GuideClaim, StagedGuideStore
+from .file_upload import (UPLOAD_MAX_BYTES, RateLimiter, SecretScanner, UploadPolicy, UploadRejected,
+                          fd_real_path, iter_exact, scan_and_digest)
 from .protocol import AddressBook, envelope, session_addr
 # 路由／提及判定与收件分类已收进 routing.py（R3 / R3-B）。下面是**临时兼容再导出**（tests 与旧 import 路径在用，
 # 这些名字仍可从 app 取到）；V9 把这些逻辑上移到 Hub 后移除。
@@ -166,6 +170,14 @@ def comm_skill_ack_envelope(book: AddressBook) -> dict:
     )
 
 
+# R-V2-AGENT-FILE-UPLOAD 第十三节：上传说明随首条真实业务输入附一次（附注独立记账），文案逐字由用例钉住。
+UPLOAD_ADDENDUM_ID = "upload_v1"
+UPLOAD_ADDENDUM_TEMPLATE = (
+    "上传文件：运行 dingwei-file upload <路径>，返回可分享链接。仅限 {root} 下、路径各段都不以点开头的工作文件；"
+    "链接公开 7 天，拿到链接的人都能下载。不要上传凭据、令牌、密钥、登录态文件。"
+)
+
+
 class SessionHelper:
     def __init__(self, cfg: Config):
         self.cfg = cfg
@@ -203,6 +215,18 @@ class SessionHelper:
         self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
         self.adapter = self._build_adapter()
         self.install_send_script()
+        # R-V2-AGENT-FILE-UPLOAD
+        self.upload_policy = UploadPolicy.build(
+            cfg.cli_cwd or os.getcwd(), codex_home=cfg.codex_home, state_dir=cfg.state_dir,
+            cred_file=cfg.cred_file, enroll_token_file=cfg.enroll_token_file, inbox_db=cfg.inbox_db)
+        self.secret_scanner = SecretScanner((cfg.cred_file, os.path.join(cfg.codex_home, "auth.json") if cfg.codex_home else ""))
+        try:
+            self.secret_scanner.needles()  # 启动即记下当前令牌，续期后的陈旧副本仍可认出（复核 S2）
+        except Exception:  # noqa: BLE001
+            pass
+        self.upload_limiter = RateLimiter(max_count=cfg.upload_max_per_hour, max_bytes=cfg.upload_max_bytes_per_hour)
+        self.ipc_bound = asyncio.Event()
+        self.install_upload_command()
 
     def _build_adapter(self) -> Adapter:
         if self.cfg.mode == "driver":
@@ -467,7 +491,7 @@ class SessionHelper:
             # Copy only the fixed response contract. Unknown fields cannot leak
             # through this control-plane channel into callers.
             waiter.set_result({key: meta.get(key) for key in
-                               ("ok", "token", "expires_at", "public_base_url", "error")})
+                               ("ok", "token", "expires_at", "public_base_url", "session", "error")})
 
     def session_capabilities_envelope(self) -> dict:
         return envelope(
@@ -476,7 +500,9 @@ class SessionHelper:
              "persistent_inbox_v1": True, "agent_route_v2": True,
              "unified_queue_v1": self.cfg.mode == "driver",
              "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),
-             "processed_semantics": "accepted_to_cli", "helper_version": __version__},
+             "processed_semantics": "accepted_to_cli", "helper_version": __version__,
+             # 只作 Hub 统计（组长裁定 C）；附注是否附加由 upload_addendum_due 在合并时自判。
+             "file_upload_v1": self.upload_configured()},
         )
 
     async def _run_once(self) -> None:
@@ -545,7 +571,9 @@ class SessionHelper:
                         serve_ipc(self.cfg.mcp_ipc_sock, self._make_send_handler(ws),
                                   vsapi_handler=vsapi_handler,
                                   file_handler=self._make_file_handler(ws),
-                                  allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock)))
+                                  allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock),
+                                  upload_handler=self._make_upload_handler(ws) if self.upload_policy.enabled else None,
+                                  bound=self.ipc_bound))
 
                 try:
                     await supervise_connection_loops([
@@ -743,20 +771,33 @@ class SessionHelper:
         try:
             async with self.adapter_handle_lock:
                 business_env = env
+                addendum = ""
                 if guide_store is not None and self._is_real_business_input(env):
                     guide_claim = await asyncio.to_thread(guide_store.claim)
-                    if guide_claim is not None:
+                    addendum = await asyncio.to_thread(self.upload_addendum_due)
+                    if guide_claim is not None or addendum:
                         business_env = dict(env)
                         business_env["meta"] = dict(env.get("meta") or {})
-                        business_env["body"] = guide_store.merge(guide_claim, str(env.get("body") or ""))
+                        body = str(env.get("body") or "")
+                        business_env["body"] = (guide_store.merge(guide_claim, body, addendum) if guide_claim is not None
+                                                else guide_store.merge_addendum(addendum, body))
 
                 def injected() -> None:
                     if on_injected is not None:
                         on_injected()
 
                 def admitted() -> None:
+                    # 入队成功才记账；记账失败只留痕（尽力而为，最坏下一条再附一次），不影响本次注入。
                     if guide_claim is not None:
-                        guide_store.consume(guide_claim)
+                        try:
+                            guide_store.consume(guide_claim)
+                        except Exception as exc:  # noqa: BLE001
+                            print(f"[agent_skill] consume failed: {type(exc).__name__}", flush=True)
+                    if addendum:
+                        try:
+                            guide_store.mark_addendum_delivered(UPLOAD_ADDENDUM_ID)
+                        except Exception as exc:  # noqa: BLE001
+                            print(f"[agent_skill] addendum ledger write failed: {type(exc).__name__}", flush=True)
 
                 def admission_failed() -> None:
                     if guide_claim is not None:
@@ -1058,6 +1099,138 @@ class SessionHelper:
         if source:
             return source in {"user", "agent", "feishu"}
         return bool(str(env.get("from") or "").strip())
+
+    # ── R-V2-AGENT-FILE-UPLOAD ──────────────────────────────────────────
+
+    def install_upload_command(self) -> None:
+        """Make `dingwei-file` runnable by the CLI child (it inherits this process's environment).
+
+        Only when the IPC socket is configured. An existing `dingwei-file` on PATH (hosted image)
+        is left alone; otherwise a copy of dingwei_file.py goes to ~/.dingwei/bin and that
+        directory is put in front of PATH. DINGWEI_MCP_IPC_SOCK is exported for the client.
+        """
+        if not self.cfg.mcp_ipc_sock or not self.upload_policy.enabled:
+            return
+        try:
+            if env_get("DINGWEI_MCP_IPC_SOCK", "") != self.cfg.mcp_ipc_sock:
+                os.environ["DINGWEI_MCP_IPC_SOCK"] = self.cfg.mcp_ipc_sock
+            if shutil.which("dingwei-file"):
+                return
+            src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dingwei_file.py")
+            bin_dir = os.path.expanduser(os.path.join("~", ".dingwei", "bin"))
+            os.makedirs(bin_dir, exist_ok=True)
+            dst = os.path.join(bin_dir, "dingwei-file")
+            with open(src, encoding="utf-8") as f:
+                content = f.read()
+            tmp = dst + f".{os.getpid()}.tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.write(f"#!{sys.executable}\n" + content)
+            os.chmod(tmp, 0o755)
+            os.replace(tmp, dst)
+            path = env_get("PATH", "")
+            if bin_dir not in path.split(os.pathsep):
+                os.environ["PATH"] = bin_dir + (os.pathsep + path if path else "")
+        except Exception as exc:  # noqa: BLE001
+            print(f"[file] upload command install failed: {type(exc).__name__}", flush=True)
+
+    def upload_configured(self) -> bool:
+        return bool(self.cfg.mcp_ipc_sock) and self.upload_policy.enabled and bool(shutil.which("dingwei-file"))
+
+    def upload_capable(self) -> bool:
+        """Three conditions, all at once: command installed, IPC actually listening, workspace root != /."""
+        return self.upload_configured() and self.ipc_bound.is_set()
+
+    def upload_addendum_text(self) -> str:
+        return UPLOAD_ADDENDUM_TEMPLATE.format(root=self.upload_policy.workspace_root)
+
+    def upload_addendum_due(self) -> str:
+        """Addendum text if it should ride on this business input, else ""."""
+        if not self.upload_capable():
+            return ""
+        try:
+            if self.guide_store.addendum_delivered(UPLOAD_ADDENDUM_ID):
+                return ""
+        except Exception:  # noqa: BLE001
+            pass
+        return self.upload_addendum_text()
+
+    async def _request_upload_ticket(self, ws, size: int) -> dict:
+        request_id = os.urandom(12).hex()
+        waiter = asyncio.get_running_loop().create_future()
+        self.file_ticket_waiters[request_id] = waiter
+        request = envelope(
+            session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
+            {"type": "file_capability_request", "request_id": request_id,
+             "operation": "upload", "max_bytes": size, "no_mirror": True},
+        )
+        try:
+            await ws.send(json.dumps(request, ensure_ascii=False))
+            return await asyncio.wait_for(waiter, timeout=10)
+        finally:
+            self.file_ticket_waiters.pop(request_id, None)
+
+    def _make_upload_handler(self, ws):
+        """Upload the file behind a passed descriptor; the ticket never leaves helper."""
+        import urllib.parse
+        import urllib.request
+
+        async def _upload(fd: int, name: str, media_type: str) -> dict:
+            label = ""
+            try:
+                st = os.fstat(fd)
+                real = fd_real_path(fd)
+                label = os.path.basename(real)
+                self.upload_policy.check(real, st)
+                size = st.st_size
+                if size <= 0:
+                    raise UploadRejected("empty_file")
+                if size > UPLOAD_MAX_BYTES:
+                    raise UploadRejected("too_large")
+                needles = await asyncio.to_thread(self.secret_scanner.needles)
+                digest = await asyncio.to_thread(scan_and_digest, fd, size, needles)
+                self.upload_limiter.admit(size)
+            except UploadRejected as exc:
+                print(f"[file] upload rejected reason={exc.code} name={label!r}", flush=True)
+                raise
+            name = os.path.basename(name or label) or "upload.bin"
+            try:
+                ticket = await self._request_upload_ticket(ws, size)
+                token = str(ticket.get("token") or "")
+                base_url = str(ticket.get("public_base_url") or "").rstrip("/")
+                session = str(ticket.get("session") or "")
+                if not ticket.get("ok") or not token or not session or not re.match(r"https?://", base_url):
+                    raise RuntimeError("file capability unavailable")
+                content_type = media_type or mimetypes.guess_type(name)[0] or "application/octet-stream"
+
+                def post() -> dict:
+                    headers = {"Authorization": f"Bearer {token}", "X-DingWei-Session": session,
+                               "X-File-Name": "UTF-8''" + urllib.parse.quote(name, safe=""),
+                               "Content-Type": content_type, "X-Content-SHA256": digest,
+                               "Content-Length": str(size)}
+                    request = urllib.request.Request(f"{base_url}/files/upload", data=iter_exact(fd, size),
+                                                     method="POST", headers=headers)
+                    with urllib.request.urlopen(request, timeout=120) as resp:  # noqa: S310 - Hub-issued URL.
+                        if resp.status != 201:
+                            raise RuntimeError("upload failed")
+                        data = json.loads(resp.read(16 * 1024).decode("utf-8"))
+                    url = str(data.get("url") or "")
+                    if (not url.startswith(base_url + "/f/") or data.get("sha256") != digest
+                            or int(data.get("size", -1)) != size):
+                        raise RuntimeError("upload failed")
+                    return {"url": url, "name": str(data.get("name") or name), "size": size,
+                            "sha256": digest, "expires_at": str(data.get("expires_at") or "")}
+
+                result = await asyncio.to_thread(post)
+            except UploadRejected as exc:
+                print(f"[file] upload rejected reason={exc.code} name={label!r}", flush=True)
+                raise
+            except Exception:
+                print(f"[file] upload failed name={label!r} size={size}", flush=True)
+                raise RuntimeError("file upload failed") from None
+            print(f"[file] upload ok name={label!r} size={size} sha256={digest}", flush=True)
+            return result
+
+        return _upload
 
     def install_send_script(self) -> None:
         """把统一发信脚本装到 ~/.dingwei/send.py，供 CLI 里的 AI 调用（跨会话可靠发信/回信）。"""

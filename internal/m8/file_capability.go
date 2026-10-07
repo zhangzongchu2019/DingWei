@@ -340,6 +340,9 @@ func (h *Hub) fileCapabilityResponse(ctx context.Context, c *sessionClient, env 
 	}
 	meta["ok"], meta["operation"], meta["token"] = true, operation, ticket.Token
 	meta["expires_at"], meta["public_base_url"] = ticket.ExpiresAt.UTC().Format(time.RFC3339Nano), ticket.PublicBaseURL
+	// R-V2-AGENT-FILE-UPLOAD：file-service 要求 X-DingWei-Session 与票内会话一致；新平台 helper 未必知道 Hub 侧规范会话名，
+	// 故回信带上票所绑的会话名（＝已认证连接的 c.sessionName，与控制台取票回包的 session 同义）。
+	meta["session"] = c.sessionName
 	return response
 }
 

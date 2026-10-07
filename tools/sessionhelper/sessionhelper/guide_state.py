@@ -58,13 +58,17 @@ class StagedGuideStore:
                     current.update({"body_hash": body_hash, "body": body})
                     self._write(current)
                 return True
-            self._write({
+            fresh = {
                 "identity": self.identity,
                 "version": version,
                 "body_hash": body_hash,
                 "body": body,
                 "state": "staged",
-            })
+            }
+            # 附注记账独立于指南版本（R-V2-AGENT-FILE-UPLOAD 第十三节）：新版本指南不得抹掉「已投递附注」。
+            if current.get("identity") == self.identity and isinstance(current.get("addenda_delivered"), list):
+                fresh["addenda_delivered"] = list(current["addenda_delivered"])
+            self._write(fresh)
             self._claimed = None
             return True
 
@@ -108,17 +112,42 @@ class StagedGuideStore:
             if self._claimed == claim:
                 self._claimed = None
 
+    def addendum_delivered(self, name: str) -> bool:
+        with self._lock:
+            current = self._read()
+            delivered = current.get("addenda_delivered") if current.get("identity") == self.identity else None
+            return isinstance(delivered, list) and name in delivered
+
+    def mark_addendum_delivered(self, name: str) -> None:
+        """Record that *name* reached a real business input. Raises OSError on write failure;
+        callers treat it as best effort (worst case: the addendum is attached once more)."""
+        with self._lock:
+            current = self._read()
+            if current.get("identity") != self.identity:
+                current = {"identity": self.identity}
+            delivered = current.get("addenda_delivered")
+            delivered = list(delivered) if isinstance(delivered, list) else []
+            if name in delivered:
+                return
+            delivered.append(name)
+            current["addenda_delivered"] = delivered
+            self._write(current)
+
     def state(self) -> dict:
         with self._lock:
             return dict(self._read())
 
     @staticmethod
-    def merge(claim: GuideClaim, business_body: str) -> str:
-        return "\n\n".join((
-            f"{GUIDE_CONTEXT_HEADER}\nversion={claim.version}\n{claim.body}",
-            GUIDE_CONTEXT_FOOTER,
-            str(business_body or ""),
-        ))
+    def merge(claim: GuideClaim, business_body: str, addendum: str = "") -> str:
+        context = f"{GUIDE_CONTEXT_HEADER}\nversion={claim.version}\n{claim.body}"
+        if addendum:
+            context += f"\n\n{addendum}"
+        return "\n\n".join((context, GUIDE_CONTEXT_FOOTER, str(business_body or "")))
+
+    @staticmethod
+    def merge_addendum(addendum: str, business_body: str) -> str:
+        """Addendum only (the guide itself already consumed): never replays the whole guide."""
+        return "\n\n".join((f"{GUIDE_CONTEXT_HEADER}\n{addendum}", GUIDE_CONTEXT_FOOTER, str(business_body or "")))
 
     @staticmethod
     def semantic_version(body: str) -> str:
