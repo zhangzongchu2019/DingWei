@@ -127,7 +127,11 @@ class Layout:
         self.state = self.root / (".dingwei" if dot else "statedir")
         self.codex.mkdir()
         self.state.mkdir()
-        self.cred = self.state / "account-credential"
+        # Plain layout keeps the credential outside every protected directory so the exact-path layer
+        # is what refuses it (not the directory prefix).
+        creds_dir = self.state if dot else self.root / "creds"
+        creds_dir.mkdir(exist_ok=True)
+        self.cred = creds_dir / "account-credential"
         self.cred.write_text(json.dumps({"tokens": {"access_token": CRED_TOKEN}}))
         self.auth = self.codex / "auth.json"
         self.auth.write_text(json.dumps({"tokens": {"access_token": CRED_TOKEN}}))
