@@ -124,13 +124,17 @@ class HandleConnectionWiringTest(unittest.TestCase):
         self.assertNotIn("NoneType", str(caught.exception))
 
     def test_run_once_always_installs_vsapi_handler(self):
-        """装配闸:变异回 `... if datad_url else None` 必须红。"""
-        tree = ast.parse(textwrap.dedent(inspect.getsource(SessionHelper._run_once)))
+        """装配闸:变异回 `... if datad_url else None` 必须红。
+
+        R-V2-IMAGE-R5 起 IPC 服务由 _ipc_server 装配（_run_once 只起它）：装配点随之移到 _ipc_server。
+        """
+        self.assertIn("self._ipc_server(ws)", inspect.getsource(SessionHelper._run_once))
+        tree = ast.parse(textwrap.dedent(inspect.getsource(SessionHelper._ipc_server)))
         assignments = [node for node in ast.walk(tree)
                        if isinstance(node, ast.Assign)
                        and any(isinstance(target, ast.Name) and target.id == "vsapi_handler"
                                for target in node.targets)]
-        self.assertEqual(len(assignments), 1, "_run_once 应仅装配一次 vsapi_handler")
+        self.assertEqual(len(assignments), 1, "_ipc_server 应仅装配一次 vsapi_handler")
         self.assertIsInstance(assignments[0].value, ast.Call,
                               "vsapi_handler 必须始终由 factory 生成,不得未配置时退回 None")
 

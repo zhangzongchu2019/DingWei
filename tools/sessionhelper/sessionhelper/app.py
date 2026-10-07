@@ -1095,8 +1095,9 @@ class SessionHelper:
 
         # 即使 datad_url 未配也装入一个 fail-loud handler。传 None 会让
         # MCP 调用退化成 NoneType/Transport closed,把配置缺失伪装成连接故障。
+        vsapi_handler = self._make_vsapi_handler()
         return serve_ipc(self.cfg.mcp_ipc_sock, send_handler or self._make_send_handler(ws),
-                         vsapi_handler=self._make_vsapi_handler(),
+                         vsapi_handler=vsapi_handler,
                          file_handler=self._make_file_handler(ws),
                          allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock),
                          upload_handler=self._make_upload_handler(ws) if self.upload_policy.enabled else None,
