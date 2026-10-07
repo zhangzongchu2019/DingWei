@@ -269,6 +269,55 @@ def _project_context(args: dict[str, Any]) -> dict[str, Any]:
     return results
 
 
+# ── MCP tool: upload_file (R-V2-AGENT-FILE-UPLOAD) ────────────────────
+# Same wire contract as dingwei_file.upload_file; duplicated because this file is a
+# self-contained entry point (no package imports). The shim is a child of the CLI, so the
+# file is opened with the Agent's own permissions and only the descriptor crosses IPC.
+
+def _ipc_upload(path: str, timeout: float = 300.0) -> dict[str, Any]:
+    import array as _array
+
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_CLOEXEC", 0)
+    fd = os.open(path, flags)
+    try:
+        payload = {"type": "file_upload_v1", "request_id": _uuid.uuid4().hex[:12], "name": os.path.basename(path)}
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
+        sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        try:
+            sock.connect(_IPC_SOCK)
+            sent = sock.sendmsg([data], [(_socket.SOL_SOCKET, _socket.SCM_RIGHTS, _array.array("i", [fd]))])
+            if sent < len(data):
+                sock.sendall(data[sent:])
+            reply = bytearray()
+            while b"\n" not in reply:
+                chunk = sock.recv(4096)
+                if not chunk:
+                    break
+                reply.extend(chunk)
+        finally:
+            sock.close()
+    finally:
+        os.close(fd)
+    response = json.loads(bytes(reply).decode("utf-8"))
+    if not response.get("ok"):
+        reason = response.get("reason")
+        raise RuntimeError(response.get("error", "file upload failed") + (f" ({reason})" if reason else ""))
+    return response["result"]
+
+
+@register("upload_file", "上传工作区内的文件，返回公开 7 天的下载链接（不要上传凭据、令牌、密钥、登录态文件）", {
+    "type": "object",
+    "properties": {"path": {"type": "string", "description": "要上传的文件路径（工作区内、非点目录）"}},
+    "required": ["path"],
+})
+def _upload_file(args: dict[str, Any]) -> dict[str, Any]:
+    path = (args.get("path") or "").strip()
+    if not path:
+        raise ValueError("path is required")
+    return _ipc_upload(path)
+
+
 # ── JSON‑RPC message dispatch ────────────────────────────────────────
 
 def _dispatch(req: Request) -> Response:
