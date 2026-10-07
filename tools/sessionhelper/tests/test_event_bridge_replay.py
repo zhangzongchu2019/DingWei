@@ -254,6 +254,26 @@ class EventBridgeReplayTest(unittest.TestCase):
         self.assertTrue(h.wait_for(lambda: len(h.sleeps) >= 7))
         self.assertEqual(h.sleeps[:7], [2.0, 4.0, 8.0, 16.0, 30.0, 30.0, 30.0])
 
+    def test_codex_start_stops_old_unhealthy_rpc_before_reconnecting(self):
+        from sessionhelper.codexDriver import CodexProtocolDriver
+
+        class DeadRpc:
+            stops = 0
+
+            def healthy(self):
+                return False
+
+            def stop(self):
+                DeadRpc.stops += 1
+
+        drv = CodexProtocolDriver.__new__(CodexProtocolDriver)
+        drv._rpc = DeadRpc()
+        drv._transport_mode = "__test_abort__"  # 停旧 rpc 之后立即因未知传输方式中止，不起真进程
+        with self.assertRaises(ValueError):
+            CodexProtocolDriver.start(drv)
+        self.assertEqual(DeadRpc.stops, 1, "重连前须先停旧的不健康 rpc（防孤儿 app-server）")
+        self.assertFalse(CodexProtocolDriver.healthy(drv))
+
     def test_real_session_event_is_unhashable(self):
         # 守卫若用 WeakSet／set 会在真对象上直接 TypeError；用例用真 SessionEvent 而非替身类。
         with self.assertRaises(TypeError):
