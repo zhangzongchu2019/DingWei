@@ -265,7 +265,7 @@ func (a *API) approve(w http.ResponseWriter, r *http.Request, actor string) {
 	approve := a.Svc.Approve
 	group := req.GroupCode
 	if req.NewGroupName != "" {
-		name := strings.TrimSpace(req.NewGroupName)
+		name := identity.NormalizeGroupName(req.NewGroupName) // 去不可见字符与首尾空白（R-V2-0102-GROUP-FIXES B）
 		if name == "" {
 			writeErr(w, http.StatusUnprocessableEntity, "group_name_invalid", nil)
 			return

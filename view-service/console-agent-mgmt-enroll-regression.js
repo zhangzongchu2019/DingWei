@@ -46,7 +46,7 @@ if (mutation === 'new-group-limit-9') mutate('NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,8}
 if (mutation === 'new-group-ascii-only') mutate('NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,8}$/u,', 'NEW_GROUP_RE=/^[A-Za-z0-9]{1,8}$/,');
 if (mutation === 'group-closed-unmapped') mutate("group_closed:'该编组已关闭添加,请换一个编组或新建',", '');
 if (mutation === 'new-group-no-check') mutate("if(!n)return {error:'请填写新编组的名字(1～8 位字母或数字)'};", '');
-if (mutation === 'new-group-no-regex') mutate("if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};", '');
+if (mutation === 'new-group-no-regex') mutate("if(!NEW_GROUP_RE.test(n))return {error:GROUP_NAME_RULE_TEXT};", '');
 if (mutation === 'no-stale-guard') mutate('if(generation!==enrollGeneration)return null;', '');
 if (mutation === 'keep-inputs') mutate("if(!gone){enrollFeedback('enrollFeedback',res.text);return;}", "if(!gone){enrollFeedback('enrollFeedback',res.text);enrollCloseEditor();return;}");
 if (mutation === 'no-confirm-revoke') mutate("if(!confirm('吊销 '+a.name+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;", '');

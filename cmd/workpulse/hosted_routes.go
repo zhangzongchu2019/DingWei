@@ -210,14 +210,17 @@ func (d hostedDeps) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "name_invalid"})
 		return
 	}
-	// 与入网审批接口（identity/httpapi approve）同口径：两个都给 ⇒ group_ambiguous；给了新组名却只有空白 ⇒ group_name_invalid。
+	// 与入网审批接口（identity/httpapi approve）同口径：两个都给 ⇒ group_ambiguous；给了新组名、清洗后为空 ⇒ group_name_invalid。
 	if req.GroupID != "" && req.NewGroupName != "" {
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "group_ambiguous"})
 		return
 	}
-	if req.NewGroupName != "" && strings.TrimSpace(req.NewGroupName) == "" {
-		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "group_name_invalid"})
-		return
+	if req.NewGroupName != "" {
+		req.NewGroupName = identity.NormalizeGroupName(req.NewGroupName) // 去不可见字符与首尾空白（R-V2-0102-GROUP-FIXES B）
+		if req.NewGroupName == "" {
+			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "group_name_invalid"})
+			return
+		}
 	}
 	out, err := d.orch.Create(r.Context(), hosted.CreateRequest{
 		OwnerLC: actor, By: actor, Name: req.Name, GroupCode: req.GroupID, NewGroupName: req.NewGroupName,

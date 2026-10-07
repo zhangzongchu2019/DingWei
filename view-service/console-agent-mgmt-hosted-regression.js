@@ -45,7 +45,7 @@ if (mutation === 'ignore-hosted-disabled') mutate('if(!FEATURE_HOSTED){var hc=',
 if (mutation === 'always-hide-hosted') mutate('if(!FEATURE_HOSTED){var hc=', 'if(true){var hc=');
 if (mutation === 'hosted-group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
 if (mutation === 'hosted-online-no-group-refresh') mutate("enrollFeedback('hostedFeedback',name+' 已上线');refreshGroups('hosted');", "enrollFeedback('hostedFeedback',name+' 已上线');");
-if (mutation === 'hosted-new-group-no-check') mutate("if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};", '');
+if (mutation === 'hosted-new-group-no-check') mutate("if(!NEW_GROUP_RE.test(n))return {error:GROUP_NAME_RULE_TEXT};", '');
 if (mutation === 'backup-failed-unmapped') mutate("backup_failed:'销毁前备份数据卷失败,容器没有被删除,请稍后再试或联系管理员',", '');
 if (mutation === 'quota-only-zero') mutate('&&data.remaining[d[0]]<=0)used.push', '&&data.remaining[d[0]]===0)used.push');
 if (mutation === 'quota-old-fallback') mutate("quota_exceeded:'配额不足，请联系管理员调整配额',", "quota_exceeded:'Agent 数量已达上限',");

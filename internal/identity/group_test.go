@@ -161,3 +161,32 @@ var tgSeq atomic.Int64
 func tg() string { return fmt.Sprintf("t%d", tgSeq.Add(1)) }
 
 var fixtureGroup = regexp.MustCompile(`^t[0-9]+$`)
+
+// R-V2-0102-GROUP-FIXES B：NormalizeGroupName 去 Unicode 格式类字符（\p{Cf}）与首尾空白；规则（ValidGroupName）不变；
+// identity 内部建组（CreateGroup、批准／托管新建组）也先清洗，落库用清洗后的值。
+func TestNormalizeGroupName(t *testing.T) {
+	for in, want := range map[string]string{
+		"test": "test", " test ": "test", "test\u200b": "test", "\ufefftest": "test", "te\u200dst\u2060": "test",
+		"\u3000测试组\u00a0": "测试组", "te st": "te st", "test-1": "test-1", "\u200b\ufeff": "", "": "",
+	} {
+		if got := identity.NormalizeGroupName(in); got != want {
+			t.Errorf("NormalizeGroupName(%q)=%q want %q", in, got, want)
+		}
+	}
+	f := newFixture(t)
+	a, err := f.svc.IssueHostedAgent(bg, "zzc", "Leader", "", "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	g, err := f.svc.CreateGroup(bg, "zzc", a.Agent.ID, "\u200bnorm\u2060")
+	if err != nil || g.ShortName != "norm" {
+		t.Fatalf("CreateGroup 应存清洗后的名：%+v %v", g, err)
+	}
+	h, err := f.svc.IssueHostedAgentWithNewGroup(bg, "zzc", "Hosted", " \ufeffhgrp ", "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := f.store.GetGroup(bg, h.Agent.GroupID); got == nil || got.ShortName != "hgrp" {
+		t.Fatalf("托管新建组应存清洗后的名：%+v", got)
+	}
+}

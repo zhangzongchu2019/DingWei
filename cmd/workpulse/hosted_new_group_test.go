@@ -224,6 +224,21 @@ func TestHostedCreateWithNewGroup(t *testing.T) {
 		ngWaitSeat(t, e.st, e.group("新组丙").LeaderAgentID, "online")
 	})
 
+	// 格 B-hosted（R-V2-0102-GROUP-FIXES B）：托管建席的新组名同样先清洗、落库用清洗值；清洗后为空 ⇒ group_name_invalid。
+	t.Run("hosted new group name is normalized before validation and storage", func(t *testing.T) {
+		st, out := e.create("Zw", `,"new_group_name":"\u200bzwgrp\u2060 "`)
+		if st != 202 {
+			t.Fatalf("%d %v", st, out)
+		}
+		if g := e.group("zwgrp"); g == nil || g.LeaderAgentID != out["job_id"] {
+			t.Fatalf("落库应为清洗后的 zwgrp：%+v", g)
+		}
+		ngWaitSeat(t, e.st, out["job_id"], "online")
+		if st, out := e.create("Zw2", `,"new_group_name":"\u200b\ufeff"`); st != 422 || out["error"] != "group_name_invalid" {
+			t.Fatalf("%d %v", st, out)
+		}
+	})
+
 	// 格 A6：席位落库失败 ⇒ 没有残留的新组；Agent 已吊销（名字可再用）。
 	t.Run("seat insert failure leaves no new group", func(t *testing.T) {
 		groups := e.groupCount()

@@ -80,6 +80,15 @@ func (h *Hub) npGroupView(info identity.GroupInfo) npGroupView {
 	return v
 }
 
+// groupNameInvalidText 编组名不合规的提示；与页面 GROUP_NAME_RULE_TEXT 逐字相同（console_group_name_text_test.go 钉住）。
+const groupNameInvalidText = "编组名只能用 1～8 位字母或数字（不含空格、连字符、符号）"
+
+func writeGroupError(w http.ResponseWriter, status int, code, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": code, "message": message})
+}
+
 // handleNewPlatformAgentGroups GET 列表／POST 建组（旧平台 HandleConsoleAgentGroups 的新平台分支）。
 func (h *Hub) handleNewPlatformAgentGroups(w http.ResponseWriter, r *http.Request) {
 	actor := platformPrincipal(r)
@@ -113,13 +122,18 @@ func (h *Hub) handleNewPlatformAgentGroups(w http.ResponseWriter, r *http.Reques
 			AgentID   string `json:"agent_id"`
 			ShortName string `json:"short_name"`
 		}
-		if json.NewDecoder(r.Body).Decode(&req) != nil || strings.TrimSpace(req.AgentID) == "" {
-			http.Error(w, "agent_id and short_name required", http.StatusBadRequest)
+		// R-V2-0102-GROUP-FIXES B：三种 400 改为带码的中文（页面 groupAction 显示 message）；其余分支不动。
+		if json.NewDecoder(r.Body).Decode(&req) != nil {
+			writeGroupError(w, http.StatusBadRequest, "bad_request", "请求格式不正确，请刷新页面后重试")
 			return
 		}
-		req.ShortName = strings.TrimSpace(req.ShortName)
+		if strings.TrimSpace(req.AgentID) == "" {
+			writeGroupError(w, http.StatusBadRequest, "group_leader_required", "请选择组长")
+			return
+		}
+		req.ShortName = identity.NormalizeGroupName(req.ShortName) // 去不可见字符与首尾空白，校验与落库同值
 		if !identity.ValidGroupName(req.ShortName) {
-			http.Error(w, "group name must be 1 to 8 letters or numbers", http.StatusBadRequest)
+			writeGroupError(w, http.StatusBadRequest, "group_name_invalid", groupNameInvalidText)
 			return
 		}
 		g, err := h.Identity.CreateGroup(r.Context(), actor, req.AgentID, req.ShortName)
