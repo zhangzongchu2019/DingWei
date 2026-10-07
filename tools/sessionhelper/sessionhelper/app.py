@@ -220,6 +220,10 @@ class SessionHelper:
             cfg.cli_cwd or os.getcwd(), codex_home=cfg.codex_home, state_dir=cfg.state_dir,
             cred_file=cfg.cred_file, enroll_token_file=cfg.enroll_token_file, inbox_db=cfg.inbox_db)
         self.secret_scanner = SecretScanner((cfg.cred_file, os.path.join(cfg.codex_home, "auth.json") if cfg.codex_home else ""))
+        try:
+            self.secret_scanner.needles()  # 启动即记下当前令牌，续期后的陈旧副本仍可认出（复核 S2）
+        except Exception:  # noqa: BLE001
+            pass
         self.upload_limiter = RateLimiter(max_count=cfg.upload_max_per_hour, max_bytes=cfg.upload_max_bytes_per_hour)
         self.ipc_bound = asyncio.Event()
         self.install_upload_command()

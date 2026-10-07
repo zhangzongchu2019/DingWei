@@ -463,6 +463,56 @@ class PlainLayoutProtectedTest(UploadCase):
                 self.assertRejected(self.upload_fd(link), "protected_inode")
 
 
+class ReviewFollowupTest(UploadCase):
+    """tosonnet55tc2k 复核 S1／S2。"""
+
+    dot_layout = False
+
+    def test_S1_protected_name_patterns_ignore_case(self):
+        for name in ("k.PEM", "Id_Rsa", "server.KEY", "Prod.Env", "ID_ED25519.pub", "INBOX.sqlite3-WAL"):
+            with self.subTest(name=name):
+                self.assertRejected(self.upload_fd(self.work_file(name, b"x")), "protected_name")
+
+    def renew_auth(self, token):
+        renewed = self.layout.codex / "auth.json.tmp"
+        renewed.write_text(json.dumps({"tokens": {"access_token": token}}))
+        os.replace(renewed, self.layout.auth)  # Codex renews with a new inode
+
+    def test_S2_hard_link_before_renewal_is_refused(self):
+        stale = self.layout.root / "stale.txt"
+        os.link(self.layout.auth, stale)
+        self.assertRejected(self.upload_fd(stale), "protected_inode", "hard_linked")
+
+    def test_S2_stale_hard_link_after_renewal_is_refused_by_remembered_token(self):
+        # 复核方场景：链接建在续期前，续期后旧 inode 只剩 stale.txt 一个链接（st_nlink 回到 1），
+        # (dev, ino) 与现行令牌集合都认不出——要靠 helper 启动时记下的旧令牌按内容拦。
+        old_token = "old-auth-access-token-0123456789abcdef"
+        self.layout.auth.write_text(json.dumps({"tokens": {"access_token": old_token}}))
+        self.helper.secret_scanner.needles()  # helper 在续期前已运行（启动时即读）
+        stale = self.layout.root / "stale.txt"
+        os.link(self.layout.auth, stale)
+        self.renew_auth(AUTH_TOKEN)
+        self.assertEqual(os.stat(stale).st_nlink, 1)
+        self.assertNotEqual(os.stat(stale).st_ino, os.stat(self.layout.auth).st_ino)
+        self.assertNotIn(old_token, self.layout.cred.read_text() + self.layout.auth.read_text())
+        self.assertRejected(self.upload_fd(stale), "secret_content")
+
+    def test_S2_helper_reads_tokens_at_start(self):
+        old_token = "start-time-token-abcdefghijklmnopqrstuv"
+        self.layout.auth.write_text(json.dumps({"tokens": {"access_token": old_token}}))
+        fresh = make_helper(self.layout)
+        self.assertIn(old_token.encode(), fresh.secret_scanner.needles())
+        self.renew_auth(AUTH_TOKEN)
+        needles = fresh.secret_scanner.needles()
+        self.assertIn(old_token.encode(), needles)
+        self.assertIn(AUTH_TOKEN.encode(), needles)
+
+    def test_S2_any_multiply_linked_work_file_is_refused(self):
+        original = self.work_file("plain.txt", b"ordinary work output")
+        os.link(original, self.layout.root / "plain-copy.txt")
+        self.assertRejected(self.upload_fd(original), "hard_linked")
+
+
 class BackendFailureTicketDeniedTest(UploadCase):
     ticket_ok = False
 
@@ -529,7 +579,7 @@ class PolicyUnitTest(unittest.TestCase):
             self.assertNotIn(b"tiny", scanner.needles())
             src.write_text(json.dumps({"b": AUTH_TOKEN}))
             self.assertIn(AUTH_TOKEN.encode(), scanner.needles())
-            self.assertNotIn(CRED_TOKEN.encode(), scanner.needles())
+            self.assertIn(CRED_TOKEN.encode(), scanner.needles(), "tokens seen earlier stay in the set (S2)")
 
     def test_upload_limit_matches_go_filepolicy(self):
         go = (Path(__file__).resolve().parents[3] / "internal/filepolicy/policy.go").read_text()

@@ -109,8 +109,9 @@ class UploadPolicy:
             raise UploadRejected("protected_path")
         if real_path in self.protected_files:
             raise UploadRejected("protected_path")
-        name = os.path.basename(real_path)
-        if any(fnmatch.fnmatchcase(name, pattern) for pattern in PROTECTED_NAME_PATTERNS):
+        # 大小写不敏感（复核 S1）：k.PEM、Id_Rsa、server.KEY 与小写同样拒。
+        name = os.path.basename(real_path).casefold()
+        if any(fnmatch.fnmatchcase(name, pattern.casefold()) for pattern in PROTECTED_NAME_PATTERNS):
             raise UploadRejected("protected_name")
         for protected in self.protected_files:
             try:
@@ -119,6 +120,10 @@ class UploadPolicy:
                 continue
             if (other.st_dev, other.st_ino) == (st.st_dev, st.st_ino):
                 raise UploadRejected("protected_inode")
+        # 复核 S2：硬链接到受保护文件后，Codex 续期以 os.replace 换了新 inode，旧链接仍指向含旧令牌的旧 inode，
+        # (dev, ino) 比对与现行令牌集合都认不出它。工作区里的正常工作文件几乎不会有多个硬链接 ⇒ 一律拒。
+        if st.st_nlink > 1:
+            raise UploadRejected("hard_linked")
 
 
 def _json_strings(value, out: set[bytes]) -> None:
@@ -154,9 +159,14 @@ class SecretScanner:
     Values stay in memory only.
     """
 
+    # 复核 S2：续期后旧 inode 只剩旁人的硬链接（链接数回到 1），内容是旧令牌。曾见过的令牌留在扫描集里
+    # （进程内、有上限），这类陈旧副本仍能按内容拦下。helper 重启前没读到过的旧令牌不在其中（已知边界）。
+    HISTORY_MAX = 256
+
     def __init__(self, sources: tuple[str, ...]):
         self.sources = tuple(s for s in sources if s)
         self._cache: dict[str, tuple[tuple[int, int, int], frozenset[bytes]]] = {}
+        self._history: dict[bytes, None] = {}
         self._lock = threading.Lock()
 
     def needles(self) -> tuple[bytes, ...]:
@@ -179,7 +189,13 @@ class SecretScanner:
                         continue
                     cached = (sig, frozenset(secret_needles(content)))
                     self._cache[path] = cached
+                    for needle in cached[1]:
+                        self._history.pop(needle, None)
+                        self._history[needle] = None
+                    while len(self._history) > self.HISTORY_MAX:
+                        self._history.pop(next(iter(self._history)))
                 found |= cached[1]
+            found |= set(self._history)
         return tuple(sorted(found, key=len, reverse=True))
 
 
