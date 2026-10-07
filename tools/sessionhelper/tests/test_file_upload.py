@@ -28,7 +28,6 @@ from sessionhelper.config import load_config
 from sessionhelper.file_upload import (UPLOAD_MAX_BYTES, RateLimiter, SecretScanner, UploadPolicy, UploadRejected,
                                        iter_exact, scan_and_digest)
 from sessionhelper.guide_state import GUIDE_CONTEXT_FOOTER, GUIDE_CONTEXT_HEADER, StagedGuideStore
-from sessionhelper.ipc_listener import serve_ipc
 
 try:
     from _home_isolation import HomeIsolation
@@ -217,10 +216,8 @@ class UploadHarness:
         async def start():
             async def no_send(*_a):
                 raise AssertionError("send handler must not be used")
-            self.task = asyncio.ensure_future(serve_ipc(
-                helper.cfg.mcp_ipc_sock, send_handler or no_send,
-                upload_handler=helper._make_upload_handler(ws) if helper.upload_policy.enabled else None,
-                bound=helper.ipc_bound, upload_only=helper.cfg.ipc_upload_only))
+            # 经 app 的同一入口起服务（接线：upload_handler、bound、upload_only 全由 helper 决定）。
+            self.task = asyncio.ensure_future(helper._ipc_server(ws, send_handler or no_send))
             await asyncio.wait_for(helper.ipc_bound.wait(), 5)
 
         asyncio.run_coroutine_threadsafe(start(), self.loop).result(10)

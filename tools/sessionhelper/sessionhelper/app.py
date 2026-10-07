@@ -562,18 +562,7 @@ class SessionHelper:
                 # MCP shim and forwards them through this existing WSS.
                 ipc_task: asyncio.Task | None = None
                 if self.cfg.mcp_ipc_sock:
-                    from .ipc_listener import serve_ipc
-
-                    # 即使 datad_url 未配也装入一个 fail-loud handler。传 None 会让
-                    # MCP 调用退化成 NoneType/Transport closed,把配置缺失伪装成连接故障。
-                    vsapi_handler = self._make_vsapi_handler()
-                    ipc_task = asyncio.create_task(
-                        serve_ipc(self.cfg.mcp_ipc_sock, self._make_send_handler(ws),
-                                  vsapi_handler=vsapi_handler,
-                                  file_handler=self._make_file_handler(ws),
-                                  allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock),
-                                  upload_handler=self._make_upload_handler(ws) if self.upload_policy.enabled else None,
-                                  bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only))
+                    ipc_task = asyncio.create_task(self._ipc_server(ws))
 
                 try:
                     await supervise_connection_loops([
@@ -1099,6 +1088,19 @@ class SessionHelper:
         if source:
             return source in {"user", "agent", "feishu"}
         return bool(str(env.get("from") or "").strip())
+
+    def _ipc_server(self, ws, send_handler=None):
+        """本机 IPC 服务协程（_run_once 起它；用例经同一入口起，钉住整条接线）。"""
+        from .ipc_listener import serve_ipc
+
+        # 即使 datad_url 未配也装入一个 fail-loud handler。传 None 会让
+        # MCP 调用退化成 NoneType/Transport closed,把配置缺失伪装成连接故障。
+        return serve_ipc(self.cfg.mcp_ipc_sock, send_handler or self._make_send_handler(ws),
+                         vsapi_handler=self._make_vsapi_handler(),
+                         file_handler=self._make_file_handler(ws),
+                         allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock),
+                         upload_handler=self._make_upload_handler(ws) if self.upload_policy.enabled else None,
+                         bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only)
 
     # ── R-V2-AGENT-FILE-UPLOAD ──────────────────────────────────────────
 
