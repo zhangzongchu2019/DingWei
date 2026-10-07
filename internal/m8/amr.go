@@ -301,7 +301,8 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 			p.stats.lateAfterTerminal++
 		}
 		// R-V2-0105 件三：按会话聚合，每会话至多每 amrIgnoredLogInterval 打一行（带区间内条数）。
-		sessionKey := keyID + "\x00" + sessionName
+		// counted_late 两类分开聚合：两类各有首行，心跳 late_after_terminal 与日志仍可对上（F8/T-040）。
+		sessionKey := fmt.Sprintf("%s\x00%s\x00%t", keyID, sessionName, late)
 		if p.ignoredCompleted == nil {
 			p.ignoredCompleted, p.ignoredCompletedLog = map[string]int{}, map[string]time.Time{}
 		}
