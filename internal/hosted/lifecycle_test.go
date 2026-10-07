@@ -74,6 +74,15 @@ func (z *lcIdp) RetireHostedAgent(ctx context.Context, id, by string) (bool, err
 	return z.IdentityIssuer.RetireHostedAgent(ctx, id, by)
 }
 
+// AbortHostedAgent 新建链回收：吊销那一步照记 idp:retire（与 RetireHostedAgent 同一事件），失败注入同口径。
+func (z *lcIdp) AbortHostedAgent(ctx context.Context, id, by string) (bool, error) {
+	z.log.add("idp:retire")
+	if z.failOn == "retire" {
+		return false, errors.New("injected retire")
+	}
+	return z.IdentityIssuer.AbortHostedAgent(ctx, id, by)
+}
+
 type lcGw struct {
 	log    *evLog
 	failOn string // 命中 ⇒ 节点在线、报告失败

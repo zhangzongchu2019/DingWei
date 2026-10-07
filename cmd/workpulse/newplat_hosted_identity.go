@@ -58,6 +58,22 @@ func (h *hostedIdentity[Tok, Ag]) IssueHostedAgent(ctx context.Context, ownerLC,
 	return Ag(struct{ ID, FullName string }{ID: iss.Agent.ID, FullName: iss.FullName}), Tok(iss.Token), nil
 }
 
+// IssueHostedAgentWithNewGroup 同上，但就地新建编组（同一事务、新 Agent 为组长；R-V2-0102-GROUP-FIXES A）。
+func (h *hostedIdentity[Tok, Ag]) IssueHostedAgentWithNewGroup(ctx context.Context, ownerLC, name, newGroupName, by string) (Ag, Tok, error) {
+	var noAg Ag
+	var noTok Tok
+	iss, err := h.svc.IssueHostedAgentWithNewGroup(ctx, ownerLC, name, newGroupName, by)
+	if err != nil {
+		return noAg, noTok, h.groupErr(err)
+	}
+	return Ag(struct{ ID, FullName string }{ID: iss.Agent.ID, FullName: iss.FullName}), Tok(iss.Token), nil
+}
+
+// AbortHostedAgent 没建成的席位回收（吊销＋删随本次新建、无其他成员的编组）。
+func (h *hostedIdentity[Tok, Ag]) AbortHostedAgent(ctx context.Context, agentID, by string) (bool, error) {
+	return h.svc.AbortHostedIssue(ctx, agentID, by)
+}
+
 func (h *hostedIdentity[Tok, Ag]) groupErr(err error) error {
 	switch {
 	case errors.Is(err, identity.ErrGroupNotFound):

@@ -17,6 +17,9 @@ type fakeIdentity struct {
 	agentIDs []string
 	issueErr error
 	nextID   int
+	// R-V2-0102-GROUP-FIXES A
+	newGroups []string
+	aborted   []string
 }
 
 func (f *fakeIdentity) IssueHostedAgent(ctx context.Context, ownerLC, name, groupCode, by string) (IssuedAgent, EnrollToken, error) {
@@ -33,6 +36,18 @@ func (f *fakeIdentity) IssueHostedAgent(ctx context.Context, ownerLC, name, grou
 func (f *fakeIdentity) RetireHostedAgent(ctx context.Context, agentID, by string) (bool, error) {
 	f.retired = append(f.retired, agentID)
 	return false, nil
+}
+
+// IssueHostedAgentWithNewGroup 记下新组名，其余同 IssueHostedAgent（R-V2-0102-GROUP-FIXES A）。
+func (f *fakeIdentity) IssueHostedAgentWithNewGroup(ctx context.Context, ownerLC, name, newGroupName, by string) (IssuedAgent, EnrollToken, error) {
+	f.newGroups = append(f.newGroups, newGroupName)
+	return f.IssueHostedAgent(ctx, ownerLC, name, "", by)
+}
+
+// AbortHostedAgent 没建成的回收：照记 retired（吊销是它的一部分），另记 aborted 供新建链断言。
+func (f *fakeIdentity) AbortHostedAgent(ctx context.Context, agentID, by string) (bool, error) {
+	f.aborted = append(f.aborted, agentID)
+	return f.RetireHostedAgent(ctx, agentID, by)
 }
 
 func (f *fakeIdentity) ListHostedAgentIDsByOwner(ctx context.Context, ownerLC string) ([]string, error) {

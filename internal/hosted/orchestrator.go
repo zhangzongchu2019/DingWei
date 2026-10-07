@@ -39,7 +39,13 @@ type IdentityIssuer interface {
 	// 必须把 identity.ErrGroupNotFound/ErrGroupClosed 译为本包 ErrGroupNotFound/ErrGroupClosed
 	// 哨兵（契约机器码 group_not_found/group_closed——页面只认机器码）。
 	IssueHostedAgent(ctx context.Context, ownerLC, name, groupCode, by string) (IssuedAgent, EnrollToken, error)
+	// IssueHostedAgentWithNewGroup 同 IssueHostedAgent，但就地新建编组、新 Agent 为组长（R-V2-0102-GROUP-FIXES A）。
+	// 组名不合规／被占用原样返回 identity 的错误（路由层错误表译为 group_name_invalid／group_name_taken）。
+	IssueHostedAgentWithNewGroup(ctx context.Context, ownerLC, name, newGroupName, by string) (IssuedAgent, EnrollToken, error)
 	RetireHostedAgent(ctx context.Context, agentID, by string) (bool, error)
+	// AbortHostedAgent 没建成的席位回收：吊销 Agent，并删掉随本次签发新建、无其他成员的编组（既有编组不动）。
+	// 新建链（落库失败、RunJob 失败、SweepTimeouts 新建超时）一律用它；销毁既有席位仍用 RetireHostedAgent。
+	AbortHostedAgent(ctx context.Context, agentID, by string) (bool, error)
 	// ListHostedAgentIDsByOwner 配额已用统计需名下席位清单（hosted_seat 不存 owner——G3 重审③）。
 	// 🔵 G3 侧若无现成方法，接线时经 console agents 端点服务端侧取——已在给 opus50tc2k 的清单里。
 	ListHostedAgentIDsByOwner(ctx context.Context, ownerLC string) ([]string, error)
@@ -158,13 +164,15 @@ type CreateRequest struct {
 	By        string // 操作者（审计）
 	Name      string
 	GroupCode string // 编组可不选（业主令 8582acc4：三键皆缺＝不入组合法；给了才校验）
-	NodeID    string // "auto" 或节点 id
-	Pool      string // 节点池标签（V8-D1：非空 ⇒ 只在该池落位；空 ⇒ 全池最闲）
-	CLI, LLM  string
-	CredKind  string // api_key | token_file
-	AccountID string
-	Plan      string
-	Model     string // 包 B2：按席模型（可空＝节点默认；清单外/非 codex ⇒ 422）
+	// NewGroupName 就地新建编组（与 GroupCode 二选一，路由层已判）；非空 ⇒ IssueHostedAgentWithNewGroup。
+	NewGroupName string
+	NodeID       string // "auto" 或节点 id
+	Pool         string // 节点池标签（V8-D1：非空 ⇒ 只在该池落位；空 ⇒ 全池最闲）
+	CLI, LLM     string
+	CredKind     string // api_key | token_file
+	AccountID    string
+	Plan         string
+	Model        string // 包 B2：按席模型（可空＝节点默认；清单外/非 codex ⇒ 422）
 }
 
 type CreateOutcome struct {
@@ -235,7 +243,13 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	}
 
 	// ⑥ 签发（名称校验委托 G3）
-	ag, tok, err := o.idp.IssueHostedAgent(ctx, req.OwnerLC, req.Name, req.GroupCode, req.By)
+	var ag IssuedAgent
+	var tok EnrollToken
+	if req.NewGroupName != "" {
+		ag, tok, err = o.idp.IssueHostedAgentWithNewGroup(ctx, req.OwnerLC, req.Name, req.NewGroupName, req.By)
+	} else {
+		ag, tok, err = o.idp.IssueHostedAgent(ctx, req.OwnerLC, req.Name, req.GroupCode, req.By)
+	}
 	if err != nil {
 		return CreateOutcome{}, err
 	}
@@ -249,7 +263,7 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 		Model: req.Model, CreatedBy: req.By, // 生效值即请求值（建席时定死；空＝未指定）
 	})
 	if err != nil {
-		_, _ = o.idp.RetireHostedAgent(ctx, ag.ID, req.By)
+		_, _ = o.idp.AbortHostedAgent(ctx, ag.ID, req.By)
 		return CreateOutcome{}, err
 	}
 	_ = o.st.AddAudit(ctx, req.By, "account.bind", req.AccountID, jsonRaw(`{"agent":"`+ag.ID+`"}`))
@@ -328,7 +342,7 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 				_ = o.pool.Release(ctx, "system", agentID)
 			}
 		}
-		_, _ = o.idp.RetireHostedAgent(ctx, agentID, "system")
+		_, _ = o.idp.AbortHostedAgent(ctx, agentID, "system")
 	}
 
 	if err := o.st.SetSeatState(ctx, agentID, "pulling", "", "pull", nil); err != nil {
@@ -467,7 +481,7 @@ WHERE state IN ('queued','pulling','starting')`)
 			_ = o.pool.Release(ctx, "system", p.id)
 		}
 		_ = o.st.SetSeatState(ctx, p.id, "error", p.state, "fail", json.RawMessage(`{"reason":"`+p.state+`"}`))
-		_, _ = o.idp.RetireHostedAgent(ctx, p.id, "system")
+		_, _ = o.idp.AbortHostedAgent(ctx, p.id, "system")
 	}
 }
 

@@ -24,8 +24,9 @@ import (
 // ---------- 路由级假件（hosted 包的测试假件不导出，这里自带最小集） ----------
 
 type fakeIDP struct {
-	ids     []string
-	retired map[string]bool
+	ids       []string
+	retired   map[string]bool
+	newGroups []string
 }
 
 func (f *fakeIDP) IssueHostedAgent(ctx context.Context, ownerLC, name, groupCode, by string) (hosted.IssuedAgent, hosted.EnrollToken, error) {
@@ -52,6 +53,15 @@ func (f *fakeIDP) RetireHostedAgent(ctx context.Context, agentID, by string) (bo
 	}
 	f.retired[agentID] = true
 	return true, nil
+}
+
+// IssueHostedAgentWithNewGroup 记下新组名；名字规则交给真 identity 的格（hosted_new_group_test.go），这里只验路由透传。
+func (f *fakeIDP) IssueHostedAgentWithNewGroup(ctx context.Context, ownerLC, name, newGroupName, by string) (hosted.IssuedAgent, hosted.EnrollToken, error) {
+	f.newGroups = append(f.newGroups, newGroupName)
+	return f.IssueHostedAgent(ctx, ownerLC, name, "", by)
+}
+func (f *fakeIDP) AbortHostedAgent(ctx context.Context, agentID, by string) (bool, error) {
+	return f.RetireHostedAgent(ctx, agentID, by)
 }
 func (f *fakeIDP) ListHostedAgentIDsByOwner(ctx context.Context, ownerLC string) ([]string, error) {
 	var out []string // 与 identity 语义对齐：已吊销（Retire）的不在名下

@@ -116,6 +116,9 @@ var hostedErrorCodes = []struct {
 	// 身份侧（经 G3 适配器原样透传上来的 identity 错误）
 	{identity.ErrNameInvalid, "name_invalid", http.StatusBadRequest},
 	{identity.ErrNameTaken, "name_taken", http.StatusConflict},
+	// R-V2-0102-GROUP-FIXES A：建席就地新建编组（与入网审批同码；页面 CONSOLE_ERRORS 已有中文）
+	{identity.ErrGroupNameInvalid, "group_name_invalid", http.StatusUnprocessableEntity},
+	{identity.ErrGroupNameTaken, "group_name_taken", http.StatusConflict},
 	{identity.ErrUnknownOwner, "forbidden_role", http.StatusForbidden},
 	// 创建
 	{hosted.ErrComboIncompatible, "combo_incompatible", http.StatusBadRequest},
@@ -192,21 +195,32 @@ func (d hostedDeps) handleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Name      string `json:"name"`
-		GroupID   string `json:"group_id"` // 编组的 32 位 code（与 identity 批准接口 group_code 同值同义；可缺省）
-		NodeID    string `json:"node_id"`
-		CLI       string `json:"cli"`
-		LLM       string `json:"llm"`
-		AccountID string `json:"account_id"`
-		PlanID    string `json:"plan_id"`
-		Model     string `json:"model"` // 包 B2：按席模型（可空）
+		Name    string `json:"name"`
+		GroupID string `json:"group_id"` // 编组的 32 位 code（与 identity 批准接口 group_code 同值同义；可缺省）
+		// NewGroupName 就地新建编组（页面「新建编组…」；R-V2-0102-GROUP-FIXES A）。与 group_id 二选一。
+		NewGroupName string `json:"new_group_name"`
+		NodeID       string `json:"node_id"`
+		CLI          string `json:"cli"`
+		LLM          string `json:"llm"`
+		AccountID    string `json:"account_id"`
+		PlanID       string `json:"plan_id"`
+		Model        string `json:"model"` // 包 B2：按席模型（可空）
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "name_invalid"})
 		return
 	}
+	// 与入网审批接口（identity/httpapi approve）同口径：两个都给 ⇒ group_ambiguous；给了新组名却只有空白 ⇒ group_name_invalid。
+	if req.GroupID != "" && req.NewGroupName != "" {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "group_ambiguous"})
+		return
+	}
+	if req.NewGroupName != "" && strings.TrimSpace(req.NewGroupName) == "" {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "group_name_invalid"})
+		return
+	}
 	out, err := d.orch.Create(r.Context(), hosted.CreateRequest{
-		OwnerLC: actor, By: actor, Name: req.Name, GroupCode: req.GroupID,
+		OwnerLC: actor, By: actor, Name: req.Name, GroupCode: req.GroupID, NewGroupName: req.NewGroupName,
 		NodeID: req.NodeID, CLI: req.CLI, LLM: req.LLM, AccountID: req.AccountID, Plan: req.PlanID, Model: req.Model,
 	})
 	if err != nil {

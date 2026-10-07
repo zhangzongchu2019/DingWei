@@ -165,3 +165,90 @@ func TestHostedSuspendResume(t *testing.T) {
 		t.Fatalf("audits: %v", n)
 	}
 }
+
+// R-V2-0102-GROUP-FIXES A：AbortHostedIssue 只回收「随本次签发新建、组长是它、无其他未吊销成员」的组。
+// 断言面＝identity.Service；实现承诺＝吊销同 RetireHostedAgent，删组判据三条缺一不删，重复调用幂等。
+func TestAbortHostedIssueReclaimsOnlyItsOwnEmptyNewGroup(t *testing.T) {
+	f := newFixture(t)
+	groupOf := func(code string) bool { _, err := f.store.GetGroup(bg, code); return err == nil }
+
+	// ① 本次新建、无其他成员 ⇒ 删组；Agent 吊销；重复调用不报错
+	a, err := f.svc.IssueHostedAgentWithNewGroup(bg, "zzc", "Lone", "孤组", "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.svc.AbortHostedIssue(bg, a.Agent.ID, "zzc"); err != nil {
+		t.Fatal(err)
+	}
+	if groupOf(a.Agent.GroupID) {
+		t.Fatal("① 本次新建的空组应被回收")
+	}
+	if ag, _ := f.store.GetAgent(bg, a.Agent.ID); ag.Current() {
+		t.Fatal("① Agent 应已吊销")
+	}
+	if already, err := f.svc.AbortHostedIssue(bg, a.Agent.ID, "zzc"); err != nil || !already {
+		t.Fatalf("① 重复调用应幂等：already=%v err=%v", already, err)
+	}
+
+	// ② 本次新建、但已有别的未吊销成员 ⇒ 不删
+	b, err := f.svc.IssueHostedAgentWithNewGroup(bg, "zzc", "Busy", "热组", "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	other, err := f.svc.IssueHostedAgent(bg, "zzc", "Mate", "", "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.svc.JoinGroup(bg, "zzc", b.Agent.GroupID, other.Agent.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.svc.AbortHostedIssue(bg, b.Agent.ID, "zzc"); err != nil {
+		t.Fatal(err)
+	}
+	if !groupOf(b.Agent.GroupID) {
+		t.Fatal("② 有其他成员的组不得删")
+	}
+
+	// ③ 既有编组（组长不是它）⇒ 不删
+	c, err := f.svc.IssueHostedAgent(bg, "zzc", "Joiner", b.Agent.GroupID, "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.svc.AbortHostedIssue(bg, c.Agent.ID, "zzc"); err != nil {
+		t.Fatal(err)
+	}
+	if !groupOf(b.Agent.GroupID) {
+		t.Fatal("③ 既有编组不得删")
+	}
+
+	// ⑤ 既有编组、组长已吊销、组里没有别的成员 ⇒ 仍不删（只看「组长是不是它」，不靠「有没有别人」兜住）
+	e, err := f.svc.IssueHostedAgentWithNewGroup(bg, "zzc", "OldLead", "旧组", "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.svc.RetireHostedAgent(bg, e.Agent.ID, "zzc"); err != nil {
+		t.Fatal(err)
+	}
+	j, err := f.svc.IssueHostedAgent(bg, "zzc", "Late", e.Agent.GroupID, "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.svc.AbortHostedIssue(bg, j.Agent.ID, "zzc"); err != nil {
+		t.Fatal(err)
+	}
+	if !groupOf(e.Agent.GroupID) {
+		t.Fatal("⑤ 组长不是本次 Agent 的既有编组不得删（即使已无其他成员）")
+	}
+
+	// ④ 不入组 ⇒ 只吊销
+	d, err := f.svc.IssueHostedAgent(bg, "zzc", "Solo", "", "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.svc.AbortHostedIssue(bg, d.Agent.ID, "zzc"); err != nil {
+		t.Fatal(err)
+	}
+	if ag, _ := f.store.GetAgent(bg, d.Agent.ID); ag.Current() {
+		t.Fatal("④ Agent 应已吊销")
+	}
+}
