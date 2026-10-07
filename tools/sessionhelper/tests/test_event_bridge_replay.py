@@ -4,6 +4,8 @@
 事件桥 1 秒后重订阅 ⇒ 整份再发，Hub 当新事件（dw2 洪流）。这里用真 CodexProtocolDriver 的缓冲与
 events()，只把 rpc 换成「不健康」的桩，让桥真实地反复重订阅；另起线程持续取 _event_q 计数。
 """
+import contextlib
+import io
 import json
 import os
 import queue
@@ -42,6 +44,11 @@ class UnhealthyRpc:
         return False
 
 
+class HealthyRpc:
+    def healthy(self):
+        return True
+
+
 class _Parked:
     """测试结束后换上它：桥线程停在 events() 里，不再碰本测试的驱动。"""
 
@@ -58,6 +65,16 @@ class BridgeHarness:
         self.adapter = DriverAdapter(load_config(dict(BASE_ENV)))
         self.driver = self.adapter.driver
         self.driver._rpc = UnhealthyRpc()
+        # 不起真 Codex：start() 换成记录器（默认重连失败＝仍不健康）；桥的睡眠换成快睡眠并记录请求时长。
+        self.starts = 0
+        self.reconnect_to = None
+        def fake_start():
+            self.starts += 1
+            if self.reconnect_to is not None:
+                self.driver._rpc = self.reconnect_to
+        self.driver.start = fake_start
+        self.sleeps = []
+        self.adapter._bridge_sleep = lambda d: (self.sleeps.append(d), time.sleep(min(d, 0.02)))
         self.received = []
         self._drain = threading.Event()
         if drain:
@@ -164,6 +181,78 @@ class EventBridgeReplayTest(unittest.TestCase):
         counts = Counter(self.texts(h))
         self.assertEqual(len(counts), 4005)
         self.assertEqual(set(counts.values()), {1})
+
+    def test_dead_driver_reconnects_with_backoff_and_never_resends(self):
+        h = BridgeHarness(self)
+        h.emit(3, "pre")
+        h.start_bridge()
+        self.assertTrue(h.wait_for(lambda: h.starts >= 6, timeout=30))
+        backoff = [d for d in h.sleeps[:6]]
+        self.assertEqual(backoff, [1.0, 2.0, 5.0, 10.0, 30.0, 30.0], "不健康期间按 1、2、5、10、30 s 退避重连")
+        self.assertEqual(Counter(self.texts(h)), Counter(f"pre-{i}" for i in range(3)), "退避空转中不重发")
+
+    def test_unavailable_warning_printed_once_per_outage(self):
+        h = BridgeHarness(self)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            h.start_bridge()
+            self.assertTrue(h.wait_for(lambda: h.starts >= 4, timeout=30))
+            h.reconnect_to = HealthyRpc()
+            self.assertTrue(h.wait_for(lambda: "driver reconnected" in out.getvalue(), timeout=30))
+        text = out.getvalue()
+        self.assertEqual(text.count("driver unavailable"), 1, text)
+        self.assertEqual(text.count("driver reconnected"), 1, text)
+
+    def test_events_resume_in_order_after_reconnect(self):
+        h = BridgeHarness(self)
+        h.emit(2, "old")
+        h.start_bridge()
+        self.assertTrue(h.wait_for(lambda: len(h.received) >= 2 and h.starts >= 1))
+        h.reconnect_to = HealthyRpc()  # 下一次重连成功
+        self.assertTrue(h.wait_for(lambda: h.driver.healthy()))
+        time.sleep(0.3)  # 桥进入新一轮订阅（健康时阻塞在实时队列上）
+        h.emit(5, "new")
+        self.assertTrue(h.wait_for(lambda: len(h.received) >= 7, timeout=20), f"重连后新事件未续流: {self.texts(h)}")
+        time.sleep(0.5)
+        self.assertEqual(self.texts(h), ["old-0", "old-1"] + [f"new-{i}" for i in range(5)])
+
+    def test_driver_without_health_probe_is_not_restarted(self):
+        h = BridgeHarness(self)
+
+        class NoProbeDriver:  # 形同 opencode 未建 session：events() 立即返回空，且不提供 healthy()
+            def __init__(self):
+                self.starts = 0
+
+            def events(self, since=None):
+                return iter(())
+
+            def start(self):
+                self.starts += 1
+
+        fake = NoProbeDriver()
+        h.adapter.driver = fake
+        h.start_bridge()
+        self.assertTrue(h.wait_for(lambda: len(h.sleeps) >= 8))
+        self.assertEqual(fake.starts, 0)
+        self.assertEqual(set(h.sleeps[:8]), {1.0}, "无探测驱动保持 1 s，不退避到 30 s")
+
+    def test_idle_backoff_for_healthy_driver_returning_empty(self):
+        h = BridgeHarness(self)
+
+        class HealthyEmptyDriver:
+            def healthy(self):
+                return True
+
+            def events(self, since=None):
+                return iter(())
+
+            def start(self):
+                raise AssertionError("healthy driver must not be restarted")
+
+        h.adapter.driver = HealthyEmptyDriver()
+        h.start_bridge()
+        self.assertTrue(h.wait_for(lambda: len(h.sleeps) >= 7))
+        self.assertEqual(h.sleeps[:7], [2.0, 4.0, 8.0, 16.0, 30.0, 30.0, 30.0])
 
     def test_real_session_event_is_unhashable(self):
         # 守卫若用 WeakSet／set 会在真对象上直接 TypeError；用例用真 SessionEvent 而非替身类。

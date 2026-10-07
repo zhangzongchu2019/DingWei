@@ -553,9 +553,20 @@ class CodexProtocolDriver(Driver):
             )
         raise ValueError(f"unsupported transport_mode={transport_mode!r}")
 
+    def healthy(self) -> bool:
+        """R-V2-0105 件二：供事件桥判断 app-server 连接是否已死（死了才重连）。"""
+        rpc = self._rpc
+        return rpc is not None and rpc.healthy()
+
     def start(self) -> None:
         if self._rpc is not None and self._rpc.healthy():
             return
+        if self._rpc is not None:
+            # R-V2-0105 件二：重连前先停掉旧的不健康连接（读线程死而进程仍在时不留孤儿进程）。
+            try:
+                self._rpc.stop()
+            except Exception:
+                pass
         if self._transport_mode == "daemon_ws":
             if self._manage_daemon:
                 self._start_daemon()
