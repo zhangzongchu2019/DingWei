@@ -427,6 +427,8 @@ func (h *Hub) handleSessionEventEnvelopeContext(_ context.Context, c *sessionCli
 	if h.amr != nil {
 		h.amr.ingest(c.keyID, c.sessionName, sanitized)
 	}
+	// R-V2-0103：view 提及转来的那一轮，回合结束时把回复只读显示到发起页（不投递、不进 AMR）。
+	h.mentionMirror.observe(c.keyID, c.sessionName, sanitized)
 	return true
 }
 
