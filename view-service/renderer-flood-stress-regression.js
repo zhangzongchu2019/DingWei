@@ -7,6 +7,12 @@
 // 读数（不作判据，组长 STRESS-DET 第 1 条）：agents 定时请求相邻间隔、longtask 最大值／总数／总时长、实际推入速率。
 //   agents 定时器在本格把 15 s 缩到 AGENT_POLL_MS＝1 s（只改顶层页的 setInterval(…,15000)），这样洪流期间能看到十几个间隔。
 // 反向：RENDERER_OVERRIDE 改指去合并的副本（STRESS_EXPECT_MUTANT=1）⇒ 先断言事件数峰值确实涨到约 10 万（变异生效），再断言判据零红。
+// R-V2-0105-F12-TESTS（正式复核件 2.1／2.2／5）：
+//   F1（flood 场景）：灌入期间长度大于 5000 的数组 sort 次数＝0（确定性硬断言，保护 70121033 顺序到达免重排的收益）；
+//      计数在 flood iframe 里包 Array.prototype.sort，自装钩起算。去掉 70121033 的副本须红在 F1。
+//   F2（late-order 场景，3 万条）：cursor 12000 扣下，等 cursor 21000 发出后才补发（迟到约 9000 条＜较新一半约 1 万条）。
+//      流内顺序固定 ⇒ 第 20001 条 push 时同步合并较旧一半，迟到那条必在合并之后到达，与机器快慢无关。
+//      断言全文与位置逐字正确；把「较旧一半」改为整组合并（R7）的副本须红在位置判据。
 const assert = require('assert');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -19,7 +25,6 @@ const RENDERER = process.env.RENDERER_OVERRIDE || path.join(HERE, 'renderer-cana
 const GO_SOURCE = path.join(HERE, '..', 'internal', 'm8', 'console_auth.go');
 const START = 'const consolePageHTML = `';
 const END = '`\n\nfunc (h *Hub) HandleConsoleAgents';
-const TOTAL = 100000;
 const RATE = 6000;           // 每秒条数（目标；实际速率另记）
 const SOFT_CAP = 20000;
 const MARGIN = 100;          // 判据零余量
@@ -45,10 +50,10 @@ function frame(epoch, seq, ev) {
   return `id: ${epoch}-${seq}\ndata: ${JSON.stringify(ev)}\n\n`;
 }
 
-function startServer() {
+function startServer(sc) {
   const html = consoleHTML();
   const renderer = fs.readFileSync(RENDERER);
-  const st = { agentGETs: [], samples: [], go: null, floodDone: null, floodStart: 0, floodEnd: 0, calmSent: 0, calmStop: false };
+  const st = { sc, agentGETs: [], samples: [], go: null, floodDone: null, floodStart: 0, floodEnd: 0, calmSent: 0, calmStop: false };
   let release;
   st.go = new Promise(r => { release = r; });
   st.floodDone = new Promise(r => { st.finishFlood = r; });
@@ -91,27 +96,43 @@ function startServer() {
   return new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve({ server, port: server.address().port, st })));
 }
 
+// 发送顺序：cursor 1..total，cursor sc.lateCursor 扣下，在 cursor sc.lateAfter 之后紧接着补发；seq 按发送顺序递增。
+function floodOrder(sc) {
+  const order = [];
+  for (let c = 1; c <= sc.total; c++) {
+    if (c === sc.lateCursor) continue;
+    order.push(c);
+    if (c === sc.lateAfter) order.push(sc.lateCursor);
+  }
+  return order;
+}
+
 async function pumpFlood(res, st) {
   await st.go;
+  const sc = st.sc;
   const epoch = 'f1';
+  const order = floodOrder(sc);
   res.write(frame(epoch, 1, { kind: 'user_input', text: '灌入', cursor: '0000000', delivery_id: 'd-f', turn_id: 't-f', stage: 'cli_injected', ts: 0 }));
   st.floodStart = Date.now();
   let i = 0;
   const tick = 10;
   let lastLog = st.floodStart;
-  while (i < TOTAL) {
+  while (i < order.length) {
     if (Date.now() - st.floodStart > DEADLINE_S * 1000) { st.aborted = i; break; }
-    if (Date.now() - lastLog >= 5000) { lastLog = Date.now(); console.error(`flood: pushed ${i} in ${((lastLog - st.floodStart) / 1000).toFixed(1)} s`); }
-    const due = Math.min(TOTAL, Math.floor(((Date.now() - st.floodStart) / 1000) * RATE) + 1);
+    if (Date.now() - lastLog >= 5000) { lastLog = Date.now(); console.error(`${sc.name}: pushed ${i} in ${((lastLog - st.floodStart) / 1000).toFixed(1)} s`); }
+    const due = Math.min(order.length, Math.floor(((Date.now() - st.floodStart) / 1000) * RATE) + 1);
     let chunk = '';
-    for (; i < due; i++) chunk += frame(epoch, i + 2, { kind: 'assistant_text', text: deltaText(i), cursor: String(i + 1).padStart(7, '0'), delivery_id: 'd-f', turn_id: 't-f', ts: 0 });
+    for (; i < due; i++) {
+      const c = order[i];
+      chunk += frame(epoch, i + 2, { kind: 'assistant_text', text: deltaText(c - 1), cursor: String(c).padStart(7, '0'), delivery_id: 'd-f', turn_id: 't-f', ts: 0 });
+    }
     if (chunk && !res.write(chunk)) await Promise.race([new Promise(r => res.once('drain', r)), sleep(DEADLINE_S * 1000)]);   // 背压：浏览器收不动就等，实际速率另记
     await sleep(tick);
   }
   st.floodEnd = Date.now();
   st.pushed = i;
   if (st.aborted !== undefined) { st.finishFlood(); return; }
-  res.write(frame(epoch, TOTAL + 2, { kind: 'state_change', text: '', cursor: '9999999', delivery_id: 'd-f', turn_id: 't-f', ts: 0, data: { change: 'turn_completed' } }));
+  res.write(frame(epoch, order.length + 2, { kind: 'state_change', text: '', cursor: '9999999', delivery_id: 'd-f', turn_id: 't-f', ts: 0, data: { change: 'turn_completed' } }));
   st.finishFlood();
 }
 
@@ -141,7 +162,10 @@ function initScript(arg) {
 
 function instrumentFlood() {
   // 在 SSE 推第一条前装上：turnGroups 由产品脚本的顶层 const 声明，这里只包它的 set
-  window.__peakEvents = 0; window.__peakNodes = 0; window.__lastNodes = 0;
+  window.__peakEvents = 0; window.__peakNodes = 0; window.__lastNodes = 0; window.__bigSorts = 0;
+  // F1：本 iframe 内长度大于 5000 的数组每 sort 一次记一次（产品重渲／合并若对整组重排就会计入）
+  const origSort = Array.prototype.sort;
+  Array.prototype.sort = function (...a) { if (this.length > 5000) window.__bigSorts++; return origSort.apply(this, a); };
   const watch = arr => {
     if (arr.length > window.__peakEvents) window.__peakEvents = arr.length;
     arr.push = function (...a) {
@@ -149,7 +173,7 @@ function instrumentFlood() {
       if (this.length > window.__peakEvents) {
         window.__peakEvents = this.length;
         // 页内定时器在洪流下会饿死；从 push 钩子每涨 1000 报一次，页面冻住后 node 侧仍有冻住前的峰值
-        if (this.length % 1000 === 0) navigator.sendBeacon('/sample', JSON.stringify({ peakEvents: this.length, events: this.length, peakNodes: window.__peakNodes, lastSeq: lastContiguousSeq }));
+        if (this.length % 1000 === 0) navigator.sendBeacon('/sample', JSON.stringify({ peakEvents: this.length, events: this.length, peakNodes: window.__peakNodes, lastSeq: lastContiguousSeq, bigSorts: window.__bigSorts }));
       }
       return r;
     };
@@ -169,7 +193,7 @@ function instrumentFlood() {
   setInterval(() => {
     const g = turnGroups.get('t-f');
     navigator.sendBeacon('/sample', JSON.stringify({ peakEvents: window.__peakEvents, events: g ? g.events.length : 0,
-      peakNodes: window.__peakNodes, lastSeq: lastContiguousSeq }));
+      peakNodes: window.__peakNodes, lastSeq: lastContiguousSeq, bigSorts: window.__bigSorts }));
   }, 500);
 }
 
@@ -178,15 +202,21 @@ function evalOr(frame, fn, arg, ms) {
   return Promise.race([frame.evaluate(fn, arg).then(v => ({ ok: true, v })), sleep(ms).then(() => ({ ok: false }))]);
 }
 
-(async () => {
-  setTimeout(() => { console.error('stress watchdog: overall deadline exceeded'); process.exit(3); }, (DEADLINE_S + 240) * 1000).unref();
-  const { server, port, st } = await startServer();
+const SCENARIOS = [
+  { name: 'flood', total: 100000, lateCursor: 0, lateAfter: 0 },
+  { name: 'late-order', total: 30000, lateCursor: 12000, lateAfter: 21000 },
+];
+
+async function runScenario(browser, sc) {
+  const TOTAL = sc.total;
+  const sent = floodOrder(sc).length;
+  const { server, port, st } = await startServer(sc);
   const base = `http://127.0.0.1:${port}`;
-  let browser;
   let exitCode = 0;
+  const results = [];
+  let readings = null;
+  const page = await browser.newPage({ viewport: { width: 1280, height: 860 } });
   try {
-    browser = await launchChromium();
-    const page = await browser.newPage({ viewport: { width: 1280, height: 860 } });
     await page.addInitScript(initScript, { pollMs: AGENT_POLL_MS });
     await page.goto(`${base}/console`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.querySelectorAll('#a button').length === 2);
@@ -210,7 +240,7 @@ function evalOr(frame, fn, arg, ms) {
       const r = await evalOr(floodFrame, () => lastContiguousSeq, null, 5000);
       if (!r.ok) { unresponsive = true; break; }
       lastSeq = r.v;
-      if (lastSeq >= TOTAL + 2) break;
+      if (lastSeq >= sent + 2) break;
       await sleep(200);
     }
     const receivedAt = Date.now();
@@ -225,14 +255,17 @@ function evalOr(frame, fn, arg, ms) {
       let expected = '';
       for (let i = 0; i < total; i++) expected += `d${i};`;
       const w = document.createTreeWalker(g.node, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT); let nodes = 0; while (w.nextNode()) nodes++;
-      return { peakEvents: window.__peakEvents, finalEvents: g.events.length, peakNodes: window.__peakNodes, finalNodes: nodes,
-        same: text === expected, textLen: text.length, expectedLen: expected.length, text, lt: window.__lt, ltUnsupported: !!window.__ltUnsupported };
+      let firstDiff = 0;
+      while (firstDiff < text.length && text[firstDiff] === expected[firstDiff]) firstDiff++;
+      return { peakEvents: window.__peakEvents, finalEvents: g.events.length, peakNodes: window.__peakNodes, finalNodes: nodes, bigSorts: window.__bigSorts,
+        same: text === expected, firstDiff, textLen: text.length, expectedLen: expected.length, text, lt: window.__lt, ltUnsupported: !!window.__ltUnsupported };
     }, { total: TOTAL }, 30000);
     if (!floodR.ok) unresponsive = true;
     const last = st.samples[st.samples.length - 1] || {};
     const samplePeak = st.samples.reduce((m, v) => Math.max(m, v.peakEvents || 0), 0);
+    const sampleSorts = st.samples.reduce((m, v) => Math.max(m, v.bigSorts || 0), 0);
     const flood = floodR.ok ? floodR.v : { peakEvents: samplePeak, finalEvents: last.events || 0, peakNodes: last.peakNodes || 0, finalNodes: last.peakNodes || 0,
-      same: false, textLen: -1, expectedLen: -1, text: '', lt: [], ltUnsupported: false };
+      bigSorts: sampleSorts, same: false, firstDiff: -1, textLen: -1, expectedLen: -1, text: '', lt: [], ltUnsupported: false };
     if (!unresponsive) lastSeq = (await evalOr(floodFrame, () => lastContiguousSeq, null, 5000)).v ?? lastSeq;
     else lastSeq = last.lastSeq || lastSeq;
     const calmR = unresponsive ? { ok: false } : await evalOr(calmFrame, () => {
@@ -251,30 +284,29 @@ function evalOr(frame, fn, arg, ms) {
     const windowEnd = receivedAt + 2 * AGENT_POLL_MS;
     if (window_.length) gaps.push(Math.min(Date.now(), windowEnd) - window_[window_.length - 1]);   // 末段：最后一次请求到窗口末，冻住时的静默在这一段
     const allLt = [...topLt, ...flood.lt, ...calm.lt];
-    const readings = {
+    readings = {
+      scenario: sc.name, late_cursor: sc.lateCursor || null, late_after: sc.lateAfter || null,
       renderer_sha256: crypto.createHash('sha256').update(fs.readFileSync(RENDERER)).digest('hex'),
       total: TOTAL, pushed: st.pushed, aborted_at_deadline: st.aborted !== undefined, target_rate: RATE, margin: MARGIN, bound: SOFT_CAP + MARGIN,
       push_seconds: +pushSecs.toFixed(2), push_rate: Math.round(st.pushed / pushSecs),
       page_unresponsive: unresponsive, last_sample_age_ms: last.at ? Date.now() - last.at : null, beacon_samples: st.samples.length,
       receive_seconds: +recvSecs.toFixed(2), receive_rate: Math.round(TOTAL / recvSecs), last_seq: lastSeq,
       peak_events: flood.peakEvents, final_events: flood.finalEvents, peak_nodes: flood.peakNodes, final_nodes: flood.finalNodes,
-      text_same: flood.same, text_len: flood.textLen, expected_len: flood.expectedLen, text_sha256: sha,
+      big_sorts: flood.bigSorts, text_same: flood.same, first_diff: flood.firstDiff, text_len: flood.textLen, expected_len: flood.expectedLen, text_sha256: sha,
       calm_sent: st.calmSent, calm_complete: calm.text === Array.from({ length: st.calmSent }, (_, i) => `c${i};`).join(''),
       agents_poll_ms: AGENT_POLL_MS, agents_requests_in_window: window_.length, agents_gap_max_ms: gaps.length ? Math.max(...gaps) : null,
       agents_gaps_ms: gaps,
       longtask_supported: !flood.ltUnsupported, longtask_count: allLt.length,
       longtask_max_ms: allLt.length ? Math.round(Math.max(...allLt)) : 0, longtask_total_ms: Math.round(allLt.reduce((a, b) => a + b, 0)),
     };
-    console.log('STRESS READINGS ' + JSON.stringify(readings));
-    if (READINGS) fs.writeFileSync(READINGS, JSON.stringify(readings, null, 2) + '\n');
+    console.log(`STRESS READINGS ${sc.name} ` + JSON.stringify(readings));
 
-    const results = [];
-    const check = (name, fn) => { try { fn(); results.push(`  PASS ${name}`); } catch (e) { exitCode = 1; results.push(`  FAIL ${name}: ${e.message}`); } };
+    const check = (name, fn) => { try { fn(); results.push(`  PASS [${sc.name}] ${name}`); } catch (e) { exitCode = 1; results.push(`  FAIL [${sc.name}] ${name}: ${e.message}`); } };
     check('X0 灌入真走完：页面收齐最后一帧、推入速率不低于每秒 5000 条', () => {
-      assert.strictEqual(lastSeq, TOTAL + 2);
+      assert.strictEqual(lastSeq, sent + 2);
       assert.ok(readings.push_rate >= 5000, `push rate ${readings.push_rate}/s`);
     });
-    if (EXPECT_MUTANT) {
+    if (EXPECT_MUTANT && sc.name === 'flood') {
       // 变异生效的证据：事件数越过软上限还在涨（未合并）。涨到约 10 万的前提是页面撑得住；撑不住（冻住）时如实报冻住前的峰值。
       check('R0 反向先证变异生效：事件数峰值越过软上限（目标约 10 万）', () => {
         assert.ok(flood.peakEvents > SOFT_CAP + MARGIN, `peak events only ${flood.peakEvents}: mutation did not take`);
@@ -291,10 +323,51 @@ function evalOr(frame, fn, arg, ms) {
     });
     check('S3 判据三：全文与逐条拼接逐字相同', () => assert.ok(flood.same, `text differs: ${flood.textLen} vs ${flood.expectedLen}`));
     check('S4 另一会话正常流完整', () => assert.ok(readings.calm_complete && st.calmSent > 0, 'calm session text incomplete'));
+    if (sc.name === 'flood') {
+      // F1：顺序到达时不应对大数组重排；去 70121033 的副本每次重渲都整组 sort ⇒ 计数远大于 0
+      check('F1 灌入期间长度大于 5000 的数组 sort 次数＝0', () => assert.strictEqual(flood.bigSorts, 0, `big array sorts during flood: ${flood.bigSorts}`));
+    }
+    if (sc.name === 'late-order') {
+      // F2 前提：迟到那条确在合并之后到达（第 20001 条时合并，迟到那条排在第 lateAfter 条之后发出）且迟到量小于较新一半
+      check('F2a 前提：越过软上限并已合并，迟到那条在合并之后到达、迟到量小于较新一半', () => {
+        assert.ok(sc.lateAfter > SOFT_CAP && sc.lateCursor > Math.floor(SOFT_CAP / 2), 'scenario does not exercise the newer-half path');
+        assert.ok(sc.lateAfter - sc.lateCursor < Math.floor(SOFT_CAP / 2), 'lag not smaller than the newer half');
+        assert.ok(flood.peakEvents > SOFT_CAP && flood.finalEvents < SOFT_CAP, `no compaction observed: peak ${flood.peakEvents} final ${flood.finalEvents}`);
+      });
+      // F2：位置逐字——迟到那片必须正好夹在前后两片之间（S3 已比全文；这里单独点名迟到片的位置，便于读红）
+      check('F2 迟到片位置正确（夹在前后两片之间）', () => {
+        const prev = deltaText(sc.lateCursor - 2), mine = deltaText(sc.lateCursor - 1), next = deltaText(sc.lateCursor);
+        const at = flood.text.indexOf(prev + mine + next);
+        assert.ok(at >= 0, `late delta ${mine} not between ${prev} and ${next}; first diff at ${flood.firstDiff}`);
+      });
+    }
     // 读数（不判红绿，STRESS-DET 第 1 条）：agents 间隔对 2 倍正常间隔、longtask 对 500 ms
     results.push(`  READING agents 最大间隔 ${readings.agents_gap_max_ms} ms（2 倍正常间隔 ${2 * AGENT_POLL_MS} ms）${readings.agents_gap_max_ms > 2 * AGENT_POLL_MS ? ' 超' : ''}；窗口内请求 ${readings.agents_requests_in_window} 次`);
     results.push(`  READING longtask 最大 ${readings.longtask_max_ms} ms、${readings.longtask_count} 次、合计 ${readings.longtask_total_ms} ms${unresponsive ? '（页面无响应，页内 longtask 未取到）' : ''}`);
-    console.log(results.join('\n'));
+  } finally {
+    st.calmStop = true;
+    await Promise.race([page.close(), sleep(10000)]);
+    server.close();
+  }
+  return { exitCode, results, readings };
+}
+
+(async () => {
+  setTimeout(() => { console.error('stress watchdog: overall deadline exceeded'); process.exit(3); }, (SCENARIOS.length * (DEADLINE_S + 240)) * 1000).unref();
+  let browser;
+  let exitCode = 0;
+  const all = {};
+  try {
+    browser = await launchChromium();
+    const lines = [];
+    for (const sc of SCENARIOS) {
+      const r = await runScenario(browser, sc);
+      if (r.exitCode) exitCode = 1;
+      all[sc.name] = r.readings;
+      lines.push(...r.results);
+    }
+    if (READINGS) fs.writeFileSync(READINGS, JSON.stringify(all, null, 2) + '\n');
+    console.log(lines.join('\n'));
     if (EXPECT_MUTANT) console.log(`stress (mutant run): ${exitCode ? 'RED as required' : 'still GREEN'}`);
     else console.log(exitCode ? 'R-V2-0105 flood stress: FAIL' : 'R-V2-0105 flood stress: ALL PASS');
   } catch (e) {
@@ -302,7 +375,6 @@ function evalOr(frame, fn, arg, ms) {
     exitCode = 2;
   } finally {
     if (browser) await Promise.race([browser.close(), sleep(10000)]);
-    server.close();
     process.exit(exitCode);
   }
 })();
