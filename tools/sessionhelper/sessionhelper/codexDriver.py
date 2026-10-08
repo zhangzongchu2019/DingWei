@@ -772,11 +772,15 @@ class CodexProtocolDriver(Driver):
         # The in-memory buffer ensures events emitted before subscription
         # (e.g. during deliver→turn completion before events() was called)
         # are not lost (Bug1 fix).
-        seen_cursors: set[str] = set()
+        # 去重按事件对象同一性，不按 cursor：Codex 的 cursor 是「每个 item 一个」（同一条消息各片共用），
+        # 按 cursor 去重会把重订阅那一刻正在流的同一 item 的后续新片当成已重放过的丢掉（r5 真退出格
+        # REAL-EXIT-BLOCKER）。_emit_event 把同一个对象同时放进 _event_log 与各订阅队列，重放与实时的
+        # 重叠只可能是同一对象；replayed 持引用，保证 id() 在本次订阅期间不被复用。
         with self._event_log_lock:
-            for ev in self._event_log:
-                seen_cursors.add(ev.cursor)
-                yield ev
+            replayed = list(self._event_log)
+        replayed_ids = {id(ev) for ev in replayed}
+        for ev in replayed:
+            yield ev
         consumer_q: queue.Queue[SessionEvent | None] = queue.Queue(maxsize=FANOUT_QUEUE_MAX)
         with self._consumers_lock:
             self._consumers.append(consumer_q)
@@ -788,8 +792,8 @@ class CodexProtocolDriver(Driver):
                         return
                     if self._session_id and ev.session_id != self._session_id:
                         continue
-                    # Dedup: skip events already replayed from the buffer
-                    if ev.cursor in seen_cursors:
+                    # Dedup: skip the very objects already replayed from the buffer
+                    if id(ev) in replayed_ids:
                         continue
                     yield ev
                 except queue.Empty:

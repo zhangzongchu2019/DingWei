@@ -413,6 +413,52 @@ class EventBridgeReplayTest(unittest.TestCase):
         h.settle(2)
         self.assertEqual(h.adapter._turns, 3, "被丢后重放补发的终态不得重复记成本／回合数")
 
+    def test_same_item_delta_after_resubscribe_is_delivered(self):
+        # r5 真退出格 REAL-EXIT-BLOCKER：Codex 同一 item 的各片共用 cursor；重连重订阅后同 cursor 的新片
+        # 不得被当成已重放过的丢掉（旧实现按 cursor 去重即丢）。必须恰好到一次。
+        h = BridgeHarness(self)
+        h.emit(3, "pre", cursor="turn:t1:item:0001")
+        h.reconnect_to = HealthyRpc()
+        h.start_bridge()
+        self.assertTrue(h.wait_for(lambda: len(h.received) >= 3))
+        self.assertTrue(h.wait_for(lambda: h.starts >= 1))
+        h.driver._emit_event(SessionEvent(kind="assistant_text", text="after-reconnect", cursor="turn:t1:item:0001",
+                                          delivery_id="d1", turn_id="t1"))
+        self.assertTrue(h.wait_for(lambda: any(e["text"] == "after-reconnect" for e in h.received), timeout=5),
+                        f"same-item delta after resubscribe was dropped: {[e['text'] for e in h.received]}")
+        time.sleep(1.5)
+        self.assertEqual([e["text"] for e in h.received].count("after-reconnect"), 1)
+
+    def test_replayed_object_also_in_live_queue_is_yielded_once(self):
+        # 重放与实时重叠（缓冲里的同一对象又进了订阅队列）只出一次；同 cursor 的不同对象照出。
+        h = BridgeHarness(self)
+        drv = h.driver
+        drv._rpc = HealthyRpc()
+        old = SessionEvent(kind="assistant_text", text="old", cursor="turn:t1:item:0001", delivery_id="d1", turn_id="t1")
+        drv._emit_event(old)
+        gen = drv.events()
+        self.assertIs(next(gen), old)                      # 重放（订阅队列此刻尚未登记）
+        fresh = SessionEvent(kind="assistant_text", text="fresh", cursor="turn:t1:item:0001", delivery_id="d1", turn_id="t1")
+        marker = SessionEvent(kind="assistant_text", text="marker", cursor="turn:t1:item:0002", delivery_id="d1", turn_id="t1")
+
+        def feed():
+            deadline = time.time() + 5
+            while time.time() < deadline:
+                with drv._consumers_lock:
+                    if drv._consumers:
+                        for q in drv._consumers:
+                            q.put_nowait(old)              # 同一对象重叠：须跳过
+                            q.put_nowait(fresh)            # 同 cursor 的新对象：须出
+                            q.put_nowait(marker)           # 不同 cursor 的哨兵：fresh 若被误丢，下一条就是它（判红不挂死）
+                        return
+                time.sleep(0.01)
+
+        threading.Thread(target=feed, daemon=True).start()
+        got = next(gen)
+        self.assertIs(got, fresh, f"expected the same-cursor new object, got {got.text!r}")
+        self.assertIs(next(gen), marker)
+        gen.close()
+
     def test_real_session_event_is_unhashable(self):
         # 守卫若用 WeakSet／set 会在真对象上直接 TypeError；用例用真 SessionEvent 而非替身类。
         with self.assertRaises(TypeError):
