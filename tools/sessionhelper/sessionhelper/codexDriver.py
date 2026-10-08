@@ -45,6 +45,9 @@ ACCEPTED_STALL_TIMEOUT = 90.0
 ABSOLUTE_TURN_TIMEOUT = 900.0
 EVENT_DRAIN_TIMEOUT = 5.0
 FANOUT_QUEUE_MAX = 1000
+# events() 重放去重表的上限：与 _event_log 触发裁剪的上限同值。可能重叠（已重放、稍后又被 put 进订阅队列）的
+# 只会是登记前最后入缓冲的那几个对象，必在最近重放的这么多个之内；更早的引用可放掉，不随订阅时长累加。
+REPLAY_DEDUP_MAX = 10000
 
 
 @dataclass
@@ -778,6 +781,7 @@ class CodexProtocolDriver(Driver):
         #   同 cursor、甚至同文本的不同对象都是新片，必须保留。_emit_event 把同一个对象同时放进 _event_log
         #   与各订阅队列，重放与实时的重叠只可能是同一对象。replayed 以 id→对象 持引用，命中后再用 is 核同一
         #   对象：持引用使这些 id 在本次订阅期间不会被新对象复用（缓冲裁剪释放旧对象也不影响），is 再兜一层。
+        #   表只收重放（含追平）过的对象、上限 REPLAY_DEDUP_MAX，登记后的实时事件不入表，不随订阅时长累加。
         # - 衔接不丢窗口：按绝对序号分批追平缓冲（锁内取批、锁外 yield），直到某次取批为空，就在同一把锁内
         #   登记订阅队列——此后发出的事件必进队列，此前发出的都已在批里。重放期间新发的事件由下一批追平，
         #   不进 1000 上限的队列，不会因重放慢而被挤掉。追平那一刻之前已入缓冲、稍后才 put 进队列的同一
@@ -803,6 +807,8 @@ class CodexProtocolDriver(Driver):
                         break
                 for ev in batch:
                     replayed[id(ev)] = ev
+                    if len(replayed) > REPLAY_DEDUP_MAX:
+                        replayed.pop(next(iter(replayed)))   # dict 按插入序：丢最早重放的那个
                     yield ev
             while not self._stop_event.is_set():
                 try:

@@ -586,6 +586,97 @@ class EventBridgeReplayTest(unittest.TestCase):
         reused = sum(1 for e in news if id(e) in old_ids)
         self.assertEqual(got, [f"new{i}" for i in range(400)], f"lost new events (ids reused from replayed objects: {reused})")
 
+    def test_replay_dedup_table_is_bounded_and_live_events_do_not_accumulate(self):
+        import sessionhelper.codexDriver as cd
+        with mock.patch.object(cd, "REPLAY_DEDUP_MAX", 50):
+            drv, buf = self._driver_with_buffer([f"b{i}" for i in range(120)])
+            gen = drv.events()
+            for want in buf:
+                self.assertIs(self._next(gen), want)
+            live = [SessionEvent(kind="assistant_text", text=f"l{i}", cursor="turn:t1:item:0001", delivery_id="d1", turn_id="t1")
+                    for i in range(200)]
+            self._feed_after_registration(drv, live)
+            for want in live:
+                self.assertIs(self._next(gen), want)
+            table = gen.gi_frame.f_locals["replayed"]
+            self.assertLessEqual(len(table), 50, f"replay dedup table grew to {len(table)}")
+            self.assertTrue(all(e not in table.values() for e in live), "live events must not enter the replay table")
+            gen.close()
+
+    def test_close_or_error_at_any_point_leaves_no_subscription(self):
+        # 重放中途 close、登记后 close、登记后抛异常：finally 都须把订阅队列清掉
+        drv, buf = self._driver_with_buffer(["a", "b"])
+        gen = drv.events()
+        self.assertIs(self._next(gen), buf[0])
+        gen.close()                                        # 重放中途关闭：从未登记
+        self.assertEqual(drv._consumers, [])
+        gen = drv.events()
+        self.assertIs(self._next(gen), buf[0])
+        self.assertIs(self._next(gen), buf[1])
+        marker = SessionEvent(kind="assistant_text", text="m", cursor="turn:t1:item:0002", delivery_id="d1", turn_id="t1")
+        self._feed_after_registration(drv, [marker])
+        self.assertIs(self._next(gen), marker)             # 已登记、停在实时 yield
+        self.assertEqual(len(drv._consumers), 1)
+        gen.close()
+        self.assertEqual(drv._consumers, [])
+        gen = drv.events()
+        for want in buf:
+            self.assertIs(self._next(gen), want)
+        self._feed_after_registration(drv, [marker])
+        self.assertIs(self._next(gen), marker)
+        with self.assertRaises(RuntimeError):
+            gen.throw(RuntimeError("consumer blew up"))
+        self.assertEqual(drv._consumers, [])
+
+    def _reset_driver(self, drv):
+        with drv._event_log_lock:
+            drv._event_log = []
+            drv._event_log_base = 0
+        with drv._consumers_lock:
+            drv._consumers.clear()
+
+    def test_boundary_and_overlap_cells_hold_for_50_rounds(self):
+        # 关键并发格各连跑 50 轮：屏障＝暂停生成器（重放中途）＋等登记后再发（实时），不靠 sleep 凑碰撞
+        h = BridgeHarness(self)
+        drv = h.driver
+        drv._rpc = HealthyRpc()
+        mk = lambda t, c="turn:t1:item:0001": SessionEvent(kind="assistant_text", text=t, cursor=c, delivery_id="d1", turn_id="t1")
+        for r in range(50):
+            with self.subTest(round=r, cell="boundary"):
+                self._reset_driver(drv)
+                e0, e1 = mk("e0"), mk("e1")
+                drv._emit_event(e0); drv._emit_event(e1)
+                gen = drv.events()
+                self.assertIs(self._next(gen), e0)
+                mid = mk("mid")
+                drv._emit_event(mid)                       # 登记前、快照后注入
+                marker = mk("marker", "turn:t1:item:0002")
+                self._feed_after_registration(drv, [marker])
+                self.assertEqual([getattr(self._next(gen), "text", "<none>") for _ in range(3)], ["e1", "mid", "marker"])
+                gen.close()
+            with self.subTest(round=r, cell="overlap+same-text"):
+                self._reset_driver(drv)
+                old = mk("same")
+                drv._emit_event(old)
+                gen = drv.events()
+                self.assertIs(self._next(gen), old)
+                twin = mk("same")
+                marker = mk("marker", "turn:t1:item:0002")
+                def feed(old=old, twin=twin, marker=marker):
+                    deadline = time.time() + 5
+                    while time.time() < deadline:
+                        with drv._consumers_lock:
+                            if drv._consumers:
+                                for q in drv._consumers:
+                                    q.put_nowait(old); q.put_nowait(twin); q.put_nowait(marker)
+                                return
+                        time.sleep(0.005)
+                threading.Thread(target=feed, daemon=True).start()
+                self.assertIs(self._next(gen), twin)
+                self.assertIs(self._next(gen), marker)
+                gen.close()
+        self.assertEqual(drv._consumers, [])
+
     def test_real_session_event_is_unhashable(self):
         # 守卫若用 WeakSet／set 会在真对象上直接 TypeError；用例用真 SessionEvent 而非替身类。
         with self.assertRaises(TypeError):
