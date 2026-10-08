@@ -1126,6 +1126,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			h.closeFeishuSyncLocked(keyID, sessionName)
 		}
 		h.mu.Unlock()
+		if current && h.amr != nil {
+			h.amr.sessionClosed(keyID, sessionName) // R-V2-0105 件三：断开时补出聚合日志计数并清表项
+		}
 		if current && h.sessionSupportsDeliveryACK(c) {
 			h.releaseSessionDeliveryLeases(c, "session_disconnected")
 		}
@@ -5574,7 +5577,7 @@ func (h *Hub) touchSessionEndpoint(ctx context.Context, c *sessionClient) {
 	// 洪流时每秒数千次 UPDATE 与控制台 HTTP 同队排。同一连接 sessionTouchMinInterval 内只落库一次；
 	// 内存 lastSeen 照常更新（在线判定读内存），断开收尾的 UpsertSessionEndpoint 不经此处、照写。
 	// session_endpoint.last_seen_at 只供管理页展示，无按新鲜度判定的读者（核于 767e073a）。
-	now := time.Now()
+	now := h.now()
 	c.stateMu.Lock()
 	skip := h.sessionTouchMinInterval > 0 && !c.lastTouchWritten.IsZero() && now.Sub(c.lastTouchWritten) < h.sessionTouchMinInterval
 	if !skip {
