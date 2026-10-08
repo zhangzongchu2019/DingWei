@@ -413,9 +413,9 @@ class EventBridgeReplayTest(unittest.TestCase):
         h.settle(2)
         self.assertEqual(h.adapter._turns, 3, "被丢后重放补发的终态不得重复记成本／回合数")
 
+    # ── R-V2-0105 REAL-EXIT-SAMECURSOR（组长 B）：先登记后读缓冲、按对象同一性去重 ────────────────
     def test_same_item_delta_after_resubscribe_is_delivered(self):
-        # r5 真退出格 REAL-EXIT-BLOCKER：Codex 同一 item 的各片共用 cursor；重连重订阅后同 cursor 的新片
-        # 不得被当成已重放过的丢掉（旧实现按 cursor 去重即丢）。必须恰好到一次。
+        # r5 真退出格：Codex 同一 item 的各片共用 cursor；重连重订阅后同 cursor 的新片必须恰到一次
         h = BridgeHarness(self)
         h.emit(3, "pre", cursor="turn:t1:item:0001")
         h.reconnect_to = HealthyRpc()
@@ -429,38 +429,9 @@ class EventBridgeReplayTest(unittest.TestCase):
         time.sleep(1.5)
         self.assertEqual([e["text"] for e in h.received].count("after-reconnect"), 1)
 
-    def test_replayed_object_also_in_live_queue_is_yielded_once(self):
-        # 重放与实时重叠（缓冲里的同一对象又进了订阅队列）只出一次；同 cursor 的不同对象照出。
-        h = BridgeHarness(self)
-        drv = h.driver
-        drv._rpc = HealthyRpc()
-        old = SessionEvent(kind="assistant_text", text="old", cursor="turn:t1:item:0001", delivery_id="d1", turn_id="t1")
-        drv._emit_event(old)
-        gen = drv.events()
-        self.assertIs(self._next(gen), old)                # 重放（订阅队列此刻尚未登记）
-        fresh = SessionEvent(kind="assistant_text", text="fresh", cursor="turn:t1:item:0001", delivery_id="d1", turn_id="t1")
-        marker = SessionEvent(kind="assistant_text", text="marker", cursor="turn:t1:item:0002", delivery_id="d1", turn_id="t1")
-
-        def feed():
-            deadline = time.time() + 5
-            while time.time() < deadline:
-                with drv._consumers_lock:
-                    if drv._consumers:
-                        for q in drv._consumers:
-                            q.put_nowait(old)              # 同一对象重叠：须跳过
-                            q.put_nowait(fresh)            # 同 cursor 的新对象：须出
-                            q.put_nowait(marker)           # 不同 cursor 的哨兵：fresh 若被误丢，下一条就是它（判红不挂死）
-                        return
-                time.sleep(0.01)
-
-        threading.Thread(target=feed, daemon=True).start()
-        got = self._next(gen)
-        self.assertIs(got, fresh, f"expected the same-cursor new object, got {getattr(got, 'text', None)!r}")
-        self.assertIs(self._next(gen), marker)
-
     @staticmethod
     def _next(gen, timeout=5.0):
-        # 限时取下一条：被测实现若丢事件，生成器会在健康驱动上一直等——这里超时即返回哨兵，判红不挂死
+        # 限时取下一条：被测实现若丢事件，生成器会在健康驱动上一直等——超时返回 None，判红不挂死
         box = {}
         def run():
             try:
@@ -476,205 +447,213 @@ class EventBridgeReplayTest(unittest.TestCase):
             raise box["e"]
         return box["v"]
 
-    def _driver_with_buffer(self, texts, cursor="turn:t1:item:0001"):
+    @staticmethod
+    def _ev(text, cursor="turn:t1:item:0001"):
+        return SessionEvent(kind="assistant_text", text=text, cursor=cursor, delivery_id="d1", turn_id="t1")
+
+    def _fresh_driver(self):
         h = BridgeHarness(self)
         drv = h.driver
         drv._rpc = HealthyRpc()
-        evs = [SessionEvent(kind="assistant_text", text=t, cursor=cursor, delivery_id="d1", turn_id="t1") for t in texts]
-        for ev in evs:
-            drv._emit_event(ev)
-        return drv, evs
+        return drv
 
-    def _feed_after_registration(self, drv, events):
-        # 订阅队列登记后才经 _emit_event 发出（真实时路径）；登记前不发，避免与追平路径混淆
-        def run():
-            deadline = time.time() + 5
-            while time.time() < deadline:
-                with drv._consumers_lock:
-                    ready = bool(drv._consumers)
-                if ready:
-                    for ev in events:
-                        drv._emit_event(ev)
-                    return
-                time.sleep(0.01)
-        threading.Thread(target=run, daemon=True).start()
-
-    def test_same_cursor_same_text_new_object_is_kept(self):
-        # 同 cursor 且同文本的不同对象是新片，追平路径与实时路径都须保留
-        drv, (old,) = self._driver_with_buffer(["same"])
-        gen = drv.events()
-        self.assertIs(self._next(gen), old)
-        twin_catchup = SessionEvent(kind="assistant_text", text="same", cursor="turn:t1:item:0001", delivery_id="d1", turn_id="t1")
-        drv._emit_event(twin_catchup)                      # 重放进行中发出 ⇒ 走追平
-        got = self._next(gen)
-        self.assertIs(got, twin_catchup, f"same cursor+text new object dropped on catch-up path, got {getattr(got, 'text', None)!r}")
-        twin_live = SessionEvent(kind="assistant_text", text="same", cursor="turn:t1:item:0001", delivery_id="d1", turn_id="t1")
-        marker = SessionEvent(kind="assistant_text", text="marker", cursor="turn:t1:item:0002", delivery_id="d1", turn_id="t1")
-        self._feed_after_registration(drv, [twin_live, marker])
-        got = self._next(gen)
-        self.assertIs(got, twin_live, f"same cursor+text new object dropped on live path, got {getattr(got, 'text', None)!r}")
-        self.assertIs(self._next(gen), marker)
-
-    def test_event_emitted_during_replay_is_delivered_exactly_once(self):
-        # 衔接窗口：重放到一半时发出的事件既不能丢，也不能因随后进队列而出两次
-        drv, (e0, e1) = self._driver_with_buffer(["e0", "e1"])
-        gen = drv.events()
-        self.assertIs(self._next(gen), e0)                 # 停在重放中途，订阅队列尚未登记
-        mid = SessionEvent(kind="assistant_text", text="mid", cursor="turn:t1:item:0001", delivery_id="d1", turn_id="t1")
-        drv._emit_event(mid)
-        marker = SessionEvent(kind="assistant_text", text="marker", cursor="turn:t1:item:0002", delivery_id="d1", turn_id="t1")
-        self._feed_after_registration(drv, [marker])
-        seen = [getattr(self._next(gen), "text", "<none>") for _ in range(3)]
-        self.assertEqual(seen, ["e1", "mid", "marker"], f"window loss or duplicate: {seen}")
-
-    def test_flood_during_replay_beyond_queue_cap_is_not_lost(self):
-        # 重放期间灌入超过订阅队列上限（1000）的事件：追平路径接住，一条不丢、顺序不乱
-        from sessionhelper.codexDriver import FANOUT_QUEUE_MAX
-        drv, buf = self._driver_with_buffer([f"b{i}" for i in range(10)])
-        gen = drv.events()
-        self.assertIs(self._next(gen), buf[0])
-        flood = [SessionEvent(kind="assistant_text", text=f"f{i}", cursor="turn:t1:item:0001", delivery_id="d1", turn_id="t1")
-                 for i in range(2 * FANOUT_QUEUE_MAX)]
-        for ev in flood:
-            drv._emit_event(ev)
-        marker = SessionEvent(kind="assistant_text", text="marker", cursor="turn:t1:item:0002", delivery_id="d1", turn_id="t1")
-        self._feed_after_registration(drv, [marker])
-        want = [e.text for e in buf[1:]] + [e.text for e in flood] + ["marker"]
-        got = []
-        for _ in range(len(want)):
-            ev = self._next(gen)
-            if ev is None:
-                break
-            got.append(ev.text)
-        self.assertEqual(len(got), len(want), f"lost {len(want) - len(got)} of {len(want)} (last got {got[-1:] })")
-        self.assertEqual(got, want)
-
-    def test_trimmed_replayed_objects_do_not_shadow_new_ones_by_id(self):
-        # 重放过的对象从缓冲裁掉并释放后，新对象可能拿到同一个 id()；去重若只存 id 不持引用，会把这条新事件
-        # 误当成已重放丢掉。实现持引用，故这些 id 不会被复用；新对象全部须到。
-        drv, buf = self._driver_with_buffer([f"old{i}" for i in range(200)])
-        gen = drv.events()
-        for want in buf:
-            self.assertIs(self._next(gen), want)
+    def _reset(self, drv):
         with drv._event_log_lock:
-            drv._event_log = []                            # 模拟裁剪：缓冲不再持有这些对象
-        old_ids = {id(e) for e in buf}
-        del buf
-        news = []
+            drv._event_log = []
+        with drv._consumers_lock:
+            drv._consumers.clear()
+
+    def _emit_from_thread(self, drv, events):
+        # 另起线程经 _emit_event 发出：重放期间生成器持缓冲锁，发事件者在锁上等，放锁后才入缓冲与队列
+        t = threading.Thread(target=lambda: [drv._emit_event(e) for e in events], daemon=True)
+        t.start()
+        return t
+
+    class _HookLock:
+        # 可控屏障：被测代码下一次 with 此锁时，先跑一次回调（只触发一次），再真正取锁
+        def __init__(self, real):
+            self._real, self._hook = real, None
+        def arm(self, fn):
+            self._hook = fn
+        def __enter__(self):
+            fn, self._hook = self._hook, None
+            if fn:
+                fn()
+            return self._real.__enter__()
+        def __exit__(self, *a):
+            return self._real.__exit__(*a)
+
+    def test_replay_order_then_live_in_order(self):
+        drv = self._fresh_driver()
+        buf = [self._ev(f"b{i}") for i in range(5)]
+        for e in buf:
+            drv._emit_event(e)
+        gen = drv.events()
+        first = self._next(gen)
+        live = [self._ev(f"l{i}") for i in range(5)]
+        self._emit_from_thread(drv, live)
+        got = [getattr(first, "text", "<none>")] + [getattr(self._next(gen), "text", "<none>") for _ in range(9)]
+        self.assertEqual(got, [e.text for e in buf] + [e.text for e in live])
+        gen.close()
+
+    def test_same_cursor_new_objects_new_text_and_same_text_each_once(self):
+        drv = self._fresh_driver()
+        old = self._ev("same")
+        drv._emit_event(old)
+        gen = drv.events()
+        first = self._next(gen)                            # 已登记、正在重放：下面的走实时路径
+        twin = self._ev("same")                            # 同 cursor 同文本的新对象
+        newer = self._ev("newer")                          # 同 cursor 新文本
+        marker = self._ev("marker", "turn:t1:item:0002")
+        self._emit_from_thread(drv, [twin, newer, marker])
+        got = [first] + [self._next(gen) for _ in range(3)]
+        self.assertEqual([getattr(e, "text", "<none>") for e in got], ["same", "same", "newer", "marker"])
+        self.assertIs(got[0], old)
+        self.assertIs(got[1], twin)
+        gen.close()
+
+    def _boundary_cells(self, drv):
+        # 屏障 a：生成器取消费者锁登记的那一刻注入（旧顺序下这正是快照之后、登记之前的空窗）
+        self._reset(drv)
+        b0 = self._ev("b0")
+        drv._emit_event(b0)
+        x = self._ev("x-at-register")
+        hook = self._HookLock(drv._consumers_lock)
+        drv._consumers_lock = hook
+        try:
+            hook.arm(lambda: drv._emit_event(x))
+            gen = drv.events()
+            marker = self._ev("marker-a", "turn:t1:item:0002")
+            first = self._next(gen)
+            self._emit_from_thread(drv, [marker])
+            rest = [self._next(gen), self._next(gen)]
+            got = [getattr(e, "text", "<none>") for e in [first] + rest]
+            self.assertEqual(got, ["b0", "x-at-register", "marker-a"], f"barrier a (register): {got}")
+            gen.close()
+        finally:
+            drv._consumers_lock = hook._real
+        # 屏障 b：生成器取缓冲锁读快照的那一刻注入（登记之后、快照之前：既入缓冲又入队列，须只出一次）
+        self._reset(drv)
+        b0 = self._ev("b0")
+        drv._emit_event(b0)
+        y = self._ev("y-at-snapshot")
+        hook = self._HookLock(drv._event_log_lock)
+        drv._event_log_lock = hook
+        try:
+            gen = drv.events()
+            hook.arm(lambda: (setattr(drv, "_event_log_lock", hook._real), drv._emit_event(y), setattr(drv, "_event_log_lock", hook)))
+            marker = self._ev("marker-b", "turn:t1:item:0002")
+            got_objs = [self._next(gen), self._next(gen)]
+            self._emit_from_thread(drv, [marker])
+            got_objs.append(self._next(gen))
+            got = [getattr(e, "text", "<none>") for e in got_objs]
+            self.assertEqual(got, ["b0", "y-at-snapshot", "marker-b"], f"barrier b (snapshot): {got}")
+            gen.close()
+        finally:
+            drv._event_log_lock = hook._real
+
+    def test_register_and_snapshot_boundaries_lose_nothing_and_duplicate_nothing(self):
+        self._boundary_cells(self._fresh_driver())
+
+    def test_boundary_cells_hold_for_50_rounds(self):
+        drv = self._fresh_driver()
+        for r in range(50):
+            with self.subTest(round=r):
+                self._boundary_cells(drv)
+        self.assertEqual(drv._consumers, [])
+
+    def test_replayed_object_also_in_live_queue_is_yielded_once(self):
+        # 同一对象既在缓冲又被放进订阅队列：只出一次；同 cursor 的新对象照出（哨兵防挂死）
+        drv = self._fresh_driver()
+        old = self._ev("old")
+        drv._emit_event(old)
+        gen = drv.events()                                 # 尚未执行：首个 next 才登记
+        fresh = self._ev("fresh")
+        marker = self._ev("marker", "turn:t1:item:0002")
         def feed():
             deadline = time.time() + 5
             while time.time() < deadline:
                 with drv._consumers_lock:
-                    ready = bool(drv._consumers)
-                if ready:
-                    for i in range(400):
-                        ev = SessionEvent(kind="assistant_text", text=f"new{i}", cursor="turn:t1:item:0001", delivery_id="d1", turn_id="t1")
-                        news.append(ev)
-                        drv._emit_event(ev)
-                    return
+                    if drv._consumers:
+                        for q in drv._consumers:
+                            q.put_nowait(old); q.put_nowait(fresh); q.put_nowait(marker)
+                        return
                 time.sleep(0.01)
-        feeder = threading.Thread(target=feed, daemon=True)
-        feeder.start()
-        first = self._next(gen)                            # 追平为空 ⇒ 登记 ⇒ 等实时
-        feeder.join(5)
-        got = [first.text] if first is not None else []
-        while len(got) < 400:
-            ev = self._next(gen, timeout=2.0)
-            if ev is None:
-                break
-            got.append(ev.text)
-        reused = sum(1 for e in news if id(e) in old_ids)
-        self.assertEqual(got, [f"new{i}" for i in range(400)], f"lost new events (ids reused from replayed objects: {reused})")
+        threading.Thread(target=feed, daemon=True).start()
+        self.assertIs(self._next(gen), old)
+        got = self._next(gen)
+        self.assertIs(got, fresh, f"expected the same-cursor new object, got {getattr(got, 'text', None)!r}")
+        self.assertIs(self._next(gen), marker)
+        gen.close()
 
-    def test_replay_dedup_table_is_bounded_and_live_events_do_not_accumulate(self):
-        import sessionhelper.codexDriver as cd
-        with mock.patch.object(cd, "REPLAY_DEDUP_MAX", 50):
-            drv, buf = self._driver_with_buffer([f"b{i}" for i in range(120)])
-            gen = drv.events()
-            for want in buf:
-                self.assertIs(self._next(gen), want)
-            live = [SessionEvent(kind="assistant_text", text=f"l{i}", cursor="turn:t1:item:0001", delivery_id="d1", turn_id="t1")
-                    for i in range(200)]
-            self._feed_after_registration(drv, live)
-            for want in live:
-                self.assertIs(self._next(gen), want)
-            table = gen.gi_frame.f_locals["replayed"]
-            self.assertLessEqual(len(table), 50, f"replay dedup table grew to {len(table)}")
-            self.assertTrue(all(e not in table.values() for e in live), "live events must not enter the replay table")
-            gen.close()
+    def test_forced_id_reuse_after_trim_does_not_drop_new_event(self):
+        # 缓冲截断释放旧对象后，强制造一个与旧对象 id 相同的新对象再发：只存 id 不持引用的实现会误丢它。
+        # 持引用的实现里旧对象仍活着，id 不可能复用——循环找不到同 id，发出最后一个新对象，同样须到。
+        drv = self._fresh_driver()
+        victim = self._ev("victim")
+        filler = self._ev("filler")                        # 重放的最后一个：生成器的循环变量停在它身上，victim 只剩去重表可能持有
+        drv._emit_event(victim)
+        drv._emit_event(filler)
+        gen = drv.events()
+        self.assertIs(self._next(gen), victim)
+        self.assertIs(self._next(gen), filler)
+        box = {}
+        waiter = threading.Thread(target=lambda: box.setdefault("v", next(gen)), daemon=True)
+        waiter.start()                                     # 生成器走完重放、放下缓冲锁、进入实时等待
+        target = id(victim)
+        with drv._event_log_lock:                          # 重放结束后才拿得到
+            drv._event_log = []                            # 模拟截断：缓冲不再持有
+        del victim
+        reused, keep = None, []
+        for i in range(20000):
+            cand = self._ev(f"cand{i}")
+            if id(cand) == target:
+                reused = cand
+                break
+            keep.append(cand)
+        new = reused if reused is not None else keep[-1]
+        drv._emit_event(new)
+        waiter.join(5)
+        self.assertIs(box.get("v"), new, f"new event dropped (forced id reuse happened: {reused is not None})")
+        gen.close()
+
+    def test_replay_memory_bounded_by_snapshot_and_live_not_accumulated(self):
+        drv = self._fresh_driver()
+        buf = [self._ev(f"b{i}") for i in range(30)]
+        for e in buf:
+            drv._emit_event(e)
+        gen = drv.events()
+        self.assertIs(self._next(gen), buf[0])             # 已登记、正持缓冲锁重放：此后的才是实时事件
+        live = [self._ev(f"l{i}") for i in range(300)]
+        self._emit_from_thread(drv, live)
+        for want in buf[1:] + live:
+            self.assertIs(self._next(gen), want)
+        table = gen.gi_frame.f_locals["replayed"]
+        self.assertEqual(len(table), len(buf), f"replay table holds {len(table)}, snapshot was {len(buf)}")
+        self.assertTrue(all(table.get(id(e)) is not e for e in live), "live events must not enter the replay table")
+        gen.close()
 
     def test_close_or_error_at_any_point_leaves_no_subscription(self):
-        # 重放中途 close、登记后 close、登记后抛异常：finally 都须把订阅队列清掉
-        drv, buf = self._driver_with_buffer(["a", "b"])
+        drv = self._fresh_driver()
+        a, b = self._ev("a"), self._ev("b")
+        drv._emit_event(a); drv._emit_event(b)
         gen = drv.events()
-        self.assertIs(self._next(gen), buf[0])
-        gen.close()                                        # 重放中途关闭：从未登记
-        self.assertEqual(drv._consumers, [])
-        gen = drv.events()
-        self.assertIs(self._next(gen), buf[0])
-        self.assertIs(self._next(gen), buf[1])
-        marker = SessionEvent(kind="assistant_text", text="m", cursor="turn:t1:item:0002", delivery_id="d1", turn_id="t1")
-        self._feed_after_registration(drv, [marker])
-        self.assertIs(self._next(gen), marker)             # 已登记、停在实时 yield
+        self.assertIs(self._next(gen), a)                  # 停在缓冲 yield（已登记、持缓冲锁）
         self.assertEqual(len(drv._consumers), 1)
         gen.close()
         self.assertEqual(drv._consumers, [])
+        self.assertTrue(drv._event_log_lock.acquire(timeout=1)); drv._event_log_lock.release()   # 缓冲锁已放
         gen = drv.events()
-        for want in buf:
-            self.assertIs(self._next(gen), want)
-        self._feed_after_registration(drv, [marker])
-        self.assertIs(self._next(gen), marker)
+        self.assertIs(self._next(gen), a)
         with self.assertRaises(RuntimeError):
-            gen.throw(RuntimeError("consumer blew up"))
+            gen.throw(RuntimeError("consumer blew up during replay"))
         self.assertEqual(drv._consumers, [])
-
-    def _reset_driver(self, drv):
-        with drv._event_log_lock:
-            drv._event_log = []
-            drv._event_log_base = 0
-        with drv._consumers_lock:
-            drv._consumers.clear()
-
-    def test_boundary_and_overlap_cells_hold_for_50_rounds(self):
-        # 关键并发格各连跑 50 轮：屏障＝暂停生成器（重放中途）＋等登记后再发（实时），不靠 sleep 凑碰撞
-        h = BridgeHarness(self)
-        drv = h.driver
-        drv._rpc = HealthyRpc()
-        mk = lambda t, c="turn:t1:item:0001": SessionEvent(kind="assistant_text", text=t, cursor=c, delivery_id="d1", turn_id="t1")
-        for r in range(50):
-            with self.subTest(round=r, cell="boundary"):
-                self._reset_driver(drv)
-                e0, e1 = mk("e0"), mk("e1")
-                drv._emit_event(e0); drv._emit_event(e1)
-                gen = drv.events()
-                self.assertIs(self._next(gen), e0)
-                mid = mk("mid")
-                drv._emit_event(mid)                       # 登记前、快照后注入
-                marker = mk("marker", "turn:t1:item:0002")
-                self._feed_after_registration(drv, [marker])
-                self.assertEqual([getattr(self._next(gen), "text", "<none>") for _ in range(3)], ["e1", "mid", "marker"])
-                gen.close()
-            with self.subTest(round=r, cell="overlap+same-text"):
-                self._reset_driver(drv)
-                old = mk("same")
-                drv._emit_event(old)
-                gen = drv.events()
-                self.assertIs(self._next(gen), old)
-                twin = mk("same")
-                marker = mk("marker", "turn:t1:item:0002")
-                def feed(old=old, twin=twin, marker=marker):
-                    deadline = time.time() + 5
-                    while time.time() < deadline:
-                        with drv._consumers_lock:
-                            if drv._consumers:
-                                for q in drv._consumers:
-                                    q.put_nowait(old); q.put_nowait(twin); q.put_nowait(marker)
-                                return
-                        time.sleep(0.005)
-                threading.Thread(target=feed, daemon=True).start()
-                self.assertIs(self._next(gen), twin)
-                self.assertIs(self._next(gen), marker)
-                gen.close()
+        gen = drv.events()
+        self.assertIs(self._next(gen), a); self.assertIs(self._next(gen), b)
+        m = self._ev("m", "turn:t1:item:0002")
+        self._emit_from_thread(drv, [m])
+        self.assertIs(self._next(gen), m)                  # 停在实时 yield
+        gen.close()
         self.assertEqual(drv._consumers, [])
 
     def test_real_session_event_is_unhashable(self):

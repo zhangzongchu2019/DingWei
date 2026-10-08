@@ -45,9 +45,6 @@ ACCEPTED_STALL_TIMEOUT = 90.0
 ABSOLUTE_TURN_TIMEOUT = 900.0
 EVENT_DRAIN_TIMEOUT = 5.0
 FANOUT_QUEUE_MAX = 1000
-# events() 重放去重表的上限：与 _event_log 触发裁剪的上限同值。可能重叠（已重放、稍后又被 put 进订阅队列）的
-# 只会是登记前最后入缓冲的那几个对象，必在最近重放的这么多个之内；更早的引用可放掉，不随订阅时长累加。
-REPLAY_DEDUP_MAX = 10000
 
 
 @dataclass
@@ -508,7 +505,6 @@ class CodexProtocolDriver(Driver):
         self._consumers: list[queue.Queue[SessionEvent | None]] = []
         self._consumers_lock = threading.Lock()
         self._event_log: list[SessionEvent] = []  # in-memory buffer for replay (like claudeDriver._history)
-        self._event_log_base = 0  # 已从缓冲前端裁掉的条数：绝对序号＝基址＋下标（events() 分批追平用）
         self._event_log_lock = threading.Lock()
         # R-V2-0105 件二（RECONNECT-MUSTFIX 必须 1）：start() 由桥线程与 deliver 线程并发进入，加重连锁。
         self._start_lock = threading.Lock()
@@ -776,39 +772,23 @@ class CodexProtocolDriver(Driver):
         # The in-memory buffer ensures events emitted before subscription
         # (e.g. during deliver→turn completion before events() was called)
         # are not lost (Bug1 fix).
-        # R-V2-0105 REAL-EXIT-SAMECURSOR：
-        # - 去重按事件对象同一性，不按 cursor：Codex 的 cursor 是「每个 item 一个」（同一条消息各片共用），
-        #   同 cursor、甚至同文本的不同对象都是新片，必须保留。_emit_event 把同一个对象同时放进 _event_log
-        #   与各订阅队列，重放与实时的重叠只可能是同一对象。replayed 以 id→对象 持引用，命中后再用 is 核同一
-        #   对象：持引用使这些 id 在本次订阅期间不会被新对象复用（缓冲裁剪释放旧对象也不影响），is 再兜一层。
-        #   表只收重放（含追平）过的对象、上限 REPLAY_DEDUP_MAX，登记后的实时事件不入表，不随订阅时长累加。
-        # - 衔接不丢窗口：按绝对序号分批追平缓冲（锁内取批、锁外 yield），直到某次取批为空，就在同一把锁内
-        #   登记订阅队列——此后发出的事件必进队列，此前发出的都已在批里。重放期间新发的事件由下一批追平，
-        #   不进 1000 上限的队列，不会因重放慢而被挤掉。追平那一刻之前已入缓冲、稍后才 put 进队列的同一
-        #   对象由上面的同一性去重挡掉。
-        # - 缓冲裁剪（超 10000 留 5000）若越过尚未重放的位置，被裁的部分无从补——那是缓冲容量，不是衔接窗口。
+        # R-V2-0105 REAL-EXIT-SAMECURSOR（组长 B，R-V2-0105-SAMECURSOR-IDENTITY-REVIEW-ADD）：
+        # - 先登记订阅队列（只取消费者锁，放锁后）再取缓冲锁重放：登记之后发出的事件必进本队列；登记之前
+        #   发出的都已在缓冲里——快照与登记之间不再有两边都不在的空窗。锁序：两把锁不嵌套，不会与
+        #   _emit_event（先缓冲锁、放锁后再取消费者锁）反序。
+        # - 重放仍在缓冲锁内 yield（既有行为，本轮不改）：重放期间发事件者在缓冲锁上等，不会往队列里灌。
+        # - 去重按事件对象同一性，不按 cursor 或内容：Codex 的 cursor 是「每个 item 一个」（同一条消息各片
+        #   共用），同 cursor、同文本的不同对象都是新片，须保留。重叠只可能是「登记后、快照前」发出的同一
+        #   对象（既进缓冲又进队列）。replayed 以 id→对象持引用、取到再用 is 核：持引用使这些 id 在本次订阅
+        #   期间不会被新对象复用（缓冲裁剪释放旧对象也不影响）。表只收快照内对象（≤ 缓冲上限），实时事件不入。
         consumer_q: queue.Queue[SessionEvent | None] = queue.Queue(maxsize=FANOUT_QUEUE_MAX)
+        with self._consumers_lock:
+            self._consumers.append(consumer_q)
         replayed: dict[int, SessionEvent] = {}
-        next_abs: int | None = None
-        registered = False
         try:
-            while True:
-                with self._event_log_lock:
-                    base = self._event_log_base
-                    if next_abs is None:
-                        next_abs = base
-                    start = max(next_abs, base)
-                    batch = self._event_log[start - base:]
-                    next_abs = base + len(self._event_log)
-                    if not batch:
-                        with self._consumers_lock:
-                            self._consumers.append(consumer_q)
-                        registered = True
-                        break
-                for ev in batch:
+            with self._event_log_lock:
+                for ev in self._event_log:
                     replayed[id(ev)] = ev
-                    if len(replayed) > REPLAY_DEDUP_MAX:
-                        replayed.pop(next(iter(replayed)))   # dict 按插入序：丢最早重放的那个
                     yield ev
             while not self._stop_event.is_set():
                 try:
@@ -825,10 +805,9 @@ class CodexProtocolDriver(Driver):
                     if self._rpc is None or not self._rpc.healthy():
                         return
         finally:
-            if registered:
-                with self._consumers_lock:
-                    if consumer_q in self._consumers:
-                        self._consumers.remove(consumer_q)
+            with self._consumers_lock:
+                if consumer_q in self._consumers:
+                    self._consumers.remove(consumer_q)
 
     def interrupt(self) -> bool:
         self._sync_thread_alias()
@@ -963,7 +942,6 @@ class CodexProtocolDriver(Driver):
         with self._event_log_lock:
             self._event_log.append(event)
             if len(self._event_log) > 10000:
-                self._event_log_base += len(self._event_log) - 5000
                 self._event_log = self._event_log[-5000:]
         with self._consumers_lock:
             for q in self._consumers:
