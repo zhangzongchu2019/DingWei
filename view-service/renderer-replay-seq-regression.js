@@ -9,7 +9,7 @@ const { finishRegression, launchChromium, regressionCollector } = require('./ren
 
 const HERE = __dirname;
 const FIXTURE = path.join(HERE, 'renderer-replay-seq-fixture.py');
-const RENDERER = path.join(HERE, 'renderer-canary-sse.html');
+const RENDERER = process.env.RENDERER || path.join(HERE, 'renderer-canary-sse.html');   // 反向可改指副本
 const N = 30;
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const tag = s => `[${String(s).padStart(3, '0')}]`;
@@ -193,6 +193,14 @@ async function waitConnections(page, count, timeout = 30000) {
         feed('', 150, i => ({ kind: 'assistant_text', text: `(${i})`, cursor: String(i).padStart(6, '0'), delivery_id: 'de', turn_id: '', ts: 0 }));
         const g4 = turnGroups.get('de');
         out.emptyTurnEvents = g4 ? g4.events.filter(e => e.kind === 'assistant_text').length : -1;
+        // 乱序到达（cursor 打乱）：不到软上限时渲染按 cursor 序；越过软上限合并后正文仍按 cursor 序逐字相同
+        feed('m-5', 40, i => { const k = (i * 7) % 40; return { kind: 'assistant_text', text: `[${k}]`, cursor: String(k).padStart(6, '0'), delivery_id: 'dq', turn_id: 'm-5', ts: 0 }; });
+        flushPendingRenders();
+        out.shuffledRendered = turnGroups.get('m-5').node.querySelector('.turn-assistant .event-content').textContent.replace(/\s+/g, '').replace(/^.*?cursor\d+/, '');   // 去掉并入正文的元信息头
+        feed('m-6', 250, i => { const k = (i * 37) % 250; return { kind: 'assistant_text', text: `[${k}]`, cursor: String(k).padStart(6, '0'), delivery_id: 'dr', turn_id: 'm-6', ts: 0 }; });
+        const g6 = turnGroups.get('m-6');
+        out.shuffledLen = g6.events.length;
+        out.shuffledMerged = g6.events.filter(e => e.kind === 'assistant_text').slice().sort(compareCursor).map(e => e.text).join('');
         return out;
       });
     }, () => { window.TURN_EVENTS_SOFT_CAP = 100; });
@@ -214,8 +222,17 @@ async function waitConnections(page, count, timeout = 30000) {
       assert.strictEqual(r7.emptyTurnEvents, 150, `empty-turn events merged or lost: ${r7.emptyTurnEvents}`);
     });
 
+    // 已知局限（登记组长）：越过软上限后，晚到且 cursor 落在已合并区间内的片排在该合并块之后——内容不丢不重，顺序不保。
+    // 常态按序到达不受影响（压力格逐字相同）；本格只钉「不丢不重」，顺序那半不钉。
+    await checks.check('S13 乱序到达：未到软上限渲染按 cursor 序；越过软上限合并后内容不丢不重', async () => {
+      assert.strictEqual(r7.shuffledRendered, Array.from({ length: 40 }, (_, i) => `[${i}]`).join(''));
+      assert.ok(r7.shuffledLen < 250, `not compacted: ${r7.shuffledLen}`);
+      const got = (r7.shuffledMerged.match(/\[\d+\]/g) || []).map(x => Number(x.slice(1, -1))).sort((x, y) => x - y);
+      assert.deepStrictEqual(got, Array.from({ length: 250 }, (_, i) => i));
+    });
+
     checks.finish();
-    console.log('R-V2-0105 replay-seq regression: ALL PASS (12/12)');
+    console.log('R-V2-0105 replay-seq regression: ALL PASS (13/13)');
   } finally {
     if (browser) await browser.close();
   }

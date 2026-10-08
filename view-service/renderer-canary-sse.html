@@ -3213,7 +3213,7 @@
     const TURN_EVENTS_SOFT_CAP = (typeof window !== 'undefined' && window.TURN_EVENTS_SOFT_CAP) || 20000;
     const TURN_EVENTS_HARD_CAP = (typeof window !== 'undefined' && window.TURN_EVENTS_HARD_CAP) || 100000;
     function compactTurnGroup(group) {
-      group.events.sort(compareCursor);
+      if (!group.sorted) group.events.sort(compareCursor);
       group.sorted = true;
       const half = Math.floor(group.events.length / 2);
       const merged = [];
@@ -3253,8 +3253,12 @@
         turnGroups.set(turnKey, group);
       }
       if (group.overCap) return;   // R-V2-0105 件一：已到硬上限并已提示
+      const prevEv = group.events[group.events.length - 1];
       group.events.push(ev);   // 不做 cursor 去重:同一 item 的多片 delta 共用 cursor,去重会吞正文
-      group.sorted = false;
+      // R-V2-0105 件一压力格：按 cursor 顺序到达（常态）不置乱序，重渲与合并就不必每次全量重排；
+      // 全量重排在 2 万条时每次约百毫秒，每片都触发一次重渲时页面整个卡住（含同页 Agent 列表轮询）。
+      // 平局（同 cursor 多片）保持到达序，与稳定排序结果相同。
+      if (prevEv && compareCursor(prevEv, ev) > 0) group.sorted = false;
       if (group.events.length > TURN_EVENTS_SOFT_CAP) compactTurnGroup(group);
       // turn_completed 强制终渲:终态文案与 renderState 的状态栏/成本副作用不可被节流推迟
       const completed = ev.kind === 'state_change' && ev.data && ev.data.change === 'turn_completed';
