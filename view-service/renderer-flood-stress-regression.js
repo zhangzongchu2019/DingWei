@@ -1,12 +1,12 @@
 // R-V2-0105-P1-STRESS／STRESS-DET：单会话洪流压力格（真控制台页＋两个 /view iframe＋桩 Hub 的 SSE）。
 // 灌入：flood 会话同一回合 100000 条 assistant_text delta，经 SSE 以每秒不少于 5000 条推入；calm 会话同时正常流。
-// 判据零（确定性，排在毫秒判据之前）：该回合组事件数与正文 DOM 节点数的峰值、终值都不超过软上限 20000＋余量 STRESS_MARGIN。
+// 判据零（确定性，排在毫秒判据之前）：该回合组事件数与正文 DOM 节点数的峰值、终值都不超过软上限 20000＋余量 MARGIN（固定 100）。
 //   事件数峰值是精确值：给该组的 events 数组挂 push 钩子、给 group.events 赋值挂 setter，每次长度变化都记；
 //   DOM 节点数峰值取 MutationObserver 每批变更后的计数（回合卡 article 之下元素＋文本节点）。
 // 判据三：灌完后该回合 assistant_text 全文与逐条拼接的期望值逐字相同；calm 会话正文完整、不受影响。
 // 读数（不作判据，组长 STRESS-DET 第 1 条）：agents 定时请求相邻间隔、longtask 最大值／总数／总时长、实际推入速率。
-//   agents 定时器在本格把 15 s 缩到 STRESS_AGENT_POLL_MS（只改顶层页的 setInterval(…,15000)），这样洪流期间能看到十几个间隔。
-// 反向：RENDERER 改指去合并的副本（STRESS_EXPECT_MUTANT=1）⇒ 先断言事件数峰值确实涨到约 10 万（变异生效），再断言判据零红。
+//   agents 定时器在本格把 15 s 缩到 AGENT_POLL_MS＝1 s（只改顶层页的 setInterval(…,15000)），这样洪流期间能看到十几个间隔。
+// 反向：RENDERER_OVERRIDE 改指去合并的副本（STRESS_EXPECT_MUTANT=1）⇒ 先断言事件数峰值确实涨到约 10 万（变异生效），再断言判据零红。
 const assert = require('assert');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -15,15 +15,15 @@ const path = require('path');
 const { launchChromium } = require('./renderer-regression-selfhost');
 
 const HERE = __dirname;
-const RENDERER = process.env.RENDERER || path.join(HERE, 'renderer-canary-sse.html');
+const RENDERER = process.env.RENDERER_OVERRIDE || path.join(HERE, 'renderer-canary-sse.html');
 const GO_SOURCE = path.join(HERE, '..', 'internal', 'm8', 'console_auth.go');
 const START = 'const consolePageHTML = `';
 const END = '`\n\nfunc (h *Hub) HandleConsoleAgents';
-const TOTAL = Number(process.env.STRESS_TOTAL || 100000);
-const RATE = Number(process.env.STRESS_RATE || 6000);           // 每秒条数（目标；实际速率另记）
+const TOTAL = 100000;
+const RATE = 6000;           // 每秒条数（目标；实际速率另记）
 const SOFT_CAP = 20000;
-const MARGIN = Number(process.env.STRESS_MARGIN || 100);          // 判据零余量
-const AGENT_POLL_MS = Number(process.env.STRESS_AGENT_POLL_MS || 1000);
+const MARGIN = 100;          // 判据零余量
+const AGENT_POLL_MS = 1000;
 const EXPECT_MUTANT = process.env.STRESS_EXPECT_MUTANT === '1';
 const READINGS = process.env.STRESS_READINGS || '';               // 读数 JSON 落盘路径（可选）
 const DEADLINE_S = Number(process.env.STRESS_DEADLINE_S || 180);   // 推入总时限：页面收不动（背压）时到点停推，X0 红并照常出读数

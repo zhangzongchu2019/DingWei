@@ -56,6 +56,8 @@ OVERRIDE_ENV_NAMES = (
     "FIXTURES", "MOCK_BASE", "MOCK_CERT", "MOCK_KEY", "MOCK_SESSION",
     "HUB_V2_GOLDEN_FILE", "NODE_PATH", "PLAYWRIGHT_BROWSERS_PATH", "PW_CHANNEL",
     "RENDERER_FILE", "RENDERER_OVERRIDE",
+    # renderer_flood_stress：反向期望、读数落盘路径、推入时限（取值固定在套件里，这三项只改判法／落点／时限）
+    "STRESS_EXPECT_MUTANT", "STRESS_READINGS", "STRESS_DEADLINE_S",
 )
 # These are overwritten by the runner before the consumer sees them. They are
 # excluded from the coverage requirement, although caller-supplied values are

@@ -2,7 +2,7 @@
 // 工装 renderer-replay-seq-fixture.py MODE=ticket：第一次申请凭证按 TICKET 出毛病，之后正常发票、/upload 收字节。
 // 钉：凭证请求挂起 ⇒ 默认 20 s 内行内失败、文案为「申请上传凭证超时（20 秒）」、有重试，重试走通；
 // 响应头已回、正文不结束 ⇒ 同样超时失败；HTTP 错误文案与超时区分，也可重试；正常票不受影响。
-// RENDERER 可由环境改指（反向：去掉超时的副本必须红）。
+// RENDERER_OVERRIDE 可由环境改指（反向：去掉超时的副本必须红）。
 const assert = require('assert');
 const net = require('net');
 const path = require('path');
@@ -11,7 +11,7 @@ const { finishRegression, launchChromium, regressionCollector } = require('./ren
 
 const HERE = __dirname;
 const FIXTURE = path.join(HERE, 'renderer-replay-seq-fixture.py');
-const RENDERER = process.env.RENDERER || path.join(HERE, 'renderer-canary-sse.html');
+const RENDERER = process.env.RENDERER_OVERRIDE || path.join(HERE, 'renderer-canary-sse.html');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function freePort() {

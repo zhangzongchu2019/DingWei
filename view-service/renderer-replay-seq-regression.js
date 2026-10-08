@@ -9,7 +9,7 @@ const { finishRegression, launchChromium, regressionCollector } = require('./ren
 
 const HERE = __dirname;
 const FIXTURE = path.join(HERE, 'renderer-replay-seq-fixture.py');
-const RENDERER = process.env.RENDERER || path.join(HERE, 'renderer-canary-sse.html');   // 反向可改指副本
+const RENDERER = process.env.RENDERER_OVERRIDE || path.join(HERE, 'renderer-canary-sse.html');   // 反向可改指副本
 const N = 30;
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const tag = s => `[${String(s).padStart(3, '0')}]`;
