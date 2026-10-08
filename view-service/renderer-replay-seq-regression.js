@@ -56,6 +56,15 @@ const turnText = (page, turn = 't-1') => page.evaluate(t => {
   const evs = g.events.filter(e => e.kind === 'assistant_text').slice().sort(compareCursor);
   return evs.map(e => e.text || '').join('');
 }, turn);
+// 等某条文本出现；超时不抛（记为未出现），让该格以断言失败呈现、不中断其余各格。
+async function waitTextAppears(page, text, timeout) {
+  try {
+    await page.waitForFunction(t => { const g = turnGroups.get('t-1'); return g && g.events.some(e => e.text === t); }, text, { timeout });
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
 const alertState = page => page.evaluate(() => ({ hidden: streamAlert.hidden, mode: streamAlertMode, text: streamAlertText.textContent }));
 
 async function withPage(browser, mode, extra, fn, init) {
@@ -116,7 +125,7 @@ async function waitConnections(page, count, timeout = 30000) {
 
     const r3 = await withPage(browser, 'epoch', {}, async page => {
       await waitConnections(page, 2);
-      await page.waitForFunction(() => { const g = turnGroups.get('t-1'); return g && g.events.some(e => e.text === '[NEW]'); }, null, { timeout: 15000 });
+      await waitTextAppears(page, '[NEW]', 15000);
       await sleep(800);
       return { text: await turnText(page), alert: await alertState(page) };
     });
@@ -127,7 +136,7 @@ async function waitConnections(page, count, timeout = 30000) {
 
     const r4 = await withPage(browser, 'overflow', {}, async page => {
       await waitConnections(page, 2);
-      await page.waitForFunction(n => { const g = turnGroups.get('t-1'); return g && g.events.some(e => e.text === `[${String(n + 5).padStart(3, '0')}]`); }, N, { timeout: 15000 });
+      await waitTextAppears(page, tag(N + 5), 15000);
       await sleep(800);
       return { text: await turnText(page), alert: await alertState(page) };
     });
@@ -138,7 +147,7 @@ async function waitConnections(page, count, timeout = 30000) {
 
     const r5 = await withPage(browser, 'live_gap', {}, async page => {
       await waitConnections(page, 2, 20000);
-      await page.waitForFunction(n => { const g = turnGroups.get('t-1'); return g && g.events.some(e => e.text === `[${String(n + 1).padStart(3, '0')}]`); }, N, { timeout: 20000 });
+      await waitTextAppears(page, tag(N + 1), 20000);
       await sleep(800);
       return { text: await turnText(page), probe: await probe(page) };
     });
