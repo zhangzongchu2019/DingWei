@@ -370,8 +370,11 @@ async function main() {
       assert.strictEqual(await aliveBtn.evaluate((b) => b.classList.contains('agent-stale')), true, 'stale style must survive a nav rebuild');
       failPlatformLoad = '';
       failAgentsLoad = '';
+      agents.push(agentRecord('owner-newcomer-2642', true));   // 恢复后的成功带新内容：列表须更新，不只是去标
       await stalePage.evaluate(() => refreshAgents());
+      agents.pop();
       assert.strictEqual(await stalePage.locator('#agents-stale').isHidden(), true, 'a success must clear the stale mark');
+      assert.ok((await stalePage.evaluate(() => agentListSnapshot.map((a) => a.full_name))).includes('owner-newcomer-2642'), 'the list must update on the recovering success');
       assert.strictEqual(await aliveBtn.evaluate((b) => b.classList.contains('agent-stale')), false);
       assert.strictEqual(await stalePage.locator('#agents-status').textContent(), '');
       // 交错：先发的慢请求晚回，标记与列表以最后一次成功为准
