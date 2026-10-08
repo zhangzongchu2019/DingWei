@@ -11,6 +11,8 @@ MODE：
   overflow    首连发 1..N 即断；第二次起 ring 被截为 N+3..N+5（N+1、N+2 丢失）
   live_gap    首连发 1..N 后在实时流里跳过 N+1 直接发 N+2 并保持；带 after 的补缺连接补上 N+1、N+2
   gap_storm   首连发 1..N 后每 0.3 s 发一条跳号的实时事件（缺口永远补不上）并保持；记录连接次数
+  ticket      SSE 同默认；可写会话（READONLY=0）。第一次申请上传凭证按 TICKET 出毛病，之后正常发票、/upload 收字节：
+              hang 不回响应头 · body_hang 回了头、正文只写一半不结束 · http503 立即 503
 """
 import json, os, sys, time, threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -21,9 +23,11 @@ MODE = os.environ.get('MODE', 'reconnect')
 N = int(os.environ.get('N', '30'))
 FIRST_DELAY = float(os.environ.get('FIRST_DELAY', '1.5'))
 RECONNECTS = int(os.environ.get('RECONNECTS', '10'))
+READONLY = os.environ.get('READONLY', '1') == '1'
+TICKET = os.environ.get('TICKET', '')
 
 LOCK = threading.Lock()
-STATE = {'epoch': 'a1b2c3d4', 'ring': [], 'connections': 0, 'afters': []}
+STATE = {'epoch': 'a1b2c3d4', 'ring': [], 'connections': 0, 'afters': [], 'tickets': 0, 'uploads': 0}
 
 
 def text_event(seq, turn='t-1', delivery='d-1'):
@@ -95,14 +99,15 @@ class H(BaseHTTPRequestHandler):
             return self._send(200, 'text/html; charset=utf-8', open(RENDERER, 'rb').read())
         if p.endswith('/status'):
             return self._send(200, 'application/json', json.dumps({
-                'session': 'smoke-2642', 'state': 'running', 'readonly': True, 'can_write': False,
+                'session': 'smoke-2642', 'state': 'running', 'readonly': READONLY, 'can_write': not READONLY,
                 'auth_mode': 'legacy', 'owner': 'zzc', 'model': 'm', 'cost_total': 0, 'cost_last': 0, 'turns': 1}).encode())
         if p.endswith('/tasks'):
             return self._send(200, 'application/json', b'{}')
         if p.endswith('/probe'):
             with LOCK:
                 return self._send(200, 'application/json', json.dumps({
-                    'event_connections': STATE['connections'], 'afters': STATE['afters'], 'epoch': STATE['epoch']}).encode())
+                    'event_connections': STATE['connections'], 'afters': STATE['afters'], 'epoch': STATE['epoch'],
+                    'tickets': STATE['tickets'], 'uploads': STATE['uploads']}).encode())
         if not p.endswith('/events'):
             return self._send(404, 'text/plain', b'nope')
         after = parse_qs(u.query).get('after', [''])[0]
@@ -164,7 +169,35 @@ class H(BaseHTTPRequestHandler):
 
     def do_POST(self):
         n = int(self.headers.get('Content-Length') or 0)
-        self.rfile.read(n)
+        body = self.rfile.read(n)
+        p = urlparse(self.path).path
+        if p.endswith('/file-upload-ticket'):
+            with LOCK:
+                STATE['tickets'] += 1
+                k = STATE['tickets']
+            if k == 1 and TICKET == 'hang':
+                time.sleep(120)
+                return
+            if k == 1 and TICKET == 'body_hang':
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', '200')
+                self.end_headers()
+                self.wfile.write(b'{"upload_url": "')
+                self.wfile.flush()
+                time.sleep(120)
+                return
+            if k == 1 and TICKET == 'http503':
+                return self._send(503, 'text/plain', b'busy')
+            host = self.headers.get('Host')
+            return self._send(200, 'application/json', json.dumps({
+                'upload_url': f'http://{host}/upload', 'ticket': f'tk-{k}', 'session': 'smoke-2642'}).encode())
+        if p == '/upload':
+            with LOCK:
+                STATE['uploads'] += 1
+            return self._send(200, 'application/json', json.dumps({
+                'url': 'https://files.example.invalid/f/smoke/a.txt', 'name': 'a.txt', 'size': len(body),
+                'media_type': 'text/plain'}).encode())
         self._send(200, 'application/json', b'{"ok":true}')
 
 

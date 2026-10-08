@@ -331,6 +331,8 @@ main{display:flex;flex-direction:column;min-width:0}
   padding:3px 8px;cursor:pointer;background:#f7f7f7;max-width:200px}
 #tabs .tab.on{background:#fff;border-color:#4a90d9;font-weight:600}
 #tabs .tab.offline{opacity:.5}
+#agents-stale{color:#8a5a00;font-size:12px;margin:0 0 4px}
+#a button.agent-stale{opacity:.6;border-style:dashed}
 #tabs .tab .x{color:#999;font-weight:400}
 #tabs .tab .x:hover{color:#c00}
 #tabs .tab .tab-state{color:#9d1b1b;font-size:11px;font-weight:400}
@@ -375,7 +377,7 @@ html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="da
 /* 🔴 nav button 那条是 display:block;width:100% ⇒ 不覆盖的话 ◐ 会变成一整条横杠 */
 #themeBtn{display:inline-block;width:auto;margin:0;padding:2px 8px;flex:0 0 auto;font-size:13px;line-height:1.5}
 </style>
-<nav><section id=platform><div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:4px 0 8px">Work platform</h3><span><button id=bindFeishuBtn type=button>绑定飞书</button><span id=feishuBoundNote hidden style="font-size:12px;color:#666">飞书已绑定</span></span></div><section id=bindFeishuForm hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><label>为确认是你本人，请输入当前口令 <input id=bindFeishuPw type=password autocomplete=current-password></label> <button id=bindFeishuGo type=button>获取绑定码</button></section><section id=bindFeishuBox hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><div>在飞书里向机器人发送：<code id=bindFeishuCmd></code> <button id=bindFeishuCopy type=button>复制</button><span id=bindFeishuCopyFb class=group-feedback></span></div><div id=bindFeishuExpiry style="font-size:12px;color:#666"></div><button id=bindFeishuDone type=button>完成,关闭</button></section><div id=bindFeishuStatus class=group-feedback role=status></div><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div><div id=navFoot><button id=logoutBtn type=button>退出</button></div></nav>
+<nav><section id=platform><div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:4px 0 8px">Work platform</h3><span><button id=bindFeishuBtn type=button>绑定飞书</button><span id=feishuBoundNote hidden style="font-size:12px;color:#666">飞书已绑定</span></span></div><section id=bindFeishuForm hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><label>为确认是你本人，请输入当前口令 <input id=bindFeishuPw type=password autocomplete=current-password></label> <button id=bindFeishuGo type=button>获取绑定码</button></section><section id=bindFeishuBox hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><div>在飞书里向机器人发送：<code id=bindFeishuCmd></code> <button id=bindFeishuCopy type=button>复制</button><span id=bindFeishuCopyFb class=group-feedback></span></div><div id=bindFeishuExpiry style="font-size:12px;color:#666"></div><button id=bindFeishuDone type=button>完成,关闭</button></section><div id=bindFeishuStatus class=group-feedback role=status></div><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=agents-stale role=status hidden></div><div id=a></div><div id=navFoot><button id=logoutBtn type=button>退出</button></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <div id=app-version data-version="{{CONSOLE_VERSION}}" data-commit="{{CONSOLE_COMMIT}}">{{CONSOLE_VERSION_TEXT}}</div>
 <script>
@@ -583,6 +585,7 @@ function renderAgentList(agents){
     var sm=document.createElement('summary'); sm.textContent='离线 ('+off.length+')';
     d.append(sm); off.forEach(function(a){d.append(mk(a))}); nav.append(d);
   }
+  applyAgentStale();
 }
 // 编组成员的名字口径:full_name(名称.业主简称)。🔵 过渡:编组接口(旧形状)目前还只给 session_name,G3 后续让它也返回 full_name;
 //    在那之前 memberName 退回 session_name,这样编组面板与现有 Hub 照常工作。编组接口迁完后删掉退回分支。
@@ -596,22 +599,42 @@ function renderAgentNav(){
   if(agentNavMode==='flat'||!groupSnapshot.groups.length){renderAgentList(agentListSnapshot);return;}
   var nav=document.getElementById('a'),ownedIDs=new Set((groupSnapshot.owned_agents||[]).map(function(a){return a.id;})),seen=new Set();nav.replaceChildren();
   (groupSnapshot.groups||[]).forEach(function(group){var section=document.createElement('section');section.className='agent-tree-group';section.dataset.groupCode=group.code;var title=document.createElement('span');title.className='agent-tree-group-label';title.textContent=group.short_name||'历史组';var members=document.createElement('div');members.className='agent-tree-members';(group.members||[]).forEach(function(member){if(!agentTreeAllowDuplicates&&seen.has(member.agent_id))return;seen.add(member.agent_id);var b=document.createElement('button');b.type='button';b.className='agent-tree-agent';b.dataset.session=memberName(member);b.title=memberName(member);b.textContent=agentTreeMemberLabel(member,ownedIDs);b.disabled=agentTreeMemberDisabled(member);b.setAttribute('aria-disabled',b.disabled?'true':'false');if(agentTreeCanOpen(member,ownedIDs))b.onclick=function(){openTab(memberName(member));};members.append(b);});section.append(title,members);nav.append(section);});
+  applyAgentStale();
 }
 function agentNavSetMode(mode){agentNavMode=mode;document.getElementById('agentNavMode').textContent=mode==='tree'?'列表':'编组';renderAgentNav();}
+// R-V2-0105-P1-LIST-UPLOAD：失败不清空已成功的列表，只标「可能已过期」；过期标与清标只看模块级的最后一次成功，
+// 不看单次调用（15 s 定时器与各入口并发调用、无进行中守卫）。请求按发起序号：比最后一次成功更早发起的请求，回来什么都不动。
+var agentsRequestSeq=0,agentsLastOkSeq=0,agentsLastSuccessAt=0,agentsStale=false;
+function agentsClock(d){function p(n){return String(n).padStart(2,'0');}return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
+function applyAgentStale(){
+  var note=document.getElementById('agents-stale'),nav=document.getElementById('a');
+  if(note){note.hidden=!agentsStale;note.textContent=agentsStale?'列表可能已过期（上次更新 '+agentsClock(new Date(agentsLastSuccessAt))+'）':'';}
+  if(!nav)return;
+  nav.querySelectorAll('button').forEach(function(b){var stale=agentsStale&&!b.disabled;b.classList.toggle('agent-stale',stale);if(stale)b.dataset.stale='1';else delete b.dataset.stale;});
+}
 async function refreshAgents(){
   var status=document.getElementById('agents-status'),retry=document.getElementById('retryAgents');
+  var seq=++agentsRequestSeq;
   status.textContent='Agent 列表加载中…';retry.hidden=true;
-  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},consoleFetchTimeoutMs);
+  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},consoleFetchTimeoutMs),httpStatus=0;
   try{
     var r=await fetch('/api/console/agents',{cache:'no-store',signal:controller.signal});
-    if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}
+    if(!r.ok){httpStatus=r.status;var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}
     var x=await r.json();
     if(!x||!Array.isArray(x.agents))throw new Error('响应格式无效');
+    if(seq<agentsLastOkSeq)return;
     var agents=x.agents;
+    agentsLastOkSeq=seq;agentsLastSuccessAt=Date.now();agentsStale=false;
     agentListSnapshot=agents;renderAgentNav();if(groupMode)renderGroups();
     applyAgentSnapshot(agents);
     status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=true;
-  }catch(err){agentListSnapshot=[];renderAgentList([]);status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
+  }catch(err){
+    if(seq<agentsLastOkSeq)return;
+    var authFailed=httpStatus===401||httpStatus===403;
+    // 401／403 不是「列表过期」：照旧清空并给原错误；从未成功过 ⇒ 空列表＋失败提示；已有成功快照 ⇒ 列表与在线标不动，只加过期标
+    if(authFailed||!agentsLastSuccessAt){agentsStale=false;agentListSnapshot=[];renderAgentList([]);}
+    else{agentsStale=true;applyAgentStale();}
+    status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
   }finally{clearTimeout(timer);}
 }
 var consoleFetchTimeoutMs=8000,groupMode=false,groupRequestGeneration=0,groupFetchTimeoutMs=8000,groupLeaderSelection='',groupPanelMode='',groupSnapshot={groups:[],owned_agents:[]};

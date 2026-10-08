@@ -336,6 +336,7 @@
     @keyframes u-slide { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
     .upload-row.failed { border-color: #c0392b; }
     .upload-row.failed .u-meta { color: #c0392b; }
+    .upload-row .u-retry { grid-column: 1 / -1; justify-self: start; font-size: 12px; padding: 1px 8px; }
     .upload-row.done .u-fill { background: #2e9e5b; }
 
     /* ── 批次级状态（R6，组长 2026-09-18 裁定）──────────────────────
@@ -4654,12 +4655,20 @@
           // 草稿块已在 ⇒ 立即移除；万一没在（理论上不该发生）⇒ 留一个短兜底，不把行永久挂住。
           if (chipShown) drop(); else setTimeout(drop, 2500);
         },
-        failed(reason) {
+        failed(reason, retry) {
           row.classList.remove('indeterminate');
           row.classList.add('failed');
           fill.style.width = '100%';
           meta.textContent = `失败 · ${reason}`;
-          // 失败行不自动消失：业主要能看到为什么失败。
+          // 失败行不自动消失：业主要能看到为什么失败。可重试的失败给「重试」：文件仍在手里，点一下重走整条上传，本行让位给新行。
+          if (retry) {
+            const again = document.createElement('button');
+            again.type = 'button';
+            again.className = 'u-retry';
+            again.textContent = '重试';
+            again.onclick = () => { row.remove(); if (!uploadQueue.children.length) uploadQueue.hidden = true; retry(); };
+            row.appendChild(again);
+          }
         },
       };
     }
@@ -4765,21 +4774,45 @@
       });
     }
 
+    // R-V2-0105-P1-LIST-UPLOAD：申请上传凭证限时 20 s（业主截图「申请上传凭证一直转」）；用例可经 globalThis 改短。
+    function uploadTicketTimeoutMs() {
+      const v = Number(globalThis.DW_UPLOAD_TICKET_TIMEOUT_MS);
+      return v > 0 ? v : 20000;
+    }
+    // 本地校验失败（空文件、超上限）重试也不会好 ⇒ 不给重试；其余失败（凭证超时、HTTP、网络）可重试。
+    function uploadInputError(text) {
+      const err = new Error(text);
+      err.retryable = false;
+      return err;
+    }
     async function uploadOneFile(file, row) {
-      if (!file) throw new Error('没有可上传的文件');
+      if (!file) throw uploadInputError('没有可上传的文件');
       const label = file.name || '未命名文件';
       // A4：上限一律 50 MiB = 50<<20 = 52428800 字节（不是 50×1000²）。
-      if (file.size <= 0) throw new Error(`${label}：空文件不上传`);
+      if (file.size <= 0) throw uploadInputError(`${label}：空文件不上传`);
       if (file.size > FILE_MAX_UPLOAD_BYTES) {
-        throw new Error(`${label}：${formatFileBytes(file.size)} 超过上限 50 MiB（${FILE_MAX_UPLOAD_BYTES} 字节）`);
+        throw uploadInputError(`${label}：${formatFileBytes(file.size)} 超过上限 50 MiB（${FILE_MAX_UPLOAD_BYTES} 字节）`);
       }
       row?.waiting('申请上传凭证…');
-      const ticketRes = await fetch(`/api/console/agents/${encodeURIComponent(stats.sessionName)}/file-upload-ticket`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ max_bytes: file.size }),
-      });
-      if (!ticketRes.ok) throw new Error(`${label}：申请上传票据失败 HTTP ${ticketRes.status}`);
-      const ticket = await ticketRes.json();
+      // 计时同时罩住 fetch 与读正文：响应头已回、正文不结束同样算超时；解析完成才清计时器。
+      const ticketTimeoutMs = uploadTicketTimeoutMs();
+      const ticketAbort = new AbortController();
+      const ticketTimer = setTimeout(() => ticketAbort.abort(), ticketTimeoutMs);
+      let ticket;
+      try {
+        const ticketRes = await fetch(`/api/console/agents/${encodeURIComponent(stats.sessionName)}/file-upload-ticket`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ max_bytes: file.size }),
+          signal: ticketAbort.signal,
+        });
+        if (!ticketRes.ok) throw new Error(`${label}：申请上传票据失败 HTTP ${ticketRes.status}`);
+        ticket = await ticketRes.json();
+      } catch (err) {
+        if (ticketAbort.signal.aborted) throw new Error(`${label}：申请上传凭证超时（${ticketTimeoutMs / 1000} 秒）`);
+        throw err;
+      } finally {
+        clearTimeout(ticketTimer);
+      }
       if (!ticket.upload_url || !ticket.ticket || ticket.session !== stats.sessionName) throw new Error(`${label}：上传票据响应无效`);
       // 不限类型：浏览器给不出类型时按二进制传，由服务端定夺，A 侧不猜（见 uploadWithProgress）。
       row?.progress(0, file.size);
@@ -4834,7 +4867,7 @@
           await uploadOneFile(file, batch ? batch.track(row) : row);
           batch?.settle(file, true);
         } catch (err) {
-          row.failed(err.message);
+          row.failed(err.message, err.retryable === false ? null : () => uploadFiles([file]));
           batch?.settle(file, false);
           // 🔴 R3：上传成功前从不修改输入框 —— 失败时用户已经输入的文字原样保留。
           //    注意这条约束只管「不动输入框」，**不含「不给反馈」**；
