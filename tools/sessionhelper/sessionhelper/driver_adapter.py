@@ -23,7 +23,8 @@ from .config import env_get
 
 # R-V2-0105 件二：驱动重连退避（秒）与事件桥空转退避上限。
 DRIVER_RECONNECT_BACKOFF = (1.0, 2.0, 5.0, 10.0, 30.0)
-BRIDGE_IDLE_MAX = 30.0
+DRIVER_FAILURE_LOG_INTERVAL = 600.0  # 持续重连失败期间至多每 10 分钟一行
+DRIVER_HEALTHY_RESET = 60.0          # 持续健康 60 s 复位退避
 
 
 class DriverAdapter:
@@ -47,7 +48,14 @@ class DriverAdapter:
         # 对象被驱动缓冲截掉并回收后条目自动消失，不膨胀。队列满被丢的事件不登记，重放时可补发。
         self._bridged: "weakref.WeakValueDictionary[int, SessionEvent]" = weakref.WeakValueDictionary()
         # R-V2-0105 件二（组长 BRIDGE-RECONNECT）：桥的睡眠可替换（用例用快睡眠）；驱动不健康时按退避重连。
-        self._bridge_sleep = time.sleep
+        # 可中断睡眠：驱动重连成功／发出新事件时经 on_activity 唤醒（RECONNECT-MUSTFIX 必须 2）；用例可替换。
+        self._bridge_wake = threading.Event()
+        self._bridge_sleep = self._bridge_wait
+        self._bridge_clock = time.monotonic
+        try:
+            self.driver.on_activity = self._bridge_wake.set
+        except Exception:
+            pass
         self._interrupt_confirmed: set[tuple[str, str]] = set()
         self._terminal_timeout = max(0.1, float(cfg.turn_terminal_timeout_seconds))
         self._input_buf = ""          # view 输入的行缓冲
@@ -328,14 +336,30 @@ class DriverAdapter:
 
     # ------------------------------------------------------------ 事件→文本桥(喂老 view 页)
 
+    def _bridge_wait(self, seconds: float) -> None:
+        self._bridge_wake.wait(seconds)
+        self._bridge_wake.clear()
+
     def _event_bridge(self) -> None:
         # 必须能重订阅:events() 在 driver 还没建 session 时会立刻返回空迭代器
         # (opencode 是懒建 session —— 第一条消息到了才建)。事件桥是 start() 后马上起的,
         # 只订阅一次的话 for 循环当场跑完、线程静静退出,此后整个 helper 生命周期内一个事件都不发,
         # view 页永远空白且无任何报错。见 2026-07-14 reviewer view 事件流为空。
+        #
+        # R-V2-0105 件二（组长 RECONNECT-MUSTFIX／P2-RECONNECT-GAP／REVIEW-ADD）：
+        # - 驱动提供 healthy() 且报不健康 ⇒ 按 1、2、5、10、30 s 退避调 driver.start() 重连。
+        #   start() 在本线程同步执行（可能起 daemon，耗时不定），期间桥不消费，驱动缓冲累积（10000 封顶）不丢；
+        #   start() 抛异常不退出本线程。重连只重建 rpc，不 resume Codex 线程——线程到下一次 deliver 才恢复，
+        #   故重连成功到下一条投递之间没有新事件属预期（不是「重连即恢复事件流」）。
+        # - 退避只作用于上述不健康路径；健康或无探测的驱动（claude／opencode）重订阅间隔保持 1 s。
+        # - 睡眠可被唤醒（重连成功、deliver 内被动重连、新事件发出）。
+        # - 复位：重连成功、转发了新事件、或持续健康 60 s；复位后下一次故障从 1 s 起并重新打 WARN。
+        # - 日志只在状态变化时打（转不可用一行、恢复一行），持续失败期间至多每 10 分钟一行带累计次数。
         subscriptions = 0
-        idle_delay = 1.0
         reconnect_attempt = 0
+        reconnect_failures = 0
+        last_failure_log = 0.0
+        healthy_since = None
         while True:
             subscriptions += 1
             skipped = 0
@@ -361,7 +385,6 @@ class DriverAdapter:
                         continue
                     if ev.delivery_id and ev.turn_id:
                         self._turn_progress[event_key] = time.monotonic()
-                    self._track_cost(ev)
                     # C5:同一条事件既喂老 view(文本)也喂新 View Service(结构化 session_event)
                     try:
                         self._event_q.put_nowait(self._event_json(ev))
@@ -369,6 +392,7 @@ class DriverAdapter:
                         pass  # 未入队 ⇒ 不登记，重订阅重放时可补发
                     else:
                         self._bridged[id(ev)] = ev
+                        self._track_cost(ev)  # 入队成功后才记成本：被丢后重放补发的事件不重复记（复核 P23-REVIEW-FIX 二 3）
                         forwarded += 1
                     text = self._format_event(ev)
                     if text:
@@ -380,37 +404,44 @@ class DriverAdapter:
                 print(f"[driver-adapter] event bridge error: {exc}", flush=True)
             if skipped:
                 print(f"[driver-adapter] bridge resubscribe skipped={skipped} subscription={subscriptions}", flush=True)
-            # R-V2-0105 件二：驱动提供健康探测且报不健康（app-server 已断）⇒ 按退避重连，不再紧循环空转。
-            # 不提供探测的驱动（claude／opencode）不触发：opencode 未建 session 时 events() 立即返回是常态。
+            if forwarded:
+                reconnect_attempt = 0
             probe = getattr(self.driver, "healthy", None)
             if callable(probe) and not probe():
+                healthy_since = None
                 if reconnect_attempt == 0:
-                    # 组长 BRIDGE-RECONNECT ③ 最小做法：本地告警（只在转为不可用时打一行）。向 Hub 报「不可接收」需协议，登记后续。
                     print("[driver-adapter][WARN] driver unavailable (app-server connection lost); "
                           "deliveries fail until reconnect", flush=True)
+                    reconnect_failures = 0
+                    last_failure_log = self._bridge_clock()
                 delay = DRIVER_RECONNECT_BACKOFF[min(reconnect_attempt, len(DRIVER_RECONNECT_BACKOFF) - 1)]
                 self._bridge_sleep(delay)
                 reconnect_attempt += 1
+                error = ""
                 try:
-                    self.driver.start()
+                    if not probe():  # 睡眠期间可能已被 deliver 被动重连
+                        self.driver.start()
                     ok = probe()
                 except Exception as exc:
-                    ok = False
-                    print(f"[driver-adapter] driver reconnect failed attempt={reconnect_attempt} error={type(exc).__name__}", flush=True)
+                    ok, error = False, type(exc).__name__
                 if ok:
                     print(f"[driver-adapter] driver reconnected attempt={reconnect_attempt}", flush=True)
                     reconnect_attempt = 0
-                    idle_delay = 1.0
+                    continue
+                reconnect_failures += 1
+                now = self._bridge_clock()
+                if now - last_failure_log >= DRIVER_FAILURE_LOG_INTERVAL:
+                    print(f"[driver-adapter] driver still unavailable failures={reconnect_failures}"
+                          + (f" last_error={error}" if error else ""), flush=True)
+                    last_failure_log = now
                 continue
-            reconnect_attempt = 0
-            if not callable(probe):
-                # 无健康探测的驱动（opencode 未建 session 时 events() 立即返回空）保持 1 s：
-                # 退避到 30 s 会让建 session 后的首批事件最多晚到 30 s。
-                self._bridge_sleep(1.0)  # 迭代器耗尽(通常=还没建 session)→ 稍后重订阅
-                continue
-            # 空转退避（有健康探测、健康却无新事件即返回）：睡眠按 1→2→4…→30 s 增长；一有新事件复位。
-            idle_delay = 1.0 if forwarded else min(idle_delay * 2, BRIDGE_IDLE_MAX)
-            self._bridge_sleep(1.0 if forwarded else idle_delay)
+            if callable(probe):
+                now = self._bridge_clock()
+                if healthy_since is None:
+                    healthy_since = now
+                elif now - healthy_since >= DRIVER_HEALTHY_RESET:
+                    reconnect_attempt = 0
+            self._bridge_sleep(1.0)  # 迭代器耗尽(通常=还没建 session)→ 稍后重订阅
 
     def _track_cost(self, ev: SessionEvent) -> None:
         # cost_usd = 会话累计(claude 用 total_cost_usd)。本次 = 累计差。
