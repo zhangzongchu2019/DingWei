@@ -36,6 +36,7 @@ SUITES = (
     ("renderer_t086_empty_ring_e2e", "node", ROOT / "view-service/renderer-t086-empty-ring-e2e-regression.js"),
     ("renderer_replay_seq", "node", ROOT / "view-service/renderer-replay-seq-regression.js"),
     ("renderer_upload_ticket_timeout", "node", ROOT / "view-service/renderer-upload-ticket-timeout-regression.js"),
+    ("renderer_flood_stress", "node", ROOT / "view-service/renderer-flood-stress-regression.js"),
     ("renderer_c2", "node", ROOT / "view-service/renderer-c2-regression.js"),
     ("console_specs_browser", "node", ROOT / "view-service/console-specs-browser-regression.js"),
     ("console_spec_workflow", "node", ROOT / "view-service/console-spec-workflow-regression.js"),
