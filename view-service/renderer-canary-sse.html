@@ -3220,7 +3220,9 @@
         const ev = group.events[i];
         const prev = merged[merged.length - 1];
         // 同 delivery 才合并（复核要求：不同投递的文本各留归属，delivery_id 另有用途如 ext- 判定）
+        // turn_id 为空的不参与合并（这类事件本就各自成卡；组长 R-V2-0105-MERGE-EMPTY-TURN）
         if (prev && prev.kind === 'assistant_text' && ev.kind === 'assistant_text'
+            && prev.turn_id && ev.turn_id
             && (prev.delivery_id || '') === (ev.delivery_id || '')) {
           merged[merged.length - 1] = { ...prev, text: (prev.text || '') + (ev.text || '') };
         } else {

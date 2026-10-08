@@ -189,6 +189,10 @@ async function waitConnections(page, count, timeout = 30000) {
           return nums.every(n => (n % 2 ? 'dA' : 'dB') === e.delivery_id);
         });
         out.text3 = g3.events.filter(e => e.kind === 'assistant_text').slice().sort(compareCursor).map(e => e.text).join('');
+        // turn_id 为空（按 delivery 归组）的相邻 assistant_text 不合并
+        feed('', 150, i => ({ kind: 'assistant_text', text: `(${i})`, cursor: String(i).padStart(6, '0'), delivery_id: 'de', turn_id: '', ts: 0 }));
+        const g4 = turnGroups.get('de');
+        out.emptyTurnEvents = g4 ? g4.events.filter(e => e.kind === 'assistant_text').length : -1;
         return out;
       });
     }, () => { window.TURN_EVENTS_SOFT_CAP = 100; });
@@ -206,8 +210,12 @@ async function waitConnections(page, count, timeout = 30000) {
       assert.strictEqual(r7.text3, Array.from({ length: 300 }, (_, i) => `{${i}}`).join(''));
     });
 
+    await checks.check('S12 turn_id 为空的相邻 assistant_text 不合并（超软上限也各自保留）', async () => {
+      assert.strictEqual(r7.emptyTurnEvents, 150, `empty-turn events merged or lost: ${r7.emptyTurnEvents}`);
+    });
+
     checks.finish();
-    console.log('R-V2-0105 replay-seq regression: ALL PASS (11/11)');
+    console.log('R-V2-0105 replay-seq regression: ALL PASS (12/12)');
   } finally {
     if (browser) await browser.close();
   }
