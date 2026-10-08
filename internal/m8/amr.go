@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -633,52 +634,55 @@ func (p *amrProcessor) expireLocked(now time.Time) {
 }
 
 func (p *amrProcessor) capCompletedLocked() {
-	for {
-		counts := map[string]int{}
-		for key := range p.completed {
-			counts[key.KeyID+"\x00"+key.Session]++
+	// R-V2-0105 件三（复核要求）：原实现每淘汰一条都重扫整表统计，上限放大到 4096 后最坏 O(N×超出数)。
+	// 改为一次计数、对超限会话一次按时间批量淘汰最旧的；随后做全局封顶。
+	counts := map[string]int{}
+	for key := range p.completed {
+		counts[key.KeyID+"\x00"+key.Session]++
+	}
+	over := map[string]int{}
+	for session, count := range counts {
+		if count > p.maxCompleted {
+			over[session] = count - p.maxCompleted
 		}
-		var over string
-		for session, count := range counts {
-			if count > p.maxCompleted {
-				over = session
-				break
-			}
-		}
-		if over == "" {
-			p.capCompletedTotalLocked()
-			return
-		}
-		var oldestKey amrTurnKey
-		var oldestAt time.Time
-		found := false
+	}
+	if len(over) > 0 {
+		bySession := map[string][]amrCompletedEntry{}
 		for key, at := range p.completed {
-			if key.KeyID+"\x00"+key.Session == over && (!found || at.Before(oldestAt)) {
-				oldestKey, oldestAt, found = key, at, true
+			session := key.KeyID + "\x00" + key.Session
+			if _, ok := over[session]; ok {
+				bySession[session] = append(bySession[session], amrCompletedEntry{key, at})
 			}
 		}
-		if found {
-			delete(p.completed, oldestKey)
+		for session, entries := range bySession {
+			p.evictOldestCompletedLocked(entries, over[session])
 		}
+	}
+	p.capCompletedTotalLocked()
+}
+
+type amrCompletedEntry struct {
+	key amrTurnKey
+	at  time.Time
+}
+
+func (p *amrProcessor) evictOldestCompletedLocked(entries []amrCompletedEntry, n int) {
+	sort.Slice(entries, func(i, j int) bool { return entries[i].at.Before(entries[j].at) })
+	for i := 0; i < n && i < len(entries); i++ {
+		delete(p.completed, entries[i].key)
 	}
 }
 
 // capCompletedTotalLocked 全局封顶（每会话上限之外的第二道；要点第十二节：约 300 B／条，10 万条约 30 MB）。
 func (p *amrProcessor) capCompletedTotalLocked() {
-	for p.maxCompletedTotal > 0 && len(p.completed) > p.maxCompletedTotal {
-		var oldestKey amrTurnKey
-		var oldestAt time.Time
-		found := false
-		for key, at := range p.completed {
-			if !found || at.Before(oldestAt) {
-				oldestKey, oldestAt, found = key, at, true
-			}
-		}
-		if !found {
-			return
-		}
-		delete(p.completed, oldestKey)
+	if p.maxCompletedTotal <= 0 || len(p.completed) <= p.maxCompletedTotal {
+		return
 	}
+	entries := make([]amrCompletedEntry, 0, len(p.completed))
+	for key, at := range p.completed {
+		entries = append(entries, amrCompletedEntry{key, at})
+	}
+	p.evictOldestCompletedLocked(entries, len(p.completed)-p.maxCompletedTotal)
 }
 
 func (p *amrProcessor) queueNoticeLocked(notice amrNoticeJob) {

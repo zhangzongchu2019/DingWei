@@ -187,3 +187,49 @@ func TestSessionTouchIsThrottledPerConnection(t *testing.T) {
 		t.Fatal("after the interval the next message must write again")
 	}
 }
+
+func TestCompletedPerSessionCapEvictsExactlyTheOldestInOnePass(t *testing.T) {
+	// 复核要求：上限放大到 4096 后，超限淘汰不得每条重扫整表；4096＋1 条只淘汰最旧的 1 条。
+	p := replayGuardProcessor()
+	base := time.Now().UTC()
+	p.mu.Lock()
+	for i := 0; i <= 4096; i++ {
+		p.completed[amrTurnKey{KeyID: "key", Session: "src", DeliveryID: fmt.Sprintf("d%05d", i), TurnID: "t"}] = base.Add(time.Duration(i) * time.Millisecond)
+	}
+	start := time.Now()
+	p.capCompletedLocked()
+	elapsed := time.Since(start)
+	_, oldest := p.completed[amrTurnKey{KeyID: "key", Session: "src", DeliveryID: "d00000", TurnID: "t"}]
+	_, second := p.completed[amrTurnKey{KeyID: "key", Session: "src", DeliveryID: "d00001", TurnID: "t"}]
+	n := len(p.completed)
+	p.mu.Unlock()
+	if n != 4096 || oldest || !second {
+		t.Fatalf("len=%d oldest present=%v second present=%v; want 4096, oldest evicted only", n, oldest, second)
+	}
+	if elapsed > 500*time.Millisecond {
+		t.Fatalf("cap took %s", elapsed)
+	}
+}
+
+func TestCompletedPerSessionCapLargeOverflowIsBatched(t *testing.T) {
+	p := replayGuardProcessor()
+	p.maxCompleted = 100
+	base := time.Now().UTC()
+	p.mu.Lock()
+	for i := 0; i < 5000; i++ {
+		p.completed[amrTurnKey{KeyID: "key", Session: "src", DeliveryID: fmt.Sprintf("d%05d", i), TurnID: "t"}] = base.Add(time.Duration(i) * time.Millisecond)
+	}
+	start := time.Now()
+	p.capCompletedLocked()
+	elapsed := time.Since(start)
+	n := len(p.completed)
+	_, newest := p.completed[amrTurnKey{KeyID: "key", Session: "src", DeliveryID: "d04999", TurnID: "t"}]
+	p.mu.Unlock()
+	if n != 100 || !newest {
+		t.Fatalf("len=%d newest present=%v", n, newest)
+	}
+	// 原「每淘汰一条重扫整表」为 O(N×超出)＝约 5000×4900 次迭代；批量为 O(N log N)。
+	if elapsed > 300*time.Millisecond {
+		t.Fatalf("batch eviction too slow: %s", elapsed)
+	}
+}
