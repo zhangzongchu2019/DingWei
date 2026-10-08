@@ -656,6 +656,59 @@ class EventBridgeReplayTest(unittest.TestCase):
         gen.close()
         self.assertEqual(drv._consumers, [])
 
+    class _AttemptLock:
+        # 包装 log 锁：标名线程一旦尝试取锁即置 attempted（取锁前置位），用来确认 producer 真的在等这把锁
+        def __init__(self, real, watch_name):
+            self._real, self._watch = real, watch_name
+            self.attempted = threading.Event()
+        def __enter__(self):
+            if threading.current_thread().name == self._watch:
+                self.attempted.set()
+            return self._real.__enter__()
+        def __exit__(self, *a):
+            return self._real.__exit__(*a)
+
+    def _f8_cell(self, drv):
+        # F8：重放在 log 锁内 yield——生成器停在重放中途时，独立 producer 的 _emit_event 必须被挡在 log 锁上、
+        # 不能完成；放行后才完成，且该事件恰到一次。锁外复制快照再 yield 的实现里 producer 会立刻完成 ⇒ 红在
+        # 「重放中 producer 不能完成」这条断言（有限等待，不靠挂起判红）。
+        self._reset(drv)
+        a, b = self._ev("a"), self._ev("b")
+        drv._emit_event(a); drv._emit_event(b)
+        lock = self._AttemptLock(drv._event_log_lock, "f8-producer")
+        drv._event_log_lock = lock
+        x = self._ev("x-from-producer")
+        done = threading.Event()
+        producer = threading.Thread(target=lambda: (drv._emit_event(x), done.set()), name="f8-producer", daemon=True)
+        gen = drv.events()
+        try:
+            self.assertIs(self._next(gen), a)              # 停在重放中途
+            producer.start()
+            self.assertTrue(lock.attempted.wait(2.0), "producer never tried to take the log lock")
+            self.assertFalse(done.wait(0.3), "producer's _emit_event completed while replay was paused (replay not holding the log lock)")
+            self.assertIs(self._next(gen), b)              # 继续重放；走完缓冲才放锁
+            got = self._next(gen)                          # 放锁后 producer 完成，经订阅队列到达
+            self.assertIs(got, x, f"producer event not delivered after replay, got {getattr(got, 'text', None)!r}")
+            self.assertTrue(done.wait(2.0), "producer did not finish after replay released the log lock")
+            marker = self._ev("marker", "turn:t1:item:0002")
+            self._emit_from_thread(drv, [marker])
+            self.assertIs(self._next(gen), marker, "producer event delivered more than once or out of order")
+        finally:
+            gen.close()
+            producer.join(2.0)
+            drv._event_log_lock = lock._real
+        self.assertFalse(producer.is_alive(), "producer thread left running")
+        self.assertEqual(drv._consumers, [])
+
+    def test_replay_holds_log_lock_so_producer_waits_and_event_arrives_once(self):
+        self._f8_cell(self._fresh_driver())
+
+    def test_replay_holds_log_lock_cell_holds_for_50_rounds(self):
+        drv = self._fresh_driver()
+        for r in range(50):
+            with self.subTest(round=r):
+                self._f8_cell(drv)
+
     def test_real_session_event_is_unhashable(self):
         # 守卫若用 WeakSet／set 会在真对象上直接 TypeError；用例用真 SessionEvent 而非替身类。
         with self.assertRaises(TypeError):
