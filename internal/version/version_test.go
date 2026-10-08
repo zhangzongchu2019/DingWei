@@ -25,7 +25,7 @@ func TestVersionMatchesRepositoryVersionFile(t *testing.T) {
 // 它只焊「VERSION 文件 == Go 常量」,两处一致地都不改,它防不住。
 // 本用例把常量与【上一个已发版本】焊住,构成另一维。
 func TestVersionIsAheadOfLastReleasedVersion(t *testing.T) {
-	const lastReleased = "0.2.1.103" // 0.2.1.103 已在生产运行（2026-10-07 上线，Hub 自报 49c1257d；组长 R-V2-0104-VERSION）;下次发版把它抬到上一个已发号
+	const lastReleased = "0.2.1.103" // 0.2.1.103 已在生产运行（2026-10-07 上线，Hub 自报 49c1257d；组长 R-V2-0104-VERSION）;0.2.1.104 未上线（被 0.2.1.105 取代，R-V2-0105-RESUME），故 0.2.1.105 仍对 0.2.1.103 比;下次发版把它抬到上一个已发号
 	cur, prev := parseQuad(t, Version), parseQuad(t, lastReleased)
 	if !(cur[0] > prev[0] ||
 		(cur[0] == prev[0] && cur[1] > prev[1]) ||
