@@ -413,6 +413,302 @@ class EventBridgeReplayTest(unittest.TestCase):
         h.settle(2)
         self.assertEqual(h.adapter._turns, 3, "被丢后重放补发的终态不得重复记成本／回合数")
 
+    # ── R-V2-0105 REAL-EXIT-SAMECURSOR（组长 B）：先登记后读缓冲、按对象同一性去重 ────────────────
+    def test_same_item_delta_after_resubscribe_is_delivered(self):
+        # r5 真退出格：Codex 同一 item 的各片共用 cursor；重连重订阅后同 cursor 的新片必须恰到一次
+        h = BridgeHarness(self)
+        h.emit(3, "pre", cursor="turn:t1:item:0001")
+        h.reconnect_to = HealthyRpc()
+        h.start_bridge()
+        self.assertTrue(h.wait_for(lambda: len(h.received) >= 3))
+        self.assertTrue(h.wait_for(lambda: h.starts >= 1))
+        h.driver._emit_event(SessionEvent(kind="assistant_text", text="after-reconnect", cursor="turn:t1:item:0001",
+                                          delivery_id="d1", turn_id="t1"))
+        self.assertTrue(h.wait_for(lambda: any(e["text"] == "after-reconnect" for e in h.received), timeout=5),
+                        f"same-item delta after resubscribe was dropped: {[e['text'] for e in h.received]}")
+        time.sleep(1.5)
+        self.assertEqual([e["text"] for e in h.received].count("after-reconnect"), 1)
+
+    @staticmethod
+    def _next(gen, timeout=5.0):
+        # 限时取下一条：被测实现若丢事件，生成器会在健康驱动上一直等——超时返回 None，判红不挂死
+        box = {}
+        def run():
+            try:
+                box["v"] = next(gen)
+            except BaseException as exc:  # noqa: BLE001
+                box["e"] = exc
+        t = threading.Thread(target=run, daemon=True)
+        t.start()
+        t.join(timeout)
+        if t.is_alive():
+            return None
+        if "e" in box:
+            raise box["e"]
+        return box["v"]
+
+    @staticmethod
+    def _ev(text, cursor="turn:t1:item:0001"):
+        return SessionEvent(kind="assistant_text", text=text, cursor=cursor, delivery_id="d1", turn_id="t1")
+
+    def _fresh_driver(self):
+        h = BridgeHarness(self)
+        drv = h.driver
+        drv._rpc = HealthyRpc()
+        return drv
+
+    def _reset(self, drv):
+        with drv._event_log_lock:
+            drv._event_log = []
+        with drv._consumers_lock:
+            drv._consumers.clear()
+
+    def _emit_from_thread(self, drv, events):
+        # 另起线程经 _emit_event 发出：重放期间生成器持缓冲锁，发事件者在锁上等，放锁后才入缓冲与队列
+        t = threading.Thread(target=lambda: [drv._emit_event(e) for e in events], daemon=True)
+        t.start()
+        return t
+
+    class _HookLock:
+        # 可控屏障：被测代码下一次 with 此锁时，先跑一次回调（只触发一次），再真正取锁
+        def __init__(self, real):
+            self._real, self._hook = real, None
+        def arm(self, fn):
+            self._hook = fn
+        def __enter__(self):
+            fn, self._hook = self._hook, None
+            if fn:
+                fn()
+            return self._real.__enter__()
+        def __exit__(self, *a):
+            return self._real.__exit__(*a)
+
+    def test_replay_order_then_live_in_order(self):
+        drv = self._fresh_driver()
+        buf = [self._ev(f"b{i}") for i in range(5)]
+        for e in buf:
+            drv._emit_event(e)
+        gen = drv.events()
+        first = self._next(gen)
+        live = [self._ev(f"l{i}") for i in range(5)]
+        self._emit_from_thread(drv, live)
+        got = [getattr(first, "text", "<none>")] + [getattr(self._next(gen), "text", "<none>") for _ in range(9)]
+        self.assertEqual(got, [e.text for e in buf] + [e.text for e in live])
+        gen.close()
+
+    def test_same_cursor_new_objects_new_text_and_same_text_each_once(self):
+        drv = self._fresh_driver()
+        old = self._ev("same")
+        drv._emit_event(old)
+        gen = drv.events()
+        first = self._next(gen)                            # 已登记、正在重放：下面的走实时路径
+        twin = self._ev("same")                            # 同 cursor 同文本的新对象
+        newer = self._ev("newer")                          # 同 cursor 新文本
+        marker = self._ev("marker", "turn:t1:item:0002")
+        self._emit_from_thread(drv, [twin, newer, marker])
+        got = [first] + [self._next(gen) for _ in range(3)]
+        self.assertEqual([getattr(e, "text", "<none>") for e in got], ["same", "same", "newer", "marker"])
+        self.assertIs(got[0], old)
+        self.assertIs(got[1], twin)
+        gen.close()
+
+    def _boundary_cells(self, drv):
+        # 屏障 a：生成器取消费者锁登记的那一刻注入（旧顺序下这正是快照之后、登记之前的空窗）
+        self._reset(drv)
+        b0 = self._ev("b0")
+        drv._emit_event(b0)
+        x = self._ev("x-at-register")
+        hook = self._HookLock(drv._consumers_lock)
+        drv._consumers_lock = hook
+        try:
+            hook.arm(lambda: drv._emit_event(x))
+            gen = drv.events()
+            marker = self._ev("marker-a", "turn:t1:item:0002")
+            first = self._next(gen)
+            self._emit_from_thread(drv, [marker])
+            rest = [self._next(gen), self._next(gen)]
+            got = [getattr(e, "text", "<none>") for e in [first] + rest]
+            self.assertEqual(got, ["b0", "x-at-register", "marker-a"], f"barrier a (register): {got}")
+            gen.close()
+        finally:
+            drv._consumers_lock = hook._real
+        # 屏障 b：生成器取缓冲锁读快照的那一刻注入（登记之后、快照之前：既入缓冲又入队列，须只出一次）
+        self._reset(drv)
+        b0 = self._ev("b0")
+        drv._emit_event(b0)
+        y = self._ev("y-at-snapshot")
+        hook = self._HookLock(drv._event_log_lock)
+        drv._event_log_lock = hook
+        try:
+            gen = drv.events()
+            hook.arm(lambda: (setattr(drv, "_event_log_lock", hook._real), drv._emit_event(y), setattr(drv, "_event_log_lock", hook)))
+            marker = self._ev("marker-b", "turn:t1:item:0002")
+            got_objs = [self._next(gen), self._next(gen)]
+            self._emit_from_thread(drv, [marker])
+            got_objs.append(self._next(gen))
+            got = [getattr(e, "text", "<none>") for e in got_objs]
+            self.assertEqual(got, ["b0", "y-at-snapshot", "marker-b"], f"barrier b (snapshot): {got}")
+            gen.close()
+        finally:
+            drv._event_log_lock = hook._real
+
+    def test_register_and_snapshot_boundaries_lose_nothing_and_duplicate_nothing(self):
+        self._boundary_cells(self._fresh_driver())
+
+    def test_boundary_cells_hold_for_50_rounds(self):
+        drv = self._fresh_driver()
+        for r in range(50):
+            with self.subTest(round=r):
+                self._boundary_cells(drv)
+        self.assertEqual(drv._consumers, [])
+
+    def test_replayed_object_also_in_live_queue_is_yielded_once(self):
+        # 同一对象既在缓冲又被放进订阅队列：只出一次；同 cursor 的新对象照出（哨兵防挂死）
+        drv = self._fresh_driver()
+        old = self._ev("old")
+        drv._emit_event(old)
+        gen = drv.events()                                 # 尚未执行：首个 next 才登记
+        fresh = self._ev("fresh")
+        marker = self._ev("marker", "turn:t1:item:0002")
+        def feed():
+            deadline = time.time() + 5
+            while time.time() < deadline:
+                with drv._consumers_lock:
+                    if drv._consumers:
+                        for q in drv._consumers:
+                            q.put_nowait(old); q.put_nowait(fresh); q.put_nowait(marker)
+                        return
+                time.sleep(0.01)
+        threading.Thread(target=feed, daemon=True).start()
+        self.assertIs(self._next(gen), old)
+        got = self._next(gen)
+        self.assertIs(got, fresh, f"expected the same-cursor new object, got {getattr(got, 'text', None)!r}")
+        self.assertIs(self._next(gen), marker)
+        gen.close()
+
+    def test_forced_id_reuse_after_trim_does_not_drop_new_event(self):
+        # 缓冲截断释放旧对象后，强制造一个与旧对象 id 相同的新对象再发：只存 id 不持引用的实现会误丢它。
+        # 持引用的实现里旧对象仍活着，id 不可能复用——循环找不到同 id，发出最后一个新对象，同样须到。
+        drv = self._fresh_driver()
+        victim = self._ev("victim")
+        filler = self._ev("filler")                        # 重放的最后一个：生成器的循环变量停在它身上，victim 只剩去重表可能持有
+        drv._emit_event(victim)
+        drv._emit_event(filler)
+        gen = drv.events()
+        self.assertIs(self._next(gen), victim)
+        self.assertIs(self._next(gen), filler)
+        box = {}
+        waiter = threading.Thread(target=lambda: box.setdefault("v", next(gen)), daemon=True)
+        waiter.start()                                     # 生成器走完重放、放下缓冲锁、进入实时等待
+        target = id(victim)
+        with drv._event_log_lock:                          # 重放结束后才拿得到
+            drv._event_log = []                            # 模拟截断：缓冲不再持有
+        del victim
+        reused, keep = None, []
+        for i in range(20000):
+            cand = self._ev(f"cand{i}")
+            if id(cand) == target:
+                reused = cand
+                break
+            keep.append(cand)
+        new = reused if reused is not None else keep[-1]
+        drv._emit_event(new)
+        waiter.join(5)
+        self.assertIs(box.get("v"), new, f"new event dropped (forced id reuse happened: {reused is not None})")
+        gen.close()
+
+    def test_replay_memory_bounded_by_snapshot_and_live_not_accumulated(self):
+        drv = self._fresh_driver()
+        buf = [self._ev(f"b{i}") for i in range(30)]
+        for e in buf:
+            drv._emit_event(e)
+        gen = drv.events()
+        self.assertIs(self._next(gen), buf[0])             # 已登记、正持缓冲锁重放：此后的才是实时事件
+        live = [self._ev(f"l{i}") for i in range(300)]
+        self._emit_from_thread(drv, live)
+        for want in buf[1:] + live:
+            self.assertIs(self._next(gen), want)
+        table = gen.gi_frame.f_locals["replayed"]
+        self.assertEqual(len(table), len(buf), f"replay table holds {len(table)}, snapshot was {len(buf)}")
+        self.assertTrue(all(table.get(id(e)) is not e for e in live), "live events must not enter the replay table")
+        gen.close()
+
+    def test_close_or_error_at_any_point_leaves_no_subscription(self):
+        drv = self._fresh_driver()
+        a, b = self._ev("a"), self._ev("b")
+        drv._emit_event(a); drv._emit_event(b)
+        gen = drv.events()
+        self.assertIs(self._next(gen), a)                  # 停在缓冲 yield（已登记、持缓冲锁）
+        self.assertEqual(len(drv._consumers), 1)
+        gen.close()
+        self.assertEqual(drv._consumers, [])
+        self.assertTrue(drv._event_log_lock.acquire(timeout=1)); drv._event_log_lock.release()   # 缓冲锁已放
+        gen = drv.events()
+        self.assertIs(self._next(gen), a)
+        with self.assertRaises(RuntimeError):
+            gen.throw(RuntimeError("consumer blew up during replay"))
+        self.assertEqual(drv._consumers, [])
+        gen = drv.events()
+        self.assertIs(self._next(gen), a); self.assertIs(self._next(gen), b)
+        m = self._ev("m", "turn:t1:item:0002")
+        self._emit_from_thread(drv, [m])
+        self.assertIs(self._next(gen), m)                  # 停在实时 yield
+        gen.close()
+        self.assertEqual(drv._consumers, [])
+
+    class _AttemptLock:
+        # 包装 log 锁：标名线程一旦尝试取锁即置 attempted（取锁前置位），用来确认 producer 真的在等这把锁
+        def __init__(self, real, watch_name):
+            self._real, self._watch = real, watch_name
+            self.attempted = threading.Event()
+        def __enter__(self):
+            if threading.current_thread().name == self._watch:
+                self.attempted.set()
+            return self._real.__enter__()
+        def __exit__(self, *a):
+            return self._real.__exit__(*a)
+
+    def _f8_cell(self, drv):
+        # F8：重放在 log 锁内 yield——生成器停在重放中途时，独立 producer 的 _emit_event 必须被挡在 log 锁上、
+        # 不能完成；放行后才完成，且该事件恰到一次。锁外复制快照再 yield 的实现里 producer 会立刻完成 ⇒ 红在
+        # 「重放中 producer 不能完成」这条断言（有限等待，不靠挂起判红）。
+        self._reset(drv)
+        a, b = self._ev("a"), self._ev("b")
+        drv._emit_event(a); drv._emit_event(b)
+        lock = self._AttemptLock(drv._event_log_lock, "f8-producer")
+        drv._event_log_lock = lock
+        x = self._ev("x-from-producer")
+        done = threading.Event()
+        producer = threading.Thread(target=lambda: (drv._emit_event(x), done.set()), name="f8-producer", daemon=True)
+        gen = drv.events()
+        try:
+            self.assertIs(self._next(gen), a)              # 停在重放中途
+            producer.start()
+            self.assertTrue(lock.attempted.wait(2.0), "producer never tried to take the log lock")
+            self.assertFalse(done.wait(0.3), "producer's _emit_event completed while replay was paused (replay not holding the log lock)")
+            self.assertIs(self._next(gen), b)              # 继续重放；走完缓冲才放锁
+            got = self._next(gen)                          # 放锁后 producer 完成，经订阅队列到达
+            self.assertIs(got, x, f"producer event not delivered after replay, got {getattr(got, 'text', None)!r}")
+            self.assertTrue(done.wait(2.0), "producer did not finish after replay released the log lock")
+            marker = self._ev("marker", "turn:t1:item:0002")
+            self._emit_from_thread(drv, [marker])
+            self.assertIs(self._next(gen), marker, "producer event delivered more than once or out of order")
+        finally:
+            gen.close()
+            producer.join(2.0)
+            drv._event_log_lock = lock._real
+        self.assertFalse(producer.is_alive(), "producer thread left running")
+        self.assertEqual(drv._consumers, [])
+
+    def test_replay_holds_log_lock_so_producer_waits_and_event_arrives_once(self):
+        self._f8_cell(self._fresh_driver())
+
+    def test_replay_holds_log_lock_cell_holds_for_50_rounds(self):
+        drv = self._fresh_driver()
+        for r in range(50):
+            with self.subTest(round=r):
+                self._f8_cell(drv)
+
     def test_real_session_event_is_unhashable(self):
         # 守卫若用 WeakSet／set 会在真对象上直接 TypeError；用例用真 SessionEvent 而非替身类。
         with self.assertRaises(TypeError):

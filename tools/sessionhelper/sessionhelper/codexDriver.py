@@ -772,15 +772,24 @@ class CodexProtocolDriver(Driver):
         # The in-memory buffer ensures events emitted before subscription
         # (e.g. during deliver→turn completion before events() was called)
         # are not lost (Bug1 fix).
-        seen_cursors: set[str] = set()
-        with self._event_log_lock:
-            for ev in self._event_log:
-                seen_cursors.add(ev.cursor)
-                yield ev
+        # R-V2-0105 REAL-EXIT-SAMECURSOR（组长 B，R-V2-0105-SAMECURSOR-IDENTITY-REVIEW-ADD）：
+        # - 先登记订阅队列（只取消费者锁，放锁后）再取缓冲锁重放：登记之后发出的事件必进本队列；登记之前
+        #   发出的都已在缓冲里——快照与登记之间不再有两边都不在的空窗。锁序：两把锁不嵌套，不会与
+        #   _emit_event（先缓冲锁、放锁后再取消费者锁）反序。
+        # - 重放仍在缓冲锁内 yield（既有行为，本轮不改）：重放期间发事件者在缓冲锁上等，不会往队列里灌。
+        # - 去重按事件对象同一性，不按 cursor 或内容：Codex 的 cursor 是「每个 item 一个」（同一条消息各片
+        #   共用），同 cursor、同文本的不同对象都是新片，须保留。重叠只可能是「登记后、快照前」发出的同一
+        #   对象（既进缓冲又进队列）。replayed 以 id→对象持引用、取到再用 is 核：持引用使这些 id 在本次订阅
+        #   期间不会被新对象复用（缓冲裁剪释放旧对象也不影响）。表只收快照内对象（≤ 缓冲上限），实时事件不入。
         consumer_q: queue.Queue[SessionEvent | None] = queue.Queue(maxsize=FANOUT_QUEUE_MAX)
         with self._consumers_lock:
             self._consumers.append(consumer_q)
+        replayed: dict[int, SessionEvent] = {}
         try:
+            with self._event_log_lock:
+                for ev in self._event_log:
+                    replayed[id(ev)] = ev
+                    yield ev
             while not self._stop_event.is_set():
                 try:
                     ev = consumer_q.get(timeout=0.5)
@@ -788,8 +797,8 @@ class CodexProtocolDriver(Driver):
                         return
                     if self._session_id and ev.session_id != self._session_id:
                         continue
-                    # Dedup: skip events already replayed from the buffer
-                    if ev.cursor in seen_cursors:
+                    # Dedup: skip the very objects already replayed from the buffer
+                    if replayed.get(id(ev)) is ev:
                         continue
                     yield ev
                 except queue.Empty:
