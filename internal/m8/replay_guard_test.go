@@ -502,3 +502,69 @@ func (b *safeBuffer) String() string {
 	defer b.mu.Unlock()
 	return b.buf.String()
 }
+
+// 0c474f63 增量复核：全局封顶触顶一次批量淘汰到 95%，最旧的先出；5% 余量内再新增不触发淘汰。
+func TestCompletedTotalCapEvictsDownTo95PercentOldestFirst(t *testing.T) {
+	p := replayGuardProcessor()
+	p.maxCompletedTotal = 1000
+	base := time.Date(2026, 10, 8, 0, 0, 0, 0, time.UTC)
+	key := func(i int) amrTurnKey {
+		return amrTurnKey{KeyID: "key", Session: fmt.Sprintf("s%02d", i%20), DeliveryID: fmt.Sprintf("d%05d", i), TurnID: "t"}
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for i := 0; i < 1001; i++ {
+		p.setCompletedLocked(key(i), base.Add(time.Duration(i)*time.Second))
+	}
+	p.capCompletedLocked()
+	if len(p.completed) != 950 {
+		t.Fatalf("after hitting the cap completed=%d want 950 (batch down to 95%%)", len(p.completed))
+	}
+	for i := 0; i < 1001; i++ {
+		_, ok := p.completed[key(i)]
+		if want := i >= 51; ok != want {
+			t.Fatalf("entry %d present=%v want %v (oldest 51 out)", i, ok, want)
+		}
+	}
+	for i := 1001; i < 1051; i++ {
+		p.setCompletedLocked(key(i), base.Add(time.Duration(i)*time.Second))
+		p.capCompletedLocked()
+	}
+	if len(p.completed) != 1000 {
+		t.Fatalf("within the 5%% headroom no eviction expected: completed=%d want 1000", len(p.completed))
+	}
+}
+
+// 10 万条量级：触顶那次批量淘汰＜50 ms；之后连续 1000 次新增完成回合（每次都做封顶检查）平均＜1 ms。
+func TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards(t *testing.T) {
+	p := replayGuardProcessor()
+	base := time.Date(2026, 10, 8, 0, 0, 0, 0, time.UTC)
+	key := func(i int) amrTurnKey {
+		return amrTurnKey{KeyID: "key", Session: fmt.Sprintf("s%02d", i%50), DeliveryID: fmt.Sprintf("d%06d", i), TurnID: "t"}
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for i := 0; i < p.maxCompletedTotal; i++ {
+		p.setCompletedLocked(key(i), base.Add(time.Duration(i)*time.Millisecond))
+	}
+	n := p.maxCompletedTotal
+	p.setCompletedLocked(key(n), base.Add(time.Duration(n)*time.Millisecond))
+	start := time.Now()
+	p.capCompletedLocked()
+	hit := time.Since(start)
+	if hit > 50*time.Millisecond {
+		t.Fatalf("batch eviction on hitting the cap took %s", hit)
+	}
+	var total time.Duration
+	for i := 1; i <= 1000; i++ {
+		p.setCompletedLocked(key(n+i), base.Add(time.Duration(n+i)*time.Millisecond))
+		start := time.Now()
+		p.capCompletedLocked()
+		total += time.Since(start)
+	}
+	avg := total / 1000
+	t.Logf("100k: hit-cap batch %s; next 1000 completions avg cap check %s; size %d", hit, avg, len(p.completed))
+	if avg > time.Millisecond {
+		t.Fatalf("average cap check after the batch took %s", avg)
+	}
+}

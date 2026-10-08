@@ -1,6 +1,7 @@
 package m8
 
 import (
+	"container/heap"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -771,15 +772,40 @@ func (p *amrProcessor) evictOldestCompletedLocked(entries []amrCompletedEntry, n
 }
 
 // capCompletedTotalLocked 全局封顶（每会话上限之外的第二道；要点第十二节：约 300 B／条，10 万条约 30 MB）。
+// 触顶时一次淘汰到上限的 95%（滞后），之后 5% 余量内不再触发——否则表停在上限时每个完成回合都要整表扫一遍只为淘汰一条。
+// 最旧 K 条用大小为 K 的最大堆选出（O(N log K)），不整表排序。
 func (p *amrProcessor) capCompletedTotalLocked() {
 	if p.maxCompletedTotal <= 0 || len(p.completed) <= p.maxCompletedTotal {
 		return
 	}
-	entries := make([]amrCompletedEntry, 0, len(p.completed))
+	target := p.maxCompletedTotal - p.maxCompletedTotal/20
+	k := len(p.completed) - target
+	h := make(amrCompletedMaxHeap, 0, k)
 	for key, at := range p.completed {
-		entries = append(entries, amrCompletedEntry{key, at})
+		if len(h) < k {
+			heap.Push(&h, amrCompletedEntry{key, at})
+		} else if at.Before(h[0].at) {
+			h[0] = amrCompletedEntry{key, at}
+			heap.Fix(&h, 0)
+		}
 	}
-	p.evictOldestCompletedLocked(entries, len(p.completed)-p.maxCompletedTotal)
+	for _, e := range h {
+		p.deleteCompletedLocked(e.key)
+	}
+}
+
+// amrCompletedMaxHeap 按完成时刻的最大堆：堆顶是已选出的 K 条里最新的那条，遇到更旧的就替换它。
+type amrCompletedMaxHeap []amrCompletedEntry
+
+func (h amrCompletedMaxHeap) Len() int            { return len(h) }
+func (h amrCompletedMaxHeap) Less(i, j int) bool  { return h[i].at.After(h[j].at) }
+func (h amrCompletedMaxHeap) Swap(i, j int)       { h[i], h[j] = h[j], h[i] }
+func (h *amrCompletedMaxHeap) Push(x interface{}) { *h = append(*h, x.(amrCompletedEntry)) }
+func (h *amrCompletedMaxHeap) Pop() interface{} {
+	old := *h
+	e := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return e
 }
 
 func (p *amrProcessor) queueNoticeLocked(notice amrNoticeJob) {
