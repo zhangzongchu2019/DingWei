@@ -110,6 +110,46 @@ class ProductionRendererTest(unittest.TestCase):
             handler._serve_events()
         handler.send_header.assert_any_call("X-Accel-Buffering", "no")
 
+    # ── R-V2-0105 件一：after／Last-Event-ID 校验后转给 Hub；id:／event: 行原样透传 ──
+    def _events_call(self, path, headers=None, lines=(b"",)):
+        handler = object.__new__(vs._Handler)
+        handler.path = path
+        handler.headers = dict({"X-DW-Session": "zzc-tester-2642"}, **(headers or {}))
+        handler.wfile = io.BytesIO()
+        handler.send_response = mock.Mock()
+        handler.send_header = mock.Mock()
+        handler.end_headers = mock.Mock()
+        response = mock.Mock()
+        response.readline.side_effect = list(lines) + [b""]
+        conn = mock.Mock()
+        conn.getresponse.return_value = response
+        with mock.patch.object(vs, "_ensure_ready"), mock.patch.object(vs.http.client, "HTTPConnection", return_value=conn):
+            handler._serve_events()
+        return conn.request.call_args, handler.wfile.getvalue()
+
+    def test_events_forwards_valid_after_to_hub(self):
+        call, _ = self._events_call("/events?after=ab12cd-7")
+        self.assertEqual(call.args, ("GET", "/internal/view/zzc-tester-2642/events?after=ab12cd-7"))
+        self.assertEqual(call.kwargs.get("headers"), {})
+
+    def test_events_drops_malformed_after(self):
+        for bad in ("ab12-7%0AX-Evil:%201", "..%2Fx", "ZZ-1", "ab12-", "ab12-7-8", "a" * 40 + "-1"):
+            with self.subTest(after=bad):
+                call, _ = self._events_call("/events?after=" + bad)
+                self.assertEqual(call.args, ("GET", "/internal/view/zzc-tester-2642/events"))
+
+    def test_events_passes_valid_last_event_id_only(self):
+        call, _ = self._events_call("/events", {"Last-Event-ID": "ab12cd-9"})
+        self.assertEqual(call.kwargs.get("headers"), {"Last-Event-ID": "ab12cd-9"})
+        call, _ = self._events_call("/events", {"Last-Event-ID": "ab12cd-9\r\nX: y"})
+        self.assertEqual(call.kwargs.get("headers"), {})
+
+    def test_events_relays_id_and_event_lines_verbatim(self):
+        lines = (b"id: ab12-1\n", b'data: {"kind":"assistant_text","text":"a"}\n', b"\n",
+                 b"event: replay_gap\n", b'data: {"reason":"overflow","epoch":"ab12"}\n', b"\n")
+        _, written = self._events_call("/events", lines=lines)
+        self.assertEqual(written, b"".join(lines))
+
     def _render_for_public_base(self, public_base):
         handler = object.__new__(vs._Handler)
         handler.headers = {"X-DW-Session": "zzc-tester-2642"}

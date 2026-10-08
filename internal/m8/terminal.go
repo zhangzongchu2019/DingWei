@@ -62,6 +62,39 @@ type terminalState struct {
 	cookieUntil time.Time
 	eventRing   []string               // 结构化会话事件(session_event)环形缓冲,供晚订阅回放
 	eventSubs   map[string]chan string // 内网事件订阅者(View Service),subID → channel
+
+	// R-V2-0105 件一：逐事件序号。纪元挂在本状态上——会话断开时 closeTerminalLocked 删除状态、下次新建，
+	// 新状态换纪元、seq 从 1 起，页面据纪元变化不把新事件误判为已见（复核必改 1，取 A）。
+	eventEpoch   string
+	eventSeq     uint64
+	eventRingSeq []uint64                        // 与 eventRing 一一对应（同步追加、同步截断）
+	eventSeqSubs map[string]chan sessionSeqEvent // 带序号的订阅者（SSE 端点用）
+}
+
+// sessionSeqEvent 带序号的会话事件（R-V2-0105 件一）。Seq 为 0 表示无序号（老测试直接写 eventRing 的条目）。
+type sessionSeqEvent struct {
+	Seq  uint64
+	Data string
+}
+
+func (st *terminalState) ensureEventEpochLocked() {
+	if st.eventEpoch == "" {
+		st.eventEpoch = randomHex(8)
+	}
+}
+
+// eventRingSnapshotLocked 返回 ring 的带序号副本；eventRingSeq 与 ring 长度不一致（老测试直接写 ring）时，
+// 缺序号的条目 Seq＝0（照旧只发 data 行）。
+func (st *terminalState) eventRingSnapshotLocked() []sessionSeqEvent {
+	out := make([]sessionSeqEvent, len(st.eventRing))
+	offset := len(st.eventRing) - len(st.eventRingSeq)
+	for i, data := range st.eventRing {
+		out[i].Data = data
+		if j := i - offset; offset >= 0 && j >= 0 && j < len(st.eventRingSeq) {
+			out[i].Seq = st.eventRingSeq[j]
+		}
+	}
+	return out
 }
 
 type terminalViewer struct {
@@ -451,19 +484,36 @@ func stripClientProvenance(raw string) (string, bool) {
 func (h *Hub) publishSessionEvent(keyID, sessionName, data string) {
 	h.mu.Lock()
 	st := h.terminalForSession(keyID, sessionName)
+	st.ensureEventEpochLocked()
+	st.eventSeq++
+	seq := st.eventSeq
 	st.eventRing = append(st.eventRing, data)
+	st.eventRingSeq = append(st.eventRingSeq, seq)
 	if len(st.eventRing) > terminalEventRingCap {
 		st.eventRing = st.eventRing[len(st.eventRing)-terminalEventRingCap:]
+	}
+	if len(st.eventRingSeq) > len(st.eventRing) {
+		st.eventRingSeq = st.eventRingSeq[len(st.eventRingSeq)-len(st.eventRing):]
 	}
 	subs := make([]chan string, 0, len(st.eventSubs))
 	for _, ch := range st.eventSubs {
 		subs = append(subs, ch)
+	}
+	seqSubs := make([]chan sessionSeqEvent, 0, len(st.eventSeqSubs))
+	for _, ch := range st.eventSeqSubs {
+		seqSubs = append(seqSubs, ch)
 	}
 	h.mu.Unlock()
 	for _, ch := range subs {
 		select {
 		case ch <- data:
 		default: // 慢消费者不阻塞事件主路(与 output 扇出同纪律)
+		}
+	}
+	for _, ch := range seqSubs {
+		select {
+		case ch <- sessionSeqEvent{Seq: seq, Data: data}:
+		default: // 同上；被丢的事件页面据序号跳号发现，带 after 补缺（R-V2-0105 件一）
 		}
 	}
 }
@@ -754,6 +804,81 @@ func (h *Hub) subscribeExistingSessionEvents(keyID, sessionName, subID string) (
 	return replay, ch, unsub, true
 }
 
+// subscribeExistingSessionEventsSeq（R-V2-0105 件一）：同 subscribeExistingSessionEvents，但带纪元与逐事件序号。
+func (h *Hub) subscribeExistingSessionEventsSeq(keyID, sessionName, subID string) (epoch string, replay []sessionSeqEvent, ch chan sessionSeqEvent, unsub func(), ok bool) {
+	ch = make(chan sessionSeqEvent, 256)
+	h.mu.Lock()
+	st := h.terminals[terminalKey(keyID, sessionName)]
+	if st == nil {
+		h.mu.Unlock()
+		return "", nil, nil, nil, false
+	}
+	st.ensureEventEpochLocked()
+	if st.eventSeqSubs == nil {
+		st.eventSeqSubs = map[string]chan sessionSeqEvent{}
+	}
+	st.eventSeqSubs[subID] = ch
+	epoch = st.eventEpoch
+	replay = st.eventRingSnapshotLocked()
+	h.mu.Unlock()
+	unsub = func() {
+		h.mu.Lock()
+		if cur := h.terminals[terminalKey(keyID, sessionName)]; cur != nil {
+			delete(cur.eventSeqSubs, subID)
+		}
+		h.mu.Unlock()
+	}
+	return epoch, replay, ch, unsub, true
+}
+
+var sseEventIDPattern = regexp.MustCompile(`^([0-9a-f]{1,32})-([0-9]{1,20})$`)
+
+// parseSSEAfter 解析 "<纪元>-<seq>"；非法返回 ok=false（按未带处理）。
+func parseSSEAfter(raw string) (epoch string, seq uint64, ok bool) {
+	m := sseEventIDPattern.FindStringSubmatch(strings.TrimSpace(raw))
+	if m == nil {
+		return "", 0, false
+	}
+	n, err := strconv.ParseUint(m[2], 10, 64)
+	if err != nil {
+		return "", 0, false
+	}
+	return m[1], n, true
+}
+
+// selectSSEReplay（R-V2-0105 件一）：按 after 决定回放哪些、是否先发 replay_gap。
+// 不带 after ⇒ 整份、无 gap（与现行同，仅多 id 行）；同纪元且 after 仍在 ring 覆盖内 ⇒ 只回放其后；
+// 纪元不同 ⇒ 整份＋gap(epoch_changed)；同纪元但 after 早于 ring 最旧 ⇒ 整份＋gap(overflow)。
+func selectSSEReplay(epoch string, replay []sessionSeqEvent, after string, hasAfter bool) (out []sessionSeqEvent, gap string) {
+	if !hasAfter {
+		return replay, ""
+	}
+	afterEpoch, afterSeq, ok := parseSSEAfter(after)
+	if !ok {
+		return replay, ""
+	}
+	if afterEpoch != epoch {
+		return replay, "epoch_changed"
+	}
+	oldest := uint64(0)
+	for _, ev := range replay {
+		if ev.Seq > 0 {
+			oldest = ev.Seq
+			break
+		}
+	}
+	if oldest > 0 && afterSeq+1 < oldest {
+		return replay, "overflow"
+	}
+	out = make([]sessionSeqEvent, 0, len(replay))
+	for _, ev := range replay {
+		if ev.Seq > afterSeq {
+			out = append(out, ev)
+		}
+	}
+	return out, ""
+}
+
 // HandleInternalViewEvents(C2):内网 SSE 口,View Service 订阅某会话的结构化事件流。
 // 先回放 eventRing,再挂实时流。**仅内网监听**(部署时绑 127.0.0.1,不上公网 mux)。
 func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
@@ -774,12 +899,20 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	subID := randomHex(8)
-	replay, ch, unsub, ok := h.subscribeExistingSessionEvents(keyID, internalSession, subID)
+	epoch, ringReplay, ch, unsub, ok := h.subscribeExistingSessionEventsSeq(keyID, internalSession, subID)
 	if !ok {
 		http.Error(w, "session offline or ambiguous", http.StatusNotFound)
 		return
 	}
 	defer unsub()
+	// R-V2-0105 件一：after（query 优先，Last-Event-ID 头作后备）决定回放范围。
+	after, hasAfter := r.URL.Query().Get("after"), r.URL.Query().Has("after")
+	if !hasAfter {
+		if v := r.Header.Get("Last-Event-ID"); v != "" {
+			after, hasAfter = v, true
+		}
+	}
+	replay, gap := selectSSEReplay(epoch, ringReplay, after, hasAfter)
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-store")
@@ -788,15 +921,27 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	flusher.Flush()
 
-	writeSSE := func(data string) bool {
-		if _, err := fmt.Fprintf(w, "data: %s\n\n", data); err != nil {
+	writeSSE := func(ev sessionSeqEvent) bool {
+		var err error
+		if ev.Seq > 0 {
+			_, err = fmt.Fprintf(w, "id: %s-%d\ndata: %s\n\n", epoch, ev.Seq, ev.Data)
+		} else {
+			_, err = fmt.Fprintf(w, "data: %s\n\n", ev.Data)
+		}
+		if err != nil {
 			return false
 		}
 		flusher.Flush()
 		return true
 	}
-	for _, data := range replay {
-		if !writeSSE(data) {
+	if gap != "" {
+		if _, err := fmt.Fprintf(w, "event: replay_gap\ndata: {\"reason\":%q,\"epoch\":%q}\n\n", gap, epoch); err != nil {
+			return
+		}
+		flusher.Flush()
+	}
+	for _, ev := range replay {
+		if !writeSSE(ev) {
 			return
 		}
 	}
@@ -806,11 +951,11 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-r.Context().Done():
 			return
-		case data, ok := <-ch:
+		case ev, ok := <-ch:
 			if !ok {
 				return
 			}
-			if !writeSSE(data) {
+			if !writeSSE(ev) {
 				return
 			}
 		case <-ping.C:

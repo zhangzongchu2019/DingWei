@@ -506,6 +506,10 @@ class CodexProtocolDriver(Driver):
         self._consumers_lock = threading.Lock()
         self._event_log: list[SessionEvent] = []  # in-memory buffer for replay (like claudeDriver._history)
         self._event_log_lock = threading.Lock()
+        # R-V2-0105 件二（RECONNECT-MUSTFIX 必须 1）：start() 由桥线程与 deliver 线程并发进入，加重连锁。
+        self._start_lock = threading.Lock()
+        # 事件桥可挂一个无参回调：重连成功、新事件发出时唤醒它的可中断睡眠（RECONNECT-MUSTFIX 必须 2）。
+        self.on_activity = None
         self._live_event_seq = 0
         self._stop_event = threading.Event()
         self._event_thread: threading.Thread | None = None
@@ -553,9 +557,36 @@ class CodexProtocolDriver(Driver):
             )
         raise ValueError(f"unsupported transport_mode={transport_mode!r}")
 
+    def healthy(self) -> bool:
+        """R-V2-0105 件二：供事件桥判断 app-server 连接是否已死（死了才重连）。"""
+        rpc = self._rpc
+        return rpc is not None and rpc.healthy()
+
+    def _notify_activity(self) -> None:
+        cb = getattr(self, "on_activity", None)
+        if callable(cb):
+            try:
+                cb()
+            except Exception:
+                pass
+
     def start(self) -> None:
-        if self._rpc is not None and self._rpc.healthy():
-            return
+        # R-V2-0105 件二：重连锁内重判健康；停旧 rpc 与建新 rpc 都在锁内（两线程同时进入只建一个）。
+        # 注意：只重建 rpc 与通知泵，不 resume Codex 线程——线程要到下一次 deliver 才恢复。
+        lock = self.__dict__.get("_start_lock") or self.__dict__.setdefault("_start_lock", threading.Lock())
+        with lock:
+            if self._rpc is not None and self._rpc.healthy():
+                return
+            if self._rpc is not None:
+                # 重连前先停掉旧的不健康连接（读线程死而进程仍在时不留孤儿进程）。
+                try:
+                    self._rpc.stop()
+                except Exception:
+                    pass
+            self._start_locked()
+        self._notify_activity()
+
+    def _start_locked(self) -> None:
         if self._transport_mode == "daemon_ws":
             if self._manage_daemon:
                 self._start_daemon()
@@ -910,6 +941,7 @@ class CodexProtocolDriver(Driver):
                 except queue.Full:
                     log.warning("[events][CONSUMER_SLOW] dropping event for slow consumer cursor=%s", event.cursor)
         self._record_published_event(event)
+        self._notify_activity()  # R-V2-0105 件二：唤醒事件桥的可中断睡眠
 
     # codex 0.144.4 通知里只发管理信号、不包含用户可见内容的 method 集合。
     # 这些不映射为 SessionEvent，避免新 view 事件环被 state_change 刷屏。

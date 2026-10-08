@@ -25,7 +25,7 @@ import threading
 import urllib.request
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, quote, urlparse
 
 from view_page_store import ViewPageStore
 
@@ -561,6 +561,15 @@ def _read_disk(path: str = "/home") -> dict:
         return {}
 
 
+
+_SSE_EVENT_ID_RE = re.compile(r"[0-9a-f]{1,32}-[0-9]{1,20}")
+
+
+def _sse_event_id(raw: str) -> str:
+    """R-V2-0105 件一：只放行 <纪元>-<seq> 形状的 SSE 事件 id，其余（含注入换行）一律丢弃。"""
+    raw = (raw or "").strip()
+    return raw if _SSE_EVENT_ID_RE.fullmatch(raw) else ""
+
 class _Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
@@ -625,11 +634,20 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Accel-Buffering", "no")
         self.end_headers()
-        # 转发 hub 的内网 SSE(C2),逐行透传,并记成本
+        # 转发 hub 的内网 SSE(C2),逐行透传(含 id:／event: 行),并记成本
         u = urlparse(HUB_INTERNAL)
         conn = http.client.HTTPConnection(u.hostname, u.port or 80, timeout=3600)
         try:
-            conn.request("GET", f"/internal/view/{session}/events")
+            # R-V2-0105 件一：页面重连带 after=<纪元>-<seq>（或浏览器原生重连的 Last-Event-ID）⇒ 校验后转给 Hub，只补缺口。
+            target = f"/internal/view/{session}/events"
+            headers = {}
+            after = _sse_event_id(parse_qs(urlparse(self.path).query).get("after", [""])[0])
+            if after:
+                target += "?after=" + quote(after, safe="")
+            last_event_id = _sse_event_id(self.headers.get("Last-Event-ID", ""))
+            if last_event_id:
+                headers["Last-Event-ID"] = last_event_id
+            conn.request("GET", target, headers=headers)
             resp = conn.getresponse()
             while True:
                 line = resp.readline()

@@ -19,6 +19,7 @@ package m8
 
 import (
 	"log"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -187,16 +188,24 @@ func hopBackstopExceeded(env model.Envelope) bool {
 // 线程安全。Seen 惰性清理过期条目。
 type replyDedup struct {
 	mu   sync.Mutex
-	seen map[string]int64 // dedup_key -> 首见 unixNano
+	seen map[string]int64 // dedup_key -> 最近一次见到的 unixNano（R-V2-0105：滑动续期）
 	ttl  time.Duration
+	max  int              // 全局条数上限（R-V2-0105 件三；0 = 不限）
 	now  func() time.Time // 可注入,便于测试
 }
 
+// replyDedupDefaultTTL／replyDedupDefaultMax：R-V2-0105 件三（要点第十、十二节，组长复定 24h／20 万条约 36 MB）。
+// dedup_key＝reply-origin:<delivery>:<turn> 对每个回合唯一，正常业务不会对同一回合合法地再回一次 ⇒ 延长无误杀。
+const (
+	replyDedupDefaultTTL = 24 * time.Hour
+	replyDedupDefaultMax = 200000
+)
+
 func newReplyDedup(ttl time.Duration) *replyDedup {
 	if ttl <= 0 {
-		ttl = 10 * time.Minute
+		ttl = replyDedupDefaultTTL
 	}
-	return &replyDedup{seen: map[string]int64{}, ttl: ttl, now: time.Now}
+	return &replyDedup{seen: map[string]int64{}, ttl: ttl, max: replyDedupDefaultMax, now: time.Now}
 }
 
 // SeenOrMark 返回 true 表示 key 之前已见(=应丢弃,R5);false 表示首见(已登记)。
@@ -209,16 +218,51 @@ func (d *replyDedup) SeenOrMark(key string) bool {
 	defer d.mu.Unlock()
 	nowNano := d.now().UnixNano()
 	ttlNano := d.ttl.Nanoseconds()
-	if first, ok := d.seen[key]; ok {
-		if nowNano-first < ttlNano {
-			return true // 仍在 TTL 内 = 重复
+	if last, ok := d.seen[key]; ok {
+		if nowNano-last < ttlNano {
+			// 仍在窗内 = 重复；滑动续期：周期性重发只要间隔小于窗就一直被挡（原按首见计，720 s 节律每次越窗放行）
+			d.seen[key] = nowNano
+			return true
 		}
 		// 已过期:当作首见,刷新时间戳
 		d.seen[key] = nowNano
 		return false
 	}
 	d.seen[key] = nowNano
+	if d.max > 0 && len(d.seen) > d.max {
+		d.evictLocked(nowNano, ttlNano)
+	}
 	return false
+}
+
+// evictLocked 超上限时先清过期，仍超则按最早时间淘汰一批（上限的 1%，摊薄 O(n) 扫描）。
+// 原先 Sweep 无任何调用方，表只增不减；这里在插入路径上兜住总量。
+func (d *replyDedup) evictLocked(nowNano, ttlNano int64) {
+	for k, at := range d.seen {
+		if nowNano-at >= ttlNano {
+			delete(d.seen, k)
+		}
+	}
+	over := len(d.seen) - d.max
+	if over <= 0 {
+		return
+	}
+	batch := d.max / 100
+	if batch < over {
+		batch = over
+	}
+	type entry struct {
+		key string
+		at  int64
+	}
+	oldest := make([]entry, 0, len(d.seen))
+	for k, at := range d.seen {
+		oldest = append(oldest, entry{k, at})
+	}
+	sort.Slice(oldest, func(i, j int) bool { return oldest[i].at < oldest[j].at })
+	for i := 0; i < batch && i < len(oldest); i++ {
+		delete(d.seen, oldest[i].key)
+	}
 }
 
 // Sweep 清理所有过期条目(可由后台定时调用;§10 防膨胀)。返回清理条数。

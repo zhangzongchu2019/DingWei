@@ -151,6 +151,9 @@ type Hub struct {
 	specPresplitDispatch  func(context.Context, model.ConsoleAgent, model.Envelope) error
 	specInferenceDispatch func(context.Context, model.ConsoleAgent, model.Envelope) error
 	SpecPresplitTimeout   time.Duration
+
+	// sessionTouchMinInterval（R-V2-0105 件三）：同一会话连接 last_seen 落库的最小间隔；0 = 不节流。
+	sessionTouchMinInterval time.Duration
 }
 
 type L2Config struct {
@@ -191,6 +194,8 @@ type sessionClient struct {
 	helperReady    bool
 	deviceID       string
 	deviceIDV1     bool
+
+	lastTouchWritten time.Time // R-V2-0105 件三：上次把 last_seen 落库的时刻（touchSessionEndpoint 节流）
 }
 
 type feishuSyncTarget struct {
@@ -291,7 +296,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 		botChannels:        map[string]string{},
 		botNames:           map[string]string{},
 		envelopeIDs:        map[string]string{},
-		replyDedup:         newReplyDedup(envDuration("REPLY_ORIGIN_DEDUP_TTL", 10*time.Minute)),
+		replyDedup:         newReplyDedup(envDuration("REPLY_ORIGIN_DEDUP_TTL", replyDedupDefaultTTL)),
 		onlineTimers:       map[string]*time.Timer{},
 		seenSessions:       map[string]bool{},
 		terminals:          map[string]*terminalState{},
@@ -323,7 +328,27 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 	}
 	h.amr = newAMRProcessor(h)
 	h.mentionMirror = newMentionMirror(h)
+	h.sessionTouchMinInterval = envDuration("WP_SESSION_TOUCH_MIN_INTERVAL", 5*time.Second)
+	h.applyReplayGuardSettings()
 	return h
+}
+
+// applyReplayGuardSettings（R-V2-0105 件三）：R5 去重总量上限取 env；AMR 已完成记忆须不短于 R5 去重窗
+// （否则过期的旧回合会在去重窗内被重开、重路由——dw2 720 s 节律的成因），不满足即抬到去重窗并留痕；
+// 启动打一行实际取值供运维核对。
+func (h *Hub) applyReplayGuardSettings() {
+	if h.replyDedup != nil {
+		h.replyDedup.max = envInt("REPLY_ORIGIN_DEDUP_MAX", replyDedupDefaultMax)
+	}
+	if h.amr != nil && h.replyDedup != nil && h.amr.completedTTL < h.replyDedup.ttl {
+		log.Printf("replay guard: WP_AMR_COMPLETED_TTL=%s shorter than REPLY_ORIGIN_DEDUP_TTL=%s; raised to %s",
+			h.amr.completedTTL, h.replyDedup.ttl, h.replyDedup.ttl)
+		h.amr.completedTTL = h.replyDedup.ttl
+	}
+	if h.amr != nil && h.replyDedup != nil {
+		log.Printf("replay guard: amr_completed_ttl=%s amr_completed_per_session=%d amr_completed_total=%d reply_dedup_ttl=%s reply_dedup_max=%d session_touch_min_interval=%s",
+			h.amr.completedTTL, h.amr.maxCompleted, h.amr.maxCompletedTotal, h.replyDedup.ttl, h.replyDedup.max, h.sessionTouchMinInterval)
+	}
 }
 
 func (h *Hub) StartL2Workers(ctx context.Context) {
@@ -1101,6 +1126,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			h.closeFeishuSyncLocked(keyID, sessionName)
 		}
 		h.mu.Unlock()
+		if current && h.amr != nil {
+			h.amr.sessionClosed(keyID, sessionName) // R-V2-0105 件三：断开时补出聚合日志计数并清表项
+		}
 		if current && h.sessionSupportsDeliveryACK(c) {
 			h.releaseSessionDeliveryLeases(c, "session_disconnected")
 		}
@@ -5543,6 +5571,20 @@ func (c *sessionClient) lastSeen() time.Time {
 
 func (h *Hub) touchSessionEndpoint(ctx context.Context, c *sessionClient) {
 	if h.Repo == nil || c == nil {
+		return
+	}
+	// R-V2-0105 件三：每条入站消息都会走到这里；Hub 的 SQLite 只有一条连接（SetMaxOpenConns(1)），
+	// 洪流时每秒数千次 UPDATE 与控制台 HTTP 同队排。同一连接 sessionTouchMinInterval 内只落库一次；
+	// 内存 lastSeen 照常更新（在线判定读内存），断开收尾的 UpsertSessionEndpoint 不经此处、照写。
+	// session_endpoint.last_seen_at 只供管理页展示，无按新鲜度判定的读者（核于 767e073a）。
+	now := h.now()
+	c.stateMu.Lock()
+	skip := h.sessionTouchMinInterval > 0 && !c.lastTouchWritten.IsZero() && now.Sub(c.lastTouchWritten) < h.sessionTouchMinInterval
+	if !skip {
+		c.lastTouchWritten = now
+	}
+	c.stateMu.Unlock()
+	if skip {
 		return
 	}
 	_ = h.Repo.TouchSessionEndpoint(ctx, c.keyID, c.sessionName, c.lastSeen())

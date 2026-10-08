@@ -48,8 +48,14 @@ function consoleHTMLFromProductionSource() {
   }
   if (MUTATION === 'preserve-stale-load-data') {
     mutate("}catch(err){renderPlatform({items:[],role:document.documentElement.dataset.platformRole||''});status.textContent='工作台加载失败: '", "}catch(err){status.textContent='工作台加载失败: '");
-    mutate("}catch(err){renderAgentList([]);status.textContent='Agent 列表加载失败: '", "}catch(err){status.textContent='Agent 列表加载失败: '");
   }
+  // R-V2-0105-P1-LIST-UPLOAD 六刀：失败改回清空／去成功侧序号守卫／去失败侧序号守卫／在线点不加过期样式／首次失败也标过期／401 也当过期
+  if (MUTATION === 'clear-agents-on-failure') mutate("else{agentsStale=true;applyAgentStale();}", "else{agentsStale=false;agentListSnapshot=[];renderAgentList([]);}");
+  if (MUTATION === 'agents-ignore-request-order') mutate("if(seq<agentsLastOkSeq)return;\n    var agents=x.agents;", "var agents=x.agents;");
+  if (MUTATION === 'agents-stale-ignore-order') mutate("if(seq<agentsLastOkSeq)return;\n    var authFailed", "var authFailed");
+  if (MUTATION === 'agents-stale-no-dot') mutate("var stale=agentsStale&&!b.disabled;", "var stale=false;");
+  if (MUTATION === 'agents-stale-first-failure') mutate("if(authFailed||!agentsLastSuccessAt){", "if(authFailed){");
+  if (MUTATION === 'agents-stale-on-auth') mutate("var authFailed=httpStatus===401||httpStatus===403;", "var authFailed=false;");
   if (MUTATION === 'show-retry-after-success') {
     mutate("status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=true;", "status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=false;");
     mutate("status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=true;", "status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=false;");
@@ -74,7 +80,7 @@ function consoleHTMLFromProductionSource() {
   html = html.split('{{CONSOLE_VERSION_TEXT}}').join(HARNESS_VERSION + ' · ' + HARNESS_COMMIT.slice(0, 7))
     .split('{{CONSOLE_VERSION}}').join(HARNESS_VERSION)
     .split('{{CONSOLE_COMMIT}}').join(HARNESS_COMMIT);
-  if (MUTATION && !['group-no-precheck','group-no-normalize','group-json-message-ignored','hardcoded-version','stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','filter-offline-group-candidates','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty','restore-inert-agents-entry','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['group-no-precheck','group-no-normalize','group-json-message-ignored','hardcoded-version','stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','filter-offline-group-candidates','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty','restore-inert-agents-entry','unhandled-group-action','legacy-group-deadlock','clear-agents-on-failure','agents-ignore-request-order','agents-stale-ignore-order','agents-stale-no-dot','agents-stale-first-failure','agents-stale-on-auth'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -103,6 +109,7 @@ async function main() {
   let failPlatformLoad = '';
   let failAgentsLoad = '';
   let agentGETs = 0;
+  const agentsQueue = [];
   let includeOfflineOwned = false;
   const groupWrites = [];
   const groupJoinWrites = [];
@@ -123,6 +130,8 @@ async function main() {
     }
     if (req.url === '/api/console/agents') {
       agentGETs += 1;
+      if (agentsQueue.length) { agentsQueue.shift()(res); return; }
+      if (failAgentsLoad === '401') { res.writeHead(401, {'Content-Type':'text/plain'}); res.end('fixture login required'); return; }
       if (failAgentsLoad === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture agents unavailable'); return; }
       if (failAgentsLoad === 'timeout') { setTimeout(() => { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({ agents })); }, 200); return; }
       if (failAgentsLoad === 'empty') { res.writeHead(200, {'Content-Type':'application/json'}); res.end('{"agents":[]}'); return; }
@@ -348,9 +357,44 @@ async function main() {
       failAgentsLoad = '500';
       await stalePage.evaluate(() => Promise.all([refreshPlatform(), refreshAgents()]));
       assert.strictEqual(await stalePage.locator('#platform-items a').count(), 0, 'failed refresh must clear stale platform entries');
-      assert.strictEqual(await stalePage.locator('#a button').count(), 0, 'failed refresh must clear stale Agent entries');
       assert.strictEqual(await stalePage.locator('#retryPlatform').isVisible(), true);
       assert.strictEqual(await stalePage.locator('#retryAgents').isVisible(), true);
+      // R-V2-0105-P1-LIST-UPLOAD：已有成功快照 ⇒ 失败不清空，列表顶部标过期，在线点本身带过期样式，原失败提示与重试保留
+      const aliveBtn = stalePage.locator('#a button[title="owner-alpha-2642"]');
+      assert.strictEqual(await aliveBtn.count(), 1, 'failed refresh must keep the last good Agent list');
+      assert.match(await stalePage.locator('#agents-stale').textContent(), /^列表可能已过期（上次更新 \d\d:\d\d:\d\d）$/);
+      assert.strictEqual(await stalePage.locator('#agents-stale').isVisible(), true);
+      assert.strictEqual(await aliveBtn.evaluate((b) => b.classList.contains('agent-stale')), true, 'online dot itself must look stale');
+      assert.strictEqual(await stalePage.locator('#agents-status').textContent(), 'Agent 列表加载失败: HTTP 500: fixture agents unavailable');
+      await stalePage.evaluate(() => renderAgentNav());
+      assert.strictEqual(await aliveBtn.evaluate((b) => b.classList.contains('agent-stale')), true, 'stale style must survive a nav rebuild');
+      failPlatformLoad = '';
+      failAgentsLoad = '';
+      agents.push(agentRecord('owner-newcomer-2642', true));   // 恢复后的成功带新内容：列表须更新，不只是去标
+      await stalePage.evaluate(() => refreshAgents());
+      agents.pop();
+      assert.strictEqual(await stalePage.locator('#agents-stale').isHidden(), true, 'a success must clear the stale mark');
+      assert.ok((await stalePage.evaluate(() => agentListSnapshot.map((a) => a.full_name))).includes('owner-newcomer-2642'), 'the list must update on the recovering success');
+      assert.strictEqual(await aliveBtn.evaluate((b) => b.classList.contains('agent-stale')), false);
+      assert.strictEqual(await stalePage.locator('#agents-status').textContent(), '');
+      // 交错：先发的慢请求晚回，标记与列表以最后一次成功为准
+      const settle = () => stalePage.evaluate(() => { const first = refreshAgents(); return new Promise((r) => setTimeout(r, 80)).then(() => Promise.all([first, refreshAgents()])); });
+      agentsQueue.push((res) => setTimeout(() => { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({ agents: [agentRecord('owner-old-2642', true)] })); }, 400));
+      await settle();
+      assert.deepStrictEqual(await stalePage.evaluate(() => agentListSnapshot.map((a) => a.full_name)), ['owner-alpha-2642', 'owner-offline-2642'], 'an older response landing late must not replace the newer list');
+      assert.strictEqual(await aliveBtn.count(), 1);
+      agentsQueue.push((res) => setTimeout(() => { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('late failure'); }, 400));
+      await settle();
+      assert.strictEqual(await stalePage.locator('#agents-stale').isHidden(), true, 'an older failure after a newer success must not mark stale');
+      assert.strictEqual(await stalePage.locator('#agents-status').textContent(), '');
+      // 401／403 不是过期：无过期标、原错误文本
+      failAgentsLoad = '401';
+      await stalePage.evaluate(() => refreshAgents());
+      assert.strictEqual(await stalePage.locator('#agents-stale').isHidden(), true, '401 must not be shown as a stale list');
+      assert.strictEqual(await stalePage.locator('#agents-status').textContent(), 'Agent 列表加载失败: HTTP 401: fixture login required');
+      assert.strictEqual(await stalePage.locator('#a button.agent-stale').count(), 0);
+      failPlatformLoad = '500';
+      failAgentsLoad = '500';
       await stalePage.close();
       const failedPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
       failedPage.setDefaultTimeout(1500);
@@ -368,6 +412,8 @@ async function main() {
       assert.strictEqual(await failedPage.locator('#retryPlatform').isVisible(), true);
       assert.strictEqual(await failedPage.locator('#retryAgents').isVisible(), true);
       assert.notStrictEqual(await failedPage.locator('#agents-status').textContent(), '没有自己的 Agent');
+      assert.strictEqual(await failedPage.locator('#agents-stale').isHidden(), true, 'first-ever failure has nothing to call stale');
+      assert.deepStrictEqual(await failedPage.evaluate(() => agentListSnapshot.map((a) => a.full_name)), [], 'first-ever failure keeps the Agent snapshot empty');
 
       failPlatformLoad = 'timeout';
       failAgentsLoad = 'timeout';
@@ -403,7 +449,7 @@ async function main() {
       assert.deepStrictEqual(failedConsoleErrors, []);
       await failedPage.close();
     });
-    if (['silent-platform-load','silent-agent-load','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty'].includes(MUTATION)) {
+    if (['silent-platform-load','silent-agent-load','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty','clear-agents-on-failure','agents-ignore-request-order','agents-stale-ignore-order','agents-stale-no-dot','agents-stale-first-failure','agents-stale-on-auth'].includes(MUTATION)) {
       console.log(`console browser harness: passed=${passed} failed=${failures.length}`);
       if (failures.length) console.error(failures.join('\n'));
       process.exitCode = failures.length ? 1 : 0;

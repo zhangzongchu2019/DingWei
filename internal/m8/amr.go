@@ -1,6 +1,7 @@
 package m8
 
 import (
+	"container/heap"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -10,6 +11,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,6 +25,9 @@ import (
 const (
 	ipcBodyAMRMetaKey = "ipc_body_amr_v1"
 	amrRouteBodyMax   = 100_000
+
+	// R-V2-0105 件三：落在已完成回合上的事件，每会话至多每 10 s 打一行聚合日志。
+	amrIgnoredLogInterval = 10 * time.Second
 )
 
 func (h *Hub) routeIPCSendBodyAMR(ctx context.Context, c *sessionClient, original model.Envelope) {
@@ -201,6 +206,68 @@ type amrProcessor struct {
 	turnTTL       time.Duration
 	routeTimeout  time.Duration
 	maxTargets    int
+
+	// R-V2-0105 件三：已完成回合记忆独立于在途回合空闲超时 turnTTL。旧 helper 事件桥会整份重放缓冲，
+	// 完成记忆若短于 R5 去重窗（原 5 分钟＜10 分钟），过期的旧回合会被重开、重路由（dw2 每 720 s 一次）。
+	completedTTL      time.Duration
+	maxCompletedTotal int
+	// 落在已完成回合上的事件按会话聚合计数、限频打印（原为逐条一行，洪流时每秒数千行，dw2 容器日志 78GB 的主因）。
+	ignoredCompleted    map[amrIgnoredKey]int
+	ignoredCompletedLog map[amrIgnoredKey]time.Time
+	// clock 只为测试注入（nil ⇒ time.Now）。
+	clock func() time.Time
+	// 完成表每会话条数的增量计数（R-V2-0105 件三：封顶检查不再整表扫描）。只经 setCompletedLocked／
+	// deleteCompletedLocked 维护；completedTracked 与 len(completed) 不符（有人直接写 map，如老测试）时整表重算一次。
+	completedPerSession map[amrSessionKey]int
+	completedTracked    int
+}
+
+type amrSessionKey struct{ KeyID, Session string }
+
+func (p *amrProcessor) setCompletedLocked(key amrTurnKey, at time.Time) {
+	if _, exists := p.completed[key]; !exists {
+		if p.completedPerSession == nil {
+			p.completedPerSession = map[amrSessionKey]int{}
+		}
+		p.completedPerSession[amrSessionKey{key.KeyID, key.Session}]++
+		p.completedTracked++
+	}
+	p.completed[key] = at
+}
+
+func (p *amrProcessor) deleteCompletedLocked(key amrTurnKey) {
+	if _, exists := p.completed[key]; !exists {
+		return
+	}
+	delete(p.completed, key)
+	sk := amrSessionKey{key.KeyID, key.Session}
+	if n := p.completedPerSession[sk] - 1; n > 0 {
+		p.completedPerSession[sk] = n
+	} else {
+		delete(p.completedPerSession, sk)
+	}
+	p.completedTracked--
+}
+
+func (p *amrProcessor) resyncCompletedCountsLocked() {
+	p.completedPerSession = map[amrSessionKey]int{}
+	for key := range p.completed {
+		p.completedPerSession[amrSessionKey{key.KeyID, key.Session}]++
+	}
+	p.completedTracked = len(p.completed)
+}
+
+// amrIgnoredKey 落在已完成回合上的事件日志聚合键：会话＋counted_late（只用于 reason=completed_turn）。
+type amrIgnoredKey struct {
+	KeyID, Session string
+	Late           bool
+}
+
+func (p *amrProcessor) nowUTC() time.Time {
+	if p.clock != nil {
+		return p.clock().UTC()
+	}
+	return time.Now().UTC()
 }
 
 func newAMRProcessor(h *Hub) *amrProcessor {
@@ -215,12 +282,17 @@ func newAMRProcessor(h *Hub) *amrProcessor {
 		maxTurnAge:   envDuration("WP_AMR_MAX_TURN_AGE", 6*time.Hour),
 		maxBytes:     envInt("WP_AMR_MAX_TURN_BYTES", 256<<10),
 		routeBodyMax: amrRouteBodyMax,
-		maxCompleted: envInt("WP_AMR_MAX_COMPLETED_PER_SESSION", 64),
+		maxCompleted: envInt("WP_AMR_MAX_COMPLETED_PER_SESSION", 4096),
 		turnTTL:      envDuration("WP_AMR_TURN_TTL", 5*time.Minute),
 		routeTimeout: envDuration("WP_AMR_ROUTE_TIMEOUT", 5*time.Second),
 		maxTargets:   envInt("WP_AMR_MAX_TARGETS", 20),
 		stop:         make(chan struct{}),
 		done:         make(chan struct{}),
+
+		completedTTL:        envDuration("WP_AMR_COMPLETED_TTL", 24*time.Hour),
+		maxCompletedTotal:   envInt("WP_AMR_MAX_COMPLETED_TOTAL", 100000),
+		ignoredCompleted:    map[amrIgnoredKey]int{},
+		ignoredCompletedLog: map[amrIgnoredKey]time.Time{},
 	}
 	p.stats.terminalUnknown = map[string]uint64{}
 	p.routeEnvelope = h.RouteEnvelope
@@ -270,7 +342,7 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 		return
 	}
 	key := amrTurnKey{KeyID: keyID, Session: sessionName, DeliveryID: ev.DeliveryID, TurnID: ev.TurnID}
-	now := time.Now().UTC()
+	now := p.nowUTC()
 
 	p.mu.Lock()
 	if _, done := p.completed[key]; done {
@@ -284,9 +356,24 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 		if late {
 			p.stats.lateAfterTerminal++
 		}
+		// R-V2-0105 件三：按会话聚合，每会话至多每 amrIgnoredLogInterval 打一行（带区间内条数）。
+		// counted_late 两类分开聚合：两类各有首行，心跳 late_after_terminal 与日志仍可对上（F8/T-040）。
+		sessionKey := amrIgnoredKey{KeyID: keyID, Session: sessionName, Late: late}
+		if p.ignoredCompleted == nil {
+			p.ignoredCompleted, p.ignoredCompletedLog = map[amrIgnoredKey]int{}, map[amrIgnoredKey]time.Time{}
+		}
+		p.ignoredCompleted[sessionKey]++
+		emit := now.Sub(p.ignoredCompletedLog[sessionKey]) >= amrIgnoredLogInterval
+		count := p.ignoredCompleted[sessionKey]
+		if emit {
+			p.ignoredCompletedLog[sessionKey] = now
+			p.ignoredCompleted[sessionKey] = 0
+		}
 		p.mu.Unlock()
-		log.Printf("amr decision=ignored reason=completed_turn counted_late=%t session=%s delivery_id=%s turn_id=%s kind=%s text_len=%d",
-			late, sessionName, ev.DeliveryID, ev.TurnID, ev.Kind, len(ev.Text))
+		if emit {
+			log.Printf("amr decision=ignored reason=completed_turn counted_late=%t session=%s delivery_id=%s turn_id=%s kind=%s text_len=%d aggregated=%d",
+				late, sessionName, ev.DeliveryID, ev.TurnID, ev.Kind, len(ev.Text), count)
+		}
 		return
 	}
 	t := p.turns[key]
@@ -335,7 +422,7 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 		p.countUnknownTerminalLocked(unknownTerminal)
 	}
 	delete(p.turns, key)
-	p.completed[key] = now
+	p.setCompletedLocked(key, now)
 	p.capCompletedLocked()
 	if !succeeded {
 		p.stats.failed++
@@ -523,7 +610,7 @@ func (p *amrProcessor) evictOldestForSessionLocked(keyID, session string, now ti
 	}
 	if found {
 		delete(p.turns, oldestKey)
-		p.completed[oldestKey] = now
+		p.setCompletedLocked(oldestKey, now)
 		p.capCompletedLocked()
 		p.stats.incomplete++
 		log.Printf("amr decision=incomplete reason=session_capacity_eviction")
@@ -577,48 +664,148 @@ func (p *amrProcessor) expireLocked(now time.Time) {
 				continue
 			}
 			delete(p.turns, key)
-			p.completed[key] = now
+			p.setCompletedLocked(key, now)
 			p.stats.incomplete++
 			log.Printf("amr decision=incomplete reason=turn_ttl")
 			p.queueNoticeLocked(amrNoticeJob{key: key, target: "", reason: "本轮未收到可靠终态，已按 TTL 关闭且不会派送", failure: true})
 		}
 	}
+	completedTTL := p.completedTTL
+	if completedTTL <= 0 {
+		completedTTL = p.turnTTL // 未配置（如字面量构造）时保持旧行为
+	}
 	for key, at := range p.completed {
-		if now.Sub(at) > p.turnTTL {
-			delete(p.completed, key)
+		if now.Sub(at) > completedTTL {
+			p.deleteCompletedLocked(key)
 		}
 	}
 	p.capCompletedLocked()
+	p.flushIgnoredLocked(now, nil)
+}
+
+// flushIgnoredLocked（R-V2-0105 件三，LOG-THROTTLE-DETAIL／LOG-FLUSH-SWEEP）：窗口已过仍有未打计数 ⇒ 补一行汇总；
+// 计数为零且窗口已过 ⇒ 删表项（空闲清理，表随活跃会话有界）。onlySession 非 nil 时强制冲刷并删除该会话全部表项（会话断开）。
+func (p *amrProcessor) flushIgnoredLocked(now time.Time, onlySession *amrTurnKey) {
+	for key, count := range p.ignoredCompleted {
+		closing := onlySession != nil && key.KeyID == onlySession.KeyID && key.Session == onlySession.Session
+		if onlySession != nil && !closing {
+			continue
+		}
+		windowOver := now.Sub(p.ignoredCompletedLog[key]) >= amrIgnoredLogInterval
+		if count > 0 && (closing || windowOver) {
+			flush := "window"
+			if closing {
+				flush = "session_closed"
+			}
+			log.Printf("amr decision=ignored reason=completed_turn counted_late=%t session=%s aggregated=%d flush=%s",
+				key.Late, key.Session, count, flush)
+			p.ignoredCompleted[key] = 0
+			p.ignoredCompletedLog[key] = now
+			count = 0
+		}
+		if closing || (count == 0 && windowOver) {
+			delete(p.ignoredCompleted, key)
+			delete(p.ignoredCompletedLog, key)
+		}
+	}
+}
+
+// sessionClosed 会话断开时补出该会话未冲刷的聚合计数并清表项（计数不丢、表有界）。
+func (p *amrProcessor) sessionClosed(keyID, sessionName string) {
+	if p == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.flushIgnoredLocked(p.nowUTC(), &amrTurnKey{KeyID: keyID, Session: sessionName})
+}
+
+// sweep 定时器一拍：过期清理（含日志汇总冲刷）、心跳统计；随后清一次 R5 去重表（R-V2-0105-R5-SWEEP，不另起定时器）。
+func (p *amrProcessor) sweep(now time.Time) {
+	p.mu.Lock()
+	p.stats.workerHeartbeat = now.UTC()
+	p.expireLocked(now.UTC())
+	p.logStatsLocked()
+	p.mu.Unlock()
+	if p.hub != nil && p.hub.replyDedup != nil {
+		p.hub.replyDedup.Sweep()
+	}
 }
 
 func (p *amrProcessor) capCompletedLocked() {
-	for {
-		counts := map[string]int{}
-		for key := range p.completed {
-			counts[key.KeyID+"\x00"+key.Session]++
-		}
-		var over string
-		for session, count := range counts {
-			if count > p.maxCompleted {
-				over = session
-				break
-			}
-		}
-		if over == "" {
-			return
-		}
-		var oldestKey amrTurnKey
-		var oldestAt time.Time
-		found := false
-		for key, at := range p.completed {
-			if key.KeyID+"\x00"+key.Session == over && (!found || at.Before(oldestAt)) {
-				oldestKey, oldestAt, found = key, at, true
-			}
-		}
-		if found {
-			delete(p.completed, oldestKey)
+	// R-V2-0105 件三（复核要求）：原实现每淘汰一条都重扫整表统计（上限 4096 后最坏 O(N×超出数)）。
+	// 现按增量计数判超限（O(会话数)）；只有确有会话超限时才扫表取该会话条目、按时间批量淘汰最旧的。
+	if p.completedPerSession == nil || p.completedTracked != len(p.completed) {
+		p.resyncCompletedCountsLocked()
+	}
+	over := map[amrSessionKey]int{}
+	for session, count := range p.completedPerSession {
+		if count > p.maxCompleted {
+			over[session] = count - p.maxCompleted
 		}
 	}
+	if len(over) > 0 {
+		bySession := map[amrSessionKey][]amrCompletedEntry{}
+		for key, at := range p.completed {
+			session := amrSessionKey{key.KeyID, key.Session}
+			if _, ok := over[session]; ok {
+				bySession[session] = append(bySession[session], amrCompletedEntry{key, at})
+			}
+		}
+		for session, entries := range bySession {
+			p.evictOldestCompletedLocked(entries, over[session])
+		}
+	}
+	p.capCompletedTotalLocked()
+}
+
+type amrCompletedEntry struct {
+	key amrTurnKey
+	at  time.Time
+}
+
+func (p *amrProcessor) evictOldestCompletedLocked(entries []amrCompletedEntry, n int) {
+	sort.Slice(entries, func(i, j int) bool { return entries[i].at.Before(entries[j].at) })
+	for i := 0; i < n && i < len(entries); i++ {
+		p.deleteCompletedLocked(entries[i].key)
+	}
+}
+
+// capCompletedTotalLocked 全局封顶（每会话上限之外的第二道；要点第十二节：约 300 B／条，10 万条约 30 MB）。
+// 触顶时一次淘汰到上限的 95%（滞后），之后 5% 余量内不再触发——否则表停在上限时每个完成回合都要整表扫一遍只为淘汰一条。
+// 最旧 K 条用大小为 K 的最大堆选出（O(N log K)），不整表排序。
+func (p *amrProcessor) capCompletedTotalLocked() {
+	if p.maxCompletedTotal <= 0 || len(p.completed) <= p.maxCompletedTotal {
+		return
+	}
+	target := p.maxCompletedTotal - p.maxCompletedTotal/20
+	k := len(p.completed) - target
+	h := make(amrCompletedMaxHeap, 0, k)
+	for key, at := range p.completed {
+		if len(h) < k {
+			heap.Push(&h, amrCompletedEntry{key, at})
+		} else if at.Before(h[0].at) {
+			h[0] = amrCompletedEntry{key, at}
+			heap.Fix(&h, 0)
+		}
+	}
+	for _, e := range h {
+		p.deleteCompletedLocked(e.key)
+	}
+}
+
+// amrCompletedMaxHeap 按完成时刻的最大堆：堆顶是已选出的 K 条里最新的那条，遇到更旧的就替换它。
+type amrCompletedMaxHeap []amrCompletedEntry
+
+func (h amrCompletedMaxHeap) Len() int            { return len(h) }
+func (h amrCompletedMaxHeap) Less(i, j int) bool  { return h[i].at.After(h[j].at) }
+func (h amrCompletedMaxHeap) Swap(i, j int)       { h[i], h[j] = h[j], h[i] }
+func (h *amrCompletedMaxHeap) Push(x interface{}) { *h = append(*h, x.(amrCompletedEntry)) }
+func (h *amrCompletedMaxHeap) Pop() interface{} {
+	old := *h
+	e := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return e
 }
 
 func (p *amrProcessor) queueNoticeLocked(notice amrNoticeJob) {
@@ -652,11 +839,7 @@ func (p *amrProcessor) run() {
 		case notice := <-p.noticeQueue:
 			p.notifySource(notice.key, notice.target, notice.reason, notice.failure)
 		case now := <-ticker.C:
-			p.mu.Lock()
-			p.stats.workerHeartbeat = now.UTC()
-			p.expireLocked(now.UTC())
-			p.logStatsLocked()
-			p.mu.Unlock()
+			p.sweep(now)
 		}
 	}
 }

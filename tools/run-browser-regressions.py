@@ -34,6 +34,9 @@ SUITES = (
     ("renderer_storage_denied", "node", ROOT / "view-service/renderer-storage-denied-regression.js"),
     ("terminal_storage_denied", "node", ROOT / "view-service/terminal-storage-denied-regression.js"),
     ("renderer_t086_empty_ring_e2e", "node", ROOT / "view-service/renderer-t086-empty-ring-e2e-regression.js"),
+    ("renderer_replay_seq", "node", ROOT / "view-service/renderer-replay-seq-regression.js"),
+    ("renderer_upload_ticket_timeout", "node", ROOT / "view-service/renderer-upload-ticket-timeout-regression.js"),
+    ("renderer_flood_stress", "node", ROOT / "view-service/renderer-flood-stress-regression.js"),
     ("renderer_c2", "node", ROOT / "view-service/renderer-c2-regression.js"),
     ("console_specs_browser", "node", ROOT / "view-service/console-specs-browser-regression.js"),
     ("console_spec_workflow", "node", ROOT / "view-service/console-spec-workflow-regression.js"),
@@ -53,6 +56,8 @@ OVERRIDE_ENV_NAMES = (
     "FIXTURES", "MOCK_BASE", "MOCK_CERT", "MOCK_KEY", "MOCK_SESSION",
     "HUB_V2_GOLDEN_FILE", "NODE_PATH", "PLAYWRIGHT_BROWSERS_PATH", "PW_CHANNEL",
     "RENDERER_FILE", "RENDERER_OVERRIDE",
+    # renderer_flood_stress：反向期望、读数落盘路径、推入时限（取值固定在套件里，这三项只改判法／落点／时限）
+    "STRESS_EXPECT_MUTANT", "STRESS_READINGS", "STRESS_DEADLINE_S",
 )
 # These are overwritten by the runner before the consumer sees them. They are
 # excluded from the coverage requirement, although caller-supplied values are
