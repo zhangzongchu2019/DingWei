@@ -181,6 +181,14 @@ async function waitConnections(page, count, timeout = 30000) {
         const g2 = turnGroups.get('m-2');
         out.len2 = g2.events.length;
         out.text2 = g2.events.map(e => e.text).join('');
+        // 不同 delivery 的相邻文本：交替两个 delivery，合并不得跨 delivery
+        feed('m-3', 300, i => ({ kind: 'assistant_text', text: `{${i}}`, cursor: String(i).padStart(6, '0'), delivery_id: i % 2 ? 'dA' : 'dB', turn_id: 'm-3', ts: 0 }));
+        const g3 = turnGroups.get('m-3');
+        out.mixed = g3.events.filter(e => e.kind === 'assistant_text').every(e => {
+          const nums = (e.text.match(/\{(\d+)\}/g) || []).map(x => Number(x.slice(1, -1)));
+          return nums.every(n => (n % 2 ? 'dA' : 'dB') === e.delivery_id);
+        });
+        out.text3 = g3.events.filter(e => e.kind === 'assistant_text').slice().sort(compareCursor).map(e => e.text).join('');
         return out;
       });
     }, () => { window.TURN_EVENTS_SOFT_CAP = 100; });
@@ -193,8 +201,13 @@ async function waitConnections(page, count, timeout = 30000) {
       assert.strictEqual(r7.text2, '的'.repeat(250));
     });
 
+    await checks.check('S11 不同 delivery 的相邻文本不合并、各留归属，正文仍逐字相同', async () => {
+      assert.ok(r7.mixed, 'merged text crossed delivery boundary');
+      assert.strictEqual(r7.text3, Array.from({ length: 300 }, (_, i) => `{${i}}`).join(''));
+    });
+
     checks.finish();
-    console.log('R-V2-0105 replay-seq regression: ALL PASS (10/10)');
+    console.log('R-V2-0105 replay-seq regression: ALL PASS (11/11)');
   } finally {
     if (browser) await browser.close();
   }

@@ -3219,7 +3219,9 @@
       for (let i = 0; i < half; i++) {
         const ev = group.events[i];
         const prev = merged[merged.length - 1];
-        if (prev && prev.kind === 'assistant_text' && ev.kind === 'assistant_text') {
+        // 同 delivery 才合并（复核要求：不同投递的文本各留归属，delivery_id 另有用途如 ext- 判定）
+        if (prev && prev.kind === 'assistant_text' && ev.kind === 'assistant_text'
+            && (prev.delivery_id || '') === (ev.delivery_id || '')) {
           merged[merged.length - 1] = { ...prev, text: (prev.text || '') + (ev.text || '') };
         } else {
           merged.push(ev);
