@@ -413,14 +413,16 @@ func TestCompletedCountsResyncAfterDirectMapWrites(t *testing.T) {
 	p := replayGuardProcessor()
 	p.maxCompleted = 10
 	p.mu.Lock()
+	p.setCompletedLocked(amrTurnKey{KeyID: "key", Session: "src", DeliveryID: "seed", TurnID: "t"}, time.Now().Add(-time.Hour)) // 计数表非空
 	for i := 0; i < 15; i++ {
 		p.completed[amrTurnKey{KeyID: "key", Session: "src", DeliveryID: fmt.Sprintf("d%02d", i), TurnID: "t"}] = time.Now().Add(time.Duration(i) * time.Millisecond)
 	}
 	p.capCompletedLocked()
 	n, tracked := len(p.completed), p.completedTracked
 	p.mu.Unlock()
-	if n != 10 || tracked != 10 {
-		t.Fatalf("len=%d tracked=%d want 10/10", n, tracked)
+	_, seed := p.completed[amrTurnKey{KeyID: "key", Session: "src", DeliveryID: "seed", TurnID: "t"}]
+	if n != 10 || tracked != 10 || seed {
+		t.Fatalf("len=%d tracked=%d seed present=%v; want 10/10 and the oldest (seed) evicted", n, tracked, seed)
 	}
 }
 
