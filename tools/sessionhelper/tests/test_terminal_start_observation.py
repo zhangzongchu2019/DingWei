@@ -96,6 +96,39 @@ class TerminalStartTest(unittest.IsolatedAsyncioTestCase):
             task.cancel()
             with self.assertRaises(asyncio.CancelledError): await asyncio.wait_for(task,0.5)
 
+    async def test_send_failure_keeps_original_exception_and_reaps_start(self):
+        entered=asyncio.Event();cleaned=asyncio.Event()
+        class SendFailed(Exception):
+            pass
+        async def start():
+            entered.set()
+            try:
+                await asyncio.Future()
+            finally:
+                await asyncio.sleep(0.01)
+                cleaned.set()
+        first=True
+        async def chunk(timeout):
+            nonlocal first
+            if first:
+                first=False
+                return "booting"
+            await asyncio.sleep(min(timeout,0.02))
+            return ""
+        class WS:
+            async def send(self,value):
+                raise SendFailed("synthetic connection failure")
+        try:
+            await asyncio.wait_for(terminal_method()(helper(SimpleNamespace(start=start,next_terminal_chunk=chunk)),WS()),0.5)
+        except SendFailed:
+            pass
+        except asyncio.CancelledError:
+            self.fail("startup cancellation masked the original send failure")
+        else:
+            self.fail("send failure was not propagated")
+        self.assertTrue(entered.is_set())
+        self.assertTrue(cleaned.is_set())
+
     async def test_completed_start_is_called_once_per_terminal_loop(self):
         calls=[];sent=asyncio.Event()
         async def start(): calls.append(1)

@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-10T09:09:57.352519+00:00",
+  "scope": "test-only G1 delta",
+  "focused_tests": 14,
+  "focused_rc": 0,
+  "new_regression_tests": 1,
+  "mutant_rc": 1,
+  "mutant_failures": 1,
+  "mutant_errors": 0,
+  "app_unchanged_sha256": "5ab081f27faabe658f92592b3403eb05ae86ef53b8790366158da1f203d022ca",
+  "new_test_sha256": "adba0a1d63183f557ca7f96f70d554383f40c96922c5869010eb16c7a7bdb384",
+  "runtime_calls": 0,
+  "independent_CR": "PENDING_DELTA"
+}
