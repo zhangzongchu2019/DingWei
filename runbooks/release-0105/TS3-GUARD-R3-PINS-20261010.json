@@ -1,0 +1,119 @@
+{
+  "utc": "2026-10-10T08:02:36.866492+00:00",
+  "parent": "c4c2ce19c37067dc68f888e10bb2f1b7237d87bb",
+  "helper_tests": 25,
+  "canonical_gate": "PASS 20 python files + 1 shell",
+  "independent_review": "PENDING",
+  "files": [
+    {
+      "path": "tools/sessionhelper/sessionhelper/app.py",
+      "bytes": 77097,
+      "sha256": "c8f5a08a84f281355c2617aebf5e0afd5f55b91c423946490c8e4d3130bac018"
+    },
+    {
+      "path": "tools/sessionhelper/test_supervise_connection_loops.py",
+      "bytes": 7860,
+      "sha256": "e27d667b40fc0db48f14a5d2cba4317829078f639f469b54df37340c1b463d14"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_connection_claim_cancellation.py",
+      "bytes": 7711,
+      "sha256": "a47733172248fea7dd17d67e85747bf8678c579d70e8a97f3121d3a296af42d8"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_connection_receive_quiescence.py",
+      "bytes": 4837,
+      "sha256": "ec1dcfcc13ebf799b66e1915ae62c7e1580b1d01b4eb2d62935bd07d45e942f8"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_connection_reconnect_backoff.py",
+      "bytes": 3152,
+      "sha256": "bd253b2575bfcb6d48dae26bd3be520c2017c2d18fc23606aabb44b1fea4a54a"
+    },
+    {
+      "path": "scripts/run-build-tests.sh",
+      "bytes": 1600,
+      "sha256": "4c10e6909bd42f500fabc3f0934bb5c9ae0e292f8b452a96873df4628ff3def6"
+    },
+    {
+      "path": "deploy/test_build_entrypoints.py",
+      "bytes": 4862,
+      "sha256": "82c5c64c9b78859e044ed56e74a29b5184c614c80507179bfc779819c7eaaf6f"
+    },
+    {
+      "path": "runbooks/release-0105/TS3-GUARD-R3-REVIEW-REWORK-20261010.md",
+      "bytes": 3879,
+      "sha256": "310c942f2fa0aebc71e15c90d4643a3b87977c842ec246ae99d1f87e639f5c5e"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/R3-CANONICAL-GATE-RESULT.json",
+      "bytes": 565,
+      "sha256": "152e27571e6d21faaf17494e747aedae1c314a18015819f9926438b6f0e781c4"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/R3-FINAL-VALIDATION.json",
+      "bytes": 805,
+      "sha256": "88551596e26d1e9c36e86f789cd5f89e56db69d6f99f16ef542d2f43b361c39f"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/R3-VALIDATION.json",
+      "bytes": 1459,
+      "sha256": "c1ed2137d80443e22920e3728fe1c4bd0149811ebfdfa61867437aa775cd1390"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r3-canonical-python-invocation.log",
+      "bytes": 98,
+      "sha256": "f6c0e66f45bbcc42cb1f432a12f5752ff99ae30fcfbd65b5f6dd8ada817aab98"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r3-final-canonical-subset.log",
+      "bytes": 98,
+      "sha256": "da16795b49d7c64a3e1964d15e657e243bbbd66ca651242a0d1eedb99e3dde9d"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r3-final-direct-claim.log",
+      "bytes": 916,
+      "sha256": "871427a1d5e6b8fc1c966b7a79a7eb649fa5ecbf3f6be6f40a7625a925103b2e"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r3-final-no_pre_dispatch_release-mutant.log",
+      "bytes": 2377,
+      "sha256": "2d383ee69b83a544f0b6e605a7db94d924724375eccbb8fb912779784c8f7f3d"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r3-final-worker_wiring-mutant.log",
+      "bytes": 2340,
+      "sha256": "428c580edce671058c5cac961e813c73ae24427d8ebd03fdc34a3193003a0933"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r3-test_connection_claim_cancellation-direct.log",
+      "bytes": 604,
+      "sha256": "17f100e4c00b543f009e6a3f91d30028b0cc14de5d99ec87af41ffce337efce4"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r3-test_connection_receive_quiescence-direct.log",
+      "bytes": 103,
+      "sha256": "db44fe5aaccd2a2429774b21132c86d841ad99c7d8bc543a1044827976fc0ed0"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r3-test_connection_reconnect_backoff-direct.log",
+      "bytes": 665,
+      "sha256": "3589f7176e7e639ebda0a6a8a2b19a9cab29047d1ff183cc5af48dc79254f28b"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r3-test_supervise_connection_loops-direct.log",
+      "bytes": 1644,
+      "sha256": "b148557c48696148f4b8845eb687e1149441aef88c6149bff8d252813db17167"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r3-worker-wiring-mutant.log",
+      "bytes": 2039,
+      "sha256": "a3411744d8a2844498c1f30d989b63303b538b880e630b1279bf9bdcd8323c25"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r3-canonical-gate-tail.log",
+      "bytes": 6417,
+      "sha256": "ed3889addf3d20d0a92810717ec46e124bb4d19d6872ffeacdb99f9b37275f3e"
+    }
+  ]
+}

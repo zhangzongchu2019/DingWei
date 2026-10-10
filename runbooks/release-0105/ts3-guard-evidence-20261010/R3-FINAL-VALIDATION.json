@@ -1,0 +1,31 @@
+{
+  "utc": "2026-10-10T08:01:06.189940+00:00",
+  "helper_tests": 25,
+  "build_entry_tests": 9,
+  "results": [
+    {
+      "case": "final-canonical-subset",
+      "rc": 0,
+      "sha256": "da16795b49d7c64a3e1964d15e657e243bbbd66ca651242a0d1eedb99e3dde9d"
+    },
+    {
+      "case": "final-direct-claim",
+      "rc": 0,
+      "sha256": "871427a1d5e6b8fc1c966b7a79a7eb649fa5ecbf3f6be6f40a7625a925103b2e"
+    },
+    {
+      "case": "worker_wiring",
+      "rc": 1,
+      "caught": true,
+      "zero_errors": true,
+      "sha256": "428c580edce671058c5cac961e813c73ae24427d8ebd03fdc34a3193003a0933"
+    },
+    {
+      "case": "no_pre_dispatch_release",
+      "rc": 1,
+      "caught": true,
+      "zero_errors": true,
+      "sha256": "2d383ee69b83a544f0b6e605a7db94d924724375eccbb8fb912779784c8f7f3d"
+    }
+  ]
+}

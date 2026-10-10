@@ -11,6 +11,10 @@ PYTHONPATH="$ROOT/view-service${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHONPATH
 
 PYTHON_TESTS='
+tools/sessionhelper/test_supervise_connection_loops.py
+tools/sessionhelper/tests/test_connection_receive_quiescence.py
+tools/sessionhelper/tests/test_connection_reconnect_backoff.py
+tools/sessionhelper/tests/test_connection_claim_cancellation.py
 deploy/image/supervisord/test_verify_supervisor_template.py
 deploy/ops/hosted-image/test_start.py
 deploy/test_build_entrypoints.py
@@ -38,4 +42,4 @@ done
 
 echo "TEST shell $SHELL_TEST"
 bash "$SHELL_TEST"
-echo 'BUILD_TESTS_OK python=16 shell=1'
+echo 'BUILD_TESTS_OK python=20 shell=1'

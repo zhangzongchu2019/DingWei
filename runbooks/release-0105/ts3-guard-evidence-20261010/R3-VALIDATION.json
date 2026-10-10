@@ -1,0 +1,44 @@
+[
+  {
+    "case": "canonical-python-invocation",
+    "Tstart": "2026-10-10T07:59:33.865158+00:00",
+    "Tend": "2026-10-10T07:59:34.739259+00:00",
+    "rc": 0,
+    "sha256": "f6c0e66f45bbcc42cb1f432a12f5752ff99ae30fcfbd65b5f6dd8ada817aab98"
+  },
+  {
+    "case": "test_supervise_connection_loops-direct",
+    "Tstart": "2026-10-10T07:59:34.739322+00:00",
+    "Tend": "2026-10-10T07:59:35.208774+00:00",
+    "rc": 0,
+    "sha256": "b148557c48696148f4b8845eb687e1149441aef88c6149bff8d252813db17167"
+  },
+  {
+    "case": "test_connection_receive_quiescence-direct",
+    "Tstart": "2026-10-10T07:59:35.208819+00:00",
+    "Tend": "2026-10-10T07:59:35.428746+00:00",
+    "rc": 0,
+    "sha256": "db44fe5aaccd2a2429774b21132c86d841ad99c7d8bc543a1044827976fc0ed0"
+  },
+  {
+    "case": "test_connection_reconnect_backoff-direct",
+    "Tstart": "2026-10-10T07:59:35.428785+00:00",
+    "Tend": "2026-10-10T07:59:35.700498+00:00",
+    "rc": 0,
+    "sha256": "3589f7176e7e639ebda0a6a8a2b19a9cab29047d1ff183cc5af48dc79254f28b"
+  },
+  {
+    "case": "test_connection_claim_cancellation-direct",
+    "Tstart": "2026-10-10T07:59:35.700537+00:00",
+    "Tend": "2026-10-10T07:59:35.901901+00:00",
+    "rc": 0,
+    "sha256": "17f100e4c00b543f009e6a3f91d30028b0cc14de5d99ec87af41ffce337efce4"
+  },
+  {
+    "case": "worker-wiring-mutant",
+    "rc": 1,
+    "caught": true,
+    "zero_errors": true,
+    "sha256": "a3411744d8a2844498c1f30d989b63303b538b880e630b1279bf9bdcd8323c25"
+  }
+]

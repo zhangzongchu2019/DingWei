@@ -51,6 +51,19 @@ class BuildEntrypointContractTest(unittest.TestCase):
             with self.subTest(test_file=test_file):
                 self.assertEqual(runner.count(test_file), 1, f"测试未接线或重复接线: {test_file}")
 
+    def test_ts3_helper_regressions_are_wired_once(self):
+        runner = self.read("scripts/run-build-tests.sh")
+        for test_file in (
+            "tools/sessionhelper/test_supervise_connection_loops.py",
+            "tools/sessionhelper/tests/test_connection_receive_quiescence.py",
+            "tools/sessionhelper/tests/test_connection_reconnect_backoff.py",
+            "tools/sessionhelper/tests/test_connection_claim_cancellation.py",
+        ):
+            with self.subTest(test_file=test_file):
+                self.assertEqual(runner.count(test_file), 1)
+                self.assertIn('if __name__ == "__main__":', self.read(test_file))
+                self.assertIn("unittest.main(", self.read(test_file))
+
     def test_build_make_and_ci_share_the_canonical_test_entrypoint(self):
         self.assertIn("./scripts/run-build-tests.sh", self.read("build.sh"))
         makefile = self.read("Makefile")

@@ -70,3 +70,7 @@ class ReconnectBackoff(unittest.IsolatedAsyncioTestCase):
     async def test_producer_finishes_without_reconnect(self):
         sleeps, calls = await self.run_schedule([0.1], producer=True)
         self.assertEqual((sleeps, calls), ([], 1))
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

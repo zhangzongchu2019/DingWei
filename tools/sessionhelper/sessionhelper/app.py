@@ -961,20 +961,28 @@ class SessionHelper:
                 await asyncio.sleep(0.2)
                 continue
             delivery_id, env = item
-            if self.cfg.mode == "cli" and hasattr(self.adapter, "is_idle"):
-                try:
-                    idle = bool(await asyncio.to_thread(self.adapter.is_idle))
-                except Exception:
-                    idle = True
-                if not idle:
-                    await asyncio.to_thread(self.delivery_inbox.release, delivery_id)
-                    if delivery_id not in self.delivery_busy_acked:
-                        self.delivery_busy_acked.add(delivery_id)
-                        await ws.send(json.dumps(self.delivery_ack(
-                            delivery_id, "busy", reason="cli_busy", retryable=True
-                        ), ensure_ascii=False))
-                    await asyncio.sleep(0.75)
-                    continue
+            try:
+                if self.cfg.mode == "cli" and hasattr(self.adapter, "is_idle"):
+                    try:
+                        idle = bool(await asyncio.to_thread(self.adapter.is_idle))
+                    except Exception:
+                        idle = True
+                    if not idle:
+                        await asyncio.to_thread(self.delivery_inbox.release, delivery_id)
+                        if delivery_id not in self.delivery_busy_acked:
+                            self.delivery_busy_acked.add(delivery_id)
+                            await ws.send(json.dumps(self.delivery_ack(
+                                delivery_id, "busy", reason="cli_busy", retryable=True
+                            ), ensure_ascii=False))
+                        await asyncio.sleep(0.75)
+                        continue
+            except asyncio.CancelledError:
+                # Still before process_inbound_message: this item has not been
+                # handed to injection. Release only this exact claim; busy
+                # release is idempotent and never changes completed records.
+                recovery = asyncio.create_task(asyncio.to_thread(self.delivery_inbox.release, delivery_id))
+                await asyncio.shield(recovery)
+                raise
             try:
                 loop = asyncio.get_running_loop()
                 injected_sent = False

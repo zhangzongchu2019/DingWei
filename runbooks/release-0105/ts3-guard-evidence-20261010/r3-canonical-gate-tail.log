@@ -1,0 +1,123 @@
+----------------------------------------------------------------------
+Ran 6 tests in 0.070s
+
+OK
+TEST python deploy/image/supervisord/test_verify_supervisor_template.py
+----------------------------------------------------------------------
+Ran 15 tests in 1.410s
+
+OK
+TEST python deploy/ops/hosted-image/test_start.py
+----------------------------------------------------------------------
+Ran 20 tests in 1.924s
+
+OK
+TEST python deploy/test_build_entrypoints.py
+----------------------------------------------------------------------
+Ran 9 tests in 0.005s
+
+OK
+TEST python deploy/test_file_service_deploy.py
+----------------------------------------------------------------------
+Ran 9 tests in 0.001s
+
+OK
+TEST python deploy/test_generate_console_seed.py
+/data/ai-dev-data/ts3-duplicate-send-guard-20261010/deploy/test_generate_console_seed.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpaj_f4wgs/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/ts3-duplicate-send-guard-20261010/deploy/test_generate_console_seed.py:116: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmp_1rhx4xq/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/ts3-duplicate-send-guard-20261010/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpawsfvt8_/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/ts3-duplicate-send-guard-20261010/deploy/test_generate_console_seed.py:72: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmp3gte_mri/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/ts3-duplicate-send-guard-20261010/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmp3gte_mri/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/ts3-duplicate-send-guard-20261010/deploy/test_generate_console_seed.py:100: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpn9veic4n/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/ts3-duplicate-send-guard-20261010/deploy/test_generate_console_seed.py:161: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpaxvg8mda/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 14 tests in 0.802s
+
+OK
+TEST python deploy/test_invariants_alert_route.py
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+TEST python deploy/test_invariants_expected_hashes.py
+----------------------------------------------------------------------
+Ran 6 tests in 0.043s
+
+OK
+TEST python deploy/test_preview_console.py
+/data/ai-dev-data/ts3-duplicate-send-guard-20261010/deploy/test_preview_console.py:78: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/ts3-duplicate-send-guard-20261010/internal/store/console_auth.go' mode='r' encoding='utf-8'>
+  go = open(PROD_GO, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/ts3-duplicate-send-guard-20261010/deploy/test_preview_console.py:83: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/ts3-duplicate-send-guard-20261010/deploy/preview_console_for_principal.py' mode='r' encoding='utf-8'>
+  tool = open(TOOL, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 9 tests in 0.424s
+
+OK
+TEST python deploy/test_validate_console_seed.py
+----------------------------------------------------------------------
+Ran 11 tests in 0.521s
+
+OK
+TEST python view-service/test_check_public_view_deploy.py
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+TEST python view-service/test_md_render_core.py
+----------------------------------------------------------------------
+Ran 12 tests in 0.697s
+
+OK
+TEST python view-service/test_provenance_flag_injection.py
+----------------------------------------------------------------------
+Ran 8 tests in 0.685s
+
+OK
+TEST python view-service/test_renderer_iter2.py
+----------------------------------------------------------------------
+Ran 7 tests in 0.018s
+
+OK
+TEST python view-service/test_view_page_store.py
+----------------------------------------------------------------------
+Ran 13 tests in 1.700s
+
+OK
+TEST python view-service/test_view_service.py
+----------------------------------------------------------------------
+Ran 39 tests in 0.042s
+
+OK
+TEST python view-service/test_view_unlock_v2_integration.py
+----------------------------------------------------------------------
+Ran 1 test in 1.080s
+
+OK
+TEST shell deploy/test-view-service-release.sh
+PACKAGED commit=161d98c6079d9c0b1d2c99b59fe35963cd9bcd9f files=3 output=/tmp/tmp.PFDkdlXa88/pkg
+VERIFIED files=3 expected_commit=161d98c6079d9c0b1d2c99b59fe35963cd9bcd9f
+PACKAGED commit=8806fd0afd1bc276092416fdf39fcc598aca3e53 files=3 output=/tmp/tmp.PFDkdlXa88/old
+PACKAGED commit=161d98c6079d9c0b1d2c99b59fe35963cd9bcd9f files=3 output=/tmp/tmp.PFDkdlXa88/install-pkg
+PACKAGED commit=bed006482bb84bd6a71a0dc44da249abf413126e files=3 output=/tmp/tmp.PFDkdlXa88/static-pkg
+PACKAGED commit=72bd2b6ca006317b3d34e1666f195f8f7c13532e files=3 output=/tmp/tmp.PFDkdlXa88/two-pkg
+PACKAGED commit=1b6ae1567042eaf122d29569405d11f8233f50d0 files=3 output=/tmp/tmp.PFDkdlXa88/all-pkg
+PACKAGED commit=21b70aa1e9562b862f02e9666998fadbbbfca203 files=3 output=/tmp/tmp.PFDkdlXa88/fail-pkg
+PACKAGED commit=b0513c418b60967f78a5735c92ca7c9e347a4619 files=3 output=/tmp/tmp.PFDkdlXa88/unhealthy-pkg
+PASS view-service release core
+BUILD_TESTS_OK python=20 shell=1

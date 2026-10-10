@@ -1,0 +1,10 @@
+{
+  "recorded_utc": "2026-10-10T08:02:36.866492+00:00",
+  "command": "env -i PATH=/usr/bin:/bin LANG=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 ./scripts/run-build-tests.sh",
+  "rc": 0,
+  "completion": "BUILD_TESTS_OK python=20 shell=1",
+  "helper_tests": 25,
+  "full_python_test_count": 202,
+  "output_capture": "tool output; stored tail excludes first 4 helper headings",
+  "limits": "Existing seed/preview tests emit ResourceWarning for unclosed local fixture/source files; all tests passed. Local test fixtures/processes only; no production deployment or runtime GO."
+}
