@@ -1,0 +1,18 @@
+test_cancellation_propagates_to_all (test_supervise_connection_loops.SuperviseConnectionLoops.test_cancellation_propagates_to_all)
+③ 外部取消 supervise 本身时,子循环同样要收掉(重启/退出路径)。 ... ok
+test_clean_receive_eof_cancels_siblings (test_supervise_connection_loops.SuperviseConnectionLoops.test_clean_receive_eof_cancels_siblings)
+A normal WebSocket iterator EOF must close this connection generation. ... ok
+test_empty_worker_list_returns (test_supervise_connection_loops.SuperviseConnectionLoops.test_empty_worker_list_returns) ... ok
+test_normal_sender_exit_also_closes_generation (test_supervise_connection_loops.SuperviseConnectionLoops.test_normal_sender_exit_also_closes_generation) ... ok
+test_original_exception_still_propagates (test_supervise_connection_loops.SuperviseConnectionLoops.test_original_exception_still_propagates)
+② 语义不得变:第一个异常照样向外抛,外层重连逻辑依赖它。 ... ok
+test_positive_control_bare_gather_still_leaks (test_supervise_connection_loops.SuperviseConnectionLoops.test_positive_control_bare_gather_still_leaks)
+④ 阳性对照:同样场景下,**裸 gather** 必须仍然泄漏。 ... ok
+test_siblings_are_cancelled_when_one_raises (test_supervise_connection_loops.SuperviseConnectionLoops.test_siblings_are_cancelled_when_one_raises)
+① 核心:一个循环抛异常后,兄弟循环必须停,不得带着死 ws 继续跑。 ... ok
+test_twenty_clean_disconnects_leave_no_old_workers (test_supervise_connection_loops.SuperviseConnectionLoops.test_twenty_clean_disconnects_leave_no_old_workers) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.333s
+
+OK

@@ -1,0 +1,50 @@
+test_buffered_guide_burst_does_not_starve_other_tasks (test_connection_receive_quiescence.ReceiveQuiescence.test_buffered_guide_burst_does_not_starve_other_tasks) ... ok
+test_log_resets_per_connection_and_business_still_arrives (test_connection_receive_quiescence.ReceiveQuiescence.test_log_resets_per_connection_and_business_still_arrives) ... FAIL
+test_normal_business_has_no_guide_warning (test_connection_receive_quiescence.ReceiveQuiescence.test_normal_business_has_no_guide_warning) ... ok
+test_repeated_guides_are_not_injected_sent_or_logged_per_frame (test_connection_receive_quiescence.ReceiveQuiescence.test_repeated_guides_are_not_injected_sent_or_logged_per_frame) ... FAIL
+test_roster_control_remains_non_injecting (test_connection_receive_quiescence.ReceiveQuiescence.test_roster_control_remains_non_injecting) ... ok
+
+======================================================================
+FAIL: test_log_resets_per_connection_and_business_still_arrives (test_connection_receive_quiescence.ReceiveQuiescence.test_log_resets_per_connection_and_business_still_arrives)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-guard-mutant-bky0ee5c/tests/test_connection_receive_quiescence.py", line 110, in test_log_resets_per_connection_and_business_still_arrives
+    self.assertEqual(output.getvalue().count("skipped cli injection for repeated client guide"), 2)
+AssertionError: 4 != 2
+
+======================================================================
+FAIL: test_repeated_guides_are_not_injected_sent_or_logged_per_frame (test_connection_receive_quiescence.ReceiveQuiescence.test_repeated_guides_are_not_injected_sent_or_logged_per_frame)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-guard-mutant-bky0ee5c/tests/test_connection_receive_quiescence.py", line 91, in test_repeated_guides_are_not_injected_sent_or_logged_per_frame
+    self.assertEqual(output.getvalue().count("skipped cli injection for repeated client guide"), 1)
+AssertionError: 200 != 1
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.061s
+
+FAILED (failures=2)

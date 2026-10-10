@@ -1,0 +1,10 @@
+test_buffered_guide_burst_does_not_starve_other_tasks (test_connection_receive_quiescence.ReceiveQuiescence.test_buffered_guide_burst_does_not_starve_other_tasks) ... ok
+test_log_resets_per_connection_and_business_still_arrives (test_connection_receive_quiescence.ReceiveQuiescence.test_log_resets_per_connection_and_business_still_arrives) ... ok
+test_normal_business_has_no_guide_warning (test_connection_receive_quiescence.ReceiveQuiescence.test_normal_business_has_no_guide_warning) ... ok
+test_repeated_guides_are_not_injected_sent_or_logged_per_frame (test_connection_receive_quiescence.ReceiveQuiescence.test_repeated_guides_are_not_injected_sent_or_logged_per_frame) ... ok
+test_roster_control_remains_non_injecting (test_connection_receive_quiescence.ReceiveQuiescence.test_roster_control_remains_non_injecting) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.063s
+
+OK
