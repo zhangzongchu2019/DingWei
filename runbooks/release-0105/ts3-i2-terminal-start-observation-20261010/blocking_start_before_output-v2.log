@@ -1,0 +1,45 @@
+======================================================================
+FAIL: test_startup_output_is_visible_before_start_finishes (tools.sessionhelper.tests.test_terminal_start_observation.TerminalStartTest.test_startup_output_is_visible_before_start_finishes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/data/ai-dev-data/ts3-terminal-start-observation-20261010/tools/sessionhelper/tests/test_terminal_start_observation.py", line 89, in test_startup_output_is_visible_before_start_finishes
+    await asyncio.wait_for(sent.wait(),0.5)
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+  File "/usr/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/ts3-terminal-start-observation-20261010/tools/sessionhelper/tests/test_terminal_start_observation.py", line 91, in test_startup_output_is_visible_before_start_finishes
+    self.fail("startup output was blocked until start finished")
+AssertionError: startup output was blocked until start finished
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.803s
+
+FAILED (failures=1)

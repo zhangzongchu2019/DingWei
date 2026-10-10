@@ -1,0 +1,24 @@
+======================================================================
+FAIL: test_cancellation_reaps_pending_start_coroutine (tools.sessionhelper.tests.test_terminal_start_observation.TerminalStartTest.test_cancellation_reaps_pending_start_coroutine)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/ts3-terminal-start-observation-20261010/tools/sessionhelper/tests/test_terminal_start_observation.py", line 69, in test_cancellation_reaps_pending_start_coroutine
+    self.assertTrue(cleaned.is_set())
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.278s
+
+FAILED (failures=1)
