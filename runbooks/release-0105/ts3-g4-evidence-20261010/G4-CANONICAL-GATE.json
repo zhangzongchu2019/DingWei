@@ -1,0 +1,10 @@
+{
+  "Tstart": "2026-10-10T08:22:11.076560+00:00",
+  "Tend": "2026-10-10T08:22:27.374324+00:00",
+  "rc": 0,
+  "stdout_stderr_sha256": "f885bef9680e2a64244af5f59d95ab04a4c549ddebf3eaffcb1978c51dac59ee",
+  "completion": "BUILD_TESTS_OK python=20 shell=1",
+  "helper_tests": 27,
+  "Python_cases": 204,
+  "runtime": "local test fixtures only; no production deployment"
+}

@@ -2,13 +2,14 @@
 import ast
 import asyncio
 import copy
+import json
 from pathlib import Path
 import threading
 from types import SimpleNamespace
 import unittest
 
 APP = Path(__file__).resolve().parents[1] / "sessionhelper" / "app.py"
-namespace = {"asyncio": asyncio}
+namespace = {"asyncio": asyncio, "json": json}
 tree = ast.parse(APP.read_text())
 for name in ("supervise_connection_loops", "claim_delivery_for_connection"):
     node = next(n for n in tree.body if isinstance(n, ast.AsyncFunctionDef) and n.name == name)
@@ -130,6 +131,77 @@ class ClaimCancellation(unittest.IsolatedAsyncioTestCase):
                 await asyncio.wait_for(task, 1.0)
             self.assertEqual(released, [], "already-dispatched work must not be auto-replayed")
         finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    async def test_busy_ack_or_cooldown_cancel_does_not_release_other_claim(self):
+        for block_ack in (True, False):
+            with self.subTest(block_ack=block_ack):
+                ready = asyncio.Event()
+                state = {"value": "received", "release_calls": 0, "injected": False}
+                def claim_next():
+                    state["value"] = "our-processing"
+                    return "D", {}
+                def release(ident):
+                    self.assertEqual(ident, "D")
+                    state["release_calls"] += 1
+                    state["value"] = "received"
+                async def send(payload):
+                    # A second claimant acquired the row after our busy release.
+                    state["value"] = "other-processing"
+                    ready.set()
+                    if block_ack:
+                        await asyncio.Future()
+                async def process(*args, **kwargs):
+                    state["injected"] = True
+                h = SimpleNamespace(delivery_inbox=SimpleNamespace(claim_next=claim_next, release=release),
+                                    cfg=SimpleNamespace(mode="cli"), adapter=SimpleNamespace(is_idle=lambda: False),
+                                    delivery_busy_acked=set(), delivery_ack=lambda *a, **k: {},
+                                    process_inbound_message=process)
+                task = asyncio.create_task(worker(h, SimpleNamespace(send=send)))
+                try:
+                    await asyncio.wait_for(ready.wait(), 1.0)
+                    self.assertEqual(state["release_calls"], 1)
+                    task.cancel()
+                    with self.assertRaises(asyncio.CancelledError):
+                        await asyncio.wait_for(task, 1.0)
+                    self.assertEqual(state, {"value": "other-processing", "release_calls": 1, "injected": False})
+                finally:
+                    task.cancel()
+                    await asyncio.gather(task, return_exceptions=True)
+
+    async def test_cancel_during_busy_release_waits_without_second_release(self):
+        started, finish = threading.Event(), threading.Event()
+        lock = threading.Lock()
+        state = {"value": "our-processing", "release_calls": 0}
+        def release(ident):
+            self.assertEqual(ident, "D")
+            with lock:
+                state["release_calls"] += 1
+                call = state["release_calls"]
+            if call == 1:
+                started.set()
+                if not finish.wait(1.0):
+                    raise TimeoutError("synthetic busy release not unblocked")
+                state["value"] = "other-processing"
+            else:
+                state["value"] = "received"
+        h = SimpleNamespace(delivery_inbox=SimpleNamespace(claim_next=lambda: ("D", {}), release=release),
+                            cfg=SimpleNamespace(mode="cli"), adapter=SimpleNamespace(is_idle=lambda: False),
+                            delivery_busy_acked=set())
+        task = asyncio.create_task(worker(h, None))
+        try:
+            self.assertTrue(await asyncio.to_thread(started.wait, 1.0))
+            task.cancel()
+            await asyncio.sleep(0.02)
+            self.assertFalse(task.done(), "cancellation returned while busy release still ran")
+            self.assertEqual(state["release_calls"], 1, "cancel recovery launched a second release")
+            finish.set()
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.wait_for(task, 1.0)
+            self.assertEqual(state, {"value": "other-processing", "release_calls": 1})
+        finally:
+            finish.set()
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
 

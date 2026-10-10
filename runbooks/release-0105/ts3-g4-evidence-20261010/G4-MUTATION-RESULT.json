@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-10T08:22:10.988759+00:00",
+  "results": [
+    {
+      "mutation": "always_new_release",
+      "rc": 1,
+      "zero_errors": true,
+      "sha256": "cf06fbfd3e9df0867d458d5295ec18a9afdf1e68bfb87493af21149d5f7b7dc7"
+    },
+    {
+      "mutation": "unshield_busy_release",
+      "rc": 1,
+      "zero_errors": true,
+      "sha256": "5d3b81d5e12620c71d23be6bfd9618089f86139632c25714ddd289ec5f850020"
+    },
+    {
+      "mutation": "R3_original",
+      "rc": 1,
+      "zero_errors": true,
+      "sha256": "1188c988f2a6f47a0ec544e1b24787c48d9229356c5bb5595aafa518402288c7"
+    }
+  ]
+}

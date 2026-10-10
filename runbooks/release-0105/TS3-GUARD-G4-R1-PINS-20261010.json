@@ -1,0 +1,70 @@
+{
+  "utc": "2026-10-10T08:23:37.866665+00:00",
+  "parent": "87f30ea9d977c8a633930777d31462b8b85d2c10",
+  "independent_review": "PENDING",
+  "helper_tests": 27,
+  "complete_gate": "PASS python20files/204cases+1shell",
+  "runtime_dispatches": 0,
+  "files": [
+    {
+      "path": "tools/sessionhelper/sessionhelper/app.py",
+      "bytes": 77274,
+      "sha256": "9e3916cb9f1335eb535f889f14447d33afa338771fef8218b76c003577c7c135"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_connection_claim_cancellation.py",
+      "bytes": 11489,
+      "sha256": "7705f7ff800f450646423d8c8b5a791274b780f720da8fa284f96620a4d5ecc6"
+    },
+    {
+      "path": "runbooks/release-0105/TS3-GUARD-G4-R1-20261010.md",
+      "bytes": 3511,
+      "sha256": "b007d29720575415b61af6a982312445997787a97cc12f8cfea3163687b8a53e"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-g4-evidence-20261010/G4-BASELINE.json",
+      "bytes": 221,
+      "sha256": "e2c932d83f632f5c325b051daf410db3cb495571a46ae3dde8323c99d33a4db1"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-g4-evidence-20261010/G4-BASELINE.log",
+      "bytes": 5285,
+      "sha256": "7e5e7029a2021693367d89bf754209dfffbfa6d1bae95a5a9d072f927ca123db"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-g4-evidence-20261010/G4-CANONICAL-GATE.json",
+      "bytes": 366,
+      "sha256": "5257814eac92daf04fa86067715e6d446600c5a04038bfd8a73e1cf8519e3de1"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-g4-evidence-20261010/G4-CANONICAL-GATE.log",
+      "bytes": 7002,
+      "sha256": "f885bef9680e2a64244af5f59d95ab04a4c549ddebf3eaffcb1978c51dac59ee"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-g4-evidence-20261010/G4-MUTATION-RESULT.json",
+      "bytes": 597,
+      "sha256": "9e13ce7dd41d0325b948d774104cdff5d9d3f9a7a024073eda2bf3560aa3976f"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-g4-evidence-20261010/R3_original.log",
+      "bytes": 4966,
+      "sha256": "1188c988f2a6f47a0ec544e1b24787c48d9229356c5bb5595aafa518402288c7"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-g4-evidence-20261010/always_new_release.log",
+      "bytes": 4966,
+      "sha256": "cf06fbfd3e9df0867d458d5295ec18a9afdf1e68bfb87493af21149d5f7b7dc7"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-g4-evidence-20261010/source-and-test.diff",
+      "bytes": 7159,
+      "sha256": "33026464873e047db26837ce9108cfd2322fbbcbe5ca694e6b22f7ab0c357318"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-g4-evidence-20261010/unshield_busy_release.log",
+      "bytes": 2544,
+      "sha256": "5d3b81d5e12620c71d23be6bfd9618089f86139632c25714ddd289ec5f850020"
+    }
+  ]
+}

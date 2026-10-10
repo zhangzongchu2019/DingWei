@@ -1,0 +1,63 @@
+test_actual_worker_cancellation_after_dispatch_does_not_requeue (__main__.ClaimCancellation.test_actual_worker_cancellation_after_dispatch_does_not_requeue) ... ok
+test_actual_worker_cancelled_during_idle_check_releases (__main__.ClaimCancellation.test_actual_worker_cancelled_during_idle_check_releases) ... ok
+test_actual_worker_releases_cancelled_claim (__main__.ClaimCancellation.test_actual_worker_releases_cancelled_claim) ... ok
+test_busy_ack_or_cooldown_cancel_does_not_release_other_claim (__main__.ClaimCancellation.test_busy_ack_or_cooldown_cancel_does_not_release_other_claim) ... 
+  test_busy_ack_or_cooldown_cancel_does_not_release_other_claim (__main__.ClaimCancellation.test_busy_ack_or_cooldown_cancel_does_not_release_other_claim) (block_ack=True) ... FAIL
+  test_busy_ack_or_cooldown_cancel_does_not_release_other_claim (__main__.ClaimCancellation.test_busy_ack_or_cooldown_cancel_does_not_release_other_claim) (block_ack=False) ... FAIL
+test_cancel_during_busy_release_waits_without_second_release (__main__.ClaimCancellation.test_cancel_during_busy_release_waits_without_second_release) ... FAIL
+test_cancel_empty_claim_does_not_release (__main__.ClaimCancellation.test_cancel_empty_claim_does_not_release) ... ok
+test_clean_eof_waits_for_claim_and_releases_before_return (__main__.ClaimCancellation.test_clean_eof_waits_for_claim_and_releases_before_return) ... ok
+test_success_keeps_claim_for_dispatch (__main__.ClaimCancellation.test_success_keeps_claim_for_dispatch) ... ok
+
+======================================================================
+FAIL: test_busy_ack_or_cooldown_cancel_does_not_release_other_claim (__main__.ClaimCancellation.test_busy_ack_or_cooldown_cancel_does_not_release_other_claim) (block_ack=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/ts3-g4-guard-mutant-ml3kvpu2/tests/test_connection_claim_cancellation.py", line 168, in test_busy_ack_or_cooldown_cancel_does_not_release_other_claim
+    self.assertEqual(state, {"value": "other-processing", "release_calls": 1, "injected": False})
+AssertionError: {'value': 'received', 'release_calls': 2, 'injected': False} != {'value': 'other-processing', 'release_calls': 1, 'injected': False}
+- {'injected': False, 'release_calls': 2, 'value': 'received'}
+?                                      ^             ^   ^^^
+
++ {'injected': False, 'release_calls': 1, 'value': 'other-processing'}
+?                                      ^            ++++ ^^^^  ++ ^^
+
+
+======================================================================
+FAIL: test_busy_ack_or_cooldown_cancel_does_not_release_other_claim (__main__.ClaimCancellation.test_busy_ack_or_cooldown_cancel_does_not_release_other_claim) (block_ack=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/ts3-g4-guard-mutant-ml3kvpu2/tests/test_connection_claim_cancellation.py", line 168, in test_busy_ack_or_cooldown_cancel_does_not_release_other_claim
+    self.assertEqual(state, {"value": "other-processing", "release_calls": 1, "injected": False})
+AssertionError: {'value': 'received', 'release_calls': 2, 'injected': False} != {'value': 'other-processing', 'release_calls': 1, 'injected': False}
+- {'injected': False, 'release_calls': 2, 'value': 'received'}
+?                                      ^             ^   ^^^
+
++ {'injected': False, 'release_calls': 1, 'value': 'other-processing'}
+?                                      ^            ++++ ^^^^  ++ ^^
+
+
+======================================================================
+FAIL: test_cancel_during_busy_release_waits_without_second_release (__main__.ClaimCancellation.test_cancel_during_busy_release_waits_without_second_release)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-g4-guard-mutant-ml3kvpu2/tests/test_connection_claim_cancellation.py", line 197, in test_cancel_during_busy_release_waits_without_second_release
+    self.assertFalse(task.done(), "cancellation returned while busy release still ran")
+AssertionError: True is not false : cancellation returned while busy release still ran
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.097s
+
+FAILED (failures=3)

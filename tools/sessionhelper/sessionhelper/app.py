@@ -961,6 +961,7 @@ class SessionHelper:
                 await asyncio.sleep(0.2)
                 continue
             delivery_id, env = item
+            release_task = None
             try:
                 if self.cfg.mode == "cli" and hasattr(self.adapter, "is_idle"):
                     try:
@@ -968,7 +969,8 @@ class SessionHelper:
                     except Exception:
                         idle = True
                     if not idle:
-                        await asyncio.to_thread(self.delivery_inbox.release, delivery_id)
+                        release_task = asyncio.create_task(asyncio.to_thread(self.delivery_inbox.release, delivery_id))
+                        await asyncio.shield(release_task)
                         if delivery_id not in self.delivery_busy_acked:
                             self.delivery_busy_acked.add(delivery_id)
                             await ws.send(json.dumps(self.delivery_ack(
@@ -978,10 +980,11 @@ class SessionHelper:
                         continue
             except asyncio.CancelledError:
                 # Still before process_inbound_message: this item has not been
-                # handed to injection. Release only this exact claim; busy
-                # release is idempotent and never changes completed records.
-                recovery = asyncio.create_task(asyncio.to_thread(self.delivery_inbox.release, delivery_id))
-                await asyncio.shield(recovery)
+                # handed to injection. Reuse an initiated busy release, even
+                # if already complete: another claimant may now own this row.
+                if release_task is None:
+                    release_task = asyncio.create_task(asyncio.to_thread(self.delivery_inbox.release, delivery_id))
+                await asyncio.shield(release_task)
                 raise
             try:
                 loop = asyncio.get_running_loop()
