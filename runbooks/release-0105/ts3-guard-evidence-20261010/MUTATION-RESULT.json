@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-10T07:43:20.043725+00:00",
+  "results": [
+    {
+      "mutation": "gather",
+      "rc": 1,
+      "caught": true,
+      "log_sha256": "51a2a17f7b3d98f5dce24557761b16afc7eb01a558d2f36545d8a02ac945b8ae"
+    },
+    {
+      "mutation": "log_every_frame",
+      "rc": 1,
+      "caught": true,
+      "log_sha256": "d5c5792d02c32339a4fea359cd33d4ae3164a9d296363ff584a5a43e029c3c16"
+    },
+    {
+      "mutation": "no_yield",
+      "rc": 1,
+      "caught": true,
+      "log_sha256": "b297c5ced0f0a4fad1441db0960342d097973fafc4c1b79874ce6d188e408aa3"
+    }
+  ]
+}

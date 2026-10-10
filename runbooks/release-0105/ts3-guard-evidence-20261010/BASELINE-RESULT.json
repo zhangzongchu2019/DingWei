@@ -1,0 +1,21 @@
+{
+  "source_commit": "8823610f0668397692674e4e82486b3e5c48eed5",
+  "scope": "AST extracted functions plus fakes only; no product module import/runtime/credential accesses",
+  "results": [
+    {
+      "label": "supervisor-baseline",
+      "Tstart": "2026-10-10T07:39:20.847757+00:00",
+      "Tend": "2026-10-10T07:39:21.877409+00:00",
+      "rc": 1,
+      "log_sha256": "29edcb9ee3465fef4b7ba4334840a75030e97dd30f232eb6fe9decbab5a798b5"
+    },
+    {
+      "label": "guide-baseline",
+      "Tstart": "2026-10-10T07:39:21.877716+00:00",
+      "Tend": "2026-10-10T07:39:22.056042+00:00",
+      "rc": 1,
+      "log_sha256": "5343dbf0ac67ac4036c8351f0fefcf57aeb3896407ddebb6dfb58935d902375b"
+    }
+  ],
+  "target_model_API_PG_calls": 0
+}

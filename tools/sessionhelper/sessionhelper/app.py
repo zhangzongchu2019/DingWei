@@ -77,11 +77,17 @@ async def supervise_connection_loops(coros: "list") -> None:
     `client_present=true` 照常入队,却没有任何关闭事件 ——
     因为出问题的根本不是 Hub 看到的那条连接,而是本进程里一条早该死掉的旧循环。
 
-    语义与原来的 gather 保持一致(第一个异常照样向外抛),只多了**必定清理**这一条。
+    任一连接循环退出（包括正常 WS EOF）即结束这一代；异常照样向外抛，
+    重连前必须取消并回收全部同代循环。
     """
     tasks = [asyncio.ensure_future(c) for c in coros]
     try:
-        await asyncio.gather(*tasks)
+        if not tasks:
+            return
+        done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        for t in tasks:
+            if t in done:
+                t.result()
     finally:
         for t in tasks:
             t.cancel()
@@ -593,6 +599,7 @@ class SessionHelper:
                         pass
 
     async def recv_loop(self, ws) -> None:
+        client_guide_logged = False
         async for raw in ws:
             try:
                 env = json.loads(raw)
@@ -637,7 +644,11 @@ class SessionHelper:
                 self.write_online_list(body)
                 continue
             if is_client_onboarding_text(body):
-                print("[onboarding] skipped cli injection for repeated client guide", flush=True)
+                if not client_guide_logged:
+                    print("[onboarding] skipped cli injection for repeated client guide", flush=True)
+                    client_guide_logged = True
+                # Buffered control floods must leave time for heartbeat and cleanup.
+                await asyncio.sleep(0)
                 continue
             from_addr = str(env.get("from") or "")
             # 🔴 只记长度与来源,不记正文(组长 2026-09-10 在移植时收紧,超出部署版的 body[:500]):

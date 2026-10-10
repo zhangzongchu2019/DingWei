@@ -35,6 +35,85 @@ supervise = _load_supervise()
 
 class SuperviseConnectionLoops(unittest.IsolatedAsyncioTestCase):
 
+    async def test_clean_receive_eof_cancels_siblings(self):
+        """A normal WebSocket iterator EOF must close this connection generation."""
+        started, stopped = asyncio.Event(), asyncio.Event()
+
+        async def recv():
+            await started.wait()
+
+        async def sender():
+            started.set()
+            try:
+                await asyncio.Future()
+            finally:
+                stopped.set()
+
+        task = asyncio.create_task(supervise([recv(), sender()]))
+        try:
+            done, _ = await asyncio.wait([task], timeout=0.2)
+            self.assertIn(task, done, "clean EOF left the connection supervisor waiting forever")
+            await task
+            self.assertTrue(stopped.is_set())
+        finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    async def test_normal_sender_exit_also_closes_generation(self):
+        started, stopped = asyncio.Event(), asyncio.Event()
+
+        async def receiver():
+            started.set()
+            try:
+                await asyncio.Future()
+            finally:
+                stopped.set()
+
+        async def sender():
+            await started.wait()
+
+        task = asyncio.create_task(supervise([receiver(), sender()]))
+        try:
+            done, _ = await asyncio.wait([task], timeout=0.2)
+            self.assertIn(task, done)
+            await task
+            self.assertTrue(stopped.is_set())
+        finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    async def test_twenty_clean_disconnects_leave_no_old_workers(self):
+        active, peak = 0, 0
+        for _ in range(20):
+            started = asyncio.Event()
+
+            async def recv():
+                await started.wait()
+
+            async def worker():
+                nonlocal active, peak
+                active += 1
+                peak = max(peak, active)
+                started.set()
+                try:
+                    await asyncio.Future()
+                finally:
+                    active -= 1
+
+            task = asyncio.create_task(supervise([recv(), worker()]))
+            try:
+                done, _ = await asyncio.wait([task], timeout=0.2)
+                self.assertIn(task, done)
+                await task
+                self.assertEqual(active, 0, "a disconnected worker survived into the next generation")
+            finally:
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+        self.assertEqual(peak, 1)
+
+    async def test_empty_worker_list_returns(self):
+        await supervise([])
+
     async def test_siblings_are_cancelled_when_one_raises(self):
         """① 核心:一个循环抛异常后,兄弟循环必须停,不得带着死 ws 继续跑。"""
         ticks = {"n": 0}

@@ -1,0 +1,83 @@
+{
+  "recorded_utc": "2026-10-10T07:44:01.066806+00:00",
+  "base": "8823610f0668397692674e4e82486b3e5c48eed5",
+  "runtime_dispatches": 0,
+  "independent_review": "PENDING",
+  "files": [
+    {
+      "path": "tools/sessionhelper/sessionhelper/app.py",
+      "bytes": 75439,
+      "sha256": "abd833b0764e28c5dc09d4a84264b4421a680ba4c3574647378772affe6c8d71"
+    },
+    {
+      "path": "tools/sessionhelper/test_supervise_connection_loops.py",
+      "bytes": 7002,
+      "sha256": "4b20bfef8c7231ecd80a9f48cb7720c94362a43aa3e39443079aa904f5e2bad6"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_connection_receive_quiescence.py",
+      "bytes": 4837,
+      "sha256": "ec1dcfcc13ebf799b66e1915ae62c7e1580b1d01b4eb2d62935bd07d45e942f8"
+    },
+    {
+      "path": "runbooks/release-0105/TS3-DUPLICATE-SEND-GUARD-20261010.md",
+      "bytes": 4236,
+      "sha256": "fcf43f761b77957a36d69b520b0dca07e8abcd9adade6182e118b0ec20f7e2cc"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/BASELINE-RESULT.json",
+      "bytes": 732,
+      "sha256": "5484f53a1c0d09d4ff21497ea75adbdff0925aca00296b4ad5e967453ff1d126"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/FIXED-RESULT.json",
+      "bytes": 462,
+      "sha256": "b794cb4129c2081a867df0f8b7b1e6434b67c205d9c0574923e3d2b9dc6d14eb"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/MUTATION-RESULT.json",
+      "bytes": 573,
+      "sha256": "5996a09c77dd4db25068c1718c06528fd74316063aa5b86c35586fddc877bbdf"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/gather-mutant.log",
+      "bytes": 6258,
+      "sha256": "51a2a17f7b3d98f5dce24557761b16afc7eb01a558d2f36545d8a02ac945b8ae"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/guide-baseline-corrected.json",
+      "bytes": 226,
+      "sha256": "680d370eaaf11b847eaa1453341f62ce70c54c8e5b8f5654c0217c9967e29db6"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/guide-baseline-corrected.log",
+      "bytes": 4883,
+      "sha256": "3a855723080e48fb2a3fe29544f3fe187854bd302b7663550f9b0a5ee06ee8cc"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/guide-fixed.log",
+      "bytes": 926,
+      "sha256": "c5f2f3760d71b91018f493e51a93650ca3ff3548dac5c8ef3e6077e181372bfa"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/log_every_frame-mutant.log",
+      "bytes": 3469,
+      "sha256": "d5c5792d02c32339a4fea359cd33d4ae3164a9d296363ff584a5a43e029c3c16"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/no_yield-mutant.log",
+      "bytes": 2234,
+      "sha256": "b297c5ced0f0a4fad1441db0960342d097973fafc4c1b79874ce6d188e408aa3"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/supervisor-baseline.log",
+      "bytes": 6504,
+      "sha256": "29edcb9ee3465fef4b7ba4334840a75030e97dd30f232eb6fe9decbab5a798b5"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/supervisor-fixed.log",
+      "bytes": 1697,
+      "sha256": "495ebe8894b541412761dadd4e36b9b40ab4877cbebf83ae759a9e2e1cdc9757"
+    }
+  ]
+}
