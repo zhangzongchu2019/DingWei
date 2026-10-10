@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-10T09:02:03.333018+00:00",
+  "mutants": [
+    {
+      "name": "no_start_failure_observation",
+      "rc": 1,
+      "summary": "Ran 4 tests in 0.795s\n\nFAILED (failures=1)"
+    },
+    {
+      "name": "no_start_task_reap",
+      "rc": 1,
+      "summary": "Ran 4 tests in 0.278s\n\nFAILED (failures=1)"
+    },
+    {
+      "name": "blocking_start_before_output",
+      "rc": 1,
+      "summary": "Ran 4 tests in 0.803s\n\nFAILED (failures=1)"
+    }
+  ],
+  "source_restored": true,
+  "focused_rc": 0,
+  "focused_tests": 13,
+  "test_timeout_assertions": "Expected timeout cases map to bounded FAIL, not ERROR"
+}

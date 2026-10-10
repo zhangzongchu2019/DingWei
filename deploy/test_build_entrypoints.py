@@ -58,6 +58,7 @@ class BuildEntrypointContractTest(unittest.TestCase):
             "tools/sessionhelper/tests/test_connection_receive_quiescence.py",
             "tools/sessionhelper/tests/test_connection_reconnect_backoff.py",
             "tools/sessionhelper/tests/test_connection_claim_cancellation.py",
+            "tools/sessionhelper/tests/test_terminal_start_observation.py",
         ):
             with self.subTest(test_file=test_file):
                 self.assertEqual(runner.count(test_file), 1)

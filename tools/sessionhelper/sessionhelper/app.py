@@ -1476,24 +1476,36 @@ class SessionHelper:
     async def terminal_loop(self, ws) -> None:
         if self.cfg.mode not in ("cli", "driver") or not hasattr(self.adapter, "next_terminal_chunk"):
             await asyncio.Future()
+        start_task = None
         if hasattr(self.adapter, "start"):
-            # 后台启动 CLI（spawn 后台跑，不等“就绪”），立即进入转发循环——
-            # 网页终端从而能实时看到 CLI 启动全过程（含首次 onboarding），可交互过去
-            asyncio.create_task(asyncio.to_thread(self.adapter.start))
-        while True:
-            chunk = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.5)
-            if not chunk:
-                continue
-            deadline = asyncio.get_running_loop().time() + 0.12
-            chunks = [chunk]
-            while asyncio.get_running_loop().time() < deadline:
-                more = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.01)
-                if not more:
-                    break
-                chunks.append(more)
-            body = "".join(chunks)
-            meta = {"type": "terminal_output", "session": self.cfg.session_name, "key_id": self.cfg.key_id, "no_mirror": True}
-            await ws.send(json.dumps(envelope(session_addr("workpulse", self.cfg.key_id), body, self.book.self_addr, meta), ensure_ascii=False))
+            # Keep startup output visible while observing this connection's task.
+            start_task = asyncio.create_task(asyncio.to_thread(self.adapter.start))
+        try:
+            while True:
+                if start_task is not None and start_task.done():
+                    start_task.result()  # startup failure stops this connection
+                    start_task = None
+                chunk = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.5)
+                if start_task is not None and start_task.done():
+                    start_task.result()
+                    start_task = None
+                if not chunk:
+                    continue
+                deadline = asyncio.get_running_loop().time() + 0.12
+                chunks = [chunk]
+                while asyncio.get_running_loop().time() < deadline:
+                    more = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.01)
+                    if not more:
+                        break
+                    chunks.append(more)
+                body = "".join(chunks)
+                meta = {"type": "terminal_output", "session": self.cfg.session_name, "key_id": self.cfg.key_id, "no_mirror": True}
+                await ws.send(json.dumps(envelope(session_addr("workpulse", self.cfg.key_id), body, self.book.self_addr, meta), ensure_ascii=False))
+        finally:
+            if start_task is not None:
+                start_task.cancel()
+                await asyncio.gather(start_task, return_exceptions=True)
+            # Cancelling to_thread's awaiter does not stop the underlying thread.
 
     async def session_event_loop(self, ws) -> None:
         if env_get("SH_EMIT_SESSION_EVENT") != "1":

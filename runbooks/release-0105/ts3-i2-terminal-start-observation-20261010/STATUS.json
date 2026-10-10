@@ -1,0 +1,54 @@
+{
+  "task": "TS3-I2-TERMINAL-START-OBSERVATION-R1",
+  "utc": "2026-10-10T09:03:17.566730+00:00",
+  "base_source_commit": "9b649dd25a9945b02e65911b9b57a431c0f6e23e",
+  "source_pins": [
+    {
+      "path": "tools/sessionhelper/sessionhelper/app.py",
+      "bytes": 77820,
+      "sha256": "5ab081f27faabe658f92592b3403eb05ae86ef53b8790366158da1f203d022ca"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_terminal_start_observation.py",
+      "bytes": 5064,
+      "sha256": "a55c6bf552242117067e039dc89ddc788c6c78d45a971b220d2b9cd1892a21b9"
+    },
+    {
+      "path": "scripts/run-build-tests.sh",
+      "bytes": 1661,
+      "sha256": "26ea3f95994efb003ffb17c660643466f705404fac9bfcdba2a18e1fd51aa4fc"
+    },
+    {
+      "path": "deploy/test_build_entrypoints.py",
+      "bytes": 4938,
+      "sha256": "8350ed9cf839272795841107afaca5422144dba0d05977b6932498522ad65f2a"
+    }
+  ],
+  "problem": "terminal_loop startup task was fire-and-forget; startup failure not propagated and pending coroutine not reclaimed on connection cancellation",
+  "change": "Own startup task, inspect result around terminal polling, propagate startup failure, cancel and gather pending task in finally; preserve output before startup completes",
+  "validation": {
+    "new_cases": 4,
+    "final_focused_cases": 13,
+    "final_focused_rc": 0,
+    "gate_python_files": 21,
+    "gate_python_cases": 208,
+    "shell_files": 1,
+    "gate_rc": 0,
+    "mutants": 3,
+    "mutants_failed": 3,
+    "mutant_errors": 0
+  },
+  "limitations": [
+    "Cancelling to_thread awaiter does not stop its underlying thread",
+    "Synthetic coroutine tests do not prove OS thread/CLI/RPC lifecycle settlement",
+    "No producer/thread/stop semantics, root cause, CPU threshold or runtime admission claims",
+    "Separate integrated helper behavior failures and target compatibility remain open"
+  ],
+  "component_pins": "d3bbe9ff/93d9c97d existing overlay unchanged; source branch remains9b with app/test/gate-only delta",
+  "existing_integrated_binary": "1364c991 is immutable pre-I2 build and does not contain this app update",
+  "independent_CR": "PENDING_AUTHOR_NOT_SIGNED",
+  "target_calls": 0,
+  "product_modules_imported_in_new_tests": false,
+  "binary_executed": false,
+  "runtime_authority": "NONE"
+}
