@@ -1,0 +1,33 @@
+{
+  "utc": "2026-10-10T07:53:17.545107+00:00",
+  "results": [
+    {
+      "mutation": "no_reap",
+      "rc": 1,
+      "caught": true,
+      "zero_test_errors": true,
+      "log_sha256": "80f3eedbc806d2a55d854275c07635a057e1062df9438654e3b51b12dfbd5ba7"
+    },
+    {
+      "mutation": "all_completed",
+      "rc": 1,
+      "caught": true,
+      "zero_test_errors": true,
+      "log_sha256": "19e32fe8c6a92d95caed22e2c28267f236505c959450723d4251be37c45bf542"
+    },
+    {
+      "mutation": "clean_reset",
+      "rc": 1,
+      "caught": true,
+      "zero_test_errors": true,
+      "log_sha256": "e25469cac16a7a57efacf42d6c7f4c73df6ebea54b6c49f71326ba8e44a8f8de"
+    },
+    {
+      "mutation": "claim_unshielded",
+      "rc": 1,
+      "caught": true,
+      "zero_test_errors": true,
+      "log_sha256": "9c91e6b8062c95131b61076a6514346eefea462f9e944391a4db7b85ed520fc6"
+    }
+  ]
+}

@@ -184,6 +184,22 @@ UPLOAD_ADDENDUM_TEMPLATE = (
 )
 
 
+async def claim_delivery_for_connection(inbox):
+    """Cancellation before dispatch must not strand a completed thread claim.
+
+    Shield the synchronous claim, then recover only this not-yet-dispatched
+    item before letting connection cleanup finish. Never requeue injected work.
+    """
+    claim = asyncio.create_task(asyncio.to_thread(inbox.claim_next))
+    try:
+        return await asyncio.shield(claim)
+    except asyncio.CancelledError:
+        item = await claim
+        if item is not None:
+            await asyncio.to_thread(inbox.release, item[0])
+        raise
+
+
 class SessionHelper:
     def __init__(self, cfg: Config):
         self.cfg = cfg
@@ -253,11 +269,19 @@ class SessionHelper:
 
         delay = self.cfg.reconnect_min
         while True:
+            self._connection_started_at = None
             try:
-                await self._run_once()
+                try:
+                    await self._run_once()
+                finally:
+                    # Short-lived clean closes also back off; only a connected
+                    # generation lasting 60s resets the delay. Error-specific
+                    # floors below (notably replaced) still take precedence.
+                    connected_at = self._connection_started_at
+                    if connected_at is not None and time.monotonic() - connected_at >= 60.0:
+                        delay = self.cfg.reconnect_min
                 if self.cfg.producer:
                     return
-                delay = self.cfg.reconnect_min
             except websockets.InvalidStatus as exc:
                 if self.enroll_credential is not None:
                     # raises for revoked / invalid / already_connected: those must end the loop, not retry
@@ -545,6 +569,7 @@ class SessionHelper:
             if self.cfg.debug:
                 print(f"[sessionHelper][debug] WS 握手成功,耗时 {time.monotonic()-_t0:.2f}s", flush=True)
             print(f"[sessionHelper] connected self={self.book.self_addr} version={__version__}", flush=True)
+            self._connection_started_at = time.monotonic()
             self.provisioner.confirm_update_connected()
             # M2 protocol admission. This raises the bar above one-shot clients
             # such as send.py, but is not cryptographic helper identity: a
@@ -931,7 +956,7 @@ class SessionHelper:
 
     async def delivery_worker_loop(self, ws) -> None:
         while True:
-            item = await asyncio.to_thread(self.delivery_inbox.claim_next)
+            item = await claim_delivery_for_connection(self.delivery_inbox)
             if item is None:
                 await asyncio.sleep(0.2)
                 continue

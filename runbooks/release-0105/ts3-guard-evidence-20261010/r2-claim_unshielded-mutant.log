@@ -1,0 +1,28 @@
+test_cancel_empty_claim_does_not_release (test_connection_claim_cancellation.ClaimCancellation.test_cancel_empty_claim_does_not_release) ... ok
+test_clean_eof_waits_for_claim_and_releases_before_return (test_connection_claim_cancellation.ClaimCancellation.test_clean_eof_waits_for_claim_and_releases_before_return) ... FAIL
+test_success_keeps_claim_for_dispatch (test_connection_claim_cancellation.ClaimCancellation.test_success_keeps_claim_for_dispatch) ... ok
+
+======================================================================
+FAIL: test_clean_eof_waits_for_claim_and_releases_before_return (test_connection_claim_cancellation.ClaimCancellation.test_clean_eof_waits_for_claim_and_releases_before_return)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-g0ctun7g/tests/test_connection_claim_cancellation.py", line 42, in test_clean_eof_waits_for_claim_and_releases_before_return
+    self.assertFalse(task.done(), "cleanup did not wait for in-flight claim")
+AssertionError: True is not false : cleanup did not wait for in-flight claim
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.040s
+
+FAILED (failures=1)

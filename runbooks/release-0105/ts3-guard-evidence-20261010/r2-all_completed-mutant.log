@@ -1,0 +1,232 @@
+test_cancellation_propagates_to_all (test_supervise_connection_loops.SuperviseConnectionLoops.test_cancellation_propagates_to_all)
+③ 外部取消 supervise 本身时,子循环同样要收掉(重启/退出路径)。 ... ok
+test_clean_receive_eof_cancels_siblings (test_supervise_connection_loops.SuperviseConnectionLoops.test_clean_receive_eof_cancels_siblings)
+A normal WebSocket iterator EOF must close this connection generation. ... FAIL
+test_empty_worker_list_returns (test_supervise_connection_loops.SuperviseConnectionLoops.test_empty_worker_list_returns) ... ok
+test_normal_sender_exit_also_closes_generation (test_supervise_connection_loops.SuperviseConnectionLoops.test_normal_sender_exit_also_closes_generation) ... FAIL
+test_original_exception_still_propagates (test_supervise_connection_loops.SuperviseConnectionLoops.test_original_exception_still_propagates)
+② 语义不得变:第一个异常照样向外抛,外层重连逻辑依赖它。 ... FAIL
+test_positive_control_bare_gather_still_leaks (test_supervise_connection_loops.SuperviseConnectionLoops.test_positive_control_bare_gather_still_leaks)
+④ 阳性对照:同样场景下,**裸 gather** 必须仍然泄漏。 ... ok
+test_return_waits_for_async_sibling_cleanup (test_supervise_connection_loops.SuperviseConnectionLoops.test_return_waits_for_async_sibling_cleanup) ... FAIL
+test_siblings_are_cancelled_when_one_raises (test_supervise_connection_loops.SuperviseConnectionLoops.test_siblings_are_cancelled_when_one_raises)
+① 核心:一个循环抛异常后,兄弟循环必须停,不得带着死 ws 继续跑。 ... FAIL
+test_twenty_clean_disconnects_leave_no_old_workers (test_supervise_connection_loops.SuperviseConnectionLoops.test_twenty_clean_disconnects_leave_no_old_workers) ... FAIL
+
+======================================================================
+FAIL: test_clean_receive_eof_cancels_siblings (test_supervise_connection_loops.SuperviseConnectionLoops.test_clean_receive_eof_cancels_siblings)
+A normal WebSocket iterator EOF must close this connection generation.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-k9s5pod_/test_supervise_connection_loops.py", line 61, in test_clean_receive_eof_cancels_siblings
+    self.assertIn(task, done, "clean EOF left the connection supervisor waiting forever")
+AssertionError: <Task pending name='Task-11' coro=<supervise_connection_loops() running at /tmp/ts3-r2-mutant-k9s5pod_/sessionhelper/app.py:25> wait_for=<Future pending cb=[Task.task_wakeup()] created at /usr/lib/python3.12/asyncio/base_events.py:449> created at /usr/lib/python3.12/asyncio/tasks.py:420> not found in set() : clean EOF left the connection supervisor waiting forever
+
+======================================================================
+FAIL: test_normal_sender_exit_also_closes_generation (test_supervise_connection_loops.SuperviseConnectionLoops.test_normal_sender_exit_also_closes_generation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-k9s5pod_/test_supervise_connection_loops.py", line 84, in test_normal_sender_exit_also_closes_generation
+    self.assertIn(task, done)
+AssertionError: <Task pending name='Task-24' coro=<supervise_connection_loops() running at /tmp/ts3-r2-mutant-k9s5pod_/sessionhelper/app.py:25> wait_for=<Future pending cb=[Task.task_wakeup()] created at /usr/lib/python3.12/asyncio/base_events.py:449> created at /usr/lib/python3.12/asyncio/tasks.py:420> not found in set()
+
+======================================================================
+FAIL: test_original_exception_still_propagates (test_supervise_connection_loops.SuperviseConnectionLoops.test_original_exception_still_propagates)
+② 语义不得变:第一个异常照样向外抛,外层重连逻辑依赖它。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-k9s5pod_/sessionhelper/app.py", line 25, in supervise_connection_loops
+    from .guide_state import GuideClaim, StagedGuideStore
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 464, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 550, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/ts3-r2-mutant-k9s5pod_/test_supervise_connection_loops.py", line 40, in bounded
+    return await asyncio.wait_for(coro, timeout=1.0)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+  File "/usr/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-k9s5pod_/test_supervise_connection_loops.py", line 169, in test_original_exception_still_propagates
+    await self.bounded(supervise([boom(), idle()]))
+  File "/tmp/ts3-r2-mutant-k9s5pod_/test_supervise_connection_loops.py", line 42, in bounded
+    self.fail("connection supervisor did not finish within the synthetic test deadline")
+AssertionError: connection supervisor did not finish within the synthetic test deadline
+
+======================================================================
+FAIL: test_return_waits_for_async_sibling_cleanup (test_supervise_connection_loops.SuperviseConnectionLoops.test_return_waits_for_async_sibling_cleanup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-k9s5pod_/sessionhelper/app.py", line 25, in supervise_connection_loops
+    from .guide_state import GuideClaim, StagedGuideStore
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 464, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 550, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/ts3-r2-mutant-k9s5pod_/test_supervise_connection_loops.py", line 40, in bounded
+    return await asyncio.wait_for(coro, timeout=1.0)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+  File "/usr/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-k9s5pod_/test_supervise_connection_loops.py", line 134, in test_return_waits_for_async_sibling_cleanup
+    await self.bounded(supervise([recv(), worker()]))
+  File "/tmp/ts3-r2-mutant-k9s5pod_/test_supervise_connection_loops.py", line 42, in bounded
+    self.fail("connection supervisor did not finish within the synthetic test deadline")
+AssertionError: connection supervisor did not finish within the synthetic test deadline
+
+======================================================================
+FAIL: test_siblings_are_cancelled_when_one_raises (test_supervise_connection_loops.SuperviseConnectionLoops.test_siblings_are_cancelled_when_one_raises)
+① 核心:一个循环抛异常后,兄弟循环必须停,不得带着死 ws 继续跑。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-k9s5pod_/sessionhelper/app.py", line 25, in supervise_connection_loops
+    from .guide_state import GuideClaim, StagedGuideStore
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 464, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 550, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/ts3-r2-mutant-k9s5pod_/test_supervise_connection_loops.py", line 40, in bounded
+    return await asyncio.wait_for(coro, timeout=1.0)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+  File "/usr/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-k9s5pod_/test_supervise_connection_loops.py", line 154, in test_siblings_are_cancelled_when_one_raises
+    await self.bounded(supervise([recv_loop(), worker()]))
+  File "/tmp/ts3-r2-mutant-k9s5pod_/test_supervise_connection_loops.py", line 42, in bounded
+    self.fail("connection supervisor did not finish within the synthetic test deadline")
+AssertionError: connection supervisor did not finish within the synthetic test deadline
+
+======================================================================
+FAIL: test_twenty_clean_disconnects_leave_no_old_workers (test_supervise_connection_loops.SuperviseConnectionLoops.test_twenty_clean_disconnects_leave_no_old_workers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-k9s5pod_/test_supervise_connection_loops.py", line 112, in test_twenty_clean_disconnects_leave_no_old_workers
+    self.assertIn(task, done)
+AssertionError: <Task pending name='Task-60' coro=<supervise_connection_loops() running at /tmp/ts3-r2-mutant-k9s5pod_/sessionhelper/app.py:25> wait_for=<Future pending cb=[Task.task_wakeup()] created at /usr/lib/python3.12/asyncio/base_events.py:449> created at /usr/lib/python3.12/asyncio/tasks.py:420> not found in set()
+
+----------------------------------------------------------------------
+Ran 9 tests in 3.805s
+
+FAILED (failures=6)

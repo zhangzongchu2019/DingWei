@@ -1,0 +1,10 @@
+test_healthy_connection_resets_delay (test_connection_reconnect_backoff.ReconnectBackoff.test_healthy_connection_resets_delay) ... ok
+test_healthy_then_error_resets_delay (test_connection_reconnect_backoff.ReconnectBackoff.test_healthy_then_error_resets_delay) ... ok
+test_producer_finishes_without_reconnect (test_connection_reconnect_backoff.ReconnectBackoff.test_producer_finishes_without_reconnect) ... ok
+test_replaced_still_has_ten_second_floor (test_connection_reconnect_backoff.ReconnectBackoff.test_replaced_still_has_ten_second_floor) ... ok
+test_short_clean_closes_back_off_to_cap (test_connection_reconnect_backoff.ReconnectBackoff.test_short_clean_closes_back_off_to_cap) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.128s
+
+OK

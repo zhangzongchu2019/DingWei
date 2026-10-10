@@ -1,0 +1,8 @@
+test_cancel_empty_claim_does_not_release (test_connection_claim_cancellation.ClaimCancellation.test_cancel_empty_claim_does_not_release) ... ok
+test_clean_eof_waits_for_claim_and_releases_before_return (test_connection_claim_cancellation.ClaimCancellation.test_clean_eof_waits_for_claim_and_releases_before_return) ... ok
+test_success_keeps_claim_for_dispatch (test_connection_claim_cancellation.ClaimCancellation.test_success_keeps_claim_for_dispatch) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.042s
+
+OK

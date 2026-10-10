@@ -1,0 +1,91 @@
+test_healthy_connection_resets_delay (test_connection_reconnect_backoff.ReconnectBackoff.test_healthy_connection_resets_delay) ... FAIL
+test_healthy_then_error_resets_delay (test_connection_reconnect_backoff.ReconnectBackoff.test_healthy_then_error_resets_delay) ... FAIL
+test_producer_finishes_without_reconnect (test_connection_reconnect_backoff.ReconnectBackoff.test_producer_finishes_without_reconnect) ... ok
+test_replaced_still_has_ten_second_floor (test_connection_reconnect_backoff.ReconnectBackoff.test_replaced_still_has_ten_second_floor) ... ok
+test_short_clean_closes_back_off_to_cap (test_connection_reconnect_backoff.ReconnectBackoff.test_short_clean_closes_back_off_to_cap) ... FAIL
+
+======================================================================
+FAIL: test_healthy_connection_resets_delay (test_connection_reconnect_backoff.ReconnectBackoff.test_healthy_connection_resets_delay)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-5wsg76in/tests/test_connection_reconnect_backoff.py", line 60, in test_healthy_connection_resets_delay
+    self.assertEqual(sleeps, [1, 2, 1, 2])
+AssertionError: Lists differ: [1.0, 1.0, 1.0, 1.0] != [1, 2, 1, 2]
+
+First differing element 1:
+1.0
+2
+
+- [1.0, 1.0, 1.0, 1.0]
++ [1, 2, 1, 2]
+
+======================================================================
+FAIL: test_healthy_then_error_resets_delay (test_connection_reconnect_backoff.ReconnectBackoff.test_healthy_then_error_resets_delay)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-5wsg76in/tests/test_connection_reconnect_backoff.py", line 64, in test_healthy_then_error_resets_delay
+    self.assertEqual(sleeps, [1, 2, 1])
+AssertionError: Lists differ: [1.0, 1.0, 1.0] != [1, 2, 1]
+
+First differing element 1:
+1.0
+2
+
+- [1.0, 1.0, 1.0]
++ [1, 2, 1]
+
+======================================================================
+FAIL: test_short_clean_closes_back_off_to_cap (test_connection_reconnect_backoff.ReconnectBackoff.test_short_clean_closes_back_off_to_cap)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/ts3-r2-mutant-5wsg76in/tests/test_connection_reconnect_backoff.py", line 56, in test_short_clean_closes_back_off_to_cap
+    self.assertEqual(sleeps, [1, 2, 4, 8, 8])
+AssertionError: Lists differ: [1.0, 1.0, 1.0, 1.0, 1.0] != [1, 2, 4, 8, 8]
+
+First differing element 1:
+1.0
+2
+
+- [1.0, 1.0, 1.0, 1.0, 1.0]
++ [1, 2, 4, 8, 8]
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.124s
+
+FAILED (failures=3)

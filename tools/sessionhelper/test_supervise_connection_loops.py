@@ -35,6 +35,12 @@ supervise = _load_supervise()
 
 class SuperviseConnectionLoops(unittest.IsolatedAsyncioTestCase):
 
+    async def bounded(self, coro):
+        try:
+            return await asyncio.wait_for(coro, timeout=1.0)
+        except TimeoutError:
+            self.fail("connection supervisor did not finish within the synthetic test deadline")
+
     async def test_clean_receive_eof_cancels_siblings(self):
         """A normal WebSocket iterator EOF must close this connection generation."""
         started, stopped = asyncio.Event(), asyncio.Event()
@@ -111,8 +117,25 @@ class SuperviseConnectionLoops(unittest.IsolatedAsyncioTestCase):
                 await asyncio.gather(task, return_exceptions=True)
         self.assertEqual(peak, 1)
 
+    async def test_return_waits_for_async_sibling_cleanup(self):
+        started, cleanup_done = asyncio.Event(), asyncio.Event()
+
+        async def recv():
+            await started.wait()
+
+        async def worker():
+            started.set()
+            try:
+                await asyncio.Future()
+            finally:
+                await asyncio.sleep(0.02)
+                cleanup_done.set()
+
+        await self.bounded(supervise([recv(), worker()]))
+        self.assertTrue(cleanup_done.is_set(), "supervisor returned before asynchronous cleanup finished")
+
     async def test_empty_worker_list_returns(self):
-        await supervise([])
+        await self.bounded(supervise([]))
 
     async def test_siblings_are_cancelled_when_one_raises(self):
         """① 核心:一个循环抛异常后,兄弟循环必须停,不得带着死 ws 继续跑。"""
@@ -128,7 +151,7 @@ class SuperviseConnectionLoops(unittest.IsolatedAsyncioTestCase):
                 await asyncio.sleep(0.005)
 
         with self.assertRaises(RuntimeError):
-            await supervise([recv_loop(), worker()])
+            await self.bounded(supervise([recv_loop(), worker()]))
         before = ticks["n"]
         await asyncio.sleep(0.1)          # 模拟外层重连那段时间
         self.assertEqual(ticks["n"], before,
@@ -143,7 +166,7 @@ class SuperviseConnectionLoops(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(10)
 
         with self.assertRaises(ValueError):
-            await supervise([boom(), idle()])
+            await self.bounded(supervise([boom(), idle()]))
 
     async def test_cancellation_propagates_to_all(self):
         """③ 外部取消 supervise 本身时,子循环同样要收掉(重启/退出路径)。"""
@@ -163,7 +186,7 @@ class SuperviseConnectionLoops(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(started.values()), "前置:两个循环都应已启动")
         task.cancel()
         with self.assertRaises(asyncio.CancelledError):
-            await task
+            await self.bounded(task)
         self.assertTrue(all(done.values()), f"未全部收到取消: {done}")
 
     async def test_positive_control_bare_gather_still_leaks(self):

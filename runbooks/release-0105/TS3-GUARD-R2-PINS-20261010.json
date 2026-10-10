@@ -1,0 +1,89 @@
+{
+  "utc": "2026-10-10T07:54:35.659004+00:00",
+  "parent": "e9e44d659296e4205f99d3626d404fadb8caecce",
+  "test_count": 22,
+  "independent_review": "PENDING",
+  "runtime_dispatches": 0,
+  "files": [
+    {
+      "path": "tools/sessionhelper/sessionhelper/app.py",
+      "bytes": 76573,
+      "sha256": "633b8311f425a5b7a5d13e74ca5f5cc74ac3577fbe486f1bec5bf8ad88240e4b"
+    },
+    {
+      "path": "tools/sessionhelper/test_supervise_connection_loops.py",
+      "bytes": 7860,
+      "sha256": "e27d667b40fc0db48f14a5d2cba4317829078f639f469b54df37340c1b463d14"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_connection_claim_cancellation.py",
+      "bytes": 3343,
+      "sha256": "fa59831caf6a1982406e7d226347a3f3112c1de4b5cbeb822f27ca174383e6bd"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_connection_receive_quiescence.py",
+      "bytes": 4837,
+      "sha256": "ec1dcfcc13ebf799b66e1915ae62c7e1580b1d01b4eb2d62935bd07d45e942f8"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_connection_reconnect_backoff.py",
+      "bytes": 3092,
+      "sha256": "a949b571ab2d037ed04827e40b465e00e11e82316e2f8d144d03f03248fa019e"
+    },
+    {
+      "path": "runbooks/release-0105/TS3-GUARD-R2-REVIEW-REWORK-20261010.md",
+      "bytes": 3806,
+      "sha256": "ecf2e80f893d3301de8ad770d22180c4365ea664aa8fc89ee2cc166b3494ac5b"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/R2-FIXED-RESULT.json",
+      "bytes": 930,
+      "sha256": "70438c7edc43a5ab43dc77a8ad2215f253934f6356ff88b9be5f4e972d747f57"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/R2-MUTATION-RESULT.json",
+      "bytes": 878,
+      "sha256": "9b4af84b4ab0fad3034b9d31ac4a5d4c4dfc6de47b68a365d932aa95ed7d4795"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/backoff-r2.log",
+      "bytes": 790,
+      "sha256": "906a93fc75e9050ad73b6b249e870bf5bbb96f80859e678cd6a27da76aa4f16d"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/claim-r2.log",
+      "bytes": 558,
+      "sha256": "7701ba729b21c4651dce06861fd26d169efac53aebeb04d5144970c26a9ed78f"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/guide-r2.log",
+      "bytes": 926,
+      "sha256": "2f25b0408851f7d2d03e64264581cd4f879b1f5c6cdf402424e9329c2be5996d"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r2-all_completed-mutant.log",
+      "bytes": 14549,
+      "sha256": "19e32fe8c6a92d95caed22e2c28267f236505c959450723d4251be37c45bf542"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r2-claim_unshielded-mutant.log",
+      "bytes": 1858,
+      "sha256": "9c91e6b8062c95131b61076a6514346eefea462f9e944391a4db7b85ed520fc6"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r2-clean_reset-mutant.log",
+      "bytes": 4551,
+      "sha256": "e25469cac16a7a57efacf42d6c7f4c73df6ebea54b6c49f71326ba8e44a8f8de"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/r2-no_reap-mutant.log",
+      "bytes": 3146,
+      "sha256": "80f3eedbc806d2a55d854275c07635a057e1062df9438654e3b51b12dfbd5ba7"
+    },
+    {
+      "path": "runbooks/release-0105/ts3-guard-evidence-20261010/supervisor-r2.log",
+      "bytes": 1851,
+      "sha256": "0bb5fda7e03ed4f77c5eab5e4f74dd954bc02047f9a78628b73ff9a31a4e9818"
+    }
+  ]
+}
