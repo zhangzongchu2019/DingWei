@@ -13,7 +13,7 @@ import (
 // 🔴 与旧平台的一处不同：没有「编组表为空 ⇒ 迁移／回滚态放行」。新平台没有迁移态（旧编组数据不迁），一律判；
 //   旧表在新平台下恒空，若沿用旧逻辑就是 fail-open（编组管控静默失效）。
 
-// enforceNewPlatformGrouping 发送方与目标须同在至少一个编组；不在任何编组的 Agent 落到属主的默认组（与旧平台同）。
+// enforceNewPlatformGrouping 发送方与目标须共享编组；特殊组的组员互斥优先，未编组 Agent 无属主默认放行。
 // 豁免：飞书发信人与 view 页（view-v2）的 console 用户映射到【激活】的平台用户。
 func (h *Hub) enforceNewPlatformGrouping(ctx context.Context, from address, env model.Envelope, targetKeyID, targetSession string) error {
 	if h.newPlatformSenderExempt(ctx, from, env) {
@@ -40,18 +40,12 @@ func (h *Hub) enforceNewPlatformGrouping(ctx context.Context, from address, env 
 	if !ok {
 		return newGroupingRejection("target_endpoint_not_found")
 	}
-	sourceGroups, err := h.newPlatformGroupKeys(ctx, source)
+	allowed, err := h.Identity.AgentsCanCommunicate(ctx, source, target)
 	if err != nil {
 		return err
 	}
-	targetGroups, err := h.newPlatformGroupKeys(ctx, target)
-	if err != nil {
-		return err
-	}
-	for code := range sourceGroups {
-		if targetGroups[code] {
-			return nil
-		}
+	if allowed {
+		return nil
 	}
 	return newGroupingRejection("cross_group_denied")
 }

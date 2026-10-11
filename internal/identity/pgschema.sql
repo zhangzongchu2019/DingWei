@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS np_group (
     creator_lc       text        NOT NULL, -- 与 np_agent.owner_lc 同：不挂外键
     leader_agent_id  text        NOT NULL REFERENCES np_agent (id),
     additions_closed boolean     NOT NULL DEFAULT false,
+    leader_only      boolean     NOT NULL DEFAULT false,
     created_at       timestamptz NOT NULL,
     updated_at       timestamptz NOT NULL
 );

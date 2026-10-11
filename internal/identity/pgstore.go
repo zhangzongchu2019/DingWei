@@ -836,11 +836,11 @@ func (s *PGStore) SetAgentSuspended(ctx context.Context, agentID string, suspend
 
 // ── GroupStore ─────────────────────────────────────────────────────────────
 
-const groupCols = `code, short_name, creator_lc, leader_agent_id, additions_closed, created_at, updated_at`
+const groupCols = `code, short_name, creator_lc, leader_agent_id, additions_closed, created_at, updated_at, leader_only`
 
 func scanGroup(r rowScanner) (*Group, error) {
 	var g Group
-	if err := r.Scan(&g.Code, &g.ShortName, &g.CreatorLC, &g.LeaderAgentID, &g.AdditionsClosed, &g.CreatedAt, &g.UpdatedAt); err != nil {
+	if err := r.Scan(&g.Code, &g.ShortName, &g.CreatorLC, &g.LeaderAgentID, &g.AdditionsClosed, &g.CreatedAt, &g.UpdatedAt, &g.LeaderOnly); err != nil {
 		return nil, err
 	}
 	g.CreatedAt, g.UpdatedAt = g.CreatedAt.UTC(), g.UpdatedAt.UTC()
@@ -881,8 +881,8 @@ func (s *PGStore) CreateGroup(ctx context.Context, g Group) error {
 		if !ok {
 			return ErrGroupAgentUnavailable
 		}
-		_, err = tx.Exec(ctx, `INSERT INTO np_group (`+groupCols+`) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-			g.Code, g.ShortName, Lower(g.CreatorLC), g.LeaderAgentID, g.AdditionsClosed, g.CreatedAt.UTC(), g.UpdatedAt.UTC())
+		_, err = tx.Exec(ctx, `INSERT INTO np_group (`+groupCols+`) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+			g.Code, g.ShortName, Lower(g.CreatorLC), g.LeaderAgentID, g.AdditionsClosed, g.CreatedAt.UTC(), g.UpdatedAt.UTC(), g.LeaderOnly)
 		if code, constraint := pgCode(err); code == pgUniqueViolation {
 			if constraint == "np_group_pkey" {
 				return ErrConflict
@@ -1046,8 +1046,8 @@ func groupChoiceTx(ctx context.Context, tx repo.Tx, agentID, ownerLC, code strin
 		return nil // 不入组（业主令：编组不是必须的）
 	}
 	if newGroup != nil {
-		_, err := tx.Exec(ctx, `INSERT INTO np_group (`+groupCols+`) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-			newGroup.Code, newGroup.ShortName, Lower(newGroup.CreatorLC), agentID, false, now.UTC(), now.UTC())
+		_, err := tx.Exec(ctx, `INSERT INTO np_group (`+groupCols+`) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+			newGroup.Code, newGroup.ShortName, Lower(newGroup.CreatorLC), agentID, false, now.UTC(), now.UTC(), newGroup.LeaderOnly)
 		if c, constraint := pgCode(err); c == pgUniqueViolation {
 			if constraint == "np_group_pkey" {
 				return ErrConflict
@@ -1091,4 +1091,9 @@ func groupUsableByTx(ctx context.Context, tx repo.Tx, g *Group, ownerLC string) 
 	err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM np_group_member m JOIN np_agent a ON a.id = m.agent_id
 		WHERE m.code = $1 AND a.owner_lc = $2 AND a.state IN ('active', 'suspended'))`, g.Code, owner).Scan(&ok)
 	return ok, err
+}
+
+func (s *PGStore) SetGroupLeaderOnly(ctx context.Context, code, actorLC string, leaderOnly bool, now time.Time) error {
+	res, err := s.pool.Exec(ctx, s.t, `UPDATE np_group SET leader_only=$3, updated_at=$4 WHERE code=$1 AND creator_lc=$2`, code, Lower(actorLC), leaderOnly, now.UTC())
+	return s.creatorOnly(ctx, code, res, err)
 }

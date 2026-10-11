@@ -32,6 +32,7 @@ type npGroupView struct {
 	ShortName           string              `json:"short_name"`
 	CreatorPrincipal    string              `json:"creator_principal"`
 	AdditionsClosed     bool                `json:"additions_closed"`
+	LeaderOnly          bool                `json:"leader_only"`
 	LeaderAgentID       string              `json:"leader_agent_id"`
 	LeaderKeyID         string              `json:"leader_key_id"`
 	LeaderSessionName   string              `json:"leader_session_name"`
@@ -55,7 +56,7 @@ type npOwnedAgentView struct {
 
 func (h *Hub) npGroupView(info identity.GroupInfo) npGroupView {
 	v := npGroupView{
-		Code: info.Code, ShortName: info.ShortName, CreatorPrincipal: info.CreatorLC, AdditionsClosed: info.AdditionsClosed,
+		Code: info.Code, ShortName: info.ShortName, CreatorPrincipal: info.CreatorLC, AdditionsClosed: info.AdditionsClosed, LeaderOnly: info.LeaderOnly,
 		LeaderAgentID: info.LeaderAgentID, LeaderSessionName: info.LeaderFullName, LeaderFullName: info.LeaderFullName,
 		LeaderConsoleMapped: true, CreatedAt: info.CreatedAt, UpdatedAt: info.UpdatedAt, CanManage: info.CanManage,
 		Members: make([]npGroupMemberView, 0, len(info.Members)),
@@ -173,6 +174,15 @@ func (h *Hub) handleNewPlatformAgentGroup(w http.ResponseWriter, r *http.Request
 	actor, code := platformPrincipal(r), r.PathValue("code")
 	var err error
 	switch {
+	case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/communication"):
+		var req struct {
+			LeaderOnly *bool `json:"leader_only"`
+		}
+		if json.NewDecoder(r.Body).Decode(&req) != nil || req.LeaderOnly == nil {
+			http.Error(w, "leader_only required", http.StatusBadRequest)
+			return
+		}
+		err = h.Identity.SetGroupLeaderOnly(r.Context(), actor, code, *req.LeaderOnly)
 	case r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/members/"):
 		err = h.Identity.LeaveGroup(r.Context(), actor, code, r.PathValue("agentID"))
 	case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/members"):
@@ -201,6 +211,7 @@ func (h *Hub) handleNewPlatformAgentGroup(w http.ResponseWriter, r *http.Request
 	}
 	switch {
 	case err == nil:
+		h.broadcastNewPlatformDirectories(r.Context())
 		w.WriteHeader(http.StatusNoContent)
 	case errors.Is(err, identity.ErrGroupClosed):
 		http.Error(w, "该编组已关闭添加", http.StatusConflict)

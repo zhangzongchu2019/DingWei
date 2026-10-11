@@ -1,0 +1,46 @@
+{
+  "utc": "2026-10-11T00:57:50.944080+00:00",
+  "source_base": "7c178b5b9f5e93e22b483b50993a89ccecda5289",
+  "scope": "Offline implementation; no deployment or production database mutation",
+  "rules": [
+    "leader_only group: leader/member bidirectional; member/member denied",
+    "shared special-group denial wins over another ordinary shared group",
+    "ordinary groups: shared group required; no implicit owner-wide ungrouped fallback",
+    "per-recipient online roster only eligible online peers; omit self; include cross-owner shared groups",
+    "each full client snapshot replaces old contents, including empty; heartbeat uses None and keeps current contents"
+  ],
+  "configuration": "Creator-only POST /api/console/agent-groups/{code}/communication with leader_only bool; control in Agent group detail",
+  "migration": "0101_group_communication.sql adds leader_only false; existing 0100 migration untouched",
+  "validation": {
+    "identity_and_workpulse": {
+      "status": "PASS",
+      "summary": "Full internal/identity and cmd/workpulse suites passed; old combined m8 timing failure resolved with three focused retries and subsequent full m8 suite PASS"
+    },
+    "migration_suite": {
+      "summary": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/store/migrate\t26.063s\n"
+    },
+    "group_HTTP_and_mentions": {
+      "summary": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t0.605s\n"
+    },
+    "route_and_live_WS_directory": {
+      "summary": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t0.173s\n"
+    },
+    "client_regression": {
+      "summary": "oducer] stdin EOF; exiting\n..[provision] action=install_skill target=x ok=False message=url host denied: evil.example\n..............[recv] from=workpulse#FB-2642 to=home#FB-2642 body_len=2\n[agent_skill] already installed; ack sent\n..................\n----------------------------------------------------------------------\nRan 101 tests in 11.643s\n\nOK\n"
+    },
+    "client_snapshot": {
+      "summary": ".\n----------------------------------------------------------------------\nRan 1 test in 0.002s\n\nOK\n"
+    },
+    "old_route_three_retries": {
+      "summary": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t0.388s\n"
+    },
+    "full_hub_regression": {
+      "status": "PASS",
+      "result": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t93.492s"
+    }
+  },
+  "limitations": [
+    "Special-group overlap precedence uses documented recommended default; optional owner clarification pending",
+    "Live rollout/version bump and independent review remain pending; deployed105 and download package unchanged"
+  ]
+}

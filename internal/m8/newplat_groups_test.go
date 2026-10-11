@@ -34,6 +34,7 @@ func TestNewPlatformAgentGroupsHTTP(t *testing.T) {
 	mux.HandleFunc("POST /api/console/agent-groups/{code}/members", v.hub.RequireConsolePrincipal(v.hub.HandleConsoleAgentGroup))
 	mux.HandleFunc("DELETE /api/console/agent-groups/{code}/members/{agentID}", v.hub.RequireConsolePrincipal(v.hub.HandleConsoleAgentGroup))
 	mux.HandleFunc("POST /api/console/agent-groups/{code}/additions", v.hub.RequireConsolePrincipal(v.hub.HandleConsoleAgentGroup))
+	mux.HandleFunc("POST /api/console/agent-groups/{code}/communication", v.hub.RequireConsolePrincipal(v.hub.HandleConsoleAgentGroup))
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 	call := func(method, path, tok, body string, origin bool) (int, string) {
@@ -65,6 +66,7 @@ func TestNewPlatformAgentGroupsHTTP(t *testing.T) {
 		LeaderKeyID       string   `json:"leader_key_id"`
 		LeaderSessionName string   `json:"leader_session_name"`
 		AdditionsClosed   bool     `json:"additions_closed"`
+		LeaderOnly        bool     `json:"leader_only"`
 		CanManage         bool     `json:"can_manage"`
 		OwnerDisplayName  string   `json:"owner_display_name"`
 		Members           []member `json:"members"`
@@ -169,6 +171,9 @@ func TestNewPlatformAgentGroupsHTTP(t *testing.T) {
 		{"member's owner closes additions", "POST", "/api/console/agent-groups/" + code + "/additions", v.tokLBL, `{"closed":true}`, 403, "无权管理该编组"},
 		{"leader removed", "DELETE", "/api/console/agent-groups/" + code + "/members/" + zID, v.tokZZC, "", 409, "组长不可剔除"},
 		{"missing group", "DELETE", "/api/console/agent-groups/nope", v.tokZZC, "", 404, "组码不存在"},
+		{"member cannot change communication", "POST", "/api/console/agent-groups/" + code + "/communication", v.tokLBL, `{"leader_only":true}`, 403, "无权管理该编组"},
+		{"communication value required", "POST", "/api/console/agent-groups/" + code + "/communication", v.tokZZC, `{}`, 400, "leader_only required"},
+		{"creator enables leader-only", "POST", "/api/console/agent-groups/" + code + "/communication", v.tokZZC, `{"leader_only":true}`, 204, ""},
 		{"closed required", "POST", "/api/console/agent-groups/" + code + "/additions", v.tokZZC, `{}`, 400, "closed required"},
 		{"member leaves", "DELETE", "/api/console/agent-groups/" + code + "/members/" + lID, v.tokLBL, "", 204, ""},
 		{"leave twice", "DELETE", "/api/console/agent-groups/" + code + "/members/" + lID, v.tokLBL, "", 409, "该 Agent 不在本编组中，可能列表已过期，请刷新"},
@@ -178,6 +183,17 @@ func TestNewPlatformAgentGroupsHTTP(t *testing.T) {
 	} {
 		if st, body := call(c.method, c.path, c.tok, c.body, true); st != c.status || body != c.want {
 			t.Errorf("%s: %d %q, want %d %q", c.name, st, body, c.status, c.want)
+		}
+		if c.name == "creator enables leader-only" {
+			found := false
+			for _, g := range get(v.tokZZC).Groups {
+				if g.Code == code {
+					found = g.LeaderOnly
+				}
+			}
+			if !found {
+				t.Fatal("policy absent from GET group view")
+			}
 		}
 	}
 	if l := get(v.tokZZC); len(l.Groups) != 0 {

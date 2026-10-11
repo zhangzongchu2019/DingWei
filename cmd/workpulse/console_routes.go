@@ -27,6 +27,7 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	mux.HandleFunc("POST /api/console/agent-groups/{code}/members", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroup))
 	mux.HandleFunc("DELETE /api/console/agent-groups/{code}/members/{agentID}", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroup))
 	mux.HandleFunc("POST /api/console/agent-groups/{code}/additions", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroup))
+	mux.HandleFunc("POST /api/console/agent-groups/{code}/communication", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroup))
 	mux.HandleFunc("GET /api/console/platform", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsolePlatform)))
 	mux.HandleFunc("POST /api/console/platform/submissions", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsolePlatformSubmit)))
 	mux.HandleFunc("POST /api/console/platform/items", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("add", prefixHub.HandleConsolePlatformAdd)))

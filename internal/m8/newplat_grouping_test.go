@@ -71,7 +71,7 @@ func TestNewPlatformGroupingUsesNpGroup(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	check("both groupless, same owner ⇒ default group", agentFrom("u_lbl", "kimi"), none, "u_lbl", "gamma", "")
+	check("both groupless have no shared group", agentFrom("u_lbl", "kimi"), none, "u_lbl", "gamma", "cross_group_denied")
 	check("groupless vs grouped other owner", agentFrom("u_lbl", "kimi"), none, "u_zzc", "opus50ts", "cross_group_denied")
 	// 两个都不在任何组、但属主不同 ⇒ 各落自己的默认组，不互通（默认组按属主分，不把所有属主并成一组）
 	kimiZOwn, _ := v.svc.Store.ListAgentGroups(ctx, kimiZ)

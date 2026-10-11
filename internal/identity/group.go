@@ -23,6 +23,7 @@ type Group struct {
 	CreatorLC       string
 	LeaderAgentID   string
 	AdditionsClosed bool
+	LeaderOnly      bool
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
@@ -313,6 +314,13 @@ func (s *Service) MentionCandidates(ctx context.Context, selfID string) ([]Menti
 		if id == selfID {
 			continue
 		}
+		allowed, err := s.AgentsCanCommunicate(ctx, union[selfID], ag)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			continue
+		}
 		c := MentionCandidate{Agent: *ag, FullName: s.fullName(ctx, ag)}
 		c.Insert = c.FullName
 		if names[ag.NameLC()] == 1 {
@@ -322,4 +330,48 @@ func (s *Service) MentionCandidates(ctx context.Context, selfID string) ([]Menti
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Agent.ID < out[j].Agent.ID })
 	return out, nil
+}
+
+// SetGroupLeaderOnly changes the group communication policy; only its creator can change it.
+func (s *Service) SetGroupLeaderOnly(ctx context.Context, actorLC, code string, leaderOnly bool) error {
+	return s.Store.SetGroupLeaderOnly(ctx, code, Lower(actorLC), leaderOnly, s.Now())
+}
+
+// AgentsCanCommunicate is also the visibility policy for online Agent directories.
+// Shared leader-only groups deny member-to-member communication even if another shared group allows it.
+// Ungrouped Agents have no implicit owner-wide group.
+func (s *Service) AgentsCanCommunicate(ctx context.Context, source, target *Agent) (bool, error) {
+	if source == nil || target == nil || source.State != AgentActive || target.State != AgentActive {
+		return false, nil
+	}
+	if source.ID == target.ID {
+		return true, nil
+	}
+	sourceCodes, err := s.Store.ListAgentGroups(ctx, source.ID)
+	if err != nil {
+		return false, err
+	}
+	targetCodes, err := s.Store.ListAgentGroups(ctx, target.ID)
+	if err != nil {
+		return false, err
+	}
+	targetSet := map[string]bool{}
+	for _, code := range targetCodes {
+		targetSet[code] = true
+	}
+	allowed := false
+	for _, code := range sourceCodes {
+		if !targetSet[code] {
+			continue
+		}
+		g, err := s.Store.GetGroup(ctx, code)
+		if err != nil {
+			return false, err
+		}
+		if g.LeaderOnly && source.ID != g.LeaderAgentID && target.ID != g.LeaderAgentID {
+			return false, nil
+		}
+		allowed = true
+	}
+	return allowed, nil
 }

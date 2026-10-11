@@ -115,6 +115,7 @@ type GroupStore interface {
 	LeaveGroup(ctx context.Context, code, agentID, actorLC string) error
 	// SetGroupAdditionsClosed 建组人才可（ErrForbidden）；不存在 ⇒ ErrNotFound。
 	SetGroupAdditionsClosed(ctx context.Context, code, actorLC string, closed bool, now time.Time) error
+	SetGroupLeaderOnly(ctx context.Context, code, actorLC string, leaderOnly bool, now time.Time) error
 	// DeleteGroup 建组人才可（ErrForbidden）；不存在 ⇒ ErrNotFound；成员行随之删除。
 	DeleteGroup(ctx context.Context, code, actorLC string) error
 }

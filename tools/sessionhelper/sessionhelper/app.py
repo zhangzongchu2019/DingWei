@@ -12,6 +12,7 @@ import re
 import shutil
 import sys
 import time
+import threading
 from collections import deque
 from dataclasses import dataclass
 from typing import Protocol
@@ -210,6 +211,7 @@ class SessionHelper:
         self.non_primary_broadcast_texts: deque[str] = deque(maxlen=32)
         self.comm_skill_installed = False
         self.last_online_list = ""
+        self._online_list_lock = threading.Lock()
         self.pending_inbound: deque[dict] = deque(maxlen=max(1, cfg.busy_buffer_max))
         self.delivery_inbox = DeliveryInbox(
             cfg.inbox_db,
@@ -665,7 +667,7 @@ class SessionHelper:
                 print(hub_notice_trace(env), flush=True)
                 continue
             body = str(env.get("body") or "")
-            if is_online_directory_text(body):
+            if (env.get("meta") or {}).get("type") == "online_directory" or is_online_directory_text(body):
                 self.write_online_list(body)
                 continue
             if is_client_onboarding_text(body):
@@ -694,7 +696,7 @@ class SessionHelper:
                     print("[agent_skill] staged + auto-acked", flush=True)
                 continue
             body = str(env.get("body") or "")
-            if is_online_directory_text(body):
+            if (env.get("meta") or {}).get("type") == "online_directory" or is_online_directory_text(body):
                 self.write_online_list(body)  # 始终写最新到会话专属共享文件，供CLI按需读取（不注入对话、不刷屏）
                 continue
             if is_no_mirror_envelope(env):
@@ -918,7 +920,7 @@ class SessionHelper:
         # recv_loop(实时路径)本来就有类似跳过,durable(补发路径)没有 —— 两条路径各走各的,
         # 只在其中一条加保护是不够的。
         body = str(env.get("body") or "")
-        if is_online_directory_text(body):
+        if (env.get("meta") or {}).get("type") == "online_directory" or is_online_directory_text(body):
             await asyncio.to_thread(self.write_online_list, body)
             await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed"), ensure_ascii=False))
             print(f"[roster] delivery list written; skipped cli injection delivery_id={delivery_id}", flush=True)
@@ -1307,10 +1309,14 @@ class SessionHelper:
         base = os.path.expanduser(os.path.join("~", ".dingwei"))
         return os.path.join(base, f"{self.cfg.session_name}.DingWeiOnlineSessions.list")
 
-    def write_online_list(self, body: str) -> None:
+    def write_online_list(self, body: str | None) -> None:
         """把最新在线清单原子写入共享文件，供 CLI（经 skill）按需读取。始终最新、不进对话。
-        body 非空=更新清单内容；空=仅刷新时间戳（心跳）。文件头带 UTC 更新时间，供 AI 判新鲜度。"""
-        if body:
+        body（含空字符串）=完整替换；None=仅刷新时间戳（心跳）。文件头带 UTC 更新时间，供 AI 判新鲜度。"""
+        with self._online_list_lock:
+            self._write_online_list(body)
+
+    def _write_online_list(self, body: str | None) -> None:
+        if body is not None:
             self.last_online_list = str(body)
         try:
             ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -1332,7 +1338,7 @@ class SessionHelper:
         """心跳：连接存续期间每 60s 刷新清单文件时间戳。由连接生命周期管理（见 recv 分支的
         create_task/cancel）——进程死或断连时本 loop 停止 → 文件时间变旧 → AI 据 2 分钟判据识别异常。"""
         while True:
-            await asyncio.to_thread(self.write_online_list, "")
+            await asyncio.to_thread(self.write_online_list, None)
             await asyncio.sleep(60)
 
     def apply_mirror_control(self, env: dict) -> None:

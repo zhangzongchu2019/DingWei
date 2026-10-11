@@ -114,7 +114,7 @@ func TestLedgerInDomains_PartitionsRealLedger(t *testing.T) {
 
 	// 🔴 名单写死：本格钉的是【真账本里现在有哪几条、各属哪个域】，引 Ledger() 去比就是自己比自己。
 	hub := names(mustLedgerIn(t, HubDomains()))
-	if strings.Join(hub, ",") != coreEntry+","+frozenIdentityEntry {
+	if strings.Join(hub, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql" {
 		t.Errorf("HubDomains 取到 %v，要 %s（core＋identity，🔴 不含 fanout 的 %s）",
 			hub, coreEntry+","+frozenIdentityEntry, frozenFanoutEntry)
 	}
@@ -212,8 +212,8 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Migrate(HubDomains): %v", err)
 		}
-		if strings.Join(rep.Applied, ",") != coreEntry+","+frozenIdentityEntry {
-			t.Errorf("Applied = %v，要 Hub 域两条按字典序", rep.Applied)
+		if strings.Join(rep.Applied, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql" {
+			t.Errorf("Applied = %v，要 Hub 域三条按字典序", rep.Applied)
 		}
 		for _, tbl := range hubTables {
 			if !tableExists(t, pool, tbl) {
@@ -226,8 +226,8 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 			}
 		}
 		rows := ledgerRows(t, pool)
-		if len(rows) != 2 || rows[coreEntry].digest == "" || rows[frozenIdentityEntry].digest == "" {
-			t.Errorf("账上读到 %v，要恰好 %s 与 %s 两条", keysOf(rows), coreEntry, frozenIdentityEntry)
+		if len(rows) != 3 || rows[coreEntry].digest == "" || rows[frozenIdentityEntry].digest == "" || rows["0101_group_communication.sql"].digest == "" {
+			t.Errorf("账上读到 %v，要 core、identity、communication 三条（含 %s 与 %s）", keysOf(rows), coreEntry, frozenIdentityEntry)
 		}
 		if _, ok := rows[frozenFanoutEntry]; ok {
 			t.Errorf("Hub 库的账上记了 %s —— 那条属 fanout 域", frozenFanoutEntry)
@@ -270,9 +270,9 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		}
 	})
 
-	// ④ 生产 Hub 库现状（只施加过 0001＋0100）在新代码下再迁一次：不报错、无新条目、表清单一字不动。
-	// 🔴 这一格是"可以部署"的判据：它红了就意味着下一次 Hub 部署会动生产库。
-	t.Run("生产 Hub 现状再迁一次＝无新条目", func(t *testing.T) {
+	// ④ 既有 Hub（0001＋0100）升级：仅增加通讯策略列及一条账，既有表与账不重写。
+	// 本格明确核准新增迁移范围；不允许新增其它域的表或改写旧账。
+	t.Run("既有 Hub 升级仅新增编组通讯列", func(t *testing.T) {
 		pool := testSchema(t, dsn)
 		// 造出生产现状：只施加 0001＋0100（按名字从真账本里挑，不自己写 DDL）。
 		prod := pickEntries(t, coreEntry, frozenIdentityEntry)
@@ -287,8 +287,8 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		if err != nil {
 			t.Fatalf("在生产 Hub 现状上跑 Hub 侧 Migrate 竟然报错（部署会起不来）: %v", err)
 		}
-		if len(rep.Applied) != 0 {
-			t.Errorf("Applied = %v，要空 —— 生产 Hub 库现状下不该有任何新条目", rep.Applied)
+		if strings.Join(rep.Applied, ",") != "0101_group_communication.sql" {
+			t.Errorf("Applied=%v, want only communication migration", rep.Applied)
 		}
 		if strings.Join(rep.Skipped, ",") != coreEntry+","+frozenIdentityEntry {
 			t.Errorf("Skipped = %v，要恰好那两条（空转）", rep.Skipped)
@@ -298,7 +298,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 			t.Errorf("表清单动了：\n迁前 %v\n迁后 %v", before, after)
 		}
 		afterRows := ledgerRows(t, pool)
-		if len(afterRows) != len(beforeRows) {
+		if len(afterRows) != len(beforeRows)+1 {
 			t.Errorf("账多了条目：迁前 %v、迁后 %v", keysOf(beforeRows), keysOf(afterRows))
 		}
 		for name, r := range beforeRows {
@@ -316,7 +316,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 
 	// ④ 指错库：fanout 库上跑 Hub 侧 Migrate ⇒ 拒绝，且【一条 DDL 都不发】。
 	// 🔴 反向对照（交付件 K3）：去掉 migrateEntries 里的隔离核对 ⇒ 本格必红
-	// （Hub 的两条会被施加进 fanout 库，两个服务共一本账，裁定取的乙就名存实亡）。
+	// （Hub 的三条会被施加进 fanout 库，两个服务共一本账，裁定取的乙就名存实亡）。
 	t.Run("fanout 库上跑 Hub 侧 Migrate ⇒ 拒绝且不动库", func(t *testing.T) {
 		pool := testSchema(t, dsn)
 		if _, err := Migrate(ctx, pool, FanoutDomains()); err != nil {

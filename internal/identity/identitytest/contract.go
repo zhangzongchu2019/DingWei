@@ -34,6 +34,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"N3_first_admin_refused_when_only_manager", firstAdminRefusedByManager},
 		{"G_group_create_leader_name_code", groupCreateRules},
 		{"G_group_join_leave_close", groupJoinLeaveClose},
+		{"G_group_communication_creator_only_persisted", groupCommunicationPolicy},
 		{"G_group_delete_creator_only_cascades", groupDeleteRules},
 		{"G_group_member_rows_survive_revoke", groupMemberAfterRevoke},
 		{"G_approve_group_choice_atomic", approveGroupChoice},
@@ -1283,4 +1284,30 @@ func setUserType(t *testing.T, s identity.Store) {
 		t.Fatalf("after SetUserType(member): %+v", u)
 	}
 	wantErr(t, "SetUserType unknown user", s.SetUserType(ctx, "nobody", identity.UserManager), identity.ErrNotFound)
+}
+
+func groupCommunicationPolicy(t *testing.T, s identity.Store) {
+	groupFixture(t, s)
+	if err := s.CreateGroup(ctx, mkGroup("policy", "Policy", "zzc", "ag-z", t0)); err != nil {
+		t.Fatal(err)
+	}
+	g, err := s.GetGroup(ctx, "policy")
+	if err != nil || g.LeaderOnly {
+		t.Fatalf("ordinary default: %+v %v", g, err)
+	}
+	wantErr(t, "noncreator", s.SetGroupLeaderOnly(ctx, "policy", "lbl", true, t0), identity.ErrForbidden)
+	if err := s.SetGroupLeaderOnly(ctx, "policy", "zzc", true, t0.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	g, err = s.GetGroup(ctx, "policy")
+	if err != nil || !g.LeaderOnly || !g.UpdatedAt.Equal(t0.Add(time.Minute)) {
+		t.Fatalf("persisted: %+v %v", g, err)
+	}
+	if err := s.SetGroupLeaderOnly(ctx, "policy", "zzc", false, t0.Add(2*time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	g, err = s.GetGroup(ctx, "policy")
+	if err != nil || g.LeaderOnly {
+		t.Fatalf("restore ordinary: %+v %v", g, err)
+	}
 }

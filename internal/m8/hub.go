@@ -4734,6 +4734,9 @@ func (h *Hub) sessionEndpointNoDirectory(ctx context.Context, keyID, sessionName
 }
 
 func (h *Hub) BroadcastOnlineDirectories(ctx context.Context) error {
+	if h.Identity != nil {
+		return h.broadcastNewPlatformDirectories(ctx)
+	}
 	owners, err := h.onlineOwners(ctx)
 	if err != nil {
 		return err
@@ -4860,6 +4863,9 @@ func (h *Hub) ownerKeyForKeyWithMembersAndAccounts(accounts []string, members []
 }
 
 func (h *Hub) broadcastOnlineDirectory(ctx context.Context, ownerKey string) error {
+	if h.Identity != nil {
+		return h.broadcastNewPlatformDirectories(ctx)
+	}
 	start := time.Now()
 	items, owner, err := h.onlineDirectory(ctx, ownerKey)
 	if err != nil {

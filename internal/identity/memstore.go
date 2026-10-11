@@ -854,3 +854,17 @@ func (m *MemStore) applyGroupChoiceLocked(agentID, code string, newGroup *Group,
 	}
 	m.members[code][agentID] = now
 }
+
+func (m *MemStore) SetGroupLeaderOnly(_ context.Context, code, actorLC string, leaderOnly bool, now time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	g, ok := m.groups[code]
+	if !ok {
+		return ErrNotFound
+	}
+	if g.CreatorLC != Lower(actorLC) {
+		return ErrForbidden
+	}
+	g.LeaderOnly, g.UpdatedAt = leaderOnly, now
+	return nil
+}

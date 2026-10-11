@@ -145,7 +145,7 @@ func TestLedger_EmbeddedEntries(t *testing.T) {
 	}
 	// 🔴 这份名单写死而不引 embed 去比：本格钉的就是「内嵌进二进制的账本是这几条、这个序」。
 	// 加一条条目 ⇒ 改这里（红一次是应当的：账本主键集合变了，必须有人看过一眼）。
-	want := []string{"0001_core_baseline.sql", "0100_identity_baseline.sql", "0400_fanout_baseline.sql"}
+	want := []string{"0001_core_baseline.sql", "0100_identity_baseline.sql", "0101_group_communication.sql", "0400_fanout_baseline.sql"}
 	if len(entries) != len(want) {
 		t.Fatalf("账本条数 = %d（%v），要 %d", len(entries), names(entries), len(want))
 	}
@@ -239,7 +239,7 @@ func TestLedger_RegisteredEntriesSortWithEmbedded(t *testing.T) {
 	}
 	got := names(entries)
 	want := []string{"0001_core_baseline.sql", "0050_core_test.sql", "0100_identity_baseline.sql",
-		"0200_hosted_test.sql", "0400_fanout_baseline.sql", "0900_cross_test.sql"}
+		"0101_group_communication.sql", "0200_hosted_test.sql", "0400_fanout_baseline.sql", "0900_cross_test.sql"}
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("账本顺序 = %v，要 %v（字典序，与来源无关）", got, want)
 	}
@@ -605,8 +605,8 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Ledger: %v", err)
 	}
-	if len(entries) != 3 {
-		t.Fatalf("账本 %d 条（%v），本格按 3 条写断言（变了就改本格，别改断言数字糊过去）",
+	if len(entries) != 4 {
+		t.Fatalf("账本 %d 条（%v），本格按 4 条写断言（变了就改本格，别改断言数字糊过去）",
 			len(entries), names(entries))
 	}
 
@@ -649,8 +649,8 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 	// 终态：账 3 条、digest 与正文一致、身份域 CheckSchema 过（＝Hub 真起得来）。
 	probe := pools[0]
 	rows := ledgerRows(t, probe)
-	if len(rows) != 3 {
-		t.Fatalf("账上 %d 条，要 3 条", len(rows))
+	if len(rows) != 4 {
+		t.Fatalf("账上 %d 条，要 4 条", len(rows))
 	}
 	for _, e := range entries {
 		if rows[e.Name].digest != Digest(e.Body) {
@@ -665,7 +665,7 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("并发之后重跑 MigrateEntries: %v", err)
 	}
-	if len(rep.Applied) != 0 || len(rep.Skipped) != 3 {
+	if len(rep.Applied) != 0 || len(rep.Skipped) != 4 {
 		t.Errorf("重跑 Applied=%v Skipped=%v，要空转三条", rep.Applied, rep.Skipped)
 	}
 }
