@@ -8,6 +8,20 @@ DEPLOY = ROOT / "deploy"
 
 
 class FileServiceDeploymentTest(unittest.TestCase):
+    def test_direct_link_regex_accepts_canonical_sessions_and_rejects_unsafe_paths(self):
+        import re
+
+        text = (DEPLOY / "nginx-dingwei.conf").read_text()
+        patterns = re.findall(r'location ~ "([^"\n]+)"', text)
+        self.assertEqual(len(patterns), 2)
+        patterns = [re.compile(re.sub(r'\(\?<([a-z_]+)>', r'(?P<\1>', p)) for p in patterns]
+        for extension, pattern in zip(("yml", "zip"), patterns):
+            suffix = "/26/1011/0123456789abcdef0123456789abcdef." + extension
+            for session in ("timer", "timer.zzc", "timer.z9"):
+                self.assertIsNotNone(pattern.fullmatch("/f/u_zhangzongchu/" + session + suffix))
+            for session in ("..", "timer.z", "timer..zzc", "timer.zzc.extra", "timer.", "timer.zz-c", "timer/zzc"):
+                self.assertIsNone(pattern.fullmatch("/f/u_zhangzongchu/" + session + suffix))
+
     def test_owner_selected_limits_are_pinned_in_deployment_contract(self):
         contract = (DEPLOY / "H-FILE-SERVICE-DEPLOYMENT.md").read_text()
         self.assertEqual(contract.count("FS_RETENTION=168h"), 1)

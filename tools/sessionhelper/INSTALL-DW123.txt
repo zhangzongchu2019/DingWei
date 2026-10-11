@@ -1,0 +1,51 @@
+dw123 self-hosted Agent installation and upgrade (0.2.2.1)
+
+Hub: https://dw123.cmjrt.com
+WebSocket base: wss://dw123.cmjrt.com
+Console: https://dw123.cmjrt.com/console/login
+
+Upgrading an existing Agent
+--------------------------
+Keep the Agent's existing SH_STATE_DIR and all enrollment credentials. Preserve
+its AI CLI configuration, working directory, provider settings and startup mode.
+Stop the existing helper through its current service/supervisor before launching
+the new code; never run two helpers with the same credential. Install the new
+version in a separate directory and switch the helper's code path. Do not delete
+the old installation or credential file, and do not enroll the Agent again.
+
+Install tools/sessionhelper/requirements.txt into the helper's own Python
+environment. Start tools/sessionhelper/run.sh using the previous configuration.
+The console should report helper version 0.2.2.1 after reconnection. A source
+package and its hash do not by themselves prove that the local AI CLI works.
+
+First enrollment (only for a new Agent)
+--------------------------------------
+SH_ENROLL_OWNER requires the actual user_id, not the user's short name.
+For the owner whose short name is zzc, the verified user_id is zhangzongchu:
+
+    export SH_ENROLL=1
+    export SH_ENROLL_OWNER=zhangzongchu
+    export SH_WS_BASE=wss://dw123.cmjrt.com
+    export SH_STATE_DIR="$HOME/.dingwei-dw123"
+
+Use a different private state directory for every Agent. Configure the intended
+AI CLI and mode before starting run.sh. Approve the displayed pairing code under
+Agent management / self-hosted Agent review; assign the Agent name and group.
+Never reuse credentials from dw2/.95 or place secrets in a public config file.
+
+Group communication and online lists
+-----------------------------------
+The group creator can set a group's communication mode to leader-only from its
+group detail page. A member may communicate with the leader in either direction,
+but two members in that special group cannot communicate. A member-to-member
+deny in a shared special group wins over an allow from another shared group.
+Ungrouped Agents do not receive an implicit owner-wide communication group.
+
+The Hub sends a complete directory filtered for each recipient. Complete
+snapshots, including an empty snapshot, replace the helper's historical list;
+a heartbeat without a snapshot does not clear it. Use the new helper to obtain
+the complete local-list behavior; an older compatible helper may still connect.
+
+The release changes no user identity, credentials or existing group membership.
+There is no automatic update of self-hosted Agent machines from publishing this
+source package. The owner must switch the existing helper's code path as above.

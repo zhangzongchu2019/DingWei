@@ -26,7 +26,9 @@ var identitySegment = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
 
 // sessionSegment 会话段另允许新平台的 full_name（名称.用户简称，均为小写字母数字；简称 2～16 位），
 // 只许一个点、点不在首尾 ⇒ 不会出现 . 与 .. 路径段。
-var sessionSegment = regexp.MustCompile(`^[a-z0-9_-]{1,64}(\.[a-z0-9]{2,16})?$`)
+const sessionPathPattern = `[a-z0-9_-]{1,64}(\.[a-z0-9]{2,16})?`
+
+var sessionSegment = regexp.MustCompile(`^` + sessionPathPattern + `$`)
 
 func normalizedMedia(mediaType, originalName string) (string, string) {
 	base := strings.ToLower(strings.TrimSpace(strings.SplitN(mediaType, ";", 2)[0]))

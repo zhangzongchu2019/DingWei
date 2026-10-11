@@ -1,0 +1,83 @@
+{
+  "utc": "2026-10-11T09:51:52.476084+00:00",
+  "source_base": "e3a4d335edf0943776e19b91cacca8f4c765fb3d",
+  "release_version": "0.2.2.1",
+  "last_deployed_version": "0.2.1.105",
+  "scope": [
+    "Previously independently reviewed leader-only groups/directory filtering/full helper snapshots unchanged",
+    "S1 share upload and cleanup session grammar, expiry/integrity cleanup accepts canonical dot suffix",
+    "Source nginx two-regex correction mirrors independently reviewed deployed fix",
+    "Functional C increase, stable A/B=0.2, root/Go/helper version synchronized",
+    "Add helper snapshot writer to canonical build gate and accurate dw123 install/upgrade instructions"
+  ],
+  "test_results": {
+    "fileservice_and_version_full_packages": "PASS, go test ./internal/fileservice ./internal/version -count=1; no captured original log claimed",
+    "deployment_contract_python": "10 tests PASS; includes both actual source location patterns with allowed/denied paths",
+    "canonical_gate": "BUILD_TESTS_OK python=22 shell=1; file count independently enumerated22",
+    "integration_packages": [
+      {
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/internal/identity",
+        "Elapsed": 22.265
+      },
+      {
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+        "Elapsed": 91.241
+      },
+      {
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+        "Elapsed": 84.367
+      },
+      {
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/internal/store/migrate",
+        "Elapsed": 23.444
+      }
+    ],
+    "go_pass_events_including_subtests": 1058,
+    "skips": [
+      "TestConsolePlatformPayloadDump",
+      "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "TestEnvelopeReadTimeoutEnvironmentChild",
+      "TestUpgradeRotationKeepsNewCredentialOnSharedWork"
+    ],
+    "old_catalog_on_upgraded_pg_schema": "1 fresh temporary PG test PASS; only schema compatibility, does not prove oldbinary enforcesnewgroup mode"
+  },
+  "red_baseline": {
+    "source": "e3 before S1 product fix, new lifecycle regression tests added",
+    "observed_failures": [
+      "canonical timer.zzc/timer.z9 delete refused unsafe key",
+      "expired canonical session sweep refused unsafe key",
+      "integrity-rejected canonical session left local object"
+    ],
+    "qualification": "Observed test output summary; no preserved full red-log pin claimed"
+  },
+  "iteration_disclosure": [
+    "Initial new rollback-test compile used Pool.QueryRow as single-value; corrected test to handle (*sql.Row,error), final targetedPGtest PASS. Product migration unchanged."
+  ],
+  "logs": [
+    {
+      "path": "/tmp/dw123-group-file-release-go-tests.jsonl",
+      "bytes": 1661505,
+      "sha256": "6d6bd632d8ef4304db1c24f29f5c839ea9f040a36b30289b4bf870280e56ae77",
+      "qualification": "Author local logs, no referenced runtime or independent reviewer claim; raw logs excluded from public release bundle"
+    },
+    {
+      "path": "/tmp/dw123-group-file-release-rollback-test.jsonl",
+      "bytes": 1645,
+      "sha256": "e90f96ad7f11882d598b7e94cdc6ec2b418dab7bc4f21e03889978dd1f10e1b6",
+      "qualification": "Author local logs, no referenced runtime or independent reviewer claim; raw logs excluded from public release bundle"
+    },
+    {
+      "path": "/tmp/dw123-group-file-release-canonical-tests.log",
+      "bytes": 7265,
+      "sha256": "7e1d0dc720780f19b1d3b4e6b823ab3d9756a43fcc4ce2383c9af02cfdc40e14",
+      "qualification": "Author local logs, no referenced runtime or independent reviewer claim; raw logs excluded from public release bundle"
+    }
+  ],
+  "deployment": "NOT DEPLOYED; current dw123 .105 remains until exact release/source/build pins, independent deltaCR and migration/rollback runbook accepted",
+  "independence": "Author tests only; previous group CRa24cd8b5 and source-nginx CR99315477 separate; do not borrow these for new S1 delta",
+  "protected": "Old dw/dw2/.95 unchanged; no online DB or actual helper changed"
+}

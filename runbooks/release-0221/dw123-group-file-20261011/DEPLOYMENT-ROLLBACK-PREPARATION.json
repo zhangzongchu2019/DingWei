@@ -1,0 +1,23 @@
+{
+  "version": "0.2.2.1",
+  "scope": "dw123-only Hub/file-service release plus matching downloadable helper source; no remote self-hosted-machine update or newaccounts/groups credentials creation",
+  "steps": [
+    "Confirm exact fixedsource/bundle and officialGo1.22.2toolpins on dw123; compile locally with originalbuild.sh externaloutput and cleanSOURCE_COMMIT, do not use rootbinary asfinal. Newsourcebundle exportviaverifiedGongfengholder if prodopsGitpublickeystillblocked; temporarytagged SFTP onlyafterstrictfingerprint ACK andremove afterpinsverify.",
+    "Before service change verify livebaselineHub17602/filebbde3727/VSloopback8793/currentfixednginxsessiondot/PGbindingrealFeishu/newtargetonly. Capture immutable rollback binarypaths/unit/env/config pins and owned data references; no generic old GO reuse.",
+    "Privately snapshot PG dingwei_dw123 and file-serviceSQLite with appropriate consistent target-owned procedure. Backups targetroot0600/private0700 under /data distinctbackups, no export or credentials in report. Verify backup bytes/hash and archive structure; never claim restore tested without actual isolated verification. Metadata and object root/retention stayunchanged.",
+    "Stage verified target-built workpulse/file-service in separate immutable version+hash directories, preserve old dirs. Stop/restart only specified newtarget units once forbinaryswitch; do not reload unchangednginx or restartVS, do not modify existingenv/tokens/keys/identity rows.",
+    "New Hub startup automatically applies ONLY newly embedded0101_group_communication.sql in Hubdomain catalog before schema check; new leader_onlyboolean NOTNULLDEFAULTfalse. Record ledger name/digest and schema proof, no usergroup statechange or manualmembershipassignment. No repeatedbootstrap-admin or key generation.",
+    "Check runningexecutable bytes/SHA/version/commit equals target build; Hubhealth/ready200,N3anonymous401/oldws410; freshFeishu ready90s; View/file endpoints/storageHTTP gates unchanged. Never repeat earlier consumed tiny probe. existing authorized preprodGET5600/fullSHA andRange206 remainsreadonlyfileacceptance.",
+    "Publish matching immutable sessionHelper0.2.2.1 sourcepackage/manifest/install guide to newversioned /downloads path. Preserve .105 package URLs and bytes; publicGET fullSHA/allGittrackedmemberpins. No Hubrestart forstaticdownloadpublication.",
+    "Groupmode APIroute anonymous401 and consoleUI mode control source/publishedpage present; do not create fakeAgent/group or mutate ownergroup to claim behaviorruntime. Existinggroup unit/integration tests evidence remainsauthor+staticreview; owner needs actualleader/members to confirm realpolicy.",
+    "Ask owner to switch existing timerhelper code path to newpackage preservingstate/credential/CLI, ensure exactlyoneconnection andnewversioncapability; no automatedserver-side clientupgrade/forcekick inferred. Full client-listcleanups remainpending actualownerclientupgrade."
+  ],
+  "rollback": [
+    "Firstfailure stopforwardprogression and report exactgate. Restore last-goodHub/file immutablebinary/unit references and unchangedenv only if failure occurs before any leader_only=true group configuration and recorded counttrue remains0. Do not regenerate keys orbootstrap, do not deleteuploads/backups/accountdata.",
+    "Additional0101column+ledger may remain during oldcatalogbinary rollback (freshPGtest demonstrates catalog compatibility), do not DROPcolumn or editmigrationdigest asroutine rollback.",
+    "If any group now usesleader_only=true, DO NOT downgrade to .105 which cannotenforcethatpolicy. Keep faultynewHub out of serviceif required forfailclosed, report andprepareforwardfix; any policy-disabling/groupmutation requires specificownerdecision.",
+    "Do not automaticallyrestorefullDBsnapshot overpost-upgradewrites. Targetbackupis fallbackmaterial, restoration requires exactdata-lossassessment/scope notgenericrollback.",
+    "Restore downloadlandingcurrentpointer ifchanged; immutableold/newpackageobjects remain. Self-hostednewhelper canconnect .105 withsameA/B butfeaturesnotaccepted onoldHub; do not downgrade ownerclientwithoutowner action."
+  ],
+  "limits": "Current105/URLsfreeze lifts onlyforfixedcoordinatedrelease uponrootconcreteexecutionafterCR; .95 remainsprotected. This document is preparation, not execution command or claim ofcompleted runtime."
+}
