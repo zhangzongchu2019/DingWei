@@ -1,6 +1,6 @@
 # 原桌面自动唤醒：待打通的接入条件
 
-状态：未实现。当前 desktop adapter/MCP 仅持久收件与显式读/回复，native_auto_notify_implemented=false。macOS 首轮本地 pilot 不改变这个结论。
+状态：完整原桌面自动唤醒未实现。当前 desktop adapter/MCP 仅持久收件与显式读/回复，native_auto_notify_implemented=false。新增 desktop_dispatch.py 为离线调度内核，未接生产/GUI transport，不改变功能状态。macOS 首轮本地 pilot 也不改变这个结论。
 
 官方依据：[MCP](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)、[App Server](https://learn.chatgpt.com/docs/app-server)、[开发命令](https://learn.chatgpt.com/docs/developer-commands?surface=cli)。
 App Server 文档提供 Unix control socket、JSON-RPC、thread/loaded/list（仅在内存的 ID）、turn/start 和运行状态通知。它没有证明业主正在使用的 GUI 实例已经共享了一个可供本 helper 使用的控制端点。开发命令的 --remote 说明针对 TUI，不能借用为桌面现成绑定证据；WebSocket/app-server 被文档标为实验性开发入口。
@@ -11,3 +11,16 @@ App Server 文档提供 Unix control socket、JSON-RPC、thread/loaded/list（�
 拟验证边界：只绑定 owner 明选的线程，不读取既存聊天正文/密钥/认证数据库；只处理绑定后到达的 DW 消息。原线程忙时排队、不打断用户当前轮次；只有真实 model-admission 回执才报告进入模型。实现去重、暂停、断线恢复与逐条投递关联，回复仅归属于相应新消息产生的 turn。绑定变更必须来自用户明确操作，不能由入箱消息自行请求更改。
 
 如果该桌面版本没有合法可用的原线程控制入口，须向业主说明限制并协商功能范围，不能把 MCP 主动读取、系统通知或 CLI 交互发布为本需求的自动原会话交互。
+
+## 调度内核增量（本地替身核验）
+
+`desktop_dispatch.py` 复用私有 desktop inbox，并持久化逐消息 admission 账本。原桌面绑定、加载且空闲、原子 `start_if_idle` 均须未来真实 provider 实现；当前没有 native provider，也没有后台接线。接口契约不等于官方服务已提供原子空闲启动 API。不能以先查 idle 再无条件 turn/start 实现该契约：其间用户可能开始自己的 turn。
+
+- 默认桌面状态仍为未实现/未验证；MCP 和消息字段均不能配置 native 绑定。
+- 开始副作用前提交 starting 意图；确认 turn ID 后才记 admitted。异常/取消标 uncertain，进程崩溃残留 starting。两者均阻止自动重投和后续启动，避免重复进入模型。
+- 单条 admitted 也阻塞下一条，直至可信 provider 提交同 message/thread/turn 的终止回执。未实现历史查询恢复，不擅自把 uncertain 清回 unread。
+- MCP 已读/ACK 与原生 admission 分开；admission 不声称 AI 执行完成、GUI 回显或回复送达。
+- 绑定需非秘密 endpoint 引用及原桌面后端来源证据。loaded/list 只能证明线程已加载，不能证明该端点属于原 GUI；thread/read 的 summary 可能包含预览文本，当前内核不调用它。
+- provider 必须限制元数据和本次关联的 turn；不拉用户历史，不新建/恢复/分叉线程，不自动批准请求，不覆写审批与 sandbox 策略。
+
+验证：test_desktop_dispatch.py 8 项替身测试通过；另保留既有 desktop inbox 和 pilot 回归。非真实 Mac、非模型调用、非端到端验收。
