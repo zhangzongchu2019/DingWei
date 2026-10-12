@@ -48,3 +48,17 @@ App Server 文档提供 Unix control socket、JSON-RPC、thread/loaded/list（�
 `SessionHelper._make_send_handler` 明确返回 `{sent:true,to:...}`，含义仅为认证连接写入，Hub 裁决另行异步返回。新增测试调用这个实际函数（仅 synthetic websocket，不联网），确认回传内核拒绝以其返回值记 sent/已读，保留 uncertain 且不重投。不得用 `{ok:true}` 包装既有写入回执绕过 durable ACK 契约。后续需确定回复 envelope ID 与 Hub 接受/拒绝或持久投递结果的安全关联，再接 sender。
 
 Mac 最小信息采集：从新的固定源码包解压目录运行 `PYTHONPATH=tools/sessionhelper python3 -m sessionhelper.desktop_host --desktop-app /Applications/Codex.app`。此入口只用标准库，不要求构建、安装 MCP、Hub 配对或桌面登录；如安装的是 ChatGPT.app，则选其准确路径。要求 Python3.11+。只回传 applications 中 name/version/build/bundle_id，以及 architecture；不要传配置、日志或任何认证数据。该信息本身仍不是 socket 来源证据。
+
+## Hub → helper 显式持久入队回执（开发增量）
+
+`outbound_receipt_v1=true` 明确启用；请求须带独立128位 nonce。Hub 只支持常规可靠 Agent 地址：组权限和属主路由仍走原 RouteEnvelope，目标不具可靠入队能力则拒绝且不降级 direct-write；飞书、selector、系统/控制信封本轮不支持。旧请求不启用此路径。
+
+成功回执仅在 EnqueueSessionDelivery 成功返回后产生，包含 source_message_id、私有 nonce、delivery_id、state=queued、durable=true；无正文，来源为 Hub 系统地址。nonce 和启用标志在目标 queue payload 前删除，不泄漏给收件 Agent。路由返回 nil 本身不产生成功回执，故重复/静默终止不会伪造确认。队列提交后的回执丢失不撤销已提交项；helper 留 uncertain，不自行重发。
+
+新增 helper OutboundReceiptBroker 注册 waiter 后才写认证连接，在同一连接、相同随机nonce/请求ID、Hub来源/本会话地址、version1、规范delivery_id 全符合后返回 `{ok:true,stage:hub_durable_queued}`；超时、拒绝、取消、断线不成功。控制回执不进收件箱或 AI。`_make_confirmed_send_handler` 为未来桌面桥准备，同一 recv_loop 已消费回执；旧 IPC `_make_send_handler` 保留 socket-write 语义。
+
+该通道覆盖 Agent 目标的 Hub 持久接受，并非终端读取/AI完成/飞书平台接受确认。本轮尚未把同步 desktop dispatcher 接到原生后台任务与异步 sender；不得称自动闭环已上线。已增加 Go 真实本地 websocket+SQLite 队列检验，以及 Python nonce/连接/ACK/取消/超时回归；不连接生产或真实 Agent。
+
+补充兼容保护：desktop capabilities 带独立一次性 cap_nonce；新 Hub 响应只表示支持 durable Agent queue 回执。Broker 在同一连接、相同 nonce、Hub 本会话地址和 version1 均核符前，不写任何正文。旧 Hub 不响应就拒绝发送；重连重新协商，不复用旧结果。普通 driver/CLI 不申请此新能力，旧 IPC 无变化。握手 nonce 只在控制面，不转给收件 Agent。
+
+全量首次回归的6项错误来自两个精简测试 fixture 未补新组件，已补 fixture 而不削弱生产接收器；另1项真实 HOME 状态变化来源未核，不删除或恢复真实文件。随后独立 HOME 下542项全通过（在能力协商最后增量之前）；最终协商增量另有靶向回归。既有 ResourceWarning/PTY 提醒保留。`durable` 对应已有 repository 队列提交，未另行声称断电/存储故障实证。

@@ -65,6 +65,8 @@ class FileHandlerBridgeTest(unittest.TestCase):
         helper = object.__new__(SessionHelper)
         helper.book = AddressBook("agent", "key", "bot")
         helper.file_ticket_waiters = {}
+        from sessionhelper.outbound_receipt import OutboundReceiptBroker
+        helper.outbound_receipts = OutboundReceiptBroker(("agent",))
         return helper
 
     def test_capability_response_is_consumed_before_cli_path(self):

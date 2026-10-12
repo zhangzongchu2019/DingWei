@@ -1248,6 +1248,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			log.Printf("amr decision=legacy_route_dropped session=%s", c.sessionName)
 			continue
 		}
+		if h.handleConfirmedOutbound(r.Context(), c, env) {
+			continue
+		}
 		if metaBool(env.Meta, ipcBodyAMRMetaKey) {
 			// T-089: send.py opts in explicitly. Parse only this authenticated
 			// helper ingress, using the exact same Go AMR parser as turn output.
@@ -3958,6 +3961,8 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			c = sessions[sessionName]
 		}
 	}()
+	wantReceipt := outboundReceiptRequested(env)
+	receiptNonce := metaString(env.Meta, outboundReceiptNonceKey)
 	reliable := reliablePrimaryEnvelope(env)
 	deliveryACK := c != nil && h.sessionSupportsDeliveryACK(c)
 	endpointKnown := c != nil
@@ -3968,6 +3973,10 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			h.unclaimEnvelope(env.ID, sig)
 			return err
 		}
+	}
+	if wantReceipt && !(reliable && deliveryACK && h.Repo != nil) {
+		h.unclaimEnvelope(env.ID, sig)
+		return errors.New("confirmed outbound requires a durable target")
 	}
 	if c == nil && !(reliable && deliveryACK && endpointKnown && h.Repo != nil) {
 		log.Printf("session route decision=offline_rejected key_id=%s session=%s client_present=false reliable=%t endpoint_known=%t delivery_ack_v1=%t reason=session_offline",
@@ -3997,6 +4006,16 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		env.Meta["delivery_version"] = 1
 		env.Meta["ack_required"] = true
 		env.Meta["source_message_id"] = env.ID
+		if wantReceipt {
+			// Receipt control flag belongs to the sender/Hub only.
+			cleanMeta := make(map[string]any, len(env.Meta))
+			for k, v := range env.Meta {
+				if k != outboundReceiptRequestKey && k != outboundReceiptNonceKey {
+					cleanMeta[k] = v
+				}
+			}
+			env.Meta = cleanMeta
+		}
 		payload, err := json.Marshal(sessionClientEnvelope(env))
 		if err != nil {
 			h.unclaimEnvelope(env.ID, sig)
@@ -4005,6 +4024,9 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		if err := h.Repo.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: deliverySourceType(env), Provenance: provenanceJSON(env)}); err != nil {
 			h.unclaimEnvelope(env.ID, sig)
 			return err
+		}
+		if wantReceipt {
+			h.writeQueuedReceiptToSource(ctx, env, receiptNonce, deliveryID)
 		}
 		h.publishInputObservation(keyID, sessionName, env, deliveryID, "hub_received", "primary", true)
 		h.publishSourceCopyObservation(env, deliveryID, "hub_received")
@@ -4099,6 +4121,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
 	c.desktopInboxV1 = metaBool(env.Meta, "desktop_inbox_v1") && metaString(env.Meta, "processed_semantics") == "saved_to_desktop_inbox"
 	c.stateMu.Unlock()
+	h.writeOutboundCapabilities(c, env)
 	if metaBool(env.Meta, "file_upload_v1") {
 		// 只作统计（组长裁定 C）：上传说明由 helper 自行附加，Hub 不据此下发任何内容。
 		log.Printf("session capability file_upload_v1=true key_id=%s session=%s conn_seq=%d", c.keyID, c.sessionName, c.connSeq)

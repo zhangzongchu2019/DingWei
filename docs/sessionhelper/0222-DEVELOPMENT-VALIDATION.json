@@ -1,19 +1,19 @@
 {
-  "recorded_utc": "2026-10-12T06:50:18.476756+00:00",
+  "recorded_utc": "2026-10-12T07:20:49.910460+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS29 Python files +1 shell. First log prints stale hardcoded python=27; list actually executed29. Counter corrected afterward; no tests added by correction.",
+    "canonical": "PASS final python=30 shell=1; private HOME and native negotiation/receipts covered",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
     "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
-    "helper_all_discovery": "PASS498 tests in282.160s; plus later desktop-private-storage4-test regression passed. DeprecationWarning forkpty/multithread and ResourceWarning fixture file preserved in log.",
+    "helper_all_discovery": "PASS542 in281.700s in isolated HOME before final capability negotiation delta; that delta covered separately by11 receipt tests+final canonical. Initial540-test run7errors retained:6 incomplete fixtures fixed,1 actual HOME file-change source UNKNOWN; no real state cleanup.",
     "frozen_linux_candidate": "PASS Linux local PyInstaller executable: --version, idempotent configuration with prior MCP preserved, initialize/tools/list, dw_inbox status via real synthetic local IPC. Not desktop UI or Hub runtime verification.",
     "macos_metadata": "PASS5 synthetic bundle tests; no Mac queried, account/login/history not read",
     "local_desktop_pilot": "PASS4 real local IPC/owned cleanup/profile-credential refusal tests; no Hub routing",
-    "native_auto_notify": "NOT_IMPLEMENTED: explicit dw_inbox/read/reply only; desktop original-thread background wake remains a required feature",
+    "native_auto_notify": "NOT_IMPLEMENTED: original GUI provider and complete automated receive/turn/reply runtime still missing",
     "macos_build": "NOT_RUN: native build script prepared, syntax checked; Linux rejected before mutation. No Mac binary exists here.",
     "legacy_IPC": "PASS15 send wiring tests, original default socket replacement semantics preserved",
     "frozen_mac_pilot_entry": "PASS Linux build of final entry, metadata and synthetic pilot stdio/read/reply/SIGTERM cleanup. Not a Mac binary or native GUI proof.",
@@ -21,8 +21,12 @@
     "desktop_endpoint": "PASS6 real local Unix websocket and refusal tests; no native GUI backend tested",
     "desktop_selected_regression": "PASS34 desktop tests",
     "local_codex_schema": "Local codex-cli0.161.0 offline schema has no idle conditional turn/start field; owner version not inferred",
-    "native_reply": "IMPLEMENTED_OFFLINE: correlated terminal output/private outbox/durable ACK gate; no actual agent send",
-    "existing_helper_send_receipt": "PASS actual SessionHelper._make_send_handler with synthetic websocket: sent-write receipt is refused as durable ACK"
+    "native_reply": "IMPLEMENTED_QUEUE_ACK_PATH_FOR_AGENT_TARGETS; no original GUI provider/background wiring; Feishu confirmed reply unsupported",
+    "existing_helper_send_receipt": "PASS actual SessionHelper._make_send_handler with synthetic websocket: sent-write receipt is refused as durable ACK",
+    "hub_outbound_confirmation": "PASS actual local websocket/SQLite queue before positive receipt; rejected legacy/offline/unsupported targets; sender nonce removed from target; explicit capabilities negotiation",
+    "hub_m8_final": "PASS go test -p1 ./internal/m8 -count=1,93.039s after final handshake",
+    "all_go_compile": "PASS go test -p1 ./... -run ^$; compilation only, not full test execution",
+    "outbound_receipt_python": "PASS11 current protocol tests; actual SessionHelper send/recv path, nonce/address/connection correlation, abort/cancellation, old-Hub refusal before body"
   },
   "required_before_release": [
     "Independent code review",
@@ -198,6 +202,56 @@
       "name": "desktop-send-contract-final.log",
       "bytes": 5226,
       "sha256": "a165e9efaeb8df6314b21be3504a7ad55ff7dea4ee05178b394250ce5fd90234"
+    },
+    {
+      "name": "outbound-receipt-go.log",
+      "bytes": 60,
+      "sha256": "6a5ac06c8d0140ea1c5a057257be764f9306f84ce78eeed15aae119d50029e8a"
+    },
+    {
+      "name": "outbound-receipt-m8-all.log",
+      "bytes": 61,
+      "sha256": "2b5a00ba5783b9dbf0a5f4e56d091c40b2902ad096bcc7c0e7e122b7f246eab0"
+    },
+    {
+      "name": "outbound-receipt-helper-all.log",
+      "bytes": 416458,
+      "sha256": "c8a9ecabc6287229bda1d079e62c2c06f1956ea2775e3066471237b388314a9f"
+    },
+    {
+      "name": "canonical-outbound-receipt.log",
+      "bytes": 8002,
+      "sha256": "a658dc38935cd107a2808cf3ac357f8ffec25090a211bb2cf8b4ceffb8207b89"
+    },
+    {
+      "name": "outbound-receipt-fixed-fixtures.log",
+      "bytes": 98,
+      "sha256": "9b4d6fa073a4e7e8105d39f9245c9b4da413eb3c0b33e94787b7657bf3aba789"
+    },
+    {
+      "name": "outbound-receipt-helper-isolated.log",
+      "bytes": 240800,
+      "sha256": "c77e493919f1d48f792e54881e06af6024e79fc9a447321bd7ea3dcdcf1eb0fc"
+    },
+    {
+      "name": "outbound-receipt-negotiation-python.log",
+      "bytes": 98,
+      "sha256": "c0ea2d5e9b6577d217a263c18ea4b6cde7ad768e1e8c7b7b9c6bbb8b1193f126"
+    },
+    {
+      "name": "outbound-receipt-m8-final.log",
+      "bytes": 61,
+      "sha256": "8784b74b0a50f65c7bdb5296af47da5d56ba4bcee03b39699451ec915a4c7b1a"
+    },
+    {
+      "name": "canonical-outbound-negotiation-final.log",
+      "bytes": 10205,
+      "sha256": "c52853d8384f4707321bb12ca8c25239fa1736536ca5d467c388c3a3aa3a85cf"
+    },
+    {
+      "name": "outbound-receipt-go-compile-all.log",
+      "bytes": 4926,
+      "sha256": "71721a49569ed5f7e85a3d43b5bdadfe5c950fc3a936ea84c70cc5048150c935"
     }
   ],
   "pm_target": {

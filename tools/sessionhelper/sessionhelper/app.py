@@ -228,6 +228,8 @@ class SessionHelper:
         # File capability responses are control-plane messages. They must be
         # consumed here and never reach the inbox, CLI, LLM, or logs.
         self.file_ticket_waiters: dict[str, asyncio.Future] = {}
+        from .outbound_receipt import OutboundReceiptBroker
+        self.outbound_receipts = OutboundReceiptBroker((cfg.session_name, cfg.session_full_name, cfg.registered_session_name))
         # Direct messages containing file refs are processed off recv_loop so
         # that the same loop remains free to receive the ticket response.
         self.file_inbound_queue: asyncio.Queue[dict] = asyncio.Queue(maxsize=max(1, cfg.busy_buffer_max))
@@ -371,6 +373,13 @@ class SessionHelper:
             return {"sent": True, "to": dest}
 
         return _send
+
+    def _make_confirmed_send_handler(self, ws):
+        """Opt-in sender for future desktop bridge; legacy IPC is unchanged."""
+        async def send(to, body, meta=None):
+            dest = to if '#' in to else session_addr(to, self.book.key_id)
+            return await self.outbound_receipts.send(ws, dest, body, self.book.self_addr, meta)
+        return send
 
     def _make_vsapi_handler(self):
         """Return an async ``(method, path, body?) -> dict`` that forwards
@@ -529,7 +538,7 @@ class SessionHelper:
             waiter.set_result({key: meta.get(key) for key in
                                ("ok", "token", "expires_at", "public_base_url", "session", "error")})
 
-    def session_capabilities_envelope(self) -> dict:
+    def session_capabilities_envelope(self, outbound_capabilities=None) -> dict:
         return envelope(
             session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
             {"type": "session_capabilities", "delivery_ack_v1": True,
@@ -540,7 +549,8 @@ class SessionHelper:
              "processed_semantics": "saved_to_desktop_inbox" if self.cfg.mode == "desktop" else "accepted_to_cli",
              "helper_version": __version__,
              # 只作 Hub 统计（组长裁定 C）；附注是否附加由 upload_addendum_due 在合并时自判。
-             "file_upload_v1": self.upload_configured()},
+             "file_upload_v1": self.upload_configured(),
+             **(outbound_capabilities or {})},
         )
 
     async def _run_once(self) -> None:
@@ -582,7 +592,8 @@ class SessionHelper:
             # M2 protocol admission. This raises the bar above one-shot clients
             # such as send.py, but is not cryptographic helper identity: a
             # holder of the shared API secret can imitate this JSON message.
-            await ws.send(json.dumps(self.session_capabilities_envelope(), ensure_ascii=False))
+            outbound_caps = self.outbound_receipts.prepare(ws) if self.cfg.mode == "desktop" else None
+            await ws.send(json.dumps(self.session_capabilities_envelope(outbound_caps), ensure_ascii=False))
             if self.cfg.producer:
                 recv_task = asyncio.create_task(self.recv_control_loop(ws))
                 try:
@@ -615,6 +626,7 @@ class SessionHelper:
                         self.mirror_loop(ws),
                     ])
                 finally:
+                    self.outbound_receipts.abort(ws)
                     hb.cancel()
                     if ipc_task is not None:
                         ipc_task.cancel()
@@ -637,6 +649,8 @@ class SessionHelper:
             try:
                 env = json.loads(raw)
             except Exception:
+                continue
+            if self.outbound_receipts.receive(ws, env):
                 continue
             if self.is_file_capability_response(env):
                 self.handle_file_capability_response(env)

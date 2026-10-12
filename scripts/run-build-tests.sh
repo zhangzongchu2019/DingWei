@@ -22,6 +22,7 @@ tools/sessionhelper/tests/test_claim_enroll.py
 tools/sessionhelper/tests/test_desktop.py
 tools/sessionhelper/tests/test_desktop_dispatch.py
 tools/sessionhelper/tests/test_desktop_endpoint.py
+tools/sessionhelper/tests/test_outbound_receipt.py
 tools/sessionhelper/tests/test_desktop_host.py
 tools/sessionhelper/tests/test_desktop_pilot.py
 deploy/image/supervisord/test_verify_supervisor_template.py
@@ -51,4 +52,4 @@ done
 
 echo "TEST shell $SHELL_TEST"
 bash "$SHELL_TEST"
-echo 'BUILD_TESTS_OK python=29 shell=1'
+echo 'BUILD_TESTS_OK python=30 shell=1'
