@@ -46,7 +46,7 @@ class BuildEntrypointContractTest(unittest.TestCase):
         for directory in (ROOT / "deploy", ROOT / "view-service"):
             for pattern in ("test*.py", "test*.sh"):
                 discovered.update(path.relative_to(ROOT).as_posix() for path in directory.rglob(pattern))
-        self.assertEqual(len(discovered), 18, f"测试文件集合变化，须同步审计清单: {sorted(discovered)}")  # 17→18：Console mux persistent projection verification
+        self.assertEqual(len(discovered), 20, f"测试文件集合变化，须同步审计清单: {sorted(discovered)}")  # 18→20: projection failclosed and controlled historical migration contracts
         for test_file in sorted(discovered):
             with self.subTest(test_file=test_file):
                 self.assertEqual(runner.count(test_file), 1, f"测试未接线或重复接线: {test_file}")
