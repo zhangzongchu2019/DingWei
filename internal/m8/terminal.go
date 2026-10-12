@@ -183,6 +183,18 @@ func (h *Hub) closeTerminalLocked(keyID, sessionName string) []*terminalViewer {
 	}
 	h.adoptRingLocked(st)
 	h.clearRingLocked(st)
+	// A deleted epoch cannot retain raw payload or leave an old mux source
+	// waiting indefinitely while a replacement terminal publishes a new epoch.
+	for _, reader := range st.muxSeqSubs {
+		reader.mu.Lock()
+		reader.events = nil
+		reader.bytes = 0
+		reader.closed = true
+		reader.gap = "epoch_changed"
+		reader.signal()
+		reader.mu.Unlock()
+	}
+	st.muxSeqSubs = nil
 	delete(h.terminals, k)
 	return viewers
 }

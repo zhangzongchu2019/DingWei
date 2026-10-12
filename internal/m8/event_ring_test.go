@@ -1,7 +1,9 @@
 package m8
 
 import (
+	"context"
 	"fmt"
+	"github.com/zhangzongchu2019/dingwei/internal/consolemux"
 	"strings"
 	"sync"
 	"testing"
@@ -149,5 +151,46 @@ func TestRingExistingCountAndMetadataCap(t *testing.T) {
 	}
 	if len(h.terminals[terminalKey("ring", "0")].eventRing) != 0 {
 		t.Fatal("metadata FIFO not oldest first")
+	}
+}
+
+func TestRingTerminalDeleteStopsOldMuxEpochAndFreesRawPayload(t *testing.T) {
+	h, _, _ := newTestHub(t)
+	a := consolemux.Agent{Owner: "owner", Session: "one", ID: "one", FullName: "one.owner"}
+	key := AgentKeyID(a.Owner)
+	h.publishSessionEvent(key, a.Session, "old")
+	old, reader, unsub, ok := h.subscribeConsoleMuxSource(a, "same")
+	if !ok {
+		t.Fatal("subscribe")
+	}
+	defer unsub()
+	h.publishSessionEvent(key, a.Session, "pending")
+	h.mu.Lock()
+	h.closeTerminalLocked(key, a.Session)
+	h.mu.Unlock()
+	reader.mu.Lock()
+	if reader.bytes != 0 || len(reader.events) != 0 || !reader.closed {
+		t.Fatal("raw payload remains after epoch deletion")
+	}
+	reader.mu.Unlock()
+	_, gap, available := reader.next(context.Background())
+	if !available || gap != "epoch_changed" {
+		t.Fatal("old source did not get visible epoch cut", gap)
+	}
+	h.publishSessionEvent(key, a.Session, "new")
+	next, r2, u2, ok := h.subscribeConsoleMuxSource(a, "same")
+	if !ok {
+		t.Fatal("replacement")
+	}
+	defer u2()
+	if next.Epoch == old.Epoch || next.H != 1 {
+		t.Fatal("replacement epoch/seq changed incorrectly")
+	}
+	unsub()
+	h.mu.Lock()
+	current := h.terminals[terminalKey(key, a.Session)].muxSeqSubs["same"]
+	h.mu.Unlock()
+	if current != r2 {
+		t.Fatal("old cleanup erased new source")
 	}
 }
