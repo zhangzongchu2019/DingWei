@@ -749,7 +749,8 @@ func (h *Hub) serveMuxSources(w http.ResponseWriter, r *http.Request, f *console
 			meta.Empty = v.snap.Empty
 			if v.phase == -1 {
 				meta.Type = "gap"
-				meta.Reason = v.gap
+				meta.Reason = "resync_required"
+				meta.Cause = v.gap
 				if !write(v.s, meta, "") {
 					return
 				}
@@ -792,7 +793,8 @@ func (h *Hub) serveMuxSources(w http.ResponseWriter, r *http.Request, f *console
 				}
 				if gap != "" {
 					meta.Type = "gap"
-					meta.Reason = gap
+					meta.Reason = "resync_required"
+					meta.Cause = gap
 					if !write(v.s, meta, "") {
 						return
 					}

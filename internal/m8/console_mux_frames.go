@@ -28,6 +28,7 @@ type consoleMuxWire struct {
 	Empty      bool   `json:"empty,omitempty"`
 	Mode       string `json:"mode,omitempty"`
 	Reason     string `json:"reason,omitempty"`
+	Cause      string `json:"cause,omitempty"`
 }
 type consoleMuxPacket struct {
 	Meta consoleMuxWire

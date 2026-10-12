@@ -6,7 +6,7 @@ function chromeRSS(root){const fs=require('node:fs'),rows=new Map();for(const pi
  const browser=await puppeteer.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  try{
  const page=await browser.newPage(),base=process.env.MUX_BASE;
- const active=new Set();let peakSSE=0;page.on("requestfinished",r=>active.delete(r));page.on("requestfailed",r=>active.delete(r));const errors=[],long=[],child=[],applied=[],appliedRecords=[];const diagnostics=[];page.on('response',r=>{if(r.url().includes('/event-'))diagnostics.push({path:new URL(r.url()).pathname,status:r.status()});});page.on('console',m=>{if(m.type()==='error')diagnostics.push({console:m.text().slice(0,160)});});page.on('pageerror',e=>errors.push(String(e)));page.on('request',r=>{if(r.method()==='PUT'&&r.url().includes('/event-feeds/')){try{const b=JSON.parse(r.postData());for(const a of b.applied||[]){applied.push(a.after);appliedRecords.push({name:a.full_name,after:a.after});}}catch{}}if(r.url().includes('/event-feeds/')&&r.url().endsWith('/events')){long.push(r.url());active.add(r);peakSSE=Math.max(peakSSE,active.size);}if(/\/view\/[^/]+\/events/.test(r.url()))child.push(r.url());});
+ const active=new Set();let peakSSE=0;page.on("requestfinished",r=>active.delete(r));page.on("requestfailed",r=>active.delete(r));const errors=[],long=[],child=[],applied=[],appliedRecords=[];const resetRequests=[];const diagnostics=[];page.on('response',r=>{if(r.url().includes('/event-'))diagnostics.push({path:new URL(r.url()).pathname,status:r.status()});});page.on('console',m=>{if(m.type()==='error')diagnostics.push({console:m.text().slice(0,160)});});page.on('pageerror',e=>errors.push(String(e)));page.on('request',r=>{if(r.method()==='PUT'&&r.url().includes('/event-feeds/')){try{const b=JSON.parse(r.postData());if(b.reset_request_id)resetRequests.push(b);for(const a of b.applied||[]){applied.push(a.after);appliedRecords.push({name:a.full_name,after:a.after});}}catch{}}if(r.url().includes('/event-feeds/')&&r.url().endsWith('/events')){long.push(r.url());active.add(r);peakSSE=Math.max(peakSSE,active.size);}if(/\/view\/[^/]+\/events/.test(r.url()))child.push(r.url());});
  await page.setCookie({name:'dw_np_session',value:process.env.MUX_TEST_SESSION,url:base});
  await page.goto(base+'/console',{waitUntil:'domcontentloaded'});
  await page.evaluate(()=>{for(let i=0;i<6;i++)openTab('agent'+String(i).padStart(2,'0')+'.owner');});
@@ -93,11 +93,28 @@ function chromeRSS(root){const fs=require('node:fs'),rows=new Map();for(const pi
  await page.evaluate(async()=>fetch('/test-publish/agent04',{method:'POST',body:JSON.stringify({kind:'assistant_text',text:'after-real-feed-reconnect',data:{}})}));
  await page.frames().find(f=>f.url().includes('/view/agent04.owner')).waitForFunction(()=>document.body.textContent.includes('after-real-feed-reconnect'),{timeout:10000});
  assert.equal(await scrollFrame.evaluate(()=>document.getElementById('timeline').scrollTop),scrollBefore,'reconnect retains reading position');
+ if(process.env.MUX_R4==='1'){
+  const oldFrame=page.frames().find(f=>f.url().includes('/view/agent05.owner'));
+  await oldFrame.evaluate(()=>{document.getElementById('humanInput').value='history-reset-draft';});
+  const before=resetRequests.length;
+  const activeID=new URL(long.at(-1)).pathname.split('/')[4];
+  const result=await page.evaluate(async fid=>(await fetch('/test-reset-history?feed_id='+fid,{method:'POST'})).status,activeID);
+  assert.equal(result,204);
+  await page.waitForFunction(()=>tabs.get('agent05.owner').pane.dataset.resyncRequired==='true',{timeout:12000});
+  await new Promise(r=>setTimeout(r,300));assert.equal(resetRequests.length,before,'no automatic reset intent');
+  assert.equal(await oldFrame.evaluate(()=>document.getElementById('humanInput').value),'history-reset-draft');
+  await page.evaluate(()=>{closeTab('agent05.owner');openTab('agent05.owner');});
+  let rebuilt;for(let i=0;i<300;i++){rebuilt=page.frames().find(f=>f.url().includes('/view/agent05.owner')&&f!==oldFrame);if(rebuilt)break;await new Promise(r=>setTimeout(r,10));}
+  assert.ok(rebuilt);await rebuilt.waitForFunction(()=>document.body.textContent.includes('history-cut-1001'),{timeout:20000});
+  assert.ok(resetRequests.length>before,'history rebuild has explicit reset_request_id');
+  assert.ok(await page.evaluate(()=>tabs.get('agent05.owner').pane.dataset.historyWarning?.includes('明确重建')));
+  console.log(JSON.stringify({r4_history_gap:true,no_auto_reset:true,draft_retained_until_close:true,explicit_bound_reset:true,retained_suffix_rebuilt:true}));
+ }
  // A simultaneous legacy independent view and aggregate bridge share the actual VS projection transaction.
  const independent=await browser.newPage();await independent.goto(base+'/view/agent04.owner',{waitUntil:'domcontentloaded'});
- await page.evaluate(async()=>fetch('/test-publish/agent04',{method:'POST',body:JSON.stringify({kind:'state_change',data:{change:'turn_completed',cost_usd:1.25}})}));
- await page.waitForFunction(async()=>{const s=await (await fetch('/view/agent04.owner/status')).json();return s.cost_total===1.25&&s.cost_last===1.25&&s.turns===1;},{timeout:10000});
- await new Promise(r=>setTimeout(r,200));const costs=await page.evaluate(async()=> (await fetch('/view/agent04.owner/status')).json());assert.equal(costs.turns,1,'legacy + aggregate completion counted once');assert.equal(costs.cost_last,1.25,'duplicate completion cannot clear last cost');await independent.close();
+ const seeded=false;await page.evaluate(v=>{window.__costSeeded=v;},seeded);await page.evaluate(async cost=>fetch('/test-publish/agent04',{method:'POST',body:JSON.stringify({kind:'state_change',data:{change:'turn_completed',cost_usd:cost}})}),seeded?15:1.25);
+ await page.waitForFunction(async()=>{const s=await (await fetch('/view/agent04.owner/status')).json();return s.cost_total===(window.__costSeeded?15:1.25)&&s.cost_last===(window.__costSeeded?2.5:1.25)&&s.turns===(window.__costSeeded?8:1);},{timeout:10000});
+ await new Promise(r=>setTimeout(r,200));const costs=await page.evaluate(async()=> (await fetch('/view/agent04.owner/status')).json());const independentCosts=await independent.evaluate(async()=> (await fetch('/view/agent04.owner/status')).json());for(const key of ['cost_total','cost_last','turns'])assert.equal(independentCosts[key],costs[key],'independent/managed status shares seeded authority');assert.equal(costs.turns,seeded?8:1,'legacy + aggregate completion counted once');assert.equal(costs.cost_last,seeded?2.5:1.25,'duplicate completion cannot clear last cost');await independent.close();
  // A production renderer DOM failure must not acknowledge or advance that seat.
  const faultFrame=page.frames().find(f=>f.url().includes('/view/agent02.owner'));
  const beforeFault=appliedRecords.filter(a=>a.name==='agent02.owner').map(a=>BigInt(a.after.split('-').pop())).reduce((a,b)=>a>b?a:b,0n);
@@ -120,9 +137,10 @@ function chromeRSS(root){const fs=require('node:fs'),rows=new Map();for(const pi
  await page.evaluate(async()=>fetch('/test-publish/agent04',{method:'POST',body:JSON.stringify({kind:'assistant_text',text:'after-oversize-other-seat-live',data:{}})}));await page.frames().find(f=>f.url().includes('/view/agent04.owner')).waitForFunction(()=>document.body.textContent.includes('after-oversize-other-seat-live'),{timeout:10000});
  console.log(JSON.stringify({illegal_complete_frame_bytes:1048577,oversized_seat_stopped:true,other_seat_after_oversize_continues:true}));
  if(process.env.MUX_RESOURCE_RSS==='1'){const ringLoad=await page.evaluate(async()=> (await fetch('/test-ring-resource-load',{method:'POST'})).json());assert.ok(ringLoad.retained_global_bytes<=128*1048576);assert.ok(ringLoad.retained_after_test_terminal_delete<=128*1048576);const retainedCost=await page.evaluate(async()=> (await fetch('/view/agent04.owner/status')).json());assert.equal(retainedCost.turns,1);assert.equal(retainedCost.cost_last,1.25);assert.equal(retainedCost.cost_total,1.25);console.log(JSON.stringify({resource_ring_load:ringLoad,chrome_process_tree_after_load:chromeRSS(browser.process().pid)}));}
+ if(process.env.MUX_SATURATION==='late')assert.ok(resetRequests.length>=1,'explicit user recovery sends bound reset_request_id');
  const start=Date.now();await page.evaluate(async()=>fetch('/test-db-revoke',{method:'POST'}));await new Promise(r=>setTimeout(r,2100));
  assert.equal(peakSSE,1,'maximum simultaneous public SSE, including reconnect');const denial=await page.evaluate(async()=> (await fetch('/api/console/event-context')).status);assert.equal(denial,401);
  assert.equal(errors.length,0,errors.join('\n'));
- console.log(JSON.stringify({scenario:'actual Go+PG+Python VS+native renderer+Chrome HTTP1',seats:[6,8],trusted_vs_targets:2,uint64_above_2p53:true,max_concurrent_public_sse:peakSSE,child_sse:0,short_requests:short,short_request_scope:'actual list+upload pipeline; arbitrary send without page capability remains rejected; helper reader is a local test peer',draft_preserved:true,scroll_preserved:true,ack_total_deliveries:2,real_feed_reconnect:true,owner_send_200:true,legacy_aggregate_cost_once:true,s11_negative_no_advance:true,other_seat_continues:true,second_console_409_visible:true,db_revoke_denied:true,revocation_sample_ms:Date.now()-start,page_errors:errors}));
+ console.log(JSON.stringify({scenario:'actual Go+PG+Python VS+native renderer+Chrome HTTP1',seats:[6,8],trusted_vs_targets:2,uint64_above_2p53:true,max_concurrent_public_sse:peakSSE,child_sse:0,short_requests:short,short_request_scope:'actual list+upload pipeline; arbitrary send without page capability remains rejected; helper reader is a local test peer',draft_preserved:true,scroll_preserved:true,ack_total_deliveries:2,real_feed_reconnect:true,owner_send_200:true,legacy_aggregate_cost_once:true,s11_negative_no_advance:true,other_seat_continues:true,second_console_409_visible:true,db_revoke_denied:true,revocation_sample_ms:Date.now()-start,page_errors:errors,reset_requests:resetRequests.length,seeded_history:seeded}));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e.stack);process.exit(1);});

@@ -530,7 +530,7 @@ function activate(session){
 }
 function closeTab(session){
   var e=tabs.get(session); if(!e) return;
-  if(CONSOLE_MUX_ENABLED&&window.DWConsoleMux)window.DWConsoleMux.remove(session);
+  if(CONSOLE_MUX_ENABLED&&window.DWConsoleMux)window.DWConsoleMux.remove(session,true);
   e.tab.remove(); e.pane.remove(); if(e.offlineReason)e.offlineReason.remove(); tabs.delete(session);   // 🔴 关闭才真正断开那条 SSE
   var last=Array.from(tabs.keys()).pop();
   if(last) activate(last);

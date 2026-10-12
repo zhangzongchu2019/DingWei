@@ -42,22 +42,31 @@ type consoleMuxDesired struct {
 	After    string `json:"after,omitempty"`
 }
 type consoleMuxScope struct {
-	Desired    consoleMuxDesired
-	Agent      consolemux.Agent
-	Generation string
-	Round      uint64
-	TargetName string
-	Target     ViewTarget
+	Desired       consoleMuxDesired
+	Agent         consolemux.Agent
+	Generation    string
+	Round         uint64
+	TargetName    string
+	Target        ViewTarget
+	ResetBaseline string
 }
 type consoleMuxControl struct {
-	RequestID     string              `json:"request_id"`
-	AuthContext   string              `json:"auth_context"`
-	Instance      string              `json:"console_instance,omitempty"`
-	Revision      uint64              `json:"expected_revision,omitempty"`
-	Subscriptions []consoleMuxDesired `json:"subscriptions"`
-	Refill        []string            `json:"refill,omitempty"`
-	Applied       []consoleMuxApplied `json:"applied,omitempty"`
-	AckOnly       bool                `json:"ack_only,omitempty"`
+	RequestID      string              `json:"request_id"`
+	AuthContext    string              `json:"auth_context"`
+	Instance       string              `json:"console_instance,omitempty"`
+	Revision       uint64              `json:"expected_revision,omitempty"`
+	Subscriptions  []consoleMuxDesired `json:"subscriptions"`
+	Refill         []string            `json:"refill,omitempty"`
+	Applied        []consoleMuxApplied `json:"applied,omitempty"`
+	AckOnly        bool                `json:"ack_only,omitempty"`
+	ResetRequestID string              `json:"reset_request_id,omitempty"`
+	Reset          *consoleMuxReset    `json:"reset,omitempty"`
+}
+type consoleMuxReset struct {
+	FullName   string `json:"full_name"`
+	Instance   string `json:"iframe_instance"`
+	Generation string `json:"generation"`
+	Round      string `json:"replay_round"`
 }
 type consoleMuxApplied struct {
 	FullName   string `json:"full_name"`
@@ -75,6 +84,8 @@ type consoleMuxFeed struct {
 	ID, Session, Principal, Instance string
 	Revision                         uint64
 	Scopes                           map[string]*consoleMuxScope
+	Retired                          map[string]*consoleMuxScope
+	RetiredOrder                     []string
 	Requests                         map[string]consoleMuxResult
 	RequestOrder                     []string
 	Owner                            consolemux.Owner
@@ -206,6 +217,9 @@ func muxDecode(w http.ResponseWriter, r *http.Request) (consoleMuxControl, []str
 	if !muxValidID(req.RequestID) || len(req.Subscriptions) > 8 || len(req.Applied) > 8 || len(req.Refill) > 8 {
 		return req, nil, [32]byte{}, errors.New("invalid control")
 	}
+	if (req.Reset == nil) != (req.ResetRequestID == "") || (req.Reset != nil && (!muxValidID(req.ResetRequestID) || req.AckOnly || !muxValidID(req.Reset.Generation) || !muxValidID(req.Reset.Instance))) {
+		return req, nil, [32]byte{}, errors.New("invalid_reset")
+	}
 	seen := map[string]bool{}
 	names := make([]string, 0, len(req.Subscriptions))
 	for i := range req.Subscriptions {
@@ -255,7 +269,7 @@ func (f *consoleMuxFeed) metadata() any {
 	defer f.mu.Unlock()
 	subs := make([]map[string]any, 0, len(f.Scopes))
 	for _, s := range f.Scopes {
-		subs = append(subs, map[string]any{"full_name": s.Agent.FullName, "agent_id": s.Agent.ID, "iframe_instance": s.Desired.Instance, "generation": s.Generation, "after": s.Desired.After, "replay_round": muxSeq(s.Round)})
+		subs = append(subs, map[string]any{"full_name": s.Agent.FullName, "agent_id": s.Agent.ID, "iframe_instance": s.Desired.Instance, "generation": s.Generation, "after": s.Desired.After, "replay_round": muxSeq(s.Round), "reset_baseline": s.ResetBaseline})
 	}
 	sort.Slice(subs, func(i, j int) bool { return subs[i]["full_name"].(string) < subs[j]["full_name"].(string) })
 	return map[string]any{"feed_id": f.ID, "revision": f.Revision, "protocol_version": 1, "subscriptions": subs, "closed": f.Closed, "streaming": f.Cancel != nil}
@@ -277,6 +291,17 @@ func (h *Hub) HandleConsoleMuxMetadata(w http.ResponseWriter, r *http.Request) {
 }
 func (m *consoleMuxRegistry) resolveScopes(auth consolemux.Authorization, req consoleMuxControl, old map[string]*consoleMuxScope) (map[string]*consoleMuxScope, int, error) {
 	next := map[string]*consoleMuxScope{}
+	if req.Reset != nil {
+		found := false
+		for _, d := range req.Subscriptions {
+			if d.FullName == req.Reset.FullName {
+				found = true
+			}
+		}
+		if !found {
+			return nil, 400, errors.New("invalid_reset_scope")
+		}
+	}
 	refill := map[string]bool{}
 	for _, name := range req.Refill {
 		refill[name] = true
@@ -294,6 +319,30 @@ func (m *consoleMuxRegistry) resolveScopes(auth consolemux.Authorization, req co
 		if !ok {
 			return nil, 404, errors.New("agent_offline")
 		}
+		prior := old[d.FullName]
+		resetting := req.Reset != nil && req.Reset.FullName == d.FullName
+		baseline := ""
+		if resetting {
+			reset := req.Reset
+			if prior == nil || prior.Agent.ID != a.ID || prior.Desired.Instance != reset.Instance || prior.Generation != reset.Generation || muxSeq(prior.Round) != reset.Round {
+				return nil, 409, errors.New("stale_reset_scope")
+			}
+			if snap.H >= ^uint64(0)-1 {
+				return nil, 409, errors.New("seq_exhausted")
+			}
+			after := snap.H
+			if snap.Floor > 0 {
+				after = snap.Floor - 1
+			}
+			d.After = snap.Epoch + "-" + muxSeq(after)
+			baseline = d.After
+		} else if prior != nil && prior.Agent.ID == a.ID && (prior.Desired.After != "" || prior.Desired.Instance != d.Instance) {
+			oldEp, oldN, _ := parseSSEAfter(prior.Desired.After)
+			ep, n, valid := parseSSEAfter(d.After)
+			if !valid || ep != oldEp || n < oldN {
+				return nil, 409, errors.New("resync_required")
+			}
+		}
 		if _, _, err := selectMuxReplay(snap, d.After, d.After != ""); err != nil {
 			code := 400
 			if errors.Is(err, errMuxCursorAhead) {
@@ -301,8 +350,7 @@ func (m *consoleMuxRegistry) resolveScopes(auth consolemux.Authorization, req co
 			}
 			return nil, code, err
 		}
-		prior := old[d.FullName]
-		if prior != nil && prior.Agent.ID == a.ID && prior.Desired.Instance == d.Instance {
+		if !resetting && prior != nil && prior.Agent.ID == a.ID && prior.Desired.Instance == d.Instance {
 			copy := *prior
 			copy.Desired = d
 			if refill[d.FullName] {
@@ -314,7 +362,14 @@ func (m *consoleMuxRegistry) resolveScopes(auth consolemux.Authorization, req co
 			if err != nil {
 				return nil, 503, err
 			}
-			next[d.FullName] = &consoleMuxScope{Desired: d, Agent: a, Generation: generation, Round: 1, TargetName: name, Target: target}
+			round := uint64(1)
+			if resetting {
+				round = prior.Round + 1
+				if round == 0 {
+					return nil, 409, errors.New("round_exhausted")
+				}
+			}
+			next[d.FullName] = &consoleMuxScope{Desired: d, Agent: a, Generation: generation, Round: round, TargetName: name, Target: target, ResetBaseline: baseline}
 		}
 	}
 	return next, 200, nil
@@ -348,7 +403,7 @@ func (h *Hub) HandleConsoleMuxCreate(w http.ResponseWriter, r *http.Request) {
 		writeAgentWSError(w, 400, "invalid_control")
 		return
 	}
-	if !muxValidID(req.Instance) {
+	if !muxValidID(req.Instance) || req.Reset != nil {
 		writeAgentWSError(w, 400, "invalid_instance")
 		return
 	}
@@ -469,7 +524,11 @@ func (h *Hub) HandleConsoleMuxReplace(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { f.control <- struct{}{} }()
 	f.mu.Lock()
-	prior, exists := f.Requests[req.RequestID]
+	cacheID := req.RequestID
+	if req.Reset != nil {
+		cacheID = "reset:" + req.ResetRequestID
+	}
+	prior, exists := f.Requests[cacheID]
 	rev := f.Revision
 	old := map[string]*consoleMuxScope{}
 	for k, v := range f.Scopes {
@@ -478,6 +537,11 @@ func (h *Hub) HandleConsoleMuxReplace(w http.ResponseWriter, r *http.Request) {
 	}
 	closed := f.Closed
 	stream := f.Stream
+	retired := map[string]*consoleMuxScope{}
+	for k, v := range f.Retired {
+		c := *v
+		retired[k] = &c
+	}
 	f.mu.Unlock()
 	if exists {
 		if prior.Hash != digest {
@@ -516,7 +580,14 @@ func (h *Hub) HandleConsoleMuxReplace(w http.ResponseWriter, r *http.Request) {
 		}
 		f.mu.Unlock()
 	} else {
-		next, code, err := m.resolveScopes(auth, req, old)
+		resolveOld := map[string]*consoleMuxScope{}
+		for k, v := range retired {
+			resolveOld[k] = v
+		}
+		for k, v := range old {
+			resolveOld[k] = v
+		}
+		next, code, err := m.resolveScopes(auth, req, resolveOld)
 		if err != nil {
 			writeAgentWSError(w, code, err.Error())
 			return
@@ -535,6 +606,29 @@ func (h *Hub) HandleConsoleMuxReplace(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
+		if f.Retired == nil {
+			f.Retired = map[string]*consoleMuxScope{}
+		}
+		for name, sc := range f.Scopes {
+			if next[name] == nil {
+				for i := len(f.RetiredOrder) - 1; i >= 0; i-- {
+					if f.RetiredOrder[i] == name {
+						f.RetiredOrder = append(f.RetiredOrder[:i], f.RetiredOrder[i+1:]...)
+					}
+				}
+				c := *sc
+				f.Retired[name] = &c
+				f.RetiredOrder = append(f.RetiredOrder, name)
+			}
+		}
+		for len(f.RetiredOrder) > 8 {
+			name := f.RetiredOrder[0]
+			f.RetiredOrder = f.RetiredOrder[1:]
+			delete(f.Retired, name)
+		}
+		for name := range next {
+			delete(f.Retired, name)
+		}
 		f.Scopes = next
 		f.Revision++
 		if f.Gate != nil {
@@ -552,8 +646,8 @@ func (h *Hub) HandleConsoleMuxReplace(w http.ResponseWriter, r *http.Request) {
 	}
 	meta := f.metadata()
 	f.mu.Lock()
-	f.Requests[req.RequestID] = consoleMuxResult{digest, 200, meta}
-	f.RequestOrder = append(f.RequestOrder, req.RequestID)
+	f.Requests[cacheID] = consoleMuxResult{digest, 200, meta}
+	f.RequestOrder = append(f.RequestOrder, cacheID)
 	if len(f.RequestOrder) > 16 {
 		id := f.RequestOrder[0]
 		f.RequestOrder = f.RequestOrder[1:]

@@ -213,6 +213,34 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 		}()
 		w.WriteHeader(204)
 	})
+	mux.HandleFunc("POST /test-reset-history", func(w http.ResponseWriter, r *http.Request) {
+		m := h.consoleMux
+		m.mu.Lock()
+		f := m.feeds[r.URL.Query().Get("feed_id")]
+		m.mu.Unlock()
+		if f == nil {
+			http.Error(w, "missing", 404)
+			return
+		}
+		f.mu.Lock()
+		cancel, done := f.Cancel, f.Done
+		f.mu.Unlock()
+		if cancel == nil {
+			http.Error(w, "inactive", 409)
+			return
+		}
+		cancel()
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			http.Error(w, "disconnect not quiescent", 503)
+			return
+		}
+		for i := 0; i < 1002; i++ {
+			h.publishSessionEvent(AgentKeyID("owner"), "agent05", fmt.Sprintf(`{"kind":"assistant_text","text":"history-cut-%d","turn_id":"history-cut"}`, i))
+		}
+		w.WriteHeader(204)
+	})
 	mux.HandleFunc("POST /test-maximum/{name}", func(w http.ResponseWriter, r *http.Request) { handleMuxMaximumFrame(h, w, r) })
 	mux.HandleFunc("POST /test-ring-resource-load", func(w http.ResponseWriter, r *http.Request) {
 		evidence.mu.Lock()
@@ -250,6 +278,7 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 				routing.Sessions[fmt.Sprintf("agent%02d.owner", i)] = name
 			}
 		}
+
 		python := exec.Command("python3", "view_service.py")
 		python.Dir = "../../view-service"
 		python.Env = append(os.Environ(), "VS_PORT="+fmt.Sprint(port), "VS_HUB_INTERNAL="+server.URL, "VS_VIEW_UNLOCK_V2=1", "VS_TARGET_NAME="+name, "VS_HUB_TO_VS_SECRET_FILE="+forward, "VS_TO_HUB_SECRET_FILE="+reverse, "VS_PAGE_DB="+filepath.Join(root, name+"-pages.db"), "VS_STATE_FILE="+filepath.Join(root, name+"-state.json"))
@@ -310,6 +339,10 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 	}
 	h.fileIssuer = issuer
 	mux.Handle("POST /files/upload", fileservice.HTTPHandler{Manager: fs.Manager, Uploads: tickets, PublicBaseURL: server.URL})
+
+	if os.Getenv("MUX_R4") == "1" {
+		exerciseR4Control(t, h, store, server.URL)
+	}
 	chrome := exec.Command("node", "testdata/console_mux_product.cjs")
 	chrome.Env = append(os.Environ(), "MUX_BASE="+server.URL, "MUX_TEST_SESSION="+token, "MUX_PUPPETEER="+module)
 	out, err := chrome.CombinedOutput()
