@@ -591,9 +591,9 @@ class CostProjection:
     @contextmanager
     def _connect(self):
         db = sqlite3.connect(self.path, timeout=0.2)
-        os.chmod(self.path, 0o600)
-        db.execute("PRAGMA synchronous=FULL")
         try:
+            os.chmod(self.path, 0o600)
+            db.execute("PRAGMA synchronous=FULL")
             with db:
                 yield db
         finally:
@@ -814,7 +814,7 @@ class _Handler(BaseHTTPRequestHandler):
                 peer_done.set()
                 conn.close()
                 peer_monitor.join(timeout=0.5)
-        except (ValueError, OSError, KeyError, json.JSONDecodeError):
+        except (ValueError, OSError, KeyError, json.JSONDecodeError, sqlite3.Error):
             self.close_connection = True
             return
 
@@ -862,6 +862,8 @@ class _Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             return
         except Exception:
+            # Projection failure after SSE starts requires closing without forwarding.
+            self.close_connection = True
             return
         finally:
             conn.close()
@@ -894,6 +896,8 @@ class _Handler(BaseHTTPRequestHandler):
                 costs = _cost_projection().status(subject["agent_id"]) if subject else {}
             except ValueError:
                 return self.send_error(401)
+            except (sqlite3.Error, OSError):
+                return self.send_error(503, "cost projection unavailable")
             body = json.dumps({
                 "session": session, "session_id": session, "state": "idle", "driver": "via-hub",
                 "auth_mode": "view_page_v2", "can_write": False, "readonly": True,
