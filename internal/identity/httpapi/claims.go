@@ -132,3 +132,20 @@ func decodeClaim(w http.ResponseWriter, r *http.Request, out *identity.ClaimRequ
 	}
 	return true
 }
+
+func (a *API) claimCancel(w http.ResponseWriter, r *http.Request) {
+	if a.Claims == nil {
+		writeErr(w, 503, "self_enroll_unavailable", nil)
+		return
+	}
+	token := bearer(r)
+	if token == "" {
+		writeErr(w, 404, "not_found", nil)
+		return
+	}
+	if err := a.Claims.CancelDeviceClaim(r.Context(), r.PathValue("id"), token); err != nil {
+		mapErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"claim_id": r.PathValue("id"), "state": "cancelled"})
+}

@@ -49,6 +49,7 @@ func (a *API) Register(mux Mux) {
 	mux.HandleFunc("POST /api/enroll/claims", a.claimApply)
 	mux.HandleFunc("GET /api/enroll/claims/{id}", a.claimPoll)
 	mux.HandleFunc("POST /api/enroll/claims/{id}/ack", a.claimAck)
+	mux.HandleFunc("POST /api/enroll/claims/{id}/cancel", a.claimCancel)
 	mux.HandleFunc("POST /api/enroll/applications", a.apply)
 	mux.HandleFunc("GET /api/enroll/applications/{id}", a.poll)
 	mux.HandleFunc("GET /api/console/enroll/applications", a.console(a.listPending))

@@ -90,3 +90,47 @@ func TestClaimApplyRejectsAmbiguousJSON(t *testing.T) {
 		}
 	}
 }
+
+func TestClaimHTTPCancelProofAndIssuedRefusal(t *testing.T) {
+	ctx := context.Background()
+	svc := identity.NewService(identity.NewMemStore(), nil, nil)
+	ob := identity.NewOnboarding(svc)
+	ob.CodeKey = "fixture-key"
+	mux := http.NewServeMux()
+	(&httpapi.API{Svc: svc, Claims: ob}).Register(mux)
+	apply := func(code string) *identity.ClaimResult {
+		t.Helper()
+		result, err := ob.ApplyDeviceClaim(ctx, identity.ClaimRequest{UserID: "alice", ShortName: "al", AgentName: "desktop", CodeDigest: identity.HashSecret(code), DeviceFingerprint: strings.Repeat("a", 64), ClientVersion: "0.2.2.2", Mode: "desktop"}, "fixture-ip")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return result
+	}
+	cancel := func(id, token string) *httptest.ResponseRecorder {
+		request := httptest.NewRequest("POST", "/api/enroll/claims/"+id+"/cancel", nil)
+		if token != "" {
+			request.Header.Set("Authorization", "Bearer "+token)
+		}
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, request)
+		return w
+	}
+	result := apply("ABCDEFGHJKMN")
+	for _, token := range []string{"", "wrong"} {
+		if w := cancel(result.ID, token); w.Code != 404 {
+			t.Fatal("cancel authenticated incorrectly", w.Code)
+		}
+	}
+	for i := 0; i < 2; i++ {
+		w := cancel(result.ID, result.PollToken)
+		var proof map[string]any
+		if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &proof) != nil || proof["claim_id"] != result.ID || proof["state"] != "cancelled" || w.Header().Get("Cache-Control") != "no-store" {
+			t.Fatal("missing cancellation proof")
+		}
+	}
+	issued := apply("PQRSTUVWXYZ2")
+	ob.HandleDeviceClaim(ctx, identity.Identity{Provider: "feishu", Issuer: "fixture", Subject: "person"}, "PQRSTUVWXYZ2")
+	if w := cancel(issued.ID, issued.PollToken); w.Code != 403 {
+		t.Fatal("issued credential could cancel", w.Code)
+	}
+}

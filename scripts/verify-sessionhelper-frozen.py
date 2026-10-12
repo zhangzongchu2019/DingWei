@@ -69,6 +69,11 @@ def main():
             sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools" / "sessionhelper"))
             from sessionhelper.enroll import write_private_file
             write_private_file(str(status_path), status_bytes.decode())
+        cancelled = subprocess.run([str(binary), "--cancel-pairing", str(state / "setup-profile.json")],
+                                   env=env, text=True, capture_output=True, timeout=30, check=True)
+        assert "没有待取消的飞书申请" in cancelled.stdout
+        assert not list(state.glob("claim-cancelled-*.json"))
+        assert not (state / "claim-pending.json").exists() and not (state / "credential.json").exists()
         assert config.read_bytes().startswith(before)
         mcp = tomllib.loads(config.read_text())["mcp_servers"]["dingwei-fixtureagent"]
         assert mcp["command"] == str(binary) and mcp["args"] == ["--mcp"]

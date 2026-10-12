@@ -265,6 +265,35 @@ class SetupTest(unittest.TestCase):
             self.assertEqual(checked, [True])
             run.assert_called_once()
 
+    def test_cancel_profile_routes_without_tool_login_or_background_start(self):
+        from io import StringIO
+        from sessionhelper.launch import main as launch
+        with tempfile.TemporaryDirectory() as root:
+            values = self.make(root)
+            path = write_profile(values)
+            # Cancellation does not need a new model readiness test or login.
+            with patch("sys.argv", ["sessionhelper", "--cancel-pairing", str(path)]), \
+                 patch("sys.stdout", StringIO()), \
+                 patch("sessionhelper.claim_enroll.cancel_pending_claim", return_value=None) as cancel, \
+                 patch("sessionhelper.app.main") as helper, \
+                 patch("sessionhelper.setup.start_background") as start:
+                launch()
+            self.assertEqual(cancel.call_args.kwargs["state_dir"], root)
+            self.assertEqual(cancel.call_args.kwargs["owner"], "alice")
+            helper.assert_not_called()
+            start.assert_not_called()
+
+    def test_cancel_profile_refuses_web_and_simultaneous_run(self):
+        with tempfile.TemporaryDirectory() as root:
+            values = profile("desktop", "codex", "https://dw123.cmjrt.com", "alice", "al", "pmagent", root, enroll_method="web")
+            path = write_profile(values)
+            with patch("sessionhelper.claim_enroll.cancel_pending_claim") as cancel:
+                with self.assertRaises(ValueError):
+                    main(["--cancel-pairing", str(path)])
+                cancel.assert_not_called()
+            with self.assertRaises(SystemExit), patch("sys.stderr"):
+                main(["--cancel-pairing", str(path), "--run-profile", str(path)])
+
     def test_failed_background_spawn_releases_reservation(self):
         with tempfile.TemporaryDirectory() as root:
             values = self.make(root)

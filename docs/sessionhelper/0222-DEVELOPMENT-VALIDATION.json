@@ -1,16 +1,16 @@
 {
-  "recorded_utc": "2026-10-12T10:11:09.247604+00:00",
+  "recorded_utc": "2026-10-12T10:44:22.839255+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS final32 Python files+2shell, including environment-read gate; mandatory memory4/PG4/MCP3 integration11 cases12.318s after import-order refinement.",
+    "canonical": "PASS final32 Python files+2shell; actual cross-runtime13 cases14.809s (memory claim5/PG claim5/MCP3) after final bounded private-state loading.",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
     "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
     "helper_all_discovery": "PASS553 in284.444s prior to delayed-pilot delta; delayed-pilot covered by final21 targeted + canonical31 + frozen local smoke. No claim of a fresh555 full-discovery run.",
-    "frozen_linux_candidate": "PASS final profile-import Linux frozen executable10751872B/b40d85949de7cc64d9ab6cd8d8bdb1c5a92a1ab81c827ae2c5d6157dae03d379: actual restart profile guard/MCP/local IPC/read/reply/wait-first smoke. No Mac/Hub/model or frozen full enrollment runtime proof.",
+    "frozen_linux_candidate": "PASS final Linux development binary10760000B/2965827d58cabe951843f567e7da0660a620f7a8f9472c01043793d736e4ac7a: actual no-pending --cancel-pairing entry/no enrollment, restart guard, MCP/local IPC/read/reply/wait-first. Not Mac signing/UI/Hub/model or frozen full pairing proof.",
     "macos_metadata": "PASS5 synthetic bundle tests; no Mac queried, account/login/history not read",
     "local_desktop_pilot": "PASS6 tests, including real local wait-first fixture and paused refusal, owned cleanup/profile-credential refusal; no Hub routing",
     "native_auto_notify": "NOT_IMPLEMENTED: original GUI provider and complete automated receive/turn/reply runtime still missing",
@@ -25,7 +25,7 @@
     "existing_helper_send_receipt": "PASS actual SessionHelper._make_send_handler with synthetic websocket: sent-write receipt is refused as durable ACK",
     "hub_outbound_confirmation": "PASS actual local websocket/SQLite queue before positive receipt; rejected legacy/offline/unsupported targets; sender nonce removed from target; explicit capabilities negotiation",
     "hub_m8_final": "PASS go test -p1 ./internal/m8 -count=1,93.039s after final handshake",
-    "all_go_compile": "PASS go test -p1 ./... -run ^$; compilation only, not full test execution",
+    "all_go_compile": "PASS full Go compile/no-tests after CancelDeviceClaim interface addition; later cmd route and m8 test-only deltas compiled/executed via targeted route sweep and canonical. No fresh full all-Go run claimed.",
     "outbound_receipt_python": "PASS11 current protocol tests; actual SessionHelper send/recv path, nonce/address/connection correlation, abort/cancellation, old-Hub refusal before body",
     "desktop_mcp_wait_reply": "PASS11 wait/reply tests including actual MCP stdio child and real local IPC; same-request response, cancellation, concurrent tools, timeout, restart-uncertain guard and single correlated send. Synthetic Hub ACK; no Mac GUI/model invocation.",
     "desktop_mcp_final_regression": "PASS43 wait/receipt/legacy-send/file-IPC tests; -W error::RuntimeWarning",
@@ -43,7 +43,11 @@
     "claim_postgres_contracts": "PASS memory11 + PG11 in2.852s: new/existing/takeover/short conflict/disabled/replay/expiry/wrong token/concurrent/different claims/preferred name reuse; existing minimal test DDL, no external DSN.",
     "claim_postgres_rollback": "PASS1 in1.977s: final audit trigger failure after attempted account/identity/agent/claim writes leaves no user/agent or consumed claim; existing PGTestSchema.",
     "managed_profile_isolation": "PASS18 setup +4 environment entry tests in0.401s; profile activation before app/driver imports; foreign hosted token/secret/owner/IPC/context and import-time CLI path overrides excluded; native AI environment preserved; own saved credential used, parent env restored after exception. Legacy direct env entry unchanged.",
-    "env_read_single_entry": "PASS4; managed snapshot/scope operations central in config.py, exact whitelist5 and no direct setup reads. Now canonical required test file."
+    "env_read_single_entry": "PASS4; managed snapshot/scope operations central in config.py, exact whitelist5 and no direct setup reads. Now canonical required test file.",
+    "claim_cancel_backend": "PASS memory5+PG5 in9.69s: pending/expired close, issued/completed refusal, concurrent claim/cancel only all-or-nothing outcomes; authenticated token/idempotency/code replay. No credential/user/Agent deletion;0102 unchanged.",
+    "claim_cancel_http": "PASS matching claim_id/cancelled proof/no-store, missing/wrong token404, issued403; actual NewPlatformRouteSweep PASS0.317s. Uses private poll token, not anonymous approval or console-role bypass.",
+    "claim_cancel_actual_client": "PASS actual memory/PG cancel-then-new branches with interrupted wait, real HTTP proof, private archive, stale code replay refused, explicit fresh claim+actual helper WS. Final memory5=1.92s PG5=10.88s. No real Feishu platform.",
+    "claim_recovery_client": "PASS33 selected tests in0.597s:9 claim+20 setup+4 env gate; cancellation uncertainty/refusal retain pending, existing credential refuses reset, no concurrent same-dir operation, interrupt releases lock, corrupt auth fields do not reach headers, private symlink/FIFO/oversize refusal, CLI cancellation does not start helper/model login."
   },
   "required_before_release": [
     "Independent code review",
@@ -450,6 +454,66 @@
       "name": "setup-profile-import-frozen-smoke.log",
       "bytes": 285,
       "sha256": "b9b3ae1645f65fdf4d4a26a56576041ba48ddab647e40efa153490bd3e137fc7"
+    },
+    {
+      "name": "claim-cancel-client-first.log",
+      "bytes": 1350,
+      "sha256": "9a753be71926883b513fbc5d41de8622e504bb70f72de2b99cb5c91db807130d"
+    },
+    {
+      "name": "claim-cancel-go-first.log",
+      "bytes": 6060,
+      "sha256": "5d7254400fb3295128497aebb52ca0559d3fc740852dba673a7390c79008e91f"
+    },
+    {
+      "name": "claim-cancel-all-compile.log",
+      "bytes": 5012,
+      "sha256": "292d0cbd9ff23ca207ffefa093eda5fbbca6d574097a3ffc3d2b94e6961742ee"
+    },
+    {
+      "name": "claim-cancel-client-final.log",
+      "bytes": 1350,
+      "sha256": "0e76bd2bf7e4d4d8b829989051c5f5523484113633a2c71a76d015fe17c378ba"
+    },
+    {
+      "name": "claim-cancel-route-sweep.log",
+      "bytes": 62,
+      "sha256": "a6cdece3124dd5c4daf952194cd6d751f53d721d200326d854e3dba9dc5704ef"
+    },
+    {
+      "name": "claim-cancel-canonical-first.log",
+      "bytes": 30352,
+      "sha256": "4cf2c63d2419d9bbd0426712d6b22504baa85001bef773d0abea42b234ab3db2"
+    },
+    {
+      "name": "claim-cancel-client-errors-final.log",
+      "bytes": 1350,
+      "sha256": "0ab09ed58dc11f2045aa668b4280620a4b73f966b075258add5a3e5a1139c773"
+    },
+    {
+      "name": "claim-cancel-client-shape-final.log",
+      "bytes": 1350,
+      "sha256": "1000106cc3fc206bdad6d42613ee37ce2fa4bfa15b9e22c9e0e8d7e7b3602352"
+    },
+    {
+      "name": "claim-recovery-private-state-final.log",
+      "bytes": 1350,
+      "sha256": "0b682cf6739892acaac8136239a55781d6732bfa5a47e592ce381778199affdd"
+    },
+    {
+      "name": "claim-recovery-private-canonical.log",
+      "bytes": 30351,
+      "sha256": "57b1882ce2494bc1a5b7b1438b31aa0d939eb755963e66fa7b0e72c0d901ff9e"
+    },
+    {
+      "name": "claim-recovery-private-frozen-build.log",
+      "bytes": 5007,
+      "sha256": "4e0812cca903a20cebee05aaf4d542ab3a9ecdedb152f1da5e7e32a24db81f0e"
+    },
+    {
+      "name": "claim-recovery-private-frozen-smoke.log",
+      "bytes": 285,
+      "sha256": "efe23ea6c824decc5ebbd02817eda3b335d347f9d7afe85c0694c659532d4526"
     }
   ],
   "pm_target": {

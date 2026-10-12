@@ -23,7 +23,7 @@ def main():
     if sys.argv[1:] == ["--mcp"]:
         from .mcp_shim import serve
         return serve()
-    if "--setup" in sys.argv[1:] or "--run-profile" in sys.argv[1:]:
+    if "--setup" in sys.argv[1:] or "--run-profile" in sys.argv[1:] or "--cancel-pairing" in sys.argv[1:]:
         from .setup import main as setup
         return setup([arg for arg in sys.argv[1:] if arg != "--setup"])
     configured = env_get("SH_ENROLL") or (env_get("SH_KEY_ID") and env_get("SH_SECRET"))

@@ -144,3 +144,20 @@ func (m *MemStore) DeviceClaimError(_ context.Context, id, code string) error {
 	}
 	return nil
 }
+
+func (m *MemStore) CancelDeviceClaim(_ context.Context, id, tokenHash string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	c := m.claims[id]
+	if c == nil || subtle.ConstantTimeCompare([]byte(c.PollTokenHash), []byte(tokenHash)) != 1 {
+		return ErrNotFound
+	}
+	if c.State == "cancelled" {
+		return nil
+	}
+	if c.State != "awaiting_feishu" || c.AgentID != "" || c.CredentialHash != "" {
+		return ErrNotAllowed
+	}
+	c.State = "cancelled"
+	return nil
+}

@@ -235,11 +235,13 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="sessionHelper 安装后配置与飞书配对向导")
     parser.add_argument("--desktop-app", type=Path, help="macOS 上选择实际使用的 Codex.app/ChatGPT.app；仅读版本")
     parser.add_argument("--configure-only", action="store_true", help="仅配置，不申请账号或启动后台")
-    parser.add_argument("--run-profile", type=Path, help="使用已保存的私有配置启动，不重复安装或模型授权")
+    operation = parser.add_mutually_exclusive_group()
+    operation.add_argument("--cancel-pairing", type=Path, help="显式取消未认领的飞书申请并私有归档；不删凭据或 Agent")
+    operation.add_argument("--run-profile", type=Path, help="使用已保存的私有配置启动，不重复安装或模型授权")
     args = parser.parse_args(argv)
-    if args.run_profile:
-        path = args.run_profile.expanduser()
-        if path.is_symlink() or path.stat().st_mode & 0o077:
+    if args.run_profile or args.cancel_pairing:
+        path = (args.run_profile or args.cancel_pairing).expanduser()
+        if not path.is_file() or path.is_symlink() or path.stat().st_mode & 0o077:
             raise ValueError("profile must be a private regular file")
         values = json.loads(path.read_text())
         expected = profile(values["SH_MODE"], values["SH_DRIVER"], "https://" + urlsplit(values["SH_WS_BASE"]).netloc,
@@ -249,6 +251,16 @@ def main(argv=None):
             expected["SH_CLI_CWD"] = values["SH_CLI_CWD"]
             if values != expected:
                 raise ValueError("profile contains unsupported or changed settings")
+        if args.cancel_pairing:
+            if values["SH_ENROLL_METHOD"] != "feishu":
+                raise ValueError("this cancellation entry supports Feishu claims only; Web/hosted enrollment unchanged")
+            from .claim_enroll import cancel_pending_claim
+            from .enroll import UrllibTransport, hub_http_base
+            archive = cancel_pending_claim(state_dir=values["SH_STATE_DIR"], owner=values["SH_ENROLL_OWNER"],
+                                           transport=UrllibTransport(hub_http_base(values["SH_WS_BASE"])))
+            print("未认领申请已取消并私有归档；旧配对码已失效。" if archive else "没有待取消的飞书申请；未创建新申请。")
+            print("如需新配对码，请显式启动：", shlex.join(profile_command(path)))
+            return
         status_path = Path(values["SH_STATE_DIR"]) / "setup-status.json"
         if not status_path.is_file() or status_path.is_symlink() or status_path.stat().st_mode & 0o077:
             raise ValueError("finish the installer tool-readiness step before starting this profile")
@@ -300,6 +312,10 @@ def main(argv=None):
         print("配置已保存。Web 审核需要已创建的用户账号；启动后取得6位配对码，在控制台的自备 Agent 审核中批准。")
     print("启动：", shlex.join(profile_command(path)))
     print("请按原生授权提示操作；CLI 模型授权码与 DW 配对码不同。")
+    if enrollment == "feishu":
+        cancel_command = profile_command(path)
+        cancel_command[-2] = "--cancel-pairing"
+        print("过期/冲突后：先退出配对等待，再显式取消未认领申请：", shlex.join(cancel_command))
     if args.configure_only:
         return
     from .enroll import prepare_client_env

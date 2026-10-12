@@ -171,3 +171,23 @@ func (s *PGStore) DeviceClaimError(ctx context.Context, id, code string) error {
 		return writeClaim(ctx, tx, c)
 	})
 }
+
+func (s *PGStore) CancelDeviceClaim(ctx context.Context, id, tokenHash string) error {
+	return s.inTx(ctx, func(tx repo.Tx) error {
+		c, err := claimScan(tx.QueryRow(ctx, `SELECT body FROM np_device_claim WHERE id=$1 FOR UPDATE`, id))
+		if err != nil {
+			return err
+		}
+		if subtle.ConstantTimeCompare([]byte(c.PollTokenHash), []byte(tokenHash)) != 1 {
+			return ErrNotFound
+		}
+		if c.State == "cancelled" {
+			return nil
+		}
+		if c.State != "awaiting_feishu" || c.AgentID != "" || c.CredentialHash != "" {
+			return ErrNotAllowed
+		}
+		c.State = "cancelled"
+		return writeClaim(ctx, tx, c)
+	})
+}

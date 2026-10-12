@@ -32,7 +32,7 @@ func TestDeviceClaimAcrossActualClientAndHub(t *testing.T) {
 	if python == "" {
 		t.Skip("run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment")
 	}
-	for _, mode := range []string{"new", "reuse", "lost_ack", "takeover"} {
+	for _, mode := range []string{"new", "reuse", "lost_ack", "takeover", "cancel_then_new"} {
 		t.Run(mode, func(t *testing.T) { claimClientIntegration(t, python, mode, "memory") })
 	}
 }
@@ -48,7 +48,7 @@ func TestDeviceClaimAcrossActualClientAndPostgres(t *testing.T) {
 	t.Setenv(pgtest.EmbeddedOffEnv, "1")
 	t.Setenv(pgtest.SkipOKEnv, "0")
 	t.Setenv(pgtest.StrictEnv, "1")
-	for _, mode := range []string{"new", "reuse", "lost_ack", "takeover"} {
+	for _, mode := range []string{"new", "reuse", "lost_ack", "takeover", "cancel_then_new"} {
 		t.Run(mode, func(t *testing.T) { claimClientIntegration(t, python, mode, "postgres") })
 	}
 }
@@ -211,6 +211,33 @@ func claimClientIntegration(t *testing.T, python, mode, backend string) {
 		t.Fatal("missing claim child phase")
 	}
 	send(config)
+	if mode == "cancel_then_new" {
+		phase("CLAIM_CANCEL_READY")
+		var old struct {
+			ID   string `json:"claim_id"`
+			Code string `json:"code"`
+		}
+		raw, err := os.ReadFile(filepath.Join(home, "claim-pending.json"))
+		if err != nil || json.Unmarshal(raw, &old) != nil {
+			t.Fatal("private cancel state unavailable")
+		}
+		send(map[string]string{"operation": "cancel"})
+		phase("CLAIM_CANCELLED")
+		cancelled, err := claimStore.GetDeviceClaim(ctx, old.ID)
+		if err != nil || cancelled.State != "cancelled" || cancelled.AgentID != "" {
+			t.Fatal("client archive lacked real server cancellation")
+		}
+		stale := trustedMsgFrom(sender.Subject, sender.Issuer, model.IngressFeishuWSAuthenticated)
+		stale.ChatType = model.ChatPersonal
+		if _, handled, err := hub.dispatchNewPlatformCommand(ctx, stale, "#pair "+old.Code); err != nil || !handled {
+			t.Fatal("cancelled code replay handling failed")
+		}
+		users, err := store.CountUsers(ctx)
+		if err != nil || users != 0 {
+			t.Fatal("cancelled claim created an account")
+		}
+		send(map[string]string{"operation": "new"})
+	}
 	phase("CLAIM_PAIR_READY")
 	var pending struct {
 		ID   string `json:"claim_id"`
@@ -283,7 +310,11 @@ func claimClientIntegration(t *testing.T, python, mode, backend string) {
 		if err != nil || users != 1 {
 			t.Fatal("duplicate user created")
 		}
-		if !savedBeforeACK.Load() || applies.Load() != 1 || polls.Load() != 1 {
+		expectedApplies := int32(1)
+		if mode == "cancel_then_new" {
+			expectedApplies = 2
+		}
+		if !savedBeforeACK.Load() || applies.Load() != expectedApplies || polls.Load() != 1 {
 			t.Fatal("recovery repeated application/poll or ACK preceded save")
 		}
 		expectedACK := int32(1)

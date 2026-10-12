@@ -27,17 +27,18 @@ func (r *routeRecorder) HandleFunc(p string, h func(http.ResponseWriter, *http.R
 // newPlatformAuthExempt 新平台模式下【不】按 N3 会话认人的路由，每条写明凭什么放行。
 // 不在此表的路由一律按 N3 会话认人；新增路由若漏包认人中间件，下面的扫描用例必红（组长裁定 140013Z ③）。
 var newPlatformAuthExempt = map[string]string{
-	"POST /api/enroll/claims":            "临时无属主申请：限频与短期码，不能匿名建号",
-	"GET /api/enroll/claims/{id}":        "设备私有轮询凭证",
-	"POST /api/enroll/claims/{id}/ack":   "设备私有领取确认凭证",
-	"POST /console/login/password":       "登录本身",
-	"POST /console/login/code":           "登录本身（取登录码）",
-	"GET /console/login/status":          "登录轮询，凭一次性登录码",
-	"POST /console/logout":               "退出；无会话也幂等",
-	"POST /api/console/account/password": "改密：必须改密的会话正需要它；自身校验旧口令（另有一格：无会话 401）",
-	"GET /ws/agent":                      "Agent 专属凭据",
-	"POST /api/enroll/applications":      "客户端入网申请：凭配对码摘要",
-	"GET /api/enroll/applications/{id}":  "客户端轮询：凭轮询令牌",
+	"POST /api/enroll/claims":             "临时无属主申请：限频与短期码，不能匿名建号",
+	"GET /api/enroll/claims/{id}":         "设备私有轮询凭证",
+	"POST /api/enroll/claims/{id}/cancel": "设备私有轮询凭证；仅取消尚未认领申请，不撤销已发凭据",
+	"POST /api/enroll/claims/{id}/ack":    "设备私有领取确认凭证",
+	"POST /console/login/password":        "登录本身",
+	"POST /console/login/code":            "登录本身（取登录码）",
+	"GET /console/login/status":           "登录轮询，凭一次性登录码",
+	"POST /console/logout":                "退出；无会话也幂等",
+	"POST /api/console/account/password":  "改密：必须改密的会话正需要它；自身校验旧口令（另有一格：无会话 401）",
+	"GET /ws/agent":                       "Agent 专属凭据",
+	"POST /api/enroll/applications":       "客户端入网申请：凭配对码摘要",
+	"GET /api/enroll/applications/{id}":   "客户端轮询：凭轮询令牌",
 }
 
 // newPlatformSpecTaskExempt spec／任务路由里【不】按 N3 会话认人的（R-V2-SPEC-TASK-SHIM-IMPL H1），口径同 095：

@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 
 from sessionhelper.app import SessionHelper
-from sessionhelper.claim_enroll import claim_enroll, PENDING
+from sessionhelper.claim_enroll import claim_enroll, cancel_pending_claim, PENDING
 from sessionhelper.config import Config
 from sessionhelper.enroll import CREDENTIAL_FILE, EnrollStopped, UrllibTransport
 
@@ -29,6 +29,22 @@ def main():
     options = dict(state_dir=str(state), owner=config['requested'], short_name='np',
                    agent_name='desktop', mode='desktop', show=show,
                    notify=notifications.append, max_polls=3)
+    if config['mode'] == 'cancel_then_new':
+        def cancel_wait(command):
+            assert command.startswith('#pair ')
+            print('CLAIM_CANCEL_READY pending', flush=True)
+            assert json.loads(sys.stdin.readline()) == {'operation': 'cancel'}
+            raise KeyboardInterrupt()
+        try:
+            claim_enroll(transport=transport, **dict(options, show=cancel_wait))
+            raise AssertionError('expected interrupted pairing')
+        except KeyboardInterrupt:
+            pass
+        archive = Path(cancel_pending_claim(state_dir=str(state), owner=config['requested'], transport=transport))
+        assert archive.stat().st_mode & 0o077 == 0
+        assert not (state/PENDING).exists() and not (state/CREDENTIAL_FILE).exists()
+        print('CLAIM_CANCELLED archived', flush=True)
+        assert json.loads(sys.stdin.readline()) == {'operation': 'new'}
     if config['mode'] == 'lost_ack' and not config.get('resume'):
         class LostResponse(UrllibTransport):
             def post_authenticated(self, path, body, headers):
@@ -59,7 +75,7 @@ def main():
     assert (state/CREDENTIAL_FILE).stat().st_mode & 0o077 == 0
     if config.get('resume'):
         assert hashlib.sha256((state/CREDENTIAL_FILE).read_bytes()).hexdigest() == config['saved_sha']
-    assert len(notifications) == (0 if config.get('resume') else 2 + (config['mode']=='reuse'))
+    assert len(notifications) == (0 if config.get('resume') else 2 + (config['mode']=='reuse') + (config['mode']=='cancel_then_new'))
     asyncio.run(connect(config, credential))
 
 

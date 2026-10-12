@@ -145,3 +145,15 @@ AI工具原生环境（如 CODEX_HOME、原生provider授权、PATH）继续继�
 这不是跨设备凭据迁移，也不授权复用.95的状态目录或改变真实账号。Mac原会话、真实飞书与空闲自动唤醒仍另行验收。本轮产品code已变，旧49fc源码包不含此隔离修复，后续须用新提交的固定源码。
 
 补充导入时机：受管profile必须先激活隔离环境，再import app与CLI驱动；这些模块会在导入时缓存SH_CODEX_BIN/SH_CLI_BIN/SH_OPENCODE_BIN。新增检查验证在import入口不存在这些旧设备路径，避免只隔离运行时读取却留下导入缓存。首次abd1f3f9d快照的运行时隔离保留记录，后续固定提交以这项补充为准。
+
+## 显式关闭未认领申请与重新配对
+
+新增同版HTTP `POST /api/enroll/claims/{id}/cancel`，只凭该申请的私有poll token。MemStore互斥锁/PG事务行锁下，只允许awaiting_feishu（包含已过期）转cancelled；credential_ready/completed拒绝，不删用户/Agent、不撤销凭据。返回必须是对应claim_id/state=cancelled的明确JSON证明；重复取消幂等，旧码仍保留摘要且不能重放。
+
+客户端 `--cancel-pairing <profile>` 验证现有私有profile，独立于模型授权/准备状态，不启动helper。持有本状态目录的非阻塞私有文件锁后，若已有凭据则拒绝；仅收到匹配服务端证明才0600归档旧pending并fsync后移除活动pending。响应丢失、未知/拒绝、旧Hub无接口均保留状态，不自动申请。退出等待释放锁，后续明确运行原profile才生成新码。并发同目录操作拒绝；锁文件保留，不依据PID或强杀进程。
+
+恢复状态拒绝symlink、非普通文件、权限/归属异常、超4KiB及损坏id/token/code/owner字段；FIFO以非阻塞打开后拒绝，防止恢复命令挂起。错误不输出私有字段。客户端保存凭据前ACK/完成状态规则不变。
+
+验证面分开记录：取消状态机memory5/PG5（未认领/过期/已发/已确认/并发认领）；HTTP缺token/错token404、确认证明/no-store、幂等和已发拒绝；实际Python↔Hub联调新增memory/PG取消旧码→拒旧码重放→显式新配对两格；新平台真实路由扫描通过。canonical仍32Py/2shell，跨运行时从11增加到13个场景。Go-only未给Python的两条联调skip不作通过；canonical显式运行。全Go编译检查不冒认全Go测试。
+
+Linux冻结检查新增无pending时的真实取消入口，不联网/开户。完整取消的实际HTTP/PG验收由源码联调提供，不声称Mac/真实飞书或冻结完整入网runtime已完成。0102迁移不变（状态在既有body列）；生产不变。Mac27591历史包不含取消增量，当前验收须使用后续新固定源码。

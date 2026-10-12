@@ -43,6 +43,9 @@ type ClaimStore interface {
 	ClaimDevice(context.Context, string, Identity, string, string, time.Time) (*DeviceClaim, error)
 	// AckDeviceClaim closes credential retrieval after the installer durably saved it.
 	AckDeviceClaim(context.Context, string, string, time.Time) error
+	// Cancellation may close only an unclaimed application, including expired
+	// ones. Issued credentials are never revoked or silently re-enrolled.
+	CancelDeviceClaim(context.Context, string, string) error
 }
 
 type ClaimRequest struct {
@@ -247,4 +250,12 @@ func (o *Onboarding) claimFailure(ctx context.Context, st ClaimStore, id, code s
 	}); ok {
 		_ = recorder.DeviceClaimError(ctx, id, code)
 	}
+}
+
+func (o *Onboarding) CancelDeviceClaim(ctx context.Context, id, token string) error {
+	st, err := o.claimStore()
+	if err != nil {
+		return err
+	}
+	return st.CancelDeviceClaim(ctx, id, HashSecret(token))
 }
