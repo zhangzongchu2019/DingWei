@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from .config import env_get
+from .config import env_get, env_snapshot, activated_helper_environment, HELPER_ENV_PREFIXES
 from .enroll import write_private_file, EnrollError
 
 TOOLS = {
@@ -161,6 +161,16 @@ def prepare_cli(tool, prompt=input, runner=subprocess.run, model=""):
     return "CLI_READY"
 
 
+def profile_environment(values):
+    """Do not inherit another DW device's credentials, token, or IPC options.
+
+    Preserve native AI/OS environment (e.g. CODEX_HOME and provider auth).
+    The private profile is the complete supported helper configuration.
+    """
+    return {**{key: value for key, value in env_snapshot().items()
+               if not key.startswith(HELPER_ENV_PREFIXES)}, **values}
+
+
 def profile_command(path):
     """One restart entry for both packaged and source installations."""
     if getattr(sys, "frozen", False):
@@ -200,13 +210,13 @@ def start_background(path, values, popen=subprocess.Popen):
         json.dump({"pid": os.getpid(), "status": "RESERVING"}, reservation)
         reservation.flush(); os.fsync(reservation.fileno())
     command = profile_command(path)
-    # Ordinary inherited environment/auth remains with the original process;
-    # no credential is inserted into command-line arguments or the profile.
+    # Keep native AI authentication; drop all inherited helper/device settings.
+    # No credential is inserted into command-line arguments or the profile.
     process = None
     try:
         with os.fdopen(fd, "ab") as log:
             process = popen(command, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
-                            start_new_session=True, close_fds=True,
+                            start_new_session=True, close_fds=True, env=profile_environment(values),
                             cwd=str(Path(__file__).resolve().parents[1]) if not getattr(sys, "frozen", False) else str(state))
         write_private_file(str(pid_path), json.dumps({"pid": process.pid, "profile": str(path), "status": "STARTING"}))
     except BaseException:
@@ -246,9 +256,9 @@ def main(argv=None):
         required = "MCP_CONFIGURED" if values["SH_MODE"] == "desktop" else "CLI_READY"
         if status.get("tool_ready") != required or status.get("mode") != values["SH_MODE"]:
             raise ValueError("selected AI tool is not verified ready; resume the setup wizard")
-        os.environ.update(values)
         from .app import main as run_helper
-        return run_helper()
+        with activated_helper_environment(values):
+            return run_helper()
     print("两种接入方式都需要 sessionHelper。请选择：\n1. Codex 桌面应用 + DW-MCP\n2. CLI 托管（通过 DingWei Web 页面交互）")
     choice = input("选择 [1/2]：").strip()
     if choice not in ("1", "2"):

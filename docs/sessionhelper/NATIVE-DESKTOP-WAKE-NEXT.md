@@ -133,3 +133,13 @@ Web配对明确需要先创建账号与6位配对码审核；飞书模式才提�
 另外独立运行现有 `TestDeviceClaimContracts` 的memory11/PG11场景，以及 `TestDeviceClaimPGFailureRollsBack`：末尾审计触发器故意报错，账户/Agent/认领消费必须全部回退。这两条契约测试仍使用仓库既有PGTestSchema；与新增实际迁移联调分开记录。
 
 本轮闭合的是**隔离PG事务与跨客户端链路**。真实飞书平台身份/渠道验证、Mac原聊天、签名安装器、空闲桌面自动唤醒和独立CR仍开放，不据此改生产或发布。Mac49fc源码包的产品代码未变，不重打包或重标其commit；新Go/PG门禁仍须完整仓库。
+
+## 新 profile 的设备环境隔离
+
+安装向导的后台启动与 `--run-profile` 均以保存的、已验证的profile作为helper配置来源。丢弃调用者终端继承的 SH_/DINGWEI_ 设置，特别是另一设备的 SH_ENROLL_TOKEN_FILE、SH_SECRET/KEY_ID、SH_OWNER、SH_MCP_IPC_SOCK及消息上下文；否则即便选择了独立新状态目录，旧hosted token文件也会优先于飞书认领被消费。
+
+AI工具原生环境（如 CODEX_HOME、原生provider授权、PATH）继续继承，不复制到profile、argv或报告。源码前台运行用统一config入口作用域替换helper命名空间，正常或异常退出后恢复调用方原有helper环境；后台仅向本轮子进程传隔离副本，不改变父进程。只有受管profile入口采用此规则，旧直接环境变量启动兼容入口保持。
+
+回归实际运行 prepare_client_env：已有本设备凭据时不触碰终端指向的另一个hosted token，不发起新申请；并核两条启动路径、异常恢复和AI原生环境保留。环境读取仍收口config.py，机械白名单记录了新增的启动快照/作用域操作；该检查现加入canonical构建门禁，32Py/2shell。
+
+这不是跨设备凭据迁移，也不授权复用.95的状态目录或改变真实账号。Mac原会话、真实飞书与空闲自动唤醒仍另行验收。本轮产品code已变，旧49fc源码包不含此隔离修复，后续须用新提交的固定源码。

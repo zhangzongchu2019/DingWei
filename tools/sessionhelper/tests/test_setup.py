@@ -184,6 +184,63 @@ class SetupTest(unittest.TestCase):
             launch()
         setup.assert_called_once_with(["--run-profile", str(path)])
 
+    def test_background_profile_drops_other_device_env_preserves_native_auth(self):
+        with tempfile.TemporaryDirectory() as root:
+            values = self.make(root)
+            path = write_profile(values)
+            calls = []
+            def popen(args, **kwargs):
+                calls.append((args, kwargs))
+                return type("Process", (), {"pid": os.getpid()})()
+            inherited = {"SH_SECRET": "synthetic-other-secret", "SH_KEY_ID": "other-device",
+                         "SH_ENROLL_TOKEN_FILE": "/fixture/other/hosted-token", "SH_MCP_IPC_SOCK": "/fixture/other.sock",
+                         "DINGWEI_REPLY_CONTEXT": "synthetic-other-context", "CODEX_HOME": "/fixture/codex",
+                         "OPENAI_API_KEY": "synthetic-provider-key"}
+            with patch.dict(os.environ, inherited):
+                before = dict(os.environ)
+                start_background(path, values, popen)
+                self.assertEqual(dict(os.environ), before)
+            child_env = calls[0][1]["env"]
+            for key in ("SH_SECRET", "SH_KEY_ID", "SH_ENROLL_TOKEN_FILE", "SH_MCP_IPC_SOCK", "DINGWEI_REPLY_CONTEXT"):
+                self.assertNotIn(key, child_env)
+            self.assertEqual(child_env["SH_WS_BASE"], values["SH_WS_BASE"])
+            self.assertEqual(child_env["DINGWEI_MCP_IPC_SOCK"], values["DINGWEI_MCP_IPC_SOCK"])
+            self.assertEqual(child_env["CODEX_HOME"], inherited["CODEX_HOME"])
+            self.assertEqual(child_env["OPENAI_API_KEY"], inherited["OPENAI_API_KEY"])
+
+    def test_run_profile_uses_own_credential_not_inherited_hosted_token(self):
+        from sessionhelper.enroll import prepare_client_env, write_private_file
+        with tempfile.TemporaryDirectory() as root:
+            state = Path(root) / "own"
+            values = self.make(str(state))
+            path = write_profile(values)
+            write_private_file(str(state / "setup-status.json"), json.dumps({"mode": "desktop", "tool_ready": "MCP_CONFIGURED"}))
+            write_private_file(str(state / "credential.json"), json.dumps({"agent_name": "ownagent", "secret": "dwa_" + "a" * 64}))
+            foreign = Path(root) / "foreign-token"
+            write_private_file(str(foreign), "synthetic-token-from-other-device")
+            native = {"SH_ENROLL_TOKEN_FILE": str(foreign), "SH_SECRET": "synthetic-other-secret",
+                      "SH_KEY_ID": "other-device", "SH_OWNER": "otherowner", "SH_MCP_IPC_SOCK": "/fixture/other.sock",
+                      "DINGWEI_REPLY_CONTEXT": "synthetic-other-context", "CODEX_HOME": "/fixture/codex"}
+            def run():
+                def no_output(_):
+                    raise AssertionError("existing own credential must not request or print a code")
+                env, credential, actual_state = prepare_client_env(os.environ, show=no_output, notify=no_output, transport=object())
+                self.assertEqual(credential.agent_name, "ownagent")
+                self.assertEqual(actual_state, str(state))
+                self.assertEqual(env["SH_KEY_ID"], "enrolled")
+                self.assertNotIn("SH_OWNER", env)
+                self.assertNotIn("SH_ENROLL_TOKEN_FILE", env)
+                self.assertNotIn("DINGWEI_REPLY_CONTEXT", env)
+                self.assertEqual(os.environ["CODEX_HOME"], native["CODEX_HOME"])
+                raise RuntimeError("synthetic helper stopped")
+            with patch.dict(os.environ, native), patch("sessionhelper.app.main", side_effect=run), \
+                 patch("sessionhelper.enroll.enroll_with_token", side_effect=AssertionError("must not claim other device's token")):
+                before = dict(os.environ)
+                with self.assertRaisesRegex(RuntimeError, "synthetic helper stopped"):
+                    main(["--run-profile", str(path)])
+                self.assertEqual(dict(os.environ), before)
+            self.assertEqual(foreign.read_text(), "synthetic-token-from-other-device")
+
     def test_failed_background_spawn_releases_reservation(self):
         with tempfile.TemporaryDirectory() as root:
             values = self.make(root)

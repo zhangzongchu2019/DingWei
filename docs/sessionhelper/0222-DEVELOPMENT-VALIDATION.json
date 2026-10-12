@@ -1,16 +1,16 @@
 {
-  "recorded_utc": "2026-10-12T09:54:16.975257+00:00",
+  "recorded_utc": "2026-10-12T10:05:05.368515+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS current31 Python files+2shell; mandatory cross-runtime gate has11 scenarios: memory claim4, PostgreSQL claim4, MCP roundtrip3; final combined Go integration12.355s.",
+    "canonical": "PASS current32 Python files+2shell, including environment-read gate; mandatory cross-runtime11 cases14.557s (memory claim4/PG claim4/MCP3).",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
     "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
     "helper_all_discovery": "PASS553 in284.444s prior to delayed-pilot delta; delayed-pilot covered by final21 targeted + canonical31 + frozen local smoke. No claim of a fresh555 full-discovery run.",
-    "frozen_linux_candidate": "PASS current setup-restart Linux frozen executable10753624B/e6e3857eb5e929123332b0fc6ddd3cdbac8d15d500e78aed6a24e59545586323: actual printed restart entry guarded/no enrollment, existing MCP/local wait-first smoke. No Mac binary/GUI/Hub/model.",
+    "frozen_linux_candidate": "PASS current profile-isolation Linux frozen executable10754752B/5c9fe8b48f90ce7d71c46ae20c62464bd70595b11172e80bf77f84b5c2bbb327: printed restart profile guard and MCP/local IPC/read/reply/wait-first smoke. No Mac/Hub/model or frozen full enrollment runtime proof.",
     "macos_metadata": "PASS5 synthetic bundle tests; no Mac queried, account/login/history not read",
     "local_desktop_pilot": "PASS6 tests, including real local wait-first fixture and paused refusal, owned cleanup/profile-credential refusal; no Hub routing",
     "native_auto_notify": "NOT_IMPLEMENTED: original GUI provider and complete automated receive/turn/reply runtime still missing",
@@ -41,7 +41,9 @@
     "installer_restart_command": "PASS15 setup tests; source and frozen use shared profile_command; shell-quoted paths with spaces; Web vs Feishu pairing instructions split. First new test fixture incorrectly included python -m args in sys.argv; corrected process argv fixture, failed log retained.",
     "claim_actual_postgres_hub": "PASS4 in8.85s final PostgreSQL18.3/server_version_num180003; actual migrate.HubDomains ledger0001/0100/0101/0102, migration idempotency and CheckSchema; actual Python HTTP private save/ACK/restart and dedicated helper WS. Own embedded DB, caller DSN blocked, strict startup/no skip downgrade, cleanup residue checks. Synthetic trusted Feishu identity, no real platform.",
     "claim_postgres_contracts": "PASS memory11 + PG11 in2.852s: new/existing/takeover/short conflict/disabled/replay/expiry/wrong token/concurrent/different claims/preferred name reuse; existing minimal test DDL, no external DSN.",
-    "claim_postgres_rollback": "PASS1 in1.977s: final audit trigger failure after attempted account/identity/agent/claim writes leaves no user/agent or consumed claim; existing PGTestSchema."
+    "claim_postgres_rollback": "PASS1 in1.977s: final audit trigger failure after attempted account/identity/agent/claim writes leaves no user/agent or consumed claim; existing PGTestSchema.",
+    "managed_profile_isolation": "PASS17 setup tests +4 environment-entry checks in0.435s; background only passes profile helper variables, native AI env preserved, parent unchanged; actual prepare_client_env ignores inherited foreign hosted-token and uses own saved credential; foreground restores original helper env on exception. Legacy direct env startup unchanged.",
+    "env_read_single_entry": "PASS4; managed snapshot/scope operations central in config.py, exact whitelist5 and no direct setup reads. Now canonical required test file."
   },
   "required_before_release": [
     "Independent code review",
@@ -403,6 +405,31 @@
       "name": "claim-postgres-ledger-canonical.log",
       "bytes": 27562,
       "sha256": "ce626cebdb15393784de7bf631a57bc6cc586a17660c2a4d76704763f0ea0f5e"
+    },
+    {
+      "name": "setup-profile-isolation-first.log",
+      "bytes": 1154,
+      "sha256": "913f6ee56bf1e574ddfa7fc46878fb4abb194dee56c9f0d408920f6355d4899e"
+    },
+    {
+      "name": "setup-profile-isolation-central.log",
+      "bytes": 1154,
+      "sha256": "63b4bf1562028993dc1f5ff8c1f0c6b2d70706d4a34f626894ff24d48511c297"
+    },
+    {
+      "name": "setup-profile-isolation-canonical.log",
+      "bytes": 27734,
+      "sha256": "3dfb5d83dcf330c2efc548fd7c41f79b2f0cf1234395f914d52b7f6edbecd32d"
+    },
+    {
+      "name": "setup-profile-isolation-frozen-build.log",
+      "bytes": 5028,
+      "sha256": "b73966aeb5a2987d3c904465c010eaa04e534cefa7328d8afc86285d9b96c3e3"
+    },
+    {
+      "name": "setup-profile-isolation-frozen-smoke.log",
+      "bytes": 285,
+      "sha256": "65b8daf2060b848fbee083dc44c0473caad967cfd1216858758ded1f7c6fbbf7"
     }
   ],
   "pm_target": {

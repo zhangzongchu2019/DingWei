@@ -7,6 +7,7 @@ import re
 import shlex
 import subprocess
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from urllib.parse import urlencode
 
@@ -123,6 +124,37 @@ class Config:
             query["device_id_v1"] = "1"
             query["device_id"] = self.device_id
         return f"{self.ws_base.rstrip('/')}/ws/session/{self.session_name}?{urlencode(query)}"
+
+
+HELPER_ENV_PREFIXES = ("SH_", "DINGWEI_")
+
+
+def env_snapshot() -> dict[str, str]:
+    """Copy native environment at call time; never log its values."""
+    return dict(os.environ)
+
+
+@contextmanager
+def activated_helper_environment(values: dict[str, str]):
+    """Run a validated managed profile without another device's overrides.
+
+    Only helper namespaces are replaced/restored; native AI authentication,
+    PATH and other application settings remain untouched.
+    """
+    environment = os.environ
+    previous = {key: value for key, value in environment.items()
+                if key.startswith(HELPER_ENV_PREFIXES)}
+    for key in tuple(environment):
+        if key.startswith(HELPER_ENV_PREFIXES):
+            del environment[key]
+    environment.update(values)
+    try:
+        yield
+    finally:
+        for key in tuple(environment):
+            if key.startswith(HELPER_ENV_PREFIXES):
+                del environment[key]
+        environment.update(previous)
 
 
 def env_get(name: str, default: str | None = None) -> str | None:
