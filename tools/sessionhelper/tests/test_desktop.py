@@ -27,6 +27,7 @@ class DesktopTest(unittest.TestCase):
             reopened.request({"operation": "ack", "message_id": "fixture-message"})
             self.assertEqual(reopened.request({"operation": "list"})["messages"], [])
             self.assertEqual(reopened.request({"operation": "status"})["native_auto_notify"], "NOT_VERIFIED")
+            self.assertFalse(reopened.request({"operation": "status"})["native_auto_notify_implemented"])
             reopened.request({"operation": "pause"})
             self.assertTrue(DesktopAdapter(cfg).request({"operation": "status"})["paused"])
 

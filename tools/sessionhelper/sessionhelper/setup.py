@@ -53,6 +53,8 @@ def profile(mode, tool, hub, owner, short_name, agent, state_dir, model="", work
         raise ValueError("an independent state directory is required")
     if not os.path.isabs(state):
         raise ValueError("state directory must be absolute")
+    if len(str(Path(state) / "dingwei-mcp.sock").encode("utf-8")) > 103:
+        raise ValueError("本地 IPC 路径太长，请选择较短的独立状态目录，例如 ~/.dingwei-pm")
     return {"SH_MODE": mode, "SH_DRIVER": tool, "SH_ENROLL": "1", "SH_ENROLL_METHOD": enroll_method,
             "SH_ENROLL_OWNER": owner, "SH_ENROLL_SHORT_NAME": short_name, "SH_ENROLL_AGENT_NAME": agent,
             "SH_WS_BASE": "wss://" + url.netloc, "SH_STATE_DIR": state,
@@ -160,6 +162,8 @@ def prepare_cli(tool, prompt=input, runner=subprocess.run, model=""):
 
 def start_background(path, values, popen=subprocess.Popen):
     state = Path(values["SH_STATE_DIR"])
+    if os.path.lexists(state / "desktop-pilot.lock"):
+        raise ValueError("stop the local desktop pilot before starting a real helper")
     pid_path = state / "helper-process.json"
     if pid_path.exists():
         saved = json.loads(pid_path.read_text())
@@ -212,6 +216,7 @@ def start_background(path, values, popen=subprocess.Popen):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="sessionHelper 安装后配置与飞书配对向导")
+    parser.add_argument("--desktop-app", type=Path, help="macOS 上选择实际使用的 Codex.app/ChatGPT.app；仅读版本")
     parser.add_argument("--configure-only", action="store_true", help="仅配置，不申请账号或启动后台")
     parser.add_argument("--run-profile", type=Path, help="使用已保存的私有配置启动，不重复安装或模型授权")
     args = parser.parse_args(argv)
@@ -252,14 +257,23 @@ def main(argv=None):
     workspace = input("工作目录（留空为当前目录）：").strip() or str(Path.cwd())
     enrollment = input("配对方式 [feishu/Web]（默认飞书一步开户与配对）：").strip().lower() or "feishu"
     values = profile(mode, tool, hub, owner, short, agent, state, model, workspace, enrollment)
+    desktop_host = None
+    if mode == "desktop":
+        from .desktop_host import require_macos_desktop
+        desktop_host = require_macos_desktop(selected=args.desktop_app)
     path = write_profile(values)
     if mode == "driver":
         prepare_cli(tool, model=model)
     else:
-        print("请先安装并登录 Codex 桌面应用。自动提醒需真机验收；MCP 配置成功不代表自动唤醒已就绪。")
+        print("请先在 Codex 桌面应用完成登录。自动提醒需真机验收；MCP 配置成功不代表自动唤醒已就绪。")
+        if desktop_host["applications"]:
+            app = desktop_host["applications"][0]
+            print("本次桌面应用：", app["name"], "版本：", app["version"], "build：", app["build"])
         configure_mcp(values)
     write_private_file(str(Path(values["SH_STATE_DIR"]) / "setup-status.json"), json.dumps({
         "mode": mode, "tool_ready": "MCP_CONFIGURED" if mode == "desktop" else "CLI_READY",
+        "desktop_host": desktop_host,
+        "native_auto_notify_implemented": False,
         "native_auto_notify": "NOT_VERIFIED" if mode == "desktop" else "NOT_APPLICABLE"}))
     print("配置已保存。接下来复制 #pair 指令并私发给当前 Hub 的官方飞书机器人完成开户与配对；Web 方式请在控制台审批。")
     print("启动：", sys.executable, "-m sessionhelper.setup --run-profile", str(path))

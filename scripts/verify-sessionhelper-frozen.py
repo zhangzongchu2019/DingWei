@@ -11,6 +11,8 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import signal
+import time
 import sys
 import tempfile
 import threading
@@ -20,10 +22,11 @@ import tomllib
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("binary", type=Path)
+    parser.add_argument("--desktop-app", type=Path, help="macOS selected application bundle")
     args = parser.parse_args()
     binary = args.binary.resolve(strict=True)
     expected_version = (Path(__file__).resolve().parents[1] / "VERSION").read_text().strip()
-    with tempfile.TemporaryDirectory(prefix="dw-frozen-fixture-") as temp:
+    with tempfile.TemporaryDirectory(prefix="dwf-", dir="/tmp") as temp:
         root = Path(temp)
         state, codex = root / "state", root / "codex"
         codex.mkdir(mode=0o700)
@@ -39,8 +42,11 @@ def main():
                                  capture_output=True, timeout=30, check=True)
         assert version.stdout.strip() == "sessionHelper " + expected_version
         answers = "\n".join(("1", "https://fixture.invalid", "fixtureowner", "fx", "fixtureagent", str(state), str(root), "feishu")) + "\n"
+        setup_command = [str(binary), "--setup", "--configure-only"]
+        if args.desktop_app:
+            setup_command.extend(["--desktop-app", str(args.desktop_app)])
         for _ in range(2):
-            subprocess.run([str(binary), "--setup", "--configure-only"], input=answers,
+            subprocess.run(setup_command, input=answers,
                            env=env, text=True, capture_output=True, timeout=30, check=True)
         assert config.read_bytes().startswith(before)
         mcp = tomllib.loads(config.read_text())["mcp_servers"]["dingwei-fixtureagent"]
@@ -98,6 +104,42 @@ def main():
             loop.call_soon_threadsafe(loop.stop)
             thread.join(5)
             loop.close()
+        probe_command = [str(binary), "--desktop-probe"]
+        if args.desktop_app:
+            probe_command.extend(["--desktop-app", str(args.desktop_app)])
+        probe = json.loads(subprocess.run(probe_command, env=env, text=True, capture_output=True, timeout=30, check=True).stdout)
+        assert probe["account_state"] == "NOT_READ" and probe["native_auto_notify"] == "NOT_VERIFIED"
+        pilot = subprocess.Popen([str(binary), "--desktop-pilot", "--profile", str(state / "setup-profile.json")],
+                                 env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            report = None
+            report_path = None
+            deadline = time.monotonic() + 15
+            while time.monotonic() < deadline:
+                assert pilot.poll() is None, "frozen local pilot exited before ready"
+                candidates = list(state.glob("desktop-pilot-*-report.json"))
+                if candidates:
+                    report_path = candidates[0]
+                    report = json.loads(report_path.read_text())
+                    if report["state"] == "IPC_READY":
+                        break
+                time.sleep(0.05)
+            assert report and report["state"] == "IPC_READY", "frozen pilot not ready"
+            requests = [
+                {"jsonrpc": "2.0", "id": 1, "method": "initialize"},
+                {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "dw_inbox", "arguments": {"operation": "read", "message_id": report["message_id"]}}},
+                {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "send_message", "arguments": {"to": "desktop-pilot#LOCAL", "body": "DW_DESKTOP_OK", "in_reply_to": report["message_id"]}}},
+            ]
+            result = subprocess.run([str(binary), "--mcp"], input="".join(json.dumps(r)+"\n" for r in requests),
+                                    env=dict(env, DINGWEI_MCP_IPC_SOCK=str(state / "dingwei-mcp.sock")), text=True, capture_output=True, timeout=30, check=True)
+            responses = list(map(json.loads, result.stdout.splitlines()))
+            assert len(responses) == 3 and all("error" not in r for r in responses)
+            report = json.loads(report_path.read_text())
+            assert report["read_count"] == report["reply_count"] == 1 and report["hub_connections"] == 0
+        finally:
+            pilot.send_signal(signal.SIGTERM)
+            pilot.wait(timeout=10)
+        assert pilot.returncode == 0 and not (state / "dingwei-mcp.sock").exists() and not (state / "desktop-pilot.lock").exists()
     print(json.dumps({"status": "FROZEN_LOCAL_SMOKE_PASS", "version": expected_version,
                       "bytes": binary.stat().st_size, "sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
                       "real_hub_or_ai_calls": 0, "native_desktop_runtime": "NOT_VERIFIED"}))

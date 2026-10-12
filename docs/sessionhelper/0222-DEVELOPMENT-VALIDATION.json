@@ -1,22 +1,27 @@
 {
-  "recorded_utc": "2026-10-12T03:33:38.974900+00:00",
+  "recorded_utc": "2026-10-12T05:20:00.555357+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS python=25 shell=1 on final legacy-compatible source",
+    "canonical": "PASS python=27 shell=1 after Mac metadata/pilot additions",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
     "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
     "helper_all_discovery": "PASS498 tests in282.160s; plus later desktop-private-storage4-test regression passed. DeprecationWarning forkpty/multithread and ResourceWarning fixture file preserved in log.",
-    "frozen_linux_candidate": "PASS Linux local PyInstaller executable: --version, idempotent configuration with prior MCP preserved, initialize/tools/list, dw_inbox status via real synthetic local IPC. Not desktop UI or Hub runtime verification."
+    "frozen_linux_candidate": "PASS Linux local PyInstaller executable: --version, idempotent configuration with prior MCP preserved, initialize/tools/list, dw_inbox status via real synthetic local IPC. Not desktop UI or Hub runtime verification.",
+    "macos_metadata": "PASS5 synthetic bundle tests; no Mac queried, account/login/history not read",
+    "local_desktop_pilot": "PASS4 real local IPC/owned cleanup/profile-credential refusal tests; no Hub routing",
+    "native_auto_notify": "NOT_IMPLEMENTED: explicit dw_inbox/read/reply only; desktop original-thread background wake remains a required feature",
+    "macos_build": "NOT_RUN: native build script prepared, syntax checked; Linux rejected before mutation. No Mac binary exists here.",
+    "legacy_IPC": "PASS15 send wiring tests, original default socket replacement semantics preserved",
+    "frozen_mac_pilot_entry": "PASS Linux build of final entry, metadata and synthetic pilot stdio/read/reply/SIGTERM cleanup. Not a Mac binary or native GUI proof."
   },
   "required_before_release": [
     "Independent code review",
-    "Actual PM OS and Codex desktop version",
-    "Same native desktop session receive/notify/reply runtime validation",
-    "Windows IPC if required for target PM",
+    "Owner Mac exact app version/architecture from bundle probe; OS already confirmed",
+    "Implement original native desktop session automatic wake bridge; then true Mac receive/notify/reply runtime validation",
     "Real CLI install/native authorization/model call per chosen mode",
     "Real Feishu new-account/existing-account/device pairing test",
     "Target-OS installer build/signing and real client recovery verification (Linux local frozen smoke passed)"
@@ -92,6 +97,83 @@
       "name": "setup-version-legacy-mcp.log",
       "bytes": 944,
       "sha256": "8ce8895d4f8ac613ac4a2b371bad7a49919afd3fa97099e0c594663694d4df1d"
+    },
+    {
+      "name": "macos-app-metadata-final.log",
+      "bytes": 103,
+      "sha256": "4c979c0d06f0e9e2109df48cae7f69ac5d403754045b4cfe404fe744e7390b47"
+    },
+    {
+      "name": "macos-pilot-owned-cleanup.log",
+      "bytes": 5151,
+      "sha256": "5412eb239c56b30a770b88dee47a52f6842e05699de7594e9705051a83914f95"
+    },
+    {
+      "name": "macos-pilot-owned-cleanup-fixed.log",
+      "bytes": 633,
+      "sha256": "8b23ef96ecba199264ce9abcfc61450d0c37770650f4425b1ff246a17992d0c5"
+    },
+    {
+      "name": "macos-pilot-ready-barrier.log",
+      "bytes": 633,
+      "sha256": "dc182d92a61af23953bc52dfa4f5f939315707f14d84bce285f5309cfd4e5ea7"
+    },
+    {
+      "name": "macos-ipc-legacy-regression.log",
+      "bytes": 114,
+      "sha256": "edecde55c6deed9a44f005853dbf1b80bb79f5daf63b49aa23fa401cf6e41cc0"
+    },
+    {
+      "name": "macos-env-contract.log",
+      "bytes": 102,
+      "sha256": "64e9f7b81655b1dce93d9989b3e21681e16e59e7eee32a902f930c65373917ee"
+    },
+    {
+      "name": "macos-explicit-state-canonical.log",
+      "bytes": 9671,
+      "sha256": "474d6b8bee2345fbcaea44167515afa21e36f9ea1f56c2c691b26f9a06801d62"
+    },
+    {
+      "name": "macos-build-platform-guard.log",
+      "bytes": 68,
+      "sha256": "c4a4b9ed3d855f32fc4f0068f228fb9d523ea0ff50c10f2383b69d78a0464e9b"
+    },
+    {
+      "name": "macos-kit-build-release-input.log",
+      "bytes": 5035,
+      "sha256": "0276f65fe790abdfb9c011860198e156ddf77abd74a584e9d45528b18e7bb347"
+    },
+    {
+      "name": "macos-kit-source-final-smoke.log",
+      "bytes": 285,
+      "sha256": "174ba2cd4042a1e3018ca609009a64aafd28da5de062e55a34c294d171e8a0ef"
+    },
+    {
+      "name": "macos-pilot-profile-guard.log",
+      "bytes": 634,
+      "sha256": "24eea5b46e3c522089b79340b9f30c0f2205c9b02369f441f019249f08f0fc22"
+    },
+    {
+      "name": "desktop-auto-status-explicit.log",
+      "bytes": 156,
+      "sha256": "d027a5cc814cf79f62ba011e7b11e8fcf969976fb29475c5bbbc5a27dfdd9b83"
+    },
+    {
+      "name": "macos-wizard-platform-fixture.log",
+      "bytes": 1007,
+      "sha256": "b3a7f60b37eda6449a594798dda5a1636cb64716c86c4aa00c1754bb8b9c922a"
+    },
+    {
+      "name": "macos-kit-build-complete.log",
+      "bytes": 5022,
+      "sha256": "0bfa629d77bd5bffe2ca860ac2d1b75f16bb642ddc068d144dc65ad00a64083a"
     }
-  ]
+  ],
+  "pm_target": {
+    "os": "macOS",
+    "hardware": "MacBook",
+    "codex_version_owner_description": "latest",
+    "actual_version": "NOT_YET_PROBED_ON_OWNER_MAC",
+    "source": "owner direct statement"
+  }
 }

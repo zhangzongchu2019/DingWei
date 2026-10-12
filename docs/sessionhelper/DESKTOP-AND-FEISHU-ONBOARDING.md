@@ -85,7 +85,7 @@ F. 先本地实现与 CR，再独立发行包、测试环境/客户端验收；�
 - 当前系统支持 POSIX 本地 Unix socket（macOS/Linux），Windows 原生 IPC 尚未实现与验收；向导会明确拒绝，不能冒认跨平台完成。
 - 桌面收件完成仅发布 helper_received / desktop_inbox_saved，绝不标 CLI 已注入；即使收到 injected ACK 也不采信。
 - 源码向导使用 Python 3.11+（tomllib）；发行包仍待构建验证。
-- 桌面 MCP 已支持 dw_inbox 的 status/list/read/ack/pause/resume，原 send_message 保留；自动原桌面会话提醒状态固定 NOT_VERIFIED。
+- 桌面 MCP 已支持 dw_inbox 的 status/list/read/ack/pause/resume，原 send_message 保留；自动原桌面会话唤醒尚未实现，native_auto_notify_implemented=false，状态固定 NOT_VERIFIED。
 - 私有 profile 可以重复启动；已加入配对后常驻后台启动、私有日志及 PID 记录，尚未注册 OS 开机自启和完成安装发行制品。
 - 新迁移 0102_device_claim.sql，不修改已发布的 0100/0101；已有密码/飞书/Web 审批/Agent 凭据不迁移。
 - 默认新 member 的个人设备由本人飞书认领批准，无跨用户权限或自动编组。

@@ -385,6 +385,7 @@ async def serve_ipc(
     bound: asyncio.Event | None = None,
     upload_only: bool = False,
     inbox_handler=None,
+    replace_existing: bool = True,
 ) -> None:
     """Start a Unix-domain socket server.
 
@@ -407,8 +408,11 @@ async def serve_ipc(
     Connections are served on a raw socket (not asyncio streams) so that
     descriptors passed with SCM_RIGHTS are received instead of silently dropped.
     """
-    if os.path.exists(socket_path):
-        os.unlink(socket_path)
+    if replace_existing:
+        if os.path.exists(socket_path):
+            os.unlink(socket_path)
+    elif os.path.lexists(socket_path):
+        raise ValueError("existing IPC path must not be replaced")
 
     async def dispatch(reader, writer, fds):
         await _handle_connection(reader, writer, send_handler, vsapi_handler, file_handler,

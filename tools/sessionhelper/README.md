@@ -9,9 +9,11 @@
 - 默认飞书配对不要求预开户：向导显示当前 Hub 机器人入口与 `#pair` 指令，可信私聊可同时完成普通账号创建、身份绑定及个人设备批准。
 - 已绑定飞书身份会复用原账号；不得接管他人账号、自动加入受限组或取得管理权限。
 - 配对完成后常驻后台启动；只标记 STARTING，Web 在线/IPC 连接另核。恢复用私有 profile 的 `--run-profile` 入口，保留凭据/AI 登录。
-- 桌面工具 `dw_inbox` 支持状态、未读列表、读取、确认和暂停标记；原 `send_message` 可显式发信/回复。原桌面会话自动通知尚未验收。
+- 桌面工具 `dw_inbox` 支持状态、未读列表、读取、确认和暂停标记；原 `send_message` 可显式发信/回复。原桌面会话自动唤醒尚未实现；当前为 MCP 主动读取/回复。
 - 当前本地 IPC 实现适用于 POSIX，Windows 原生 IPC 与真实桌面集成仍待开发/真机验证。不能把源码测试当作跨平台安装包验收。
 - 需要 Hub 的 0102_device_claim 迁移与同版接口；旧 Web 审批及旧凭据连接继续保留。
+
+Mac 首轮开发验收：[macOS＋Codex 操作说明](../../docs/sessionhelper/MACOS-CODEX-PILOT.md)。
 
 设计与范围：[桌面与飞书入网设计](../../docs/sessionhelper/DESKTOP-AND-FEISHU-ONBOARDING.md)。
 

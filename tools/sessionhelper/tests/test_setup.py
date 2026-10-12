@@ -45,6 +45,10 @@ class SetupTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             profile("desktop", "codex", "https://dw123.cmjrt.com", "alice.x", "al", "pmagent", "/tmp/fixture")
 
+    def test_profile_rejects_oversized_unix_socket_path(self):
+        with self.assertRaises(ValueError):
+            self.make("/tmp/" + "fixture" * 30)
+
     def test_private_profile_idempotent_preserves_credentials(self):
         with tempfile.TemporaryDirectory() as root:
             credential = Path(root) / "credential.json"
@@ -117,6 +121,7 @@ class SetupTest(unittest.TestCase):
             with patch.dict(os.environ, {"CODEX_HOME": str(Path(root) / "codex")}), \
                  patch("builtins.input", side_effect=lambda _: next(answers)), \
                  patch("sessionhelper.enroll.prepare_client_env") as enroll, \
+                 patch("sessionhelper.desktop_host.require_macos_desktop", return_value={"platform": "Darwin", "applications": [{"name": "Codex.app", "version": "fixture1", "build": "1"}]}) as host, \
                  patch("sessionhelper.setup.start_background", return_value=1234) as start:
                 main([])
             values = enroll.call_args.args[0]
@@ -124,6 +129,7 @@ class SetupTest(unittest.TestCase):
             self.assertTrue((Path(root) / "codex" / "config.toml").exists())
             self.assertEqual(json.loads((Path(root) / "setup-status.json").read_text())["tool_ready"], "MCP_CONFIGURED")
             start.assert_called_once()
+            host.assert_called_once_with(selected=None)
 
     def test_run_profile_refuses_skipped_model_readiness(self):
         with tempfile.TemporaryDirectory() as root:

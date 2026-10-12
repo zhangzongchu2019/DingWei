@@ -76,7 +76,7 @@ class DesktopAdapter:
             with self._lock, self._connect() as db:
                 count = db.execute("SELECT count(*) FROM desktop_message WHERE state='unread'").fetchone()[0]
             return {"ok": True, "unread": count, "paused": self.paused,
-                    "native_auto_notify": "NOT_VERIFIED", "mode": "desktop"}
+                    "native_auto_notify": "NOT_VERIFIED", "native_auto_notify_implemented": False, "mode": "desktop"}
         if op in ("pause", "resume"):
             with self._lock, self._connect() as db:
                 db.execute("INSERT OR REPLACE INTO desktop_setting(key,value) VALUES('paused',?)", ("1" if op == "pause" else "0",))

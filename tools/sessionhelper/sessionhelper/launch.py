@@ -11,6 +11,12 @@ def main():
         from . import __version__
         print("sessionHelper " + __version__)
         return
+    if "--desktop-pilot" in sys.argv[1:]:
+        from .desktop_pilot import main as pilot
+        return pilot([arg for arg in sys.argv[1:] if arg != "--desktop-pilot"])
+    if "--desktop-probe" in sys.argv[1:]:
+        from .desktop_host import main as probe
+        return probe([arg for arg in sys.argv[1:] if arg != "--desktop-probe"])
     if sys.argv[1:] == ["--mcp"]:
         from .mcp_shim import serve
         return serve()
