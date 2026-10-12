@@ -9,6 +9,16 @@ from __future__ import annotations
 import threading
 
 
+class NativeAdmissionBusy(Exception):
+    """Trusted backend atomically refused admission without any side effect.
+
+    Only a provider with a documented conditional-start contract may raise
+    this. A status poll, timeout, disconnect, generic RPC error or text saying
+    'busy' cannot establish that no input was accepted. No current Codex
+    transport implements this contract; this is an offline provider boundary.
+    """
+
+
 class DesktopDispatcher:
     def __init__(self, adapter, provider, thread_id):
         if not isinstance(thread_id, str) or not 1 <= len(thread_id) <= 256:
@@ -61,6 +71,19 @@ class DesktopDispatcher:
                     self.thread_id, row['id'], row['body'])
                 if not isinstance(turn_id, str) or not 1 <= len(turn_id) <= 256:
                     raise ValueError("missing native admission ID")
+            except NativeAdmissionBusy:
+                # The backend, not our earlier idle snapshot, guarantees no
+                # start/steer/enqueue occurred. Keep the same inbox item unread
+                # and retry only on a later explicit scheduler step. If this
+                # transaction fails/crashes, 'starting' stays fail-closed.
+                with self.adapter._lock, self.adapter._connect() as db:
+                    result = db.execute('''DELETE FROM desktop_admission
+                        WHERE message_id=? AND thread_id=?
+                        AND state='starting' AND turn_id IS NULL''',
+                        (row['id'], self.thread_id))
+                    if result.rowcount != 1:
+                        raise RuntimeError("native refusal intent mismatch")
+                return {"state": "busy"}
             except BaseException:
                 # Includes cancellation; never leak native exception text or
                 # assume an exception proves the request didn't reach backend.

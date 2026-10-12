@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from types import SimpleNamespace
 from sessionhelper.desktop import DesktopAdapter
-from sessionhelper.desktop_dispatch import DesktopDispatcher
+from sessionhelper.desktop_dispatch import DesktopDispatcher, NativeAdmissionBusy
 
 
 class Provider:
@@ -55,6 +55,50 @@ class DispatchTest(unittest.TestCase):
         reopened = DesktopDispatcher(DesktopAdapter(self.cfg), self.provider, 'original')
         self.assertEqual(reopened.step()['admission_state'], 'uncertain')
         self.assertEqual(len(self.provider.calls), 1)
+    def test_user_turn_wins_after_idle_snapshot_no_steer_or_lost_item(self):
+        accepted = []
+        calls = []
+        def conditional_start(thread, message, body):
+            calls.append(message)
+            if len(calls) == 1:
+                # User started a turn between the metadata check and admission.
+                self.provider.idle = False
+                raise NativeAdmissionBusy()
+            accepted.append(message)
+            return 'turn-' + message
+        self.provider.start_if_idle = conditional_start
+        self.assertEqual(self.engine.step()['state'], 'busy')
+        self.assertEqual(accepted, [])
+        self.assertEqual(self.adapter.request({'operation': 'status'})['unread'], 1)
+        reopened = DesktopDispatcher(DesktopAdapter(self.cfg), self.provider, 'original')
+        self.assertEqual(reopened.step()['state'], 'busy')
+        self.assertEqual(calls, ['a'])
+        self.provider.idle = True
+        self.assertEqual(reopened.step()['message_id'], 'a')
+        self.assertEqual(accepted, ['a'])
+        self.assertEqual(reopened.step()['admission_state'], 'admitted')
+    def test_generic_busy_error_is_uncertain_not_retry_permission(self):
+        calls = []
+        def ambiguous(thread, message, body):
+            calls.append(message)
+            raise RuntimeError('busy')
+        self.provider.start_if_idle = ambiguous
+        with self.assertRaises(RuntimeError):
+            self.engine.step()
+        reopened = DesktopDispatcher(DesktopAdapter(self.cfg), self.provider, 'original')
+        self.assertEqual(reopened.step()['admission_state'], 'uncertain')
+        self.assertEqual(calls, ['a'])
+    def test_second_scheduler_blocked_during_conditional_busy_refusal(self):
+        other = DesktopDispatcher(DesktopAdapter(self.cfg), self.provider, 'original')
+        def refused(thread, message, body):
+            self.assertEqual(other.step()['admission_state'], 'starting')
+            raise NativeAdmissionBusy()
+        self.provider.start_if_idle = refused
+        self.assertEqual(self.engine.step()['state'], 'busy')
+        self.provider.idle = False
+        self.assertEqual(other.step()['state'], 'busy')
+        with self.adapter._connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM desktop_admission').fetchone()[0], 0)
     def test_crash_before_native_response_remains_blocked(self):
         with self.adapter._connect() as db:
             db.execute("INSERT INTO desktop_admission VALUES('a','original','starting',NULL)")

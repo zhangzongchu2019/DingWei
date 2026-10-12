@@ -1,0 +1,84 @@
+{
+  "recorded_utc": "2026-10-12T10:54:21.359618+00:00",
+  "scope": "Local CLI schema and opened official documentation only; not owner Mac compatibility or live endpoint binding",
+  "local_cli_version": "0.161.0",
+  "schema_origin": "Existing offline generate-json-schema export, isolated empty CODEX_HOME",
+  "schemas": [
+    {
+      "name": "TurnStartParams.json",
+      "bytes": 22371,
+      "sha256": "f938082a79859cb113b695a996b760f904b5caf55760b539a1d9b1865ab13fc6",
+      "properties": [
+        "approvalPolicy",
+        "approvalsReviewer",
+        "clientUserMessageId",
+        "cwd",
+        "disabledPluginIds",
+        "effort",
+        "input",
+        "model",
+        "outputSchema",
+        "personality",
+        "sandboxPolicy",
+        "serviceTier",
+        "serviceTierForTurn",
+        "summary",
+        "threadId",
+        "toolOutput",
+        "turnTrigger"
+      ]
+    },
+    {
+      "name": "TurnSteerParams.json",
+      "bytes": 6923,
+      "sha256": "857e7a2b061ae46ed6aedea6a5fddd3a6ce14f0334bf7eafaf10d4cbe68ec78b",
+      "properties": [
+        "clientUserMessageId",
+        "expectedTurnId",
+        "input",
+        "threadId"
+      ]
+    },
+    {
+      "name": "ThreadResumeParams.json",
+      "bytes": 40510,
+      "sha256": "c818e26d830ac4430791eab7d4a872d2384fa6006b14c505d8caf46e7e093527",
+      "properties": [
+        "approvalPolicy",
+        "approvalsReviewer",
+        "baseInstructions",
+        "config",
+        "cwd",
+        "developerInstructions",
+        "excludeTurns",
+        "model",
+        "modelProvider",
+        "personality",
+        "sandbox",
+        "serviceTier",
+        "threadId"
+      ]
+    }
+  ],
+  "official_pages_opened": [
+    "https://learn.chatgpt.com/docs/app-server",
+    "https://learn.chatgpt.com/docs/app/commands",
+    "https://learn.chatgpt.com/docs/extend/mcp"
+  ],
+  "findings": {
+    "turn_start_atomic_idle_guard": "NOT_ESTABLISHED",
+    "turn_trigger": "Source classification; ignored when steering an active turn, per local schema description",
+    "expected_turn_id": "TurnSteerParams only; not an idle admission guard",
+    "client_user_message_id_idempotency": "NOT_ESTABLISHED",
+    "thread_resume_exclude_turns": "PRESENT; does not establish original desktop backend provenance",
+    "standalone_tool_output": "Official docs say active turn receives queued output; unsuitable for busy-refusal/no-interference requirement",
+    "deep_link": "Open chat / initial composer text; no original-idle automatic model admission established"
+  },
+  "implementation": "Typed native busy refusal handled only by trusted future conditional provider; no actual provider wired",
+  "owner_mac_version_build_architecture": "PENDING_OWNER_METADATA",
+  "native_auto_notify_implemented": false,
+  "release_ready": false,
+  "production_actions": 0,
+  "model_runs": 0,
+  "desktop_history_reads": 0
+}

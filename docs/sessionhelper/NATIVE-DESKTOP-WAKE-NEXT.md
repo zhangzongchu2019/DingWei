@@ -157,3 +157,15 @@ AI工具原生环境（如 CODEX_HOME、原生provider授权、PATH）继续继�
 验证面分开记录：取消状态机memory5/PG5（未认领/过期/已发/已确认/并发认领）；HTTP缺token/错token404、确认证明/no-store、幂等和已发拒绝；实际Python↔Hub联调新增memory/PG取消旧码→拒旧码重放→显式新配对两格；新平台真实路由扫描通过。canonical仍32Py/2shell，跨运行时从11增加到13个场景。Go-only未给Python的两条联调skip不作通过；canonical显式运行。全Go编译检查不冒认全Go测试。
 
 Linux冻结检查新增无pending时的真实取消入口，不联网/开户。完整取消的实际HTTP/PG验收由源码联调提供，不声称Mac/真实飞书或冻结完整入网runtime已完成。0102迁移不变（状态在既有body列）；生产不变。Mac27591历史包不含取消增量，当前验收须使用后续新固定源码。
+
+## 原桌面忙态竞争与协议复核（2026-10-12）
+
+重新打开官方 [App Server](https://learn.chatgpt.com/docs/app-server)、[桌面命令](https://learn.chatgpt.com/docs/app/commands) 与 [MCP 配置](https://learn.chatgpt.com/docs/extend/mcp) 文档，并直核本机 codex-cli 0.161.0 既存离线导出 schema。TurnStartParams 有 input/threadId/clientUserMessageId/toolOutput/turnTrigger，但没有 idle 条件字段；turnTrigger 描述明确在 steer 已活动 turn 时被忽略。TurnSteerParams 的 expectedTurnId 约束活动轮次，不是空闲才启动。ThreadResumeParams 有 excludeTurns，不应再记为缺失；resume 也不用于证明原 GUI 绑定或自动创建执行权限。
+
+文档的 standalone toolOutput 在已有活动 turn 时会排入该 turn。这仍会进入用户当前轮次，不能作为本需求的“忙时拒绝且不干扰”契约。deep link 打开现有线程或填入新聊天输入框，也不证明后台自动开始原线程。上述是本机版本与已读文档的限定结论，不宣称所有桌面版本均无可用接口。
+
+调度器新增 NativeAdmissionBusy 类型：只有未来可信 provider 获得**原子拒绝且无启动/steer/入队副作用**的明确后端结果时，才可抛出此类型。调度器事务移除本消息 starting 意图，原 inbox 保持 unread，当前 step 返回 busy；后续显式 step 在空闲时处理同一消息。闲态预读不能产生此证明。超时、断线、一般 RPC 错误乃至错误文字“busy”仍进入 uncertain，重启后不自动重投。事务失败/崩溃留下 starting，另一 dispatcher 在条件调用期间仍被持久意图阻断。
+
+新增三个替身场景：空闲检查后用户先启动时拒绝、不丢消息，重开调度器后仅在空闲时 admission 一次；普通 busy 错误不作为重试许可；第二个调度器在原子拒绝期间不能重复发起。共18项调度器测试。当前没有真实 native provider 实现该拒绝类型，也未开启后台原桌面自动唤醒；安装向导与 MCP 资格不变。
+
+91b468761 固定 Mac 源码包及 Linux frozen 产物保留原 pins；本轮产品源码发生变化，它们不含本增量，不重新标记为最新制品。尚未在 Mac/真实模型/飞书平台执行，也未操作生产。

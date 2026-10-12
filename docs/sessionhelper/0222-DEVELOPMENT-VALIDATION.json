@@ -1,10 +1,10 @@
 {
-  "recorded_utc": "2026-10-12T10:44:22.839255+00:00",
+  "recorded_utc": "2026-10-12T10:54:44.712134+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS final32 Python files+2shell; actual cross-runtime13 cases14.809s (memory claim5/PG claim5/MCP3) after final bounded private-state loading.",
+    "canonical": "PASS final32 Python files+2shell after busy-admission race handling; actual local memory/PG claim and MCP integration included. No Mac/real model/Feishu platform proof.",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
@@ -17,7 +17,7 @@
     "macos_build": "NOT_RUN: native build script prepared, syntax checked; Linux rejected before mutation. No Mac binary exists here.",
     "legacy_IPC": "PASS15 send wiring tests, original default socket replacement semantics preserved",
     "frozen_mac_pilot_entry": "PASS Linux build of final entry, metadata and synthetic pilot stdio/read/reply/SIGTERM cleanup. Not a Mac binary or native GUI proof.",
-    "desktop_dispatch": "PASS15 provider/outbox/actual-helper-send contract tests; no native provider or production sender wiring",
+    "desktop_dispatch": "PASS18 including idle-to-busy race preserving unread, generic busy errors uncertain across restart, and concurrent scheduler blocking. Native provider NOT_IMPLEMENTED.",
     "desktop_endpoint": "PASS6 real local Unix websocket and refusal tests; no native GUI backend tested",
     "desktop_selected_regression": "PASS34 desktop tests",
     "local_codex_schema": "Local codex-cli0.161.0 ThreadResumeParams includes excludeTurns; TurnStartParams has no atomic idle conditional field and turnTrigger may steer active turn. Not owner Mac version evidence.",
@@ -47,7 +47,8 @@
     "claim_cancel_backend": "PASS memory5+PG5 in9.69s: pending/expired close, issued/completed refusal, concurrent claim/cancel only all-or-nothing outcomes; authenticated token/idempotency/code replay. No credential/user/Agent deletion;0102 unchanged.",
     "claim_cancel_http": "PASS matching claim_id/cancelled proof/no-store, missing/wrong token404, issued403; actual NewPlatformRouteSweep PASS0.317s. Uses private poll token, not anonymous approval or console-role bypass.",
     "claim_cancel_actual_client": "PASS actual memory/PG cancel-then-new branches with interrupted wait, real HTTP proof, private archive, stale code replay refused, explicit fresh claim+actual helper WS. Final memory5=1.92s PG5=10.88s. No real Feishu platform.",
-    "claim_recovery_client": "PASS33 selected tests in0.597s:9 claim+20 setup+4 env gate; cancellation uncertainty/refusal retain pending, existing credential refuses reset, no concurrent same-dir operation, interrupt releases lock, corrupt auth fields do not reach headers, private symlink/FIFO/oversize refusal, CLI cancellation does not start helper/model login."
+    "claim_recovery_client": "PASS33 selected tests in0.597s:9 claim+20 setup+4 env gate; cancellation uncertainty/refusal retain pending, existing credential refuses reset, no concurrent same-dir operation, interrupt releases lock, corrupt auth fields do not reach headers, private symlink/FIFO/oversize refusal, CLI cancellation does not start helper/model login.",
+    "native_busy_admission": "Typed refusal only for future trusted atomic no-side-effect backend; no RPC text/status/timeout conversion. No real desktop capability enabled."
   },
   "required_before_release": [
     "Independent code review",
@@ -523,5 +524,17 @@
     "actual_version": "NOT_YET_PROBED_ON_OWNER_MAC",
     "source": "owner direct statement"
   },
-  "latest_mac_source_kit": "6e9bc5e4b development kit remains frozen; product helper code unchanged in this test-only delta. Does not include new full-repository Go harness."
+  "latest_mac_source_kit": "91b468761 development source kit preserved at original pins. Does not contain this native-busy-admission increment; no updated Mac/frozen artifact built this turn.",
+  "logs": [],
+  "native_busy_admission_evidence": {
+    "canonical_log": {
+      "name": "native-busy-admission-canonical.log",
+      "bytes": 30350,
+      "sha256": "fa7dba535786982dc7ee3536e747ffc48b79e42104467624c965b368f3aa0a66"
+    },
+    "protocol_evidence": "docs/sessionhelper/NATIVE-DESKTOP-PROTOCOL-EVIDENCE-20261012.json",
+    "model_runs": 0,
+    "production_actions": 0,
+    "native_provider": "NOT_IMPLEMENTED"
+  }
 }
