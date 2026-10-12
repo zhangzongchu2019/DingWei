@@ -584,6 +584,8 @@ class CostProjection:
             db.executescript("""
             CREATE TABLE IF NOT EXISTS mux_cost(agent_id TEXT PRIMARY KEY,
               full_name TEXT NOT NULL,cost_total REAL NOT NULL,cost_last REAL NOT NULL,turns INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS mux_seed_floor(agent_id TEXT NOT NULL,epoch TEXT NOT NULL,H TEXT NOT NULL,PRIMARY KEY(agent_id,epoch));
+            CREATE TABLE IF NOT EXISTS mux_migration(version TEXT PRIMARY KEY,fingerprint TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS mux_completed(agent_id TEXT NOT NULL,epoch TEXT NOT NULL,
               seq TEXT NOT NULL,PRIMARY KEY(agent_id,epoch,seq));
             """)
@@ -611,6 +613,9 @@ class CostProjection:
             return False
         with self.lock, self._connect() as db:
             db.execute("BEGIN IMMEDIATE")
+            floor = db.execute("SELECT H FROM mux_seed_floor WHERE agent_id=? AND epoch=?",(agent_id,match[1])).fetchone()
+            if floor and int(match[2]) <= int(floor[0]):
+                return False
             inserted = db.execute("INSERT OR IGNORE INTO mux_completed VALUES(?,?,?)",
                                   (agent_id, match[1], match[2])).rowcount
             if not inserted:
@@ -628,6 +633,44 @@ class CostProjection:
                        "cost_last=excluded.cost_last,turns=excluded.turns", (agent_id, full_name, total, last, turns))
             # Context manager commits both the unique key and all side effects, or rolls both back.
             return True
+
+    def has_seed(self, fingerprint):
+        with self.lock, self._connect() as db:
+            prior=db.execute("SELECT fingerprint FROM mux_migration WHERE version='cost-seed-v1'").fetchone()
+            if prior and prior[0]!=fingerprint:
+                raise ValueError("migration fingerprint conflict")
+            return bool(prior)
+
+    def seed(self, rows, fingerprint):
+        # Offline only: caller has verified approved alias mapping and fresh
+        # signed target authority. One transaction includes costs, replay cuts
+        # and migration marker. Existing seen entries are never removed.
+        with self.lock, self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            prior=db.execute("SELECT fingerprint FROM mux_migration WHERE version='cost-seed-v1'").fetchone()
+            if prior:
+                if prior[0] != fingerprint:
+                    raise ValueError("migration fingerprint conflict")
+                return False
+            for row in rows:
+                agent, name = row['agent_id'], row['full_name']
+                values = (row['cost_total'],row['cost_last'],row['turns'])
+                existing=db.execute("SELECT cost_total,cost_last,turns FROM mux_cost WHERE agent_id=?",(agent,)).fetchone()
+                if existing and tuple(existing)!=values:
+                    raise ValueError("existing cost conflict")
+                if not existing:
+                    db.execute("INSERT INTO mux_cost VALUES(?,?,?,?,?)",(agent,name,*values))
+                db.execute("INSERT INTO mux_seed_floor VALUES(?,?,?)",(agent,row['epoch'],row['H']))
+            db.execute("INSERT INTO mux_migration VALUES('cost-seed-v1',?)",(fingerprint,))
+            return True
+
+    def require_legacy_seed(self, sessions):
+        historical=any(any(v.get(k,0) != 0 for k in ('cost_total','cost_last','turns'))
+                       for v in sessions.values() if isinstance(v,dict))
+        if historical:
+            with self.lock, self._connect() as db:
+                if not db.execute("SELECT 1 FROM mux_migration WHERE version='cost-seed-v1'").fetchone():
+                    raise sqlite3.OperationalError("historical cost migration required")
 
     def status(self, agent_id):
         with self.lock, self._connect() as db:
@@ -648,7 +691,10 @@ def _cost_projection():
     with _projection_lock:
         if _projection is None or _projection_path != path:
             os.makedirs(os.path.dirname(path) or ".", mode=0o700, exist_ok=True)
-            _projection = CostProjection(path)
+            candidate = CostProjection(path)
+            with _state_lock:
+                candidate.require_legacy_seed(_sessions)
+            _projection = candidate
             _projection_path = path
         return _projection
 

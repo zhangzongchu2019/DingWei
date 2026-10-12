@@ -35,6 +35,7 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 	ctx := context.Background()
 	evidence := &muxOutputEvidence{}
 	var vsPIDs []int
+	var seedState, seedKey string
 	root := t.TempDir()
 	h, _, _ := newTestHub(t)
 	dsn := pgtest.DSN(t)
@@ -130,6 +131,7 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 	mux.HandleFunc("GET /api/console/event-feeds/{feed_id}/events", func(w http.ResponseWriter, r *http.Request) {
 		h.HandleConsoleMuxEvents(&muxOutputTap{ResponseWriter: w, e: evidence}, r)
 	})
+	mux.HandleFunc("POST /internal/console/cost-seed-authority", h.HandleConsoleMuxCostSeedAuthority)
 	mux.HandleFunc("POST /internal/console/event-feeds/{feed_id}/bridges/{bridge_id}/events", h.HandleInternalConsoleMuxEvents)
 	mux.HandleFunc("GET /internal/view/{session}/events", h.HandleInternalViewEvents)
 	mux.HandleFunc("POST /internal/view-v2/{session}/input", h.HandleInternalViewV2Input)
@@ -278,7 +280,13 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 				routing.Sessions[fmt.Sprintf("agent%02d.owner", i)] = name
 			}
 		}
-
+		if os.Getenv("MUX_SEED") == "1" && index == 1 {
+			seedState = filepath.Join(root, name+"-state.json")
+			seedKey = reverse
+			os.WriteFile(seedState, []byte(`{"old-agent04":{"cost_total":12.5,"cost_last":2.5,"turns":7}}`), 0600)
+			h.publishSessionEvent(AgentKeyID("owner"), "agent04", `{"kind":"state_change","data":{"change":"turn_completed","cost_usd":10,"num_turns":6}}`)
+			h.publishSessionEvent(AgentKeyID("owner"), "agent04", `{"kind":"state_change","data":{"change":"turn_completed","cost_usd":12.5}}`)
+		}
 		python := exec.Command("python3", "view_service.py")
 		python.Dir = "../../view-service"
 		python.Env = append(os.Environ(), "VS_PORT="+fmt.Sprint(port), "VS_HUB_INTERNAL="+server.URL, "VS_VIEW_UNLOCK_V2=1", "VS_TARGET_NAME="+name, "VS_HUB_TO_VS_SECRET_FILE="+forward, "VS_TO_HUB_SECRET_FILE="+reverse, "VS_PAGE_DB="+filepath.Join(root, name+"-pages.db"), "VS_STATE_FILE="+filepath.Join(root, name+"-state.json"))
@@ -339,7 +347,9 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 	}
 	h.fileIssuer = issuer
 	mux.Handle("POST /files/upload", fileservice.HTTPHandler{Manager: fs.Manager, Uploads: tickets, PublicBaseURL: server.URL})
-
+	if os.Getenv("MUX_SEED") == "1" {
+		exerciseCostSeedProduct(t, h, server.URL, token, seedState, seedKey)
+	}
 	if os.Getenv("MUX_R4") == "1" {
 		exerciseR4Control(t, h, store, server.URL)
 	}

@@ -1,0 +1,69 @@
+E2 controlled upgrade / rollback (candidate procedure, not production authorization)
+
+Authority: only prodops during the approved release. This developer slice runs
+synthetic accounts only. Never upload/log the private legacy state, DB, service
+keys, cookies or session hashes. Public evidence is SHA/count/result only.
+
+1 Inventory every VS target's sole projection authority and private state/SQLite
+paths. Stop publisher changes and drain legacy and aggregate cost consumers;
+then stop both consumers. Freeze identity/rename/target changes for the cut.
+Keep the Hub alive: restarting it changes runtime epoch and invalidates a cut.
+The private signed POST /internal/console/cost-seed-authority (target service
+key, same direction/nonce/signature as existing VS→Hub bridges; <=8 names per
+request) returns stable IDs/owners/canonical names/epoch/H, no event payload.
+It refuses active aggregate consumers. Independently verify legacy consumers
+are stopped; the Hub registry cannot observe every independently proxied stream.
+
+2 Backup the exact private state and SQLite with the controlled site mechanism.
+SQLite backups must be consistent (SQLite backup API or checkpoint + quiescent
+copy); retain mux_completed, mux_seed_floor and mux_migration with mux_cost.
+Do not copy only the main file while a WAL writer remains active. Save hashes
+privately. Rollback is not permission to clear seen or start a new empty ledger.
+
+3 The responsible operator approves a mapping JSON (version cost-seed-v1,
+target, bindings). Each binding: legacy_name, agent_id, owner_lc, full_name,
+epoch, H (decimal STRING), coverage=all_completed_through_H. Historical alias
+mapping is explicit and audited, never inferred from .zzc/old suffix/name.
+One alias maps to one stable Agent; conflicting or merged old ledgers refuse.
+Every nonzero old account must be mapped; unknown/deleted/reassigned accounts
+or missing cut coverage block the target. The source has no historic cursor by
+default: current H alone DOES NOT prove every completed <=H was accounted.
+Require a witnessed frozen drain/cost reconciliation that proves coverage for
+this runtime epoch. Prior retained epochs require separate proof; this tool
+supports a single verified current epoch per Agent and cannot invent old IDs.
+If that proof is unavailable, leave the target unavailable and escalate the
+specific account/range for controlled reconciliation; do not mark migration PASS.
+
+4 Take approved source/mapping SHA256 after the cut. On the trusted internal
+network, under the VS host's controlled account, run the candidate tool:
+  python3 migrate_mux_cost.py --legacy-state <private-backup.json> \
+    --legacy-sha256 <approved-source-sha> --mapping <approved-map.json> \
+    --mapping-sha256 <approved-map-sha> --projection <actual-state.mux-cost.db> \
+    --authority-url <internal-hub-http-origin> --target <configured-target> \
+    --service-key-file <private-VS-to-Hub-key-file> --consumers-stopped
+It re-fetches signed actual identity/cursor authority. Hash/cut/owner/alias
+conflicts, storage failure or existing inconsistent cost refuse with no secret
+error details. Costs/floors/migration fingerprint commit in one SQLite
+transaction. Existing immutable seen entries survive. Exact repeat is no-op;
+post-seed growth is never overwritten. A repeat still checks fresh stable
+identity, but already-committed H may have advanced; it does not change the cut.
+A different mapping/source fingerprint requires review, not a second merge.
+The tool writes only to the explicitly selected private projection, never the
+legacy source. This CLI is shipped as an ops artifact; not an HTTP handler.
+
+5 Verify saved costs/nonzero last/turns and marker; restart VS on the same DB,
+then enable consumers and publishers in that order. Both public independent
+V2 and managed use the signed unique projection. Replay <=verified epoch/H
+is ignored for cost effects with or without num_turns; new completed >H is
+atomic and ordinary duplicate replay remains protected by mux_completed.
+Nonzero historical state with no migration marker fails closed before status
+or event projection (public status503), never returns false zero success.
+
+6 For rollback after new writes, preserve the CURRENT migrated ledger, seen,
+floors and migration marker. Use a compatible projection consumer; old code
+that reads only JSON is not a safe rollback after new growth. Freeze consumers
+again and obtain reviewed reconciliation/export before an incompatible binary
+rollback. Do not restore the pre-upgrade zero/older SQLite over new growth or
+sum two ledgers. Failure before atomic commit leaves the private source/backup
+and existing projection unchanged. Actual production inventory/mapping/cut
+coverage and the compatible rollback candidate remain release gates.
