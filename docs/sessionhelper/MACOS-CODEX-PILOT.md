@@ -3,6 +3,18 @@
 首轮 PM 目标由业主确认：MacBook / macOS / 最新 Codex 桌面应用。准确版本、处理器架构由本机只读探测取得，不把“最新”作为固定版本号。
 这是开发验收包，不是正式发布。现网 Hub/helper、飞书与 .95 不因本流程改变。
 
+### 不依赖 Python 的第一步元数据
+
+若 PM 尚未安装 Python，可单独取得 `tools/sessionhelper/deploy/macos/probe-desktop-metadata.sh`，在实际 Mac 用系统 shell 执行：
+
+```sh
+sh probe-desktop-metadata.sh /Applications/Codex.app
+```
+
+只读所选应用 Info.plist 三项及系统版本/进程架构，不安装依赖、写状态、启动应用或读取登录/聊天。架构是当前进程架构（Rosetta 下可能是 x86_64），不是物理芯片或签名证明。版本输出仅作为下一步固定版本依据，不能证明原会话控制入口、模型或空闲唤醒。
+
+该独立探测脚本为后续增量，旧823909固定源码归档保留原文件集合/pins；不要往旧源码目录补文件破坏成员闭合，探测脚本放独立目录。此脚本的 Mac 实际执行仍待；本机仅核 shell 语法与 Linux 前置拒绝。拿到元数据后才使用已钉源码做 Mac 构建/原会话验收。
+
 ## 1. 在 Mac 本机构建
 
 检查收到的源码验收包完整 SHA，解压到永久目录；归档内的 SOURCE-MEMBER-PINS.json 是逐文件固定清单。需要 Python 3.11+。没有合适 Python 时脚本会停止，用户从 https://www.python.org/downloads/macos/ 安装后重试；不自动安装系统 Python 或 AI CLI。
