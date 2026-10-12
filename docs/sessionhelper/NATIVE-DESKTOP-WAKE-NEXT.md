@@ -102,3 +102,16 @@ Mac 最小信息采集：从新的固定源码包解压目录运行 `PYTHONPATH=
 没有真实 Mac GUI、AI/模型调用、飞书认领或生产；专属凭据场景不是飞书开户验收，身份存储是临时 MemStore而非PG，durable队列使用现有SQLite提交语义，不声明断电实证。状态语义仍为 returned_to_mcp 和 hub_durable_queued，不是 model_executed。运行中断时测试父进程要求子进程取消/回收，超时才强制结束本轮owned子进程。
 
 本轮仅新增联调与门禁，产品代码不变；先前6e9bc5e4b Mac源码包保留其原pins与资格，不伪称含这些完整仓库联调脚本。
+
+## 一步入网实际 HTTP／客户端联调
+
+现有 `scripts/test-desktop-hub-roundtrip.sh` 必跑门禁新增四种认领场景，不增加第二次构建：匿名申请经实际 HTTP API，Python `claim_enroll` 使用真实 UrllibTransport，父进程从测试专属0600 pending文件取配对码，调用 Hub 可信私聊认领处理，再由实际 SessionHelper._run_once 使用领取的专属凭据连接 `/ws/agent` 并完成能力协商。
+
+- 新账号：可信身份绑定一个普通 member 与一个自备 Agent，客户端保存正确 full_name，没有管理权限提升。
+- 已绑定身份：安装端填写另一个期望账号名时复用原有账号，客户端得到实际 user_id/full_name；不创建重复账号。
+- ACK 丢失：实际 ACK 已提交后，客户端注入响应丢失；保留0600凭据与 pending。通过 exec 启动全新 Python解释器，重新加载同一凭据，仅补 ACK，不重复申请/领取、不改变凭据字节，再完成真实 Agent WS连接。
+- 冒领：另一飞书身份尝试认领已有用户，客户端停止且不落凭据、服务端不创建 Agent。所有场景还先验证不可信来源与群聊不消耗认领码。
+
+服务端在每次 ACK 前检查客户端文件已存在、权限0600且凭据散列等于该 claim 已绑定的 Agent 凭据；记录申请/poll/ACK次数，防止恢复测试误用内存缓存。父子只交换阶段标记和私有stdin控制数据，不把码、poll token或凭据写入 argv/报告。已配置测试机器人元数据走正常 apply 响应。
+
+资格限于开发联调：身份存储为临时 MemStore；Hub 队列用临时SQLite；配对从**合成可信身份入口**进入，未与飞书平台连接/验签，也未验证PG认领事务、真实安装向导UI或Mac桌面。ACK丢失是客户端在实际提交之后注入的响应错误，不是网络故障/断电实证。生产和公开下载无变化；先前源码包仍保留原commit/pins。

@@ -1,10 +1,10 @@
 {
-  "recorded_utc": "2026-10-12T09:14:38.004169+00:00",
+  "recorded_utc": "2026-10-12T09:33:12.027874+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS final python=31 shell=2, including real Go/Python/MCP cross-runtime gate in private HOME",
+    "canonical": "PASS final31 Python files+2shell; same mandatory cross-runtime gate covers7 scenarios: actual MCP3 and claim/client4;3.592s total Go integration. Other all-Go/full discovery records are prior snapshots.",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
@@ -34,8 +34,10 @@
     "macos_wait_pilot": "IMPLEMENTED explicit --message-after-wait; synthetic fixture created only after pending wait. dw_reply_message refuses to simulate a Hub receipt; local send_message remains sent_to_hub=false. Mac UI not run.",
     "desktop_actual_hub_roundtrip": "PASS3 actual loopback websocket/SQLite/helper._run_once/MCP subprocess cases: legacy service key; approved dedicated /ws/agent credentials with leader_only group; group removal before reply causes actual rejection, unread retained, resend refused. No Mac GUI/model/Feishu; identity uses private MemStore, durable queue SQLite.",
     "desktop_actual_hub_cleanup": "PASS helper loops/MCP waiters and child processes joined on normal exit; subprocess failure cleanup bounded with interrupt/owned fallback. Not a forced-failure process-death recovery claim.",
-    "cross_runtime_gate_policy": "Ordinary Go-only tests explicitly skip without DW_DESKTOP_INTEGRATION_PYTHON; canonical shell gate requires interpreter/dependencies and runs the3 cases, no silent skip.",
-    "first_cross_runtime_invocation": "FAILED before package tests due compact -p1 option; corrected to -p 1. Failed log retained, not counted PASS."
+    "cross_runtime_gate_policy": "Canonical shell requires Python/dependencies and runs both actual MCP roundtrip (3) and claim onboarding (4); ordinary Go-only test runs explicitly skip these without interpreter.",
+    "first_cross_runtime_invocation": "FAILED before package tests due compact -p1 option; corrected to -p 1. Failed log retained, not counted PASS.",
+    "claim_actual_client_hub": "PASS4 in1.58s actual localhost HTTP apply/poll/ACK + trusted synthetic Feishu command handler + actual dedicated helper WS: new member; bound identity reuse; lost committed ACK response with fresh interpreter/same saved credential; takeover denied. All first reject untrusted/group ingress. MemStore, no real Feishu platform or PG transaction.",
+    "claim_failure_history": "Initial harness failed due credential fixture filename/missing Config key_id, then restart control buffering/repeated injected lost ACK. Fixed harness only; original failed logs retained. No product code change or weakening assertions."
   },
   "required_before_release": [
     "Independent code review",
@@ -332,6 +334,31 @@
       "name": "desktop-real-hub-canonical-final.log",
       "bytes": 18951,
       "sha256": "7ac2b553c4a62324737ca7fef3018e1b0575b544768ea7fd28c4901c08a1f81d"
+    },
+    {
+      "name": "claim-real-http-first.log",
+      "bytes": 9169,
+      "sha256": "7b84de012d641ea58b0d741f079a72d4f008a092d61ac42b1a47c68491fd0f5b"
+    },
+    {
+      "name": "claim-real-http-second.log",
+      "bytes": 10441,
+      "sha256": "c0d908edeaef94f04bf01f09c54fe886cabfa792f0450e122895308e2aa8c984"
+    },
+    {
+      "name": "claim-real-http-third.log",
+      "bytes": 10443,
+      "sha256": "849502888bfcc22993179adac334963d4e9d436aa76e830e6bf18c64f4259c89"
+    },
+    {
+      "name": "claim-real-http-fourth.log",
+      "bytes": 11071,
+      "sha256": "1a7fde25f6232560e279832fbdcf1df15aa49ffbb493c47eab2bdc8d48d68619"
+    },
+    {
+      "name": "claim-canonical-final.log",
+      "bytes": 23042,
+      "sha256": "05118c7ace8d63aa81b5ac75ba15fe956051332617a4eaff6cc94431261e8d76"
     }
   ],
   "pm_target": {
