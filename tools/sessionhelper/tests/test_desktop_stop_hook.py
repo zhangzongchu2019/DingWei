@@ -80,6 +80,19 @@ class StopHookTest(unittest.TestCase):
         self.assertEqual(json.loads(proc.stdout)['decision'], 'block')
         self.assertNotIn('PRIVATE', proc.stdout + proc.stderr)
 
+    def test_shared_installation_entry_never_inspects_enrollment_environment(self):
+        from io import BytesIO, StringIO
+        from unittest.mock import patch
+        from sessionhelper.launch import main as launch
+        self.post()
+        output = StringIO()
+        input_stream = SimpleNamespace(buffer=BytesIO(json.dumps(self.event).encode()))
+        with patch('sys.argv', ['sessionhelper', '--desktop-stop-hook', '--binding', str(self.binding)]), \
+                patch('sys.stdin', input_stream), patch('sys.stdout', output), \
+                patch('sessionhelper.launch.env_get', side_effect=AssertionError('no enrollment config read')):
+            self.assertEqual(launch(), 0)
+        self.assertEqual(json.loads(output.getvalue())['decision'], 'block')
+
     def cli(self, payload):
         env = dict(os.environ, PYTHONPATH=str(Path(__file__).resolve().parents[1]))
         return subprocess.run([sys.executable, '-B', '-m', 'sessionhelper.desktop_stop_hook',

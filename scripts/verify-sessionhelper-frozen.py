@@ -89,6 +89,25 @@ def main():
         from sessionhelper.ipc_listener import serve_ipc
         inbox = DesktopAdapter(SimpleNamespace(inbox_db=str(root / "messages")))
         inbox.handle_delivery({"id": "fixture-only", "from": "fixture", "body": "fixture message"})
+        # Actual frozen Stop entry uses the same local private inbox, never an
+        # enrollment/AI path. Reopening the process must not repeat its intent.
+        hook_binding = root / "stop-binding.json"
+        hook_binding.write_text(json.dumps({"enabled": True, "session_id": "fixture-thread",
+                                            "inbox_path": inbox.path}))
+        hook_binding.chmod(0o600)
+        hook_event = {"hook_event_name": "Stop", "session_id": "fixture-thread",
+                      "turn_id": "fixture-turn", "stop_hook_active": False,
+                      "transcript_path": "/not-readable/fixture"}
+        hook_command = [str(binary), "--desktop-stop-hook", "--binding", str(hook_binding)]
+        for event, expected in ((dict(hook_event, session_id="other"), {}),
+                                (hook_event, "block"), (hook_event, {})):
+            hook = subprocess.run(hook_command, input=json.dumps(event), env=env,
+                                  text=True, capture_output=True, timeout=30, check=True)
+            output = json.loads(hook.stdout)
+            assert output.get("decision") == expected if expected == "block" else output == expected
+            assert "fixture message" not in hook.stdout
+            assert not hook.stderr
+        assert inbox.request({"operation": "status"})["unread"] == 1
         socket_path = str(root / "fixture.sock")
         ready = threading.Event()
         loop = asyncio.new_event_loop()
@@ -217,7 +236,8 @@ def main():
         assert pilot.returncode == 0 and not (state / "dingwei-mcp.sock").exists() and not (state / "desktop-pilot.lock").exists()
     print(json.dumps({"status": "FROZEN_LOCAL_SMOKE_PASS", "version": expected_version,
                       "bytes": binary.stat().st_size, "sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
-                      "real_hub_or_ai_calls": 0, "native_desktop_runtime": "NOT_VERIFIED"}))
+                      "real_hub_or_ai_calls": 0, "native_desktop_runtime": "NOT_VERIFIED",
+                      "frozen_stop_hook": "LOCAL_REQUEST_AND_DEDUP_PASS"}))
 
 
 if __name__ == "__main__":

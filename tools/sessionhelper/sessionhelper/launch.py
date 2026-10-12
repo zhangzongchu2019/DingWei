@@ -7,6 +7,9 @@ from .config import env_get
 
 
 def main():
+    if sys.argv[1:2] == ["--desktop-stop-hook"]:
+        from .desktop_stop_hook import main as hook
+        return hook(sys.argv[2:])
     if sys.argv[1:] == ["--version"]:
         from . import __version__
         print("sessionHelper " + __version__)
