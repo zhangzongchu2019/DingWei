@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import subprocess
 import signal
+import select
 import time
 import sys
 import tempfile
@@ -34,7 +35,9 @@ def main():
         before = b'model = "fixture-model"\n[mcp_servers.fixture_existing]\ncommand = "fixture-only"\n'
         config.write_bytes(before)
         config.chmod(0o600)
-        env = dict(os.environ, CODEX_HOME=str(codex))
+        env = {key: value for key, value in os.environ.items()
+               if not key.startswith(("SH_", "DW_", "CODEX_", "CLAUDE_", "OPENCODE_", "DINGWEI_"))}
+        env["CODEX_HOME"] = str(codex)
         # An MCP/version/setup invocation must not enroll using a caller's credentials.
         for key in ("SH_ENROLL", "SH_KEY_ID", "SH_SECRET"):
             env.pop(key, None)
@@ -93,7 +96,7 @@ def main():
             responses = {r["id"]: r for r in map(json.loads, result.stdout.splitlines())}
             assert len(responses) == 3 and all("error" not in r for r in responses.values())
             assert responses[1]["result"]["serverInfo"]["version"] == expected_version
-            assert {"dw_inbox", "send_message"} <= {t["name"] for t in responses[2]["result"]["tools"]}
+            assert {"dw_inbox", "send_message", "dw_wait_message", "dw_reply_message"} <= {t["name"] for t in responses[2]["result"]["tools"]}
             content = json.loads(responses[3]["result"]["content"][0]["text"])
             assert content["unread"] == 1 and content["native_auto_notify"] == "NOT_VERIFIED"
         finally:
@@ -138,6 +141,55 @@ def main():
             assert report["read_count"] == report["reply_count"] == 1 and report["hub_connections"] == 0
         finally:
             pilot.send_signal(signal.SIGTERM)
+            pilot.wait(timeout=10)
+        assert pilot.returncode == 0 and not (state / "dingwei-mcp.sock").exists() and not (state / "desktop-pilot.lock").exists()
+
+        # Exercise the frozen process's pending tool, not a source-module stand-in.
+        old_reports = set(state.glob("desktop-pilot-*-report.json"))
+        pilot = subprocess.Popen([str(binary), "--desktop-pilot", "--message-after-wait", "--profile", str(state / "setup-profile.json")],
+                                 env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        client = None
+        try:
+            deadline = time.monotonic() + 15
+            report = None
+            while time.monotonic() < deadline:
+                assert pilot.poll() is None, "frozen delayed pilot exited before ready"
+                candidates = set(state.glob("desktop-pilot-*-report.json")) - old_reports
+                if candidates:
+                    report_path = candidates.pop()
+                    report = json.loads(report_path.read_text())
+                    if report["state"] == "IPC_READY": break
+                time.sleep(.05)
+            assert report and report["state"] == "IPC_READY"
+            assert not report["fixture_posted"]
+            client = subprocess.Popen([str(binary), "--mcp"], env=dict(env, DINGWEI_MCP_IPC_SOCK=str(state / "dingwei-mcp.sock")),
+                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+            def call(ident, method, params=None):
+                packet = {"jsonrpc":"2.0", "id":ident, "method":method}
+                if params is not None: packet["params"] = params
+                client.stdin.write(json.dumps(packet)+"\n"); client.stdin.flush()
+                assert select.select([client.stdout], [], [], 15)[0], "frozen MCP response timeout"
+                result = json.loads(client.stdout.readline())
+                assert result["id"] == ident
+                return result
+            assert "error" not in call(1, "initialize")
+            packet = call(2, "tools/call", {"name":"dw_wait_message", "arguments":{"wait_seconds":5}})
+            result = json.loads(packet["result"]["content"][0]["text"])
+            assert result["state"] == "message" and result["message"]["id"] == report["message_id"]
+            assert result["model_execution_verified"] is False
+            assert "error" in call(3, "tools/call", {"name":"dw_reply_message", "arguments":{"message_id":report["message_id"],"body":"DW_DESKTOP_OK"}})
+            packet = call(4, "tools/call", {"name":"send_message", "arguments":{"to":"desktop-pilot#LOCAL","body":"DW_DESKTOP_OK","in_reply_to":report["message_id"]}})
+            assert json.loads(packet["result"]["content"][0]["text"])["sent_to_hub"] is False
+            report = json.loads(report_path.read_text())
+            assert report["fixture_posted"] and report["wait_return_count"] == report["reply_count"] == 1
+            assert report["hub_connections"] == 0
+        finally:
+            if client is not None:
+                client.stdin.close()
+                try: client.wait(timeout=10)
+                except subprocess.TimeoutExpired: client.kill(); client.wait(timeout=5)
+                client.stdout.close()
+            if pilot.poll() is None: pilot.send_signal(signal.SIGTERM)
             pilot.wait(timeout=10)
         assert pilot.returncode == 0 and not (state / "dingwei-mcp.sock").exists() and not (state / "desktop-pilot.lock").exists()
     print(json.dumps({"status": "FROZEN_LOCAL_SMOKE_PASS", "version": expected_version,

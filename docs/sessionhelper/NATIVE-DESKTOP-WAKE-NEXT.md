@@ -82,3 +82,8 @@ Mac 最小信息采集：从新的固定源码包解压目录运行 `PYTHONPATH=
 ### 本机 schema 事实补充
 
 独立空 CODEX_HOME 导出的 codex-cli 0.161.0 `ThreadResumeParams` **含 excludeTurns**，可避免在 resume 响应里返回 turn 正文；不能以文档搜索未命中推断它不存在。该字段仍不解决原 GUI 来源绑定或空闲原子启动：本机 `TurnStartParams.turnTrigger` 说明已有 active turn 时可能进入 steering；`clientUserMessageId` 也没有已核的幂等保证。本机 schema 不代表业主 Mac 应用版本。
+
+
+### 真机待完成的有界试验入口
+
+`--desktop-pilot --message-after-wait` 将合成消息延后至 dw_wait_message 已挂起，复用真实 helper 等待/取消路径，适用于 PM 在原 Mac 桌面聊天观察工具返回。它不使用 Hub，不模拟 durable ACK；dw_reply_message 明确拒绝，固定 send_message 合成回复标 sent_to_hub=false。报告计数与用户看到的原会话 UI 结果分开，不计空闲原桌面唤醒或真实路由完成。具体步骤见 MACOS-CODEX-PILOT.md 第5节。

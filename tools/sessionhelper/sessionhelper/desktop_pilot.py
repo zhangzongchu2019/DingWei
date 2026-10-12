@@ -17,12 +17,13 @@ import signal
 from types import SimpleNamespace
 
 from .desktop import DesktopAdapter
+from .app import SessionHelper
 from .enroll import write_private_file
 from .ipc_listener import serve_ipc
 
 
 class Pilot:
-    def __init__(self, profile_path):
+    def __init__(self, profile_path, *, message_after_wait=False):
         profile_path = Path(profile_path)
         if profile_path.name != "setup-profile.json" or profile_path.is_symlink() or not profile_path.is_file() or profile_path.stat().st_mode & 0o077:
             raise ValueError("pilot requires a private setup-profile.json")
@@ -45,11 +46,51 @@ class Pilot:
         self.report_path = self.state / ("desktop-pilot-" + self.nonce + "-report.json")
         self.report = {"mode": "LOCAL_SYNTHETIC_PILOT", "state": "PREPARED", "message_id": self.message_id,
                        "read_count": 0, "reply_count": 0, "hub_connections": 0,
+                       "message_after_wait": message_after_wait, "fixture_posted": False, "wait_return_count": 0,
                        "native_auto_notify": "NOT_VERIFIED", "native_auto_notify_implemented": False, "desktop_UI_owner_confirmation": "PENDING"}
         self.adapter = None
         self.socket_identity = None
+        self.helper_inbox = None
+
+    def post_fixture(self):
+        if self.report["fixture_posted"]:
+            return
+        self.adapter.handle_delivery({"id": self.message_id, "from": self.target, "body": "Local synthetic desktop test. Reply only DW_DESKTOP_OK to desktop-pilot#LOCAL and use this message ID as in_reply_to."})
+        self.report["fixture_posted"] = True
+        write_private_file(str(self.report_path), json.dumps(self.report))
+
+    async def post_after_listener(self, work):
+        # Only the local synthetic fixture uses this readiness barrier. It
+        # never discovers or controls a native desktop/model thread.
+        async with asyncio.timeout(2):
+            while not self.adapter._wait_guard.locked():
+                if work.done():
+                    return
+                await asyncio.sleep(.01)
+            if not work.done() and not self.adapter.paused:
+                self.post_fixture()
 
     async def inbox(self, args):
+        if args.get("operation") == "reply":
+            return {"ok": False, "error": "local_pilot_has_no_hub_confirmation"}
+        if args.get("operation") == "wait":
+            work = asyncio.create_task(self.helper_inbox(args))
+            fixture = None
+            try:
+                if self.report["message_after_wait"] and not self.report["fixture_posted"]:
+                    fixture = asyncio.create_task(self.post_after_listener(work))
+                    await fixture
+                result = await work
+            finally:
+                owned = [work] + ([fixture] if fixture is not None else [])
+                for task in owned:
+                    if not task.done(): task.cancel()
+                await asyncio.gather(*owned, return_exceptions=True)
+            if result.get("state") == "message" and result.get("message", {}).get("id") == self.message_id:
+                self.report["wait_return_count"] += 1
+                self.report["read_count"] += 1
+                write_private_file(str(self.report_path), json.dumps(self.report))
+            return result
         result = self.adapter.request(args)
         if args.get("operation") == "read" and args.get("message_id") == self.message_id and result.get("ok"):
             self.report["read_count"] += 1
@@ -77,7 +118,12 @@ class Pilot:
             if os.path.lexists(self.socket):
                 raise ValueError("socket appeared concurrently; do not replace it")
             self.adapter = DesktopAdapter(SimpleNamespace(inbox_db=str(self.db_base)))
-            self.adapter.handle_delivery({"id": self.message_id, "from": self.target, "body": "Local synthetic desktop test. Reply only DW_DESKTOP_OK to desktop-pilot#LOCAL and use this message ID as in_reply_to."})
+            helper = SessionHelper.__new__(SessionHelper)
+            helper.cfg = SimpleNamespace(mode="desktop")
+            helper.adapter = self.adapter
+            self.helper_inbox = helper._make_desktop_inbox_handler()
+            if not self.report["message_after_wait"]:
+                self.post_fixture()
             write_private_file(str(self.report_path), json.dumps(self.report))
             bound = asyncio.Event()
             task = asyncio.create_task(serve_ipc(self.socket, self.send, bound=bound, inbox_handler=self.inbox, replace_existing=False))
@@ -90,6 +136,8 @@ class Pilot:
             write_private_file(str(self.report_path), json.dumps(self.report))
             print("LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID:", self.message_id, flush=True)
             print("Reply destination:", self.target, "Report:", self.report_path, flush=True)
+            if self.report["message_after_wait"]:
+                print("Fixture stays absent until dw_wait_message is pending; no Hub confirmation is simulated.", flush=True)
             if ready is not None:
                 ready.set()
             if stop is None:
@@ -115,8 +163,9 @@ class Pilot:
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", type=Path, required=True)
+    parser.add_argument("--message-after-wait", action="store_true", help="Create the synthetic message only after the original MCP wait is pending")
     args = parser.parse_args(argv)
-    asyncio.run(Pilot(args.profile).run())
+    asyncio.run(Pilot(args.profile, message_after_wait=args.message_after_wait).run())
 
 
 if __name__ == "__main__":

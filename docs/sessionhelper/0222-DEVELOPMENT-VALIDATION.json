@@ -1,18 +1,18 @@
 {
-  "recorded_utc": "2026-10-12T08:12:41.931648+00:00",
+  "recorded_utc": "2026-10-12T08:50:03.010032+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS final python=31 shell=1; includes bounded MCP wait/reply, cancellation and private HOME",
+    "canonical": "PASS final python=31 shell=1 including delayed-pilot tests; private HOME",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
     "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
-    "helper_all_discovery": "PASS553 in284.444s in isolated HOME; final malformed stdio/restart guard and setup delta also covered by final focused43 and canonical31. Prior failed540 run retained, no actual state cleanup.",
-    "frozen_linux_candidate": "PASS Linux local PyInstaller executable: --version, idempotent configuration with prior MCP preserved, initialize/tools/list, dw_inbox status via real synthetic local IPC. Not desktop UI or Hub runtime verification.",
+    "helper_all_discovery": "PASS553 in284.444s prior to delayed-pilot delta; delayed-pilot covered by final21 targeted + canonical31 + frozen local smoke. No claim of a fresh555 full-discovery run.",
+    "frozen_linux_candidate": "PASS current Linux PyInstaller executable 10753752B/5c2537e14f38c8b5cc953e95636c31566045fd550821d17700fe724abc8bbf1d: version/setup idempotency/MCP tools/real IPC/read/reply and wait-first synthetic pilot. Not Mac or Hub/model proof.",
     "macos_metadata": "PASS5 synthetic bundle tests; no Mac queried, account/login/history not read",
-    "local_desktop_pilot": "PASS4 real local IPC/owned cleanup/profile-credential refusal tests; no Hub routing",
+    "local_desktop_pilot": "PASS6 tests, including real local wait-first fixture and paused refusal, owned cleanup/profile-credential refusal; no Hub routing",
     "native_auto_notify": "NOT_IMPLEMENTED: original GUI provider and complete automated receive/turn/reply runtime still missing",
     "macos_build": "NOT_RUN: native build script prepared, syntax checked; Linux rejected before mutation. No Mac binary exists here.",
     "legacy_IPC": "PASS15 send wiring tests, original default socket replacement semantics preserved",
@@ -29,7 +29,9 @@
     "outbound_receipt_python": "PASS11 current protocol tests; actual SessionHelper send/recv path, nonce/address/connection correlation, abort/cancellation, old-Hub refusal before body",
     "desktop_mcp_wait_reply": "PASS11 wait/reply tests including actual MCP stdio child and real local IPC; same-request response, cancellation, concurrent tools, timeout, restart-uncertain guard and single correlated send. Synthetic Hub ACK; no Mac GUI/model invocation.",
     "desktop_mcp_final_regression": "PASS43 wait/receipt/legacy-send/file-IPC tests; -W error::RuntimeWarning",
-    "active_original_conversation": "IMPLEMENTED_BOUNDED_WAIT_TOOL; cancelled/closed/finished model turn cannot be automatically restarted. Mac GUI continuous interaction NOT_VERIFIED."
+    "active_original_conversation": "IMPLEMENTED_BOUNDED_WAIT_TOOL; cancelled/closed/finished model turn cannot be automatically restarted. Mac GUI continuous interaction NOT_VERIFIED.",
+    "desktop_wait_pilot_regression": "PASS21 desktop pilot/wait/inbox tests in1.967s -W error::RuntimeWarning",
+    "macos_wait_pilot": "IMPLEMENTED explicit --message-after-wait; synthetic fixture created only after pending wait. dw_reply_message refuses to simulate a Hub receipt; local send_message remains sent_to_hub=false. Mac UI not run."
   },
   "required_before_release": [
     "Independent code review",
@@ -276,6 +278,26 @@
       "name": "desktop-wait-canonical-final.log",
       "bytes": 11214,
       "sha256": "a3be00eae6667972683ca81113ba06945c6c0d952ca2ac9beff2c2b3f0a3d29e"
+    },
+    {
+      "name": "desktop-wait-pilot-regression.log",
+      "bytes": 5668,
+      "sha256": "7016149c416b4756003945a4ca4ab48c4e689a99a20a65aad74937fbfd8a4ff8"
+    },
+    {
+      "name": "desktop-wait-pilot-linux-build.log",
+      "bytes": 4972,
+      "sha256": "511b272325566aad36ab76d6f8334c9492301fc15ec9d55dd588d78ab294eabd"
+    },
+    {
+      "name": "desktop-wait-pilot-frozen-smoke.log",
+      "bytes": 285,
+      "sha256": "a79a0e070d76e166b91173626f7f6f2b4686ec8f0521d9cdd130a62b123ea3dc"
+    },
+    {
+      "name": "desktop-wait-pilot-canonical.log",
+      "bytes": 11924,
+      "sha256": "88d88c4f523d0f21bdf96e90c761b13557538c297d1dd8a71cea50c85e3fc9f0"
     }
   ],
   "pm_target": {

@@ -7,11 +7,57 @@ import unittest
 from unittest.mock import patch
 
 from sessionhelper.desktop_pilot import Pilot
-from sessionhelper.mcp_shim import _desktop_inbox, _send_message
+from sessionhelper.mcp_shim import _desktop_inbox, _desktop_wait, _desktop_reply, _send_message
 from sessionhelper.setup import profile, write_profile
 
 
 class DesktopPilotTest(unittest.TestCase):
+    def test_wait_pilot_posts_only_after_real_ipc_wait_and_never_fakes_hub_receipt(self):
+        async def exercise(root):
+            pilot = Pilot(write_profile(profile("desktop", "codex", "https://fixture.invalid", "fixtureuser", "fx", "pmfixture", root)), message_after_wait=True)
+            stop, ready = asyncio.Event(), asyncio.Event()
+            task = asyncio.create_task(pilot.run(stop, ready))
+            await asyncio.wait_for(ready.wait(), 5)
+            try:
+                self.assertEqual(pilot.adapter.request({"operation":"status"})["unread"], 0)
+                self.assertFalse(pilot.report["fixture_posted"])
+                with patch("sessionhelper.mcp_shim._IPC_SOCK", pilot.socket):
+                    result = await asyncio.to_thread(_desktop_wait, {"wait_seconds":5})
+                    self.assertEqual(result["message"]["id"], pilot.message_id)
+                    self.assertFalse(result["model_execution_verified"])
+                    with self.assertRaises(ValueError):
+                        await asyncio.to_thread(_desktop_reply, {"message_id":pilot.message_id,"body":"DW_DESKTOP_OK"})
+                    reply = await asyncio.to_thread(_send_message, {"to":pilot.target,"body":"DW_DESKTOP_OK","in_reply_to":pilot.message_id})
+                    self.assertFalse(reply["sent_to_hub"])
+                self.assertEqual(pilot.report["wait_return_count"],1)
+                self.assertEqual(pilot.report["hub_connections"],0)
+                self.assertEqual(pilot.adapter.request({"operation":"status"})["unread"],1)
+            finally:
+                stop.set();await task
+            self.assertFalse(pilot.adapter._wait_guard.locked())
+            self.assertFalse(Path(pilot.socket).exists())
+        with tempfile.TemporaryDirectory(prefix="dwp-",dir="/tmp") as root:
+            asyncio.run(exercise(root))
+
+    def test_paused_wait_pilot_does_not_create_fixture(self):
+        async def exercise(root):
+            pilot = Pilot(write_profile(profile("desktop", "codex", "https://fixture.invalid", "fixtureuser", "fx", "pmfixture", root)), message_after_wait=True)
+            stop, ready = asyncio.Event(), asyncio.Event()
+            task = asyncio.create_task(pilot.run(stop, ready))
+            await asyncio.wait_for(ready.wait(),5)
+            try:
+                pilot.adapter.request({"operation":"pause"})
+                with patch("sessionhelper.mcp_shim._IPC_SOCK",pilot.socket):
+                    result = await asyncio.to_thread(_desktop_wait,{"wait_seconds":5})
+                self.assertEqual(result["state"],"paused")
+                self.assertFalse(pilot.report["fixture_posted"])
+                self.assertEqual(pilot.adapter.request({"operation":"status"})["unread"],0)
+            finally:
+                stop.set();await task
+            self.assertFalse(pilot.adapter._wait_guard.locked())
+        with tempfile.TemporaryDirectory(prefix="dwp-",dir="/tmp") as root:
+            asyncio.run(exercise(root))
+
     def test_real_local_read_reply_no_hub_and_owned_cleanup(self):
         async def exercise(root):
             values = profile("desktop", "codex", "https://fixture.invalid", "fixtureuser", "fx", "pmfixture", root)

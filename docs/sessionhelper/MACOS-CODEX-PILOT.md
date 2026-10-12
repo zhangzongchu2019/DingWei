@@ -66,3 +66,25 @@ sh tools/sessionhelper/deploy/macos/build-desktop-candidate.sh \
 普通系统通知、MCP 配置成功、显式工具调用与原桌面会话自动启动模型是四个不同结果。自动能力未闭合前，0.2.2.2 仍不计完整发布就绪。
 
 端点增量（后续开发分支）：如有明确的原桌面已有 Unix 控制入口，可用 `--desktop-endpoint-probe --socket <明确路径> --thread-id <业主选定线程ID>` 只读验证。不要为此启动新 daemon/CLI，不要提供 pairing code、token 或聊天正文。该探针尚不在先前 43a03e2f4 冻结源码包内。仅 loaded=true 不能证明原桌面绑定或自动通知可用。
+
+
+## 5. 原会话先等待，再收到合成消息（当前开发增量）
+
+此模式需要最新开发源码/本机重新构建的包，旧43a/b695冻结包不含本轮入口。停止前一个 pilot 并确认其 socket/lock 清理后，可复用无凭据的测试 profile：
+
+```sh
+"$HOME/Applications/dw0222-mac-pilot/bin/sessionhelper" \
+  --desktop-pilot --message-after-wait \
+  --profile "$HOME/.dw0222-pilot/setup-profile.json"
+```
+
+此时报告 fixture_posted=false，私有测试收件箱为空。只有原聊天发起 MCP 等待并实际挂起后，试验程序才投放一条合成消息，无需把握倒计时，也不连接 Hub、飞书或真实 Agent。
+在原来使用的 Codex 桌面会话输入：
+
+> 请只用 dingwei-macpilot 的 dw_wait_message，wait_seconds=5，等待本地合成测试消息。收到后确认 message_id，然后用 send_message 回复：to=desktop-pilot#LOCAL，body=DW_DESKTOP_OK，in_reply_to=这条 message_id。不要调用其他工具，不读文件，不另开AI会话。报告这次收到和回复的结果，然后停止试验。
+
+这一 pilot 的 send_message 只认可该固定合成回复和原 ID，结果标 sent_to_hub=false。**不要用 dw_reply_message 来伪装 Hub 确认**：该工具在 pilot 中明确拒绝，因为没有真实 Hub 及 durable queue。真正 Agent 回复须在同版测试 Hub/helper 的原目标确认通道另验。
+
+试验报告只回传 fixture_posted、wait_return_count、reply_count、hub_connections=0 和你是否在原聊天看到结果。它不能证明空闲自动唤醒，也不能证明真实消息端到端；取消/退出后不自动建立新的模型轮次。Ctrl+C 停止后保留合成报告/DB，仅清理本次 owned socket/lock。
+
+当前自动冻结包验证脚本同时覆盖即时显式读和延迟等待两种本地模式，并检查 pilot 不伪造 Hub 确认；Linux 验证只证明冻结入口，不代替 Mac 应用 UI。
