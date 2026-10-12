@@ -805,30 +805,54 @@ func (h *Hub) subscribeExistingSessionEvents(keyID, sessionName, subID string) (
 }
 
 // subscribeExistingSessionEventsSeq（R-V2-0105 件一）：同 subscribeExistingSessionEvents，但带纪元与逐事件序号。
+type sessionSeqSnapshot struct {
+	Epoch    string
+	Floor, H uint64
+	Empty    bool
+	Replay   []sessionSeqEvent
+	Live     chan sessionSeqEvent
+	Unsub    func()
+}
+
 func (h *Hub) subscribeExistingSessionEventsSeq(keyID, sessionName, subID string) (epoch string, replay []sessionSeqEvent, ch chan sessionSeqEvent, unsub func(), ok bool) {
-	ch = make(chan sessionSeqEvent, 256)
+	snap, ok := h.subscribeExistingSessionEventsSeqSnapshot(keyID, sessionName, subID)
+	if !ok {
+		return "", nil, nil, nil, false
+	}
+	return snap.Epoch, snap.Replay, snap.Live, snap.Unsub, true
+}
+
+// The cut, reader registration and ring copy are one terminal critical section.
+func (h *Hub) subscribeExistingSessionEventsSeqSnapshot(keyID, sessionName, subID string) (sessionSeqSnapshot, bool) {
+	ch := make(chan sessionSeqEvent, 256)
 	h.mu.Lock()
 	st := h.terminals[terminalKey(keyID, sessionName)]
 	if st == nil {
 		h.mu.Unlock()
-		return "", nil, nil, nil, false
+		return sessionSeqSnapshot{}, false
 	}
 	st.ensureEventEpochLocked()
 	if st.eventSeqSubs == nil {
 		st.eventSeqSubs = map[string]chan sessionSeqEvent{}
 	}
 	st.eventSeqSubs[subID] = ch
-	epoch = st.eventEpoch
-	replay = st.eventRingSnapshotLocked()
+	snap := sessionSeqSnapshot{Epoch: st.eventEpoch, H: st.eventSeq, Replay: st.eventRingSnapshotLocked(), Live: ch}
+	snap.Empty = len(snap.Replay) == 0
+	for _, ev := range snap.Replay {
+		if ev.Seq > 0 {
+			snap.Floor = ev.Seq
+			break
+		}
+	}
 	h.mu.Unlock()
-	unsub = func() {
+	snap.Unsub = func() {
 		h.mu.Lock()
-		if cur := h.terminals[terminalKey(keyID, sessionName)]; cur != nil {
+		defer h.mu.Unlock()
+		if cur := h.terminals[terminalKey(keyID, sessionName)]; cur == st && cur.eventSeqSubs[subID] == ch {
 			delete(cur.eventSeqSubs, subID)
 		}
-		h.mu.Unlock()
 	}
-	return epoch, replay, ch, unsub, true
+	return snap, true
 }
 
 var sseEventIDPattern = regexp.MustCompile(`^([0-9a-f]{1,32})-([0-9]{1,20})$`)

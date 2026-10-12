@@ -453,6 +453,11 @@ func (s *PGStore) CreateSession(ctx context.Context, se Session) error {
 	return err
 }
 
+func (s *PGStore) RevokeSession(ctx context.Context, tokenHash string, now time.Time) error {
+	_, err := s.pool.Exec(ctx, s.t, `UPDATE np_session SET revoked_at=$2 WHERE token_hash=$1 AND revoked_at IS NULL`, tokenHash, now.UTC())
+	return err
+}
+
 func (s *PGStore) ResolveSession(ctx context.Context, tokenHash string, now time.Time) (*Session, *User, error) {
 	row, err := s.queryRow(ctx, `SELECT s.token_hash, s.user_id_lc, s.expires_at,
 		u.user_id, u.short_name, u.display_name, u.type, u.state, u.password_hash, u.must_change_password, u.created_at

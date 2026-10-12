@@ -275,6 +275,18 @@ func (m *MemStore) CreateSession(_ context.Context, s Session) error {
 	return nil
 }
 
+func (m *MemStore) RevokeSession(ctx context.Context, tokenHash string, now time.Time) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if s := m.sessions[tokenHash]; s != nil && s.RevokedAt.IsZero() {
+		s.RevokedAt = now.UTC()
+	}
+	return nil
+}
+
 func (m *MemStore) ResolveSession(_ context.Context, tokenHash string, now time.Time) (*Session, *User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

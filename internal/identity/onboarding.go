@@ -181,6 +181,21 @@ func (o *Onboarding) newSession(ctx context.Context, userLC string) (string, err
 	return tok, nil
 }
 
+// Logout is idempotent, including retries after a committed revoke whose hook failed.
+func (o *Onboarding) Logout(ctx context.Context, token string) error {
+	if token == "" {
+		return nil
+	}
+	hash := HashSecret(token)
+	if err := o.Store.RevokeSession(ctx, hash, o.Now()); err != nil {
+		return err
+	}
+	if o.OnSessionRevoked != nil {
+		return o.OnSessionRevoked(ctx, hash)
+	}
+	return nil
+}
+
 // ResolveSession 按会话令牌认出当前用户。must_change_password 为真时返回 ErrMustChange（同时返回用户，供改密页使用）。
 func (o *Onboarding) ResolveSession(ctx context.Context, token string) (*User, error) {
 	_, u, err := o.Store.ResolveSession(ctx, HashSecret(token), o.Now())

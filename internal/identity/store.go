@@ -42,6 +42,8 @@ type IdentityStore interface {
 	// 任一失败都不改任何状态。
 	RedeemRegistrationCode(ctx context.Context, codeDigest string, ident Identity, now time.Time) (*User, error)
 	CreateSession(ctx context.Context, s Session) error
+	// RevokeSession revokes only this session; missing/already revoked is success.
+	RevokeSession(ctx context.Context, tokenHash string, now time.Time) error
 	// ResolveSession 会话不存在／过期／已吊销，或用户非 active ⇒ ErrNotFound。
 	ResolveSession(ctx context.Context, tokenHash string, now time.Time) (*Session, *User, error)
 	AppendAudit(ctx context.Context, e AuditEvent) error

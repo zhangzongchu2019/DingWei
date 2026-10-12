@@ -73,6 +73,9 @@ type Service struct {
 	// OnUserChanged 用户被停用、恢复或改类型（Onboarding.SetUserState／SetUserType）成功后、返回前同步调用：
 	// Hub 据此断开该用户 Agent 的在线连接并同步 console 投影（R-V2-SPEC-TASK-SHIM-IMPL A11）。
 	OnUserChanged func(userIDLC string)
+	// OnSessionRevoked completes local stream invalidation before logout returns.
+	// Only an internal hash is passed; never log it or send it to clients.
+	OnSessionRevoked func(ctx context.Context, tokenHash string) error
 	// NameAllowed 额外的名称检查（Hub 注入渠道保留字检查）；返回 false ⇒ ErrNameInvalid。为空则不查。
 	NameAllowed func(name string) bool
 

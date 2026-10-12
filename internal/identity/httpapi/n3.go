@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -144,6 +145,18 @@ func (n *N3) loginStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (n *N3) logout(w http.ResponseWriter, r *http.Request) {
+	if !n.sameOrigin(r) {
+		writeErr(w, http.StatusForbidden, "origin_mismatch", nil)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second)
+	defer cancel()
+	if c, err := r.Cookie(SessionCookie); err == nil {
+		if err := n.OB.Logout(ctx, c.Value); err != nil {
+			writeErr(w, http.StatusServiceUnavailable, "logout_unavailable", nil)
+			return
+		}
+	}
 	http.SetCookie(w, &http.Cookie{Name: SessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: n.Secure, SameSite: http.SameSiteLaxMode})
 	writeJSON(w, http.StatusOK, map[string]any{})
 }

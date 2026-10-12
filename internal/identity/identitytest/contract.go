@@ -44,6 +44,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"N3_get_user_by_short_name_case_insensitive", getUserByShortName},
 		{"N3_list_users_sorted_by_lowercase_id", listUsers},
 		{"N3_session_expiry_and_inactive_user", sessionExpiryAndInactive},
+		{"N3_logout_revokes_only_current_session", logoutCurrentSession},
 		{"N3_registration_code_one_shot_binds_identity", regCodeOneShot},
 		{"N3_registration_code_expired_or_unknown_changes_nothing", regCodeInvalidChangesNothing},
 		{"N3_identity_already_bound_rejected", identityAlreadyBound},

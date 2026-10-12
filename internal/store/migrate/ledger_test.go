@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/consolemux"
 	"github.com/zhangzongchu2019/dingwei/internal/fanout"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
@@ -51,7 +52,7 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 	}
 	// 🔴 这份名单写死是有意的（与上面「缺表名单」同理）：它钉的是【Hub 域里到底有哪几条】，
 	// 引 LedgerInDomains() 去比就变成自己比自己。加一条 Hub 域条目 ⇒ 改这里，红一次是应当的。
-	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql" {
+	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0300_console_transport_slot.sql" {
 		t.Errorf("Applied = %v，要 Hub 域四条按字典序（0400 属 fanout 域，不得进 Hub 库）", rep.Applied)
 	}
 	if err := identity.NewPGStore(pool).CheckSchema(ctx); err != nil {
@@ -83,7 +84,7 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("重跑 Migrate: %v", err)
 	}
-	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 4 {
+	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 5 {
 		t.Errorf("重跑 Applied=%v Skipped=%v，要空转四条", rep2.Applied, rep2.Skipped)
 	}
 }
@@ -187,12 +188,15 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 	if _, err := trackA.Exec(ctx, testCtx(t), fanout.PGSchemaSQL); err != nil {
 		t.Fatalf("轨 A 建表失败（fanout）: %v", err)
 	}
+	if _, err := trackA.Exec(ctx, testCtx(t), consolemux.PGSchemaSQL); err != nil {
+		t.Fatalf("track A mux schema: %v", err)
+	}
 	aTables := baseTables(t, trackA, schemaOf(t, trackA))
 	// 13 ＝ 身份域 8 ＋ fanout 域 5（outbound／inbound_msg／inbound_sink／waive_audit／selfcheck，
 	// R-G2-FANOUT-HARDEN ① 把五表收口进 internal/fanout/pgschema.sql 后才有这一项）。
-	if len(aTables) != 14 {
-		t.Fatalf("轨 A 建出 %d 张表（%v），要 14 张＝身份域 9（G3 终版 800f24d8：原 6 张＋编组两张＋设备认领一张）"+
-			"＋ fanout 域 5（0400）", len(aTables), aTables)
+	if len(aTables) != 15 {
+		t.Fatalf("轨 A 建出 %d 张表（%v），要 15 张＝身份域 9（G3 终版 800f24d8：原 6 张＋编组两张＋设备认领一张）"+
+			"＋ mux 域 1（0300）＋ fanout 域 5（0400）", len(aTables), aTables)
 	}
 
 	// 轨 B：账本。🔴 本格用【全账本】（Ledger()＋MigrateEntries），不是某个装配点的域子集：
