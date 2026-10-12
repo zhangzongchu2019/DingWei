@@ -140,7 +140,7 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 		m.mu.Lock()
 		var f *consoleMuxFeed
 		for _, v := range m.feeds {
-			if v.Session == hash {
+			if v.Session == hash && v.ID == r.URL.Query().Get("feed_id") {
 				f = v
 				break
 			}
@@ -152,9 +152,11 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 			f.mu.Unlock()
 			if cancel != nil {
 				cancel()
+				w.WriteHeader(204)
+				return
 			}
 		}
-		w.WriteHeader(204)
+		http.Error(w, "requested feed is not active", 409)
 	})
 	mux.HandleFunc("POST /test-db-revoke", func(w http.ResponseWriter, r *http.Request) {
 		commitLowerBound := time.Now()
@@ -181,6 +183,12 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 		w.WriteHeader(204)
 	})
 	mux.HandleFunc("POST /test-maximum/{name}", func(w http.ResponseWriter, r *http.Request) { handleMuxMaximumFrame(h, w, r) })
+	mux.HandleFunc("POST /test-ring-resource-load", func(w http.ResponseWriter, r *http.Request) {
+		evidence.mu.Lock()
+		pids := append([]int(nil), vsPIDs...)
+		evidence.mu.Unlock()
+		json.NewEncoder(w).Encode(retainedRingResourceLoad(h, pids))
+	})
 	mux.HandleFunc("GET /test-resources", func(w http.ResponseWriter, r *http.Request) {
 		evidence.mu.Lock()
 		pids := append([]int(nil), vsPIDs...)

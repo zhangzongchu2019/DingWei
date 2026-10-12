@@ -3,6 +3,7 @@ package consolemux
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 	"sync"
@@ -21,6 +22,8 @@ func TestBudgetRealPGDeadlineAndCapacity(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
+	seed, _ := NewOwner("test", "https://example.invalid", "budget", "console")
+	tag := "mux_budget_" + seed.Nonce
 	b := NewBudget()
 	start := make(chan struct{})
 	done := make(chan struct{})
@@ -34,7 +37,23 @@ func TestBudgetRealPGDeadlineAndCapacity(t *testing.T) {
 			defer wg.Done()
 			<-start
 			began := time.Now()
-			err := b.Do(ctx, func(c context.Context) error { _, e := p.Exec(c, a, "SELECT pg_sleep(2)"); return e })
+			var workDeadline, queryEnded time.Time
+			err := b.Do(ctx, func(c context.Context) error {
+				workDeadline, _ = c.Deadline()
+				if c.Err() != nil {
+					return c.Err()
+				}
+				_, e := p.Exec(c, a, "SELECT pg_sleep(2) /*"+tag+"*/")
+				queryEnded = time.Now()
+				return e
+			})
+			returned := time.Now()
+			if !workDeadline.IsZero() {
+				if queryEnded.Sub(workDeadline) > 50*time.Millisecond || returned.Sub(workDeadline) > 50*time.Millisecond {
+					t.Errorf("cleanup exceeded50ms: query=%s return=%s", queryEnded.Sub(workDeadline), returned.Sub(workDeadline))
+				}
+				t.Logf("work_deadline=%s query_end_relative=%s return_release_relative=%s", workDeadline.Sub(began), queryEnded.Sub(workDeadline), returned.Sub(workDeadline))
+			}
 			mu.Lock()
 			defer mu.Unlock()
 			if errors.Is(err, ErrCapacity) {
@@ -71,6 +90,28 @@ loop:
 	if maxExecuting != 16 || maxAdmitted != 64 || rejected != 16 || expired != 64 || len(b.executing) != 0 || len(b.waiting) != 0 {
 		t.Fatalf("execution=%d admitted=%d rejected=%d expired=%d", maxExecuting, maxAdmitted, rejected, expired)
 	}
+	if longest > 1050*time.Millisecond {
+		t.Fatalf("wall-return >1.050s: %s", longest)
+	}
+	health, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
+	defer cancel()
+	row, e := p.QueryRow(health, a, "SELECT count(*) FROM pg_stat_activity WHERE pid<>pg_backend_pid() AND state='active' AND query LIKE $1", "%"+tag+"%")
+	var active int
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = row.Scan(&active); e != nil || active != 0 {
+		t.Fatalf("background SQL remains: active=%d err=%v", active, e)
+	}
+	row, e = p.QueryRow(health, a, "SELECT 1")
+	var one int
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = row.Scan(&one); e != nil || one != 1 {
+		t.Fatal("pool not restored", e)
+	}
+	t.Log(fmt.Sprintf("cancelled_primary_sql_remaining=%d pool_reusable=true cleanup_deadline=50ms", active))
 	// Cancellation is requested at 1s. Scheduling/driver return latency is reported,
 	// never added to a positive authorization lease.
 	t.Logf("primary_pg concurrent=80 executing_peak=%d admitted_peak=%d waiting_cap=48 rejected=%d cancelled=%d max_return=%s cancellation_deadline=1s leases_not_extended=true", maxExecuting, maxAdmitted, rejected, expired, longest)

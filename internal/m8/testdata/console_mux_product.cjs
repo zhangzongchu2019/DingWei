@@ -42,6 +42,32 @@ function chromeRSS(root){const fs=require('node:fs'),rows=new Map();for(const pi
   for(let k=0;k<400&&!appliedRecords.some(a=>a.name===name+'.owner'&&a.after===max.after);k++)await new Promise(r=>setTimeout(r,10));
   assert.ok(appliedRecords.some(a=>a.name===name+'.owner'&&a.after===max.after),'max F must get production applied ACK');maximumFrames.push({name,wire_bytes:max.wire_bytes,raw_payload_bytes:max.raw_payload_bytes,applied:true});
  }
+ if(process.env.MUX_SATURATION==='normal'){
+ const burst=await page.evaluate(async()=>{const frames=[];for(let round=0;round<2;round++)frames.push(...await Promise.all(Array.from({length:8},async(_,i)=>{const r=await fetch('/test-maximum/agent'+String(i).padStart(2,'0'),{method:'POST'});if(!r.ok)throw new Error('normal burst '+r.status);return r.json();})));return frames;});
+ for(let i=0;i<8;i++){const max=burst[i+8];for(let k=0;k<600&&!appliedRecords.some(a=>a.name==='agent'+String(i).padStart(2,'0')+'.owner'&&a.after===max.after);k++)await new Promise(r=>setTimeout(r,10));assert.ok(appliedRecords.some(a=>a.name==='agent'+String(i).padStart(2,'0')+'.owner'&&a.after===max.after),'normal ACK final burst cursor '+i);}
+ console.log(JSON.stringify({pressure_case:'normal_ack',legal_frames:16,all_last_cursors_actually_applied:true,ack_seconds:2,total_deliveries_cap:2}));
+ }
+ if(process.env.MUX_SATURATION==='late'){
+ const lateFrame=page.frames().find(f=>f.url().includes('/view/agent06.owner'));
+ await lateFrame.evaluate(()=>{document.getElementById('humanInput').value='explicit-user-recovery-draft';});
+ const appliedBefore=appliedRecords.filter(a=>a.name==='agent06.owner').map(a=>a.after).at(-1);
+ await page.evaluate(()=>{window.lateOriginal=window.postMessage;window.lateAckCount=0;window.postMessage=function(d,...args){if(d?.protocol==='dw-console-mux/v1'&&d.type==='applied'&&d.agent_id==='agent06'){window.lateAckCount++;return;}return window.lateOriginal.call(window,d,...args);};const target=tabs.get('agent06.owner').pane.contentWindow;window.lateDeliveryCount=0;window.lateDeliverOriginal=target.postMessage.bind(target);target.postMessage=(d,...a)=>{if(d?.protocol==='dw-console-mux/v1'&&d.type==='event')window.lateDeliveryCount++;return window.lateDeliverOriginal(d,...a);};});
+ await page.evaluate(async()=>fetch('/test-publish/agent06',{method:'POST',body:JSON.stringify({kind:'assistant_text',text:'late-ack-real-DOM-event',data:{}})}));
+ await lateFrame.waitForFunction(()=>document.body.textContent.includes('late-ack-real-DOM-event'),{timeout:10000});
+ await page.waitForFunction(()=>tabs.get('agent06.owner').pane.dataset.streamError?.includes('ACK 超时'),{timeout:8000});
+ assert.equal(await page.evaluate(()=>window.lateDeliveryCount),2);assert.ok(await page.evaluate(()=>window.lateAckCount)>=2);
+ assert.equal(appliedRecords.filter(a=>a.name==='agent06.owner').map(a=>a.after).at(-1),appliedBefore,'late ACK cannot advance confirmed cursor');
+ assert.equal(await lateFrame.evaluate(()=>document.getElementById('humanInput').value),'explicit-user-recovery-draft');
+ await page.evaluate(()=>{window.postMessage=window.lateOriginal;});
+ await page.evaluate(async()=>fetch('/test-publish/agent04',{method:'POST',body:JSON.stringify({kind:'assistant_text',text:'other-seat-during-late-stop',data:{}})}));await page.frames().find(f=>f.url().includes('/view/agent04.owner')).waitForFunction(()=>document.body.textContent.includes('other-seat-during-late-stop'),{timeout:10000});
+ // Explicit existing product action: user closes the stopped tab and opens it again.
+ // Fresh DOM starts at the retained suffix floor; this is not automatic resume.
+ await page.evaluate(()=>{closeTab('agent06.owner');openTab('agent06.owner');});
+ let recovered;for(let i=0;i<300;i++){recovered=page.frames().find(f=>f.url().includes('/view/agent06.owner')&&f!==lateFrame);if(recovered)break;await new Promise(r=>setTimeout(r,10));}assert.ok(recovered);
+ await recovered.waitForFunction(()=>document.body.textContent.includes('late-ack-real-DOM-event'),{timeout:15000});
+ await page.evaluate(async()=>fetch('/test-publish/agent06',{method:'POST',body:JSON.stringify({kind:'assistant_text',text:'after-explicit-user-reopen',data:{}})}));await recovered.waitForFunction(()=>document.body.textContent.includes('after-explicit-user-reopen'),{timeout:10000});
+ console.log(JSON.stringify({pressure_case:'ack_later_than_2s',expected_stop:true,total_deliveries:2,no_confirmed_cursor_jump:true,draft_preserved_until_explicit_close:true,other_seat_continues:true,user_action:'existing closeTab then openTab',replay_baseline:'fresh DOM retained suffix floor-1, actual DOM before applied; cost projection unchanged',user_recovery_live:true}));
+ }
  if(process.env.MUX_SATURATION==='1'){
  // Hold applied messages at the test observer, filling real pending+sent credits.
  await page.evaluate(()=>{window.testOriginalPostMessage=window.postMessage;window.testHeld=0;window.testHeldMessages=[];window.postMessage=function(d,...args){if(d?.protocol==='dw-console-mux/v1'&&d.type==='applied'){window.testHeld++;window.testHeldMessages.push(d);return;}return window.testOriginalPostMessage.call(window,d,...args);};});
@@ -56,11 +82,13 @@ function chromeRSS(root){const fs=require('node:fs'),rows=new Map();for(const pi
  for(let k=0;k<700;k++){const q=await page.evaluate(async()=> (await fetch('/test-resources')).json());if(q.hub_queue_events===0)break;if(k===699)throw new Error('held queue did not release after bounded duplicate ACK retry');await new Promise(r=>setTimeout(r,10));}
  console.log(JSON.stringify({real_wire_queue_saturation:saturation,burst_legal_frames:burst.length,burst_complete_wire_bytes:burst.reduce((n,v)=>n+v.wire_bytes,0)}));
  }
+ await page.evaluate(()=>activate('agent00.owner'));
  const resourcesAfter=await page.evaluate(async()=> (await fetch('/test-resources')).json());
  console.log(JSON.stringify({maximum_legal_frames:maximumFrames,resources_before:resourcesBefore,resources_after:resourcesAfter,chrome_process_tree:chromeRSS(browser.process().pid)}));
  // Real server transport cancellation: registry remains metadata-only until a fresh slot/gate is reacquired.
- await page.evaluate(async()=>fetch('/test-disconnect',{method:'POST'}));
- for(let i=0;i<300&&long.length<2;i++)await new Promise(r=>setTimeout(r,10));assert.ok(long.length>=2,'actual EventSource reconnect attempted');
+ const transportBeforeDisconnect=long.length,disconnectFeed=new URL(long.at(-1)).pathname.split('/')[4];
+ const disconnectStatus=await page.evaluate(async id=>(await fetch('/test-disconnect?feed_id='+id,{method:'POST'})).status,disconnectFeed);assert.equal(disconnectStatus,204,'must cancel this exact active transport');
+ for(let i=0;i<300&&long.length<=transportBeforeDisconnect;i++)await new Promise(r=>setTimeout(r,10));if(long.length<=transportBeforeDisconnect)console.log(JSON.stringify({disconnect_status:disconnectStatus,pre_connections:transportBeforeDisconnect,post_connections:long.length,status:await page.evaluate(()=>document.getElementById('consoleMuxStatus')?.textContent)}));assert.ok(long.length>transportBeforeDisconnect,'actual EventSource reconnect attempted after this cancellation');
  await page.evaluate(async()=>fetch('/test-publish/agent04',{method:'POST',body:JSON.stringify({kind:'assistant_text',text:'after-real-feed-reconnect',data:{}})}));
  await page.frames().find(f=>f.url().includes('/view/agent04.owner')).waitForFunction(()=>document.body.textContent.includes('after-real-feed-reconnect'),{timeout:10000});
  assert.equal(await scrollFrame.evaluate(()=>document.getElementById('timeline').scrollTop),scrollBefore,'reconnect retains reading position');
@@ -83,13 +111,14 @@ function chromeRSS(root){const fs=require('node:fs'),rows=new Map();for(const pi
  const timeoutFrame=page.frames().find(f=>f.url().includes('/view/agent03.owner'));
  await page.evaluate(()=>{const target=tabs.get('agent03.owner').pane.contentWindow;window.__muxIgnored=0;const original=target.postMessage.bind(target);target.postMessage=(d,...args)=>{if(d?.protocol==='dw-console-mux/v1'&&d.type==='event'){window.__muxIgnored++;return;}return original(d,...args);};});
  await page.evaluate(async()=>fetch('/test-publish/agent03',{method:'POST',body:JSON.stringify({kind:'assistant_text',text:'timeout-event-must-not-apply',data:{}})}));
- await page.waitForFunction(()=>document.getElementById('consoleMuxStatus')?.textContent.includes('ACK 超时'),{timeout:8000});assert.equal(await page.evaluate(()=>window.__muxIgnored),2,'initial + one retry only');
+ await page.waitForFunction(()=>document.getElementById('consoleMuxStatus')?.textContent.includes('agent03.owner')&&document.getElementById('consoleMuxStatus')?.textContent.includes('ACK 超时'),{timeout:8000});assert.equal(await page.evaluate(()=>window.__muxIgnored),2,'initial + one retry only');
  // A second top-level Console gets a visible shared PG occupancy refusal; no session logout.
  const second=await browser.newPage();await second.goto(base+'/console',{waitUntil:'domcontentloaded'});await second.evaluate(()=>openTab('agent00.owner'));await second.waitForFunction(()=>document.getElementById('consoleMuxStatus')?.textContent.includes('另一个 Console'),{timeout:10000});assert.equal(await second.evaluate(async()=> (await fetch('/api/console/agents')).status),200);await second.close();
  const over=await page.evaluate(async()=> (await fetch('/test-maximum/agent06?over=1',{method:'POST'})).json());assert.equal(over.wire_bytes,1048577);
  const oversizedFrame=page.frames().find(f=>f.url().includes('/view/agent06.owner'));await page.waitForFunction(()=>tabs.get('agent06.owner').pane.dataset.streamError?.includes('event_too_large'),{timeout:10000});await oversizedFrame.waitForFunction(()=>document.getElementById('streamAlertText')?.textContent.includes('event_too_large'),{timeout:10000});
  await page.evaluate(async()=>fetch('/test-publish/agent04',{method:'POST',body:JSON.stringify({kind:'assistant_text',text:'after-oversize-other-seat-live',data:{}})}));await page.frames().find(f=>f.url().includes('/view/agent04.owner')).waitForFunction(()=>document.body.textContent.includes('after-oversize-other-seat-live'),{timeout:10000});
  console.log(JSON.stringify({illegal_complete_frame_bytes:1048577,oversized_seat_stopped:true,other_seat_after_oversize_continues:true}));
+ if(process.env.MUX_RESOURCE_RSS==='1'){const ringLoad=await page.evaluate(async()=> (await fetch('/test-ring-resource-load',{method:'POST'})).json());assert.ok(ringLoad.retained_global_bytes<=128*1048576);assert.ok(ringLoad.retained_after_test_terminal_delete<=128*1048576);const retainedCost=await page.evaluate(async()=> (await fetch('/view/agent04.owner/status')).json());assert.equal(retainedCost.turns,1);assert.equal(retainedCost.cost_last,1.25);assert.equal(retainedCost.cost_total,1.25);console.log(JSON.stringify({resource_ring_load:ringLoad,chrome_process_tree_after_load:chromeRSS(browser.process().pid)}));}
  const start=Date.now();await page.evaluate(async()=>fetch('/test-db-revoke',{method:'POST'}));await new Promise(r=>setTimeout(r,2100));
  assert.equal(peakSSE,1,'maximum simultaneous public SSE, including reconnect');const denial=await page.evaluate(async()=> (await fetch('/api/console/event-context')).status);assert.equal(denial,401);
  assert.equal(errors.length,0,errors.join('\n'));

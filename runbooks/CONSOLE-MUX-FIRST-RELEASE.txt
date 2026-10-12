@@ -50,3 +50,33 @@ Meaningful tests cover primary owned batch/state/expiry/current-only revoke; rea
 TestMuxProductHTTP1EightSeats runs actual Go handlers+primary PG+two Python VS+real File Service+native renderer+Chrome151 HTTP1 with real authenticated Agent WS test peers. It verifies6->8 subscriptions, one maximum concurrent managed SSE and zero child SSE, large precision, list/ticket/upload, native owner send, draft/scroll, actual transport cancellation/replay, independent+aggregate cost uniqueness, negative applied, timeout exactly2 deliveries, other-seat continuity and visible second Console409. Incoming Agent events and helper readers are local test peers, not a model/PTY business completion claim. DB-revoke browser sampling is not a physical stop-time measurement by itself.
 Canonical build entry is original build.sh with SOURCE_COMMIT equal committed clean HEAD and OUT outside checkout. Canonical test list includes36Python/2shell with new projection test. Existing migration goldens include the new ledger entry; no old migration digest was edited.
 Remaining release gates: independent Kimi implementation CR, Terra business verification including actual helper/PTY/real owner flow and all B1 phases; exact deployment source/config/affinity and signed VS target readiness; maximum legal-frame/slow-peer load, DB capacity and RSS; Gongfeng push after trusted SSH host-key channel restoration; dw123 pull/local build, provenance/rollback verification and authorized prodops deployment. No push/deploy/restart is implied by local candidate success.
+
+2026-10-12 resource supplement (root SHA30f1d98a, supersedes resource timing interpretation):
+Whole-round effective WORK deadline remains start+1s. New work checks the absolute
+context deadline, not just a delayed ctx.Err callback. Cancellation/connection
+cleanup may take <=50ms, call return <=1.050s; this is never a positive lease or
+writer grace. Tokens remain charged until SQL actually returns. Actual PG sample
+uses production16 exec+48 wait(total64); independent16+64 component is separate.
+Shared retained raw UTF8 data: <=16MiB/Agent, <=128MiB/Hub, existing1000/Agent;
+global FIFO removes per-Agent prefixes under the terminal lock. Conservative
+metadata entry cap128000 applies even to zero-length payloads. Payload string
+references are not copied into FIFO nodes; removed references are cleared and
+sparse metadata slices compacted. This extra count bound is explicit, not a
+claim of a total RSS ceiling. Seq/epoch/live bodies/cost projection remain intact.
+Oversized events clear that Agent history into a future contiguous suffix, never
+remain in ring. Same-lock snapshots include internal lost-through/truncation.
+Legacy public internal-SSE path emits existing replay_gap overflow even for empty
+or fresh truncated history; old wrapper signatures remain. Managed empty history
+is history_unavailable, existing out-of-range cursor gap stops visibly; a fresh
+nonempty retained suffix uses existing floor to show a history-incomplete notice.
+No new wire type/sequence spelling. Actual pressure cases distinguish normal
+ACK burst/reconnect from intentionally withheld ACK>2s: latter stops after2
+TOTAL deliveries, confirmed applied stays unchanged, existing explicit close/open
+creates fresh DOM/suffix baseline; draft is preserved UNTIL user's explicit close.
+ACK transport_missing is a transient disconnected feed, not another principal
+slot conflict. Broker retains dirty applied, performs bounded existing fresh
+reauthenticated reconnect, retries ACK only after the new EventSource opens.
+Wire budgets/ring retained data are not total RSS; RSS/heap before/peak/stop/delete
+and explicit diagnostic GC/OS trim must be reported separately, with VS/Chrome
+process figures and shared-page double-count caveat. Prod memory capacity is
+still an independent publication gate. No version bump or deploy follows values.
