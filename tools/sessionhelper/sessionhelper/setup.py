@@ -270,6 +270,7 @@ def main(argv=None):
             app = desktop_host["applications"][0]
             print("本次桌面应用：", app["name"], "版本：", app["version"], "build：", app["build"])
         configure_mcp(values)
+        print("桌面持续监听：在原聊天要求 AI 调用 dw_wait_message；收到消息后用 dw_reply_message 回复再等待。取消或退出后需重新发起，不能自动唤醒空闲会话。")
     write_private_file(str(Path(values["SH_STATE_DIR"]) / "setup-status.json"), json.dumps({
         "mode": mode, "tool_ready": "MCP_CONFIGURED" if mode == "desktop" else "CLI_READY",
         "desktop_host": desktop_host,

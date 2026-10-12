@@ -14,6 +14,10 @@ class OutboundReceiptError(Exception):
     pass
 
 
+class OutboundRejected(OutboundReceiptError):
+    pass
+
+
 class OutboundReceiptBroker:
     def __init__(self, session_names):
         self.session_names = frozenset(name for name in session_names if name)
@@ -92,7 +96,7 @@ class OutboundReceiptBroker:
             future.set_result({'ok': True, 'stage': 'hub_durable_queued',
                                'source_message_id':meta['source_message_id'], 'delivery_id':meta['delivery_id']})
         elif meta.get('state')=='rejected' and meta.get('durable') is False:
-            future.set_exception(OutboundReceiptError('Hub rejected outbound request'))
+            future.set_exception(OutboundRejected('Hub rejected outbound request'))
         return True
 
     def abort(self, ws):

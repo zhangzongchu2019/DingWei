@@ -1,6 +1,6 @@
 # 原桌面自动唤醒：待打通的接入条件
 
-状态：完整原桌面自动唤醒未实现。当前 desktop adapter/MCP 仅持久收件与显式读/回复，native_auto_notify_implemented=false。新增 desktop_dispatch.py 为离线调度内核，未接生产/GUI transport，不改变功能状态。macOS 首轮本地 pilot 也不改变这个结论。
+状态：完整原桌面自动唤醒未实现。当前 desktop adapter/MCP 支持持久收件、显式读/回复与有界等待工具，native_auto_notify_implemented=false。新增 desktop_dispatch.py 为离线调度内核，未接生产/GUI transport，不改变功能状态。macOS 首轮本地 pilot 也不改变这个结论。
 
 官方依据：[MCP](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)、[App Server](https://learn.chatgpt.com/docs/app-server)、[开发命令](https://learn.chatgpt.com/docs/developer-commands?surface=cli)。
 App Server 文档提供 Unix control socket、JSON-RPC、thread/loaded/list（仅在内存的 ID）、turn/start 和运行状态通知。它没有证明业主正在使用的 GUI 实例已经共享了一个可供本 helper 使用的控制端点。开发命令的 --remote 说明针对 TUI，不能借用为桌面现成绑定证据；WebSocket/app-server 被文档标为实验性开发入口。
@@ -62,3 +62,23 @@ Mac 最小信息采集：从新的固定源码包解压目录运行 `PYTHONPATH=
 补充兼容保护：desktop capabilities 带独立一次性 cap_nonce；新 Hub 响应只表示支持 durable Agent queue 回执。Broker 在同一连接、相同 nonce、Hub 本会话地址和 version1 均核符前，不写任何正文。旧 Hub 不响应就拒绝发送；重连重新协商，不复用旧结果。普通 driver/CLI 不申请此新能力，旧 IPC 无变化。握手 nonce 只在控制面，不转给收件 Agent。
 
 全量首次回归的6项错误来自两个精简测试 fixture 未补新组件，已补 fixture 而不削弱生产接收器；另1项真实 HOME 状态变化来源未核，不删除或恢复真实文件。随后独立 HOME 下542项全通过（在能力协商最后增量之前）；最终协商增量另有靶向回归。既有 ResourceWarning/PTY 提醒保留。`durable` 对应已有 repository 队列提交，未另行声称断电/存储故障实证。
+
+
+## 原会话中的持续等待工具（开发增量）
+
+新增 `dw_wait_message` 和 `dw_reply_message`，安装后的同一 Codex 会话可由用户要求进入持续监听。MCP 工具请求保持待完成，helper 私有收件箱出现消息后，将它返回到该次工具调用；模型处理后调用回复工具，再调用等待工具。既不需要另起 CLI/线程，也不需要猜测桌面控制 socket。
+
+这一实现只覆盖**已有模型轮次仍在调用等待工具**的模式。用户停止、MCP 取消、应用退出、模型结束本轮或工具超时后没有继续调用，均不会自动建立一个空闲原会话的新模型轮次。不能替代原需求中的空闲自动唤醒，也不能把本地 stdio 请求 ID 关联作为真实桌面 UI 验收。完整 0.2.2.2 发布门禁仍开放。
+
+- 单次等待 1–45 秒，默认45秒；每个 helper 只允许一个待完成监听。等待期间 MCP 仍能接收取消、查询和暂停请求。IPC 断开或服务停止会取消并等待本次 helper 线程结束。
+- 等待返回消息本身不标已读，不标 model execution。超时返回 timeout；暂停返回 paused；调用取消不消费下一条消息。
+- 回复只接受 message_id/body。目标读取原消息的 reply_to；不接受模型指定新目标，也不把收到的正文当配置、系统指令或批准授权。
+- 发送前持久写入 sending；必须经同版 Hub 的能力协商，并收到与该连接/nonce/请求相符的 durable Agent queue 回执，才写 confirmed 与 inbox read。同一正文重复调用仅返回缓存确认，不再发送。
+- 拒绝、断线、取消或超时保留 rejected/uncertain/sending；重启后不自动重试，下一次等待返回需要核实的状态。未知结果可能已经入队，不改用普通 send_message 绕过防重。
+- 当前确认回复只支持可靠 Agent 目标；不支持飞书接收者或旧 Hub 的普通写入确认。Hub 入队不证明对端模型已经执行。
+
+在实际 Mac 原会话中验收前，仍须核确应用版本/构建、运行同版测试 Hub/helper，并由用户确认同一聊天确实完成等待→接收→处理→回复→再次等待。现网 .221 没有本轮协商协议，不能直接用于这条回传验收。
+
+### 本机 schema 事实补充
+
+独立空 CODEX_HOME 导出的 codex-cli 0.161.0 `ThreadResumeParams` **含 excludeTurns**，可避免在 resume 响应里返回 turn 正文；不能以文档搜索未命中推断它不存在。该字段仍不解决原 GUI 来源绑定或空闲原子启动：本机 `TurnStartParams.turnTrigger` 说明已有 active turn 时可能进入 steering；`clientUserMessageId` 也没有已核的幂等保证。本机 schema 不代表业主 Mac 应用版本。

@@ -1171,14 +1171,40 @@ class SessionHelper:
                          allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock),
                          upload_handler=self._make_upload_handler(ws) if self.upload_policy.enabled else None,
                          bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only,
-                         inbox_handler=self._make_desktop_inbox_handler())
+                         inbox_handler=self._make_desktop_inbox_handler(ws))
 
-    def _make_desktop_inbox_handler(self):
+    def _make_desktop_inbox_handler(self, ws=None):
         if self.cfg.mode != "desktop":
             return None
 
         async def handle(args):
-            return await asyncio.to_thread(self.adapter.request, args)
+            if args.get('operation') == 'reply':
+                if ws is None or self.outbound_receipts.connection is not ws or not self.outbound_receipts.negotiated:
+                    return {'ok':False,'error':'confirmed_reply_unavailable'}
+                message_id,body=args.get('message_id'),args.get('body')
+                claim=await asyncio.to_thread(self.adapter.reserve_mcp_reply,message_id,body)
+                if not claim.get('ok'): return claim
+                if claim.get('already_confirmed'): return {'ok':True,'outcome':claim['outcome']}
+                try:
+                    outcome=await self._make_confirmed_send_handler(ws)(claim['target'],body,
+                        {'kind':'reply','in_reply_to':message_id,'conversation_terminal':True,'reply_policy':'no_reply'})
+                    await asyncio.to_thread(self.adapter.finish_mcp_reply,message_id,outcome)
+                    return {'ok':True,'outcome':outcome}
+                except BaseException as exc:
+                    from .outbound_receipt import OutboundRejected
+                    rejected=isinstance(exc,OutboundRejected)
+                    await asyncio.to_thread(self.adapter.finish_mcp_reply,message_id,rejected=rejected)
+                    if isinstance(exc,(asyncio.CancelledError,KeyboardInterrupt,SystemExit)): raise
+                    return {'ok':False,'error':'reply_rejected' if rejected else 'reply_outcome_uncertain'}
+            if args.get('operation') != 'wait':
+                return await asyncio.to_thread(self.adapter.request, args)
+            cancelled = threading.Event()
+            task = asyncio.create_task(asyncio.to_thread(self.adapter.wait_message, args, cancel_event=cancelled))
+            try:
+                return await asyncio.shield(task)
+            finally:
+                cancelled.set()
+                await asyncio.shield(task)
         return handle
 
     # ── R-V2-AGENT-FILE-UPLOAD ──────────────────────────────────────────

@@ -12,7 +12,8 @@ This file provides the MCP-facing half:
 The shim does NOT:
   • open its own network connections
   • manage authentication (identity is the already-authenticated sessionHelper)
-  • replace passive receive (pushing messages into a sleeping CLI stays with helper)
+  • start a new model turn in an idle desktop app (an explicit pending wait tool
+    can return new messages to its requesting conversation)
 """
 
 from __future__ import annotations
@@ -71,6 +72,12 @@ def register(name: str, description: str, input_schema: dict[str, Any]):
 
 # ── IPC client (B2: real Unix-socket call to sessionHelper) ──────────
 
+import threading
+import time
+
+_wait_context = threading.local()
+_stdout_lock = threading.Lock()
+
 import socket as _socket
 import uuid as _uuid
 
@@ -82,14 +89,14 @@ def _ipc_send(payload: dict[str, Any]) -> dict[str, Any]:
     return _ipc_request({"type": "mcp_send", **payload})
 
 
-def _ipc_request(payload: dict[str, Any]) -> dict[str, Any]:
+def _ipc_request(payload: dict[str, Any], *, timeout=None) -> dict[str, Any]:
     """Forward a validated send request to the live sessionHelper via a
     local Unix-domain socket, then return the helperʼs outcome."""
     payload["request_id"] = _uuid.uuid4().hex[:12]
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
 
     sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
-    sock.settimeout(_IPC_TIMEOUT)
+    sock.settimeout(_IPC_TIMEOUT if timeout is None else timeout)
     try:
         sock.connect(_IPC_SOCK)
         sock.sendall(body)
@@ -251,6 +258,61 @@ def _desktop_inbox(args):
     return _ipc_request({**args, "type": "desktop_inbox_v1"})
 
 
+@register("dw_wait_message", "在用户要求 DW 持续监听时调用：等待本机新消息交还当前 AI 会话。仅桌面模式；超时不是新消息，暂停/取消后停止等待。返回不代表 AI 已执行。", {
+    "type": "object", "properties": {"wait_seconds": {"type": "integer", "minimum": 1, "maximum": 45}},
+    "additionalProperties": False,
+})
+def _desktop_wait(args):
+    if not isinstance(args, dict) or set(args)-{'wait_seconds'}:
+        raise ValueError('invalid desktop wait arguments')
+    seconds = args.get('wait_seconds',45)
+    if type(seconds) is not int or not 1 <= seconds <= 45:
+        raise ValueError('wait_seconds must be 1..45')
+    cancelled = getattr(_wait_context, 'cancelled', threading.Event())
+    sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+    deadline = time.monotonic()+seconds+2
+    try:
+        sock.settimeout(2)
+        sock.connect(_IPC_SOCK)
+        sock.sendall((json.dumps({'type':'desktop_inbox_v1','operation':'wait','wait_seconds':seconds,'request_id':_uuid.uuid4().hex})+'\n').encode())
+        sock.settimeout(.1)
+        data = bytearray()
+        while b'\n' not in data:
+            if cancelled.is_set(): raise ValueError('desktop wait cancelled')
+            if time.monotonic() >= deadline: raise ValueError('desktop wait transport timeout')
+            try: chunk = sock.recv(4096)
+            except _socket.timeout: continue
+            if not chunk: raise ValueError('desktop wait disconnected')
+            data.extend(chunk)
+            if len(data)>512*1024: raise ValueError('desktop wait result exceeds limit')
+        result = json.loads(bytes(data).split(b'\n',1)[0])
+        if not isinstance(result,dict) or result.get('ok') is not True:
+            raise ValueError('desktop wait unavailable')
+        return result
+    except (OSError, RuntimeError):
+        raise ValueError('desktop wait unavailable') from None
+    finally:
+        sock.close()
+
+
+@register("dw_reply_message", "回复收到的 DW 消息：从原消息取目标，Hub 确认持久入队后才确认已处理。当前仅支持可靠 Agent 目标；结果不明时不要另发重试。", {
+    "type":"object","properties":{"message_id":{"type":"string"},"body":{"type":"string"}},
+    "required":["message_id","body"],"additionalProperties":False,
+})
+def _desktop_reply(args):
+    if not isinstance(args,dict) or set(args)!={'message_id','body'}:
+        raise ValueError('reply requires only message_id and body')
+    message_id,body=args['message_id'],args['body']
+    if not isinstance(message_id,str) or not 1<=len(message_id)<=256:
+        raise ValueError('invalid message_id')
+    if not isinstance(body,str) or not body.strip() or len(body.encode('utf-8'))>65536:
+        raise ValueError('invalid reply body')
+    try:
+        return _ipc_request({'type':'desktop_inbox_v1','operation':'reply','message_id':message_id,'body':body},timeout=12)
+    except (OSError,RuntimeError):
+        raise ValueError('reply outcome unavailable; do not blindly resend') from None
+
+
 # ── T18 MCP tool: heartbeat_report ────────────────────────────────────
 
 @register("heartbeat_report", "向 datad 自报心跳(状态+任务+卡点)", {
@@ -405,13 +467,34 @@ def _write(response: Response) -> None:
         body["error"] = response.error
     else:
         body["result"] = response.result
-    sys.stdout.write(json.dumps(body, ensure_ascii=False) + "\n")
-    sys.stdout.flush()
+    with _stdout_lock:
+        sys.stdout.write(json.dumps(body, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
 
 
 def serve() -> None:
-    """Blocking stdio read loop — read one line, dispatch, write response."""
+    """Read requests while a single bounded desktop wait runs concurrently."""
+    active_waits = {}
+    def start_wait(req):
+        cancelled = threading.Event()
+        def worker():
+            _wait_context.cancelled = cancelled
+            response = _dispatch(req)
+            if not cancelled.is_set(): _write(response)
+        thread = threading.Thread(target=worker, daemon=True)
+        active_waits[req.id] = (thread, cancelled)
+        thread.start()
+    try:
+        _serve_requests(active_waits, start_wait)
+    finally:
+        for thread, cancelled in list(active_waits.values()): cancelled.set()
+        for thread, _ in list(active_waits.values()): thread.join(timeout=1)
+
+
+def _serve_requests(active_waits, start_wait):
     for line in sys.stdin:
+        for key, (thread, _) in list(active_waits.items()):
+            if not thread.is_alive(): active_waits.pop(key, None)
         line = line.strip()
         if not line:
             continue
@@ -419,6 +502,14 @@ def serve() -> None:
             raw = json.loads(line)
         except json.JSONDecodeError:
             _write(Response(id=None, error={"code": -32700, "message": "parse error"}))
+            continue
+
+        # Request/cancellation IDs index the active wait. Never let malformed
+        # input crash the reader and strand that pending tool call.
+        if (not isinstance(raw, dict)
+                or raw.get('id') is not None and type(raw['id']) not in (str, int)
+                or raw.get('params') is not None and not isinstance(raw['params'], dict)):
+            _write(Response(id=None, error={"code": -32600, "message": "invalid request"}))
             continue
 
         req = Request(
@@ -431,10 +522,18 @@ def serve() -> None:
             _write(Response(id=req.id, error={"code": -32600, "message": "invalid request"}))
             continue
 
-        # notifications (no id) are silently dropped
         if req.id is None:
+            if req.method == 'notifications/cancelled' and isinstance(req.params,dict):
+                request_id = req.params.get('requestId')
+                entry = active_waits.get(request_id) if type(request_id) in (str, int) else None
+                if entry: entry[1].set()
             continue
-
+        if req.method == 'tools/call' and (req.params or {}).get('name') == 'dw_wait_message':
+            if active_waits:
+                _write(Response(id=req.id,error={'code':-32000,'message':'desktop wait already active'}))
+            else:
+                start_wait(req)
+            continue
         _write(_dispatch(req))
 
 

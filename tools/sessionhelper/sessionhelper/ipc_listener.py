@@ -362,7 +362,26 @@ async def _serve_socket_connection(conn: socket.socket, dispatch) -> None:
         reader = asyncio.StreamReader()
         reader.feed_data(line)
         reader.feed_eof()
-        await dispatch(reader, writer, fds)
+        try:
+            parsed = json.loads(line)
+        except (ValueError, UnicodeDecodeError):
+            parsed = {}
+        if not isinstance(parsed, dict): parsed = {}
+        if parsed.get('type') == 'desktop_inbox_v1' and parsed.get('operation') == 'wait':
+            # A cancelled MCP closes its IPC socket. Stop/join the wait rather
+            # than holding a helper thread until the full timeout.
+            work = asyncio.create_task(dispatch(reader, writer, fds))
+            disconnect = asyncio.create_task(loop.sock_recv(conn, 1))
+            try:
+                done, _ = await asyncio.wait((work, disconnect), return_when=asyncio.FIRST_COMPLETED)
+                if work in done:
+                    await work
+            finally:
+                for task in (work, disconnect):
+                    if not task.done(): task.cancel()
+                await asyncio.gather(work, disconnect, return_exceptions=True)
+        else:
+            await dispatch(reader, writer, fds)
     except (OSError, ConnectionError):
         pass
     finally:
@@ -440,3 +459,4 @@ async def serve_ipc(
         listener.close()
         for task in list(tasks):
             task.cancel()
+        await asyncio.gather(*list(tasks), return_exceptions=True)
