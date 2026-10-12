@@ -157,7 +157,7 @@ func TestOpenSpoolPool_RefusesHubDB(t *testing.T) {
 	if err := rows.Err(); err != nil {
 		t.Fatalf("遍历账失败: %v", err)
 	}
-	if strings.Join(versions, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql" {
+	if strings.Join(versions, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql" {
 		t.Errorf("Hub 库的账被动了：%v", versions)
 	}
 }

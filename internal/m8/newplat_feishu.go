@@ -24,10 +24,13 @@ const untrustedIngressReply = "拒绝：消息来源未通过可信入站认证�
 
 func parseNewPlatformCommand(text string) (verb, code string, ok bool) {
 	fields := strings.Fields(strings.TrimSpace(text))
-	if len(fields) != 2 || (fields[0] != consoleLoginVerb && fields[0] != newPlatformRegisterVerb) {
+	if len(fields) != 2 || (fields[0] != consoleLoginVerb && fields[0] != newPlatformRegisterVerb && fields[0] != "#pair") {
 		return "", "", false
 	}
 	c := identity.NormalizeCode(fields[1])
+	if fields[0] == "#pair" {
+		return fields[0], c, identity.ValidClaimCode(c)
+	}
 	if len(c) != 8 {
 		return "", "", false
 	}
@@ -52,7 +55,13 @@ func (h *Hub) dispatchNewPlatformCommand(ctx context.Context, msg model.Message,
 	}
 	sender := identity.Identity{Provider: "feishu", Issuer: strings.TrimSpace(msg.BotChannelID), Subject: strings.TrimSpace(msg.SenderOpenID)}
 	var reply string
-	if verb == newPlatformRegisterVerb {
+	if verb == "#pair" {
+		if msg.ChatType != model.ChatPersonal || sender.Issuer == "" || sender.Subject == "" {
+			reply = "请通过官方飞书机器人的私聊完成配对。"
+		} else {
+			reply = h.Onboarding.HandleDeviceClaim(ctx, sender, code)
+		}
+	} else if verb == newPlatformRegisterVerb {
 		reply = h.Onboarding.HandleRegister(ctx, sender, code)
 	} else if sender.Subject == "" {
 		reply = "无法确认发送者身份，登录被拒绝。"

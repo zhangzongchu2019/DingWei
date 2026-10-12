@@ -73,7 +73,7 @@ func TestPGStoreCheckSchema(t *testing.T) {
 	ctx := context.Background()
 	s := identity.NewPGStore(pool)
 	err := s.CheckSchema(ctx)
-	if err == nil || !strings.Contains(err.Error(), "np_user, np_identity, np_registration_code, np_session, np_agent, np_enroll_application, np_group, np_group_member, audit_log") {
+	if err == nil || !strings.Contains(err.Error(), "np_user, np_identity, np_registration_code, np_session, np_agent, np_enroll_application, np_group, np_group_member, audit_log, np_device_claim") {
 		t.Fatalf("empty schema: %v", err)
 	}
 	for _, ddl := range identitytest.PGTestSchema() {

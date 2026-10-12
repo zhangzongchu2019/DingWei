@@ -253,6 +253,10 @@ class SessionHelper:
         self.install_upload_command()
 
     def _build_adapter(self) -> Adapter:
+        if self.cfg.mode == "desktop":
+            from .desktop import DesktopAdapter
+
+            return DesktopAdapter(self.cfg)
         if self.cfg.mode == "driver":
             from .driver_adapter import DriverAdapter
 
@@ -532,7 +536,9 @@ class SessionHelper:
              "persistent_inbox_v1": True, "agent_route_v2": True,
              "unified_queue_v1": self.cfg.mode == "driver",
              "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),
-             "processed_semantics": "accepted_to_cli", "helper_version": __version__,
+             "desktop_inbox_v1": self.cfg.mode == "desktop",
+             "processed_semantics": "saved_to_desktop_inbox" if self.cfg.mode == "desktop" else "accepted_to_cli",
+             "helper_version": __version__,
              # 只作 Hub 统计（组长裁定 C）；附注是否附加由 upload_addendum_due 在合并时自判。
              "file_upload_v1": self.upload_configured()},
         )
@@ -922,15 +928,15 @@ class SessionHelper:
         body = str(env.get("body") or "")
         if (env.get("meta") or {}).get("type") == "online_directory" or is_online_directory_text(body):
             await asyncio.to_thread(self.write_online_list, body)
-            await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed"), ensure_ascii=False))
+            await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed", reason="desktop_inbox_saved" if self.cfg.mode == "desktop" else ""), ensure_ascii=False))
             print(f"[roster] delivery list written; skipped cli injection delivery_id={delivery_id}", flush=True)
             return
         if is_client_onboarding_text(body):
-            await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed"), ensure_ascii=False))
+            await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed", reason="desktop_inbox_saved" if self.cfg.mode == "desktop" else ""), ensure_ascii=False))
             print(f"[onboarding] skipped delivery cli injection delivery_id={delivery_id}", flush=True)
             return
         if self.is_agent_network_skill(env):
-            await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed"), ensure_ascii=False))
+            await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed", reason="desktop_inbox_saved" if self.cfg.mode == "desktop" else ""), ensure_ascii=False))
             if self.comm_skill_installed:
                 await ws.send(json.dumps(comm_skill_ack_envelope(self.book), ensure_ascii=False))
             print(f"[agent_skill] skipped delivery cli injection delivery_id={delivery_id}", flush=True)
@@ -1051,7 +1057,7 @@ class SessionHelper:
             else:
                 await asyncio.to_thread(self.delivery_inbox.finish, delivery_id)
                 self.delivery_busy_acked.discard(delivery_id)
-                await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed"), ensure_ascii=False))
+                await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed", reason="desktop_inbox_saved" if self.cfg.mode == "desktop" else ""), ensure_ascii=False))
 
     def reply_body(self, env: dict, reply_body: str) -> str:
         prefix = str((env.get("meta") or {}).get("reply_prefix") or f"【{self.cfg.session_name}】")
@@ -1150,7 +1156,16 @@ class SessionHelper:
                          file_handler=self._make_file_handler(ws),
                          allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock),
                          upload_handler=self._make_upload_handler(ws) if self.upload_policy.enabled else None,
-                         bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only)
+                         bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only,
+                         inbox_handler=self._make_desktop_inbox_handler())
+
+    def _make_desktop_inbox_handler(self):
+        if self.cfg.mode != "desktop":
+            return None
+
+        async def handle(args):
+            return await asyncio.to_thread(self.adapter.request, args)
+        return handle
 
     # ── R-V2-AGENT-FILE-UPLOAD ──────────────────────────────────────────
 
@@ -1533,7 +1548,10 @@ def main() -> None:
     credential, state_dir, env = None, "", None
     if enroll.enabled_for_env(os.environ):
         def show(code: str) -> None:
-            print(f"[sessionHelper] 配对码 {code}  —— 请在 console「自备 Agent 审核」里核对并通过", flush=True)
+            if env_get("SH_ENROLL_METHOD") == "feishu":
+                print(f"[sessionHelper] 请将 {code} 私发给当前 Hub 的官方飞书机器人，完成开户与设备配对。", flush=True)
+            else:
+                print(f"[sessionHelper] 配对码 {code}  —— 请在 console「自备 Agent 审核」里核对并通过", flush=True)
         try:
             env, credential, state_dir = enroll.prepare_client_env(os.environ, show=show, notify=SessionHelper._enroll_say)
         except enroll.EnrollError as exc:

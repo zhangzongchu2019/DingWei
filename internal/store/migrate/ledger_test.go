@@ -51,8 +51,8 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 	}
 	// 🔴 这份名单写死是有意的（与上面「缺表名单」同理）：它钉的是【Hub 域里到底有哪几条】，
 	// 引 LedgerInDomains() 去比就变成自己比自己。加一条 Hub 域条目 ⇒ 改这里，红一次是应当的。
-	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql" {
-		t.Errorf("Applied = %v，要 Hub 域三条按字典序（0400 属 fanout 域，不得进 Hub 库）", rep.Applied)
+	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql" {
+		t.Errorf("Applied = %v，要 Hub 域四条按字典序（0400 属 fanout 域，不得进 Hub 库）", rep.Applied)
 	}
 	if err := identity.NewPGStore(pool).CheckSchema(ctx); err != nil {
 		t.Fatalf("跑完账本 CheckSchema 仍失败: %v", err)
@@ -64,7 +64,7 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 			t.Errorf("Hub 库里出现了 fanout 域的表 %s —— HubDomains() 不含 fanout（裁定 R-G2-LEDGER-DOMAIN）", tbl)
 		}
 	}
-	// 账本自己也记了账（Hub 域三条，digest 与内嵌正文一致）。
+	// 账本自己也记了账（Hub 域四条，digest 与内嵌正文一致）。
 	rows := ledgerRows(t, pool)
 	entries, err := LedgerInDomains(HubDomains())
 	if err != nil {
@@ -83,8 +83,8 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("重跑 Migrate: %v", err)
 	}
-	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 3 {
-		t.Errorf("重跑 Applied=%v Skipped=%v，要空转三条", rep2.Applied, rep2.Skipped)
+	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 4 {
+		t.Errorf("重跑 Applied=%v Skipped=%v，要空转四条", rep2.Applied, rep2.Skipped)
 	}
 }
 
@@ -190,8 +190,8 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 	aTables := baseTables(t, trackA, schemaOf(t, trackA))
 	// 13 ＝ 身份域 8 ＋ fanout 域 5（outbound／inbound_msg／inbound_sink／waive_audit／selfcheck，
 	// R-G2-FANOUT-HARDEN ① 把五表收口进 internal/fanout/pgschema.sql 后才有这一项）。
-	if len(aTables) != 13 {
-		t.Fatalf("轨 A 建出 %d 张表（%v），要 13 张＝身份域 8（G3 终版 800f24d8：原 6 张＋编组两张）"+
+	if len(aTables) != 14 {
+		t.Fatalf("轨 A 建出 %d 张表（%v），要 14 张＝身份域 9（G3 终版 800f24d8：原 6 张＋编组两张＋设备认领一张）"+
 			"＋ fanout 域 5（0400）", len(aTables), aTables)
 	}
 

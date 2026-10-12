@@ -19,7 +19,9 @@ import (
 
 // API 路由与依赖。
 type API struct {
-	Svc *identity.Service
+	Svc       *identity.Service
+	Claims    *identity.Onboarding
+	ClaimBots func(context.Context) ([]ClaimBot, error)
 	// Actor 取当前 console 用户的 user_id_lc。未登录返回非 nil 错误；必须改密的会话返回 identity.ErrMustChange
 	// （组长裁定 140013Z ②：必须改密访问任何 /api/console/* 一律 403 must_change_password，与 N3 自己的接口同口径）。
 	Actor func(r *http.Request) (userIDLC string, err error)
@@ -44,6 +46,9 @@ type Mux interface {
 
 // Register 挂到 mux（Go 1.22 方法＋路径写法，与 cmd/workpulse/main.go 一致）。
 func (a *API) Register(mux Mux) {
+	mux.HandleFunc("POST /api/enroll/claims", a.claimApply)
+	mux.HandleFunc("GET /api/enroll/claims/{id}", a.claimPoll)
+	mux.HandleFunc("POST /api/enroll/claims/{id}/ack", a.claimAck)
 	mux.HandleFunc("POST /api/enroll/applications", a.apply)
 	mux.HandleFunc("GET /api/enroll/applications/{id}", a.poll)
 	mux.HandleFunc("GET /api/console/enroll/applications", a.console(a.listPending))
@@ -107,6 +112,10 @@ func mapErr(w http.ResponseWriter, err error) {
 		writeErr(w, http.StatusTooManyRequests, "rate_limited", map[string]any{"retry_after_s": secs})
 	case errors.As(err, &pm):
 		writeErr(w, http.StatusUnprocessableEntity, "pairing_mismatch", map[string]any{"remaining": pm.Remaining, "rejected": pm.Rejected})
+	case errors.Is(err, identity.ErrConflict):
+		writeErr(w, http.StatusConflict, "conflict", nil)
+	case errors.Is(err, identity.ErrNotAllowed):
+		writeErr(w, http.StatusForbidden, "not_allowed", nil)
 	case errors.Is(err, identity.ErrBadRequest):
 		writeErr(w, http.StatusBadRequest, "bad_request", nil)
 	case errors.Is(err, identity.ErrUnknownOwner):

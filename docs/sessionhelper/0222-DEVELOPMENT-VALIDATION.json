@@ -1,0 +1,62 @@
+{
+  "recorded_utc": "2026-10-12T02:51:17.124958+00:00",
+  "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
+  "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
+  "candidate_version": "0.2.2.2",
+  "checks": {
+    "canonical": "PASS python=25 shell=1",
+    "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
+    "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
+    "all_go": "NOT_ALL_GREEN: parallel suite had migration expectation and timing failures; expectation fixed, isolated reruns passed; serial suite still timed out TestShortSessionSelectorRejectsAmbiguousOwnerMatch, isolated rerun passed. Full-suite stability remains open.",
+    "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
+    "helper_all_discovery": "RUNNING; not counted as passed; focused helper regression previously passed145 tests"
+  },
+  "required_before_release": [
+    "Independent code review",
+    "Full Go suite failure investigation on fixed commit",
+    "Actual PM OS and Codex desktop version",
+    "Same native desktop session receive/notify/reply runtime validation",
+    "Windows IPC if required for target PM",
+    "Real CLI install/native authorization/model call per chosen mode",
+    "Real Feishu new-account/existing-account/device pairing test",
+    "Source/frozen installer packaging and recovery verification"
+  ],
+  "production_actions": 0,
+  "evidence": [
+    {
+      "name": "canonical-final.log",
+      "bytes": 8764,
+      "sha256": "edffbaaf9f07ec3844fcf964f32877be6dead40a3d3d00a8ccc4e83a20b627f4"
+    },
+    {
+      "name": "changed-surfaces-final.log",
+      "bytes": 334,
+      "sha256": "3be145f9cedf534395cfa39c68140ee3a12924d8d5e9af4971cf4e8ed2071a16"
+    },
+    {
+      "name": "desktop-delivery.log",
+      "bytes": 60,
+      "sha256": "87ded0258b1c35df6219159f1dc532867667e7608975615766bf0d65b7afea74"
+    },
+    {
+      "name": "go-all.log",
+      "bytes": 289515,
+      "sha256": "6fa858982cf538d88c4fff4ad245e07ba48c280dcbe10e5a68fc9bfd7b6f12dd"
+    },
+    {
+      "name": "go-all-serial.log",
+      "bytes": 284764,
+      "sha256": "769927fdf316914c7c58942b31b05fc01c336f85ef082d2a7fc9fbc0803877f6"
+    },
+    {
+      "name": "m8-serial-targeted.log",
+      "bytes": 60,
+      "sha256": "762a1d74ef6722fdb7d40a2518a2cb7963d8f50a69afe8ac046282f074389df9"
+    },
+    {
+      "name": "desktop-private-file-final.log",
+      "bytes": 156,
+      "sha256": "a0e0bc43321c8bf2194efd9c08a6b51ee5dd75d753fe9cc2b1edb5f9745bcb56"
+    }
+  ]
+}

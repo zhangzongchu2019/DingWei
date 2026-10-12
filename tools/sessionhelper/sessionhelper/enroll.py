@@ -132,6 +132,11 @@ class UrllibTransport:
         )
         return self._call(req)
 
+    def post_authenticated(self, path: str, body: dict, headers: dict[str, str]) -> dict:
+        req = urllib.request.Request(self.base_url + path, data=json.dumps(body).encode("utf-8"),
+                                     method="POST", headers={"Content-Type": "application/json", **headers})
+        return self._call(req)
+
     def get_json(self, path: str, headers: dict[str, str]) -> dict:
         return self._call(urllib.request.Request(self.base_url + path, headers=headers))
 
@@ -160,6 +165,12 @@ def write_private_file(path: str, data: str) -> None:
             fh.flush()
             os.fsync(fh.fileno())
         os.replace(tmp, path)
+        if hasattr(os, "O_DIRECTORY"):
+            dir_fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(dir_fd)
+            finally:
+                os.close(dir_fd)
     except BaseException:
         try:
             os.unlink(tmp)
@@ -558,6 +569,13 @@ def prepare_client_env(environ, *, show: Callable[[str], None], notify: Callable
     if os.path.exists(token_file) or _load_pending(state_dir, "hosted"):
         # hosted seat: the platform put a one-time token file in the container; no owner, no pairing code
         cred = enroll_with_token(state_dir=state_dir, token_file=token_file, transport=transport, notify=notify, now=now)
+    elif env.get("SH_ENROLL_METHOD") == "feishu":
+        from .claim_enroll import claim_enroll
+        cred = claim_enroll(state_dir=state_dir, owner=env.get("SH_ENROLL_OWNER", ""),
+                            short_name=env.get("SH_ENROLL_SHORT_NAME", ""),
+                            agent_name=env.get("SH_ENROLL_AGENT_NAME", ""),
+                            mode=env.get("SH_MODE", "driver"), transport=transport,
+                            show=show, notify=notify)
     else:
         cred = enroll(
             state_dir=state_dir, owner=env.get("SH_ENROLL_OWNER", ""),

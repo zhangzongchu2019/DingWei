@@ -10,6 +10,7 @@ import (
 // MemStore 是 Store 的内存实现：G3 在 R0 的 PG 测试环境就绪前用它跑契约测试与 Hub 侧集成用例。
 // 一把互斥锁保护全部状态，每个方法即一个"事务"。返回值一律是副本。
 type MemStore struct {
+	claims     map[string]*DeviceClaim
 	mu         sync.Mutex
 	users      map[string]*User    // user_id_lc → user
 	shortNames map[string]string   // short_name_lc → user_id_lc

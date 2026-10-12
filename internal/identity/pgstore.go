@@ -36,7 +36,7 @@ func NewPGStore(pool *repo.Pool) *PGStore {
 }
 
 // pgRequiredTables 身份存储要用的表：本包 pgschema.sql 的八张，加复用的 audit_log（由 G2 的迁移账本建）。
-var pgRequiredTables = []string{"np_user", "np_identity", "np_registration_code", "np_session", "np_agent", "np_enroll_application", "np_group", "np_group_member", "audit_log"}
+var pgRequiredTables = []string{"np_user", "np_identity", "np_registration_code", "np_session", "np_agent", "np_enroll_application", "np_group", "np_group_member", "audit_log", "np_device_claim"}
 
 // CheckSchema 表都在才返回 nil；缺表时报出缺哪几张。本包不自行建表 —— 建表归迁移账本，
 // Hub 与初始化脚本启动时据此拒绝在没建好表的库上运行，不在半套表上写入。

@@ -155,7 +155,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	}
 	// 页面只认真实装配结果；不能按 env、pool 非空或浏览器 404 猜测。
 	hub.SetConsoleHostedPageEnabled(hostedOn)
-	api := &httpapi.API{Svc: svc, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline, Hosted: cfg.hosted}
+	api := &httpapi.API{Svc: svc, Claims: ob, ClaimBots: hub.ClaimGuidance, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline, Hosted: cfg.hosted}
 	n3.Register(mux)
 	api.Register(mux)
 	mux.HandleFunc("GET /ws/agent", hub.HandleAgentWS)

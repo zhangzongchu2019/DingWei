@@ -66,20 +66,23 @@ class DriverAdapter:
     def _build_driver(self, which: str):
         # 按机器取路径,别写死 pilot 开发机路径(否则每台都挂):
         cwd = env_get("SH_CLI_CWD") or os.path.expanduser("~")
-        store = os.path.join(os.path.expanduser("~"), f".dw-{which}-ledger.sqlite3")
+        store = (os.path.join(self.cfg.state_dir, f"{which}-ledger.sqlite3") if getattr(self.cfg, "state_dir", "")
+                 else os.path.join(os.path.expanduser("~"), f".dw-{which}-ledger.sqlite3"))
+        model = getattr(self.cfg, "model", "")
         if which == "claude":
-            from .claudeDriver import ClaudeProtocolDriver
-            return ClaudeProtocolDriver(store_path=store, cwd=cwd)
+            from .claudeDriver import ClaudeProtocolDriver, DEFAULT_CMD
+            cmd = [*DEFAULT_CMD, "--model", model] if model else None
+            return ClaudeProtocolDriver(store_path=store, cwd=cwd, cmd=cmd)
         if which == "opencode":
             from .openCodeDriver import OpenCodeProtocolDriver
             pw = env_get("OPENCODE_SERVER_PASSWORD", "pilotpw")
             port = int(env_get("SH_OPENCODE_PORT", "19300"))
             return OpenCodeProtocolDriver(password=pw, port=port, workdir=cwd,
-                                          model=env_get("SH_OPENCODE_MODEL", "deepseek-anthropic/deepseek-v4-pro"),
+                                          model=model or env_get("SH_OPENCODE_MODEL", "deepseek-anthropic/deepseek-v4-pro"),
                                           store_path=store)
         # 默认 codex —— sandbox/approval 给足权限(对齐 claude 的 --dangerously-skip-permissions 意图),可用 env 收紧
         from .codexDriver import CodexProtocolDriver
-        return CodexProtocolDriver(store_path=store, workdir=cwd,
+        return CodexProtocolDriver(store_path=store, workdir=cwd, model=model or None,
                                    sandbox=env_get("SH_CODEX_SANDBOX", "danger-full-access"),
                                    approval_policy=env_get("SH_CODEX_APPROVAL", "never"))
 

@@ -191,6 +191,7 @@ type sessionClient struct {
 	skillInstalled bool
 	skillCancel    context.CancelFunc
 	deliveryACKV1  bool
+	desktopInboxV1 bool
 	helperReady    bool
 	deviceID       string
 	deviceIDV1     bool
@@ -4096,6 +4097,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	wasDeliveryACKV1 := c.deliveryACKV1
 	c.helperReady = true
 	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
+	c.desktopInboxV1 = metaBool(env.Meta, "desktop_inbox_v1") && metaString(env.Meta, "processed_semantics") == "saved_to_desktop_inbox"
 	c.stateMu.Unlock()
 	if metaBool(env.Meta, "file_upload_v1") {
 		// 只作统计（组长裁定 C）：上传说明由 helper 自行附加，Hub 不据此下发任何内容。
@@ -4191,6 +4193,13 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	if d.KeyID != c.keyID || d.SessionName != c.sessionName || d.State == "dead" || d.State == "cancelled" {
 		return true
 	}
+	c.stateMu.Lock()
+	desktopInbox := c.desktopInboxV1
+	c.stateMu.Unlock()
+	// Durable desktop receipt completes transport only, not model admission.
+	if state == "injected" && desktopInbox {
+		return true
+	}
 	if state == "injected" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "injected", "", time.Now().UTC())
 		h.publishDeliveryUpdateForDelivery(*d, "injected", "cli_injected", "", "")
@@ -4201,7 +4210,11 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	} else if state == "processed" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "processed", "", time.Now().UTC())
 		if d.State != "injected" {
-			h.publishDeliveryUpdateForDelivery(*d, "processed", "cli_injected", "", "")
+			if desktopInbox {
+				h.publishDeliveryUpdateForDelivery(*d, "processed", "helper_received", "", "desktop_inbox_saved")
+			} else {
+				h.publishDeliveryUpdateForDelivery(*d, "processed", "cli_injected", "", "")
+			}
 		}
 		if d.SourceMessageID != "" {
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)

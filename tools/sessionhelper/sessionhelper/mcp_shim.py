@@ -72,6 +72,10 @@ _IPC_TIMEOUT = 5.0
 
 
 def _ipc_send(payload: dict[str, Any]) -> dict[str, Any]:
+    return _ipc_request({"type": "mcp_send", **payload})
+
+
+def _ipc_request(payload: dict[str, Any]) -> dict[str, Any]:
     """Forward a validated send request to the live sessionHelper via a
     local Unix-domain socket, then return the helperʼs outcome."""
     payload["request_id"] = _uuid.uuid4().hex[:12]
@@ -216,6 +220,28 @@ def _send_message(args: dict[str, Any]) -> dict[str, Any]:
             raise ValueError(f"cannot read file: {exc}") from exc
 
     return _ipc_send(payload)
+
+
+@register("dw_inbox", "查询本机桌面收件箱，读取、确认消息或暂停接收处理。接收不等于 AI 已执行。", {
+    "type": "object",
+    "properties": {
+        "operation": {"type": "string", "enum": ["status", "list", "read", "ack", "pause", "resume"]},
+        "message_id": {"type": "string"},
+        "limit": {"type": "integer", "minimum": 1, "maximum": 100},
+    },
+    "required": ["operation"],
+    "additionalProperties": False,
+})
+def _desktop_inbox(args):
+    if not isinstance(args, dict) or set(args) - {"operation", "message_id", "limit"}:
+        raise ValueError("unsupported inbox arguments")
+    if args.get("operation") not in {"status", "list", "read", "ack", "pause", "resume"}:
+        raise ValueError("unsupported inbox operation")
+    if "limit" in args and (type(args["limit"]) is not int or not 1 <= args["limit"] <= 100):
+        raise ValueError("limit must be 1..100")
+    if "message_id" in args and (not isinstance(args["message_id"], str) or not 1 <= len(args["message_id"]) <= 256):
+        raise ValueError("invalid message_id")
+    return _ipc_request({**args, "type": "desktop_inbox_v1"})
 
 
 # ── T18 MCP tool: heartbeat_report ────────────────────────────────────

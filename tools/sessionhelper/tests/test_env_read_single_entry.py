@@ -11,6 +11,7 @@ from pathlib import Path
 PKG = Path(__file__).resolve().parents[1] / "sessionhelper"
 
 ALLOWED = {
+    "setup.py": (1, "向导启动入口仅把已验证的非秘密 profile 写入环境以启动 helper，不读取任意环境键"),
     "config.py": (3, "统一入口本身：env_get 的实现，以及 load_config / detect_full_session_name "
                      "的 `env or os.environ` 缺省（调用方可传入替代的 env 字典）"),
     "claudeDriver.py": (1, "dict(os.environ)：把整份环境透传给子进程，语义是继承而非读配置值"),

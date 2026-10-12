@@ -13,6 +13,11 @@ a = Analysis(
     datas=[],
     hiddenimports=[
         "sessionhelper.app",
+        "sessionhelper.launch",
+        "sessionhelper.setup",
+        "sessionhelper.desktop",
+        "sessionhelper.claim_enroll",
+        "sessionhelper.mcp_shim",
         "sessionhelper.cli",
         "sessionhelper.config",
         "sessionhelper.contract",
