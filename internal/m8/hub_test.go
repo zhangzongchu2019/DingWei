@@ -3936,6 +3936,8 @@ func TestMirrorCommandDMControlsSessionAndGroupIgnored(t *testing.T) {
 	defer srv.Close()
 	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
 	defer home.Close(websocket.StatusNormalClosure, "done")
+	// A received guide precedes runtime publication; wait for the actual route barrier.
+	awaitMirrorRuntime(t, hub, key.ID, "home")
 
 	result, err := hub.Dispatch(ctx, model.Message{ID: "m1", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "mirror on home")
 	if err != nil {
