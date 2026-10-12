@@ -82,6 +82,9 @@ func exerciseR4Control(t *testing.T, h *Hub, store *identity.PGStore, base strin
 	if code != 200 {
 		t.Fatalf("reset: %d %v", code, newMeta)
 	}
+	if code, _ := request("PUT", path, token, base, req); code != 409 {
+		t.Fatalf("old cached request after reset: %d", code)
+	}
 	fresh, _ := muxScopes(f)
 	if fresh["agent00.owner"].Generation == generation || fresh["agent00.owner"].Round != 2 || fresh["agent04.owner"].Generation != old["agent04.owner"].Generation {
 		t.Fatal("reset scope isolation")

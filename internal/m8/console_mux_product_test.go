@@ -1,6 +1,7 @@
 package m8
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -126,7 +127,28 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 	mux.HandleFunc("GET /api/console/event-context", h.HandleConsoleMuxContext)
 	mux.HandleFunc("POST /api/console/event-feeds", h.HandleConsoleMuxCreate)
 	mux.HandleFunc("GET /api/console/event-feeds/{feed_id}", h.HandleConsoleMuxMetadata)
-	mux.HandleFunc("PUT /api/console/event-feeds/{feed_id}", h.HandleConsoleMuxReplace)
+	mux.HandleFunc("PUT /api/console/event-feeds/{feed_id}", func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		r.Body = io.NopCloser(bytes.NewReader(raw))
+		var req consoleMuxControl
+		json.Unmarshal(raw, &req)
+		before := map[string]string{}
+		h.consoleMux.mu.Lock()
+		f := h.consoleMux.feeds[r.PathValue("feed_id")]
+		h.consoleMux.mu.Unlock()
+		if f != nil {
+			f.mu.Lock()
+			for k, sc := range f.Scopes {
+				before[k] = sc.Generation
+			}
+			f.mu.Unlock()
+		}
+		tap := &muxControlStatusTap{ResponseWriter: w}
+		h.HandleConsoleMuxReplace(tap, r)
+		if tap.status == 400 {
+			t.Logf("CONTROL400 applied=%+v active_generations=%v", req.Applied, before)
+		}
+	})
 	mux.HandleFunc("DELETE /api/console/event-feeds/{feed_id}", h.HandleConsoleMuxDelete)
 	mux.HandleFunc("GET /api/console/event-feeds/{feed_id}/events", func(w http.ResponseWriter, r *http.Request) {
 		h.HandleConsoleMuxEvents(&muxOutputTap{ResponseWriter: w, e: evidence}, r)
@@ -241,7 +263,11 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 		for i := 0; i < 1002; i++ {
 			h.publishSessionEvent(AgentKeyID("owner"), "agent05", fmt.Sprintf(`{"kind":"assistant_text","text":"history-cut-%d","turn_id":"history-cut"}`, i))
 		}
-		w.WriteHeader(204)
+		f.mu.Lock()
+		agent := f.Scopes["agent05.owner"].Agent
+		f.mu.Unlock()
+		snap, _ := h.consoleMuxSnapshot(agent)
+		muxJSON(w, 200, map[string]string{"epoch": snap.Epoch, "H": muxSeq(snap.H)})
 	})
 	mux.HandleFunc("POST /test-maximum/{name}", func(w http.ResponseWriter, r *http.Request) { handleMuxMaximumFrame(h, w, r) })
 	mux.HandleFunc("POST /test-ring-resource-load", func(w http.ResponseWriter, r *http.Request) {
@@ -364,4 +390,14 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 	if resetMode {
 		t.Log("RESET_REAL_CHAIN PG transaction/Onboarding reset: both old sessions denied; old password denied; temporary login must-change and mux denied; change-password restores fresh authority; old cookies remain denied; no reset callback installed")
 	}
+}
+
+type muxControlStatusTap struct {
+	http.ResponseWriter
+	status int
+}
+
+func (w *muxControlStatusTap) WriteHeader(code int) {
+	w.status = code
+	w.ResponseWriter.WriteHeader(code)
 }

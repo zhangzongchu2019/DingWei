@@ -98,14 +98,16 @@ function chromeRSS(root){const fs=require('node:fs'),rows=new Map();for(const pi
   await oldFrame.evaluate(()=>{document.getElementById('humanInput').value='history-reset-draft';});
   const before=resetRequests.length;
   const activeID=new URL(long.at(-1)).pathname.split('/')[4];
-  const result=await page.evaluate(async fid=>(await fetch('/test-reset-history?feed_id='+fid,{method:'POST'})).status,activeID);
-  assert.equal(result,204);
+  const result=await page.evaluate(async fid=>{const r=await fetch('/test-reset-history?feed_id='+fid,{method:'POST'});return {status:r.status,cut:await r.json()};},activeID);
+  assert.equal(result.status,200);
   await page.waitForFunction(()=>tabs.get('agent05.owner').pane.dataset.resyncRequired==='true',{timeout:12000});
   await new Promise(r=>setTimeout(r,300));assert.equal(resetRequests.length,before,'no automatic reset intent');
   assert.equal(await oldFrame.evaluate(()=>document.getElementById('humanInput').value),'history-reset-draft');
   await page.evaluate(()=>{closeTab('agent05.owner');openTab('agent05.owner');});
   let rebuilt;for(let i=0;i<300;i++){rebuilt=page.frames().find(f=>f.url().includes('/view/agent05.owner')&&f!==oldFrame);if(rebuilt)break;await new Promise(r=>setTimeout(r,10));}
-  assert.ok(rebuilt);await rebuilt.waitForFunction(()=>document.body.textContent.includes('history-cut-1001'),{timeout:20000});
+  assert.ok(rebuilt);try{await rebuilt.waitForFunction(()=>document.body.textContent.includes('history-cut-2'),{timeout:20000});}catch(e){console.log(JSON.stringify({r4_reset_diagnostics:diagnostics,status:await page.evaluate(()=>document.getElementById('consoleMuxStatus')?.textContent),pane:await page.evaluate(()=>({...tabs.get('agent05.owner').pane.dataset})),tail:await rebuilt.evaluate(()=>document.body.textContent.slice(-500)),acks:appliedRecords.filter(v=>v.name==='agent05.owner').slice(-8),reset_count:resetRequests.length}));throw e;}
+  for(let i=0;i<2000&&appliedRecords.filter(v=>v.name==='agent05.owner').at(-1)?.after!==result.cut.epoch+'-'+result.cut.H;i++)await new Promise(r=>setTimeout(r,10));
+  assert.equal(appliedRecords.filter(v=>v.name==='agent05.owner').at(-1)?.after,result.cut.epoch+'-'+result.cut.H,'all retained frames actually applied; long group intentionally folds visible suffix');
   assert.ok(resetRequests.length>before,'history rebuild has explicit reset_request_id');
   assert.ok(await page.evaluate(()=>tabs.get('agent05.owner').pane.dataset.historyWarning?.includes('明确重建')));
   console.log(JSON.stringify({r4_history_gap:true,no_auto_reset:true,draft_retained_until_close:true,explicit_bound_reset:true,retained_suffix_rebuilt:true}));

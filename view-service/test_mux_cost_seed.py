@@ -48,3 +48,11 @@ class CostSeedTest(unittest.TestCase):
         with self.assertRaises(sqlite3.Error):self.p.require_legacy_seed(self.legacy)
         self.p.seed(self.rows(),'approved');self.p.require_legacy_seed(self.legacy)
         with self.assertRaises(ValueError):self.p.seed(self.rows(),'different')
+
+    def test_idempotent_repeat_can_validate_advanced_cut_without_overwrite(self):
+        self.p.seed(self.rows(),'approved')
+        self.p.apply('stable-id','new.owner','deadbeef-9007199254740994',dict(kind='state_change',data=dict(change='turn_completed',cost_usd=15)))
+        fresh=copy.deepcopy(self.authority);fresh['agents'][0]['H']='9007199254740994'
+        rows=validate_seed(self.legacy,self.mapping,fresh,'t',already_seeded=self.p.has_seed('approved'))
+        self.assertFalse(self.p.seed(rows,'approved'))
+        self.assertEqual(self.p.status('stable-id')['turns'],8)
