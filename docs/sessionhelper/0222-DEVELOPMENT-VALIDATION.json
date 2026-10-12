@@ -1,5 +1,5 @@
 {
-  "recorded_utc": "2026-10-12T15:13:22.786675+00:00",
+  "recorded_utc": "2026-10-12T15:25:26.132001+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
@@ -7,7 +7,7 @@
     "canonical": "PASS35 Python files+2shell including8 Stop-hook tests, actual local Hub/PG/MCP13 cases. No actual Mac/Codex/model/Feishu platform acceptance.",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
-    "all_go": "LATEST FULL RUN rc1: 45 package passes,3 failures,12 no-test packages;2425 passing test/subtest events,2 failures,20 skips. B3 async-observation fixture fixed: fresh workpulse whole package rc0 plus focused race count5 rc0. Hosted240s timeout/nodegate deadline fixture failure remain unclosed; prior PASS is historical, not current all-Go PASS.",
+    "all_go": "Original full run rc1 retained:45 package passes/3failures/12no-test;20test skips. Fresh failed-package verification closes B3 async observation (workpulse package rc0/race5), node registration observation (nodegate package rc0/race10), Hosted package deadline (600s harness budget, rc0,229 test/subtest passes). Composite evidence, not fresh whole-suite PASS; no product runtime change or actualMac/model/Feishu acceptance.",
     "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
     "helper_all_discovery": "PASS553 in284.444s prior to delayed-pilot delta; delayed-pilot covered by final21 targeted + canonical31 + frozen local smoke. No claim of a fresh555 full-discovery run.",
     "frozen_linux_candidate": "PASS Linux development frozen10764712B/f67bfc6744d82263e490feb007f15d7a5103e45be9cdc3032aa37ca3ec7fb87a: standard local smoke plus actual packaged Stop request/other-session refusal/process-reopen dedup. Zero Hub/model calls; no native Mac/GUI proof. Built from workingtree before final commit.",
@@ -707,5 +707,69 @@
     "actual_mac_model_feishu_acceptance": false,
     "production_actions": 0,
     "idle_original_chat_wakeup": "NOT_IMPLEMENTED"
+  },
+  "full_go_followup_20261012": {
+    "recorded_utc": "2026-10-12T15:25:26.132001+00:00",
+    "source_before_receipt_commit": "54216dd9f9c7c97c567953433a61043c44e2e28e",
+    "status": "ORIGINAL_FAILURES_RESOLVED_BY_FRESH_TARGETED_PACKAGE_RUNS_NOT_FRESH_WHOLE_SUITE",
+    "first_full_run": "/mnt/session-context/dw0222-full-go-960f7b7e9/REGRESSION-SUMMARY.json",
+    "first_run_preserved": true,
+    "nodegate": "WebSocket handshake can precede connection registration; test now checks registration under mutex before timing send. Runtime unchanged; original200ms/3s assertions retained.",
+    "hosted": "Whole-package600s test limit only, no product timeout change. Fresh rc0 with229 passing test/subtest events, package elapsed exceeds240s.",
+    "results": {
+      "nodegate-race": {
+        "started_utc": "2026-10-12T15:18:24.508020+00:00",
+        "finished_utc": "2026-10-12T15:19:01.171892+00:00",
+        "exit_code": 0,
+        "args": [
+          "-race",
+          "-p",
+          "1",
+          "./internal/nodegate",
+          "-run",
+          "^TestSendWithTimeoutHonorsCallerDeadline$",
+          "-count=10",
+          "-timeout=120s"
+        ],
+        "external_DB_env_removed": true,
+        "production_actions": 0
+      },
+      "nodegate-package": {
+        "started_utc": "2026-10-12T15:19:37.336390+00:00",
+        "finished_utc": "2026-10-12T15:19:55.201232+00:00",
+        "exit_code": 0,
+        "args": [
+          "-json",
+          "-p",
+          "1",
+          "./internal/nodegate",
+          "-count=1",
+          "-timeout=300s"
+        ],
+        "external_DB_env_removed": true,
+        "production_actions": 0
+      },
+      "hosted-package": {
+        "started_utc": "2026-10-12T15:18:24.527009+00:00",
+        "finished_utc": "2026-10-12T15:24:53.533292+00:00",
+        "exit_code": 0,
+        "args": [
+          "-json",
+          "-p",
+          "1",
+          "./internal/hosted",
+          "-count=1",
+          "-timeout=600s"
+        ],
+        "external_DB_env_removed": true,
+        "production_actions": 0
+      }
+    },
+    "skip_qualification": "Original20 test skips and12 no-test packages retained, not passes. Only failed/timeout packages rerun; other45 passing packages retain original qualification.",
+    "workpulse": "Earlier fresh whole package rc0 plus race5 after test-only cleanup channel fix026b1309c.",
+    "production_actions": 0,
+    "actual_mac_or_model_or_feishu_calls": 0,
+    "native_idle_original_chat_wakeup": "NOT_IMPLEMENTED",
+    "release_ready": false
   }
 }
