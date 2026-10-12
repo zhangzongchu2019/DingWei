@@ -32,6 +32,8 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 		t.Skip("set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration")
 	}
 	ctx := context.Background()
+	evidence := &muxOutputEvidence{}
+	var vsPIDs []int
 	root := t.TempDir()
 	h, _, _ := newTestHub(t)
 	dsn := pgtest.DSN(t)
@@ -115,7 +117,9 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 	mux.HandleFunc("GET /api/console/event-feeds/{feed_id}", h.HandleConsoleMuxMetadata)
 	mux.HandleFunc("PUT /api/console/event-feeds/{feed_id}", h.HandleConsoleMuxReplace)
 	mux.HandleFunc("DELETE /api/console/event-feeds/{feed_id}", h.HandleConsoleMuxDelete)
-	mux.HandleFunc("GET /api/console/event-feeds/{feed_id}/events", h.HandleConsoleMuxEvents)
+	mux.HandleFunc("GET /api/console/event-feeds/{feed_id}/events", func(w http.ResponseWriter, r *http.Request) {
+		h.HandleConsoleMuxEvents(&muxOutputTap{ResponseWriter: w, e: evidence}, r)
+	})
 	mux.HandleFunc("POST /internal/console/event-feeds/{feed_id}/bridges/{bridge_id}/events", h.HandleInternalConsoleMuxEvents)
 	mux.HandleFunc("GET /internal/view/{session}/events", h.HandleInternalViewEvents)
 	mux.HandleFunc("POST /internal/view-v2/{session}/input", h.HandleInternalViewV2Input)
@@ -153,11 +157,35 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 		w.WriteHeader(204)
 	})
 	mux.HandleFunc("POST /test-db-revoke", func(w http.ResponseWriter, r *http.Request) {
+		commitLowerBound := time.Now()
 		if err := store.RevokeSession(r.Context(), hash, time.Now()); err != nil {
 			http.Error(w, "DB error", 500)
 			return
 		}
+		evidence.mu.Lock()
+		evidence.commit = commitLowerBound
+		evidence.probeDone = make(chan struct{})
+		done := evidence.probeDone
+		evidence.mu.Unlock()
+		go func() {
+			defer close(done)
+			end := time.Now().Add(2500 * time.Millisecond)
+			for time.Now().Before(end) {
+				h.publishSessionEvent(AgentKeyID("owner"), "agent04", `{"kind":"assistant_text","text":"post-authoritative-commit-probe"}`)
+				evidence.mu.Lock()
+				evidence.probes++
+				evidence.mu.Unlock()
+				time.Sleep(10 * time.Millisecond)
+			}
+		}()
 		w.WriteHeader(204)
+	})
+	mux.HandleFunc("POST /test-maximum/{name}", func(w http.ResponseWriter, r *http.Request) { handleMuxMaximumFrame(h, w, r) })
+	mux.HandleFunc("GET /test-resources", func(w http.ResponseWriter, r *http.Request) {
+		evidence.mu.Lock()
+		pids := append([]int(nil), vsPIDs...)
+		evidence.mu.Unlock()
+		json.NewEncoder(w).Encode(muxResourceSample(h, pids))
 	})
 	// Two real VS targets with independent signing keys and persistent projections.
 	routing := ViewRouting{Default: "target-a", Sessions: map[string]string{}, Targets: map[string]ViewTarget{}}
@@ -191,6 +219,9 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 		if err := python.Start(); err != nil {
 			t.Fatal(err)
 		}
+		evidence.mu.Lock()
+		vsPIDs = append(vsPIDs, python.Process.Pid)
+		evidence.mu.Unlock()
 		defer func() { _ = python.Process.Kill(); _ = python.Wait() }()
 		ready := false
 		for i := 0; i < 100; i++ {
@@ -247,4 +278,5 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 	if err != nil {
 		t.Fatal("actual Chrome product integration", err)
 	}
+	evidence.check(t)
 }

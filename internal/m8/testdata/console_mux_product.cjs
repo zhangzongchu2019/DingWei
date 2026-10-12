@@ -1,5 +1,7 @@
 const assert=require('node:assert/strict');
 const puppeteer=require(process.env.MUX_PUPPETEER);
+function chromeRSS(root){const fs=require('node:fs'),rows=new Map();for(const pid of fs.readdirSync('/proc').filter(v=>/^\d+$/.test(v))){try{const s=fs.readFileSync('/proc/'+pid+'/status','utf8');rows.set(Number(pid),{parent:Number(s.match(/PPid:\s+(\d+)/)[1]),rss:Number(s.match(/VmRSS:\s+(\d+) kB/)?.[1]||0)*1024});}catch{}}let rss=0,count=0;const todo=[root];while(todo.length){const p=todo.pop(),v=rows.get(p);if(!v)continue;rss+=v.rss;count++;for(const [id,r] of rows)if(r.parent===p)todo.push(id);}return {rss_sum_bytes:rss,processes:count,scope:'sum per-process RSS, shared pages counted repeatedly; includes browser/renderers/utility processes; snapshot'};}
+
 (async()=>{
  const browser=await puppeteer.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  try{
@@ -29,6 +31,33 @@ const puppeteer=require(process.env.MUX_PUPPETEER);
  const ownerFrame=page.frames().find(f=>f.url().includes('/view/agent00.owner'));await ownerFrame.waitForFunction(()=>!document.getElementById('humanInput').disabled,{timeout:10000});const sent=page.waitForResponse(r=>r.url().endsWith('/view/agent00.owner/input')&&r.request().method()==='POST');await ownerFrame.evaluate(()=>{document.getElementById('humanInput').value='product-owner-send';document.getElementById('sendBtn').click();});const sendResponse=await sent;assert.equal(sendResponse.status(),200,'native owner capability send accepted');assert.equal((await sendResponse.json()).ok,true);
 
  await page.waitForFunction(()=>true);await new Promise(r=>setTimeout(r,200));assert.ok(applied.some(a=>BigInt(a.split('-').pop())>9007199254740992n),'uint64 above 2^53 preserved end to end');
+ const resourcesBefore=await page.evaluate(async()=> (await fetch('/test-resources')).json());
+ const maximumFrames=[];
+ for(let i=0;i<8;i++){
+  const name='agent'+String(i).padStart(2,'0');
+  const max=await page.evaluate(async n=>{const r=await fetch('/test-maximum/'+n,{method:'POST'});if(!r.ok)throw new Error('maximum frame construction '+r.status);return r.json();},name);
+  assert.equal(max.wire_bytes,1048576);
+  const f=page.frames().find(f=>f.url().includes('/view/'+name+'.owner'));
+  await f.waitForFunction(m=>document.body.textContent.includes(m),{timeout:15000},max.marker);
+  for(let k=0;k<400&&!appliedRecords.some(a=>a.name===name+'.owner'&&a.after===max.after);k++)await new Promise(r=>setTimeout(r,10));
+  assert.ok(appliedRecords.some(a=>a.name===name+'.owner'&&a.after===max.after),'max F must get production applied ACK');maximumFrames.push({name,wire_bytes:max.wire_bytes,raw_payload_bytes:max.raw_payload_bytes,applied:true});
+ }
+ if(process.env.MUX_SATURATION==='1'){
+ // Hold applied messages at the test observer, filling real pending+sent credits.
+ await page.evaluate(()=>{window.testOriginalPostMessage=window.postMessage;window.testHeld=0;window.testHeldMessages=[];window.postMessage=function(d,...args){if(d?.protocol==='dw-console-mux/v1'&&d.type==='applied'){window.testHeld++;window.testHeldMessages.push(d);return;}return window.testOriginalPostMessage.call(window,d,...args);};});
+ const burst=await page.evaluate(async()=>{const frames=[];for(let round=0;round<2;round++)frames.push(...await Promise.all(Array.from({length:8},async(_,i)=>{const r=await fetch('/test-maximum/agent'+String(i).padStart(2,'0'),{method:'POST'});if(!r.ok)throw new Error('burst '+r.status);return r.json();})));return frames;});
+ let saturation;for(let k=0;k<100;k++){saturation=await page.evaluate(async()=> (await fetch('/test-resources')).json());if(saturation.hub_queue_events===16)break;await new Promise(r=>setTimeout(r,10));}
+ console.log(JSON.stringify({saturation_observed:saturation,console_status:await page.evaluate(()=>document.getElementById('consoleMuxStatus')?.textContent),held_applied:await page.evaluate(()=>window.testHeld),transport_requests:long.length,network_errors:diagnostics.filter(d=>d.console)}));
+ assert.equal(saturation.hub_queue_events,16,'real queue retains pending+sent before applied');assert.equal(saturation.hub_queue_wire_bytes,16*1048576,'full 16MiB wire budget');
+ const delayed=await page.evaluate(()=>{window.postMessage=window.testOriginalPostMessage;return window.testHeldMessages;});
+ // Re-deliver the renderer's own actual ACK from its trusted iframe Window.
+ // No forged applied success: these exact objects were emitted after real DOM apply.
+ for(const d of delayed){const f=page.frames().find(f=>f.url().includes('/view/'+d.agent_id+'.owner'));await f.evaluate(d=>parent.postMessage(d,location.origin),d);}
+ for(let k=0;k<700;k++){const q=await page.evaluate(async()=> (await fetch('/test-resources')).json());if(q.hub_queue_events===0)break;if(k===699)throw new Error('held queue did not release after bounded duplicate ACK retry');await new Promise(r=>setTimeout(r,10));}
+ console.log(JSON.stringify({real_wire_queue_saturation:saturation,burst_legal_frames:burst.length,burst_complete_wire_bytes:burst.reduce((n,v)=>n+v.wire_bytes,0)}));
+ }
+ const resourcesAfter=await page.evaluate(async()=> (await fetch('/test-resources')).json());
+ console.log(JSON.stringify({maximum_legal_frames:maximumFrames,resources_before:resourcesBefore,resources_after:resourcesAfter,chrome_process_tree:chromeRSS(browser.process().pid)}));
  // Real server transport cancellation: registry remains metadata-only until a fresh slot/gate is reacquired.
  await page.evaluate(async()=>fetch('/test-disconnect',{method:'POST'}));
  for(let i=0;i<300&&long.length<2;i++)await new Promise(r=>setTimeout(r,10));assert.ok(long.length>=2,'actual EventSource reconnect attempted');
@@ -57,6 +86,10 @@ const puppeteer=require(process.env.MUX_PUPPETEER);
  await page.waitForFunction(()=>document.getElementById('consoleMuxStatus')?.textContent.includes('ACK 超时'),{timeout:8000});assert.equal(await page.evaluate(()=>window.__muxIgnored),2,'initial + one retry only');
  // A second top-level Console gets a visible shared PG occupancy refusal; no session logout.
  const second=await browser.newPage();await second.goto(base+'/console',{waitUntil:'domcontentloaded'});await second.evaluate(()=>openTab('agent00.owner'));await second.waitForFunction(()=>document.getElementById('consoleMuxStatus')?.textContent.includes('另一个 Console'),{timeout:10000});assert.equal(await second.evaluate(async()=> (await fetch('/api/console/agents')).status),200);await second.close();
+ const over=await page.evaluate(async()=> (await fetch('/test-maximum/agent06?over=1',{method:'POST'})).json());assert.equal(over.wire_bytes,1048577);
+ const oversizedFrame=page.frames().find(f=>f.url().includes('/view/agent06.owner'));await page.waitForFunction(()=>tabs.get('agent06.owner').pane.dataset.streamError?.includes('event_too_large'),{timeout:10000});await oversizedFrame.waitForFunction(()=>document.getElementById('streamAlertText')?.textContent.includes('event_too_large'),{timeout:10000});
+ await page.evaluate(async()=>fetch('/test-publish/agent04',{method:'POST',body:JSON.stringify({kind:'assistant_text',text:'after-oversize-other-seat-live',data:{}})}));await page.frames().find(f=>f.url().includes('/view/agent04.owner')).waitForFunction(()=>document.body.textContent.includes('after-oversize-other-seat-live'),{timeout:10000});
+ console.log(JSON.stringify({illegal_complete_frame_bytes:1048577,oversized_seat_stopped:true,other_seat_after_oversize_continues:true}));
  const start=Date.now();await page.evaluate(async()=>fetch('/test-db-revoke',{method:'POST'}));await new Promise(r=>setTimeout(r,2100));
  assert.equal(peakSSE,1,'maximum simultaneous public SSE, including reconnect');const denial=await page.evaluate(async()=> (await fetch('/api/console/event-context')).status);assert.equal(denial,401);
  assert.equal(errors.length,0,errors.join('\n'));

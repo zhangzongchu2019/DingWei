@@ -134,3 +134,59 @@ func TestMuxRecoveryMetadataExpiresWithoutAnotherRequest(t *testing.T) {
 	}
 	t.Fatal("registry exceeded retention deadline")
 }
+
+// Both queued and physically sent, not-yet-applied events retain the same byte charge.
+func TestMuxMaximumFramesPendingAndSentLedger(t *testing.T) {
+	q := newMuxStream()
+	scopes := map[string]*consoleMuxScope{}
+	for i := 0; i < 8; i++ {
+		id := string(rune('a' + i))
+		s := &consoleMuxScope{Agent: consolemux.Agent{ID: id, FullName: id + ".test"}, Generation: "g", Round: 1}
+		scopes[s.Agent.FullName] = s
+		begin := muxMeta(s, "replay_begin")
+		begin.Epoch = "deadbeef"
+		begin.H = "2"
+		p, _ := muxPacket(begin, nil)
+		if !q.offer(p) {
+			t.Fatal("begin")
+		}
+		q.controlWritten(q.take("", false))
+		for seq := uint64(1); seq <= 2; seq++ {
+			m := muxMeta(s, "event")
+			m.Epoch = "deadbeef"
+			m.Seq = muxSeq(seq)
+			head, _ := json.Marshal(m)
+			body := []byte(`{"kind":"assistant_text","text":"` + strings.Repeat("x", muxFrameMax-len(head)-19-len(`{"kind":"assistant_text","text":""}`)) + `"}`)
+			p, e := muxPacket(m, body)
+			if e != nil || len(p.Wire) != muxFrameMax || !q.offer(p) {
+				t.Fatal("legal F", e)
+			}
+		}
+	}
+	if q.bytes != 16<<20 || q.count != 16 {
+		t.Fatal("full aggregate charge", q.bytes, q.count)
+	}
+	rejected, _ := muxPacket(consoleMuxWire{Type: "event", AgentID: "extra", Epoch: "deadbeef", Seq: "1"}, []byte(`{}`))
+	if q.offer(rejected) {
+		t.Fatal("aggregate byte overrun admitted")
+	}
+	for _, s := range scopes {
+		if q.take(s.Agent.ID, true) == nil || q.take(s.Agent.ID, true) == nil {
+			t.Fatal("sent selection")
+		}
+	}
+	if q.bytes != 16<<20 || q.count != 16 {
+		t.Fatal("physical send incorrectly released credit")
+	}
+	acks := []consoleMuxApplied{}
+	for name := range scopes {
+		acks = append(acks, consoleMuxApplied{FullName: name, Generation: "g", After: "deadbeef-2"})
+	}
+	if e := q.ack(acks, scopes); e != nil {
+		t.Fatal(e)
+	}
+	if q.bytes != 0 || q.count != 0 {
+		t.Fatal("applied did not release charge")
+	}
+	t.Log("8 seats x 2 exact F: pending=16MiB sent/unapplied=16MiB rejected-overrun=true applied=0")
+}
