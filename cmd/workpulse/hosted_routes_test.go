@@ -27,6 +27,9 @@ type fakeIDP struct {
 	ids       []string
 	retired   map[string]bool
 	newGroups []string
+	// Optional test completion signal: failed job status is published before
+	// asynchronous account release/identity abort, so it is not a cleanup join.
+	abortDone chan string
 }
 
 func (f *fakeIDP) IssueHostedAgent(ctx context.Context, ownerLC, name, groupCode, by string) (hosted.IssuedAgent, hosted.EnrollToken, error) {
@@ -61,7 +64,14 @@ func (f *fakeIDP) IssueHostedAgentWithNewGroup(ctx context.Context, ownerLC, nam
 	return f.IssueHostedAgent(ctx, ownerLC, name, "", by)
 }
 func (f *fakeIDP) AbortHostedAgent(ctx context.Context, agentID, by string) (bool, error) {
-	return f.RetireHostedAgent(ctx, agentID, by)
+	retired, err := f.RetireHostedAgent(ctx, agentID, by)
+	if f.abortDone != nil {
+		select {
+		case f.abortDone <- agentID:
+		default:
+		}
+	}
+	return retired, err
 }
 func (f *fakeIDP) ListHostedAgentIDsByOwner(ctx context.Context, ownerLC string) ([]string, error) {
 	var out []string // 与 identity 语义对齐：已吊销（Retire）的不在名下

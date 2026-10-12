@@ -118,12 +118,24 @@ func TestB2AllNodeActionsFromHub(t *testing.T) {
 // B3：拉镜像失败 ⇒ 蒙版 failed/image_pull_failed；Retire 吊销（配额归还）；账号回池；无后续指令。
 func TestB3PullFailureCleanup(t *testing.T) {
 	r := mkRig(t)
+	r.idp.abortDone = make(chan string, 1)
 	r.gw.failOn = "pull_image"
 	acctID := r.usableAcct(t)
 	jobID := r.createAndDrive(t, "b3w", acctID)
 	_, jv := r.call("zzc", "GET", "/api/console/hosted/jobs/"+jobID, "")
 	if jv["stage"] != "failed" || jv["reason"] != "image_pull_failed" {
 		t.Fatalf("B3 蒙版: %v", jv)
+	}
+	// Job/seat failed is visible before the server-owned cleanup ends. Wait for
+	// the actual abort callback, both to observe cleanup and to synchronize the
+	// fake map write; sleeping/polling that map would still race the worker.
+	select {
+	case aborted := <-r.idp.abortDone:
+		if aborted != jobID {
+			t.Fatal("B3 cleanup completed for a different synthetic job")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("B3 identity abort cleanup did not complete")
 	}
 	if !r.idp.retired[jobID] {
 		t.Fatal("B3 必须 Retire 吊销（配额归还与释放名字的同一动作）")
@@ -278,7 +290,7 @@ func TestB6NameInvalidRejected(t *testing.T) {
 }
 
 // B7 补格（复验附录 A，tosonnet55tc2k）：明文凭据在 create_seat 参数里必须【恰好一次】
-//（只在 credential_file.content——多一个 env／api_key 键即红）。
+// （只在 credential_file.content——多一个 env／api_key 键即红）。
 func TestB7PlaintextExactlyOnceInCreateSeat(t *testing.T) {
 	r := mkRig(t)
 	r.createAndDrive(t, "zb7", r.usableAcct(t))
