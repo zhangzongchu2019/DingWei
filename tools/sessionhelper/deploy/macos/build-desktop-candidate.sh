@@ -49,29 +49,7 @@ fi
 if [ -e "$task_source_root/.git" ]; then
     [ -z "$(git -C "$task_source_root" status --porcelain)" ] || { echo 'Source Git tree is dirty.' >&2; exit 1; }
 else
-    "$task_python" - "$task_source_root" <<'PY'
-import hashlib, json, sys
-from pathlib import Path
-root = Path(sys.argv[1]).resolve()
-manifest = json.loads((root / 'SOURCE-MEMBER-PINS.json').read_text())
-seen = set()
-for item in manifest['files']:
-    path = Path(item['path'])
-    if path.is_absolute() or '..' in path.parts or str(path) in seen:
-        raise SystemExit('Invalid source member')
-    seen.add(str(path))
-    source = root / path
-    if source.is_symlink() or not source.is_file() or not source.resolve().is_relative_to(root):
-        raise SystemExit('Unsafe source member')
-    data = source.read_bytes()
-    if len(data) != item['bytes'] or hashlib.sha256(data).hexdigest() != item['sha256']:
-        raise SystemExit('Source member pin mismatch')
-required = {'VERSION', 'scripts/verify-sessionhelper-frozen.py',
-            'tools/sessionhelper/sessionhelper.spec', 'tools/sessionhelper/requirements.txt',
-            'tools/sessionhelper/sessionhelper/desktop_host.py'}
-if not required <= seen:
-    raise SystemExit('Source manifest missing required build members')
-PY
+    "$task_python" -B "$task_source_root/scripts/verify-sessionhelper-source.py" "$task_source_root"
 fi
 umask 077
 mkdir -p -m 700 "$task_output"

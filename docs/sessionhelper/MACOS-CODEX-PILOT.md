@@ -18,6 +18,7 @@ sh tools/sessionhelper/deploy/macos/build-desktop-candidate.sh \
 实际应用若是 ChatGPT.app，应把第二个参数改为该 .app 的实际路径。不传第二个参数时自动探测 /Applications 和 ~/Applications；存在多个应用时拒绝自动选择。该名称兼容依据见[官方桌面文档](https://learn.chatgpt.com/docs/app)和[官方 MCP 文档](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)。
 
 此脚本只核源码、创建独立私有 venv、构建本机冻结包及做本地测试。使用下载依赖，需要网络；不关闭 Gatekeeper/SIP、不读取钥匙串、模型认证、桌面历史、cookie、设备凭据，不连接 Hub。没有登录或模型调用。
+源码归档的新入口在创建输出目录/venv或安装依赖前核全部清单文件及**精确文件集合**：缺失、哈希不符、重复/逃逸路径、额外Python/pycache、链接/FIFO或版本不一致均拒绝，保留现场不自动删除。仅允许已钉源码及 SOURCE-MEMBER-PINS.json、START-HERE.txt 两个包装件。先检查收到的总包外部SHA仍是前置要求，包内自带清单不能独立证明来源或正式发布资格。旧开发归档仍保留各自旧脚本和原pins，不重新标记。
 生成 desktop-metadata.json 的架构/应用名/准确版本/build 仅是本机元数据，不是签名、登录或自动提醒证明；不会启动 Codex CLI 或另建会话。
 
 ## 2. 配置测试专用 MCP
