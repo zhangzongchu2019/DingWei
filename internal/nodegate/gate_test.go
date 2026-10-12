@@ -226,6 +226,22 @@ func TestSendWithTimeoutHonorsCallerDeadline(t *testing.T) {
 	ctx := context.Background()
 	conn := dial(t, srv, nodeID, secret)
 	defer conn.CloseNow()
+	// Dial observes the HTTP upgrade before serve necessarily registers the
+	// connection. Establish the send precondition without sending a command;
+	// otherwise this deadline test can measure node_offline instead of timeout.
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		g.mu.Lock()
+		registered := g.conns[nodeID] != nil
+		g.mu.Unlock()
+		if registered {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("node connection was not registered before deadline test")
+		}
+		time.Sleep(time.Millisecond)
+	}
 
 	// 慢节点：每条指令睡 500ms 再回 ok
 	go func() {
