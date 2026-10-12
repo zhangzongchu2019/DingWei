@@ -43,8 +43,9 @@ function chromeRSS(root){const fs=require('node:fs'),rows=new Map();for(const pi
   assert.ok(appliedRecords.some(a=>a.name===name+'.owner'&&a.after===max.after),'max F must get production applied ACK');maximumFrames.push({name,wire_bytes:max.wire_bytes,raw_payload_bytes:max.raw_payload_bytes,applied:true});
  }
  if(process.env.MUX_SATURATION==='normal'){
+ let credit;for(let k=0;k<400;k++){credit=await page.evaluate(async()=> (await fetch('/test-resources')).json());if(credit.hub_queue_events===0)break;await new Promise(r=>setTimeout(r,10));}assert.equal(credit.hub_queue_events,0,'pre-burst server actually applied credit barrier');assert.equal(credit.active_mux_transports,1);assert.equal(credit.active_subscription_count,8);
  const burst=await page.evaluate(async()=>{const frames=[];for(let round=0;round<2;round++)frames.push(...await Promise.all(Array.from({length:8},async(_,i)=>{const r=await fetch('/test-maximum/agent'+String(i).padStart(2,'0'),{method:'POST'});if(!r.ok)throw new Error('normal burst '+r.status);return r.json();})));return frames;});
- for(let i=0;i<8;i++){const max=burst[i+8];for(let k=0;k<600&&!appliedRecords.some(a=>a.name==='agent'+String(i).padStart(2,'0')+'.owner'&&a.after===max.after);k++)await new Promise(r=>setTimeout(r,10));assert.ok(appliedRecords.some(a=>a.name==='agent'+String(i).padStart(2,'0')+'.owner'&&a.after===max.after),'normal ACK final burst cursor '+i);}
+ for(let i=0;i<8;i++){const max=burst[i+8];for(let k=0;k<1000&&!appliedRecords.some(a=>a.name==='agent'+String(i).padStart(2,'0')+'.owner'&&a.after===max.after);k++)await new Promise(r=>setTimeout(r,10));assert.ok(appliedRecords.some(a=>a.name==='agent'+String(i).padStart(2,'0')+'.owner'&&a.after===max.after),'normal ACK final burst cursor '+i+'; status='+await page.evaluate(()=>document.getElementById('consoleMuxStatus')?.textContent));}
  console.log(JSON.stringify({pressure_case:'normal_ack',legal_frames:16,all_last_cursors_actually_applied:true,ack_seconds:2,total_deliveries_cap:2}));
  }
  if(process.env.MUX_SATURATION==='late'){

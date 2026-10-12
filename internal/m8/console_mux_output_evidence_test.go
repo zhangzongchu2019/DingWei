@@ -103,9 +103,14 @@ func muxResourceSample(h *Hub, pids []int) map[string]any {
 	}
 	h.consoleMux.mu.Unlock()
 	queueBytes, queueCount := 0, 0
+	activeTransports, activeSubscriptions := 0, 0
 	for _, f := range feeds {
 		f.mu.Lock()
 		q := f.Stream
+		if q != nil && f.Cancel != nil && !f.Closed {
+			activeTransports++
+			activeSubscriptions += len(f.Scopes)
+		}
 		f.mu.Unlock()
 		if q != nil {
 			q.mu.Lock()
@@ -136,7 +141,7 @@ func muxResourceSample(h *Hub, pids []int) map[string]any {
 	for _, pid := range pids {
 		vs = append(vs, procRSS(pid))
 	}
-	return map[string]any{"hub_process_rss": procRSS(os.Getpid()), "hub_heap_alloc": mem.HeapAlloc, "hub_heap_sys": mem.HeapSys, "hub_queue_wire_bytes": queueBytes, "hub_queue_events": queueCount, "raw_reader_payload_bytes": rawBytes, "legacy_ring_payload_bytes_excluded_from_mux_budget": ringBytes, "vs_process_rss": vs, "scope": "one actual Hub test process/two VS; absolute RSS includes all process overhead; snapshot not a universal upper bound"}
+	return map[string]any{"hub_process_rss": procRSS(os.Getpid()), "hub_heap_alloc": mem.HeapAlloc, "hub_heap_sys": mem.HeapSys, "hub_queue_wire_bytes": queueBytes, "hub_queue_events": queueCount, "active_mux_transports": activeTransports, "active_subscription_count": activeSubscriptions, "raw_reader_payload_bytes": rawBytes, "legacy_ring_payload_bytes_excluded_from_mux_budget": ringBytes, "vs_process_rss": vs, "scope": "one actual Hub test process/two VS; absolute RSS includes all process overhead; snapshot not a universal upper bound"}
 }
 func handleMuxMaximumFrame(h *Hub, w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name") + ".owner"

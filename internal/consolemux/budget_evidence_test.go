@@ -25,6 +25,17 @@ func TestBudgetRealPGDeadlineAndCapacity(t *testing.T) {
 	seed, _ := NewOwner("test", "https://example.invalid", "budget", "console")
 	tag := "mux_budget_" + seed.Nonce
 	b := NewBudget()
+	var traceMu sync.Mutex
+	traces := map[int]map[string]time.Time{}
+	b.observe = func(c context.Context, stage string, at time.Time) {
+		id := c.Value(budgetTraceKey{}).(int)
+		traceMu.Lock()
+		defer traceMu.Unlock()
+		if traces[id] == nil {
+			traces[id] = map[string]time.Time{}
+		}
+		traces[id][stage] = at
+	}
 	start := make(chan struct{})
 	done := make(chan struct{})
 	var wg sync.WaitGroup
@@ -33,12 +44,12 @@ func TestBudgetRealPGDeadlineAndCapacity(t *testing.T) {
 	var longest time.Duration
 	for i := 0; i < 80; i++ {
 		wg.Add(1)
-		go func() {
+		go func(id int) {
 			defer wg.Done()
 			<-start
 			began := time.Now()
 			var workDeadline, queryEnded time.Time
-			err := b.Do(ctx, func(c context.Context) error {
+			err := b.Do(context.WithValue(ctx, budgetTraceKey{}, id), func(c context.Context) error {
 				workDeadline, _ = c.Deadline()
 				if c.Err() != nil {
 					return c.Err()
@@ -48,6 +59,16 @@ func TestBudgetRealPGDeadlineAndCapacity(t *testing.T) {
 				return e
 			})
 			returned := time.Now()
+			traceMu.Lock()
+			stage := traces[id]
+			executionReleased, admissionReleased := stage["execution_released"], stage["admission_released"]
+			traceMu.Unlock()
+			if !workDeadline.IsZero() {
+				if executionReleased.Before(queryEnded) || admissionReleased.Before(executionReleased) || returned.Before(admissionReleased) {
+					t.Error("release trace order violated")
+				}
+				t.Logf("id=%d query_end=%s execution_release=%s admission_release=%s call_return=%s relative_to_work_deadline", id, queryEnded.Sub(workDeadline), executionReleased.Sub(workDeadline), admissionReleased.Sub(workDeadline), returned.Sub(workDeadline))
+			}
 			if !workDeadline.IsZero() {
 				if queryEnded.Sub(workDeadline) > 50*time.Millisecond || returned.Sub(workDeadline) > 50*time.Millisecond {
 					t.Errorf("cleanup exceeded50ms: query=%s return=%s", queryEnded.Sub(workDeadline), returned.Sub(workDeadline))
@@ -66,7 +87,7 @@ func TestBudgetRealPGDeadlineAndCapacity(t *testing.T) {
 			if d := time.Since(began); d > longest {
 				longest = d
 			}
-		}()
+		}(i)
 	}
 	go func() { wg.Wait(); close(done) }()
 	close(start)
@@ -116,3 +137,5 @@ loop:
 	// never added to a positive authorization lease.
 	t.Logf("primary_pg concurrent=80 executing_peak=%d admitted_peak=%d waiting_cap=48 rejected=%d cancelled=%d max_return=%s cancellation_deadline=1s leases_not_extended=true", maxExecuting, maxAdmitted, rejected, expired, longest)
 }
+
+type budgetTraceKey struct{}

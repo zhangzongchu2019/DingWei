@@ -25,6 +25,7 @@ var (
 type Budget struct {
 	executing, waiting chan struct{}
 	unhealthy          atomic.Bool
+	observe            func(context.Context, string, time.Time)
 }
 
 func NewBudget() *Budget {
@@ -36,18 +37,20 @@ func (b *Budget) Do(ctx context.Context, fn func(context.Context) error) error {
 	}
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
+	deadlineForTrace, _ := ctx.Deadline()
+	b.note(ctx, "work_deadline", deadlineForTrace)
 	select {
 	case b.waiting <- struct{}{}:
 	default:
 		return ErrCapacity
 	}
-	defer func() { <-b.waiting }()
+	defer func() { <-b.waiting; b.note(ctx, "admission_released", time.Now()) }()
 	select {
 	case b.executing <- struct{}{}:
 	case <-ctx.Done():
 		return ctx.Err()
 	}
-	defer func() { <-b.executing }()
+	defer func() { <-b.executing; b.note(ctx, "execution_released", time.Now()) }()
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -183,4 +186,11 @@ func (s *PGSlots) Release(ctx context.Context, o Owner) error {
 			o.Principal, o.Origin, o.Session, o.Instance, o.Nonce, o.Generation)
 		return err
 	})
+}
+
+// Optional per-instance test observer; production assembly leaves this nil.
+func (b *Budget) note(ctx context.Context, stage string, at time.Time) {
+	if b.observe != nil {
+		b.observe(ctx, stage, at)
+	}
 }
