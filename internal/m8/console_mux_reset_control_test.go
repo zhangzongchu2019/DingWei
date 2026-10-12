@@ -64,7 +64,7 @@ func exerciseR4Control(t *testing.T, h *Hub, store *identity.PGStore, base strin
 	bad.Revision = 1
 	bad.Subscriptions = append([]consoleMuxDesired(nil), req.Subscriptions...)
 	bad.Subscriptions[0].After = snap.Epoch + "-" + muxSeq(snap.H+1)
-	if code, _ := request("PUT", path, token, base, bad); code != 409 {
+	if code, body := request("PUT", path, token, base, bad); code != 409 || body["full_name"] != "agent00.owner" {
 		t.Fatalf("ahead: %d", code)
 	}
 	f.mu.Lock()

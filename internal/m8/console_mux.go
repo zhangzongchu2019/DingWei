@@ -327,7 +327,7 @@ func (m *consoleMuxRegistry) resolveScopes(auth consolemux.Authorization, req co
 		if resetting {
 			reset := req.Reset
 			if prior == nil || prior.Agent.ID != a.ID || prior.Desired.Instance != reset.Instance || prior.Generation != reset.Generation || muxSeq(prior.Round) != reset.Round {
-				return nil, 409, errors.New("stale_reset_scope")
+				return nil, 409, &muxScopeControlError{d.FullName, errors.New("stale_reset_scope")}
 			}
 			if snap.H >= ^uint64(0)-1 {
 				return nil, 409, errors.New("seq_exhausted")
@@ -342,7 +342,7 @@ func (m *consoleMuxRegistry) resolveScopes(auth consolemux.Authorization, req co
 			oldEp, oldN, _ := parseSSEAfter(prior.Desired.After)
 			ep, n, valid := parseSSEAfter(d.After)
 			if !valid || ep != oldEp || n < oldN {
-				return nil, 409, errors.New("resync_required")
+				return nil, 409, &muxScopeControlError{d.FullName, errors.New("resync_required")}
 			}
 		}
 		if _, _, err := selectMuxReplay(snap, d.After, d.After != ""); err != nil {
@@ -350,7 +350,7 @@ func (m *consoleMuxRegistry) resolveScopes(auth consolemux.Authorization, req co
 			if errors.Is(err, errMuxCursorAhead) {
 				code = 409
 			}
-			return nil, code, err
+			return nil, code, &muxScopeControlError{d.FullName, err}
 		}
 		if !resetting && prior != nil && prior.Agent.ID == a.ID && prior.Desired.Instance == d.Instance {
 			copy := *prior
@@ -419,7 +419,7 @@ func (h *Hub) HandleConsoleMuxCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	scopes, code, err := m.resolveScopes(auth, req, nil)
 	if err != nil {
-		writeAgentWSError(w, code, err.Error())
+		muxWriteScopeError(w, code, err)
 		return
 	}
 	m.mu.Lock()
@@ -594,7 +594,7 @@ func (h *Hub) HandleConsoleMuxReplace(w http.ResponseWriter, r *http.Request) {
 		}
 		next, code, err := m.resolveScopes(auth, req, resolveOld)
 		if err != nil {
-			writeAgentWSError(w, code, err.Error())
+			muxWriteScopeError(w, code, err)
 			return
 		}
 		f.mu.Lock()
@@ -839,4 +839,20 @@ func (f *consoleMuxFeed) retireScopeLocked(name string, sc *consoleMuxScope) {
 		f.RetiredOrder = f.RetiredOrder[1:]
 		delete(f.Retired, name)
 	}
+}
+
+type muxScopeControlError struct {
+	name  string
+	cause error
+}
+
+func (e *muxScopeControlError) Error() string { return e.cause.Error() }
+func (e *muxScopeControlError) Unwrap() error { return e.cause }
+func muxWriteScopeError(w http.ResponseWriter, code int, err error) {
+	var scope *muxScopeControlError
+	if errors.As(err, &scope) {
+		muxJSON(w, code, map[string]string{"error": scope.Error(), "full_name": scope.name})
+		return
+	}
+	writeAgentWSError(w, code, err.Error())
 }
