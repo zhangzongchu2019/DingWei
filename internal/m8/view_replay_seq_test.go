@@ -139,7 +139,11 @@ func TestSSEAfterOtherEpochSendsGapThenFullReplay(t *testing.T) {
 func TestSSEAfterOlderThanRingSendsOverflowGap(t *testing.T) {
 	hub, srv, c := seqTestHub(t)
 	publishN(hub, c, 1, terminalEventRingCap+10)
-	epoch := epochOf(t, readSSE(t, srv.URL+"/internal/view/s1/events", nil, 1)[0].ID)
+	fresh := readSSE(t, srv.URL+"/internal/view/s1/events", nil, 2)
+	if fresh[0].Event != "replay_gap" || !strings.Contains(fresh[0].Data, `"overflow"`) {
+		t.Fatal("fresh truncated history must be visible", fresh[0])
+	}
+	epoch := epochOf(t, fresh[1].ID)
 	frames := readSSE(t, srv.URL+"/internal/view/s1/events?after="+epoch+"-1", nil, 2)
 	if len(frames) != 2 || frames[0].Event != "replay_gap" || !strings.Contains(frames[0].Data, `"overflow"`) {
 		t.Fatalf("frames=%+v", frames)

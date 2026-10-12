@@ -2161,6 +2161,12 @@ func TestIPCSendBodyAMRRoutesMentionsAtAnyIndent(t *testing.T) {
 	sourceName := "u1-source-" + tail
 	primaryName := "u1-primary-" + tail
 
+	// A guide receipt precedes runtime publication. AMR best-effort resolution
+	// must see all four actual endpoints before the fixture starts sending.
+	for _, name := range []string{"source", "primary", "alpha", "beta"} {
+		awaitSessionRuntime(t, hub, key.ID, "u1-"+name+"-"+tail)
+	}
+
 	if err := writeEnvelope(ctx, source, model.Envelope{
 		ID: "ipc-amr-top", To: primaryName + "#" + key.ID, From: sourceName + "#" + key.ID,
 		Body: "说明\n@alpha @beta 给两席", Meta: map[string]any{ipcBodyAMRMetaKey: true},
@@ -3937,7 +3943,7 @@ func TestMirrorCommandDMControlsSessionAndGroupIgnored(t *testing.T) {
 	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
 	defer home.Close(websocket.StatusNormalClosure, "done")
 	// A received guide precedes runtime publication; wait for the actual route barrier.
-	awaitMirrorRuntime(t, hub, key.ID, "home")
+	awaitSessionRuntime(t, hub, key.ID, "home")
 
 	result, err := hub.Dispatch(ctx, model.Message{ID: "m1", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "mirror on home")
 	if err != nil {

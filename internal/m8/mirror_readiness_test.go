@@ -45,7 +45,7 @@ func (w mirrorHijackWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	wrapped := &mirrorGuideBarrier{Conn: c, reached: w.reached, release: w.release}
 	return wrapped, bufio.NewReadWriter(b.Reader, bufio.NewWriter(wrapped)), nil
 }
-func awaitMirrorRuntime(t *testing.T, h *Hub, key, name string) {
+func awaitSessionRuntime(t *testing.T, h *Hub, key, name string) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -106,7 +106,7 @@ func TestMirrorRegistrationRuntimeBarrier(t *testing.T) {
 	}
 	t.Logf("trace +%s before_ready command=on persisted=true reply=offline no_runtime_delivery", time.Since(start))
 	unlock()
-	awaitMirrorRuntime(t, h, key.ID, "home")
+	awaitSessionRuntime(t, h, key.ID, "home")
 	t.Logf("trace +%s runtime_ready=true", time.Since(start))
 	for _, action := range []string{"on", "off"} {
 		msg.ID = "ready-" + action
