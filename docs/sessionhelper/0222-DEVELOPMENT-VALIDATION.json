@@ -1,10 +1,10 @@
 {
-  "recorded_utc": "2026-10-12T10:54:44.712134+00:00",
+  "recorded_utc": "2026-10-12T11:01:03.145060+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS final32 Python files+2shell after busy-admission race handling; actual local memory/PG claim and MCP integration included. No Mac/real model/Feishu platform proof.",
+    "canonical": "PASS final32 Python files+2shell after offline reply-confirmation recovery; actual local memory claim5/PG claim5/MCP3 cases passed (2.01s/11.66s/2.01s). No Mac/real model/Feishu platform proof.",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
@@ -48,7 +48,8 @@
     "claim_cancel_http": "PASS matching claim_id/cancelled proof/no-store, missing/wrong token404, issued403; actual NewPlatformRouteSweep PASS0.317s. Uses private poll token, not anonymous approval or console-role bypass.",
     "claim_cancel_actual_client": "PASS actual memory/PG cancel-then-new branches with interrupted wait, real HTTP proof, private archive, stale code replay refused, explicit fresh claim+actual helper WS. Final memory5=1.92s PG5=10.88s. No real Feishu platform.",
     "claim_recovery_client": "PASS33 selected tests in0.597s:9 claim+20 setup+4 env gate; cancellation uncertainty/refusal retain pending, existing credential refuses reset, no concurrent same-dir operation, interrupt releases lock, corrupt auth fields do not reach headers, private symlink/FIFO/oversize refusal, CLI cancellation does not start helper/model login.",
-    "native_busy_admission": "Typed refusal only for future trusted atomic no-side-effect backend; no RPC text/status/timeout conversion. No real desktop capability enabled."
+    "native_busy_admission": "Typed refusal only for future trusted atomic no-side-effect backend; no RPC text/status/timeout conversion. No real desktop capability enabled.",
+    "desktop_reply_offline_recovery": "PASS13 desktop wait/reply tests, including real MCP stdio/Unix IPC duplicate ACK recovery after broker disconnect and SQLite reopen; confirmed result cached, changed-body/uncertain/rejected attempts never resent, new reply refused before renegotiation."
   },
   "required_before_release": [
     "Independent code review",
@@ -536,5 +537,15 @@
     "model_runs": 0,
     "production_actions": 0,
     "native_provider": "NOT_IMPLEMENTED"
+  },
+  "offline_confirmation_evidence": {
+    "canonical_log": {
+      "name": "desktop-offline-confirmation-canonical.log",
+      "bytes": 30459,
+      "sha256": "9db070a87d81778a9549e92aa7c2ecb0c77cd1ae1b979ebb486fe6b9add66199"
+    },
+    "native_desktop_model_calls": 0,
+    "production_actions": 0,
+    "prior_91b_source_kit": "Preserved at original pins; excludes this increment and f3db0fc50. No new frozen/Mac artifact this turn."
   }
 }

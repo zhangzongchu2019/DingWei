@@ -140,6 +140,38 @@ class DesktopWaitTest(unittest.IsolatedAsyncioTestCase):
         reopened=DesktopAdapter(SimpleNamespace(inbox_db=str(Path(self.tmp.name)/'inbox')))
         self.assertEqual(reopened.wait_message({'wait_seconds':1})['state'],'reply_uncertain')
         self.assertFalse(reopened.reserve_mcp_reply('fixture-message','fixture answer')['ok'])
+
+    async def test_confirmed_reply_recovered_offline_after_response_loss(self):
+        ws=self.reply_ws();self.post()
+        handler=self.helper._make_desktop_inbox_handler(ws)
+        request={'operation':'reply','message_id':'fixture-message','body':'synthetic answer'}
+        # Hub ACK was persisted, but the MCP caller did not retain its response.
+        original=await handler(request)
+        self.assertTrue(original['ok'])
+        self.helper.outbound_receipts.abort(ws)
+        self.helper.adapter=DesktopAdapter(SimpleNamespace(inbox_db=str(Path(self.tmp.name)/'inbox')))
+        # A recreated handler without a socket must return only the saved ACK.
+        offline=self.helper._make_desktop_inbox_handler()
+        self.assertEqual(await offline(request),original)
+        self.assertFalse((await offline({**request,'body':'changed answer'}))['ok'])
+        self.assertEqual(len(ws.frames),1)
+        self.assertEqual(self.helper.adapter.request({'operation':'status'})['unread'],0)
+
+    async def test_new_or_uncertain_reply_not_reissued_during_reconnect(self):
+        ws=self.reply_ws(no_ack=True);self.post()
+        handler=self.helper._make_desktop_inbox_handler(ws)
+        request={'operation':'reply','message_id':'fixture-message','body':'fixture answer'}
+        self.assertEqual((await handler(request))['error'],'reply_outcome_uncertain')
+        self.helper.outbound_receipts.abort(ws)
+        reconnect=object();self.helper.outbound_receipts.prepare(reconnect)
+        self.helper.adapter=DesktopAdapter(SimpleNamespace(inbox_db=str(Path(self.tmp.name)/'inbox')))
+        reconnect_handler=self.helper._make_desktop_inbox_handler(reconnect)
+        self.assertEqual((await reconnect_handler(request))['error'],'reply_already_attempted')
+        self.post('new-message')
+        self.assertEqual((await reconnect_handler({**request,'message_id':'new-message'}))['error'],'confirmed_reply_unavailable')
+        self.assertIsNone(self.helper.adapter.existing_mcp_reply('new-message','fixture answer'))
+        self.assertEqual(len(ws.frames),1)
+        self.assertEqual(self.helper.adapter.request({'operation':'status'})['unread'],2)
     async def test_explicit_rejection_is_retained_and_not_retried(self):
         ws=self.reply_ws(reject=True);self.post()
         handler=self.helper._make_desktop_inbox_handler(ws)
@@ -161,6 +193,11 @@ class DesktopWaitTest(unittest.IsolatedAsyncioTestCase):
             packet=await self.read(child);self.assertEqual(packet['id'],ident)
             outcome=json.loads(packet['result']['content'][0]['text'])
             self.assertEqual(outcome['stage'],'hub_durable_queued')
+            if ident == 11:
+                # The duplicate real stdio/IPC call now crosses a disconnected
+                # broker and reopened inbox, not only an in-memory cache hit.
+                self.helper.outbound_receipts.abort(ws)
+                self.helper.adapter=DesktopAdapter(SimpleNamespace(inbox_db=str(Path(self.tmp.name)/'inbox')))
         self.assertEqual(len(ws.frames),1)
         self.assertEqual(self.adapter.request({'operation':'status'})['unread'],0)
 

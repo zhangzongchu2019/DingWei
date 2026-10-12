@@ -1179,9 +1179,16 @@ class SessionHelper:
 
         async def handle(args):
             if args.get('operation') == 'reply':
+                message_id,body=args.get('message_id'),args.get('body')
+                # Read the durable attempt journal before checking this socket.
+                # Recovering a prior ACK needs no connection or new reservation.
+                prior=await asyncio.to_thread(self.adapter.existing_mcp_reply,message_id,body)
+                if prior is not None:
+                    if prior.get('already_confirmed'):
+                        return {'ok':True,'outcome':prior['outcome']}
+                    return prior
                 if ws is None or self.outbound_receipts.connection is not ws or not self.outbound_receipts.negotiated:
                     return {'ok':False,'error':'confirmed_reply_unavailable'}
-                message_id,body=args.get('message_id'),args.get('body')
                 claim=await asyncio.to_thread(self.adapter.reserve_mcp_reply,message_id,body)
                 if not claim.get('ok'): return claim
                 if claim.get('already_confirmed'): return {'ok':True,'outcome':claim['outcome']}

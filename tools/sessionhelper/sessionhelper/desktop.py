@@ -142,18 +142,40 @@ class DesktopAdapter:
         finally:
             self._wait_guard.release()
 
-    def reserve_mcp_reply(self, message_id, body):
+    @staticmethod
+    def _validate_mcp_reply(message_id, body):
         if not isinstance(message_id,str) or not 1 <= len(message_id)<=256:
             raise ValueError('invalid message_id')
         if not isinstance(body,str) or not body.strip() or len(body.encode('utf-8'))>65536:
             raise ValueError('invalid reply body')
+
+    @staticmethod
+    def _prior_mcp_reply(prior, body):
+        if prior is None:
+            return None
+        if prior['state']=='confirmed' and prior['body']==body:
+            return {'ok': True,'already_confirmed':True,'outcome':json.loads(prior['outcome'])}
+        return {'ok': False,'error':'reply_already_attempted'}
+
+    def existing_mcp_reply(self, message_id, body):
+        """Recover an existing outcome without reserving/sending a new reply.
+
+        A confirmed journal receipt survives disconnection/restart. Other
+        attempted outcomes still refuse resend, including a changed body.
+        None means no attempt exists, not permission to send without negotiation.
+        """
+        self._validate_mcp_reply(message_id, body)
+        with self._lock,self._connect() as db:
+            prior=db.execute('SELECT * FROM desktop_mcp_reply WHERE message_id=?',(message_id,)).fetchone()
+            return self._prior_mcp_reply(prior, body)
+
+    def reserve_mcp_reply(self, message_id, body):
+        self._validate_mcp_reply(message_id, body)
         with self._lock,self._connect() as db:
             db.execute('BEGIN IMMEDIATE')
             prior=db.execute('SELECT * FROM desktop_mcp_reply WHERE message_id=?',(message_id,)).fetchone()
             if prior:
-                if prior['state']=='confirmed' and prior['body']==body:
-                    return {'ok': True,'already_confirmed':True,'outcome':json.loads(prior['outcome'])}
-                return {'ok': False,'error':'reply_already_attempted'}
+                return self._prior_mcp_reply(prior, body)
             row=db.execute("SELECT reply_to FROM desktop_message WHERE id=? AND state='unread'",(message_id,)).fetchone()
             if row is None or not row[0] or len(row[0])>256 or any(c.isspace() for c in row[0]):
                 return {'ok':False,'error':'no_unread_message_or_reply_target'}
