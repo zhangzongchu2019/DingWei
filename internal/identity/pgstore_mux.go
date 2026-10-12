@@ -19,6 +19,9 @@ func (s *PGStore) ConsoleMuxSlots(b *consolemux.Budget) consolemux.Slots {
 func (s *PGStore) AuthorizeConsoleMux(ctx context.Context, hash string, names []string) (consolemux.Authorization, error) {
 	start := time.Now()
 	out := consolemux.Authorization{Agents: map[string]consolemux.Agent{}}
+	if err := muxWorkDeadline(ctx); err != nil {
+		return out, err
+	}
 	row, err := s.queryRow(ctx, `SELECT s.user_id_lc,s.expires_at,clock_timestamp()
  FROM np_session s JOIN np_user u ON u.user_id_lc=s.user_id_lc
  WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>clock_timestamp()
@@ -37,6 +40,9 @@ func (s *PGStore) AuthorizeConsoleMux(ctx context.Context, hash string, names []
 	if len(names) == 0 {
 		return out, nil
 	}
+	if err := muxWorkDeadline(ctx); err != nil {
+		return out, err
+	}
 	rows, err := s.pool.Query(ctx, s.t, `SELECT a.id,a.owner_lc,lower(a.name),
  lower(a.name)||'.'||lower(u.short_name)
  FROM np_agent a JOIN np_user u ON u.user_id_lc=a.owner_lc
@@ -54,4 +60,14 @@ func (s *PGStore) AuthorizeConsoleMux(ctx context.Context, hash string, names []
 		out.Agents[a.FullName] = a
 	}
 	return out, rows.Err()
+}
+
+func muxWorkDeadline(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if d, ok := ctx.Deadline(); ok && !time.Now().Before(d) {
+		return context.DeadlineExceeded
+	}
+	return nil
 }

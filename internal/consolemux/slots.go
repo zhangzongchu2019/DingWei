@@ -8,22 +8,32 @@ import (
 	"encoding/hex"
 	"errors"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
+	"sync/atomic"
 	"time"
 )
 
 const SlotTTL = 3 * time.Second
 
 var (
-	ErrInUse    = errors.New("console_in_use")
-	ErrLost     = errors.New("console_slot_lost")
-	ErrCapacity = errors.New("console_capacity")
+	ErrInUse          = errors.New("console_in_use")
+	ErrLost           = errors.New("console_slot_lost")
+	ErrCapacity       = errors.New("console_capacity")
+	ErrCleanupTimeout = errors.New("console_db_cleanup_timeout")
 )
 
 // Budget is shared by all mux authorization and slot work on one Hub.
-type Budget struct{ executing, waiting chan struct{} }
+type Budget struct {
+	executing, waiting chan struct{}
+	unhealthy          atomic.Bool
+}
 
-func NewBudget() *Budget { return &Budget{make(chan struct{}, 16), make(chan struct{}, 64)} }
+func NewBudget() *Budget {
+	return &Budget{executing: make(chan struct{}, 16), waiting: make(chan struct{}, 64)}
+}
 func (b *Budget) Do(ctx context.Context, fn func(context.Context) error) error {
+	if b.unhealthy.Load() {
+		return ErrCleanupTimeout
+	}
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	select {
@@ -41,8 +51,39 @@ func (b *Budget) Do(ctx context.Context, fn func(context.Context) error) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	// A delayed cancellation callback is not permission to start new work.
+	if deadline, ok := ctx.Deadline(); ok && !time.Now().Before(deadline) {
+		return context.DeadlineExceeded
+	}
+	if b.unhealthy.Load() {
+		return ErrCleanupTimeout
+	}
+	deadline, _ := ctx.Deadline()
+	finished := make(chan struct{})
+	// At most one watchdog per charged executing operation (<=16). It never
+	// replaces the worker or releases its token while SQL is still running.
+	watchdog := time.AfterFunc(time.Until(deadline.Add(50*time.Millisecond)), func() {
+		select {
+		case <-finished:
+			return
+		default:
+			b.unhealthy.Store(true)
+		}
+	})
+	defer watchdog.Stop()
+	defer close(finished)
 	err := fn(ctx)
+	if b.unhealthy.Load() {
+		return ErrCleanupTimeout
+	}
+	if time.Now().After(deadline.Add(50 * time.Millisecond)) {
+		b.unhealthy.Store(true)
+		return ErrCleanupTimeout
+	}
 	if err == nil {
+		if !time.Now().Before(deadline) {
+			return context.DeadlineExceeded
+		}
 		return ctx.Err()
 	}
 	return err
