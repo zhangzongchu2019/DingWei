@@ -1,10 +1,10 @@
 {
-  "recorded_utc": "2026-10-12T09:42:54.398440+00:00",
+  "recorded_utc": "2026-10-12T09:54:16.975257+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "Prior2f4fa3512 snapshot PASS31 Python files+2shell, including7 actual integration scenarios. Not repeated for narrow setup restart-command correction; current setup targeted and new frozen smoke recorded separately.",
+    "canonical": "PASS current31 Python files+2shell; mandatory cross-runtime gate has11 scenarios: memory claim4, PostgreSQL claim4, MCP roundtrip3; final combined Go integration12.355s.",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
@@ -34,11 +34,14 @@
     "macos_wait_pilot": "IMPLEMENTED explicit --message-after-wait; synthetic fixture created only after pending wait. dw_reply_message refuses to simulate a Hub receipt; local send_message remains sent_to_hub=false. Mac UI not run.",
     "desktop_actual_hub_roundtrip": "PASS3 actual loopback websocket/SQLite/helper._run_once/MCP subprocess cases: legacy service key; approved dedicated /ws/agent credentials with leader_only group; group removal before reply causes actual rejection, unread retained, resend refused. No Mac GUI/model/Feishu; identity uses private MemStore, durable queue SQLite.",
     "desktop_actual_hub_cleanup": "PASS helper loops/MCP waiters and child processes joined on normal exit; subprocess failure cleanup bounded with interrupt/owned fallback. Not a forced-failure process-death recovery claim.",
-    "cross_runtime_gate_policy": "Canonical shell requires Python/dependencies and runs both actual MCP roundtrip (3) and claim onboarding (4); ordinary Go-only test runs explicitly skip these without interpreter.",
+    "cross_runtime_gate_policy": "Canonical requires Python/dependencies and runs actual memory4+PG4+MCP3. PG variant forces owned embedded database and strict failure; ordinary Go-only skips Python cross-runtime explicitly if interpreter absent.",
     "first_cross_runtime_invocation": "FAILED before package tests due compact -p1 option; corrected to -p 1. Failed log retained, not counted PASS.",
     "claim_actual_client_hub": "PASS4 in1.58s actual localhost HTTP apply/poll/ACK + trusted synthetic Feishu command handler + actual dedicated helper WS: new member; bound identity reuse; lost committed ACK response with fresh interpreter/same saved credential; takeover denied. All first reject untrusted/group ingress. MemStore, no real Feishu platform or PG transaction.",
     "claim_failure_history": "Initial harness failed due credential fixture filename/missing Config key_id, then restart control buffering/repeated injected lost ACK. Fixed harness only; original failed logs retained. No product code change or weakening assertions.",
-    "installer_restart_command": "PASS15 setup tests; source and frozen use shared profile_command; shell-quoted paths with spaces; Web vs Feishu pairing instructions split. First new test fixture incorrectly included python -m args in sys.argv; corrected process argv fixture, failed log retained."
+    "installer_restart_command": "PASS15 setup tests; source and frozen use shared profile_command; shell-quoted paths with spaces; Web vs Feishu pairing instructions split. First new test fixture incorrectly included python -m args in sys.argv; corrected process argv fixture, failed log retained.",
+    "claim_actual_postgres_hub": "PASS4 in8.85s final PostgreSQL18.3/server_version_num180003; actual migrate.HubDomains ledger0001/0100/0101/0102, migration idempotency and CheckSchema; actual Python HTTP private save/ACK/restart and dedicated helper WS. Own embedded DB, caller DSN blocked, strict startup/no skip downgrade, cleanup residue checks. Synthetic trusted Feishu identity, no real platform.",
+    "claim_postgres_contracts": "PASS memory11 + PG11 in2.852s: new/existing/takeover/short conflict/disabled/replay/expiry/wrong token/concurrent/different claims/preferred name reuse; existing minimal test DDL, no external DSN.",
+    "claim_postgres_rollback": "PASS1 in1.977s: final audit trigger failure after attempted account/identity/agent/claim writes leaves no user/agent or consumed claim; existing PGTestSchema."
   },
   "required_before_release": [
     "Independent code review",
@@ -380,6 +383,26 @@
       "name": "setup-restart-frozen-smoke.log",
       "bytes": 285,
       "sha256": "d6cc29bbcd08fab94acbf399abf889363a5adca423cc2b49f308fd3f17a7fd84"
+    },
+    {
+      "name": "claim-postgres-contracts.log",
+      "bytes": 3185,
+      "sha256": "83d49e62d053ab455d5662ee1ebde0e9bcfe8d154a3d1d0c7da17991ca327897"
+    },
+    {
+      "name": "claim-postgres-rollback.log",
+      "bytes": 167,
+      "sha256": "ea4c23adf3dc0c2c3cbbc96e336728b46283e0127f3ba4e43b355189a0fcc804"
+    },
+    {
+      "name": "claim-postgres-http-first.log",
+      "bytes": 15272,
+      "sha256": "b46c490c250517ada1686daa918572a84fa94df4492079febe01b08ed93154cc"
+    },
+    {
+      "name": "claim-postgres-ledger-canonical.log",
+      "bytes": 27562,
+      "sha256": "ce626cebdb15393784de7bf631a57bc6cc586a17660c2a4d76704763f0ea0f5e"
     }
   ],
   "pm_target": {

@@ -20,6 +20,9 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
+	"github.com/zhangzongchu2019/dingwei/internal/store/migrate"
+	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
 
 // All HTTP/WS endpoints are loopback and all identities are synthetic.
@@ -30,15 +33,57 @@ func TestDeviceClaimAcrossActualClientAndHub(t *testing.T) {
 		t.Skip("run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment")
 	}
 	for _, mode := range []string{"new", "reuse", "lost_ack", "takeover"} {
-		t.Run(mode, func(t *testing.T) { claimClientIntegration(t, python, mode) })
+		t.Run(mode, func(t *testing.T) { claimClientIntegration(t, python, mode, "memory") })
 	}
 }
 
-func claimClientIntegration(t *testing.T, python, mode string) {
+// This variant must own its test database. Never reuse a caller's DSN or
+// downgrade a failed startup to a skip. pgtest checks cleanup and new residue.
+func TestDeviceClaimAcrossActualClientAndPostgres(t *testing.T) {
+	python := os.Getenv("DW_DESKTOP_INTEGRATION_PYTHON")
+	if python == "" {
+		t.Skip("run scripts/test-desktop-hub-roundtrip.sh for cross-runtime PostgreSQL enrollment")
+	}
+	t.Setenv(pgtest.DSNEnv, "")
+	t.Setenv(pgtest.EmbeddedOffEnv, "1")
+	t.Setenv(pgtest.SkipOKEnv, "0")
+	t.Setenv(pgtest.StrictEnv, "1")
+	for _, mode := range []string{"new", "reuse", "lost_ack", "takeover"} {
+		t.Run(mode, func(t *testing.T) { claimClientIntegration(t, python, mode, "postgres") })
+	}
+}
+
+func claimClientIntegration(t *testing.T, python, mode, backend string) {
 	hub, _, base := newTestHub(t)
 	ctx, cancel := context.WithTimeout(base, 25*time.Second)
 	defer cancel()
-	store := identity.NewMemStore()
+	var store identity.Store = identity.NewMemStore()
+	if backend == "postgres" {
+		pool := pgtest.Pool(t)
+		access, err := repo.NewAccessCtx("test", "claim-client-integration")
+		if err != nil {
+			t.Fatal(err)
+		}
+		row, err := pool.QueryRow(ctx, access, "SELECT current_setting('server_version_num')")
+		var versionNumber int
+		if err != nil || row.Scan(&versionNumber) != nil {
+			t.Fatal("cannot identify isolated PostgreSQL version")
+		}
+		t.Logf("isolated PostgreSQL server_version_num=%d", versionNumber)
+		report, err := migrate.Migrate(ctx, pool, migrate.HubDomains())
+		if err != nil || strings.Join(report.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql" {
+			t.Fatal("production Hub migration ledger did not initialize expected identity/claim schema")
+		}
+		repeated, err := migrate.Migrate(ctx, pool, migrate.HubDomains())
+		if err != nil || len(repeated.Applied) != 0 {
+			t.Fatal("migration rerun was not idempotent")
+		}
+		if err := identity.NewPGStore(pool).CheckSchema(ctx); err != nil {
+			t.Fatal("migrated identity schema not usable")
+		}
+		store = identity.NewPGStore(pool)
+	}
+	claimStore := store.(identity.ClaimStore)
 	svc := identity.NewService(store, nil, nil)
 	ob := identity.NewOnboarding(svc)
 	ob.CodeKey = "local-synthetic-claim-key"
@@ -96,7 +141,7 @@ func claimClientIntegration(t *testing.T, python, mode string) {
 				http.Error(w, "credential not saved", 500)
 				return
 			}
-			c, err := store.GetDeviceClaim(r.Context(), saved.ClaimID)
+			c, err := claimStore.GetDeviceClaim(r.Context(), saved.ClaimID)
 			if err != nil || identity.HashSecret(saved.Secret) != c.CredentialHash {
 				http.Error(w, "wrong saved credential", 500)
 				return
@@ -186,7 +231,7 @@ func claimClientIntegration(t *testing.T, python, mode string) {
 		if _, handled, err := hub.dispatchNewPlatformCommand(ctx, bad, command); err != nil || !handled {
 			t.Fatal("untrusted claim handling failed")
 		}
-		claim, err := store.GetDeviceClaim(ctx, pending.ID)
+		claim, err := claimStore.GetDeviceClaim(ctx, pending.ID)
 		if err != nil || claim.State != "awaiting_feishu" {
 			t.Fatal("untrusted ingress consumed code")
 		}
@@ -207,7 +252,7 @@ func claimClientIntegration(t *testing.T, python, mode string) {
 	} else {
 		if mode == "lost_ack" {
 			phase("CLAIM_RESTART_READY")
-			c, err := store.GetDeviceClaim(ctx, pending.ID)
+			c, err := claimStore.GetDeviceClaim(ctx, pending.ID)
 			if err != nil || c.State != "completed" {
 				t.Fatal("lost response did not commit ACK")
 			}
@@ -222,7 +267,7 @@ func claimClientIntegration(t *testing.T, python, mode string) {
 			send(config)
 		}
 		phase("CLAIM_CONNECTED")
-		c, err := store.GetDeviceClaim(ctx, pending.ID)
+		c, err := claimStore.GetDeviceClaim(ctx, pending.ID)
 		if err != nil || c.State != "completed" || c.UserID != actual {
 			t.Fatal("claim not completed for expected owner")
 		}
@@ -254,5 +299,5 @@ func claimClientIntegration(t *testing.T, python, mode string) {
 	if err := cmd.Wait(); err != nil {
 		t.Fatal("claim child unsuccessful")
 	}
-	t.Log("actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; MemStore, no real Feishu")
+	t.Log("actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=" + backend + ", no real Feishu")
 }

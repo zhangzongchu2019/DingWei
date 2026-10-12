@@ -123,3 +123,13 @@ Mac 最小信息采集：从新的固定源码包解压目录运行 `PYTHONPATH=
 Web配对明确需要先创建账号与6位配对码审核；飞书模式才提示 `#pair` 一步开户/配对。不修改已有 profile、认证或设备凭据。configure-only 继续只配置，不启动/配对。冻结验证新增执行实际打印的命令：测试就绪状态临时缺失时必须进入 profile安全检查并拒绝，无 Hub连接，再恢复本轮合成状态。
 
 这条订正改变setup产品代码；6e9bc5e4b原Mac源码包仍保留其历史pins，不能声称包含本轮修复。后续Mac制品须从新固定提交构建；Linux冻结验证不替代Mac签名/桌面验收。
+
+## PostgreSQL 一步入网闭环（开发增量）
+
+同一必跑跨运行时门禁新增 `TestDeviceClaimAcrossActualClientAndPostgres`：四个场景复用实际Python HTTP申请/领取/落盘/ACK/重启、合成可信私聊认领处理和真实helper专属Agent WS。身份存储改为实际PGStore；每场景使用pgtest自建独立临时PostgreSQL，明确屏蔽调用者HUB_TEST_PG_DSN，不连接外部库，启动失败不允许降级skip。pgtest退出时核临时目录和新增进程/日志残留。
+
+空库通过生产 `migrate.Migrate(..., HubDomains())` 建表，钉0001/0100/0101/0102四条账本，第二次应用不增加条目，并验证身份CheckSchema；不是仅用最小测试DDL替代发布迁移。日志只回server_version_num等安全元数据。新开户、已绑定用户复用、ACK提交后响应丢失且全新解释器恢复、冒领拒绝四面均须走此PG路径。
+
+另外独立运行现有 `TestDeviceClaimContracts` 的memory11/PG11场景，以及 `TestDeviceClaimPGFailureRollsBack`：末尾审计触发器故意报错，账户/Agent/认领消费必须全部回退。这两条契约测试仍使用仓库既有PGTestSchema；与新增实际迁移联调分开记录。
+
+本轮闭合的是**隔离PG事务与跨客户端链路**。真实飞书平台身份/渠道验证、Mac原聊天、签名安装器、空闲桌面自动唤醒和独立CR仍开放，不据此改生产或发布。Mac49fc源码包的产品代码未变，不重打包或重标其commit；新Go/PG门禁仍须完整仓库。
