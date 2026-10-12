@@ -702,6 +702,9 @@ func (h *Hub) serveMuxSources(w http.ResponseWriter, r *http.Request, f *console
 			return
 		}
 		replay, gap, err := selectMuxReplay(snap, s.Desired.After, s.Desired.After != "")
+		// Keep only the selected replay ownership, not an additional complete
+		// snapshot reference after its cut metadata has been extracted.
+		snap.Replay = nil
 		v := &src{s: s, snap: snap, reader: reader, unsub: unsub, replay: replay}
 		sources = append(sources, v)
 		if err != nil || gap != "" {
@@ -871,6 +874,7 @@ func (h *Hub) serveMuxSources(w http.ResponseWriter, r *http.Request, f *console
 				}
 				v.window.sent(ev.Seq, wireBytes)
 				if !live {
+					v.replay[0] = sessionSeqEvent{}
 					v.replay = v.replay[1:]
 				}
 				if live {
