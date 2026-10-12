@@ -1,6 +1,7 @@
 package m8
 
 import (
+	"container/list"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -51,17 +52,21 @@ type displayProvenance struct {
 }
 
 type terminalState struct {
-	keyID       string
-	sessionName string
-	buffer      string
-	viewers     map[string]*terminalViewer
-	writerPage  string
-	writerToken string
-	writerUntil time.Time
-	cookieToken string
-	cookieUntil time.Time
-	eventRing   []string               // 结构化会话事件(session_event)环形缓冲,供晚订阅回放
-	eventSubs   map[string]chan string // 内网事件订阅者(View Service),subID → channel
+	keyID                string
+	sessionName          string
+	buffer               string
+	viewers              map[string]*terminalViewer
+	writerPage           string
+	writerToken          string
+	writerUntil          time.Time
+	cookieToken          string
+	cookieUntil          time.Time
+	eventRingBytes       int
+	eventRingNodes       []*list.Element
+	eventRingLostThrough uint64
+	eventRingTruncated   bool
+	eventRing            []string               // 结构化会话事件(session_event)环形缓冲,供晚订阅回放
+	eventSubs            map[string]chan string // 内网事件订阅者(View Service),subID → channel
 
 	// R-V2-0105 件一：逐事件序号。纪元挂在本状态上——会话断开时 closeTerminalLocked 删除状态、下次新建，
 	// 新状态换纪元、seq 从 1 起，页面据纪元变化不把新事件误判为已见（复核必改 1，取 A）。
@@ -176,6 +181,8 @@ func (h *Hub) closeTerminalLocked(keyID, sessionName string) []*terminalViewer {
 	for _, v := range st.viewers {
 		viewers = append(viewers, v)
 	}
+	h.adoptRingLocked(st)
+	h.clearRingLocked(st)
 	delete(h.terminals, k)
 	return viewers
 }
@@ -488,14 +495,7 @@ func (h *Hub) publishSessionEvent(keyID, sessionName, data string) {
 	st.ensureEventEpochLocked()
 	st.eventSeq++
 	seq := st.eventSeq
-	st.eventRing = append(st.eventRing, data)
-	st.eventRingSeq = append(st.eventRingSeq, seq)
-	if len(st.eventRing) > terminalEventRingCap {
-		st.eventRing = st.eventRing[len(st.eventRing)-terminalEventRingCap:]
-	}
-	if len(st.eventRingSeq) > len(st.eventRing) {
-		st.eventRingSeq = st.eventRingSeq[len(st.eventRingSeq)-len(st.eventRing):]
-	}
+	h.retainEventLocked(st, seq, data)
 	subs := make([]chan string, 0, len(st.eventSubs))
 	for _, ch := range st.eventSubs {
 		subs = append(subs, ch)
@@ -815,12 +815,14 @@ func (h *Hub) subscribeExistingSessionEvents(keyID, sessionName, subID string) (
 
 // subscribeExistingSessionEventsSeq（R-V2-0105 件一）：同 subscribeExistingSessionEvents，但带纪元与逐事件序号。
 type sessionSeqSnapshot struct {
-	Epoch    string
-	Floor, H uint64
-	Empty    bool
-	Replay   []sessionSeqEvent
-	Live     chan sessionSeqEvent
-	Unsub    func()
+	Epoch            string
+	Floor, H         uint64
+	LostThrough      uint64
+	HistoryTruncated bool
+	Empty            bool
+	Replay           []sessionSeqEvent
+	Live             chan sessionSeqEvent
+	Unsub            func()
 }
 
 func (h *Hub) subscribeExistingSessionEventsSeq(keyID, sessionName, subID string) (epoch string, replay []sessionSeqEvent, ch chan sessionSeqEvent, unsub func(), ok bool) {
@@ -845,7 +847,8 @@ func (h *Hub) subscribeExistingSessionEventsSeqSnapshot(keyID, sessionName, subI
 		st.eventSeqSubs = map[string]chan sessionSeqEvent{}
 	}
 	st.eventSeqSubs[subID] = ch
-	snap := sessionSeqSnapshot{Epoch: st.eventEpoch, H: st.eventSeq, Replay: st.eventRingSnapshotLocked(), Live: ch}
+	h.adoptRingLocked(st)
+	snap := sessionSeqSnapshot{LostThrough: st.eventRingLostThrough, HistoryTruncated: st.eventRingTruncated, Epoch: st.eventEpoch, H: st.eventSeq, Replay: st.eventRingSnapshotLocked(), Live: ch}
 	snap.Empty = len(snap.Replay) == 0
 	for _, ev := range snap.Replay {
 		if ev.Seq > 0 {
@@ -932,7 +935,8 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	subID := randomHex(8)
-	epoch, ringReplay, ch, unsub, ok := h.subscribeExistingSessionEventsSeq(keyID, internalSession, subID)
+	snap, ok := h.subscribeExistingSessionEventsSeqSnapshot(keyID, internalSession, subID)
+	epoch, ch, unsub := snap.Epoch, snap.Live, snap.Unsub
 	if !ok {
 		http.Error(w, "session offline or ambiguous", http.StatusNotFound)
 		return
@@ -945,7 +949,7 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 			after, hasAfter = v, true
 		}
 	}
-	replay, gap := selectSSEReplay(epoch, ringReplay, after, hasAfter)
+	replay, gap := selectLegacySnapshotReplay(snap, after, hasAfter)
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-store")

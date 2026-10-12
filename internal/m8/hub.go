@@ -2,6 +2,7 @@
 package m8
 
 import (
+	"container/list"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -126,6 +127,8 @@ type Hub struct {
 	seenSessions          map[string]bool
 	seenSessionsOnce      sync.Once
 	seenSessionsOK        bool
+	retainedRingBytes     int
+	retainedRingFIFO      list.List
 	terminals             map[string]*terminalState
 	terminalLastSize      map[string][2]int
 	syncTargets           map[string]map[string]feishuSyncTarget

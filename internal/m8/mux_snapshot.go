@@ -16,6 +16,9 @@ func selectMuxReplay(s sessionSeqSnapshot, after string, hasAfter bool) ([]sessi
 		return nil, "seq_exhausted", nil
 	}
 	if !hasAfter {
+		if s.HistoryTruncated && s.Empty {
+			return nil, "history_unavailable", nil
+		}
 		for _, e := range s.Replay {
 			if e.Seq == 0 {
 				return nil, "legacy_unsequenced", nil

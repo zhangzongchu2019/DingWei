@@ -159,7 +159,8 @@ func (h *Hub) subscribeConsoleMuxSource(a consolemux.Agent, id string) (sessionS
 		st.muxSeqSubs = map[string]*consoleMuxReader{}
 	}
 	st.muxSeqSubs[id] = r
-	snap := sessionSeqSnapshot{Epoch: st.eventEpoch, H: st.eventSeq, Replay: st.eventRingSnapshotLocked(), Empty: len(st.eventRing) == 0}
+	h.adoptRingLocked(st)
+	snap := sessionSeqSnapshot{LostThrough: st.eventRingLostThrough, HistoryTruncated: st.eventRingTruncated, Epoch: st.eventEpoch, H: st.eventSeq, Replay: st.eventRingSnapshotLocked(), Empty: len(st.eventRing) == 0}
 	for _, e := range snap.Replay {
 		if e.Seq > 0 {
 			snap.Floor = e.Seq
