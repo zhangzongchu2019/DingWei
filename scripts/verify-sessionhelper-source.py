@@ -16,6 +16,7 @@ import stat
 
 WRAPPERS = {'SOURCE-MEMBER-PINS.json', 'START-HERE.txt'}
 REQUIRED = {'VERSION', 'scripts/verify-sessionhelper-source.py',
+            'scripts/record-sessionhelper-macos-build.py',
             'scripts/verify-sessionhelper-frozen.py',
             'tools/sessionhelper/deploy/macos/build-desktop-candidate.sh',
             'tools/sessionhelper/sessionhelper.py',

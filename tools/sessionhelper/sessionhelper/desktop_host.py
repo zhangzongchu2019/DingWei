@@ -84,8 +84,15 @@ def main(argv=None):
     import argparse
     parser = argparse.ArgumentParser(description="只读桌面应用版本；不读登录、会话或凭据")
     parser.add_argument("--desktop-app", type=Path)
+    parser.add_argument("--require-app", action="store_true", help="原生构建前要求 macOS 且唯一明确选择的桌面应用")
     args = parser.parse_args(argv)
-    print(json.dumps(desktop_probe(selected=args.desktop_app), ensure_ascii=False, indent=2))
+    try:
+        result = desktop_probe(selected=args.desktop_app)
+        if args.require_app and (result["platform"] != "Darwin" or len(result["applications"]) != 1):
+            raise ValueError("native build requires macOS and one selected installed desktop application")
+    except (OSError, ValueError):
+        raise SystemExit("桌面应用预检未通过：请在 Mac 上指定已安装的 Codex.app/ChatGPT.app；不读取登录或会话。") from None
+    print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

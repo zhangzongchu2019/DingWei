@@ -3,9 +3,11 @@ from pathlib import Path
 import plistlib
 import tempfile
 import unittest
+import io
+from contextlib import redirect_stdout
 from unittest.mock import patch
 
-from sessionhelper.desktop_host import desktop_probe, require_macos_desktop
+from sessionhelper.desktop_host import desktop_probe, require_macos_desktop, main
 
 
 class DesktopHostTest(unittest.TestCase):
@@ -65,6 +67,22 @@ class DesktopHostTest(unittest.TestCase):
         result = desktop_probe(system="Linux", selected="/never/read/fixture.app")
         self.assertEqual(result["status"], "MACOS_PROBE_NOT_APPLICABLE")
         self.assertEqual(result["applications"], [])
+
+    def test_native_preflight_cli_rejects_nonmac_and_ambiguous_selection(self):
+        for result in (desktop_probe(system='Linux'),
+                       {'platform':'Darwin','applications':[]},
+                       {'platform':'Darwin','applications':[{},{}]}):
+            with self.subTest(result=result), patch('sessionhelper.desktop_host.desktop_probe', return_value=result):
+                with self.assertRaises(SystemExit): main(['--require-app'])
+
+    def test_native_preflight_reads_only_selected_synthetic_app_metadata(self):
+        with tempfile.TemporaryDirectory() as root:
+            app = self.app(root)
+            with patch('sessionhelper.desktop_host.platform.system', return_value='Darwin'), redirect_stdout(io.StringIO()) as output:
+                main(['--require-app','--desktop-app',str(app)])
+            result = json.loads(output.getvalue())
+            self.assertEqual(result['applications'][0]['build'],'fixture123')
+            self.assertFalse(result['native_auto_notify_implemented'])
 
 
 if __name__ == "__main__":

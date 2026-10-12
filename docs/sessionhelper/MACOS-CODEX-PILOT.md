@@ -20,6 +20,9 @@ sh tools/sessionhelper/deploy/macos/build-desktop-candidate.sh \
 此脚本只核源码、创建独立私有 venv、构建本机冻结包及做本地测试。使用下载依赖，需要网络；不关闭 Gatekeeper/SIP、不读取钥匙串、模型认证、桌面历史、cookie、设备凭据，不连接 Hub。没有登录或模型调用。
 源码归档的新入口在创建输出目录/venv或安装依赖前核全部清单文件及**精确文件集合**：缺失、哈希不符、重复/逃逸路径、额外Python/pycache、链接/FIFO或版本不一致均拒绝，保留现场不自动删除。仅允许已钉源码及 SOURCE-MEMBER-PINS.json、START-HERE.txt 两个包装件。先检查收到的总包外部SHA仍是前置要求，包内自带清单不能独立证明来源或正式发布资格。旧开发归档仍保留各自旧脚本和原pins，不重新标记。
 生成 desktop-metadata.json 的架构/应用名/准确版本/build 仅是本机元数据，不是签名、登录或自动提醒证明；不会启动 Codex CLI 或另建会话。
+应用检查现在在创建输出目录、安装依赖及编译之前执行：非macOS、未找到应用、多应用未明确选择或损坏元数据均停止。编译前后应用身份/版本/build 必须一致，改变时保留现场，不记录成功清单。Python预检/编译/本地smoke使用无源码bytecode模式，防止自身生成pycache破坏归档完整文件集合。
+
+通过本地smoke后生成私有 `MAC-BUILD-MANIFEST.json`，记录准确源码commit、源码资格、Python/构建进程架构、PyInstaller/websockets/pexpect实际版本、二进制bytes/SHA及所选应用元数据。归档源码会再核一次成员集合，Git源码会重核clean HEAD。清单为O_EXCL/0600，不覆写；不包含环境、账号、URL凭据、聊天或日志正文，也不执行模型。signature_verified=false、native_desktop_model_runtime=NOT_VERIFIED、release_ready=false 保持；Mac签名/原聊天/自动唤醒另验。
 
 ## 2. 配置测试专用 MCP
 

@@ -1,20 +1,20 @@
 {
-  "recorded_utc": "2026-10-12T11:28:14.534649+00:00",
+  "recorded_utc": "2026-10-12T11:42:49.899184+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS33 Python files+2shell after source-kit exact closure gate; local actual Hub claim5/PG claim5/MCP3 passed (1.88s/10.73s/1.94s). No native Mac, model or actual Feishu platform validation.",
+    "canonical": "PASS34 Python files+2shell after early Mac app preflight and private build receipt; actual local Hub/PG/MCP cases13. No actual native Mac/GUI/model/Feishu platform acceptance.",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
     "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
     "helper_all_discovery": "PASS553 in284.444s prior to delayed-pilot delta; delayed-pilot covered by final21 targeted + canonical31 + frozen local smoke. No claim of a fresh555 full-discovery run.",
-    "frozen_linux_candidate": "PASS final Linux development binary10760000B/2965827d58cabe951843f567e7da0660a620f7a8f9472c01043793d736e4ac7a: actual no-pending --cancel-pairing entry/no enrollment, restart guard, MCP/local IPC/read/reply/wait-first. Not Mac signing/UI/Hub/model or frozen full pairing proof.",
+    "frozen_linux_candidate": "PASS current Linux development binary10760440B/4841cc381053c4072c720029a19acc2c5f26a9aa551aad3cd2d0f00423983016: actual --desktop-probe --require-app refused Linux, standard local frozen setup/restore/cancel/MCP/IPC/wait-first passed. Built from workingtree before final commit; not clean release/native Mac/real Hub or AI proof.",
     "macos_metadata": "PASS5 synthetic bundle tests; no Mac queried, account/login/history not read",
     "local_desktop_pilot": "PASS6 tests, including real local wait-first fixture and paused refusal, owned cleanup/profile-credential refusal; no Hub routing",
     "native_auto_notify": "NOT_IMPLEMENTED: original GUI provider and complete automated receive/turn/reply runtime still missing",
-    "macos_build": "NOT_RUN: native build script prepared, syntax checked; Linux rejected before mutation. No Mac binary exists here.",
+    "macos_build": "NOT_RUN_ON_ACTUAL_MAC. Shell adds pre-output unique app preflight, no source bytecode, post-build source/app/binary pin consistency and O_EXCL0600 MAC-BUILD-MANIFEST. Metadata/synthetic tests do not verify signing/original desktop/model.",
     "legacy_IPC": "PASS15 send wiring tests, original default socket replacement semantics preserved",
     "frozen_mac_pilot_entry": "PASS Linux build of final entry, metadata and synthetic pilot stdio/read/reply/SIGTERM cleanup. Not a Mac binary or native GUI proof.",
     "desktop_dispatch": "PASS18 including idle-to-busy race preserving unread, generic busy errors uncertain across restart, and concurrent scheduler blocking. Native provider NOT_IMPLEMENTED.",
@@ -50,7 +50,8 @@
     "claim_recovery_client": "PASS33 selected tests in0.597s:9 claim+20 setup+4 env gate; cancellation uncertainty/refusal retain pending, existing credential refuses reset, no concurrent same-dir operation, interrupt releases lock, corrupt auth fields do not reach headers, private symlink/FIFO/oversize refusal, CLI cancellation does not start helper/model login.",
     "native_busy_admission": "Typed refusal only for future trusted atomic no-side-effect backend; no RPC text/status/timeout conversion. No real desktop capability enabled.",
     "desktop_reply_offline_recovery": "PASS13 desktop wait/reply tests, including real MCP stdio/Unix IPC duplicate ACK recovery after broker disconnect and SQLite reopen; confirmed result cached, changed-body/uncertain/rejected attempts never resent, new reply refused before renegotiation.",
-    "source_kit_closure": "PASS8 synthetic filesystem/actual verifier CLI scenarios: exact set, extra code/cache, missing/tampered/omitted required files, unsafe/duplicate paths and JSON, links/FIFO, version/wrapper mismatch; no mutation/network. macOS builder shell syntax PASS, native execution NOT_RUN."
+    "source_kit_closure": "PASS8 synthetic filesystem/actual verifier CLI scenarios: exact set, extra code/cache, missing/tampered/omitted required files, unsafe/duplicate paths and JSON, links/FIFO, version/wrapper mismatch; no mutation/network. macOS builder shell syntax PASS, native execution NOT_RUN.",
+    "macos_build_preflight": "PASS7 desktop metadata tests +7 build receipt/refusal tests +8 source closure tests. Includes real shell rejection before output/venv/dependency steps on Linux; synthetic Mac receipt fixtures, not native Mac build."
   },
   "required_before_release": [
     "Independent code review",
@@ -526,7 +527,7 @@
     "actual_version": "NOT_YET_PROBED_ON_OWNER_MAC",
     "source": "owner direct statement"
   },
-  "latest_mac_source_kit": "New development archive to be generated from the fixed commit containing this verifier, f3db0fc50 and bd669086c; exact commit/archive/member pins recorded in external latest recovery. Historical91b archive unchanged. No native binary/signing/runtime release claim.",
+  "latest_mac_source_kit": "New fixed development archive will include native preflight/receipt scripts and current helper code. Exact commit/archive/member pins live in latest recovery. Historical8fc19/91b kits preserved; no signing/runtime/release qualification.",
   "logs": [],
   "native_busy_admission_evidence": {
     "canonical_log": {
@@ -558,5 +559,31 @@
     "source_verifier": "scripts/verify-sessionhelper-source.py",
     "native_mac_build": "NOT_RUN",
     "release_ready": false
+  },
+  "macos_preflight_evidence": {
+    "logs": [
+      {
+        "name": "macos-preflight-manifest-canonical-final.log",
+        "bytes": 30766,
+        "sha256": "619d4dc8cab6bbbf6e5f9c2f753adf171e1102b1ce11d8a22383022de3c04905"
+      },
+      {
+        "name": "macos-preflight-frozen-build.log",
+        "bytes": 4980,
+        "sha256": "f7546098e284348ec3ca8c4b876e8d40920c8d046f39f341e78d0cee18e2569e"
+      },
+      {
+        "name": "macos-preflight-frozen-smoke.log",
+        "bytes": 285,
+        "sha256": "e701c00fa19c9bbb4fd45eb47eebd131cfdcb9b78d1e41c23e00c2f85cfcd020"
+      },
+      {
+        "name": "macos-preflight-frozen-refusal.json",
+        "bytes": 257,
+        "sha256": "aa25b58d054f8ee20594d14d34e181ec49ea5beb977d22b80ee5b9dd7704a0dd"
+      }
+    ],
+    "actual_mac_builds": 0,
+    "production_actions": 0
   }
 }
