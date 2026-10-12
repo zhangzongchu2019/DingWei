@@ -823,9 +823,12 @@ func (h *Hub) serveMuxSources(w http.ResponseWriter, r *http.Request, f *console
 					v.stopped = true
 					break
 				}
-				meta.Type = "event"
-				meta.Seq = muxSeq(ev.Seq)
-				header, _ := json.Marshal(meta)
+				// Event metadata must not inherit replay floor/H/empty. Those
+				// control-only fields would reduce the legal maximum payload.
+				eventMeta := muxMeta(v.s, "event")
+				eventMeta.Epoch = v.snap.Epoch
+				eventMeta.Seq = muxSeq(ev.Seq)
+				header, _ := json.Marshal(eventMeta)
 				if len(header)+len(ev.Data)+19 > muxFrameMax {
 					meta.Type = "gap"
 					meta.Reason = "event_too_large"
@@ -836,7 +839,7 @@ func (h *Hub) serveMuxSources(w http.ResponseWriter, r *http.Request, f *console
 					v.unsub()
 					break
 				}
-				if !write(v.s, meta, ev.Data) {
+				if !write(v.s, eventMeta, ev.Data) {
 					return
 				}
 				if live {
