@@ -12,6 +12,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/identity/identitytest"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
+	"golang.org/x/crypto/bcrypt"
 	"io"
 	"net"
 	"net/http"
@@ -67,7 +68,16 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 		}
 	}
 	store := identity.NewPGStore(pool)
-	if err := store.CreateUser(ctx, identity.User{UserID: "owner", ShortName: "owner", Type: identity.UserMember, State: identity.UserActive, CreatedAt: time.Now()}); err != nil {
+	resetMode := os.Getenv("MUX_INVALIDATION") == "reset"
+	passwordHash := ""
+	if resetMode {
+		encoded, err := bcrypt.GenerateFromPassword([]byte("Local-Test-Initial-0042"), bcrypt.DefaultCost)
+		if err != nil {
+			t.Fatal(err)
+		}
+		passwordHash = string(encoded)
+	}
+	if err := store.CreateUser(ctx, identity.User{UserID: "owner", ShortName: "owner", Type: identity.UserMember, State: identity.UserActive, PasswordHash: passwordHash, CreatedAt: time.Now()}); err != nil {
 		t.Fatal(err)
 	}
 	token, _ := muxID()
@@ -160,12 +170,33 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 	})
 	mux.HandleFunc("POST /test-db-revoke", func(w http.ResponseWriter, r *http.Request) {
 		commitLowerBound := time.Now()
-		if err := store.RevokeSession(r.Context(), hash, time.Now()); err != nil {
+		var invalidationErr error
+		if resetMode {
+			resetOB := identity.NewOnboarding(identity.NewService(&muxResetStore{Store: store, evidence: evidence}, nil, nil))
+			// Keep publishing throughout password work and the invalidating transaction.
+			resetDone := make(chan struct{})
+			go func() {
+				defer close(resetDone)
+				until := time.Now().Add(9 * time.Second)
+				for time.Now().Before(until) {
+					h.publishSessionEvent(AgentKeyID("owner"), "agent04", `{"kind":"assistant_text","text":"reset-continuous-source-probe"}`)
+					time.Sleep(10 * time.Millisecond)
+				}
+			}()
+			invalidationErr = exerciseMuxResetChain(r.Context(), resetOB, store, token)
+			<-resetDone
+		} else {
+			invalidationErr = store.RevokeSession(r.Context(), hash, time.Now())
+		}
+		if invalidationErr != nil {
+			t.Errorf("authoritative invalidation chain: %v", invalidationErr)
 			http.Error(w, "DB error", 500)
 			return
 		}
 		evidence.mu.Lock()
-		evidence.commit = commitLowerBound
+		if !resetMode {
+			evidence.commit = commitLowerBound
+		}
 		evidence.probeDone = make(chan struct{})
 		done := evidence.probeDone
 		evidence.mu.Unlock()
@@ -287,4 +318,7 @@ func TestMuxProductHTTP1EightSeats(t *testing.T) {
 		t.Fatal("actual Chrome product integration", err)
 	}
 	evidence.check(t)
+	if resetMode {
+		t.Log("RESET_REAL_CHAIN PG transaction/Onboarding reset: both old sessions denied; old password denied; temporary login must-change and mux denied; change-password restores fresh authority; old cookies remain denied; no reset callback installed")
+	}
 }
