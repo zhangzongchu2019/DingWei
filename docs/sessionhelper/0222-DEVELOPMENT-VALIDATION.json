@@ -1,5 +1,5 @@
 {
-  "recorded_utc": "2026-10-12T12:29:49.393645+00:00",
+  "recorded_utc": "2026-10-12T12:51:14.046057+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
@@ -53,7 +53,8 @@
     "source_kit_closure": "PASS8 synthetic filesystem/actual verifier CLI scenarios: exact set, extra code/cache, missing/tampered/omitted required files, unsafe/duplicate paths and JSON, links/FIFO, version/wrapper mismatch; no mutation/network. macOS builder shell syntax PASS, native execution NOT_RUN.",
     "macos_build_preflight": "PASS7 desktop metadata tests +7 build receipt/refusal tests +8 source closure tests. Includes real shell rejection before output/venv/dependency steps on Linux; synthetic Mac receipt fixtures, not native Mac build.",
     "desktop_stop_continuation": "PASS8 local tests and actual frozen entry: precise main session, private SQLite persisted one-shot metadata, loop/paused/uncertain/refusal/race, source/package dispatch before enrollment configuration. Hook not installed; not idle wakeup.",
-    "stop_actual_hub_roundtrip": "PASS4 fresh local Hub/MCP modes incl Stop: exact-session metadata request once -> scripted MCP read/reply -> actual Hub durable queued -> unread0, repeated hook empty. Other10 claim/PG cases historical latest canonical. Not actual Codex model/GUI."
+    "stop_actual_hub_roundtrip": "PASS4 fresh local Hub/MCP modes incl Stop: exact-session metadata request once -> scripted MCP read/reply -> actual Hub durable queued -> unread0, repeated hook empty. Other10 claim/PG cases historical latest canonical. Not actual Codex model/GUI.",
+    "frozen_actual_hub_roundtrip": "PASS5 actual local Hub/MCP modes incl opt-in frozen helper/MCP/Stop; final frozen-only ordered rerun PASS: metadata unread -> hook one-shot -> scripted package MCP wait/reply -> durable queued/unread0. Synthetic approved credential private0600, no real account/GUI/model/Feishu."
   },
   "required_before_release": [
     "Independent code review",
@@ -644,6 +645,27 @@
     "initial_failure": "Owned Go test HOME mode0755 was refused by private-directory hook guard; corrected synthetic fixture to0700, not relaxed product permissions",
     "fresh_cases": 4,
     "scripted_mcp_calls_not_model": true,
+    "production_actions": 0,
+    "actual_mac_tests": 0
+  },
+  "frozen_actual_hub_evidence": {
+    "logs": [
+      {
+        "path": "/mnt/session-context/dw0222-development-tests/frozen-stop-real-hub.log",
+        "bytes": 11558,
+        "sha256": "184bfdae9c053eb6e06a943bfbccf33ba1f1dad9d502ea7bd198b9009d82e9d6"
+      },
+      {
+        "path": "/mnt/session-context/dw0222-development-tests/frozen-stop-ordered-real-hub.log",
+        "bytes": 2052,
+        "sha256": "3016ed5bbb181d89f2564a99117981da09ecc40269d57457c27f04dcefd1dad7"
+      }
+    ],
+    "binary_bytes": 10764712,
+    "binary_sha256": "f67bfc6744d82263e490feb007f15d7a5103e45be9cdc3032aa37ca3ec7fb87a",
+    "frozen_product_source": "edb85bb3f9a26c0880ef68c08930ce68e36a2065",
+    "qualification": "Linux binary built workingtree before edb commit; product code identical. Python harness only seeds fixture/reads results; actual helper, MCP, Stop run frozen package. Scripted tools not actual model. Startup uses explicit isolated test environment and existing synthetic approved credential, not real setup/claim.",
+    "optional_gate": "DW_DESKTOP_INTEGRATION_BINARY explicitly enables frozen case; absent binary cannot count it passed",
     "production_actions": 0,
     "actual_mac_tests": 0
   }

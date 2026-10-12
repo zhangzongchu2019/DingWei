@@ -24,7 +24,11 @@ func TestDesktopMCPRoundTripAcrossRealHub(t *testing.T) {
 	if python == "" {
 		t.Skip("run scripts/test-desktop-hub-roundtrip.sh for the cross-runtime gate")
 	}
-	for _, mode := range []string{"legacy", "enrolled_leader_only", "enrolled_group_removed", "enrolled_stop_hook"} {
+	modes := []string{"legacy", "enrolled_leader_only", "enrolled_group_removed", "enrolled_stop_hook"}
+	if os.Getenv("DW_DESKTOP_INTEGRATION_BINARY") != "" {
+		modes = append(modes, "enrolled_frozen_stop")
+	}
+	for _, mode := range modes {
 		t.Run(mode, func(t *testing.T) { desktopMCPRoundTrip(t, python, mode) })
 	}
 }
@@ -95,7 +99,11 @@ func desktopMCPRoundTrip(t *testing.T, python, mode string) {
 		t.Fatal(err)
 	}
 	home := t.TempDir()
-	cmd := exec.CommandContext(ctx, python, "-W", "error::RuntimeWarning", filepath.Join(root, "tools/sessionhelper/tests/desktop_hub_roundtrip_client.py"))
+	script := "desktop_hub_roundtrip_client.py"
+	if mode == "enrolled_frozen_stop" {
+		script = "desktop_frozen_hub_client.py"
+	}
+	cmd := exec.CommandContext(ctx, python, "-W", "error::RuntimeWarning", filepath.Join(root, "tools/sessionhelper/tests", script))
 	cmd.Cancel = func() error { return cmd.Process.Signal(os.Interrupt) }
 	cmd.WaitDelay = 5 * time.Second
 	for _, entry := range os.Environ() {
@@ -128,7 +136,7 @@ func desktopMCPRoundTrip(t *testing.T, python, mode string) {
 		}
 	}()
 	encoder := json.NewEncoder(input)
-	if err := encoder.Encode(map[string]string{"ws_base": "ws" + strings.TrimPrefix(srv.URL, "http"), "key_id": keyID, "secret": sourceSecret, "state": home, "mode": mode}); err != nil {
+	if err := encoder.Encode(map[string]string{"ws_base": "ws" + strings.TrimPrefix(srv.URL, "http"), "key_id": keyID, "secret": sourceSecret, "state": home, "mode": mode, "binary": os.Getenv("DW_DESKTOP_INTEGRATION_BINARY")}); err != nil {
 		t.Fatal(err)
 	}
 	scanner := bufio.NewScanner(output)

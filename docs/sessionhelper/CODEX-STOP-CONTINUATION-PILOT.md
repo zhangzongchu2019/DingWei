@@ -50,3 +50,11 @@
 开发门禁增加 enrolled_stop_hook：合成已批准组长/组员走真实 /ws/agent，实际 helper 接收并持久保存；空箱 hook 无请求，收到后实际共享入口子进程返回一次 block，重开子进程不重复，正文不出 hook。随后由脚本（不是模型）调用实际 MCP wait/reply，Hub持久入队 ACK 后 unread=0，重复回复使用已确认回执，后续 hook 不触发。
 
 本轮4个 Hub/MCP模式新跑通过；首次测试HOME为0755被拒，修正仅临时夹具0700后通过。保留失败日志，不放宽产品权限。没有真实 Codex 续轮或 Mac，仍不计模型执行/空闲自动唤醒。旧 edb85 Mac源码包不含此测试增量，产品接线代码与其相同，保留原 pins。
+
+## 实际冻结安装包闭环
+
+在完整开发仓库，用明确指定的 Linux 冻结二进制设置 DW_DESKTOP_INTEGRATION_BINARY，再运行 TestDesktopMCPRoundTripAcrossRealHub，可额外运行 enrolled_frozen_stop。没有指定包的普通canonical仍只覆盖源码四格，不借签冻结格。
+
+实际冻结helper从独立0700目录的既有合成已批准0600凭据连接本地 /ws/agent；冻结Stop返回请求后，脚本才调用冻结MCP读取/回复。所有三个入口均为同一个包。断言未读归零、重复回复缓存不重发、重复hook空结果，以及三个子进程退出收口。此轮五格通过，随后冻结格按上述先hook后读顺序单独重跑通过。不是仅将MCP嵌进源码helper。
+
+Python只准备夹具/驱动工具，不启动模型。没有飞书平台、新用户开户、Mac、Codex原聊天、签名或空闲自动唤醒；冻结启动使用隔离测试环境及既有合成凭据，不声称真实安装向导/配对验收。实际用包10764712B/f67bfc6744d82263e490feb007f15d7a5103e45be9cdc3032aa37ca3ec7fb87a，edb产品代码一致，旧包/源码archive保留原pins。
