@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/zhangzongchu2019/dingwei/internal/consolemux"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"io"
 	"net/http"
@@ -145,4 +146,23 @@ func exerciseCostSeedProduct(t *testing.T, h *Hub, base, token, state, keyPath s
 	t.Log("E1_TRUE_PUBLIC_PG_PYTHON_VS missing/short/bad-signature events+status fixed503, forged browser subject stripped, legacy source unchanged, restored200 PASS")
 
 	t.Log("E2_TRUE_PG_SIGNED_AUTHORITY_AND_OFFLINE_TOOL public unseeded503/seed/repeat seeded200 PASS; historical source is synthetic and coverage explicitly known")
+}
+
+// Cold bootstrap uses fresh identity from the signed handler; the primitive
+// cannot certify historical costs and must refuse any new-runtime publication.
+func TestMuxCostSeedColdBootstrap(t *testing.T) {
+	h := &Hub{terminals: map[string]*terminalState{}}
+	a := consolemux.Agent{ID: "stable", Owner: "owner", Session: "agent", FullName: "agent.owner"}
+	s, ok := h.consoleMuxSeedSnapshot(a, true)
+	if !ok || s.H != 0 || !s.Empty || s.Epoch == "" {
+		t.Fatal("missing empty cold runtime")
+	}
+	again, ok := h.consoleMuxSeedSnapshot(a, true)
+	if !ok || again.Epoch != s.Epoch {
+		t.Fatal("cold bootstrap changed epoch")
+	}
+	h.publishSessionEvent(AgentKeyID(a.Owner), a.Session, `{"kind":"assistant_text","text":"new"}`)
+	if _, ok := h.consoleMuxSeedSnapshot(a, true); ok {
+		t.Fatal("warm runtime accepted")
+	}
 }

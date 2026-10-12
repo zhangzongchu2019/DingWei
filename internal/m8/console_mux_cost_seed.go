@@ -31,8 +31,9 @@ func (h *Hub) HandleConsoleMuxCostSeedAuthority(w http.ResponseWriter, r *http.R
 		return
 	}
 	var request struct {
-		Target string   `json:"target"`
-		Names  []string `json:"full_names"`
+		ColdStart bool     `json:"cold_start"`
+		Target    string   `json:"target"`
+		Names     []string `json:"full_names"`
 	}
 	if json.Unmarshal(body, &request) != nil || len(request.Names) == 0 || len(request.Names) > 8 {
 		writeAgentWSError(w, 400, "invalid_seed_request")
@@ -92,7 +93,7 @@ func (h *Hub) HandleConsoleMuxCostSeedAuthority(w http.ResponseWriter, r *http.R
 			if routed != request.Target {
 				return consolemux.ErrDenied
 			}
-			snap, ok := h.consoleMuxSnapshot(consolemux.Agent{ID: a.ID, Owner: a.OwnerLC, Session: a.NameLC(), FullName: canon})
+			snap, ok := h.consoleMuxSeedSnapshot(consolemux.Agent{ID: a.ID, Owner: a.OwnerLC, Session: a.NameLC(), FullName: canon}, request.ColdStart)
 			if !ok {
 				return consolemux.ErrDenied
 			}
@@ -106,4 +107,23 @@ func (h *Hub) HandleConsoleMuxCostSeedAuthority(w http.ResponseWriter, r *http.R
 	}
 	authority := sha256.Sum256(m.secret[:])
 	muxJSON(w, 200, map[string]any{"target": request.Target, "authority_id": hex.EncodeToString(authority[:]), "agents": entries})
+}
+
+// Explicit private migration bootstrap only. A newly started Hub may not yet
+// have any runtime terminal because publishers must stay disconnected. Create
+// the empty terminal for an already fresh-authorized stable Agent under h.mu.
+// Any published event (even non-cost) refuses the cold-start cut. This is not a
+// historical coverage claim: the ops tool binds the separately approved old cut.
+func (h *Hub) consoleMuxSeedSnapshot(a consolemux.Agent, cold bool) (sessionSeqSnapshot, bool) {
+	if !cold {
+		return h.consoleMuxSnapshot(a)
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	st := h.terminalForSession(AgentKeyID(a.Owner), a.Session)
+	if st.eventSeq != 0 || len(st.eventRing) != 0 || st.eventRingLostThrough != 0 {
+		return sessionSeqSnapshot{}, false
+	}
+	st.ensureEventEpochLocked()
+	return sessionSeqSnapshot{Epoch: st.eventEpoch, H: 0, Empty: true}, true
 }

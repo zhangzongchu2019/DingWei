@@ -4,6 +4,7 @@ Authority: only prodops during the approved release. This developer slice runs
 synthetic accounts only. Never upload/log the private legacy state, DB, service
 keys, cookies or session hashes. Public evidence is SHA/count/result only.
 
+HOT-HUB path (only when the installed Hub ALREADY has the candidate authority):
 1 Inventory every VS target's sole projection authority and private state/SQLite
 paths. Stop publisher changes and drain legacy and aggregate cost consumers;
 then stop both consumers. Freeze identity/rename/target changes for the cut.
@@ -67,3 +68,106 @@ rollback. Do not restore the pre-upgrade zero/older SQLite over new growth or
 sum two ledgers. Failure before atomic commit leaves the private source/backup
 and existing projection unchanged. Actual production inventory/mapping/cut
 coverage and the compatible rollback candidate remain release gates.
+
+COLD upgrade from cae4fe4c or another verified old Hub WITHOUT new authority
+This section supersedes the hot-Hub assumption for a Hub binary restart.
+It is a CONDITIONAL release procedure, not a statement of site readiness.
+No production operations are authorized by this document.
+
+P0 Inventory/fence, BEFORE stopping the old Hub
+Verify the deployed source/protocol actually matches the existing old internal
+GET /internal/view/<full_name>/events: id epoch-seq, initial ring replay then
+30-second ': ping'. cae4fe4c terminal.go:808-975 has that protocol; it has NO
+cost-seed-authority. Old eventEpoch/eventSeq/ring are memory-only, not a durable
+cost coverage ledger. Freeze identity/rename/routing, every event publisher
+(helper, mirror/background control producers), and NEW viewer ingress. Keep the
+existing cost consumer alive only to drain already-produced events. Stop no
+Hub yet. Freeze is an ops fence, not a flag implemented by the observer.
+
+P1 Read-only old cut, using a TOOL against the OLD existing interface
+Run once per canonical full name on the trusted internal host/network:
+  python3 capture_old_cost_cut.py --old-hub-url <old-internal-http-origin> \
+    --full-name <actual-canonical-name> --output <new-private-cut.json> \
+    --publishers-frozen
+This does NOT call a candidate-only endpoint and does NOT replay into old VS
+costs. It reads only old Hub SSE and hashes payload privately, retains only
+canonical name, old epoch/H, suffix floor/count/hash. First ping after initial
+replay is the cut barrier ONLY while all producers are frozen. Gaps, mixed
+epoch, EOF, oversized wire, or empty replay refuse. Empty old runtime needs a
+separate approved export/instrumentation; do not claim ping proves epoch/H=0.
+The finite reader budget is 35s/256MiB total/16MiB line. Actual baseline old
+handler ping is 30s. Run names sequentially under the persistent freeze.
+
+P2 Drain/reconciliation is a DISTINCT approved evidence gate
+Neither P1 nor current H proves old JSON has counted every completed event.
+Old VS _track_cost (cae lines668-683) saves total/last and turns in two writes,
+without cursor/seen; slow SSE fan-out can drop events; V2 status may return
+literal zero. Do NOT use elapsed sleep, status200, equal latest total or P1's
+suffix as proof of full coverage. Obtain controlled consumer tracing plus the
+account's completed-turn source/ledger reconciliation through old H, including
+num_turns-absent events and prior epochs. Finish BOTH cost and turn writes,
+then stop every old VS consumer/process so source JSON is quiescent. Backup it
+and existing SQLite consistently and hash privately. Missing trace/evicted
+history/ambiguous legacy alias means BLOCK this target for reviewed accounting;
+this candidate cannot reconstruct information the old product did not record.
+Do not reconnect an old VS to replay its tail just to manufacture a drain:
+legacy has no dedup and doing that changes turns/last. A staged legacy consumer
+instrumentation or full independent ledger export, when needed, is a separate
+reviewed prerequisite; restarting the Hub first destroys the cut evidence.
+
+P3 Freeze approval receipt, then stop OLD Hub
+Operator mapping retains the P1 OLD epoch/H exactly. Stable Agent ID/owner/name
+come from a controlled identity export and are rechecked by new Hub later.
+Keep separate cut capture, drain/reconciliation, publication fence and old-Hub
+stop evidence. Approve a private cost-restart-v1 receipt with:
+ version, target, approval_ref, legacy_sha256, mapping_sha256,
+ cut_capture_sha256, drain_reconciliation_sha256, publication_fence_sha256,
+ old_hub_stop_sha256 (all four full SHA256),
+ publishers_frozen=true, consumers_drained_stopped=true, old_hub_stopped=true,
+ no_completed_republication=true,
+ old_cuts=[{agent_id,owner_lc,full_name,epoch,H}, ...] in mapping order.
+The receipt must be independently reviewed and its full SHA approved. Its flags
+are auditable operator attestations, NOT automatic proof of those operations.
+The tool verifies binding/hash/shape; the reviewer must inspect evidence contents.
+No old source/map/cut is modified to match a post-restart epoch or H.
+
+P4 Start candidate Hub ALONE, publishers and consumers still fenced
+New private signed authority cold_start=true can initialize an empty terminal
+for a freshly authorized stable identity without connecting helper/creating SSE.
+Under terminal lock it returns its genuine NEW epoch/H=0, refuses any published
+new event (even a non-cost event), and keeps an existing empty epoch unchanged.
+It is NOT old coverage and grants no consumer access. The normal signed target
+key/nonce/owner/routing checks remain. Then seed with the same CLI as step4 plus:
+  --restart-proof <approved-private-receipt.json> \
+  --restart-proof-sha256 <approved-receipt-sha>
+First commit requires new epoch != OLD epoch, new H exactly '0', and unchanged
+stable Agent/owner/canonical mapping. It inserts ONLY the OLD epoch/H floor,
+original costs/last/turns, retained seen and migration fingerprint atomically.
+Receipt hash participates in the fingerprint. Same receipt retry after new
+writes is no-op with fresh identity checks, preserves all subsequent growth.
+Any warm start, mapping/evidence mismatch, concurrent publisher or consumer
+causes refusal/phase reset; do not relax H=0 or put old coverage in new epoch.
+Ops ingress/publisher fencing must span the whole authority-to-commit interval;
+this is not a database transaction distributed across Hub and VS. More than
+one Hub authority, or alternate unfenced entry path, blocks the operation.
+
+P5 Resume only with no old-completion republication proof
+New Hub does not restore its old in-memory ring. That alone does NOT prove
+helpers/collectors will not submit an old completed event under a NEW id. Before
+unfreezing, inventory/drain/disable any retry/backfill queue or collector resume
+that can do so; verify actual helper/driver behavior with approved evidence.
+Without that proof, BLOCK resume: old epoch floors cannot dedup cross-epoch
+business republication, especially without num_turns. Do not reset helper data
+or discard pending completions on the spot. A stable business event identity
+or explicit reviewed reconciliation would be a separately scoped solution.
+Start VS on seeded SAME SQLite, verify original last/turns/cost plus marker,
+then enable consumers and finally publishers. New completed events get normal
+new-epoch seen entries; old-epoch replay <=old H remains suppressed. New epoch
+is never assigned an artificial old coverage floor. Preserve current SQLite
+for rollback as step6; JSON-only baseline rollback is unsafe after new growth.
+
+Site readiness remains OPEN: deployed old binary/protocol, full drain/account
+coverage, publisher/republication fences, approved mapping, and single-authority
+must be obtained by authorized ops. Synthetic candidate checks are not proof
+that those facts exist at the upgrade source. If P2 or P5 cannot be evidenced,
+report the exact account/range/producer and do not seed or enable that target.

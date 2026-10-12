@@ -67,3 +67,49 @@ class CostSeedTest(unittest.TestCase):
             with self.assertRaises(sqlite3.Error):self.p.require_legacy_seed({},vs._legacy_state_unreadable)
             self.p.seed(self.rows(),'approved')
             self.p.require_legacy_seed({},vs._legacy_state_unreadable)
+
+    def restart_proof(self):
+        return dict(version='cost-restart-v1',target='t',approval_ref='synthetic-approved',
+            publishers_frozen=True,consumers_drained_stopped=True,old_hub_stopped=True,
+            no_completed_republication=True,old_cuts=[self.record.copy()],
+            **{k:'a'*64 for k in ('cut_capture_sha256','drain_reconciliation_sha256',
+                                  'publication_fence_sha256','old_hub_stop_sha256')})
+
+    def test_restart_preserves_old_floor_not_new_epoch(self):
+        fresh=copy.deepcopy(self.authority);fresh['agents'][0].update(epoch='cafebabe',H='0')
+        proof=self.restart_proof()
+        rows=validate_seed(self.legacy,self.mapping,fresh,'t',restart_proof=proof)
+        self.p.seed(rows,'restart-approved')
+        with sqlite3.connect(self.p.path) as db:
+            self.assertEqual(db.execute('SELECT epoch,H FROM mux_seed_floor').fetchall(),
+                             [('deadbeef','9007199254740993')])
+        event=dict(kind='state_change',data=dict(change='turn_completed',cost_usd=15))
+        self.assertFalse(self.p.apply('stable-id','new.owner','deadbeef-9007199254740993',event))
+        self.assertTrue(self.p.apply('stable-id','new.owner','cafebabe-1',event))
+        self.assertFalse(self.p.apply('stable-id','new.owner','cafebabe-1',event))
+        self.assertEqual(self.p.status('stable-id'),dict(cost_total=15,cost_last=2.5,turns=8))
+        fresh['agents'][0]['H']='4'
+        rows=validate_seed(self.legacy,self.mapping,fresh,'t',True,restart_proof=proof)
+        self.assertFalse(self.p.seed(rows,'restart-approved'))
+
+    def test_restart_missing_drain_relabel_and_warm_start_refuse(self):
+        proof=self.restart_proof();fresh=copy.deepcopy(self.authority)
+        fresh['agents'][0].update(epoch='cafebabe',H='0')
+        for key in ('drain_reconciliation_sha256','publication_fence_sha256','old_hub_stop_sha256',
+                    'approval_ref','no_completed_republication'):
+            bad=copy.deepcopy(proof);bad.pop(key)
+            with self.assertRaises(ValueError):validate_seed(self.legacy,self.mapping,fresh,'t',restart_proof=bad)
+        for change in ({'H':'1'},{'epoch':'deadbeef'}):
+            bad=copy.deepcopy(fresh);bad['agents'][0].update(change)
+            with self.assertRaises(ValueError):validate_seed(self.legacy,self.mapping,bad,'t',restart_proof=proof)
+        bad=copy.deepcopy(self.mapping);bad['bindings'][0]['epoch']='cafebabe'
+        with self.assertRaises(ValueError):validate_seed(self.legacy,bad,fresh,'t',restart_proof=proof)
+
+    def test_old_sse_capture_is_tail_only_and_refuses_gaps(self):
+        import io
+        from capture_old_cost_cut import read_cut
+        cut=read_cut(io.BytesIO(b'id: deadbeef-7\ndata: {"kind":"test"}\n\nid: deadbeef-8\ndata: {}\n\n: ping\n\n'),'new.owner')
+        self.assertEqual((cut['epoch'],cut['H'],cut['floor']),('deadbeef','8','7'))
+        self.assertEqual(cut['coverage'],'TAIL_ONLY_NOT_COST_COVERAGE')
+        for wire in (b': ping\n',b'data: {}\n',b'id: deadbeef-1\ndata: {}\n\nid: deadbeef-3\ndata: {}\n\n: ping\n',b'event: replay_gap\n',b'id: deadbeef-1\ndata: {}\n'):
+            with self.assertRaises(ValueError):read_cut(io.BytesIO(wire),'new.owner')
