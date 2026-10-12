@@ -1,0 +1,82 @@
+{
+  "recorded_utc": "2026-10-12T12:39:21.278549+00:00",
+  "reviewed_source_head": "74f2e1c233f9f597cf4b83da4f066571f9c3b33c",
+  "goal": "0.2.2.2 PM MacBook macOS + Codex desktop original-chat DW interaction with one-step trusted Feishu device/account pairing",
+  "goal_changed": false,
+  "release_ready": false,
+  "requirement_matrix": [
+    {
+      "requirement": "Desktop vs CLI selection; helper required in both",
+      "local_evidence": "setup/launch tests, frozen configure-only/profile recovery",
+      "status": "LOCAL_PASS_NATIVE_MAC_PENDING"
+    },
+    {
+      "requirement": "Desktop DW-MCP read/wait/reply in existing owner chat",
+      "local_evidence": "persistent inbox, actual source/frozen MCP, four fresh Hub/MCP cases; scripted tool caller",
+      "status": "LOCAL_PASS_REAL_OWNER_CHAT_PENDING"
+    },
+    {
+      "requirement": "Receive when original chat already idle, automatic model processing without another CLI/chat",
+      "local_evidence": "No trusted original-GUI atomic idle provider; bounded MCP waits only while tool invoked; Stop only at turn end",
+      "status": "NOT_IMPLEMENTED",
+      "blocks_original_full_feature_release": true
+    },
+    {
+      "requirement": "Busy original chat is not disturbed; no duplicate injection/reply",
+      "local_evidence": "dispatcher atomic-refusal contract tested with substitutes, hook exact binding/one-shot/stop_hook_active; real provider absent",
+      "status": "LOCAL_PARTIAL_NATIVE_RACE_ACCEPTANCE_PENDING"
+    },
+    {
+      "requirement": "Install/update selected CLI and native provider authorization/model readiness",
+      "local_evidence": "setup tests and explicit readiness flow; no real CLI model authorization in this round",
+      "status": "LIVE_TOOL_ACCEPTANCE_PENDING_NOT_PM_DESKTOP_SUBSTITUTE"
+    },
+    {
+      "requirement": "No pre-created account: trusted Feishu #pair creates/binds owner and approves device atomically",
+      "local_evidence": "actual local HTTP/client+isolated PG transactions; synthetic trusted ingress, cancel/restart recovery",
+      "status": "LOCAL_PASS_REAL_FEISHU_PENDING"
+    },
+    {
+      "requirement": "Real Mac installation/signing and original desktop workflow",
+      "local_evidence": "Mac metadata/build preflight and manifests; Linux frozen only",
+      "status": "OWNER_MAC_PENDING"
+    }
+  ],
+  "excluded": [
+    "Unrelated coordinator/Wenwen/business-bug matrix",
+    "Reopening closed0221 server/download work",
+    "Using old105 downgrade after leader_only usage",
+    "Another app-server/newthread/CLI AI as original desktop proof",
+    "Polling/Stop continuation represented as already-idle auto-wake"
+  ],
+  "next_actual_acceptance": [
+    {
+      "gate": "A metadata",
+      "action": "Owner runs desktop_host --require-app --desktop-app for actual selected installed app; return version/build/architecture only",
+      "does_not_prove": "Original-chat control endpoint/model execution"
+    },
+    {
+      "gate": "B native source build",
+      "action": "Use externally pinnededb85 Mac source, fresh private output, retain build manifest; do not modify95 credentials",
+      "does_not_prove": "Signing or GUI interaction"
+    },
+    {
+      "gate": "C original-chat MCP local pilot",
+      "action": "Owner uses existing chosen chat, configure-only independentprofile, explicit local synthetic wait/read/send test",
+      "does_not_prove": "Hub delivery or idle auto-wake"
+    },
+    {
+      "gate": "D owner-reviewed Stop pilot",
+      "action": "Only after actual version supports/trusts hook and owner confirms precise session_id/inbox; observe original chat continuation once",
+      "does_not_prove": "Already-idle arrival handling"
+    },
+    {
+      "gate": "E full feature",
+      "action": "Establish genuine original-GUI idle admission interface and busy atomic refusal, then owner-approved correlated message/reply plus realFeishu one-step flow",
+      "status": "BLOCKED_BY_NATIVE_INTERFACE_AND_REAL_PLATFORM_EVIDENCE"
+    }
+  ],
+  "current_owner_question": "Mac Codex accurate version/build and whether an existing DW-MCP original chat is available; awaiting answer",
+  "production_actions": 0,
+  "new_tests_this_audit": 0
+}
