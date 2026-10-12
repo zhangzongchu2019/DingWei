@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"io"
@@ -1135,6 +1136,19 @@ func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, session
 			header = canon
 		}
 	}
+	// Signing preparation must finish before proxy I/O; a Director cannot
+	// return an error and must never silently send an unsigned V2 cost request.
+	prepared := r.Clone(r.Context())
+	prepared.Header.Set("X-DW-Session", header)
+	p := strings.TrimPrefix(prepared.URL.Path, prefix)
+	if p == "" {
+		p = "/"
+	}
+	prepared.URL.Path = strings.TrimRight(u.Path, "/") + p
+	if err := h.muxProjectionSubject(prepared, header); err != nil {
+		writeAgentWSError(w, 503, "projection_subject_unavailable")
+		return true
+	}
 	rp := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = u.Scheme
@@ -1146,11 +1160,21 @@ func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, session
 			req.URL.Path = strings.TrimRight(u.Path, "/") + p
 			req.Host = u.Host
 			req.Header.Set("X-DW-Session", header)
-			h.muxProjectionSubject(req, header)
+			req.Header = prepared.Header.Clone()
 		},
+	}
+	rp.ModifyResponse = func(resp *http.Response) error {
+		if prepared.Header.Get("X-DW-Mux-Subject") != "" && (resp.StatusCode == 401 || resp.StatusCode == 403) {
+			return errMuxSubjectUnavailable
+		}
+		return nil
 	}
 	reached := true
 	rp.ErrorHandler = func(rw http.ResponseWriter, req *http.Request, e error) {
+		if errors.Is(e, errMuxSubjectUnavailable) {
+			writeAgentWSError(rw, 503, "projection_subject_unavailable")
+			return
+		}
 		reached = false // 连接失败:不写响应,交给调用方兜底
 	}
 	rp.ServeHTTP(w, r)

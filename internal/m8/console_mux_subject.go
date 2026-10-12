@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"strconv"
@@ -18,31 +19,34 @@ func (h *Hub) muxRouteOwner(r *http.Request, name string) string {
 	}
 	return ownerFromSessionName(name)
 }
-func (h *Hub) muxProjectionSubject(req *http.Request, session string) {
+
+var errMuxSubjectUnavailable = errors.New("projection_subject_unavailable")
+
+func (h *Hub) muxProjectionSubject(req *http.Request, session string) error {
 	req.Header.Del("X-DW-Mux-Subject")
 	// All service authentication fields are router-owned; incoming browser values never survive.
 	for _, name := range []string{"X-DW-VS-Target", "X-DW-Timestamp", "X-DW-Nonce", "X-DW-Signature"} {
 		req.Header.Del(name)
 	}
 	if h.Identity == nil || req.Method != "GET" {
-		return
+		return nil
 	}
 	canon, a, ok := h.newPlatformCanonicalName(req.Context(), session)
 	if !ok {
-		return
+		return errMuxSubjectUnavailable
 	}
 	targetName, target := loadViewRouting().resolve(canon, a.OwnerLC)
 	if !target.ViewUnlockV2 {
-		return
+		return nil
 	}
 	key, err := os.ReadFile(target.HubToVSSecretFile)
 	if err != nil || len(bytes.TrimSpace(key)) < 32 {
-		return
+		return errMuxSubjectUnavailable
 	}
 	body, _ := json.Marshal(map[string]string{"agent_id": a.ID, "full_name": canon})
 	nonce, err := muxID()
 	if err != nil {
-		return
+		return errMuxSubjectUnavailable
 	}
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	req.Header.Set("X-DW-Mux-Subject", base64.RawURLEncoding.EncodeToString(body))
@@ -50,4 +54,5 @@ func (h *Hub) muxProjectionSubject(req *http.Request, session string) {
 	req.Header.Set("X-DW-Timestamp", timestamp)
 	req.Header.Set("X-DW-Nonce", nonce)
 	req.Header.Set("X-DW-Signature", signViewServiceRequest(bytes.TrimSpace(key), hubToVSDirection, req.Method, req.URL.Path, timestamp, nonce, body))
+	return nil
 }
