@@ -1,5 +1,5 @@
 {
-  "recorded_utc": "2026-10-12T02:51:17.124958+00:00",
+  "recorded_utc": "2026-10-12T02:56:04.380601+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
@@ -9,7 +9,7 @@
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "NOT_ALL_GREEN: parallel suite had migration expectation and timing failures; expectation fixed, isolated reruns passed; serial suite still timed out TestShortSessionSelectorRejectsAmbiguousOwnerMatch, isolated rerun passed. Full-suite stability remains open.",
     "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
-    "helper_all_discovery": "RUNNING; not counted as passed; focused helper regression previously passed145 tests"
+    "helper_all_discovery": "PASS498 tests in282.160s; plus later desktop-private-storage4-test regression passed. DeprecationWarning forkpty/multithread and ResourceWarning fixture file preserved in log."
   },
   "required_before_release": [
     "Independent code review",
@@ -57,6 +57,11 @@
       "name": "desktop-private-file-final.log",
       "bytes": 156,
       "sha256": "a0e0bc43321c8bf2194efd9c08a6b51ee5dd75d753fe9cc2b1edb5f9745bcb56"
+    },
+    {
+      "name": "helper-all-final.log",
+      "bytes": 38897,
+      "sha256": "e84d93fbc7b57383d980d810e2629bd9e166fa674ceda2a74b0785f62cc232f3"
     }
   ]
 }
