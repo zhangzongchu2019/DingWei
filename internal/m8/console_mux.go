@@ -327,7 +327,8 @@ func (h *Hub) consoleMuxSnapshot(a consolemux.Agent) (sessionSeqSnapshot, bool) 
 		return sessionSeqSnapshot{}, false
 	}
 	st.ensureEventEpochLocked()
-	s := sessionSeqSnapshot{Epoch: st.eventEpoch, H: st.eventSeq, Replay: st.eventRingSnapshotLocked(), Empty: len(st.eventRing) == 0}
+	h.adoptRingLocked(st)
+	s := sessionSeqSnapshot{LostThrough: st.eventRingLostThrough, HistoryTruncated: st.eventRingTruncated, Epoch: st.eventEpoch, H: st.eventSeq, Replay: st.eventRingSnapshotLocked(), Empty: len(st.eventRing) == 0}
 	for _, e := range s.Replay {
 		if e.Seq > 0 {
 			s.Floor = e.Seq
