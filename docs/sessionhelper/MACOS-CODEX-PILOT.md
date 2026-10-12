@@ -92,3 +92,7 @@ sh tools/sessionhelper/deploy/macos/build-desktop-candidate.sh \
 试验报告只回传 fixture_posted、wait_return_count、reply_count、hub_connections=0 和你是否在原聊天看到结果。它不能证明空闲自动唤醒，也不能证明真实消息端到端；取消/退出后不自动建立新的模型轮次。Ctrl+C 停止后保留合成报告/DB，仅清理本次 owned socket/lock。
 
 当前自动冻结包验证脚本同时覆盖即时显式读和延迟等待两种本地模式，并检查 pilot 不伪造 Hub 确认；Linux 验证只证明冻结入口，不代替 Mac 应用 UI。
+
+## 当前 Stop 安装包覆盖门禁
+
+新源码归档必须列出并包含 desktop_stop_hook.py；Mac成功构建回执必须匹配本包smoke的 frozen_stop_hook=LOCAL_REQUEST_AND_DEDUP_PASS。仅版本/二进制哈希/通用smoke成功不够，缺字段、NOT_RUN或MODEL_EXECUTED均拒绝。这里只计实际包入口请求与重开进程防重，native_desktop_model_runtime仍NOT_VERIFIED，release_ready=false。旧edb源码包保留原脚本/pins；新门禁须后续固定源码。

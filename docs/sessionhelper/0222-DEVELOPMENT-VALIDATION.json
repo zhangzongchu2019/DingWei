@@ -1,5 +1,5 @@
 {
-  "recorded_utc": "2026-10-12T12:51:14.046057+00:00",
+  "recorded_utc": "2026-10-12T12:58:35.926840+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
@@ -54,7 +54,8 @@
     "macos_build_preflight": "PASS7 desktop metadata tests +7 build receipt/refusal tests +8 source closure tests. Includes real shell rejection before output/venv/dependency steps on Linux; synthetic Mac receipt fixtures, not native Mac build.",
     "desktop_stop_continuation": "PASS8 local tests and actual frozen entry: precise main session, private SQLite persisted one-shot metadata, loop/paused/uncertain/refusal/race, source/package dispatch before enrollment configuration. Hook not installed; not idle wakeup.",
     "stop_actual_hub_roundtrip": "PASS4 fresh local Hub/MCP modes incl Stop: exact-session metadata request once -> scripted MCP read/reply -> actual Hub durable queued -> unread0, repeated hook empty. Other10 claim/PG cases historical latest canonical. Not actual Codex model/GUI.",
-    "frozen_actual_hub_roundtrip": "PASS5 actual local Hub/MCP modes incl opt-in frozen helper/MCP/Stop; final frozen-only ordered rerun PASS: metadata unread -> hook one-shot -> scripted package MCP wait/reply -> durable queued/unread0. Synthetic approved credential private0600, no real account/GUI/model/Feishu."
+    "frozen_actual_hub_roundtrip": "PASS5 actual local Hub/MCP modes incl opt-in frozen helper/MCP/Stop; final frozen-only ordered rerun PASS: metadata unread -> hook one-shot -> scripted package MCP wait/reply -> durable queued/unread0. Synthetic approved credential private0600, no real account/GUI/model/Feishu.",
+    "mac_packaged_stop_receipt_gate": "PASS16 synthetic source-closure/Mac-receipt tests: mandatory Stop source member, receipt requires actual smoke LOCAL_REQUEST_AND_DEDUP_PASS, missing/wrong/model-executed claims refused. No actual Mac build/model."
   },
   "required_before_release": [
     "Independent code review",
@@ -668,5 +669,12 @@
     "optional_gate": "DW_DESKTOP_INTEGRATION_BINARY explicitly enables frozen case; absent binary cannot count it passed",
     "production_actions": 0,
     "actual_mac_tests": 0
+  },
+  "mac_packaged_stop_receipt_evidence": {
+    "log": "/mnt/session-context/dw0222-development-tests/stop-mac-receipt-gates.log",
+    "bytes": 98,
+    "sha256": "6c14f328c0906a2340f7bae1731960c6baf13751eccb0affcd000ca8704b10b4",
+    "actual_mac_builds": 0,
+    "production_actions": 0
   }
 }

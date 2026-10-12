@@ -23,6 +23,7 @@ REQUIRED = {'VERSION', 'scripts/verify-sessionhelper-source.py',
             'tools/sessionhelper/sessionhelper.spec',
             'tools/sessionhelper/requirements.txt',
             'tools/sessionhelper/sessionhelper/desktop_host.py',
+            'tools/sessionhelper/sessionhelper/desktop_stop_hook.py',
             'tools/sessionhelper/sessionhelper/launch.py',
             'tools/sessionhelper/sessionhelper/setup.py',
             'tools/sessionhelper/sessionhelper/mcp_shim.py'}

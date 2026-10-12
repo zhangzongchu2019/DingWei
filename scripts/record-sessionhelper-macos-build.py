@@ -47,7 +47,8 @@ def create_receipt(source_root, commit, output):
     digest = hashlib.sha256(binary_bytes).hexdigest()
     if (smoke[0].get('version') != version or smoke[0].get('bytes') != len(binary_bytes)
             or smoke[0].get('sha256') != digest or smoke[0].get('real_hub_or_ai_calls') != 0
-            or smoke[0].get('native_desktop_runtime') != 'NOT_VERIFIED'):
+            or smoke[0].get('native_desktop_runtime') != 'NOT_VERIFIED'
+            or smoke[0].get('frozen_stop_hook') != 'LOCAL_REQUEST_AND_DEDUP_PASS'):
         raise ValueError('frozen smoke binary pin or qualification mismatch')
     # Read metadata only; never pip-freeze raw direct URLs or environment values.
     dependencies = {name: importlib.metadata.version(name) for name in ('pyinstaller', 'websockets', 'pexpect')}
@@ -69,6 +70,7 @@ def create_receipt(source_root, commit, output):
     return {'recorded_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'status': 'MAC_DEVELOPMENT_BUILD_LOCAL_SMOKE_PASS',
             'source_commit': commit, 'source_kind': source_kind, 'version': version,
+            'frozen_stop_hook': 'LOCAL_REQUEST_AND_DEDUP_PASS',
             'architecture': platform.machine(), 'python_version': platform.python_version(),
             'dependencies': dependencies, 'binary': {'bytes': len(binary_bytes), 'sha256': digest},
             'desktop_app': after['applications'][0],

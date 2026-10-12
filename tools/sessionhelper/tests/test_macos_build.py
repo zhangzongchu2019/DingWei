@@ -43,7 +43,8 @@ class MacBuildTest(unittest.TestCase):
         (self.output/'bin').mkdir();(self.output/'bin/sessionhelper').write_bytes(b'not an executable: synthetic test bytes')
         b=(self.output/'bin/sessionhelper').read_bytes()
         self.smoke={'status':'FROZEN_LOCAL_SMOKE_PASS','version':'0.2.2.2','bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),
-                    'real_hub_or_ai_calls':0,'native_desktop_runtime':'NOT_VERIFIED'}
+                    'real_hub_or_ai_calls':0,'native_desktop_runtime':'NOT_VERIFIED',
+                    'frozen_stop_hook':'LOCAL_REQUEST_AND_DEDUP_PASS'}
         self.write_smoke()
         self.patches=[patch.object(recorder.platform,'system',return_value='Darwin'),
                       patch.object(recorder.platform,'machine',return_value='arm64'),
@@ -71,6 +72,15 @@ class MacBuildTest(unittest.TestCase):
         self.assertFalse(result['signature_verified']);self.assertFalse(result['release_ready'])
         self.assertEqual(result['native_desktop_model_runtime'],'NOT_VERIFIED')
         self.assertFalse((self.output/'MAC-BUILD-MANIFEST.json').exists())
+
+    def test_missing_or_wrong_packaged_stop_coverage_refuses_build_receipt(self):
+        for value in (None, 'NOT_RUN', 'MODEL_EXECUTED'):
+            if value is None:
+                self.smoke.pop('frozen_stop_hook',None)
+            else:
+                self.smoke['frozen_stop_hook']=value
+            self.write_smoke()
+            with self.assertRaises(ValueError):self.receipt()
 
     def test_changed_app_or_architecture_refused(self):
         for field in ('build','architecture'):
