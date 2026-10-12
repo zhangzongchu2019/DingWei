@@ -1,5 +1,5 @@
 {
-  "recorded_utc": "2026-10-12T12:20:11.306760+00:00",
+  "recorded_utc": "2026-10-12T12:29:49.393645+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
@@ -52,7 +52,8 @@
     "desktop_reply_offline_recovery": "PASS13 desktop wait/reply tests, including real MCP stdio/Unix IPC duplicate ACK recovery after broker disconnect and SQLite reopen; confirmed result cached, changed-body/uncertain/rejected attempts never resent, new reply refused before renegotiation.",
     "source_kit_closure": "PASS8 synthetic filesystem/actual verifier CLI scenarios: exact set, extra code/cache, missing/tampered/omitted required files, unsafe/duplicate paths and JSON, links/FIFO, version/wrapper mismatch; no mutation/network. macOS builder shell syntax PASS, native execution NOT_RUN.",
     "macos_build_preflight": "PASS7 desktop metadata tests +7 build receipt/refusal tests +8 source closure tests. Includes real shell rejection before output/venv/dependency steps on Linux; synthetic Mac receipt fixtures, not native Mac build.",
-    "desktop_stop_continuation": "PASS8 local tests and actual frozen entry: precise main session, private SQLite persisted one-shot metadata, loop/paused/uncertain/refusal/race, source/package dispatch before enrollment configuration. Hook not installed; not idle wakeup."
+    "desktop_stop_continuation": "PASS8 local tests and actual frozen entry: precise main session, private SQLite persisted one-shot metadata, loop/paused/uncertain/refusal/race, source/package dispatch before enrollment configuration. Hook not installed; not idle wakeup.",
+    "stop_actual_hub_roundtrip": "PASS4 fresh local Hub/MCP modes incl Stop: exact-session metadata request once -> scripted MCP read/reply -> actual Hub durable queued -> unread0, repeated hook empty. Other10 claim/PG cases historical latest canonical. Not actual Codex model/GUI."
   },
   "required_before_release": [
     "Independent code review",
@@ -626,5 +627,24 @@
     "hook_installed": false,
     "production_actions": 0,
     "actual_mac_builds": 0
+  },
+  "stop_actual_hub_evidence": {
+    "logs": [
+      {
+        "path": "/mnt/session-context/dw0222-development-tests/stop-real-hub-roundtrip.log",
+        "bytes": 8964,
+        "sha256": "b097a1d65b1770bb16237355c6de85ddc6a0868d4edb5257f313c2a2db04eeb8"
+      },
+      {
+        "path": "/mnt/session-context/dw0222-development-tests/stop-real-hub-roundtrip-fixed.log",
+        "bytes": 9389,
+        "sha256": "251c3c4edb82f27ec2c94267aebc0a601be0140e0c099a6f7bbd8ea0597510a2"
+      }
+    ],
+    "initial_failure": "Owned Go test HOME mode0755 was refused by private-directory hook guard; corrected synthetic fixture to0700, not relaxed product permissions",
+    "fresh_cases": 4,
+    "scripted_mcp_calls_not_model": true,
+    "production_actions": 0,
+    "actual_mac_tests": 0
   }
 }

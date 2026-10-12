@@ -24,7 +24,7 @@ func TestDesktopMCPRoundTripAcrossRealHub(t *testing.T) {
 	if python == "" {
 		t.Skip("run scripts/test-desktop-hub-roundtrip.sh for the cross-runtime gate")
 	}
-	for _, mode := range []string{"legacy", "enrolled_leader_only", "enrolled_group_removed"} {
+	for _, mode := range []string{"legacy", "enrolled_leader_only", "enrolled_group_removed", "enrolled_stop_hook"} {
 		t.Run(mode, func(t *testing.T) { desktopMCPRoundTrip(t, python, mode) })
 	}
 }

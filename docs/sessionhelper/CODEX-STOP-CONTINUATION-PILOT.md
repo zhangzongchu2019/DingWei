@@ -44,3 +44,9 @@
 本轮只验证本地 SQLite 与实际 hook 子进程输出、去重及拒绝规则。没有运行真实 Codex/Mac/模型或发送真实 DW 消息，不计桌面/飞书端到端验收。原子 idle native provider 仍未实现。
 
 [MCP Events 文档](https://developers.openai.com/plugins/build/mcp-events) 的 webhook 订阅描述 ChatGPT Work web/Cloud 接入，不证明本地 Codex 桌面 stdio MCP 自动唤醒。[插件文档](https://developers.openai.com/plugins/build/plugins) 要求 hook 显式审查与信任。
+
+## 实际本地 Hub/MCP 闭环增量
+
+开发门禁增加 enrolled_stop_hook：合成已批准组长/组员走真实 /ws/agent，实际 helper 接收并持久保存；空箱 hook 无请求，收到后实际共享入口子进程返回一次 block，重开子进程不重复，正文不出 hook。随后由脚本（不是模型）调用实际 MCP wait/reply，Hub持久入队 ACK 后 unread=0，重复回复使用已确认回执，后续 hook 不触发。
+
+本轮4个 Hub/MCP模式新跑通过；首次测试HOME为0755被拒，修正仅临时夹具0700后通过。保留失败日志，不放宽产品权限。没有真实 Codex 续轮或 Mac，仍不计模型执行/空闲自动唤醒。旧 edb85 Mac源码包不含此测试增量，产品接线代码与其相同，保留原 pins。
