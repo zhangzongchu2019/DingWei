@@ -326,14 +326,23 @@ def _read_tasks_snapshot() -> dict:
     return {"project": "", "tasks": []}
 
 
+_legacy_state_unreadable = False
+
+
 def _load_state() -> None:
+    global _legacy_state_unreadable
+    _legacy_state_unreadable = False
     try:
         with open(STATE_FILE, encoding="utf-8") as fh:
             saved = json.load(fh)
-        if isinstance(saved, dict):
-            _sessions.update({k: v for k, v in saved.items() if isinstance(k, str) and isinstance(v, dict)})
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        if isinstance(saved, dict) and all(isinstance(k,str) and isinstance(v,dict) for k,v in saved.items()):
+            _sessions.update(saved)
+        else:
+            _legacy_state_unreadable = True
+    except FileNotFoundError:
         pass
+    except (json.JSONDecodeError, OSError):
+        _legacy_state_unreadable = True
 
 
 def _save_state_locked() -> None:
@@ -664,10 +673,10 @@ class CostProjection:
             db.execute("INSERT INTO mux_migration VALUES('cost-seed-v1',?)",(fingerprint,))
             return True
 
-    def require_legacy_seed(self, sessions):
+    def require_legacy_seed(self, sessions, unreadable=False):
         historical=any(any(v.get(k,0) != 0 for k in ('cost_total','cost_last','turns'))
                        for v in sessions.values() if isinstance(v,dict))
-        if historical:
+        if historical or unreadable:
             with self.lock, self._connect() as db:
                 if not db.execute("SELECT 1 FROM mux_migration WHERE version='cost-seed-v1'").fetchone():
                     raise sqlite3.OperationalError("historical cost migration required")
@@ -693,7 +702,7 @@ def _cost_projection():
             os.makedirs(os.path.dirname(path) or ".", mode=0o700, exist_ok=True)
             candidate = CostProjection(path)
             with _state_lock:
-                candidate.require_legacy_seed(_sessions)
+                candidate.require_legacy_seed(_sessions, _legacy_state_unreadable)
             _projection = candidate
             _projection_path = path
         return _projection

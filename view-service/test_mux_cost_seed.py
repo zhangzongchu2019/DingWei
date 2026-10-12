@@ -1,4 +1,5 @@
 import copy, os, sqlite3, tempfile, unittest
+from unittest.mock import patch
 import view_service as vs
 from migrate_mux_cost import validate_seed
 
@@ -56,3 +57,13 @@ class CostSeedTest(unittest.TestCase):
         rows=validate_seed(self.legacy,self.mapping,fresh,'t',already_seeded=self.p.has_seed('approved'))
         self.assertFalse(self.p.seed(rows,'approved'))
         self.assertEqual(self.p.status('stable-id')['turns'],8)
+
+    def test_unreadable_legacy_cannot_be_treated_as_empty_history(self):
+        path=os.path.join(self.root.name,'legacy.json')
+        with open(path,'w') as f:f.write('{broken')
+        with patch.object(vs,'STATE_FILE',path),patch.object(vs,'_legacy_state_unreadable',False):
+            vs._load_state()
+            self.assertTrue(vs._legacy_state_unreadable)
+            with self.assertRaises(sqlite3.Error):self.p.require_legacy_seed({},vs._legacy_state_unreadable)
+            self.p.seed(self.rows(),'approved')
+            self.p.require_legacy_seed({},vs._legacy_state_unreadable)
