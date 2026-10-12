@@ -2,6 +2,7 @@ package m8
 
 import (
 	"errors"
+	"math"
 	"sync"
 	"testing"
 )
@@ -79,5 +80,12 @@ func TestMuxReplayAdmissionBoundaries(t *testing.T) {
 	}
 	if _, _, err := selectMuxReplay(s, "deadbeef-18446744073709551616", true); !errors.Is(err, errMuxInvalidCursor) {
 		t.Fatal("uint64 overflow accepted")
+	}
+}
+
+func TestMuxRolloverStopsOnlyManagedAdmission(t *testing.T) {
+	s := sessionSeqSnapshot{Epoch: "deadbeef", H: math.MaxUint64 - 1}
+	if _, gap, err := selectMuxReplay(s, "", false); gap != "seq_exhausted" || err != nil {
+		t.Fatal("rollover did not stop managed seat", gap, err)
 	}
 }

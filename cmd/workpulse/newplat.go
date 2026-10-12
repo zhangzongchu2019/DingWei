@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/zhangzongchu2019/dingwei/internal/consolemux"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
@@ -138,6 +139,21 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	hub.Onboarding = ob
 	hub.AgentCredentialOnly = true
 	hub.PublicOrigin = cfg.publicOrigin
+	// Shared PG is required for a global single transport slot. Memory mode keeps legacy views.
+	if pg, ok := store.(*identity.PGStore); ok {
+		budget := consolemux.NewBudget()
+		if err := hub.ConfigureConsoleMux(pg, pg.ConsoleMuxSlots(budget), budget); err != nil {
+			return err
+		}
+		svc.OnSessionRevoked = hub.RevokeConsoleMuxSession
+		mux.HandleFunc("GET /api/console/event-context", hub.HandleConsoleMuxContext)
+		mux.HandleFunc("POST /api/console/event-feeds", hub.HandleConsoleMuxCreate)
+		mux.HandleFunc("GET /api/console/event-feeds/{feed_id}", hub.HandleConsoleMuxMetadata)
+		mux.HandleFunc("PUT /api/console/event-feeds/{feed_id}", hub.HandleConsoleMuxReplace)
+		mux.HandleFunc("DELETE /api/console/event-feeds/{feed_id}", hub.HandleConsoleMuxDelete)
+		mux.HandleFunc("GET /api/console/event-feeds/{feed_id}/events", hub.HandleConsoleMuxEvents)
+	}
+
 	// 垫片启动对账（R-V2-SPEC-TASK-SHIM-IMPL）：失败只记日志不挡启动——随请求同步会补上，且同步失败的请求一律拒绝。
 	if err := hub.ReconcileNewPlatformConsole(ctx); err != nil {
 		log.Printf("newplat shim: startup reconcile: %v", err)

@@ -2,6 +2,7 @@ package consolemux
 
 import (
 	"errors"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -37,11 +38,24 @@ func (g *Gate) CommitCheck(v uint64, started, expiry time.Time, o Owner, scopes 
 	}
 	g.until = until
 	g.sessionExpiry = expiry
-	g.slot = o
+	if o.Until.After(g.slot.Until) {
+		g.slot = o
+	}
 	g.scopes = make(map[string]string, len(scopes))
 	for k, v := range scopes {
 		g.scopes[k] = v
 	}
+	return true
+}
+
+// UpdateSlot extends fencing validity only, never an authorization lease.
+func (g *Gate) UpdateSlot(o Owner) bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.stopped || g.slot.Nonce != o.Nonce || g.slot.Generation != o.Generation || !time.Now().Before(g.slot.Until) {
+		return false
+	}
+	g.slot = o
 	return true
 }
 func (g *Gate) Revoke(agentID string) {
@@ -64,7 +78,63 @@ func (g *Gate) FailCheck() {
 	g.until = time.Time{}
 	g.scopes = map[string]string{}
 }
+
+// Retag never grants a newly added seat using an older authorization check.
+func (g *Gate) Retag(next map[string]string) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.version++
+	for id, gen := range g.scopes {
+		if next[id] != gen {
+			delete(g.scopes, id)
+		}
+	}
+}
+
+// Terminated also fences abandoned internal source readers, not just writes.
+func (g *Gate) Terminated() bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	now := time.Now()
+	return g.stopped || !now.Before(g.slot.Until) || !now.Before(g.sessionExpiry) || !now.Before(g.until.Add(time.Second))
+}
+func (g *Gate) Ready(agentID, generation string) bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	now := time.Now()
+	if g.stopped || !now.Before(g.until) || !now.Before(g.sessionExpiry) || !now.Before(g.slot.Until) {
+		return false
+	}
+	if agentID == "" {
+		return true
+	}
+	gen, ok := g.scopes[agentID]
+	return ok && gen == generation && gen != ""
+}
 func (g *Gate) Write(w http.ResponseWriter, agentID, generation string, frame []byte) error {
+	return g.write(w, agentID, generation, func() error { _, err := w.Write(frame); return err })
+}
+
+// WriteParts avoids duplicating a raw event into another 1MiB source frame.
+// net/http's native writer supports WriteString; unsupported wrappers fail closed.
+func (g *Gate) WriteParts(w http.ResponseWriter, agentID, generation string, head []byte, payload string, tail []byte) error {
+	sw, ok := w.(io.StringWriter)
+	if !ok {
+		return http.ErrNotSupported
+	}
+	return g.write(w, agentID, generation, func() error {
+		if _, err := w.Write(head); err != nil {
+			return err
+		}
+		if _, err := sw.WriteString(payload); err != nil {
+			return err
+		}
+		_, err := w.Write(tail)
+		return err
+	})
+}
+func (g *Gate) write(w http.ResponseWriter, agentID, generation string, send func() error) error {
+
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	now := time.Now()
@@ -85,7 +155,7 @@ func (g *Gate) Write(w http.ResponseWriter, agentID, generation string, frame []
 	if err := ctl.SetWriteDeadline(deadline); err != nil {
 		return err
 	}
-	if _, err := w.Write(frame); err != nil {
+	if err := send(); err != nil {
 		return err
 	}
 	return ctl.Flush()

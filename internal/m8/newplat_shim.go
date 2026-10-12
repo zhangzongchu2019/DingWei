@@ -105,6 +105,7 @@ func (h *Hub) ReconcileNewPlatformConsole(ctx context.Context) error {
 
 // NewPlatformAgentGone identity.Service.OnRevoked／OnSuspended：投影 Agent 立即停用，再按原样断开在线连接。
 func (h *Hub) NewPlatformAgentGone(agentID string) {
+	h.revokeConsoleMuxAgent(agentID)
 	if repo, ok := h.newPlatformShim(); ok {
 		if err := repo.DeactivateNewPlatformConsoleAgent(context.Background(), agentID); err != nil {
 			log.Printf("newplat shim: deactivate agent %s: %v", agentID, err)
@@ -116,6 +117,7 @@ func (h *Hub) NewPlatformAgentGone(agentID string) {
 // NewPlatformUserChanged identity.Service.OnUserChanged（A11 停用／恢复／改类型）：立即重投影；
 // 用户已不是 active ⇒ 以 4401（credential_suspended：客户端不删凭据，等恢复）断开其全部在线 Agent。
 func (h *Hub) NewPlatformUserChanged(userLC string) {
+	h.revokeConsoleMuxUser(userLC)
 	ctx := context.Background()
 	if err := h.syncNewPlatformUser(ctx, userLC, nil); err != nil {
 		log.Printf("newplat shim: sync user %s: %v", userLC, err)

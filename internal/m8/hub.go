@@ -60,6 +60,7 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
+	consoleMux         *consoleMuxRegistry
 	Repo               store.Repository
 	Outbound           MessageQueue
 	System             SystemHandler
@@ -6413,6 +6414,7 @@ func (h *Hub) Close() {
 	if h == nil {
 		return
 	}
+	h.closeConsoleMux()
 	if h.amr != nil {
 		h.amr.close()
 	}

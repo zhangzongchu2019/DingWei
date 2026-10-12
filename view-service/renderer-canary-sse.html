@@ -2068,7 +2068,12 @@
     function bufferMergeCopy(dlvId, ev, opts = {}) {
       const buf = c1MergeBuf.get(dlvId) || [];
       const rec = { ev, admit: !!opts.admit, footKey: opts.footKey || 'echo_merge',
-        timer: setTimeout(() => flushMergeCopy(dlvId, rec), opts.holdMs || C2_MERGE_HOLD_MS) };
+        timer: setTimeout(() => {
+          if(!rec.managed) return flushMergeCopy(dlvId,rec);
+          try {managedApplyActive=true;flushMergeCopy(dlvId,rec);flushPendingRenders();rec.managed.records.delete(rec);if(!rec.managed.records.size)rec.managed.resolve();}
+          catch(err){rec.managed.reject(err);}finally{managedApplyActive=false;}
+        }, opts.holdMs || C2_MERGE_HOLD_MS) };
+      if(managedApplyActive&&managedApplyPending){rec.managed=managedApplyPending;managedApplyPending.records.add(rec);}
       buf.push(rec);
       c1MergeBuf.set(dlvId, buf);
     }
@@ -3300,6 +3305,7 @@
         try {
           renderPendingEntry(entry);
         } catch (err) {
+          if (managedApplyActive) throw err;
           console.error('[render] 条目重渲失败,已跳过该条,不影响同批其余条目:', err);
         }
       }
@@ -4187,7 +4193,67 @@
       if (reason === 'overflow') showStreamAlert('gap');
     }
 
+    const managedParams = new URLSearchParams(location.search);
+    const managedMux = managedParams.get('console_mux') === '1';
+    const managedInstance = managedParams.get('iframe_instance') || '';
+    let managedApplyActive = false, managedStopped = false, managedApplyPending = null, managedInFlight = null;
+    let managedEpoch = '', managedApplied = 0n, managedAgent = '', managedGeneration = '';
+    function managedDecimal(value) {
+      if (typeof value !== 'string' || !/^(0|[1-9][0-9]{0,19})$/.test(value)) throw Error('invalid managed seq');
+      const n = BigInt(value); if (n > 18446744073709551615n) throw Error('managed seq overflow'); return n;
+    }
+    function managedReply(p, ok, retryable) {
+      parent.postMessage({protocol:'dw-console-mux/v1',type:'applied',iframe_instance:managedInstance,
+        agent_id:p.agent_id,generation:p.generation,delivery_id:p.epoch+'-'+p.seq,ok,retryable},location.origin);
+    }
+    if (managedMux) {
+      if (parent === window || !/^[0-9a-f]{32}$/.test(managedInstance)) {
+        managedStopped = true; showStreamAlert('gap');
+      } else {
+        window.addEventListener('message', async ev => {
+          const d=ev.data;
+          if(ev.source!==parent||ev.origin!==location.origin||!d||d.protocol!=='dw-console-mux/v1'||d.iframe_instance!==managedInstance)return;
+          if(d.type==='bind'&&d.agent_id===managedAgent&&d.generation===managedGeneration&&/^[0-9a-f]{32}$/.test(d.next_generation)){managedGeneration=d.next_generation;return;}
+          if(d.type==='stopped'){managedStopped=true;finishTimelineReplay(true);showStreamAlert('gap');const alert=document.getElementById('streamAlertText');if(alert)alert.textContent=d.reason;return;}
+          if(d.type!=='event'||managedStopped)return;
+          const p=d.event;
+          if(!p||p.agent_id!==d.agent_id||p.generation!==d.generation||p.iframe_instance!==managedInstance)return;
+          try {
+            const n=managedDecimal(p.seq);
+            if(managedAgent&&(managedAgent!==p.agent_id||managedGeneration!==p.generation||managedEpoch!==p.epoch))throw Error('managed identity changed');
+            if(!managedAgent){managedAgent=p.agent_id;managedGeneration=p.generation;managedEpoch=p.epoch;managedApplied=n-1n;}
+            if(managedInFlight){if(managedInFlight.key!==p.epoch+'-'+p.seq)throw Error('concurrent managed event');await managedInFlight.promise;managedReply(p,true,false);return;}
+            if(n<=managedApplied){managedReply(p,true,false);return;}
+            if(n!==managedApplied+1n)throw Error('managed event gap');
+            const pending={records:new Set(),resolve:null,reject:null};
+            const mergeDone=new Promise((resolve,reject)=>{pending.resolve=resolve;pending.reject=reject;});mergeDone.catch(()=>{});
+            let complete,fail;const applied=new Promise((resolve,reject)=>{complete=resolve;fail=reject;});applied.catch(()=>{});
+            managedInFlight={key:p.epoch+'-'+p.seq,promise:applied,fail};managedApplyPending=pending;
+            managedApplyActive=true;
+            handleIncomingEvent(p.payload);
+            flushPendingRenders();
+            managedApplyActive=false;
+            if(!pending.records.size)pending.resolve();
+            await mergeDone;
+            managedApplied=n;
+            managedApplyPending=null;managedInFlight=null;complete();
+            hideStreamAlert();markStreamConnected();
+            managedReply(p,true,false);
+          } catch (err) {
+            managedApplyActive=false;managedStopped=true;
+            if(managedApplyPending){for(const rec of managedApplyPending.records)clearTimeout(rec.timer);managedApplyPending=null;}
+            if(managedInFlight){managedInFlight.fail(err);managedInFlight=null;}
+            finishTimelineReplay(true);showStreamAlert('gap');
+            // A handler may have partially mutated DOM. Never retry that mutation or claim applied.
+            managedReply(p,false,false);
+          }
+        });
+        parent.postMessage({protocol:'dw-console-mux/v1',type:'ready',iframe_instance:managedInstance},location.origin);
+      }
+    }
+
     function connectEventStream() {
+      if (managedMux) return;
       closeEventStream();
       const generation = eventSourceGeneration;
       let opened = false;

@@ -71,7 +71,7 @@ func claimClientIntegration(t *testing.T, python, mode, backend string) {
 		}
 		t.Logf("isolated PostgreSQL server_version_num=%d", versionNumber)
 		report, err := migrate.Migrate(ctx, pool, migrate.HubDomains())
-		if err != nil || strings.Join(report.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql" {
+		if err != nil || strings.Join(report.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0300_console_transport_slot.sql" {
 			t.Fatal("production Hub migration ledger did not initialize expected identity/claim schema")
 		}
 		repeated, err := migrate.Migrate(ctx, pool, migrate.HubDomains())

@@ -306,6 +306,7 @@ func run(logger *slog.Logger) error {
 	// C2 事件订阅 / C3 鉴权 / C3 输入回投。View Service 作为内部消费者调用。
 	internalMux := http.NewServeMux()
 	internalMux.HandleFunc("GET /internal/view/{session}/events", prefixHub.HandleInternalViewEvents)
+	internalMux.HandleFunc("POST /internal/console/event-feeds/{feed_id}/bridges/{bridge_id}/events", prefixHub.HandleInternalConsoleMuxEvents)
 	internalMux.HandleFunc("POST /internal/view/authorize", prefixHub.HandleInternalViewAuthorize)
 	internalMux.HandleFunc("POST /internal/view/{session}/input", prefixHub.HandleInternalViewInput)
 	internalMux.HandleFunc("POST /internal/view/{session}/interrupt", prefixHub.HandleInternalViewInterrupt)

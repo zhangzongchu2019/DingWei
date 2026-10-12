@@ -67,7 +67,8 @@ type terminalState struct {
 	// 新状态换纪元、seq 从 1 起，页面据纪元变化不把新事件误判为已见（复核必改 1，取 A）。
 	eventEpoch   string
 	eventSeq     uint64
-	eventRingSeq []uint64                        // 与 eventRing 一一对应（同步追加、同步截断）
+	eventRingSeq []uint64 // 与 eventRing 一一对应（同步追加、同步截断）
+	muxSeqSubs   map[string]*consoleMuxReader
 	eventSeqSubs map[string]chan sessionSeqEvent // 带序号的订阅者（SSE 端点用）
 }
 
@@ -186,7 +187,7 @@ func (h *Hub) HandleTerminalViewPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// C4:按三级路由策略选目标。命中 View 服务 ⇒ 反代;否则(含任何异常)走老 xterm。
-	name, tgt := loadViewRouting().resolve(sessionName, ownerFromSessionName(sessionName))
+	name, tgt := loadViewRouting().resolve(sessionName, h.muxRouteOwner(r, sessionName))
 	if !tgt.Builtin && tgt.URL != "" {
 		if h.proxyToViewService(w, r, sessionName, tgt.URL) {
 			return
@@ -207,7 +208,7 @@ func (h *Hub) HandleViewSubPath(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid session name", http.StatusBadRequest)
 		return
 	}
-	name, tgt := loadViewRouting().resolve(sessionName, ownerFromSessionName(sessionName))
+	name, tgt := loadViewRouting().resolve(sessionName, h.muxRouteOwner(r, sessionName))
 	if !tgt.Builtin && tgt.URL != "" {
 		if h.proxyToViewService(w, r, sessionName, tgt.URL) {
 			return
@@ -503,7 +504,15 @@ func (h *Hub) publishSessionEvent(keyID, sessionName, data string) {
 	for _, ch := range st.eventSeqSubs {
 		seqSubs = append(seqSubs, ch)
 	}
+	muxReaders := make([]*consoleMuxReader, 0, len(st.muxSeqSubs))
+	for _, reader := range st.muxSeqSubs {
+		muxReaders = append(muxReaders, reader)
+	}
+	epoch := st.eventEpoch
 	h.mu.Unlock()
+	for _, reader := range muxReaders {
+		reader.offer(epoch, seq, data)
+	}
 	for _, ch := range subs {
 		select {
 		case ch <- data:
@@ -1121,6 +1130,7 @@ func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, session
 			req.URL.Path = strings.TrimRight(u.Path, "/") + p
 			req.Host = u.Host
 			req.Header.Set("X-DW-Session", header)
+			h.muxProjectionSubject(req, header)
 		},
 	}
 	reached := true

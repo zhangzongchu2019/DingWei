@@ -28,6 +28,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, urlparse
 
 from view_page_store import ViewPageStore
+import base64
+import math
+import sqlite3
+import socket
+import select
+from contextlib import contextmanager
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RENDERER_PATH = os.path.join(BASE_DIR, "renderer-canary-sse.html")
@@ -570,6 +576,99 @@ def _sse_event_id(raw: str) -> str:
     raw = (raw or "").strip()
     return raw if _SSE_EVENT_ID_RE.fullmatch(raw) else ""
 
+class CostProjection:
+    def __init__(self, path):
+        self.path = path
+        self.lock = threading.Lock()
+        with self._connect() as db:
+            db.executescript("""
+            CREATE TABLE IF NOT EXISTS mux_cost(agent_id TEXT PRIMARY KEY,
+              full_name TEXT NOT NULL,cost_total REAL NOT NULL,cost_last REAL NOT NULL,turns INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS mux_completed(agent_id TEXT NOT NULL,epoch TEXT NOT NULL,
+              seq TEXT NOT NULL,PRIMARY KEY(agent_id,epoch,seq));
+            """)
+
+    @contextmanager
+    def _connect(self):
+        db = sqlite3.connect(self.path, timeout=0.2)
+        os.chmod(self.path, 0o600)
+        db.execute("PRAGMA synchronous=FULL")
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
+
+    def apply(self, agent_id, full_name, event_id, payload):
+        match = re.fullmatch(r"([0-9a-f]{1,32})-(0|[1-9][0-9]{0,19})", event_id or "")
+        if not agent_id or not full_name or not match or int(match[2]) > 2**64-1:
+            raise ValueError("unsequenced projection")
+        ev = json.loads(payload) if isinstance(payload, (bytes, str)) else payload
+        if not isinstance(ev, dict):
+            raise ValueError("invalid projection event")
+        data = ev.get("data") or {}
+        if ev.get("kind") != "state_change" or not isinstance(data, dict) or data.get("change") != "turn_completed":
+            return False
+        with self.lock, self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            inserted = db.execute("INSERT OR IGNORE INTO mux_completed VALUES(?,?,?)",
+                                  (agent_id, match[1], match[2])).rowcount
+            if not inserted:
+                return False
+            row = db.execute("SELECT cost_total,cost_last,turns FROM mux_cost WHERE agent_id=?",
+                             (agent_id,)).fetchone() or (0.0, 0.0, 0)
+            total, last, turns = row
+            cost = ev["data"].get("cost_usd")
+            if isinstance(cost, (int, float)) and not isinstance(cost, bool) and math.isfinite(cost) and cost >= total:
+                last, total = cost - total, cost
+            n = ev["data"].get("num_turns")
+            turns = max(turns, n) if isinstance(n, int) and not isinstance(n, bool) and n >= 0 else turns + 1
+            db.execute("INSERT INTO mux_cost VALUES(?,?,?,?,?) ON CONFLICT(agent_id) DO UPDATE SET "
+                       "full_name=excluded.full_name,cost_total=excluded.cost_total,"
+                       "cost_last=excluded.cost_last,turns=excluded.turns", (agent_id, full_name, total, last, turns))
+            # Context manager commits both the unique key and all side effects, or rolls both back.
+            return True
+
+    def status(self, agent_id):
+        with self.lock, self._connect() as db:
+            row = db.execute("SELECT cost_total,cost_last,turns FROM mux_cost WHERE agent_id=?",
+                             (agent_id,)).fetchone() or (0.0, 0.0, 0)
+            return dict(zip(("cost_total", "cost_last", "turns"), row))
+
+
+MUX_FRAME_MAX = 1 << 20
+_projection_lock = threading.Lock()
+_projection = None
+_projection_path = None
+
+
+def _cost_projection():
+    global _projection, _projection_path
+    path = STATE_FILE + ".mux-cost.db"
+    with _projection_lock:
+        if _projection is None or _projection_path != path:
+            os.makedirs(os.path.dirname(path) or ".", mode=0o700, exist_ok=True)
+            _projection = CostProjection(path)
+            _projection_path = path
+        return _projection
+
+
+def _bounded_sse_frames(response):
+    frame = bytearray()
+    while True:
+        line = response.readline(MUX_FRAME_MAX + 1 - len(frame))
+        if not line:
+            if frame:
+                raise ValueError("incomplete SSE frame")
+            return
+        frame.extend(line)
+        if len(frame) > MUX_FRAME_MAX:
+            raise ValueError("event_too_large")
+        if line in (b"\n", b"\r\n"):
+            yield bytes(frame)
+            frame.clear()
+
+
 class _Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
@@ -624,10 +723,109 @@ class _Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _mux_subject(self):
+        encoded = self.headers.get("X-DW-Mux-Subject", "")
+        if not encoded:
+            return None
+        try:
+            if len(encoded) > 2048:
+                raise ValueError("subject size")
+            raw = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+            ok, _ = _verify_control_request(self.headers, "GET", urlparse(self.path).path,
+                                            raw, _get_page_store(), now=time.time())
+            subject = json.loads(raw)
+            if not ok or subject.get("full_name") != self._session() or not subject.get("agent_id"):
+                raise ValueError("subject mismatch")
+            return subject
+        except Exception:
+            raise ValueError("invalid projection subject")
+
+    def _serve_mux_bridge(self):
+        try:
+            size = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            return self.send_error(400)
+        if not 0 < size <= 4096:
+            return self.send_error(400)
+        raw = self.rfile.read(size)
+        ok, code = _verify_control_request(self.headers, "POST", "/internal/console-mux/events",
+                                           raw, _get_page_store(), now=time.time())
+        if not ok:
+            return self.send_error(code)
+        try:
+            request = json.loads(raw)
+            feed, bridge = request["feed_id"], request["bridge_id"]
+            if not re.fullmatch(r"[0-9a-f]{32}", feed) or not re.fullmatch(r"[0-9a-f]{32}", bridge) or request["target"] != VIEW_TARGET_NAME:
+                raise ValueError("bridge identity")
+            with open(VS_TO_HUB_SECRET_FILE, "rb") as fh:
+                secret = fh.read().strip()
+            if len(secret) < 32:
+                raise ValueError("service authentication unavailable")
+            path = f"/internal/console/event-feeds/{feed}/bridges/{bridge}/events"
+            body = json.dumps({"target": VIEW_TARGET_NAME}, separators=(",", ":")).encode()
+            timestamp, nonce = str(int(time.time())), secrets.token_hex(16)
+            signature = _control_signature(secret, "POST", path, timestamp, nonce, body,
+                                           direction="view-service-to-hub/v1")
+            u = urlparse(HUB_INTERNAL)
+            conn = http.client.HTTPConnection(u.hostname, u.port or 80, timeout=1)
+            conn.request("POST", path, body=body, headers={"Content-Type": "application/json",
+                "X-DW-VS-Target": VIEW_TARGET_NAME, "X-DW-Timestamp": timestamp,
+                "X-DW-Nonce": nonce, "X-DW-Signature": signature})
+            response = conn.getresponse()
+            if response.status != 200:
+                conn.close()
+                return self.send_error(502)
+            # Socket write/flush is bounded; abandoned Hub readers cannot pin VS threads indefinitely.
+            self.connection.settimeout(0.25)
+            response.fp.raw._sock.settimeout(20)
+            upstream_socket = response.fp.raw._sock
+            peer_done = threading.Event()
+            def stop_upstream_on_abandoned_peer():
+                while not peer_done.wait(0.1):
+                    try:
+                        readable, _, _ = select.select([self.connection], [], [], 0)
+                        if not readable or self.connection.recv(1, socket.MSG_PEEK):
+                            continue
+                    except OSError:
+                        pass
+                    try:
+                        upstream_socket.shutdown(socket.SHUT_RDWR)
+                    except OSError:
+                        pass
+                    return
+            peer_monitor = threading.Thread(target=stop_upstream_on_abandoned_peer, daemon=True)
+            peer_monitor.start()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Accel-Buffering", "no")
+            self.end_headers()
+            try:
+                for frame in _bounded_sse_frames(response):
+                    for line in frame.splitlines():
+                        if line.startswith(b"data: "):
+                            event = json.loads(line[6:])
+                            if event.get("type") == "event":
+                                _cost_projection().apply(event["agent_id"], event["full_name"],
+                                     event["epoch"] + "-" + event["seq"], event["payload"])
+                    self.wfile.write(frame)
+                    self.wfile.flush()
+            finally:
+                peer_done.set()
+                conn.close()
+                peer_monitor.join(timeout=0.5)
+        except (ValueError, OSError, KeyError, json.JSONDecodeError):
+            self.close_connection = True
+            return
+
     def _serve_events(self):
         session = self._session()
         if not session:
             return self.send_error(400, "session required")
+        try:
+            subject = self._mux_subject()
+        except ValueError:
+            return self.send_error(401)
         _ensure_ready(session)
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
@@ -649,13 +847,17 @@ class _Handler(BaseHTTPRequestHandler):
                 headers["Last-Event-ID"] = last_event_id
             conn.request("GET", target, headers=headers)
             resp = conn.getresponse()
-            while True:
-                line = resp.readline()
-                if not line:
-                    break
-                if line.startswith(b"data: "):
-                    self._track_cost(session, line[6:].strip())
-                self.wfile.write(line)
+            for frame in _bounded_sse_frames(resp):
+                event_id = ""
+                for line in frame.splitlines():
+                    if line.startswith(b"id: "):
+                        event_id = line[4:].decode("ascii")
+                    elif line.startswith(b"data: "):
+                        if subject:
+                            _cost_projection().apply(subject["agent_id"], session, event_id, line[6:])
+                        else:
+                            self._track_cost(session, line[6:].strip())
+                self.wfile.write(frame)
                 self.wfile.flush()
         except (BrokenPipeError, ConnectionResetError):
             return
@@ -687,10 +889,15 @@ class _Handler(BaseHTTPRequestHandler):
         if not session:
             return self.send_error(400, "session required")
         if VIEW_UNLOCK_V2:
+            try:
+                subject = self._mux_subject()
+                costs = _cost_projection().status(subject["agent_id"]) if subject else {}
+            except ValueError:
+                return self.send_error(401)
             body = json.dumps({
                 "session": session, "session_id": session, "state": "idle", "driver": "via-hub",
                 "auth_mode": "view_page_v2", "can_write": False, "readonly": True,
-                "unlock_code": "", "cost_total": 0, "cost_last": 0, "turns": 0,
+                "unlock_code": "", "cost_total": 0, "cost_last": 0, "turns": 0, **costs,
                 "mem": _read_mem(), "disk": _read_disk(),
                 "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }, ensure_ascii=False).encode()
@@ -725,6 +932,8 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+        if path == "/internal/console-mux/events":
+            return self._serve_mux_bridge()
         if path == CONTROL_UNLOCK_PATH:
             return self._control_unlock()
         session = self._session()

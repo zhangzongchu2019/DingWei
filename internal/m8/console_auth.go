@@ -260,7 +260,12 @@ func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http
 func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	fmt.Fprint(w, renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedEnabled))
+	page := renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedEnabled)
+	if h.consoleMux != nil {
+		page = strings.Replace(page, "const CONSOLE_MUX_ENABLED = false;", "const CONSOLE_MUX_ENABLED = true;", 1)
+		page += "<script>" + consoleMuxBrokerJS + "</script>"
+	}
+	fmt.Fprint(w, page)
 }
 
 // SetConsoleHostedPageEnabled receives the result of the server-side hosted assembly step.
@@ -398,6 +403,7 @@ html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="da
     return r;
   };
 })();
+const CONSOLE_MUX_ENABLED = false;
 const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6 条长连接的硬限制
 // 短名 = 三段式 <owner>-<name>-<suffix> 的中间段;取不到就原样显示(T-138,业主裁定命名归他)
 function dwShortName(s){var p=String(s).split('-');return p.length===3?p[1]:s}
@@ -524,6 +530,7 @@ function activate(session){
 }
 function closeTab(session){
   var e=tabs.get(session); if(!e) return;
+  if(CONSOLE_MUX_ENABLED&&window.DWConsoleMux)window.DWConsoleMux.remove(session);
   e.tab.remove(); e.pane.remove(); if(e.offlineReason)e.offlineReason.remove(); tabs.delete(session);   // 🔴 关闭才真正断开那条 SSE
   var last=Array.from(tabs.keys()).pop();
   if(last) activate(last);
@@ -533,7 +540,7 @@ function openTab(session){
   if(tabs.has(session)){ activate(session); return; }      // 已开过 ⇒ 切过去,不重建
   if(tabs.size >= MAX_TABS){
     alert('最多同时打开 ' + MAX_TABS + ' 个 Agent。\n' +
-          '每个页面占一条长连接,超过浏览器上限后新页会一直转圈而不报错。\n' +
+          (CONSOLE_MUX_ENABLED?'聚合连接首期最多支持八个 Agent 页签。\n':'每个页面占一条长连接,超过浏览器上限后新页会一直转圈而不报错。\n') +
           '请先关掉一个再打开。');
     return;
   }
@@ -544,7 +551,8 @@ function openTab(session){
   tab.onclick=function(ev){ if(ev.target===x){ ev.stopPropagation(); closeTab(session); } else activate(session); };
   var pane=document.createElement('iframe');
   pane.title='Agent view: '+session;
-  pane.src='/view/'+encodeURIComponent(session);
+  var muxInstance=CONSOLE_MUX_ENABLED&&window.DWConsoleMux?window.DWConsoleMux.register(session,pane):'';
+  pane.src='/view/'+encodeURIComponent(session)+(muxInstance?'?console_mux=1&iframe_instance='+muxInstance:'');
   pane.style.display='none';
   var offlineReason=document.createElement('div');offlineReason.className='agent-offline-reason';offlineReason.hidden=true;offlineReason.textContent='该 Agent 已离线，暂不可交互';
   document.getElementById('tabs').append(tab);
