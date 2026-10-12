@@ -11,6 +11,9 @@ def main():
         from . import __version__
         print("sessionHelper " + __version__)
         return
+    if "--desktop-endpoint-probe" in sys.argv[1:]:
+        from .desktop_endpoint import main as probe
+        return probe([arg for arg in sys.argv[1:] if arg != "--desktop-endpoint-probe"])
     if "--desktop-pilot" in sys.argv[1:]:
         from .desktop_pilot import main as pilot
         return pilot([arg for arg in sys.argv[1:] if arg != "--desktop-pilot"])

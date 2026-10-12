@@ -1,10 +1,10 @@
 {
-  "recorded_utc": "2026-10-12T05:20:00.555357+00:00",
+  "recorded_utc": "2026-10-12T06:32:08.555218+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS python=27 shell=1 after Mac metadata/pilot additions",
+    "canonical": "PASS python=29 shell=1; admission scheduler and explicit read-only endpoint probe included",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
@@ -16,7 +16,11 @@
     "native_auto_notify": "NOT_IMPLEMENTED: explicit dw_inbox/read/reply only; desktop original-thread background wake remains a required feature",
     "macos_build": "NOT_RUN: native build script prepared, syntax checked; Linux rejected before mutation. No Mac binary exists here.",
     "legacy_IPC": "PASS15 send wiring tests, original default socket replacement semantics preserved",
-    "frozen_mac_pilot_entry": "PASS Linux build of final entry, metadata and synthetic pilot stdio/read/reply/SIGTERM cleanup. Not a Mac binary or native GUI proof."
+    "frozen_mac_pilot_entry": "PASS Linux build of final entry, metadata and synthetic pilot stdio/read/reply/SIGTERM cleanup. Not a Mac binary or native GUI proof.",
+    "desktop_dispatch": "PASS8 synthetic provider tests; not wired to real GUI",
+    "desktop_endpoint": "PASS6 real local Unix websocket and refusal tests; no native GUI backend tested",
+    "desktop_selected_regression": "PASS27 desktop/inbox/metadata/pilot/dispatcher/endpoint tests",
+    "local_codex_schema": "Local codex-cli0.161.0 offline schema has no idle conditional turn/start field; owner version not inferred"
   },
   "required_before_release": [
     "Independent code review",
@@ -167,6 +171,16 @@
       "name": "macos-kit-build-complete.log",
       "bytes": 5022,
       "sha256": "0bfa629d77bd5bffe2ca860ac2d1b75f16bb642ddc068d144dc65ad00a64083a"
+    },
+    {
+      "name": "canonical-endpoint.log",
+      "bytes": 9991,
+      "sha256": "7a471bab8d61ec4081a3b258a3c617b7cda9d01f7c598854e26b7d169d9cc8d8"
+    },
+    {
+      "name": "desktop-endpoint-regression.log",
+      "bytes": 4228,
+      "sha256": "79dd6c7a7a308155ad1cad4fd697435ae7e60c347ee4d553edb7c3c1ca23c597"
     }
   ],
   "pm_target": {

@@ -17,6 +17,7 @@ a = Analysis(
         "sessionhelper.setup",
         "sessionhelper.desktop",
         "sessionhelper.desktop_host",
+        "sessionhelper.desktop_endpoint",
         "sessionhelper.desktop_pilot",
         "sessionhelper.claim_enroll",
         "sessionhelper.mcp_shim",

@@ -24,3 +24,11 @@ App Server 文档提供 Unix control socket、JSON-RPC、thread/loaded/list（�
 - provider 必须限制元数据和本次关联的 turn；不拉用户历史，不新建/恢复/分叉线程，不自动批准请求，不覆写审批与 sandbox 策略。
 
 验证：test_desktop_dispatch.py 8 项替身测试通过；另保留既有 desktop inbox 和 pilot 回归。非真实 Mac、非模型调用、非端到端验收。
+
+## 明确端点的只读探针
+
+新增 `--desktop-endpoint-probe --socket /absolute/private/control.sock --thread-id OWNER_SELECTED_ID`。仅在业主明确提供现有端点引用后使用；不枚举/猜测路径。要求当前用户所属 socket 和直接父目录私有，拒绝路径符号链接；连接前后核 dev/inode。WebSocket 官方握手由 websockets 库完成，使用整体5秒期限、64KiB帧界和通知数量上限。
+
+只发送 initialize、initialized、thread/loaded/list；不启动 daemon、AI、线程、turn，不读历史，不回应审批。输出仅选定线程是否加载和总数，不列其他线程 ID；远端原始错误/通知正文不输出。接通仍标 original_desktop_binding_verified=false，native_auto_notify_implemented=false。私有 socket 的同用户所有权不等于来源或签名证明，尚不能用于执行接入。
+
+本机 codex-cli 0.161.0 在独立空 CODEX_HOME 离线导出 TurnStartParams：有 threadId、input、clientUserMessageId 等，没有条件 idle/expectedTurnId 字段。该证据仅属于本机版本，不借作业主 Mac 版本结论；clientUserMessageId 也未核有幂等重放保证。不能直接实现“先查空闲，再无条件 start”作为原子忙时拒绝。真实 provider 仍待既存桌面端点来源与确切控制契约。

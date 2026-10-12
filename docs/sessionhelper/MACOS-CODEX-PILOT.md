@@ -64,3 +64,5 @@ sh tools/sessionhelper/deploy/macos/build-desktop-candidate.sh \
 - 真实路由与飞书一步开户：需同版 Hub 上线与独立权限/恢复验收后另测；不要用现网 .221 冒认 .222 接口已部署。
 
 普通系统通知、MCP 配置成功、显式工具调用与原桌面会话自动启动模型是四个不同结果。自动能力未闭合前，0.2.2.2 仍不计完整发布就绪。
+
+端点增量（后续开发分支）：如有明确的原桌面已有 Unix 控制入口，可用 `--desktop-endpoint-probe --socket <明确路径> --thread-id <业主选定线程ID>` 只读验证。不要为此启动新 daemon/CLI，不要提供 pairing code、token 或聊天正文。该探针尚不在先前 43a03e2f4 冻结源码包内。仅 loaded=true 不能证明原桌面绑定或自动通知可用。
