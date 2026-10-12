@@ -1,5 +1,5 @@
 {
-  "recorded_utc": "2026-10-12T06:32:08.555218+00:00",
+  "recorded_utc": "2026-10-12T06:39:31.326684+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
@@ -17,10 +17,11 @@
     "macos_build": "NOT_RUN: native build script prepared, syntax checked; Linux rejected before mutation. No Mac binary exists here.",
     "legacy_IPC": "PASS15 send wiring tests, original default socket replacement semantics preserved",
     "frozen_mac_pilot_entry": "PASS Linux build of final entry, metadata and synthetic pilot stdio/read/reply/SIGTERM cleanup. Not a Mac binary or native GUI proof.",
-    "desktop_dispatch": "PASS8 synthetic provider tests; not wired to real GUI",
+    "desktop_dispatch": "PASS14 synthetic provider/reply sender tests; original desktop and real Hub sender not wired",
     "desktop_endpoint": "PASS6 real local Unix websocket and refusal tests; no native GUI backend tested",
-    "desktop_selected_regression": "PASS27 desktop/inbox/metadata/pilot/dispatcher/endpoint tests",
-    "local_codex_schema": "Local codex-cli0.161.0 offline schema has no idle conditional turn/start field; owner version not inferred"
+    "desktop_selected_regression": "PASS33 desktop/inbox/metadata/pilot/dispatch/endpoint tests",
+    "local_codex_schema": "Local codex-cli0.161.0 offline schema has no idle conditional turn/start field; owner version not inferred",
+    "native_reply": "IMPLEMENTED_OFFLINE: correlated terminal output/private outbox/durable ACK gate; no actual agent send"
   },
   "required_before_release": [
     "Independent code review",
@@ -181,6 +182,11 @@
       "name": "desktop-endpoint-regression.log",
       "bytes": 4228,
       "sha256": "79dd6c7a7a308155ad1cad4fd697435ae7e60c347ee4d553edb7c3c1ca23c597"
+    },
+    {
+      "name": "desktop-reply-regression.log",
+      "bytes": 5002,
+      "sha256": "8015e6e89c7c65598c852bf5540f8c853eed2b41972f2b64254716d619f0aaa6"
     }
   ],
   "pm_target": {

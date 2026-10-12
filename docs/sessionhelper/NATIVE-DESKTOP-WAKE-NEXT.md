@@ -32,3 +32,13 @@ App Server 文档提供 Unix control socket、JSON-RPC、thread/loaded/list（�
 只发送 initialize、initialized、thread/loaded/list；不启动 daemon、AI、线程、turn，不读历史，不回应审批。输出仅选定线程是否加载和总数，不列其他线程 ID；远端原始错误/通知正文不输出。接通仍标 original_desktop_binding_verified=false，native_auto_notify_implemented=false。私有 socket 的同用户所有权不等于来源或签名证明，尚不能用于执行接入。
 
 本机 codex-cli 0.161.0 在独立空 CODEX_HOME 离线导出 TurnStartParams：有 threadId、input、clientUserMessageId 等，没有条件 idle/expectedTurnId 字段。该证据仅属于本机版本，不借作业主 Mac 版本结论；clientUserMessageId 也未核有幂等重放保证。不能直接实现“先查空闲，再无条件 start”作为原子忙时拒绝。真实 provider 仍待既存桌面端点来源与确切控制契约。
+
+## 目标审计与回复回传增量
+
+最终验收链：Hub 消息 → helper 持久收件 → **原 Codex 桌面线程自动进入模型** → 本轮最终回复 → 原消息发送方。配置向导、MCP 显式收件、端点探针均不能替代粗体环节。当前原桌面 provider 未实现，且后台调度与真实 Hub reply sender 尚未接线；0.2.2.2 仍不具备完整发布资格。
+
+新增 `complete_with_reply`：只接受 admission 账本中同 message/thread/turn 且仍 admitted 的终止输出，输出和完成状态一次事务写入私有 outbox。目标来自已保存的原 reply_to，不由模型传入新的路由；其他聊天或重复终止输出不进入 outbox。输出最多64KiB，空输出拒绝。
+
+新增 `flush_reply`：先持久化 sending，只有未来受管 sender 明确 durable ACK 后才记 sent 和 inbox read；异常/取消/无 ACK 留 uncertain，不重放，进程崩溃留下 sending 同样阻止后续发送。当前只有替身 sender，未向真实 Agent 发消息；普通 WebSocket send 完成或 MCP queued 结果不等于 durable ACK。此策略避免盲目重投，但 UNKNOWN 项仍可能需要受管人工核实，未声称端到端 exactly-once。
+
+排除项：不再把重复打包、系统通知、MCP 手动读取、另起 CLI/线程或一次探针成功算作核心实现进度。保留旧 package/pins 和生产冻结；下一项仍是核确 PM Mac 桌面已有控制入口并接上原生 provider，而非扩大服务器/数据库/下载变更。

@@ -84,5 +84,60 @@ class DispatchTest(unittest.TestCase):
         self.assertEqual(self.provider.calls[0][0], 'original')
 
 
+    def prepare_reply(self):
+        with self.adapter._connect() as db:
+            db.execute("UPDATE desktop_message SET reply_to='fixture-sender' WHERE id='a'")
+        self.engine.step()
+        return self.engine.complete_with_reply('a', 'turn-a', thread_id='original', body='synthetic answer')
+    def test_correlated_output_durable_route_and_ack(self):
+        self.assertTrue(self.prepare_reply())
+        self.assertFalse(self.engine.complete_with_reply('a', 'turn-a', thread_id='original', body='duplicate'))
+        reopened = DesktopDispatcher(DesktopAdapter(self.cfg), self.provider, 'original')
+        calls = []
+        def send(payload):
+            calls.append(payload)
+            return {'ok': True}
+        self.assertEqual(reopened.flush_reply(send)['state'], 'sent')
+        self.assertEqual(calls, [{'to': 'fixture-sender', 'body': 'synthetic answer', 'meta': {'in_reply_to': 'a', 'kind': 'reply'}}])
+        self.assertEqual(reopened.flush_reply(send)['state'], 'empty')
+        self.assertEqual(self.adapter.request({'operation': 'status'})['unread'], 0)
+    def test_unrelated_output_does_not_enter_outbox(self):
+        self.engine.step()
+        self.assertFalse(self.engine.complete_with_reply('a', 'wrong-turn', thread_id='original', body='private unrelated fixture'))
+        self.assertFalse(self.engine.complete_with_reply('a', 'turn-a', thread_id='wrong-thread', body='fixture'))
+        self.assertEqual(self.engine.flush_reply(lambda _: self.fail('must not send'))['state'], 'empty')
+    def test_ambiguous_send_persists_no_retry_or_read_ack(self):
+        self.prepare_reply()
+        calls = []
+        def fail(payload):
+            calls.append(payload)
+            raise TimeoutError('synthetic uncertain outcome')
+        with self.assertRaises(TimeoutError):
+            self.engine.flush_reply(fail)
+        reopened = DesktopDispatcher(DesktopAdapter(self.cfg), self.provider, 'original')
+        self.assertEqual(reopened.flush_reply(fail)['reply_state'], 'uncertain')
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(self.adapter.request({'operation': 'status'})['unread'], 1)
+    def test_pause_and_missing_durable_ack(self):
+        self.prepare_reply()
+        self.adapter.request({'operation': 'pause'})
+        self.assertEqual(self.engine.flush_reply(lambda _: self.fail('paused'))['state'], 'paused')
+        self.adapter.request({'operation': 'resume'})
+        with self.assertRaises(ValueError):
+            self.engine.flush_reply(lambda _: {'ok': 1})
+        self.assertEqual(self.engine.flush_reply(lambda _: self.fail('uncertain'))['reply_state'], 'uncertain')
+    def test_missing_original_target_keeps_admission(self):
+        self.engine.step()
+        with self.assertRaises(ValueError):
+            self.engine.complete_with_reply('a', 'turn-a', thread_id='original', body='fixture')
+        self.assertEqual(self.engine.step()['admission_state'], 'admitted')
+    def test_reply_limits_no_state_mutation(self):
+        self.engine.step()
+        for body in ('', ' '*10, 'x'*65537, None):
+            with self.assertRaises(ValueError):
+                self.engine.complete_with_reply('a', 'turn-a', thread_id='original', body=body)
+        self.assertEqual(self.engine.step()['admission_state'], 'admitted')
+
+
 if __name__ == '__main__':
     unittest.main()
