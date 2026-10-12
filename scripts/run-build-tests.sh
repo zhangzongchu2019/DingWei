@@ -43,7 +43,10 @@ view-service/test_view_page_store.py
 view-service/test_view_service.py
 view-service/test_view_unlock_v2_integration.py
 '
-SHELL_TEST='deploy/test-view-service-release.sh'
+SHELL_TESTS='
+deploy/test-view-service-release.sh
+scripts/test-desktop-hub-roundtrip.sh
+'
 
 printf '%s\n' "$PYTHON_TESTS" | while IFS= read -r test_file; do
   [ -n "$test_file" ] || continue
@@ -51,6 +54,9 @@ printf '%s\n' "$PYTHON_TESTS" | while IFS= read -r test_file; do
   python3 -m unittest -q "$test_file"
 done
 
-echo "TEST shell $SHELL_TEST"
-bash "$SHELL_TEST"
-echo 'BUILD_TESTS_OK python=31 shell=1'
+printf '%s\n' "$SHELL_TESTS" | while IFS= read -r test_file; do
+  [ -n "$test_file" ] || continue
+  echo "TEST shell $test_file"
+  bash "$test_file"
+done
+echo 'BUILD_TESTS_OK python=31 shell=2'

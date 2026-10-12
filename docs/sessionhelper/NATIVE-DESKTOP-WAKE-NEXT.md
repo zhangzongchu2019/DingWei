@@ -87,3 +87,18 @@ Mac 最小信息采集：从新的固定源码包解压目录运行 `PYTHONPATH=
 ### 真机待完成的有界试验入口
 
 `--desktop-pilot --message-after-wait` 将合成消息延后至 dw_wait_message 已挂起，复用真实 helper 等待/取消路径，适用于 PM 在原 Mac 桌面聊天观察工具返回。它不使用 Hub，不模拟 durable ACK；dw_reply_message 明确拒绝，固定 send_message 合成回复标 sent_to_hub=false。报告计数与用户看到的原会话 UI 结果分开，不计空闲原桌面唤醒或真实路由完成。具体步骤见 MACOS-CODEX-PILOT.md 第5节。
+
+
+## 实际 Hub/helper/MCP 跨运行时联调门禁
+
+`DW_DESKTOP_INTEGRATION_PYTHON=/absolute/test-venv/bin/python sh scripts/test-desktop-hub-roundtrip.sh` 在完整仓库中运行；它需要本机 Go 和 Python3.11+/websockets/pexpect。只监听 httptest 随机 loopback，所有身份、SQLite、HOME和IPC为临时私有测试资源，凭据仅通过父子 stdin，不放 argv 或共享日志。普通 Go-only 套件未指定 Python 时会明确 skip 本条跨运行时测试；canonical 脚本明确运行它，依赖缺失即失败。
+
+三场景使用实际 SessionHelper._run_once 的接收/持久收件/worker/能力协商、真实 MCP stdio 子进程及实际 Go Hub RouteEnvelope/SQLite 队列：
+
+- legacy 合成服务 API key：挂起同一等待请求后收到消息，确认回复的 delivery_id 在实际队列存在，目标来自原消息，in_reply_to 保留，nonce不入目标队列；相同正文重调缓存确认，不再发业务回复。
+- 新平台专属 Agent `/ws/agent` 凭据：临时内存身份走正常申请/批准/领取业务层，共享 leader_only=true 特殊组；组长/组员两向路由及同一等待/回复路径通过。
+- 入箱后退出共享组：发起回复时真实 Hub 按当前编组拒绝，客户端保持 unread、journal=reply_rejected，再调仍拒；观察窗内 peer 无回复帧，禁止改用普通发送绕过策略。
+
+没有真实 Mac GUI、AI/模型调用、飞书认领或生产；专属凭据场景不是飞书开户验收，身份存储是临时 MemStore而非PG，durable队列使用现有SQLite提交语义，不声明断电实证。状态语义仍为 returned_to_mcp 和 hub_durable_queued，不是 model_executed。运行中断时测试父进程要求子进程取消/回收，超时才强制结束本轮owned子进程。
+
+本轮仅新增联调与门禁，产品代码不变；先前6e9bc5e4b Mac源码包保留其原pins与资格，不伪称含这些完整仓库联调脚本。

@@ -1,10 +1,10 @@
 {
-  "recorded_utc": "2026-10-12T08:50:03.010032+00:00",
+  "recorded_utc": "2026-10-12T09:14:38.004169+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS final python=31 shell=1 including delayed-pilot tests; private HOME",
+    "canonical": "PASS final python=31 shell=2, including real Go/Python/MCP cross-runtime gate in private HOME",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
@@ -21,7 +21,7 @@
     "desktop_endpoint": "PASS6 real local Unix websocket and refusal tests; no native GUI backend tested",
     "desktop_selected_regression": "PASS34 desktop tests",
     "local_codex_schema": "Local codex-cli0.161.0 ThreadResumeParams includes excludeTurns; TurnStartParams has no atomic idle conditional field and turnTrigger may steer active turn. Not owner Mac version evidence.",
-    "native_reply": "IMPLEMENTED_MCP_AGENT_QUEUE_CONFIRMED_REPLY; target comes from original message and journal prevents ambiguous replay. Original idle GUI wake/provider remains missing; Feishu confirmed reply unsupported.",
+    "native_reply": "IMPLEMENTED_MCP_AGENT_QUEUE_CONFIRMED_REPLY; now exercised with actual Hub/SQLite over both legacy and dedicated Agent WS. No native idle GUI provider; Feishu confirmed reply unsupported.",
     "existing_helper_send_receipt": "PASS actual SessionHelper._make_send_handler with synthetic websocket: sent-write receipt is refused as durable ACK",
     "hub_outbound_confirmation": "PASS actual local websocket/SQLite queue before positive receipt; rejected legacy/offline/unsupported targets; sender nonce removed from target; explicit capabilities negotiation",
     "hub_m8_final": "PASS go test -p1 ./internal/m8 -count=1,93.039s after final handshake",
@@ -31,7 +31,11 @@
     "desktop_mcp_final_regression": "PASS43 wait/receipt/legacy-send/file-IPC tests; -W error::RuntimeWarning",
     "active_original_conversation": "IMPLEMENTED_BOUNDED_WAIT_TOOL; cancelled/closed/finished model turn cannot be automatically restarted. Mac GUI continuous interaction NOT_VERIFIED.",
     "desktop_wait_pilot_regression": "PASS21 desktop pilot/wait/inbox tests in1.967s -W error::RuntimeWarning",
-    "macos_wait_pilot": "IMPLEMENTED explicit --message-after-wait; synthetic fixture created only after pending wait. dw_reply_message refuses to simulate a Hub receipt; local send_message remains sent_to_hub=false. Mac UI not run."
+    "macos_wait_pilot": "IMPLEMENTED explicit --message-after-wait; synthetic fixture created only after pending wait. dw_reply_message refuses to simulate a Hub receipt; local send_message remains sent_to_hub=false. Mac UI not run.",
+    "desktop_actual_hub_roundtrip": "PASS3 actual loopback websocket/SQLite/helper._run_once/MCP subprocess cases: legacy service key; approved dedicated /ws/agent credentials with leader_only group; group removal before reply causes actual rejection, unread retained, resend refused. No Mac GUI/model/Feishu; identity uses private MemStore, durable queue SQLite.",
+    "desktop_actual_hub_cleanup": "PASS helper loops/MCP waiters and child processes joined on normal exit; subprocess failure cleanup bounded with interrupt/owned fallback. Not a forced-failure process-death recovery claim.",
+    "cross_runtime_gate_policy": "Ordinary Go-only tests explicitly skip without DW_DESKTOP_INTEGRATION_PYTHON; canonical shell gate requires interpreter/dependencies and runs the3 cases, no silent skip.",
+    "first_cross_runtime_invocation": "FAILED before package tests due compact -p1 option; corrected to -p 1. Failed log retained, not counted PASS."
   },
   "required_before_release": [
     "Independent code review",
@@ -298,6 +302,36 @@
       "name": "desktop-wait-pilot-canonical.log",
       "bytes": 11924,
       "sha256": "88d88c4f523d0f21bdf96e90c761b13557538c297d1dd8a71cea50c85e3fc9f0"
+    },
+    {
+      "name": "desktop-real-hub-roundtrip-first.log",
+      "bytes": 75,
+      "sha256": "91944b408498ea4dec22273a4e1a0cf18f24ecfc31457693a1c189bac0c1b1cb"
+    },
+    {
+      "name": "desktop-real-hub-roundtrip-second.log",
+      "bytes": 2794,
+      "sha256": "41d057c88e564040a1202538c2e16cc4b843df5983de870019c6278a0858a334"
+    },
+    {
+      "name": "desktop-real-hub-roundtrip-final.log",
+      "bytes": 2794,
+      "sha256": "8ca153e14f91bfaf1c8bd267287599a8f85e6b1e4f21bd506743db4db72de1bf"
+    },
+    {
+      "name": "desktop-real-hub-agent-roundtrip.log",
+      "bytes": 4898,
+      "sha256": "b7f1608ca38175c8906e9ef10a6731817d5944473ae2f788f71ec7bbf9af1a88"
+    },
+    {
+      "name": "desktop-real-hub-group-roundtrip.log",
+      "bytes": 6976,
+      "sha256": "641228486aba9ef52ce77248e2eb98960d8d6e981b762b51a29a40fcb5280243"
+    },
+    {
+      "name": "desktop-real-hub-canonical-final.log",
+      "bytes": 18951,
+      "sha256": "7ac2b553c4a62324737ca7fef3018e1b0575b544768ea7fd28c4901c08a1f81d"
     }
   ],
   "pm_target": {
@@ -306,5 +340,6 @@
     "codex_version_owner_description": "latest",
     "actual_version": "NOT_YET_PROBED_ON_OWNER_MAC",
     "source": "owner direct statement"
-  }
+  },
+  "latest_mac_source_kit": "6e9bc5e4b development kit remains frozen; product helper code unchanged in this test-only delta. Does not include new full-repository Go harness."
 }
