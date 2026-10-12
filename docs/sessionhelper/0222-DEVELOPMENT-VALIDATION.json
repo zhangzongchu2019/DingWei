@@ -4,7 +4,7 @@
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS python=29 shell=1; admission scheduler and explicit read-only endpoint probe included",
+    "canonical": "PASS29 Python files +1 shell. First log prints stale hardcoded python=27; list actually executed29. Counter corrected afterward; no tests added by correction.",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",

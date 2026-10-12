@@ -51,4 +51,4 @@ done
 
 echo "TEST shell $SHELL_TEST"
 bash "$SHELL_TEST"
-echo 'BUILD_TESTS_OK python=27 shell=1'
+echo 'BUILD_TESTS_OK python=29 shell=1'
