@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import subprocess
 import signal
+import shlex
 import select
 import time
 import sys
@@ -49,8 +50,25 @@ def main():
         if args.desktop_app:
             setup_command.extend(["--desktop-app", str(args.desktop_app)])
         for _ in range(2):
-            subprocess.run(setup_command, input=answers,
+            configured = subprocess.run(setup_command, input=answers,
                            env=env, text=True, capture_output=True, timeout=30, check=True)
+            startup = next(line for line in configured.stdout.splitlines() if line.startswith("启动： "))
+            startup_args = shlex.split(startup[len("启动： "):])
+            assert startup_args == [str(binary), "--run-profile", str(state / "setup-profile.json")]
+        # Execute the actual printed command with readiness deliberately absent.
+        # It must reach the profile guard, not enroll/connect or treat -m as a
+        # frozen executable option. Restore only the synthetic status afterwards.
+        status_path = state / "setup-status.json"
+        status_bytes = status_path.read_bytes()
+        status_path.unlink()
+        try:
+            refused = subprocess.run(startup_args, env=env, text=True, capture_output=True, timeout=30)
+            assert refused.returncode != 0
+            assert "finish the installer tool-readiness step" in refused.stderr
+        finally:
+            sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools" / "sessionhelper"))
+            from sessionhelper.enroll import write_private_file
+            write_private_file(str(status_path), status_bytes.decode())
         assert config.read_bytes().startswith(before)
         mcp = tomllib.loads(config.read_text())["mcp_servers"]["dingwei-fixtureagent"]
         assert mcp["command"] == str(binary) and mcp["args"] == ["--mcp"]

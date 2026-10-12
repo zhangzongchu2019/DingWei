@@ -11,6 +11,7 @@ import json
 import os
 import re
 import shutil
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -160,6 +161,13 @@ def prepare_cli(tool, prompt=input, runner=subprocess.run, model=""):
     return "CLI_READY"
 
 
+def profile_command(path):
+    """One restart entry for both packaged and source installations."""
+    if getattr(sys, "frozen", False):
+        return [sys.executable, "--run-profile", str(path)]
+    return [sys.executable, "-m", "sessionhelper", "--run-profile", str(path)]
+
+
 def start_background(path, values, popen=subprocess.Popen):
     state = Path(values["SH_STATE_DIR"])
     if os.path.lexists(state / "desktop-pilot.lock"):
@@ -191,8 +199,7 @@ def start_background(path, values, popen=subprocess.Popen):
     with os.fdopen(reservation_fd, "w") as reservation:
         json.dump({"pid": os.getpid(), "status": "RESERVING"}, reservation)
         reservation.flush(); os.fsync(reservation.fileno())
-    command = ([sys.executable, "--run-profile", str(path)] if getattr(sys, "frozen", False)
-               else [sys.executable, "-m", "sessionhelper", "--run-profile", str(path)])
+    command = profile_command(path)
     # Ordinary inherited environment/auth remains with the original process;
     # no credential is inserted into command-line arguments or the profile.
     process = None
@@ -276,8 +283,11 @@ def main(argv=None):
         "desktop_host": desktop_host,
         "native_auto_notify_implemented": False,
         "native_auto_notify": "NOT_VERIFIED" if mode == "desktop" else "NOT_APPLICABLE"}))
-    print("配置已保存。接下来复制 #pair 指令并私发给当前 Hub 的官方飞书机器人完成开户与配对；Web 方式请在控制台审批。")
-    print("启动：", sys.executable, "-m sessionhelper.setup --run-profile", str(path))
+    if enrollment == "feishu":
+        print("配置已保存。启动时复制 #pair 指令并私发给当前 Hub 的官方飞书机器人，完成开户与设备配对。")
+    else:
+        print("配置已保存。Web 审核需要已创建的用户账号；启动后取得6位配对码，在控制台的自备 Agent 审核中批准。")
+    print("启动：", shlex.join(profile_command(path)))
     print("请按原生授权提示操作；CLI 模型授权码与 DW 配对码不同。")
     if args.configure_only:
         return

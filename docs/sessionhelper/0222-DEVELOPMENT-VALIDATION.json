@@ -1,16 +1,16 @@
 {
-  "recorded_utc": "2026-10-12T09:33:12.027874+00:00",
+  "recorded_utc": "2026-10-12T09:42:54.398440+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS final31 Python files+2shell; same mandatory cross-runtime gate covers7 scenarios: actual MCP3 and claim/client4;3.592s total Go integration. Other all-Go/full discovery records are prior snapshots.",
+    "canonical": "Prior2f4fa3512 snapshot PASS31 Python files+2shell, including7 actual integration scenarios. Not repeated for narrow setup restart-command correction; current setup targeted and new frozen smoke recorded separately.",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
     "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
     "helper_all_discovery": "PASS553 in284.444s prior to delayed-pilot delta; delayed-pilot covered by final21 targeted + canonical31 + frozen local smoke. No claim of a fresh555 full-discovery run.",
-    "frozen_linux_candidate": "PASS current Linux PyInstaller executable 10753752B/5c2537e14f38c8b5cc953e95636c31566045fd550821d17700fe724abc8bbf1d: version/setup idempotency/MCP tools/real IPC/read/reply and wait-first synthetic pilot. Not Mac or Hub/model proof.",
+    "frozen_linux_candidate": "PASS current setup-restart Linux frozen executable10753624B/e6e3857eb5e929123332b0fc6ddd3cdbac8d15d500e78aed6a24e59545586323: actual printed restart entry guarded/no enrollment, existing MCP/local wait-first smoke. No Mac binary/GUI/Hub/model.",
     "macos_metadata": "PASS5 synthetic bundle tests; no Mac queried, account/login/history not read",
     "local_desktop_pilot": "PASS6 tests, including real local wait-first fixture and paused refusal, owned cleanup/profile-credential refusal; no Hub routing",
     "native_auto_notify": "NOT_IMPLEMENTED: original GUI provider and complete automated receive/turn/reply runtime still missing",
@@ -37,7 +37,8 @@
     "cross_runtime_gate_policy": "Canonical shell requires Python/dependencies and runs both actual MCP roundtrip (3) and claim onboarding (4); ordinary Go-only test runs explicitly skip these without interpreter.",
     "first_cross_runtime_invocation": "FAILED before package tests due compact -p1 option; corrected to -p 1. Failed log retained, not counted PASS.",
     "claim_actual_client_hub": "PASS4 in1.58s actual localhost HTTP apply/poll/ACK + trusted synthetic Feishu command handler + actual dedicated helper WS: new member; bound identity reuse; lost committed ACK response with fresh interpreter/same saved credential; takeover denied. All first reject untrusted/group ingress. MemStore, no real Feishu platform or PG transaction.",
-    "claim_failure_history": "Initial harness failed due credential fixture filename/missing Config key_id, then restart control buffering/repeated injected lost ACK. Fixed harness only; original failed logs retained. No product code change or weakening assertions."
+    "claim_failure_history": "Initial harness failed due credential fixture filename/missing Config key_id, then restart control buffering/repeated injected lost ACK. Fixed harness only; original failed logs retained. No product code change or weakening assertions.",
+    "installer_restart_command": "PASS15 setup tests; source and frozen use shared profile_command; shell-quoted paths with spaces; Web vs Feishu pairing instructions split. First new test fixture incorrectly included python -m args in sys.argv; corrected process argv fixture, failed log retained."
   },
   "required_before_release": [
     "Independent code review",
@@ -359,6 +360,26 @@
       "name": "claim-canonical-final.log",
       "bytes": 23042,
       "sha256": "05118c7ace8d63aa81b5ac75ba15fe956051332617a4eaff6cc94431261e8d76"
+    },
+    {
+      "name": "setup-restart-first.log",
+      "bytes": 2289,
+      "sha256": "99fe736a7634590d582fd77ca6be0ceeca1ccf09380337e062690bc55beb4306"
+    },
+    {
+      "name": "setup-restart-final.log",
+      "bytes": 1154,
+      "sha256": "a3887381972485125a162b56a903e40e0794602b0c932c521de2a8adfcd477da"
+    },
+    {
+      "name": "setup-restart-frozen-build.log",
+      "bytes": 4949,
+      "sha256": "88875e8513f67e124353976b3d9260ab7fb4c917f205371881616259c4fb2946"
+    },
+    {
+      "name": "setup-restart-frozen-smoke.log",
+      "bytes": 285,
+      "sha256": "d6cc29bbcd08fab94acbf399abf889363a5adca423cc2b49f308fd3f17a7fd84"
     }
   ],
   "pm_target": {

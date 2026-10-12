@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from sessionhelper.setup import configure_mcp, profile, write_profile, prepare_cli, start_background, main
+from sessionhelper.setup import configure_mcp, profile, write_profile, prepare_cli, start_background, profile_command, main
 
 
 class SetupTest(unittest.TestCase):
@@ -148,6 +148,41 @@ class SetupTest(unittest.TestCase):
             server = tomllib.loads(config.read_text())["mcp_servers"][name]
             self.assertEqual(server["args"], ["--mcp"])
             self.assertNotIn("PYTHONPATH", server["env"])
+
+    def test_packaged_wizard_prints_usable_restart_with_spaces_and_web_hint(self):
+        import shlex
+        from io import StringIO
+        with tempfile.TemporaryDirectory(prefix="dw setup ") as root:
+            answers = iter(["1", "", "alice", "al", "pmagent", root, root, "Web"])
+            output = StringIO()
+            binary = "/fixture/Applications/Ding Wei/sessionhelper"
+            with patch.dict(os.environ, {"CODEX_HOME": str(Path(root) / "codex")}), \
+                 patch("builtins.input", side_effect=lambda _: next(answers)), \
+                 patch("sys.stdout", output), \
+                 patch("sessionhelper.setup.sys.frozen", True, create=True), \
+                 patch("sessionhelper.setup.sys.executable", binary), \
+                 patch("sessionhelper.desktop_host.require_macos_desktop", return_value={"platform": "Darwin", "applications": []}), \
+                 patch("sessionhelper.enroll.prepare_client_env") as enroll, \
+                 patch("sessionhelper.setup.start_background") as start:
+                main(["--configure-only"])
+            line = next(line for line in output.getvalue().splitlines() if line.startswith("启动： "))
+            self.assertEqual(shlex.split(line[len("启动： "):]),
+                             [binary, "--run-profile", str(Path(root) / "setup-profile.json")])
+            self.assertIn("需要已创建的用户账号", output.getvalue())
+            self.assertIn("6位配对码", output.getvalue())
+            self.assertNotIn("#pair", output.getvalue())
+            enroll.assert_not_called()
+            start.assert_not_called()
+
+    def test_source_profile_command_uses_shared_launch_entry(self):
+        import sys
+        path = Path("/fixture/with spaces/setup-profile.json")
+        self.assertEqual(profile_command(path), [sys.executable, "-m", "sessionhelper", "--run-profile", str(path)])
+        from sessionhelper.launch import main as launch
+        with patch("sys.argv", ["sessionhelper", *profile_command(path)[3:]]), patch("sessionhelper.setup.main") as setup, \
+             patch("sessionhelper.launch.env_get", side_effect=AssertionError("profile must be handled before legacy environment")):
+            launch()
+        setup.assert_called_once_with(["--run-profile", str(path)])
 
     def test_failed_background_spawn_releases_reservation(self):
         with tempfile.TemporaryDirectory() as root:
