@@ -1,25 +1,25 @@
 {
-  "recorded_utc": "2026-10-12T02:56:04.380601+00:00",
+  "recorded_utc": "2026-10-12T03:33:38.974900+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS python=25 shell=1",
+    "canonical": "PASS python=25 shell=1 on final legacy-compatible source",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
-    "all_go": "NOT_ALL_GREEN: parallel suite had migration expectation and timing failures; expectation fixed, isolated reruns passed; serial suite still timed out TestShortSessionSelectorRejectsAmbiguousOwnerMatch, isolated rerun passed. Full-suite stability remains open.",
+    "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
     "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
-    "helper_all_discovery": "PASS498 tests in282.160s; plus later desktop-private-storage4-test regression passed. DeprecationWarning forkpty/multithread and ResourceWarning fixture file preserved in log."
+    "helper_all_discovery": "PASS498 tests in282.160s; plus later desktop-private-storage4-test regression passed. DeprecationWarning forkpty/multithread and ResourceWarning fixture file preserved in log.",
+    "frozen_linux_candidate": "PASS Linux local PyInstaller executable: --version, idempotent configuration with prior MCP preserved, initialize/tools/list, dw_inbox status via real synthetic local IPC. Not desktop UI or Hub runtime verification."
   },
   "required_before_release": [
     "Independent code review",
-    "Full Go suite failure investigation on fixed commit",
     "Actual PM OS and Codex desktop version",
     "Same native desktop session receive/notify/reply runtime validation",
     "Windows IPC if required for target PM",
     "Real CLI install/native authorization/model call per chosen mode",
     "Real Feishu new-account/existing-account/device pairing test",
-    "Source/frozen installer packaging and recovery verification"
+    "Target-OS installer build/signing and real client recovery verification (Linux local frozen smoke passed)"
   ],
   "production_actions": 0,
   "evidence": [
@@ -62,6 +62,36 @@
       "name": "helper-all-final.log",
       "bytes": 38897,
       "sha256": "e84d93fbc7b57383d980d810e2629bd9e166fa674ceda2a74b0785f62cc232f3"
+    },
+    {
+      "name": "go-fixed-handshake-all.log",
+      "bytes": 286431,
+      "sha256": "265804cf0137f49234472b0fa7ff8cc1027a76ff90804637a89f2278d1a6362b"
+    },
+    {
+      "name": "go-fixed-shared-timeout-all.log",
+      "bytes": 4153,
+      "sha256": "aaaac1c0ddde472f001f786eb0f23c97215d3bcdf8baf7cb38eafff3a818796f"
+    },
+    {
+      "name": "canonical-legacy-compatible.log",
+      "bytes": 8764,
+      "sha256": "140db9d1b5730bf05fdefb45b377aa7c2a420152a66a19dfea48bc5fd835aed0"
+    },
+    {
+      "name": "frozen-build-legacy-compatible.log",
+      "bytes": 5008,
+      "sha256": "f05075c835fef9132913208f90139f331ef38353cf09ad92ad44335399ac94f8"
+    },
+    {
+      "name": "frozen-smoke-legacy-compatible.log",
+      "bytes": 299,
+      "sha256": "9c074765b38e97e06608f2335456df7032ea5cced811387b94158378aae80204"
+    },
+    {
+      "name": "setup-version-legacy-mcp.log",
+      "bytes": 944,
+      "sha256": "8ce8895d4f8ac613ac4a2b371bad7a49919afd3fa97099e0c594663694d4df1d"
     }
   ]
 }

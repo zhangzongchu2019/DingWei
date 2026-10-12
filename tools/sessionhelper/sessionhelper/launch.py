@@ -7,6 +7,10 @@ from .config import env_get
 
 
 def main():
+    if sys.argv[1:] == ["--version"]:
+        from . import __version__
+        print("sessionHelper " + __version__)
+        return
     if sys.argv[1:] == ["--mcp"]:
         from .mcp_shim import serve
         return serve()

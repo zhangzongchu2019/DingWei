@@ -91,3 +91,10 @@ F. 先本地实现与 CR，再独立发行包、测试环境/客户端验收；�
 - 默认新 member 的个人设备由本人飞书认领批准，无跨用户权限或自动编组。
 - 设备凭据采用服务器密钥+独立随机 claim ID 的域隔离 HMAC 派生，在私有轮询确认前可重复取回同一凭据，确认后不再下发；服务器密钥变更会拒绝继续领取旧 claim。
 - 只在临时 PG、内存与本地 IPC 做了开发验证；未安装真实 AI CLI、未使用真人飞书、未连接或变更生产。
+
+## 本地发行候选核验
+
+Linux 本地单文件候选已用原 sessionhelper.spec 构建，未发布或接入生产。新增 --version 不读取凭据；MCP initialize 的版本与 helper 同值，仍兼容旧直接执行 mcp_shim.py 配置。
+核验脚本：`python scripts/verify-sessionhelper-frozen.py /绝对路径/sessionhelper`。仅使用临时私有配置、模拟消息及本地 IPC；检查配置重入/旧配置保留、冻结包自己的 MCP 入口、协议 stdout、未读状态与 NOT_VERIFIED 提示。没有 Hub 连接、开户或模型调用。
+构建示例：`python -m PyInstaller --noconfirm --distpath /私有候选目录 --workpath /私有构建目录 tools/sessionhelper/sessionhelper.spec`。macOS/Windows 必须在目标系统重新构建与验收，Linux 包不能替代。
+完整 Go 套件及 25 Python/1 shell 门禁已通过。最初的会话测试握手仅等150ms并静默忽略读取失败，修正为沿用统一 envelopeReadTimeout 且缺握手即失败；未改变产品权限、路由断言或生产超时。此前失败日志继续保留。

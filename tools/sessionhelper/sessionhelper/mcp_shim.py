@@ -23,6 +23,13 @@ import sys
 from dataclasses import dataclass
 from typing import Any, Callable
 
+if __package__:
+    from . import __version__
+else:
+    # Preserve existing MCP configurations that execute this file directly.
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from sessionhelper import __version__
+
 
 # ── JSON‑RPC 2.0 types ────────────────────────────────────────────────
 
@@ -384,7 +391,7 @@ def _dispatch(req: Request) -> Response:
         return Response(id=req.id, result={
             "protocolVersion": "2024-11-05",
             "capabilities": {"tools": {}},
-            "serverInfo": {"name": "dingwei-mcp-shim", "version": "0.1.0"},
+            "serverInfo": {"name": "dingwei-mcp-shim", "version": __version__},
         })
 
     # -- unknown method ------------------------------------------------

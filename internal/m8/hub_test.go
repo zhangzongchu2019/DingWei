@@ -6290,11 +6290,15 @@ func dialSessionWithQueryRaw(t *testing.T, ctx context.Context, baseURL, session
 
 func discardInitialAgentNetworkSkill(t *testing.T, ctx context.Context, conn *websocket.Conn) {
 	t.Helper()
-	readCtx, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
+	// Every normal test handshake receives an onboarding/resume envelope.
+	// A timed-out websocket Read can close the connection, so silently ignoring
+	// it makes later routing assertions race a disconnected fixture. Raw dial
+	// helpers are available for tests that deliberately omit this envelope.
+	readCtx, cancel := context.WithTimeout(ctx, envelopeReadTimeout)
 	defer cancel()
 	_, data, err := conn.Read(readCtx)
 	if err != nil {
-		return
+		t.Fatalf("initial agent network skill handshake: %v", err)
 	}
 	var env model.Envelope
 	if err := json.Unmarshal(data, &env); err != nil {
