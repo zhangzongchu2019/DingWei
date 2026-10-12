@@ -241,6 +241,30 @@ class SetupTest(unittest.TestCase):
                 self.assertEqual(dict(os.environ), before)
             self.assertEqual(foreign.read_text(), "synthetic-token-from-other-device")
 
+    def test_profile_is_activated_before_import_time_driver_overrides(self):
+        import builtins
+        from sessionhelper.enroll import write_private_file
+        with tempfile.TemporaryDirectory() as root:
+            values = self.make(root)
+            path = write_profile(values)
+            write_private_file(str(Path(root) / "setup-status.json"), json.dumps({"mode": "desktop", "tool_ready": "MCP_CONFIGURED"}))
+            original_import = builtins.__import__
+            checked = []
+            def guarded(name, globals=None, locals=None, fromlist=(), level=0):
+                if name == "app" and level == 1:
+                    self.assertNotIn("SH_CODEX_BIN", os.environ)
+                    self.assertNotIn("SH_CLI_BIN", os.environ)
+                    self.assertNotIn("SH_OPENCODE_BIN", os.environ)
+                    self.assertEqual(os.environ["SH_MODE"], "desktop")
+                    checked.append(True)
+                return original_import(name, globals, locals, fromlist, level)
+            with patch.dict(os.environ, {"SH_CODEX_BIN": "/fixture/foreign/codex", "SH_CLI_BIN": "/fixture/foreign/claude", "SH_OPENCODE_BIN": "/fixture/foreign/opencode"}), \
+                 patch("sessionhelper.app.main") as run, \
+                 patch("builtins.__import__", side_effect=guarded):
+                main(["--run-profile", str(path)])
+            self.assertEqual(checked, [True])
+            run.assert_called_once()
+
     def test_failed_background_spawn_releases_reservation(self):
         with tempfile.TemporaryDirectory() as root:
             values = self.make(root)

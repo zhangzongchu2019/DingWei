@@ -1,16 +1,16 @@
 {
-  "recorded_utc": "2026-10-12T10:05:05.368515+00:00",
+  "recorded_utc": "2026-10-12T10:11:09.247604+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
   "checks": {
-    "canonical": "PASS current32 Python files+2shell, including environment-read gate; mandatory cross-runtime11 cases14.557s (memory claim4/PG claim4/MCP3).",
+    "canonical": "PASS final32 Python files+2shell, including environment-read gate; mandatory memory4/PG4/MCP3 integration11 cases12.318s after import-order refinement.",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
     "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
     "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
     "helper_all_discovery": "PASS553 in284.444s prior to delayed-pilot delta; delayed-pilot covered by final21 targeted + canonical31 + frozen local smoke. No claim of a fresh555 full-discovery run.",
-    "frozen_linux_candidate": "PASS current profile-isolation Linux frozen executable10754752B/5c9fe8b48f90ce7d71c46ae20c62464bd70595b11172e80bf77f84b5c2bbb327: printed restart profile guard and MCP/local IPC/read/reply/wait-first smoke. No Mac/Hub/model or frozen full enrollment runtime proof.",
+    "frozen_linux_candidate": "PASS final profile-import Linux frozen executable10751872B/b40d85949de7cc64d9ab6cd8d8bdb1c5a92a1ab81c827ae2c5d6157dae03d379: actual restart profile guard/MCP/local IPC/read/reply/wait-first smoke. No Mac/Hub/model or frozen full enrollment runtime proof.",
     "macos_metadata": "PASS5 synthetic bundle tests; no Mac queried, account/login/history not read",
     "local_desktop_pilot": "PASS6 tests, including real local wait-first fixture and paused refusal, owned cleanup/profile-credential refusal; no Hub routing",
     "native_auto_notify": "NOT_IMPLEMENTED: original GUI provider and complete automated receive/turn/reply runtime still missing",
@@ -42,7 +42,7 @@
     "claim_actual_postgres_hub": "PASS4 in8.85s final PostgreSQL18.3/server_version_num180003; actual migrate.HubDomains ledger0001/0100/0101/0102, migration idempotency and CheckSchema; actual Python HTTP private save/ACK/restart and dedicated helper WS. Own embedded DB, caller DSN blocked, strict startup/no skip downgrade, cleanup residue checks. Synthetic trusted Feishu identity, no real platform.",
     "claim_postgres_contracts": "PASS memory11 + PG11 in2.852s: new/existing/takeover/short conflict/disabled/replay/expiry/wrong token/concurrent/different claims/preferred name reuse; existing minimal test DDL, no external DSN.",
     "claim_postgres_rollback": "PASS1 in1.977s: final audit trigger failure after attempted account/identity/agent/claim writes leaves no user/agent or consumed claim; existing PGTestSchema.",
-    "managed_profile_isolation": "PASS17 setup tests +4 environment-entry checks in0.435s; background only passes profile helper variables, native AI env preserved, parent unchanged; actual prepare_client_env ignores inherited foreign hosted-token and uses own saved credential; foreground restores original helper env on exception. Legacy direct env startup unchanged.",
+    "managed_profile_isolation": "PASS18 setup +4 environment entry tests in0.401s; profile activation before app/driver imports; foreign hosted token/secret/owner/IPC/context and import-time CLI path overrides excluded; native AI environment preserved; own saved credential used, parent env restored after exception. Legacy direct env entry unchanged.",
     "env_read_single_entry": "PASS4; managed snapshot/scope operations central in config.py, exact whitelist5 and no direct setup reads. Now canonical required test file."
   },
   "required_before_release": [
@@ -430,6 +430,26 @@
       "name": "setup-profile-isolation-frozen-smoke.log",
       "bytes": 285,
       "sha256": "65b8daf2060b848fbee083dc44c0473caad967cfd1216858758ded1f7c6fbbf7"
+    },
+    {
+      "name": "setup-profile-isolation-import-final.log",
+      "bytes": 1154,
+      "sha256": "cffccdf4af8c12284724742805eb2c77ad310f11b6a6090e10b0902488518b24"
+    },
+    {
+      "name": "setup-profile-import-canonical-final.log",
+      "bytes": 27725,
+      "sha256": "65c87833d7d1279d57dd0784b85d2b88ad6fa7b14add867012da44eff4879672"
+    },
+    {
+      "name": "setup-profile-import-frozen-build.log",
+      "bytes": 5001,
+      "sha256": "2256e267a6bdad9ea42fe4fc363dcbd7c5ba9d77efa810a8575d1869dbecdc02"
+    },
+    {
+      "name": "setup-profile-import-frozen-smoke.log",
+      "bytes": 285,
+      "sha256": "b9b3ae1645f65fdf4d4a26a56576041ba48ddab647e40efa153490bd3e137fc7"
     }
   ],
   "pm_target": {

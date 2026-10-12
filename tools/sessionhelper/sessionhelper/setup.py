@@ -256,8 +256,9 @@ def main(argv=None):
         required = "MCP_CONFIGURED" if values["SH_MODE"] == "desktop" else "CLI_READY"
         if status.get("tool_ready") != required or status.get("mode") != values["SH_MODE"]:
             raise ValueError("selected AI tool is not verified ready; resume the setup wizard")
-        from .app import main as run_helper
         with activated_helper_environment(values):
+            # Driver modules resolve CLI binary overrides at import time.
+            from .app import main as run_helper
             return run_helper()
     print("两种接入方式都需要 sessionHelper。请选择：\n1. Codex 桌面应用 + DW-MCP\n2. CLI 托管（通过 DingWei Web 页面交互）")
     choice = input("选择 [1/2]：").strip()
