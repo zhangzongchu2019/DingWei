@@ -1,5 +1,5 @@
 {
-  "recorded_utc": "2026-10-12T12:58:35.926840+00:00",
+  "recorded_utc": "2026-10-12T15:13:22.786675+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
@@ -7,7 +7,7 @@
     "canonical": "PASS35 Python files+2shell including8 Stop-hook tests, actual local Hub/PG/MCP13 cases. No actual Mac/Codex/model/Feishu platform acceptance.",
     "changed_go_surfaces": "PASS claim/enroll/desktop/migration/injected-ack selectors",
     "desktop_transport_semantics": "PASS real local websocket; transport receipt is not CLI injection",
-    "all_go": "PASS go test -p1 ./...; m8 fresh92.375s, some other packages cached. Test handshake now requires onboarding using existing envelopeReadTimeout; previous failed runs preserved.",
+    "all_go": "LATEST FULL RUN rc1: 45 package passes,3 failures,12 no-test packages;2425 passing test/subtest events,2 failures,20 skips. B3 async-observation fixture fixed: fresh workpulse whole package rc0 plus focused race count5 rc0. Hosted240s timeout/nodegate deadline fixture failure remain unclosed; prior PASS is historical, not current all-Go PASS.",
     "desktop_private_storage": "PASS symlink rejection preserves target; private inbox and local IPC regression",
     "helper_all_discovery": "PASS553 in284.444s prior to delayed-pilot delta; delayed-pilot covered by final21 targeted + canonical31 + frozen local smoke. No claim of a fresh555 full-discovery run.",
     "frozen_linux_candidate": "PASS Linux development frozen10764712B/f67bfc6744d82263e490feb007f15d7a5103e45be9cdc3032aa37ca3ec7fb87a: standard local smoke plus actual packaged Stop request/other-session refusal/process-reopen dedup. Zero Hub/model calls; no native Mac/GUI proof. Built from workingtree before final commit.",
@@ -676,5 +676,36 @@
     "sha256": "6c14f328c0906a2340f7bae1731960c6baf13751eccb0affcd000ca8704b10b4",
     "actual_mac_builds": 0,
     "production_actions": 0
+  },
+  "full_go_regression_20261012": {
+    "recorded_utc": "2026-10-12T15:13:22.786675+00:00",
+    "original_run_source": "960f7b7e907dded9f706201c772539720f832a1a",
+    "original_exit_code": 1,
+    "package_counts": {
+      "skip": 12,
+      "pass": 45,
+      "fail": 3
+    },
+    "test_counts": {
+      "pass": 2425,
+      "fail": 2,
+      "skip": 20
+    },
+    "qualification": "Original failed run retained; counts include subtests, 12 package skip events are no-test packages, 20 test skips not passes. Whole suite NOT PASS. Test-only cleanup edits occurred after original workpulse test binary compiled.",
+    "repair_commit": "026b1309c5f770872e4060b0a9a3d0105b9c6d31",
+    "repair": "B3 test observes failed stage before async abort cleanup. Optional completion channel synchronizes fake map observation; no product runtime changed.",
+    "fresh_workpulse_result": {
+      "started_utc": "2026-10-12T15:10:30.832834+00:00",
+      "completed_utc": "2026-10-12T15:12:01.364369+00:00",
+      "exit_code": 0
+    },
+    "focused_race": "go test -race ./cmd/workpulse -run ^TestB3PullFailureCleanup$ -count=5: rc0",
+    "remaining": [
+      "internal/hosted package hit configured 240s timeout; not a passing run or proven product defect",
+      "internal/nodegate TestSendWithTimeoutHonorsCallerDeadline expected node_command_timeout but received node_offline; unchanged from .221, not fixed or retried in this turn"
+    ],
+    "actual_mac_model_feishu_acceptance": false,
+    "production_actions": 0,
+    "idle_original_chat_wakeup": "NOT_IMPLEMENTED"
   }
 }
