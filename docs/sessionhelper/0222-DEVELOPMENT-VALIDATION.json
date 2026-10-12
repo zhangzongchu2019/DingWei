@@ -1,5 +1,5 @@
 {
-  "recorded_utc": "2026-10-12T06:39:31.326684+00:00",
+  "recorded_utc": "2026-10-12T06:50:18.476756+00:00",
   "status": "DEVELOPMENT_ONLY_NOT_RELEASE_READY",
   "base_commit": "9c14fe714b02e702c193a8a6fd439bc76eb1ebc5",
   "candidate_version": "0.2.2.2",
@@ -17,11 +17,12 @@
     "macos_build": "NOT_RUN: native build script prepared, syntax checked; Linux rejected before mutation. No Mac binary exists here.",
     "legacy_IPC": "PASS15 send wiring tests, original default socket replacement semantics preserved",
     "frozen_mac_pilot_entry": "PASS Linux build of final entry, metadata and synthetic pilot stdio/read/reply/SIGTERM cleanup. Not a Mac binary or native GUI proof.",
-    "desktop_dispatch": "PASS14 synthetic provider/reply sender tests; original desktop and real Hub sender not wired",
+    "desktop_dispatch": "PASS15 provider/outbox/actual-helper-send contract tests; no native provider or production sender wiring",
     "desktop_endpoint": "PASS6 real local Unix websocket and refusal tests; no native GUI backend tested",
-    "desktop_selected_regression": "PASS33 desktop/inbox/metadata/pilot/dispatch/endpoint tests",
+    "desktop_selected_regression": "PASS34 desktop tests",
     "local_codex_schema": "Local codex-cli0.161.0 offline schema has no idle conditional turn/start field; owner version not inferred",
-    "native_reply": "IMPLEMENTED_OFFLINE: correlated terminal output/private outbox/durable ACK gate; no actual agent send"
+    "native_reply": "IMPLEMENTED_OFFLINE: correlated terminal output/private outbox/durable ACK gate; no actual agent send",
+    "existing_helper_send_receipt": "PASS actual SessionHelper._make_send_handler with synthetic websocket: sent-write receipt is refused as durable ACK"
   },
   "required_before_release": [
     "Independent code review",
@@ -187,6 +188,16 @@
       "name": "desktop-reply-regression.log",
       "bytes": 5002,
       "sha256": "8015e6e89c7c65598c852bf5540f8c853eed2b41972f2b64254716d619f0aaa6"
+    },
+    {
+      "name": "desktop-send-contract-first-failure.txt",
+      "bytes": 217,
+      "sha256": "5d5942203b1b9a7d0f572b4ec4a79eb7d8486b2de3ebcb08c31a9f531beab452"
+    },
+    {
+      "name": "desktop-send-contract-final.log",
+      "bytes": 5226,
+      "sha256": "a165e9efaeb8df6314b21be3504a7ad55ff7dea4ee05178b394250ce5fd90234"
     }
   ],
   "pm_target": {

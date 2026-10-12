@@ -131,6 +131,26 @@ class DispatchTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.engine.complete_with_reply('a', 'turn-a', thread_id='original', body='fixture')
         self.assertEqual(self.engine.step()['admission_state'], 'admitted')
+    def test_existing_helper_write_receipt_is_not_delivery_confirmation(self):
+        import asyncio
+        from sessionhelper.app import SessionHelper
+        self.prepare_reply()
+        helper = SessionHelper.__new__(SessionHelper)
+        helper.book = SimpleNamespace(key_id='fixture-owner', self_addr='fixture-helper#LOCAL')
+        class SyntheticWS:
+            def __init__(self): self.frames = []
+            async def send(self, frame): self.frames.append(frame)
+        ws = SyntheticWS()
+        transport_send = helper._make_send_handler(ws)
+        def sender(payload):
+            return asyncio.run(transport_send(payload['to'], payload['body'], payload['meta']))
+        with self.assertRaisesRegex(ValueError, 'durable reply ACK missing'):
+            self.engine.flush_reply(sender)
+        self.assertEqual(len(ws.frames), 1)
+        self.assertEqual(self.engine.flush_reply(sender)['reply_state'], 'uncertain')
+        self.assertEqual(len(ws.frames), 1)
+        self.assertEqual(self.adapter.request({'operation': 'status'})['unread'], 1)
+
     def test_reply_limits_no_state_mutation(self):
         self.engine.step()
         for body in ('', ' '*10, 'x'*65537, None):

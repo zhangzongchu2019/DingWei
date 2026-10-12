@@ -42,3 +42,9 @@ App Server 文档提供 Unix control socket、JSON-RPC、thread/loaded/list（�
 新增 `flush_reply`：先持久化 sending，只有未来受管 sender 明确 durable ACK 后才记 sent 和 inbox read；异常/取消/无 ACK 留 uncertain，不重放，进程崩溃留下 sending 同样阻止后续发送。当前只有替身 sender，未向真实 Agent 发消息；普通 WebSocket send 完成或 MCP queued 结果不等于 durable ACK。此策略避免盲目重投，但 UNKNOWN 项仍可能需要受管人工核实，未声称端到端 exactly-once。
 
 排除项：不再把重复打包、系统通知、MCP 手动读取、另起 CLI/线程或一次探针成功算作核心实现进度。保留旧 package/pins 和生产冻结；下一项仍是核确 PM Mac 桌面已有控制入口并接上原生 provider，而非扩大服务器/数据库/下载变更。
+
+## 回传现有能力直核
+
+`SessionHelper._make_send_handler` 明确返回 `{sent:true,to:...}`，含义仅为认证连接写入，Hub 裁决另行异步返回。新增测试调用这个实际函数（仅 synthetic websocket，不联网），确认回传内核拒绝以其返回值记 sent/已读，保留 uncertain 且不重投。不得用 `{ok:true}` 包装既有写入回执绕过 durable ACK 契约。后续需确定回复 envelope ID 与 Hub 接受/拒绝或持久投递结果的安全关联，再接 sender。
+
+Mac 最小信息采集：从新的固定源码包解压目录运行 `PYTHONPATH=tools/sessionhelper python3 -m sessionhelper.desktop_host --desktop-app /Applications/Codex.app`。此入口只用标准库，不要求构建、安装 MCP、Hub 配对或桌面登录；如安装的是 ChatGPT.app，则选其准确路径。要求 Python3.11+。只回传 applications 中 name/version/build/bundle_id，以及 architecture；不要传配置、日志或任何认证数据。该信息本身仍不是 socket 来源证据。
