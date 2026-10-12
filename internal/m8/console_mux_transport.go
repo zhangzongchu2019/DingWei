@@ -376,6 +376,7 @@ func (m *consoleMuxRegistry) manageBridges(ctx context.Context, cancel context.C
 						current := f.Scopes[sc.Agent.FullName]
 						valid := current != nil && current.Generation == sc.Generation && current.Round == sc.Round
 						if valid {
+							f.retireScopeLocked(sc.Agent.FullName, current)
 							delete(f.Scopes, sc.Agent.FullName)
 							f.Revision++
 							if f.Gate != nil {
@@ -486,6 +487,12 @@ func (m *consoleMuxRegistry) runBridge(ctx context.Context, f *consoleMuxFeed, b
 		}
 		// Do not let a full seat hold a shared encoder or stall another target.
 		f.mu.Lock()
+		currentScope := f.Scopes[meta.FullName]
+		if currentScope == nil || currentScope.Generation != sc.Generation || currentScope.Round != sc.Round {
+			f.mu.Unlock()
+			return nil
+		}
+		f.retireScopeLocked(meta.FullName, currentScope)
 		delete(f.Scopes, meta.FullName)
 		f.Revision++
 		if f.Gate != nil {
@@ -680,6 +687,7 @@ func (h *Hub) serveMuxSources(w http.ResponseWriter, r *http.Request, f *console
 		phase   int
 		stopped bool
 		gap     string
+		window  muxSourceWindow
 	}
 	sources := []*src{}
 	defer func() {
@@ -771,7 +779,6 @@ func (h *Hub) serveMuxSources(w http.ResponseWriter, r *http.Request, f *console
 				live := false
 				if len(v.replay) > 0 {
 					ev = v.replay[0]
-					v.replay = v.replay[1:]
 					has = true
 				} else if v.phase == 1 {
 					meta.Type = "replay_end"
@@ -841,8 +848,30 @@ func (h *Hub) serveMuxSources(w http.ResponseWriter, r *http.Request, f *console
 					v.unsub()
 					break
 				}
+				// Pace at the raw source before encoding into a shared VS
+				// bridge. A large valid retained replay must not flood the
+				// public queue and be mistaken for a live producer overrun.
+				f.mu.Lock()
+				current := f.Scopes[v.s.Agent.FullName]
+				applied := ""
+				if current != nil && current.Generation == v.s.Generation && current.Round == v.s.Round {
+					applied = current.Desired.After
+				}
+				f.mu.Unlock()
+				ep, confirmed, valid := parseSSEAfter(applied)
+				if valid && ep == v.snap.Epoch {
+					v.window.confirm(confirmed)
+				}
+				wireBytes := len(header) + len(ev.Data) + 19
+				if !v.window.ready(wireBytes) {
+					break
+				}
 				if !write(v.s, eventMeta, ev.Data) {
 					return
+				}
+				v.window.sent(ev.Seq, wireBytes)
+				if !live {
+					v.replay = v.replay[1:]
 				}
 				if live {
 					v.reader.mu.Lock()

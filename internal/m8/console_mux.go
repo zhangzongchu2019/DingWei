@@ -74,15 +74,17 @@ type consoleMuxApplied struct {
 	After      string `json:"after"`
 }
 type consoleMuxResult struct {
-	Hash   [32]byte
-	Status int
-	Body   any
+	Revision uint64
+	Hash     [32]byte
+	Status   int
+	Body     any
 }
 type consoleMuxFeed struct {
 	mu                               sync.Mutex
 	control                          chan struct{}
 	ID, Session, Principal, Instance string
 	Revision                         uint64
+	ResetRevision                    uint64
 	Scopes                           map[string]*consoleMuxScope
 	Retired                          map[string]*consoleMuxScope
 	RetiredOrder                     []string
@@ -486,7 +488,7 @@ func (h *Hub) HandleConsoleMuxCreate(w http.ResponseWriter, r *http.Request) {
 	f.mu.Unlock()
 	meta := f.metadata()
 	f.mu.Lock()
-	f.Requests[req.RequestID] = consoleMuxResult{digest, 201, meta}
+	f.Requests[req.RequestID] = consoleMuxResult{Hash: digest, Status: 201, Body: meta, Revision: 1}
 	f.RequestOrder = []string{req.RequestID}
 	f.mu.Unlock()
 	muxJSON(w, 201, meta)
@@ -530,6 +532,7 @@ func (h *Hub) HandleConsoleMuxReplace(w http.ResponseWriter, r *http.Request) {
 	}
 	prior, exists := f.Requests[cacheID]
 	rev := f.Revision
+	resetRevision := f.ResetRevision
 	old := map[string]*consoleMuxScope{}
 	for k, v := range f.Scopes {
 		copy := *v
@@ -546,6 +549,8 @@ func (h *Hub) HandleConsoleMuxReplace(w http.ResponseWriter, r *http.Request) {
 	if exists {
 		if prior.Hash != digest {
 			writeAgentWSError(w, 409, "request_id_conflict")
+		} else if prior.Revision < resetRevision {
+			writeAgentWSError(w, 409, "reset_generation_changed")
 		} else {
 			muxJSON(w, prior.Status, prior.Body)
 		}
@@ -606,31 +611,20 @@ func (h *Hub) HandleConsoleMuxReplace(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		if f.Retired == nil {
-			f.Retired = map[string]*consoleMuxScope{}
-		}
 		for name, sc := range f.Scopes {
 			if next[name] == nil {
-				for i := len(f.RetiredOrder) - 1; i >= 0; i-- {
-					if f.RetiredOrder[i] == name {
-						f.RetiredOrder = append(f.RetiredOrder[:i], f.RetiredOrder[i+1:]...)
-					}
-				}
-				c := *sc
-				f.Retired[name] = &c
-				f.RetiredOrder = append(f.RetiredOrder, name)
+				f.retireScopeLocked(name, sc)
 			}
 		}
-		for len(f.RetiredOrder) > 8 {
-			name := f.RetiredOrder[0]
-			f.RetiredOrder = f.RetiredOrder[1:]
-			delete(f.Retired, name)
-		}
+
 		for name := range next {
 			delete(f.Retired, name)
 		}
 		f.Scopes = next
 		f.Revision++
+		if req.Reset != nil {
+			f.ResetRevision = f.Revision
+		}
 		if f.Gate != nil {
 			nextGenerations := map[string]string{}
 			for _, sc := range next {
@@ -646,7 +640,7 @@ func (h *Hub) HandleConsoleMuxReplace(w http.ResponseWriter, r *http.Request) {
 	}
 	meta := f.metadata()
 	f.mu.Lock()
-	f.Requests[cacheID] = consoleMuxResult{digest, 200, meta}
+	f.Requests[cacheID] = consoleMuxResult{Hash: digest, Status: 200, Body: meta, Revision: f.Revision}
 	f.RequestOrder = append(f.RequestOrder, cacheID)
 	if len(f.RequestOrder) > 16 {
 		id := f.RequestOrder[0]
@@ -824,5 +818,25 @@ func (h *Hub) closeConsoleMux() {
 	defer cancel()
 	for _, f := range feeds {
 		_ = m.stop(f, ctx)
+	}
+}
+
+// Only bounded scope metadata survives a stop; never payload or positive leases.
+func (f *consoleMuxFeed) retireScopeLocked(name string, sc *consoleMuxScope) {
+	if f.Retired == nil {
+		f.Retired = map[string]*consoleMuxScope{}
+	}
+	for i := len(f.RetiredOrder) - 1; i >= 0; i-- {
+		if f.RetiredOrder[i] == name {
+			f.RetiredOrder = append(f.RetiredOrder[:i], f.RetiredOrder[i+1:]...)
+		}
+	}
+	c := *sc
+	f.Retired[name] = &c
+	f.RetiredOrder = append(f.RetiredOrder, name)
+	for len(f.RetiredOrder) > 8 {
+		name := f.RetiredOrder[0]
+		f.RetiredOrder = f.RetiredOrder[1:]
+		delete(f.Retired, name)
 	}
 }
