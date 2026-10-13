@@ -207,7 +207,8 @@ func (w *obsWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 
 func (w *obsWriter) Unwrap() http.ResponseWriter { return w.inner }
 
-// SnapshotHandler 输出 JSON 快照。鉴权由调用方在外面套（只给 management）。
+// SnapshotHandler 输出 JSON 快照。本函数不做鉴权：路由上必须套 RequireConsolePrincipal＋RequireConsolePlatformAdmin
+// （只给当前 active 的 platform_admin；manager 不行，组长 2026-10-13T08:30:38Z 补裁）。
 func (r *Registry) SnapshotHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet && req.Method != http.MethodHead {
 		w.Header().Set("Allow", "GET, HEAD")

@@ -143,7 +143,7 @@ func New(now func() time.Time) *Registry {
 		now = time.Now
 	}
 	start := now()
-	return &Registry{
+	r := &Registry{
 		now:           now,
 		started:       start.UTC(),
 		startedMono:   start,
@@ -153,7 +153,16 @@ func New(now func() time.Time) *Registry {
 		ws:            map[string]*wsStat{},
 		artifactPath:  os.Executable,
 	}
+	// 已接 hook 的 kind 预先登记：没有连接时快照里是真实观测到的 0，而不是「缺这一项」。
+	// node 的 socket 本版没接 hook ⇒ 不登记，只在 not_instrumented 里列出（不计空零）。
+	for _, k := range instrumentedWSKinds {
+		r.wsFor(k)
+	}
+	return r
 }
+
+// instrumentedWSKinds 是本版真正接了 hook 的 WebSocket 种类。
+var instrumentedWSKinds = []string{"session", "service", "view"}
 
 // Default 是 Hub 进程用的登记处；hook 走包级函数，测试用 New 自建。
 var Default = New(nil)
@@ -628,6 +637,7 @@ func (r *Registry) Snapshot() Snapshot {
 
 func notInstrumented() []NotInstrumented {
 	return []NotInstrumented{
+		{Area: "node_ws", Status: "NOT_INSTRUMENTED", Reason: "nodegate /api/node/connect socket has no hook in this candidate; not reported as zero"},
 		{Area: "feishu", Status: "NOT_INSTRUMENTED", Reason: "outbound attempt stages and ingress counters not wired in this candidate"},
 		{Area: "view_service", Status: "NOT_INSTRUMENTED", Reason: "python view-service has no metrics; SSE relay timing not wired"},
 		{Area: "browser_report", Status: "NOT_INSTRUMENTED", Reason: "no client report endpoint in this candidate"},

@@ -399,12 +399,12 @@ func TestMiddlewarePreservesWebSocketUpgrade(t *testing.T) {
 	deadline := time.Now().Add(3 * time.Second)
 	for time.Now().Before(deadline) {
 		s = r.Snapshot()
-		if len(s.WS) == 1 && s.WS[0].Closed["peer_normal"] == 1 && len(s.Streams.Series) == 1 && s.Streams.Series[0].Closed == 1 {
+		if w := wsKind(s, "session"); w != nil && w.Closed["peer_normal"] == 1 && len(s.Streams.Series) == 1 && s.Streams.Series[0].Closed == 1 {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	if len(s.WS) != 1 || s.WS[0].Kind != "session" || s.WS[0].Opened != 1 || s.WS[0].Active != 0 || s.WS[0].Closed["peer_normal"] != 1 {
+	if w := wsKind(s, "session"); w == nil || w.Opened != 1 || w.Active != 0 || w.Closed["peer_normal"] != 1 {
 		t.Fatalf("ws %+v", s.WS)
 	}
 	if len(s.Streams.Series) != 1 || s.Streams.Series[0].Kind != "upgrade" || s.Streams.Series[0].Route != "/ws/{name}" {
@@ -491,4 +491,40 @@ func TestWSConnReasonsAndPing(t *testing.T) {
 	if other.Closed["local_other"] != 1 {
 		t.Fatalf("unknown reason must collapse to local_other: %v", other.Closed)
 	}
+}
+
+// 已接 hook 的 kind 无连接时是真实 0；node 没接 hook，不出现在 ws 里，只出现在 not_instrumented 里。
+func TestWSKindsInstrumentedZeroVsNodeNotInstrumented(t *testing.T) {
+	s := New(nil).Snapshot()
+	kinds := map[string]WSView{}
+	for _, w := range s.WS {
+		kinds[w.Kind] = w
+	}
+	for _, k := range []string{"session", "service", "view"} {
+		w, ok := kinds[k]
+		if !ok || w.Opened != 0 || w.Active != 0 {
+			t.Fatalf("instrumented kind %s must be present with measured zero: %+v", k, s.WS)
+		}
+	}
+	if _, ok := kinds["node"]; ok {
+		t.Fatal("node is not hooked; it must not appear as a zero row")
+	}
+	found := false
+	for _, n := range s.NotInstrumented {
+		if n.Area == "node_ws" && n.Status == "NOT_INSTRUMENTED" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("node_ws must be listed as NOT_INSTRUMENTED: %+v", s.NotInstrumented)
+	}
+}
+
+func wsKind(s Snapshot, kind string) *WSView {
+	for i := range s.WS {
+		if s.WS[i].Kind == kind {
+			return &s.WS[i]
+		}
+	}
+	return nil
 }
