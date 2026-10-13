@@ -244,3 +244,43 @@ func TestMonitorRouteLabelsAreRegisteredPatternsOnly(t *testing.T) {
 		t.Errorf("PROPFIND must be recorded under OTHER: %+v", snap.HTTP.Series)
 	}
 }
+
+// 独立页与快照接口同一套 guard；页面请求（Accept html）未登录／改密／失活走 302，非 platform_admin 一律 403。
+func TestMonitorPageSameGuardAsSnapshot(t *testing.T) {
+	r := newMonitorRig(t)
+	page := func(tok string) (int, string, string, string) {
+		req, _ := http.NewRequest("GET", r.srv.URL+"/console/monitor", nil)
+		req.Header.Set("Accept", "text/html")
+		if tok != "" {
+			req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: tok})
+		}
+		res, err := (&http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}).Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		b, _ := io.ReadAll(res.Body)
+		return res.StatusCode, res.Header.Get("Location"), res.Header.Get("Content-Security-Policy"), string(b)
+	}
+	code, _, csp, body := page("tok-admin")
+	if code != 200 || csp == "" || !strings.Contains(body, "/api/console/monitor/snapshot") {
+		t.Fatalf("admin page: %d csp=%q", code, csp)
+	}
+	for _, c := range []struct {
+		tok      string
+		code     int
+		loc, has string
+	}{
+		{"tok-mgr", 403, "", "platform_admin_required"},
+		{"tok-mem", 403, "", "platform_admin_required"},
+		{"", 302, "/console/login", ""},
+		{"tok-nobody", 302, "/console/login", ""},
+		{"tok-admin2", 302, "/console/login#change", ""},
+		{"tok-admin3", 302, "/console/login", ""},
+	} {
+		code, loc, _, body := page(c.tok)
+		if code != c.code || loc != c.loc || !strings.Contains(body, c.has) || strings.Contains(body, "monitor/snapshot") {
+			t.Errorf("token %q: got %d loc=%q body=%.80q; want %d loc=%q", c.tok, code, loc, body, c.code, c.loc)
+		}
+	}
+}

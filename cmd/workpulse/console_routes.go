@@ -18,6 +18,8 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	mux.HandleFunc("GET /console", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsolePage))
 	// DW123-PER-RELEASE-OBSERVABILITY 首片：全站运维快照只给 active platform_admin（组长 2026-10-13T08:30:38Z 补裁）。
 	mux.HandleFunc("GET /api/console/monitor/snapshot", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(obs.Default.SnapshotHandler)))
+	// 独立监控页（不改 consolePageHTML 与 renderer），与快照接口同一套 guard（组长 2026-10-13T08:59:04Z）。
+	mux.HandleFunc("GET /console/monitor", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(obs.MonitorPageHandler)))
 	if !newplat {
 		// 新平台下这三条由 wireNewPlatform 的新实现替换，不并存（同路径重复注册会 panic）。
 		mux.HandleFunc("GET /console/login", prefixHub.HandleConsoleLoginPage)
