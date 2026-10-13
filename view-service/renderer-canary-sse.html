@@ -2384,16 +2384,44 @@
           waitingArea.hidden = waitingDeliveries.size === 0;
           renderEvent(wEntry.event);
           rendered += 1;
-        } else if (wEntry && norm.stage) {
-          // Only a forward C1 stage may advance the waiting row. Late or
-          // repeated updates must not regress its label or renew confirmation.
-          const currentStage = wEntry.event._norm.stage;
-          const currentStageIdx = C1_STAGE_ORDER.indexOf(currentStage === 'turn_admitted' ? 'cli_injected' : currentStage);
+        } else if (wEntry) {
+          // Merge only delivery progress, never the original input identity/body.
+          const current = wEntry.event._norm;
+          const currentStageIdx = C1_STAGE_ORDER.indexOf(current.stage === 'turn_admitted' ? 'cli_injected' : current.stage);
+          let changed = false;
           if (norm.stageIdx > currentStageIdx) {
-            wEntry.event._norm.stage = norm.stage;
-            wEntry.event._norm.stageIdx = norm.stageIdx;
-            renderWaitingDelivery(wEntry.event);
+            current.stage = norm.stage;
+            current.stageIdx = norm.stageIdx;
+            changed = true;
           }
+          const rawVer = ev.schema_version ?? ev.meta?.schema_version;
+          const canonicalUpdate = ev.kind === 'delivery_update' && (rawVer === 'delivery.v2' || rawVer === 2 || rawVer === '2');
+          if (canonicalUpdate) {
+            // Explicit denial is fail-closed. Once denied, an older/same-stage
+            // update cannot recreate a cancel action for this delivery.
+            const canCancel = ev.cancellable;
+            if (canCancel === false && current.cancellable !== false) {
+              current.cancellable = false;
+              changed = true;
+            } else if (canCancel === true && current.cancellable !== false &&
+                       (!norm.stage || norm.stageIdx >= currentStageIdx) && current.cancellable !== true) {
+              current.cancellable = true;
+              changed = true;
+            }
+            if (!norm.stage || norm.stageIdx >= currentStageIdx) {
+              const status = ev.delivery_status;
+              if (typeof status === 'string' && ['', 'cancelled', 'failed', 'dead', 'dropped'].includes(status) && (current.status || '') !== status) {
+                current.status = status;
+                changed = true;
+              }
+              const reason = ev.reason;
+              if (typeof reason === 'string' && (reason === '' || reason === 'desktop_inbox_saved' || Object.hasOwn(C1_REASON_TEXT, reason)) && current.reason !== reason) {
+                current.reason = reason;
+                changed = true;
+              }
+            }
+          }
+          if (changed) renderWaitingDelivery(wEntry.event);
         }
         if (copyMergable) {
           // 归并去重(display v1):observed_delivery_id→primary 卡 footnote「已回显」;
