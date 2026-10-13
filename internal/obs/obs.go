@@ -117,8 +117,9 @@ type Identity struct {
 type Registry struct {
 	mu sync.Mutex
 
-	now     func() time.Time
-	started time.Time
+	now         func() time.Time
+	started     time.Time // 墙钟 UTC，只用于展示
+	startedMono time.Time // 带单调读数的原值，只用于算 uptime（墙钟跳变不影响）
 
 	routes         map[routeKey]*histogram
 	routeOverflow  map[string]*histogram // 按 server 分的溢出桶
@@ -131,7 +132,7 @@ type Registry struct {
 	identity Identity
 
 	artifactOnce sync.Once
-	artifactSHA  string
+	artifactSHA  string // 由后台协程写入，读写都在 mu 下
 	artifactErr  string
 	artifactPath func() (string, error)
 }
@@ -141,9 +142,11 @@ func New(now func() time.Time) *Registry {
 	if now == nil {
 		now = time.Now
 	}
+	start := now()
 	return &Registry{
 		now:           now,
-		started:       now().UTC(),
+		started:       start.UTC(),
+		startedMono:   start,
 		routes:        map[routeKey]*histogram{},
 		routeOverflow: map[string]*histogram{},
 		streams:       map[streamKey]*streamStat{},
@@ -156,10 +159,12 @@ func New(now func() time.Time) *Registry {
 var Default = New(nil)
 
 // SetIdentity 在启动时设一次运行身份。
+// 同时在后台起一次制品 sha 计算（读可执行文件），不放在任何请求路径或锁内。
 func (r *Registry) SetIdentity(id Identity) {
 	r.mu.Lock()
 	r.identity = id
 	r.mu.Unlock()
+	r.startArtifactHash()
 }
 
 // SanitizeDeployID 只接受 [A-Za-z0-9._:-]，长度 1–128；其他一律当 UNKNOWN（返回空串），防止环境变量把任意内容带进快照。
@@ -474,36 +479,48 @@ func strPtr(s string) *string {
 	return &s
 }
 
-func (r *Registry) artifact() (string, string) {
+// startArtifactHash 只启动一次后台计算；结果在 mu 下发布。读文件失败只记 UNKNOWN 原因，不影响任何请求。
+func (r *Registry) startArtifactHash() {
 	r.artifactOnce.Do(func() {
-		p, err := r.artifactPath()
-		if err != nil {
-			r.artifactErr = "UNKNOWN: executable path unavailable"
-			return
-		}
-		f, err := os.Open(p)
-		if err != nil {
-			r.artifactErr = "UNKNOWN: executable not readable"
-			return
-		}
-		defer f.Close()
-		h := sha256.New()
-		if _, err := io.Copy(h, f); err != nil {
-			r.artifactErr = "UNKNOWN: executable read failed"
-			return
-		}
-		r.artifactSHA = hex.EncodeToString(h.Sum(nil))
+		r.mu.Lock()
+		r.artifactErr = "UNKNOWN: artifact hash pending"
+		r.mu.Unlock()
+		go func() {
+			sum, reason := hashExecutable(r.artifactPath)
+			r.mu.Lock()
+			r.artifactSHA, r.artifactErr = sum, reason
+			r.mu.Unlock()
+		}()
 	})
-	return r.artifactSHA, r.artifactErr
+}
+
+func hashExecutable(path func() (string, error)) (string, string) {
+	p, err := path()
+	if err != nil {
+		return "", "UNKNOWN: executable path unavailable"
+	}
+	f, err := os.Open(p)
+	if err != nil {
+		return "", "UNKNOWN: executable not readable"
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", "UNKNOWN: executable read failed"
+	}
+	return hex.EncodeToString(h.Sum(nil)), ""
 }
 
 // Snapshot 返回当前快照（深拷贝，可直接序列化）。
 func (r *Registry) Snapshot() Snapshot {
-	artSHA, artErr := r.artifact()
-	now := r.now().UTC()
+	r.startArtifactHash() // 没调 SetIdentity 的登记处也会起后台计算；本次快照不等它
+	raw := r.now()        // 带单调读数：uptime 用它与 startedMono 相减
+	now := raw.UTC()      // .UTC() 会去掉单调读数，只作展示用的墙钟
 
+	// 锁内只复制内存里的计数，不做 I/O；编码在锁外（SnapshotHandler）。
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	artSHA, artErr := r.artifactSHA, r.artifactErr
 
 	id := r.identity
 	unknown := map[string]string{}
@@ -600,7 +617,7 @@ func (r *Registry) Snapshot() Snapshot {
 		Schema:           Schema,
 		SnapshotAt:       now,
 		ProcessStartedAt: r.started,
-		UptimeSeconds:    now.Sub(r.started).Seconds(),
+		UptimeSeconds:    raw.Sub(r.startedMono).Seconds(),
 		Identity:         iv,
 		HTTP:             hv,
 		Streams:          sv,

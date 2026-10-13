@@ -182,12 +182,17 @@ func (w *obsWriter) ReadFrom(src io.Reader) (int64, error) {
 
 type writerOnly struct{ io.Writer }
 
-func (w *obsWriter) Flush() {
+// FlushError 把真实 writer 的 flush 错误原样交回：http.ResponseController.Flush 先找 FlushError，
+// consolemux Gate.write 靠这个错误判断对端已死（写截止到点）——不能吞掉。
+func (w *obsWriter) FlushError() error {
 	if !w.wroteHeader {
 		w.WriteHeader(http.StatusOK)
 	}
-	_ = http.NewResponseController(w.inner).Flush()
+	return http.NewResponseController(w.inner).Flush()
 }
+
+// Flush 满足直接断言 http.Flusher 的处理器（HandleInternalViewEvents）；该接口无返回值，错误由后续 Write 暴露。
+func (w *obsWriter) Flush() { _ = w.FlushError() }
 
 func (w *obsWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	conn, rw, err := http.NewResponseController(w.inner).Hijack()

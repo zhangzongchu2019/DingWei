@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -121,10 +122,88 @@ func TestSanitizeDeployID(t *testing.T) {
 
 func TestArtifactSHAOfExecutable(t *testing.T) {
 	r := New(nil)
-	s := r.Snapshot()
-	if s.Identity.ArtifactSHA256 == nil || len(*s.Identity.ArtifactSHA256) != 64 {
-		t.Fatalf("artifact sha of test binary: %v %v", s.Identity.ArtifactSHA256, s.Identity.Unknown)
+	r.SetIdentity(Identity{Service: "workpulse"})
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		s := r.Snapshot()
+		if s.Identity.ArtifactSHA256 != nil {
+			if len(*s.Identity.ArtifactSHA256) != 64 {
+				t.Fatalf("artifact sha %q", *s.Identity.ArtifactSHA256)
+			}
+			return
+		}
+		if why := s.Identity.Unknown["artifact_sha256"]; !strings.HasPrefix(why, "UNKNOWN") {
+			t.Fatalf("pending artifact must be UNKNOWN with reason, got %q", why)
+		}
+		time.Sleep(20 * time.Millisecond)
 	}
+	t.Fatal("artifact sha never computed")
+}
+
+// 真 HTTP/1.1 慢对端：客户端发完请求就不读。处理器照 consolemux Gate.write 的写法（ResponseController 设写截止、
+// 小块写、ctl.Flush()）——截止到点后，第一个错误必须由 ctl.Flush() 交回（小块写都进缓冲），且在截止后限时内出现。
+// 吞掉 flush 错误的包装器会让第一个错误改由后续 Write 暴露，或让处理器以为对端还活着。
+func TestMiddlewareSlowPeerWriteDeadlineSurfacesFlushError(t *testing.T) {
+	r := New(nil)
+	mux := http.NewServeMux()
+	type result struct {
+		from    string
+		err     error
+		elapsed time.Duration
+	}
+	got := make(chan result, 1)
+	const limit = 400 * time.Millisecond
+	mux.HandleFunc("GET /feed", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		ctl := http.NewResponseController(w)
+		start := time.Now()
+		if err := ctl.SetWriteDeadline(start.Add(limit)); err != nil {
+			got <- result{"deadline", err, 0}
+			return
+		}
+		chunk := ": " + strings.Repeat("x", 1021) + "\n"
+		for time.Since(start) < 15*time.Second {
+			if _, err := io.WriteString(w, chunk); err != nil {
+				got <- result{"write", err, time.Since(start)}
+				return
+			}
+			if err := ctl.Flush(); err != nil {
+				got <- result{"flush", err, time.Since(start)}
+				return
+			}
+		}
+		got <- result{"none", nil, time.Since(start)}
+	})
+	srv := httptest.NewServer(r.Middleware("public", mux))
+	defer srv.Close()
+	conn, err := net.Dial("tcp", strings.TrimPrefix(srv.URL, "http://"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	if tc, ok := conn.(*net.TCPConn); ok {
+		_ = tc.SetReadBuffer(4096)
+	}
+	if _, err := io.WriteString(conn, "GET /feed HTTP/1.1\r\nHost: x\r\n\r\n"); err != nil {
+		t.Fatal(err)
+	}
+	res := <-got // 客户端从不读
+	if res.from != "flush" || res.err == nil {
+		t.Fatalf("first error must come from ResponseController.Flush, got from=%s err=%v after %v", res.from, res.err, res.elapsed)
+	}
+	if res.elapsed < limit || res.elapsed > limit+5*time.Second {
+		t.Fatalf("flush error at %v, want shortly after the %v deadline", res.elapsed, limit)
+	}
+	t.Logf("slow peer: flush error after %v: %v", res.elapsed, res.err)
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		s := r.Snapshot()
+		if len(s.Streams.Series) == 1 && s.Streams.Series[0].Closed == 1 && len(s.HTTP.Series) == 0 {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("slow-peer stream must be recorded as a stream, not a short request: %+v %+v", r.Snapshot().Streams.Series, r.Snapshot().HTTP.Series)
 }
 
 func TestSnapshotTimesDistinct(t *testing.T) {

@@ -14,6 +14,7 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
+	"github.com/zhangzongchu2019/dingwei/internal/obs"
 )
 
 const monitorPath = "/api/console/monitor/snapshot"
@@ -180,5 +181,66 @@ func TestMonitorSnapshotIsGetOnly(t *testing.T) {
 	res.Body.Close()
 	if res.StatusCode != http.StatusMethodNotAllowed {
 		t.Fatalf("POST %s: %d", monitorPath, res.StatusCode)
+	}
+}
+
+// S1：route 标签只能是实际注册的 pattern（去掉方法前缀）或固定的 _unmatched；方法只能落在固定集合（其他归 OTHER）。
+// 用真实的 wireNewPlatform＋registerConsoleRoutes 注册表，打一批已注册、未注册、带 id、带 query 的请求。
+func TestMonitorRouteLabelsAreRegisteredPatternsOnly(t *testing.T) {
+	hub := newplatHub(t)
+	rec := &routeRecorder{mux: http.NewServeMux()}
+	if err := wireNewPlatform(context.Background(), rec, hub, newPlatformConfig{publicOrigin: "https://dw.example"}, identity.NewMemStore(), nil); err != nil {
+		t.Fatal(err)
+	}
+	registerConsoleRoutes(rec, hub, true)
+	allowed := map[string]bool{"_unmatched": true}
+	for _, p := range rec.patterns {
+		if i := strings.IndexByte(p, ' '); i >= 0 {
+			p = strings.TrimSpace(p[i+1:])
+		}
+		allowed[p] = true
+	}
+	reg := obs.New(nil)
+	srv := httptest.NewServer(reg.Middleware("public", rec.mux))
+	defer srv.Close()
+	reqs := []struct{ method, path string }{
+		{"GET", "/console"}, {"GET", "/api/console/platform"}, {"GET", monitorPath},
+		{"GET", "/view/some-agent.zzc"}, {"POST", "/view/some-agent.zzc/input?token=abc"},
+		{"GET", "/api/console/agents"}, {"GET", "/no/such/route/123"}, {"PROPFIND", "/console"},
+		{"DELETE", "/api/console/event-feeds/feed-xyz"}, {"GET", "/ws/view/agent-q"},
+	}
+	for _, q := range reqs {
+		req, _ := http.NewRequest(q.method, srv.URL+q.path, nil)
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = io.Copy(io.Discard, res.Body)
+		res.Body.Close()
+	}
+	snap := reg.Snapshot()
+	if len(snap.HTTP.Series) == 0 {
+		t.Fatal("no series recorded")
+	}
+	methods := map[string]bool{"GET": true, "POST": true, "PUT": true, "DELETE": true, "PATCH": true, "HEAD": true, "OPTIONS": true, "OTHER": true}
+	sawOther := false
+	for _, s := range snap.HTTP.Series {
+		if !allowed[s.Route] {
+			t.Errorf("route label %q is not a registered pattern", s.Route)
+		}
+		if !methods[s.Method] {
+			t.Errorf("method label %q outside fixed set", s.Method)
+		}
+		if s.Method == "OTHER" {
+			sawOther = true
+		}
+		for _, bad := range []string{"some-agent", "feed-xyz", "token", "123", "agent-q"} {
+			if strings.Contains(s.Route, bad) {
+				t.Errorf("route label %q carries request data %q", s.Route, bad)
+			}
+		}
+	}
+	if !sawOther {
+		t.Errorf("PROPFIND must be recorded under OTHER: %+v", snap.HTTP.Series)
 	}
 }
