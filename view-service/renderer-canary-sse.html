@@ -1064,6 +1064,7 @@
       <div class="brand">
         <div class="title" id="headerSessionName">demo</div>
       </div>
+      <a href="/console/tasks" target="_blank" rel="noopener">任务管理</a>
     </header>
 
     <main class="main">
@@ -1206,7 +1207,6 @@
       control: apiEp('control'),
       status: apiEp('status'),
       page: apiEp('page'),
-      tasks: '/tasks',  // 全局投影端点(C3:VS_TASKS_FILE 快照,非 session 子路径;生产 VS 尚无 handler)——不 scoped,勿拼 base
     };
     let eventSource = null;
     let eventSourceGeneration = 0;
@@ -1788,221 +1788,6 @@
       beginTimelineReplay();
       scrollTimelineToBottom();
       updateMetrics();
-    }
-
-    // ── C3 责任方任务看板(右侧折叠浮窗,只读)──
-    function taskBoardInitialCollapsed() {
-      try { return sessionStorage.getItem('dw-taskboard-collapsed') !== '0'; }
-      catch (_) { return true; }
-    }
-    function persistTaskBoardCollapsed(collapsed) {
-      try { sessionStorage.setItem('dw-taskboard-collapsed', collapsed ? '1' : '0'); }
-      catch (_) { /* Storage may be denied by browser policy; in-memory state still works. */ }
-    }
-    const taskBoard = {
-      handle: null, panel: null, listEl: null, headEl: null,
-      data: null, lastGood: null, lastGoodAt: 0,
-      collapsed: taskBoardInitialCollapsed(),
-      STALE_MS: 600000,
-    };
-
-    function taskBoardEnsureDom() {
-      if (taskBoard.handle) return;
-      const handle = document.createElement('button');
-      handle.type = 'button';
-      handle.className = 'taskboard-handle';
-      handle.setAttribute('aria-label', '任务看板');
-      const panel = document.createElement('aside');
-      panel.className = 'taskboard-panel';
-      panel.hidden = true;
-      panel.innerHTML = '<div class="taskboard-head"></div><div class="taskboard-list"></div>';
-      document.body.append(handle, panel);
-      taskBoard.handle = handle;
-      taskBoard.panel = panel;
-      taskBoard.headEl = panel.querySelector('.taskboard-head');
-      taskBoard.listEl = panel.querySelector('.taskboard-list');
-      handle.addEventListener('click', event => {
-        event.stopPropagation();
-        taskBoardSetCollapsed(!taskBoard.collapsed);
-      });
-      // 点击主区域即收起,浮层不拦截外部事件
-      document.addEventListener('click', event => {
-        if (!taskBoard.collapsed && !panel.contains(event.target) && event.target !== handle) {
-          taskBoardSetCollapsed(true);
-        }
-      });
-      taskBoardSetCollapsed(taskBoard.collapsed);
-    }
-
-    function taskBoardSetCollapsed(collapsed) {
-      taskBoard.collapsed = collapsed;
-      persistTaskBoardCollapsed(collapsed);
-      taskBoard.panel.hidden = collapsed;
-      taskBoardRenderHandle();
-    }
-
-    function taskBoardActiveCount() {
-      const tasks = (taskBoard.lastGood || taskBoard.data)?.tasks || [];
-      return tasks.filter(t => t.status === 'in_progress' || t.status === 'blocked').length;
-    }
-
-    function taskBoardRenderHandle() {
-      taskBoard.handle.textContent = `📋 任务看板 (${taskBoardActiveCount()})`;
-    }
-
-    const TASK_STATUS_META = {
-      todo: { label: '待办', cls: 'todo' },
-      in_progress: { label: '进行', cls: 'in_progress' },
-      blocked: { label: '阻塞', cls: 'blocked' },
-      in_review: { label: '评审', cls: 'in_review' },
-      done: { label: '完成', cls: 'done' },
-    };
-
-    function taskBoardSortTasks(tasks) {
-      const groupOrder = { a: 0, b: 1, c: 2, cross: 3 };
-      const statusOrder = { blocked: 0, in_progress: 1, in_review: 2, todo: 3, done: 4 };
-      return [...tasks].sort((x, y) =>
-        (groupOrder[x.group] ?? 9) - (groupOrder[y.group] ?? 9) ||
-        (statusOrder[x.status] ?? 9) - (statusOrder[y.status] ?? 9) ||
-        String(y.updated_at || '').localeCompare(String(x.updated_at || '')));
-    }
-
-    function taskBoardIsStale() {
-      // 新鲜度按数据 envelope.updated_at(非拉取时间)
-      const upd = (taskBoard.lastGood || taskBoard.data)?.updated_at;
-      if (!upd) return false;
-      const t = Date.parse(upd);
-      return !Number.isNaN(t) && (Date.now() - t > taskBoard.STALE_MS);
-    }
-
-    async function taskBoardRefresh() {
-      taskBoardEnsureDom();
-      try {
-        const res = await fetch(API.tasks, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (!data || !Array.isArray(data.tasks)) throw new Error('bad payload');
-        taskBoard.data = data;
-        taskBoard.lastGood = data;
-        taskBoard.lastGoodAt = Date.now();
-      } catch (err) {
-        // 失败保留上次数据(陈旧标记);首次失败显示错误态
-        taskBoard.data = taskBoard.lastGood ? { ...taskBoard.lastGood, __error: String(err.message || err) } : { __error: String(err.message || err), tasks: [] };
-      }
-      taskBoardRender();
-    }
-
-    function taskBoardRender() {
-      taskBoardRenderHandle();
-      const data = taskBoard.data;
-      const head = taskBoard.headEl;
-      const list = taskBoard.listEl;
-      head.textContent = '';
-      list.textContent = '';
-      if (!data || data.__error !== undefined && !data.tasks?.length) {
-        const err = document.createElement('div');
-        err.className = 'taskboard-error';
-        err.textContent = '看板数据暂不可用';
-        head.appendChild(err);
-        return;
-      }
-      const tasks = data.tasks || [];
-      const allDone = tasks.length > 0 && tasks.every(t => t.status === 'done');
-      const stale = !allDone && taskBoardIsStale();
-      const doneCount = tasks.filter(t => t.status === 'done').length;
-      const title = document.createElement('div');
-      title.className = 'taskboard-title';
-      title.textContent = `${data.project || '任务看板'} · ${doneCount}/${tasks.length} 完成`;
-      head.appendChild(title);
-      if (data.updated_at) {
-        const upd = document.createElement('div');
-        upd.className = 'taskboard-updated' + (stale ? ' stale' : '');
-        upd.textContent = `数据更新于 ${data.updated_at}${stale ? '(可能已陈旧)' : ''}`;
-        head.appendChild(upd);
-      }
-      if (data.__error) {
-        const warn = document.createElement('div');
-        warn.className = 'taskboard-updated stale';
-        warn.textContent = '刷新失败,显示上次数据';
-        head.appendChild(warn);
-      }
-      for (const task of taskBoardSortTasks(tasks)) {
-        list.appendChild(taskBoardRenderCard(task, tasks));
-      }
-    }
-
-    function taskBoardRenderCard(task, allTasks) {
-      const meta = TASK_STATUS_META[task.status] || TASK_STATUS_META.todo;
-      const card = document.createElement('div');
-      card.className = `task-card status-${meta.cls}`;
-      card.dataset.taskId = task.task_id || '';
-      const head = document.createElement('div');
-      head.className = 'task-card-head';
-      const dot = document.createElement('span');
-      dot.className = `task-dot status-${meta.cls}`;
-      const idEl = document.createElement('span');
-      idEl.className = 'task-id';
-      idEl.textContent = task.task_id || '?';
-      const titleEl = document.createElement('span');
-      titleEl.className = 'task-title';
-      titleEl.textContent = task.title || '';
-      const ownerEl = document.createElement('span');
-      ownerEl.className = 'task-owner';
-      ownerEl.textContent = task.owner_display || task.owner || '';
-      head.append(dot, idEl, titleEl, ownerEl);
-      card.appendChild(head);
-      const body = document.createElement('div');
-      body.className = 'task-card-body';
-      const statusLine = document.createElement('div');
-      statusLine.className = 'task-status-line';
-      statusLine.textContent = meta.label + (typeof task.progress_pct === 'number' ? ` · ${task.progress_pct}%` : '');
-      body.appendChild(statusLine);
-      if (typeof task.progress_pct === 'number') {
-        const bar = document.createElement('div');
-        bar.className = 'task-bar';
-        const fill = document.createElement('div');
-        fill.className = 'task-bar-fill';
-        fill.style.width = `${Math.max(0, Math.min(100, task.progress_pct))}%`;
-        bar.appendChild(fill);
-        body.appendChild(bar);
-      }
-      if (task.status === 'blocked') {
-        const blk = document.createElement('div');
-        blk.className = 'task-blockers';
-        blk.textContent = '已阻塞';   // 不渲染 raw blockers(防拓扑串),原因走 public_summary(策展)
-        body.appendChild(blk);
-      }
-      const deps = Array.isArray(task.depends_on) ? task.depends_on.filter(Boolean) : [];
-      if (deps.length) {
-        const depEl = document.createElement('div');
-        depEl.className = 'task-deps';
-        depEl.textContent = `依赖:${deps.join(', ')}`;
-        depEl.title = deps.map(d => {
-          const target = allTasks.find(t => t.task_id === d);
-          return target ? `${d}: ${target.title}` : d;
-        }).join('\n');
-        depEl.addEventListener('click', event => {
-          event.stopPropagation();
-          const first = deps[0];
-          const target = taskBoard.listEl.querySelector(`[data-task-id="${CSS.escape(first)}"]`);
-          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        });
-        body.appendChild(depEl);
-      }
-      if (task.public_summary) {
-        const noteEl = document.createElement('div');
-        noteEl.className = 'task-note';
-        noteEl.textContent = task.public_summary;   // 仅 manager 维护的对外摘要
-        body.appendChild(noteEl);
-      }
-      card.appendChild(body);
-      return card;
-    }
-
-    function taskBoardStart() {
-      taskBoardEnsureDom();
-      taskBoardRefresh();
-      setInterval(taskBoardRefresh, 5000);
     }
 
     // ── C1 三来源显示:事件规范化(B0 canonical 一等协议,legacy 仅迁移输入)──
@@ -4025,7 +3810,6 @@
       connectEventStream();
       await refreshStatus();
       statusTimer = setInterval(refreshStatus, 5000);
-      taskBoardStart();   // C3 看板(失败自清,不阻塞主页)
     }
 
     function clearStreamConnectTimer() {

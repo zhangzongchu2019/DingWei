@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -25,8 +26,8 @@ table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{padding:8px;b
 #task-table th:nth-child(1){width:32%}#task-table th:nth-child(2),#task-table th:nth-child(3){width:13%}#task-table th:nth-child(4){width:18%}#task-table th:nth-child(5){width:24%}
 @media(max-width:800px){.board{grid-template-columns:1fr}}
 </style></head><body><h1>任务管理</h1><div class=board>
-<section id=spec-panel class=panel><h2>spec 列表</h2><table><thead><tr><th>spec</th><th>状态</th></tr></thead><tbody id=spec-list></tbody></table><div class=pager><button id=spec-prev type=button>上一页</button><span id=spec-page></span><button id=spec-next type=button>下一页</button></div></section>
-<section id=task-panel class=panel><div class=task-toolbar><h2>任务分解列表</h2><span><button id=edit-tasks type=button>编辑</button><button id=finish-tasks type=button hidden>编辑完成</button></span></div><div id=task-status role=status></div><table id=task-table><thead><tr><th>任务文本</th><th>研发</th><th>验收</th><th>状态</th><th>验收标准</th></tr></thead><tbody id=task-list></tbody></table><div class=pager><button id=task-prev type=button>上一页</button><span id=task-page></span><button id=task-next type=button>下一页</button></div></section>
+<section id=spec-panel class=panel><h2>spec 列表</h2><button id=all-owned-tasks type=button>本人全部任务</button><table><thead><tr><th>spec</th><th>状态</th></tr></thead><tbody id=spec-list></tbody></table><div class=pager><button id=spec-prev type=button>上一页</button><span id=spec-page></span><button id=spec-next type=button>下一页</button></div></section>
+<section id=task-panel class=panel><div class=task-toolbar><h2>任务列表</h2><span><button id=refresh-tasks type=button>刷新</button><button id=edit-tasks type=button>编辑</button><button id=finish-tasks type=button hidden>编辑完成</button></span></div><div id=task-status role=status></div><div id=task-updated class=muted></div><table id=task-table><thead><tr><th>任务文本</th><th>研发</th><th>验收</th><th>状态</th><th>验收标准</th></tr></thead><tbody id=task-list></tbody></table><div class=pager><button id=task-prev type=button>上一页</button><span id=task-page></span><button id=task-next type=button>下一页</button></div></section>
 </div><script>
 var DW_THEME_KEY='dw-theme',dwTaskThemeChannel=null;
 function dwTaskApplyTheme(v){if(v!=='dark'&&v!=='light')return;document.documentElement.dataset.theme=v;if(document.body)document.body.dataset.theme=v;}
@@ -39,15 +40,60 @@ function acceptanceDisplay(raw){try{const value=JSON.parse(raw||'[]'),list=Array
 function setPager(prefix,page,pages){document.getElementById(prefix+'-page').textContent=page+' / '+pages;document.getElementById(prefix+'-prev').disabled=page<=1;document.getElementById(prefix+'-next').disabled=page>=pages}
 function taskCell(value,title){const td=document.createElement('td');td.textContent=value||'';if(title)td.title=title;return td}
 function assigneeCell(task,role){const td=document.createElement('td'),idKey=role+'_agent_id',nameKey=role+'_agent',onlineKey=role+'_online';if(!editing||!String(task.review_id||'').startsWith('manual:')){td.textContent=task[nameKey]||'';if(task[idKey]&&!task[onlineKey]){const dot=document.createElement('span');dot.className='offline-dot';dot.title='当前离线';dot.textContent='●';td.append(dot)}return td}const select=document.createElement('select');select.className='assignee-select '+role+'-agent';const blank=document.createElement('option');blank.value='';blank.textContent='';select.append(blank);if(task[idKey]&&!task[onlineKey]){const assigned=document.createElement('option');assigned.value=task[idKey];assigned.textContent=task[nameKey]||task[idKey];assigned.disabled=true;assigned.selected=true;assigned.dataset.assignedOffline='true';select.append(assigned)}onlineAgents.forEach(function(agent){const option=document.createElement('option');option.value=agent.id;option.textContent=agent.session_name;option.selected=agent.id===task[idKey];select.append(option)});select.onchange=function(){task[idKey]=select.value;task.assignment_dirty=true};td.append(select);return td}
-async function saveAssignment(task){const status=document.getElementById('task-status'),r=await fetch('/api/console/task-board/tasks/'+encodeURIComponent(task.proposal_id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({developer_agent_id:task.developer_agent_id||'',reviewer_agent_id:task.reviewer_agent_id||''})});if(!r.ok){status.textContent=(await r.text()).trim();return false}task.assignment_dirty=false;return true}
-async function saveAssignments(){for(const task of currentTasks){if(task.assignment_dirty&&!await saveAssignment(task))return false}document.getElementById('task-status').textContent='已保存';return true}
-function taskProgress(task){if(task.developer_agent_id&&!task.reviewer_agent_id)return {text:'缺少验收 Agent，任务无法完成',problem:true};return {text:String(task.passed_cases||0)+'/'+String(task.total_cases||1),problem:false}}
+async function saveAssignment(task){if(boardStopped)return false;const status=document.getElementById('task-status'),r=await fetch('/api/console/task-board/tasks/'+encodeURIComponent(task.proposal_id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({developer_agent_id:task.developer_agent_id||'',reviewer_agent_id:task.reviewer_agent_id||''})});if(r.status===401||r.status===403){boardStop('登录或访问权限已失效，请重新打开任务管理');return false}if(boardStopped)return false;if(!r.ok){status.textContent='任务保存失败，编辑内容已保留';return false}task.assignment_dirty=false;return true}
+async function saveAssignments(){if(!await loadBoard('verify')||boardStopped)return false;for(const task of currentTasks){if(task.assignment_dirty&&!await saveAssignment(task))return false}document.getElementById('task-status').textContent='已保存';return true}
+function taskProgress(task){if(task.developer_agent_id&&!task.reviewer_agent_id)return {text:'缺少验收 Agent，任务无法完成',problem:true};return {text:(task.status?({'planned':'已计划'}[task.status]||task.status)+' · ':'')+String(task.passed_cases||0)+'/'+String(task.total_cases||1),problem:false}}
 function renderTasks(tasks){currentTasks=tasks||[];const body=document.getElementById('task-list');body.replaceChildren();currentTasks.forEach(function(task){const tr=document.createElement('tr'),acceptance=acceptanceDisplay(task.acceptance_json),progress=taskProgress(task),progressCell=taskCell(progress.text);tr.dataset.taskId=task.proposal_id;if(progress.problem)progressCell.className='error assignment-problem';tr.append(taskCell(task.content||task.title),assigneeCell(task,'developer'),assigneeCell(task,'reviewer'),progressCell,taskCell(acceptance.label,acceptance.title));body.append(tr)})}
-function renderSpecs(specs){const body=document.getElementById('spec-list');body.replaceChildren();(specs||[]).forEach(function(spec){const tr=document.createElement('tr');tr.dataset.specId=spec.id;tr.classList.toggle('selected',spec.id===selectedSpec);tr.append(taskCell(spec.title),taskCell(spec.state));tr.onclick=function(){selectedSpec=selectedSpec===spec.id?'':spec.id;taskPage=1;loadBoard()};body.append(tr)})}
-async function loadBoard(){const q=new URLSearchParams({spec_page:String(specPage),task_page:String(taskPage)});if(selectedSpec)q.set('spec_id',selectedSpec);const r=await fetch('/api/console/task-board?'+q,{cache:'no-store'});const status=document.getElementById('task-status');if(!r.ok){status.textContent=(await r.text()).trim()||'任务管理不可用';renderSpecs([]);renderTasks([]);return;}const data=await r.json();specPage=data.spec_page;taskPage=data.task_page;onlineAgents=data.agents||[];renderSpecs(data.specs);renderTasks(data.tasks);setPager('spec',data.spec_page,data.spec_total_pages);setPager('task',data.task_page,data.task_total_pages)}
-document.getElementById('edit-tasks').onclick=function(){editing=true;this.hidden=true;document.getElementById('finish-tasks').hidden=false;renderTasks(currentTasks)};document.getElementById('finish-tasks').onclick=async function(){if(!await saveAssignments())return;editing=false;this.hidden=true;document.getElementById('edit-tasks').hidden=false;await loadBoard()};
-document.getElementById('spec-prev').onclick=function(){if(specPage>1){specPage--;loadBoard()}};document.getElementById('spec-next').onclick=function(){specPage++;loadBoard()};document.getElementById('task-prev').onclick=function(){if(taskPage>1){taskPage--;loadBoard()}};document.getElementById('task-next').onclick=function(){taskPage++;loadBoard()};
-loadBoard();
+function renderSpecs(specs){const body=document.getElementById('spec-list');body.replaceChildren();(specs||[]).forEach(function(spec){const tr=document.createElement('tr');tr.dataset.specId=spec.id;tr.classList.toggle('selected',spec.id===selectedSpec);tr.append(taskCell(spec.title),taskCell(spec.state));tr.onclick=function(){boardChangeSelection(function(){selectedSpec=selectedSpec===spec.id?'':spec.id;taskPage=1})};body.append(tr)})}
+// DW-OWNED-TASK-BOARD BEGIN: single-flight reads, editing owns its draft objects.
+let boardTimer=null,boardFlight=null,boardGeneration=0,boardStopped=false,boardQueued=false,boardViewer='',boardLastGoodAt='',boardSaving=false;
+const boardParams=new URLSearchParams(location.search),boardEmbedded=boardParams.get('embedded')==='1';
+const boardInstance=boardParams.get('board_instance')||'';
+let boardParentActive=!boardEmbedded,boardVisibilityGeneration=-1;
+function boardIsActive(){return !document.hidden&&(!boardEmbedded||boardParentActive)}
+function boardClearTimer(){if(boardTimer!==null)clearTimeout(boardTimer);boardTimer=null}
+function boardSchedule(){boardClearTimer();if(!boardStopped&&!editing&&boardIsActive())boardTimer=setTimeout(function(){boardTimer=null;loadBoard()},60000)}
+function boardStop(text){boardStopped=true;boardGeneration++;boardQueued=false;boardClearTimer();if(boardFlight)boardFlight.controller.abort();boardViewer='';boardLastGoodAt='';editing=false;onlineAgents=[];renderSpecs([]);renderTasks([]);document.getElementById('task-updated').textContent='';document.getElementById('task-status').textContent=text;document.getElementById('edit-tasks').disabled=true;document.getElementById('finish-tasks').hidden=true;document.getElementById('refresh-tasks').disabled=true}
+function boardQuery(){const q=new URLSearchParams({spec_page:String(specPage),task_page:String(taskPage)});if(selectedSpec)q.set('spec_id',selectedSpec);return q.toString()}
+async function loadBoard(mode){
+ mode=mode||'auto';boardClearTimer();
+ if(boardStopped||!boardIsActive())return null;
+ if(editing&&mode!=='verify'){boardQueued=true;return null}
+ if(boardFlight){if(mode==='verify'){await boardFlight.promise;return loadBoard('verify')}boardQueued=true;return null}
+ const generation=boardGeneration,query=boardQuery(),controller=new AbortController(),token={controller,promise:null};let timeout=null;
+ if(mode!=='verify')document.getElementById('task-status').textContent='正在更新任务列表…';
+ const run=(async function(){try{
+  const deadline=new Promise(function(_,reject){timeout=setTimeout(function(){controller.abort();reject(new Error('deadline'))},5000)});
+  const request=(async function(){const r=await fetch('/api/console/task-board?'+query,{cache:'no-store',signal:controller.signal});if(r.status===401||r.status===403){boardStop('登录或访问权限已失效，请重新打开任务管理');return null}if(!r.ok)throw new Error('unavailable');const data=await r.json();if(!data||!Array.isArray(data.specs)||!Array.isArray(data.tasks)||!Array.isArray(data.agents)||typeof data.viewer_key!=='string'||!data.viewer_key)throw new Error('shape');return data})();
+  const data=await Promise.race([request,deadline]);
+  if(!data||boardStopped||generation!==boardGeneration||query!==boardQuery())return null;
+  if(boardViewer&&boardViewer!==data.viewer_key){boardStop('登录身份已变化，请重新打开任务管理');return null}
+  boardViewer=data.viewer_key;
+  if(mode==='verify')return data;
+  if(editing){boardQueued=true;return null}
+  specPage=data.spec_page;taskPage=data.task_page;onlineAgents=data.agents;
+  renderSpecs(data.specs);renderTasks(data.tasks);setPager('spec',data.spec_page,data.spec_total_pages);setPager('task',data.task_page,data.task_total_pages);
+  boardLastGoodAt=data.updated_at||new Date().toISOString();
+  document.getElementById('task-updated').textContent='更新于 '+boardLastGoodAt;
+  document.getElementById('task-status').textContent=selectedSpec?'':'本人名下任务 · '+String(data.task_total??data.tasks.length)+' 项';
+  return data;
+ }catch(_){if(!boardStopped&&generation===boardGeneration)document.getElementById('task-status').textContent=boardLastGoodAt?'更新失败，保留上次成功列表；当前筛选可能尚未生效':'任务管理暂不可用，请重试';return null}
+ finally{if(timeout!==null)clearTimeout(timeout)} })();
+ token.promise=run;boardFlight=token;
+ try{return await run}finally{if(boardFlight===token)boardFlight=null;if(!boardStopped&&boardIsActive()&&!editing){if(boardQueued){boardQueued=false;loadBoard('manual')}else boardSchedule()}}
+}
+function boardChangeSelection(change){if(editing||boardSaving||boardStopped)return;change();boardGeneration++;loadBoard('manual')}
+function boardVisibilityChanged(){boardClearTimer();boardGeneration++;if(boardStopped)return;if(boardIsActive())loadBoard('manual');else boardQueued=false}
+window.addEventListener('message',function(ev){const d=ev.data;if(!boardEmbedded||parent===window||!/^[0-9a-f]{32}$/.test(boardInstance)||ev.source!==parent||ev.origin!==location.origin||!d||d.protocol!=='dw-task-board/v1'||d.instance!==boardInstance||!Number.isSafeInteger(d.generation)||d.generation<boardVisibilityGeneration)return;if(d.type==='invalidate'){boardStop('任务管理已关闭，请重新打开');return}if(d.type!=='visibility'||typeof d.active!=='boolean')return;boardVisibilityGeneration=d.generation;if(boardParentActive!==d.active){boardParentActive=d.active;boardVisibilityChanged()}});
+document.addEventListener('visibilitychange',boardVisibilityChanged);
+window.addEventListener('pagehide',function(){boardStop('任务管理已关闭')});
+document.getElementById('refresh-tasks').onclick=function(){loadBoard('manual')};
+document.getElementById('all-owned-tasks').onclick=function(){boardChangeSelection(function(){selectedSpec='';taskPage=1})};
+document.getElementById('edit-tasks').onclick=function(){if(boardStopped||!currentTasks.length)return;editing=true;boardGeneration++;boardClearTimer();this.hidden=true;document.getElementById('finish-tasks').hidden=false;renderTasks(currentTasks);document.getElementById('task-status').textContent='编辑中，自动更新将在编辑完成后继续'};
+document.getElementById('finish-tasks').onclick=async function(){if(boardSaving||boardStopped)return;boardSaving=true;this.disabled=true;try{if(!await saveAssignments())return;editing=false;this.hidden=true;document.getElementById('edit-tasks').hidden=false;boardGeneration++;boardQueued=false;await loadBoard('manual')}finally{boardSaving=false;this.disabled=false}};
+document.getElementById('spec-prev').onclick=function(){boardChangeSelection(function(){if(specPage>1)specPage--})};document.getElementById('spec-next').onclick=function(){boardChangeSelection(function(){specPage++})};document.getElementById('task-prev').onclick=function(){boardChangeSelection(function(){if(taskPage>1)taskPage--})};document.getElementById('task-next').onclick=function(){boardChangeSelection(function(){taskPage++})};
+if(boardEmbedded){if(parent!==window&&/^[0-9a-f]{32}$/.test(boardInstance))parent.postMessage({protocol:'dw-task-board/v1',type:'ready',instance:boardInstance},location.origin);else document.getElementById('task-status').textContent='请从工作台重新打开任务管理'}else loadBoard();
+// DW-OWNED-TASK-BOARD END
 </script></body></html>`
 
 const (
@@ -74,6 +120,9 @@ func pageConsoleSpecs(items []model.ConsoleSpec, page, size int) ([]model.Consol
 	if pages == 0 {
 		pages = 1
 	}
+	if page > pages {
+		page = pages
+	}
 	start := (page - 1) * size
 	if start > len(items) {
 		start = len(items)
@@ -89,6 +138,9 @@ func pageConsoleTasks(items []model.ConsoleTaskProposal, page, size int) ([]mode
 	pages := (len(items) + size - 1) / size
 	if pages == 0 {
 		pages = 1
+	}
+	if page > pages {
+		page = pages
 	}
 	start := (page - 1) * size
 	if start > len(items) {
@@ -114,6 +166,10 @@ func (h *Hub) HandleConsoleTaskBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	principal := platformPrincipal(r)
+	if principal == "" {
+		http.Error(w, "unauthenticated", http.StatusUnauthorized)
+		return
+	}
 	allSpecs, err := repo.ListConsoleSpecs(r.Context(), principal, false)
 	if err != nil {
 		http.Error(w, "console task board unavailable", http.StatusServiceUnavailable)
@@ -121,27 +177,56 @@ func (h *Hub) HandleConsoleTaskBoard(w http.ResponseWriter, r *http.Request) {
 	}
 	selectedID := strings.TrimSpace(r.URL.Query().Get("spec_id"))
 	specs := make([]model.ConsoleSpec, 0, len(allSpecs))
-	selected := false
+	var selected *model.ConsoleSpec
 	for i := range allSpecs {
-		if allSpecs[i].ID == selectedID && allSpecs[i].State != "final" {
-			http.Error(w, fmt.Sprintf("该 spec 尚未审结(当前状态:%s),审结后才能进入任务管理", allSpecs[i].State), http.StatusConflict)
-			return
+		spec := &allSpecs[i]
+		if spec.ID == selectedID {
+			selected = spec // Existing owner/editor read scope, never a query principal.
 		}
-		if allSpecs[i].State != "final" {
-			continue
-		}
-		specs = append(specs, allSpecs[i])
-		if allSpecs[i].ID == selectedID {
-			selected = true
+		if spec.PrincipalID == principal && spec.State == "final" {
+			specs = append(specs, *spec)
 		}
 	}
-	var tasks []model.ConsoleTaskProposal
-	if selected {
-		tasks, err = repo.ListConsoleTaskProposals(r.Context(), selectedID)
-		if err != nil {
-			http.Error(w, "console task board unavailable", http.StatusServiceUnavailable)
+	if selectedID != "" {
+		if selected == nil {
+			http.NotFound(w, r)
 			return
 		}
+		if selected.State != "final" {
+			http.Error(w, fmt.Sprintf("该 spec 尚未审结(当前状态:%s),审结后才能进入任务管理", selected.State), http.StatusConflict)
+			return
+		}
+		if selected.PrincipalID != principal {
+			specs = append(specs, *selected) // Explicitly selected, already authorized.
+		}
+	}
+	tasks := make([]model.ConsoleTaskProposal, 0)
+	loadTasks := func(specID string) bool {
+		items, loadErr := repo.ListConsoleTaskProposals(r.Context(), specID)
+		if loadErr != nil {
+			http.Error(w, "console task board unavailable", http.StatusServiceUnavailable)
+			return false
+		}
+		tasks = append(tasks, items...)
+		return true
+	}
+	if selected != nil {
+		if !loadTasks(selected.ID) {
+			return
+		}
+	} else {
+		// All owned final specs, not merely the current eight-item spec page.
+		for _, spec := range specs {
+			if !loadTasks(spec.ID) {
+				return
+			}
+		}
+		sort.SliceStable(tasks, func(i, j int) bool {
+			if tasks[i].CreatedAt.Equal(tasks[j].CreatedAt) {
+				return tasks[i].ID < tasks[j].ID
+			}
+			return tasks[i].CreatedAt.After(tasks[j].CreatedAt)
+		})
 	}
 	agents, err := repo.ListConsoleAgents(r.Context(), principal)
 	if err != nil {
@@ -156,23 +241,32 @@ func (h *Hub) HandleConsoleTaskBoard(w http.ResponseWriter, r *http.Request) {
 			onlineIDs[agent.ID] = true
 		}
 	}
-	for i := range tasks {
-		tasks[i].DeveloperOnline = tasks[i].DeveloperAgentID != "" && onlineIDs[tasks[i].DeveloperAgentID]
-		tasks[i].ReviewerOnline = tasks[i].ReviewerAgentID != "" && onlineIDs[tasks[i].ReviewerAgentID]
-		tasks[i].TotalCases = 1
-		if strings.HasPrefix(tasks[i].ReviewID, "manual:") {
-			tasks[i].PassedCases, tasks[i].TotalCases, err = repo.ConsoleSpecTaskCaseProgress(r.Context(), tasks[i].ID)
+	visibleSpecs, specPages := pageConsoleSpecs(specs, specPage, consoleTaskBoardSpecPageSize)
+	if specPage > specPages {
+		specPage = specPages
+		visibleSpecs, _ = pageConsoleSpecs(specs, specPage, consoleTaskBoardSpecPageSize)
+	}
+	visibleTasks, taskPages := pageConsoleTasks(tasks, taskPage, consoleTaskBoardTaskPageSize)
+	if taskPage > taskPages {
+		taskPage = taskPages
+		visibleTasks, _ = pageConsoleTasks(tasks, taskPage, consoleTaskBoardTaskPageSize)
+	}
+	for i := range visibleTasks {
+		visibleTasks[i].DeveloperOnline = visibleTasks[i].DeveloperAgentID != "" && onlineIDs[visibleTasks[i].DeveloperAgentID]
+		visibleTasks[i].ReviewerOnline = visibleTasks[i].ReviewerAgentID != "" && onlineIDs[visibleTasks[i].ReviewerAgentID]
+		visibleTasks[i].TotalCases = 1
+		if strings.HasPrefix(visibleTasks[i].ReviewID, "manual:") {
+			visibleTasks[i].PassedCases, visibleTasks[i].TotalCases, err = repo.ConsoleSpecTaskCaseProgress(r.Context(), visibleTasks[i].ID)
 			if err != nil {
 				http.Error(w, "console task board unavailable", http.StatusServiceUnavailable)
 				return
 			}
 		}
 	}
-	visibleSpecs, specPages := pageConsoleSpecs(specs, specPage, consoleTaskBoardSpecPageSize)
-	visibleTasks, taskPages := pageConsoleTasks(tasks, taskPage, consoleTaskBoardTaskPageSize)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	_ = json.NewEncoder(w).Encode(map[string]any{
+		"viewer_key": hashConsoleToken("task-board:" + principal), "updated_at": h.now().UTC(), "task_total": len(tasks),
 		"specs": visibleSpecs, "spec_page": specPage, "spec_page_size": consoleTaskBoardSpecPageSize, "spec_total_pages": specPages,
 		"tasks": visibleTasks, "agents": online, "task_page": taskPage, "task_page_size": consoleTaskBoardTaskPageSize, "task_total_pages": taskPages,
 	})

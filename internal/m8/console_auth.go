@@ -521,12 +521,14 @@ async function refreshPlatform(){
   }finally{clearTimeout(timer);}
 }
 function activate(session){
+  dwTaskBoardActive=session;
   tabs.forEach(function(v,k){
     v.tab.classList.toggle('on', k===session);
     v.pane.style.display = (k===session) ? 'block' : 'none';
     if(v.offlineReason)v.offlineReason.style.display=(k===session&&!v.offlineReason.hidden)?'flex':'none';
   });
   var h=document.getElementById('hint'); if(h) h.style.display='none';
+  dwTaskBoardNotify();
 }
 function closeTab(session){
   var e=tabs.get(session); if(!e) return;
@@ -1482,7 +1484,14 @@ function openPlatformAdminWorkspace(){
   activate('__platform-admin');refreshAdminUsers();
 }
 function openSpecsWorkspace(){if(tabs.has('__specs')){activate('__specs');return;}var tab=document.createElement('span');tab.className='tab';tab.title='Specs';var label=document.createElement('span');label.textContent='Specs';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='Specs workspace';pane.src='/console/specs?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__specs');}else activate('__specs');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__specs',{tab:tab,pane:pane});activate('__specs');}
-function openTaskBoardWorkspace(){if(tabs.has('__task-board')){activate('__task-board');return;}var tab=document.createElement('span');tab.className='tab';tab.title='任务管理';var label=document.createElement('span');label.textContent='任务管理';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='任务管理';pane.src='/console/tasks?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__task-board');}else activate('__task-board');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__task-board',{tab:tab,pane:pane});activate('__task-board');}
+// DW-TASK-BOARD-VISIBILITY BEGIN
+var dwTaskBoardActive='',dwTaskBoardVisibilityGeneration=0;
+function dwTaskBoardNotify(invalidate){var e=tabs.get('__task-board');if(!e||!e.pane.contentWindow)return;try{e.pane.contentWindow.postMessage({protocol:'dw-task-board/v1',type:invalidate?'invalidate':'visibility',instance:e.pane.dataset.boardInstance,generation:++dwTaskBoardVisibilityGeneration,active:!invalidate&&dwTaskBoardActive==='__task-board'&&!document.hidden},location.origin);}catch(_){} }
+window.addEventListener('message',function(ev){var e=tabs.get('__task-board'),d=ev.data;if(ev.origin!==location.origin||!e||ev.source!==e.pane.contentWindow||!d||d.protocol!=='dw-task-board/v1'||d.instance!==e.pane.dataset.boardInstance||d.type!=='ready')return;dwTaskBoardNotify();});
+document.addEventListener('visibilitychange',function(){dwTaskBoardNotify();});
+window.addEventListener('pagehide',function(){dwTaskBoardNotify(true);});
+// DW-TASK-BOARD-VISIBILITY END
+function openTaskBoardWorkspace(){if(tabs.has('__task-board')){activate('__task-board');return;}var tab=document.createElement('span');tab.className='tab';tab.title='任务管理';var label=document.createElement('span');label.textContent='任务管理';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='任务管理';pane.dataset.boardInstance=Array.from(crypto.getRandomValues(new Uint8Array(16)),function(x){return x.toString(16).padStart(2,'0')}).join('');pane.src='/console/tasks?embedded=1&board_instance='+pane.dataset.boardInstance;pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__task-board');}else activate('__task-board');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__task-board',{tab:tab,pane:pane});activate('__task-board');}
 dwThemeInit();   // 🔴 主题先行:先把已存偏好应用到外壳,再渲染列表(否则先白一下再变暗)
 document.getElementById('retryPlatform').onclick=refreshPlatform;
 document.getElementById('retryAgents').onclick=refreshAgents;
