@@ -19,14 +19,14 @@ class SetupTest(unittest.TestCase):
         output = StringIO()
         with patch("sys.argv", ["sessionhelper", "--version"]), patch("sys.stdout", output), patch("sessionhelper.launch.env_get", side_effect=AssertionError("version must not inspect credentials")):
             launch()
-        self.assertEqual(output.getvalue(), "sessionHelper 0.2.2.2\n")
+        self.assertEqual(output.getvalue(), "sessionHelper " + (Path(__file__).resolve().parents[3] / "VERSION").read_text().strip() + "\n")
 
     def test_legacy_direct_mcp_script_reports_current_version(self):
         from sessionhelper import mcp_shim
         import subprocess, sys
         request = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize"}) + "\n"
         result = subprocess.run([sys.executable, mcp_shim.__file__], input=request, text=True, capture_output=True, timeout=10, check=True)
-        self.assertEqual(json.loads(result.stdout)["result"]["serverInfo"]["version"], "0.2.2.2")
+        self.assertEqual(json.loads(result.stdout)["result"]["serverInfo"]["version"], (Path(__file__).resolve().parents[3] / "VERSION").read_text().strip())
 
     def test_modes_and_reply_events(self):
         with tempfile.TemporaryDirectory() as root:
