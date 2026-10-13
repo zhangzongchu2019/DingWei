@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -240,3 +241,44 @@ class ModeConfigTest(unittest.TestCase):
                          env=env, cwd=Path(vs.__file__).parent, stdout=log, stderr=subprocess.PIPE)
             self.assertNotEqual(result.returncode, 0)
             self.assertFalse((Path(root)/'separate-pages.db').exists())
+
+    def test_interpreter_entrypoint_bytecode_boundary(self):
+        # Python may cache the module being imported before its body validates
+        # configuration. Rejection is not a promise of zero interpreter writes.
+        for colocated, entry in ((True, 'unsafe'), (True, 'flag'),
+                                 (True, 'environment'), (False, 'outside')):
+            with self.subTest(entry=entry), tempfile.TemporaryDirectory() as root:
+                root = Path(root)
+                cost = root / 'cost'; cost.mkdir()
+                state = cost / 'old.json'; state.write_bytes(b'preserved old artifact')
+                code = cost if colocated else root / 'source'
+                if not code.exists(): code.mkdir()
+                for filename in ('view_service.py', 'view_page_store.py'):
+                    shutil.copyfile(Path(vs.__file__).parent / filename, code / filename)
+                before = snapshot(cost)
+                env = dict(os.environ, VS_COST_ACCOUNTING_MODE='paused', VS_VIEW_UNLOCK_V2='1',
+                           VS_STATE_FILE=str(state), VS_PAGE_DB=str(root / 'pages.db'),
+                           PYTHONPATH=str(code))
+                env.pop('PYTHONDONTWRITEBYTECODE', None)
+                env.pop('PYTHONPYCACHEPREFIX', None)
+                flags = ['-B'] if entry == 'flag' else []
+                if entry == 'environment': env['PYTHONDONTWRITEBYTECODE'] = '1'
+                result = subprocess.run([sys.executable, *flags, '-c', 'import view_service'],
+                        env=env, cwd=code, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if entry == 'unsafe':
+                    self.assertEqual(result.returncode, 1)
+                    self.assertIn(b'Python bytecode must not write inside the cost directory', result.stderr)
+                    self.assertTrue(list((cost / '__pycache__').glob('view_service.*.pyc')))
+                    self.assertNotEqual(snapshot(cost), before)
+                    self.assertEqual(state.read_bytes(), b'preserved old artifact')
+                else:
+                    self.assertEqual(result.returncode, 0)
+                    self.assertEqual(snapshot(cost), before)
+                    if entry == 'outside':
+                        self.assertTrue(list((code / '__pycache__').glob('view_service.*.pyc')))
+                self.assertFalse((root / 'pages.db').exists())
+                print('ENTRYPOINT_BOUNDARY ' + json.dumps({
+                    'entry': entry, 'actual_rc': result.returncode,
+                    'costdir_unchanged': snapshot(cost) == before,
+                    'module_cache_in_costdir': bool(list((cost / '__pycache__').glob('view_service.*.pyc')))
+                }), flush=True)
