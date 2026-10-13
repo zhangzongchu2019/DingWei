@@ -2385,9 +2385,15 @@
           renderEvent(wEntry.event);
           rendered += 1;
         } else if (wEntry && norm.stage) {
-          // 未注入:原位推进待提交区条目的阶段显示
-          wEntry.event._norm.stage = norm.stage;
-          renderWaitingDelivery(wEntry.event);
+          // Only a forward C1 stage may advance the waiting row. Late or
+          // repeated updates must not regress its label or renew confirmation.
+          const currentStage = wEntry.event._norm.stage;
+          const currentStageIdx = C1_STAGE_ORDER.indexOf(currentStage === 'turn_admitted' ? 'cli_injected' : currentStage);
+          if (norm.stageIdx > currentStageIdx) {
+            wEntry.event._norm.stage = norm.stage;
+            wEntry.event._norm.stageIdx = norm.stageIdx;
+            renderWaitingDelivery(wEntry.event);
+          }
         }
         if (copyMergable) {
           // 归并去重(display v1):observed_delivery_id→primary 卡 footnote「已回显」;
