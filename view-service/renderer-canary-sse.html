@@ -4247,7 +4247,7 @@
       authTimer = setInterval(() => {
         if (stats.authMode === 'view_page_v2') refreshViewAuthorization();
         else if (viewIsVisible()) refreshLegacyAuthorization();
-      }, 5000);
+      }, isConsoleView() ? 15000 : 5000);
       if (!viewRefreshBound) document.addEventListener('visibilitychange', () => {
         viewAuthGeneration++;
         if (!document.hidden) {

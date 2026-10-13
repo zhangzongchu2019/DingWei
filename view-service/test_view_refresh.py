@@ -68,7 +68,7 @@ class ViewRefreshRecorderTest(unittest.TestCase):
         self.context = patch.multiple(vs, VIEW_UNLOCK_V2=True,
             COST_ACCOUNTING_MODE='paused', STATE_FILE=str(self.cost / 'old.json'),
             PAGE_DB_FILE=str(root / 'page.db'), _page_store=self.page,
-            VIEW_TARGET_NAME='fixture', HUB_TO_VS_SECRET_FILE=str(keypath))
+            VIEW_TARGET_NAME='fixture', HUB_TO_VS_SECRET_FILE=str(keypath), VS_TO_HUB_SECRET_FILE=str(keypath))
         self.context.start()
         self.no_network = patch.object(vs.urllib.request, 'urlopen', side_effect=AssertionError('network prohibited'))
         self.no_network.start()
@@ -109,6 +109,8 @@ class ViewRefreshRecorderTest(unittest.TestCase):
                 bad = Recorder('/status?resources_only=1', self.signed(True))
                 bad._serve_status()
                 self.assertEqual(bad.code, 401)
+                unsigned = Recorder('/status?resources_only=1'); unsigned._serve_status()
+                self.assertEqual(unsigned.code, 401)
 
     def test_full_paused_compatible_active_fail_closed(self):
         with patch.object(vs, '_cost_projection', side_effect=sqlite3.OperationalError('synthetic')) as factory:
@@ -145,12 +147,30 @@ class ViewRefreshRecorderTest(unittest.TestCase):
                 hub.assert_not_called()
                 # Attestation consumed here is supplied only by the Hub's unchanged
                 # cookie+owner+Origin+page/Agent/session/ticket verifier (Go recorder test).
-                console = Recorder(endpoint, {'X-DW-Console-Capability-Verified': '1'}, base)
+                trusted = {'X-DW-Console-Capability-Verified': '1',
+                           'X-DW-Console-Page': identity['page_id'], 'X-DW-Console-Principal': 'owner'}
+                lock_before = tuple(self.page._db.execute('SELECT state,unlock_expires_at,last_write_at FROM view_pages WHERE page_id=?', (identity['page_id'],)).fetchone())
+                console = Recorder(endpoint, trusted, base)
                 getattr(console, '_handle_control' if endpoint == '/control' else '_handle_interrupt')('agent.owner')
                 self.assertEqual(console.code, 200)
                 self.assertTrue(console.result()['ok'])
                 hub.assert_called_once()
                 self.assertFalse(self.page.authorize_page(identity['page_id'], identity['page_token'], 'agent.owner'))
+                lock_after = tuple(self.page._db.execute('SELECT state,unlock_expires_at,last_write_at FROM view_pages WHERE page_id=?', (identity['page_id'],)).fetchone())
+                self.assertEqual(lock_before, lock_after)
+                for bad_headers in [
+                    {**trusted, 'X-DW-Console-Page': 'other-page'},
+                    {**trusted, 'X-DW-Console-Principal': ''},
+                    {**trusted, 'X-DW-Console-Capability-Verified': 'true'},
+                    {},
+                ]:
+                    bad = Recorder(endpoint, bad_headers, {**base, 'console_verified': True})
+                    getattr(bad, '_handle_control' if endpoint == '/control' else '_handle_interrupt')('agent.owner')
+                    self.assertEqual(bad.code, 403)
+                for field in ['request_id', 'page_id', 'page_token', 'delivery_id', 'message_id' if endpoint == '/control' else 'turn_id']:
+                    bad = Recorder(endpoint, trusted, {**base, field: ''})
+                    getattr(bad, '_handle_control' if endpoint == '/control' else '_handle_interrupt')('agent.owner')
+                    self.assertEqual(bad.code, 400)
                 invalid = Recorder(endpoint, body={**base, 'page_token': ''})
                 getattr(invalid, '_handle_control' if endpoint == '/control' else '_handle_interrupt')('agent.owner')
                 self.assertEqual(invalid.code, 400)
@@ -162,6 +182,23 @@ class ViewRefreshRecorderTest(unittest.TestCase):
         with patch.object(vs, '_hub_v2_cancel', return_value=(200, {'ok': True})) as hub:
             manual = Recorder('/control', body=base); manual._handle_control('agent.owner')
             self.assertEqual(manual.code, 200); hub.assert_called_once()
+
+
+    def test_real_signer_preserves_signed_address_contract(self):
+        for function, address in [(vs._hub_v2_cancel, ('message', 'delivery')),
+                                  (vs._hub_v2_interrupt, ('delivery', 'turn'))]:
+            with self.subTest(function=function.__name__), patch.object(vs.urllib.request, 'urlopen') as client:
+                response = client.return_value.__enter__.return_value
+                response.status, response.read.return_value = 200, b'{"ok":true}'
+                self.assertEqual(function('agent.owner', 'page', 'request', *address), (200, {'ok': True}))
+                req = client.call_args.args[0]
+                headers = {k.lower(): v for k, v in req.header_items()}
+                self.assertEqual(headers['x-dw-signature'], vs._control_signature(
+                    self.key, 'POST', req.selector, headers['x-dw-timestamp'], headers['x-dw-nonce'], req.data,
+                    direction='view-service-to-hub/v1'))
+                payload = json.loads(req.data)
+                self.assertEqual(payload['page_id'], 'page'); self.assertEqual(payload['request_id'], 'request')
+                self.assertIn('delivery_id', payload)
 
 
 if __name__ == '__main__':

@@ -1011,6 +1011,14 @@ class _Handler(BaseHTTPRequestHandler):
                 st["turns"] = n if isinstance(n, int) else st["turns"] + 1
                 _save_state_locked()
 
+    def _console_page_attested(self, payload):
+        # Only Hub-derived trust headers qualify; never consult payload flags or URL.
+        page_id = payload.get("page_id")
+        return (self.headers.get("X-DW-Console-Capability-Verified") == "1"
+                and isinstance(page_id, str) and bool(page_id)
+                and self.headers.get("X-DW-Console-Page", "") == page_id
+                and bool(self.headers.get("X-DW-Console-Principal", "").strip()))
+
     def _serve_status(self):
         session = self._session()
         if not session:
@@ -1024,6 +1032,8 @@ class _Handler(BaseHTTPRequestHandler):
             except ValueError:
                 return self.send_error(401)
         if resources_only:
+            if VIEW_UNLOCK_V2 and subject is None:
+                return self.send_error(401)
             # Read-only environment snapshot: no page identity/cost/collector creation.
             # Existing signed-subject nonce checks may use the separate page DB.
             return self._json_response(200, {"mem": _read_mem(), "disk": _read_disk(),
@@ -1212,7 +1222,7 @@ class _Handler(BaseHTTPRequestHandler):
                 str(obj.get("page_token", "")).strip(),
                 str(obj.get("request_id", "")).strip(),
                 message_id, delivery_id,
-                **({"console_verified": True} if self.headers.get("X-DW-Console-Capability-Verified") == "1" else {}))
+                **({"console_verified": True} if self._console_page_attested(obj) else {}))
             return self._json_response(status, {"ok": ok})
         # legacy(VS_VIEW_UNLOCK_V2=0):直通 _forward_control(viewer_id+writer token),行为完全不变。
         ok, _ = _forward_control(session, kind, message_id, delivery_id)
@@ -1242,7 +1252,7 @@ class _Handler(BaseHTTPRequestHandler):
                 str(obj.get("page_token", "")).strip(),
                 str(obj.get("request_id", "")).strip(),
                 delivery_id, turn_id,
-                **({"console_verified": True} if self.headers.get("X-DW-Console-Capability-Verified") == "1" else {}))
+                **({"console_verified": True} if self._console_page_attested(obj) else {}))
             return self._json_response(status, {"ok": ok})
         # legacy:直通 _forward_interrupt(viewer_id+writer token,hub legacy interrupt 端点)。
         ok, _ = _forward_interrupt(session, delivery_id, turn_id)

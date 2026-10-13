@@ -2,6 +2,7 @@ package m8
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -56,10 +57,12 @@ func TestViewRefreshConsoleAuthority(t *testing.T) {
 	if code, _ := issue("synthetic-zzc", "https://foreign.invalid"); code != 403 {
 		t.Fatalf("foreign origin mint: %d", code)
 	}
-	consume := func(token, page, ticket, origin string) int {
-		req := httptest.NewRequest("POST", "/view/opus50ts.zzc/input?console_mux=1", strings.NewReader(`{}`))
+	var seenVerified, seenPrincipal, seenBody string
+	consumePath := func(rest, token, page, ticket, origin, bodyPage string) int {
+		body, _ := json.Marshal(map[string]any{"page_id": bodyPage, "page_token": "synthetic-token", "request_id": "request", "kind": "cancel", "message_id": "message", "delivery_id": "delivery", "turn_id": "turn", "console_verified": true})
+		req := httptest.NewRequest("POST", "/view/opus50ts.zzc/"+rest+"?console_mux=1", strings.NewReader(string(body)))
 		req.SetPathValue("sessionName", "opus50ts.zzc")
-		req.SetPathValue("rest", "input")
+		req.SetPathValue("rest", rest)
 		req.Header.Set("Origin", origin)
 		if token != "" {
 			req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: token})
@@ -68,15 +71,53 @@ func TestViewRefreshConsoleAuthority(t *testing.T) {
 		req.Header.Set("X-DW-Console-Capability", ticket)
 		req.Header.Set("X-DW-Console-Capability-Verified", "1")
 		req.Header.Set("X-DW-Console-Principal", "forged")
+		seenVerified, seenPrincipal, seenBody = "", "", ""
 		w := httptest.NewRecorder()
 		h.RequireConsoleViewSubPath(func(w http.ResponseWriter, r *http.Request) {
-			if r.Header.Get("X-DW-Console-Capability-Verified") != "1" || r.Header.Get("X-DW-Console-Principal") != "zzc" {
+			seenVerified = r.Header.Get("X-DW-Console-Capability-Verified")
+			seenPrincipal = r.Header.Get("X-DW-Console-Principal")
+			raw, err := io.ReadAll(r.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			seenBody = string(raw)
+			if seenBody != string(body) {
+				t.Fatal("binding check consumed or changed downstream body")
+			}
+			if seenVerified != "1" || seenPrincipal != "zzc" {
 				w.WriteHeader(403)
 				return
 			}
 			w.WriteHeader(200)
 		})(w, req)
 		return w.Code
+	}
+	consume := func(token, page, ticket, origin string) int {
+		return consumePath("input", token, page, ticket, origin, page)
+	}
+	for _, rest := range []string{"control", "interrupt"} {
+		for _, tc := range []struct {
+			name, bodyPage, ticket string
+			want                   int
+		}{
+			{"valid", "synthetic-page", cap, 200},
+			{"header body mismatch", "other-page", cap, 403},
+			{"missing body page", "", cap, 403},
+			{"forged verified header", "synthetic-page", "invalid-ticket", 403},
+			{"URL and body bool only", "synthetic-page", "", 403},
+		} {
+			t.Run(rest+"/"+tc.name, func(t *testing.T) {
+				if got := consumePath(rest, "synthetic-zzc", "synthetic-page", tc.ticket, npOrigin, tc.bodyPage); got != tc.want {
+					t.Fatalf("got %d want %d", got, tc.want)
+				}
+				if tc.want == 200 && (seenVerified != "1" || seenPrincipal != "zzc") {
+					t.Fatal("actual rest did not receive Hub attestation")
+				}
+				if tc.want != 200 && (seenVerified != "" || seenPrincipal != "") {
+					t.Fatal("invalid/forged attestation survived")
+				}
+			})
+		}
 	}
 	for _, tc := range []struct {
 		name, token, page, ticket, origin string
@@ -99,12 +140,22 @@ func TestViewRefreshConsoleAuthority(t *testing.T) {
 	if got := consume("synthetic-zzc", "synthetic-page", cap, npOrigin); got != 403 {
 		t.Fatalf("expired capability: %d", got)
 	}
+	for _, rest := range []string{"control", "interrupt"} {
+		if got := consumePath(rest, "synthetic-zzc", "synthetic-page", cap, npOrigin, "synthetic-page"); got != 403 {
+			t.Fatalf("expired %s: %d", rest, got)
+		}
+	}
 	h.NowFunc = nil
 	if err := authority.RevokeSession(ctx, identity.HashSecret("synthetic-zzc"), time.Now()); err != nil {
 		t.Fatal(err)
 	}
 	if got := consume("synthetic-zzc", "synthetic-page", cap, npOrigin); got != 401 {
 		t.Fatalf("revoked session: %d", got)
+	}
+	for _, rest := range []string{"control", "interrupt"} {
+		if got := consumePath(rest, "synthetic-zzc", "synthetic-page", cap, npOrigin, "synthetic-page"); got != 401 {
+			t.Fatalf("revoked session %s: %d", rest, got)
+		}
 	}
 	if err := authority.CreateSession(ctx, identity.Session{TokenHash: identity.HashSecret("synthetic-retained"), UserIDLC: "zzc", ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
 		t.Fatal(err)

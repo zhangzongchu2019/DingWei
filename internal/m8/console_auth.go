@@ -1,12 +1,14 @@
 package m8
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -1643,6 +1645,32 @@ func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{"page_id": req.PageID, "capability": raw, "expires_in": 300})
 }
 
+// consoleControlPageMatches binds the ticket header to the control body without
+// consuming/replacing the downstream payload. A mismatch withholds attestation;
+// new-platform manual page authorization remains available in view-service.
+func consoleControlPageMatches(r *http.Request) bool {
+	rest := strings.Trim(r.PathValue("rest"), "/")
+	if (rest != "control" && rest != "interrupt") || r.Header.Get("X-DW-Console-Capability") == "" {
+		return true
+	}
+	if r.Body == nil {
+		return false
+	}
+	original := r.Body
+	raw, err := io.ReadAll(io.LimitReader(original, (1<<20)+1))
+	r.Body = struct {
+		io.Reader
+		io.Closer
+	}{io.MultiReader(bytes.NewReader(raw), original), original}
+	if err != nil || len(raw) > 1<<20 {
+		return false
+	}
+	var body struct {
+		PageID string `json:"page_id"`
+	}
+	return json.Unmarshal(raw, &body) == nil && body.PageID != "" && body.PageID == strings.TrimSpace(r.Header.Get("X-DW-Console-Page"))
+}
+
 func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// This is an internal trust marker. Strip it before every branch,
@@ -1654,7 +1682,7 @@ func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc 
 			// 有效票转换成只供内网 view-service 信任的头；无效/缺票不伪造写权，交给页面锁路径拒绝。
 			if h.newPlatformViewAuth(w, r) {
 				h.grantNewPlatformViewServiceInput(r.Context(), r.PathValue("sessionName"))
-				if r.Method != http.MethodGet && consoleCapabilityRequired(r.PathValue("rest")) {
+				if r.Method != http.MethodGet && consoleCapabilityRequired(r.PathValue("rest")) && consoleControlPageMatches(r) {
 					verified, err := h.newPlatformViewCapability(r)
 					if err != nil {
 						http.Error(w, "console auth unavailable", http.StatusServiceUnavailable)
@@ -1681,7 +1709,7 @@ func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc 
 			agent, agentOK := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
 			pageID := strings.TrimSpace(r.Header.Get("X-DW-Console-Page"))
 			raw := strings.TrimSpace(r.Header.Get("X-DW-Console-Capability"))
-			if !repoOK || !agentOK || pageID == "" || raw == "" {
+			if !repoOK || !agentOK || pageID == "" || raw == "" || !consoleControlPageMatches(r) {
 				http.Error(w, "console capability required", http.StatusForbidden)
 				return
 			}
