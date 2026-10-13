@@ -39,6 +39,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/obs"
 	"github.com/zhangzongchu2019/dingwei/internal/portal"
 	"github.com/zhangzongchu2019/dingwei/internal/reminder"
 	"github.com/zhangzongchu2019/dingwei/internal/schedule"
@@ -323,7 +324,7 @@ func run(logger *slog.Logger) error {
 	if internalAddr == "" {
 		internalAddr = "127.0.0.1:8792"
 	}
-	internalSrv := &http.Server{Addr: internalAddr, Handler: internalMux, ReadHeaderTimeout: 5 * time.Second}
+	internalSrv := &http.Server{Addr: internalAddr, Handler: obs.Default.Middleware("internal", internalMux), ReadHeaderTimeout: 5 * time.Second}
 
 	// 🔴 D(0.2.0.4)告警出口:**只挂 Unix socket,不挂 TCP**。
 	//    首版挂 127.0.0.1:8792 并声称「宿主不可达」—— prodops 实测从宿主得到 400,该假设被证伪。
@@ -339,7 +340,16 @@ func run(logger *slog.Logger) error {
 		}
 	}
 
-	srv := &http.Server{Addr: bs.Addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	// DW123-PER-RELEASE-OBSERVABILITY：运行身份进快照；有效配置只哈希 workpulseEffectiveConfig 的观测键集合（不含 secret）。
+	obs.Default.SetIdentity(obs.Identity{
+		Service:      "workpulse",
+		Version:      version.Version,
+		Commit:       version.Commit,
+		ConfigSHA256: obs.ConfigSHA256(config.Line(workpulseEffectiveConfig())),
+		ConfigScope:  "sha256 of effective_config line (workpulseEffectiveConfig observed keys only), not full config",
+		DeployID:     obs.SanitizeDeployID(strings.TrimSpace(os.Getenv("WP_DEPLOY_ID"))),
+	})
+	srv := &http.Server{Addr: bs.Addr, Handler: obs.Default.Middleware("public", mux), ReadHeaderTimeout: 5 * time.Second}
 	publicListener, publicAccept, err := listenWithHeartbeat(bs.Addr)
 	if err != nil {
 		return fmt.Errorf("listen public %s: %w", bs.Addr, err)

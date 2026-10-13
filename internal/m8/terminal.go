@@ -24,6 +24,7 @@ import (
 	"github.com/coder/websocket"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/obs"
 )
 
 const (
@@ -281,6 +282,9 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	obsConn := obs.Default.OpenWS("view")
+	var obsReadErr error
+	defer func() { obsConn.Closed(obsReadErr) }()
 	pageID := strings.TrimSpace(r.URL.Query().Get("page"))
 	mu := make(chan struct{}, 1)
 	mu <- struct{}{}
@@ -326,6 +330,7 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 	h.mu.Unlock()
 	if !ok || st == nil {
 		_ = terminalWrite(r.Context(), &terminalViewer{conn: conn, mu: mu}, map[string]any{"type": "status", "readonly": true, "message": "会话不在线或会话名不唯一"})
+		obsConn.SetLocalReason("rejected")
 		_ = conn.Close(websocket.StatusNormalClosure, "offline")
 		return
 	}
@@ -394,6 +399,7 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 	for {
 		_, data, err := conn.Read(r.Context())
 		if err != nil {
+			obsReadErr = obsWSReadErr(r.Context(), err)
 			return
 		}
 		var msg terminalClientMessage

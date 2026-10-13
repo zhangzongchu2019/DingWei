@@ -29,6 +29,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/obs"
 	"github.com/zhangzongchu2019/dingwei/internal/router"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
@@ -201,6 +202,8 @@ type sessionClient struct {
 	deviceIDV1     bool
 
 	lastTouchWritten time.Time // R-V2-0105 件三：上次把 last_seen 落库的时刻（touchSessionEndpoint 节流）
+
+	obsConn *obs.WSConn // DW123-PER-RELEASE-OBSERVABILITY：生命周期计数；nil 安全
 }
 
 type feishuSyncTarget struct {
@@ -815,6 +818,9 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	obsConn := obs.Default.OpenWS("service")
+	var obsReadErr, svcReadErr error
+	defer func() { obsConn.Closed(obsReadErr) }()
 	c := &client{conn: conn, resp: make(chan []byte, 1), readDone: make(chan struct{})}
 	var oldConn *websocket.Conn
 	h.mu.Lock()
@@ -843,6 +849,7 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 		for {
 			_, data, err := conn.Read(context.Background())
 			if err != nil {
+				svcReadErr = obsWSReadErr(context.Background(), err) // 只在 readDone 关闭后由主协程读取
 				return
 			}
 			// 🔴 签注（组长 R-HUB-WSB-COMMENT）：服务只许应答，不得主动发帧。c.resp 容量 1：无请求在途时的主动帧会进缓冲，
@@ -856,7 +863,9 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 	}()
 	select {
 	case <-r.Context().Done():
+		obsReadErr = obs.ContextDone()
 	case <-c.readDone:
+		obsReadErr = svcReadErr
 	}
 }
 
@@ -1040,9 +1049,13 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		return
 	}
 	markTiming("accept")
+	obsConn := obs.Default.OpenWS("session")
+	var obsReadErr error
+	defer func() { obsConn.Closed(obsReadErr) }()
 	conn.SetReadLimit(16 << 20) // 终端 PTY 全屏输出可能远超默认 32KB
 	connSeq, err := h.Repo.IncrementSessionEndpointConnSeq(r.Context(), keyID, sessionName)
 	if err != nil {
+		obsConn.SetLocalReason("rejected")
 		if conn != nil {
 			_ = conn.Close(websocket.StatusInternalError, "save session endpoint failed")
 		}
@@ -1050,6 +1063,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	}
 	markTiming("conn_seq")
 	c = &sessionClient{conn: conn, keyID: keyID, ownerKey: ownerKey, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: h.now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, tool: tool, version: clientVersion, deviceID: deviceID, deviceIDV1: deviceIDV1}
+	c.obsConn = obsConn
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
 	go h.watchSessionKeepalive(idleWatchdogCtx, c)
@@ -1062,6 +1076,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	timingParts = append(timingParts, fmt.Sprintf("onboard=%s", time.Since(onboardStart).Round(time.Millisecond)))
 	lockStart := time.Now()
 	var oldConn *websocket.Conn
+	var oldObs *obs.WSConn
 	var rejectDevice bool
 	var reSize [2]int
 	h.mu.Lock()
@@ -1075,6 +1090,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 				rejectDevice = true
 			} else {
 				oldConn = old.conn
+				oldObs = old.obsConn
 			}
 		}
 		if !rejectDevice && c != nil && c.conn != nil {
@@ -1086,10 +1102,12 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	if rejectDevice {
 		stopIdleWatchdog()
 		skillCancel()
+		obsConn.SetLocalReason("rejected")
 		_ = conn.Close(websocket.StatusPolicyViolation, "session held by another device")
 		return
 	}
 	if oldConn != nil {
+		oldObs.SetLocalReason("replaced")
 		_ = oldConn.Close(websocket.StatusPolicyViolation, "replaced")
 	}
 	if a.onRegistered != nil {
@@ -1164,6 +1182,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	for {
 		_, data, err := h.readSessionMessage(r.Context(), c)
 		if err != nil {
+			obsReadErr = obsWSReadErr(r.Context(), err)
 			return
 		}
 		h.touchSessionEndpoint(r.Context(), c)
@@ -5528,6 +5547,7 @@ func (h *Hub) watchSessionIdle(ctx context.Context, c *sessionClient) {
 			return
 		case now := <-tick:
 			if now.Sub(c.lastSeen()) > idleTimeout {
+				c.obsConn.SetLocalReason("idle_timeout")
 				_ = c.conn.Close(websocket.StatusGoingAway, "idle timeout")
 				return
 			}
@@ -5584,12 +5604,15 @@ func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
 			if hook := keepalivePingHook.Load(); hook != nil {
 				(*hook)(false)
 			}
+			pingStart := time.Now()
 			err := c.conn.Ping(pingCtx)
+			c.obsConn.Ping(time.Since(pingStart), err)
 			if hook := keepalivePingHook.Load(); hook != nil {
 				(*hook)(true)
 			}
 			cancel()
 			if err != nil {
+				c.obsConn.SetLocalReason("keepalive_failed")
 				_ = c.conn.Close(websocket.StatusGoingAway, "keepalive failed")
 				return
 			}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
+	"github.com/zhangzongchu2019/dingwei/internal/obs"
 )
 
 // registerConsoleRoutes console 页、view 页与 ws-view，以及 /api/console/* 等接口的注册。
@@ -15,6 +16,8 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	mux.HandleFunc("GET /view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewPage))
 	mux.HandleFunc("GET /tasks", prefixHub.RequireConsolePrincipal(prefixHub.HandleViewTasks))
 	mux.HandleFunc("GET /console", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsolePage))
+	// DW123-PER-RELEASE-OBSERVABILITY 首片：全站运维快照只给 active platform_admin（组长 2026-10-13T08:30:38Z 补裁）。
+	mux.HandleFunc("GET /api/console/monitor/snapshot", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(obs.Default.SnapshotHandler)))
 	if !newplat {
 		// 新平台下这三条由 wireNewPlatform 的新实现替换，不并存（同路径重复注册会 panic）。
 		mux.HandleFunc("GET /console/login", prefixHub.HandleConsoleLoginPage)
