@@ -520,6 +520,21 @@ async function refreshPlatform(){
   }catch(err){renderPlatform({items:[],role:document.documentElement.dataset.platformRole||''});status.textContent='工作台加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
   }finally{clearTimeout(timer);}
 }
+// Fixed control messages only: no resource values, credentials, or capabilities.
+var dwViewRefreshActive='', dwViewRefreshGeneration=0, dwViewRefreshLastTick=Date.now();
+function notifyViewRefresh(kind,resource){
+  tabs.forEach(function(v,key){
+    var instance=v.pane.dataset.viewRefreshInstance;if(!instance)return;
+    try{v.pane.contentWindow.postMessage({protocol:'dw-view-refresh/v1',instance:instance,generation:++dwViewRefreshGeneration,kind:kind,active:key===dwViewRefreshActive&&!document.hidden,resource:resource===true},location.origin);}catch(_){}
+  });
+}
+window.addEventListener('message',function(ev){
+  var d=ev.data;if(ev.origin!==location.origin||!d||d.protocol!=='dw-view-refresh/v1'||d.type!=='ready')return;
+  tabs.forEach(function(v,key){if(ev.source!==v.pane.contentWindow||!v.pane.dataset.viewRefreshInstance||d.instance!==v.pane.dataset.viewRefreshInstance)return;try{ev.source.postMessage({protocol:'dw-view-refresh/v1',instance:d.instance,generation:++dwViewRefreshGeneration,kind:'visibility',active:key===dwViewRefreshActive&&!document.hidden,resource:false},location.origin);}catch(_){}});
+});
+setInterval(function(){if(!document.hidden){dwViewRefreshLastTick=Date.now();notifyViewRefresh('tick',true);}},300000);
+document.addEventListener('visibilitychange',function(){var due=!document.hidden&&Date.now()-dwViewRefreshLastTick>=300000;if(due)dwViewRefreshLastTick=Date.now();notifyViewRefresh('visibility',due);});
+window.addEventListener('pagehide',function(){notifyViewRefresh('invalidate',false);});
 function activate(session){
   dwTaskBoardActive=session;
   tabs.forEach(function(v,k){
@@ -527,11 +542,13 @@ function activate(session){
     v.pane.style.display = (k===session) ? 'block' : 'none';
     if(v.offlineReason)v.offlineReason.style.display=(k===session&&!v.offlineReason.hidden)?'flex':'none';
   });
+  dwViewRefreshActive=session;notifyViewRefresh('visibility',false);
   var h=document.getElementById('hint'); if(h) h.style.display='none';
   dwTaskBoardNotify();
 }
 function closeTab(session){
   var e=tabs.get(session); if(!e) return;
+  if(e.pane.dataset.viewRefreshInstance){try{e.pane.contentWindow.postMessage({protocol:'dw-view-refresh/v1',instance:e.pane.dataset.viewRefreshInstance,generation:++dwViewRefreshGeneration,kind:'invalidate',active:false,resource:false},location.origin);}catch(_){}}
   if(CONSOLE_MUX_ENABLED&&window.DWConsoleMux)window.DWConsoleMux.remove(session,true);
   e.tab.remove(); e.pane.remove(); if(e.offlineReason)e.offlineReason.remove(); tabs.delete(session);   // 🔴 关闭才真正断开那条 SSE
   var last=Array.from(tabs.keys()).pop();
@@ -554,7 +571,9 @@ function openTab(session){
   var pane=document.createElement('iframe');
   pane.title='Agent view: '+session;
   var muxInstance=CONSOLE_MUX_ENABLED&&window.DWConsoleMux?window.DWConsoleMux.register(session,pane):'';
-  pane.src='/view/'+encodeURIComponent(session)+(muxInstance?'?console_mux=1&iframe_instance='+muxInstance:'');
+  var refreshInstance=Array.from(crypto.getRandomValues(new Uint8Array(16)),function(x){return x.toString(16).padStart(2,'0');}).join('');
+  pane.dataset.viewRefreshInstance=refreshInstance;
+  pane.src='/view/'+encodeURIComponent(session)+'?view_refresh_instance='+refreshInstance+(muxInstance?'&console_mux=1&iframe_instance='+muxInstance:'');
   pane.style.display='none';
   var offlineReason=document.createElement('div');offlineReason.className='agent-offline-reason';offlineReason.hidden=true;offlineReason.textContent='该 Agent 已离线，暂不可交互';
   document.getElementById('tabs').append(tab);

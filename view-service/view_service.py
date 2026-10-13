@@ -536,8 +536,8 @@ def _forward_control(session: str, kind: str, message_id: str, delivery_id: str)
 
 
 def _forward_control_v2(session: str, page_id: str, page_token: str, request_id: str,
-                        message_id: str, delivery_id: str) -> tuple[int, bool]:
-    """V2 真删除链 VS 侧:page 授权(authorize_page,V2 唯一写权门)+ 签名转发 hub V2 cancel。
+                        message_id: str, delivery_id: str, *, console_verified: bool = False) -> tuple[int, bool]:
+    """V2 真删除链:人工页锁或Hub已验的Console短票，加签转发Hub V2 cancel。
     返回 (http_status, ok) 供 _handle_control 直接回 renderer。四态返回码(07-19 教训:不压 403):
       400=请求错(缺 page 凭证) / 403=真·未鉴权(authorize_page 失败,与 404/5xx 严格区分)
       200{ok:bool}=已转发(hub 200:成功/幂等 duplicate 均 ok:true;hub 409 已注入终态→ok:false 未生效)
@@ -546,14 +546,16 @@ def _forward_control_v2(session: str, page_id: str, page_token: str, request_id:
           (那是 hub durable cancel_requested 状态机、GA 前补)。"""
     if not (page_id and page_token and request_id):
         return 400, False
-    store = _get_page_store()
-    if not store.authorize_page(page_id, page_token, session):
+    # Only the handler supplies this attestation from the trusted Hub proxy;
+    # never accept a payload/query flag or persist a manual page unlock.
+    store = None if console_verified else _get_page_store()
+    if not console_verified and not store.authorize_page(page_id, page_token, session):
         return 403, False  # 真·未鉴权
     code, payload = _hub_v2_cancel(session, page_id, request_id, message_id, delivery_id)
     if code == 200:
         # 成功 / 幂等 duplicate:true 均 ok:true;条目消失只由 hub SSE delivery_update(cancelled) 驱动。
         ok = bool(payload.get("ok"))
-        if ok:
+        if ok and not console_verified:
             store.record_successful_write(page_id, page_token)
         return 200, ok
     if code == 409:
@@ -580,8 +582,8 @@ def _forward_interrupt(session: str, delivery_id: str, turn_id: str) -> tuple[bo
 
 
 def _forward_interrupt_v2(session: str, page_id: str, page_token: str, request_id: str,
-                          delivery_id: str, turn_id: str) -> tuple[int, bool]:
-    """V2 中断链 VS 侧:page 授权(authorize_page,V2 唯一写权门)+ 签名转发 hub V2 interrupt。
+                          delivery_id: str, turn_id: str, *, console_verified: bool = False) -> tuple[int, bool]:
+    """V2 中断链:人工页锁或Hub已验的Console短票，加签转发Hub V2 interrupt。
     返回 (http_status, ok) 供 _handle_interrupt 直接回 renderer。四态返回码(07-19 教训:不压 403):
       400=请求错(缺 page 凭证) / 403=真·未鉴权(authorize_page 失败,与 409/5xx 严格区分)
       200{ok:bool}=已转发(hub 200:成功/幂等 duplicate 均 ok:true;hub 409 会话离线不可中断→ok:false)
@@ -589,14 +591,16 @@ def _forward_interrupt_v2(session: str, page_id: str, page_token: str, request_i
     与 _forward_control_v2 逐字节同构,仅换端点与地址键(delivery_id+turn_id,无 message_id)。"""
     if not (page_id and page_token and request_id):
         return 400, False
-    store = _get_page_store()
-    if not store.authorize_page(page_id, page_token, session):
+    # Only the handler supplies this attestation from the trusted Hub proxy;
+    # never accept a payload/query flag or persist a manual page unlock.
+    store = None if console_verified else _get_page_store()
+    if not console_verified and not store.authorize_page(page_id, page_token, session):
         return 403, False  # 真·未鉴权
     code, payload = _hub_v2_interrupt(session, page_id, request_id, delivery_id, turn_id)
     if code == 200:
         # 成功 / 幂等 duplicate:true 均 ok:true;turn 停止由既有 turn/流事件收尾(非特殊 SSE)。
         ok = bool(payload.get("ok"))
-        if ok:
+        if ok and not console_verified:
             store.record_successful_write(page_id, page_token)
         return 200, ok
     if code == 409:
@@ -1011,9 +1015,26 @@ class _Handler(BaseHTTPRequestHandler):
         session = self._session()
         if not session:
             return self.send_error(400, "session required")
+        query = parse_qs(urlparse(self.path).query)
+        resources_only = query.get("resources_only") == ["1"]
+        auth_only = query.get("auth_only") == ["1"]
         if VIEW_UNLOCK_V2:
             try:
                 subject = self._mux_subject()
+            except ValueError:
+                return self.send_error(401)
+        if resources_only:
+            # Read-only environment snapshot: no page identity/cost/collector creation.
+            # Existing signed-subject nonce checks may use the separate page DB.
+            return self._json_response(200, {"mem": _read_mem(), "disk": _read_disk(),
+                "datetime_epoch_ms": int(time.time() * 1000), "resource_scope": "view-service"})
+        if auth_only:
+            if VIEW_UNLOCK_V2:
+                return self._json_response(200, {"auth_mode": "view_page_v2", "readonly": True})
+            st = _ensure_ready(session)
+            return self._json_response(200, {"readonly": not st.get("can_write", False)})
+        if VIEW_UNLOCK_V2:
+            try:
                 if COST_ACCOUNTING_MODE == "paused":
                     costs = {"cost_accounting": {"mode": "paused", "available": False,
                                                 "history": "preserved_unmapped"}}
@@ -1031,6 +1052,7 @@ class _Handler(BaseHTTPRequestHandler):
                 "unlock_code": "", **costs,
                 "mem": _read_mem(), "disk": _read_disk(),
                 "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "datetime_epoch_ms": int(time.time() * 1000), "resource_scope": "view-service",
             }, ensure_ascii=False).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -1053,6 +1075,7 @@ class _Handler(BaseHTTPRequestHandler):
             "mem": _read_mem(),
             "disk": _read_disk(),
             "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "datetime_epoch_ms": int(time.time() * 1000), "resource_scope": "view-service",
         }, ensure_ascii=False).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -1188,7 +1211,8 @@ class _Handler(BaseHTTPRequestHandler):
                 str(obj.get("page_id", "")).strip(),
                 str(obj.get("page_token", "")).strip(),
                 str(obj.get("request_id", "")).strip(),
-                message_id, delivery_id)
+                message_id, delivery_id,
+                **({"console_verified": True} if self.headers.get("X-DW-Console-Capability-Verified") == "1" else {}))
             return self._json_response(status, {"ok": ok})
         # legacy(VS_VIEW_UNLOCK_V2=0):直通 _forward_control(viewer_id+writer token),行为完全不变。
         ok, _ = _forward_control(session, kind, message_id, delivery_id)
@@ -1217,7 +1241,8 @@ class _Handler(BaseHTTPRequestHandler):
                 str(obj.get("page_id", "")).strip(),
                 str(obj.get("page_token", "")).strip(),
                 str(obj.get("request_id", "")).strip(),
-                delivery_id, turn_id)
+                delivery_id, turn_id,
+                **({"console_verified": True} if self.headers.get("X-DW-Console-Capability-Verified") == "1" else {}))
             return self._json_response(status, {"ok": ok})
         # legacy:直通 _forward_interrupt(viewer_id+writer token,hub legacy interrupt 端点)。
         ok, _ = _forward_interrupt(session, delivery_id, turn_id)

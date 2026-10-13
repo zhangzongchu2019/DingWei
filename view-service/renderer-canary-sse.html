@@ -1114,6 +1114,7 @@
         <span class="status-sep sb-res"></span>
         <span class="status-item sb-res">内存 <strong id="memStat">--</strong></span>
         <span class="status-item sb-res">磁盘 <strong id="diskStat">--</strong></span>
+        <span class="status-item sb-res" id="resourceFreshness" role="status">资源待更新</span>
       </div>
       <!-- 业主 2026-09-18 验收第 1 条：「选择文件上传时，没有任何提示，这个很容易认为是出问题了」
            ⇒ 上传全程必须可见：每个文件一行，文件名 + 已传/总 + 进度条 + 状态。 -->
@@ -1313,13 +1314,14 @@
         let ctlBody = { kind: 'cancel', message_id: msg.message_id || '', delivery_id: msg.delivery_id || '' };
         if (!ctlBody.message_id || !ctlBody.delivery_id) return { sent: false, reason: 'addr_incomplete' };  // 缺寻址字段本地拦(生产实证 15:13:28:发空串=VS 400,不如诚实早报)
         if (stats.authMode === 'view_page_v2') {
+          await prepareViewWrite();
           if (!pageIdentity?.page_id || !pageIdentity?.page_token) return { sent: false, reason: 'no_page_identity' };  // fail-closed:无 V2 凭证不冒充,明说未发出
           ctlBody = { ...ctlBody, page_id: pageIdentity.page_id, page_token: pageIdentity.page_token, request_id: msg.request_id || '' };
         }
         try {
           const res = await fetch(apiEp('control'), {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...consoleWriteHeaders() },
             body: JSON.stringify(ctlBody),
           });
           const body = await res.json().catch(() => ({}));
@@ -1563,7 +1565,7 @@
         return;
       }
       if (stats.statusDatetimeMs) {
-        const elapsed = Date.now() - stats.statusDatetimeReceivedAt;
+        const elapsed = stats.statusMonotonicAt !== undefined ? performance.now() - stats.statusMonotonicAt : Date.now() - stats.statusDatetimeReceivedAt;
         localTime.textContent = new Date(stats.statusDatetimeMs + elapsed).toLocaleString();
         return;
       }
@@ -1595,13 +1597,15 @@
       // 0.2.1.2:「归属」一格已移除。RED 它原来是个缺陷:HTML 里写了标签「归属」,
       // 这里又拼了一次 `归属 ${stats.owner}` ⇒ 页面显示「归属 归属 xxx」。
       // 将来若要恢复归属显示,**标签与值只在一处拼**。
+      const consoleView = isConsoleView();
+      lockBadge.hidden = consoleView;
       if (stats.readonly) {
         if (lockBadge.className !== 'lock-badge readonly') lockBadge.className = 'lock-badge readonly';
         if (lockBadge.textContent !== '🔒 只读') lockBadge.textContent = '🔒 只读';
-        if (copyUnlockBtn.hidden) copyUnlockBtn.hidden = false;
+        copyUnlockBtn.hidden = consoleView;
         if (copyUnlockBtn.textContent !== '复制解锁指令') copyUnlockBtn.textContent = '复制解锁指令';
         setHumanInputDisabled(true);
-        const placeholder = '只读模式。点击头部按钮复制 #unlock 指令，发给机器人后解锁输入。';
+        const placeholder = consoleView ? '输入授权暂不可用，请检查登录或访问权限' : '只读模式。点击头部按钮复制 #unlock 指令，发给机器人后解锁输入。';
         if (humanInput.placeholder !== placeholder) humanInput.placeholder = placeholder;
       } else {
         if (lockBadge.className !== 'lock-badge writable') lockBadge.className = 'lock-badge writable';
@@ -3506,23 +3510,11 @@
           stats.access = '只读';
         }
       }
-      if (data.mem) stats.mem = data.mem;
-      if (data.disk) stats.disk = data.disk;
+      // mem/disk/time belong only to the bounded VS resource snapshot, not SSE heartbeats.
       if (data.load !== undefined) stats.load = data.load;
       if (data.turns !== undefined) {
         const turns = Number(data.turns);
         if (Number.isFinite(turns)) stats.turns = turns;
-      }
-      if (data.datetime) {
-        const parsed = Date.parse(data.datetime);
-        if (Number.isFinite(parsed)) {
-          stats.statusDatetimeMs = parsed;
-          stats.statusDatetimeReceivedAt = Date.now();
-          stats.statusDatetimeText = '';
-        } else {
-          stats.statusDatetimeMs = 0;
-          stats.statusDatetimeText = data.datetime;
-        }
       }
       if (costAccountingMode === 'active' && (data.cost_total !== undefined || data.total_cost_usd !== undefined)) {
         const total = Number(data.cost_total ?? data.total_cost_usd);
@@ -3809,7 +3801,7 @@
       setInterval(updateLocalTime, 1000);
       connectEventStream();
       await refreshStatus();
-      statusTimer = setInterval(refreshStatus, 5000);
+      startViewRefresh();
     }
 
     function clearStreamConnectTimer() {
@@ -4133,15 +4125,163 @@
       }, STREAM_CONNECT_GRACE_MS);
     }
 
-    async function refreshStatus() {
+    // Resource snapshots never authorize writes or describe Agent/model liveness.
+    const VIEW_REFRESH_MS = 300000;
+    const viewRefreshParams = new URLSearchParams(location.search);
+    const viewRefreshInstance = viewRefreshParams.get('view_refresh_instance') || '';
+    const viewRefreshEmbedded = parent !== window && /^[0-9a-f]{32}$/.test(viewRefreshInstance);
+    let viewRefreshActive = !viewRefreshEmbedded, viewRefreshGeneration = -1;
+    let viewRefreshClosed = false, viewAuthGeneration = 0, viewResourceGeneration = 0, viewRefreshBound = false;
+    let statusInitialized = false, resourcePending = null, authPending = null;
+    let resourceLastGood = 0, resourceLastAttempt = 0, standaloneResourceTimer = null, authTimer = null;
+    function isConsoleView() { return viewRefreshEmbedded || managedMux || !!consoleCapability; }
+    function viewIsVisible() { return !viewRefreshClosed && !document.hidden && viewRefreshActive; }
+    async function viewRequestJSON(url, options = {}) {
+      const controller = new AbortController();
+      let timer;
       try {
-        const res = await fetch(apiEp('status'), { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        applyStatusData(await res.json());
-        if (stats.authMode === 'view_page_v2') await ensurePageIdentity();
-      } catch {
-        setStatus('disconnected');
+        return await Promise.race([
+          (async () => {
+            const response = await fetch(url, { ...options, signal: controller.signal, cache: 'no-store' });
+            if (!response.ok) { const error = new Error('HTTP ' + response.status); error.code = response.status; throw error; }
+            return { response, body: await response.json() };
+          })(),
+          new Promise((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error('request timeout')); }, 5000); }),
+        ]);
+      } finally { clearTimeout(timer); }
+    }
+    function failViewAuthorization() {
+      resetConsoleCapability();
+      stats.readonly = true; stats.access = '只读'; updateMetrics();
+    }
+    function applyResourceData(data) {
+      if (data.mem && typeof data.mem === 'object') stats.mem = data.mem;
+      if (data.disk && typeof data.disk === 'object') stats.disk = data.disk;
+      if (Number.isFinite(data.datetime_epoch_ms) && data.datetime_epoch_ms > 0) {
+        stats.statusDatetimeMs = data.datetime_epoch_ms; stats.statusDatetimeText = '';
+        stats.statusDatetimeReceivedAt = Date.now(); stats.statusMonotonicAt = performance.now();
+      } else if (typeof data.datetime === 'string') {
+        const parsed = Date.parse(data.datetime);
+        if (Number.isFinite(parsed)) {
+          stats.statusDatetimeMs = parsed; stats.statusDatetimeText = '';
+          stats.statusDatetimeReceivedAt = Date.now(); stats.statusMonotonicAt = performance.now();
+        }
       }
+      updateMetrics(); updateLocalTime();
+    }
+    async function refreshStatus() {
+      if (viewRefreshClosed) return;
+      if (resourcePending) return resourcePending;
+      const generation = viewResourceGeneration;
+      resourceLastAttempt = Date.now();
+      const pending = (async () => {
+        try {
+          const initial = !statusInitialized;
+          const { body } = await viewRequestJSON(apiEp('status') + (initial ? '' : '?resources_only=1'));
+          if (viewRefreshClosed || generation !== viewResourceGeneration) return;
+          if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('invalid resource snapshot');
+          if (initial) {
+            if (!(body.session_id || body.session)) throw new Error('missing session identity');
+            applyStatusData(body); statusInitialized = true;
+          }
+          applyResourceData(body);
+          resourceLastGood = Date.now();
+          const fresh = document.getElementById('resourceFreshness');
+          if (fresh) { fresh.textContent = '资源已更新 ' + new Date(resourceLastGood).toLocaleTimeString(); fresh.title = 'View 服务环境'; }
+          if (initial && stats.authMode === 'view_page_v2') {
+            try { await ensurePageIdentity(); } catch { failViewAuthorization(); }
+          }
+        } catch (error) {
+          if (viewRefreshClosed || generation !== viewResourceGeneration) return;
+          const fresh = document.getElementById('resourceFreshness');
+          if (fresh) fresh.textContent = resourceLastGood ? '资源更新失败，显示上次结果' : '资源暂不可用';
+          if (error.code === 401 || error.code === 403) failViewAuthorization();
+          // Retain last-good values and stream state; a failed read never grants input.
+        }
+      })();
+      resourcePending = pending;
+      try { await pending; } finally { if (resourcePending === pending) resourcePending = null; }
+    }
+    async function refreshViewAuthorization() {
+      if (!viewIsVisible() || stats.authMode !== 'view_page_v2') return;
+      if (authPending) return authPending;
+      const generation = viewAuthGeneration;
+      const pending = (async () => {
+        try {
+          if (isConsoleView()) {
+            if (!pageIdentity || !consoleCapabilityUsable() || Date.now() >= consoleCapabilityExpiresAt - CONSOLE_CAPABILITY_RENEW_MS) await ensurePageIdentity();
+            if (generation === viewAuthGeneration) { stats.readonly = !consoleCapabilityUsable(); updateMetrics(); }
+          } else {
+            // Manual unlock discovery is page-only; never re-read resources.
+            await ensurePageIdentityOnce();
+          }
+        } catch { if (generation === viewAuthGeneration) failViewAuthorization(); }
+      })();
+      authPending = pending;
+      try { await pending; } finally { if (authPending === pending) authPending = null; }
+    }
+    function closeViewRefresh() {
+      viewRefreshClosed = true; viewAuthGeneration++; viewResourceGeneration++;
+      clearInterval(standaloneResourceTimer); clearInterval(authTimer); failViewAuthorization();
+    }
+    function startViewRefresh() {
+      clearInterval(standaloneResourceTimer); clearInterval(authTimer);
+      if (viewRefreshEmbedded && !viewRefreshBound) {
+        window.addEventListener('message', event => {
+          const d = event.data;
+          if (event.source !== parent || event.origin !== location.origin || !d || d.protocol !== 'dw-view-refresh/v1' || d.instance !== viewRefreshInstance || !Number.isSafeInteger(d.generation) || d.generation <= viewRefreshGeneration) return;
+          viewRefreshGeneration = d.generation;
+          if (d.kind === 'invalidate') { closeViewRefresh(); return; }
+          if (d.kind !== 'tick' && d.kind !== 'visibility') return;
+          if (viewRefreshActive !== (d.active === true)) viewAuthGeneration++;
+          viewRefreshActive = d.active === true;
+          if (d.resource === true) refreshStatus();
+          if (viewIsVisible()) refreshViewAuthorization();
+        });
+      }
+      if (viewRefreshEmbedded) {
+        parent.postMessage({ protocol: 'dw-view-refresh/v1', type: 'ready', instance: viewRefreshInstance }, location.origin);
+      } else {
+        standaloneResourceTimer = setInterval(() => { if (!document.hidden) refreshStatus(); }, VIEW_REFRESH_MS);
+      }
+      authTimer = setInterval(() => {
+        if (stats.authMode === 'view_page_v2') refreshViewAuthorization();
+        else if (viewIsVisible()) refreshLegacyAuthorization();
+      }, 5000);
+      if (!viewRefreshBound) document.addEventListener('visibilitychange', () => {
+        viewAuthGeneration++;
+        if (!document.hidden) {
+          if (!viewRefreshEmbedded && Date.now() - resourceLastAttempt >= VIEW_REFRESH_MS) refreshStatus();
+          refreshViewAuthorization();
+        }
+      });
+      viewRefreshBound = true;
+    }
+    async function refreshLegacyAuthorization() {
+      if (authPending) return authPending;
+      const generation = viewAuthGeneration;
+      const pending = (async () => {
+        try {
+          const { body } = await viewRequestJSON(apiEp('status') + '?auth_only=1');
+          if (generation !== viewAuthGeneration || viewRefreshClosed) return;
+          if (body.readonly !== undefined) { stats.readonly = !!body.readonly; updateMetrics(); }
+        } catch { if (generation === viewAuthGeneration) failViewAuthorization(); }
+      })();
+      authPending = pending;
+      try { await pending; } finally { if (authPending === pending) authPending = null; }
+    }
+    async function prepareViewWrite() {
+      if (stats.authMode !== 'view_page_v2') return;
+      if (viewRefreshClosed) throw new Error('页面已离开');
+      await awaitPageIdentityUniqueness();
+      if (isConsoleView()) {
+        try {
+          if (!consoleCapabilityUsable() || Date.now() >= consoleCapabilityExpiresAt - CONSOLE_CAPABILITY_RENEW_MS) await ensurePageIdentity();
+          else await acquireConsoleCapability();
+        } catch (error) { failViewAuthorization(); throw error; }
+        if (!consoleCapabilityUsable()) { failViewAuthorization(); throw new Error('输入授权暂不可用'); }
+      }
+      if (stats.readonly) throw new Error('当前页面尚未获得输入授权');
     }
 
     function pageStorageKey() {
@@ -4152,11 +4292,18 @@
       sessionStorage.setItem(pageStorageKey(), JSON.stringify(identity));
       stats.unlockCode = identity.code;
       // T-141:控制台能力票与页面锁是【两套授权】;持票时不得被页面锁覆盖。
-      stats.readonly = consoleCapabilityUsable() ? false : !identity.can_write;
+      stats.readonly = isConsoleView() ? !consoleCapabilityUsable() : !identity.can_write;
       stats.access = stats.readonly ? '只读' : '可写';
       updateMetrics();
     }
+    let consoleCapabilityPending = null;
     async function acquireConsoleCapability() {
+      if (consoleCapabilityPending) return consoleCapabilityPending;
+      const pending = acquireConsoleCapabilityOnce();
+      consoleCapabilityPending = pending;
+      try { return await pending; } finally { if (consoleCapabilityPending === pending) consoleCapabilityPending = null; }
+    }
+    async function acquireConsoleCapabilityOnce() {
       if (!pageIdentity?.page_id || !stats.sessionName) return false;
       // T-141:仍有余额则直接复用,不重铸 —— 重铸会作废手上这张。
       if (consoleCapabilityUsable()
@@ -4164,34 +4311,37 @@
         if (stats.readonly) { stats.readonly = false; stats.access = '可写'; updateMetrics(); }
         return true;
       }
-      const res = await fetch(`/api/console/agents/${encodeURIComponent(stats.sessionName)}/capability`, {
+      const capabilityCheckStartedAt = Date.now();
+      const expectedPage = pageIdentity.page_id, expectedSession = stats.sessionName, generation = viewAuthGeneration;
+      const { response: res, body: issued } = await viewRequestJSON(`/api/console/agents/${encodeURIComponent(stats.sessionName)}/capability`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ page_id: pageIdentity.page_id }),
-      });
+        body: JSON.stringify({ page_id: expectedPage }),
+      }).catch(error => { resetConsoleCapability(); if (error.code === 404) return { response: {status:404}, body:null }; throw error; });
       if (res.status === 404) return false;
-      if (!res.ok) throw new Error(`console capability failed: HTTP ${res.status}`);
-      const issued = await res.json();
+      if (viewRefreshClosed || generation !== viewAuthGeneration || expectedPage !== pageIdentity?.page_id || expectedSession !== stats.sessionName) throw new Error('stale capability response');
       if (!issued.capability || issued.page_id !== pageIdentity.page_id) throw new Error('invalid console capability');
       consoleCapability = issued.capability;
       consoleCapabilityPageId = issued.page_id;
-      // 后端回 expires_in(秒);缺省按 300s,并留 5s 余量抵消网络往返。
-      consoleCapabilityExpiresAt = Date.now() + ((Number(issued.expires_in) || 300) - 5) * 1000;
+      // 后端短租约从请求开始计，最大300s并留5s余量，不因慢响应延长。
+      if (!Number.isFinite(issued.expires_in) || issued.expires_in <= 5 || issued.expires_in > 300) throw new Error('invalid capability lease');
+      consoleCapabilityExpiresAt = capabilityCheckStartedAt + (issued.expires_in - 5) * 1000;
+      if (!consoleCapabilityUsable()) { resetConsoleCapability(); throw new Error('capability already expired'); }
       stats.readonly = false;
       stats.access = '可写';
       updateMetrics();
       return true;
     }
     function consoleWriteHeaders() {
-      if (!consoleCapability) return {};
+      if (!consoleCapabilityUsable()) return {};
       return {
         'X-DW-Console-Page': pageIdentity.page_id,
         'X-DW-Console-Capability': consoleCapability,
       };
     }
     async function createPageIdentity() {
-      const res = await fetch(apiEp('page'), { method: 'POST' });
-      if (!res.ok) throw new Error(`POST /page failed: HTTP ${res.status}`);
-      const created = await res.json();
+      const generation = viewAuthGeneration;
+      const { body: created } = await viewRequestJSON(apiEp('page'), { method: 'POST' });
+      if (viewRefreshClosed || generation !== viewAuthGeneration) throw new Error('stale page identity');
       savePageIdentity({ page_id: created.page_id, page_token: created.page_token,
         code: created.code, state: created.state, can_write: created.state === 'unlocked' });
       announcePageIdentity();
@@ -4212,11 +4362,13 @@
         await pageIdentityEnsurePromise;
         if (!forceNew) return;
       }
-      const pending = ensurePageIdentityOnce(forceNew);
+      const pending = (async () => {
+        await ensurePageIdentityOnce(forceNew);
+        if (!viewRefreshEmbedded || viewIsVisible()) await acquireConsoleCapability();
+      })();
       pageIdentityEnsurePromise = pending;
       try {
         await pending;
-        await acquireConsoleCapability();
       } finally {
         if (pageIdentityEnsurePromise === pending) pageIdentityEnsurePromise = null;
       }
@@ -4231,17 +4383,25 @@
         setupPageIdentityChannel();
         return;
       }
-      const res = await fetch(`${apiEp('page')}/resume`, {
+      const generation = viewAuthGeneration;
+      let resumed, resumeRejected = false;
+      try {
+        const result = await viewRequestJSON(`${apiEp('page')}/resume`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ page_id: pageIdentity.page_id, page_token: pageIdentity.page_token }),
       });
-      if (!res.ok) {
+        resumed = result.body;
+      } catch (error) {
+        if (error.code !== 403 && error.code !== 404) throw error;
+        resumeRejected = true;
+      }
+      if (viewRefreshClosed || generation !== viewAuthGeneration) throw new Error('stale resume');
+      if (resumeRejected) {
         sessionStorage.removeItem(pageStorageKey());
         pageIdentity = null;
         resetPageIdentityChannel();
         await createPageIdentity();
       } else {
-        const resumed = await res.json();
         if (!['locked', 'unlocked'].includes(resumed.state)) {
           sessionStorage.removeItem(pageStorageKey());
           pageIdentity = null;
@@ -4307,8 +4467,7 @@
       const mentions = mentionTargetsFor(text);
       const withMentions = (o) => (mentions.length ? { ...o, mentions } : o);
       if (stats.authMode === 'view_page_v2') {
-        await awaitPageIdentityUniqueness();
-        if (stats.readonly) throw new Error('当前页面尚未解锁');
+        await prepareViewWrite();
       }
       const res = await fetch(apiEp('input'), {
         method: 'POST',
@@ -4331,6 +4490,7 @@
       // 非 200(400/403/502)=未受理,沿用 throw→error 卡诚实呈现。
       let intBody = null;
       if (stats.authMode === 'view_page_v2') {
+        await prepareViewWrite();
         if (!pageIdentity?.page_id || !pageIdentity?.page_token) throw new Error('中断未发出:无 V2 page 凭证');
         const act = c2TurnCtx.active;
         if (!act) throw new Error('中断未发出:无运行中 turn');
@@ -4339,7 +4499,7 @@
         intBody = { delivery_id: act.deliveryId, turn_id: act.turnId, page_id: pageIdentity.page_id, page_token: pageIdentity.page_token, request_id: act.requestId };
       }
       const res = await fetch(apiEp('interrupt'), intBody
-        ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(intBody) }
+        ? { method: 'POST', headers: { 'Content-Type': 'application/json', ...consoleWriteHeaders() }, body: JSON.stringify(intBody) }
         : { method: 'POST' });
       if (!res.ok) throw new Error(`POST /interrupt failed: HTTP ${res.status}`);
       const body = await res.json().catch(() => ({}));
@@ -4439,8 +4599,9 @@
       connectEventStream();
     });
     async function doSend() {
+      if (stats.readonly && isConsoleView()) { await refreshViewAuthorization(); }
       if (stats.readonly) {
-        copyUnlockInstruction();
+        if (!isConsoleView()) copyUnlockInstruction();
         return;
       }
       // 保留开头和内部换行，只清掉消息结尾的多余空白。
@@ -4733,7 +4894,7 @@
       const list = Array.from(files || []).filter(Boolean);
       if (!list.length) return;
       if (stats.readonly) {
-        handleIncomingEvent({ kind: 'error', text: '只读模式：先解锁再上传文件', data: { code: 'file_upload_readonly' } });
+        handleIncomingEvent({ kind: 'error', text: isConsoleView() ? '上传授权暂不可用，请检查登录或访问权限' : '只读模式：先解锁再上传文件', data: { code: 'file_upload_readonly' } });
         return;
       }
       // 顺序上传：票据一次一张、且按 max_bytes 绑定本次大小，并发会互相挤掉。
@@ -4918,7 +5079,7 @@
 
     async function startScreenshot() {
       if (stats.readonly) {
-        handleIncomingEvent({ kind: 'error', text: '只读模式：先解锁再上传文件', data: { code: 'file_upload_readonly' } });
+        handleIncomingEvent({ kind: 'error', text: isConsoleView() ? '上传授权暂不可用，请检查登录或访问权限' : '只读模式：先解锁再上传文件', data: { code: 'file_upload_readonly' } });
         return;
       }
       try {
@@ -5227,6 +5388,7 @@
     copyUnlockBtn.addEventListener('click', copyUnlockInstruction);
 
     addEventListener('pagehide', () => {
+      closeViewRefresh();
       if (stats.authMode !== 'view_page_v2' || !pageIdentity) return;
       navigator.sendBeacon(`${apiEp('page')}/disconnect`, new Blob([JSON.stringify({
         page_id: pageIdentity.page_id, page_token: pageIdentity.page_token,
@@ -5234,7 +5396,9 @@
     });
     addEventListener('pageshow', event => {
       if (!event.persisted || stats.authMode !== 'view_page_v2') return;
+      viewRefreshClosed = false; viewAuthGeneration++;
       resetPageIdentityChannel();
+      startViewRefresh();
       ensurePageIdentity().catch(() => setStatus('disconnected'));
     });
 
