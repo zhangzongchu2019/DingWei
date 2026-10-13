@@ -3,6 +3,28 @@ Normative authority: lead freeze SHA256 42dbe27c29bb5f62ea7af91dc9bf25b01f16dfef
 Base: cae4fe4c1dbbb99641dfd46dc5b28082388788bb (VERSION 0.2.2.2).
 This document records candidate behavior. Independent CR/business acceptance and deployment are separate gates.
 
+Release prerequisite: V2 ViewTarget BOTH directional service keys
+Before enabling any view_unlock_v2 target, authorized ops must inventory its
+Hub hub_to_vs_secret_file AND vs_to_hub_secret_file plus the VS matching
+VS_HUB_TO_VS_SECRET_FILE AND VS_TO_HUB_SECRET_FILE. Each pair must contain the
+same trimmed secret on the two endpoints, >=32 bytes, readable by the actual
+service account; use separate direction-scoped keys. Confirm actual deployed
+VS target name matches configured Hub target. File paths/permissions/config
+and target binding must be validated privately; never print or upload secrets.
+Verify BOTH directions with real authenticated independent status/events and
+owner page/input plus managed target bridge on a controlled approved account.
+Missing/unreadable/short Hub-to-VS key or mismatched signature must fail closed
+with public503 projection_subject_unavailable; reverse-key failure prevents
+trusted VS-to-Hub authorization/input/source control. A target with only the
+previous reverse key is NOT upgrade-ready and can become public503 immediately
+on this candidate. Keep the target unavailable until the correct paired
+configuration is independently verified; do not remove signing or fall back to
+legacy projection to bypass this release gate. Production key provisioning,
+configuration change and deployment require their existing explicit authority.
+Legacy non-V2 targets retain their legacy path; do not label a legacy VS target
+view_unlock_v2=true merely to satisfy a fixture or inventory. Actual site
+readiness is not established by synthetic fixture keys.
+
 1. Assembly and public API
 cmd/workpulse/newplat.go assembles mux only for the real PG identity store. Memory mode retains legacy views. Console rendering is server-gated on actual assembly. Old independent view signatures are preserved.
 GET /api/console/event-context: session-bound opaque auth_context, never cookie/hash.

@@ -47,7 +47,7 @@ func freeTCPPort(t *testing.T) int {
 	return ln.Addr().(*net.TCPAddr).Port
 }
 
-func startRealViewService(t *testing.T, hubInternal string, v2 bool, secretFile string) string {
+func startRealViewService(t *testing.T, hubInternal string, v2 bool, secretFile, hubSecretFile string) string {
 	t.Helper()
 	port := freeTCPPort(t)
 	tmp := t.TempDir()
@@ -60,6 +60,7 @@ func startRealViewService(t *testing.T, hubInternal string, v2 bool, secretFile 
 		"VS_VIEW_UNLOCK_V2="+map[bool]string{false: "0", true: "1"}[v2],
 		"VS_TARGET_NAME=canary",
 		"VS_TO_HUB_SECRET_FILE="+secretFile,
+		"VS_HUB_TO_VS_SECRET_FILE="+hubSecretFile,
 	)
 	var output bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &output, &output
@@ -100,6 +101,10 @@ func TestNewPlatformOwnerInputThroughRealViewServiceModes(t *testing.T) {
 			if err := os.WriteFile(secretFile, []byte("abcdef0123456789abcdef0123456789"), 0o600); err != nil {
 				t.Fatal(err)
 			}
+			hubSecretFile := filepath.Join(t.TempDir(), "hub-to-vs.key")
+			if err := os.WriteFile(hubSecretFile, []byte("0123456789abcdef0123456789abcdef"), 0o600); err != nil {
+				t.Fatal(err)
+			}
 			internalMux := http.NewServeMux()
 			internalMux.HandleFunc("POST /internal/view/authorize", e.hub.HandleInternalViewAuthorize)
 			internalMux.HandleFunc("POST /internal/view/{session}/input", e.hub.HandleInternalViewInput)
@@ -110,13 +115,13 @@ func TestNewPlatformOwnerInputThroughRealViewServiceModes(t *testing.T) {
 			internal := httptest.NewServer(internalMux)
 			defer internal.Close()
 			defer internal.CloseClientConnections()
-			vsURL := startRealViewService(t, internal.URL, v2, secretFile)
+			vsURL := startRealViewService(t, internal.URL, v2, secretFile, hubSecretFile)
 
 			configFile := filepath.Join(t.TempDir(), "routes.json")
 			rawConfig, _ := json.Marshal(map[string]any{
 				"sessions": map[string]string{"kimi.zzc": "canary"},
 				"targets": map[string]any{"canary": map[string]any{
-					"url": vsURL, "view_unlock_v2": true, "vs_to_hub_secret_file": secretFile,
+					"url": vsURL, "view_unlock_v2": v2, "vs_to_hub_secret_file": secretFile, "hub_to_vs_secret_file": hubSecretFile,
 				}},
 			})
 			if err := os.WriteFile(configFile, rawConfig, 0o600); err != nil {
