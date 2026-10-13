@@ -311,7 +311,7 @@ func (m *consoleMuxRegistry) resolveScopes(auth consolemux.Authorization, req co
 	for _, d := range req.Subscriptions {
 		a, ok := auth.Agents[d.FullName]
 		if !ok {
-			return nil, 404, errors.New("not_found")
+			return nil, 404, &muxScopeControlError{d.FullName, errors.New("not_found")}
 		}
 		name, target := loadViewRouting().resolve(a.FullName, a.Owner)
 		if target.Builtin || !target.ViewUnlockV2 || target.URL == "" || target.HubToVSSecretFile == "" || target.VSToHubSecretFile == "" {
@@ -319,7 +319,7 @@ func (m *consoleMuxRegistry) resolveScopes(auth consolemux.Authorization, req co
 		}
 		snap, ok := m.h.consoleMuxSnapshot(a)
 		if !ok {
-			return nil, 404, errors.New("agent_offline")
+			return nil, 404, &muxScopeControlError{d.FullName, errors.New("agent_offline")}
 		}
 		prior := old[d.FullName]
 		resetting := req.Reset != nil && req.Reset.FullName == d.FullName
