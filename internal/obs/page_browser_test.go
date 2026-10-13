@@ -1,7 +1,9 @@
 package obs
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -33,13 +35,13 @@ func TestMonitorPageInRealChrome(t *testing.T) {
 	}
 
 	reg := New(nil)
-	reg.SetIdentity(Identity{Service: "workpulse", Version: `<img src=x onerror="window.__pwn=1">`, Commit: "unknown"})
+	reg.SetIdentity(Identity{Service: "workpulse", Version: `<img src=x onerror="window.__pwn=1">`, Commit: "unknown", ConfigScope: "多字节边界：观测配置范围说明"})
 	op := reg.OpenWS("session")
 	op.Closed(PeerClose(1000))
 
 	var mode atomic.Value // ok | slow | 500 | 401 | 403
 	mode.Store("ok")
-	var total, cur, maxCur atomic.Int64
+	var total, cur, maxCur, bigSent atomic.Int64
 	var mu sync.Mutex
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /console/monitor", MonitorPageHandler)
@@ -64,6 +66,53 @@ func TestMonitorPageInRealChrome(t *testing.T) {
 		case "403":
 			http.Error(w, `{"error":"platform_admin_required"}`, 403)
 			return
+		case "big-chunked":
+			// 无 Content-Length、分块：400000 个中文字（约 1.2 MB UTF-8），字符数低于 1 MiB、字节数超过。
+			w.Header().Set("Content-Type", "application/json")
+			fl := w.(http.Flusher)
+			_, _ = io.WriteString(w, `{"schema":"dw-obs/v1","x":"`)
+			chunk := strings.Repeat("中", 20000)
+			var sent int64
+			for i := 0; i < 20; i++ {
+				n, err := io.WriteString(w, chunk)
+				sent += int64(n)
+				if err != nil {
+					break
+				}
+				fl.Flush()
+				time.Sleep(5 * time.Millisecond)
+			}
+			_, _ = io.WriteString(w, `"}`)
+			bigSent.Store(sent)
+			return
+		case "multibyte-split":
+			// 合法快照，按会把多字节字符切开的位置分块发送。
+			rec := httptest.NewRecorder()
+			reg.SnapshotHandler(rec, r)
+			b := rec.Body.Bytes()
+			i := bytes.Index(b, []byte("多字节"))
+			if i < 0 {
+				http.Error(w, "fixture", 500)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			fl := w.(http.Flusher)
+			for _, cut := range [][2]int{{0, i + 1}, {i + 1, i + 4}, {i + 4, i + 8}, {i + 8, len(b)}} {
+				_, _ = w.Write(b[cut[0]:cut[1]])
+				fl.Flush()
+				time.Sleep(30 * time.Millisecond)
+			}
+			return
+		case "malformed-null":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(w, malformedSnapshot(reg, func(m map[string]any) { m["http"].(map[string]any)["series"] = []any{nil} }))
+			return
+		case "malformed-type":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(w, malformedSnapshot(reg, func(m map[string]any) {
+				m["ws"].([]any)[0].(map[string]any)["opened"] = "many"
+			}))
+			return
 		}
 		reg.SnapshotHandler(w, r)
 	})
@@ -72,7 +121,7 @@ func TestMonitorPageInRealChrome(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]int64{"total": total.Load(), "max": maxCur.Load()})
 	})
 	mux.HandleFunc("GET /ctl/count", func(w http.ResponseWriter, r *http.Request) {
-		_ = json.NewEncoder(w).Encode(map[string]int64{"total": total.Load(), "max": maxCur.Load()})
+		_ = json.NewEncoder(w).Encode(map[string]int64{"total": total.Load(), "max": maxCur.Load(), "bigSent": bigSent.Load()})
 	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
@@ -93,6 +142,16 @@ func TestMonitorPageInRealChrome(t *testing.T) {
 	}
 }
 
+// malformedSnapshot 取一份真实快照，按 mutate 改坏一处（schema 仍是 dw-obs/v1）。
+func malformedSnapshot(reg *Registry, mutate func(map[string]any)) string {
+	b, _ := json.Marshal(reg.Snapshot())
+	var m map[string]any
+	_ = json.Unmarshal(b, &m)
+	mutate(m)
+	out, _ := json.Marshal(m)
+	return string(out)
+}
+
 const monitorChromeScript = `
 const puppeteer = require('puppeteer-core');
 const [,, base, chrome] = process.argv;
@@ -106,6 +165,10 @@ function check(c, msg) { if (!c) { console.log('FAIL: ' + msg); process.exitCode
     page.on('console', m => consoleMsgs.push(m.text()));
     page.on('pageerror', e => consoleMsgs.push('pageerror ' + e.message));
     await page.evaluateOnNewDocument(() => {
+      // 受控单调时钟：页面年龄只用 performance.now；测试可整体前拨，不用真等 75 s。
+      const realNow = performance.now.bind(performance);
+      window.__monoOffset = 0;
+      performance.now = () => realNow() + window.__monoOffset;
       window.__hid = false;
       Object.defineProperty(document, 'hidden', { configurable: true, get() { return window.__hid; } });
     });
@@ -125,6 +188,7 @@ function check(c, msg) { if (!c) { console.log('FAIL: ' + msg); process.exitCode
     check(/deploy_id\s+UNKNOWN（UNKNOWN/.test(body) && /commit\s+UNKNOWN（UNKNOWN/.test(body), 'null identity fields shown as UNKNOWN with reason');
     check(/session\s+1\s+0\s+peer_normal=1/.test(body), 'measured ws row rendered');
     check(body.includes('node_ws') && body.includes('NOT_INSTRUMENTED'), 'NOT_INSTRUMENTED areas listed');
+    check(body.includes('多字节边界：观测配置范围说明'), 'multibyte text decoded on normal load');
     let c = await count();
     check(c.total === 1, 'exactly one request on load (got ' + c.total + ')');
     await sleep(1500);
@@ -162,6 +226,54 @@ function check(c, msg) { if (!c) { console.log('FAIL: ' + msg); process.exitCode
     await setHidden(false);
     await page.waitForFunction(() => document.getElementById('status').className.includes('ok'), { timeout: 5000 });
     check((await count()).total === 5, 'resume after hidden-in-flight polls once');
+
+    // ---- R2 页面 findings：有界流式读取、失败保留旧值、陈旧与错误共存
+    const pollNow = async () => { await setHidden(true); await setHidden(false); };
+    const waitDone = () => page.waitForFunction(() => !window.__dwMonitorState().inflight, { timeout: 8000 });
+    const goodText = await page.evaluate(() => document.getElementById('data').innerText);
+    const goodStatus = (await status()).text;
+    const goodAt = (goodStatus.match(/服务端取样 (\S+?)；/) || [])[1];
+    check(!!goodAt, 'good sample time visible: ' + goodStatus);
+
+    await ctl('multibyte-split');
+    await pollNow(); await waitDone();
+    let s1 = await status();
+    check(s1.cls.includes('ok'), 'multibyte split across chunks accepted: ' + s1.text);
+    check((await page.evaluate(() => document.body.innerText)).includes('多字节边界：观测配置范围说明'), 'multibyte boundary decoded intact');
+
+    const keptText = await page.evaluate(() => document.getElementById('data').innerText);
+    const keptAt = ((await status()).text.match(/服务端取样 (\S+?)；/) || [])[1];
+    await ctl('big-chunked');
+    await pollNow(); await waitDone();
+    s1 = await status();
+    check(s1.text.includes('响应过大'), 'chunked response without Content-Length over 1 MiB (bytes, not chars) rejected: ' + s1.text);
+    check(await page.evaluate(() => document.getElementById('data').innerText) === keptText, 'old data unchanged after oversize');
+    check(s1.text.includes(keptAt), 'old sample time kept after oversize');
+
+    for (const m of ['malformed-null', 'malformed-type']) {
+      await ctl(m);
+      await pollNow(); await waitDone();
+      s1 = await status();
+      check(s1.text.includes('快照字段不合法'), m + ' rejected by validation: ' + s1.text);
+      check(await page.evaluate(() => document.getElementById('data').innerText) === keptText, m + ': DOM unchanged (no partial render)');
+      check(s1.text.includes(keptAt), m + ': old sample time kept');
+    }
+
+    await ctl('ok');
+    await pollNow(); await waitDone();
+    check((await status()).cls.includes('ok'), 'recovers after malformed');
+    await page.evaluate(() => { window.__monoOffset += 80000; });
+    await page.waitForFunction(() => document.getElementById('status').textContent.includes('陈旧'), { timeout: 7000 });
+    s1 = await status();
+    check(s1.cls.includes('stale') && !s1.text.includes('取样失败'), 'stale after 75 s on the monotonic clock: ' + s1.text);
+    await ctl('500');
+    await pollNow(); await waitDone();
+    s1 = await status();
+    check(s1.cls.includes('stale') && s1.text.includes('陈旧') && s1.text.includes('最近一次取样失败：HTTP 500'), 'stale and latest error shown together: ' + s1.text);
+    await ctl('ok');
+    await pollNow(); await waitDone();
+    s1 = await status();
+    check(s1.cls.includes('ok') && !s1.text.includes('陈旧'), 'fresh sample clears stale: ' + s1.text);
 
     await ctl('500');
     await setHidden(true); await setHidden(false);

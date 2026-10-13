@@ -54,7 +54,7 @@ func TestMonitorPageSourceHasNoForbiddenConstructs(t *testing.T) {
 	src := monitorPageHTML
 	for _, bad := range []string{"innerHTML", "outerHTML", "insertAdjacentHTML", "document.write", "eval(", "new Function", "setTimeout('", "setInterval('",
 		"http://", "https://", "//cdn", "<script src", "<link", "<img", "<iframe", "localStorage", "sessionStorage", "Authorization", "method: 'POST'",
-		"method:'POST'", "'PUT'", "'DELETE'", "sendBeacon", "0.2."} {
+		"method:'POST'", "'PUT'", "'DELETE'", "sendBeacon", "0.2.", "Date.now", "res.text(", ".text().", "text.length"} {
 		if strings.Contains(src, bad) {
 			t.Fatalf("page source contains forbidden %q", bad)
 		}
@@ -64,7 +64,9 @@ func TestMonitorPageSourceHasNoForbiddenConstructs(t *testing.T) {
 	if len(fetches) != 1 || fetches[0][1] != "API" || !strings.Contains(monitorPageScript, "var API = '/api/console/monitor/snapshot';") {
 		t.Fatalf("fetch targets %v", fetches)
 	}
-	for _, need := range []string{"credentials: 'same-origin'", "MAX_BYTES = 1048576", "INTERVAL_MS = 30000", "res.status === 401 || res.status === 403", "inflight", "visibilitychange", "UNKNOWN"} {
+	for _, need := range []string{"credentials: 'same-origin'", "MAX_BYTES = 1048576", "INTERVAL_MS = 30000", "res.status === 401 || res.status === 403", "inflight", "visibilitychange", "UNKNOWN",
+		"getReader()", "r.value.byteLength", "total > MAX_BYTES", "reader.cancel()", "new TextDecoder('utf-8', { fatal: true })", "performance.now()",
+		"var built = build(validate(snap));"} {
 		if !strings.Contains(monitorPageScript, need) {
 			t.Fatalf("page script missing %q", need)
 		}
