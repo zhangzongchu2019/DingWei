@@ -821,9 +821,8 @@
     .statusbar .icon-btn { height: 24px; width: 28px; }
     .statusbar .text-btn { height: 24px; padding: 0 8px; }
     .statusbar > * { flex: 0 0 auto; }
-    /* 响应式优先级:窄屏只留 主题切换/主机时间/锁状态/解锁;够宽再依次追加 成本、身份与服务资源 */
-    .sb-cost, .sb-res { display: none; }
-    @media (min-width: 560px) { .sb-cost { display: inline-flex; } }
+    /* 响应式优先级:窄屏只留 主题切换/主机时间/锁状态/解锁;够宽再追加 服务资源 */
+    .sb-res { display: none; }
     @media (min-width: 880px) { .sb-res  { display: inline-flex; } }
     /* RED 0.2.1.2:📎/📷 移进状态栏后**必须单独豁免**上面那条响应式隐藏。
        直接沿用 .sb-res 会让它们在 <880px 时整排 display:none ⇒ 窄窗口下按钮消失,
@@ -850,8 +849,7 @@
     .shot-canvas-wrap { position: relative; flex: 1; overflow: auto; display: flex; align-items: flex-start; justify-content: center; }
     .shot-canvas-wrap canvas { max-width: 100%; cursor: crosshair; background: #fff; }
     .shot-sel { position: absolute; border: 2px dashed #2e9e5b; background: rgba(46,158,91,.15); pointer-events: none; }
-    .sb-res.status-sep, .sb-cost.status-sep { display: none; }
-    @media (min-width: 560px) { .status-sep.sb-cost { display: block; } }
+    .sb-res.status-sep { display: none; }
     @media (min-width: 880px) { .status-sep.sb-res  { display: block; } }
     .status-item {
       display: inline-flex;
@@ -1111,10 +1109,6 @@
           <input type="file" id="filePicker" multiple>
         </label>
         <button class="text-btn sb-res sb-always" id="shotBtn" type="button" title="截屏 → 框选 → 上传">📷 截屏</button>
-        <!-- 够宽追加:成本 -->
-        <span class="status-sep sb-cost"></span>
-        <span class="status-item sb-cost">本次 <strong id="turnCost">$0.0000</strong></span>
-        <span class="status-item sb-cost">累计 <strong id="totalCost">$0.0000</strong></span>
         <!-- 更宽追加:服务资源(内存/磁盘,去掉百分比) -->
         <span class="status-sep sb-res"></span>
         <span class="status-item sb-res">内存 <strong id="memStat">--</strong></span>
@@ -1196,8 +1190,6 @@
     const memStat = document.getElementById('memStat');
     const diskStat = document.getElementById('diskStat');
     const localTime = document.getElementById('localTime');
-    const turnCost = document.getElementById('turnCost');
-    const totalCost = document.getElementById('totalCost');
 
     // VS 代理端点自定位 scoped base(M1):保留 /view 前全部 pathname 前缀(/dingwei/view/<sess>/ → /dingwei/view/<sess>),
     // 未命中(根直出/nginx)→''=根相对。VS _serve_file 字面量改写降为冗余(本处不再含 ''/ep'' 引号字面量,不会双前缀)。
@@ -1558,8 +1550,6 @@
       taskProgress.hidden = stats.sessionState !== 'running';
       memStat.textContent = formatMem(stats.mem);
       diskStat.textContent = formatDisk(stats.disk);
-      turnCost.textContent = `$${stats.turnCost.toFixed(4)}`;
-      totalCost.textContent = `$${stats.cost.toFixed(4)}`;
       updateHeaderLock();
     }
     function updateLocalTime() {
