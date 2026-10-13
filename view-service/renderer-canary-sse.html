@@ -1181,6 +1181,7 @@
     const headerSessionName = document.getElementById('headerSessionName');
     const lockBadge = document.getElementById('lockBadge');
     const copyUnlockBtn = document.getElementById('copyUnlockBtn');
+    const costAccountingMode = /* VS_COST_ACCOUNTING_MODE */ 'active';
     const composerInner = document.getElementById('composerInner');
     const filePicker = document.getElementById('filePicker');
     const dropHint = document.getElementById('dropHint');
@@ -3643,6 +3644,7 @@
     }
 
     function applyCostData(data) {
+      if (costAccountingMode !== 'active') return;
       const total = Number(data.total_cost_usd ?? data.cost_total ?? data.totalCostUsd ?? data.cost_usd ?? NaN);
       if (Number.isFinite(total)) {
         stats.turnCost = Math.max(0, total - stats.lastTurnCostTotal);
@@ -3703,13 +3705,13 @@
           stats.statusDatetimeText = data.datetime;
         }
       }
-      if (data.cost_total !== undefined || data.total_cost_usd !== undefined) {
+      if (costAccountingMode === 'active' && (data.cost_total !== undefined || data.total_cost_usd !== undefined)) {
         const total = Number(data.cost_total ?? data.total_cost_usd);
         if (Number.isFinite(total)) {
           stats.cost = total;
         }
       }
-      if (data.cost_last !== undefined) {
+      if (costAccountingMode === 'active' && data.cost_last !== undefined) {
         const last = Number(data.cost_last);
         if (Number.isFinite(last)) stats.turnCost = last;
       }

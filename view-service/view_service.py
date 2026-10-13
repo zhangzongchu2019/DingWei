@@ -27,12 +27,13 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, urlparse
 
-from view_page_store import ViewPageStore
 import base64
 import math
 import sqlite3
 import socket
 import select
+import stat
+import sys
 from contextlib import contextmanager
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -52,6 +53,55 @@ VS_TASKS_FILE = os.environ.get("VS_TASKS_FILE", "").strip()
 CONTROL_CLOCK_SKEW = 60
 HUB_TO_VS_DIRECTION = "hub-to-view-service/v1"
 CONTROL_UNLOCK_PATH = "/internal/control/view-page/unlock"
+
+# Process-static capability, never inferred from a failed projection or request.
+# No resume/backfill API: returning to active after a paused deployment requires
+# separately approved E2 coverage and explicit exclusion of paused completions.
+COST_ACCOUNTING_MODE = os.environ.get("VS_COST_ACCOUNTING_MODE", "active")
+
+
+class CostAccountingPaused(RuntimeError):
+    pass
+
+
+def _require_cost_active():
+    if COST_ACCOUNTING_MODE != "active":
+        raise CostAccountingPaused("cost accounting unavailable")
+
+
+def _validate_cost_config():
+    if COST_ACCOUNTING_MODE not in ("active", "paused"):
+        raise ValueError("invalid cost accounting mode")
+    if COST_ACCOUNTING_MODE == "active":
+        return
+    if not VIEW_UNLOCK_V2:
+        raise ValueError("paused cost accounting requires view page v2")
+    cost_dir = os.path.dirname(os.path.realpath(STATE_FILE))
+    def in_cost_dir(path):
+        return os.path.commonpath((cost_dir, os.path.realpath(path))) == cost_dir
+    if not sys.dont_write_bytecode and (in_cost_dir(BASE_DIR)
+            or (sys.pycache_prefix and in_cost_dir(sys.pycache_prefix))):
+        raise ValueError("Python bytecode must not write inside the cost directory")
+    if in_cost_dir(PAGE_DB_FILE):
+        raise ValueError("page database must be outside the cost directory")
+    db_path = STATE_FILE + ".mux-cost.db"
+    cost_files = (STATE_FILE, db_path, db_path + "-wal", db_path + "-shm", db_path + "-journal")
+    for cost in cost_files:
+        if os.path.exists(cost) and os.path.exists(PAGE_DB_FILE) and os.path.samefile(cost, PAGE_DB_FILE):
+            raise ValueError("page database must not alias a cost file")
+    # The service logs to stdout/stderr, not a service-owned file. Validate
+    # regular-file redirection when Linux exposes it; pipes need no cost file.
+    for fd in (1, 2):
+        if stat.S_ISREG(os.fstat(fd).st_mode):
+            target = f"/proc/self/fd/{fd}"
+            if (not os.path.exists(target) or in_cost_dir(target)
+                    or any(os.path.exists(cost) and os.path.samefile(target, cost) for cost in cost_files)):
+                raise ValueError("service log must be outside the cost directory")
+
+
+_validate_cost_config()
+# Import only after paused layout validation, before any local cache can write.
+from view_page_store import ViewPageStore
 
 
 def _validate_public_view_base(value: str) -> str:
@@ -78,6 +128,7 @@ _page_store: ViewPageStore | None = None
 
 
 def _get_page_store() -> ViewPageStore:
+    _validate_cost_config()
     global _page_store
     with _page_store_lock:
         if _page_store is None:
@@ -346,6 +397,7 @@ def _load_state() -> None:
 
 
 def _save_state_locked() -> None:
+    _require_cost_active()
     directory = os.path.dirname(STATE_FILE) or "."
     os.makedirs(directory, mode=0o700, exist_ok=True)
     fd, tmp = tempfile.mkstemp(prefix=".view-state-", dir=directory, text=True)
@@ -364,7 +416,8 @@ def _save_state_locked() -> None:
         raise
 
 
-_load_state()
+if COST_ACCOUNTING_MODE == "active":
+    _load_state()
 
 
 def _sess_state(session: str) -> dict:
@@ -408,11 +461,13 @@ def _ensure_ready(session: str) -> dict:
     返回 {viewer_id, code, can_write, token}。"""
     # 页面加载会并发请求 /events 与 /status。必须按 session 串行化首次注册，
     # 否则两条请求会各拿一个 viewer/code，后写入缓存者令先展示的解锁码失效。
+    _require_cost_active()
     with _ready_lock_for(session):
         return _ensure_ready_locked(session)
 
 
 def _ensure_ready_locked(session: str) -> dict:
+    _require_cost_active()
     st = _sess_state(session)
     # 1) 已有 viewer:查写权。hub 返回 404 = viewer 已失效(pilot 断连重连清了 hub 侧 viewer)
     #    → 清缓存,走下面重注册(自愈,避免 pilot 重启后旧码 unlock 不到/订不到事件)。
@@ -587,6 +642,7 @@ def _sse_event_id(raw: str) -> str:
 
 class CostProjection:
     def __init__(self, path):
+        _require_cost_active()
         self.path = path
         self.lock = threading.Lock()
         with self._connect() as db:
@@ -601,6 +657,7 @@ class CostProjection:
 
     @contextmanager
     def _connect(self):
+        _require_cost_active()
         db = sqlite3.connect(self.path, timeout=0.2)
         try:
             os.chmod(self.path, 0o600)
@@ -611,6 +668,7 @@ class CostProjection:
             db.close()
 
     def apply(self, agent_id, full_name, event_id, payload):
+        _require_cost_active()
         match = re.fullmatch(r"([0-9a-f]{1,32})-(0|[1-9][0-9]{0,19})", event_id or "")
         if not agent_id or not full_name or not match or int(match[2]) > 2**64-1:
             raise ValueError("unsequenced projection")
@@ -695,6 +753,7 @@ _projection_path = None
 
 
 def _cost_projection():
+    _require_cost_active()
     global _projection, _projection_path
     path = STATE_FILE + ".mux-cost.db"
     with _projection_lock:
@@ -770,6 +829,10 @@ class _Handler(BaseHTTPRequestHandler):
         # 🔴 注入**无条件**:来源头像与是否带 X-DW-Session 无关,
         # 放进上面的 if 里会让直连 VS 的场景永远看不到图标。
         text = _inject_provenance_flag(text)
+        mode_marker = "/* VS_COST_ACCOUNTING_MODE */ 'active'"
+        if COST_ACCOUNTING_MODE == "paused" and text.count(mode_marker) != 1:
+            return self.send_error(503, "cost mode template unavailable")
+        text = text.replace(mode_marker, json.dumps(COST_ACCOUNTING_MODE))
         body = text.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -860,7 +923,7 @@ class _Handler(BaseHTTPRequestHandler):
                     for line in frame.splitlines():
                         if line.startswith(b"data: "):
                             event = json.loads(line[6:])
-                            if event.get("type") == "event":
+                            if event.get("type") == "event" and COST_ACCOUNTING_MODE == "active":
                                 _cost_projection().apply(event["agent_id"], event["full_name"],
                                      event["epoch"] + "-" + event["seq"], event["payload"])
                     self.wfile.write(frame)
@@ -881,7 +944,8 @@ class _Handler(BaseHTTPRequestHandler):
             subject = self._mux_subject()
         except ValueError:
             return self.send_error(401)
-        _ensure_ready(session)
+        if COST_ACCOUNTING_MODE == "active":
+            _ensure_ready(session)
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-store")
@@ -908,10 +972,11 @@ class _Handler(BaseHTTPRequestHandler):
                     if line.startswith(b"id: "):
                         event_id = line[4:].decode("ascii")
                     elif line.startswith(b"data: "):
-                        if subject:
-                            _cost_projection().apply(subject["agent_id"], session, event_id, line[6:])
-                        else:
-                            self._track_cost(session, line[6:].strip())
+                        if COST_ACCOUNTING_MODE == "active":
+                            if subject:
+                                _cost_projection().apply(subject["agent_id"], session, event_id, line[6:])
+                            else:
+                                self._track_cost(session, line[6:].strip())
                 self.wfile.write(frame)
                 self.wfile.flush()
         except (BrokenPipeError, ConnectionResetError):
@@ -924,6 +989,7 @@ class _Handler(BaseHTTPRequestHandler):
             conn.close()
 
     def _track_cost(self, session: str, payload: bytes):
+        _require_cost_active()
         try:
             ev = json.loads(payload)
         except Exception:
@@ -948,7 +1014,13 @@ class _Handler(BaseHTTPRequestHandler):
         if VIEW_UNLOCK_V2:
             try:
                 subject = self._mux_subject()
-                costs = _cost_projection().status(subject["agent_id"]) if subject else {}
+                if COST_ACCOUNTING_MODE == "paused":
+                    costs = {"cost_accounting": {"mode": "paused", "available": False,
+                                                "history": "preserved_unmapped"}}
+                else:
+                    costs = {"cost_total": 0, "cost_last": 0, "turns": 0}
+                    if subject:
+                        costs.update(_cost_projection().status(subject["agent_id"]))
             except ValueError:
                 return self.send_error(401)
             except (sqlite3.Error, OSError):
@@ -956,7 +1028,7 @@ class _Handler(BaseHTTPRequestHandler):
             body = json.dumps({
                 "session": session, "session_id": session, "state": "idle", "driver": "via-hub",
                 "auth_mode": "view_page_v2", "can_write": False, "readonly": True,
-                "unlock_code": "", "cost_total": 0, "cost_last": 0, "turns": 0, **costs,
+                "unlock_code": "", **costs,
                 "mem": _read_mem(), "disk": _read_disk(),
                 "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }, ensure_ascii=False).encode()
@@ -1153,6 +1225,7 @@ class _Handler(BaseHTTPRequestHandler):
 
 
 def main():
+    _validate_cost_config()
     port = int(os.environ.get("VS_PORT", "19320"))
     sweeper = _start_page_sweeper()
     srv = ThreadingHTTPServer(("127.0.0.1", port), _Handler)
