@@ -404,5 +404,9 @@ def is_file_capability_response_envelope(env: dict) -> bool:
     return (env.get("meta") or {}).get("type") == "file_capability_response"
 
 
+def is_spec_grant_response_envelope(env: dict) -> bool:
+    return (env.get("meta") or {}).get("type") == "spec_grant_response"
+
+
 def is_provision_envelope(env: dict) -> bool:
     return (env.get("meta") or {}).get("type") == "provision"

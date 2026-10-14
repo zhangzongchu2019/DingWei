@@ -49,6 +49,7 @@ from .routing import (  # noqa: F401
     is_no_mirror_envelope,
     is_online_directory_text,
     is_provision_envelope,
+    is_spec_grant_response_envelope,
     is_terminal_input_envelope,
     is_terminal_interrupt_envelope,
     is_terminal_refresh_envelope,
@@ -544,7 +545,7 @@ class SessionHelper:
                                ("ok", "token", "expires_at", "public_base_url", "session", "error")})
 
     def is_spec_grant_response(self, env: dict) -> bool:
-        return (env.get("meta") or {}).get("type") == "spec_grant_response"
+        return is_spec_grant_response_envelope(env)
 
     def handle_spec_grant_response(self, env: dict) -> None:
         meta = env.get("meta") or {}
@@ -740,7 +741,7 @@ class SessionHelper:
             if self.is_file_capability_response(env):
                 self.handle_file_capability_response(env)
                 continue
-            if self.is_spec_grant_response(env):
+            if is_spec_grant_response_envelope(env):
                 self.handle_spec_grant_response(env)
                 continue
             if self.is_terminal_interrupt(env):

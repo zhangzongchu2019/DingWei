@@ -32,6 +32,7 @@ def extract(path, name, namespace, class_name=None):
 NAMESPACE = {"asyncio": asyncio, "json": json, "re": re}
 for name in ("is_mirror_control", "is_provision_envelope", "is_hub_notice_envelope", "is_no_mirror_envelope"):
     NAMESPACE[name] = lambda env: False
+extract(PACKAGE / "routing.py", "is_spec_grant_response_envelope", NAMESPACE)
 for name in ("is_online_directory_text", "is_client_onboarding_text"):
     extract(PACKAGE / "routing.py", name, NAMESPACE)
 RECV = extract(PACKAGE / "app.py", "recv_loop", NAMESPACE, "SessionHelper")
@@ -81,6 +82,12 @@ def frame(body, ident="synthetic-guide"):
 
 
 class ReceiveQuiescence(unittest.IsolatedAsyncioTestCase):
+    async def test_spec_grant_response_uses_pure_classifier(self):
+        h = helper()
+        h.handle_spec_grant_response = lambda env: h.processed.append(env["id"])
+        await RECV(h, BufferedWS([{**frame("control", "grant-1"), "meta": {"type": "spec_grant_response"}}]))
+        self.assertEqual(h.processed, ["grant-1"])
+
     async def test_repeated_guides_are_not_injected_sent_or_logged_per_frame(self):
         h, ws = helper(), BufferedWS([frame(GUIDE) for _ in range(200)])
         output = io.StringIO()
