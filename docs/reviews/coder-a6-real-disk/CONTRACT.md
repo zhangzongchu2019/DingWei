@@ -21,7 +21,7 @@ A compatible selfhost Hub advertises `X-DW-Agent-Metrics: agent-disk/v1` on the 
 Existing envelope: meta.type = `agent_environment_metrics`, meta.no_mirror = true; body is at most 2048 UTF-8 bytes of one JSON object:
 
 - Required: schema `agent-disk/v1`, producer `helper`, path_basis `cli_workdir_filesystem`, status `ok` or `unavailable`, sample_instance (32 lowercase hex), sample_seq (positive canonical uint64 decimal string), sampled_at_ms (UTC integer ms), elapsed_send_age_ms (integer 0..5000).
-- For ok: filesystem_instance (opaque process-local 32 lowercase hex), used_bytes, total_bytes, available_bytes; integer bytes <= 2^53-1, total > 0, 0 <= used/available <= total. reason absent.
+- For ok: filesystem_instance (opaque process-local 32 lowercase hex), used_bytes, total_bytes, available_bytes; integer bytes <= 2^53-1, total > 0, 0 <= used/available <= total. reason must be empty (the helper omits it; the receiver also accepts an explicit empty string).
 - For unavailable: reason in workdir_unbound / namespace_unbound / sample_failed / unsupported_mode; all filesystem/numeric fields absent.
 - No other, duplicate, case-variant or null keys; no trailing object. UTC clock skew window is -30 seconds through +30 seconds plus measured send age. A sample outside these bounds is rejected, not restamped.
 
