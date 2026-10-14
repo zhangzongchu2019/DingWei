@@ -1,0 +1,31 @@
+test_absent_stays_empty (tools.sessionhelper.tests.test_mcp_send_wiring.DatadEnvWiringTest.test_absent_stays_empty) ... ok
+test_datad_env_wired (tools.sessionhelper.tests.test_mcp_send_wiring.DatadEnvWiringTest.test_datad_env_wired) ... ok
+test_sh_prefix_takes_precedence (tools.sessionhelper.tests.test_mcp_send_wiring.DatadEnvWiringTest.test_sh_prefix_takes_precedence) ... ok
+test_all_four_present (tools.sessionhelper.tests.test_mcp_send_wiring.ExtractReplyOriginMetaTest.test_all_four_present) ... ok
+test_explicit_null_treated_as_absent (tools.sessionhelper.tests.test_mcp_send_wiring.ExtractReplyOriginMetaTest.test_explicit_null_treated_as_absent) ... ok
+test_key_set_matches_contract (tools.sessionhelper.tests.test_mcp_send_wiring.ExtractReplyOriginMetaTest.test_key_set_matches_contract) ... ok
+test_none_present_is_empty (tools.sessionhelper.tests.test_mcp_send_wiring.ExtractReplyOriginMetaTest.test_none_present_is_empty) ... ok
+test_subset_present (tools.sessionhelper.tests.test_mcp_send_wiring.ExtractReplyOriginMetaTest.test_subset_present) ... ok
+test_unknown_top_level_keys_not_copied (tools.sessionhelper.tests.test_mcp_send_wiring.ExtractReplyOriginMetaTest.test_unknown_top_level_keys_not_copied) ... ok
+test_envelope_meta_carries_fields_verbatim (tools.sessionhelper.tests.test_mcp_send_wiring.HandleConnectionWiringTest.test_envelope_meta_carries_fields_verbatim) ... ok
+test_four_fields_reach_send_handler (tools.sessionhelper.tests.test_mcp_send_wiring.HandleConnectionWiringTest.test_four_fields_reach_send_handler) ... ok
+test_mcp_vsapi_receives_one_line_error_instead_of_transport_close (tools.sessionhelper.tests.test_mcp_send_wiring.HandleConnectionWiringTest.test_mcp_vsapi_receives_one_line_error_instead_of_transport_close)
+真 Unix socket 腿:两个 MCP 工具都须收到明确错误,不能被吞成断链。 ... ok
+test_plain_send_gets_empty_meta (tools.sessionhelper.tests.test_mcp_send_wiring.HandleConnectionWiringTest.test_plain_send_gets_empty_meta) ... ok
+test_run_once_always_installs_vsapi_handler (tools.sessionhelper.tests.test_mcp_send_wiring.HandleConnectionWiringTest.test_run_once_always_installs_vsapi_handler)
+装配闸:变异回 `... if datad_url else None` 必须红。 ... ok
+test_vsapi_without_datad_is_explicitly_unconfigured (tools.sessionhelper.tests.test_mcp_send_wiring.HandleConnectionWiringTest.test_vsapi_without_datad_is_explicitly_unconfigured) ... ok
+test_bare_session_name_is_completed (tools.sessionhelper.tests.test_ipc_send_addr.TestIPCSendAddressCompletion.test_bare_session_name_is_completed) ... ok
+test_cross_key_address_preserved (tools.sessionhelper.tests.test_ipc_send_addr.TestIPCSendAddressCompletion.test_cross_key_address_preserved) ... ok
+test_full_address_is_left_alone (tools.sessionhelper.tests.test_ipc_send_addr.TestIPCSendAddressCompletion.test_full_address_is_left_alone) ... ok
+test_gate_rejects_home_outside_tmp (tools.sessionhelper.tests.test_smoke_ipc_gate.SmokeIpcGate.test_gate_rejects_home_outside_tmp) ... ok
+test_gate_rejects_ipc_outside_tmp (tools.sessionhelper.tests.test_smoke_ipc_gate.SmokeIpcGate.test_gate_rejects_ipc_outside_tmp) ... ok
+test_gate_rejects_missing_ipc_and_outside_fallback_key (tools.sessionhelper.tests.test_smoke_ipc_gate.SmokeIpcGate.test_gate_rejects_missing_ipc_and_outside_fallback_key) ... ok
+test_gate_rejects_symlink_escape (tools.sessionhelper.tests.test_smoke_ipc_gate.SmokeIpcGate.test_gate_rejects_symlink_escape) ... ok
+test_gate_stops_real_helper_from_hijacking_a_path_outside_tmp (tools.sessionhelper.tests.test_smoke_ipc_gate.SmokeIpcGate.test_gate_stops_real_helper_from_hijacking_a_path_outside_tmp) ... ok
+test_isolated_env_strips_inherited_seat_variables (tools.sessionhelper.tests.test_smoke_ipc_gate.SmokeIpcGate.test_isolated_env_strips_inherited_seat_variables) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.037s
+
+OK

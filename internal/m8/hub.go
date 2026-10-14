@@ -117,43 +117,48 @@ type Hub struct {
 	// 会拖到下一条用例里，撞进别人的日志捕获窗口（复验方 qwen38maxkhovvob4 的日志卫生用例即被打红过）。
 	sessionWG sync.WaitGroup
 
-	mu                    hubMutex
-	serviceClients        map[string]*client
-	sessionClients        map[string]map[string]*sessionClient
-	keyAccounts           map[string]map[string]bool
-	botChannels           map[string]string
-	botNames              map[string]string
-	envelopeIDs           map[string]string
-	replyDedup            *replyDedup
-	onlineTimers          map[string]*time.Timer
-	seenSessions          map[string]bool
-	seenSessionsOnce      sync.Once
-	seenSessionsOK        bool
-	retainedRingBytes     int
-	retainedRingFIFO      list.List
-	terminals             map[string]*terminalState
-	terminalLastSize      map[string][2]int
-	syncTargets           map[string]map[string]feishuSyncTarget
-	recentTerminal        map[string][]terminalSyncItem
-	syncBuffers           map[string]*feishuSyncBuffer
-	syncToolSummaries     map[string]*terminalToolSummary
-	linkTokens            map[string]ownerLinkToken
-	onboardPushed         map[string]time.Time
-	onboardContexts       map[string]onboardContext
-	onlineDebounce        time.Duration
-	onboardInterval       time.Duration
-	newSessionNotice      bool
-	viewV2Mu              sync.Mutex
-	viewV2Nonces          map[string]time.Time
-	viewV2Requests        map[string]viewV2RequestResult
-	deliveryNotices       map[string]time.Time
-	amr                   *amrProcessor
-	mentionMirror         *mentionMirror // R-V2-0103：view 提及的回复回流（只显示）
-	startedAt             time.Time
-	restartWindow         time.Duration
-	fileIssuer            FileTicketIssuer
-	fileArchive           FileArchiveClient
-	filePermanent         FilePermanentClient
+	mu                hubMutex
+	serviceClients    map[string]*client
+	sessionClients    map[string]map[string]*sessionClient
+	keyAccounts       map[string]map[string]bool
+	botChannels       map[string]string
+	botNames          map[string]string
+	envelopeIDs       map[string]string
+	replyDedup        *replyDedup
+	onlineTimers      map[string]*time.Timer
+	seenSessions      map[string]bool
+	seenSessionsOnce  sync.Once
+	seenSessionsOK    bool
+	retainedRingBytes int
+	retainedRingFIFO  list.List
+	terminals         map[string]*terminalState
+	terminalLastSize  map[string][2]int
+	syncTargets       map[string]map[string]feishuSyncTarget
+	recentTerminal    map[string][]terminalSyncItem
+	syncBuffers       map[string]*feishuSyncBuffer
+	syncToolSummaries map[string]*terminalToolSummary
+	linkTokens        map[string]ownerLinkToken
+	onboardPushed     map[string]time.Time
+	onboardContexts   map[string]onboardContext
+	onlineDebounce    time.Duration
+	onboardInterval   time.Duration
+	newSessionNotice  bool
+	viewV2Mu          sync.Mutex
+	viewV2Nonces      map[string]time.Time
+	viewV2Requests    map[string]viewV2RequestResult
+	deliveryNotices   map[string]time.Time
+	amr               *amrProcessor
+	mentionMirror     *mentionMirror // R-V2-0103：view 提及的回复回流（只显示）
+	startedAt         time.Time
+	restartWindow     time.Duration
+	fileIssuer        FileTicketIssuer
+	fileArchive       FileArchiveClient
+	filePermanent     FilePermanentClient
+	// Short-lived MCP spec approvals. Raw page capabilities stay here only
+	// until the authenticated helper polls them once; the repository persists
+	// only the hash in ConsolePageCapability.
+	specGrantMu           sync.Mutex
+	specGrantRequests     map[string]*specGrantRequest
 	specPresplitDispatch  func(context.Context, model.ConsoleAgent, model.Envelope) error
 	specInferenceDispatch func(context.Context, model.ConsoleAgent, model.Envelope) error
 	SpecPresplitTimeout   time.Duration
@@ -326,6 +331,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 		viewV2Nonces:       map[string]time.Time{},
 		viewV2Requests:     map[string]viewV2RequestResult{},
 		deliveryNotices:    map[string]time.Time{},
+		specGrantRequests:  map[string]*specGrantRequest{},
 		startedAt:          time.Now().UTC(),
 		restartWindow:      envDuration("WP_RESTART_STABILITY_WINDOW", time.Minute),
 		onlineDebounce:     2500 * time.Millisecond,
@@ -1257,6 +1263,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			continue
 		}
 		if h.handleFileCapabilityRequest(r.Context(), c, env) {
+			continue
+		}
+		if h.handleSpecGrantRequest(r.Context(), c, env) {
 			continue
 		}
 		// Reserved attestation fields are never accepted from a session. The

@@ -114,6 +114,7 @@ type consoleAuthRepository interface {
 	ResolveGrantedConsoleAgent(context.Context, string, string, string) (*model.ConsoleAgent, error)
 	ListConsoleAgents(context.Context, string) ([]model.ConsoleAgent, error)
 	RotateConsolePageCapability(context.Context, model.ConsolePageCapability, string, string, time.Time) error
+	RevokeConsolePageCapability(context.Context, string, string, string, string, string, time.Time) (bool, error)
 	ResolveConsolePageCapability(context.Context, string, string, string, time.Time) (*model.ConsolePageCapability, error)
 }
 

@@ -1,0 +1,30 @@
+test_create_and_update_success_after_real_twenty_seconds (tools.sessionhelper.tests.test_spec_ipc_timeout.SpecIPCTimeouts.test_create_and_update_success_after_real_twenty_seconds) ... ERROR
+
+======================================================================
+ERROR: test_create_and_update_success_after_real_twenty_seconds (tools.sessionhelper.tests.test_spec_ipc_timeout.SpecIPCTimeouts.test_create_and_update_success_after_real_twenty_seconds)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/a3-o3/tools/sessionhelper/tests/test_spec_ipc_timeout.py", line 47, in test_create_and_update_success_after_real_twenty_seconds
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TimeoutError: timed out
+
+----------------------------------------------------------------------
+Ran 1 test in 5.016s
+
+FAILED (errors=1)

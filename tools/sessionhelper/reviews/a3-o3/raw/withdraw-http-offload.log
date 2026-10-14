@@ -1,0 +1,38 @@
+test_blocking_agent_http_does_not_block_ipc_deadline (tools.sessionhelper.tests.test_spec_ipc_timeout.SpecIPCTimeouts.test_blocking_agent_http_does_not_block_ipc_deadline) ... ERROR
+
+======================================================================
+ERROR: test_blocking_agent_http_does_not_block_ipc_deadline (tools.sessionhelper.tests.test_spec_ipc_timeout.SpecIPCTimeouts.test_blocking_agent_http_does_not_block_ipc_deadline)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/a3-o3/tools/sessionhelper/tests/test_spec_ipc_timeout.py", line 91, in test_blocking_agent_http_does_not_block_ipc_deadline
+    result = await asyncio.to_thread(mcp_shim._dw_spec_create, body())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/a3-o3/tools/sessionhelper/sessionhelper/mcp_shim.py", line 414, in _dw_spec_create
+    return _ipc_request({"type": "spec_write_v1", "action": "create", "grant_request_id": grant_request_id, "body": body}, timeout=_SPEC_IPC_TIMEOUT)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/a3-o3/tools/sessionhelper/sessionhelper/mcp_shim.py", line 119, in _ipc_request
+    raise RuntimeError(response.get("error", "IPC send failed"))
+RuntimeError: spec write failed
+
+----------------------------------------------------------------------
+Ran 1 test in 3.015s
+
+FAILED (errors=1)
