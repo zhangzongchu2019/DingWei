@@ -1,0 +1,38 @@
+[
+  {
+    "name": "history-consume",
+    "bytes": 260,
+    "sha256": "fbc7cd6a2102e131f1502316401434dcaf58b8801843afc02b862aea869d51da",
+    "identical": true
+  },
+  {
+    "name": "history-arm",
+    "bytes": 1184,
+    "sha256": "f80f8db2638a070d63d41648e101af35574411e183f5923f23b9cdddca01eb95",
+    "identical": true
+  },
+  {
+    "name": "admission",
+    "bytes": 1525,
+    "sha256": "2a64f95ebc84c39636855e10542a2c3d4619b42c9a3134d5fa1d9bfad63aff2f",
+    "identical": true
+  },
+  {
+    "name": "managed-ack",
+    "bytes": 4308,
+    "sha256": "ad8ac8712bf33a34a44a18238ff8caacae1d9d251981411b83593b5aa41ac935",
+    "identical": true
+  },
+  {
+    "name": "stream-callbacks",
+    "bytes": 4439,
+    "sha256": "bfba3b5d4f0844a82148a43a4264796669739b0341751b044aa4642324dd9e17",
+    "identical": true
+  },
+  {
+    "name": "resources-auth-tail",
+    "bytes": 72337,
+    "sha256": "2f87bafe20f3b78a78217d23f46ea1ea008b98db69fe0bfa83c96c84cbe8f90a",
+    "identical": true
+  }
+]

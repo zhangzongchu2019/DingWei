@@ -1,0 +1,50 @@
+{
+  "A4-4.log": {
+    "bytes": 340,
+    "sha256": "9b7b955b7cbc5090ac329c80c49f14d0b73cc404134ed118994d56f472dad86a"
+  },
+  "A5-8.log": {
+    "bytes": 461,
+    "sha256": "b7ee747d87f6d3466481f0741d71cca2050713ff4c7d1c7c0e09074fa0eeaefa"
+  },
+  "HISTORY-7.log": {
+    "bytes": 446,
+    "sha256": "cbfdea2c0e5100bdb43eb335977bd24983baf5f727131f8c82db21a40df5fd5d"
+  },
+  "INTEGRITY-22.log": {
+    "bytes": 1638,
+    "sha256": "8997f6235c62cf0403e755487f654114363b346857abc88428e99f3c2a3fe0f0"
+  },
+  "MANAGED-3.log": {
+    "bytes": 378,
+    "sha256": "cc584307da0713f234f0ac4414313866325d670f447dc9b7132a8cdf51db94c0"
+  },
+  "PARENT-STATE-RC1.log": {
+    "bytes": 1554,
+    "sha256": "73ce30160f6f8778fc671d088a0061952907035d23f2dbd0476963bd461b9486"
+  },
+  "PROTECTED-SPANS.json": {
+    "bytes": 972,
+    "sha256": "31d5fc578a334841fac65c388401d3d93e7572bc674b4c85da7fb3f78d0931db"
+  },
+  "PY-5.log": {
+    "bytes": 103,
+    "sha256": "e99d1f023643f2af19a0b71d74e5b6e0852d14d749cc58c4417b68b716c3fbea"
+  },
+  "REAL-GAP-9.log": {
+    "bytes": 742,
+    "sha256": "f966084d7dc5d1fd1042fe4309524ec665fc708957115fcf91dd2e97c6fb020e"
+  },
+  "REVIEW.txt": {
+    "bytes": 3171,
+    "sha256": "07647a495543e07b167a288c2de509dd0e89ac9b864ef16c64c9b521a788a756"
+  },
+  "SOURCE-PINS.json": {
+    "bytes": 433,
+    "sha256": "56f8afc21326882285848f19ca19fa99f4e7c2f7b775cba93e667a6e41d85489"
+  },
+  "WITHOUT-STATE-BRANCH-RC1.log": {
+    "bytes": 1554,
+    "sha256": "73ce30160f6f8778fc671d088a0061952907035d23f2dbd0476963bd461b9486"
+  }
+}

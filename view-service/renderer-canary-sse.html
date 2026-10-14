@@ -1563,6 +1563,8 @@
       //    时钟每秒刷新一次,不挡住的话会把断线提示**一秒内覆盖掉**,
       //    于是"断线可见"这件事在页面上只存在一瞬 —— 那等于不可见。
       if (reconnectAttempt > 0) return;
+      // Keep the explicit connected-but-incomplete state across ordinary clock ticks.
+      if (typeof streamGapRecoveryActive === 'function' && streamGapRecoveryActive()) return;
       if (stats.statusDatetimeText && !stats.statusDatetimeMs) {
         localTime.textContent = stats.statusDatetimeText;
         return;
@@ -3942,7 +3944,11 @@
     //    做法(不额外占状态栏空间):让保留下来的 🕐 那一栏兼任连接状态。
     function renderConnectionState() {
       if (!clockStatus) return;
-      if (reconnectAttempt > 0 && streamTransportOpen) {
+      if (streamGapRecoveryActive()) {
+        clockStatus.classList.remove('offline');
+        clockStatus.title = '事件流已连接；检测到事件序号缺口，正在自动补收，补齐后此提示自动消失。';
+        localTime.textContent = '已连接 · 正在补收缺失事件';
+      } else if (reconnectAttempt > 0 && streamTransportOpen) {
         clockStatus.classList.remove('offline');
         clockStatus.title = '事件连接已建立；等待可应用事件，历史完整性尚未确认';
         localTime.textContent = '已连接，等待事件';
@@ -3955,6 +3961,9 @@
         clockStatus.title = '点击立即重连事件流';
         updateLocalTime();
       }
+    }
+    function streamGapRecoveryActive() {
+      return streamTransportOpen && seqStreamSeen && seenAboveSeq.size > 0 && !gapRefillStopped;
     }
     // A queued gap refill owns its completion check; transport success cannot cancel it.
     let reconnectTimerForGap = false;
@@ -4092,6 +4101,7 @@
           if (gapRefillTimes.length >= GAP_REFILL_MAX) {
             gapRefillStopped = true;
             noteIntegrityIssue('recoverable', '自动补收次数已达上限；缺口尚未补齐。');
+            renderConnectionState();
             return false;
           }
           gapRefillTimes.push(now);

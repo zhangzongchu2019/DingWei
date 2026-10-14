@@ -1,0 +1,14 @@
+{
+  "view-service/renderer-canary-sse.html": {
+    "bytes": 305486,
+    "sha256": "bed3f4d304cbda5cda6c5e55f48325aea11f6afb1673a6e34e09ff64f133595a"
+  },
+  "tests/a5-replay-state.cjs": {
+    "bytes": 4598,
+    "sha256": "4375f976a09119f5bcbf3c1a85a90aee559f65829376cd912f34db0ffa2d6ceb"
+  },
+  "tests/a5-real-gap-timer.cjs": {
+    "bytes": 5659,
+    "sha256": "e8e23632d20da67872837d2bbf423e7924c357dd0819af2b7dd232266e1990f8"
+  }
+}

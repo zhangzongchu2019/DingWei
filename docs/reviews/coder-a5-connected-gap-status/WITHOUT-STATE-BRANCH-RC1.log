@@ -1,0 +1,36 @@
+PASS 1,3,queued refill,4 preserves unresolved-gap reconnect
+PASS continuous jumps preserve one queued refill and charge only at execution
+PASS actual missing event preserves original final check and consumes no refill
+PASS transport open cannot cancel queued gap refill
+PASS duplicate event does not falsely close the gap or cancel recovery
+PASS ordinary legacy success still clears ordinary reconnect and retry count
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ '已连接，等待事件'
+- '已连接 · 正在补收缺失事件'
+      ^
+
+    at /data/ai-dev-data/a5-on-a4rework/tests/a5-real-gap-timer.cjs:27:9
+    at test (/data/ai-dev-data/a5-on-a4rework/tests/a5-real-gap-timer.cjs:9:36)
+    at Object.<anonymous> (/data/ai-dev-data/a5-on-a4rework/tests/a5-real-gap-timer.cjs:25:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: '已连接，等待事件',
+  expected: '已连接 · 正在补收缺失事件',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.1
