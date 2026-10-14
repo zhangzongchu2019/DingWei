@@ -22,7 +22,10 @@ async function startFixture({ reason = 'event_stream_unavailable', previousConte
       eventRequests += 1;
       res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store' });
       if (eventRequests === 1) {
-        const previous = previousContent ? 'data: {"kind":"assistant_text","text":"PREVIOUS-CONTENT","data":{}}\n\n' : '';
+        // The preservation promise applies to the production sequenced stream.
+        // Old no-id Hub streams intentionally retain their existing replay-reset
+        // behavior and are not made stronger by this View404 change.
+        const previous = previousContent ? 'id: 0000000000000001-1\ndata: {"kind":"assistant_text","text":"PREVIOUS-CONTENT","data":{}}\n\n' : '';
         return res.end(`${previous}event: stream_unavailable\ndata: {"reason":"${reason}"}\n\n`);
       }
       // A transport can open before its upstream refusal is known. Keep this
@@ -62,7 +65,7 @@ async function startFixture({ reason = 'event_stream_unavailable', previousConte
       assert.match(text || '', /^等待会话输出$/);
       assert.ok(!/断线重连中/.test(text || ''), `generic reconnect text leaked: ${text}`);
     });
-    await checks.check('unavailable retry preserves already-rendered legacy content', async () => {
+    await checks.check('unavailable retry preserves already-rendered sequenced content', async () => {
       await page.waitForFunction(() => document.body.textContent.includes('PREVIOUS-CONTENT'));
       assert.ok((await page.locator('body').textContent()).includes('PREVIOUS-CONTENT'));
     });
@@ -81,7 +84,7 @@ async function startFixture({ reason = 'event_stream_unavailable', previousConte
       await page.waitForFunction(() => document.body.textContent.includes('恢复后输出'));
       const body = await page.locator('body').textContent();
       const text = await page.locator('#localTime').textContent();
-      assert.ok(body.includes('PREVIOUS-CONTENT'), 'reasoned refusal erased existing legacy content');
+      assert.ok(body.includes('PREVIOUS-CONTENT'), 'reasoned refusal erased existing sequenced content');
       assert.ok(!/等待会话输出|断线重连中|无法识别该 Agent 会话/.test(text || ''), `unavailable state remained: ${text}`);
     });
     await checks.check('generic upstream refusal is not presented as identity loss', async () => {
@@ -89,7 +92,7 @@ async function startFixture({ reason = 'event_stream_unavailable', previousConte
       const genericPage = await browser.newPage();
       try {
         await genericPage.goto(genericFixture.url, { waitUntil: 'domcontentloaded' });
-        await genericPage.waitForFunction(() => document.getElementById('localTime')?.textContent.includes('上游事件服务暂时不可用'));
+        await genericPage.waitForFunction(() => document.getElementById('localTime')?.textContent.includes('View 服务暂时无法获取该会话事件'));
         const text = await genericPage.locator('#localTime').textContent();
         assert.ok(!/无法识别该 Agent|删除或重命名/.test(text || ''), `generic failure was mislabelled as identity loss: ${text}`);
       } finally {
