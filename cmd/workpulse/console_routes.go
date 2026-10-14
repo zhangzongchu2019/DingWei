@@ -44,6 +44,9 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	// 身份经垫片投影进旧表，处理器与存储不变。共享链接沿 095 口径（GET 公开、写凭链接里的编辑能力令牌）。
 	registerSpecTaskRoutes(mux, prefixHub)
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/capability", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleCapability))
+	mux.HandleFunc("GET /api/console/agents/{sessionName}/spec-grant-requests", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleSpecGrantRequests))
+	mux.HandleFunc("POST /api/console/agents/{sessionName}/spec-grant-requests/{requestID}/{decision}", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleSpecGrantDecision))
+	mux.HandleFunc("GET /console/agents/{sessionName}/spec-grant-requests", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleSpecGrantPage))
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/file-upload-ticket", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleFileUploadTicket))
 	mux.HandleFunc("POST /api/console/files/{fileID}/archive", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleFileArchive))
 	mux.HandleFunc("POST /view/{sessionName}/unlock-cookie", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleTerminalViewCookie))

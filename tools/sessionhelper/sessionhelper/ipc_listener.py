@@ -79,6 +79,7 @@ _SendHandler = Callable[[str, str, dict[str, Any]], Awaitable[dict[str, Any]]]
 _VsapiHandler = Callable[[str, str, dict[str, Any] | None], Awaitable[dict[str, Any]]]
 _FileHandler = Callable[[str, str, str], Awaitable[dict[str, Any]]]
 _UploadHandler = Callable[[int, str, str], Awaitable[dict[str, Any]]]
+_SpecHandler = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
 
 
 async def _handle_connection(
@@ -93,6 +94,7 @@ async def _handle_connection(
     passed_fds: list[int] | None = None,
     upload_only: bool = False,
     inbox_handler=None,
+    spec_handler: _SpecHandler | None = None,
 ) -> None:
     """Serve a single Unix-socket connection: read one request, dispatch by type, ack.
 
@@ -129,6 +131,8 @@ async def _handle_connection(
         return await _handle_vsapi(writer, msg, vsapi_handler)
     if msg_type == IPC_FILE:
         return await _handle_file(writer, msg, file_handler)
+    if msg_type == "spec_write_v1":
+        return await _handle_spec_write(writer, msg, spec_handler)
     if msg_type != IPC_SEND:
         await _write_one(writer, {"ok": False, "error": f"unknown type {msg_type!r}"})
         return
@@ -193,6 +197,34 @@ async def _handle_vsapi(
         result = await vsapi_handler(method, path, body)
     except Exception as exc:
         await _write_one(writer, {"ok": False, "error": f"vsapi call failed: {exc}"})
+        return
+    await _write_one(writer, {"ok": True, "result": result, "request_id": request_id})
+
+
+async def _handle_spec_write(writer: asyncio.StreamWriter, msg: dict[str, Any], handler: _SpecHandler | None) -> None:
+    """Keep raw grants inside helper; IPC accepts only spec document fields."""
+    request_id = str(msg.get("request_id") or "")
+    if handler is None:
+        await _write_one(writer, {"ok": False, "error": "spec write unavailable"})
+        return
+    if set(msg) - {"type", "request_id", "action", "grant_request_id", "spec_id", "body"}:
+        await _write_one(writer, {"ok": False, "error": "invalid spec request"})
+        return
+    action, grant_id, spec_id, body = (str(msg.get("action") or "").strip(), str(msg.get("grant_request_id") or "").strip(), str(msg.get("spec_id") or "").strip(), msg.get("body"))
+    if action not in {"create", "update"} or len(grant_id) > 256 or len(spec_id) > 256 or (body is not None and not isinstance(body, dict)):
+        await _write_one(writer, {"ok": False, "error": "invalid spec request"})
+        return
+    if action == "update" and not spec_id:
+        await _write_one(writer, {"ok": False, "error": "invalid spec request"})
+        return
+    try:
+        result = await handler({"action": action, "grant_request_id": grant_id, "spec_id": spec_id, "body": body or {}})
+    except Exception:
+        await _write_one(writer, {"ok": False, "error": "spec write failed"})
+        return
+    # The capability must never traverse local IPC, even on a handler bug.
+    if not isinstance(result, dict) or "capability" in result:
+        await _write_one(writer, {"ok": False, "error": "unsafe spec response"})
         return
     await _write_one(writer, {"ok": True, "result": result, "request_id": request_id})
 
@@ -404,6 +436,7 @@ async def serve_ipc(
     bound: asyncio.Event | None = None,
     upload_only: bool = False,
     inbox_handler=None,
+    spec_handler: _SpecHandler | None = None,
     replace_existing: bool = True,
 ) -> None:
     """Start a Unix-domain socket server.
@@ -436,7 +469,8 @@ async def serve_ipc(
     async def dispatch(reader, writer, fds):
         await _handle_connection(reader, writer, send_handler, vsapi_handler, file_handler,
                                  allowed_socket_dir=allowed_socket_dir,
-                                 upload_handler=upload_handler, passed_fds=fds, upload_only=upload_only, inbox_handler=inbox_handler)
+                                 upload_handler=upload_handler, passed_fds=fds, upload_only=upload_only, inbox_handler=inbox_handler,
+                                 spec_handler=spec_handler)
 
     loop = asyncio.get_running_loop()
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

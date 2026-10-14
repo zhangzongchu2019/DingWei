@@ -364,6 +364,66 @@ def _project_context(args: dict[str, Any]) -> dict[str, Any]:
     return results
 
 
+# ── MCP tools: Console spec writing (A3) ─────────────────────────────
+# The short-lived human-approved capability stays in sessionHelper. These
+# tools exchange only document data and a non-secret grant request id.
+
+_SPEC_BODY_PROPERTIES = {
+    "title": {"type": "string"},
+    "content_markdown": {"type": "string"},
+    "acceptance": {"type": "array"},
+    "input_anchors": {"type": "array"},
+    "inferences": {"type": "array"},
+    "expected_revision": {"type": "integer", "minimum": 1},
+}
+
+
+def _spec_body(args: dict[str, Any], *, update: bool) -> dict[str, Any]:
+    allowed = set(_SPEC_BODY_PROPERTIES) | ({"spec_id", "grant_request_id"} if update else {"grant_request_id"})
+    if not isinstance(args, dict) or set(args) - allowed:
+        raise ValueError("unsupported spec arguments")
+    body = {key: args[key] for key in _SPEC_BODY_PROPERTIES if key in args}
+    required = {"title", "content_markdown", "acceptance", "input_anchors"}
+    if update:
+        required.add("expected_revision")
+    if not required.issubset(body):
+        raise ValueError("missing required spec fields")
+    if not isinstance(body["title"], str) or not isinstance(body["content_markdown"], str):
+        raise ValueError("invalid spec text")
+    if not isinstance(body["acceptance"], list) or not isinstance(body["input_anchors"], list):
+        raise ValueError("invalid spec arrays")
+    if "inferences" in body and not isinstance(body["inferences"], list):
+        raise ValueError("invalid spec inferences")
+    if update and (type(body["expected_revision"]) is not int or body["expected_revision"] < 1):
+        raise ValueError("invalid expected_revision")
+    if len(json.dumps(body, ensure_ascii=False).encode("utf-8")) > 2 << 20:
+        raise ValueError("spec body exceeds 2 MiB")
+    return body
+
+
+@register("dw_spec_create", "经业主在 Console 显式批准后创建 spec；首次调用只返回批准请求，不会写入。", {
+    "type": "object", "properties": {**_SPEC_BODY_PROPERTIES, "grant_request_id": {"type": "string"}},
+    "required": ["title", "content_markdown", "acceptance", "input_anchors"], "additionalProperties": False,
+})
+def _dw_spec_create(args: dict[str, Any]) -> dict[str, Any]:
+    body = _spec_body(args, update=False)
+    grant_request_id = str(args.get("grant_request_id") or "").strip()
+    return _ipc_request({"type": "spec_write_v1", "action": "create", "grant_request_id": grant_request_id, "body": body})
+
+
+@register("dw_spec_update", "经业主在 Console 显式批准后更新指定 spec；创建批准不能用于更新。", {
+    "type": "object", "properties": {**_SPEC_BODY_PROPERTIES, "spec_id": {"type": "string"}, "grant_request_id": {"type": "string"}},
+    "required": ["spec_id", "title", "content_markdown", "acceptance", "input_anchors", "expected_revision"], "additionalProperties": False,
+})
+def _dw_spec_update(args: dict[str, Any]) -> dict[str, Any]:
+    spec_id = str(args.get("spec_id") or "").strip()
+    if not spec_id or len(spec_id) > 256:
+        raise ValueError("invalid spec_id")
+    body = _spec_body(args, update=True)
+    grant_request_id = str(args.get("grant_request_id") or "").strip()
+    return _ipc_request({"type": "spec_write_v1", "action": "update", "spec_id": spec_id, "grant_request_id": grant_request_id, "body": body})
+
+
 # ── MCP tool: upload_file (R-V2-AGENT-FILE-UPLOAD) ────────────────────
 # Same wire contract as dingwei_file.upload_file; duplicated because this file is a
 # self-contained entry point (no package imports). The shim is a child of the CLI, so the
