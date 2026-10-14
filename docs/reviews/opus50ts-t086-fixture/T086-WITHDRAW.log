@@ -1,0 +1,11 @@
+T-086 推迟清空（源自 renderer-canary-sse.html 实际文本）
+  🔴 ① 🔴 重连那一刻【不得】立刻清空 -> integrityIssue is not defined
+  🔴 ② ring 有内容:第一条重放到达 ⇒ 此刻才清空(与旧行为等价) -> integrityIssue is not defined
+  🔴 ③ 🔴 ring 为空:窗口内一条都没来 ⇒ 取消清空(历史保住) -> integrityIssue is not defined
+  🔴 ④ 窗口【内】到达仍会清空(不能因为加了窗口就永不清空) -> integrityIssue is not defined
+  🔴 ⑤ 连续两次重连:后一次重置窗口,不得沿用上一次的挂起 -> integrityIssue is not defined
+  🔴 ⑥ markStreamReconnect 仍会启动重放窗口 -> integrityIssue is not defined
+  🔴 ⑦ 🔴 窗口过期 ⇒ 必须发出「重放超时」告警(静默失败要变成可观测事件) -> integrityIssue is not defined
+  🔴 ⑧ 窗口【内】被正常消费 ⇒ 不得告警(误报会把真告警淹掉) -> integrityIssue is not defined
+
+通过 0 / 失败 8
