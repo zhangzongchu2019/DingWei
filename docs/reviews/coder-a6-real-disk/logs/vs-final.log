@@ -1,0 +1,14 @@
+test_entire_read_is_bounded_and_stuck_workers_not_multiplied (test_agent_disk_resource.BoundedTransport.test_entire_read_is_bounded_and_stuck_workers_not_multiplied) ... ok
+test_oversize_and_parse_failure_unknown (test_agent_disk_resource.BoundedTransport.test_oversize_and_parse_failure_unknown) ... ok
+test_console_controls_and_manual_lock_preserved (test_agent_disk_resource.ResourceStatus.test_console_controls_and_manual_lock_preserved) ... ok
+test_full_paused_compatible_active_fail_closed (test_agent_disk_resource.ResourceStatus.test_full_paused_compatible_active_fail_closed) ... ok
+test_internal_request_signed_and_bound (test_agent_disk_resource.ResourceStatus.test_internal_request_signed_and_bound) ... ok
+test_legacy_auth_heartbeat_excludes_resources (test_agent_disk_resource.ResourceStatus.test_legacy_auth_heartbeat_excludes_resources) ... ok
+test_real_signer_preserves_signed_address_contract (test_agent_disk_resource.ResourceStatus.test_real_signer_preserves_signed_address_contract) ... ok
+test_resource_only_modes_subject_and_no_cost (test_agent_disk_resource.ResourceStatus.test_resource_only_modes_subject_and_no_cost) ... ok
+test_verified_subject_precedes_resource_fetch (test_agent_disk_resource.ResourceStatus.test_verified_subject_precedes_resource_fetch) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.212s
+
+OK

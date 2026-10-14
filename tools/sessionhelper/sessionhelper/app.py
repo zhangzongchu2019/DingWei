@@ -240,6 +240,8 @@ class SessionHelper:
         self.provisioner = Provisioner(cfg)
         self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
         self.adapter = self._build_adapter()
+        from .agent_disk_metrics import BoundedDiskPublisher
+        self.agent_disk_publisher = BoundedDiskPublisher()
         self.install_send_script()
         # R-V2-AGENT-FILE-UPLOAD
         self.upload_policy = UploadPolicy.build(
@@ -622,6 +624,7 @@ class SessionHelper:
                         self.file_inbound_worker_loop(ws),
                         self.terminal_loop(ws),
                         self.session_event_loop(ws),
+                        self.agent_disk_metrics_loop(ws),
                         self.outbox_loop(ws),
                         self.mirror_loop(ws),
                     ])
@@ -1574,6 +1577,24 @@ class SessionHelper:
                 start_task.cancel()
                 await asyncio.gather(start_task, return_exceptions=True)
             # Cancelling to_thread's awaiter does not stop the underlying thread.
+
+    async def agent_disk_metrics_loop(self, ws) -> None:
+        # This is control metadata on the existing authenticated connection;
+        # it never goes through model output, the conversation ring or outbox.
+        response = getattr(ws, "response", None)
+        headers = getattr(response, "headers", {})
+        if headers.get("X-DW-Agent-Metrics") != "agent-disk/v1":
+            # Old/shared-key/hosted Hubs must never receive an unknown control
+            # subtype that they could route as a conversation message.
+            await asyncio.Future()
+        while True:
+            payload = await self.agent_disk_publisher.sample(self.adapter)
+            if payload is not None:
+                meta = {"type": "agent_environment_metrics", "no_mirror": True}
+                await ws.send(json.dumps(envelope(
+                    session_addr("workpulse", self.cfg.key_id), payload, self.book.self_addr, meta
+                ), ensure_ascii=False))
+            await asyncio.sleep(30)
 
     async def session_event_loop(self, ws) -> None:
         if env_get("SH_EMIT_SESSION_EVENT") != "1":

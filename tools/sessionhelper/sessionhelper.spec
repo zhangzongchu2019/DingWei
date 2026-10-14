@@ -40,6 +40,7 @@ a = Analysis(
         # 🔵 本列表其余仍靠静态 import 侥幸成立的项(inbox / provision / reply_origin 等)
         #    **本次不动**:没量过就不改(组长明令,另一件事)。
         "sessionhelper.hub_meta",
+        "sessionhelper.agent_disk_metrics",
     ],
     hookspath=[],
     hooksconfig={},

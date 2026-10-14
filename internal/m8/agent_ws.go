@@ -87,13 +87,18 @@ func (h *Hub) HandleAgentWS(w http.ResponseWriter, r *http.Request) {
 	adm := sessionAdmission{
 		keyID: keyID, ownerKey: keyID, requestedSessionName: sessionName, sessionName: sessionName,
 		fullSessionName: fullName, clientIP: clientIPFromRequest(r), credentialIdentity: true,
-		tool: strings.TrimSpace(q.Get("tool")), clientVersion: strings.TrimSpace(q.Get("version")),
+		metricsAgentID: ag.ID,
+		tool:           strings.TrimSpace(q.Get("tool")), clientVersion: strings.TrimSpace(q.Get("version")),
 		osName:      strings.TrimSpace(q.Get("os")),
 		timingStart: timingStart, timingLast: time.Now(),
 	}
 	if ag.Origin == identity.OriginHosted && h.OnHostedAgentOnline != nil {
 		agentID, cb := ag.ID, h.OnHostedAgentOnline
 		adm.onRegistered = func() { cb(context.Background(), agentID) }
+	}
+	// Optional control stream capability: old Hubs do not consume this subtype.
+	if ag.Origin == identity.OriginSelfhost {
+		w.Header().Set("X-DW-Agent-Metrics", "agent-disk/v1")
 	}
 	h.serveSession(w, r, adm)
 }

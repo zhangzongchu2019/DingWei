@@ -66,18 +66,23 @@ class ViewRefreshRecorderTest(unittest.TestCase):
         keypath = root / 'forward.key'
         keypath.write_bytes(self.key)
         self.context = patch.multiple(vs, VIEW_UNLOCK_V2=True,
+            _read_mem=lambda: {'used_mb': 20, 'total_mb': 100},
+            _read_disk=lambda: {'used_gb': 0, 'total_gb': 6.5},
             COST_ACCOUNTING_MODE='paused', STATE_FILE=str(self.cost / 'old.json'),
             PAGE_DB_FILE=str(root / 'page.db'), _page_store=self.page,
             VIEW_TARGET_NAME='fixture', HUB_TO_VS_SECRET_FILE=str(keypath), VS_TO_HUB_SECRET_FILE=str(keypath))
         self.context.start()
         self.no_network = patch.object(vs.urllib.request, 'urlopen', side_effect=AssertionError('network prohibited'))
         self.no_network.start()
+        self.disk_fetch = patch.object(vs, '_bounded_agent_disk_fetch', return_value=None)
+        self.disk_fetch.start()
         self.before = snapshot(self.cost)
 
     def tearDown(self):
         try:
             self.assertEqual(snapshot(self.cost), self.before)
         finally:
+            self.disk_fetch.stop()
             self.no_network.stop()
             self.context.stop()
             self.page._db.close()
@@ -101,7 +106,7 @@ class ViewRefreshRecorderTest(unittest.TestCase):
                 h._serve_status()
                 self.assertEqual(h.code, 200)
                 data = h.result()
-                self.assertEqual(set(data), {'mem', 'disk', 'datetime_epoch_ms', 'resource_scope'})
+                self.assertEqual(set(data), {'mem', 'disk', 'datetime_epoch_ms', 'resource_scope', 'agent_id', 'agent_disk'})
                 self.assertLessEqual(begin, data['datetime_epoch_ms'])
                 self.assertLessEqual(data['datetime_epoch_ms'], int(time.time() * 1000))
                 self.assertEqual(data['resource_scope'], 'view-service')

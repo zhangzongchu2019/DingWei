@@ -1,0 +1,130 @@
+{
+  "base": "2d5bde739deba3876a5b63ce41d8ce1301271735",
+  "records": [
+    {
+      "file": "VERSION",
+      "bytes": 8,
+      "sha256": "52d77456661b29165dd048beac7134fc4984dbbdc1851647a7b932678f2ac8c5",
+      "equals_parent": true
+    },
+    {
+      "file": "internal/m8/console_auth.go",
+      "bytes": 146059,
+      "sha256": "c2b9e233be41025038d782e39850a4faa61404700ee6eea9ca40848521b6478c",
+      "equals_parent": true
+    },
+    {
+      "file": "internal/m8/console_mux_broker.js",
+      "bytes": 16300,
+      "sha256": "c5164469519ec23fd8d89f5c5d2f7e41de20f36228b461645e195ecb4b60e4b0",
+      "equals_parent": true
+    },
+    {
+      "file": "internal/m8/console_mux.go",
+      "bytes": 24533,
+      "sha256": "5996aab05792696d9fa2008a878dbc8ae389b849fcc3551fa574eff4c4314bf0",
+      "equals_parent": true
+    },
+    {
+      "file": "internal/m8/event_ring.go",
+      "bytes": 3575,
+      "sha256": "56068d5bb6dd0dba40ff2d7a0b4586ae7abd2bd6f37ab872902d13094ce3192d",
+      "equals_parent": true
+    },
+    {
+      "file": "internal/m8/view_input_v2.go",
+      "bytes": 7603,
+      "sha256": "a928fa1c49c609b35629370bfc5c9b8eb129ba2febcece0a67c761b2fa0a22d8",
+      "equals_parent": true
+    },
+    {
+      "file": "view-service/view_page_store.py",
+      "bytes": 11631,
+      "sha256": "5cc8e2b6ce98fc057b3583ff5f8bd429ceb1e3450304606408996a5b5c89778c",
+      "equals_parent": true
+    },
+    {
+      "file": "internal/identity/pgstore.go",
+      "bytes": 37802,
+      "sha256": "1538655fbb690a33bb84170ea3a9da0a3cc41e2a6d10cdccc465caee94f14960",
+      "equals_parent": true
+    },
+    {
+      "file": "view-service/renderer-canary-sse.html",
+      "function": "consoleCapabilityUsable",
+      "bytes": 1588,
+      "sha256": "e98c29f4275f2218044727711b6ad0ca4055bda14d05073ff1bc9f55e8c451cc",
+      "equals_parent": true
+    },
+    {
+      "file": "view-service/renderer-canary-sse.html",
+      "function": "consumeReconnectClear",
+      "bytes": 260,
+      "sha256": "fbc7cd6a2102e131f1502316401434dcaf58b8801843afc02b862aea869d51da",
+      "equals_parent": true
+    },
+    {
+      "file": "view-service/renderer-canary-sse.html",
+      "function": "markStreamReconnect",
+      "bytes": 2028,
+      "sha256": "88597c9422c6912ccc735471cffc1815daf70ab40ab01d4c5da76c787a1de0ea",
+      "equals_parent": true
+    },
+    {
+      "file": "view-service/renderer-canary-sse.html",
+      "function": "admitEventId",
+      "bytes": 1667,
+      "sha256": "58cbfe4848c9fdc98ac79f6609f471a0a29a75484b3e553d4933668543294ada",
+      "equals_parent": true
+    },
+    {
+      "file": "view-service/renderer-canary-sse.html",
+      "function": "connectEventStream",
+      "bytes": 4969,
+      "sha256": "3c0a3137a74862e98d377f46e7fa12593505b65a84a8ae52e3ce4b10b1f198a9",
+      "equals_parent": true
+    },
+    {
+      "file": "view-service/renderer-canary-sse.html",
+      "function": "maybeClearRecoveredGap",
+      "bytes": 735,
+      "sha256": "13a528a1235aad6f5467b5184daa49bea3848b3911c2a095b8bd72e14763ae71",
+      "equals_parent": true
+    },
+    {
+      "file": "view-service/renderer-canary-sse.html",
+      "function": "bufferMergeCopy",
+      "bytes": 900,
+      "sha256": "0ffbfefc6707e63f97ec8b833a4859da26deafa42bd9ba16e5ef4318a4e87b77",
+      "equals_parent": true
+    },
+    {
+      "file": "view-service/renderer-canary-sse.html",
+      "function": "flushPendingRenders",
+      "bytes": 1546,
+      "sha256": "7305388d45d3699d9ce47ad1885389504f8024b663d690ec53587c4cf811c833",
+      "equals_parent": true
+    },
+    {
+      "file": "view-service/renderer-canary-sse.html",
+      "function": "prepareViewWrite",
+      "bytes": 715,
+      "sha256": "40270ae44328aee4abf348d9c035e5f1655afa42f4be15d32a5d5c29463aa0b0",
+      "equals_parent": true
+    },
+    {
+      "file": "view-service/renderer-canary-sse.html",
+      "function": "ensurePageIdentity",
+      "bytes": 556,
+      "sha256": "daf8141b436e293faffa0074cd6d21766bfbe5e99df78d671b4613fc6aaa23f6",
+      "equals_parent": true
+    },
+    {
+      "file": "view-service/renderer-canary-sse.html",
+      "function": "ensurePageIdentityOnce",
+      "bytes": 1584,
+      "sha256": "5c066084ee45b446cddd006c1616e5b7f8c258c8973d78ea4a36a77aa9f68f60",
+      "equals_parent": true
+    }
+  ]
+}

@@ -1,0 +1,240 @@
+{
+  "schema": "review-source-manifest-v1",
+  "files": [
+    {
+      "file": "cmd/workpulse/main.go",
+      "bytes": 38563,
+      "sha256": "2dfda8cde8b4d653c9468b1c6de708607726f2176cec4d28d63d14dcdb223314"
+    },
+    {
+      "file": "deploy/test_build_entrypoints.py",
+      "bytes": 4935,
+      "sha256": "947fd904d8264bf2ead414c5170528170945f2267a6139b578e23bff062a7f11"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/CONTRACT.md",
+      "bytes": 9167,
+      "sha256": "e47f47f0aad79a471c8ea7f19dc2dfb5d478232a51fa30c777f73111dc92c47a"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/PROTECTED-SOURCE.json",
+      "bytes": 4249,
+      "sha256": "291719c35be1b289dc41ec1bf5f609cbf0083579da9b79cfa51122bc097b80f8"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/PROVENANCE.json",
+      "bytes": 753,
+      "sha256": "d116d30321b5a14135b6bd51ed5ed60250d9de7ea0fd614182ff2541549e7746"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/REVIEW.md",
+      "bytes": 6620,
+      "sha256": "63018ffee9200a462024b7abfb4b21bd67ec44ddff5f17edc67f928a8a408e53"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/SOURCE-PINS.json",
+      "bytes": 3831,
+      "sha256": "afd594c8d610213ee3a239b9bfa036c1d93aecb9e9111420706e226d2ec72cf8"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/DIRECTED-RESULTS.json",
+      "bytes": 2568,
+      "sha256": "f3bfd84b04da4e59c0a4871deda36983f1309ce871373f3d40f5b510b5bc7e62"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/build-entry-wiring.log",
+      "bytes": 97,
+      "sha256": "f3b694cf6646097eabc4ce0bc4b85f59a5debdc11bfa3e9de75c275e2684a889"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/diff-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/go-cache-ingress.log",
+      "bytes": 7148,
+      "sha256": "7f1643da8d5b0e93aaeb6ee23a04500003a28159d231c508338c245f2fee05d4"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/go-main-compile.log",
+      "bytes": 80,
+      "sha256": "6aa563d21e218541421df31f437c6e70f91fb0a53c6303c2c5bbac7fc651a502"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/helper-final.log",
+      "bytes": 3171,
+      "sha256": "5617a6c1e279b64b1695c8b433e974d270686002ca7768e9a68e030f7521b1f3"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/helper-initial-missing-pexpect.log",
+      "bytes": 3386,
+      "sha256": "b6fb09c113aa0ab5fdce9f83e27219d0e3b2fb7b036719fe99921d7acc29ae13"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/history-7.log",
+      "bytes": 446,
+      "sha256": "cbfdea2c0e5100bdb43eb335977bd24983baf5f727131f8c82db21a40df5fd5d"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/integrity-22.log",
+      "bytes": 1638,
+      "sha256": "8997f6235c62cf0403e755487f654114363b346857abc88428e99f3c2a3fe0f0"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/managed-3.log",
+      "bytes": 378,
+      "sha256": "cc584307da0713f234f0ac4414313866325d670f447dc9b7132a8cdf51db94c0"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/mutation-hub-current-connection.log",
+      "bytes": 557,
+      "sha256": "960932331fc636b725de854a8d3fcda62329eecc2f816d1d8fdbd4acb97ac115"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/mutation-renderer-expiry.log",
+      "bytes": 1418,
+      "sha256": "07164586454a3a83d231eeeb9cb4d7fac3e74618c526a119c4e557035a5b0976"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/mutation-results.json",
+      "bytes": 76,
+      "sha256": "f659d975455545651ae2fca8e8a66ff0a817acef667c8d4313786b67041453b3"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/overflow-4.log",
+      "bytes": 340,
+      "sha256": "9b7b955b7cbc5090ac329c80c49f14d0b73cc404134ed118994d56f472dad86a"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/refresh-final.log",
+      "bytes": 1361,
+      "sha256": "d773a4a7e367aade1156b8d37a15154b7e3223c1b4a65dd464abc9fe92a0e60e"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/refresh-node-initial-stale-vs-disk-assert.log",
+      "bytes": 1255,
+      "sha256": "d167af97798a6d5205a9ef0aaf3919d94f0f72d920492181268ee1176de94867"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/renderer-real-final.log",
+      "bytes": 904,
+      "sha256": "7ec55301a60cad58256cc1e032cfdf9bdd70088a4320924145830feeb65d5839"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/renderer-unknown-final.log",
+      "bytes": 433,
+      "sha256": "dbd63a57996fa569e9eaf30a1b876cde9d3e3f629484a47ae7419d8394ec799c"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/renderer-unknown-initial-old-copy-assert.log",
+      "bytes": 1427,
+      "sha256": "f917c2f2aead6069d71cd18350f422572ed823489ffea3ea848d07890b992363"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/logs/vs-final.log",
+      "bytes": 1389,
+      "sha256": "2f703a816b0a22e9ae105ed34c2955f63c80ce633792fc174ee7954633f7afa8"
+    },
+    {
+      "file": "internal/agentmetrics/metrics.go",
+      "bytes": 6426,
+      "sha256": "22d65f2605ce98c9d2c8b8b4f23da9208b366601fe8270a68e26eeb25d548115"
+    },
+    {
+      "file": "internal/agentmetrics/metrics_test.go",
+      "bytes": 6573,
+      "sha256": "764fd76491048284eced2f21a0b21ece7e09852aa09aeff37013d2c61796a2f5"
+    },
+    {
+      "file": "internal/m8/agent_disk_metrics.go",
+      "bytes": 5934,
+      "sha256": "77a77fe11c13e2f8db145f71544845c946f828b0451bcafdd0502be4d961c6bb"
+    },
+    {
+      "file": "internal/m8/agent_disk_metrics_test.go",
+      "bytes": 10281,
+      "sha256": "416224dc3ac8811fbce659219eecb21f088384831d9d806b1b85149adf6dd08f"
+    },
+    {
+      "file": "internal/m8/agent_ws.go",
+      "bytes": 7797,
+      "sha256": "5b51dad08d4c89a05becc3481044a532fa5e89aaf45fecb1841ad8c10f765320"
+    },
+    {
+      "file": "internal/m8/hub.go",
+      "bytes": 234442,
+      "sha256": "a996dc62bd8b2a8ac5d126df5b865accdba0eb6343f9d78a99316e22dc7837ac"
+    },
+    {
+      "file": "scripts/run-build-tests.sh",
+      "bytes": 2782,
+      "sha256": "6be38cd6f1eeb9bfdf6baa30a6171d3be3ab3043d3565732e9a5940a24b6c746"
+    },
+    {
+      "file": "tests/a6-agent-disk-real.cjs",
+      "bytes": 5103,
+      "sha256": "161b592eaba9bc581259477c6f6a25941348ca67bcda1581a2626e62241dcf1f"
+    },
+    {
+      "file": "tests/a6-agent-disk-unknown.cjs",
+      "bytes": 2531,
+      "sha256": "d08ceafccdb2b955ce246477d37d3d8d8b823aa05db6379cedd90e47a21d2ae3"
+    },
+    {
+      "file": "tools/sessionhelper/sessionhelper.spec",
+      "bytes": 2151,
+      "sha256": "57ce3e40c15ec598b80876967bbc386c95b90e39230ae2337bd6ff666fee0b1a"
+    },
+    {
+      "file": "tools/sessionhelper/sessionhelper/agent_disk_metrics.py",
+      "bytes": 7449,
+      "sha256": "0e87a7bc8001a378a7d88c9348946af866bd80e475c712e3322c912a13bacfa6"
+    },
+    {
+      "file": "tools/sessionhelper/sessionhelper/app.py",
+      "bytes": 83636,
+      "sha256": "3a89aec24944eb693cd096e83cbca658a0cc010ce8a7907ccf0e22a230708087"
+    },
+    {
+      "file": "tools/sessionhelper/sessionhelper/cli.py",
+      "bytes": 48217,
+      "sha256": "ffe8d1ee85c5e612b959aae017cb7b39ed47ffad40082d8562f2f49f75ed6a79"
+    },
+    {
+      "file": "tools/sessionhelper/sessionhelper/driver_adapter.py",
+      "bytes": 30119,
+      "sha256": "3087ccf5700c84fa6277e05ac829026fff48e53912626583b532ca1c006457fd"
+    },
+    {
+      "file": "tools/sessionhelper/tests/test_agent_disk_metrics.py",
+      "bytes": 8469,
+      "sha256": "ace300c12ab8197b11fc76ecfebbda3c5b30769381ee2910d3bd372a8259f8f6"
+    },
+    {
+      "file": "view-service/renderer-canary-sse.html",
+      "bytes": 308951,
+      "sha256": "79ca87c74ff5bf7fd2a7b9475924ce4b4f45badc221d2c8370ed13f9384a843f"
+    },
+    {
+      "file": "view-service/test_agent_disk_resource.py",
+      "bytes": 4046,
+      "sha256": "11eb288a25260a231e44beef1d443030fd43491b8e06e72d7e4cc52be633c07c"
+    },
+    {
+      "file": "view-service/test_view_refresh.py",
+      "bytes": 11679,
+      "sha256": "8062c2ccd48eb86bf984d8405b09649adafda9ab79dcc8cf23529f48595401b7"
+    },
+    {
+      "file": "view-service/view-refresh-regression.cjs",
+      "bytes": 15076,
+      "sha256": "093c48829704fd559e5c41233133afb64b0d60fca1d17c5b2ab6d92823b0cf3c"
+    },
+    {
+      "file": "view-service/view_service.py",
+      "bytes": 64631,
+      "sha256": "93e8d15ab089d9e12da126470a6c22f2539658f85bbb53e813f3fcdcf95fd494"
+    }
+  ]
+}

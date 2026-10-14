@@ -1555,10 +1555,11 @@
       taskProgress.hidden = stats.sessionState !== 'running';
       memStat.textContent = formatMem(stats.mem);
       diskStat.textContent = formatDisk(stats.disk);
-      diskStat.title = '尚未收到与本 Agent 身份绑定的环境磁盘采样；不使用 View 服务磁盘代替';
+      refreshAgentDiskLabel();
       updateHeaderLock();
     }
     function updateLocalTime() {
+      if (typeof refreshAgentDiskLabel === 'function') refreshAgentDiskLabel();
       // RED 断线态下这一栏显示的是「断线重连中 · 第 N 次」——
       //    时钟每秒刷新一次,不挡住的话会把断线提示**一秒内覆盖掉**,
       //    于是"断线可见"这件事在页面上只存在一瞬 —— 那等于不可见。
@@ -1590,13 +1591,61 @@
       }
       return `${mem.used} / ${mem.total} ${mem.unit}`;
     }
-    function formatDisk(disk) {
-      if (!disk) return '未知';
-      if (disk.used_gb !== undefined && disk.total_gb !== undefined) {
-        // 业主 2026-09-19:简化为 `44.2 / 232.4 GB` —— **去掉百分比**。
-        return `${disk.used_gb} / ${disk.total_gb} GB`;
+    // A6 authenticated Agent disk display gate BEGIN
+    const agentDiskState = (() => {
+      const MAX_MS=360000,HEX=/^[0-9a-f]{32}$/,UINT=/^(0|[1-9][0-9]*)$/;
+      const integer=(n)=>Number.isSafeInteger(n);
+      class AgentDiskState {
+       constructor(){this.clear();}
+       clear(){this.state='unknown';this.record=null;this.deadline=0;this.last=null;}
+       apply(snapshot,expectedAgent,requestStartedAt,now){
+        // current producer unavailable is authoritative for this read; no VS fallback.
+        const previous=this.last;
+        this.state='unknown';this.record=null;this.deadline=0;
+        if(!snapshot||typeof snapshot!=='object'||!expectedAgent||snapshot.agent_id!==expectedAgent||typeof snapshot.connection_generation!=='string'||!snapshot.connection_generation)return false;
+        if(snapshot.source!=='helper_self_report')return false;
+        if(snapshot.status==='expired'){this.state='expired';return false;}
+        if(snapshot.status!=='ok')return false;
+        const sample=snapshot.sample;
+        if(!sample||typeof sample.sample_seq!=='string'||typeof sample.sample_instance!=='string'||typeof sample.filesystem_instance!=='string'||sample.schema!=='agent-disk/v1'||sample.status!=='ok'||sample.producer!=='helper'||sample.path_basis!=='cli_workdir_filesystem'||!HEX.test(sample.sample_instance||'')||!HEX.test(sample.filesystem_instance||'')||!UINT.test(sample.sample_seq||''))return false;
+        const sequence=BigInt(sample.sample_seq);
+        if(sequence===0n||sequence>18446744073709551615n)return false;
+        if(!integer(sample.used_bytes)||!integer(sample.total_bytes)||!integer(sample.available_bytes)||sample.used_bytes<0||sample.total_bytes<=0||sample.used_bytes>sample.total_bytes||sample.available_bytes<0||sample.available_bytes>sample.total_bytes)return false;
+        if(!integer(sample.sampled_at_ms)||sample.sampled_at_ms<=0||!integer(snapshot.received_at_ms)||snapshot.received_at_ms<=0||!integer(snapshot.age_ms)||snapshot.age_ms<0||!integer(snapshot.expires_in_ms)||snapshot.expires_in_ms<=0||snapshot.expires_in_ms>MAX_MS||snapshot.age_ms+snapshot.expires_in_ms>MAX_MS)return false;
+        if(!Number.isFinite(requestStartedAt)||!Number.isFinite(now)||now<requestStartedAt)return false;
+        let end=requestStartedAt+snapshot.expires_in_ms;
+        if(previous&&previous.agent===snapshot.agent_id&&previous.connection===snapshot.connection_generation){
+         if(previous.instance!==sample.sample_instance||sequence<previous.seq)return false;
+         if(sequence===previous.seq){
+          if(previous.sampledAt!==sample.sampled_at_ms||previous.receivedAt!==snapshot.received_at_ms||previous.used!==sample.used_bytes||previous.total!==sample.total_bytes||previous.available!==sample.available_bytes||previous.filesystem!==sample.filesystem_instance)return false;
+          end=Math.min(end,previous.deadline);
+         }
+        }
+        this.last={agent:snapshot.agent_id,connection:snapshot.connection_generation,instance:sample.sample_instance,seq:sequence,deadline:end,sampledAt:sample.sampled_at_ms,receivedAt:snapshot.received_at_ms,used:sample.used_bytes,total:sample.total_bytes,available:sample.available_bytes,filesystem:sample.filesystem_instance};
+        if(now>=end){this.state='expired';return false;}
+        this.state='fresh';this.deadline=end;
+        this.record={agent:snapshot.agent_id,connection:snapshot.connection_generation,used:sample.used_bytes,total:sample.total_bytes,sampledAt:sample.sampled_at_ms,receivedAt:snapshot.received_at_ms,instance:sample.sample_instance,seq:sample.sample_seq};
+        return true;
+       }
+       display(now){
+        if(this.state==='fresh'&&(!Number.isFinite(now)||now>=this.deadline)){this.state='expired';this.record=null;}
+        if(this.state==='unknown')return {text:'未知',numeric:false};
+        if(this.state==='expired')return {text:'已过期',numeric:false};
+        const gb=(n)=>n===0?'0':n<1e8?'<0.1':(n/1e9).toFixed(1).replace(/\.0$/,'');
+        return {text:gb(this.record.used)+' / '+gb(this.record.total)+' GB',numeric:true,sampledAt:this.record.sampledAt};
+       }
       }
-      return `${disk.used} / ${disk.total} ${disk.unit}`;
+      return new AgentDiskState();
+          })();
+    // A6 authenticated Agent disk display gate END
+    function formatDisk(disk) {
+      return agentDiskState.display(performance.now()).text;
+    }
+    function refreshAgentDiskLabel() {
+      if (typeof diskStat === 'undefined') return;
+      const view = agentDiskState.display(performance.now());
+      diskStat.textContent = view.text;
+      diskStat.title = view.numeric ? 'Agent helper 上报；执行工作目录所在文件系统；GB=10^9 字节；采样时间 ' + new Date(view.sampledAt).toLocaleString() : 'Agent 执行环境磁盘' + (view.text === '已过期' ? '采样已过期' : '暂不可用');
     }
     function updateHeaderLock() {
       headerSessionName.textContent = stats.sessionName;
@@ -4280,14 +4329,16 @@
       } finally { clearTimeout(timer); }
     }
     function failViewAuthorization() {
+      agentDiskState.clear();
       resetConsoleCapability();
       stats.readonly = true; stats.access = '只读'; updateMetrics();
     }
-    function applyResourceData(data) {
+    function applyResourceData(data, requestStartedAt) {
       if (data.mem && typeof data.mem === 'object') stats.mem = data.mem;
       // This endpoint samples the View Service environment, not the Agent's execution namespace.
       // No raw scope/identity/time fields can substitute for a reviewed authenticated metric binding.
       stats.disk = null;
+      agentDiskState.apply(data.agent_disk, stats.agentID, requestStartedAt, performance.now());
       if (Number.isFinite(data.datetime_epoch_ms) && data.datetime_epoch_ms > 0) {
         stats.statusDatetimeMs = data.datetime_epoch_ms; stats.statusDatetimeText = '';
         stats.statusDatetimeReceivedAt = Date.now(); stats.statusMonotonicAt = performance.now();
@@ -4308,14 +4359,17 @@
       const pending = (async () => {
         try {
           const initial = !statusInitialized;
+          const requestStartedAt = performance.now();
           const { body } = await viewRequestJSON(apiEp('status') + (initial ? '' : '?resources_only=1'));
           if (viewRefreshClosed || generation !== viewResourceGeneration) return;
           if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('invalid resource snapshot');
           if (initial) {
             if (!(body.session_id || body.session)) throw new Error('missing session identity');
             applyStatusData(body); statusInitialized = true;
+            stats.agentID = typeof body.agent_id === 'string' ? body.agent_id : '';
           }
-          applyResourceData(body);
+          if (body.agent_id !== stats.agentID) agentDiskState.clear();
+          applyResourceData(body.agent_id === stats.agentID ? body : {...body,agent_disk:null}, requestStartedAt);
           resourceLastGood = Date.now();
           const fresh = document.getElementById('resourceFreshness');
           if (fresh) { fresh.textContent = '资源已更新 ' + new Date(resourceLastGood).toLocaleTimeString(); fresh.title = 'View 服务环境'; }

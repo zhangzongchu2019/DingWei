@@ -1,0 +1,24 @@
+test_backwards_clock_rejected (tools.sessionhelper.tests.test_agent_disk_metrics.Collector.test_backwards_clock_rejected) ... ok
+test_close_failure_unavailable (tools.sessionhelper.tests.test_agent_disk_metrics.Collector.test_close_failure_unavailable) ... ok
+test_correct_bytes_reserved_separate (tools.sessionhelper.tests.test_agent_disk_metrics.Collector.test_correct_bytes_reserved_separate) ... ok
+test_delayed_send_does_not_refresh (tools.sessionhelper.tests.test_agent_disk_metrics.Collector.test_delayed_send_does_not_refresh) ... ok
+test_error_no_raw_exception (tools.sessionhelper.tests.test_agent_disk_metrics.Collector.test_error_no_raw_exception) ... ok
+test_no_workdir_no_syscalls (tools.sessionhelper.tests.test_agent_disk_metrics.Collector.test_no_workdir_no_syscalls) ... ok
+test_paths_not_exported (tools.sessionhelper.tests.test_agent_disk_metrics.Collector.test_paths_not_exported) ... ok
+test_rename_invalidates_and_closes (tools.sessionhelper.tests.test_agent_disk_metrics.Collector.test_rename_invalidates_and_closes) ... ok
+test_sequence_and_original_sample_time (tools.sessionhelper.tests.test_agent_disk_metrics.Collector.test_sequence_and_original_sample_time) ... ok
+test_symlink_named_path_invalidates (tools.sessionhelper.tests.test_agent_disk_metrics.Collector.test_symlink_named_path_invalidates) ... ok
+test_unsafe_or_bool_values_rejected (tools.sessionhelper.tests.test_agent_disk_metrics.Collector.test_unsafe_or_bool_values_rejected) ... ok
+test_valid_actual_zero (tools.sessionhelper.tests.test_agent_disk_metrics.Collector.test_valid_actual_zero) ... ok
+test_old_hub_never_samples_or_routes_metadata (tools.sessionhelper.tests.test_agent_disk_metrics.Compatibility.test_old_hub_never_samples_or_routes_metadata) ... ok
+test_adapter_uses_owned_pid_not_configured_path (tools.sessionhelper.tests.test_agent_disk_metrics.ProcessBinding.test_adapter_uses_owned_pid_not_configured_path) ... ok
+test_owned_process_namespace_and_cwd (tools.sessionhelper.tests.test_agent_disk_metrics.ProcessBinding.test_owned_process_namespace_and_cwd) ... ok
+test_unbound_or_changed_process_is_unknown (tools.sessionhelper.tests.test_agent_disk_metrics.ProcessBinding.test_unbound_or_changed_process_is_unknown) ... ok
+test_actual_loop_uses_same_ws_control_and_30_seconds (tools.sessionhelper.tests.test_agent_disk_metrics.Publisher.test_actual_loop_uses_same_ws_control_and_30_seconds) ... ok
+test_singleflight_timeout_and_late_discard (tools.sessionhelper.tests.test_agent_disk_metrics.Publisher.test_singleflight_timeout_and_late_discard) ... ok
+test_workdir_change_strips_numbers (tools.sessionhelper.tests.test_agent_disk_metrics.Publisher.test_workdir_change_strips_numbers) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.172s
+
+OK

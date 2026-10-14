@@ -86,6 +86,21 @@ class DriverAdapter:
                                    sandbox=env_get("SH_CODEX_SANDBOX", "danger-full-access"),
                                    approval_policy=env_get("SH_CODEX_APPROVAL", "never"))
 
+    def agent_metrics_workdir(self):
+        from .agent_disk_metrics import process_workdir
+        if not self._started:
+            return None
+        if self._which == "codex":
+            rpc = getattr(self.driver, "_rpc", None)
+            proc = getattr(rpc, "_proc", None)
+        elif self._which in ("claude", "opencode"):
+            proc = getattr(self.driver, "_proc", None)
+        else:
+            return None
+        if proc is None:
+            return None
+        return process_workdir(proc.pid, lambda: proc.poll() is None)
+
     # ------------------------------------------------------------ 生命周期
 
     def start(self) -> None:

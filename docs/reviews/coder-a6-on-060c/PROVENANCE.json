@@ -1,0 +1,9 @@
+{
+  "base": "060c7b9d4226746b68b71f130c68ca0ab6584e1e",
+  "previous_a6_tip": "506f136b5bf5eb1d17e7e5199accd28b9f77159b",
+  "created_utc": "2026-10-14T17:25:01.598417+00:00",
+  "review_ref": "review/coder/a6-real-disk",
+  "merge": "automatic no conflict",
+  "runtime_delta_beyond_existing_a6": "none",
+  "scope": "offline author evidence only"
+}

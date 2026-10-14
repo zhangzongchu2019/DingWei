@@ -1,0 +1,94 @@
+{
+  "files": [
+    {
+      "file": "docs/reviews/coder-a6-on-060c/PROVENANCE.json",
+      "bytes": 345,
+      "sha256": "1ade278b36707f13ea802ae8a977920e29b60a29c3e65620062622ede49aca14"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/REVIEW.md",
+      "bytes": 1944,
+      "sha256": "0ae2ec91c6b06bae35858c13f58defaf1b2f4b187c195d4d195577f25112ea5a"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/SOURCE-PINS.json",
+      "bytes": 3829,
+      "sha256": "62d33f8832ac91fcc22142496d6f83bd1d0b58438f57d15b633131b0956a7f5a"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/RESULTS.json",
+      "bytes": 2270,
+      "sha256": "40fd112955a21827a92961ab7e9aa24a58f48af5996f48d2bdffd3ede43fb036"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/a4-4.log",
+      "bytes": 340,
+      "sha256": "9b7b955b7cbc5090ac329c80c49f14d0b73cc404134ed118994d56f472dad86a"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/a5-8.log",
+      "bytes": 461,
+      "sha256": "b7ee747d87f6d3466481f0741d71cca2050713ff4c7d1c7c0e09074fa0eeaefa"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/a5-gap.log",
+      "bytes": 742,
+      "sha256": "f966084d7dc5d1fd1042fe4309524ec665fc708957115fcf91dd2e97c6fb020e"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/diff-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/go-a6.log",
+      "bytes": 130,
+      "sha256": "dfa699a2e6a9fb1286fe5487829f99e376433268cd677a5a2cb8e9ec1edc8ae6"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/helper-30s.log",
+      "bytes": 2803,
+      "sha256": "46a5e23f154e038a99a3215bb0dd8baea5aba8df15bdd19a1f222e114f99e7b2"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/helper-initial-missing-pythonpath.log",
+      "bytes": 938,
+      "sha256": "4e39843c74e5541b401001cd300f8e763aeb4a9eef8d8dc0f284f27eb5a1f073"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/history-7.log",
+      "bytes": 446,
+      "sha256": "cbfdea2c0e5100bdb43eb335977bd24983baf5f727131f8c82db21a40df5fd5d"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/integrity-22.log",
+      "bytes": 1638,
+      "sha256": "8997f6235c62cf0403e755487f654114363b346857abc88428e99f3c2a3fe0f0"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/managed-3.log",
+      "bytes": 378,
+      "sha256": "cc584307da0713f234f0ac4414313866325d670f447dc9b7132a8cdf51db94c0"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/refresh-5.log",
+      "bytes": 103,
+      "sha256": "f95e929578dfb36f3e18f9f5b5ac0ad22e549827038a1e64cb8b276eaadcf694"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/remove-R2-preflight.log",
+      "bytes": 1615,
+      "sha256": "ca049b5f12314708bf005e00c8732f4d70f11606ea5f8b0651c1bcfad64f3254"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/renderer-27.log",
+      "bytes": 984,
+      "sha256": "6566658b4483498194d495b15a117b4d535e23fc99ab08c0e147ba17d91339de"
+    },
+    {
+      "file": "docs/reviews/coder-a6-on-060c/raw/restore-300s-cache.log",
+      "bytes": 209,
+      "sha256": "20dbb40f60d7d23e65ac4f56002ef348de5376345b026511e1dcc7a66cb4c562"
+    }
+  ]
+}

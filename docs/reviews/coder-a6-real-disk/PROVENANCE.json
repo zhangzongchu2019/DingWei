@@ -1,0 +1,15 @@
+{
+  "schema": "coder-a6-offline-candidate-v1",
+  "created_utc": "2026-10-14T17:03:26.450338+00:00",
+  "parent_commit": "2d5bde739deba3876a5b63ce41d8ce1301271735",
+  "parent_tree": "424852a803ae40e30ecf88c83f422149478c92da",
+  "review_ref": "refs/heads/review/coder/a6-real-disk",
+  "scope": "Selfhost owned-process helper disk; unsupported/expired unknown. Not complete hosted coverage or field acceptance.",
+  "sample_period_seconds": 30,
+  "hub_replacement_min_seconds": 30,
+  "ttl_seconds": 360,
+  "profile_status": "LEADER_SELECTED_R1_889b3b9c3b76; follow-up independent CR pending",
+  "a5": "Not integrated; approved930 and deferred S-A5-1 untouched",
+  "tests": "Author directed fixtures/recorders; no independent CR",
+  "target_actions": false
+}
