@@ -138,3 +138,29 @@ func TestSpecGrantRevokeDeniesAgentWriteForGrantedAndConsumed(t *testing.T) {
 		})
 	}
 }
+
+func TestSpecGrantApproveSynchronizesFreshOwnerSession(t *testing.T) {
+	e := newShimEnv(t)
+	// Deliberately do not call ReconcileNewPlatformConsole or syncNewPlatformUser:
+	// this is the first owner request after login, the path that used to 403.
+	ag, err := e.svc.Store.FindAgentByName(e.ctx, "zzc", "kimi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.hub.specGrantRequests["fresh-owner-grant"] = &specGrantRequest{
+		ID: "fresh-owner-grant", OwnerKey: AgentKeyID("zzc"), SessionName: ag.NameLC(), AgentID: ag.ID,
+		PrincipalID: "zzc", Action: "create", PageID: ConsoleAgentCapabilitySpecsNew, State: "pending",
+		ExpiresAt: e.hub.now().Add(specGrantRequestTTL),
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api/console/agents/{sessionName}/spec-grant-requests/{requestID}/{decision}", e.hub.RequireConsoleAgent("interact", e.hub.HandleConsoleSpecGrantDecision))
+	oldServer := e.srv
+	e.srv = httptest.NewServer(mux)
+	t.Cleanup(func() { e.srv.Close(); e.srv = oldServer })
+	if status, body := e.do(http.MethodPost, "/api/console/agents/Kimi.zzc/spec-grant-requests/fresh-owner-grant/approve", e.tokZZC, "", "", ""); status != http.StatusNoContent {
+		t.Fatalf("fresh owner direct approve status=%d body=%s, want 204", status, body)
+	}
+	if got := e.hub.specGrantRequests["fresh-owner-grant"]; got.State != "granted" || got.CapabilityID == "" || got.CapabilitySessionID == "" {
+		t.Fatalf("fresh owner grant=%+v, want granted capability", got)
+	}
+}
