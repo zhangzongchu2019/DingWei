@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -213,7 +214,33 @@ func TestSpecMCPEndToEnd(t *testing.T) {
 	if python == "" {
 		t.Skip("set DW_SPEC_E2E_PYTHON to an interpreter with helper runtime dependencies")
 	}
+	// This test is intentionally serial: Hub uses the process default logger.
+	// Capture before fixture startup, restore after all registered Hub cleanup,
+	// and scan without ever forwarding private Hub output to the test reporter.
+	hubLogDir := t.TempDir()
+	if err := os.Chmod(hubLogDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	hubLogPath := filepath.Join(hubLogDir, "hub.log")
+	hubLog, err := os.OpenFile(hubLogPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	if err != nil {
+		t.Fatal("private Hub log capture unavailable")
+	}
+	priorLogWriter := log.Writer()
+	log.SetOutput(hubLog)
+	var hubPrivate []string
+	t.Cleanup(func() {
+		log.SetOutput(priorLogWriter)
+		if err := hubLog.Sync(); err != nil {
+			t.Error("private Hub log sync failed")
+		}
+		if err := scanSpecMCPPrivateLogs([]string{hubLogPath}, hubPrivate); err != nil {
+			t.Error(err)
+		}
+		hubLog.Close()
+	})
 	e := newShimEnv(t)
+	hubPrivate = append(hubPrivate, e.zKimiCred, e.lKimiCr, e.cred)
 	h := e.hub
 	if err := h.ReconcileNewPlatformConsole(e.ctx); err != nil {
 		t.Fatal(err)
@@ -271,6 +298,7 @@ func TestSpecMCPEndToEnd(t *testing.T) {
 				b.t.Fatal("approval returned without a private capability")
 			}
 			b.private = append(b.private, raw)
+			hubPrivate = append(hubPrivate, raw)
 		}
 		return st
 	}
@@ -625,7 +653,7 @@ func TestSpecMCPEndToEnd(t *testing.T) {
 // matched bytes in an error. Actual helper capability-leak mutations are also
 // run on disposable source copies when this coverage delta is delivered.
 func TestSpecMCPPrivateLogScan(t *testing.T) {
-	for _, channel := range []string{"helper.stdout", "helper.stderr", "mcp.stdout", "mcp.stderr"} {
+	for _, channel := range []string{"helper.stdout", "helper.stderr", "mcp.stdout", "mcp.stderr", "hub.log"} {
 		t.Run(channel, func(t *testing.T) {
 			dir := t.TempDir()
 			if err := os.Chmod(dir, 0700); err != nil {
