@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/sessionhelper/tests",
+    "-v"
+  ],
+  "cwd": "/data/ai-dev-data/helper-deps-lock",
+  "env_scope": "new private TemporaryDirectory HOME, no inherited SH_/DW_/DINGWEI_/CODEX_/CLAUDE_/OPENCODE_ variables",
+  "rc": 0
+}

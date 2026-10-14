@@ -1,0 +1,10 @@
+test_checker_reverse_controls (tools.sessionhelper.tests.test_home_isolation_wiring.HomeIsolationWiringTest.test_checker_reverse_controls) ... ok
+test_checker_reverse_controls_for_evasions (tools.sessionhelper.tests.test_home_isolation_wiring.HomeIsolationWiringTest.test_checker_reverse_controls_for_evasions) ... ok
+test_every_constructing_test_module_is_isolated_or_allowlisted (tools.sessionhelper.tests.test_home_isolation_wiring.HomeIsolationWiringTest.test_every_constructing_test_module_is_isolated_or_allowlisted) ... ok
+test_go_children_refuse_a_home_outside_bootstrap_state (tools.sessionhelper.tests.test_home_isolation_wiring.HomeIsolationWiringTest.test_go_children_refuse_a_home_outside_bootstrap_state) ... ok
+test_the_scan_is_not_vacuous (tools.sessionhelper.tests.test_home_isolation_wiring.HomeIsolationWiringTest.test_the_scan_is_not_vacuous) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 1.064s
+
+OK

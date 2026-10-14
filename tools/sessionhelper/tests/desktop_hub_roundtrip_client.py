@@ -17,6 +17,7 @@ from sessionhelper.enroll import Credential
 async def main():
     bootstrap = json.loads(sys.stdin.readline())
     state = Path(bootstrap['state'])
+    assert Path.home().resolve() == state.resolve(), "integration child requires its synthetic HOME"
     # Go t.TempDir owns this synthetic HOME but may create it as 0755. Match the
     # installer's private desktop profile contract before a hook can read it.
     state.chmod(0o700)

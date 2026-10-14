@@ -305,5 +305,97 @@ class SetupTest(unittest.TestCase):
             self.assertFalse((Path(root) / "helper-process.json").exists())
 
 
+class RuntimeDependencyLockTest(unittest.TestCase):
+    """Actual bootstrap functions with offline Python/pip recording shims."""
+    helper = Path(__file__).resolve().parents[1]
+
+    def checker(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('runtime_lock_check', self.helper / 'check-runtime-deps.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def test_runtime_lock_and_bootstrap_share_the_exact_file(self):
+        lock = self.helper / 'requirements-runtime.lock'
+        versions = self.checker().locked_versions(lock)
+        self.assertEqual(versions, {'websockets': '15.0.1', 'pexpect': '4.9.0', 'ptyprocess': '0.7.0', 'certifi': '2026.7.22'})
+        entry = (self.helper / 'requirements.txt').read_text()
+        self.assertIn('-r ' + lock.name, entry)
+        self.assertIn('--require-hashes', entry)
+        self.assertIn('--only-binary=:all:', entry)
+        run = (self.helper / 'run.sh').read_text()
+        self.assertIn('runtime_lock="$SCRIPT_DIR/' + lock.name + '"', run)
+        self.assertIn('pip install --require-hashes --only-binary=:all: -r "$runtime_lock"', run)
+        self.assertNotIn('requirements-build', run)
+        self.assertNotIn('--upgrade pip', run)
+        self.assertNotIn('pip install -q certifi', run)
+        self.assertIn('pyinstaller==', (self.helper / 'requirements-build.txt').read_text())
+
+    def test_checker_reports_mismatch_without_installation(self):
+        checker = self.checker()
+        expected = checker.locked_versions(self.helper / 'requirements-runtime.lock')
+        with patch.object(checker.importlib.metadata, 'version', side_effect=expected.__getitem__):
+            self.assertEqual(checker.check(self.helper / 'requirements-runtime.lock'), [])
+        with patch.object(checker.importlib.metadata, 'version', return_value='wrong'):
+            self.assertEqual(len(checker.check(self.helper / 'requirements-runtime.lock')), 4)
+        with tempfile.TemporaryDirectory() as root:
+            invalid = Path(root) / 'lock'
+            invalid.write_text('websockets>=15\n')
+            with self.assertRaises(ValueError):
+                checker.locked_versions(invalid)
+
+    def run_bootstrap(self, existing=True, matches=True):
+        import subprocess, sys
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            recorder = root / 'python'
+            calls = root / 'calls'
+            venv = root / 'venv'
+            recorder.write_text('#!' + sys.executable + '\n' + '''import sys,os,pathlib,shutil
+args=sys.argv[1:]
+with open(os.environ['LOCK_CALLS'],'a') as f:f.write(' '.join(args)+'\\n')
+if args[:2]==['-m','venv']:
+ p=pathlib.Path(args[2])/'bin';p.mkdir(parents=True);shutil.copyfile(__file__,p/'python');(p/'python').chmod(0o700)
+elif args[:3]==['-I','-m','pip']:
+ if os.environ['LOCK_EXPECT_INSTALL']!='1':raise SystemExit(99)
+elif args and args[0]=='-I':
+ raise SystemExit(int(os.environ['LOCK_CHECK_RC']))
+else:raise SystemExit(98)
+''')
+            recorder.chmod(0o700)
+            if existing:
+                (venv / 'bin').mkdir(parents=True)
+                (venv / 'bin/python').write_bytes(recorder.read_bytes())
+                (venv / 'bin/python').chmod(0o700)
+            prefix = (self.helper / 'run.sh').read_text().split('for arg in "$@"; do')[0]
+            harness = root / 'bootstrap.sh'
+            harness.write_text(prefix + '\nSCRIPT_DIR="$LOCK_SOURCE"\nensure_venv "$LOCK_PYTHON"\n')
+            env = dict(os.environ, WORKPULSE_SH_VENV=str(venv), LOCK_SOURCE=str(self.helper), LOCK_PYTHON=str(recorder),
+                       LOCK_CALLS=str(calls), LOCK_CHECK_RC='0' if matches else '1', LOCK_EXPECT_INSTALL='0' if existing else '1')
+            result = subprocess.run(['bash', str(harness)], env=env, capture_output=True, text=True, timeout=5)
+            return result, calls.read_text() if calls.exists() else ''
+
+    def test_matching_existing_venv_does_not_install(self):
+        result, calls = self.run_bootstrap()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn('-m pip', calls)
+        self.assertIn('reusing venv without installation', result.stdout)
+
+    def test_mismatched_existing_venv_fails_without_upgrade(self):
+        result, calls = self.run_bootstrap(matches=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn('-m pip', calls)
+        self.assertIn('no packages changed', result.stderr)
+
+    def test_new_venv_installs_only_the_hashed_runtime_lock(self):
+        result, calls = self.run_bootstrap(existing=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        pip_calls = [line for line in calls.splitlines() if '-m pip' in line]
+        self.assertEqual(len(pip_calls), 1)
+        self.assertEqual(pip_calls[0], '-I -m pip install --require-hashes --only-binary=:all: -r ' + str(self.helper / 'requirements-runtime.lock'))
+        self.assertNotIn('pyinstaller', calls)
+
+
 if __name__ == "__main__":
     unittest.main()

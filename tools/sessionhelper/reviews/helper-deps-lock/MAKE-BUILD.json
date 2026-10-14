@@ -1,0 +1,79 @@
+{
+  "base_review_commit": "6fcf8f82f2c53e1b74c15e11ce4502718029233f",
+  "scope_extension": "leader eb3d58d1e8ac; one root Makefile recipe line",
+  "argv": [
+    "make",
+    "sessionhelper"
+  ],
+  "rc": 0,
+  "platform": "Linux-7.0.0-14-generic-x86_64-with-glibc2.39",
+  "machine": "x86_64",
+  "python": "3.12.3",
+  "source_method": "git archive6fcf8f82 + exact approved Makefile overlay; no runtime/test source changes",
+  "source_makefile_sha256": "47631e691fc2e9fd155500966cf7bc771e1ab04d40ed2a8eb32af222ed94d06e",
+  "runtime_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "build_requirements_sha256": "3bf282422d36be1648b606af66f15fd01d919aa8615822467c7b7226fba85acc",
+  "artifact": {
+    "path": "/data/ai-dev-data/helper-deps-lock-make-build-20261014T1827Z/source/dist/sessionhelper",
+    "bytes": 10699160,
+    "sha256": "6fc94d7707e3ccc1015a351d648426da70ff49dc486de4b7ef87afae510914bc",
+    "format": "Linux x86_64 ELF, local author build; not a Mac artifact"
+  },
+  "version_smoke": {
+    "argv": [
+      "dist/sessionhelper",
+      "--version"
+    ],
+    "rc": 0,
+    "stdout": "sessionHelper 0.2.3.0"
+  },
+  "build_dependencies": [
+    {
+      "name": "altgraph",
+      "version": "0.17.5"
+    },
+    {
+      "name": "certifi",
+      "version": "2026.7.22"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3"
+    },
+    {
+      "name": "pexpect",
+      "version": "4.9.0"
+    },
+    {
+      "name": "pip",
+      "version": "24.0"
+    },
+    {
+      "name": "ptyprocess",
+      "version": "0.7.0"
+    },
+    {
+      "name": "pyinstaller",
+      "version": "6.22.3"
+    },
+    {
+      "name": "pyinstaller-hooks-contrib",
+      "version": "2026.8"
+    },
+    {
+      "name": "setuptools",
+      "version": "84.0.0"
+    },
+    {
+      "name": "websockets",
+      "version": "15.0.1"
+    }
+  ],
+  "finished_utc": "2026-10-14T18:27:10.827384+00:00",
+  "not_run": [
+    "deployment",
+    "real Hub/Agent connection",
+    "Mac/signing/notarization"
+  ],
+  "build_dependency_scope": "runtime exact hash lock; build direct PyInstaller6.22.3 with recorded resolved transitive inventory, not full transitive build hash lock"
+}

@@ -1,0 +1,87 @@
+{
+  "parent": "26b48ec962b4f1de1343bfec40c202f74ee6eea3",
+  "runtime_install": {
+    "argv": [
+      "python",
+      "-m",
+      "pip",
+      "install",
+      "--require-hashes",
+      "--only-binary=:all:",
+      "-r",
+      "tools/sessionhelper/requirements-runtime.lock"
+    ],
+    "rc": 0,
+    "fresh_venv": "/data/ai-dev-data/helper-deps-lock-venv"
+  },
+  "helper_final": {
+    "rc": 0,
+    "tests": 625,
+    "elapsed_seconds": 286.045,
+    "command_record": "raw/helper-clean-home-command.json"
+  },
+  "canonical_build": {
+    "argv": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "rc": 0,
+    "PATH_prepend": "/data/ai-dev-data/helper-deps-lock-venv/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "python_modules": 42,
+    "shell": 2
+  },
+  "setup": {
+    "rc": 0,
+    "tests": 25
+  },
+  "home_guard": {
+    "rc": 0,
+    "tests": 5
+  },
+  "matching_real_venv": {
+    "rc": 0,
+    "inventory_changed": false
+  },
+  "mismatched_real_venv": {
+    "rc": 1,
+    "expected": true,
+    "inventory_changed": false
+  },
+  "withdraw_lock_name": {
+    "rc": 1,
+    "expected": true
+  },
+  "parent_guard": {
+    "rc": 1,
+    "expected_baseline_failure": true
+  },
+  "initial_full": {
+    "rc": 1,
+    "tests": 624,
+    "failure": "parent guard missing existing Go child entries"
+  },
+  "second_full": {
+    "rc": 1,
+    "tests": 625,
+    "failure": "real seat inbox sentinel change; cannot attribute to tests vs active helper"
+  },
+  "supplemental_claim": {
+    "status": "SKIP; not counted as PASS; actual claim client exercised by canonical gate"
+  },
+  "makefile_patch": {
+    "applied": true,
+    "scope_extension": "leader eb3d58d1e8ac, one root Makefile recipe line",
+    "actual_make_rc": 0,
+    "version_smoke_rc": 0,
+    "runtime_metadata_rc": 0,
+    "pip_check_rc": 0,
+    "receipt": "MAKE-BUILD.json"
+  },
+  "native_Mac_Python39_freezer": "NOT_RUN",
+  "whitespace_check": {
+    "rc": 0,
+    "raw_evidence_bytes_preserved": true,
+    "exceptions": "tools/sessionhelper/.gitattributes, only this review raw logs and unapplied patch"
+  }
+}

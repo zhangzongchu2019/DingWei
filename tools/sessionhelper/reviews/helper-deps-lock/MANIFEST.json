@@ -1,0 +1,204 @@
+{
+  "files": [
+    {
+      "file": "Makefile",
+      "bytes": 1346,
+      "sha256": "47631e691fc2e9fd155500966cf7bc771e1ab04d40ed2a8eb32af222ed94d06e"
+    },
+    {
+      "file": "tools/sessionhelper/.gitattributes",
+      "bytes": 210,
+      "sha256": "2a951061f3caf7e4b746f90a33439dfbcff8e6996eae77eada2b630884e988a3"
+    },
+    {
+      "file": "tools/sessionhelper/INSTALL-DW123.txt",
+      "bytes": 2768,
+      "sha256": "59d0d1c807d2505dde6f91f2a6751a1b3bde3a780ffa4a37e57250d5547c2250"
+    },
+    {
+      "file": "tools/sessionhelper/README.md",
+      "bytes": 13227,
+      "sha256": "fc51cf6947e31cb4b72af0250d1ca1de16b0f9a9937bfef98cb01be859c7ab2c"
+    },
+    {
+      "file": "tools/sessionhelper/check-runtime-deps.py",
+      "bytes": 1880,
+      "sha256": "be0d8917873c4d733522d42f096e69f042db0b363223e92bdced037d2ad61476"
+    },
+    {
+      "file": "tools/sessionhelper/deploy/macos/build-desktop-candidate.sh",
+      "bytes": 4840,
+      "sha256": "4c25541071fc09137ac1708f408d6537cd2b6ef717629f87177a77f7838c972e"
+    },
+    {
+      "file": "tools/sessionhelper/requirements-build.txt",
+      "bytes": 170,
+      "sha256": "3bf282422d36be1648b606af66f15fd01d919aa8615822467c7b7226fba85acc"
+    },
+    {
+      "file": "tools/sessionhelper/requirements-runtime.lock",
+      "bytes": 6255,
+      "sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+    },
+    {
+      "file": "tools/sessionhelper/requirements.txt",
+      "bytes": 137,
+      "sha256": "207adc89c6101bce9846b5a95746432b1fd2aa9aa729a7128bb75d8b5580f43b"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/MAKE-BUILD.json",
+      "bytes": 2175,
+      "sha256": "747ac9d4e6c4bea2dd71837413cdf6f83b2ca9b41ddf50406df706458ed3c3e9"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/MAKEFILE-BUILD-ONLY-INTEGRATION.patch",
+      "bytes": 513,
+      "sha256": "854dd62b29d80d8e5a0c3d0abd339f473a761648f52e489ebe9e9c3780ef18b7"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/PROVENANCE.json",
+      "bytes": 651,
+      "sha256": "fb8f1b76abf4ed54ef1f6628537c7d97b4dc3dcfee2a2cb45ee1a440c4252722"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/RESULTS.json",
+      "bytes": 2056,
+      "sha256": "c1538bfa0942bf5a1909c4fea54a08727fde3642297df24d889cb84606a4d87c"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/REVIEW.md",
+      "bytes": 7607,
+      "sha256": "955c5666805ac82c2da83f52f552776f1290715260bef1dc71724d1481c8aa00"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/UNCHANGED-RUNTIME.json",
+      "bytes": 6380,
+      "sha256": "7d8fa93e55d688ae1ae5186a1d8a04bfce50a941f487210220cfccb127536079"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/binary-version.log",
+      "bytes": 22,
+      "sha256": "77bb151fd60bbb22a885cb9e3c14150b62ae6e76b883dda5646308e6f0955219"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/build-final.log",
+      "bytes": 34581,
+      "sha256": "e7fc6fa5ce42e354a0ab7ff6cba8975e5aa1af8c6b4ae167153ec90be32f30fc"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/build-gate.log",
+      "bytes": 34580,
+      "sha256": "6a69bbb8c88e23f11d4ea5590d610e9d5b98aa4da0d2bda1a42907ebf8cf3862"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/built-venv-pip-check.log",
+      "bytes": 30,
+      "sha256": "9261363b733079a641c2e4cc9bc46ffa1d8336945a87f807b6cf68847dbc9b09"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/built-venv-runtime-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/compat-entry.log",
+      "bytes": 783,
+      "sha256": "49d5fa0cca7f7c4fc89390e574a8fd7f5800d0349cf2551a2c4c950ddd34da62"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/diff-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/helper-clean-home-command.json",
+      "bytes": 360,
+      "sha256": "d1672bb1d3a5537db83f1314560b6d72d4a0f6bd9fa4a18bdc81d8c3ecc4a5b8"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/helper-final-625.log",
+      "bytes": 175601,
+      "sha256": "30832f11c849b0d5ac004d6022b7e22ee2d417463c68cd9899413dfe4bf3fb1e"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/helper-initial-parent-gap.log",
+      "bytes": 142176,
+      "sha256": "529a671bfde815192336eebebffa064ba657cf23e95b87a666e857de466b0f18"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/helper-second-live-home-sentinel.log",
+      "bytes": 182474,
+      "sha256": "bbb55b487a4fd9b7b0158baa9d2770549955acf72ce553950969edb6b2220a93"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/home-guard-fixed.log",
+      "bytes": 968,
+      "sha256": "f932fe72023735f2c7c0aa5447aca07c2f968854d94892760bcd48e7f315c43e"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/make-sessionhelper.log",
+      "bytes": 9893,
+      "sha256": "54b2d7b410dd70c93d8e46ab1b894d5f97652cd4b97b4eecb1d8e4c913f5504b"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/matching.log",
+      "bytes": 93,
+      "sha256": "147b828742ed437c85fff85837a9aa67ecfcef990aafa4c82e1e713bdf7cdeab"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/mismatch.log",
+      "bytes": 253,
+      "sha256": "466d0479304f10d52cb89b56d6713a49544c865d8421112623d4b3f5731b9a5f"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/parent-home-guard.log",
+      "bytes": 2223,
+      "sha256": "82a7a92a54ecb75d17ac71f83555865a0a71d62c6f37b70edb6f3acc04f774ab"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/runtime-inventory.json",
+      "bytes": 212,
+      "sha256": "926980c5906a879d920162a4f78ec3284a4937c4209e89a4794dc25b7c1f299c"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/setup-25.log",
+      "bytes": 5537,
+      "sha256": "35a2956397285345d469070e0748fc12110d97508066e45b8da8fe5658d25bb5"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/supplemental-claim-SKIP.log",
+      "bytes": 285,
+      "sha256": "884246520ed7e67ab5efbb6e75fbb4536421f3115fabab7aecb78db7791aea94"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/helper-deps-lock/raw/withdraw-lock-name.log",
+      "bytes": 13150,
+      "sha256": "48d7912f9b9439e5f7c1fa841631faf4740161fe94d49ffb2a7ab01eeeefe3df"
+    },
+    {
+      "file": "tools/sessionhelper/run.sh",
+      "bytes": 11796,
+      "sha256": "9281c2f9f9dae379176d6032caf90a3810f7bed8d5551cd74273652c29f7f1cb"
+    },
+    {
+      "file": "tools/sessionhelper/tests/claim_hub_integration_client.py",
+      "bytes": 5608,
+      "sha256": "84558f289b570d72316a5ce5709e8b64d57f52367196d4291dd225ac44145417"
+    },
+    {
+      "file": "tools/sessionhelper/tests/desktop_hub_roundtrip_client.py",
+      "bytes": 7915,
+      "sha256": "c42a98fe243b81f64c986c68618ed2854adc41dd471db65c1d9f5036b1db4f48"
+    },
+    {
+      "file": "tools/sessionhelper/tests/test_home_isolation_wiring.py",
+      "bytes": 16223,
+      "sha256": "f4f7234f1f9855cb98d47fe2d6d84b45a9f702a9e0462c121665f8d48cd7bdcb"
+    },
+    {
+      "file": "tools/sessionhelper/tests/test_setup.py",
+      "bytes": 23385,
+      "sha256": "842a51124670f33ba1c89a55290a57b262f1ba29da92bf47d7b66adb12ab7c58"
+    }
+  ]
+}

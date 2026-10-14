@@ -17,6 +17,7 @@ def main():
         print('CLAIM_RESUME_READY fresh_interpreter', flush=True)
     config = json.loads(sys.stdin.readline())
     state = Path(config['state'])
+    assert Path.home().resolve() == state.resolve(), "integration child requires its synthetic HOME"
     transport = UrllibTransport(config['base'])
     notifications = []
 

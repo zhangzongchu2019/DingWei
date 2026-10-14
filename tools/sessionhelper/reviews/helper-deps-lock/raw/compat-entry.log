@@ -1,0 +1,4 @@
+Requirement already satisfied: websockets==15.0.1 in /data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages (from -r tools/sessionhelper/requirements-runtime.lock (line 3)) (15.0.1)
+Requirement already satisfied: pexpect==4.9.0 in /data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages (from -r tools/sessionhelper/requirements-runtime.lock (line 72)) (4.9.0)
+Requirement already satisfied: ptyprocess==0.7.0 in /data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages (from -r tools/sessionhelper/requirements-runtime.lock (line 74)) (0.7.0)
+Requirement already satisfied: certifi==2026.7.22 in /data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages (from -r tools/sessionhelper/requirements-runtime.lock (line 76)) (2026.7.22)

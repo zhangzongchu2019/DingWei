@@ -22,6 +22,14 @@ CONSTRUCTED = {"SessionHelper", "Provisioner"}
 # 不接助手但允许构造的模块：文件名 → (理由, 必须仍然存在于该文件里的证据串)。
 # 证据串用来防止"理由写了、实际卫生格已被删"：它不在了，本检查就红。
 ALLOWED = {
+    "claim_hub_integration_client.py": (
+        "Go claim integration child: parent strips ambient seat variables and sets HOME=t.TempDir=state; child asserts before any enrollment/helper construction",
+        'assert Path.home().resolve() == state.resolve(), "integration child requires its synthetic HOME"',
+    ),
+    "desktop_hub_roundtrip_client.py": (
+        "Go desktop roundtrip child: parent strips ambient seat variables and sets HOME=t.TempDir=state; child asserts before helper construction",
+        'assert Path.home().resolve() == state.resolve(), "integration child requires its synthetic HOME"',
+    ),
     "test_hub_notice_no_inject.py": (
         "自带隔离：构造点在 mock.patch.dict(HOME=临时目录, SH_PROVISION_NO_EXIT=1) 内，配置路径全指向临时目录，"
         "并有 test_03c 在跑完后断言真实 HOME 下无 provision 残留",
@@ -132,6 +140,24 @@ def problems_for(filename: str, source: str, allowed=ALLOWED) -> list:
 
 
 class HomeIsolationWiringTest(unittest.TestCase):
+    def test_go_children_refuse_a_home_outside_bootstrap_state(self):
+        import asyncio, importlib.util, io, json, os, tempfile
+        from unittest.mock import patch
+        for name in ('claim_hub_integration_client.py', 'desktop_hub_roundtrip_client.py'):
+            spec = importlib.util.spec_from_file_location('isolated_child_' + name[:-3], TESTS / name)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            with tempfile.TemporaryDirectory() as home, tempfile.TemporaryDirectory() as state:
+                request = json.dumps({'state': state}) + '\n'
+                with patch.dict(os.environ, HOME=home), patch('sys.stdin', io.StringIO(request)), patch.object(module, 'SessionHelper', side_effect=AssertionError('must not construct helper')) as helper:
+                    with self.assertRaisesRegex(AssertionError, 'requires its synthetic HOME'):
+                        if name.startswith('desktop'):
+                            asyncio.run(module.main())
+                        else:
+                            module.main()
+                    helper.assert_not_called()
+
+
     def test_every_constructing_test_module_is_isolated_or_allowlisted(self):
         problems = []
         for path in sorted(TESTS.glob("*.py")):

@@ -1,0 +1,42 @@
+test_checker_reports_mismatch_without_installation (tools.sessionhelper.tests.test_setup.RuntimeDependencyLockTest.test_checker_reports_mismatch_without_installation) ... ok
+test_matching_existing_venv_does_not_install (tools.sessionhelper.tests.test_setup.RuntimeDependencyLockTest.test_matching_existing_venv_does_not_install) ... ok
+test_mismatched_existing_venv_fails_without_upgrade (tools.sessionhelper.tests.test_setup.RuntimeDependencyLockTest.test_mismatched_existing_venv_fails_without_upgrade) ... ok
+test_new_venv_installs_only_the_hashed_runtime_lock (tools.sessionhelper.tests.test_setup.RuntimeDependencyLockTest.test_new_venv_installs_only_the_hashed_runtime_lock) ... ok
+test_runtime_lock_and_bootstrap_share_the_exact_file (tools.sessionhelper.tests.test_setup.RuntimeDependencyLockTest.test_runtime_lock_and_bootstrap_share_the_exact_file) ... ok
+test_background_launcher_no_credentials_in_argv_and_no_duplicate (tools.sessionhelper.tests.test_setup.SetupTest.test_background_launcher_no_credentials_in_argv_and_no_duplicate) ... ok
+test_background_profile_drops_other_device_env_preserves_native_auth (tools.sessionhelper.tests.test_setup.SetupTest.test_background_profile_drops_other_device_env_preserves_native_auth) ... ok
+test_cancel_profile_refuses_web_and_simultaneous_run (tools.sessionhelper.tests.test_setup.SetupTest.test_cancel_profile_refuses_web_and_simultaneous_run) ... ok
+test_cancel_profile_routes_without_tool_login_or_background_start (tools.sessionhelper.tests.test_setup.SetupTest.test_cancel_profile_routes_without_tool_login_or_background_start) ... ok
+test_cli_not_marked_ready_without_actual_probe (tools.sessionhelper.tests.test_setup.SetupTest.test_cli_not_marked_ready_without_actual_probe) ... 模型授权在所选工具自己的界面中完成；DW 不接收模型账号或密钥。
+ok
+test_failed_background_spawn_releases_reservation (tools.sessionhelper.tests.test_setup.SetupTest.test_failed_background_spawn_releases_reservation) ... ok
+test_legacy_direct_mcp_script_reports_current_version (tools.sessionhelper.tests.test_setup.SetupTest.test_legacy_direct_mcp_script_reports_current_version) ... ok
+test_mcp_exact_append_preserves_other_settings_and_private_backup (tools.sessionhelper.tests.test_setup.SetupTest.test_mcp_exact_append_preserves_other_settings_and_private_backup) ... ok
+test_modes_and_reply_events (tools.sessionhelper.tests.test_setup.SetupTest.test_modes_and_reply_events) ... ok
+test_origin_and_identifier_validation (tools.sessionhelper.tests.test_setup.SetupTest.test_origin_and_identifier_validation) ... ok
+test_packaged_mcp_entry_uses_own_stdio_dispatch (tools.sessionhelper.tests.test_setup.SetupTest.test_packaged_mcp_entry_uses_own_stdio_dispatch) ... ok
+test_packaged_wizard_prints_usable_restart_with_spaces_and_web_hint (tools.sessionhelper.tests.test_setup.SetupTest.test_packaged_wizard_prints_usable_restart_with_spaces_and_web_hint) ... ok
+test_private_profile_idempotent_preserves_credentials (tools.sessionhelper.tests.test_setup.SetupTest.test_private_profile_idempotent_preserves_credentials) ... ok
+test_profile_is_activated_before_import_time_driver_overrides (tools.sessionhelper.tests.test_setup.SetupTest.test_profile_is_activated_before_import_time_driver_overrides) ... ok
+test_profile_rejects_oversized_unix_socket_path (tools.sessionhelper.tests.test_setup.SetupTest.test_profile_rejects_oversized_unix_socket_path) ... ok
+test_run_profile_refuses_skipped_model_readiness (tools.sessionhelper.tests.test_setup.SetupTest.test_run_profile_refuses_skipped_model_readiness) ... ok
+test_run_profile_uses_own_credential_not_inherited_hosted_token (tools.sessionhelper.tests.test_setup.SetupTest.test_run_profile_uses_own_credential_not_inherited_hosted_token) ... ok
+test_source_profile_command_uses_shared_launch_entry (tools.sessionhelper.tests.test_setup.SetupTest.test_source_profile_command_uses_shared_launch_entry) ... ok
+test_version_entry_has_no_enrollment_or_environment_read (tools.sessionhelper.tests.test_setup.SetupTest.test_version_entry_has_no_enrollment_or_environment_read) ... ok
+test_wizard_desktop_pairs_then_starts_only_after_mcp_setup (tools.sessionhelper.tests.test_setup.SetupTest.test_wizard_desktop_pairs_then_starts_only_after_mcp_setup) ... 两种接入方式都需要 sessionHelper。请选择：
+1. Codex 桌面应用 + DW-MCP
+2. CLI 托管（通过 DingWei Web 页面交互）
+请先在 Codex 桌面应用完成登录。自动提醒需真机验收；MCP 配置成功不代表自动唤醒已就绪。
+本次桌面应用： Codex.app 版本： fixture1 build： 1
+桌面持续监听：在原聊天要求 AI 调用 dw_wait_message；收到消息后用 dw_reply_message 回复再等待。取消或退出后需重新发起，不能自动唤醒空闲会话。
+配置已保存。启动时复制 #pair 指令并私发给当前 Hub 的官方飞书机器人，完成开户与设备配对。
+启动： /data/ai-dev-data/helper-deps-lock-venv/bin/python -m sessionhelper --run-profile /tmp/tmp_orwf85l/setup-profile.json
+请按原生授权提示操作；CLI 模型授权码与 DW 配对码不同。
+过期/冲突后：先退出配对等待，再显式取消未认领申请： /data/ai-dev-data/helper-deps-lock-venv/bin/python -m sessionhelper --cancel-pairing /tmp/tmp_orwf85l/setup-profile.json
+sessionHelper 后台进程已启动，PID： 1234 ；当前为 STARTING，连接状态请在 Web 或 DW-MCP 核实。
+ok
+
+----------------------------------------------------------------------
+Ran 25 tests in 0.446s
+
+OK
