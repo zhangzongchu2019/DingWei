@@ -1,13 +1,65 @@
 package m8
 
 import (
+	"context"
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
+
+// blockingSpecGrantRepo holds the first signing transaction at the repository
+// boundary so a second owner approval exercises the in-memory reservation,
+// not timing luck in SQLite.
+type blockingSpecGrantRepo struct {
+	store.Repository
+	entered chan struct{}
+	release chan struct{}
+	once    sync.Once
+}
+
+var _ consoleAuthRepository = (*blockingSpecGrantRepo)(nil)
+
+func (r *blockingSpecGrantRepo) auth() consoleAuthRepository {
+	return r.Repository.(consoleAuthRepository)
+}
+
+func (r *blockingSpecGrantRepo) ResolveConsoleSession(ctx context.Context, tokenHash string, now time.Time) (*model.ConsoleSession, error) {
+	return r.auth().ResolveConsoleSession(ctx, tokenHash, now)
+}
+
+func (r *blockingSpecGrantRepo) TouchConsoleSession(ctx context.Context, sessionID string, expiry, now time.Time) error {
+	return r.auth().TouchConsoleSession(ctx, sessionID, expiry, now)
+}
+
+func (r *blockingSpecGrantRepo) ResolveGrantedConsoleAgent(ctx context.Context, principalID, agentID, permission string) (*model.ConsoleAgent, error) {
+	return r.auth().ResolveGrantedConsoleAgent(ctx, principalID, agentID, permission)
+}
+
+func (r *blockingSpecGrantRepo) ListConsoleAgents(ctx context.Context, principalID string) ([]model.ConsoleAgent, error) {
+	return r.auth().ListConsoleAgents(ctx, principalID)
+}
+
+func (r *blockingSpecGrantRepo) RotateConsolePageCapability(ctx context.Context, c model.ConsolePageCapability, keyID, sessionName string, now time.Time) error {
+	r.once.Do(func() { close(r.entered) })
+	<-r.release
+	return r.auth().RotateConsolePageCapability(ctx, c, keyID, sessionName, now)
+}
+
+func (r *blockingSpecGrantRepo) RevokeConsolePageCapability(ctx context.Context, id, sessionID, principalID, agentID, pageID string, now time.Time) (bool, error) {
+	return r.auth().RevokeConsolePageCapability(ctx, id, sessionID, principalID, agentID, pageID, now)
+}
+
+func (r *blockingSpecGrantRepo) ResolveConsolePageCapability(ctx context.Context, tokenHash, agentID, pageID string, now time.Time) (*model.ConsolePageCapability, error) {
+	return r.auth().ResolveConsolePageCapability(ctx, tokenHash, agentID, pageID, now)
+}
 
 func TestSpecGrantRevokeInvalidatesIssuedCapability(t *testing.T) {
 	e := newShimEnv(t)
@@ -162,5 +214,140 @@ func TestSpecGrantApproveSynchronizesFreshOwnerSession(t *testing.T) {
 	}
 	if got := e.hub.specGrantRequests["fresh-owner-grant"]; got.State != "granted" || got.CapabilityID == "" || got.CapabilitySessionID == "" {
 		t.Fatalf("fresh owner grant=%+v, want granted capability", got)
+	}
+}
+
+func TestSpecGrantListShowsBothDeadlinesAndExpiresEachWindow(t *testing.T) {
+	e := newShimEnv(t)
+	if err := e.hub.ReconcileNewPlatformConsole(e.ctx); err != nil {
+		t.Fatal(err)
+	}
+	ag, err := e.svc.Store.FindAgentByName(e.ctx, "zzc", "kimi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := e.hub.now()
+	pendingDeadline := now.Add(10 * time.Minute)
+	capabilityDeadline := now.Add(5 * time.Minute)
+	e.hub.specGrantRequests = map[string]*specGrantRequest{
+		"pending":            {ID: "pending", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "pending", ExpiresAt: pendingDeadline},
+		"granted":            {ID: "granted", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "granted", ExpiresAt: pendingDeadline, CapabilityExpiresAt: capabilityDeadline, capability: "not-in-output"},
+		"request-expired":    {ID: "request-expired", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "pending", ExpiresAt: now.Add(-time.Second)},
+		"capability-expired": {ID: "capability-expired", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "granted", ExpiresAt: pendingDeadline, CapabilityExpiresAt: now.Add(-time.Second), capability: "must-be-cleared"},
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/console/agents/{sessionName}/spec-grant-requests", e.hub.RequireConsoleAgent("interact", e.hub.HandleConsoleSpecGrantRequests))
+	oldServer := e.srv
+	e.srv = httptest.NewServer(mux)
+	t.Cleanup(func() { e.srv.Close(); e.srv = oldServer })
+	status, body := e.do(http.MethodGet, "/api/console/agents/Kimi.zzc/spec-grant-requests", e.tokZZC, "", "", "")
+	if status != http.StatusOK {
+		t.Fatalf("list status=%d body=%s", status, body)
+	}
+	var got struct {
+		Requests []struct {
+			ID                  string  `json:"id"`
+			Status              string  `json:"status"`
+			ExpiresAt           string  `json:"expires_at"`
+			RequestExpiresAt    string  `json:"request_expires_at"`
+			CapabilityExpiresAt *string `json:"capability_expires_at"`
+		}
+	}
+	if err := json.Unmarshal([]byte(body), &got); err != nil {
+		t.Fatal(err)
+	}
+	rows := map[string]struct {
+		Status              string
+		RequestExpiresAt    string
+		CapabilityExpiresAt *string
+	}{}
+	for _, row := range got.Requests {
+		if row.ExpiresAt != row.RequestExpiresAt {
+			t.Fatalf("legacy expires_at and request deadline diverged for %s", row.ID)
+		}
+		rows[row.ID] = struct {
+			Status              string
+			RequestExpiresAt    string
+			CapabilityExpiresAt *string
+		}{row.Status, row.RequestExpiresAt, row.CapabilityExpiresAt}
+	}
+	if row := rows["pending"]; row.Status != "pending" || row.RequestExpiresAt != pendingDeadline.UTC().Format(time.RFC3339) || row.CapabilityExpiresAt != nil {
+		t.Fatalf("pending row=%+v", row)
+	}
+	if row := rows["granted"]; row.Status != "granted" || row.CapabilityExpiresAt == nil || *row.CapabilityExpiresAt != capabilityDeadline.UTC().Format(time.RFC3339) {
+		t.Fatalf("granted row=%+v", row)
+	}
+	if row := rows["request-expired"]; row.Status != "expired" {
+		t.Fatalf("request expiry row=%+v", row)
+	}
+	if row := rows["capability-expired"]; row.Status != "expired" || row.CapabilityExpiresAt == nil {
+		t.Fatalf("capability expiry row=%+v", row)
+	}
+	if raw := e.hub.specGrantRequests["capability-expired"].capability; raw != "" {
+		t.Fatal("expired capability remained in Hub memory")
+	}
+}
+
+func TestSpecGrantConcurrentApproveSignsOnlyOnce(t *testing.T) {
+	e := newShimEnv(t)
+	if err := e.hub.ReconcileNewPlatformConsole(e.ctx); err != nil {
+		t.Fatal(err)
+	}
+	ag, err := e.svc.Store.FindAgentByName(e.ctx, "zzc", "kimi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.hub.specGrantRequests["concurrent"] = &specGrantRequest{
+		ID: "concurrent", OwnerKey: AgentKeyID("zzc"), SessionName: ag.NameLC(), AgentID: ag.ID,
+		PrincipalID: "zzc", Action: "create", PageID: ConsoleAgentCapabilitySpecsNew,
+		State: "pending", ExpiresAt: e.hub.now().Add(specGrantRequestTTL),
+	}
+	oldRepo := e.hub.Repo
+	repo := &blockingSpecGrantRepo{Repository: oldRepo, entered: make(chan struct{}), release: make(chan struct{})}
+	// The wrapper blocks only capability signing; keep the real shim repository
+	// available for the fresh-owner projection that precedes it.
+	e.hub.newPlatformShimRepo = e.db
+	e.hub.Repo = repo
+	t.Cleanup(func() { e.hub.Repo, e.hub.newPlatformShimRepo = oldRepo, nil })
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api/console/agents/{sessionName}/spec-grant-requests/{requestID}/{decision}", e.hub.RequireConsoleAgent("interact", e.hub.HandleConsoleSpecGrantDecision))
+	oldServer := e.srv
+	e.srv = httptest.NewServer(mux)
+	t.Cleanup(func() { e.srv.Close(); e.srv = oldServer })
+	type response struct {
+		status int
+		body   string
+	}
+	first := make(chan response, 1)
+	go func() {
+		req, _ := http.NewRequest(http.MethodPost, e.srv.URL+"/api/console/agents/Kimi.zzc/spec-grant-requests/concurrent/approve", nil)
+		req.Header.Set("Origin", npOrigin)
+		req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: e.tokZZC})
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			first <- response{status: -1, body: err.Error()}
+			return
+		}
+		body, _ := io.ReadAll(res.Body)
+		res.Body.Close()
+		first <- response{status: res.StatusCode, body: string(body)}
+	}()
+	select {
+	case <-repo.entered:
+	case result := <-first:
+		t.Fatalf("first approval ended before signing boundary: status=%d body=%s", result.status, result.body)
+	case <-time.After(5 * time.Second):
+		t.Fatal("first approval never reached signing boundary")
+	}
+	if status, body := e.do(http.MethodPost, "/api/console/agents/Kimi.zzc/spec-grant-requests/concurrent/approve", e.tokZZC, "", "", ""); status != http.StatusNotFound {
+		t.Fatalf("second concurrent approval status=%d body=%s, want 404", status, body)
+	}
+	close(repo.release)
+	if result := <-first; result.status != http.StatusNoContent {
+		t.Fatalf("first approval status=%d body=%s, want 204", result.status, result.body)
+	}
+	g := e.hub.specGrantRequests["concurrent"]
+	if g.State != "granted" || g.CapabilityID == "" || g.capability == "" {
+		t.Fatalf("first approval did not produce the sole grant: state=%q capID=%q", g.State, g.CapabilityID)
 	}
 }
