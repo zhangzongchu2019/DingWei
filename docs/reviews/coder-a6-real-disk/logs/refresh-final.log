@@ -1,0 +1,21 @@
+PASS Console cookie capability initializes without manual unlock, no5s status/resume
+PASS Console eligibility15s, separate from300s resource cadence
+PASS hidden lease expires; visible resumes page and renews only near expiry
+PASS resource tick independent of page/capability renewal
+PASS forged console_mux hint never grants write
+PASS resource failure lastgood/stale + no offline/write projection
+PASS resource singleflight and invalidate rejects late response
+PASS timeout includes hung JSON body
+PASS parent Window/origin/instance/generation fencing
+PASS standalone resource300s, manual page-only unlock heartbeat
+PASS manual state cannot override failed Console capability/write preflight
+PASS write preflight renews, headers bound to current page only
+PASS numeric UTC monotonic anchor + local seconds, zero network
+PASS SSE heartbeat cannot overwrite memory/time or forge Agent disk
+PASS resource401 clears capability and input without feed-status mutation
+PASS generation change rejects late mint
+PASS A6 authenticated status paints bytes with provenance and local expiry without network/write grant
+PASS A6 changed stable Agent cannot relabel current page
+PASS A6 unavailable producer clears numeric, no VS fallback
+PASS single parent300s ticker,8-seat fanout, hidden pause/overdue restore, zero shared auth/resource payload
+PASS renderer inline syntax

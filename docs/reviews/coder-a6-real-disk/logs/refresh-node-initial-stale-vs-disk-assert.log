@@ -1,0 +1,23 @@
+PASS Console cookie capability initializes without manual unlock, no5s status/resume
+PASS Console eligibility15s, separate from300s resource cadence
+PASS hidden lease expires; visible resumes page and renews only near expiry
+PASS resource tick independent of page/capability renewal
+PASS forged console_mux hint never grants write
+PASS resource failure lastgood/stale + no offline/write projection
+PASS resource singleflight and invalidate rejects late response
+PASS timeout includes hung JSON body
+PASS parent Window/origin/instance/generation fencing
+PASS standalone resource300s, manual page-only unlock heartbeat
+PASS manual state cannot override failed Console capability/write preflight
+PASS write preflight renews, headers bound to current page only
+PASS numeric UTC monotonic anchor + local seconds, zero network
+evalmachine.<anonymous>:1
+stats.disk.used
+           ^
+
+TypeError: Cannot read properties of null (reading 'used')
+    at evalmachine.<anonymous>:1:12
+    at Script.runInContext (node:vm:149:12)
+    at Object.runInContext (node:vm:301:6)
+    at Object.run (/data/ai-dev-data/a6-agent-disk-real/view-service/view-refresh-regression.cjs:20:18)
+    at /data/ai-dev-data/a6-agent-disk-real/view-service/view-refresh-regression.cjs:42:244

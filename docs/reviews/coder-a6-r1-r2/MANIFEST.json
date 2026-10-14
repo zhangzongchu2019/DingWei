@@ -1,0 +1,119 @@
+{
+  "files": [
+    {
+      "file": "docs/reviews/coder-a6-r1-r2/PROVENANCE.json",
+      "bytes": 704,
+      "sha256": "bb8988239b79f61957b8f4ac570b6689d661b7ca480a0c196ec14006c28d0b45"
+    },
+    {
+      "file": "docs/reviews/coder-a6-r1-r2/REVIEW.md",
+      "bytes": 3134,
+      "sha256": "d621d46cd8f77c09a7411921df8092465581202f12ae84fe562f3651d3eaec0c"
+    },
+    {
+      "file": "docs/reviews/coder-a6-r1-r2/raw/MUTATIONS.json",
+      "bytes": 207,
+      "sha256": "6bfb54f0438459607b479c3d18e9aeedfba3084d8fd2d4f15ae06a0148d621a4"
+    },
+    {
+      "file": "docs/reviews/coder-a6-r1-r2/raw/RESULTS.json",
+      "bytes": 787,
+      "sha256": "f2ccad5b5620be84ca4955ba074bedf1f9e548ca2a1316fc72c8f382d27961e0"
+    },
+    {
+      "file": "docs/reviews/coder-a6-r1-r2/raw/diff-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "docs/reviews/coder-a6-r1-r2/raw/go-a6.log",
+      "bytes": 8413,
+      "sha256": "dd79a62bbbbb8545f1d9ec1deb7309d3928103599013971b593c640fcdb6d523"
+    },
+    {
+      "file": "docs/reviews/coder-a6-r1-r2/raw/helper-30s.log",
+      "bytes": 2803,
+      "sha256": "de3036a841d732fd299889f4f5baa508e8cee563fe1628a98ae339ba206d99ab"
+    },
+    {
+      "file": "docs/reviews/coder-a6-r1-r2/raw/remove-R2-preflight.log",
+      "bytes": 1615,
+      "sha256": "14a6481543cf5fec545901c6a7da7650e335d8750f2ea5a7153f525bffb6f9a4"
+    },
+    {
+      "file": "docs/reviews/coder-a6-r1-r2/raw/renderer-max-age.log",
+      "bytes": 984,
+      "sha256": "6566658b4483498194d495b15a117b4d535e23fc99ab08c0e147ba17d91339de"
+    },
+    {
+      "file": "docs/reviews/coder-a6-r1-r2/raw/restore-300s-cache.log",
+      "bytes": 209,
+      "sha256": "80681fcc179c05b92ca342805b23e78028f945da147cf1207b9a3104068c4af7"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/CONTRACT.md",
+      "bytes": 9167,
+      "sha256": "e47f47f0aad79a471c8ea7f19dc2dfb5d478232a51fa30c777f73111dc92c47a"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/MANIFEST.json",
+      "bytes": 8600,
+      "sha256": "019a0d5bca2b2c765fa948882d77d4a5a56756d653db5d571c73d4da2ebfcf9a"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/PROVENANCE.json",
+      "bytes": 753,
+      "sha256": "d116d30321b5a14135b6bd51ed5ed60250d9de7ea0fd614182ff2541549e7746"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/REVIEW.md",
+      "bytes": 6620,
+      "sha256": "63018ffee9200a462024b7abfb4b21bd67ec44ddff5f17edc67f928a8a408e53"
+    },
+    {
+      "file": "docs/reviews/coder-a6-real-disk/SOURCE-PINS.json",
+      "bytes": 3831,
+      "sha256": "afd594c8d610213ee3a239b9bfa036c1d93aecb9e9111420706e226d2ec72cf8"
+    },
+    {
+      "file": "internal/agentmetrics/metrics.go",
+      "bytes": 6426,
+      "sha256": "22d65f2605ce98c9d2c8b8b4f23da9208b366601fe8270a68e26eeb25d548115"
+    },
+    {
+      "file": "internal/agentmetrics/metrics_test.go",
+      "bytes": 6573,
+      "sha256": "764fd76491048284eced2f21a0b21ece7e09852aa09aeff37013d2c61796a2f5"
+    },
+    {
+      "file": "internal/m8/agent_disk_metrics.go",
+      "bytes": 5934,
+      "sha256": "77a77fe11c13e2f8db145f71544845c946f828b0451bcafdd0502be4d961c6bb"
+    },
+    {
+      "file": "internal/m8/agent_disk_metrics_test.go",
+      "bytes": 10281,
+      "sha256": "416224dc3ac8811fbce659219eecb21f088384831d9d806b1b85149adf6dd08f"
+    },
+    {
+      "file": "internal/m8/hub.go",
+      "bytes": 234442,
+      "sha256": "a996dc62bd8b2a8ac5d126df5b865accdba0eb6343f9d78a99316e22dc7837ac"
+    },
+    {
+      "file": "tests/a6-agent-disk-real.cjs",
+      "bytes": 5103,
+      "sha256": "161b592eaba9bc581259477c6f6a25941348ca67bcda1581a2626e62241dcf1f"
+    },
+    {
+      "file": "tools/sessionhelper/sessionhelper/app.py",
+      "bytes": 83636,
+      "sha256": "3a89aec24944eb693cd096e83cbca658a0cc010ce8a7907ccf0e22a230708087"
+    },
+    {
+      "file": "tools/sessionhelper/tests/test_agent_disk_metrics.py",
+      "bytes": 8469,
+      "sha256": "ace300c12ab8197b11fc76ecfebbda3c5b30769381ee2910d3bd372a8259f8f6"
+    }
+  ]
+}

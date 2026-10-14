@@ -1,0 +1,41 @@
+PASS missing means unknown not zero
+PASS valid authenticated-context zero is zero
+PASS nonzero small used is not rounded into literal zero
+PASS wrong Agent
+PASS VS source
+PASS fake source
+PASS no generation
+PASS no schema
+PASS bad basis
+PASS bool zero
+PASS unsafe total
+PASS used exceeds total
+PASS future renewal budget
+PASS age plus ttl exceeds bound
+PASS missing age
+PASS missing timestamp
+PASS unavailable cannot keep zero
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: '0 / 6.5 GB' == '已过期'
+    at /data/ai-dev-data/a6-agent-disk-real/tests/a6-agent-disk-real.cjs:26:237
+    at test (/data/ai-dev-data/a6-agent-disk-real/tests/a6-agent-disk-real.cjs:6:35)
+    at Object.<anonymous> (/data/ai-dev-data/a6-agent-disk-real/tests/a6-agent-disk-real.cjs:26:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: '0 / 6.5 GB',
+  expected: '已过期',
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.1

@@ -17,6 +17,7 @@ tools/sessionhelper/tests/test_connection_reconnect_backoff.py
 tools/sessionhelper/tests/test_connection_claim_cancellation.py
 tools/sessionhelper/tests/test_terminal_start_observation.py
 tools/sessionhelper/tests/test_roster_snapshot.py
+tools/sessionhelper/tests/test_agent_disk_metrics.py
 tools/sessionhelper/tests/test_setup.py
 tools/sessionhelper/tests/test_env_read_single_entry.py
 tools/sessionhelper/tests/test_claim_enroll.py
@@ -45,6 +46,7 @@ view-service/test_provenance_flag_injection.py
 view-service/test_renderer_iter2.py
 view-service/test_view_page_store.py
 view-service/test_view_service.py
+view-service/test_agent_disk_resource.py
 view-service/test_view_refresh.py
 view-service/test_mux_projection.py
 view-service/test_mux_projection_failure.py
@@ -68,4 +70,4 @@ printf '%s\n' "$SHELL_TESTS" | while IFS= read -r test_file; do
   echo "TEST shell $test_file"
   bash "$test_file"
 done
-echo 'BUILD_TESTS_OK python=40 shell=2'
+echo 'BUILD_TESTS_OK python=42 shell=2'

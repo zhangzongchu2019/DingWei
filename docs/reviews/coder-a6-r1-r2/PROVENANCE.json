@@ -1,0 +1,16 @@
+{
+  "base_commit": "51538e0280ca92717c6eedd5ba847543558e734d",
+  "independent_cr_runtime_parent": "fedfd145ecf3cfe1e1df7a55dc5a82a3909102c8",
+  "created_utc": "2026-10-14T17:18:57.022554+00:00",
+  "review_ref": "refs/heads/review/coder/a6-real-disk",
+  "leader_profile_ruling": "889b3b9c3b76",
+  "helper_seconds": 30,
+  "cache_replacement_seconds": 30,
+  "pre_identity_attempt_seconds": 30,
+  "page_seconds": 300,
+  "lifetime_seconds": 360,
+  "runtime_renderer_unchanged_from_parent": true,
+  "S1": "nonblocking follow-up, not implemented",
+  "S2": "explicit mix table in current CONTRACT.md",
+  "evidence_scope": "Offline author tests and source overlays only; not independent CR or field acceptance"
+}

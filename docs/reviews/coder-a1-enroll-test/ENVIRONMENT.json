@@ -1,0 +1,10 @@
+{
+  "node": "v22.23.1",
+  "playwright": "1.64.1",
+  "chrome": "Google Chrome 151.0.7922.108",
+  "platform": "Linux-7.0.0-14-generic-x86_64-with-glibc2.39",
+  "NODE_PATH": "/data/ai-dev-data/a1-enroll-browser-private/node_modules",
+  "PW_CHANNEL": "chrome",
+  "scope": "Private local Playwright+Chrome and localhost fixture only; not the reviewer container or target browser",
+  "command": "cd view-service && NODE_PATH=/data/ai-dev-data/a1-enroll-browser-private/node_modules PW_CHANNEL=chrome node console-agent-mgmt-enroll-regression.js"
+}

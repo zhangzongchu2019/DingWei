@@ -1,0 +1,32 @@
+[
+  {
+    "file": "internal/agentmetrics/metrics.go",
+    "bytes": 6426,
+    "sha256": "2d3189e7c75e5e0b17cc8bb6c448f4300359aabf32790ba5f735944298e56abf"
+  },
+  {
+    "file": "internal/agentmetrics/metrics_test.go",
+    "bytes": 6573,
+    "sha256": "4542430bf7923391e6655b92688fb7d2aaa687cdd8894064ed471623b77809a7"
+  },
+  {
+    "file": "internal/m8/agent_disk_metrics_test.go",
+    "bytes": 10281,
+    "sha256": "7d1b36ddd108e4444bb31c2f68d8f6825d27c1c4b2758cecf71b51e8339a3032"
+  },
+  {
+    "file": "docs/reviews/coder-a6-r3/targeted.log",
+    "bytes": 130,
+    "sha256": "9dc3310bbe2c667f622b0afa042b81ab11fae0b7d00d9249b9bc481b94eca074"
+  },
+  {
+    "file": "docs/reviews/coder-a6-r3/withdraw-25.log",
+    "bytes": 1430,
+    "sha256": "e493f0a8680fa55ce32b69dc23b1a2e6f2600fc2069b5e0b09a487bc2ead443e"
+  },
+  {
+    "file": "docs/reviews/coder-a6-r3/REVIEW.md",
+    "bytes": 662,
+    "sha256": "c38d75d6796c05f68176dc06ce272edd134dd389663ad8105ed55e48964a0034"
+  }
+]

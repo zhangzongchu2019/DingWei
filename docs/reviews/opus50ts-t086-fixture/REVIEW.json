@@ -1,0 +1,10 @@
+{
+  "utc": "2026-10-14T16:53:47.640266+00:00",
+  "base": "6802aa6fa330e39f0264f5d2c4a2d3fd7e243a90",
+  "scope": "Only adds integrityIssue=null to extracted-function fixture; original eight assertions byte-identical; no product changes",
+  "final_rc": 0,
+  "passed": 8,
+  "withdraw_rc": 1,
+  "withdraw_failure": "integrityIssue is not defined; 0 passed / 8 failed",
+  "product_renderer_sha256": "0046be37685564b16bb87fc2c8fc83a2e9e9ba1e73f7753396f08f68bb71361b"
+}

@@ -1,0 +1,34 @@
+PASS VS zero/6.5 cannot masquerade as Agent disk
+PASS initial absent sample is unknown, not zero
+PASS VS positive value also rejected
+PASS raw agent scope is not identity attestation
+PASS unsupported stale legacy value is discarded
+PASS missing/error disk cannot become a numeric zero
+PASS memory and time still use existing resource snapshot
+node:internal/assert/utils:77
+    throw err;
+    ^
+
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert(s.includes('尚未收到与本 Agent 身份绑定的环境磁盘采样'))
+
+    at /data/ai-dev-data/a6-agent-disk-real/tests/a6-agent-disk-unknown.cjs:13:130
+    at test (/data/ai-dev-data/a6-agent-disk-real/tests/a6-agent-disk-unknown.cjs:5:36)
+    at Object.<anonymous> (/data/ai-dev-data/a6-agent-disk-real/tests/a6-agent-disk-unknown.cjs:13:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.1

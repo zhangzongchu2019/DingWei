@@ -175,6 +175,14 @@ class CLIAdapter:
         self.exit_streak = 0
         self.start_backoff_until = 0.0
 
+    def agent_metrics_workdir(self):
+        from .agent_disk_metrics import process_workdir
+        # An existing tmux server may live in another namespace. No guessed cwd.
+        child = self.child
+        if self.launch_mode == "tmux" or child is None:
+            return None
+        return process_workdir(child.pid, child.isalive)
+
     def _child_gone(self) -> bool:
         """PTY 模式下子进程已退出（tmux 模式不在此判）。"""
         return self.launch_mode != "tmux" and self.child is not None and not self.child.isalive()
