@@ -87,6 +87,22 @@ async function test(name,fn){const h=await fixture();try{await fn(h);console.log
   await h.attach('resolved',prefix+'\n'+url,false);await h.cards('resolved',1);
   assert.deepEqual((await h.state('resolved')).urls,[url]);
  });
+ await test('removing a successful prefix restores its hidden body URL until the complete card succeeds',async h=>{
+  const prefix=url.slice(0,-3);await h.card('marks');await h.attach('marks',prefix,false);await h.cards('marks',1);
+  assert.equal(await h.page.locator('#marks .dw-link-rendered').count(),1,'existing successful card must retain R5-2');
+  const pending=await h.page.evaluate(({prefix,url})=>{
+   const c=document.getElementById('marks'),body=c.querySelector('.event-content');
+   body.append(document.createTextNode(url.slice(prefix.length)));
+   attachFileRenders(c,url,{streaming:true});
+   return {slots:c._fileHost.children.length,marks:c.querySelectorAll('.dw-link-rendered').length,visible:body.innerText,copyable:body.textContent};
+  },{prefix,url});
+  assert.equal(pending.slots,0);assert.equal(pending.marks,0,'removed prefix must leave no hidden marker');
+  assert.equal(pending.visible,url);assert.equal(pending.copyable,url);
+  await h.page.evaluate(u=>attachFileRenders(document.getElementById('marks'),u,{streaming:false}),url);
+  await h.cards('marks',1);assert.deepEqual((await h.state('marks')).urls,[url]);
+  assert.equal(await h.page.locator('#marks .dw-link-rendered').count(),1,'successful complete card reapplies unchanged R5-2');
+  assert.equal(await h.page.locator('#marks .dw-link-rendered').getAttribute('data-file-url'),url);
+ });
  await test('history replay and complete one-shot user message still render a tail URL immediately',async h=>{
   await h.card('history');await h.attach('history',url,false);await h.cards('history',1);
   assert.deepEqual((await h.state('history')).urls,[url]);

@@ -4,12 +4,12 @@
   "parent_commit": "e1f295e7fe883042fe615a62bad4c2196bc3c938",
   "files": {
     "view-service/renderer-canary-sse.html": {
-      "bytes": 312309,
-      "sha256": "c932f21e1b622897c1f6badbcc7eee71e4b6547611656993f31c385d70bddbdf"
+      "bytes": 312791,
+      "sha256": "f6567d3a7f3f68aa124c94101330e807d35222e8bfa58eb4a8e93054ae12ddf8"
     },
     "tests/file-card-streaming.cjs": {
-      "bytes": 9265,
-      "sha256": "25053599f588eb7bb71ebbc16c92224b313d92b2eef06059b0cbd351bb9cd56e"
+      "bytes": 10638,
+      "sha256": "83936b56ff637fc2011c825636a17381c074a02076ac4e5ca29d32488ef09a5a"
     },
     "view-service/renderer-0206-file-render-regression.js": {
       "bytes": 138743,
@@ -25,7 +25,7 @@
     "version": "151.0.7922.108",
     "new_fixture_command": "NODE_PATH=<playwright module directory> PW_CHANNEL=chrome node tests/file-card-streaming.cjs",
     "new_fixture_rc": 0,
-    "cases": 9,
+    "cases": 10,
     "network": "All requests intercepted at synthetic file-card.invalid origin; no live site, upload or credentials"
   },
   "parent_counterexample": {
@@ -118,14 +118,16 @@
   "markdown_images": {
     "command": "NODE_PATH=<playwright module directory> PW_CHANNEL=chrome node view-service/renderer-markdown-image-regression.js",
     "rc": 0,
-    "cases": 15
+    "cases": 15,
+    "scope": "Rerun on R5 follow-up, 15 cases including mutation controls; rc0."
   },
   "canonical_build": {
     "command": "sh scripts/run-build-tests.sh",
     "rc": 0,
     "python_files": 42,
     "shell_files": 2,
-    "environment": "private HOME, helper runtime venv, seat variables removed"
+    "environment": "private HOME, helper runtime venv, seat variables removed",
+    "scope": "Rerun after R5 follow-up; BUILD_TESTS_OK python=42 shell=2; rc0."
   },
   "boundaries": [
     "No production, service, DB or actual upload actions.",
@@ -149,11 +151,36 @@
     "file-card-streaming-markdown-images.log": {
       "bytes": 8602,
       "sha256": "d95951811c9894cfcb9eafa95b213bac54b8e505d97b2118d6b288f03f5ff6da"
+    },
+    "file-card-streaming-r5-final.log": {
+      "bytes": 989,
+      "sha256": "7ec9e151f7fcc1ea30e6a54c1188406ec0ee19485e82b518fd69102e0af5870c"
+    },
+    "file-card-streaming-r5-red.log": {
+      "bytes": 1042,
+      "sha256": "ff5f670461cf93fdaedae7829de8833fce55b3950877873f01f8799c1003ae3e"
+    },
+    "file-card-streaming-r5-markdown.log": {
+      "bytes": 8602,
+      "sha256": "c80ad28f48a90d5a21e8d610d49f0a8e72d9677bb8a81aa71aa56824b5e7658b"
+    },
+    "file-card-streaming-r5-build.log": {
+      "bytes": 34614,
+      "sha256": "7d04cc0f2bfd9820625f9a878e43f30d0615d7dab128b30ca0319e033135eff1"
     }
   },
   "log_delivery": "Hashes identify local author logs; raw logs are not included or claimed delivered.",
   "existing_fixture_changes": [
     "Align old 404 assertion with the authorized missing/invalid-link wording.",
     "Keep markdown-image M-G4 mutation anchors exact after adding the streaming/prefix guards; image behavior unchanged."
-  ]
+  ],
+  "r5_followup": {
+    "parent_commit": "03e901b79ed6c493111f9a1a02cb3322c1c4260a",
+    "requirement": "Successful attachments keep R5-2 unchanged; pending and failed URLs remain visible. Removing a strict-prefix card restores its hidden span to body text before the longer card succeeds.",
+    "fixture_rc": 0,
+    "withdrawal_rc": 1,
+    "withdrawal_result": "9 pass, 1 fail: obsolete prefix hidden marker count is 1, expected 0.",
+    "existing_r5_2_assertions": "Unchanged; the new case additionally verifies hiding is reapplied only after complete-card success."
+  },
+  "existing_regression_scope": "All nine listed renderer regression commands rerun after R5 follow-up; rc0."
 }

@@ -2925,6 +2925,15 @@
       for (const [url, rec] of records) {
         if (!longerExists(url)) continue;
         rec.cancelled = true; rec.node.remove(); records.delete(url); seen.delete(url);
+        // A removed success card no longer justifies hiding its body URL.
+        // Restore text, including adjacent suffix bytes, before any new card
+        // is ready; a later successful full URL may apply R5-2 again.
+        for (const span of cardEl.querySelectorAll('.dw-link-rendered')) {
+          if (span.dataset.fileUrl !== url) continue;
+          const parent = span.parentNode;
+          span.replaceWith(span.textContent);
+          parent?.normalize();
+        }
       }
       const tail = matches.at(-1);
       // A trailing dot may be the first byte of an extension (.md), not a
