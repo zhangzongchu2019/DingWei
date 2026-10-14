@@ -214,10 +214,10 @@ func TestAgentDiskCheapAdmission(t *testing.T) {
 			}
 			now = begun.Add(10 * time.Second)
 			send("")
-			now = begun.Add(30*time.Second - time.Millisecond)
+			now = begun.Add(25*time.Second - time.Millisecond)
 			send("")
 			if counter.agentGets != 1 || counter.userGets != 1 {
-				t.Fatalf("30s burst incurred identity reads agent=%d user=%d, want 1 each", counter.agentGets, counter.userGets)
+				t.Fatalf("25s burst incurred identity reads agent=%d user=%d, want 1 each", counter.agentGets, counter.userGets)
 			}
 			if !c.lastMetricsAttempt.Equal(begun) {
 				t.Fatal("suppressed messages moved eligible-attempt time")
@@ -225,16 +225,16 @@ func TestAgentDiskCheapAdmission(t *testing.T) {
 			if mode == "invalid_first_attempt" && c.diskMetrics.Read(agentmetrics.Binding{Agent: c.metricsAgentID, Connection: c.metricsGeneration, Current: true}, now).Status != "unavailable" {
 				t.Fatal("invalid attempt acquired a sample")
 			}
-			now = begun.Add(30 * time.Second)
+			now = begun.Add(25 * time.Second)
 			env := diskEnvelope(now)
 			env.Body = strings.Replace(env.Body, `"sample_seq":"1"`, `"sample_seq":"2"`, 1)
 			h.handleAgentDiskMetrics(context.Background(), c, env)
 			if counter.agentGets != 2 || counter.userGets != 2 {
-				t.Fatalf("full 30s boundary did not query agent=%d user=%d", counter.agentGets, counter.userGets)
+				t.Fatalf("full 25s boundary did not query agent=%d user=%d", counter.agentGets, counter.userGets)
 			}
 			snapshot := c.diskMetrics.Read(agentmetrics.Binding{Agent: c.metricsAgentID, Connection: c.metricsGeneration, Current: true}, now)
 			if snapshot.Status != "ok" || snapshot.Sample.Seq != "2" {
-				t.Fatalf("full 30s boundary did not accept next sample %+v", snapshot)
+				t.Fatalf("full 25s boundary did not accept next sample %+v", snapshot)
 			}
 		})
 	}

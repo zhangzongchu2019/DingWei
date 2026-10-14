@@ -1,0 +1,3 @@
+# R3 Hub receive floor25 seconds
+
+Parent69636158, including exact second-wave base060c. Hub cache replacement and pre-identity attempt admission share SampleInterval25s; helper actual send remains30s, page300s, sample TTL360s. This gives5s arrival jitter tolerance without increasing normal helper frequency. Actual-handler tests reject24.999s and accept25s; invalid attempts still charge admission. Cache acceptance original-age deduction unchanged. Directed A6 Go matrix rc0; temporary overlay restoring30s makes25s boundary checks rc1. No production sampling or deployment. Earlier R1/R2 docs/pins remain historical; this delta supersedes only the Hub floor.

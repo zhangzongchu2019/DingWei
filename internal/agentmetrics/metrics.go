@@ -16,7 +16,7 @@ import (
 const MaxBytes = 2048
 const MaxSafe = 1<<53 - 1
 const Lifetime = 360 * time.Second
-const SampleInterval = 30 * time.Second
+const SampleInterval = 25 * time.Second
 
 var hex32 = regexp.MustCompile(`^[0-9a-f]{32}$`)
 var errInvalid = errors.New("invalid_agent_disk_metric")
