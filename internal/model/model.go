@@ -451,34 +451,38 @@ type ConsoleSpecEvent struct {
 }
 
 type ConsoleTaskProposal struct {
-	ID               string    `json:"proposal_id"`
-	SchemaVersion    int       `json:"schema_version"`
-	SpecID           string    `json:"spec_id"`
-	Revision         int       `json:"revision"`
-	ContentSHA256    string    `json:"content_sha256"`
-	Title            string    `json:"title"`
-	TaskContent      string    `json:"content"`
-	Status           string    `json:"status"`
-	EstimatedHours   float64   `json:"estimated_hours"`
-	DependsOnJSON    string    `json:"depends_on_json"`
-	DependedBy       []string  `json:"depended_by,omitempty"`
-	DependencyLevel  int       `json:"dependency_level"`
-	Parallel         bool      `json:"parallel"`
-	AcceptanceJSON   string    `json:"acceptance_json"`
-	DefinitionOfDone string    `json:"definition_of_done"`
-	InputAnchorsJSON string    `json:"input_anchors_json"`
-	DeveloperAgentID string    `json:"developer_agent_id,omitempty"`
-	DeveloperAgent   string    `json:"developer_agent,omitempty"`
-	DeveloperOnline  bool      `json:"developer_online"`
-	ReviewerAgentID  string    `json:"reviewer_agent_id,omitempty"`
-	ReviewerAgent    string    `json:"reviewer_agent,omitempty"`
-	ReviewerOnline   bool      `json:"reviewer_online"`
-	PassedCases      int       `json:"passed_cases"`
-	TotalCases       int       `json:"total_cases"`
-	ReviewID         string    `json:"review_id"`
-	ReviewedBy       string    `json:"-"`
-	ReviewedAt       time.Time `json:"reviewed_at"`
-	CreatedAt        time.Time `json:"created_at"`
+	ID                   string     `json:"proposal_id"`
+	SchemaVersion        int        `json:"schema_version"`
+	SpecID               string     `json:"spec_id"`
+	Revision             int        `json:"revision"`
+	ContentSHA256        string     `json:"content_sha256"`
+	Title                string     `json:"title"`
+	TaskContent          string     `json:"content"`
+	Status               string     `json:"status"`
+	EstimatedHours       float64    `json:"estimated_hours"`
+	DependsOnJSON        string     `json:"depends_on_json"`
+	DependedBy           []string   `json:"depended_by,omitempty"`
+	DependencyLevel      int        `json:"dependency_level"`
+	Parallel             bool       `json:"parallel"`
+	AcceptanceJSON       string     `json:"acceptance_json"`
+	DefinitionOfDone     string     `json:"definition_of_done"`
+	InputAnchorsJSON     string     `json:"input_anchors_json"`
+	DeveloperAgentID     string     `json:"developer_agent_id,omitempty"`
+	DeveloperAgent       string     `json:"developer_agent,omitempty"`
+	DeveloperOnline      bool       `json:"developer_online"`
+	ReviewerAgentID      string     `json:"reviewer_agent_id,omitempty"`
+	ReviewerAgent        string     `json:"reviewer_agent,omitempty"`
+	ReviewerOnline       bool       `json:"reviewer_online"`
+	PassedCases          int        `json:"passed_cases"`
+	TotalCases           int        `json:"total_cases"`
+	ReviewID             string     `json:"review_id"`
+	ReviewedBy           string     `json:"-"`
+	ReviewedAt           time.Time  `json:"reviewed_at"`
+	CreatedAt            time.Time  `json:"created_at"`
+	StartedAt            *time.Time `json:"started_at,omitempty"`
+	PlannedFinishAt      *time.Time `json:"planned_finish_at,omitempty"`
+	Blocker              *string    `json:"blocker,omitempty"`
+	ResourceCoordination *string    `json:"resource_coordination,omitempty"`
 }
 
 // ConsoleTaskDriverStart is the durable seven-part project-start record. Token

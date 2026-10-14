@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
@@ -56,7 +57,19 @@ var _ httpapi.Mux = (*http.ServeMux)(nil)
 // registerSpecTaskRoutes specs 与 task-board 两组功能的全部路由（页面、console 接口、Agent capability 接口、共享链接）。新旧平台都注册。
 func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
 	mux.HandleFunc("GET /console/specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleSpecsPage)))
-	mux.HandleFunc("GET /console/tasks", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleTaskBoardPage)))
+	// The task board lives in the Console workspace. Keep the old page URL only
+	// as a non-cached compatibility entrance; do not retain a parallel nav page.
+	mux.HandleFunc("GET /console/tasks", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("embedded") == "1" {
+			prefixHub.HandleConsoleTaskBoardPage(w, r)
+			return
+		}
+		target := "/console?task_manager=1"
+		if specID := r.URL.Query().Get("spec_id"); specID != "" {
+			target += "&spec_id=" + url.QueryEscape(specID)
+		}
+		http.Redirect(w, r, target, http.StatusFound)
+	})))
 	mux.HandleFunc("GET /console/specs/{specID}", prefixHub.HandleSharedConsoleSpecPage) // 旧平台共享 spec 页
 	mux.HandleFunc("GET /console/spec-assets/{name}", prefixHub.HandleConsoleSpecAsset)
 	mux.HandleFunc("GET /api/console/specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleSpecs)))

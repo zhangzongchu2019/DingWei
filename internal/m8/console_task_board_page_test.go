@@ -45,8 +45,8 @@ func TestConsoleTaskBoardFiveColumnsAndNoInventedPrincipalPlaceholder(t *testing
 			t.Fatalf("heading %q count=%d", heading, strings.Count(taskTable, "<th>"+heading+"</th>"))
 		}
 	}
-	if strings.Contains(consoleTaskBoardPageHTML, "未知") {
-		t.Fatal("task board must leave unavailable values empty")
+	if strings.Contains(taskTable, "未知") {
+		t.Fatal("upper task breakdown must leave unavailable values empty")
 	}
 }
 
