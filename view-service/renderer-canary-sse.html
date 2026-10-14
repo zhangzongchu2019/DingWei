@@ -1113,7 +1113,7 @@
         <!-- 更宽追加:服务资源(内存/磁盘,去掉百分比) -->
         <span class="status-sep sb-res"></span>
         <span class="status-item sb-res">内存 <strong id="memStat">--</strong></span>
-        <span class="status-item sb-res">磁盘 <strong id="diskStat">--</strong></span>
+        <span class="status-item sb-res">Agent 磁盘 <strong id="diskStat">未知</strong></span>
         <span class="status-item sb-res" id="resourceFreshness" role="status">资源待更新</span>
       </div>
       <!-- 业主 2026-09-18 验收第 1 条：「选择文件上传时，没有任何提示，这个很容易认为是出问题了」
@@ -1221,6 +1221,8 @@
     //      (对照实测:摘掉自建重连、以及真 pre-0.2.1.2 的件,正文全程纹丝不动)。
     //    判据是"**这个页面**曾经连上过",不是"**这个对象**open 过第二次"。
     let streamEverOpened = false;
+    // Transport open is not evidence that replay or an event was successfully applied.
+    let streamHasAcceptedEvent = false, streamTransportOpen = false;
     let streamConnectTimer = null;
     const STREAM_CONNECT_GRACE_MS = 7500;
     // RED 0.2.1.2:移除「重连」按钮**必须同时加自动重连** —— 移除前它是 SSE 断开后
@@ -1479,7 +1481,7 @@
       unlockCode: '',
       access: '只读',
       mem: { used: 0, total: 0, unit: '' },
-      disk: { used: 0, total: 0, unit: '' },
+      disk: null, // Unknown until an authenticated Agent-environment metric is available.
       load: 0,
       lastTurnCostTotal: 0,
       statusDatetimeMs: 0,
@@ -1553,6 +1555,7 @@
       taskProgress.hidden = stats.sessionState !== 'running';
       memStat.textContent = formatMem(stats.mem);
       diskStat.textContent = formatDisk(stats.disk);
+      diskStat.title = '尚未收到与本 Agent 身份绑定的环境磁盘采样；不使用 View 服务磁盘代替';
       updateHeaderLock();
     }
     function updateLocalTime() {
@@ -1586,6 +1589,7 @@
       return `${mem.used} / ${mem.total} ${mem.unit}`;
     }
     function formatDisk(disk) {
+      if (!disk) return '未知';
       if (disk.used_gb !== undefined && disk.total_gb !== undefined) {
         // 业主 2026-09-19:简化为 `44.2 / 232.4 GB` —— **去掉百分比**。
         return `${disk.used_gb} / ${disk.total_gb} GB`;
@@ -3938,7 +3942,11 @@
     //    做法(不额外占状态栏空间):让保留下来的 🕐 那一栏兼任连接状态。
     function renderConnectionState() {
       if (!clockStatus) return;
-      if (reconnectAttempt > 0) {
+      if (reconnectAttempt > 0 && streamTransportOpen) {
+        clockStatus.classList.remove('offline');
+        clockStatus.title = '事件连接已建立；等待可应用事件，历史完整性尚未确认';
+        localTime.textContent = '已连接，等待事件';
+      } else if (reconnectAttempt > 0) {
         clockStatus.classList.add('offline');
         clockStatus.title = '事件流已断开,正在自动重连。点击立即重试';
         localTime.textContent = `断线重连中 · 第 ${reconnectAttempt} 次`;
@@ -3948,12 +3956,16 @@
         updateLocalTime();
       }
     }
+    // A queued gap refill owns its completion check; transport success cannot cancel it.
+    let reconnectTimerForGap = false;
     function clearReconnectTimer() {
       if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      reconnectTimerForGap = false;
     }
-    // 连上了 ⇒ 归零并恢复时钟显示。
+    // Only parsed event dispatch returning successfully clears consecutive retry failures.
     function markStreamConnected() {
-      clearReconnectTimer();
+      streamTransportOpen = true; streamHasAcceptedEvent = true;
+      if (!reconnectTimerForGap) clearReconnectTimer();
       reconnectAttempt = 0;
       renderConnectionState();
     }
@@ -3963,9 +3975,11 @@
       const delay = RECONNECT_BACKOFF_MS[Math.min(reconnectAttempt, RECONNECT_BACKOFF_MS.length - 1)];
       reconnectAttempt += 1;
       renderConnectionState();
-      reconnectTimer = setTimeout(() => { reconnectTimer = null; if (beforeConnect && beforeConnect() === false) return; connectEventStream(); }, delay);
+      reconnectTimerForGap = typeof beforeConnect === 'function';
+      reconnectTimer = setTimeout(() => { reconnectTimer = null; reconnectTimerForGap = false; if (beforeConnect && beforeConnect() === false) return; connectEventStream(); }, delay);
     }
     function closeEventStream() {
+      streamTransportOpen = false; cancelPendingReconnectClear();
       eventSourceGeneration += 1;
       clearStreamConnectTimer();
       if (eventSource) eventSource.close();
@@ -3996,9 +4010,11 @@
     function consumeReconnectClear() {
       if (!pendingReconnectClear) return false;
       cancelPendingReconnectClear();
-      return true;
+      // A retained suffix cannot rebuild history already evicted by the server.
+      return integrityIssue?.kind !== 'history';
     }
     function markStreamReconnect() {
+      if (integrityIssue?.kind === 'history') { cancelPendingReconnectClear(); return; }
       // 不再立刻 resetConversation();挂起,等第一条重放事件。
       pendingReconnectClear = true;
       clearTimeout(pendingClearTimer);
@@ -4170,12 +4186,14 @@
         //    (REPLAY_HARD_LIMIT_MS)是从 arm 那一刻起算的,而 backoff 最长 30s ⇒
         //    提前 arm 会让窗口在重放到达之前就过期,等于没修。
         // R-V2-0105 件一：已收到过带序号的事件 ⇒ 本次连接带 after、Hub 只补缺口，不需要清空窗口。
-        if (streamEverOpened && !seqStreamSeen) markStreamReconnect();
+        if (streamEverOpened && streamHasAcceptedEvent && !seqStreamSeen) markStreamReconnect();
         streamEverOpened = true;
         opened = true;
         clearStreamConnectTimer();
         hideStreamAlert();
-        markStreamConnected();
+        streamTransportOpen = true;
+        if (!reconnectTimerForGap) clearReconnectTimer();
+        renderConnectionState();
         if (!stats.readonly) setStatus('idle');
       };
       eventSource.onmessage = (msg) => {
@@ -4192,6 +4210,7 @@
           integrityDispatchDepth++;
           try { handleIncomingEvent(payload); } finally { integrityDispatchDepth--; }
           maybeClearRecoveredGap();
+          markStreamConnected();
         } catch (err) {
           markIntegrityApplyFailed();
           handleIncomingEvent({ kind: 'error', text: `Bad event payload: ${err.message}`, data: { code: 'bad_sse_payload' } });
@@ -4199,7 +4218,7 @@
       };
       eventSource.onerror = () => {
         if (generation !== eventSourceGeneration) return;
-        opened = false;
+        opened = false; streamTransportOpen = false; cancelPendingReconnectClear();
         setStatus('disconnected');
         // RED 不依赖 EventSource 自带的重连:它不给次数、不给节奏,也**不给任何可见状态**。
         //    这里自己排队重连,并把次数显示到 🕐 那一栏上。
@@ -4256,7 +4275,9 @@
     }
     function applyResourceData(data) {
       if (data.mem && typeof data.mem === 'object') stats.mem = data.mem;
-      if (data.disk && typeof data.disk === 'object') stats.disk = data.disk;
+      // This endpoint samples the View Service environment, not the Agent's execution namespace.
+      // No raw scope/identity/time fields can substitute for a reviewed authenticated metric binding.
+      stats.disk = null;
       if (Number.isFinite(data.datetime_epoch_ms) && data.datetime_epoch_ms > 0) {
         stats.statusDatetimeMs = data.datetime_epoch_ms; stats.statusDatetimeText = '';
         stats.statusDatetimeReceivedAt = Date.now(); stats.statusMonotonicAt = performance.now();
