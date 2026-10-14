@@ -137,3 +137,25 @@ func TestConsoleTaskDriverUnassignedTaskAppearsForNoAgent(t *testing.T) {
 		}
 	}
 }
+
+func TestConsoleTaskDriverAgentListCarriesOptionalMetadata(t *testing.T) {
+	db, _, dev, review := taskDriverFixture(t, "driver-metadata")
+	ctx := context.Background()
+	if err := db.UpdateConsoleSpecTaskAssignees(ctx, "driver-task", "owner-a", dev, review); err != nil {
+		t.Fatal(err)
+	}
+	started := time.Date(2026, 10, 14, 1, 2, 3, 0, time.UTC)
+	planned := time.Date(2026, 10, 15, 4, 5, 6, 0, time.UTC)
+	blocker, resources := "blocked-by-db", "need-test-pg"
+	if err := db.UpdateConsoleSpecTaskMetadata(ctx, "driver-task", "owner-a", &started, &planned, &blocker, &resources); err != nil {
+		t.Fatal(err)
+	}
+	tasks, err := db.ListConsoleTasksForAgent(ctx, dev)
+	if err != nil || len(tasks) != 1 {
+		t.Fatalf("agent task list err=%v tasks=%v", err, tasks)
+	}
+	got := tasks[0]
+	if got.StartedAt == nil || !got.StartedAt.Equal(started) || got.PlannedFinishAt == nil || !got.PlannedFinishAt.Equal(planned) || got.Blocker == nil || *got.Blocker != blocker || got.ResourceCoordination == nil || *got.ResourceCoordination != resources {
+		t.Fatalf("metadata mismatch: %+v", got)
+	}
+}
