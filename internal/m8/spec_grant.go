@@ -28,7 +28,8 @@ const (
 type specGrantRequest struct {
 	ID, OwnerKey, SessionName, AgentID, AgentFullName, PrincipalID string
 	Action, SpecID, PageID, State                                  string
-	ExpiresAt                                                      time.Time
+	ExpiresAt, CapabilityExpiresAt                                 time.Time
+	CapabilitySessionID                                            string
 	capability                                                     string // never serialized or logged
 }
 
@@ -98,6 +99,9 @@ func (h *Hub) handleSpecGrantRequest(ctx context.Context, c *sessionClient, env 
 	if g != nil && g.OwnerKey == c.ownerKey && g.SessionName == c.sessionName {
 		if !g.ExpiresAt.After(now) && g.State == "pending" {
 			g.State = "expired"
+		}
+		if g.State == "granted" && !g.CapabilityExpiresAt.After(now) {
+			g.State, g.capability = "expired", ""
 		}
 		status = g.State
 		if g.State == "granted" && g.capability != "" {
@@ -205,6 +209,8 @@ func (h *Hub) HandleConsoleSpecGrantDecision(w http.ResponseWriter, r *http.Requ
 	if current := h.specGrantRequests[id]; current == g && current.State == "pending" {
 		current.State = "granted"
 		current.capability = raw
+		current.CapabilitySessionID = sess.ID
+		current.CapabilityExpiresAt = cap.ExpiresAt
 	}
 	h.specGrantMu.Unlock()
 	w.WriteHeader(http.StatusNoContent)
