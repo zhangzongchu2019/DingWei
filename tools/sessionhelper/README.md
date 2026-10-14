@@ -37,7 +37,7 @@ cd tools/sessionhelper
 首次运行会交互引导一次，之后复用本地配置并自动启动：
 
 - 检测 `python3 >= 3.9`、所选 AI CLI（如 `claude` / `codex`）。
-- 在工具目录创建/复用 `.venv`，执行 `pip install -r requirements.txt`，不污染全局 Python。
+- 仅新建 `.venv` 时按 `requirements-runtime.lock` 校验 SHA256 安装运行依赖；现有 venv 版本一致则直接复用，不访问 pip。版本不符明确报错并保留原环境，请为新版本选择新的 `WORKPULSE_SH_VENV`。不污染全局 Python。
 - 把配置写入 `~/.workpulse-sh/config`，权限强制 `600`；`SH_SECRET` 不回显、不打印、不写入仓库。
 - 导出 `SH_MODE=cli`、`SH_CLI_LAUNCH=pty`、`SH_COLLECT=1`、`SH_CLI_READY_TIMEOUT=90`、`SH_CLI_REPLY_WAIT=45` 等环境变量后运行 `python -m sessionhelper`。
 - 默认会静默采集本地 AI CLI 会话轮次到 DingWei，用于团队进度佐证；不会发到飞书。需关闭请联系管理员设置成员 `evidence_optout`，或本地把 `SH_COLLECT=0`。
@@ -89,7 +89,7 @@ AI CLI 需要用户自行安装并登录，本工具只托管已可用的 CLI，
 ## 构建
 
 ```bash
-python3 -m pip install -r tools/sessionhelper/requirements.txt
+python3 -m pip install --require-hashes --only-binary=:all: -r tools/sessionhelper/requirements-runtime.lock
 make sessionhelper
 ./dist/sessionhelper
 ```
@@ -265,3 +265,9 @@ mirror off home
 python3 -m compileall -q tools/sessionhelper/sessionhelper tools/sessionhelper/sessionhelper.py
 python3 -m unittest discover -s tools/sessionhelper/tests
 ```
+
+### Dependency reproducibility
+
+Runtime pins: websockets15.0.1 (Python3.9+), pexpect4.9.0, ptyprocess0.7.0, certifi2026.7.22. The lock includes PyPI SHA256 hashes for published wheels, including Linux/Mac variants; source builds are disabled. `requirements.txt` remains a compatibility entry into the same runtime lock. `run.sh` never upgrades pip, silently changes an existing venv, or installs PyInstaller. New-install failures preserve the partial venv; inspect it and select a new path rather than overwriting it. Matching versions are checked through installed distribution metadata, not a fresh download or a full installed-file attestation.
+
+Packaging uses `requirements-build.txt` separately after the runtime lock (the Mac build entry follows this order). PyInstaller is pinned there; its transitive build dependencies are not a full hashed build-environment lock. A native binary still requires its own reviewed build and artifact hashes. This change does not claim Mac runtime or Python3.9 execution was tested on this Linux/Python3.12 seat.

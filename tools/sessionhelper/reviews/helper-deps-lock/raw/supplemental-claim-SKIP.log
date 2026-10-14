@@ -1,0 +1,5 @@
+=== RUN   TestDeviceClaimAcrossActualClientAndHub
+    claim_client_integration_test.go:33: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment
+--- SKIP: TestDeviceClaimAcrossActualClientAndHub (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.007s

@@ -13,7 +13,7 @@ the new code; never run two helpers with the same credential. Install the new
 version in a separate directory and switch the helper's code path. Do not delete
 the old installation or credential file, and do not enroll the Agent again.
 
-Install tools/sessionhelper/requirements.txt into the helper's own Python
+Install tools/sessionhelper/requirements.txt (the hashed runtime lock entry) into the helper's own Python
 environment. Start tools/sessionhelper/run.sh using the previous configuration.
 The console should report helper version 0.2.2.1 after reconnection. A source
 package and its hash do not by themselves prove that the local AI CLI works.

@@ -1,0 +1,3 @@
+# Packaging only; install the runtime lock first. Never used by run.sh.
+# This is a pinned build entry, not a full transitive build-environment lock.
+pyinstaller==6.22.3

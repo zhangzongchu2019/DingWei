@@ -1,0 +1,187 @@
+[
+  {
+    "file": "tools/sessionhelper/sessionhelper/__init__.py",
+    "bytes": 54,
+    "sha256": "27e326a2cb8e9292fa0a1200253c9e9f18f286728b66a2d12743b54bc92c1af3"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/__main__.py",
+    "bytes": 65,
+    "sha256": "5963af4e4fe4f99371f25e7bdc5bb2b9d553087b3838908be51434fda54590a5"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/agent_disk_metrics.py",
+    "bytes": 7449,
+    "sha256": "0e87a7bc8001a378a7d88c9348946af866bd80e475c712e3322c912a13bacfa6"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/app.py",
+    "bytes": 83636,
+    "sha256": "3a89aec24944eb693cd096e83cbca658a0cc010ce8a7907ccf0e22a230708087"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/claim_enroll.py",
+    "bytes": 11265,
+    "sha256": "f1f9ee70b36fd00b27cf5d2acf583d4fd77ef8835158acc911be915616cf5682"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/claudeDriver.py",
+    "bytes": 25978,
+    "sha256": "55727de9504f4fb83b331551d5fb28bda0eb79e686fdab69b526e1a3178a6f22"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/cli.py",
+    "bytes": 48217,
+    "sha256": "ffe8d1ee85c5e612b959aae017cb7b39ed47ffad40082d8562f2f49f75ed6a79"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/codexDriver.py",
+    "bytes": 60153,
+    "sha256": "586792d868bfbb69057cb1f172ae2768fa6593ccc98be16f84d16c7287c90042"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/config.py",
+    "bytes": 17855,
+    "sha256": "795ffdee83e29fcb43d463d90edaba26c5313524b9a1804ab43e53ca5b3e3a91"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/contract.py",
+    "bytes": 10777,
+    "sha256": "2538b13515a3ed03416f50fd8ccd0c543bf1fe861ad7cfd15bfdebd232d2e66d"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/desktop.py",
+    "bytes": 11065,
+    "sha256": "8c5bd24bfc523b9a4bd930760f1e7e87054b2da927ce6d4d76950a98c6c0d001"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/desktop_dispatch.py",
+    "bytes": 9705,
+    "sha256": "ac149886237eeb4d9a33d9b30b0f3ea61304a634951646485664552fa90c810c"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/desktop_endpoint.py",
+    "bytes": 5257,
+    "sha256": "4df80b62fc6b7051f5a602b7f57ad7d9df2ae56c7b7557ea254dea225506e13d"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/desktop_host.py",
+    "bytes": 4524,
+    "sha256": "48e8d59eb7892a49cb96a98b4e84992aeaf01c690e2ed014e8c93fec4b1a8f51"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/desktop_pilot.py",
+    "bytes": 9216,
+    "sha256": "06b892dad50f8ba57fc143713f11fbddd503e4d5ddde4f74b772adfeb51af2b8"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/desktop_stop_hook.py",
+    "bytes": 5161,
+    "sha256": "22ffd7b711ef6a374b227834fb0395ae00562635d8d18cffee86d7f199dc5751"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/dingwei_file.py",
+    "bytes": 4047,
+    "sha256": "19e5f636a32794b5bc0d89112e6a786eceef602ecdef30bcd0bd2661fba52f92"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/driver_adapter.py",
+    "bytes": 30119,
+    "sha256": "3087ccf5700c84fa6277e05ac829026fff48e53912626583b532ca1c006457fd"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/enroll.py",
+    "bytes": 25199,
+    "sha256": "3634d8cc7fb63c0a5d44592eb3485a5fa64305203abd7c6cfe438c5f00186c43"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/file_upload.py",
+    "bytes": 10770,
+    "sha256": "bb22ebea1b2c755d2739ab5e0e6245480b5c46876e4e273ade02f0dd2cbd0e67"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/guide_state.py",
+    "bytes": 7171,
+    "sha256": "a8556e2eaa3c3370c9b25dfa788a43a6d34b6cca23aaad80ade83775fa1d21a0"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/hub_meta.py",
+    "bytes": 567,
+    "sha256": "85d646c3d66d2f6247957beb2d9981478c96eeb19ce1951b4b060fcc7b9d7937"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/inbox.py",
+    "bytes": 18965,
+    "sha256": "cd9157e23586f047bcbf7ab35f680647505afb3ff4117cc3a4305cd3b690fbe7"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/ipc_listener.py",
+    "bytes": 19546,
+    "sha256": "ff64330c3778262e5ef76062313487f0089157ea72a5ccadcb7247cb94157e3e"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/launch.py",
+    "bytes": 1688,
+    "sha256": "1997c79a163abc4e1a787dc12548781009889bc8dad203dbec4d27c87f541e31"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/llm.py",
+    "bytes": 5387,
+    "sha256": "380ea0eaa6a458c83cb9fd19a7bb0e9b7c359ba0dfa430e34a43a564b616adba"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/mcp_shim.py",
+    "bytes": 21683,
+    "sha256": "a34cf0a7c7dac40450c618c76c5c4887ecf90664795e866208b81b0105ecb798"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/openCodeDriver.py",
+    "bytes": 45629,
+    "sha256": "bf86cbeced18c3884b612c365517dcfba1695f3d77a253a1e4df5926439550ce"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/outbound_receipt.py",
+    "bytes": 5119,
+    "sha256": "fa576fc42423d6b94107801454a5e0320786ccdd54092eff8b95f73f732dabbb"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/protocol.py",
+    "bytes": 1744,
+    "sha256": "21e0801443373cd5f2e3dd2a52696f93add8167f0046e9f9b8d9b4b429e57ab1"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/provision.py",
+    "bytes": 18595,
+    "sha256": "1b1cfed098deb5f3bd543d274829f6df31d3dee503bfbacaffdfd188022d123f"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/reply_origin.py",
+    "bytes": 1002,
+    "sha256": "5ae630363f680faeea3d676f167ea3f65864d015bbbcbe5091a04254acb10fef"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/routing.py",
+    "bytes": 17858,
+    "sha256": "57eb2a5617d8a47c44e69220afd532b201e84ff9840aa877ae12a97124b3fbd9"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/send_dingwei.py",
+    "bytes": 4287,
+    "sha256": "da1c72d98466a8e2c8c423146db713e5222971703721c96abbf7a43074e7b0bc"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/setup.py",
+    "bytes": 19382,
+    "sha256": "f5cfad22ff17af717f72a2e370e9a6167511b75868d3a9d4b6b03c2b29ccb10b"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/sidecar.py",
+    "bytes": 6690,
+    "sha256": "14d3edbb49d717dd45bd93d44e6dcc90bc32261f51379c66661af884de3bb18c"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/unified_queue.py",
+    "bytes": 10068,
+    "sha256": "f43daa008298291353fefcecddf58e46b48bc317e407fe1dfce5430cd06d6502"
+  }
+]

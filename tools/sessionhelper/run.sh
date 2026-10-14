@@ -223,15 +223,21 @@ PY
 
 ensure_venv() {
   python_bin=$1
-  if [ ! -x "$VENV_DIR/bin/python" ]; then
-    log "creating virtualenv: $VENV_DIR"
-    "$python_bin" -m venv "$VENV_DIR" || die "failed to create venv. On Linux install python3-venv."
+  runtime_lock="$SCRIPT_DIR/requirements-runtime.lock"
+  runtime_check="$SCRIPT_DIR/check-runtime-deps.py"
+  if [ -e "$VENV_DIR" ] || [ -L "$VENV_DIR" ]; then
+    [ -x "$VENV_DIR/bin/python" ] || die "existing venv is incomplete: $VENV_DIR; choose a new WORKPULSE_SH_VENV, preserving the old directory"
+    if ! "$VENV_DIR/bin/python" -I "$runtime_check" "$runtime_lock"; then
+      die "venv dependencies do not match the runtime lock; no packages changed. Choose a new WORKPULSE_SH_VENV for the reviewed helper release"
+    fi
+    log "runtime dependencies match lock; reusing venv without installation"
+    return
   fi
-  log "installing Python dependencies in isolated venv"
-  "$VENV_DIR/bin/python" -m pip install -q --upgrade pip
-  "$VENV_DIR/bin/python" -m pip install -q -r "$SCRIPT_DIR/requirements.txt"
-  # certifi 提供 CA 根证书;macOS 的 Python 默认没有系统证书,不装会 SSL 握手失败
-  "$VENV_DIR/bin/python" -m pip install -q certifi 2>/dev/null || true
+  log "creating virtualenv: $VENV_DIR"
+  "$python_bin" -m venv "$VENV_DIR" || die "failed to create venv. On Linux install python3-venv."
+  log "installing hash-locked runtime dependencies in new venv"
+  "$VENV_DIR/bin/python" -I -m pip install --require-hashes --only-binary=:all: -r "$runtime_lock" || die "locked dependency installation failed; partial venv retained at $VENV_DIR"
+  "$VENV_DIR/bin/python" -I "$runtime_check" "$runtime_lock" || die "new venv failed runtime lock verification; partial venv retained"
 }
 
 detect_cli_command() {
