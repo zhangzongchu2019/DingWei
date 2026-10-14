@@ -4001,10 +4001,10 @@
       if (streamUnavailableReason) {
         clockStatus.classList.add('offline');
         const reason = streamUnavailableReason === 'event_stream_unavailable'
-          ? '该 Agent 会话当前不可用：事件流尚未注册'
-          : '该 Agent 会话当前不可用：身份无法解析';
+          ? '该 Agent 在线，但还没有可显示的会话输出；有输出后会自动出现'
+          : '无法识别该 Agent 会话（可能已删除或重命名）';
         clockStatus.title = `${reason}；将按退避策略重试。`;
-        localTime.textContent = reason;
+        localTime.textContent = streamUnavailableReason === 'event_stream_unavailable' ? '等待会话输出' : reason;
       } else if (streamGapRecoveryActive()) {
         clockStatus.classList.remove('offline');
         clockStatus.title = '事件流已连接；检测到事件序号缺口，正在自动补收，补齐后此提示自动消失。';

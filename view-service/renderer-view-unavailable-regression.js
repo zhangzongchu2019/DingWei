@@ -21,7 +21,9 @@ async function startFixture() {
     if (pathname === '/view/oaagent.lbl/events') {
       eventRequests += 1;
       res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store' });
-      return res.end('event: stream_unavailable\ndata: {"reason":"event_stream_unavailable"}\n\n');
+      if (eventRequests === 1) return res.end('event: stream_unavailable\ndata: {"reason":"event_stream_unavailable"}\n\n');
+      res.write('data: {"kind":"assistant_text","text":"恢复后输出","data":{}}\n\n');
+      return;
     }
     if (pathname.endsWith('/status')) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -46,15 +48,20 @@ async function startFixture() {
   try {
     await page.goto(fixture.url, { waitUntil: 'domcontentloaded' });
     await checks.check('reasoned unavailable state is visible', async () => {
-      await page.waitForFunction(() => document.getElementById('localTime')?.textContent.includes('事件流尚未注册'));
+      await page.waitForFunction(() => document.getElementById('localTime')?.textContent.includes('等待会话输出'));
       const text = await page.locator('#localTime').textContent();
-      assert.match(text || '', /^该 Agent 会话当前不可用：事件流尚未注册$/);
+      assert.match(text || '', /^等待会话输出$/);
       assert.ok(!/断线重连中/.test(text || ''), `generic reconnect text leaked: ${text}`);
     });
     await checks.check('unavailable stream retries through backoff', async () => {
       const deadline = Date.now() + 4000;
       while (fixture.requests() < 2 && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 50));
       assert.ok(fixture.requests() >= 2, `event requests=${fixture.requests()}, want retry`);
+    });
+    await checks.check('first event after unavailable restores normal state', async () => {
+      await page.waitForFunction(() => document.body.textContent.includes('恢复后输出'));
+      const text = await page.locator('#localTime').textContent();
+      assert.ok(!/等待会话输出|断线重连中|无法识别该 Agent 会话/.test(text || ''), `unavailable state remained: ${text}`);
     });
     await checks.check('unavailable event handler remains present', async () => {
       const source = fs.readFileSync(renderer, 'utf8');
