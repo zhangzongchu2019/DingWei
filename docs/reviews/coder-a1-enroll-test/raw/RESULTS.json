@@ -1,0 +1,30 @@
+[
+  {
+    "name": "current",
+    "rc": 0,
+    "expected_rc": 0,
+    "script_sha256": "e8712a93cd49c76563304419d60f1f56172fad9a7935a3f2a81e02ae38f78696",
+    "console_sha256": "c2b9e233be41025038d782e39850a4faa61404700ee6eea9ca40848521b6478c",
+    "fail_lines": []
+  },
+  {
+    "name": "old-S5-on-2d5b",
+    "rc": 1,
+    "expected_rc": 1,
+    "script_sha256": "217fbb57ba5a14ca94181226208f8d5dfbb7eadcd2119ee836553915ea6db5ec",
+    "console_sha256": "c2b9e233be41025038d782e39850a4faa61404700ee6eea9ca40848521b6478c",
+    "fail_lines": [
+      "FAIL the group panel keeps list and create, and no longer offers join-by-code (owner S5): groupCodeJoin must be gone"
+    ]
+  },
+  {
+    "name": "withdraw-A1-entry-ff49",
+    "rc": 1,
+    "expected_rc": 1,
+    "script_sha256": "e8712a93cd49c76563304419d60f1f56172fad9a7935a3f2a81e02ae38f78696",
+    "console_sha256": "48c6271d890d5bd5df720f6b0bd68cf39dd891f0538128eb3d87347c8ead9d4c",
+    "fail_lines": [
+      "FAIL the group panel keeps list and create, and joins by exact 32-character code using only an owned Agent (current A1): current A1 join-by-code entry must exist"
+    ]
+  }
+]

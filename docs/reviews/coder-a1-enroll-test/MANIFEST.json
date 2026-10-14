@@ -1,0 +1,64 @@
+{
+  "files": [
+    {
+      "file": "docs/reviews/coder-a1-enroll-test/ENVIRONMENT.json",
+      "bytes": 542,
+      "sha256": "78193ea5ff8eab0a108e1a5517d339406fe9c61eae9dcde3527fff788f09ca56"
+    },
+    {
+      "file": "docs/reviews/coder-a1-enroll-test/PROVENANCE.json",
+      "bytes": 1789,
+      "sha256": "cf6cf143ed289f1a9bc7c69b50f0127da6a47ba85d168d877e2c948060a4577c"
+    },
+    {
+      "file": "docs/reviews/coder-a1-enroll-test/REVIEW.md",
+      "bytes": 3489,
+      "sha256": "518c7794cf7e707795f5a7f2b9ae4a75a9dda4c54426c5854701b0c60ae2cf6f"
+    },
+    {
+      "file": "docs/reviews/coder-a1-enroll-test/raw/RESULTS.json",
+      "bytes": 1131,
+      "sha256": "a85c27d6938783d8a6b2d354cd3842cb1711414a2da5008f494f1cbd071387dc"
+    },
+    {
+      "file": "docs/reviews/coder-a1-enroll-test/raw/current.log",
+      "bytes": 2004,
+      "sha256": "86b3196783f6f234f2bcc9466ebf80d20e4cd55c49ab1a4131a2b1da750f946f"
+    },
+    {
+      "file": "docs/reviews/coder-a1-enroll-test/raw/current.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "file": "docs/reviews/coder-a1-enroll-test/raw/initial-maxlength-fixture.log",
+      "bytes": 2095,
+      "sha256": "613f15725c499dec7bff72d3fb240caadc2435176e419056b2a0c1323a47ba80"
+    },
+    {
+      "file": "docs/reviews/coder-a1-enroll-test/raw/old-S5-on-2d5b.log",
+      "bytes": 2011,
+      "sha256": "449f6b720bc4ab4699e3ab71b7b3dbafc3c858998cf8807db96b39320ae7e160"
+    },
+    {
+      "file": "docs/reviews/coder-a1-enroll-test/raw/old-S5-on-2d5b.rc",
+      "bytes": 2,
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    {
+      "file": "docs/reviews/coder-a1-enroll-test/raw/withdraw-A1-entry-ff49.log",
+      "bytes": 2056,
+      "sha256": "ca85d4c9da271e3adf5478ddc537e170f0b1fae92f6199e0c46b665cd2f4c492"
+    },
+    {
+      "file": "docs/reviews/coder-a1-enroll-test/raw/withdraw-A1-entry-ff49.rc",
+      "bytes": 2,
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    {
+      "file": "view-service/console-agent-mgmt-enroll-regression.js",
+      "bytes": 37967,
+      "sha256": "e8712a93cd49c76563304419d60f1f56172fad9a7935a3f2a81e02ae38f78696"
+    }
+  ]
+}

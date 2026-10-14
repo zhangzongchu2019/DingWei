@@ -1,0 +1,37 @@
+{
+  "created_utc": "2026-10-14T17:12:27.696227+00:00",
+  "base_commit": "2d5bde739deba3876a5b63ce41d8ce1301271735",
+  "base_tree": "424852a803ae40e30ecf88c83f422149478c92da",
+  "review_ref": "refs/heads/review/coder/a1-enroll-test",
+  "only_changed_case": true,
+  "unchanged_test_prefix_sha256": "f73a10de2de394352b51d6077266ad848a2089fcf2e44ed943574edf263f9bc6",
+  "unchanged_test_suffix_sha256": "bdbe3210363a19c755f598ff152b43d7d8a73987c0e1a1e6adadfa04725dc120",
+  "remaining_18_cases_unchanged": true,
+  "product_source_unchanged": true,
+  "sources": {
+    "2d5bde739deba3876a5b63ce41d8ce1301271735:view-service/console-agent-mgmt-enroll-regression.js": {
+      "bytes": 34678,
+      "sha256": "217fbb57ba5a14ca94181226208f8d5dfbb7eadcd2119ee836553915ea6db5ec"
+    },
+    "2d5bde739deba3876a5b63ce41d8ce1301271735:internal/m8/console_auth.go": {
+      "bytes": 146059,
+      "sha256": "c2b9e233be41025038d782e39850a4faa61404700ee6eea9ca40848521b6478c"
+    },
+    "ff49d4d974f37beeee32c3733b717dc0809fe88b:internal/m8/console_auth.go": {
+      "bytes": 143237,
+      "sha256": "48c6271d890d5bd5df720f6b0bd68cf39dd891f0538128eb3d87347c8ead9d4c"
+    },
+    "60905ca3c08ea06eb169dae7afedefd6f5b42360:docs/reviews/spec5ff-wave1-validation/browser/console-agent-mgmt-enroll-regression.js.log": {
+      "bytes": 2011,
+      "sha256": "449f6b720bc4ab4699e3ab71b7b3dbafc3c858998cf8807db96b39320ae7e160"
+    },
+    "60905ca3c08ea06eb169dae7afedefd6f5b42360:docs/reviews/spec5ff-wave1-validation/console-agent-mgmt-enroll-regression.js.ff49-baseline.log": {
+      "bytes": 1973,
+      "sha256": "f62499921b6ad869456abb44e95566e0d5be309816416e42d7cb04e6e285d08e"
+    }
+  },
+  "new_test": {
+    "bytes": 37967,
+    "sha256": "e8712a93cd49c76563304419d60f1f56172fad9a7935a3f2a81e02ae38f78696"
+  }
+}
