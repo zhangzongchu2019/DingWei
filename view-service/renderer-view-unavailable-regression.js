@@ -22,6 +22,12 @@ async function startFixture() {
       eventRequests += 1;
       res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store' });
       if (eventRequests === 1) return res.end('event: stream_unavailable\ndata: {"reason":"event_stream_unavailable"}\n\n');
+      // A transport can open before its upstream refusal is known. Keep this
+      // connection open briefly to make sure the prior reason remains visible
+      // during that interval, then refuse it too.
+      if (eventRequests === 2) {
+        return setTimeout(() => res.end('event: stream_unavailable\ndata: {"reason":"event_stream_unavailable"}\n\n'), 500);
+      }
       res.write('data: {"kind":"assistant_text","text":"恢复后输出","data":{}}\n\n');
       return;
     }
@@ -57,6 +63,12 @@ async function startFixture() {
       const deadline = Date.now() + 4000;
       while (fixture.requests() < 2 && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 50));
       assert.ok(fixture.requests() >= 2, `event requests=${fixture.requests()}, want retry`);
+    });
+    await checks.check('reason remains visible while a retry is open but unresolved', async () => {
+      await new Promise(resolve => setTimeout(resolve, 150));
+      const text = await page.locator('#localTime').textContent();
+      assert.match(text || '', /^等待会话输出$/);
+      assert.ok(!/已连接.*等待事件|断线重连中/.test(text || ''), `retry hid unavailable reason: ${text}`);
     });
     await checks.check('first event after unavailable restores normal state', async () => {
       await page.waitForFunction(() => document.body.textContent.includes('恢复后输出'));

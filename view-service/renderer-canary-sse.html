@@ -4035,6 +4035,11 @@
     // Only parsed event dispatch returning successfully clears consecutive retry failures.
     function markStreamConnected() {
       streamTransportOpen = true; streamHasAcceptedEvent = true;
+      // Opening a TCP/SSE transport does not prove that it can supply an event.
+      // Keep a reasoned upstream refusal visible until a real event has been
+      // parsed and applied; a reconnect can otherwise flicker to a misleading
+      // "connected, waiting" state before the next refusal arrives.
+      streamUnavailableReason = '';
       if (!reconnectTimerForGap) clearReconnectTimer();
       reconnectAttempt = 0;
       renderConnectionState();
@@ -4270,7 +4275,6 @@
         // R-V2-0105 件一：已收到过带序号的事件 ⇒ 本次连接带 after、Hub 只补缺口，不需要清空窗口。
         if (streamEverOpened && streamHasAcceptedEvent && !seqStreamSeen) markStreamReconnect();
         streamEverOpened = true;
-        streamUnavailableReason = '';
         opened = true;
         clearStreamConnectTimer();
         hideStreamAlert();
