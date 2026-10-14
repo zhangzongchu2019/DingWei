@@ -1849,7 +1849,7 @@
       const buf = c1MergeBuf.get(dlvId) || [];
       const rec = { ev, admit: !!opts.admit, footKey: opts.footKey || 'echo_merge',
         timer: setTimeout(() => {
-          if(!rec.managed) return flushMergeCopy(dlvId,rec);
+          if(!rec.managed){integrityDispatchDepth++;try{flushMergeCopy(dlvId,rec);}catch(err){markIntegrityApplyFailed();throw err;}finally{integrityDispatchDepth--;}maybeClearRecoveredGap();return;}
           try {managedApplyActive=true;flushMergeCopy(dlvId,rec);flushPendingRenders();rec.managed.records.delete(rec);if(!rec.managed.records.size)rec.managed.resolve();}
           catch(err){rec.managed.reject(err);}finally{managedApplyActive=false;}
         }, opts.holdMs || C2_MERGE_HOLD_MS) };
@@ -3120,10 +3120,12 @@
           renderPendingEntry(entry);
         } catch (err) {
           if (managedApplyActive) throw err;
+          markIntegrityApplyFailed();
           console.error('[render] 条目重渲失败,已跳过该条,不影响同批其余条目:', err);
         }
       }
       if (wasFollowing) scrollTimelineToBottom();
+      maybeClearRecoveredGap();
     }
 
     function scheduleRenderFlush() {
@@ -3814,22 +3816,108 @@
     //    🔵 措辞与外观属**产品可见**项(业主可能改)⇒ 闸只钉"出窗时有可见告警"与"变体是 replay",不钉文案。
     const STREAM_ALERT_TEXT = {
       conn: streamAlertText.textContent.trim(),
-      replay: '⚠️ 重连后 1 秒内没等到历史重放:屏幕上的正文可能已过期,或与随后到达的重放重复。点【刷新】可恢复。',
-      gap: '⚠️ 有较早或未送达的事件没能补齐,显示可能不全。点【刷新】可重建。',
+      replay: '⚠️ 未能确认历史重放完整；已显示内容保留。刷新不能保证找回历史，请查看可恢复范围。',
+      gap: '⚠️ 事件完整性尚未确认；已显示内容保留。',
+      result: '✓ 本次临时缺口已补齐并完成渲染；这不代表更早历史完整。',
     };
-    const STREAM_ALERT_ACTION = { conn: '重试', replay: '刷新', gap: '刷新' };
+    const STREAM_ALERT_ACTION = { conn: '重试', replay: '查看范围', gap: '查看原因', result: '知道了' };
     let streamAlertMode = 'conn';
+    let integrityIssue = null, integrityApplyFailed = false, integrityRetryTimer = null, integrityDispatchDepth = 0;
+    const INTEGRITY_RETRY_MS = 8000;
+    function paintIntegrityIssue() {
+      if (!integrityIssue) return;
+      const x = integrityIssue;
+      const descriptions = {
+        history: '服务端已无法补回当前保留范围之前的历史。当前页面保留已收到内容；后续新事件是否接收取决于当前连接状态。刷新不会找回已淘汰历史。',
+        recoverable: '已发现临时序号缺口，尚未确认补齐；已显示正文保留，新事件继续接收。',
+        tracking: '客户端已无法核实部分较早事件是否完整；已显示正文保留。不能据此声称刷新能恢复全部历史。',
+        apply: '部分事件未能完整显示，完整性无法确认；已显示正文保留。这不是服务端历史已丢失的证明。',
+        managed: '本席事件接收已停止，正文和草稿保留；不能用页面刷新保证恢复。请在 Console 查看本席原因并使用明确重新同步；重新同步也仅限服务端保留历史。',
+      };
+      streamAlertMode = 'gap';
+      streamAlert.setAttribute?.('role', 'alert');
+      streamAlertText.textContent = '⚠️ ' + descriptions[x.kind] + (x.detail ? ' ' + x.detail : '') + (x.outcome ? ' ' + x.outcome : '');
+      streamRetryBtn.textContent = x.kind === 'recoverable' ? (x.retrying ? '补收中…' : '重试补收') : '查看范围';
+      streamRetryBtn.disabled = !!x.retrying;
+      streamAlert.hidden = false;
+    }
+    function noteIntegrityIssue(kind, detail = '') {
+      // An authoritative retention gap stays visible across other local failures.
+      // New transport/render details supplement it, never imply historical repair.
+      if (integrityIssue?.kind === 'history' && kind !== 'history') {
+        if (detail) integrityIssue.outcome = detail;
+        else if (kind === 'apply') integrityIssue.outcome = '另有事件未完整显示；当前完整性仍未确认。';
+        paintIntegrityIssue(); return;
+      }
+      if (integrityIssue && integrityIssue.kind !== 'recoverable' && kind === 'recoverable') return;
+      if (integrityIssue?.kind === 'recoverable' && kind === 'recoverable') {
+        integrityIssue.through = Math.max(integrityIssue.through, lastContiguousSeq, ...seenAboveSeq);
+        if (detail) integrityIssue.detail = detail;
+        paintIntegrityIssue(); return;
+      }
+      clearTimeout(integrityRetryTimer); integrityRetryTimer = null;
+      integrityIssue = {kind, detail, epoch:lastEventEpoch, through:Math.max(lastContiguousSeq, ...seenAboveSeq), retrying:false};
+      paintIntegrityIssue();
+    }
+    function markIntegrityApplyFailed() {
+      integrityApplyFailed = true;
+      if (typeof managedMux !== 'undefined' && managedMux) return;
+      noteIntegrityIssue('apply');
+    }
+    function maybeClearRecoveredGap() {
+      const x = integrityIssue;
+      if (!x || x.kind !== 'recoverable' || integrityApplyFailed || integrityDispatchDepth || x.epoch !== lastEventEpoch ||
+          lastContiguousSeq < x.through || seenAboveSeq.size || c1MergeBuf.size || pendingRenders.size) return false;
+      clearTimeout(integrityRetryTimer); integrityRetryTimer = null;
+      integrityIssue = null; gapRefillStopped = false;
+      streamAlertMode = 'result'; streamRetryBtn.disabled = false;
+      streamAlert.setAttribute?.('role', 'status');
+      streamAlertText.textContent = STREAM_ALERT_TEXT.result;
+      streamRetryBtn.textContent = STREAM_ALERT_ACTION.result; streamAlert.hidden = false;
+      return true;
+    }
+    function requestStreamRecovery() {
+      if (streamAlertMode === 'result') { streamAlertMode = 'conn'; streamAlert.hidden = true; return; }
+      if (streamAlertMode === 'replay') {
+        streamAlertText.textContent = STREAM_ALERT_TEXT.replay + ' 当前只能确认已显示内容；没有逐事件完整性证据，不能宣告重建成功。';
+        return;
+      }
+      if (!integrityIssue) { hideStreamAlert(); connectEventStream(); return; }
+      const x = integrityIssue;
+      if (x.kind !== 'recoverable') { x.outcome = '没有可由刷新找回全部历史的证据；当前内容不会清空。'; paintIntegrityIssue(); return; }
+      if (x.retrying) return;
+      const now = Date.now();
+      gapRefillTimes = gapRefillTimes.filter(t => now - t < GAP_REFILL_WINDOW_MS);
+      if (gapRefillTimes.length >= GAP_REFILL_MAX) {
+        x.outcome = '本轮补收次数已达上限，请待窗口释放后再试；尚未补齐。'; paintIntegrityIssue(); return;
+      }
+      if (managedMux || !seqStreamSeen || !lastEventEpoch || x.epoch !== lastEventEpoch) {
+        x.outcome = '当前没有可安全续传的同纪元游标；未发起补收，不能宣告恢复。'; paintIntegrityIssue(); return;
+      }
+      // Only a real attempt is charged. Existing body/draft and cursor stay intact.
+      clearReconnectTimer(); clearTimeout(gapRefillTimer); gapRefillTimer = null;
+      gapRefillTimes.push(now); x.retrying = true; x.outcome = '正在请求当前游标之后的保留事件。'; paintIntegrityIssue();
+      try { connectEventStream(); } catch (_) { x.retrying = false; x.outcome = '补收连接未能建立；现有内容保留。'; paintIntegrityIssue(); return; }
+      integrityRetryTimer = setTimeout(() => {
+        integrityRetryTimer = null;
+        if (integrityIssue !== x || maybeClearRecoveredGap()) return;
+        x.retrying = false; x.outcome = '8 秒内尚未确认补齐，不能宣告恢复；连接仍按原规则尝试接收新事件。'; paintIntegrityIssue();
+      }, INTEGRITY_RETRY_MS);
+    }
     function hideStreamAlert() {
       // 🔴 重放超时告警**不许**被 onopen / onmessage 的常规 hide 抹掉:它出现的那一刻(arm+1s)
       //    之后约 300ms 就会来一条迟到的重放事件 ⇒ 没有这一句,告警只显示 300ms,业主根本看不见,
       //    (c) 等于没做。端到端闸那条"可见性"断言(要求某次采样里 hidden=false · 文本非空 · 盒子非零)
       //    钉的就是这件事。清它只有一条正路:clearReplayTimeoutAlert()。
-      // R-V2-0105 件一：'gap'（显示可能不全）同理不得被常规 hide 抹掉，只有刷新才算处理了它。
-      if ((streamAlertMode === 'replay' || streamAlertMode === 'gap') && !streamAlert.hidden) return;
+      // 普通 hide 不提供完整性证据；临时缺口须连续序号及渲染完成，历史缺失则保留范围说明。
+      if (integrityIssue || ((streamAlertMode === 'replay' || streamAlertMode === 'gap' || streamAlertMode === 'result') && !streamAlert.hidden)) return;
       streamAlert.hidden = true;
     }
     function showStreamAlert(mode) {
       if (document.hidden) return;
+      if (integrityIssue) { paintIntegrityIssue(); return; }
+      streamRetryBtn.disabled = false;
+      streamAlert.setAttribute?.('role', 'alert');
       streamAlertMode = mode || 'conn';
       // 🔴 不留 `|| conn` 兜底:那会把"变体缺失 / 文案为空"**静默降级成另一件事的告警**。
       //    实测(变异 M-C3:把 replay 文案改成空串)有兜底时页面弹的是"连接不上…点【重试】",
@@ -3870,12 +3958,12 @@
       renderConnectionState();
     }
     // 断了 ⇒ 计次、显示、并按 1s→2s→5s→10s→30s 封顶排下一次。
-    function scheduleReconnect() {
+    function scheduleReconnect(beforeConnect) {
       clearReconnectTimer();
       const delay = RECONNECT_BACKOFF_MS[Math.min(reconnectAttempt, RECONNECT_BACKOFF_MS.length - 1)];
       reconnectAttempt += 1;
       renderConnectionState();
-      reconnectTimer = setTimeout(() => { reconnectTimer = null; connectEventStream(); }, delay);
+      reconnectTimer = setTimeout(() => { reconnectTimer = null; if (beforeConnect && beforeConnect() === false) return; connectEventStream(); }, delay);
     }
     function closeEventStream() {
       eventSourceGeneration += 1;
@@ -3950,7 +4038,9 @@
       if (!p) return true;                       // 无 id：旧 Hub，照旧
       seqStreamSeen = true;
       if (p.epoch !== lastEventEpoch) {          // 首次或换纪元：保留现有内容，以本条为基线
+        if (lastEventEpoch && integrityIssue?.kind === 'recoverable') noteIntegrityIssue('tracking', '事件纪元已改变，旧缺口无法据新纪元事件判定补齐。');
         lastEventEpoch = p.epoch;
+        clearTimeout(gapRefillTimer); gapRefillTimer = null; gapRefillTimes = []; gapRefillStopped = false;
         lastContiguousSeq = p.seq - 1;
         seenAboveSeq = new Set();
       }
@@ -3964,35 +4054,41 @@
       if (seenAboveSeq.size > SEEN_ABOVE_MAX) {  // 缺口长期补不上：放弃补缺，向前对齐并提示
         lastContiguousSeq = Math.max(...seenAboveSeq);
         seenAboveSeq = new Set();
-        showStreamAlert('gap');
+        noteIntegrityIssue('tracking', '超出了客户端缺口跟踪范围。');
         return true;
       }
+      noteIntegrityIssue('recoverable');
       scheduleGapRefill();
       return true;
     }
     // 补缺：合并等待 2 s；与断线重连共用 scheduleReconnect 的退避；同纪元每 5 分钟至多 3 次，超出只提示。
     function scheduleGapRefill() {
       if (gapRefillTimer || gapRefillStopped) return;
+      const epoch = lastEventEpoch;
       gapRefillTimer = setTimeout(() => {
         gapRefillTimer = null;
-        if (!seenAboveSeq.size) return;          // 等待期间已自然补齐
-        if (reconnectTimer) return;              // 已有重连在途，不叠加（它本就带 after）
-        const now = Date.now();
-        gapRefillTimes = gapRefillTimes.filter(t => now - t < GAP_REFILL_WINDOW_MS);
-        if (gapRefillTimes.length >= GAP_REFILL_MAX) {
-          gapRefillStopped = true;
-          showStreamAlert('gap');
-          return;
-        }
-        gapRefillTimes.push(now);
-        scheduleReconnect();
+        if (epoch !== lastEventEpoch || !seenAboveSeq.size || reconnectTimer) return;
+        scheduleReconnect(() => {
+          // Recheck at actual serial execution, not when a timer was proposed.
+          if (epoch !== lastEventEpoch || !seenAboveSeq.size) return false;
+          const now = Date.now();
+          gapRefillTimes = gapRefillTimes.filter(t => now - t < GAP_REFILL_WINDOW_MS);
+          if (gapRefillTimes.length >= GAP_REFILL_MAX) {
+            gapRefillStopped = true;
+            noteIntegrityIssue('recoverable', '自动补收次数已达上限；缺口尚未补齐。');
+            return false;
+          }
+          gapRefillTimes.push(now);
+          return true;
+        });
       }, GAP_COALESCE_MS);
     }
     function handleReplayGap(msg) {
       let reason = '';
       try { reason = JSON.parse(msg.data).reason || ''; } catch (_) {}
-      // epoch_changed：Hub 重启或会话终端重建 ⇒ 保留现有内容，随后到达的新纪元事件按基线收；不提示。
-      if (reason === 'overflow') showStreamAlert('gap');
+      // 新纪元保留现有内容，但不能据新基线声称旧历史已恢复。
+      if (reason === 'overflow') noteIntegrityIssue('history');
+      else if (reason === 'epoch_changed') noteIntegrityIssue('tracking', '服务端事件纪元已改变，旧历史完整性无法确认。');
     }
 
     const managedParams = new URLSearchParams(location.search);
@@ -4010,13 +4106,13 @@
     }
     if (managedMux) {
       if (parent === window || !/^[0-9a-f]{32}$/.test(managedInstance)) {
-        managedStopped = true; showStreamAlert('gap');
+        managedStopped = true; noteIntegrityIssue('managed', '页面上下文无效，未建立可用订阅。');
       } else {
         window.addEventListener('message', async ev => {
           const d=ev.data;
           if(ev.source!==parent||ev.origin!==location.origin||!d||d.protocol!=='dw-console-mux/v1'||d.iframe_instance!==managedInstance)return;
           if(d.type==='bind'&&d.agent_id===managedAgent&&d.generation===managedGeneration&&/^[0-9a-f]{32}$/.test(d.next_generation)){managedGeneration=d.next_generation;return;}
-          if(d.type==='stopped'){managedStopped=true;finishTimelineReplay(true);showStreamAlert('gap');const alert=document.getElementById('streamAlertText');if(alert)alert.textContent=d.reason;return;}
+          if(d.type==='stopped'){managedStopped=true;finishTimelineReplay(true);noteIntegrityIssue('managed', typeof d.reason === 'string' ? d.reason : '聚合接收停止，原因未提供。');return;}
           if(d.type!=='event'||managedStopped)return;
           const p=d.event;
           if(!p||p.agent_id!==d.agent_id||p.generation!==d.generation||p.iframe_instance!==managedInstance)return;
@@ -4045,7 +4141,7 @@
             managedApplyActive=false;managedStopped=true;
             if(managedApplyPending){for(const rec of managedApplyPending.records)clearTimeout(rec.timer);managedApplyPending=null;}
             if(managedInFlight){managedInFlight.fail(err);managedInFlight=null;}
-            finishTimelineReplay(true);showStreamAlert('gap');
+            finishTimelineReplay(true);if(!integrityIssue || integrityIssue.kind !== 'managed')noteIntegrityIssue('managed', '事件序号、身份或渲染未通过完整性检查；未确认应用。');
             // A handler may have partially mutated DOM. Never retry that mutation or claim applied.
             managedReply(p,false,false);
           }
@@ -4090,10 +4186,14 @@
         // T-086:重放的第一条到达了 ⇒ 此刻才清空(与旧行为等价);ring 空则永远走不到这里。
         // 🔴 (c):清空 = 内容马上由 ring 重建 ⇒ "可能与重放重复"的风险过去了,重放超时告警可以撤。
         if (consumeReconnectClear()) { resetConversation(); clearReplayTimeoutAlert(); }
-        if (!admitEventId(msg.lastEventId)) return;   // R-V2-0105 件一：已见事件不再渲染
         try {
-          handleIncomingEvent(JSON.parse(msg.data));
+          const payload = JSON.parse(msg.data);
+          if (!admitEventId(msg.lastEventId)) return;
+          integrityDispatchDepth++;
+          try { handleIncomingEvent(payload); } finally { integrityDispatchDepth--; }
+          maybeClearRecoveredGap();
         } catch (err) {
+          markIntegrityApplyFailed();
           handleIncomingEvent({ kind: 'error', text: `Bad event payload: ${err.message}`, data: { code: 'bad_sse_payload' } });
         }
       };
@@ -4590,14 +4690,7 @@
       connectEventStream();
       refreshStatus();
     });
-    streamRetryBtn.addEventListener('click', () => {
-      const mode = streamAlertMode;
-      hideStreamAlert();
-      // 🔴 (c):重放超时那条的恢复动作是**刷新**,不是重连 —— 重连只会再 arm 一次窗口,
-      //    治不了屏幕上已经叠起来的内容;刷新让整页从 hub 重新取一份完整状态。
-      if (mode === 'replay' || mode === 'gap') { window.location.reload(); return; }
-      connectEventStream();
-    });
+    streamRetryBtn.addEventListener('click', requestStreamRecovery);
     async function doSend() {
       if (stats.readonly && isConsoleView()) { await refreshViewAuthorization(); }
       if (stats.readonly) {
