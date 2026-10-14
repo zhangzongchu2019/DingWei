@@ -9,7 +9,7 @@ function make(){const alert={hidden:true,setAttribute(k,v){this[k]=v;}},text={te
 let count=0;
 for(const next of ["noteIntegrityIssue('recoverable')","noteIntegrityIssue('tracking','纪元改变')","markIntegrityApplyFailed()","noteIntegrityIssue('managed','父链已停止')","showStreamAlert('conn')","hideStreamAlert();maybeClearRecoveredGap()"]){
  const h=make();h.run("noteIntegrityIssue('history','服务端overflow')");h.run(next);
- assert.equal(h.run('integrityIssue.kind'),'history');assert.equal(h.alert.hidden,false);assert.match(h.text.textContent,/刷新不会找回已淘汰历史/);assert.equal(h.alert.role,'alert');console.log('PASS history retained: '+next);count++;
+ assert.equal(h.run('integrityIssue.kind'),'history');assert.equal(h.alert.hidden,false);assert.match(h.text.textContent,/更早的历史已超出服务端保留范围，无法加载/);assert.equal(h.alert.role,next.startsWith('noteIntegrityIssue')||next.startsWith('markIntegrityApplyFailed')?'alert':'status');console.log('PASS history retained: '+next);count++;
 }
-{const h=make();h.run("noteIntegrityIssue('recoverable');noteIntegrityIssue('history','history_unavailable');maybeClearRecoveredGap()");assert.equal(h.run('integrityIssue.kind'),'history');assert.equal(h.alert.role,'alert');console.log('PASS history escalates temporary gap, never success');count++;}
+{const h=make();h.run("noteIntegrityIssue('recoverable');noteIntegrityIssue('history','history_unavailable');maybeClearRecoveredGap()");assert.equal(h.run('integrityIssue.kind'),'history');assert.equal(h.alert.role,'status');console.log('PASS history escalates temporary gap, never success');count++;}
 console.log('TOTAL '+count+' new severity observations');

@@ -394,6 +394,18 @@
       background: var(--danger-bg);
       color: var(--danger);
     }
+    .stream-alert[data-tone="notice"] {
+      border-color: var(--line);
+      background: var(--panel);
+      color: var(--muted);
+      padding: 6px 12px;
+    }
+    .stream-alert[data-tone="notice"] #streamAlertText {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .stream-alert[hidden] { display: none; }
     .stream-alert .text-btn { flex: 0 0 auto; }
     .timeline {
@@ -3924,15 +3936,20 @@
       if (!integrityIssue) return;
       const x = integrityIssue;
       const descriptions = {
-        history: '服务端已无法补回当前保留范围之前的历史。当前页面保留已收到内容；后续新事件是否接收取决于当前连接状态。刷新不会找回已淘汰历史。',
+        history: '更早的历史已超出服务端保留范围，无法加载；当前内容完整保留。',
         recoverable: '已发现临时序号缺口，尚未确认补齐；已显示正文保留，新事件继续接收。',
         tracking: '客户端已无法核实部分较早事件是否完整；已显示正文保留。不能据此声称刷新能恢复全部历史。',
         apply: '部分事件未能完整显示，完整性无法确认；已显示正文保留。这不是服务端历史已丢失的证明。',
         managed: '本席事件接收已停止，正文和草稿保留；不能用页面刷新保证恢复。请在 Console 查看本席原因并使用明确重新同步；重新同步也仅限服务端保留历史。',
       };
       streamAlertMode = 'gap';
-      streamAlert.setAttribute?.('role', 'alert');
-      streamAlertText.textContent = '⚠️ ' + descriptions[x.kind] + (x.detail ? ' ' + x.detail : '') + (x.outcome ? ' ' + x.outcome : '');
+      // Retention alone is informational; a concurrent real integrity failure
+      // still warns without replacing the authoritative history issue.
+      const notice = x.kind === 'history' && !x.warningKind;
+      streamAlert.setAttribute?.('data-tone', notice ? 'notice' : 'warning');
+      streamAlert.setAttribute?.('role', notice ? 'status' : 'alert');
+      streamAlertText.textContent = notice ? descriptions.history : '⚠️ ' + descriptions[x.kind] + (x.detail ? ' ' + x.detail : '') + (x.outcome ? ' ' + x.outcome : x.warningKind ? ' ' + descriptions[x.warningKind] : '');
+      streamAlertText.title = streamAlertText.textContent;
       streamRetryBtn.textContent = x.kind === 'recoverable' ? (x.retrying ? '补收中…' : '重试补收') : '查看范围';
       streamRetryBtn.disabled = !!x.retrying;
       streamAlert.hidden = false;
@@ -3940,7 +3957,14 @@
     function noteIntegrityIssue(kind, detail = '') {
       // An authoritative retention gap stays visible across other local failures.
       // New transport/render details supplement it, never imply historical repair.
+      // A repeated retention notification is not proof that a concurrent
+      // integrity failure recovered. Keep its warning state and outcome.
+      if (integrityIssue?.kind === 'history' && kind === 'history') {
+        if (detail) integrityIssue.detail = detail;
+        paintIntegrityIssue(); return;
+      }
       if (integrityIssue?.kind === 'history' && kind !== 'history') {
+        integrityIssue.warningKind = kind;
         if (detail) integrityIssue.outcome = detail;
         else if (kind === 'apply') integrityIssue.outcome = '另有事件未完整显示；当前完整性仍未确认。';
         paintIntegrityIssue(); return;
@@ -3968,6 +3992,7 @@
       integrityIssue = null; gapRefillStopped = false;
       streamAlertMode = 'result'; streamRetryBtn.disabled = false;
       streamAlert.setAttribute?.('role', 'status');
+      streamAlert.setAttribute?.('data-tone', 'warning');
       streamAlertText.textContent = STREAM_ALERT_TEXT.result;
       streamRetryBtn.textContent = STREAM_ALERT_ACTION.result; streamAlert.hidden = false;
       return true;
@@ -4014,6 +4039,7 @@
       if (integrityIssue) { paintIntegrityIssue(); return; }
       streamRetryBtn.disabled = false;
       streamAlert.setAttribute?.('role', 'alert');
+      streamAlert.setAttribute?.('data-tone', 'warning');
       streamAlertMode = mode || 'conn';
       // 🔴 不留 `|| conn` 兜底:那会把"变体缺失 / 文案为空"**静默降级成另一件事的告警**。
       //    实测(变异 M-C3:把 replay 文案改成空串)有兜底时页面弹的是"连接不上…点【重试】",
