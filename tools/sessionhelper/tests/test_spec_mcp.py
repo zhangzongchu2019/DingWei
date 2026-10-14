@@ -31,4 +31,3 @@ class SpecMCPToolTest(unittest.TestCase):
     def test_unknown_or_capability_argument_is_rejected(self):
         with self.assertRaises(ValueError):
             mcp_shim._dw_spec_create(self.body() | {"capability": "forbidden"})
-
