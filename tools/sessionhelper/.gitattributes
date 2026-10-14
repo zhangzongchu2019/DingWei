@@ -1,0 +1,3 @@
+# Preserve original evidence bytes; product/bootstrap sources retain whitespace checks.
+reviews/helper-deps-lock/raw/*.log -whitespace
+reviews/helper-deps-lock/MAKEFILE-BUILD-ONLY-INTEGRATION.patch -whitespace

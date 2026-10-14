@@ -1,6 +1,11 @@
 {
   "files": [
     {
+      "file": "tools/sessionhelper/.gitattributes",
+      "bytes": 210,
+      "sha256": "2a951061f3caf7e4b746f90a33439dfbcff8e6996eae77eada2b630884e988a3"
+    },
+    {
       "file": "tools/sessionhelper/INSTALL-DW123.txt",
       "bytes": 2768,
       "sha256": "59d0d1c807d2505dde6f91f2a6751a1b3bde3a780ffa4a37e57250d5547c2250"
@@ -47,13 +52,13 @@
     },
     {
       "file": "tools/sessionhelper/reviews/helper-deps-lock/RESULTS.json",
-      "bytes": 1732,
-      "sha256": "fa818fa932afc086a434bbebdd6f10a3860e66222eba29695efd5b1d41e9f842"
+      "bytes": 1918,
+      "sha256": "1ed99754b1bda6c3cee08b73b94f7c2571bf3672085c2776534e173b5c79aea5"
     },
     {
       "file": "tools/sessionhelper/reviews/helper-deps-lock/REVIEW.md",
-      "bytes": 5272,
-      "sha256": "3eaaa77d3e7dcf58585a38deb0986fd0b2c48b0553106e6d273bfdc7913a2263"
+      "bytes": 6089,
+      "sha256": "07ea9e46123054c6af53f4929e6610451d2a136df98c2c8f86bc78ee99bddfa9"
     },
     {
       "file": "tools/sessionhelper/reviews/helper-deps-lock/UNCHANGED-RUNTIME.json",

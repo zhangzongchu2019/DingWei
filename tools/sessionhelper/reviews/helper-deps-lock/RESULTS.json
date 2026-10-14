@@ -74,5 +74,10 @@
     "apply_check_rc": 0,
     "scope": "outside-task integration input only"
   },
-  "native_Mac_Python39_freezer": "NOT_RUN"
+  "native_Mac_Python39_freezer": "NOT_RUN",
+  "whitespace_check": {
+    "rc": 0,
+    "raw_evidence_bytes_preserved": true,
+    "exceptions": "tools/sessionhelper/.gitattributes, only this review raw logs and unapplied patch"
+  }
 }
