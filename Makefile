@@ -14,6 +14,7 @@ docker:
 sessionhelper:
 	python3 -m venv tools/sessionhelper/.venv
 	tools/sessionhelper/.venv/bin/python -m pip install -r tools/sessionhelper/requirements.txt
+	tools/sessionhelper/.venv/bin/python -m pip install -r tools/sessionhelper/requirements-build.txt
 	tools/sessionhelper/.venv/bin/python -m PyInstaller --clean tools/sessionhelper/sessionhelper.spec
 
 # —— 多CLI调度模拟测试台(phase-2 E4):一条命令全跑,tester/后来者可独立复现 ——

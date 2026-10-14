@@ -65,7 +65,8 @@ mkdir -p -m 700 "$task_output"
 printf '%s\n' "$task_desktop_metadata" > "$task_output/desktop-metadata-before-build.json"
 "$task_python" -m venv "$task_output/venv"
 task_venv_python="$task_output/venv/bin/python"
-"$task_venv_python" -m pip install -r "$task_source_root/tools/sessionhelper/requirements.txt" > "$task_output/dependencies-private.log" 2>&1
+"$task_venv_python" -m pip install --require-hashes --only-binary=:all: -r "$task_source_root/tools/sessionhelper/requirements-runtime.lock" > "$task_output/dependencies-private.log" 2>&1
+"$task_venv_python" -m pip install -r "$task_source_root/tools/sessionhelper/requirements-build.txt" >> "$task_output/dependencies-private.log" 2>&1
 "$task_venv_python" -B -m PyInstaller --noconfirm --distpath "$task_output/bin" --workpath "$task_output/work" \
     "$task_source_root/tools/sessionhelper/sessionhelper.spec" > "$task_output/build-private.log" 2>&1
 if [ -n "$task_desktop_app" ]; then

@@ -1,0 +1,27 @@
+test_checker_reverse_controls (test_home_isolation_wiring.HomeIsolationWiringTest.test_checker_reverse_controls) ... ok
+test_checker_reverse_controls_for_evasions (test_home_isolation_wiring.HomeIsolationWiringTest.test_checker_reverse_controls_for_evasions) ... ok
+test_every_constructing_test_module_is_isolated_or_allowlisted (test_home_isolation_wiring.HomeIsolationWiringTest.test_every_constructing_test_module_is_isolated_or_allowlisted) ... FAIL
+test_the_scan_is_not_vacuous (test_home_isolation_wiring.HomeIsolationWiringTest.test_the_scan_is_not_vacuous) ... ok
+
+======================================================================
+FAIL: test_every_constructing_test_module_is_isolated_or_allowlisted (test_home_isolation_wiring.HomeIsolationWiringTest.test_every_constructing_test_module_is_isolated_or_allowlisted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/lock-parent-guard-axf3p8_y/tools/sessionhelper/tests/test_home_isolation_wiring.py", line 145, in test_every_constructing_test_module_is_isolated_or_allowlisted
+    self.assertEqual(problems, [], "新增构造点：接 tests/_home_isolation.py 的 HomeIsolation，"
+AssertionError: Lists differ: ["claim_hub_integration_client.py: 构造了 ['S[233 chars]白名单"] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+"claim_hub_integration_client.py: 构造了 ['SessionHelper']（行 [91]…）却没接 HomeIsolation（setUpModule 顶层调 start、tearDownModule 顶层调 finish），也不在白名单"
+
++ []
+- ["claim_hub_integration_client.py: 构造了 ['SessionHelper']（行 [91]…）却没接 "
+-  'HomeIsolation（setUpModule 顶层调 start、tearDownModule 顶层调 finish），也不在白名单',
+-  "desktop_hub_roundtrip_client.py: 构造了 ['SessionHelper']（行 [30]…）却没接 "
+-  'HomeIsolation（setUpModule 顶层调 start、tearDownModule 顶层调 finish），也不在白名单'] : 新增构造点：接 tests/_home_isolation.py 的 HomeIsolation，或到本文件 ALLOWED 里写明理由与证据串
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.051s
+
+FAILED (failures=1)

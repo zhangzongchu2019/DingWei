@@ -1,0 +1,15 @@
+{
+  "parent": "26b48ec962b4f1de1343bfec40c202f74ee6eea3",
+  "review_ref": "review/coder/helper-deps-lock",
+  "created_utc": "2026-10-14T18:06:31.731287+00:00",
+  "python": "3.12.3",
+  "tested_runtime": {
+    "websockets": "15.0.1",
+    "pexpect": "4.9.0",
+    "ptyprocess": "0.7.0",
+    "certifi": "2026.7.22"
+  },
+  "prior_author_venv_websockets": "17.2 (requires Python>=3.11; not selected for the existing3.9+ bootstrap contract)",
+  "hash_source": "https://pypi.org/pypi/<distribution>/<version>/json; non-yanked bdist_wheel SHA256 only",
+  "scope": "offline author dependency/bootstrap tests; not native Mac/frozen build or production rollout"
+}
