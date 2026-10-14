@@ -372,8 +372,8 @@ const MUTATIONS = {
     //    只拆前一道 ⇒ 后一道会把卡再撤掉 ⇒ 观测量不动 ⇒ 这条对照会**假报"探针没牙"**(实际是变异没生效)。
     steps: [
       [
-        `        if (seen.has(url) || inlineShown.has(url)) continue;`,
-        `        if (seen.has(url)) continue;`,
+        `        if (url === openTail || longerExists(url) || seen.has(url) || inlineShown.has(url)) continue;`,
+        `        if (url === openTail || longerExists(url) || seen.has(url)) continue;`,
       ],
       [
         `            if (mdInlineImageUrls(cardEl).has(url)) { slot.remove(); return; }`,
