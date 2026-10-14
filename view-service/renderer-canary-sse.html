@@ -3916,6 +3916,12 @@
     function noteIntegrityIssue(kind, detail = '') {
       // An authoritative retention gap stays visible across other local failures.
       // New transport/render details supplement it, never imply historical repair.
+      // A repeated retention notification is not proof that a concurrent
+      // integrity failure recovered. Keep its warning state and outcome.
+      if (integrityIssue?.kind === 'history' && kind === 'history') {
+        if (detail) integrityIssue.detail = detail;
+        paintIntegrityIssue(); return;
+      }
       if (integrityIssue?.kind === 'history' && kind !== 'history') {
         integrityIssue.warningKind = kind;
         if (detail) integrityIssue.outcome = detail;

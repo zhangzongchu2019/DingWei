@@ -21,6 +21,13 @@ for(const kind of ['recoverable','tracking','apply','managed'])check(kind+' reta
 for(const kind of ['recoverable','apply','managed'])check('history priority cannot hide concurrent '+kind+' warning',()=>{
  const h=fixture();h.run(`noteIntegrityIssue('history');noteIntegrityIssue('${kind}')`);assert.equal(h.state().issue.kind,'history');assert.equal(h.alert.role,'alert');assert.equal(h.alert['data-tone'],'warning');assert.ok(h.text.textContent.startsWith('⚠️ '));assert.equal(h.counts().resets,0);
 });
+for(const kind of ['recoverable','apply','managed'])check('repeated history preserves concurrent '+kind+' warning',()=>{
+ const h=fixture();h.run(`noteIntegrityIssue('history');noteIntegrityIssue('${kind}');noteIntegrityIssue('history')`);
+ assert.equal(h.state().issue.kind,'history');assert.equal(h.state().issue.warningKind,kind);assert.equal(h.alert.role,'alert');assert.equal(h.alert['data-tone'],'warning');assert.ok(h.text.textContent.startsWith('⚠️ '));assert.equal(h.counts().resets,0);
+});
+check('repeated retention alone remains a neutral notice',()=>{
+ const h=fixture();h.run("noteIntegrityIssue('history');noteIntegrityIssue('history')");assert.equal(h.alert.role,'status');assert.equal(h.alert['data-tone'],'notice');assert.equal(h.text.textContent,message);assert.equal(h.counts().resets,0);
+});
 (async()=>{
  const {chromium}=require('playwright');const browser=await chromium.launch({headless:true,...(process.env.PW_CHANNEL?{channel:process.env.PW_CHANNEL}:{})});
  try{
