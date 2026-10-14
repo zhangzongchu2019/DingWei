@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
@@ -19,7 +20,7 @@ const consoleTaskBoardPageHTML = `<!doctype html>
 :root{color-scheme:light;--bg:#fff;--panel:#f6f8fb;--line:#d8dee8;--text:#17202a;--muted:#667085;--selected:#e8f1ff}
 html[data-theme="dark"]{color-scheme:dark;--bg:#111316;--panel:#1b1f24;--line:#38414c;--text:#eef2f6;--muted:#a8b0bb;--selected:#1b3048}
 *{box-sizing:border-box}body{margin:0;padding:16px;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
-h1,h2{margin:0 0 10px}.board{display:grid;grid-template-columns:minmax(280px,35%) minmax(0,65%);gap:16px}.panel{min-width:0;padding:12px;border-radius:8px;background:var(--panel)}
+h1,h2{margin:0 0 10px}.board{display:grid;grid-template-columns:minmax(280px,35%) minmax(0,65%);gap:16px}.panel{min-width:0;padding:12px;border-radius:8px;background:var(--panel)}.active-panel{grid-column:1 / -1}
 table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-weight:400;overflow-wrap:anywhere}th{font-weight:700}
 #spec-list tr{cursor:pointer}#spec-list tr.selected{background:var(--selected)}.pager{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px}.muted{color:var(--muted)}
 .task-toolbar{display:flex;justify-content:space-between;align-items:center}.offline-dot{color:#98a2b3;margin-left:5px}.assignee-select{max-width:100%}
@@ -28,7 +29,7 @@ table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{padding:8px;b
 </style></head><body><h1>任务管理</h1><div class=board>
 <section id=spec-panel class=panel><h2>spec 列表</h2><button id=all-owned-tasks type=button>本人全部任务</button><table><thead><tr><th>spec</th><th>状态</th></tr></thead><tbody id=spec-list></tbody></table><div class=pager><button id=spec-prev type=button>上一页</button><span id=spec-page></span><button id=spec-next type=button>下一页</button></div></section>
 <section id=task-panel class=panel><div class=task-toolbar><h2>任务列表</h2><span><button id=refresh-tasks type=button>刷新</button><button id=edit-tasks type=button>编辑</button><button id=finish-tasks type=button hidden>编辑完成</button></span></div><div id=task-status role=status></div><div id=task-updated class=muted></div><table id=task-table><thead><tr><th>任务文本</th><th>研发</th><th>验收</th><th>状态</th><th>验收标准</th></tr></thead><tbody id=task-list></tbody></table><div class=pager><button id=task-prev type=button>上一页</button><span id=task-page></span><button id=task-next type=button>下一页</button></div></section>
-</div><script>
+</div><section class="panel active-panel"><h2>进行中任务</h2><table><thead><tr><th>任务</th><th>状态</th><th>开始时间</th><th>执行人</th><th>验收人</th><th>计划完成</th><th>堵塞点</th><th>资源协调</th></tr></thead><tbody id="active-task-list"></tbody></table></section><script>
 var DW_THEME_KEY='dw-theme',dwTaskThemeChannel=null;
 function dwTaskApplyTheme(v){if(v!=='dark'&&v!=='light')return;document.documentElement.dataset.theme=v;if(document.body)document.body.dataset.theme=v;}
 function dwTaskInitTheme(){var initial='light';try{var stored=localStorage.getItem(DW_THEME_KEY);if(stored==='dark'||stored==='light')initial=stored;}catch(_){}dwTaskApplyTheme(initial);
@@ -44,6 +45,8 @@ async function saveAssignment(task){if(boardStopped)return false;const status=do
 async function saveAssignments(){if(!await loadBoard('verify')||boardStopped)return false;for(const task of currentTasks){if(task.assignment_dirty&&!await saveAssignment(task))return false}document.getElementById('task-status').textContent='已保存';return true}
 function taskProgress(task){if(task.developer_agent_id&&!task.reviewer_agent_id)return {text:'缺少验收 Agent，任务无法完成',problem:true};return {text:(task.status?({'planned':'已计划'}[task.status]||task.status)+' · ':'')+String(task.passed_cases||0)+'/'+String(task.total_cases||1),problem:false}}
 function renderTasks(tasks){currentTasks=tasks||[];const body=document.getElementById('task-list');body.replaceChildren();currentTasks.forEach(function(task){const tr=document.createElement('tr'),acceptance=acceptanceDisplay(task.acceptance_json),progress=taskProgress(task),progressCell=taskCell(progress.text);tr.dataset.taskId=task.proposal_id;if(progress.problem)progressCell.className='error assignment-problem';tr.append(taskCell(task.content||task.title),assigneeCell(task,'developer'),assigneeCell(task,'reviewer'),progressCell,taskCell(acceptance.label,acceptance.title));body.append(tr)})}
+function taskUnknown(v){return v===null||v===undefined||v===''?'未填写/未知':String(v)}
+function renderActiveTasks(tasks){const body=document.getElementById('active-task-list');body.replaceChildren();(tasks||[]).forEach(function(task){const tr=document.createElement('tr');tr.append(taskCell(task.content||task.title),taskCell(task.status),taskCell(taskUnknown(task.started_at)),taskCell(taskUnknown(task.developer_agent)),taskCell(taskUnknown(task.reviewer_agent)),taskCell(taskUnknown(task.planned_finish_at)),taskCell(taskUnknown(task.blocker)),taskCell(taskUnknown(task.resource_coordination)));body.append(tr)})}
 function renderSpecs(specs){const body=document.getElementById('spec-list');body.replaceChildren();(specs||[]).forEach(function(spec){const tr=document.createElement('tr');tr.dataset.specId=spec.id;tr.classList.toggle('selected',spec.id===selectedSpec);tr.append(taskCell(spec.title),taskCell(spec.state));tr.onclick=function(){boardChangeSelection(function(){selectedSpec=selectedSpec===spec.id?'':spec.id;taskPage=1})};body.append(tr)})}
 // DW-OWNED-TASK-BOARD BEGIN: single-flight reads, editing owns its draft objects.
 let boardTimer=null,boardFlight=null,boardGeneration=0,boardStopped=false,boardQueued=false,boardViewer='',boardLastGoodAt='',boardSaving=false;
@@ -72,7 +75,7 @@ async function loadBoard(mode){
   if(mode==='verify')return data;
   if(editing){boardQueued=true;return null}
   specPage=data.spec_page;taskPage=data.task_page;onlineAgents=data.agents;
-  renderSpecs(data.specs);renderTasks(data.tasks);setPager('spec',data.spec_page,data.spec_total_pages);setPager('task',data.task_page,data.task_total_pages);
+  renderSpecs(data.specs);renderTasks(data.tasks);renderActiveTasks(data.active_tasks||[]);setPager('spec',data.spec_page,data.spec_total_pages);setPager('task',data.task_page,data.task_total_pages);
   boardLastGoodAt=data.updated_at||new Date().toISOString();
   document.getElementById('task-updated').textContent='更新于 '+boardLastGoodAt;
   document.getElementById('task-status').textContent=selectedSpec?'':'本人名下任务 · '+String(data.task_total??data.tasks.length)+' 项';
@@ -268,8 +271,18 @@ func (h *Hub) HandleConsoleTaskBoard(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"viewer_key": hashConsoleToken("task-board:" + principal), "updated_at": h.now().UTC(), "task_total": len(tasks),
 		"specs": visibleSpecs, "spec_page": specPage, "spec_page_size": consoleTaskBoardSpecPageSize, "spec_total_pages": specPages,
-		"tasks": visibleTasks, "agents": online, "task_page": taskPage, "task_page_size": consoleTaskBoardTaskPageSize, "task_total_pages": taskPages,
+		"tasks": visibleTasks, "active_tasks": activeConsoleTasks(tasks), "agents": online, "task_page": taskPage, "task_page_size": consoleTaskBoardTaskPageSize, "task_total_pages": taskPages,
 	})
+}
+
+func activeConsoleTasks(tasks []model.ConsoleTaskProposal) []model.ConsoleTaskProposal {
+	out := make([]model.ConsoleTaskProposal, 0)
+	for _, task := range tasks {
+		if task.Status == "in_progress" || task.Status == "blocked" {
+			out = append(out, task)
+		}
+	}
+	return out
 }
 
 func (h *Hub) HandleConsoleTaskBoardAssignment(w http.ResponseWriter, r *http.Request) {
@@ -279,13 +292,34 @@ func (h *Hub) HandleConsoleTaskBoardAssignment(w http.ResponseWriter, r *http.Re
 		return
 	}
 	var req struct {
-		DeveloperAgentID string `json:"developer_agent_id"`
-		ReviewerAgentID  string `json:"reviewer_agent_id"`
+		DeveloperAgentID     string  `json:"developer_agent_id"`
+		ReviewerAgentID      string  `json:"reviewer_agent_id"`
+		StartedAt            *string `json:"started_at"`
+		PlannedFinishAt      *string `json:"planned_finish_at"`
+		Blocker              *string `json:"blocker"`
+		ResourceCoordination *string `json:"resource_coordination"`
 	}
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10))
 	dec.DisallowUnknownFields()
 	if dec.Decode(&req) != nil {
 		http.Error(w, "invalid task assignment", http.StatusBadRequest)
+		return
+	}
+	parseTaskTime := func(raw *string) (*time.Time, bool) {
+		if raw == nil {
+			return nil, true
+		}
+		v, err := time.Parse(time.RFC3339, *raw)
+		if err != nil {
+			return nil, false
+		}
+		v = v.UTC()
+		return &v, true
+	}
+	startedAt, startedOK := parseTaskTime(req.StartedAt)
+	plannedAt, plannedOK := parseTaskTime(req.PlannedFinishAt)
+	if !startedOK || !plannedOK {
+		http.Error(w, "invalid task time", http.StatusBadRequest)
 		return
 	}
 	principal := platformPrincipal(r)
@@ -345,6 +379,16 @@ func (h *Hub) HandleConsoleTaskBoardAssignment(w http.ResponseWriter, r *http.Re
 		}
 		http.Error(w, err.Error(), code)
 		return
+	}
+	if req.StartedAt != nil || req.PlannedFinishAt != nil || req.Blocker != nil || req.ResourceCoordination != nil {
+		if err := repo.UpdateConsoleSpecTaskMetadata(r.Context(), current.ID, principal, startedAt, plannedAt, req.Blocker, req.ResourceCoordination); err != nil {
+			code := http.StatusConflict
+			if errors.Is(err, store.ErrConsoleSpecPermission) {
+				code = http.StatusForbidden
+			}
+			http.Error(w, err.Error(), code)
+			return
+		}
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
