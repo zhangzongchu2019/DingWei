@@ -164,6 +164,19 @@ func (h *Hub) HandleConsoleSpecGrantDecision(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	id, decision, now := strings.TrimSpace(r.PathValue("requestID")), strings.TrimSpace(r.PathValue("decision")), h.now()
+	// A freshly authenticated owner may not yet have a Console projection.
+	// Sync it before RotateConsolePageCapability performs its four gates;
+	// otherwise the first approval spuriously fails until an unrelated
+	// Console request warms that projection.
+	var approvalSession *model.ConsoleSession
+	if decision == "approve" {
+		var sessionOK bool
+		approvalSession, sessionOK = h.newPlatformSessionProjection(r)
+		if !sessionOK || h.syncNewPlatformUser(r.Context(), identity.Lower(principal), approvalSession) != nil {
+			http.Error(w, "console unavailable", http.StatusServiceUnavailable)
+			return
+		}
+	}
 	h.specGrantMu.Lock()
 	g := h.specGrantRequests[id]
 	if g == nil || g.SessionName != ag.NameLC() || g.PrincipalID != identity.Lower(principal) {
@@ -228,8 +241,7 @@ func (h *Hub) HandleConsoleSpecGrantDecision(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	repo, repoOK := h.Repo.(consoleAuthRepository)
-	sess, sessOK := h.newPlatformSessionProjection(r)
-	if !repoOK || !sessOK {
+	if !repoOK || approvalSession == nil {
 		h.specGrantMu.Unlock()
 		http.Error(w, "console unavailable", http.StatusServiceUnavailable)
 		return
@@ -241,7 +253,7 @@ func (h *Hub) HandleConsoleSpecGrantDecision(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "grant unavailable", http.StatusServiceUnavailable)
 		return
 	}
-	cap := model.ConsolePageCapability{ID: capID, SessionID: sess.ID, PrincipalID: identity.Lower(principal), AgentID: ag.ID, PageID: g.PageID, TokenHash: hashConsoleToken(raw), ExpiresAt: now.Add(newPlatformCapabilityTTL)}
+	cap := model.ConsolePageCapability{ID: capID, SessionID: approvalSession.ID, PrincipalID: identity.Lower(principal), AgentID: ag.ID, PageID: g.PageID, TokenHash: hashConsoleToken(raw), ExpiresAt: now.Add(newPlatformCapabilityTTL)}
 	h.specGrantMu.Unlock()
 	if err := repo.RotateConsolePageCapability(r.Context(), cap, AgentKeyID(identity.Lower(principal)), ag.NameLC(), now); err != nil {
 		http.Error(w, "forbidden", http.StatusForbidden)
@@ -251,7 +263,7 @@ func (h *Hub) HandleConsoleSpecGrantDecision(w http.ResponseWriter, r *http.Requ
 	if current := h.specGrantRequests[id]; current == g && current.State == "pending" {
 		current.State = "granted"
 		current.capability = raw
-		current.CapabilitySessionID = sess.ID
+		current.CapabilitySessionID = approvalSession.ID
 		current.CapabilityID = cap.ID
 		current.CapabilityExpiresAt = cap.ExpiresAt
 	}
