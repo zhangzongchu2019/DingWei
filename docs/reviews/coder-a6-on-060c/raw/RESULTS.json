@@ -1,0 +1,108 @@
+[
+  {
+    "name": "go-a6",
+    "argv": [
+      "go",
+      "test",
+      "./internal/agentmetrics",
+      "./internal/m8",
+      "-run",
+      "^(TestAgentDisk|TestValidation|TestLifetimeAndBinding|TestRateAndSendAgeBudget)",
+      "-count=1"
+    ],
+    "cwd": "/data/ai-dev-data/a6-agent-disk-real",
+    "rc": 0
+  },
+  {
+    "name": "helper-30s",
+    "argv": [
+      "/data/ai-dev-data/sse-mux-product-coder56solzzc-20261012/build-venv/bin/python",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools/sessionhelper/tests/test_agent_disk_metrics.py"
+    ],
+    "cwd": "/data/ai-dev-data/a6-agent-disk-real",
+    "rc": 0,
+    "env": {
+      "PYTHONPATH": "/data/ai-dev-data/a6-agent-disk-real/tools/sessionhelper"
+    },
+    "initial_harness_failure": "helper-initial-missing-pythonpath.log"
+  },
+  {
+    "name": "renderer-27",
+    "argv": [
+      "node",
+      "tests/a6-agent-disk-real.cjs"
+    ],
+    "cwd": "/data/ai-dev-data/a6-agent-disk-real",
+    "rc": 0
+  },
+  {
+    "name": "a5-8",
+    "argv": [
+      "node",
+      "tests/a5-replay-state.cjs"
+    ],
+    "cwd": "/data/ai-dev-data/a6-agent-disk-real",
+    "rc": 0
+  },
+  {
+    "name": "a5-gap",
+    "argv": [
+      "node",
+      "tests/a5-real-gap-timer.cjs"
+    ],
+    "cwd": "/data/ai-dev-data/a6-agent-disk-real",
+    "rc": 0
+  },
+  {
+    "name": "integrity-22",
+    "argv": [
+      "node",
+      "internal/m8/testdata/renderer_integrity_recovery.cjs"
+    ],
+    "cwd": "/data/ai-dev-data/a6-agent-disk-real",
+    "rc": 0
+  },
+  {
+    "name": "history-7",
+    "argv": [
+      "node",
+      "internal/m8/testdata/renderer_history_priority.cjs"
+    ],
+    "cwd": "/data/ai-dev-data/a6-agent-disk-real",
+    "rc": 0
+  },
+  {
+    "name": "a4-4",
+    "argv": [
+      "node",
+      "tests/a4-overflow-preserve.cjs"
+    ],
+    "cwd": "/data/ai-dev-data/a6-agent-disk-real",
+    "rc": 0
+  },
+  {
+    "name": "managed-3",
+    "argv": [
+      "node",
+      "internal/m8/testdata/managed_recovery_result.cjs"
+    ],
+    "cwd": "/data/ai-dev-data/a6-agent-disk-real",
+    "rc": 0
+  },
+  {
+    "name": "refresh-5",
+    "argv": [
+      "python3",
+      "-B",
+      "-m",
+      "unittest",
+      "test_view_refresh.py"
+    ],
+    "cwd": "/data/ai-dev-data/a6-agent-disk-real/view-service",
+    "rc": 0
+  }
+]

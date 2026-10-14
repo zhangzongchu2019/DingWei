@@ -7,7 +7,7 @@ const original=fs.readFileSync(base,'utf8'),end=original.indexOf('let checks=0;'
 const ctx={URLSearchParams,require:createRequire(base),__dirname:path.dirname(base),console,process:{argv:['node',base,renderer]}};
 vm.createContext(ctx);vm.runInContext(original.slice(0,end),ctx);const fixture=vm.runInContext('fixture',ctx);
 let tests=0;
-function setup(){const h=fixture();let resets=0;const body=['already displayed'];h.c.resetConversation=()=>{resets++;body.length=0;};h.c.handleIncomingEvent=p=>body.push(p.text);return {h,body,resets:()=>resets};}
+function setup(){const h=fixture();let resets=0;const body=[];h.c.resetConversation=()=>{resets++;body.length=0;};h.c.handleIncomingEvent=p=>body.push(p.text);h.run('connectEventStream()');h.es.at(-1).onopen();h.es.at(-1).onmessage({lastEventId:'',data:JSON.stringify({text:'already displayed'})});return {h,body,resets:()=>resets};}
 function open(h){h.run('streamEverOpened=true;connectEventStream()');h.es.at(-1).onopen();}
 function overflow(h){h.run('handleReplayGap({data:\'{"reason":"overflow"}\'})');}
 function deliver(h){h.es.at(-1).onmessage({lastEventId:'',data:'{"text":"retained suffix"}'});}

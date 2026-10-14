@@ -64,7 +64,7 @@ func (s *SQLite) ListConsoleTasksForAgent(ctx context.Context, agentID string) (
 	rows, err := s.db.QueryContext(ctx, `SELECT t.id,1,t.spec_id,t.revision,t.content_sha256,t.title,t.task_content,t.status,t.estimated_hours,t.depends_on_json,
 		COALESCE((SELECT json_group_array(json_object('id',a.acceptance_id,'text',COALESCE(json_extract(j.value,'$.text'),''))) FROM console_spec_task_acceptance a JOIN console_spec_revision rr ON rr.spec_id=t.spec_id AND rr.revision=t.revision JOIN json_each(rr.acceptance_json) j ON json_extract(j.value,'$.id')=a.acceptance_id WHERE a.task_id=t.id),'[]'),
 		t.input_anchors_json,t.definition_of_done,t.developer_agent_id,COALESCE(da.session_name,''),t.reviewer_agent_id,COALESCE(ra.session_name,''),
-		'manual:'||t.id,t.created_by,t.created_at,t.created_at
+		'manual:'||t.id,t.created_by,t.created_at,t.created_at,t.started_at,t.planned_finish_at,t.blocker,t.resource_coordination
 		FROM console_spec_task t LEFT JOIN console_agent da ON da.id=t.developer_agent_id LEFT JOIN console_agent ra ON ra.id=t.reviewer_agent_id
 		WHERE t.developer_agent_id=? OR t.reviewer_agent_id=? ORDER BY t.created_at,t.id`, agentID, agentID)
 	if err != nil {

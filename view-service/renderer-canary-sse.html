@@ -1221,6 +1221,8 @@
     //      (对照实测:摘掉自建重连、以及真 pre-0.2.1.2 的件,正文全程纹丝不动)。
     //    判据是"**这个页面**曾经连上过",不是"**这个对象**open 过第二次"。
     let streamEverOpened = false;
+    // Transport open is not evidence that replay or an event was successfully applied.
+    let streamHasAcceptedEvent = false, streamTransportOpen = false;
     let streamConnectTimer = null;
     const STREAM_CONNECT_GRACE_MS = 7500;
     // RED 0.2.1.2:移除「重连」按钮**必须同时加自动重连** —— 移除前它是 SSE 断开后
@@ -1562,6 +1564,8 @@
       //    时钟每秒刷新一次,不挡住的话会把断线提示**一秒内覆盖掉**,
       //    于是"断线可见"这件事在页面上只存在一瞬 —— 那等于不可见。
       if (reconnectAttempt > 0) return;
+      // Keep the explicit connected-but-incomplete state across ordinary clock ticks.
+      if (typeof streamGapRecoveryActive === 'function' && streamGapRecoveryActive()) return;
       if (stats.statusDatetimeText && !stats.statusDatetimeMs) {
         localTime.textContent = stats.statusDatetimeText;
         return;
@@ -3989,7 +3993,15 @@
     //    做法(不额外占状态栏空间):让保留下来的 🕐 那一栏兼任连接状态。
     function renderConnectionState() {
       if (!clockStatus) return;
-      if (reconnectAttempt > 0) {
+      if (streamGapRecoveryActive()) {
+        clockStatus.classList.remove('offline');
+        clockStatus.title = '事件流已连接；检测到事件序号缺口，正在自动补收，补齐后此提示自动消失。';
+        localTime.textContent = '已连接 · 正在补收缺失事件';
+      } else if (reconnectAttempt > 0 && streamTransportOpen) {
+        clockStatus.classList.remove('offline');
+        clockStatus.title = '事件连接已建立；等待可应用事件，历史完整性尚未确认';
+        localTime.textContent = '已连接，等待事件';
+      } else if (reconnectAttempt > 0) {
         clockStatus.classList.add('offline');
         clockStatus.title = '事件流已断开,正在自动重连。点击立即重试';
         localTime.textContent = `断线重连中 · 第 ${reconnectAttempt} 次`;
@@ -3999,12 +4011,19 @@
         updateLocalTime();
       }
     }
+    function streamGapRecoveryActive() {
+      return streamTransportOpen && seqStreamSeen && seenAboveSeq.size > 0 && !gapRefillStopped;
+    }
+    // A queued gap refill owns its completion check; transport success cannot cancel it.
+    let reconnectTimerForGap = false;
     function clearReconnectTimer() {
       if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      reconnectTimerForGap = false;
     }
-    // 连上了 ⇒ 归零并恢复时钟显示。
+    // Only parsed event dispatch returning successfully clears consecutive retry failures.
     function markStreamConnected() {
-      clearReconnectTimer();
+      streamTransportOpen = true; streamHasAcceptedEvent = true;
+      if (!reconnectTimerForGap) clearReconnectTimer();
       reconnectAttempt = 0;
       renderConnectionState();
     }
@@ -4014,9 +4033,11 @@
       const delay = RECONNECT_BACKOFF_MS[Math.min(reconnectAttempt, RECONNECT_BACKOFF_MS.length - 1)];
       reconnectAttempt += 1;
       renderConnectionState();
-      reconnectTimer = setTimeout(() => { reconnectTimer = null; if (beforeConnect && beforeConnect() === false) return; connectEventStream(); }, delay);
+      reconnectTimerForGap = typeof beforeConnect === 'function';
+      reconnectTimer = setTimeout(() => { reconnectTimer = null; reconnectTimerForGap = false; if (beforeConnect && beforeConnect() === false) return; connectEventStream(); }, delay);
     }
     function closeEventStream() {
+      streamTransportOpen = false; cancelPendingReconnectClear();
       eventSourceGeneration += 1;
       clearStreamConnectTimer();
       if (eventSource) eventSource.close();
@@ -4129,6 +4150,7 @@
           if (gapRefillTimes.length >= GAP_REFILL_MAX) {
             gapRefillStopped = true;
             noteIntegrityIssue('recoverable', '自动补收次数已达上限；缺口尚未补齐。');
+            renderConnectionState();
             return false;
           }
           gapRefillTimes.push(now);
@@ -4223,12 +4245,14 @@
         //    (REPLAY_HARD_LIMIT_MS)是从 arm 那一刻起算的,而 backoff 最长 30s ⇒
         //    提前 arm 会让窗口在重放到达之前就过期,等于没修。
         // R-V2-0105 件一：已收到过带序号的事件 ⇒ 本次连接带 after、Hub 只补缺口，不需要清空窗口。
-        if (streamEverOpened && !seqStreamSeen) markStreamReconnect();
+        if (streamEverOpened && streamHasAcceptedEvent && !seqStreamSeen) markStreamReconnect();
         streamEverOpened = true;
         opened = true;
         clearStreamConnectTimer();
         hideStreamAlert();
-        markStreamConnected();
+        streamTransportOpen = true;
+        if (!reconnectTimerForGap) clearReconnectTimer();
+        renderConnectionState();
         if (!stats.readonly) setStatus('idle');
       };
       eventSource.onmessage = (msg) => {
@@ -4245,6 +4269,7 @@
           integrityDispatchDepth++;
           try { handleIncomingEvent(payload); } finally { integrityDispatchDepth--; }
           maybeClearRecoveredGap();
+          markStreamConnected();
         } catch (err) {
           markIntegrityApplyFailed();
           handleIncomingEvent({ kind: 'error', text: `Bad event payload: ${err.message}`, data: { code: 'bad_sse_payload' } });
@@ -4252,7 +4277,7 @@
       };
       eventSource.onerror = () => {
         if (generation !== eventSourceGeneration) return;
-        opened = false;
+        opened = false; streamTransportOpen = false; cancelPendingReconnectClear();
         setStatus('disconnected');
         // RED 不依赖 EventSource 自带的重连:它不给次数、不给节奏,也**不给任何可见状态**。
         //    这里自己排队重连,并把次数显示到 🕐 那一栏上。

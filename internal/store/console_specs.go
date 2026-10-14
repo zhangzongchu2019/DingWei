@@ -767,8 +767,9 @@ func scanProposal(row rowScanner) (*model.ConsoleTaskProposal, error) {
 	var p model.ConsoleTaskProposal
 	var developerID, developerName, reviewerID, reviewerName, definitionOfDone sql.NullString
 	var reviewed, created string
+	var started, planned, blocker, resources sql.NullString
 	err := row.Scan(&p.ID, &p.SchemaVersion, &p.SpecID, &p.Revision, &p.ContentSHA256, &p.Title, &p.TaskContent, &p.Status, &p.EstimatedHours, &p.DependsOnJSON, &p.AcceptanceJSON, &p.InputAnchorsJSON,
-		&definitionOfDone, &developerID, &developerName, &reviewerID, &reviewerName, &p.ReviewID, &p.ReviewedBy, &reviewed, &created)
+		&definitionOfDone, &developerID, &developerName, &reviewerID, &reviewerName, &p.ReviewID, &p.ReviewedBy, &reviewed, &created, &started, &planned, &blocker, &resources)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -783,16 +784,72 @@ func scanProposal(row rowScanner) (*model.ConsoleTaskProposal, error) {
 		return nil, err
 	}
 	p.CreatedAt, err = specTime(created)
+	if err != nil {
+		return nil, err
+	}
+	if started.Valid {
+		t, e := specTime(started.String)
+		if e != nil {
+			return nil, e
+		}
+		p.StartedAt = &t
+	}
+	if planned.Valid {
+		t, e := specTime(planned.String)
+		if e != nil {
+			return nil, e
+		}
+		p.PlannedFinishAt = &t
+	}
+	if blocker.Valid {
+		v := blocker.String
+		p.Blocker = &v
+	}
+	if resources.Valid {
+		v := resources.String
+		p.ResourceCoordination = &v
+	}
 	return &p, err
 }
 
-const proposalColumns = `p.id,p.schema_version,p.spec_id,p.revision,p.content_sha256,p.title,p.task_content,p.status,p.estimated_hours,p.depends_on_json,'[]',p.input_anchors_json,'',NULL,NULL,NULL,NULL,p.review_id,p.reviewed_by,p.reviewed_at,p.created_at`
+const proposalColumns = `p.id,p.schema_version,p.spec_id,p.revision,p.content_sha256,p.title,p.task_content,p.status,p.estimated_hours,p.depends_on_json,'[]',p.input_anchors_json,'',NULL,NULL,NULL,NULL,p.review_id,p.reviewed_by,p.reviewed_at,p.created_at,NULL,NULL,NULL,NULL`
 const taskUnion = `SELECT ` + proposalColumns + ` FROM console_task_proposal p UNION ALL
 	SELECT t.id,1,t.spec_id,t.revision,t.content_sha256,t.title,t.task_content,t.status,t.estimated_hours,t.depends_on_json,
 		COALESCE((SELECT json_group_array(json_object('id',a.acceptance_id,'text',COALESCE(json_extract(j.value,'$.text'),''))) FROM console_spec_task_acceptance a JOIN console_spec_revision rr ON rr.spec_id=t.spec_id AND rr.revision=t.revision JOIN json_each(rr.acceptance_json) j ON json_extract(j.value,'$.id')=a.acceptance_id WHERE a.task_id=t.id),'[]'),
 		t.input_anchors_json,t.definition_of_done,
 		t.developer_agent_id,(SELECT session_name FROM console_agent WHERE id=t.developer_agent_id),t.reviewer_agent_id,(SELECT session_name FROM console_agent WHERE id=t.reviewer_agent_id),
-		'manual:'||t.id,t.created_by,t.created_at,t.created_at FROM console_spec_task t`
+		'manual:'||t.id,t.created_by,t.created_at,t.created_at,t.started_at,t.planned_finish_at,t.blocker,t.resource_coordination FROM console_spec_task t`
+
+func nullableTaskTime(v *time.Time) any {
+	if v == nil {
+		return nil
+	}
+	return v.UTC().Format(time.RFC3339Nano)
+}
+func nullableTaskText(v *string) any {
+	if v == nil {
+		return nil
+	}
+	s := strings.TrimSpace(*v)
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
+func (s *SQLite) UpdateConsoleSpecTaskMetadata(ctx context.Context, taskID, principalID string, startedAt, plannedFinishAt *time.Time, blocker, resourceCoordination *string) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE console_spec_task SET started_at=?,planned_finish_at=?,blocker=?,resource_coordination=?
+		WHERE id=? AND EXISTS(SELECT 1 FROM console_spec s WHERE s.id=console_spec_task.spec_id AND s.principal_id=? AND s.state='final' AND s.task_state='splitting')`,
+		nullableTaskTime(startedAt), nullableTaskTime(plannedFinishAt), nullableTaskText(blocker), nullableTaskText(resourceCoordination), taskID, principalID)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return ErrConsoleSpecPermission
+	}
+	return nil
+}
 
 func (s *SQLite) ListReadyConsoleTaskProposals(ctx context.Context) ([]model.ConsoleTaskProposal, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT `+proposalColumns+` FROM console_task_proposal p JOIN console_spec s ON s.id=p.spec_id AND s.current_revision=p.revision WHERE s.state='final' AND s.task_state='closed' ORDER BY p.created_at,p.id`)

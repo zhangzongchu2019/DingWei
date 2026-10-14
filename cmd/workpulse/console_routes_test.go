@@ -231,5 +231,62 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 	t.Logf("routes recorded=%d exempt=%d requests checked=%d", len(rec.patterns), len(newPlatformAuthExempt), checked)
 }
 
+// The legacy task-board URL is a compatibility entrance into the Console
+// workspace. Exercise the real registered route: the browser fixture covers
+// the workspace consuming task_manager, but must not stand in for this router
+// contract.
+func TestConsoleTasksCompatibilityRoute(t *testing.T) {
+	ctx := context.Background()
+	hub := newplatHub(t)
+	identities := identity.NewMemStore()
+	rec := &routeRecorder{mux: http.NewServeMux()}
+	const origin = "https://dw.example"
+	if err := wireNewPlatform(ctx, rec, hub, newPlatformConfig{publicOrigin: origin}, identities, nil); err != nil {
+		t.Fatal(err)
+	}
+	registerConsoleRoutes(rec, hub, true)
+	now := hub.Identity.Now()
+	if err := identities.CreateUser(ctx, identity.User{UserID: "owner", ShortName: "own", Type: identity.UserPlatformAdmin, State: identity.UserActive, CreatedAt: now}); err != nil {
+		t.Fatal(err)
+	}
+	if err := identities.CreateSession(ctx, identity.Session{TokenHash: identity.HashSecret("task-route-token"), UserIDLC: "owner", ExpiresAt: now.Add(identity.SessionTTL)}); err != nil {
+		t.Fatal(err)
+	}
+
+	do := func(path, token string) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req.Header.Set("Accept", "text/html,application/xhtml+xml")
+		req.Header.Set("Origin", origin)
+		if token != "" {
+			req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: token})
+		}
+		rr := httptest.NewRecorder()
+		rec.mux.ServeHTTP(rr, req)
+		return rr
+	}
+
+	if rr := do("/console/tasks?embedded=1", "task-route-token"); rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), "<h1>任务管理</h1>") {
+		t.Fatalf("embedded task board: status=%d body=%q", rr.Code, rr.Body.String())
+	}
+	for _, tc := range []struct {
+		path, want string
+	}{
+		{"/console/tasks", "/console?task_manager=1"},
+		{"/console/tasks?spec_id=spec%20x%2F%3F%26", "/console?task_manager=1&spec_id=spec+x%2F%3F%26"},
+	} {
+		rr := do(tc.path, "task-route-token")
+		if rr.Code != http.StatusFound || rr.Header().Get("Location") != tc.want {
+			t.Errorf("legacy %s: status=%d location=%q, want 302 %q", tc.path, rr.Code, rr.Header().Get("Location"), tc.want)
+		}
+	}
+	for _, path := range []string{"/console/tasks?embedded=1", "/console/tasks?spec_id=spec-x"} {
+		rr := do(path, "")
+		if rr.Code != http.StatusFound || rr.Header().Get("Location") != "/console/login" {
+			t.Errorf("anonymous %s: status=%d location=%q, want 302 /console/login", path, rr.Code, rr.Header().Get("Location"))
+		}
+	}
+}
+
 // specTaskRoute specs 与 task-board 两组功能的路由形状（页面、console 接口、Agent capability 接口、共享链接）。
 var specTaskRoute = regexp.MustCompile(`/(console/specs|console/tasks|console/spec-assets|api/console/specs|api/console/task-|api/console/spec-editors|api/agent/console/|api/specs/shared)`)

@@ -390,13 +390,60 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       }
     });
 
-    await test('the group panel keeps list and create, and no longer offers join-by-code (owner S5)', async () => {
+    await test('the group panel keeps list and create, and joins by exact 32-character code using only an owned Agent (current A1)', async () => {
       assert.strictEqual(await page.locator('#groupListTable').count(), 1);
       assert.strictEqual(await page.locator('#groupAddOpen').count(), 1);
-      for (const id of ['groupCodeJoinOpen', 'groupCodeJoin', 'groupJoinCode', 'joinByCode', 'groupCodeJoinAgent']) {
-        assert.strictEqual(await page.locator(`#${id}`).count(), 0, `${id} must be gone`);
-      }
-      assert.doesNotMatch(await page.locator('.group-workspace').textContent(), /加入到其他业主编组/);
+      const panel = page.locator('#groupCodeJoin');
+      assert.strictEqual(await panel.count(), 1, 'current A1 join-by-code entry must exist');
+      assert.strictEqual(await panel.isVisible(), true, 'join-by-code entry must be reachable');
+      assert.match(await panel.textContent(), /凭组码加入编组/);
+      assert.match(await panel.textContent(), /自己的 Agent/);
+      const codeInput = page.locator('#groupJoinCode');
+      const ownedSelect = page.locator('#groupCodeJoinAgent');
+      const joinButton = page.locator('#joinByCode');
+      assert.strictEqual(await codeInput.getAttribute('maxlength'), '32');
+      const ownedIDs = groupsPayload().owned_agents.map((a) => a.id).sort();
+      assert.ok(ownedIDs.length, 'fixture must contain owned Agents');
+      await page.waitForFunction((ids) => {
+        const select = document.getElementById('groupCodeJoinAgent');
+        return select && !select.disabled && JSON.stringify(Array.from(select.options, (o) => o.value).sort()) === JSON.stringify(ids);
+      }, ownedIDs);
+      assert.deepStrictEqual(await ownedSelect.locator('option').evaluateAll((options) => options.map((o) => o.value).sort()), ownedIDs);
+      const joins = [];
+      const routePattern = '**/api/console/agent-groups/*/members';
+      const acceptJoin = async (route) => {
+        const request = route.request();
+        joins.push({ method: request.method(), path: new URL(request.url()).pathname, body: request.postDataJSON() });
+        await route.fulfill({ status: 204 }); // local fixture only; no actual membership is changed
+      };
+      await page.route(routePattern, acceptJoin);
+      try {
+        await ownedSelect.selectOption(ownedIDs[0]);
+        // Scripted oversize values exercise the submit guard beyond the input maxlength.
+        for (const bad of ['A'.repeat(31), 'A'.repeat(33), 'A'.repeat(31) + '!', ' ' + 'A'.repeat(31)]) {
+          await codeInput.fill(bad.slice(0, 32));
+          if (bad.length > 32) await codeInput.evaluate((input, value) => { input.value = value; }, bad);
+          await joinButton.click();
+          assert.match(await page.locator('#groupCodeJoinFeedback').textContent(), /32 位组码/);
+          assert.strictEqual(joins.length, 0, 'invalid code must not submit');
+        }
+        const code = 'Aa0_-'.repeat(6) + 'Z9'; // mixed case, digits, underscore and hyphen; exactly 32
+        assert.strictEqual(code.length, 32);
+        await codeInput.fill(code);
+        await ownedSelect.evaluate((select) => {
+          const option = document.createElement('option'); option.value = 'not-owned'; option.textContent = 'foreign fixture';
+          select.append(option); select.value = option.value;
+        });
+        await joinButton.click();
+        assert.match(await page.locator('#groupCodeJoinFeedback').textContent(), /选择自己的 Agent/);
+        assert.strictEqual(joins.length, 0, 'a DOM-injected foreign Agent must not submit');
+        await ownedSelect.locator('option[value="not-owned"]').evaluate((option) => option.remove());
+        await ownedSelect.selectOption(ownedIDs[0]);
+        await joinButton.click();
+        await page.locator('#groupCodeJoinFeedback').filter({ hasText: '已加入编组' }).waitFor({ state: 'visible' });
+        assert.deepStrictEqual(joins, [{ method: 'POST', path: `/api/console/agent-groups/${code}/members`, body: { agent_id: ownedIDs[0] } }]);
+        assert.strictEqual(await codeInput.inputValue(), code, 'group code must not be lowercased or trimmed');
+      } finally { await page.unroute(routePattern, acceptJoin); }
     });
 
     await test('no pageerror and no unexpected console error across the whole run', async () => {

@@ -15,6 +15,7 @@ function load(hardLimitMs) {
   let cleared = 0, replayBegun = 0;
   const alerts = [];
   const fn = new Function('REPLAY_HARD_LIMIT_MS', 'resetConversation', 'beginTimelineReplay', 'showStreamAlert', `
+    let integrityIssue = null; // Explicit normal state for the extracted legacy reconnect logic.
     ${block}
     return { markStreamReconnect, consumeReconnectClear, cancelPendingReconnectClear,
              peek: () => pendingReconnectClear };

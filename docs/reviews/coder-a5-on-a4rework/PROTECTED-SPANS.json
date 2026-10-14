@@ -1,0 +1,50 @@
+[
+  {
+    "name": "integrity",
+    "bytes": 8599,
+    "sha256": "86dfa1512d9c6df840974ee25623c6b70c329581121f9cdbd0d0646f413a852e",
+    "unchanged": true
+  },
+  {
+    "name": "a4-consume-guard",
+    "bytes": 260,
+    "sha256": "fbc7cd6a2102e131f1502316401434dcaf58b8801843afc02b862aea869d51da",
+    "unchanged": true
+  },
+  {
+    "name": "a4-arm-guard",
+    "bytes": 1184,
+    "sha256": "f80f8db2638a070d63d41648e101af35574411e183f5923f23b9cdddca01eb95",
+    "unchanged": true
+  },
+  {
+    "name": "sequence-admission",
+    "bytes": 1525,
+    "sha256": "2a64f95ebc84c39636855e10542a2c3d4619b42c9a3134d5fa1d9bfad63aff2f",
+    "unchanged": true
+  },
+  {
+    "name": "gap-budget-finalcheck",
+    "bytes": 936,
+    "sha256": "db4679420bdef75af6ef0ee70435271b74cd0f4b45540e2e505935783b1ba76b",
+    "unchanged": true
+  },
+  {
+    "name": "gap-severity",
+    "bytes": 434,
+    "sha256": "166c05528a6f3fae9811d53bfcc9812cbf231e8a4c73312b0cb418ee20103b56",
+    "unchanged": true
+  },
+  {
+    "name": "managed-ack",
+    "bytes": 4308,
+    "sha256": "ad8ac8712bf33a34a44a18238ff8caacae1d9d251981411b83593b5aa41ac935",
+    "unchanged": true
+  },
+  {
+    "name": "resources-auth-tail",
+    "bytes": 72337,
+    "sha256": "2f87bafe20f3b78a78217d23f46ea1ea008b98db69fe0bfa83c96c84cbe8f90a",
+    "unchanged": true
+  }
+]

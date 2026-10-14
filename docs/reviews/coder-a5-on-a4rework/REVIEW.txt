@@ -1,0 +1,26 @@
+A5 on exact A4 rework, offline author verification
+
+Base: 882143e1bd9f65526c1c4d1775058854cc72ad94 / tree 0b206cb5d293f637bab2494ef648a3092b7404fa.
+Original A5: 068c99098fa5c3b671616c9800fffdc5f4d1d441 (relayed 0a751dadf1aeb855a7162703e15309b034b740c1, same tree).
+Original isolated gap followup c136d8cc retained, not a release anchor. This combined change supersedes its no-gap conditional with timer-purpose separation appropriate to ff49's execution-time charging.
+
+Conflict: cherry-picking original A5 produced one renderer onmessage conflict. Kept exact A4/ff49 JSON parse BEFORE admission, integrityDispatchDepth try/finally, maybeClearRecoveredGap and markIntegrityApplyFailed; appended A5 markStreamConnected only after successful dispatch. No admit-before-parse or removed depth/completion gate. Cherry-pick stopped; all resolved content committed once directly on exact A4 rework.
+
+Transport open establishes waiting, not accepted or history completion. Successfully parsed/admitted dispatch confirms activity and resets consecutive retry count. Error/close cancel pending legacy clear. Sequenced flow does not arm legacy clear. A4 consume/arm guards byte-identical.
+
+Gap correction: reconnectTimerForGap describes the pending timer purpose, independent of transport/accepted state. scheduleReconnect's existing beforeConnect callback identifies the bounded gap refill. Open/accepted dispatch only cancel an ordinary connection retry. Gap timer runs its ORIGINAL final callback: rechecks epoch and actual unresolved sequences, then charges budget only if actually reconnecting. Naturally filled gaps retain this final check, consume no budget and open no new connection. No gap admission/budget/ACK/auth/resource changes.
+
+Fixture adjustments: integrity shared fixture supplies the two new A5 state globals. A4 setup now accepts an actual initial legacy event before reopening; no production arm relaxation. Original eight fixture has only integrity state/observer stubs needed for its limited transport tests; NEW six executes actual complete integrity, admission, gap scheduling and connection code via the shared actual-source fixture.
+
+Commands on final tree (all rc0):
+node tests/a5-replay-state.cjs (8 + full inline compilation)
+node internal/m8/testdata/renderer_integrity_recovery.cjs (22)
+node internal/m8/testdata/renderer_history_priority.cjs (7)
+(cd view-service && python3 -B -m unittest test_view_refresh.py) (5)
+node tests/a4-overflow-preserve.cjs (4)
+node tests/a5-real-gap-timer.cjs (6)
+git diff --check
+
+Counterexamples: exact combined HTML with only gap cancellation guards removed fails real-gap test with null !== 3 (rc1). Exact combined HTML with only A4 two history guards removed fails overflow composition with reset 1 !== 0 (rc1). Both original logs retained. Source mutations are temporary evidence files outside Git, never deployed.
+
+Only renderer production file changed; four related fixture files and review evidence. No Hub, broker, VS, cost, auth, store, timer budgets, network, real browser, DB or deployment. All checks are offline author evidence, not independent CR or owner acceptance. A6 display already integrated elsewhere; this branch is exact A4 plus A5 only.

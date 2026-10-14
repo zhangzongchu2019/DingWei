@@ -1,0 +1,18 @@
+A5 connected-but-incomplete status, narrowly scoped rework
+
+Parent: 930aa6399001d4cd24be87039e29b1044ec010d2. Earlier f01/930 and their old logs are preserved. The normal-clock policy documented in the older test-only followup is superseded by leader's explicit product ruling.
+
+Connected transport + actual unresolved sequence gap + automatic recovery not stopped:
+  text: 已连接 · 正在补收缺失事件
+  title: 事件流已连接；检测到事件序号缺口，正在自动补收，补齐后此提示自动消失。
+Successful seq4 still retains this label and pending refill. Clock ticks cannot overwrite it. When missing seq2 actually arrives and contiguous cursor advances through4, markStreamConnected refreshes ordinary connected clock/title immediately. Disconnect prioritizes the existing reconnect state; onopen with the gap unresolved restores the explicit recovery label. The existing exhaustion branch marks gapRefillStopped, paints the existing integrity alert, and now repaints connection state so no active-recovery promise remains. No retry/budget/ACK policy change.
+
+Only product changes: renderConnectionState's explicit branch, pure streamGapRecoveryActive predicate, clock tick preservation check, and repaint at existing exhaustion result. All seq admission, beforeConnect callback guards, budgets and mutations are unchanged; the only addition inside scheduleGapRefill is renderConnectionState() after the existing exhaustion alert. Existing A4 history guards, JSON-before-admit/depth/completion and managed ACK remain byte-identical. Resource/auth tail unchanged. No new timers or cadence.
+
+Actual-source tests: original six gap cases retained; three state cases execute real connection, admission, gap scheduling, renderConnectionState and updateLocalTime. Exhaustion is reached via THREE actual scheduled refill callbacks and real subsequent out-of-order events, not by injecting a counter; a fourth callback hits the original maximum and opens no connection. Reconnect test executes onerror, scheduled reconnect, new onopen. Original eight isolated replay fixture adds the existing sequence-set/stopped-state dependencies for its no-gap sequenced scenario.
+
+Final commands/rc: node tests/a5-replay-state.cjs (8+inline) rc0; node tests/a5-real-gap-timer.cjs (9) rc0; node internal/m8/testdata/renderer_integrity_recovery.cjs (22) rc0; node internal/m8/testdata/renderer_history_priority.cjs (7) rc0; cd view-service && python3 -B -m unittest test_view_refresh.py (5) rc0; node internal/m8/testdata/managed_recovery_result.cjs (3) rc0; node tests/a4-overflow-preserve.cjs (4) rc0; git diff --check rc0.
+
+Parent counterexample: updated state test on exact parent930 fails at actual 已连接，等待事件 vs required 已连接 · 正在补收缺失事件, rc1. Mutation counterexample: only remove the NEW renderConnectionState status branch from final renderer, leave timer fixes/clock guard/history intact; new state test again fails with that exact mismatch, rc1. Temporary mutated HTMLs stay outside Git. Logs retained.
+
+Author offline evidence only; no browser/live service/DB/fullbuild/deployment or self-issued independent PASS.
