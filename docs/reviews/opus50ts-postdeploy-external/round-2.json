@@ -1,0 +1,68 @@
+[
+  {
+    "name": "console",
+    "url": "https://dw123.cmjrt.com/console",
+    "utc": "2026-10-14T16:51:22.557921+00:00",
+    "status": 401,
+    "bytes": 28,
+    "sha256": "3ad69aa74376902fc14fd549a4c9d96c8f38744aa7fffaf44529f5af25609774",
+    "location": null,
+    "commit_marker_2d5bde7": false,
+    "pass": true
+  },
+  {
+    "name": "missing",
+    "url": "https://dw123.cmjrt.com/spec5ff-independent-missing-20261014",
+    "utc": "2026-10-14T16:51:23.056103+00:00",
+    "status": 404,
+    "bytes": 19,
+    "sha256": "b16e15764b8bc06c5c3f9f19bc8b99fa48e7894aa5a6ccdad65da49bbf564793",
+    "location": null,
+    "commit_marker_2d5bde7": false,
+    "pass": true
+  },
+  {
+    "name": "old",
+    "url": "https://dw123.cmjrt.com/f/u_zhangzongchu/opus50ts/26/1013/259d8d5ab17d03784be3257a4af7f683.bin",
+    "utc": "2026-10-14T16:51:23.710006+00:00",
+    "status": 200,
+    "bytes": 2522,
+    "sha256": "fdad07d14ae9cf1e01565f782b2fc42c9e5f0b1aabd22a0eace270b0575d3ad8",
+    "location": null,
+    "commit_marker_2d5bde7": false,
+    "pass": true
+  },
+  {
+    "name": "new",
+    "url": "https://dw123.cmjrt.com/f/u_zhangzongchu/opus50ts/26/1014/ff50eddf20c180055173c1d3fb4c95a8.txt",
+    "utc": "2026-10-14T16:51:24.224778+00:00",
+    "status": 200,
+    "bytes": 98,
+    "sha256": "08abeaa54bc632f95f1b97623095bf81e02c853c014402c545fa89a978956b34",
+    "location": null,
+    "commit_marker_2d5bde7": false,
+    "pass": true
+  },
+  {
+    "name": "invalid",
+    "url": "https://dw123.cmjrt.com/f/not-a-valid-shape",
+    "utc": "2026-10-14T16:51:24.699144+00:00",
+    "status": 404,
+    "bytes": 162,
+    "sha256": "7b61a0032297d2b400d3dd5e69556a8ca31adb717464c247aaf997f4b4de26f6",
+    "location": null,
+    "commit_marker_2d5bde7": false,
+    "pass": true
+  },
+  {
+    "name": "valid_missing",
+    "url": "https://dw123.cmjrt.com/f/u_zhangzongchu/opus50ts/26/1014/00000000000000000000000000000000.txt",
+    "utc": "2026-10-14T16:51:25.186246+00:00",
+    "status": 404,
+    "bytes": 162,
+    "sha256": "7b61a0032297d2b400d3dd5e69556a8ca31adb717464c247aaf997f4b4de26f6",
+    "location": null,
+    "commit_marker_2d5bde7": false,
+    "pass": true
+  }
+]
