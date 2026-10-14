@@ -8,8 +8,8 @@
     "sha256": "9e23d62d80a95a4ed9402f50414912143da0080fb7af565ec272e6969cc0ae7c"
   },
   "tests/a5-real-gap-timer.cjs": {
-    "bytes": 2991,
-    "sha256": "f19a67501b833f8c21485b5aae2c2799744f9adde6a078ed232a19a7ab543162"
+    "bytes": 4059,
+    "sha256": "c9173ff8308e0244beaf718c18e4badd0a835c761412634d4976d77c975b239d"
   },
   "tests/a4-overflow-preserve.cjs": {
     "bytes": 2842,

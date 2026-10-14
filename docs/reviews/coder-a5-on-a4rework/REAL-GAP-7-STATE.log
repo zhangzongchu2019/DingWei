@@ -1,0 +1,8 @@
+PASS 1,3,queued refill,4 preserves unresolved-gap reconnect
+PASS continuous jumps preserve one queued refill and charge only at execution
+PASS actual missing event preserves original final check and consumes no refill
+PASS transport open cannot cancel queued gap refill
+PASS duplicate event does not falsely close the gap or cancel recovery
+PASS ordinary legacy success still clears ordinary reconnect and retry count
+PASS connected transport with pending gap shows waiting then clock, never stuck reconnect
+TOTAL 7 real integrated gap-timer observations
