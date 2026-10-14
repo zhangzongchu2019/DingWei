@@ -19,7 +19,7 @@ function fixture({managed=false,fail=false,instance="a".repeat(32),holdManaged=f
   setTimeout:(f,delay)=>{const id=++tid;timers.set(id,{f,delay});return id;},clearTimeout:id=>timers.delete(id),
   streamAlert:alert,streamAlertText:text,streamRetryBtn:button,document:doc,window,parent,location:{origin:'https://synthetic.invalid',search:managed?'?console_mux=1&iframe_instance='+instance:''},
   clockStatus:null,localTime:{},updateLocalTime:()=>{},reconnectTimer:null,reconnectAttempt:0,RECONNECT_BACKOFF_MS:[1000,2000,5000,10000,30000],
-  eventSource:null,eventSourceGeneration:0,streamConnectTimer:null,streamEverOpened:false,STREAM_CONNECT_GRACE_MS:5000,REPLAY_HARD_LIMIT_MS:1000,
+  eventSource:null,eventSourceGeneration:0,streamConnectTimer:null,streamEverOpened:false,streamHasAcceptedEvent:false,streamTransportOpen:false,STREAM_CONNECT_GRACE_MS:5000,REPLAY_HARD_LIMIT_MS:1000,
   c1MergeBuf:new Map(),pendingRenders:new Set(),stats:{readonly:true},beginTimelineReplay:()=>{},finishTimelineReplay:()=>{},setStatus:()=>{},apiEp:()=>'/synthetic-events',
   EventSource,resetConversation:()=>resets++,handleIncomingEvent:()=>{if(fail)throw Error('SYNTHETIC');if(holdManaged)vm.runInContext('managedApplyPending.records.add({timer:0})',c);rendered++;},flushPendingRenders:()=>{}};
  vm.createContext(c);

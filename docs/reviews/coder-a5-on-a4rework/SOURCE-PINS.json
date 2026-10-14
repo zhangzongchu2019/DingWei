@@ -1,0 +1,22 @@
+{
+  "view-service/renderer-canary-sse.html": {
+    "bytes": 304819,
+    "sha256": "04e01f5f896d3d0a30872ddc73c1ad147c8f41834975809d6ab95280aa678459"
+  },
+  "tests/a5-replay-state.cjs": {
+    "bytes": 4552,
+    "sha256": "9e23d62d80a95a4ed9402f50414912143da0080fb7af565ec272e6969cc0ae7c"
+  },
+  "tests/a5-real-gap-timer.cjs": {
+    "bytes": 2991,
+    "sha256": "f19a67501b833f8c21485b5aae2c2799744f9adde6a078ed232a19a7ab543162"
+  },
+  "tests/a4-overflow-preserve.cjs": {
+    "bytes": 2842,
+    "sha256": "25f4e64a8e240ddad2d90b307e5814cecb1c37b0272430798a447294e1bbcb53"
+  },
+  "internal/m8/testdata/renderer_integrity_recovery.cjs": {
+    "bytes": 13055,
+    "sha256": "59831388b29869bd8d7ff8151f8ff4cf2f7d0ad0562ae7f4a427d14211ed88a8"
+  }
+}
