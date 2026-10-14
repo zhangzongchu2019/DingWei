@@ -129,7 +129,7 @@ func (h *Hub) HandleConsoleSpecGrantPage(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Cache-Control", "no-store")
 	_, _ = fmt.Fprintf(w, `<!doctype html><meta charset="utf-8"><title>Agent spec approvals</title><h1>Agent spec approvals</h1><p id="status">Loading…</p><table><thead><tr><th>Action</th><th>Spec</th><th>Status</th><th>Expires</th><th>Decision</th></tr></thead><tbody id="rows"></tbody></table><script>
 const api=%q, rows=document.getElementById('rows'),status=document.getElementById('status');
-async function load(){const r=await fetch(api,{cache:'no-store'}),d=await r.json();if(!r.ok){status.textContent='Unable to load approvals';return}rows.replaceChildren();for(const x of d.requests||[]){const tr=document.createElement('tr');for(const v of [x.action,x.spec_id||'—',x.status,x.expires_at]){const td=document.createElement('td');td.textContent=v;tr.append(td)}const td=document.createElement('td');for(const action of ['approve','deny']){const b=document.createElement('button');b.textContent=action==='approve'?'Approve':'Deny';b.disabled=x.status!=='pending';b.onclick=async()=>{await fetch(api+'/'+encodeURIComponent(x.id)+'/'+action,{method:'POST'});load()};td.append(b)}tr.append(td);rows.append(tr)}status.textContent='';}load();
+async function load(){const r=await fetch(api,{cache:'no-store'}),d=await r.json();if(!r.ok){status.textContent='Unable to load approvals';return}rows.replaceChildren();for(const x of d.requests||[]){const tr=document.createElement('tr');for(const v of [x.action,x.spec_id||'—',x.status,x.expires_at]){const td=document.createElement('td');td.textContent=v;tr.append(td)}const td=document.createElement('td');for(const action of ['approve','deny','revoke']){const b=document.createElement('button');b.textContent=action==='approve'?'Approve':action==='deny'?'Deny':'Revoke';b.disabled=action==='revoke'?!(x.status==='granted'||x.status==='consumed'):x.status!=='pending';b.onclick=async()=>{await fetch(api+'/'+encodeURIComponent(x.id)+'/'+action,{method:'POST'});load()};td.append(b)}tr.append(td);rows.append(tr)}status.textContent='';}load();
 </script>`, html.EscapeString(path))
 }
 
@@ -166,7 +166,42 @@ func (h *Hub) HandleConsoleSpecGrantDecision(w http.ResponseWriter, r *http.Requ
 	id, decision, now := strings.TrimSpace(r.PathValue("requestID")), strings.TrimSpace(r.PathValue("decision")), h.now()
 	h.specGrantMu.Lock()
 	g := h.specGrantRequests[id]
-	if g == nil || g.SessionName != ag.NameLC() || g.PrincipalID != identity.Lower(principal) || g.State != "pending" || !g.ExpiresAt.After(now) {
+	if g == nil || g.SessionName != ag.NameLC() || g.PrincipalID != identity.Lower(principal) {
+		h.specGrantMu.Unlock()
+		http.Error(w, "grant unavailable", http.StatusNotFound)
+		return
+	}
+	if decision == "revoke" {
+		if g.State != "granted" && g.State != "consumed" {
+			h.specGrantMu.Unlock()
+			http.Error(w, "grant unavailable", http.StatusNotFound)
+			return
+		}
+		repo, repoOK := h.Repo.(consoleAuthRepository)
+		if !repoOK || g.CapabilitySessionID == "" {
+			h.specGrantMu.Unlock()
+			http.Error(w, "console unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		// Rotate to an undisclosed capability: this atomically revokes the
+		// approval token without returning any replacement to the requester.
+		poison, err := randomConsoleToken()
+		capID, idErr := randomConsoleToken()
+		cap := model.ConsolePageCapability{ID: capID, SessionID: g.CapabilitySessionID, PrincipalID: identity.Lower(principal), AgentID: ag.ID, PageID: g.PageID, TokenHash: hashConsoleToken(poison), ExpiresAt: now.Add(newPlatformCapabilityTTL)}
+		h.specGrantMu.Unlock()
+		if err != nil || idErr != nil || repo.RotateConsolePageCapability(r.Context(), cap, AgentKeyID(identity.Lower(principal)), ag.NameLC(), now) != nil {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		h.specGrantMu.Lock()
+		if current := h.specGrantRequests[id]; current == g && (current.State == "granted" || current.State == "consumed") {
+			current.State, current.capability = "revoked", ""
+		}
+		h.specGrantMu.Unlock()
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	if g.State != "pending" || !g.ExpiresAt.After(now) {
 		if g != nil && !g.ExpiresAt.After(now) && g.State == "pending" {
 			g.State = "expired"
 		}
