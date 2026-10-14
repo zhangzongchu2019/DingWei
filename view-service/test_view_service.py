@@ -103,6 +103,7 @@ class ProductionRendererTest(unittest.TestCase):
         handler.send_header = mock.Mock()
         handler.end_headers = mock.Mock()
         response = mock.Mock()
+        response.status = 200
         response.readline.return_value = b""
         conn = mock.Mock()
         conn.getresponse.return_value = response
@@ -120,12 +121,32 @@ class ProductionRendererTest(unittest.TestCase):
         handler.send_header = mock.Mock()
         handler.end_headers = mock.Mock()
         response = mock.Mock()
+        response.status = 200
         response.readline.side_effect = list(lines) + [b""]
         conn = mock.Mock()
         conn.getresponse.return_value = response
         with mock.patch.object(vs, "_ensure_ready"), mock.patch.object(vs.http.client, "HTTPConnection", return_value=conn):
             handler._serve_events()
         return conn.request.call_args, handler.wfile.getvalue()
+
+    def test_events_upstream_404_becomes_reasoned_sse_not_empty_success(self):
+        handler = object.__new__(vs._Handler)
+        handler.path = "/events"
+        handler.headers = {"X-DW-Session": "zzc-tester-2642"}
+        handler.wfile = io.BytesIO()
+        handler.send_response = mock.Mock()
+        handler.send_header = mock.Mock()
+        handler.end_headers = mock.Mock()
+        response = mock.Mock()
+        response.status = 404
+        response.read.return_value = b"view_identity_unresolved\n"
+        conn = mock.Mock()
+        conn.getresponse.return_value = response
+        with mock.patch.object(vs, "_ensure_ready"), mock.patch.object(vs.http.client, "HTTPConnection", return_value=conn), mock.patch.object(vs.sys, "stderr", new=io.StringIO()) as stderr:
+            handler._serve_events()
+        handler.send_response.assert_called_once_with(200)
+        self.assertEqual(handler.wfile.getvalue(), b'event: stream_unavailable\ndata: {"reason":"view_identity_unresolved"}\n\n')
+        self.assertIn("status=404 reason=view_identity_unresolved", stderr.getvalue())
 
     def test_events_forwards_valid_after_to_hub(self):
         call, _ = self._events_call("/events?after=ab12cd-7")

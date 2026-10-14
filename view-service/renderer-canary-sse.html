@@ -1232,6 +1232,11 @@
     const RECONNECT_BACKOFF_MS = [1000, 2000, 5000, 10000, 30000];
     let reconnectAttempt = 0;      // 第几次重连(0 = 当前是连着的)
     let reconnectTimer = null;
+    // A reasoned upstream refusal is not a generic transport outage. Keep the
+    // reason visible while the same bounded backoff retries, so an Agent whose
+    // helper has no event stream does not look like a permanently reconnecting
+    // browser network failure.
+    let streamUnavailableReason = '';
     let statusTimer = null;
     let rendered = 0;
     const messageBuffers = new Map();
@@ -3993,7 +3998,14 @@
     //    做法(不额外占状态栏空间):让保留下来的 🕐 那一栏兼任连接状态。
     function renderConnectionState() {
       if (!clockStatus) return;
-      if (streamGapRecoveryActive()) {
+      if (streamUnavailableReason) {
+        clockStatus.classList.add('offline');
+        const reason = streamUnavailableReason === 'event_stream_unavailable'
+          ? '该 Agent 会话当前不可用：事件流尚未注册'
+          : '该 Agent 会话当前不可用：身份无法解析';
+        clockStatus.title = `${reason}；将按退避策略重试。`;
+        localTime.textContent = reason;
+      } else if (streamGapRecoveryActive()) {
         clockStatus.classList.remove('offline');
         clockStatus.title = '事件流已连接；检测到事件序号缺口，正在自动补收，补齐后此提示自动消失。';
         localTime.textContent = '已连接 · 正在补收缺失事件';
@@ -4234,6 +4246,17 @@
       beginTimelineReplay();
       setStatus('idle');
       eventSource = new EventSource(eventsStreamUrl());
+      eventSource.addEventListener('stream_unavailable', msg => {
+        if (generation !== eventSourceGeneration) return;
+        let reason = 'upstream_events_unavailable';
+        try {
+          const parsed = JSON.parse(msg.data);
+          if (parsed && (parsed.reason === 'event_stream_unavailable' || parsed.reason === 'view_identity_unresolved')) reason = parsed.reason;
+        } catch (_) {}
+        streamUnavailableReason = reason;
+        closeEventStream();
+        scheduleReconnect();
+      });
       eventSource.addEventListener('replay_gap', msg => {
         if (generation !== eventSourceGeneration) return;
         handleReplayGap(msg);
@@ -4247,6 +4270,7 @@
         // R-V2-0105 件一：已收到过带序号的事件 ⇒ 本次连接带 after、Hub 只补缺口，不需要清空窗口。
         if (streamEverOpened && streamHasAcceptedEvent && !seqStreamSeen) markStreamReconnect();
         streamEverOpened = true;
+        streamUnavailableReason = '';
         opened = true;
         clearStreamConnectTimer();
         hideStreamAlert();

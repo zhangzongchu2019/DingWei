@@ -409,14 +409,14 @@ func TestNewPlatformEventsMissingSessionDoesNotCreateTerminal(t *testing.T) {
 	before := len(e.hub.terminals)
 	e.hub.mu.Unlock()
 	// Kimi exists in the identity store but has never connected, so owner
-	// resolution succeeds while the terminal itself is absent.
+	// resolution succeeds while the event terminal itself is absent.
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 	req := httptest.NewRequest(http.MethodGet, "/internal/view/kimi.zzc/events", nil).WithContext(ctx)
 	req.SetPathValue("session", "kimi.zzc")
 	result := httptest.NewRecorder()
 	e.hub.HandleInternalViewEvents(result, req)
-	if result.Code != http.StatusNotFound {
+	if result.Code != http.StatusConflict || strings.TrimSpace(result.Body.String()) != "event_stream_unavailable" {
 		t.Fatalf("missing session status=%d body=%q", result.Code, result.Body.String())
 	}
 	e.hub.mu.Lock()
@@ -425,5 +425,42 @@ func TestNewPlatformEventsMissingSessionDoesNotCreateTerminal(t *testing.T) {
 	e.hub.mu.Unlock()
 	if after != before || ghost {
 		t.Fatalf("missing events subscription created terminal: before=%d after=%d ghost=%v", before, after, ghost)
+	}
+}
+
+func TestNewPlatformEventsUnknownIdentityExplainsResolutionFailure(t *testing.T) {
+	e := newViewEnv(t)
+	req := httptest.NewRequest(http.MethodGet, "/internal/view/ghost.zzc/events", nil)
+	req.SetPathValue("session", "ghost.zzc")
+	result := httptest.NewRecorder()
+	e.hub.HandleInternalViewEvents(result, req)
+	if result.Code != http.StatusNotFound || strings.TrimSpace(result.Body.String()) != "view_identity_unresolved" {
+		t.Fatalf("unknown identity: status=%d body=%q", result.Code, result.Body.String())
+	}
+}
+
+func TestNewPlatformEventsOnlineWithoutEventStreamExplainsUnavailable(t *testing.T) {
+	e := newViewEnv(t)
+	agent, status, body := e.dial(e.zKimiCred, "")
+	if agent == nil {
+		t.Fatalf("agent dial: %d %s", status, body)
+	}
+	defer agent.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "kimi")
+
+	// A connected helper which has not emitted terminal_output/session_event has
+	// a live sessionClient but deliberately no event terminal to subscribe to.
+	e.hub.mu.Lock()
+	_, terminalExists := e.hub.terminals[terminalKey(AgentKeyID("zzc"), "kimi")]
+	e.hub.mu.Unlock()
+	if terminalExists {
+		t.Fatal("test setup unexpectedly registered an event terminal")
+	}
+	req := httptest.NewRequest(http.MethodGet, "/internal/view/kimi.zzc/events", nil)
+	req.SetPathValue("session", "kimi.zzc")
+	result := httptest.NewRecorder()
+	e.hub.HandleInternalViewEvents(result, req)
+	if result.Code != http.StatusConflict || strings.TrimSpace(result.Body.String()) != "event_stream_unavailable" {
+		t.Fatalf("online session without stream: status=%d body=%q", result.Code, result.Body.String())
 	}
 }

@@ -950,14 +950,22 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 	// Resolve the public full_name once, then use the exact internal key/session pair.
 	keyID, internalSession, found := h.viewInternalSession(r.Context(), sessionName)
 	if !found {
-		http.Error(w, "session offline or ambiguous", http.StatusNotFound)
+		// Keep an unresolved public identity distinct from a connected Agent which
+		// has not registered an event-producing terminal yet.  View Service uses
+		// this stable reason to render an actionable state instead of retrying an
+		// empty 200 response forever.
+		http.Error(w, "view_identity_unresolved", http.StatusNotFound)
 		return
 	}
 	subID := randomHex(8)
 	snap, ok := h.subscribeExistingSessionEventsSeqSnapshot(keyID, internalSession, subID)
 	epoch, ch, unsub := snap.Epoch, snap.Live, snap.Unsub
 	if !ok {
-		http.Error(w, "session offline or ambiguous", http.StatusNotFound)
+		// A heartbeat-only helper can be online without having emitted
+		// terminal_output or session_event, and therefore has no terminal state
+		// to subscribe to. Do not manufacture an empty terminal here: that would
+		// conceal the unavailable stream and make an empty View look connected.
+		http.Error(w, "event_stream_unavailable", http.StatusConflict)
 		return
 	}
 	defer unsub()
