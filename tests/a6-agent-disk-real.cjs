@@ -32,4 +32,11 @@ test('oversized uint64 sequence rejected',()=>{const s=new AgentDiskState(),v=va
 test('same sample cannot renew client expiry on response replay',()=>{const s=new AgentDiskState(),v=valid();v.expires_in_ms=1000;v.age_ms=359000;s.apply(v,'stable-agent-a',0,1);s.apply(v,'stable-agent-a',900,901);assert.equal(s.display(1000).text,'已过期');});
 test('JSON arrays cannot masquerade as sequence or instance strings',()=>{for(const key of ['sample_seq','sample_instance','filesystem_instance']){const s=new AgentDiskState(),v=valid();v.sample[key]=[v.sample[key]];assert.equal(s.apply(v,'stable-agent-a',0,1),false);}});
 test('same sample cannot change filesystem or available bytes',()=>{for(const key of ['filesystem_instance','available_bytes']){const s=new AgentDiskState(),v=valid();s.apply(v,'stable-agent-a',0,1);v.sample[key]=key==='available_bytes'?1:'c'.repeat(32);assert.equal(s.apply(v,'stable-agent-a',2,3),false);}});
+test('normal maximum sample age 330 seconds remains numeric under 360 second TTL',()=>{
+ const s=new AgentDiskState(),v=valid();v.age_ms=30000;v.expires_in_ms=330000;
+ assert(s.apply(v,'stable-agent-a',0,0)); // up to 30s old at a resource response
+ assert.equal(v.age_ms+300000,330000); // next page poll after 300s
+ assert.equal(s.display(300000).numeric,true);
+ assert.equal(s.display(330000).text,'已过期'); // no TTL extension
+});
 console.log('OBSERVATIONS '+count);

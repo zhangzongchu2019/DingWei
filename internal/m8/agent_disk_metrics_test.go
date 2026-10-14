@@ -166,3 +166,76 @@ func TestAgentDiskRetiredNameCannotInheritOldConnection(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+// Count real ingress identity lookups through the existing Store interface;
+// no fake metrics result or DB connection is substituted for the handler.
+type metricsReadCounter struct {
+	identity.Store
+	agentGets, userGets int
+}
+
+func (s *metricsReadCounter) GetAgent(ctx context.Context, id string) (*identity.Agent, error) {
+	s.agentGets++
+	return s.Store.GetAgent(ctx, id)
+}
+func (s *metricsReadCounter) GetUser(ctx context.Context, id string) (*identity.User, error) {
+	s.userGets++
+	return s.Store.GetUser(ctx, id)
+}
+func TestAgentDiskCheapAdmission(t *testing.T) {
+	for _, mode := range []string{"burst", "oversize", "invalid_first_attempt"} {
+		t.Run(mode, func(t *testing.T) {
+			h, c, mem := diskEnv(t)
+			counter := &metricsReadCounter{Store: mem}
+			h.Identity.Store = counter
+			now := time.Now()
+			begun := now
+			h.NowFunc = func() time.Time { return now }
+			send := func(body string) {
+				env := diskEnvelope(now)
+				if body != "" {
+					env.Body = body
+				}
+				if !h.handleAgentDiskMetrics(context.Background(), c, env) {
+					t.Fatal("metrics not consumed")
+				}
+			}
+			if mode == "oversize" {
+				send(strings.Repeat("x", agentmetrics.MaxBytes+1))
+				if counter.agentGets != 0 || counter.userGets != 0 || !c.lastMetricsAttempt.IsZero() {
+					t.Fatalf("oversize incurred identity reads agent=%d user=%d", counter.agentGets, counter.userGets)
+				}
+				return
+			}
+			if mode == "invalid_first_attempt" {
+				send("{}")
+			} else {
+				send("")
+			}
+			now = begun.Add(10 * time.Second)
+			send("")
+			now = begun.Add(30*time.Second - time.Millisecond)
+			send("")
+			if counter.agentGets != 1 || counter.userGets != 1 {
+				t.Fatalf("30s burst incurred identity reads agent=%d user=%d, want 1 each", counter.agentGets, counter.userGets)
+			}
+			if !c.lastMetricsAttempt.Equal(begun) {
+				t.Fatal("suppressed messages moved eligible-attempt time")
+			}
+			if mode == "invalid_first_attempt" && c.diskMetrics.Read(agentmetrics.Binding{Agent: c.metricsAgentID, Connection: c.metricsGeneration, Current: true}, now).Status != "unavailable" {
+				t.Fatal("invalid attempt acquired a sample")
+			}
+			now = begun.Add(30 * time.Second)
+			env := diskEnvelope(now)
+			env.Body = strings.Replace(env.Body, `"sample_seq":"1"`, `"sample_seq":"2"`, 1)
+			h.handleAgentDiskMetrics(context.Background(), c, env)
+			if counter.agentGets != 2 || counter.userGets != 2 {
+				t.Fatalf("full 30s boundary did not query agent=%d user=%d", counter.agentGets, counter.userGets)
+			}
+			snapshot := c.diskMetrics.Read(agentmetrics.Binding{Agent: c.metricsAgentID, Connection: c.metricsGeneration, Current: true}, now)
+			if snapshot.Status != "ok" || snapshot.Sample.Seq != "2" {
+				t.Fatalf("full 30s boundary did not accept next sample %+v", snapshot)
+			}
+		})
+	}
+}

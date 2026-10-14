@@ -25,9 +25,11 @@ Existing envelope: meta.type = `agent_environment_metrics`, meta.no_mirror = tru
 - For unavailable: reason in workdir_unbound / namespace_unbound / sample_failed / unsupported_mode; all filesystem/numeric fields absent.
 - No other, duplicate, case-variant or null keys; no trailing object. UTC clock skew window is -30 seconds through +30 seconds plus measured send age. A sample outside these bounds is rejected, not restamped.
 
-Candidate numeric profile remains helper 300s, Hub new-sample replacement minimum 300s, TTL 360s, sampler await 2s, send age <=5s. Exact retransmission cannot renew receipt or expiry. Hub TTL is monotonic from first receipt less measured helper age; UTC tolerance is a clock check, not proof of zero transport delay. The UI anchors remaining TTL at its request start, charges request duration and does not renew a repeated sample. Local second ticks paint expiration. GB means 10^9 bytes; actual zero displays zero, small positive use displays <0.1 instead of rounded zero. Provenance and original sample time appear in the disk title.
+Leader-selected R1 profile: helper 30s, Hub new-sample replacement minimum 30s, TTL 360s, sampler await 2s, send age <=5s. Exact retransmission cannot renew receipt or expiry. Hub TTL is monotonic from first receipt less measured helper age; UTC tolerance is a clock check, not proof of zero transport delay. The UI anchors remaining TTL at its request start, charges request duration and does not renew a repeated sample. Local second ticks paint expiration. GB means 10^9 bytes; actual zero displays zero, small positive use displays <0.1 instead of rounded zero. Provenance and original sample time appear in the disk title.
 
-**Polling phase limitation:** helper 300s plus page 300s with TTL 360s can yield only about 60s remaining lifetime at a status response, followed by visible expired state until the next refresh. The candidate preserves honest expiration. A 30s helper/Hub replacement profile with the existing page 300s/TTL360s was separately proposed to the leader; it has not silently replaced this profile or been field capacity-tested.
+**Polling profile:** with normal helper publication at 30s and page resource polling at 300s, normal maximum sample age is 330s < 360s. The actual-source renderer fixture pins that numeric state and still expires it at TTL. This is the leader's R1 selection (889b3b9c3b76), superseding the initial 300/300/360 proposal; it is not a field capacity or delivery-latency guarantee. Sampling failure, network delay or stalled reads still yield unknown/expired rather than renewed freshness.
+
+Before identity store reads, the Hub consumes any body over 2048 bytes and rejects any connection attempt within 30s of its prior admitted attempt. lastMetricsAttempt is stored on sessionClient under h.mu, with a cheap current-pointer check; after admission, even invalid payloads/identities consume that attempt interval. Suppressed messages and reads do not move that time or renew the cache. Full identity/current-pointer checks still follow; a replacement during lookup is rejected before cache update. The ingress counter test covers burst, invalid-first attempt, oversize and the exact 30s boundary.
 
 ## Read path
 
@@ -36,3 +38,18 @@ The public path stays the existing authenticated status proxy and its already si
 VS uses its existing HUB_INTERNAL and secret configuration; no guessed target URL, new credential or secret parameter is introduced. The lookup has a 2s caller bound covering key read/setup/connect/body/decode, at most two daemon workers, bounded response bytes, no redirects or ambient proxy. Late results are discarded. The helper has at most one sampling worker across reconnects. A blocked kernel operation cannot be forcibly preempted by these thread deadlines; an outstanding worker is not multiplied. Secret/OS errors return fixed unavailable, never raw exceptions or private paths.
 
 The original 5s complete status-request deadline, 300s resource cadence, visibility/generation/singleflight rules, page/cookie/Origin/principal/input authorization and paused-cost rules remain. Resources-only lookup does not initialize cost projection. The top-level legacy resource_scope still describes VS memory/time; only agent_disk carries the Agent source contract. VS runtime is kept in view_service.py, so its existing release file list does not omit a new Python runtime module. The new helper module is explicitly included in PyInstaller hiddenimports. VERSION is not bumped or published by this review candidate; release versioning remains part of the coordinated build/release set.
+
+
+## Mixed-version and unsupported-source matrix (S2)
+
+| Helper/source | Hub | VS | Renderer | Result |
+| --- | --- | --- | --- | --- |
+| Supported owned local CLI, new helper | New authenticated selfhost capability | New signed resource reader | New A6 gate | Valid fresh bytes, otherwise unknown/expired |
+| Old helper | New | New | New | No sample; unknown |
+| New helper | Old / shared-key handshake without capability | Any | New | No metrics subtype sent; unknown |
+| New helper | New | Old / V1 route without verified Agent snapshot | New | No supported agent_disk; unknown |
+| New helper | New | New | Reviewed A6-display-only renderer | Unknown; no VS fallback, no numeric support yet |
+| Any | Any | Any | Pre-A6 renderer | Unsupported A6 release mix: old UI may still display VS disk; paired renderer deployment is required |
+| Hosted allocation / tmux / remote or external driver without owned process | Any compatible chain | Any | New | Always unknown in this candidate; no node-host substitution |
+
+The deployment set must include matching Hub, VS and renderer; helper rollout can follow Hub because absent capability suppresses unknown control messages. This table is compatibility scope, not a deployment action or field assertion. S1 rejected-count observability remains a nonblocking follow-up; no per-message logging was added.

@@ -1,0 +1,6 @@
+=== RUN   TestRateAndSendAgeBudget
+    metrics_test.go:169: invalid_agent_disk_metric
+--- FAIL: TestRateAndSendAgeBudget (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/agentmetrics	0.003s
+FAIL

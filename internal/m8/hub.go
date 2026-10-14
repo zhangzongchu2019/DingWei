@@ -180,9 +180,10 @@ type client struct {
 }
 
 type sessionClient struct {
-	metricsAgentID    string // Set only by dedicated credential admission, never helper JSON.
-	metricsGeneration string
-	diskMetrics       *agentmetrics.Cache // Access to the pointer is under h.mu.
+	metricsAgentID     string // Set only by dedicated credential admission, never helper JSON.
+	metricsGeneration  string
+	diskMetrics        *agentmetrics.Cache // Access to the pointer is under h.mu.
+	lastMetricsAttempt time.Time           // Read/written under h.mu; rejected attempts do not renew the cache.
 
 	conn           *websocket.Conn
 	mu             sync.Mutex

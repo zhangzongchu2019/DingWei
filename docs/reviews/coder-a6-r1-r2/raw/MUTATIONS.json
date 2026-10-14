@@ -1,0 +1,12 @@
+[
+  {
+    "name": "remove-R2-preflight",
+    "rc": 1,
+    "fixture": "^TestAgentDiskCheapAdmission$"
+  },
+  {
+    "name": "restore-300s-cache",
+    "rc": 1,
+    "fixture": "^TestRateAndSendAgeBudget$"
+  }
+]

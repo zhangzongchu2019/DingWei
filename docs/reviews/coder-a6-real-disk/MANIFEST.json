@@ -13,8 +13,8 @@
     },
     {
       "file": "docs/reviews/coder-a6-real-disk/CONTRACT.md",
-      "bytes": 7157,
-      "sha256": "4f7ec5ffe0fb0defc919163df441b0e53f632ebfc0b8199d735d9a61d560373a"
+      "bytes": 9167,
+      "sha256": "e47f47f0aad79a471c8ea7f19dc2dfb5d478232a51fa30c777f73111dc92c47a"
     },
     {
       "file": "docs/reviews/coder-a6-real-disk/PROTECTED-SOURCE.json",
@@ -23,18 +23,18 @@
     },
     {
       "file": "docs/reviews/coder-a6-real-disk/PROVENANCE.json",
-      "bytes": 756,
-      "sha256": "1b08f24aae3b13b3659ce4b03cf484e6b5af40a3c68c9687c0c4a672665dbf19"
+      "bytes": 753,
+      "sha256": "d116d30321b5a14135b6bd51ed5ed60250d9de7ea0fd614182ff2541549e7746"
     },
     {
       "file": "docs/reviews/coder-a6-real-disk/REVIEW.md",
-      "bytes": 6401,
-      "sha256": "9358fce48bb2b841a0a9980e0c8503d99492c2c21aa1070173e6ac26a8f4aa13"
+      "bytes": 6620,
+      "sha256": "63018ffee9200a462024b7abfb4b21bd67ec44ddff5f17edc67f928a8a408e53"
     },
     {
       "file": "docs/reviews/coder-a6-real-disk/SOURCE-PINS.json",
-      "bytes": 3830,
-      "sha256": "9d729ecdc298d961d89500e4ba72fc5e6d31c283abd20e2ff5311e4aac30577e"
+      "bytes": 3831,
+      "sha256": "afd594c8d610213ee3a239b9bfa036c1d93aecb9e9111420706e226d2ec72cf8"
     },
     {
       "file": "docs/reviews/coder-a6-real-disk/logs/DIRECTED-RESULTS.json",
@@ -138,23 +138,23 @@
     },
     {
       "file": "internal/agentmetrics/metrics.go",
-      "bytes": 6387,
-      "sha256": "9d8de7c133ec5f7283c2a41f1cc31541d4bd3bce90fbca5a8a0fcfd77654a74c"
+      "bytes": 6426,
+      "sha256": "22d65f2605ce98c9d2c8b8b4f23da9208b366601fe8270a68e26eeb25d548115"
     },
     {
       "file": "internal/agentmetrics/metrics_test.go",
-      "bytes": 6415,
-      "sha256": "58377f682a06ce36172c518ec3e1303c7c96a0f560e8877e10ac36890ebee3ce"
+      "bytes": 6573,
+      "sha256": "764fd76491048284eced2f21a0b21ece7e09852aa09aeff37013d2c61796a2f5"
     },
     {
       "file": "internal/m8/agent_disk_metrics.go",
-      "bytes": 5439,
-      "sha256": "50c1f3e2d7eda758df84535879ff6a7be86232ed2c670b6d7e7b3f6918381c48"
+      "bytes": 5934,
+      "sha256": "77a77fe11c13e2f8db145f71544845c946f828b0451bcafdd0502be4d961c6bb"
     },
     {
       "file": "internal/m8/agent_disk_metrics_test.go",
-      "bytes": 7506,
-      "sha256": "3730b1bab0d33d06d930919db29ec0f12ee8a3a8defac72d5dcb1c6939e341e6"
+      "bytes": 10281,
+      "sha256": "416224dc3ac8811fbce659219eecb21f088384831d9d806b1b85149adf6dd08f"
     },
     {
       "file": "internal/m8/agent_ws.go",
@@ -163,8 +163,8 @@
     },
     {
       "file": "internal/m8/hub.go",
-      "bytes": 234329,
-      "sha256": "128fbc9246bd91382b7ab0ee2490813a79ff17901076b6b1d8942cd20cbf7129"
+      "bytes": 234442,
+      "sha256": "a996dc62bd8b2a8ac5d126df5b865accdba0eb6343f9d78a99316e22dc7837ac"
     },
     {
       "file": "scripts/run-build-tests.sh",
@@ -173,8 +173,8 @@
     },
     {
       "file": "tests/a6-agent-disk-real.cjs",
-      "bytes": 4664,
-      "sha256": "7e9e60bb8125c06029e4adcb6333d7531c2b07cf0c9df608c75c56a4e906b8cf"
+      "bytes": 5103,
+      "sha256": "161b592eaba9bc581259477c6f6a25941348ca67bcda1581a2626e62241dcf1f"
     },
     {
       "file": "tests/a6-agent-disk-unknown.cjs",
@@ -193,8 +193,8 @@
     },
     {
       "file": "tools/sessionhelper/sessionhelper/app.py",
-      "bytes": 83637,
-      "sha256": "0d4a26b54cf45387c8a611ab0a054f74e4e24a9f3c0f3a70dfd1504f12e00122"
+      "bytes": 83636,
+      "sha256": "3a89aec24944eb693cd096e83cbca658a0cc010ce8a7907ccf0e22a230708087"
     },
     {
       "file": "tools/sessionhelper/sessionhelper/cli.py",
@@ -208,8 +208,8 @@
     },
     {
       "file": "tools/sessionhelper/tests/test_agent_disk_metrics.py",
-      "bytes": 8471,
-      "sha256": "06892ebd2488a1045cf680e61c81833b84b42233e830a2681122ce6231ec0473"
+      "bytes": 8469,
+      "sha256": "ace300c12ab8197b11fc76ecfebbda3c5b30769381ee2910d3bd372a8259f8f6"
     },
     {
       "file": "view-service/renderer-canary-sse.html",

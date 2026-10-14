@@ -1594,7 +1594,7 @@ class SessionHelper:
                 await ws.send(json.dumps(envelope(
                     session_addr("workpulse", self.cfg.key_id), payload, self.book.self_addr, meta
                 ), ensure_ascii=False))
-            await asyncio.sleep(300)
+            await asyncio.sleep(30)
 
     async def session_event_loop(self, ws) -> None:
         if env_get("SH_EMIT_SESSION_EVENT") != "1":

@@ -82,7 +82,7 @@ class Publisher(unittest.IsolatedAsyncioTestCase):
   adapter=types.SimpleNamespace(agent_metrics_workdir=Mock(side_effect=['/first','/second']))
   raw=await BoundedDiskPublisher(sampler).sample(adapter)
   data=json.loads(raw);self.assertEqual(data['status'],'unavailable');self.assertEqual(data['reason'],'namespace_unbound');self.assertNotIn('used_bytes',data)
- async def test_actual_loop_uses_same_ws_control_and_300_seconds(self):
+ async def test_actual_loop_uses_same_ws_control_and_30_seconds(self):
   import asyncio
   from unittest.mock import AsyncMock,patch
   from sessionhelper.app import SessionHelper
@@ -91,7 +91,7 @@ class Publisher(unittest.IsolatedAsyncioTestCase):
   ws=types.SimpleNamespace(send=AsyncMock(),response=types.SimpleNamespace(headers={"X-DW-Agent-Metrics":"agent-disk/v1"}))
   with patch('sessionhelper.app.asyncio.sleep',new=AsyncMock(side_effect=asyncio.CancelledError)) as sleep:
    with self.assertRaises(asyncio.CancelledError):await obj.agent_disk_metrics_loop(ws)
-  sleep.assert_awaited_once_with(300);ws.send.assert_awaited_once()
+  sleep.assert_awaited_once_with(30);ws.send.assert_awaited_once()
   sent=json.loads(ws.send.call_args.args[0]);self.assertEqual(sent['body'],'metric');self.assertEqual(sent['meta']['type'],'agent_environment_metrics');self.assertTrue(sent['meta']['no_mirror']);self.assertEqual(sent['from'],'agent#synthetic')
 
 class Compatibility(unittest.IsolatedAsyncioTestCase):

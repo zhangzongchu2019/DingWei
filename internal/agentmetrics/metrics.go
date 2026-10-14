@@ -16,6 +16,7 @@ import (
 const MaxBytes = 2048
 const MaxSafe = 1<<53 - 1
 const Lifetime = 360 * time.Second
+const SampleInterval = 30 * time.Second
 
 var hex32 = regexp.MustCompile(`^[0-9a-f]{32}$`)
 var errInvalid = errors.New("invalid_agent_disk_metric")
@@ -172,7 +173,7 @@ func (c *Cache) Accept(raw []byte, b Binding, now time.Time) (bool, error) {
 		}
 	}
 	// A current connection may replace its snapshot no more than once per period.
-	if c.seq != 0 && now.Sub(c.received) < 300*time.Second {
+	if c.seq != 0 && now.Sub(c.received) < SampleInterval {
 		return false, errInvalid
 	}
 	c.record, c.seq, c.digest = w, n, digest

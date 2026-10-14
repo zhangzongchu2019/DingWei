@@ -13,23 +13,23 @@
     },
     {
       "file": "internal/agentmetrics/metrics.go",
-      "bytes": 6387,
-      "sha256": "9d8de7c133ec5f7283c2a41f1cc31541d4bd3bce90fbca5a8a0fcfd77654a74c"
+      "bytes": 6426,
+      "sha256": "22d65f2605ce98c9d2c8b8b4f23da9208b366601fe8270a68e26eeb25d548115"
     },
     {
       "file": "internal/agentmetrics/metrics_test.go",
-      "bytes": 6415,
-      "sha256": "58377f682a06ce36172c518ec3e1303c7c96a0f560e8877e10ac36890ebee3ce"
+      "bytes": 6573,
+      "sha256": "764fd76491048284eced2f21a0b21ece7e09852aa09aeff37013d2c61796a2f5"
     },
     {
       "file": "internal/m8/agent_disk_metrics.go",
-      "bytes": 5439,
-      "sha256": "50c1f3e2d7eda758df84535879ff6a7be86232ed2c670b6d7e7b3f6918381c48"
+      "bytes": 5934,
+      "sha256": "77a77fe11c13e2f8db145f71544845c946f828b0451bcafdd0502be4d961c6bb"
     },
     {
       "file": "internal/m8/agent_disk_metrics_test.go",
-      "bytes": 7506,
-      "sha256": "3730b1bab0d33d06d930919db29ec0f12ee8a3a8defac72d5dcb1c6939e341e6"
+      "bytes": 10281,
+      "sha256": "416224dc3ac8811fbce659219eecb21f088384831d9d806b1b85149adf6dd08f"
     },
     {
       "file": "internal/m8/agent_ws.go",
@@ -38,8 +38,8 @@
     },
     {
       "file": "internal/m8/hub.go",
-      "bytes": 234329,
-      "sha256": "128fbc9246bd91382b7ab0ee2490813a79ff17901076b6b1d8942cd20cbf7129"
+      "bytes": 234442,
+      "sha256": "a996dc62bd8b2a8ac5d126df5b865accdba0eb6343f9d78a99316e22dc7837ac"
     },
     {
       "file": "scripts/run-build-tests.sh",
@@ -48,8 +48,8 @@
     },
     {
       "file": "tests/a6-agent-disk-real.cjs",
-      "bytes": 4664,
-      "sha256": "7e9e60bb8125c06029e4adcb6333d7531c2b07cf0c9df608c75c56a4e906b8cf"
+      "bytes": 5103,
+      "sha256": "161b592eaba9bc581259477c6f6a25941348ca67bcda1581a2626e62241dcf1f"
     },
     {
       "file": "tests/a6-agent-disk-unknown.cjs",
@@ -68,8 +68,8 @@
     },
     {
       "file": "tools/sessionhelper/sessionhelper/app.py",
-      "bytes": 83637,
-      "sha256": "0d4a26b54cf45387c8a611ab0a054f74e4e24a9f3c0f3a70dfd1504f12e00122"
+      "bytes": 83636,
+      "sha256": "3a89aec24944eb693cd096e83cbca658a0cc010ce8a7907ccf0e22a230708087"
     },
     {
       "file": "tools/sessionhelper/sessionhelper/cli.py",
@@ -83,8 +83,8 @@
     },
     {
       "file": "tools/sessionhelper/tests/test_agent_disk_metrics.py",
-      "bytes": 8471,
-      "sha256": "06892ebd2488a1045cf680e61c81833b84b42233e830a2681122ce6231ec0473"
+      "bytes": 8469,
+      "sha256": "ace300c12ab8197b11fc76ecfebbda3c5b30769381ee2910d3bd372a8259f8f6"
     },
     {
       "file": "view-service/renderer-canary-sse.html",

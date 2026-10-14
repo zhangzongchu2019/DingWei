@@ -160,12 +160,15 @@ func TestRateAndSendAgeBudget(t *testing.T) {
 	if _, err := c.Accept([]byte(update), b, now.Add(time.Second)); err == nil {
 		t.Fatal("rate bound missing")
 	}
-	update = strings.Replace(update, `"sampled_at_ms":1001000`, `"sampled_at_ms":1300000`, 1)
+	update = strings.Replace(update, `"sampled_at_ms":1001000`, `"sampled_at_ms":1030000`, 1)
 	update = strings.Replace(update, `"elapsed_send_age_ms":0`, `"elapsed_send_age_ms":5000`, 1)
-	if changed, err := c.Accept([]byte(update), b, now.Add(300*time.Second)); err != nil || !changed {
+	if _, err := c.Accept([]byte(update), b, now.Add(30*time.Second-time.Millisecond)); err == nil {
+		t.Fatal("sample accepted before the 30 second boundary")
+	}
+	if changed, err := c.Accept([]byte(update), b, now.Add(30*time.Second)); err != nil || !changed {
 		t.Fatal(err)
 	}
-	if got := c.Read(b, now.Add(300*time.Second)); got.ExpiresInMS != 355000 || got.AgeMS != 5000 {
+	if got := c.Read(b, now.Add(30*time.Second)); got.ExpiresInMS != 355000 || got.AgeMS != 5000 {
 		t.Fatal(got)
 	}
 	if _, _, err := Parse([]byte(strings.Replace(string(valid()), `"filesystem_instance":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"`, `"filesystem_instance":null`, 1)), now); err == nil {

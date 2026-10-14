@@ -40,6 +40,20 @@ func (h *Hub) handleAgentDiskMetrics(ctx context.Context, c *sessionClient, env 
 	if metaString(env.Meta, "type") != "agent_environment_metrics" {
 		return false
 	}
+	// Cheap admission precedes identity I/O. Charge attempts, including invalid
+	// payloads/identities, so a connection cannot turn rejects into unbounded DB reads.
+	if c == nil || len(env.Body) > agentmetrics.MaxBytes {
+		return true
+	}
+	now := h.now()
+	h.mu.Lock()
+	if h.sessionClients[c.keyID][c.sessionName] != c ||
+		(!c.lastMetricsAttempt.IsZero() && now.Sub(c.lastMetricsAttempt) < agentmetrics.SampleInterval) {
+		h.mu.Unlock()
+		return true
+	}
+	c.lastMetricsAttempt = now
+	h.mu.Unlock()
 	binding, ok := h.metricsBinding(ctx, c)
 	if !ok {
 		return true

@@ -1,0 +1,45 @@
+[
+  {
+    "name": "go-a6",
+    "argv": [
+      "go",
+      "test",
+      "./internal/agentmetrics",
+      "./internal/m8",
+      "-run",
+      "^(TestAgentDisk|TestValidation|TestLifetimeAndBinding|TestRateAndSendAgeBudget)",
+      "-count=1",
+      "-v"
+    ],
+    "rc": 0
+  },
+  {
+    "name": "helper-30s",
+    "argv": [
+      "/data/ai-dev-data/sse-mux-product-coder56solzzc-20261012/build-venv/bin/python",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools/sessionhelper/tests/test_agent_disk_metrics.py"
+    ],
+    "rc": 0
+  },
+  {
+    "name": "renderer-max-age",
+    "argv": [
+      "node",
+      "tests/a6-agent-disk-real.cjs"
+    ],
+    "rc": 0
+  },
+  {
+    "name": "diff-check",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "rc": 0
+  }
+]

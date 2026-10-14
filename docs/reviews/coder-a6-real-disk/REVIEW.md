@@ -1,5 +1,7 @@
 # A6 implementation and author evidence
 
+Historical initial fedfd145/51538 evidence below. For the current 30s R1/R2 delta and its actual logs, see ../coder-a6-r1-r2/REVIEW.md. Initial counts/profile are not silently re-labelled as results for the follow-up.
+
 Status: offline implementation candidate, not independent CR, target verification, deployment or owner acceptance. Original requirement basis: MINIMAL-CONTRACT-PROPOSAL SHA256 eb1d85d52bbef993831c80f4193a859d6fecdf69afba3960d2ef8c6311dbf97e; original implementation plan SHA256 44ac869e716d6c033731d7acb3b9313fc7b71121b6eecaaca271579f3f98a737. CONTRACT.md states concrete implementation refinements (reserved control subtype, negotiated support, private signed lookup), numeric choices and unsupported sources.
 
 Actual components are connected: helper adapter/process sampler and supervised existing-WS publisher; Hub dedicated credential admission plus ingress/cache; private signed read-only route registered on internalMux; verified-subject VS status lookup; actual renderer source gate, response/generation binding and local expiry painting. The tests do not stand in for deployed components or physical Agent measurements.
