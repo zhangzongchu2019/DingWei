@@ -14,6 +14,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -30,13 +32,12 @@ import (
 type specE2EHTTPGate struct{ entered, release chan struct{} }
 
 type specMCPBridge struct {
-	t       *testing.T
-	input   *json.Encoder
-	scan    *bufio.Scanner
-	cmd     *exec.Cmd
-	private []string
-	stderr  *bytes.Buffer
-	other   []string // private capture of non-protocol stdout; never printed
+	t        *testing.T
+	input    *json.Encoder
+	scan     *bufio.Scanner
+	cmd      *exec.Cmd
+	private  []string
+	logPaths []string
 }
 
 func (b *specMCPBridge) phase(prefix string) string {
@@ -49,7 +50,6 @@ func (b *specMCPBridge) phase(prefix string) string {
 		if strings.HasPrefix(line, prefix) {
 			return strings.TrimPrefix(line, prefix)
 		}
-		b.other = append(b.other, line)
 	}
 	b.t.Fatal("local helper/MCP child ended before phase " + prefix)
 	return ""
@@ -98,50 +98,33 @@ func (b *specMCPBridge) unwrap(p map[string]any) map[string]any {
 	}
 	return frame.Result
 }
-func (b *specMCPBridge) stop() {
-	b.stopWithDiagnosticExpectation(false)
+func scanSpecMCPPrivateLogs(paths, private []string) error {
+	for _, path := range paths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return errors.New("private log capture unavailable")
+		}
+		for _, secret := range private {
+			if secret != "" && bytes.Contains(data, []byte(secret)) {
+				return errors.New("private credential/capability detected in captured logs")
+			}
+		}
+	}
+	return nil
 }
-func (b *specMCPBridge) stopWithDiagnosticExpectation(wantPrivate bool) {
+func (b *specMCPBridge) stop() {
 	b.t.Helper()
 	if err := b.input.Encode(map[string]bool{"stop": true}); err != nil {
 		b.t.Fatal(err)
 	}
 	b.phase("A3_E2E_CLEAN")
+	for b.scan.Scan() {
+	} // drain the entire helper stdout tail into its private capture
 	if err := b.cmd.Wait(); err != nil {
 		b.t.Fatalf("local child exit: %v", err)
 	}
-	if b.hasPrivateDiagnostics() != wantPrivate {
-		if wantPrivate {
-			b.t.Fatal("diagnostic-leak mutation was not detected")
-		}
-		b.assertNoPrivateDiagnostics()
-	}
-}
-
-func (b *specMCPBridge) hasPrivateDiagnostics() bool {
-	diagnostics := append([]string{}, b.other...)
-	if b.stderr != nil {
-		diagnostics = append(diagnostics, b.stderr.String())
-	}
-	for _, private := range b.private {
-		if private == "" {
-			continue
-		}
-		for _, diagnostic := range diagnostics {
-			if strings.Contains(diagnostic, private) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (b *specMCPBridge) assertNoPrivateDiagnostics() {
-	b.t.Helper()
-	if b.hasPrivateDiagnostics() {
-		// Never include captured diagnostics: a failing assertion must not turn a
-		// test-private credential/capability into a CI log artifact.
-		b.t.Fatal("private value found in captured helper/MCP diagnostics")
+	if err := scanSpecMCPPrivateLogs(b.logPaths, b.private); err != nil {
+		b.t.Fatal(err)
 	}
 }
 func specE2EArgs(update bool, id string) map[string]any {
@@ -160,9 +143,6 @@ func startSpecMCPBridge(t *testing.T, e *shimEnv, python string) *specMCPBridge 
 	return startSpecMCPBridgeAs(t, e, python, e.zKimiCred, "Kimi", "u_zzc")
 }
 func startSpecMCPBridgeAs(t *testing.T, e *shimEnv, python, secret, name, keyID string) *specMCPBridge {
-	return startSpecMCPBridgeAsDiagnostic(t, e, python, secret, name, keyID, false)
-}
-func startSpecMCPBridgeAsDiagnostic(t *testing.T, e *shimEnv, python, secret, name, keyID string, injectDiagnosticLeak bool) *specMCPBridge {
 	t.Helper()
 	root, err := filepath.Abs("../..")
 	if err != nil {
@@ -181,9 +161,16 @@ func startSpecMCPBridgeAsDiagnostic(t *testing.T, e *shimEnv, python, secret, na
 		cmd.Env = append(cmd.Env, v)
 	}
 	cmd.Env = append(cmd.Env, "HOME="+home, "PYTHONPATH="+filepath.Join(root, "tools/sessionhelper"), "PYTHONDONTWRITEBYTECODE=1")
-	if injectDiagnosticLeak {
-		cmd.Env = append(cmd.Env, "A3_E2E_TEST_DIAGNOSTIC_LEAK=1")
+	stdoutLog, err := os.OpenFile(filepath.Join(home, "helper.stdout"), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	if err != nil {
+		t.Fatal("private stdout capture unavailable")
 	}
+	stderrLog, err := os.OpenFile(filepath.Join(home, "helper.stderr"), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	if err != nil {
+		stdoutLog.Close()
+		t.Fatal("private stderr capture unavailable")
+	}
+	cmd.Stderr = stderrLog
 	in, err := cmd.StdinPipe()
 	if err != nil {
 		t.Fatal(err)
@@ -192,19 +179,27 @@ func startSpecMCPBridgeAsDiagnostic(t *testing.T, e *shimEnv, python, secret, na
 	if err != nil {
 		t.Fatal(err)
 	}
-	stderr := &bytes.Buffer{}
-	cmd.Stderr = stderr
 	if err = cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
+	capturedOut := io.TeeReader(out, stdoutLog)
+	var b *specMCPBridge
 	t.Cleanup(func() {
 		in.Close()
 		cancel()
+		_, _ = io.Copy(io.Discard, capturedOut)
 		if cmd.ProcessState == nil {
 			_ = cmd.Wait()
 		}
+		stdoutLog.Close()
+		stderrLog.Close()
+		if b != nil {
+			if err := scanSpecMCPPrivateLogs(b.logPaths, b.private); err != nil {
+				t.Error(err)
+			}
+		}
 	})
-	b := &specMCPBridge{t: t, input: json.NewEncoder(in), scan: bufio.NewScanner(out), cmd: cmd, private: []string{secret}, stderr: stderr}
+	b = &specMCPBridge{t: t, input: json.NewEncoder(in), scan: bufio.NewScanner(capturedOut), cmd: cmd, private: []string{secret}, logPaths: []string{filepath.Join(home, "helper.stdout"), filepath.Join(home, "helper.stderr"), filepath.Join(home, "mcp.stdout"), filepath.Join(home, "mcp.stderr")}}
 	b.scan.Buffer(make([]byte, 4096), 1<<20)
 	if err = b.input.Encode(map[string]string{"state": home, "ws_base": "ws" + strings.TrimPrefix(e.srv.URL, "http"), "secret": secret, "name": name, "key_id": keyID}); err != nil {
 		t.Fatal(err)
@@ -355,24 +350,26 @@ func TestSpecMCPEndToEnd(t *testing.T) {
 		if specID == "" || r["shared_url"] != "/api/specs/shared/"+specID {
 			t.Error("missing id/shared URL")
 		}
+		if count() != startCount+1 {
+			t.Error("create count mismatch")
+		}
 		st, list = e.do("GET", "/api/console/specs", e.tokZZC, "", "", "")
 		var visible struct {
 			Specs []struct {
 				ID string `json:"id"`
 			} `json:"specs"`
 		}
-		if err := json.Unmarshal([]byte(list), &visible); st != http.StatusOK || err != nil {
-			t.Fatalf("Console spec list status=%d err=%v", st, err)
+		if st != 200 || json.Unmarshal([]byte(list), &visible) != nil {
+			t.Fatalf("real Console spec listing=%d", st)
 		}
 		found := false
 		for _, item := range visible.Specs {
-			found = found || item.ID == specID
+			if item.ID == specID {
+				found = true
+			}
 		}
 		if !found {
-			t.Error("created spec absent from real Console list")
-		}
-		if count() != startCount+1 {
-			t.Error("create count mismatch")
+			t.Error("created MCP spec id missing from real Console GET list")
 		}
 		if r := invoke(false, "", g); r["status"] != "consumed" {
 			t.Errorf("replay status=%v", r["status"])
@@ -476,13 +473,6 @@ func TestSpecMCPEndToEnd(t *testing.T) {
 			if r := invoke(true, specID, g); r["status"] != "error" || r["http_status"] != float64(403) {
 				t.Errorf("create grant used for update status=%v http=%v", r["status"], r["http_status"])
 			}
-			g = grant(true, specID)
-			if st := decide(g, "approve", e.tokZZC); st != 204 {
-				t.Fatal("update-scope approval")
-			}
-			if r := invoke(false, "", g); r["status"] != "error" || r["http_status"] != float64(403) {
-				t.Errorf("update grant used for create status=%v http=%v", r["status"], r["http_status"])
-			}
 		}
 		if count() != baseline {
 			t.Error("negative path created spec")
@@ -492,6 +482,7 @@ func TestSpecMCPEndToEnd(t *testing.T) {
 		b.t = t
 		g := grant(false, "")
 		peer := startSpecMCPBridgeAs(t, e, python, e.lKimiCr, "kimi", "u_lbl")
+		peer.private = append(peer.private, b.private...)
 		a := specE2EArgs(false, "")
 		a["grant_request_id"] = g
 		if r := peer.call("dw_spec_create", a); r["status"] != "not_found" {
@@ -505,17 +496,42 @@ func TestSpecMCPEndToEnd(t *testing.T) {
 	t.Run("same_owner_other_agent_cannot_poll_grant", func(t *testing.T) {
 		b.t = t
 		g := grant(false, "")
-		// e.cred belongs to zzc's separately enrolled Opus50TS Agent, so this
-		// exercises same owner but a distinct Agent/session binding.
+		if st := decide(g, "approve", e.tokZZC); st != 204 {
+			t.Fatal("same-owner grant approval")
+		}
 		peer := startSpecMCPBridgeAs(t, e, python, e.cred, "Opus50TS", "u_zzc")
+		peer.private = append(peer.private, b.private...)
 		a := specE2EArgs(false, "")
 		a["grant_request_id"] = g
 		if r := peer.call("dw_spec_create", a); r["status"] != "not_found" {
-			t.Errorf("same-owner other-Agent poll=%v", r["status"])
+			t.Errorf("same-owner other Agent/session poll=%v", r["status"])
 		}
 		peer.stop()
-		if r := invoke(false, "", g); r["status"] != "pending" {
-			t.Errorf("same-owner peer poll changed grant=%v", r["status"])
+		h.specGrantMu.Lock()
+		state, stillPrivate := h.specGrantRequests[g].State, h.specGrantRequests[g].capability != ""
+		h.specGrantMu.Unlock()
+		if state != "granted" || !stillPrivate {
+			t.Error("other session consumed or changed approved grant")
+		}
+		if st := decide(g, "revoke", e.tokZZC); st != 204 {
+			t.Errorf("owner revoke after refused peer=%d", st)
+		}
+	})
+	t.Run("update_grant_cannot_create_spec", func(t *testing.T) {
+		b.t = t
+		if specID == "" {
+			t.Fatal("missing update target")
+		}
+		baseline := count()
+		g := grant(true, specID)
+		if st := decide(g, "approve", e.tokZZC); st != 204 {
+			t.Fatal("update grant approval")
+		}
+		if r := invoke(false, "", g); r["status"] != "error" || r["http_status"] != float64(403) {
+			t.Errorf("update grant used for create status=%v http=%v", r["status"], r["http_status"])
+		}
+		if count() != baseline {
+			t.Error("update-scoped approval created a spec")
 		}
 	})
 	t.Run("revoke_after_consumption_before_agent_http", func(t *testing.T) {
@@ -602,9 +618,37 @@ func TestSpecMCPEndToEnd(t *testing.T) {
 	})
 	b.t = t
 	b.stop()
-	t.Run("diagnostic_leak_mutation_is_detected_privately", func(t *testing.T) {
-		leak := startSpecMCPBridgeAsDiagnostic(t, e, python, e.zKimiCred, "Kimi", "u_zzc", true)
-		leak.stopWithDiagnosticExpectation(true)
-	})
 	// Closing the child stdin and context is owned by cleanup even after a red assertion.
+}
+
+// The detector must reject each stream independently, without returning the
+// matched bytes in an error. Actual helper capability-leak mutations are also
+// run on disposable source copies when this coverage delta is delivered.
+func TestSpecMCPPrivateLogScan(t *testing.T) {
+	for _, channel := range []string{"helper.stdout", "helper.stderr", "mcp.stdout", "mcp.stderr"} {
+		t.Run(channel, func(t *testing.T) {
+			dir := t.TempDir()
+			if err := os.Chmod(dir, 0700); err != nil {
+				t.Fatal(err)
+			}
+			path := filepath.Join(dir, channel)
+			private := "synthetic-private-capability-canary"
+			if err := os.WriteFile(path, []byte("clean output"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			if err := scanSpecMCPPrivateLogs([]string{path}, []string{private}); err != nil {
+				t.Fatal("clean stream rejected")
+			}
+			if err := os.WriteFile(path, []byte("logged: "+private), 0600); err != nil {
+				t.Fatal(err)
+			}
+			err := scanSpecMCPPrivateLogs([]string{path}, []string{private})
+			if err == nil {
+				t.Fatal("raw capability leak in captured stream was missed")
+			}
+			if strings.Contains(err.Error(), private) {
+				t.Fatal("detector exposed matched private bytes")
+			}
+		})
+	}
 }
