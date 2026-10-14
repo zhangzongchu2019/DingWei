@@ -3998,9 +3998,11 @@
     function consumeReconnectClear() {
       if (!pendingReconnectClear) return false;
       cancelPendingReconnectClear();
-      return true;
+      // A retained suffix cannot rebuild history already evicted by the server.
+      return integrityIssue?.kind !== 'history';
     }
     function markStreamReconnect() {
+      if (integrityIssue?.kind === 'history') { cancelPendingReconnectClear(); return; }
       // 不再立刻 resetConversation();挂起,等第一条重放事件。
       pendingReconnectClear = true;
       clearTimeout(pendingClearTimer);
