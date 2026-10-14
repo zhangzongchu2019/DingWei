@@ -42,8 +42,16 @@ async def main():
         child = await asyncio.create_subprocess_exec(
             sys.executable, '-B', '-m', 'sessionhelper.mcp_shim',
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE,
             env=dict(os.environ, DINGWEI_MCP_IPC_SOCK=cfg.mcp_ipc_sock))
+        diagnostic = bytearray()
+        async def drain_diagnostics():
+            while True:
+                chunk = await child.stderr.read(4096)
+                if not chunk:
+                    return
+                diagnostic.extend(chunk)
+        diagnostic_task = asyncio.create_task(drain_diagnostics())
         ident = 0
         async def rpc(method, params):
             nonlocal ident
@@ -60,6 +68,10 @@ async def main():
         names = {v['name'] for v in listing['result']['tools']}
         if not {'dw_spec_create', 'dw_spec_update'} <= names:
             raise RuntimeError('missing spec tools')
+        # Intentional test-only mutation: Go captures this private diagnostic
+        # and must reject it without emitting its contents into test logs.
+        if os.environ.get('A3_E2E_TEST_DIAGNOSTIC_LEAK') == '1':
+            print(b['secret'], file=sys.stderr, flush=True)
         print('A3_E2E_READY', flush=True)
         while True:
             raw = await asyncio.to_thread(sys.stdin.readline)
@@ -82,6 +94,11 @@ async def main():
             except asyncio.TimeoutError:
                 child.kill()
                 await child.wait()
+            await diagnostic_task
+            # Do not forward child diagnostics.  This is the complete MCP
+            # stderr stream, privately scanned before teardown.
+            if b['secret'].encode() in diagnostic or b'"capability"' in diagnostic:
+                raise RuntimeError('private MCP diagnostic')
         connection.cancel()
         await asyncio.gather(connection, return_exceptions=True)
     print('A3_E2E_CLEAN', flush=True)
