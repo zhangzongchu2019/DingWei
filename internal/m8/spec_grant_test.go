@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -21,10 +22,12 @@ import (
 // not timing luck in SQLite.
 type blockingSpecGrantRepo struct {
 	store.Repository
-	entered   chan struct{}
-	release   chan struct{}
-	rotateErr error
-	once      sync.Once
+	entered     chan struct{}
+	release     chan struct{}
+	rotateErr   error
+	once        sync.Once
+	mu          sync.Mutex
+	revokeCalls int
 }
 
 var _ consoleAuthRepository = (*blockingSpecGrantRepo)(nil)
@@ -59,7 +62,16 @@ func (r *blockingSpecGrantRepo) RotateConsolePageCapability(ctx context.Context,
 }
 
 func (r *blockingSpecGrantRepo) RevokeConsolePageCapability(ctx context.Context, id, sessionID, principalID, agentID, pageID string, now time.Time) (bool, error) {
+	r.mu.Lock()
+	r.revokeCalls++
+	r.mu.Unlock()
 	return r.auth().RevokeConsolePageCapability(ctx, id, sessionID, principalID, agentID, pageID, now)
+}
+
+func (r *blockingSpecGrantRepo) revocations() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.revokeCalls
 }
 
 func (r *blockingSpecGrantRepo) ResolveConsolePageCapability(ctx context.Context, tokenHash, agentID, pageID string, now time.Time) (*model.ConsolePageCapability, error) {
@@ -397,6 +409,61 @@ func TestSpecGrantApprovalFailureInsideRequestWindowReturnsPendingAndCanRetry(t 
 	}
 	if g := e.hub.specGrantRequests["retry-after-failure"]; g.State != "granted" || g.capability == "" {
 		t.Fatalf("retry grant=%+v, want granted capability", g)
+	}
+}
+
+func TestSpecGrantListExpiryDuringSigningRevokesPersistedCapability(t *testing.T) {
+	e := newShimEnv(t)
+	if err := e.hub.ReconcileNewPlatformConsole(e.ctx); err != nil {
+		t.Fatal(err)
+	}
+	ag, err := e.svc.Store.FindAgentByName(e.ctx, "zzc", "kimi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := e.hub.now()
+	current := start
+	e.hub.NowFunc = func() time.Time { return current }
+	e.hub.specGrantRequests["list-expiry-during-signing"] = &specGrantRequest{
+		ID: "list-expiry-during-signing", OwnerKey: AgentKeyID("zzc"), SessionName: ag.NameLC(), AgentID: ag.ID,
+		PrincipalID: "zzc", Action: "create", PageID: ConsoleAgentCapabilitySpecsNew,
+		State: "pending", ExpiresAt: start.Add(time.Second),
+	}
+	oldRepo := e.hub.Repo
+	repo := &blockingSpecGrantRepo{Repository: oldRepo, entered: make(chan struct{}), release: make(chan struct{})}
+	e.hub.newPlatformShimRepo = e.db
+	e.hub.Repo = repo
+	t.Cleanup(func() { e.hub.Repo, e.hub.newPlatformShimRepo = oldRepo, nil })
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/console/agents/{sessionName}/spec-grant-requests", e.hub.RequireConsoleAgent("interact", e.hub.HandleConsoleSpecGrantRequests))
+	mux.HandleFunc("POST /api/console/agents/{sessionName}/spec-grant-requests/{requestID}/{decision}", e.hub.RequireConsoleAgent("interact", e.hub.HandleConsoleSpecGrantDecision))
+	oldServer := e.srv
+	e.srv = httptest.NewServer(mux)
+	t.Cleanup(func() { e.srv.Close(); e.srv = oldServer })
+	result := make(chan int, 1)
+	go func() {
+		status, _ := e.do(http.MethodPost, "/api/console/agents/Kimi.zzc/spec-grant-requests/list-expiry-during-signing/approve", e.tokZZC, "", "", "")
+		result <- status
+	}()
+	select {
+	case <-repo.entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("approval did not reach signing boundary")
+	}
+	current = start.Add(2 * time.Second)
+	if status, body := e.do(http.MethodGet, "/api/console/agents/Kimi.zzc/spec-grant-requests", e.tokZZC, "", "", ""); status != http.StatusOK || !strings.Contains(body, `"status":"expired"`) {
+		t.Fatalf("owner list did not expire in-flight grant: status=%d body=%s", status, body)
+	}
+	close(repo.release)
+	if status := <-result; status != http.StatusNotFound {
+		t.Fatalf("expired signing completion status=%d, want 404", status)
+	}
+	g := e.hub.specGrantRequests["list-expiry-during-signing"]
+	if g.State != "expired" || g.capability != "" {
+		t.Fatalf("in-flight expired grant=%+v", g)
+	}
+	if calls := repo.revocations(); calls != 1 {
+		t.Fatalf("persisted capability revoke calls=%d, want 1", calls)
 	}
 }
 

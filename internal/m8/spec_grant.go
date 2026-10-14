@@ -292,19 +292,26 @@ func (h *Hub) HandleConsoleSpecGrantDecision(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	h.specGrantMu.Lock()
-	if current := h.specGrantRequests[id]; current == g && current.State == "approving" {
+	revokeSignedCapability := true
+	if current := h.specGrantRequests[id]; current == g {
 		expireSpecGrantLocked(current, h.now())
-		if current.State == "expired" {
-			h.specGrantMu.Unlock()
-			_, _ = repo.RevokeConsolePageCapability(r.Context(), cap.ID, approvalSession.ID, identity.Lower(principal), ag.ID, g.PageID, h.now())
-			http.Error(w, "grant unavailable", http.StatusNotFound)
-			return
+		if current.State == "approving" {
+			current.State, current.capability = "granted", raw
+			current.CapabilitySessionID, current.CapabilityID = approvalSession.ID, cap.ID
+			current.CapabilityExpiresAt = cap.ExpiresAt
+			revokeSignedCapability = false
 		}
-		current.State, current.capability = "granted", raw
-		current.CapabilitySessionID, current.CapabilityID = approvalSession.ID, cap.ID
-		current.CapabilityExpiresAt = cap.ExpiresAt
 	}
 	h.specGrantMu.Unlock()
+	if revokeSignedCapability {
+		// A list or poll can observe an in-flight approval and expire it while
+		// RotateConsolePageCapability is outside the grant mutex. The successful
+		// signing result must not resurrect that terminal state or survive as an
+		// untracked persisted capability.
+		_, _ = repo.RevokeConsolePageCapability(r.Context(), cap.ID, approvalSession.ID, identity.Lower(principal), ag.ID, g.PageID, h.now())
+		http.Error(w, "grant unavailable", http.StatusNotFound)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
