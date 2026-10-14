@@ -1113,7 +1113,7 @@
         <!-- 更宽追加:服务资源(内存/磁盘,去掉百分比) -->
         <span class="status-sep sb-res"></span>
         <span class="status-item sb-res">内存 <strong id="memStat">--</strong></span>
-        <span class="status-item sb-res">磁盘 <strong id="diskStat">--</strong></span>
+        <span class="status-item sb-res">Agent 磁盘 <strong id="diskStat">未知</strong></span>
         <span class="status-item sb-res" id="resourceFreshness" role="status">资源待更新</span>
       </div>
       <!-- 业主 2026-09-18 验收第 1 条：「选择文件上传时，没有任何提示，这个很容易认为是出问题了」
@@ -1479,7 +1479,7 @@
       unlockCode: '',
       access: '只读',
       mem: { used: 0, total: 0, unit: '' },
-      disk: { used: 0, total: 0, unit: '' },
+      disk: null, // Unknown until an authenticated Agent-environment metric is available.
       load: 0,
       lastTurnCostTotal: 0,
       statusDatetimeMs: 0,
@@ -1553,6 +1553,7 @@
       taskProgress.hidden = stats.sessionState !== 'running';
       memStat.textContent = formatMem(stats.mem);
       diskStat.textContent = formatDisk(stats.disk);
+      diskStat.title = '尚未收到与本 Agent 身份绑定的环境磁盘采样；不使用 View 服务磁盘代替';
       updateHeaderLock();
     }
     function updateLocalTime() {
@@ -1586,6 +1587,7 @@
       return `${mem.used} / ${mem.total} ${mem.unit}`;
     }
     function formatDisk(disk) {
+      if (!disk) return '未知';
       if (disk.used_gb !== undefined && disk.total_gb !== undefined) {
         // 业主 2026-09-19:简化为 `44.2 / 232.4 GB` —— **去掉百分比**。
         return `${disk.used_gb} / ${disk.total_gb} GB`;
@@ -4156,7 +4158,9 @@
     }
     function applyResourceData(data) {
       if (data.mem && typeof data.mem === 'object') stats.mem = data.mem;
-      if (data.disk && typeof data.disk === 'object') stats.disk = data.disk;
+      // This endpoint samples the View Service environment, not the Agent's execution namespace.
+      // No raw scope/identity/time fields can substitute for a reviewed authenticated metric binding.
+      stats.disk = null;
       if (Number.isFinite(data.datetime_epoch_ms) && data.datetime_epoch_ms > 0) {
         stats.statusDatetimeMs = data.datetime_epoch_ms; stats.statusDatetimeText = '';
         stats.statusDatetimeReceivedAt = Date.now(); stats.statusMonotonicAt = performance.now();
