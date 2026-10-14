@@ -88,3 +88,53 @@ func TestSpecGrantActionBindsPageScope(t *testing.T) {
 		}
 	}
 }
+
+func TestSpecGrantRevokeDeniesAgentWriteForGrantedAndConsumed(t *testing.T) {
+	for _, state := range []string{"granted", "consumed"} {
+		t.Run(state, func(t *testing.T) {
+			e := newShimEnv(t)
+			if err := e.hub.ReconcileNewPlatformConsole(e.ctx); err != nil {
+				t.Fatal(err)
+			}
+			ag, err := e.svc.Store.FindAgentByName(e.ctx, "zzc", "kimi")
+			if err != nil {
+				t.Fatal(err)
+			}
+			req := httptest.NewRequest(http.MethodGet, "http://example.invalid/", nil)
+			req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: e.tokZZC})
+			session, ok := e.hub.newPlatformSessionProjection(req)
+			if !ok {
+				t.Fatal("new-platform session projection unavailable")
+			}
+			if err := e.hub.syncNewPlatformUser(e.ctx, "zzc", session); err != nil {
+				t.Fatal(err)
+			}
+			const pageID = "console-specs:new"
+			raw := "revoked-agent-write-" + state
+			capID := "grant-agent-write-" + state
+			if err := e.db.RotateConsolePageCapability(e.ctx, model.ConsolePageCapability{
+				ID: capID, SessionID: session.ID, PrincipalID: "zzc", AgentID: ag.ID, PageID: pageID,
+				TokenHash: hashConsoleToken(raw), ExpiresAt: e.hub.now().Add(newPlatformCapabilityTTL),
+			}, AgentKeyID("zzc"), ag.NameLC(), e.hub.now()); err != nil {
+				t.Fatal(err)
+			}
+			e.hub.specGrantRequests["grant-agent-write"] = &specGrantRequest{
+				ID: "grant-agent-write", OwnerKey: AgentKeyID("zzc"), SessionName: ag.NameLC(), AgentID: ag.ID,
+				PrincipalID: "zzc", Action: "create", PageID: pageID, State: state,
+				CapabilitySessionID: session.ID, CapabilityID: capID,
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("POST /api/console/agents/{sessionName}/spec-grant-requests/{requestID}/{decision}", e.hub.RequireConsoleAgent("interact", e.hub.HandleConsoleSpecGrantDecision))
+			mux.HandleFunc("POST /api/agent/console/specs", e.hub.RequireConsoleSpecAgentCapability(func(*http.Request) string { return ConsoleAgentCapabilitySpecsNew }, e.hub.HandleConsoleSpecs))
+			oldServer := e.srv
+			e.srv = httptest.NewServer(mux)
+			t.Cleanup(func() { e.srv.Close(); e.srv = oldServer })
+			if status, body := e.do(http.MethodPost, "/api/console/agents/Kimi.zzc/spec-grant-requests/grant-agent-write/revoke", e.tokZZC, "", "", ""); status != http.StatusNoContent {
+				t.Fatalf("revoke status=%d body=%s", status, body)
+			}
+			if status, body := e.do(http.MethodPost, "/api/agent/console/specs", "", e.zKimiCred, raw, agentSpecBody(t, "revoked "+state)); status != http.StatusForbidden {
+				t.Fatalf("revoked %s Agent write status=%d body=%s, want 403", state, status, body)
+			}
+		})
+	}
+}
