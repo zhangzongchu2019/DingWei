@@ -70,9 +70,13 @@
     "status": "SKIP; not counted as PASS; actual claim client exercised by canonical gate"
   },
   "makefile_patch": {
-    "applied": false,
-    "apply_check_rc": 0,
-    "scope": "outside-task integration input only"
+    "applied": true,
+    "scope_extension": "leader eb3d58d1e8ac, one root Makefile recipe line",
+    "actual_make_rc": 0,
+    "version_smoke_rc": 0,
+    "runtime_metadata_rc": 0,
+    "pip_check_rc": 0,
+    "receipt": "MAKE-BUILD.json"
   },
   "native_Mac_Python39_freezer": "NOT_RUN",
   "whitespace_check": {
