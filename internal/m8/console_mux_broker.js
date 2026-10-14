@@ -35,16 +35,32 @@
     if(p.type==='agent_revoked'){notify(s,'此 Agent 的查看授权已失效');changed();return;}
     if(p.type==='gap'){notify(s,'历史可能不完整：'+(p.cause||p.reason)+'。页面与草稿已保留，请明确关闭后重新打开。');changed();return;}
     if(p.type==='replay_begin'){if(seq(p.floor)>1n&&!s.applied){s.pane.dataset.historyWarning='历史可能不完整：仅恢复当前保留后缀';let warning=document.getElementById('consoleMuxStatus');if(!warning){warning=document.createElement('div');warning.id='consoleMuxStatus';warning.setAttribute('role','alert');document.body.append(warning);}warning.textContent=s.name+'：'+s.pane.dataset.historyWarning;}seq(p.floor);const h=seq(p.H);if(s.epoch&&s.epoch!==p.epoch){notify(s,'历史可能不完整：事件纪元已改变。页面与草稿已保留。');return;}s.epoch=p.epoch;if(!s.applied){s.applied=p.empty?'0':(seq(p.floor)>0n?(seq(p.floor)-1n).toString():'0');}s.high=h.toString();s.replaying=true;return;}
-    if(p.type==='watermark'){if(p.epoch!==s.epoch){notify(s,'历史可能不完整：事件纪元已改变');return;}if(seq(p.H)>seq(s.applied||'0')&&!s.inflight&&!s.queue.length)refill(s);return;}
-    if(p.type==='replay_end'){if(p.epoch!==s.epoch)throw Error('重放纪元不匹配');s.high=seq(p.H).toString();s.replaying=false;if(!s.queue.length&&!s.inflight&&seq(s.applied||'0')<seq(s.high))refill(s);return;}
+    if(p.type==='watermark'){if(p.epoch!==s.epoch){notify(s,'历史可能不完整：事件纪元已改变');return;}if(seq(p.H)>seq(s.applied||'0')&&!s.inflight&&!s.queue.length)refill(s,p.H);return;}
+    if(p.type==='replay_end'){if(p.epoch!==s.epoch)throw Error('重放纪元不匹配');s.high=seq(p.H).toString();s.replaying=false;if(!s.queue.length&&!s.inflight&&seq(s.applied||'0')<seq(s.high))refill(s,s.high);return;}
     if(p.type!=='event'||!p.payload)throw Error('未知聚合帧');const n=seq(p.seq);if(p.epoch!==s.epoch){notify(s,'历史可能不完整：事件纪元已改变');return;}
     if(n<=seq(s.applied||'0')){if(s.ackSeen===undefined||n>seq(s.ackSeen))s.ackSeen=n.toString();ackLater(s);return;}
     if(s.queue.some(v=>v.p.seq===p.seq))return;
     if(bytes>F||s.count>=64||s.bytes+bytes>2*F||totalCount>=512||totalBytes+bytes>16*F){notify(s,'聚合事件队列已达上限；保留页面并停止该席');changed();return;}
     s.queue.push({p,bytes,deliveries:0});s.count++;s.bytes+=bytes;totalCount++;totalBytes+=bytes;pump(s);
   }
-  function refill(s){const now=Date.now();s.refills=s.refills.filter(t=>now-t<300000);if(s.refillPending)return;if(s.refills.length>=3){notify(s,'补收次数已达上限，历史可能不完整');changed();return;}s.refillPending=true;s.refills.push(now);setTimeout(()=>{s.refillPending=false;if(s.stopped)return;drop(s);enqueueControl(()=>sync([s.name]));},2000);}
-  function pump(s){if(s.stopped||!s.ready||s.inflight||!s.queue.length)return;const item=s.queue[0];if(seq(item.p.seq)!==seq(s.applied||'0')+1n){refill(s);return;}s.inflight=item;deliver(s,item);}
+  function refill(s,target){
+    if(s.refillPending)return;
+    const epoch=s.epoch,generation=s.generation,round=s.round;
+    s.refillPending=true;
+    setTimeout(()=>enqueueControl(async()=>{
+      try{
+        // Watermarks can precede events. Recheck after the delay and after any
+        // earlier control request; resolved gaps must not consume the budget.
+        if(stopped||s.stopped||seats.get(s.name)!==s||s.epoch!==epoch||s.generation!==generation||s.round!==round)return;
+        if(seq(s.applied||'0')>=seq(target))return;
+        if(s.inflight||(s.queue.length&&seq(s.queue[0].p.seq)===seq(s.applied||'0')+1n))return;
+        const now=Date.now();s.refills=s.refills.filter(t=>now-t<300000);
+        if(s.refills.length>=3){notify(s,'补收次数已达上限，历史可能不完整');changed();return;}
+        s.refills.push(now);drop(s);await sync([s.name]);
+      }finally{s.refillPending=false;}
+    }),2000);
+  }
+  function pump(s){if(s.stopped||!s.ready||s.inflight||!s.queue.length)return;const item=s.queue[0];if(seq(item.p.seq)!==seq(s.applied||'0')+1n){refill(s,(seq(item.p.seq)-1n).toString());return;}s.inflight=item;deliver(s,item);}
   function deliver(s,item){item.deliveries++;message(s,'event',{event:item.p,delivery_id:item.p.epoch+'-'+item.p.seq});clearTimeout(s.timer);s.timer=setTimeout(()=>{if(s.inflight!==item)return;if(item.deliveries<2)deliver(s,item);else{notify(s,'事件应用 ACK 超时；未推进游标，保留页面并停止该席');changed();}},2000);}
   function ackLater(s){s.ackDirty=true;if(ackTimer)return;ackTimer=setTimeout(()=>{ackTimer=null;enqueueControl(async()=>{if(!feed)return;const a=Array.from(seats.values()).filter(s=>s.ackDirty&&!s.stopped&&s.generation&&s.applied&&s.ackSeen!==undefined).map(s=>({full_name:s.name,generation:s.generation,after:s.epoch+'-'+(seq(s.applied)<seq(s.ackSeen)?s.applied:s.ackSeen)}));if(!a.length)return;try{install(await request('/api/console/event-feeds/'+feed.feed_id,'PUT',{request_id:id(),auth_context:context,expected_revision:feed.revision,subscriptions:[],ack_only:true,applied:a}));}catch(e){if(e.code===409&&e.reason==='transport_missing'){if(source)recoverTransport(source);return;}if(e.code===409&&e.reason==='revision_conflict'){install(await request('/api/console/event-feeds/'+feed.feed_id,'GET'));const next=Array.from(seats.values()).find(s=>s.ackDirty&&!s.stopped);if(next)ackLater(next);return;}throw e;}for(const ack of a){const s=seats.get(ack.full_name);if(s&&s.epoch+'-'+s.applied===ack.after)s.ackDirty=false;}const next=Array.from(seats.values()).find(s=>s.ackDirty&&!s.stopped);if(next)ackLater(next);});},100);}
   window.addEventListener('message',ev=>{if(ev.origin!==location.origin||!ev.data||ev.data.protocol!=='dw-console-mux/v1')return;const d=ev.data;const s=Array.from(seats.values()).find(s=>s.pane.contentWindow===ev.source&&s.instance===d.iframe_instance);if(!s)return;if(d.type==='ready'){s.ready=true;if(s.stopped){message(s,'stopped',{reason:s.reason});return;}pump(s);return;}if(d.type!=='applied'||!s.inflight||d.agent_id!==s.agent||d.generation!==s.generation||d.delivery_id!==s.inflight.p.epoch+'-'+s.inflight.p.seq)return;clearTimeout(s.timer);if(!d.ok){if(d.retryable&&s.inflight.deliveries<2)deliver(s,s.inflight);else{notify(s,'事件未完整应用；未推进游标，保留页面并停止该席');changed();}return;}const item=s.inflight;s.applied=item.p.seq;s.ackSeen=item.p.seq;s.queue.shift();s.count--;s.bytes-=item.bytes;totalCount--;totalBytes-=item.bytes;s.inflight=null;ackLater(s);pump(s);});
