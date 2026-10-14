@@ -45,6 +45,7 @@ view-service/test_provenance_flag_injection.py
 view-service/test_renderer_iter2.py
 view-service/test_view_page_store.py
 view-service/test_view_service.py
+view-service/test_view_refresh.py
 view-service/test_mux_projection.py
 view-service/test_mux_projection_failure.py
 view-service/test_cost_paused.py
@@ -67,4 +68,4 @@ printf '%s\n' "$SHELL_TESTS" | while IFS= read -r test_file; do
   echo "TEST shell $test_file"
   bash "$test_file"
 done
-echo 'BUILD_TESTS_OK python=39 shell=2'
+echo 'BUILD_TESTS_OK python=40 shell=2'
