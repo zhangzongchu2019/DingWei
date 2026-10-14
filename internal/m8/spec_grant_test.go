@@ -348,6 +348,58 @@ func TestSpecGrantApprovalFailureAfterRequestExpiryStaysExpired(t *testing.T) {
 	}
 }
 
+func TestSpecGrantApprovalFailureInsideRequestWindowReturnsPendingAndCanRetry(t *testing.T) {
+	e := newShimEnv(t)
+	if err := e.hub.ReconcileNewPlatformConsole(e.ctx); err != nil {
+		t.Fatal(err)
+	}
+	ag, err := e.svc.Store.FindAgentByName(e.ctx, "zzc", "kimi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := e.hub.now()
+	e.hub.NowFunc = func() time.Time { return start }
+	e.hub.specGrantRequests["retry-after-failure"] = &specGrantRequest{
+		ID: "retry-after-failure", OwnerKey: AgentKeyID("zzc"), SessionName: ag.NameLC(), AgentID: ag.ID,
+		PrincipalID: "zzc", Action: "create", PageID: ConsoleAgentCapabilitySpecsNew,
+		State: "pending", ExpiresAt: start.Add(time.Minute),
+	}
+	oldRepo := e.hub.Repo
+	repo := &blockingSpecGrantRepo{Repository: oldRepo, entered: make(chan struct{}), release: make(chan struct{}), rotateErr: errors.New("signing failed")}
+	e.hub.newPlatformShimRepo = e.db
+	e.hub.Repo = repo
+	t.Cleanup(func() { e.hub.Repo, e.hub.newPlatformShimRepo = oldRepo, nil })
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api/console/agents/{sessionName}/spec-grant-requests/{requestID}/{decision}", e.hub.RequireConsoleAgent("interact", e.hub.HandleConsoleSpecGrantDecision))
+	oldServer := e.srv
+	e.srv = httptest.NewServer(mux)
+	t.Cleanup(func() { e.srv.Close(); e.srv = oldServer })
+	result := make(chan int, 1)
+	go func() {
+		status, _ := e.do(http.MethodPost, "/api/console/agents/Kimi.zzc/spec-grant-requests/retry-after-failure/approve", e.tokZZC, "", "", "")
+		result <- status
+	}()
+	select {
+	case <-repo.entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("approval did not reach signing boundary")
+	}
+	close(repo.release)
+	if status := <-result; status != http.StatusForbidden {
+		t.Fatalf("signing failure status=%d, want 403", status)
+	}
+	if state := e.hub.specGrantRequests["retry-after-failure"].State; state != "pending" {
+		t.Fatalf("in-window signing failure state=%q, want pending", state)
+	}
+	repo.rotateErr = nil
+	if status, body := e.do(http.MethodPost, "/api/console/agents/Kimi.zzc/spec-grant-requests/retry-after-failure/approve", e.tokZZC, "", "", ""); status != http.StatusNoContent {
+		t.Fatalf("retry approval status=%d body=%s, want 204", status, body)
+	}
+	if g := e.hub.specGrantRequests["retry-after-failure"]; g.State != "granted" || g.capability == "" {
+		t.Fatalf("retry grant=%+v, want granted capability", g)
+	}
+}
+
 func TestSpecGrantConcurrentApproveSignsOnlyOnce(t *testing.T) {
 	e := newShimEnv(t)
 	if err := e.hub.ReconcileNewPlatformConsole(e.ctx); err != nil {
