@@ -12,6 +12,7 @@ const renderer = process.env.RENDERER_OVERRIDE || path.join(__dirname, 'renderer
 async function startFixture({ reason = 'event_stream_unavailable', previousContent = false } = {}) {
   const html = fs.readFileSync(renderer);
   let eventRequests = 0;
+  let retryHeadersFlushedAt = 0;
   const server = http.createServer((req, res) => {
     const pathname = new URL(req.url, 'http://fixture.invalid').pathname;
     if (pathname === '/view/oaagent.lbl') {
@@ -32,6 +33,10 @@ async function startFixture({ reason = 'event_stream_unavailable', previousConte
       // connection open briefly to make sure the prior reason remains visible
       // during that interval, then refuse it too.
       if (eventRequests === 2) {
+        // Actually commit the response headers so the browser EventSource opens
+        // before the refusal frame exists (writeHead alone does not send them).
+        res.flushHeaders();
+        retryHeadersFlushedAt = Date.now();
         return setTimeout(() => res.end(`event: stream_unavailable\ndata: {"reason":"${reason}"}\n\n`), 500);
       }
       res.write('data: {"kind":"assistant_text","text":"恢复后输出","data":{}}\n\n');
@@ -48,6 +53,7 @@ async function startFixture({ reason = 'event_stream_unavailable', previousConte
   return {
     url: `http://127.0.0.1:${server.address().port}/view/oaagent.lbl`,
     requests: () => eventRequests,
+    retryHeadersFlushedAt: () => retryHeadersFlushedAt,
     close: () => new Promise(resolve => server.close(resolve)),
   };
 }
@@ -75,10 +81,18 @@ async function startFixture({ reason = 'event_stream_unavailable', previousConte
       assert.ok(fixture.requests() >= 2, `event requests=${fixture.requests()}, want retry`);
     });
     await checks.check('reason remains visible while a retry is open but unresolved', async () => {
-      await new Promise(resolve => setTimeout(resolve, 150));
-      const text = await page.locator('#localTime').textContent();
-      assert.match(text || '', /^等待会话输出$/);
-      assert.ok(!/已连接.*等待事件|断线重连中/.test(text || ''), `retry hid unavailable reason: ${text}`);
+      const deadline = Date.now() + 4000;
+      while (!fixture.retryHeadersFlushedAt() && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 20));
+      assert.ok(fixture.retryHeadersFlushedAt(), 'retry response headers were never flushed');
+      // Sample repeatedly inside the 500ms window between the flushed headers
+      // (browser open) and the delayed refusal frame.
+      for (let i = 0; i < 8; i++) {
+        await new Promise(resolve => setTimeout(resolve, 40));
+        if (Date.now() - fixture.retryHeadersFlushedAt() > 450) break;
+        const text = await page.locator('#localTime').textContent();
+        assert.match(text || '', /^等待会话输出$/, `sample ${i}: ${text}`);
+        assert.ok(!/已连接.*等待事件|断线重连中/.test(text || ''), `retry hid unavailable reason: ${text}`);
+      }
     });
     await checks.check('first event after unavailable restores normal state', async () => {
       await page.waitForFunction(() => document.body.textContent.includes('恢复后输出'));
@@ -86,6 +100,19 @@ async function startFixture({ reason = 'event_stream_unavailable', previousConte
       const text = await page.locator('#localTime').textContent();
       assert.ok(body.includes('PREVIOUS-CONTENT'), 'reasoned refusal erased existing sequenced content');
       assert.ok(!/等待会话输出|断线重连中|无法识别该 Agent 会话/.test(text || ''), `unavailable state remained: ${text}`);
+    });
+    await checks.check('unknown refusal reason uses the generic View-service text', async () => {
+      const unknownFixture = await startFixture({ reason: 'some_future_reason' });
+      const unknownPage = await browser.newPage();
+      try {
+        await unknownPage.goto(unknownFixture.url, { waitUntil: 'domcontentloaded' });
+        await unknownPage.waitForFunction(() => document.getElementById('localTime')?.textContent.includes('View 服务暂时无法获取该会话事件'));
+        const text = await unknownPage.locator('#localTime').textContent();
+        assert.ok(!/无法识别该 Agent|删除或重命名|等待会话输出/.test(text || ''), `unknown reason mislabelled: ${text}`);
+      } finally {
+        await unknownPage.close();
+        await unknownFixture.close();
+      }
     });
     await checks.check('generic upstream refusal is not presented as identity loss', async () => {
       const genericFixture = await startFixture({ reason: 'upstream_events_unavailable' });
