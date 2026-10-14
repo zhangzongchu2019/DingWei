@@ -44,7 +44,7 @@ let checks=0;function test(name,fn){fn();console.log('PASS '+name);checks++;}
   const h=fixture();h.event(10);h.run(`handleReplayGap({data:'{"reason":"overflow"}'})`);
   assert.equal(h.state().issue.kind,'history');h.run('requestStreamRecovery()');h.event(11);
   assert.equal(h.state().issue.kind,'history');assert.equal(h.counts().resets,0);assert.equal(h.counts().rendered,2);
-  assert.match(h.text.textContent,/刷新不会找回/);assert.match(h.text.textContent,/当前内容不会清空/);
+  assert.match(h.text.textContent,/更早的历史已超出服务端保留范围，无法加载/);assert.match(h.text.textContent,/当前内容完整保留/);
  });
  test('temporary missing seq closes only after actual contiguous render evidence',()=>{
   const h=fixture();h.event(1);h.event(3);assert.equal(h.state().issue.kind,'recoverable');h.run('hideStreamAlert()');assert.equal(h.alert.hidden,false);

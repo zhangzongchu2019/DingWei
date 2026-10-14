@@ -1,0 +1,81 @@
+{
+  "schema": "a1-show-code-author-evidence-v1",
+  "status": "AUTHOR_TESTED_PENDING_INDEPENDENT_CR_NOT_DEPLOYED",
+  "parent": "e1f295e7fe883042fe615a62bad4c2196bc3c938",
+  "files": {
+    "internal/m8/console_auth.go": {
+      "bytes": 149733,
+      "sha256": "f57cef6ba084d7bbf2c210a552b0d8d16e72e8939eaf7c6678d553f81df9b0ab"
+    },
+    "tests/a1-show-code.cjs": {
+      "bytes": 5156,
+      "sha256": "1fe8ca679fed9917ad287d329575196b3a0e5c9546913dd5abc8fde728a14b58"
+    },
+    "tests/group-code-restore.cjs": {
+      "bytes": 5548,
+      "sha256": "6df7d7c722de312e5208e311f07f56149143d89c455c83af74184c7ea616d9c7"
+    }
+  },
+  "browser": {
+    "command": "NODE_PATH=<private playwright directory> PW_CHANNEL=chrome node tests/a1-show-code.cjs",
+    "cases": 5,
+    "rc": 0,
+    "scope": "Actual full Console HTML, all HTTP intercepted at console.invalid; manager and visible member owner each copy through real Chromium clipboard; management actions remain manager-only; no returned group clears prior code/handler; no membership writes."
+  },
+  "regressions": [
+    {
+      "command": "node tests/group-code-restore.cjs",
+      "cases": 17,
+      "inline_syntax": 1,
+      "rc": 0
+    },
+    {
+      "command": "NODE_PATH=<private playwright directory> PW_CHANNEL=chrome node view-service/console-agent-mgmt-enroll-regression.js",
+      "cases": 20,
+      "rc": 0
+    }
+  ],
+  "withdrawal": {
+    "command": "same browser fixture using exact r4 parent console_auth.go",
+    "rc": 1,
+    "assertion": "manager must see group code: actual false, expected true (exact r4 parent with current new fixture)"
+  },
+  "api_finding": {
+    "files": [
+      "internal/m8/newplat_groups.go",
+      "internal/identity/group.go"
+    ],
+    "scope": "Current npGroupView serializes code, and ListVisibleGroups includes owners of group-member Agents even if CanManage is false. No API/authorization changed. This does not imply anonymous or arbitrary outsiders can read a group."
+  },
+  "fixture_adjustment": "group-code-restore actual-source slice now also includes new renderGroupShareCode dependency; all original assertions unchanged. Initial narrow-slice ReferenceError was a fixture dependency issue, corrected without a stub.",
+  "local_logs": {
+    "a1-invitation-code-browser.log": {
+      "bytes": 415,
+      "sha256": "dc6ca36cbe449fe65bc7c6587e31ce22fc04deca13eb986a75c131ea787b1845"
+    },
+    "a1-invitation-code-group.log": {
+      "bytes": 713,
+      "sha256": "410950fc56ef955805c4177dbeffb59c5c01739856565ceb36344454c934f432"
+    },
+    "a1-invitation-code-enroll.log": {
+      "bytes": 2095,
+      "sha256": "0866464a62da6c558c7418c942822cdb2c0ad55202bd7c9a25e007c5428855cb"
+    },
+    "a1-invitation-code-parent-red.log": {
+      "bytes": 278,
+      "sha256": "945568abf0cf0f7d055941b8fd8020c2cae186c06619d863ca2d3a80aed84d4d"
+    },
+    "a1-invitation-code-build.log": {
+      "bytes": 34538,
+      "sha256": "8adb9a169de4b6df56b50806544e56a1316bcc53e4090d638c141171165f392b"
+    }
+  },
+  "scope": "Latest leader ruling: group code is a shareable invitation; any viewer of a returned group may see/copy it. can_manage still controls existing management actions. Supersedes initial manager-only UI scope.",
+  "canonical_build": {
+    "command": "sh scripts/run-build-tests.sh",
+    "rc": 0,
+    "python_files": 42,
+    "shell_files": 2,
+    "environment": "private HOME, pinned runtime venv, seat variables removed"
+  }
+}
