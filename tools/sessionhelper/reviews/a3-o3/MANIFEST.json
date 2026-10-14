@@ -1,0 +1,59 @@
+{
+  "files": [
+    {
+      "file": "tools/sessionhelper/sessionhelper/mcp_shim.py",
+      "bytes": 25285,
+      "sha256": "d989671f3c0c75598e2da37989b703e69f76cbe5165184acb59755e5c2630af3"
+    },
+    {
+      "file": "tools/sessionhelper/sessionhelper/ipc_listener.py",
+      "bytes": 22273,
+      "sha256": "43f4f326440a5166649e2eec10ec368a0683357cc0b0c2ecfd85841644935c94"
+    },
+    {
+      "file": "tools/sessionhelper/sessionhelper/app.py",
+      "bytes": 88232,
+      "sha256": "d757c49f37bad0440e8a3607812cbe33cb629dc22cec6f67bf0501357fdee235"
+    },
+    {
+      "file": "tools/sessionhelper/tests/test_spec_ipc_timeout.py",
+      "bytes": 5140,
+      "sha256": "670f47181bbc30e93a3d91f2c06b713f3fa1059556cbeba150e426bba14e1902"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/a3-o3/PROVENANCE.json",
+      "bytes": 362,
+      "sha256": "981502c6e7fd764e5a83fc505a1b3ab03d29a2e6b9d909a5229bb5b56e2e33e2"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/a3-o3/REVIEW.md",
+      "bytes": 2843,
+      "sha256": "56c09afcbab12a5e9319a592485715772d11cb8f85fdc11fe986eaefb1ae8ed7"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/a3-o3/raw/diff-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/a3-o3/raw/other-ipc-regression.log",
+      "bytes": 3916,
+      "sha256": "464fac825f86a458e0f6a41810d9854435a2cf982e03dd503f79ebf939900e03"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/a3-o3/raw/timeout-and-spec.log",
+      "bytes": 1527,
+      "sha256": "763fb06a0eb4bb9fe3da224aac566277fe3b68fabcef90c5bb726cd75e32888e"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/a3-o3/raw/withdraw-five-second.log",
+      "bytes": 1717,
+      "sha256": "6283b24551d731604854f36f7cafee0a44bea60cb2b2a70b732bd91d907b61d9"
+    },
+    {
+      "file": "tools/sessionhelper/reviews/a3-o3/raw/withdraw-http-offload.log",
+      "bytes": 2526,
+      "sha256": "95ace2f33c99e81a38f26d1d94273bf29ac62f433087655a6b123168c920dff0"
+    }
+  ]
+}

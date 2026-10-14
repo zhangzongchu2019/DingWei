@@ -201,6 +201,9 @@ async def _handle_vsapi(
     await _write_one(writer, {"ok": True, "result": result, "request_id": request_id})
 
 
+_SPEC_HANDLER_TIMEOUT = 30.0  # grant10 + Agent HTTP15 + scheduling/cancellation5
+
+
 async def _handle_spec_write(writer: asyncio.StreamWriter, msg: dict[str, Any], handler: _SpecHandler | None) -> None:
     """Keep raw grants inside helper; IPC accepts only spec document fields."""
     request_id = str(msg.get("request_id") or "")
@@ -218,7 +221,19 @@ async def _handle_spec_write(writer: asyncio.StreamWriter, msg: dict[str, Any], 
         await _write_one(writer, {"ok": False, "error": "invalid spec request"})
         return
     try:
-        result = await handler({"action": action, "grant_request_id": grant_id, "spec_id": spec_id, "body": body or {}})
+        result = await asyncio.wait_for(
+            handler({"action": action, "grant_request_id": grant_id, "spec_id": spec_id, "body": body or {}}),
+            timeout=_SPEC_HANDLER_TIMEOUT,
+        )
+    except asyncio.TimeoutError:
+        # The HTTP write may already have committed. Never promise rollback or
+        # retry a consumed grant; return an explicit, non-secret outcome.
+        await _write_one(writer, {"ok": True, "result": {
+            "status": "error", "code": "spec_write_deadline_exceeded",
+            "outcome": "unknown", "retryable": False,
+            "message": "spec 操作超过 helper 总预算；写入结果未确认，请在 Console 核对，勿自动重试。",
+        }, "request_id": request_id})
+        return
     except Exception:
         await _write_one(writer, {"ok": False, "error": "spec write failed"})
         return

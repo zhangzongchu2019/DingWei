@@ -83,6 +83,9 @@ import uuid as _uuid
 
 _IPC_SOCK = os.environ.get("DINGWEI_MCP_IPC_SOCK", "")
 _IPC_TIMEOUT = 5.0
+# Grant roundtrip10 + Agent HTTP15 + helper scheduling/cancellation5.
+# Leave a further5 seconds for the helper's explicit result to reach the shim.
+_SPEC_IPC_TIMEOUT = 35.0
 
 
 def _ipc_send(payload: dict[str, Any]) -> dict[str, Any]:
@@ -408,7 +411,7 @@ def _spec_body(args: dict[str, Any], *, update: bool) -> dict[str, Any]:
 def _dw_spec_create(args: dict[str, Any]) -> dict[str, Any]:
     body = _spec_body(args, update=False)
     grant_request_id = str(args.get("grant_request_id") or "").strip()
-    return _ipc_request({"type": "spec_write_v1", "action": "create", "grant_request_id": grant_request_id, "body": body})
+    return _ipc_request({"type": "spec_write_v1", "action": "create", "grant_request_id": grant_request_id, "body": body}, timeout=_SPEC_IPC_TIMEOUT)
 
 
 @register("dw_spec_update", "经业主在 Console 显式批准后更新指定 spec；创建批准不能用于更新。", {
@@ -421,7 +424,7 @@ def _dw_spec_update(args: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("invalid spec_id")
     body = _spec_body(args, update=True)
     grant_request_id = str(args.get("grant_request_id") or "").strip()
-    return _ipc_request({"type": "spec_write_v1", "action": "update", "spec_id": spec_id, "grant_request_id": grant_request_id, "body": body})
+    return _ipc_request({"type": "spec_write_v1", "action": "update", "spec_id": spec_id, "grant_request_id": grant_request_id, "body": body}, timeout=_SPEC_IPC_TIMEOUT)
 
 
 # ── MCP tool: upload_file (R-V2-AGENT-FILE-UPLOAD) ────────────────────

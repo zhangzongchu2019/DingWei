@@ -1,0 +1,11 @@
+{
+  "parent": "a202b3fc385dff11136c1e5578befa1da7170cb2",
+  "review_ref": "review/coder/a3-o3",
+  "created_utc": "2026-10-14T17:41:59.178850+00:00",
+  "shim_spec_seconds": 35,
+  "helper_seconds": 30,
+  "other_default_seconds": 5,
+  "helper_budget": "10 + 15 + 5 = 30; shim 30 + 5 = 35",
+  "scope": "offline author tests only",
+  "grant_source_unchanged": true
+}
