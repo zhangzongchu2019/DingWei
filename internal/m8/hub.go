@@ -26,6 +26,7 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/zhangzongchu2019/dingwei/internal/agentmetrics"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -179,6 +180,10 @@ type client struct {
 }
 
 type sessionClient struct {
+	metricsAgentID    string // Set only by dedicated credential admission, never helper JSON.
+	metricsGeneration string
+	diskMetrics       *agentmetrics.Cache // Access to the pointer is under h.mu.
+
 	conn           *websocket.Conn
 	mu             sync.Mutex
 	stateMu        sync.Mutex
@@ -987,6 +992,7 @@ type sessionAdmission struct {
 
 	// credentialIdentity 为真＝身份由专属凭据认定（HandleAgentWS）：信封里自报的 from 不是身份的来源，见 serveSession 读循环里的改写。
 	credentialIdentity bool
+	metricsAgentID     string
 }
 
 // serveSession 的函数体是从 HandleSessionWS 原样搬来的（逐字未改），开头只做同名解包。
@@ -1063,6 +1069,8 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	}
 	markTiming("conn_seq")
 	c = &sessionClient{conn: conn, keyID: keyID, ownerKey: ownerKey, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: h.now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, tool: tool, version: clientVersion, deviceID: deviceID, deviceIDV1: deviceIDV1}
+	c.metricsAgentID = a.metricsAgentID
+	c.metricsGeneration = randomHex(16)
 	c.obsConn = obsConn
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
@@ -1244,6 +1252,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		}
 		// R-V2-AGENT-FILE-UPLOAD：取文件票原先只在带 target_bot 的连接上分派（见上）；托管席与多数自备 helper 不带 target_bot，
 		// 取票信封会落进普通路由。这里对其余已认证会话同样就地应答（票绑定本连接的 owner／会话，信封自报的身份一律不看）。
+		if h.handleAgentDiskMetrics(r.Context(), c, env) {
+			continue
+		}
 		if h.handleFileCapabilityRequest(r.Context(), c, env) {
 			continue
 		}

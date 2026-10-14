@@ -1,0 +1,4 @@
+PASS managed actual refill from contiguous cursor, replay+positive applied reaches H without body/draft reset
+PASS replay_end without missing event does not fabricate applied H or recovery
+PASS managed history_unavailable remains stopped with explicit retained-suffix-only reset, no auto-reopen or other-seat stop
+TOTAL 3 new managed recovery observations; no live HTTP/browser

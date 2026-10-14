@@ -16,6 +16,7 @@ import http.client
 import hashlib
 import hmac
 import json
+import concurrent.futures
 import os
 import re
 import secrets
@@ -215,6 +216,77 @@ def _sanitize_mentions(raw) -> list[str]:
         if isinstance(item, str) and item and len(item.encode("utf-8")) <= VIEW_MENTION_MAX_BYTES:
             out.append(item)
     return out
+
+
+_AGENT_DISK_FETCH_SLOTS = threading.BoundedSemaphore(2)
+
+
+class _AgentDiskNoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+def _bounded_agent_disk_fetch(make_request, timeout=2.0):
+    """Absolute caller bound including secret read, connect, body and decode.
+
+    Stuck kernel/socket reads retain at most two daemon workers; late results
+    are discarded. No hard preemption or cancellation of kernel I/O claimed.
+    """
+    if not _AGENT_DISK_FETCH_SLOTS.acquire(blocking=False):
+        return None
+    done = concurrent.futures.Future()
+    def worker():
+        try:
+            request = make_request()
+            opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _AgentDiskNoRedirect())
+            with opener.open(request, timeout=timeout) as response:
+                if response.status != 200:
+                    result = None
+                else:
+                    raw = response.read(4097)
+                    result = json.loads(raw) if len(raw) <= 4096 else None
+            done.set_result(result)
+        except Exception:
+            done.set_result(None)
+        finally:
+            _AGENT_DISK_FETCH_SLOTS.release()
+    try:
+        threading.Thread(target=worker, daemon=True, name='dw-agent-resource').start()
+    except RuntimeError:
+        _AGENT_DISK_FETCH_SLOTS.release()
+        return None
+    try:
+        return done.result(timeout=timeout)
+    except concurrent.futures.TimeoutError:
+        return None
+
+
+def _agent_disk_from_hub(session: str, subject) -> dict:
+    # Only _mux_subject's already verified Hub subject supplies stable identity.
+    agent = subject.get("agent_id", "") if isinstance(subject, dict) else ""
+    unavailable = {"agent_id": agent, "status": "unavailable", "source": "helper_self_report"}
+    if not agent or not VIEW_TARGET_NAME or not VS_TO_HUB_SECRET_FILE:
+        return unavailable
+    path = f"/internal/view-v2/{quote(session, safe='')}/resources"
+    def request():
+        with open(VS_TO_HUB_SECRET_FILE, "rb") as fh:
+            secret = fh.read(4097).strip()
+        if not 32 <= len(secret) <= 4096:
+            raise ValueError("service_auth_unavailable")
+        body = json.dumps({"agent_id": agent, "full_name": session}, separators=(",", ":")).encode()
+        stamp, nonce = str(int(time.time())), secrets.token_hex(16)
+        signature = _control_signature(secret, "POST", path, stamp, nonce, body,
+                                       direction="view-service-to-hub/v1")
+        return urllib.request.Request(HUB_INTERNAL + path, data=body, method="POST", headers={
+            "Content-Type": "application/json", "X-DW-VS-Target": VIEW_TARGET_NAME,
+            "X-DW-Timestamp": stamp, "X-DW-Nonce": nonce, "X-DW-Signature": signature})
+    result = _bounded_agent_disk_fetch(request)
+    if not isinstance(result, dict) or result.get("agent_id") != agent or result.get("full_name") != session:
+        return unavailable
+    disk = result.get("agent_disk")
+    if not isinstance(disk, dict) or disk.get("agent_id") != agent or disk.get("source") != "helper_self_report":
+        return unavailable
+    return disk
 
 
 def _hub_v2_input(session: str, page_id: str, request_id: str, text: str,
@@ -1036,7 +1108,9 @@ class _Handler(BaseHTTPRequestHandler):
                 return self.send_error(401)
             # Read-only environment snapshot: no page identity/cost/collector creation.
             # Existing signed-subject nonce checks may use the separate page DB.
+            disk = _agent_disk_from_hub(session, subject) if VIEW_UNLOCK_V2 else {"status": "unavailable"}
             return self._json_response(200, {"mem": _read_mem(), "disk": _read_disk(),
+                "agent_id": subject["agent_id"] if VIEW_UNLOCK_V2 else "", "agent_disk": disk,
                 "datetime_epoch_ms": int(time.time() * 1000), "resource_scope": "view-service"})
         if auth_only:
             if VIEW_UNLOCK_V2:
@@ -1061,6 +1135,8 @@ class _Handler(BaseHTTPRequestHandler):
                 "auth_mode": "view_page_v2", "can_write": False, "readonly": True,
                 "unlock_code": "", **costs,
                 "mem": _read_mem(), "disk": _read_disk(),
+                "agent_id": subject["agent_id"] if subject else "",
+                "agent_disk": _agent_disk_from_hub(session, subject),
                 "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "datetime_epoch_ms": int(time.time() * 1000), "resource_scope": "view-service",
             }, ensure_ascii=False).encode()

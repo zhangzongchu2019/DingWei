@@ -1,0 +1,142 @@
+[
+  {
+    "name": "go-cache-ingress",
+    "argv": [
+      "go",
+      "test",
+      "./internal/agentmetrics",
+      "./internal/m8",
+      "-run",
+      "^(TestAgentDisk|TestValidation|TestLifetimeAndBinding|TestRateAndSendAgeBudget)",
+      "-count=1",
+      "-v"
+    ],
+    "rc": 0,
+    "seconds": 8.563
+  },
+  {
+    "name": "go-main-compile",
+    "argv": [
+      "go",
+      "test",
+      "./cmd/workpulse",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "seconds": 6.691
+  },
+  {
+    "name": "helper-final",
+    "argv": [
+      "/data/ai-dev-data/sse-mux-product-coder56solzzc-20261012/build-venv/bin/python",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools/sessionhelper/tests/test_agent_disk_metrics.py"
+    ],
+    "rc": 0,
+    "seconds": 0.315
+  },
+  {
+    "name": "vs-final",
+    "argv": [
+      "/data/ai-dev-data/sse-mux-product-coder56solzzc-20261012/build-venv/bin/python",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "test_agent_disk_resource"
+    ],
+    "rc": 0,
+    "seconds": 0.399
+  },
+  {
+    "name": "build-entry-wiring",
+    "argv": [
+      "/data/ai-dev-data/sse-mux-product-coder56solzzc-20261012/build-venv/bin/python",
+      "-B",
+      "-m",
+      "unittest",
+      "-q",
+      "deploy/test_build_entrypoints.py"
+    ],
+    "rc": 0,
+    "seconds": 0.073
+  },
+  {
+    "name": "renderer-real-final",
+    "argv": [
+      "node",
+      "tests/a6-agent-disk-real.cjs"
+    ],
+    "rc": 0,
+    "seconds": 0.052
+  },
+  {
+    "name": "renderer-unknown-final",
+    "argv": [
+      "node",
+      "tests/a6-agent-disk-unknown.cjs"
+    ],
+    "rc": 0,
+    "seconds": 0.057
+  },
+  {
+    "name": "refresh-final",
+    "argv": [
+      "node",
+      "view-service/view-refresh-regression.cjs"
+    ],
+    "rc": 0,
+    "seconds": 0.111
+  },
+  {
+    "name": "integrity-22",
+    "argv": [
+      "node",
+      "internal/m8/testdata/renderer_integrity_recovery.cjs"
+    ],
+    "rc": 0,
+    "seconds": 0.591
+  },
+  {
+    "name": "history-7",
+    "argv": [
+      "node",
+      "internal/m8/testdata/renderer_history_priority.cjs"
+    ],
+    "rc": 0,
+    "seconds": 0.053
+  },
+  {
+    "name": "managed-3",
+    "argv": [
+      "node",
+      "internal/m8/testdata/managed_recovery_result.cjs"
+    ],
+    "rc": 0,
+    "seconds": 0.061
+  },
+  {
+    "name": "overflow-4",
+    "argv": [
+      "node",
+      "tests/a4-overflow-preserve.cjs"
+    ],
+    "rc": 0,
+    "seconds": 0.056
+  },
+  {
+    "name": "diff-check",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "rc": 0,
+    "seconds": 0.022
+  }
+]
