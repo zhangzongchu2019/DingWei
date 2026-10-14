@@ -172,6 +172,13 @@ func (h *Hub) HandleConsoleSpecGrantDecision(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	if decision == "revoke" {
+		if g.State == "revoked" {
+			h.specGrantMu.Unlock()
+			// Idempotent owner revoke: the original capability was already
+			// invalidated, so there is no further state to mutate.
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		if g.State != "granted" && g.State != "consumed" {
 			h.specGrantMu.Unlock()
 			http.Error(w, "grant unavailable", http.StatusNotFound)

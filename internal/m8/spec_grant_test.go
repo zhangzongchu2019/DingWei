@@ -67,6 +67,9 @@ func TestSpecGrantRevokeInvalidatesIssuedCapability(t *testing.T) {
 	if state := e.hub.specGrantRequests["grant-revoke"].State; state != "revoked" {
 		t.Fatalf("grant state=%q, want revoked", state)
 	}
+	if status, body := e.do(http.MethodPost, "/api/console/agents/Kimi.zzc/spec-grant-requests/grant-revoke/revoke", e.tokZZC, "", "", ""); status != http.StatusNoContent {
+		t.Fatalf("repeat revoke status=%d body=%s", status, body)
+	}
 	if got, err := e.db.ResolveConsolePageCapability(e.ctx, hashConsoleToken(siblingCapability), ag.ID, pageID, e.hub.now()); err != nil || got == nil {
 		t.Fatalf("later capability was revoked with the old grant: capability=%+v err=%v", got, err)
 	}
