@@ -36,7 +36,7 @@ function mutate(from, to) {
   html = html.replace(from, to);
 }
 // 第一版:自备审核区默认开(业主实测关着则入网批准走不通),托管区默认关(第二版)——本件按页面的默认值测,不打开任何开关。
-const MUTATIONS = ['mutation-anchor-selftest', 'seal-review', 'hosted-on-by-default', 'new-group-limit-9', 'group-closed-unmapped', 'new-group-ascii-only', 'group-still-required', 'new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor'];
+const MUTATIONS = ['mutation-anchor-selftest', 'seal-review', 'hosted-on-by-default', 'new-group-limit-9', 'group-closed-unmapped', 'new-group-ascii-only', 'group-still-required', 'new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor', 'hide-spec-grant-entry'];
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'seal-review') mutate('var FEATURE_SELFHOST_REVIEW=true;', 'var FEATURE_SELFHOST_REVIEW=false;');
@@ -55,6 +55,7 @@ if (mutation === 'show-hub-text') mutate("function consoleErrorText(status,data)
 if (mutation === 'ignore-hosted') mutate("revoke.hidden=a.origin==='hosted';", 'revoke.hidden=false;');   // 锚点随页面更新:托管区按 FEATURE_HOSTED 拆出后，名册行只剩 origin 判断
 if (mutation === 'notice-in-hidden-editor') mutate("enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}   // 申请保留", "enrollCloseEditor();enrollFeedback('enrollFeedback',res.text);refreshEnroll();return;}   // 申请保留");
 if (mutation === 'leak-nonmanage-group') mutate("var sel=document.getElementById('enrollGroup');if(!sel)return;var keep=sel.value;sel.replaceChildren();\n  var own=(groupSnapshot.groups||[]).filter(function(g){return g.can_manage;});", "var sel=document.getElementById('enrollGroup');if(!sel)return;var keep=sel.value;sel.replaceChildren();\n  var own=(groupSnapshot.groups||[]).filter(function(){return true;});");   // 页面里同一句有两处(审核区与托管区)，锚点带上审核区那处独有的前一句
+if (mutation === 'hide-spec-grant-entry') mutate("if(fullName){\n      var link=document.createElement('a');link.className='spec-grant-entry';", "if(false){\n      var link=document.createElement('a');link.className='spec-grant-entry';");
 
 const GROUP_MINE = 'A'.repeat(32);
 const GROUP_OTHER = 'B'.repeat(32);
@@ -101,6 +102,18 @@ const server = http.createServer(async (req, res) => {
   if (p === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
   // 设计件 3.2 新形状(agent_id/name/full_name/origin/group_code/online)
   if (p === '/api/console/agents') return json(res, 200, { agents: [{ online: true, agent_id: 'ag-solo', name: 'solo', full_name: 'solo.zzc', origin: 'selfhost', group_code: '' }].concat(agents.map((a) => { const name = a.session_name.split('-')[1]; return { online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE }; })) });
+  const grantList = p.match(/^\/api\/console\/agents\/([^/]+)\/spec-grant-requests$/);
+  if (grantList && req.method === 'GET') {
+    const fullName = decodeURIComponent(grantList[1]);
+    if (fullName === 'locked.zzc') return text(res, 503, 'grant list unavailable');
+    if (fullName === 'foreign.zzc') return err(res, 403, 'forbidden');
+    const pending = fullName === 'solo.zzc' ? [{ id: 'p1', status: 'pending' }, { id: 'p2', status: 'pending' }] : [];
+    return json(res, 200, { requests: pending });
+  }
+  const grantPage = p.match(/^\/console\/agents\/([^/]+)\/spec-grant-requests$/);
+  if (grantPage && req.method === 'GET') {
+    return text(res, 200, `existing approvals for ${decodeURIComponent(grantPage[1])}`);
+  }
   if (p === '/api/console/platform') return json(res, 200, { role: 'owner', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'ready' }] });
   if (p === '/api/console/agent-groups' && req.method === 'GET') return json(res, 200, groupsPayload());
   if (p === '/api/console/hosted/options') return json(res, 200, { nodes: [], combos: [], accounts: [], plans: [], quota: { remaining: {} } }); // 托管区挂载请求;本件不测托管
@@ -210,6 +223,25 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(await page.locator('#hostedCreate').count(), 0, 'the hosted area is second-version: not rendered');
       assert.strictEqual(await page.locator('#hostedStatus').count(), 0);
       assert.deepStrictEqual(getPaths.filter((q) => q.startsWith('/api/console/hosted')), [], 'no request to the hosted endpoints (they 404 on the first version)');
+    });
+
+    await test('each owned Agent has a read-only spec-pending entry; failures do not block the roster', async () => {
+      await page.locator('#rosterItems .spec-grant-entry').first().waitFor({ state: 'visible' });
+      const solo = page.locator('#rosterItems tr').filter({ hasText: 'solo' });
+      await solo.locator('.spec-grant-entry').filter({ hasText: 'spec 待批（2）' }).waitFor({ state: 'visible' });
+      const href = await solo.locator('.spec-grant-entry').getAttribute('href');
+      assert.strictEqual(href, '/console/agents/solo.zzc/spec-grant-requests');
+      const approvalPage = await context.newPage();
+      await approvalPage.goto(`http://127.0.0.1:${server.address().port}${href}`);
+      assert.match(await approvalPage.textContent('body'), /existing approvals for solo\.zzc/);
+      await approvalPage.close();
+      const leader = page.locator('#rosterItems tr').filter({ hasText: 'leader' });
+      await leader.locator('.spec-grant-entry').filter({ hasText: 'spec 待批（0）' }).waitFor({ state: 'visible' });
+      const locked = page.locator('#rosterItems tr').filter({ hasText: 'locked' });
+      await locked.locator('.spec-grant-entry').filter({ hasText: 'spec 待批（未知）' }).waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('.spec-grant-entry[href*="foreign"]').count(), 0, 'foreign Agent has no roster entry');
+      assert.strictEqual(getPaths.includes('/api/console/agents/foreign.zzc/spec-grant-requests'), false, 'foreign Agent is never queried');
+      assert.strictEqual(await page.locator('#rosterItems tr').count() > 0, true, 'a failed pending-count request must not empty the roster');
     });
 
     await test('group dropdown: no-group first and default, then manageable groups, then new group', async () => {
