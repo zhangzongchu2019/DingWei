@@ -3,6 +3,7 @@ package m8
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,9 +21,10 @@ import (
 // not timing luck in SQLite.
 type blockingSpecGrantRepo struct {
 	store.Repository
-	entered chan struct{}
-	release chan struct{}
-	once    sync.Once
+	entered   chan struct{}
+	release   chan struct{}
+	rotateErr error
+	once      sync.Once
 }
 
 var _ consoleAuthRepository = (*blockingSpecGrantRepo)(nil)
@@ -50,6 +52,9 @@ func (r *blockingSpecGrantRepo) ListConsoleAgents(ctx context.Context, principal
 func (r *blockingSpecGrantRepo) RotateConsolePageCapability(ctx context.Context, c model.ConsolePageCapability, keyID, sessionName string, now time.Time) error {
 	r.once.Do(func() { close(r.entered) })
 	<-r.release
+	if r.rotateErr != nil {
+		return r.rotateErr
+	}
 	return r.auth().RotateConsolePageCapability(ctx, c, keyID, sessionName, now)
 }
 
@@ -230,10 +235,11 @@ func TestSpecGrantListShowsBothDeadlinesAndExpiresEachWindow(t *testing.T) {
 	pendingDeadline := now.Add(10 * time.Minute)
 	capabilityDeadline := now.Add(5 * time.Minute)
 	e.hub.specGrantRequests = map[string]*specGrantRequest{
-		"pending":            {ID: "pending", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "pending", ExpiresAt: pendingDeadline},
-		"granted":            {ID: "granted", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "granted", ExpiresAt: pendingDeadline, CapabilityExpiresAt: capabilityDeadline, capability: "not-in-output"},
-		"request-expired":    {ID: "request-expired", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "pending", ExpiresAt: now.Add(-time.Second)},
-		"capability-expired": {ID: "capability-expired", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "granted", ExpiresAt: pendingDeadline, CapabilityExpiresAt: now.Add(-time.Second), capability: "must-be-cleared"},
+		"pending":                 {ID: "pending", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "pending", ExpiresAt: pendingDeadline},
+		"granted":                 {ID: "granted", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "granted", ExpiresAt: pendingDeadline, CapabilityExpiresAt: capabilityDeadline, capability: "not-in-output"},
+		"request-expired":         {ID: "request-expired", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "pending", ExpiresAt: now.Add(-time.Second)},
+		"granted-request-expired": {ID: "granted-request-expired", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "granted", ExpiresAt: now.Add(-time.Second), CapabilityExpiresAt: now.Add(time.Minute), capability: "must-be-cleared"},
+		"capability-expired":      {ID: "capability-expired", SessionName: ag.NameLC(), PrincipalID: "zzc", State: "granted", ExpiresAt: pendingDeadline, CapabilityExpiresAt: now.Add(-time.Second), capability: "must-be-cleared"},
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/console/agents/{sessionName}/spec-grant-requests", e.hub.RequireConsoleAgent("interact", e.hub.HandleConsoleSpecGrantRequests))
@@ -280,11 +286,65 @@ func TestSpecGrantListShowsBothDeadlinesAndExpiresEachWindow(t *testing.T) {
 	if row := rows["request-expired"]; row.Status != "expired" {
 		t.Fatalf("request expiry row=%+v", row)
 	}
+	if row := rows["granted-request-expired"]; row.Status != "expired" {
+		t.Fatalf("granted request expiry row=%+v", row)
+	}
+	if raw := e.hub.specGrantRequests["granted-request-expired"].capability; raw != "" {
+		t.Fatal("request-expired grant remained in Hub memory")
+	}
 	if row := rows["capability-expired"]; row.Status != "expired" || row.CapabilityExpiresAt == nil {
 		t.Fatalf("capability expiry row=%+v", row)
 	}
 	if raw := e.hub.specGrantRequests["capability-expired"].capability; raw != "" {
 		t.Fatal("expired capability remained in Hub memory")
+	}
+}
+
+func TestSpecGrantApprovalFailureAfterRequestExpiryStaysExpired(t *testing.T) {
+	e := newShimEnv(t)
+	if err := e.hub.ReconcileNewPlatformConsole(e.ctx); err != nil {
+		t.Fatal(err)
+	}
+	ag, err := e.svc.Store.FindAgentByName(e.ctx, "zzc", "kimi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := e.hub.now()
+	current := start
+	e.hub.NowFunc = func() time.Time { return current }
+	e.hub.specGrantRequests["signing-expiry"] = &specGrantRequest{
+		ID: "signing-expiry", OwnerKey: AgentKeyID("zzc"), SessionName: ag.NameLC(), AgentID: ag.ID,
+		PrincipalID: "zzc", Action: "create", PageID: ConsoleAgentCapabilitySpecsNew,
+		State: "pending", ExpiresAt: start.Add(time.Second),
+	}
+	oldRepo := e.hub.Repo
+	repo := &blockingSpecGrantRepo{Repository: oldRepo, entered: make(chan struct{}), release: make(chan struct{}), rotateErr: errors.New("signing failed")}
+	e.hub.newPlatformShimRepo = e.db
+	e.hub.Repo = repo
+	t.Cleanup(func() { e.hub.Repo, e.hub.newPlatformShimRepo = oldRepo, nil })
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api/console/agents/{sessionName}/spec-grant-requests/{requestID}/{decision}", e.hub.RequireConsoleAgent("interact", e.hub.HandleConsoleSpecGrantDecision))
+	oldServer := e.srv
+	e.srv = httptest.NewServer(mux)
+	t.Cleanup(func() { e.srv.Close(); e.srv = oldServer })
+	result := make(chan int, 1)
+	go func() {
+		status, _ := e.do(http.MethodPost, "/api/console/agents/Kimi.zzc/spec-grant-requests/signing-expiry/approve", e.tokZZC, "", "", "")
+		result <- status
+	}()
+	select {
+	case <-repo.entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("approval did not reach signing boundary")
+	}
+	current = start.Add(2 * time.Second)
+	close(repo.release)
+	if status := <-result; status != http.StatusForbidden {
+		t.Fatalf("signing failure status=%d, want 403", status)
+	}
+	g := e.hub.specGrantRequests["signing-expiry"]
+	if g.State != "expired" || g.capability != "" {
+		t.Fatalf("expired signing failure grant=%+v", g)
 	}
 }
 

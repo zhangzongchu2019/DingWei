@@ -34,15 +34,16 @@ type specGrantRequest struct {
 }
 
 // expireSpecGrantLocked applies both independently visible deadlines while the
-// grant map is locked.  The request window controls whether an owner may
-// approve; the shorter capability window controls whether the helper may
-// still collect an already-approved one-time capability.
+// grant map is locked. The request window is an absolute lifetime for the
+// approval request, including an issued capability; the capability window is
+// a second, potentially earlier collection deadline. A granted capability is
+// consequently usable only until the earlier deadline.
 func expireSpecGrantLocked(g *specGrantRequest, now time.Time) {
 	if g == nil {
 		return
 	}
-	if g.State == "pending" && !g.ExpiresAt.After(now) {
-		g.State = "expired"
+	if (g.State == "pending" || g.State == "approving" || g.State == "granted") && !g.ExpiresAt.After(now) {
+		g.State, g.capability = "expired", ""
 	}
 	if g.State == "granted" && !g.CapabilityExpiresAt.After(now) {
 		g.State, g.capability = "expired", ""
@@ -268,7 +269,11 @@ func (h *Hub) HandleConsoleSpecGrantDecision(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "grant unavailable", http.StatusServiceUnavailable)
 		return
 	}
-	cap := model.ConsolePageCapability{ID: capID, SessionID: approvalSession.ID, PrincipalID: identity.Lower(principal), AgentID: ag.ID, PageID: g.PageID, TokenHash: hashConsoleToken(raw), ExpiresAt: now.Add(newPlatformCapabilityTTL)}
+	capExpiry := now.Add(newPlatformCapabilityTTL)
+	if g.ExpiresAt.Before(capExpiry) {
+		capExpiry = g.ExpiresAt
+	}
+	cap := model.ConsolePageCapability{ID: capID, SessionID: approvalSession.ID, PrincipalID: identity.Lower(principal), AgentID: ag.ID, PageID: g.PageID, TokenHash: hashConsoleToken(raw), ExpiresAt: capExpiry}
 	// Reserve the request before releasing the mutex to sign the persisted
 	// capability.  A second approval cannot mint a competing raw capability
 	// while the first signing transaction is in flight.
@@ -288,9 +293,8 @@ func (h *Hub) HandleConsoleSpecGrantDecision(w http.ResponseWriter, r *http.Requ
 	}
 	h.specGrantMu.Lock()
 	if current := h.specGrantRequests[id]; current == g && current.State == "approving" {
-		if !current.ExpiresAt.After(h.now()) {
-			current.State = "expired"
-			current.capability = ""
+		expireSpecGrantLocked(current, h.now())
+		if current.State == "expired" {
 			h.specGrantMu.Unlock()
 			_, _ = repo.RevokeConsolePageCapability(r.Context(), cap.ID, approvalSession.ID, identity.Lower(principal), ag.ID, g.PageID, h.now())
 			http.Error(w, "grant unavailable", http.StatusNotFound)
