@@ -599,12 +599,16 @@ class SessionHelper:
                 path = "/api/agent/console/specs" if action == "create" else "/api/agent/console/specs/" + spec_id
                 request = urllib.request.Request(base + path, data=json.dumps(body).encode("utf-8"), method="POST" if action == "create" else "PATCH",
                     headers={**headers, "Content-Type": "application/json", "X-DW-Console-Capability": capability})
-                try:
-                    with urllib.request.urlopen(request, timeout=15) as http_response:  # noqa: S310 -- base is configured Hub endpoint.
-                        payload = json.loads(http_response.read(2 << 20).decode("utf-8") or "{}")
-                        status = http_response.status
-                except urllib.error.HTTPError as exc:
-                    return failure(exc.code)
+                def perform_http():
+                    try:
+                        with urllib.request.urlopen(request, timeout=15) as http_response:  # noqa: S310 -- configured Hub endpoint.
+                            payload = json.loads(http_response.read(2 << 20).decode("utf-8") or "{}")
+                            return http_response.status, payload
+                    except urllib.error.HTTPError as exc:
+                        return exc.code, {}
+                # Keep the IPC event loop responsive to its aggregate deadline.
+                # Cancellation does not imply an in-flight HTTP write rolled back.
+                status, payload = await asyncio.to_thread(perform_http)
                 if action == "create" and status == 201:
                     result = {"status": "ok", "spec_id": str(payload.get("id") or ""), "revision": payload.get("current_revision"), "shared_url": "/api/specs/shared/" + str(payload.get("id") or "")}
                     return result if result["spec_id"] else failure(502)

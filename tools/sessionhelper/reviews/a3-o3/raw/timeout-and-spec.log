@@ -1,0 +1,15 @@
+test_only_spec_tools_override_five_second_default (tools.sessionhelper.tests.test_spec_ipc_timeout.OtherToolBudget.test_only_spec_tools_override_five_second_default) ... ok
+test_blocking_agent_http_does_not_block_ipc_deadline (tools.sessionhelper.tests.test_spec_ipc_timeout.SpecIPCTimeouts.test_blocking_agent_http_does_not_block_ipc_deadline) ... [ipc_listener] listening on /tmp/spec-o3-t4jd0srl/ipc.sock
+ok
+test_create_and_update_success_after_real_twenty_seconds (tools.sessionhelper.tests.test_spec_ipc_timeout.SpecIPCTimeouts.test_create_and_update_success_after_real_twenty_seconds) ... [ipc_listener] listening on /tmp/spec-o3-s9knkaw9/ipc.sock
+ok
+test_helper_over_budget_returns_explicit_result_not_socket_timeout (tools.sessionhelper.tests.test_spec_ipc_timeout.SpecIPCTimeouts.test_helper_over_budget_returns_explicit_result_not_socket_timeout) ... [ipc_listener] listening on /tmp/spec-o3-mzx77psj/ipc.sock
+ok
+test_create_requests_private_grant_without_capability_argument (tools.sessionhelper.tests.test_spec_mcp.SpecMCPToolTest.test_create_requests_private_grant_without_capability_argument) ... ok
+test_unknown_or_capability_argument_is_rejected (tools.sessionhelper.tests.test_spec_mcp.SpecMCPToolTest.test_unknown_or_capability_argument_is_rejected) ... ok
+test_update_needs_its_own_spec_and_revision (tools.sessionhelper.tests.test_spec_mcp.SpecMCPToolTest.test_update_needs_its_own_spec_and_revision) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 50.275s
+
+OK
