@@ -1,0 +1,81 @@
+{
+  "schema": "a1-show-code-author-evidence-v1",
+  "status": "AUTHOR_TESTED_PENDING_INDEPENDENT_CR_NOT_DEPLOYED",
+  "parent": "e1f295e7fe883042fe615a62bad4c2196bc3c938",
+  "files": {
+    "internal/m8/console_auth.go": {
+      "bytes": 149634,
+      "sha256": "ee11a562f6b806d12a507cfe6868d169818e3ac97f3ddd223236ddc8bc61cee8"
+    },
+    "tests/a1-show-code.cjs": {
+      "bytes": 4283,
+      "sha256": "f5e614f44776de568032886a560aba6172f69c819c295afecf83eb2bd43d6e47"
+    },
+    "tests/group-code-restore.cjs": {
+      "bytes": 5548,
+      "sha256": "6df7d7c722de312e5208e311f07f56149143d89c455c83af74184c7ea616d9c7"
+    }
+  },
+  "browser": {
+    "command": "NODE_PATH=<private playwright directory> PW_CHANNEL=chrome node tests/a1-show-code.cjs",
+    "cases": 5,
+    "rc": 0,
+    "scope": "Actual full Console HTML, all HTTP intercepted at console.invalid, real local Chromium clipboard; no membership writes"
+  },
+  "regressions": [
+    {
+      "command": "node tests/group-code-restore.cjs",
+      "cases": 17,
+      "inline_syntax": 1,
+      "rc": 0
+    },
+    {
+      "command": "NODE_PATH=<private playwright directory> PW_CHANNEL=chrome node view-service/console-agent-mgmt-enroll-regression.js",
+      "cases": 20,
+      "rc": 0
+    }
+  ],
+  "withdrawal": {
+    "command": "same browser fixture using exact r4 parent console_auth.go",
+    "rc": 1,
+    "assertion": "manager must see group code: actual false, expected true"
+  },
+  "api_finding": {
+    "file": "internal/m8/console_agent_groups.go",
+    "scope": "Existing GET returns whole AgentGroup including code when canManage OR member-owned endpoint makes group visible; therefore nonmanager group members also receive code. No API or authorization modified. UI-only gating is not a secrecy boundary.",
+    "reported_to": [
+      "opus50tc2k",
+      "opus50ts"
+    ]
+  },
+  "fixture_adjustment": "group-code-restore actual-source slice now also includes new renderGroupShareCode dependency; all original assertions unchanged. Initial narrow-slice ReferenceError was a fixture dependency issue, corrected without a stub.",
+  "local_logs": {
+    "a1-show-code-browser.log": {
+      "bytes": 415,
+      "sha256": "4b474f3ea98acd9f5d9c2893af0fc00b9d8d6af5682f9a0a29ec5eb4c2f7da35"
+    },
+    "a1-show-code-group-regression.log": {
+      "bytes": 713,
+      "sha256": "410950fc56ef955805c4177dbeffb59c5c01739856565ceb36344454c934f432"
+    },
+    "a1-show-code-enroll.log": {
+      "bytes": 2095,
+      "sha256": "0866464a62da6c558c7418c942822cdb2c0ad55202bd7c9a25e007c5428855cb"
+    },
+    "a1-show-code-parent-red.log": {
+      "bytes": 278,
+      "sha256": "945568abf0cf0f7d055941b8fd8020c2cae186c06619d863ca2d3a80aed84d4d"
+    },
+    "a1-show-code-build.log": {
+      "bytes": 34536,
+      "sha256": "e3cba7ba185db0673ab51243840ec3b1ec1fe423ff7a49ceea911e5703c3e1fd"
+    }
+  },
+  "canonical_build": {
+    "command": "sh scripts/run-build-tests.sh",
+    "rc": 0,
+    "python_files": 42,
+    "shell_files": 2,
+    "environment": "private HOME, pinned runtime venv, seat variables removed"
+  }
+}
