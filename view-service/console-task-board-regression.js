@@ -47,20 +47,20 @@ let board = rawGoString(path.join(root, 'internal/m8/console_task_board_page.go'
 
 const boardMutations = new Map([
   ['k1-hide-task-panel', ['<section id=task-panel class=panel>', '<section id=task-panel class=panel hidden>']],
-  ['k1-drop-initial-load', ['\nloadBoard();\n</script>', '\n</script>']],
+  ['k1-drop-initial-load', ["parent.postMessage({protocol:'dw-task-board/v1',type:'ready',instance:boardInstance},location.origin)", "parent.postMessage({protocol:'dw-task-board/v1',type:'not-ready',instance:boardInstance},location.origin)"]],
   ['k2-drop-status-column', ['<th>状态</th><th>验收标准</th>', '<th>验收标准</th>']],
   ['k2-drop-task-table', ['<table id=task-table>', '<div id=task-table>']],
-  ['k3-break-next-page', ['specPage++;loadBoard()', 'specPage+=0;loadBoard()']],
-  ['k3-drop-next-load', ['specPage++;loadBoard()', 'specPage++']],
+  ['k3-break-next-page', ['function(){specPage++}', 'function(){specPage+=0}']],
+  ['k3-drop-next-load', ['boardChangeSelection(function(){specPage++})', 'specPage++']],
   ['k4-break-acceptance', ['if(id)ids.push(id)', 'if(false)ids.push(id)']],
   ['k4-drop-acceptance-call', ['acceptance=acceptanceDisplay(task.acceptance_json)', "acceptance={label:'',title:''}"]],
   ['k5-invent-placeholder', ["td.textContent=task[nameKey]||''", "td.textContent=task[nameKey]||'未知人员'"]],
   ['k5-drop-empty-normalizer', ["td.textContent=task[nameKey]||''", "td.textContent=task[nameKey]||'undefined'"]],
   ['k6-break-toggle', ["selectedSpec=selectedSpec===spec.id?'':spec.id", 'selectedSpec=spec.id']],
-  ['k6-drop-toggle-handler', ["tr.onclick=function(){selectedSpec=selectedSpec===spec.id?'':spec.id;taskPage=1;loadBoard()}", '']],
+  ['k6-drop-toggle-handler', ["tr.onclick=function(){boardChangeSelection(function(){selectedSpec=selectedSpec===spec.id?'':spec.id;taskPage=1})}", 'tr.onclick=null']],
   ['k11-drop-offline-dot', ['td.append(dot)', '']],
-  ['k-status-invent-value', ["return {text:String(task.passed_cases||0)+'/'+String(task.total_cases||1),problem:false}", "return {text:'0/0',problem:false}"]],
-  ['k-status-drop-empty-call', ["return {text:String(task.passed_cases||0)+'/'+String(task.total_cases||1),problem:false}", "return {text:'',problem:false}"]],
+  ['k-status-invent-value', ["String(task.passed_cases||0)+'/'+String(task.total_cases||1)", "'0/0'"]],
+  ['k-status-drop-empty-call', ["String(task.passed_cases||0)+'/'+String(task.total_cases||1)", "''"]],
   ['theme-drop-receiver', ['dwTaskInitTheme();', '']],
 ]);
 for (const [name, [needle]] of boardMutations) assert.ok(board.includes(needle), `stale mutation probe ${name}`);
@@ -74,6 +74,8 @@ const tasks = Array.from({ length: 21 }, (_, i) => ({
   proposal_id: `task-${i + 1}`, title: `Task ${i + 1}`, content: `Task text ${i + 1}`,
   acceptance_json: JSON.stringify([{ id: `A${i + 1}`, text: `Acceptance ${i + 1}` }]), status: 'planned', review_id: `manual:task-${i + 1}`,
 }));
+Object.assign(tasks[0], { status: 'in_progress', started_at: '2026-10-14T01:02:03Z', planned_finish_at: '2026-10-15T04:05:06Z', blocker: 'blocked-by-db', resource_coordination: 'need-test-pg' });
+tasks[1].status = 'blocked';
 const agents = [
   { id: 'agent-dev', session_name: 'developer-session' },
   { id: 'agent-review', session_name: 'reviewer-session' },
@@ -95,7 +97,7 @@ function sendJSON(res, value) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://fixture');
   if (url.pathname === '/console') { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end(shell); return; }
-  if (url.pathname === '/console/tasks') { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end(board); return; }
+  if (url.pathname === '/console/tasks') { if (url.searchParams.get('embedded') !== '1') { res.writeHead(302, { Location: '/console?task_manager=1'+(url.searchParams.get('spec_id')?'&spec_id='+encodeURIComponent(url.searchParams.get('spec_id')):'') }); res.end(); return; } res.writeHead(200, { 'Content-Type': 'text/html' }); res.end(board); return; }
   if (url.pathname === '/api/console/platform') {
     sendJSON(res, { role: 'owner', actions: ['read'], items: [{ id: 'task-board', kind: 'task-board', title: '任务管理', href: '#task-board', status: 'approved' }] }); return;
   }
@@ -138,7 +140,7 @@ const server = http.createServer(async (req, res) => {
     }) : [];
     sendJSON(res, {
       specs: specs.slice((specPage - 1) * 8, specPage * 8), spec_page: specPage, spec_page_size: 8, spec_total_pages: 2,
-      tasks: visibleTasks, agents: onlineAgents, task_page: taskPage, task_page_size: 20, task_total_pages: selected ? 2 : 1,
+      tasks: visibleTasks, active_tasks: tasks.filter((task) => task.status === 'in_progress' || task.status === 'blocked'), agents: onlineAgents, viewer_key: 'fixture-owner', updated_at: '2026-10-14T00:00:00Z', task_page: taskPage, task_page_size: 20, task_total_pages: selected ? 2 : 1,
     }); return;
   }
   res.writeHead(404); res.end('not found');
@@ -153,6 +155,7 @@ async function main() {
   await page.goto(base + '/console');
   await page.locator('#platform-items a[data-item-id="task-board"]').click();
   const frame = page.frameLocator('iframe[title="任务管理"]');
+  assert.match(page.frames().find((candidate) => candidate.url().includes('/console/tasks')).url(), /\/console\/tasks\?embedded=1&board_instance=[0-9a-f]{32}$/, 'A7 embedded task URL remains a task-management page');
   const reloadAndSelect = async () => { const boardFrame = page.frames().find((candidate) => candidate.url().includes('/console/tasks')); await boardFrame.goto(boardFrame.url()); await frame.locator('#spec-list tr').first().waitFor(); await frame.locator('#spec-list tr').first().click(); await frame.locator('#task-list tr').first().waitFor(); };
   await frame.locator('#spec-list tr').first().waitFor();
   assert.strictEqual(await frame.locator('html').evaluate(()=>window.dwTaskThemeChannel!==null),true,'任务管理页公共主题接收器必须已连接');
@@ -177,8 +180,10 @@ async function main() {
   assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(2).textContent(), '', 'K5 missing reviewer empty');
   assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(4).textContent(), 'A1', 'K4 fifth column shows stable acceptance id');
   assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(4).getAttribute('title'), 'A1 Acceptance 1', 'K4 acceptance hover exposes full text');
-  assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(3).textContent(), '0/1', 'K24 status uses produced-or-not fallback and never 0/0');
-  assert.strictEqual((await frame.locator('body').innerText()).includes('未知'), false, 'K5 no invented unknown placeholder');
+  assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(3).textContent(), 'in_progress · 0/1', 'K24 status uses produced-or-not fallback and never 0/0');
+  assert.deepStrictEqual(await frame.locator('#active-task-list tr').first().locator('td').allTextContents(), ['Task text 1','in_progress','2026-10-14T01:02:03Z','未填写/未知','未填写/未知','2026-10-15T04:05:06Z','blocked-by-db','need-test-pg'], 'A7 active row retains all eight source fields');
+  assert.deepStrictEqual(await frame.locator('#active-task-list tr').nth(1).locator('td').allTextContents(), ['Task text 2','blocked','未填写/未知','未填写/未知','未填写/未知','未填写/未知','未填写/未知','未填写/未知'], 'A7 active row renders every absent field as unknown');
+  assert.strictEqual((await frame.locator('#task-list').innerText()).includes('未知'), false, 'K5 no invented unknown placeholder in the task breakdown');
   await frame.locator('#edit-tasks').click();
   const firstDeveloper = frame.locator('#task-list tr').first().locator('select.developer-agent');
   assert.strictEqual(await firstDeveloper.locator('option[value="agent-dev"]').count(), 1, 'K10 online Agent appears in new assignment options');
@@ -186,7 +191,7 @@ async function main() {
   await firstDeveloper.selectOption('agent-dev');
   await frame.locator('#task-list tr').first().locator('select.reviewer-agent').selectOption('agent-review');
   await frame.locator('#finish-tasks').click();
-  await frame.locator('#task-status').filter({ hasText: '已保存' }).waitFor();
+  await frame.locator('#finish-tasks').waitFor({ state: 'hidden' });
   await reloadAndSelect();
   assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(1).textContent(), 'developer-session', 'K9 developer survives refresh');
   assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(2).textContent(), 'reviewer-session', 'K9 reviewer survives refresh');
@@ -202,9 +207,12 @@ async function main() {
   assert.strictEqual(await frame.locator('#spec-page').textContent(), '2 / 2', 'K3 spec next advances to page two');
   assert.strictEqual(await frame.locator('#spec-list tr').count(), 1, 'K3 spec page two');
   const blocked = await browser.newPage();
+  blocked.setDefaultTimeout(3000);
   await blocked.goto(base + '/console/tasks?spec_id=spec-review', { waitUntil: 'domcontentloaded' });
-  await blocked.locator('#task-status').filter({ hasText: '该 spec 尚未审结(当前状态:review),审结后才能进入任务管理' }).waitFor();
-  assert.strictEqual(await blocked.locator('#task-list tr').count(), 0, 'unfinalized direct access must explain inapplicability, not render an empty task set as valid');
+  assert.match(blocked.url(), /\/console\?task_manager=1&spec_id=spec-review$/, 'A7 direct legacy URL redirects into Console task manager');
+  const blockedFrame = blocked.frameLocator('iframe[title="任务管理"]');
+  await blockedFrame.locator('h1').filter({ hasText: '任务管理' }).waitFor();
+  assert.strictEqual(await blockedFrame.locator('#active-task-list').count(), 1, 'A7 redirect opens the Console task-management workspace');
   await blocked.close();
   await frame.locator('#spec-prev').click();
   await frame.locator('#task-list tr').first().waitFor();
