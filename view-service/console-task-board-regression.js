@@ -206,10 +206,12 @@ async function main() {
   await page.waitForTimeout(100);
   assert.strictEqual(await frame.locator('#spec-page').textContent(), '2 / 2', 'K3 spec next advances to page two');
   assert.strictEqual(await frame.locator('#spec-list tr').count(), 1, 'K3 spec page two');
+  // This fixture redirect only proves that Console consumes task_manager and
+  // opens its iframe. TestConsoleTasksCompatibilityRoute owns real Go routing.
   const blocked = await browser.newPage();
   blocked.setDefaultTimeout(3000);
   await blocked.goto(base + '/console/tasks?spec_id=spec-review', { waitUntil: 'domcontentloaded' });
-  assert.match(blocked.url(), /\/console\?task_manager=1&spec_id=spec-review$/, 'A7 direct legacy URL redirects into Console task manager');
+  assert.match(blocked.url(), /\/console\?task_manager=1&spec_id=spec-review$/, 'A7 fixture verifies Console task_manager parameter consumption');
   const blockedFrame = blocked.frameLocator('iframe[title="任务管理"]');
   await blockedFrame.locator('h1').filter({ hasText: '任务管理' }).waitFor();
   assert.strictEqual(await blockedFrame.locator('#active-task-list').count(), 1, 'A7 redirect opens the Console task-management workspace');
