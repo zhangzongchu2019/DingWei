@@ -1,7 +1,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const source=fs.readFileSync('internal/m8/console_auth.go','utf8');
 const join=source.slice(source.indexOf('var groupCodeJoinPending=false;'),source.indexOf('function groupShortName(s)'));
-const render=source.slice(source.indexOf('function renderGroups(){'),source.indexOf('function openGroupWorkspace(){'));
+const render=source.slice(source.indexOf('function renderGroupShareCode(selected){'),source.indexOf('function openGroupWorkspace(){'));
 let observations=0;
 function fixture(){
  const nodes={};function node(){return {value:'',disabled:false,hidden:false,children:[],replaceChildren(){this.children=[];this.value='';},append(n){this.children.push(n);if(this.value==='')this.value=n.value||'';},get options(){return this.children;}};}
