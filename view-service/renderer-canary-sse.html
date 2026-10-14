@@ -4002,7 +4002,9 @@
         clockStatus.classList.add('offline');
         const reason = streamUnavailableReason === 'event_stream_unavailable'
           ? '该 Agent 在线，但还没有可显示的会话输出；有输出后会自动出现'
-          : '无法识别该 Agent 会话（可能已删除或重命名）';
+          : streamUnavailableReason === 'view_identity_unresolved'
+            ? '无法识别该 Agent 会话（可能已删除或重命名）'
+            : '上游事件服务暂时不可用，正在重试';
         clockStatus.title = `${reason}；将按退避策略重试。`;
         localTime.textContent = streamUnavailableReason === 'event_stream_unavailable' ? '等待会话输出' : reason;
       } else if (streamGapRecoveryActive()) {
@@ -4273,7 +4275,10 @@
         //    (REPLAY_HARD_LIMIT_MS)是从 arm 那一刻起算的,而 backoff 最长 30s ⇒
         //    提前 arm 会让窗口在重放到达之前就过期,等于没修。
         // R-V2-0105 件一：已收到过带序号的事件 ⇒ 本次连接带 after、Hub 只补缺口，不需要清空窗口。
-        if (streamEverOpened && streamHasAcceptedEvent && !seqStreamSeen) markStreamReconnect();
+        // A reasoned refusal is not a replay boundary. In particular legacy
+        // unsequenced streams must retain already-rendered content while the
+        // refusal retries; only a normal reconnect may arm the replay reset.
+        if (streamEverOpened && streamHasAcceptedEvent && !seqStreamSeen && !streamUnavailableReason) markStreamReconnect();
         streamEverOpened = true;
         opened = true;
         clearStreamConnectTimer();

@@ -9,7 +9,7 @@ const { finishRegression, launchChromium, regressionCollector } = require('./ren
 
 const renderer = process.env.RENDERER_OVERRIDE || path.join(__dirname, 'renderer-canary-sse.html');
 
-async function startFixture() {
+async function startFixture({ reason = 'event_stream_unavailable', previousContent = false } = {}) {
   const html = fs.readFileSync(renderer);
   let eventRequests = 0;
   const server = http.createServer((req, res) => {
@@ -21,12 +21,15 @@ async function startFixture() {
     if (pathname === '/view/oaagent.lbl/events') {
       eventRequests += 1;
       res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store' });
-      if (eventRequests === 1) return res.end('event: stream_unavailable\ndata: {"reason":"event_stream_unavailable"}\n\n');
+      if (eventRequests === 1) {
+        const previous = previousContent ? 'data: {"kind":"assistant_text","text":"PREVIOUS-CONTENT","data":{}}\n\n' : '';
+        return res.end(`${previous}event: stream_unavailable\ndata: {"reason":"${reason}"}\n\n`);
+      }
       // A transport can open before its upstream refusal is known. Keep this
       // connection open briefly to make sure the prior reason remains visible
       // during that interval, then refuse it too.
       if (eventRequests === 2) {
-        return setTimeout(() => res.end('event: stream_unavailable\ndata: {"reason":"event_stream_unavailable"}\n\n'), 500);
+        return setTimeout(() => res.end(`event: stream_unavailable\ndata: {"reason":"${reason}"}\n\n`), 500);
       }
       res.write('data: {"kind":"assistant_text","text":"恢复后输出","data":{}}\n\n');
       return;
@@ -48,7 +51,7 @@ async function startFixture() {
 
 (async () => {
   const checks = regressionCollector();
-  const fixture = await startFixture();
+  const fixture = await startFixture({ previousContent: true });
   const browser = await launchChromium();
   const page = await browser.newPage();
   try {
@@ -58,6 +61,10 @@ async function startFixture() {
       const text = await page.locator('#localTime').textContent();
       assert.match(text || '', /^等待会话输出$/);
       assert.ok(!/断线重连中/.test(text || ''), `generic reconnect text leaked: ${text}`);
+    });
+    await checks.check('unavailable retry preserves already-rendered legacy content', async () => {
+      await page.waitForFunction(() => document.body.textContent.includes('PREVIOUS-CONTENT'));
+      assert.ok((await page.locator('body').textContent()).includes('PREVIOUS-CONTENT'));
     });
     await checks.check('unavailable stream retries through backoff', async () => {
       const deadline = Date.now() + 4000;
@@ -72,8 +79,23 @@ async function startFixture() {
     });
     await checks.check('first event after unavailable restores normal state', async () => {
       await page.waitForFunction(() => document.body.textContent.includes('恢复后输出'));
+      const body = await page.locator('body').textContent();
       const text = await page.locator('#localTime').textContent();
+      assert.ok(body.includes('PREVIOUS-CONTENT'), 'reasoned refusal erased existing legacy content');
       assert.ok(!/等待会话输出|断线重连中|无法识别该 Agent 会话/.test(text || ''), `unavailable state remained: ${text}`);
+    });
+    await checks.check('generic upstream refusal is not presented as identity loss', async () => {
+      const genericFixture = await startFixture({ reason: 'upstream_events_unavailable' });
+      const genericPage = await browser.newPage();
+      try {
+        await genericPage.goto(genericFixture.url, { waitUntil: 'domcontentloaded' });
+        await genericPage.waitForFunction(() => document.getElementById('localTime')?.textContent.includes('上游事件服务暂时不可用'));
+        const text = await genericPage.locator('#localTime').textContent();
+        assert.ok(!/无法识别该 Agent|删除或重命名/.test(text || ''), `generic failure was mislabelled as identity loss: ${text}`);
+      } finally {
+        await genericPage.close();
+        await genericFixture.close();
+      }
     });
     await checks.check('unavailable event handler remains present', async () => {
       const source = fs.readFileSync(renderer, 'utf8');
