@@ -220,14 +220,15 @@ async function t(name, fn) {
   await page.unroute('**/f/**');   // 🔴 无论 ④c 过没过都要摘掉，否则后面每一条都被它污染
 
   // ── ④d 过期链接：7 天保留期到了，HEAD 自然 404 ⇒ 如实说，不画坏图 ──────
-  await t('④d 文件已被清理（HEAD 404）时给出「已不可取」，不是坏掉的 <img> 也不是裸 URL', async () => {
+  await t('④d HEAD 404 说明文件不存在或链接无效，不把过期当结论', async () => {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
     const gone = `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/deadbeefdeadbeefdeadbeefdeadbeef.png`;
     await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: `过期件：${u}`, ts: Date.now() }), gone);
     await page.waitForSelector('.attachment[data-dispatch="gone"]', { timeout: 20000 });
     const note = await page.locator('.attachment[data-dispatch="gone"] .attachment-note').textContent();
-    assert.ok(note.includes('不可取'), `应如实说明已不可取，实际「${note}」`);
+    assert.ok(note.startsWith('文件不存在或链接无效（服务端 404）'), `应说明不存在或链接无效，实际「${note}」`);
+    assert.ok(note.includes('若是 7 天前的链接'), '保留期只应作为有条件的可能原因');
     assert.strictEqual(await page.locator('.attachment[data-dispatch="gone"] img').count(), 0, '不得为已清理的文件画 <img>');
   });
 

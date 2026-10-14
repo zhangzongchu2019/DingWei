@@ -2513,7 +2513,7 @@
     //      ① **本页本次上传** ⇒ 用上传响应里的 media_type（§2 的四字段之一，最准）
     //      ② **收到的消息** ⇒ 发 HEAD 读**服务端声明的 Content-Type**。
     //         那是权威值；URL 扩展名只是对权威值的再解释。A5 保证这个头是对的。
-    //         HEAD 返回 404 ⇒ 文件已过 7 天保留期被清掉，如实说「已不可取」，不画一个坏掉的 <img>。
+    //         HEAD 返回 404 ⇒ 文件不存在或链接无效；单凭 404 不能断定过期，不画坏掉的 <img>。
     //      ③ 🔴 **降级**：HEAD 不被放行 / 网络出错 ⇒ 退回 URL 扩展名分派。
     //         组长明示 nginx `limit_except GET` 放行 HEAD **只从文档知道、未实测**
     //         （已派 prodops 在 H 收尾实测），实测通过前这条降级分支必须在。
@@ -2551,7 +2551,7 @@
 
     const fileMetaCache = new Map();   // url -> Promise<meta|'gone'|null>；同一 URL 全页只探一次
 
-    // HEAD 探测：ok ⇒ 服务端声明；404 ⇒ 文件已被清理；其余(405/403/网络错) ⇒ null ⇒ 走扩展名降级。
+    // HEAD 探测：ok ⇒ 服务端声明；404 ⇒ 文件不存在或链接无效；其余(405/403/网络错) ⇒ null ⇒ 走扩展名降级。
     function probeFileMeta(url) {
       if (fileMetaCache.has(url)) return fileMetaCache.get(url);
       const task = fetch(url, { method: 'HEAD' })
@@ -2739,7 +2739,7 @@
       }
     }
 
-    async function buildFileAttachment(url) {
+    async function buildFileAttachment(url, stillCurrent = () => true) {
       const hint = uploadedFileHints.get(url) || null;
       const ext = fileExtOf(url);
       let kind = '';
@@ -2752,8 +2752,9 @@
         source = 'upload';
       } else {
         const probed = await probeFileMeta(url);
+        if (!stillCurrent()) return null; // superseded attachment: do not continue rendering/fetching
         if (probed === 'gone') {
-          // ② HEAD 404：7 天保留期到了、文件已被清掉。如实说，不画坏图也不假装能下。
+          // ② HEAD 404：不存在或链接无效；不能仅凭此响应断定保留期已到。
           source = 'gone';
         } else if (probed) {
           meta = { mediaType: probed.mediaType, size: probed.size };
@@ -2783,7 +2784,7 @@
       if (source === 'gone') {
         const note = document.createElement('div');
         note.className = 'attachment-note';
-        note.textContent = '文件已不可取（服务端 404）——可能已过 7 天保留期被清理';
+        note.textContent = '文件不存在或链接无效（服务端 404）。若是 7 天前的链接，可能已过保留期。';
         box.append(note, fileDownloadLink(url, '仍要试着打开', knownName));
         return box;
       }
@@ -2904,39 +2905,68 @@
       }
     }
 
-    function attachFileRenders(cardEl, rawText) {
+    function attachFileRenders(cardEl, rawText, options) {
       if (!cardEl || !rawText) return;
-      const urls = [...new Set((String(rawText).match(FILE_URL_RE) || []).map(trimUrlTail))].filter(isOwnFileUrl);
+      const text = String(rawText);
+      // A URL at the live text boundary has no completion evidence yet. Keep
+      // its body text intact and wait for a delimiter or explicit card finish.
+      const streaming = options?.streaming ?? cardEl._fileStreaming ?? false;
+      cardEl._fileStreaming = streaming;
+      cardEl._fileText = text;
+      const matches = [...text.matchAll(FILE_URL_RE)];
+      const urls = [...new Set(matches.map(m => trimUrlTail(m[0])))].filter(isOwnFileUrl);
       if (!urls.length) return;
       const seen = cardEl._fileSeen || (cardEl._fileSeen = new Set());
-      // 🔴 ts-No.79:同一张图不显示两处 —— 正文里已**就地出图**的直链不再建卡。
-      //    判据是"当前 DOM 里那张 <img> 的状态",不是"这条 URL 写在 markdown 语法里"(理由见 mdInlineImageUrls)。
+      const records = cardEl._fileRecords || (cardEl._fileRecords = new Map());
+      const known = [...new Set([...seen, ...urls])];
+      const longerExists = url => known.some(other => other.length > url.length && other.startsWith(url));
+      // Invalidate both resolved cards and pending slots. HEAD promises are
+      // shared across cards, so cancel this subscriber, not another card's HEAD.
+      for (const [url, rec] of records) {
+        if (!longerExists(url)) continue;
+        rec.cancelled = true; rec.node.remove(); records.delete(url); seen.delete(url);
+      }
+      const tail = matches.at(-1);
+      // A trailing dot may be the first byte of an extension (.md), not a
+      // sentence delimiter. Only whitespace or unambiguous closing syntax can
+      // close a live tail; ambiguous punctuation waits for the card finish.
+      const closedTail = tail && /[)\]}」』>，。；：！？、]$/u.test(tail[0]);
+      const openTail = streaming && tail && tail.index + tail[0].length === text.length &&
+        !closedTail ? trimUrlTail(tail[0]) : '';
       const inlineShown = mdInlineImageUrls(cardEl);
-      // 🔴 ts-No.79:记住这张卡当前的正文 —— 就地那张**加载失败**时,wireMarkdownImages 要靠它把卡补回来。
-      cardEl._fileText = String(rawText);
       const host = fileAttachmentsHost(cardEl);
       for (const url of urls) {
-        if (seen.has(url) || inlineShown.has(url)) continue;
+        if (url === openTail || longerExists(url) || seen.has(url) || inlineShown.has(url)) continue;
         seen.add(url);
-        const slot = document.createElement('div');   // 占位：保证多个附件的先后次序与正文一致
-        slot.dataset.fileUrl = url;   // 🔴 ts-No.79:让"就地那张已加载"能撤掉**还在飞**的这张卡
-        host.appendChild(slot);
-        buildFileAttachment(url)
+        const slot = document.createElement('div');
+        slot.dataset.fileUrl = url;
+        const rec = { node: slot, cancelled: false };
+        records.set(url, rec); host.appendChild(slot);
+        const current = () => !rec.cancelled && records.get(url) === rec && rec.node.parentNode === host;
+        buildFileAttachment(url, current)
           .then((box) => {
-            // 🔴 ts-No.79:探测回来时正文里已经就地出图了 ⇒ 这张卡不要了(一图不两处)
+            if (!current() || !box) return;
             if (mdInlineImageUrls(cardEl).has(url)) { slot.remove(); return; }
-            // R5-3：只有**成功渲染**的才算数。gone（HEAD 404 已过期）不算 ——
-            //      它在正文里那条 URL 必须留着可见，否则用户连复制都做不到。
+            // 404/failure bodies remain visible and copyable (R5-3).
             if (box.dataset.dispatch && box.dataset.dispatch !== 'gone') box.dataset.rendered = 'ok';
-            slot.replaceWith(box);
+            slot.replaceWith(box); rec.node = box;
             hideRenderedLinks(cardEl);
           })
           .catch(() => {
-            // 渲染失败 ⇒ 不打 rendered 标记 ⇒ 正文那条 URL 保持可见（R5-3）
+            if (!current()) return; // rejected obsolete probe cannot resurrect its prefix
             const fallback = fileAttachmentShell(url, null, uploadedFileHints.get(url));
             fallback.appendChild(fileDownloadLink(url, '下载', uploadedFileHints.get(url)?.name || ''));
-            slot.replaceWith(fallback);
+            slot.replaceWith(fallback); rec.node = fallback;
           });
+      }
+    }
+
+    function finishAssistantFileRenders() {
+      for (const entry of assistantEntries.values()) {
+        const card = messageNodes.get(entry.key)?.closest('.message-card');
+        if (entry.detached || !card?._fileStreaming) continue;
+        entry.fileComplete = true;
+        scheduleRender(entry, true);
       }
     }
 
@@ -3283,7 +3313,7 @@
       // 0.2.0.6 A：innerHTML 会连附件一起抹掉 ⇒ 重渲后把附件区接回去，已渲染过的不重建。
       if (group.node._fileHost) group.node.appendChild(group.node._fileHost);
       if (group.node._overCapNote) group.node.appendChild(group.node._overCapNote);
-      attachFileRenders(group.node, `${users.map(ev => ev.text || '').join('')}\n${eventsTextFull(assistants)}`);
+      attachFileRenders(group.node, `${users.map(ev => ev.text || '').join('')}\n${eventsTextFull(assistants)}`, { streaming: !completed && !replayInProgress });
       group.node.querySelectorAll('.turn-assistant .event-content').forEach(content => {
         mergeMetaIntoMarkdown(content);
         wireCopyButtons(content);
@@ -3467,6 +3497,7 @@
         entry = { kind: 'assistant', key: k, dirty: false, lastRender: 0, detached: false };
         assistantEntries.set(k, entry);
       }
+      entry.fileComplete = false;
       messageBuffers.set(k, (messageBuffers.get(k) || '') + (ev.text || ''));   // 同上:不去重,不吞正文
       scheduleRender(entry);   // A:同一条助手消息的多个 chunk 合并为一次 markdown 重渲
     }
@@ -3478,7 +3509,7 @@
       mergeMetaIntoMarkdown(body);
       wireCopyButtons(body);
       // 0.2.0.6 A：挂在卡片上而不是正文里 —— 正文每个 chunk 都重写 innerHTML。
-      attachFileRenders(body.closest('.message-card'), messageBuffers.get(entry.key) || '');
+      attachFileRenders(body.closest('.message-card'), messageBuffers.get(entry.key) || '', { streaming: !entry.fileComplete && !replayInProgress });
       // 🔴 ts-No.79:流式路径也要接线,否则每个 chunk 重渲后"让位"就失效 ⇒ 一图两处。
       wireMarkdownImages(body, body.closest('.message-card'));
     }
@@ -3513,6 +3544,7 @@
         return;
       }
       if (ev.data?.change === 'turn_completed') {
+        finishAssistantFileRenders();
         stats.turns = Math.max(stats.turns, Number(ev.data.num_turns || stats.turns || 0));
         applyCostData(ev.data);
         setStatus('idle');

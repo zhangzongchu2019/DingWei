@@ -1,0 +1,159 @@
+{
+  "schema": "file-card-streaming-author-validation-v1",
+  "status": "OFFLINE_AUTHOR_EVIDENCE_NOT_CR_OR_DEPLOYMENT",
+  "parent_commit": "e1f295e7fe883042fe615a62bad4c2196bc3c938",
+  "files": {
+    "view-service/renderer-canary-sse.html": {
+      "bytes": 312309,
+      "sha256": "c932f21e1b622897c1f6badbcc7eee71e4b6547611656993f31c385d70bddbdf"
+    },
+    "tests/file-card-streaming.cjs": {
+      "bytes": 9265,
+      "sha256": "25053599f588eb7bb71ebbc16c92224b313d92b2eef06059b0cbd351bb9cd56e"
+    },
+    "view-service/renderer-0206-file-render-regression.js": {
+      "bytes": 138743,
+      "sha256": "705e2f49a9a000a30f288449434b93ff73730d449f9ec44ec1e21d48d58d93a5"
+    },
+    "view-service/renderer-markdown-image-regression.js": {
+      "bytes": 70413,
+      "sha256": "1a69b4d8a2f638658aed57f61517944eec28d17ac186483be011a690e1b95466"
+    }
+  },
+  "browser": {
+    "name": "Chrome",
+    "version": "151.0.7922.108",
+    "new_fixture_command": "NODE_PATH=<playwright module directory> PW_CHANNEL=chrome node tests/file-card-streaming.cjs",
+    "new_fixture_rc": 0,
+    "cases": 9,
+    "network": "All requests intercepted at synthetic file-card.invalid origin; no live site, upload or credentials"
+  },
+  "parent_counterexample": {
+    "command": "same new fixture with renderer from exact parent commit",
+    "rc": 1,
+    "passed": 2,
+    "failed": 7,
+    "primary": "Actual growing-URL slot assertion fails (observed prefixes, expected zero); other failures include one shared-HEAD card-count timeout, not all seven are direct assertions."
+  },
+  "existing_regressions": [
+    {
+      "name": "integrity",
+      "command": [
+        "node",
+        "internal/m8/testdata/renderer_integrity_recovery.cjs",
+        "view-service/renderer-canary-sse.html"
+      ],
+      "rc": 0
+    },
+    {
+      "name": "history",
+      "command": [
+        "node",
+        "internal/m8/testdata/renderer_history_priority.cjs",
+        "view-service/renderer-canary-sse.html"
+      ],
+      "rc": 0
+    },
+    {
+      "name": "a4",
+      "command": [
+        "node",
+        "tests/a4-overflow-preserve.cjs",
+        "view-service/renderer-canary-sse.html"
+      ],
+      "rc": 0
+    },
+    {
+      "name": "a5-replay",
+      "command": [
+        "node",
+        "tests/a5-replay-state.cjs"
+      ],
+      "rc": 0
+    },
+    {
+      "name": "a5-gap",
+      "command": [
+        "node",
+        "tests/a5-real-gap-timer.cjs"
+      ],
+      "rc": 0
+    },
+    {
+      "name": "a6-real",
+      "command": [
+        "node",
+        "tests/a6-agent-disk-real.cjs"
+      ],
+      "rc": 0
+    },
+    {
+      "name": "a6-unknown",
+      "command": [
+        "node",
+        "tests/a6-agent-disk-unknown.cjs"
+      ],
+      "rc": 0
+    },
+    {
+      "name": "t086",
+      "command": [
+        "node",
+        "renderer-t086-deferred-clear-regression.js"
+      ],
+      "rc": 0
+    },
+    {
+      "name": "view-refresh",
+      "command": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "test_view_refresh.py"
+      ],
+      "rc": 0
+    }
+  ],
+  "markdown_images": {
+    "command": "NODE_PATH=<playwright module directory> PW_CHANNEL=chrome node view-service/renderer-markdown-image-regression.js",
+    "rc": 0,
+    "cases": 15
+  },
+  "canonical_build": {
+    "command": "sh scripts/run-build-tests.sh",
+    "rc": 0,
+    "python_files": 42,
+    "shell_files": 2,
+    "environment": "private HOME, helper runtime venv, seat variables removed"
+  },
+  "boundaries": [
+    "No production, service, DB or actual upload actions.",
+    "Retain original body text. Pending/404/failure URLs remain visible and copyable; existing successful-attachment R5 hiding is unchanged.",
+    "Cancel obsolete attachment subscribers, including late success/failure; shared HEAD transport/cache remains available to other cards.",
+    "Existing replayInProgress classification is retained; live assistant tails close on a delimiter or turn/card completion."
+  ],
+  "local_logs": {
+    "file-card-streaming-final.log": {
+      "bytes": 892,
+      "sha256": "4f7381f96678d6c873076bd8b9fe6efdeeef8576134db9b804960b74f17acf03"
+    },
+    "file-card-streaming-parent-red.log": {
+      "bytes": 1601,
+      "sha256": "15a72c4bb6454ba96d0bff971274502d7ea30ad21cbe17bf3df1ec8ef88be93f"
+    },
+    "file-card-streaming-build.log": {
+      "bytes": 35782,
+      "sha256": "a906dadb511e2e0c6bb60d245ae63bba2beb61a0cc28dce5f54351669c1b6ce2"
+    },
+    "file-card-streaming-markdown-images.log": {
+      "bytes": 8602,
+      "sha256": "d95951811c9894cfcb9eafa95b213bac54b8e505d97b2118d6b288f03f5ff6da"
+    }
+  },
+  "log_delivery": "Hashes identify local author logs; raw logs are not included or claimed delivered.",
+  "existing_fixture_changes": [
+    "Align old 404 assertion with the authorized missing/invalid-link wording.",
+    "Keep markdown-image M-G4 mutation anchors exact after adding the streaming/prefix guards; image behavior unchanged."
+  ]
+}
