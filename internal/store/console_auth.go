@@ -105,6 +105,21 @@ func (s *SQLite) RotateConsolePageCapability(ctx context.Context, capability mod
 	return tx.Commit()
 }
 
+// RevokeConsolePageCapability revokes exactly one previously issued
+// capability. It deliberately does not rotate a page scope: a grant revoke
+// must never invalidate a later approval for the same Agent and page.
+func (s *SQLite) RevokeConsolePageCapability(ctx context.Context, capabilityID, sessionID, principalID, agentID, pageID string, now time.Time) (bool, error) {
+	result, err := s.db.ExecContext(ctx, `UPDATE console_page_capability
+		SET revoked_at=COALESCE(revoked_at, ?)
+		WHERE id=? AND session_id=? AND principal_id=? AND agent_id=? AND page_id=?`,
+		now.UTC().Format(time.RFC3339Nano), capabilityID, sessionID, principalID, agentID, pageID)
+	if err != nil {
+		return false, err
+	}
+	n, err := result.RowsAffected()
+	return n == 1, err
+}
+
 func (s *SQLite) ResolveConsolePageCapability(ctx context.Context, tokenHash, agentID, pageID string, now time.Time) (*model.ConsolePageCapability, error) {
 	var c model.ConsolePageCapability
 	var expires string

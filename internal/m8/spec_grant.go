@@ -29,7 +29,7 @@ type specGrantRequest struct {
 	ID, OwnerKey, SessionName, AgentID, AgentFullName, PrincipalID string
 	Action, SpecID, PageID, State                                  string
 	ExpiresAt, CapabilityExpiresAt                                 time.Time
-	CapabilitySessionID                                            string
+	CapabilitySessionID, CapabilityID                              string
 	capability                                                     string // never serialized or logged
 }
 
@@ -178,18 +178,18 @@ func (h *Hub) HandleConsoleSpecGrantDecision(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		repo, repoOK := h.Repo.(consoleAuthRepository)
-		if !repoOK || g.CapabilitySessionID == "" {
+		if !repoOK || g.CapabilitySessionID == "" || g.CapabilityID == "" {
 			h.specGrantMu.Unlock()
 			http.Error(w, "console unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		// Rotate to an undisclosed capability: this atomically revokes the
-		// approval token without returning any replacement to the requester.
-		poison, err := randomConsoleToken()
-		capID, idErr := randomConsoleToken()
-		cap := model.ConsolePageCapability{ID: capID, SessionID: g.CapabilitySessionID, PrincipalID: identity.Lower(principal), AgentID: ag.ID, PageID: g.PageID, TokenHash: hashConsoleToken(poison), ExpiresAt: now.Add(newPlatformCapabilityTTL)}
 		h.specGrantMu.Unlock()
-		if err != nil || idErr != nil || repo.RotateConsolePageCapability(r.Context(), cap, AgentKeyID(identity.Lower(principal)), ag.NameLC(), now) != nil {
+		revoked, err := repo.RevokeConsolePageCapability(r.Context(), g.CapabilityID, g.CapabilitySessionID, identity.Lower(principal), ag.ID, g.PageID, now)
+		if err != nil {
+			http.Error(w, "console unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		if !revoked {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
@@ -245,6 +245,7 @@ func (h *Hub) HandleConsoleSpecGrantDecision(w http.ResponseWriter, r *http.Requ
 		current.State = "granted"
 		current.capability = raw
 		current.CapabilitySessionID = sess.ID
+		current.CapabilityID = cap.ID
 		current.CapabilityExpiresAt = cap.ExpiresAt
 	}
 	h.specGrantMu.Unlock()

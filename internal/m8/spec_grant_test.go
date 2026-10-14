@@ -38,7 +38,19 @@ func TestSpecGrantRevokeInvalidatesIssuedCapability(t *testing.T) {
 	e.hub.specGrantRequests["grant-revoke"] = &specGrantRequest{
 		ID: "grant-revoke", OwnerKey: AgentKeyID("zzc"), SessionName: ag.NameLC(), AgentID: ag.ID,
 		PrincipalID: "zzc", Action: "create", PageID: pageID, State: "consumed",
-		CapabilitySessionID: session.ID,
+		CapabilitySessionID: session.ID, CapabilityID: "spec-grant-old-capability",
+	}
+	// A later approval for the same page has its own capability generation.
+	// Revoking the old grant must leave this newer token usable.
+	const siblingCapability = "later-capability-that-must-survive"
+	if err := e.db.RotateConsolePageCapability(e.ctx, model.ConsolePageCapability{
+		ID: "spec-grant-later-capability", SessionID: session.ID, PrincipalID: "zzc", AgentID: ag.ID,
+		PageID: pageID, TokenHash: hashConsoleToken(siblingCapability), ExpiresAt: e.hub.now().Add(newPlatformCapabilityTTL),
+	}, AgentKeyID("zzc"), ag.NameLC(), e.hub.now()); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := e.db.ResolveConsolePageCapability(e.ctx, hashConsoleToken(siblingCapability), ag.ID, pageID, e.hub.now()); err != nil || got == nil {
+		t.Fatalf("later capability unavailable before old revoke: capability=%+v err=%v", got, err)
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/spec-grant-requests/{requestID}/{decision}", e.hub.RequireConsoleAgent("interact", e.hub.HandleConsoleSpecGrantDecision))
@@ -54,6 +66,9 @@ func TestSpecGrantRevokeInvalidatesIssuedCapability(t *testing.T) {
 	}
 	if state := e.hub.specGrantRequests["grant-revoke"].State; state != "revoked" {
 		t.Fatalf("grant state=%q, want revoked", state)
+	}
+	if got, err := e.db.ResolveConsolePageCapability(e.ctx, hashConsoleToken(siblingCapability), ag.ID, pageID, e.hub.now()); err != nil || got == nil {
+		t.Fatalf("later capability was revoked with the old grant: capability=%+v err=%v", got, err)
 	}
 }
 
