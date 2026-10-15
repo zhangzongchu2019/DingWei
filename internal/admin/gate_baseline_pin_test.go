@@ -32,9 +32,16 @@ import (
 	"testing"
 )
 
-// doorABaselineSHA256 = 基线树 `bcd5f337`(0.2.1.50)上实跑 dumpDoorABaseline 的输出哈希。
+// doorABaselineSHA256 初始取自基线树 bcd5f337 (0.2.1.50)，旧值为
+// ea1766cb001d2cc60f0235d3b3b4725f4f18776847b1102af88651785f4356cd。
+// 2026-10-15 leader「允许窄幅重定基线」裁定（先报记录 13fb2de768c8）：
+// 已授权退役公开上传/在线打包，故仅更新 /admin/provision 对应的页面字节。
+// 父 r12 与候选 16f86731 的同一夹具保留全部 20 条记录；19 条逐字节一致，
+// 唯一差异是删除上传/打包控件、multipart 属性与直接相关的退役/已有 URL 文案。
+// 完整父/候选输出和逐行 diff：docs/reviews/coder-helper-self-update-console/retirement/。
+// 文件头③「确需改先报组长」原样保留；本次是已报告且获准的例外，不授权未来改 pin。
 // 🔴 改动它等于声称"门 A 的输出**应该**变了" —— 那不是本格的权限,见文件头 ③。
-const doorABaselineSHA256 = "ea1766cb001d2cc60f0235d3b3b4725f4f18776847b1102af88651785f4356cd"
+const doorABaselineSHA256 = "4c7b45af8b8b0f4f950a1eae23ddda12175a5ae4daf0d67110910e87a456f859"
 
 // doorABaselineRecords = 取数装置必须覆盖的门 A 记录条数(8 GET 有正文 + 1 凭证页只记码
 // + 6 ANON GET + 5 POST = 20)。🔴 与 G3b 的 `probed < 20`、G7 的 `paired < 8` 同一族:
@@ -74,9 +81,9 @@ func TestGateDoorABytesMatchThePinnedBaseline(t *testing.T) {
 	sum := sha256.Sum256([]byte(first))
 	got := hex.EncodeToString(sum[:])
 	if got != doorABaselineSHA256 {
-		t.Fatalf("🔴 门 A 的输出字节与 0.2.1.50 基线**不同**。\n"+
+		t.Fatalf("🔴 门 A 的输出字节与已批准基线**不同**。\n"+
 			"  本树 sha256 = %s\n"+
-			"  基线 sha256 = %s(基线树 bcd5f337 上实跑取得,独立来源)\n"+
+			"  基线 sha256 = %s(2026-10-15 授权退役后的基线,见常量注释)\n"+
 			"判据:并存期旧 admin(/admin/*,wp_admin)是业主的「回退的地方」,\n"+
 			"      本次搬迁**不得**改它的任何输出(派工第五节阴格:并存,不是迁移)。\n"+
 			"定位:DW_ADMIN_BASELINE_OUT=/tmp/doorA-now.txt go test ./internal/admin/ -run TestGateDumpDoorABaseline -count=1\n"+
