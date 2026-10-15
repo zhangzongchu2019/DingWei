@@ -35,7 +35,7 @@ if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN
 if (mutation === 'enter-sends-while-open') mutate("e.preventDefault(); e.stopImmediatePropagation(); mentionSelect(mention.active); }\n    }, true);", "mentionSelect(mention.active); }\n    }, true);");
 if (mutation === 'ignore-insert-field') mutate("const insert = it.insert || it.full_name || it.name || '';", "const insert = it.name || '';");
 if (mutation === 'no-stale-guard') mutate("if (gen !== mention.gen) return;                       // 过期应答不得覆盖新应答", '');
-if (mutation === 'trigger-mid-word') mutate("/(^|\\s)@([A-Za-z0-9.]*)$/.exec(", "/()@([A-Za-z0-9.]*)$/.exec(");
+if (mutation === 'trigger-mid-word') mutate("return at === 0 || !/[A-Za-z0-9.]/.test(text.charAt(at - 1));", "return true;");
 if (mutation === 'no-ime-guard') mutate("if (!mention.open || e.isComposing) return;", "if (!mention.open) return;");
 if (mutation === 'enter-ignored-when-no-items') mutate("if (!mentionSelectable()) return;\n      const n = mentionMatches().length;", "const n = Math.max(1, mentionMatches().length);");
 if (mutation === 'refetch-while-loading') mutate("      if (mention.status === 'loading' && !force) return;   // 沿用在途那次,慢接口下连敲不重复请求\n", '');
@@ -174,7 +174,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(await input.inputValue(), '@al');
     });
 
-    await test('the trigger is "@ at the start or after whitespace": an @ inside a word (an e-mail) opens nothing; a new line works', async () => {
+    await test('name-character prefixes (an e-mail) open nothing; a new line still works', async () => {
       await input.fill(''); await typeAt('mail me at a@b');
       await page.waitForTimeout(150);
       assert.strictEqual(await popup.isHidden(), true);
