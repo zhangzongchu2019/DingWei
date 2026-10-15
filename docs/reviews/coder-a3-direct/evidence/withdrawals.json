@@ -1,0 +1,52 @@
+[
+  {
+    "case": "auth",
+    "rc": 1,
+    "log": "/tmp/coder-a3-withdraw-auth.log"
+  },
+  {
+    "case": "ownership",
+    "rc": 1,
+    "log": "/tmp/coder-a3-withdraw-ownership.log"
+  },
+  {
+    "case": "audit",
+    "rc": 1,
+    "log": "/tmp/coder-a3-withdraw-audit.log"
+  },
+  {
+    "case": "legacy",
+    "rc": 1,
+    "log": "/tmp/coder-a3-withdraw-legacy.log"
+  },
+  {
+    "case": "old-http",
+    "rc": 1,
+    "log": "/tmp/coder-a3-withdraw-old-http.log"
+  },
+  {
+    "case": "batch-atomic",
+    "rc": 1,
+    "log": "/tmp/coder-a3-withdraw-batch-atomic.log"
+  },
+  {
+    "case": "archive-permission",
+    "rc": 1,
+    "log": "/tmp/coder-a3-withdraw-archive-permission.log"
+  },
+  {
+    "case": "restore",
+    "rc": 1,
+    "log": "/tmp/coder-a3-withdraw-restore.log"
+  },
+  {
+    "case": "default-list",
+    "rc": 1,
+    "log": "/tmp/coder-a3-withdraw-default-list.log"
+  },
+  {
+    "case": "board",
+    "rc": 1,
+    "log": "/tmp/coder-a3-withdraw-board.log"
+  }
+]

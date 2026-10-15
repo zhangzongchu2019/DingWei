@@ -24,12 +24,14 @@ type consoleSpecRepository interface {
 	ConsoleSpec(context.Context, string, string, bool) (*model.ConsoleSpec, error)
 	ConsoleSpecRevision(context.Context, string, string, int, bool) (*model.ConsoleSpecRevision, error)
 	AppendConsoleSpecRevision(context.Context, string, string, int, model.ConsoleSpecRevision, time.Time) (int, error)
+	AppendConsoleSpecRevisionByAgent(context.Context, string, string, int, model.ConsoleSpecRevision, time.Time) (int, error)
 	AppendConsoleSpecRevisionWithCapability(context.Context, string, int, string, model.ConsoleSpecRevision, time.Time) (int, error)
 	OpenConsoleSpecRevision(context.Context, string, string, int, model.ConsoleSpecRevision, time.Time) (int, error)
 	OpenConsoleSpecRevisionWithCapability(context.Context, string, int, string, model.ConsoleSpecRevision, time.Time) (int, error)
 	CloseConsoleSpecEditing(context.Context, string, string, time.Time) error
 	ReopenConsoleSpecEditing(context.Context, string, string, time.Time) error
 	ArchiveConsoleSpec(context.Context, string, string, time.Time) error
+	SetConsoleSpecsArchived(context.Context, []string, string, bool, bool, time.Time) error
 	ListReadyConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
 	ListConsoleTaskProposals(context.Context, string) ([]model.ConsoleTaskProposal, error)
 	ListAllConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
@@ -66,6 +68,7 @@ type consoleSpecRepository interface {
 	DeriveConsoleSpec(context.Context, string, string, model.ConsoleSpec, model.ConsoleSpecRevision, time.Time) error
 }
 
+type consoleSpecDirectContextKey struct{}
 type consoleSpecOpenNewContextKey struct{}
 type consoleSpecActorContextKey struct{}
 
@@ -346,6 +349,14 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
 			return
 		}
+		includeArchived := r.URL.Query().Get("include_archived") == "1"
+		visible := make([]model.ConsoleSpec, 0, len(items))
+		for _, item := range items {
+			if !item.Archived || includeArchived {
+				visible = append(visible, item)
+			}
+		}
+		items = visible
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
 		page := 1
@@ -357,8 +368,9 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 		}
 		const pageSize = 20
 		for i := range items {
+			items[i].CanDelete = items[i].PrincipalID == principal || management
 			items[i].CanEdit = items[i].CurrentEditorID == principal && items[i].State != "final" && !items[i].Archived
-			items[i].CanSplit = items[i].PrincipalID == principal && items[i].State == "final" && items[i].TaskState == "splitting"
+			items[i].CanSplit = items[i].PrincipalID == principal && items[i].State == "final" && items[i].TaskState == "splitting" && !items[i].Archived
 		}
 		total := len(items)
 		pages := (total + pageSize - 1) / pageSize
@@ -445,8 +457,9 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodGet {
+		spec.CanDelete = spec.PrincipalID == principal || management
 		spec.CanEdit = spec.CurrentEditorID == principal && spec.State != "final" && !spec.Archived
-		spec.CanSplit = spec.PrincipalID == principal && spec.State == "final" && spec.TaskState == "splitting"
+		spec.CanSplit = spec.PrincipalID == principal && spec.State == "final" && spec.TaskState == "splitting" && !spec.Archived
 		rev, err := repo.ConsoleSpecRevision(r.Context(), principal, id, spec.CurrentRevision, management)
 		if err != nil {
 			http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
@@ -507,7 +520,9 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 	capability := strings.TrimSpace(r.Header.Get("X-DW-Spec-Edit-Capability"))
 	openNew, _ := r.Context().Value(consoleSpecOpenNewContextKey{}).(bool)
 	var next int
-	if capability != "" {
+	if direct, _ := r.Context().Value(consoleSpecDirectContextKey{}).(bool); direct {
+		next, err = repo.AppendConsoleSpecRevisionByAgent(r.Context(), principal, id, req.ExpectedRevision, rev, h.now())
+	} else if capability != "" {
 		if openNew {
 			next, err = repo.OpenConsoleSpecRevisionWithCapability(r.Context(), id, req.ExpectedRevision, specCapabilityHash(capability), rev, h.now())
 		} else {
@@ -521,6 +536,10 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		err = store.ErrConsoleSpecEditDenied
+	}
+	if errors.Is(err, store.ErrConsoleSpecAgentOwnership) {
+		http.Error(w, "只能更新由当前 Agent 创建的 spec", http.StatusForbidden)
+		return
 	}
 	if errors.Is(err, store.ErrConsoleSpecNotFound) {
 		http.NotFound(w, r)
@@ -809,16 +828,44 @@ func (h *Hub) HandleConsoleSpecReopenEditing(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *Hub) HandleConsoleSpecArchive(w http.ResponseWriter, r *http.Request) {
+	h.setConsoleSpecArchive(w, r, true, false)
+}
+func (h *Hub) HandleConsoleSpecUnarchive(w http.ResponseWriter, r *http.Request) {
+	h.setConsoleSpecArchive(w, r, false, false)
+}
+func (h *Hub) HandleConsoleSpecsArchiveBatch(w http.ResponseWriter, r *http.Request) {
+	h.setConsoleSpecArchive(w, r, true, true)
+}
+func (h *Hub) setConsoleSpecArchive(w http.ResponseWriter, r *http.Request, archived, batch bool) {
 	repo, ok := h.consoleSpecs()
 	if !ok {
 		http.Error(w, "console specs unavailable", 503)
 		return
 	}
-	if err := repo.ArchiveConsoleSpec(r.Context(), r.PathValue("specID"), platformPrincipal(r), h.now()); errors.Is(err, store.ErrConsoleSpecNotFound) {
+	ids := []string{r.PathValue("specID")}
+	if batch {
+		var body struct {
+			IDs []string `json:"spec_ids"`
+		}
+		dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 32<<10))
+		dec.DisallowUnknownFields()
+		if dec.Decode(&body) != nil {
+			http.Error(w, "invalid spec IDs", 400)
+			return
+		}
+		ids = body.IDs
+	}
+	err := repo.SetConsoleSpecsArchived(r.Context(), ids, platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement, archived, h.now())
+	if errors.Is(err, store.ErrConsoleSpecNotFound) {
 		http.NotFound(w, r)
 		return
-	} else if err != nil {
-		http.Error(w, "cannot archive spec", http.StatusConflict)
+	}
+	if errors.Is(err, store.ErrConsoleSpecPermission) {
+		http.Error(w, "forbidden", 403)
+		return
+	}
+	if err != nil {
+		http.Error(w, "cannot change archive", 409)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

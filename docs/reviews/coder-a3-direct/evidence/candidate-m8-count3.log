@@ -1,0 +1,74 @@
+=== RUN   TestFeishuIngressNewChannelAutoBindingAndReplyToSender
+2026/10/15 11:23:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/15 11:23:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/15 11:23:40 session version warning key_id=FB-manager-20261015-5183d078 owner=zzc session=zzc-manager-d078 version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:40 session handshake timing key_id=FB-manager-20261015-5183d078 session=zzc-manager-d078 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestFeishuIngressNewChannelAutoBindingAndReplyToSender (0.20s)
+=== RUN   TestSessionNameReconnectKeepsNameAndReleaseReuses
+2026/10/15 11:23:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/15 11:23:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/15 11:23:40 session version warning key_id=FB-u11-20261015-4627a5ba owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:40 session handshake timing key_id=FB-u11-20261015-4627a5ba session=u1-developer-a5ba total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/15 11:23:40 session version warning key_id=FB-u11-20261015-4627a5ba owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:40 session handshake timing key_id=FB-u11-20261015-4627a5ba session=u1-developer-a5ba total=3ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=2ms
+2026/10/15 11:23:40 session version warning key_id=FB-u12-20261015-be6b463e owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:40 session handshake timing key_id=FB-u12-20261015-be6b463e session=u1-developer-463e total=6ms auth=0s accounts=0s owner=0s register=2ms accept=0s conn_seq=0s onboard=4ms register_lock=0s
+--- PASS: TestSessionNameReconnectKeepsNameAndReleaseReuses (0.24s)
+=== RUN   TestProducerSessionMetadataAndOnlineDirectory
+2026/10/15 11:23:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/15 11:23:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/15 11:23:40 session version warning key_id=FB-system-20261015-a14b50cb owner=systemtaskintl session=producer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:40 session handshake timing key_id=FB-system-20261015-a14b50cb session=systemtaskintl-producer-50cb total=6ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=4ms register_lock=0s
+2026/10/15 11:23:40 online directory snapshot timing owner=systemtaskintl total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=1 clients=1
+2026/10/15 11:23:40 online directory broadcast timing owner=systemtaskintl total=3ms snapshot=0s fanout=0s clients=1
+--- PASS: TestProducerSessionMetadataAndOnlineDirectory (0.23s)
+=== RUN   TestFeishuIngressNewChannelAutoBindingAndReplyToSender
+2026/10/15 11:23:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/15 11:23:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/15 11:23:41 session version warning key_id=FB-manager-20261015-d47cf7f4 owner=zzc session=zzc-manager-f7f4 version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:41 session handshake timing key_id=FB-manager-20261015-d47cf7f4 session=zzc-manager-f7f4 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestFeishuIngressNewChannelAutoBindingAndReplyToSender (0.34s)
+=== RUN   TestSessionNameReconnectKeepsNameAndReleaseReuses
+2026/10/15 11:23:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/15 11:23:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/15 11:23:41 session version warning key_id=FB-u11-20261015-98087715 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:41 session handshake timing key_id=FB-u11-20261015-98087715 session=u1-developer-7715 total=11ms auth=0s accounts=0s owner=2ms register=7ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/15 11:23:41 session version warning key_id=FB-u11-20261015-98087715 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:41 session handshake timing key_id=FB-u11-20261015-98087715 session=u1-developer-7715 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=1ms
+2026/10/15 11:23:41 session version warning key_id=FB-u12-20261015-4eca76e8 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:41 session handshake timing key_id=FB-u12-20261015-4eca76e8 session=u1-developer-76e8 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestSessionNameReconnectKeepsNameAndReleaseReuses (0.24s)
+=== RUN   TestProducerSessionMetadataAndOnlineDirectory
+2026/10/15 11:23:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/15 11:23:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/15 11:23:41 session version warning key_id=FB-system-20261015-f055f2d9 owner=systemtaskintl session=producer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:41 session handshake timing key_id=FB-system-20261015-f055f2d9 session=systemtaskintl-producer-f2d9 total=3ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/15 11:23:41 online directory snapshot timing owner=systemtaskintl total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=1 clients=1
+2026/10/15 11:23:41 online directory broadcast timing owner=systemtaskintl total=1ms snapshot=1ms fanout=0s clients=1
+--- PASS: TestProducerSessionMetadataAndOnlineDirectory (0.26s)
+=== RUN   TestFeishuIngressNewChannelAutoBindingAndReplyToSender
+2026/10/15 11:23:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/15 11:23:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/15 11:23:41 session version warning key_id=FB-manager-20261015-b98f9ce9 owner=zzc session=zzc-manager-9ce9 version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:41 session handshake timing key_id=FB-manager-20261015-b98f9ce9 session=zzc-manager-9ce9 total=5ms auth=0s accounts=0s owner=0s register=1ms accept=4ms conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestFeishuIngressNewChannelAutoBindingAndReplyToSender (0.16s)
+=== RUN   TestSessionNameReconnectKeepsNameAndReleaseReuses
+2026/10/15 11:23:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/15 11:23:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/15 11:23:41 session version warning key_id=FB-u11-20261015-f08144d2 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:41 session handshake timing key_id=FB-u11-20261015-f08144d2 session=u1-developer-44d2 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/15 11:23:41 session version warning key_id=FB-u11-20261015-f08144d2 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:41 session handshake timing key_id=FB-u11-20261015-f08144d2 session=u1-developer-44d2 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/15 11:23:41 session version warning key_id=FB-u12-20261015-75a1dacf owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:41 session handshake timing key_id=FB-u12-20261015-75a1dacf session=u1-developer-dacf total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+--- PASS: TestSessionNameReconnectKeepsNameAndReleaseReuses (0.21s)
+=== RUN   TestProducerSessionMetadataAndOnlineDirectory
+2026/10/15 11:23:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/15 11:23:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/15 11:23:42 session version warning key_id=FB-system-20261015-30ed01fd owner=systemtaskintl session=producer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/15 11:23:42 session handshake timing key_id=FB-system-20261015-30ed01fd session=systemtaskintl-producer-01fd total=1ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/15 11:23:42 online directory snapshot timing owner=systemtaskintl total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=1 clients=1
+2026/10/15 11:23:42 online directory broadcast timing owner=systemtaskintl total=0s snapshot=0s fanout=0s clients=1
+--- PASS: TestProducerSessionMetadataAndOnlineDirectory (0.30s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	2.211s

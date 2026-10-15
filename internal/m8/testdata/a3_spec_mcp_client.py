@@ -1,8 +1,8 @@
 """Local-only real helper/WS/Unix-IPC/MCP bridge; credentials enter over stdin.
 
-Go owns the temporary Hub, database and human approval requests. No model,
+Go owns the temporary Hub, database and authenticated direct-write requests. No model,
 production endpoint or external account is used. Only prefixed protocol output
-is consumed by Go; bootstrap and capabilities are never printed.
+is consumed by Go; bootstrap credentials are never printed.
 """
 import asyncio
 import json

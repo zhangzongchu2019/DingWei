@@ -172,14 +172,9 @@ type Hub struct {
 	fileIssuer                         FileTicketIssuer
 	fileArchive                        FileArchiveClient
 	filePermanent                      FilePermanentClient
-	// Short-lived MCP spec approvals. Raw page capabilities stay here only
-	// until the authenticated helper polls them once; the repository persists
-	// only the hash in ConsolePageCapability.
-	specGrantMu           sync.Mutex
-	specGrantRequests     map[string]*specGrantRequest
-	specPresplitDispatch  func(context.Context, model.ConsoleAgent, model.Envelope) error
-	specInferenceDispatch func(context.Context, model.ConsoleAgent, model.Envelope) error
-	SpecPresplitTimeout   time.Duration
+	specPresplitDispatch               func(context.Context, model.ConsoleAgent, model.Envelope) error
+	specInferenceDispatch              func(context.Context, model.ConsoleAgent, model.Envelope) error
+	SpecPresplitTimeout                time.Duration
 
 	// sessionTouchMinInterval（R-V2-0105 件三）：同一会话连接 last_seen 落库的最小间隔；0 = 不节流。
 	sessionTouchMinInterval time.Duration
@@ -350,7 +345,6 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 		viewV2Requests:              map[string]viewV2RequestResult{},
 		deliveryNotices:             map[string]time.Time{},
 		capabilityPendingAdmissions: map[string]*capabilityPendingAdmission{},
-		specGrantRequests:           map[string]*specGrantRequest{},
 		startedAt:                   time.Now().UTC(),
 		restartWindow:               envDuration("WP_RESTART_STABILITY_WINDOW", time.Minute),
 		onlineDebounce:              2500 * time.Millisecond,

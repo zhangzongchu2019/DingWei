@@ -1,0 +1,5 @@
+--- FAIL: TestSpecArchiveBatchAllOrNothingPermissionAndRestore (0.31s)
+    console_spec_direct_test.go:99: non-owner deleted spec
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.329s
+FAIL

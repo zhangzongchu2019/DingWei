@@ -1,0 +1,5 @@
+--- FAIL: TestSpecArchiveBatchAllOrNothingPermissionAndRestore (0.14s)
+    console_spec_direct_test.go:128: restore failed
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.160s
+FAIL

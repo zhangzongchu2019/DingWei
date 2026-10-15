@@ -402,7 +402,7 @@ async function main() {
     assert.ok(columnEdges.every((edge) => Math.abs(edge.h-edge.d) <= 0.5), `四列表头与内容未对齐: ${JSON.stringify(columnEdges)}`);
     assert.deepStrictEqual(await page.locator('#spec-table thead th').allTextContents(), ['标题','状态','当前','操作']);
     assert.deepStrictEqual(await page.locator('#spec-list tr td:nth-child(2)').allTextContents(), ['修改','修改'], '状态列必须用业主图里的中文状态');
-    assert.strictEqual(await page.locator('.delete-spec,.archive-spec').count(),0,'业主已裁定不提供删除或归档入口');
+    assert.strictEqual(await page.locator('.delete-spec,.archive-spec').count(),0,'服务端未授予删除权限的夹具不得出现删除或归档入口');
     assert.strictEqual((html.match(/['"](?:lbl|th)['"]/g)||[]).length,0,'前端不得硬编码业主 lbl/th');
     const secondAction=page.locator('#spec-list [data-title="Spec B"] .spec-action');
     const selectedRowBefore=await page.locator('#spec-list tr').evaluateAll((rows)=>rows.findIndex((row)=>row.dataset.title==='Spec B'));
@@ -931,6 +931,9 @@ async function main() {
     assert.strictEqual(readonlyShape.secondEntry, 0, '只读态同样不得出现「编辑」入口');
     const occurrenceCount = await page.evaluate(() => (document.getElementById('detail-screen').innerText.match(/SPEC_BODY_OCCURRENCE_SENTINEL/g) || []).length);
     assert.strictEqual(occurrenceCount, 1, `同一份正文在详情屏上必须只出现一次，实测 ${occurrenceCount}`);
+    // Finish the fixture's asynchronous broken-image fallback before measuring keyboard immutability.
+    await page.locator('#spec-rendered img.md-img[alt="missing"]').scrollIntoViewIfNeeded();
+    await page.locator('#spec-rendered .md-image-fallback').waitFor({ state: 'visible' });
     const readonlyRenderedBefore = await page.locator('#spec-rendered').innerText();
     await page.locator('#spec-rendered').click();
     await page.keyboard.type('FORBIDDEN_WRITE_SENTINEL');

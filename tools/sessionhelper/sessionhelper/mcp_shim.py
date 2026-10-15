@@ -19,6 +19,7 @@ The shim does NOT:
 from __future__ import annotations
 
 import json
+import re
 import os
 import sys
 from dataclasses import dataclass
@@ -83,7 +84,7 @@ import uuid as _uuid
 
 _IPC_SOCK = os.environ.get("DINGWEI_MCP_IPC_SOCK", "")
 _IPC_TIMEOUT = 5.0
-# Grant roundtrip10 + Agent HTTP15 + helper scheduling/cancellation5.
+# Agent HTTP15 within helper aggregate30; shim35 receives explicit deadline result.
 # Leave a further5 seconds for the helper's explicit result to reach the shim.
 _SPEC_IPC_TIMEOUT = 35.0
 
@@ -368,8 +369,8 @@ def _project_context(args: dict[str, Any]) -> dict[str, Any]:
 
 
 # ── MCP tools: Console spec writing (A3) ─────────────────────────────
-# The short-lived human-approved capability stays in sessionHelper. These
-# tools exchange only document data and a non-secret grant request id.
+# Dedicated Agent identity stays in sessionHelper. Direct writes exchange
+# only document data; no approval request, credential or capability argument.
 
 _SPEC_BODY_PROPERTIES = {
     "title": {"type": "string"},
@@ -382,7 +383,7 @@ _SPEC_BODY_PROPERTIES = {
 
 
 def _spec_body(args: dict[str, Any], *, update: bool) -> dict[str, Any]:
-    allowed = set(_SPEC_BODY_PROPERTIES) | ({"spec_id", "grant_request_id"} if update else {"grant_request_id"})
+    allowed = set(_SPEC_BODY_PROPERTIES) | ({"spec_id"} if update else set())
     if not isinstance(args, dict) or set(args) - allowed:
         raise ValueError("unsupported spec arguments")
     body = {key: args[key] for key in _SPEC_BODY_PROPERTIES if key in args}
@@ -404,27 +405,25 @@ def _spec_body(args: dict[str, Any], *, update: bool) -> dict[str, Any]:
     return body
 
 
-@register("dw_spec_create", "经业主在 Console 显式批准后创建 spec；首次调用只返回批准请求，不会写入。", {
-    "type": "object", "properties": {**_SPEC_BODY_PROPERTIES, "grant_request_id": {"type": "string"}},
+@register("dw_spec_create", "以当前 Agent 身份直接创建 spec；一次调用完成写入，不需要待批。", {
+    "type": "object", "properties": {**_SPEC_BODY_PROPERTIES},
     "required": ["title", "content_markdown", "acceptance", "input_anchors"], "additionalProperties": False,
 })
 def _dw_spec_create(args: dict[str, Any]) -> dict[str, Any]:
     body = _spec_body(args, update=False)
-    grant_request_id = str(args.get("grant_request_id") or "").strip()
-    return _ipc_request({"type": "spec_write_v1", "action": "create", "grant_request_id": grant_request_id, "body": body}, timeout=_SPEC_IPC_TIMEOUT)
+    return _ipc_request({"type": "spec_write_v1", "action": "create", "protocol": "direct-v1", "body": body}, timeout=_SPEC_IPC_TIMEOUT)
 
 
-@register("dw_spec_update", "经业主在 Console 显式批准后更新指定 spec；创建批准不能用于更新。", {
-    "type": "object", "properties": {**_SPEC_BODY_PROPERTIES, "spec_id": {"type": "string"}, "grant_request_id": {"type": "string"}},
+@register("dw_spec_update", "直接更新当前 Agent 自建的 spec；必须提供最新 expected_revision。", {
+    "type": "object", "properties": {**_SPEC_BODY_PROPERTIES, "spec_id": {"type": "string"}},
     "required": ["spec_id", "title", "content_markdown", "acceptance", "input_anchors", "expected_revision"], "additionalProperties": False,
 })
 def _dw_spec_update(args: dict[str, Any]) -> dict[str, Any]:
     spec_id = str(args.get("spec_id") or "").strip()
-    if not spec_id or len(spec_id) > 256:
+    if not spec_id or len(spec_id) > 256 or not re.fullmatch(r"[A-Za-z0-9_-]+", spec_id):
         raise ValueError("invalid spec_id")
     body = _spec_body(args, update=True)
-    grant_request_id = str(args.get("grant_request_id") or "").strip()
-    return _ipc_request({"type": "spec_write_v1", "action": "update", "spec_id": spec_id, "grant_request_id": grant_request_id, "body": body}, timeout=_SPEC_IPC_TIMEOUT)
+    return _ipc_request({"type": "spec_write_v1", "action": "update", "spec_id": spec_id, "protocol": "direct-v1", "body": body}, timeout=_SPEC_IPC_TIMEOUT)
 
 
 # ── MCP tool: upload_file (R-V2-AGENT-FILE-UPLOAD) ────────────────────

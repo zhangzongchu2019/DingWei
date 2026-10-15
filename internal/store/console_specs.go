@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	ErrConsoleSpecAgentOwnership  = errors.New("只能更新由当前 Agent 创建的 spec")
 	ErrConsoleSpecNotFound        = errors.New("console spec not found")
 	ErrConsoleSpecConflict        = errors.New("console spec revision conflict")
 	ErrConsoleSpecGateOrder       = errors.New("console spec gate order invalid")
@@ -462,7 +463,11 @@ func (s *SQLite) CreateConsoleSpec(ctx context.Context, spec model.ConsoleSpec, 
 	if err = insertConsoleSpecRevision(ctx, tx, revision, now); err != nil {
 		return err
 	}
-	if err = appendConsoleSpecEvent(ctx, tx, spec.ID, 1, revision.CreatedBy, "create", "", now); err != nil {
+	action := "create"
+	if revision.CreatedByKind == "agent" {
+		action = "agent_create"
+	}
+	if err = appendConsoleSpecEvent(ctx, tx, spec.ID, 1, revision.CreatedBy, action, "", now); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -550,6 +555,16 @@ func (s *SQLite) ConsoleSpecAttribution(ctx context.Context, specID string) (mod
 		}
 		return label
 	}
+	var created, lastEdited, lastID, lastKind string
+	if err := s.db.QueryRowContext(ctx, `SELECT created_at FROM console_spec_revision WHERE spec_id=? AND revision=1`, specID).Scan(&created); err != nil {
+		return out, err
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT created_by,created_by_kind,created_at FROM console_spec_revision WHERE spec_id=? ORDER BY revision DESC LIMIT 1`, specID).Scan(&lastID, &lastKind, &lastEdited); err != nil {
+		return out, err
+	}
+	out.CreatedAt, _ = specTime(created)
+	out.LastEditedAt, _ = specTime(lastEdited)
+	out.LastEditor = actorLabel(lastKind, lastID)
 	out.CreatorKind = creatorKind
 	out.Creator = actorLabel(creatorKind, creatorID)
 	rows, err := s.db.QueryContext(ctx, `
@@ -631,14 +646,20 @@ func (s *SQLite) ConsoleSpecRevision(ctx context.Context, principalID, specID st
 }
 
 func (s *SQLite) AppendConsoleSpecRevision(ctx context.Context, principalID, specID string, expected int, revision model.ConsoleSpecRevision, now time.Time) (int, error) {
-	return s.appendConsoleSpecRevision(ctx, principalID, specID, expected, revision, now, false)
+	return s.appendConsoleSpecRevision(ctx, principalID, specID, expected, revision, now, false, false)
 }
 
 func (s *SQLite) OpenConsoleSpecRevision(ctx context.Context, principalID, specID string, expected int, revision model.ConsoleSpecRevision, now time.Time) (int, error) {
-	return s.appendConsoleSpecRevision(ctx, principalID, specID, expected, revision, now, true)
+	return s.appendConsoleSpecRevision(ctx, principalID, specID, expected, revision, now, true, false)
 }
 
-func (s *SQLite) appendConsoleSpecRevision(ctx context.Context, principalID, specID string, expected int, revision model.ConsoleSpecRevision, now time.Time, openNew bool) (int, error) {
+// AppendConsoleSpecRevisionByAgent is only for authenticated direct full-spec
+// updates. Explicitly requested inference assistance retains its separate gate.
+func (s *SQLite) AppendConsoleSpecRevisionByAgent(ctx context.Context, principalID, specID string, expected int, revision model.ConsoleSpecRevision, now time.Time) (int, error) {
+	return s.appendConsoleSpecRevision(ctx, principalID, specID, expected, revision, now, false, true)
+}
+
+func (s *SQLite) appendConsoleSpecRevision(ctx context.Context, principalID, specID string, expected int, revision model.ConsoleSpecRevision, now time.Time, openNew, agentSelfOnly bool) (int, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
@@ -653,6 +674,22 @@ func (s *SQLite) appendConsoleSpecRevision(ctx context.Context, principalID, spe
 	}
 	if err != nil {
 		return 0, err
+	}
+	// Agent self-ownership is checked against immutable revision 1 inside this
+	// SAME transaction, before revision insertion or optimistic update. Current
+	// owner/editor/latest revision are not proof that this Agent created it.
+	if agentSelfOnly {
+		if revision.CreatedByKind != "agent" || revision.CreatedBy == "" {
+			return 0, ErrConsoleSpecAgentOwnership
+		}
+		var creator, kind string
+		err = tx.QueryRowContext(ctx, `SELECT created_by,created_by_kind FROM console_spec_revision WHERE spec_id=? AND revision=1`, specID).Scan(&creator, &kind)
+		if err != nil {
+			return 0, err
+		}
+		if kind != "agent" || creator != revision.CreatedBy {
+			return 0, ErrConsoleSpecAgentOwnership
+		}
 	}
 	// Final is a distinct, auditable reason. Do not fold it into the compound
 	// editor/archived/closed predicate: final rows also have no current editor,
@@ -693,7 +730,11 @@ func (s *SQLite) appendConsoleSpecRevision(ctx context.Context, principalID, spe
 	if n != 1 {
 		return 0, ErrConsoleSpecEditDenied
 	}
-	if err = appendConsoleSpecEvent(ctx, tx, specID, next, revision.CreatedBy, "revise", fmt.Sprintf("supersedes=%d", current), now); err != nil {
+	action := "revise"
+	if agentSelfOnly {
+		action = "agent_update"
+	}
+	if err = appendConsoleSpecEvent(ctx, tx, specID, next, revision.CreatedBy, action, fmt.Sprintf("supersedes=%d", current), now); err != nil {
 		return 0, err
 	}
 	if err = tx.Commit(); err != nil {
@@ -742,25 +783,62 @@ func (s *SQLite) ReopenConsoleSpecEditing(ctx context.Context, principalID, spec
 	return nil
 }
 
-func (s *SQLite) ArchiveConsoleSpec(ctx context.Context, specID, actor string, now time.Time) error {
+// SetConsoleSpecsArchived checks the entire batch and writes its archive events
+// in one transaction. No row is changed when any ID/permission is invalid.
+func (s *SQLite) SetConsoleSpecsArchived(ctx context.Context, ids []string, actor string, mayDeleteOthers, archived bool, now time.Time) error {
+	if len(ids) == 0 || len(ids) > 100 || actor == "" {
+		return ErrConsoleSpecPermission
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	var revision int
-	if err = tx.QueryRowContext(ctx, `SELECT current_revision FROM console_spec WHERE id=? AND archived=0`, specID).Scan(&revision); errors.Is(err, sql.ErrNoRows) {
-		return ErrConsoleSpecNotFound
-	} else if err != nil {
-		return err
+	type row struct {
+		id            string
+		revision, old int
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE console_spec SET archived=1,updated_at=? WHERE id=?`, now.UTC().Format(time.RFC3339Nano), specID); err != nil {
-		return err
+	items := make([]row, 0, len(ids))
+	seen := map[string]bool{}
+	for _, id := range ids {
+		if strings.TrimSpace(id) != id || id == "" || seen[id] {
+			return ErrConsoleSpecNotFound
+		}
+		seen[id] = true
+		item := row{id: id}
+		var owner string
+		err = tx.QueryRowContext(ctx, `SELECT principal_id,current_revision,archived FROM console_spec WHERE id=?`, id).Scan(&owner, &item.revision, &item.old)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrConsoleSpecNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if owner != actor && !mayDeleteOthers {
+			return ErrConsoleSpecPermission
+		}
+		items = append(items, item)
 	}
-	if err = appendConsoleSpecEvent(ctx, tx, specID, revision, actor, "archive", "", now); err != nil {
-		return err
+	value, action := 0, "unarchive"
+	if archived {
+		value, action = 1, "archive"
+	}
+	for _, item := range items {
+		if item.old == value {
+			continue
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE console_spec SET archived=?,updated_at=? WHERE id=?`, value, now.UTC().Format(time.RFC3339Nano), item.id); err != nil {
+			return err
+		}
+		if err = appendConsoleSpecEvent(ctx, tx, item.id, item.revision, actor, action, "", now); err != nil {
+			return err
+		}
 	}
 	return tx.Commit()
+}
+
+func (s *SQLite) ArchiveConsoleSpec(ctx context.Context, specID, actor string, now time.Time) error {
+	return s.SetConsoleSpecsArchived(ctx, []string{specID}, actor, false, true, now)
 }
 
 func scanProposal(row rowScanner) (*model.ConsoleTaskProposal, error) {

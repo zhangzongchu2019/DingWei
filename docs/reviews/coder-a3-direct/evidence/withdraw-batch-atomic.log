@@ -1,0 +1,5 @@
+--- FAIL: TestSpecArchiveBatchAllOrNothingPermissionAndRestore (0.33s)
+    console_spec_direct_test.go:111: event failure committed partial archive
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.347s
+FAIL
