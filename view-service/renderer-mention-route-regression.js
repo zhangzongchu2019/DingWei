@@ -153,7 +153,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       reply = { ok: true, mentions: [
         { full_name: 'beta.zzc', status: 'delivered', message: '已转给 beta，回复请到 beta 的页面查看' },
         { full_name: 'quill.zzc', status: 'queued', message: 'quill 不在线，已排队；回复请到 quill 的页面查看' },
-        { full_name: 'twin.lisa', status: 'rejected', reason: 'cross_owner', message: '未转给 twin.lisa：暂不支持转给其他用户的 Agent<b>x</b>' },
+        { full_name: 'twin.lisa', status: 'delivered', message: '已转给 twin.lisa，回复请到 twin.lisa 的页面查看<b>x</b>' },
       ] };
       await send();
       await receipt.waitFor({ state: 'visible' });
@@ -161,7 +161,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.deepStrictEqual(rows, [
         'delivered|已转给 beta，回复请到 beta 的页面查看',
         'queued|quill 不在线，已排队；回复请到 quill 的页面查看',
-        'rejected|未转给 twin.lisa：暂不支持转给其他用户的 Agent<b>x</b>',
+        'delivered|已转给 twin.lisa，回复请到 twin.lisa 的页面查看<b>x</b>',
       ]);
       assert.strictEqual(await page.locator('#mentionReceipt b').count(), 0, 'Hub text must not be parsed as HTML');
       reply = { ok: true };

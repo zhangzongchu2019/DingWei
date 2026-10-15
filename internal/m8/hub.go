@@ -1274,6 +1274,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			log.Printf("provenance claim dropped ingress=agent_session session=%s", sessionName)
 		}
 		delete(env.Meta, "provenance")
+		delete(env.Meta, metaKeyViewMention)
+		delete(env.Meta, "source_key_id")
+		delete(env.Meta, "source_session_name")
 		delete(env.Meta, hubIngressMetaKey)
 		env.Meta[hubIngressMetaKey] = hubIngressAgent
 		if h.handleConsoleSpecPresplitResult(r.Context(), c, env) {
@@ -3655,6 +3658,18 @@ func (h *Hub) prepareSessionSelector(ctx context.Context, sourceKeyID, sourceSes
 		// to/from key match and performs Feishu delivery.
 		if isAddressableFeishuID(sessionName) {
 			env.To = feishuAddress(sessionName, sourceKeyID, h.defaultBotName())
+			env.From = sessionAddress(sourceSession, sourceKeyID)
+			env.Body = body
+			return true, env, nil
+		}
+		// Exact public full_names may refer to another owner's group member.
+		// Keep legacy short/fuzzy owner resolution unchanged; RouteEnvelope
+		// remains responsible for the current group authorization check.
+		if full := h.resolveNewPlatformVisibleSession(ctx, sessionName); full.fullName && full.found &&
+			full.ownerLC != identity.Lower(h.ownerKeyForKey(ctx, sourceKeyID)) {
+			// Retain the exact public name until RouteEnvelope resolves and
+			// authorizes it; an internal short name would be owner-scoped again.
+			env.To = sessionAddress(sessionName, sourceKeyID)
 			env.From = sessionAddress(sourceSession, sourceKeyID)
 			env.Body = body
 			return true, env, nil
