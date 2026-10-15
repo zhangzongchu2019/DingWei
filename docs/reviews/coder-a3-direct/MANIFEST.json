@@ -1,0 +1,196 @@
+{
+  "source_commit": "6a7d1d8703113e00f393c1b9f52eedbab669ea5b",
+  "source_tree": "b2e29d25482b818bc2ac505b737a84c550d5bfc0",
+  "assets": [
+    {
+      "path": "docs/reviews/coder-a3-direct/REPORT.md",
+      "bytes": 7113,
+      "sha256": "cd17b78803852f26e7c9ee780c236d73382bc4fc60f839cc345fd7b67241edd7"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/SCOPE.md",
+      "bytes": 2958,
+      "sha256": "b7208fcf5c6866a450593bbdf270e8aac6f17f59b22bfaf81c1998e8cbf59b25"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/SOURCE-PINS.json",
+      "bytes": 5262,
+      "sha256": "b29c966630ac4c37e13583b0c4da6cd14bb4e01f166c5bc2a76d1dcea1533255"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/candidate-m8-count3.log",
+      "bytes": 10254,
+      "sha256": "e3d8df035bbf3c60904b93c87d679d2524851b8e0ba8492f451f31402116b9bc"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/canonical-build.log",
+      "bytes": 35868,
+      "sha256": "2383d0833d5d42fc878d408e0257dacbfef9dcc54ef8cdaa44f1c4f94fb14962"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/console-agent-mgmt-enroll-regression.js.log",
+      "bytes": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/console-serial.log",
+      "bytes": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/console-spec-direct-regression.js.log",
+      "bytes": 57,
+      "sha256": "7159282586bb04e0c9a9953d14578d825b728429efc442275008d4af84e34f2a"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/console-spec-workflow-regression.js.log",
+      "bytes": 50,
+      "sha256": "50d881adb3720f18f22fc9f3dc18843cedfb57d1ac4a05be63fc69d517343673"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/console-specs-theme-regression.js.log",
+      "bytes": 225,
+      "sha256": "592030f8e47b3009255eb968c6599aa04cc487e8c34f984838b8c51aeed5d937"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/console-task-board-regression.js.log",
+      "bytes": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/helper-full.log",
+      "bytes": 184721,
+      "sha256": "77aaaf2261dbdfb5a9858c3325b9b049ea067e8e5ae1551dd04d65e665fb92e8"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/initial-browser-matrix.json",
+      "bytes": 1028,
+      "sha256": "93a00a210c6c94dff5138b143c0278670f9ab4469bb0aefc220139d5f75a7f6f"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/initial-full-go-skips.txt",
+      "bytes": 1388,
+      "sha256": "18c8dada5245564253d300ea59e0a3024f5d1b6e4a769517861d823717ba4eee"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/initial-full-go.log",
+      "bytes": 845451,
+      "sha256": "95ab66820f6978e9179fcd1891fa87ebe493779941d9218a3049920f80490a4c"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/p1-real-29.log",
+      "bytes": 2851,
+      "sha256": "c1620b3f79e17d62361ad04273bb3716edf14abcaae58dd7803e6f5839502d5c"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/parent-console-20.log",
+      "bytes": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/parent-ledger.log",
+      "bytes": 309,
+      "sha256": "28ec06906f7c2e3ad9ae8c013b8ff4796f55bbbbccf62ae51afbfa71f8f4aa5a"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/parent-m8-count3.log",
+      "bytes": 10244,
+      "sha256": "57e61ec773b21a95b7bcbc7fbbbfaab4785b42afe18426d6421891c384f6207e"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/parent-specs-race.log",
+      "bytes": 1599,
+      "sha256": "203cc04d47f59ebb4634e9789ffe29894a0cd622f6a42d41b67b2b1cac568f25"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/pg-budget-serial.log",
+      "bytes": 5115,
+      "sha256": "c833ed9e116658c6e8097a9dd5962c8b685375c7f9e0db31484870a519917ee2"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/specs-220.log",
+      "bytes": 985,
+      "sha256": "ee52bca464c47d8bb4106b67f0eee0dff557ce1895314a9ad5326a3e83a6f527"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/targeted-race.log",
+      "bytes": 186,
+      "sha256": "df3a2a9abf067f9e81df65af9d68cb9e086b550bf9e4dc2f72a3945a7ef236e8"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-archive-permission.log",
+      "bytes": 203,
+      "sha256": "42a50c47ea28f0fd8cc93a98dceff1155029c078a12cc9388935b94bf62c5d04"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-audit.log",
+      "bytes": 207,
+      "sha256": "2e9cca47cf1c4847da0c7a8a6a8fe96101e9c144d8ce4b3e79046cb122c2b6b3"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-auth.log",
+      "bytes": 480,
+      "sha256": "53995fd37acc98416eda86f21321d533b9bccd3e607e5f04234d7d0b08bcd1af"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-batch-atomic.log",
+      "bytes": 221,
+      "sha256": "d1bf2125d7d67a88ab8151abaaebe9e3012a7c185b168c82e9bad9651e450da1"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-board.log",
+      "bytes": 502,
+      "sha256": "cb86a2335f1d8770760d75592097474ff833a18103cb0b197d8931f2cc664ea6"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-default-list.log",
+      "bytes": 492,
+      "sha256": "9b4015fdd86ef697cfef6a2449066295b74e55ac4003a263e00e9d95a6b5243f"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-helper-legacy.log",
+      "bytes": 1503,
+      "sha256": "dfb84478b83ede1ed06cfe72a33cf6c33dd98b9358247966fca7946d8fc49115"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-legacy.log",
+      "bytes": 627,
+      "sha256": "419b567a4f5c858d8e7d8544321c43cea584794dcfe5b2319cb9677032249706"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-old-http.log",
+      "bytes": 480,
+      "sha256": "d3c4800cb12430eebb1462d40726cd9f7247c8ed68214978fdfb323ac4e1b7aa"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-ownership.log",
+      "bytes": 198,
+      "sha256": "8f3572e7c8d87ee9ad67ad80527becfcd8ebede7a5229aaacc12c99a920047a2"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-pending-ui.log",
+      "bytes": 2189,
+      "sha256": "e97975d83313e58a3172c9f00320c5b3858acd2132e52dee1faf82346917129e"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-restore.log",
+      "bytes": 196,
+      "sha256": "53b6960eb31c3890822b9cff446a4a66c837f3006e3c02c413277f4ea08f563e"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw-spec-ui.log",
+      "bytes": 161,
+      "sha256": "93038818bfff1a2946baa9a9bc0b9b2b5d29fe9e581f6ac19b60d208d14c6a1b"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdraw.py",
+      "bytes": 3146,
+      "sha256": "90592e5584fc38805a39c5299415a81fce62bd55f28eede846b94b157001cdb6"
+    },
+    {
+      "path": "docs/reviews/coder-a3-direct/evidence/withdrawals.json",
+      "bytes": 965,
+      "sha256": "fee0d85e89c85c34ccbf215b100dc84e3b5ab63df65364116da9815307cab487"
+    }
+  ]
+}

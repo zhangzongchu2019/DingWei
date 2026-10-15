@@ -1,0 +1,37 @@
+[
+  {
+    "suite": "console-spec-direct-regression.js",
+    "rc": 0,
+    "log": "/tmp/coder-a3-browser-console-spec-direct-regression.js.log"
+  },
+  {
+    "suite": "console-agent-mgmt-enroll-regression.js",
+    "rc": 0,
+    "log": "/tmp/coder-a3-browser-console-agent-mgmt-enroll-regression.js.log"
+  },
+  {
+    "suite": "console-specs-browser-regression.js",
+    "rc": 1,
+    "log": "/tmp/coder-a3-browser-console-specs-browser-regression.js.log"
+  },
+  {
+    "suite": "console-spec-workflow-regression.js",
+    "rc": 0,
+    "log": "/tmp/coder-a3-browser-console-spec-workflow-regression.js.log"
+  },
+  {
+    "suite": "console-specs-theme-regression.js",
+    "rc": 0,
+    "log": "/tmp/coder-a3-browser-console-specs-theme-regression.js.log"
+  },
+  {
+    "suite": "console-browser-regression.js",
+    "rc": 1,
+    "log": "/tmp/coder-a3-browser-console-browser-regression.js.log"
+  },
+  {
+    "suite": "console-task-board-regression.js",
+    "rc": 0,
+    "log": "/tmp/coder-a3-browser-console-task-board-regression.js.log"
+  }
+]

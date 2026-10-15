@@ -1,0 +1,152 @@
+{
+  "source_commit": "6a7d1d8703113e00f393c1b9f52eedbab669ea5b",
+  "source_tree": "b2e29d25482b818bc2ac505b737a84c550d5bfc0",
+  "base": "6c4600478a4c7c769cb6adaa1024e4504208f39b",
+  "assets": [
+    {
+      "path": "cmd/workpulse/console_platform_wiring_test.go",
+      "bytes": 10662,
+      "sha256": "973ae49000cbae5df376e3571541c5fbe460387a2a6b5be349941166485388a4"
+    },
+    {
+      "path": "cmd/workpulse/console_routes.go",
+      "bytes": 12735,
+      "sha256": "5d5d5b0dd5ea09e41d8a3d36be9554f4c95a4d91d7bb81991d9a864571585209"
+    },
+    {
+      "path": "cmd/workpulse/console_routes_test.go",
+      "bytes": 14149,
+      "sha256": "adc87b4f18da35b6697fcbe6fde31f5c4e5ccbee1c6d037a274928fa374a8b8e"
+    },
+    {
+      "path": "internal/m8/agent_spec_direct.go",
+      "bytes": 2179,
+      "sha256": "17ec1164134001e2c22236927f606106635350e5909df88e78e60cb114be2106"
+    },
+    {
+      "path": "internal/m8/agent_spec_direct_test.go",
+      "bytes": 3938,
+      "sha256": "ad8e6fda02d8e70e096bfe922954880be92a894539e722b94fe91fc7022ac1cd"
+    },
+    {
+      "path": "internal/m8/console_auth.go",
+      "bytes": 147869,
+      "sha256": "4e6daf033c4e8707a126b8bb37ba3caa055c2a2fa10e25de4b37cfa5e16a5234"
+    },
+    {
+      "path": "internal/m8/console_spec_archive_direct_test.go",
+      "bytes": 3249,
+      "sha256": "46117a8b9d4fabef9bd7576621a1032290879e2b9d64e50eda103a4a394e0694"
+    },
+    {
+      "path": "internal/m8/console_specs.go",
+      "bytes": 35445,
+      "sha256": "1c684b158ac2f3668eb74117d107d507288a86e3787de4045e655db888f2ab11"
+    },
+    {
+      "path": "internal/m8/console_specs_page.go",
+      "bytes": 54146,
+      "sha256": "e9c1959272e39f846400bd699eef86da71bf706f0aa9499e1a6a189b17a162fa"
+    },
+    {
+      "path": "internal/m8/console_task_board_page.go",
+      "bytes": 25934,
+      "sha256": "2fa0960cfabb4c1b0321021417efeb17c67dfe29d5a0d85321c6ae8c432f3b37"
+    },
+    {
+      "path": "internal/m8/hub.go",
+      "bytes": 241526,
+      "sha256": "2380ba95beb91a5abbd5eb9b3df0fde9c6c2fe7bcbf7ed0dd71e487cfcecc3c7"
+    },
+    {
+      "path": "internal/m8/spec_grant.go",
+      "bytes": 1058,
+      "sha256": "ca39d819efc62a103f7ee18b71f46088f28197abcbbd361bbf0437d45be11e23"
+    },
+    {
+      "path": "internal/m8/spec_grant_test.go",
+      "bytes": 1593,
+      "sha256": "cb41474b91800a9aa0372020555534e8c8752b4a7e32933e81b4fc6fddb36428"
+    },
+    {
+      "path": "internal/m8/spec_mcp_e2e_test.go",
+      "bytes": 12492,
+      "sha256": "a9342cc88eef57ef3931bcd958b4e3ee1250dd7af838599a2365f70a9b8a5d29"
+    },
+    {
+      "path": "internal/m8/testdata/a3_spec_mcp_client.py",
+      "bytes": 4849,
+      "sha256": "3da4348c49ababd809a173850be4771ba723c66a61da5da55b32131009fd5b00"
+    },
+    {
+      "path": "internal/model/model.go",
+      "bytes": 26733,
+      "sha256": "53bc251c4165327773af8966aef10cbcc78ae32cee9dd8f036030f0681499fc9"
+    },
+    {
+      "path": "internal/store/console_spec_direct_test.go",
+      "bytes": 4731,
+      "sha256": "e43b5fa648a322649ebd040a06a9c97a7fc7c5585ae629fe69a48bdf73156872"
+    },
+    {
+      "path": "internal/store/console_specs.go",
+      "bytes": 52636,
+      "sha256": "23afc78931eec732d2abd2e2e14f22cbdc428239ced4ec6cb521248a035e8365"
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/app.py",
+      "bytes": 88835,
+      "sha256": "caf7793c52608f48701e3034b8f5703d0eb1b2af8fa84a11ab5a0e64cb934ced"
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/ipc_listener.py",
+      "bytes": 23623,
+      "sha256": "0b4b65a4f3c2271958c57becf5e7d46e885f5bd1972d6a2ab182aacea3f814c2"
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/mcp_shim.py",
+      "bytes": 25138,
+      "sha256": "1554fe0f731921a6bdefa0a40f37bddc5e526b1fbec122f67d776e20c657857d"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_connection_receive_quiescence.py",
+      "bytes": 5287,
+      "sha256": "b6f1c052478773d49fe8689a050dc6f45df30d1a1ecfc7ca6a6c585c334a2813"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_spec_direct.py",
+      "bytes": 3855,
+      "sha256": "1fd0a13e14fcbd3661588cc84d0592c13d81c53631cc2442f417d45310c64805"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_spec_ipc_timeout.py",
+      "bytes": 5107,
+      "sha256": "4f1808ab9904c671d9403d58ac42f9955f749231d90be1fb8d1d26d4fcb849cf"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_spec_mcp.py",
+      "bytes": 1610,
+      "sha256": "f668b57e2c2e06234bfc3bcb8eaee871f6195152c33d1b34d36c18d71fc672f3"
+    },
+    {
+      "path": "view-service/console-agent-mgmt-enroll-regression.js",
+      "bytes": 39512,
+      "sha256": "bda80c81105f389c44e63fb7b258e1cd8e633fb7276794e4c366596471c8e0eb"
+    },
+    {
+      "path": "view-service/console-spec-direct-regression.js",
+      "bytes": 6084,
+      "sha256": "760ef3ef5ce651b6ee4721830bacc6e9f2a5b7bad15e9e122d30ed4d82ce9281"
+    },
+    {
+      "path": "view-service/console-spec-task-p1-real-regression.js",
+      "bytes": 44625,
+      "sha256": "ff4d58f6f1bce3e5c11b3036820b02ed0019edc820e57f1ec6efed7e73e6d594"
+    },
+    {
+      "path": "view-service/console-specs-browser-regression.js",
+      "bytes": 98919,
+      "sha256": "1d1ab56fa95812718e8f29d1b16dd759e9d076dc07f82c72076084b6d35195a6"
+    }
+  ]
+}
