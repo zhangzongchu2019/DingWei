@@ -284,7 +284,7 @@ thread directory's filesystem. The existing collector opens the absolute
 candidate with `O_DIRECTORY|O_NOFOLLOW`, checks that it is a real directory with
 stable descriptor/named device and inode, then samples that descriptor's
 `fstatvfs`. Invalid candidates report unavailable; no helper-current-directory
-fallback is used. External daemons (`manage_daemon=False`) remain unbound.
+fallback is used. External daemons (`manage_daemon is not True`) remain `workdir_unbound` (「未知」).
 Claude, OpenCode, direct/proxy Codex and PTY CLI retain their existing owned-process
 binding; tmux/remote/unsupported sources remain unknown. This is authenticated
 helper self-report, not external-daemon namespace attestation. See the full
