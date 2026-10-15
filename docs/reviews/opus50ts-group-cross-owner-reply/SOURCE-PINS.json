@@ -1,0 +1,32 @@
+{
+  "internal/m8/amr.go": {
+    "bytes": 65530,
+    "sha256": "c321f78a415f3aeb0c3dc5708c23837bddc6bc37c67cacaae40e27c80c798b7f",
+    "blob": "bc934b2e895a967434945b566ccc7cde5cc33d24"
+  },
+  "internal/m8/group_reply_test.go": {
+    "bytes": 9920,
+    "sha256": "bafed945a9bcc39117d64f0c58198197359ba12028b8c71c11d0805187de1386",
+    "blob": "2127843323e36fe2390f525c8c403a5a313cb528"
+  },
+  "internal/m8/hub.go": {
+    "bytes": 237199,
+    "sha256": "47f1097b11ced091b7acc0bcace8dde68b7e53fbc98142a9081b15ca6ffbf8e4",
+    "blob": "68b643ffadb033dbb0429bb6d5ee165ebcacf012"
+  },
+  "internal/m8/reply_origin.go": {
+    "bytes": 11771,
+    "sha256": "68c24f22bd8c5fe6f1f5777f942168b829cd48f636c02bb5a9d94cc9a4290abc",
+    "blob": "ed70b10355e75519a222cdd1a360f547dc6f37c7"
+  },
+  "internal/m8/reply_to_origin.go": {
+    "bytes": 9827,
+    "sha256": "cb4f5d5e3dfe31632cabfde6c040bfad2f75faf21f329f84786d6b2ff5a383ee",
+    "blob": "b400dd8a094eb705237f0940877f0265a5f64e2f"
+  },
+  "tools/sessionhelper/sessionhelper/mcp_shim.py": {
+    "bytes": 25325,
+    "sha256": "96534429d7d80271ab3a1ba13f2be73267cddfb7a9302120e9251f528cf4253a",
+    "blob": "4fae2a623f147b8c1f545ebf3354f81883cb5893"
+  }
+}

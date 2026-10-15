@@ -1,0 +1,32 @@
+=== RUN   TestGroupReplyMCP
+2026/10/14 18:54:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:13 session handshake timing key_id=u_zzc session=kimi total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:13 session handshake timing key_id=u_zzc session=beta total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:13 session handshake timing key_id=u_zzc session=nack total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:13 session handshake timing key_id=u_zzc session=outsider total=2ms register=2ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:13 session handshake timing key_id=u_lbl session=gamma total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:13 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:54:13 session handshake timing key_id=u_zzc session=quill total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:13 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:54:13 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:54:13 session handshake timing key_id=u_zzc session=kimi total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:13 session capability file_upload_v1=true key_id=u_zzc session=kimi conn_seq=2
+2026/10/14 18:54:13 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=2 reason=session_reconnected released=0
+2026/10/14 18:54:13 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_ee10571d38491916ddc561e722d240cf source_message_id=b017d0e6decf4daca9047a9e7603c33c
+2026/10/14 18:54:13 [reply-origin] lookup session=gamma delivery_id=dw-dlv_ee10571d38491916ddc561e722d240cf cost=238.556µs err=<nil> found=true
+2026/10/14 18:54:13 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=2 delivery_id=dw-dlv_427185b178a768c5490c4b3677f071e2 source_message_id=reply-origin-09b7c37e18d4f4debe3b52c67a37bd88
+2026/10/14 18:54:13 [reply-origin] R1 已回程 session=gamma to=kimi#u_zzc delivery_id=dw-dlv_ee10571d38491916ddc561e722d240cf in_reply_to=b017d0e6decf4daca9047a9e7603c33c hop=1
+2026/10/14 18:54:13 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_edc7ca5a2b73a094d65193d2806d8aa8 source_message_id=57118c3a06c8433cb64d8382886d79b8
+2026/10/14 18:54:13 [reply-origin] lookup session=gamma delivery_id=dw-dlv_edc7ca5a2b73a094d65193d2806d8aa8 cost=305.624µs err=<nil> found=true
+2026/10/14 18:54:13 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=2 delivery_id=dw-dlv_dca5409248812606b5f178ca7acad3d8 source_message_id=reply-origin-5a18d5d1b75a7b1562613b7a8f4d8c87
+2026/10/14 18:54:13 [reply-origin] R1 已回程 session=gamma to=kimi#u_zzc delivery_id=dw-dlv_edc7ca5a2b73a094d65193d2806d8aa8 in_reply_to=57118c3a06c8433cb64d8382886d79b8 hop=1
+    group_reply_test.go:156: condition not met before timeout (1s): MCP no-policy/no-reply skipped
+2026/10/14 18:54:15 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=2 reason=session_disconnected released=0
+2026/10/14 18:54:15 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:54:15 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:54:15 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+--- FAIL: TestGroupReplyMCP (1.70s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	1.709s
+FAIL
