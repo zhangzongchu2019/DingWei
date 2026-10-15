@@ -37,3 +37,8 @@ The first isolated-HOME canonical build attempt returned rc1 when Go tried to un
 - Canonical build remains **environment-blocked**, both rc1 logs preserved; no successful supplement received at evidence capture time. This is not a whole-task PASS or deployment candidate approval.
 
 Raw logs are deterministic gzip assets with original uncompressed SHA256 in RESULT.json. They preserve original whitespace and failures without text normalization. The product change is eight added lines in one helper file; the other source change is the new regression test. This evidence commit does not change those tested source blobs.
+
+
+### Documentation follow-up
+
+The authoritative A6 `docs/reviews/coder-a6-real-disk/CONTRACT.md` now explicitly documents the managed Codex daemon exception to the owned-PID rule and adds its compatibility-table row. `tools/sessionhelper/README.md` also describes the configured thread directory, unchanged secure collector, external-daemon rejection and no helper-cwd fallback. This follow-up changes documentation only; all product/test blobs remain equal to source commit 9822df07. No duplicate helper/build rerun is claimed for this documentation-only correction. Independent code/test checks and separately attributed build supplement remain separate evidence.

@@ -8,8 +8,8 @@
     "sha256": "a320afd390e230ce5b556482e8ca9c1d106b93ef36db91b012082584b0de8379"
   },
   "docs/reviews/a6-codex-daemon-workdir/REPORT.md": {
-    "bytes": 5263,
-    "sha256": "2b2c49869d40ebcae28eba402ff23e686fcde5a2bdec9938742ee479cd011f36"
+    "bytes": 5930,
+    "sha256": "1e951e381c36826f01ada30c2075d0fe24048e49a76ce094318244689cefa3f0"
   },
   "docs/reviews/a6-codex-daemon-workdir/RESULT.json": {
     "bytes": 2569,
@@ -38,5 +38,13 @@
   "docs/reviews/a6-codex-daemon-workdir/withdrawal.py": {
     "bytes": 1066,
     "sha256": "3cc8c97bf7d6a67d60e85a8d62416fb053982038d84349fa658f83b9018d59bc"
+  },
+  "docs/reviews/coder-a6-real-disk/CONTRACT.md": {
+    "bytes": 10679,
+    "sha256": "e616ea36d17226a098d2de989b70283c83e493aaba68d5706fa46a13355391db"
+  },
+  "tools/sessionhelper/README.md": {
+    "bytes": 14374,
+    "sha256": "bbc2528745491617f4d26bb036a6d57a8ccbfbe568666ce8646fcf88d6cd8d82"
   }
 }
