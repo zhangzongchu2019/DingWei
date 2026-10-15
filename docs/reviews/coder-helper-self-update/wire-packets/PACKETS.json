@@ -1,0 +1,218 @@
+{
+  "provenance": {
+    "boundary": "real helper dispatch/serializer + loopback package HTTP; synthetic trusted Hub confirm",
+    "runtime_version_fixture": "0.2.3.2",
+    "real_hub": false,
+    "real_docker": false
+  },
+  "downloaded_receipt": {
+    "id": "2310025b1556437298c1dc595947dcad",
+    "to": "workpulse#synthetic-key",
+    "from": "agent.owner",
+    "body": "",
+    "ts": 1792097730,
+    "meta": {
+      "type": "provision_ack",
+      "action": "update_self",
+      "target": "self",
+      "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+      "job_id": "job-synthetic",
+      "release_id": "release-synthetic",
+      "agent_id": "id-synthetic",
+      "owner_id": "owner-synthetic",
+      "version": "0.2.3.2",
+      "sha256": "6291e270b70809c7370da6e621422a18bfdcf5ed9514e92318e8410a8048d875",
+      "from_version": "0.2.3.1",
+      "to_version": "0.2.3.2",
+      "stage": "downloaded",
+      "reason": "",
+      "ok": true,
+      "message": "",
+      "system": true,
+      "no_mirror": true
+    }
+  },
+  "installed_receipt": {
+    "id": "1d7f9e621e8940208eecf5b2c99662b4",
+    "to": "workpulse#synthetic-key",
+    "from": "agent.owner",
+    "body": "",
+    "ts": 1792097730,
+    "meta": {
+      "type": "provision_ack",
+      "action": "update_self",
+      "target": "self",
+      "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+      "job_id": "job-synthetic",
+      "release_id": "release-synthetic",
+      "agent_id": "id-synthetic",
+      "owner_id": "owner-synthetic",
+      "version": "0.2.3.2",
+      "sha256": "6291e270b70809c7370da6e621422a18bfdcf5ed9514e92318e8410a8048d875",
+      "from_version": "0.2.3.1",
+      "to_version": "0.2.3.2",
+      "stage": "installed",
+      "reason": "",
+      "ok": true,
+      "message": "",
+      "system": true,
+      "no_mirror": true
+    }
+  },
+  "health": {
+    "id": "4dbc20682ef94312a1ce6d2229b915de",
+    "to": "workpulse#synthetic-key",
+    "from": "agent.owner",
+    "body": "",
+    "ts": 1792097730,
+    "meta": {
+      "type": "helper_update_health",
+      "health_nonce": "8ef42618c0ca4523bc0b501b24f65169",
+      "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+      "job_id": "job-synthetic",
+      "release_id": "release-synthetic",
+      "agent_id": "id-synthetic",
+      "owner_id": "owner-synthetic",
+      "version": "0.2.3.2",
+      "sha256": "6291e270b70809c7370da6e621422a18bfdcf5ed9514e92318e8410a8048d875",
+      "action": "update_self",
+      "stage": "restarted",
+      "helper_version": "0.2.3.2",
+      "from_version": "0.2.3.1"
+    }
+  },
+  "synthetic_hub_confirmation": {
+    "id": "6128e167d0a34da9ada467ef4396baf1",
+    "to": "agent.owner",
+    "from": "workpulse#synthetic-key",
+    "body": "",
+    "ts": 1792097730,
+    "meta": {
+      "type": "helper_update_confirm",
+      "health_nonce": "8ef42618c0ca4523bc0b501b24f65169",
+      "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+      "job_id": "job-synthetic",
+      "release_id": "release-synthetic",
+      "agent_id": "id-synthetic",
+      "owner_id": "owner-synthetic",
+      "version": "0.2.3.2",
+      "sha256": "6291e270b70809c7370da6e621422a18bfdcf5ed9514e92318e8410a8048d875",
+      "action": "update_self",
+      "stage": "restarted",
+      "helper_version": "0.2.3.2",
+      "from_version": "0.2.3.1",
+      "system": true
+    }
+  },
+  "confirmed_receipt": {
+    "id": "cc38a96aa2db4ded876500ebe1900191",
+    "to": "workpulse#synthetic-key",
+    "from": "agent.owner",
+    "body": "",
+    "ts": 1792097730,
+    "meta": {
+      "type": "provision_ack",
+      "action": "update_self",
+      "target": "self",
+      "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+      "job_id": "job-synthetic",
+      "release_id": "release-synthetic",
+      "agent_id": "id-synthetic",
+      "owner_id": "owner-synthetic",
+      "version": "0.2.3.2",
+      "sha256": "6291e270b70809c7370da6e621422a18bfdcf5ed9514e92318e8410a8048d875",
+      "from_version": "0.2.3.1",
+      "to_version": "0.2.3.2",
+      "stage": "confirmed",
+      "reason": "",
+      "ok": true,
+      "message": "",
+      "system": true,
+      "no_mirror": true
+    }
+  },
+  "rollback_receipt": {
+    "id": "09d0b40807dc4a48af20a8038e63d7e7",
+    "to": "workpulse#synthetic-key",
+    "from": "agent.owner",
+    "body": "",
+    "ts": 1792097730,
+    "meta": {
+      "type": "provision_ack",
+      "action": "update_self",
+      "target": "self",
+      "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+      "job_id": "job-synthetic-rollback",
+      "release_id": "release-synthetic",
+      "agent_id": "id-synthetic",
+      "owner_id": "owner-synthetic",
+      "version": "0.2.3.2",
+      "sha256": "6291e270b70809c7370da6e621422a18bfdcf5ed9514e92318e8410a8048d875",
+      "from_version": "0.2.3.1",
+      "to_version": "0.2.3.2",
+      "stage": "rolled_back",
+      "reason": "candidate_failed",
+      "ok": false,
+      "message": "candidate_failed",
+      "system": true,
+      "no_mirror": true
+    }
+  },
+  "negative_confirmations": {
+    "missing_lock": {
+      "packet": {
+        "id": "6128e167d0a34da9ada467ef4396baf1",
+        "to": "agent.owner",
+        "from": "workpulse#synthetic-key",
+        "body": "",
+        "ts": 1792097730,
+        "meta": {
+          "type": "helper_update_confirm",
+          "health_nonce": "8ef42618c0ca4523bc0b501b24f65169",
+          "job_id": "job-synthetic",
+          "release_id": "release-synthetic",
+          "agent_id": "id-synthetic",
+          "owner_id": "owner-synthetic",
+          "version": "0.2.3.2",
+          "sha256": "6291e270b70809c7370da6e621422a18bfdcf5ed9514e92318e8410a8048d875",
+          "action": "update_self",
+          "stage": "restarted",
+          "helper_version": "0.2.3.2",
+          "from_version": "0.2.3.1",
+          "system": true
+        }
+      },
+      "rejected": "confirmation_mismatch",
+      "emitted_receipts": 0,
+      "pending_preserved": true
+    },
+    "wrong_lock": {
+      "packet": {
+        "id": "6128e167d0a34da9ada467ef4396baf1",
+        "to": "agent.owner",
+        "from": "workpulse#synthetic-key",
+        "body": "",
+        "ts": 1792097730,
+        "meta": {
+          "type": "helper_update_confirm",
+          "health_nonce": "8ef42618c0ca4523bc0b501b24f65169",
+          "lock_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "job_id": "job-synthetic",
+          "release_id": "release-synthetic",
+          "agent_id": "id-synthetic",
+          "owner_id": "owner-synthetic",
+          "version": "0.2.3.2",
+          "sha256": "6291e270b70809c7370da6e621422a18bfdcf5ed9514e92318e8410a8048d875",
+          "action": "update_self",
+          "stage": "restarted",
+          "helper_version": "0.2.3.2",
+          "from_version": "0.2.3.1",
+          "system": true
+        }
+      },
+      "rejected": "confirmation_mismatch",
+      "emitted_receipts": 0,
+      "pending_preserved": true
+    }
+  }
+}
