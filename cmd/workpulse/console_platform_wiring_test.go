@@ -5,6 +5,7 @@ import (
 	"go/parser"
 	"go/token"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
@@ -32,6 +33,9 @@ func TestConsolePlatformRoutesAreAssembledWithServerGuards(t *testing.T) {
 		"GET /api/console/specs/{specID}/presplit":                       "HandleConsoleSpecPresplit",
 		"POST /api/console/specs/{specID}/presplit":                      "HandleConsoleSpecPresplit",
 		"POST /api/console/specs/{specID}/archive":                       "HandleConsoleSpecArchive",
+		"DELETE /api/console/specs/{specID}":                             "HandleConsoleSpecArchive",
+		"POST /api/console/specs/archive":                                "HandleConsoleSpecsArchiveBatch",
+		"POST /api/console/specs/{specID}/unarchive":                     "HandleConsoleSpecUnarchive",
 		"GET /api/console/task-proposals/ready":                          "HandleConsoleTaskProposalsReady",
 		"PATCH /api/console/task-proposals/{proposalID}/plan":            "HandleConsoleTaskProposalPlan",
 		"DELETE /api/console/task-proposals/{proposalID}":                "HandleConsoleSpecTaskDelete",
@@ -179,8 +183,8 @@ func TestEveryAgentCapabilityRoutePageIsAcceptedBySigningRegistry(t *testing.T) 
 		}
 		return true
 	})
-	if count < 4 {
-		t.Fatalf("Agent capability route scan matched %d, want at least current four routes", count)
+	if count != 2 {
+		t.Fatalf("Agent capability route scan matched %d, want the two retained task/inference capability routes", count)
 	}
 	// This hand-built node controls the evaluator + route registry only. The
 	// count floor above independently guards the main.go scan.
@@ -249,4 +253,51 @@ func parseRouteSources(fset *token.FileSet) (*ast.File, error) {
 		merged.Decls = append(merged.Decls, f.Decls...)
 	}
 	return merged, nil
+}
+
+func TestSpecDirectRoutesAndRetiredApprovals(t *testing.T) {
+	source, err := parseRouteSources(token.NewFileSet())
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{"POST /api/agent/console/specs": false, "PATCH /api/agent/console/specs/{specID}": false}
+	ast.Inspect(source, func(node ast.Node) bool {
+		call, ok := node.(*ast.CallExpr)
+		if !ok || len(call.Args) != 2 {
+			return true
+		}
+		sel, ok := call.Fun.(*ast.SelectorExpr)
+		if !ok || sel.Sel.Name != "HandleFunc" {
+			return true
+		}
+		lit, ok := call.Args[0].(*ast.BasicLit)
+		if !ok {
+			return true
+		}
+		pattern, _ := strconv.Unquote(lit.Value)
+		if strings.Contains(pattern, "spec-grant-requests") {
+			t.Error("retired approval route still registered")
+		}
+		if _, ok := want[pattern]; !ok {
+			return true
+		}
+		direct, cap := false, false
+		ast.Inspect(call.Args[1], func(n ast.Node) bool {
+			if s, ok := n.(*ast.SelectorExpr); ok {
+				direct = direct || s.Sel.Name == "RequireAgentSpecDirect"
+				cap = cap || s.Sel.Name == "RequireConsoleSpecAgentCapability"
+			}
+			return true
+		})
+		if !direct || cap {
+			t.Errorf("direct route %s is not guarded exclusively by Agent direct identity", pattern)
+		}
+		want[pattern] = true
+		return true
+	})
+	for route, seen := range want {
+		if !seen {
+			t.Error("missing direct route " + route)
+		}
+	}
 }

@@ -402,7 +402,7 @@ async function main() {
     assert.ok(columnEdges.every((edge) => Math.abs(edge.h-edge.d) <= 0.5), `四列表头与内容未对齐: ${JSON.stringify(columnEdges)}`);
     assert.deepStrictEqual(await page.locator('#spec-table thead th').allTextContents(), ['标题','状态','当前','操作']);
     assert.deepStrictEqual(await page.locator('#spec-list tr td:nth-child(2)').allTextContents(), ['修改','修改'], '状态列必须用业主图里的中文状态');
-    assert.strictEqual(await page.locator('.delete-spec,.archive-spec').count(),0,'业主已裁定不提供删除或归档入口');
+    assert.strictEqual(await page.locator('.delete-spec,.archive-spec').count(),0,'服务端未授予删除权限的夹具不得出现删除或归档入口');
     assert.strictEqual((html.match(/['"](?:lbl|th)['"]/g)||[]).length,0,'前端不得硬编码业主 lbl/th');
     const secondAction=page.locator('#spec-list [data-title="Spec B"] .spec-action');
     const selectedRowBefore=await page.locator('#spec-list tr').evaluateAll((rows)=>rows.findIndex((row)=>row.dataset.title==='Spec B'));

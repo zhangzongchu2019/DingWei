@@ -387,6 +387,7 @@ type ConsoleSpec struct {
 	TaskState          string    `json:"task_state"`
 	CanEdit            bool      `json:"can_edit"`
 	CanSplit           bool      `json:"can_split"`
+	CanDelete          bool      `json:"can_delete"`
 	EditCapabilityHash string    `json:"-"`
 	EditingClosed      bool      `json:"editing_closed"`
 	DerivedFrom        string    `json:"derived_from,omitempty"`
@@ -409,9 +410,12 @@ type ConsoleSpecRevision struct {
 }
 
 type ConsoleSpecAttribution struct {
-	Creator      string   `json:"creator"`
-	CreatorKind  string   `json:"creator_kind"`
-	Participants []string `json:"participants"`
+	Creator      string    `json:"creator"`
+	CreatorKind  string    `json:"creator_kind"`
+	CreatedAt    time.Time `json:"created_at"`
+	LastEditor   string    `json:"last_editor"`
+	LastEditedAt time.Time `json:"last_edited_at"`
+	Participants []string  `json:"participants"`
 }
 
 type ConsoleSpecReview struct {

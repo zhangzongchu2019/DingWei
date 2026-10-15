@@ -14,7 +14,7 @@ from sessionhelper import ipc_listener, mcp_shim
 
 
 def body(update=False):
-    value = dict(title="draft", content_markdown="body", acceptance=[], input_anchors=[], grant_request_id="synthetic")
+    value = dict(title="draft", content_markdown="body", acceptance=[], input_anchors=[])
     if update:
         value.update(spec_id="spec-test", expected_revision=1)
     return value
@@ -78,7 +78,7 @@ class SpecIPCTimeouts(unittest.IsolatedAsyncioTestCase):
         entered, release = threading.Event(), threading.Event()
         async def granted(*args):
             return {"status": "granted", "capability": "test-only"}
-        owner = types.SimpleNamespace(_spec_grant_roundtrip=granted,
+        owner = types.SimpleNamespace(enroll_credential=object(),
                                       _connection=lambda: ("wss://hub.invalid/v2c", {}))
         def blocked_http(*args, **kwargs):
             entered.set()

@@ -906,7 +906,7 @@ async function enrollReject(){
   if(!res.ok){if(ENROLL_GONE.indexOf(res.code)<0&&res.status!==410){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}
   enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();
 }
-var rosterAgents=[],rosterGeneration=0,specGrantEntryGeneration=0;
+var rosterAgents=[],rosterGeneration=0;
 async function refreshRoster(){
   var generation=++rosterGeneration;
   var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);
@@ -924,7 +924,6 @@ async function refreshRoster(){
 function renderRoster(){
   var body=document.getElementById('rosterItems'),empty=document.getElementById('rosterEmpty');if(!body||!empty)return;
   body.replaceChildren();
-  var grantEntries=[];
   rosterAgents.forEach(function(a){
     var row=document.createElement('tr');row.className='roster-row';row.dataset.agentId=a.agent_id;
     var name=document.createElement('td');name.textContent=a.name||'';name.title=a.full_name||'';
@@ -941,35 +940,9 @@ function renderRoster(){
       enrollFeedback('rosterFeedback',res.data&&res.data.already_revoked?'已吊销':'');refreshRoster();refreshGroups('revoke');refreshAgents();
     };
     action.append(revoke);
-    var grants=document.createElement('td'),fullName=String(a.full_name||'');
-    if(fullName){
-      var link=document.createElement('a');link.className='spec-grant-entry';link.href='/console/agents/'+encodeURIComponent(fullName)+'/spec-grant-requests';link.textContent='spec 待批（0）';link.setAttribute('aria-label',fullName+' 的 spec 待批，0 项');
-      grants.append(link);grantEntries.push({fullName:fullName,link:link});
-    }else grants.textContent='spec 待批（未知）';
-    row.append(name,st,grants,action);body.append(row);
+    row.append(name,st,action);body.append(row);
   });
   empty.hidden=rosterAgents.length>0;
-  refreshRosterSpecGrantEntries(grantEntries);
-}
-function refreshRosterSpecGrantEntries(entries){
-  var generation=++specGrantEntryGeneration;
-  entries.forEach(function(entry){
-    (async function(){
-      var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},groupFetchTimeoutMs);
-      try{
-        var path='/api/console/agents/'+encodeURIComponent(entry.fullName)+'/spec-grant-requests';
-        var r=await fetch(path,{cache:'no-store',signal:controller.signal}),data=await r.json();
-        if(!r.ok||!data||!Array.isArray(data.requests))throw new Error('response');
-        if(generation!==specGrantEntryGeneration||!entry.link.isConnected)return;
-        var count=data.requests.filter(function(x){return x&&x.status==='pending';}).length;
-        entry.link.textContent='spec 待批（'+count+'）';entry.link.setAttribute('aria-label',entry.fullName+' 的 spec 待批，'+count+' 项');
-        entry.link.classList.toggle('spec-grant-empty',count===0);
-      }catch(_){
-        if(generation!==specGrantEntryGeneration||!entry.link.isConnected)return;
-        entry.link.textContent='spec 待批（未知）';entry.link.setAttribute('aria-label',entry.fullName+' 的 spec 待批，加载失败');
-      }finally{clearTimeout(timer);}
-    })();
-  });
 }
 // G3 · 托管 Agent 生成区、进度蒙版、托管生命周期操作(业主 2026-10-01 改序:托管先行)。
 // 接口按 G4 契约 v2(runbooks/CONTRACT-G4-CONSOLE-API-DRAFT-20261001.md,草稿待冻结),全部集中在 HOSTED_API;托管行的生命周期状态
@@ -1342,7 +1315,7 @@ function hostedOpButtons(a,hs){
 }
 function mountEnrollPanels(pane){
   var anchor=pane.querySelector('#group-status');if(!anchor)return;
-  anchor.insertAdjacentHTML('beforebegin',(FEATURE_SELFHOST_REVIEW?'<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><label id=enrollNewGroupBox hidden>新编组名 <input id=enrollNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section>':'')+'<section id=hostedCreate class="group-block"><div class=group-toolbar><h3>托管 Agent 生成</h3><span><button id=hostedRefresh type=button>刷新</button></span></div><div id=hostedStatus role=status></div><button id=hostedRetry type=button hidden>重试加载</button><div id=hostedForm hidden><label>节点 <select id=hostedNode></select></label><label>CLI <select id=hostedCli></select></label><label>LLM <select id=hostedLlm></select></label><label>LLM 账号 <select id=hostedAccount></select></label><div id=hostedAccountWarn class=group-feedback role=status hidden></div><label>运行资源套餐 <select id=hostedPlan></select></label><label>模型 <select id=hostedModel></select></label><label>Agent 名称 <input id=hostedName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=hostedGroup></select></label><label id=hostedNewGroupBox hidden>新编组名 <input id=hostedNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=hostedCreateBtn type=button>创建</button><div id=hostedQuota role=status></div><div id=hostedFeedback class=group-feedback></div></div></section><section id=llmAccounts class="group-block"><div class=group-toolbar><h3>我的 LLM 账号</h3><span><button id=llmRefresh type=button>刷新</button></span></div><div id=llmAddRow><label>LLM <select id=llmAddLlm></select></label><label>方式 <select id=llmAddMethod></select></label><label id=llmAddEmailBox>账号邮箱 <input id=llmAddEmail autocomplete=off placeholder="登录用的账号邮箱"></label><label id=llmAddKeyBox hidden>API Key <input id=llmAddKey type=password autocomplete=off></label><label id=llmAddLabelBox hidden>标签（可选） <input id=llmAddLabel maxlength=64 autocomplete=off placeholder="不填则按 LLM＋序号"></label><button id=llmAddBtn type=button>新增</button></div><p class=group-feedback id=llmTermsNote hidden>账号登录使用你自己的订阅账号；订阅类账号用于平台的条款由你自行判断。同一账号被多个 Agent 共用时可能互相顶掉登录，建议一号一席。</p><section id=llmLoginBox class="group-block" hidden><div>1. 在你自己的浏览器打开：<a id=llmLoginUrl target=_blank rel="noopener noreferrer"></a> <button id=llmLoginUrlCopy type=button>复制链接</button></div><div>2. 登录后输入一次性码：<code id=llmLoginCode></code> <button id=llmLoginCodeCopy type=button>复制码</button></div><div id=llmLoginNote style="font-size:12px;color:#666">链接与码 15 分钟内有效，只显示给你本人；完成后此处会自动更新。</div><button id=llmLoginCancel type=button>取消登录</button></section><table id=llmTable class=group-table><thead><tr><th>邮箱 / Key</th><th>LLM</th><th>方式</th><th>在用</th><th>状态</th><th>操作</th></tr></thead><tbody id=llmItems></tbody></table><div id=llmEmpty hidden>还没有 LLM 账号。</div><div id=llmStatus role=status></div><div id=llmFeedback class=group-feedback role=status></div></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>spec 待批</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterStatus role=status></div><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
+  anchor.insertAdjacentHTML('beforebegin',(FEATURE_SELFHOST_REVIEW?'<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><label id=enrollNewGroupBox hidden>新编组名 <input id=enrollNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section>':'')+'<section id=hostedCreate class="group-block"><div class=group-toolbar><h3>托管 Agent 生成</h3><span><button id=hostedRefresh type=button>刷新</button></span></div><div id=hostedStatus role=status></div><button id=hostedRetry type=button hidden>重试加载</button><div id=hostedForm hidden><label>节点 <select id=hostedNode></select></label><label>CLI <select id=hostedCli></select></label><label>LLM <select id=hostedLlm></select></label><label>LLM 账号 <select id=hostedAccount></select></label><div id=hostedAccountWarn class=group-feedback role=status hidden></div><label>运行资源套餐 <select id=hostedPlan></select></label><label>模型 <select id=hostedModel></select></label><label>Agent 名称 <input id=hostedName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=hostedGroup></select></label><label id=hostedNewGroupBox hidden>新编组名 <input id=hostedNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=hostedCreateBtn type=button>创建</button><div id=hostedQuota role=status></div><div id=hostedFeedback class=group-feedback></div></div></section><section id=llmAccounts class="group-block"><div class=group-toolbar><h3>我的 LLM 账号</h3><span><button id=llmRefresh type=button>刷新</button></span></div><div id=llmAddRow><label>LLM <select id=llmAddLlm></select></label><label>方式 <select id=llmAddMethod></select></label><label id=llmAddEmailBox>账号邮箱 <input id=llmAddEmail autocomplete=off placeholder="登录用的账号邮箱"></label><label id=llmAddKeyBox hidden>API Key <input id=llmAddKey type=password autocomplete=off></label><label id=llmAddLabelBox hidden>标签（可选） <input id=llmAddLabel maxlength=64 autocomplete=off placeholder="不填则按 LLM＋序号"></label><button id=llmAddBtn type=button>新增</button></div><p class=group-feedback id=llmTermsNote hidden>账号登录使用你自己的订阅账号；订阅类账号用于平台的条款由你自行判断。同一账号被多个 Agent 共用时可能互相顶掉登录，建议一号一席。</p><section id=llmLoginBox class="group-block" hidden><div>1. 在你自己的浏览器打开：<a id=llmLoginUrl target=_blank rel="noopener noreferrer"></a> <button id=llmLoginUrlCopy type=button>复制链接</button></div><div>2. 登录后输入一次性码：<code id=llmLoginCode></code> <button id=llmLoginCodeCopy type=button>复制码</button></div><div id=llmLoginNote style="font-size:12px;color:#666">链接与码 15 分钟内有效，只显示给你本人；完成后此处会自动更新。</div><button id=llmLoginCancel type=button>取消登录</button></section><table id=llmTable class=group-table><thead><tr><th>邮箱 / Key</th><th>LLM</th><th>方式</th><th>在用</th><th>状态</th><th>操作</th></tr></thead><tbody id=llmItems></tbody></table><div id=llmEmpty hidden>还没有 LLM 账号。</div><div id=llmStatus role=status></div><div id=llmFeedback class=group-feedback role=status></div></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterStatus role=status></div><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
   if(FEATURE_SELFHOST_REVIEW){
     document.getElementById('enrollRefresh').onclick=refreshEnroll;document.getElementById('enrollRetry').onclick=refreshEnroll;
     document.getElementById('enrollApprove').onclick=enrollApprove;document.getElementById('enrollReject').onclick=enrollReject;

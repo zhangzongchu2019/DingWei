@@ -226,16 +226,19 @@ _SPEC_HANDLER_TIMEOUT = 30.0  # grant10 + Agent HTTP15 + scheduling/cancellation
 
 
 async def _handle_spec_write(writer: asyncio.StreamWriter, msg: dict[str, Any], handler: _SpecHandler | None) -> None:
-    """Keep raw grants inside helper; IPC accepts only spec document fields."""
+    """Direct writes accept only document data; retired shim calls fail without HTTP."""
     request_id = str(msg.get("request_id") or "")
     if handler is None:
         await _write_one(writer, {"ok": False, "error": "spec write unavailable"})
         return
-    if set(msg) - {"type", "request_id", "action", "grant_request_id", "spec_id", "body"}:
+    if set(msg) - {"type", "request_id", "action", "protocol", "grant_request_id", "spec_id", "body"}:
         await _write_one(writer, {"ok": False, "error": "invalid spec request"})
         return
-    action, grant_id, spec_id, body = (str(msg.get("action") or "").strip(), str(msg.get("grant_request_id") or "").strip(), str(msg.get("spec_id") or "").strip(), msg.get("body"))
-    if action not in {"create", "update"} or len(grant_id) > 256 or len(spec_id) > 256 or (body is not None and not isinstance(body, dict)):
+    if msg.get("protocol") != "direct-v1" or "grant_request_id" in msg:
+        await _write_one(writer, {"ok":True,"result":{"status":"upgrade_required","message":"请升级 helper 后直接创建或更新 spec"},"request_id":request_id})
+        return
+    action, spec_id, body = (str(msg.get("action") or "").strip(), str(msg.get("spec_id") or "").strip(), msg.get("body"))
+    if action not in {"create", "update"} or len(spec_id) > 256 or (body is not None and not isinstance(body, dict)):
         await _write_one(writer, {"ok": False, "error": "invalid spec request"})
         return
     if action == "update" and not spec_id:
@@ -243,12 +246,12 @@ async def _handle_spec_write(writer: asyncio.StreamWriter, msg: dict[str, Any], 
         return
     try:
         result = await asyncio.wait_for(
-            handler({"action": action, "grant_request_id": grant_id, "spec_id": spec_id, "body": body or {}}),
+            handler({"action": action, "protocol":"direct-v1", "spec_id": spec_id, "body": body or {}}),
             timeout=_SPEC_HANDLER_TIMEOUT,
         )
     except asyncio.TimeoutError:
         # The HTTP write may already have committed. Never promise rollback or
-        # retry a consumed grant; return an explicit, non-secret outcome.
+        # blindly retry; return an explicit, non-secret outcome.
         await _write_one(writer, {"ok": True, "result": {
             "status": "error", "code": "spec_write_deadline_exceeded",
             "outcome": "unknown", "retryable": False,

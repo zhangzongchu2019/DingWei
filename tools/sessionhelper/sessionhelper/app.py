@@ -229,9 +229,6 @@ class SessionHelper:
         # File capability responses are control-plane messages. They must be
         # consumed here and never reach the inbox, CLI, LLM, or logs.
         self.file_ticket_waiters: dict[str, asyncio.Future] = {}
-        # Spec grants are control-plane replies. Raw page capabilities are held
-        # only in this helper long enough to make the Agent HTTP request.
-        self.spec_grant_waiters: dict[str, asyncio.Future] = {}
         from .outbound_receipt import OutboundReceiptBroker
         self.outbound_receipts = OutboundReceiptBroker((cfg.session_name, cfg.session_full_name, cfg.registered_session_name))
         # Direct messages containing file refs are processed off recv_loop so
@@ -544,33 +541,12 @@ class SessionHelper:
             waiter.set_result({key: meta.get(key) for key in
                                ("ok", "token", "expires_at", "public_base_url", "session", "error")})
 
-    def is_spec_grant_response(self, env: dict) -> bool:
-        return is_spec_grant_response_envelope(env)
-
-    def handle_spec_grant_response(self, env: dict) -> None:
-        meta = env.get("meta") or {}
-        request_id = str(meta.get("request_id") or "")
-        waiter = self.spec_grant_waiters.get(request_id)
-        if waiter is not None and not waiter.done():
-            # Deliberate allow-list: only this routine may see capability.
-            waiter.set_result({key: meta.get(key) for key in ("status", "grant_request_id", "expires_at", "console_url", "capability", "page_id", "action", "spec_id")})
-
-    async def _spec_grant_roundtrip(self, ws, typ: str, fields: dict) -> dict:
-        request_id = os.urandom(12).hex()
-        waiter = asyncio.get_running_loop().create_future()
-        self.spec_grant_waiters[request_id] = waiter
-        try:
-            await ws.send(json.dumps(envelope(session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
-                {"type": typ, "request_id": request_id, **fields, "no_mirror": True}), ensure_ascii=False))
-            return await asyncio.wait_for(waiter, timeout=10)
-        finally:
-            self.spec_grant_waiters.pop(request_id, None)
-
     def _make_spec_write_handler(self, ws):
         def failure(status: int) -> dict:
             messages = {
                 400: "spec 字段无效，请检查必填项和版本号",
-                403: "授权已失效或被撤销，请在 Console 重新批准",
+                403: "仅可更新当前 Agent 自建的 spec，或 Agent／业主已停用",
+                426: "请升级 helper 后直接创建或更新 spec",
                 409: "spec 已被修改，请读取最新 revision 后重试",
                 422: "spec 字段无效，请检查必填项和版本号",
             }
@@ -578,30 +554,22 @@ class SessionHelper:
                     "message": messages.get(status, "服务暂不可用，请稍后重试" if status >= 500 else "spec 操作失败")}
 
         async def _spec_write(args: dict) -> dict:
-            action, grant_id = str(args.get("action") or ""), str(args.get("grant_request_id") or "")
+            action = str(args.get("action") or "")
             spec_id, body = str(args.get("spec_id") or ""), dict(args.get("body") or {})
-            if not grant_id:
-                response = await self._spec_grant_roundtrip(ws, "spec_grant_request", {"action": action, "spec_id": spec_id})
-                if response.get("status") != "approval_required":
-                    return {"status": str(response.get("status") or "unavailable")}
-                # The Console page is intentionally only a location hint. It
-                # never contains a grant or changes the required approval.
-                return {"status": "approval_required", "grant_request_id": response.get("grant_request_id"), "expires_at": response.get("expires_at"), "console_url": response.get("console_url")}
-            response = await self._spec_grant_roundtrip(ws, "spec_grant_poll", {"grant_request_id": grant_id})
-            if response.get("status") != "granted" or not response.get("capability"):
-                return {"status": str(response.get("status") or "unavailable")}
-            capability = str(response.get("capability"))
+            if args.get("protocol") != "direct-v1" or "grant_request_id" in args or not getattr(self, "enroll_credential", None):
+                return {"status":"upgrade_required", "message":"请升级 helper 后直接创建或更新 spec"}
+            if action not in ("create", "update") or (action == "update" and not spec_id):
+                return failure(400)
             try:
-                # Dedicated credentials and legacy helpers both use the same
-                # already-authenticated WS bearer. Never expose it over IPC.
+                # Reuse the dedicated authenticated Agent bearer; never expose it over IPC.
                 ws_url, headers = self._connection()
-                from urllib.parse import urlsplit, urlunsplit
+                from urllib.parse import quote, urlsplit, urlunsplit
                 import urllib.request
                 u = urlsplit(ws_url)
                 base = urlunsplit(("https" if u.scheme == "wss" else "http", u.netloc, "", "", ""))
-                path = "/api/agent/console/specs" if action == "create" else "/api/agent/console/specs/" + spec_id
+                path = "/api/agent/console/specs" if action == "create" else "/api/agent/console/specs/" + quote(spec_id, safe="")
                 request = urllib.request.Request(base + path, data=json.dumps(body).encode("utf-8"), method="POST" if action == "create" else "PATCH",
-                    headers={**headers, "Content-Type": "application/json", "X-DW-Console-Capability": capability})
+                    headers={**headers, "Content-Type": "application/json", "X-DW-Spec-Write": "direct-v1"})
                 def perform_http():
                     try:
                         with urllib.request.urlopen(request, timeout=15) as http_response:  # noqa: S310 -- configured Hub endpoint.
@@ -618,9 +586,8 @@ class SessionHelper:
                 if action == "update" and status == 200:
                     return {"status": "ok", "spec_id": spec_id, "revision": payload.get("revision"), "shared_url": "/api/specs/shared/" + spec_id}
                 return failure(status)
-            finally:
-                # No durable variable, log, or IPC response may retain it.
-                capability = ""
+            except (OSError, ValueError):
+                return {"status":"error", "code":"spec_write_outcome_unknown", "outcome":"unknown", "retryable":False, "message":"写入结果尚未确认；请先查询，勿直接重试"}
         return _spec_write
 
     def session_capabilities_envelope(self, outbound_capabilities=None) -> dict:
@@ -750,7 +717,7 @@ class SessionHelper:
                 self.handle_file_capability_response(env)
                 continue
             if is_spec_grant_response_envelope(env):
-                self.handle_spec_grant_response(env)
+                # Stale control-plane replies must never reach a model turn.
                 continue
             if self.is_terminal_interrupt(env):
                 await self.handle_terminal_interrupt(ws, env)

@@ -13,16 +13,18 @@ class SpecMCPToolTest(unittest.TestCase):
             "input_anchors": [{"kind": "message", "ref": "m-1"}],
         }
 
-    def test_create_requests_private_grant_without_capability_argument(self):
-        with patch.object(mcp_shim, "_ipc_request", return_value={"status": "approval_required", "grant_request_id": "g"}) as ipc:
-            self.assertEqual(mcp_shim._dw_spec_create(self.body())["status"], "approval_required")
+    def test_create_direct_write_without_grant_or_capability_argument(self):
+        with patch.object(mcp_shim, "_ipc_request", return_value={"status":"ok","spec_id":"spec-1"}) as ipc:
+            self.assertEqual(mcp_shim._dw_spec_create(self.body())["status"], "ok")
         payload = ipc.call_args.args[0]
         self.assertEqual(payload["type"], "spec_write_v1")
         self.assertEqual(payload["action"], "create")
         self.assertNotIn("capability", payload)
+        self.assertNotIn("grant_request_id",payload)
+        self.assertEqual(payload["protocol"],"direct-v1")
 
     def test_update_needs_its_own_spec_and_revision(self):
-        body = self.body() | {"spec_id": "spec-1", "expected_revision": 2, "grant_request_id": "g"}
+        body = self.body() | {"spec_id": "spec-1", "expected_revision": 2}
         with patch.object(mcp_shim, "_ipc_request", return_value={"status": "ok", "spec_id": "spec-1", "revision": 3}):
             self.assertEqual(mcp_shim._dw_spec_update(body)["revision"], 3)
         with self.assertRaises(ValueError):

@@ -183,6 +183,9 @@ func (h *Hub) HandleConsoleTaskBoard(w http.ResponseWriter, r *http.Request) {
 	var selected *model.ConsoleSpec
 	for i := range allSpecs {
 		spec := &allSpecs[i]
+		if spec.Archived {
+			continue
+		}
 		if spec.ID == selectedID {
 			selected = spec // Existing owner/editor read scope, never a query principal.
 		}
@@ -330,7 +333,9 @@ func (h *Hub) HandleConsoleTaskBoardAssignment(w http.ResponseWriter, r *http.Re
 	}
 	ownedSpecs := make(map[string]bool, len(specs))
 	for _, spec := range specs {
-		ownedSpecs[spec.ID] = true
+		if !spec.Archived {
+			ownedSpecs[spec.ID] = true
+		}
 	}
 	tasks, err := repo.ListAllConsoleTaskProposals(r.Context())
 	if err != nil {

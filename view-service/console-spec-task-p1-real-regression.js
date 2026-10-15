@@ -603,7 +603,7 @@ async function test(name, fn, { standalone = false } = {}) {
     });
     await test('Agent 拉任务（反）：console-tasks 令牌打 spec 新建口被拒（令牌页面方向的另一头）', async () => {
       const r = await agents.kimi.http('POST', '/api/agent/console/specs', state.cap);
-      assert.ok(denied(r), `任务令牌不得用于 spec 新建口：应 401/403，实得 ${r.status}`);
+      assert.strictEqual(r.status,426,'旧页面令牌调用 spec 写口须立即 upgrade_required、零写入');
     });
     await test('跨属主：第二个用户 bobtwo 经口令登录，批准自己的 Agent 入网并连入 /ws/agent', async () => {
       sh(bins.seed, [dsn, 'bobtwo', 'bo', bobPassword]);
