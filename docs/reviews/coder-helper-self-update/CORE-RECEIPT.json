@@ -1,0 +1,23 @@
+{
+  "artifact": "local core development package only, version0.2.3.0; no upload",
+  "canonical": {
+    "marker": "BUILD_TESTS_OK python=42 shell=2",
+    "rc": 0
+  },
+  "docker": "BLOCK: API permission denied, no workaround or real Agent changes",
+  "helper_initial_snapshot": {
+    "note": "discovered647 existing+13 early core before later3 focused cases; not a final release full-suite claim",
+    "rc": 0,
+    "seconds": 339.058,
+    "tests": 660
+  },
+  "source_commit": "04a62368a0a7f8ca91e238bdf6fa1e7030915323",
+  "targeted_current": {
+    "rc": 0,
+    "tests": 16
+  },
+  "withdrawals": {
+    "pending_priority": 1,
+    "secret_content_scan": 1
+  }
+}

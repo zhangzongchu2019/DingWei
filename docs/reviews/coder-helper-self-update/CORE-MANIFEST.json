@@ -1,0 +1,34 @@
+{
+  "CORE-RECEIPT.json": {
+    "bytes": 657,
+    "sha256": "976912fbf35eedf7788e1c668e7dc3b0c79132ddc6281b947e69cd1d7acae0af"
+  },
+  "CORE-REPORT.md": {
+    "bytes": 3289,
+    "sha256": "016bff2b9a5205245a5b17ff806eb7b8bdc0d4eef46ded96e424fb4a3cb7490f"
+  },
+  "build-gate.log.gz": {
+    "bytes": 5491,
+    "sha256": "060959131d7269fcd0e42ce210995af44a9f494ae4b20afc0296417a51ddb311"
+  },
+  "core-tests.log.gz": {
+    "bytes": 791,
+    "sha256": "e5785f3138273644794508a2df8b2b2477ef59dd03ad66a5fae76e0d7b700c66"
+  },
+  "helper-full.log.gz": {
+    "bytes": 31821,
+    "sha256": "b5f71cb75837a9ceb17b65846bba4671386665e621264098846f669358501741"
+  },
+  "withdraw-pending-priority.log.gz": {
+    "bytes": 335,
+    "sha256": "96677cedf3096e9f3f38e6a1437803b2d1e4e951788b68351bf2174db9442e19"
+  },
+  "withdraw-secret-scan.log.gz": {
+    "bytes": 305,
+    "sha256": "5d8d63080c02bcd164caceb61bd00186384ccd3a187d8067a50552ec98cade55"
+  },
+  "withdrawals.json": {
+    "bytes": 66,
+    "sha256": "3bf410749ee1bf49d183f66b903a80bd66608604bec091e5ae9bfd4fe34562ce"
+  }
+}
