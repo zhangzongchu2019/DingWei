@@ -28,6 +28,12 @@ type freshTargetDeliveryRepository interface {
 	ExpireCapabilityPendingSessionDeliveries(ctx context.Context, now time.Time) ([]model.SessionDelivery, error)
 }
 
+// Optional repository extension: the global sweep replaces the narrow pending
+// sweep when supported, and atomically persists sender notices with expiry.
+type offlineFailureNoticeRepository interface {
+	SweepSessionDeliveryFailures(context.Context, time.Time) ([]model.SessionDelivery, error)
+}
+
 type capabilityPendingAdmission struct {
 	mu          sync.Mutex
 	resolved    bool
@@ -92,9 +98,9 @@ func (h *Hub) resolveCapabilityPendingAdmission(ctx context.Context, keyID, sess
 	return dead, nil
 }
 
-// startCapabilityPendingCleanup covers both Hub startup and the no-reconnect
-// case. Existing normal delivery expiry is per-drain; a capability-pending row
-// has no ACK-capable client yet, so it needs this small independent reaper.
+// startCapabilityPendingCleanup covers startup and no-reconnect expiry. The
+// global extension handles all nonterminal states; legacy repositories retain
+// the capability-pending-only fallback.
 func (h *Hub) startCapabilityPendingCleanup() {
 	if h.freshTargetDeliveryRepo() == nil {
 		return
@@ -141,13 +147,24 @@ func (h *Hub) expireCapabilityPendingDeliveries(ctx context.Context, now time.Ti
 	if repo == nil {
 		return
 	}
-	expired, err := repo.ExpireCapabilityPendingSessionDeliveries(ctx, now)
+	var expired []model.SessionDelivery
+	var err error
+	if all, ok := h.Repo.(offlineFailureNoticeRepository); ok {
+		expired, err = all.SweepSessionDeliveryFailures(ctx, now)
+	} else {
+		expired, err = repo.ExpireCapabilityPendingSessionDeliveries(ctx, now)
+	}
 	if err != nil {
-		log.Printf("capability pending expiry sweep failed: %v", err)
+		log.Printf("delivery expiry sweep failed: %v", err)
 		return
 	}
 	for _, d := range expired {
-		h.finishCapabilityPendingDelivery(ctx, d, pendingCapabilityFailureReason(d))
+		if d.Provenance == capabilityPendingProvenance {
+			h.finishCapabilityPendingDelivery(ctx, d, pendingCapabilityFailureReason(d))
+		} else {
+			h.publishDeliveryUpdateForDelivery(d, "dead", "helper_received", "failed", d.LastError)
+			h.drainDurableFailureNotice(ctx, d)
+		}
 	}
 }
 
@@ -160,6 +177,9 @@ func pendingCapabilityFailureReason(d model.SessionDelivery) string {
 
 func (h *Hub) finishCapabilityPendingDelivery(ctx context.Context, d model.SessionDelivery, reason string) {
 	h.publishDeliveryUpdateForDelivery(d, "dead", "capability_pending", "failed", reason)
+	if h.drainDurableFailureNotice(ctx, d) {
+		return
+	}
 	var original model.Envelope
 	if err := json.Unmarshal([]byte(d.Envelope), &original); err != nil || original.From == "" {
 		return
@@ -174,4 +194,26 @@ func (h *Hub) finishCapabilityPendingDelivery(ctx context.Context, d model.Sessi
 	if err := h.RouteEnvelope(ctx, notice); err != nil {
 		log.Printf("capability pending dead notice route failed delivery_id=%s err=%v", d.ID, err)
 	}
+}
+
+// Persistence is the authority; a live sender merely accelerates the same
+// ordinary ACK queue drain. Offline senders pick it up after reconnect.
+func (h *Hub) drainDurableFailureNotice(ctx context.Context, d model.SessionDelivery) bool {
+	if h.Repo == nil {
+		return false
+	}
+	notice, err := h.Repo.GetSessionDelivery(ctx, model.FailureNoticeDeliveryID(d.ID))
+	if err != nil || notice == nil || notice.Provenance != model.FailureNoticeProvenance {
+		return false
+	}
+	h.mu.Lock()
+	var c *sessionClient
+	if clients := h.sessionClients[notice.KeyID]; clients != nil {
+		c = clients[notice.SessionName]
+	}
+	h.mu.Unlock()
+	if c != nil && h.sessionSupportsDeliveryACK(c) {
+		go h.drainSessionDeliveries(context.Background(), c)
+	}
+	return true
 }

@@ -1,0 +1,78 @@
+{
+  "scope": "slice one only; R2/helper compatibility not yet complete; no deployment",
+  "base": "7651602335267ef2f8b9957d795e0cfddbd9c08f",
+  "go": "go1.22.2 linux/amd64",
+  "commands": [
+    {
+      "command": "go test ./internal/store ./internal/m8 -run 'Test(FailureNotice|OfflineFailureNotice|FreshTarget|RetryableFailedDeliveryCaps|ExpireSessionDeliveries|CapabilityPending)' -count=1 -timeout=5m",
+      "rc": 0
+    },
+    {
+      "command": "same command with -race",
+      "rc": 0
+    },
+    {
+      "command": "go test -overlay=<private nonatomic-overlay.json> ./internal/store -run ^TestFailureNoticeAtomicRollbackAndSameIDRetry$ -count=1 -timeout=2m",
+      "rc": 1,
+      "expected": "partial commit State:dead after synthetic notice INSERT fault"
+    }
+  ],
+  "limits": [
+    "Historical retry exhaustion stored arbitrary LastError; only explicit four-reason recent dead rows are backfilled; leader/reviewer informed",
+    "Unknown/unsupported ACK sources retain prior best-effort path, no durability promise",
+    "First test draft used unavailable testing.T.Context on Go1.22; replaced with context.Background before passing tests",
+    "Full final feature/build/helper suite pending slice two"
+  ],
+  "source": {
+    "internal/model/failure_notice.go": {
+      "bytes": 625,
+      "sha256": "333dcf84879e2c8a632f25402490730b223b91afe97c3637ff7010fe50075b2a"
+    },
+    "internal/store/failure_notice.go": {
+      "bytes": 5486,
+      "sha256": "414a40321012f544edf2795ef220cce2198d092f20bdbb44c33e4d5d5f186218"
+    },
+    "internal/store/failure_notice_test.go": {
+      "bytes": 10110,
+      "sha256": "f85fd143ee21be626a3633c38c82677eab1d61737901432eb4c3dbc609523d96"
+    },
+    "internal/store/sqlite.go": {
+      "bytes": 176533,
+      "sha256": "8fc646021ede500921365917db30e477ed127b03337e6ce5df844cd4cbdc6892"
+    },
+    "internal/m8/fresh_target_delivery.go": {
+      "bytes": 7596,
+      "sha256": "e7968e17549ad06cac7b420ddc5dd26ebdec3316dd7cebfb8f72a674dd6eccef"
+    },
+    "internal/m8/hub.go": {
+      "bytes": 241685,
+      "sha256": "ff9ebcfa58151d12448887fb3017122755a1b77334a2c6237bad3c5ab1f9a9da"
+    },
+    "internal/m8/failure_notice_offline_test.go": {
+      "bytes": 2213,
+      "sha256": "e22e9bdc8b2f56993fe002b076d7b16af163593d963619747c1c07487b92f591"
+    },
+    "internal/m8/fresh_target_delivery_test.go": {
+      "bytes": 19741,
+      "sha256": "87b7d322e7a2a6362a4cede14ac82cc3ad8b5a3792530435dd3caf6cbf8e62b3"
+    },
+    "docs/designs/FAILURE-NOTICE-OFFLINE.md": {
+      "bytes": 5576,
+      "sha256": "cd7c06e5b0a0e45658c33ef8d86f524d76e43f4d00e67c356f0695cf752ebe6f"
+    }
+  },
+  "logs": {
+    "slice1-race.log": {
+      "bytes": 125,
+      "sha256": "c5b3dea8fa0db42446f0a7122db96d8f2d0851d1c314a32dd94de3adb8a9dc78"
+    },
+    "slice1-atomic-withdrawal.log": {
+      "bytes": 660,
+      "sha256": "058d9c540126bd97a91ed95c90c297a933beb8580de6c24da1647f25e6bab3a7"
+    },
+    "slice1-targeted.log": {
+      "bytes": 123,
+      "sha256": "86871f9cb68aeae595a36feb485fcdd3cb74f7fceaf214c4bd138446d87ebc7a"
+    }
+  }
+}

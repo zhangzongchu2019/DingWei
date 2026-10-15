@@ -4502,6 +4502,7 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 		}
 		for _, d := range expired {
 			h.publishDeliveryUpdateForDelivery(d, "dead", "helper_received", "failed", "delivery_expired")
+			h.drainDurableFailureNotice(ctx, d)
 		}
 		d, err := h.Repo.ClaimSessionDelivery(ctx, c.keyID, c.sessionName, time.Now().UTC())
 		if err != nil || d == nil {
@@ -4561,6 +4562,9 @@ func (h *Hub) deliveryFailedRetryParams() (time.Duration, time.Duration, int) {
 
 // notifyDeliveryRetryExhausted 连续失败到限转 dead 时给发送方一条可见的投递失败通知：原因码＋最后一次失败原因。
 func (h *Hub) notifyDeliveryRetryExhausted(ctx context.Context, d model.SessionDelivery, failed int, lastReason string) {
+	if h.drainDurableFailureNotice(ctx, d) {
+		return
+	}
 	var original model.Envelope
 	if json.Unmarshal([]byte(d.Envelope), &original) != nil || original.From == "" {
 		return
