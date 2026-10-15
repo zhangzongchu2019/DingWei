@@ -1,0 +1,17 @@
+golang.org/x/text/transform: mkdir /data/ai-dev-data/cgt/go-build1611760381/b205/: no space left on device
+golang.org/x/text/internal/language: mkdir /data/ai-dev-data/cgt/go-build1611760381/b202/: no space left on device
+net/http: mkdir /data/ai-dev-data/cgt/go-build1611760381/b113/: no space left on device
+os/user: mkdir /data/ai-dev-data/cgt/go-build1611760381/b211/: no space left on device
+golang.org/x/text/unicode/bidi: mkdir /data/ai-dev-data/cgt/go-build1611760381/b209/: no space left on device
+encoding/xml: mkdir /data/ai-dev-data/cgt/go-build1611760381/b213/: no space left on device
+github.com/zhangzongchu2019/dingwei/internal/filepolicy: mkdir /data/ai-dev-data/cgt/go-build1611760381/b219/: no space left on device
+golang.org/x/sync/semaphore: mkdir /data/ai-dev-data/cgt/go-build1611760381/b217/: no space left on device
+net/http/internal/testcert: mkdir /data/ai-dev-data/cgt/go-build1611760381/b232/: no space left on device
+github.com/zhangzongchu2019/dingwei/view-service: mkdir /data/ai-dev-data/cgt/go-build1611760381/b230/: no space left on device
+golang.org/x/crypto/blowfish: mkdir /data/ai-dev-data/cgt/go-build1611760381/b222/: no space left on device
+container/heap: mkdir /data/ai-dev-data/cgt/go-build1611760381/b233/: no space left on device
+github.com/zhangzongchu2019/dingwei/internal/router: mkdir /data/ai-dev-data/cgt/go-build1611760381/b236/: no space left on device
+html: mkdir /data/ai-dev-data/cgt/go-build1611760381/b237/: no space left on device
+modernc.org/libc: mkdir /data/ai-dev-data/cgt/go-build1611760381/b171/: no space left on device
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8 [build failed]
+FAIL

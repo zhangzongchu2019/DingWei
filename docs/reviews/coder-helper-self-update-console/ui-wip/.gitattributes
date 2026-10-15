@@ -1,0 +1,2 @@
+# Preserve unmodified fixture error output.
+groups-entry-*.log.txt -whitespace

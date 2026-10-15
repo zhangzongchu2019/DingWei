@@ -1,0 +1,26 @@
+[
+  {
+    "case": "origin",
+    "rc": 1,
+    "intended": true,
+    "log": "/tmp/coder-console-update-withdraw-origin.log"
+  },
+  {
+    "case": "ownership",
+    "rc": 1,
+    "intended": true,
+    "log": "/tmp/coder-console-update-withdraw-ownership.log"
+  },
+  {
+    "case": "catalog-input",
+    "rc": 1,
+    "intended": true,
+    "log": "/tmp/coder-console-update-withdraw-catalog-input.log"
+  },
+  {
+    "case": "page-asset",
+    "rc": 1,
+    "intended": true,
+    "log": "/tmp/coder-console-update-withdraw-page-asset.log"
+  }
+]

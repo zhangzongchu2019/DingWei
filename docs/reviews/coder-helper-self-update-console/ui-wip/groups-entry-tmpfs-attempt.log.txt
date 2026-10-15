@@ -1,0 +1,6 @@
+  🔴 go test 取载荷失败,原样输出如下:
+      
+  🔴 装置异常: Error: Command failed: go test ./internal/m8/ -run TestConsolePlatformPayloadDump -count=1
+    at genericNodeError (node:internal/errors:983:15)
+    at wrappedFn (node:internal/errors:537:14)
+    at checkExecSyncError (node:child_process:916:11)

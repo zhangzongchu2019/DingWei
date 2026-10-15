@@ -1,0 +1,12 @@
+PASS does not fetch catalog until panel opened
+PASS single uses registered SHA and one opaque Agent ID only
+PASS batch submits only explicitly selected eligible owned rows
+PASS old helper is manual-required with disabled action
+fixture status:  posts: []
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /等待重启确认/. Input:
+
+'\tOne.owner\t0.2.3.1\t已上线新版本（目标 0.2.3.2）\t升级'
+
+    at /data/ai-dev-data/helper-self-update-console/view-service/console-helper-update-regression.js:29:319
+    at async test (/data/ai-dev-data/helper-self-update-console/view-service/console-helper-update-regression.js:21:97)
+    at async /data/ai-dev-data/helper-self-update-console/view-service/console-helper-update-regression.js:29:3
