@@ -172,3 +172,18 @@ func TestConsoleHelperUpdateHandlerOriginDefense(t *testing.T) {
 		t.Fatalf("unguarded handler origin=%d %s", w.Code, w.Body.String())
 	}
 }
+
+func TestConsoleHelperUpdateProductionAsset(t *testing.T) {
+	v := newViewEnv(t)
+	w := httptest.NewRecorder()
+	v.hub.HandleConsolePage(w, httptest.NewRequest("GET", "/console", nil))
+	if !strings.Contains(w.Body.String(), consoleHelperUpdatesJS) || strings.Count(w.Body.String(), "const API='/api/console/helper-updates'") != 1 {
+		t.Fatal("production page omitted or duplicated helper update script")
+	}
+	v.hub.Onboarding = nil
+	w = httptest.NewRecorder()
+	v.hub.HandleConsolePage(w, httptest.NewRequest("GET", "/console", nil))
+	if strings.Contains(w.Body.String(), consoleHelperUpdatesJS) {
+		t.Fatal("legacy page unexpectedly enables new-platform updater")
+	}
+}
