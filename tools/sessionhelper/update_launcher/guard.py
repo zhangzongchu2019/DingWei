@@ -119,6 +119,11 @@ class State:
         with self.locked():
             data = self.read()
             pending = data['pending']
+            if not trial and pending and pending['starts'] > 0 and now < pending['deadline']:
+                try:
+                    return self.slot(pending), None
+                except UpdateError:
+                    pass
             if trial and pending:
                 if pending['starts'] >= MAX_STARTS or now >= pending['deadline']:
                     self._rollback(data, 'health_timeout')
@@ -171,7 +176,10 @@ def run(factory, root, args=()):
     env['PYTHONPATH'] = str(path)
     env['SH_UPDATE_ROOT'] = str(state.root)
     env['SH_UPDATE_LAUNCHER'] = str(Path(__file__).resolve())
-    child = subprocess.Popen([sys.executable, '-m', 'sessionhelper', *args], cwd=path, env=env, start_new_session=True)
+    # Preserve business cwd (notably default driver/A6 workdir), while putting
+    # the selected package before the read-only launcher even when cwd is its root.
+    trampoline = 'import runpy,sys;sys.path.insert(0,sys.argv.pop(1));runpy.run_module("sessionhelper",run_name="__main__",alter_sys=True)'
+    child = subprocess.Popen([sys.executable, '-c', trampoline, str(path), *args], env=env, start_new_session=True)
     old = {}
     def forward(sig, frame):
         if child.poll() is None:

@@ -12,6 +12,21 @@ import threading
 import unittest
 from unittest.mock import patch
 
+try:
+    from _home_isolation import HomeIsolation
+except ImportError:
+    from tools.sessionhelper.tests._home_isolation import HomeIsolation
+_HOME = HomeIsolation()
+
+
+def setUpModule():
+    _HOME.start()
+
+
+def tearDownModule():
+    _HOME.finish()
+
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from sessionhelper.config import Config
@@ -64,11 +79,21 @@ class OfferTests(unittest.TestCase):
         meta,stage,restart=self.updater.prepare(self.env)
         self.assertEqual((stage,restart),('installed',True))
         self.assertTrue((self.updater.state.slot(meta)/'sessionhelper/__main__.py').is_file())
+        self.updater.mark_restart_requested(meta)
         self.assertEqual(self.updater.prepare(self.env)[1:],('installed',False))
         self.assertEqual(len(self.requests),1)
         self.assertTrue(all('Authorization' not in h and 'Cookie' not in h for h in self.requests))
         self.assertNotIn(self.cfg.secret,json.dumps(self.requests))
         self.assertFalse((self.mount/'journal.json').exists())
+
+    def test_lost_installed_ack_can_retry_restart_without_redownload(self):
+        meta,_,restart=self.updater.prepare(self.env)
+        self.assertTrue(restart)
+        # Simulate a WS failure before receipts/restart request were durably completed.
+        self.assertTrue(self.updater.prepare(self.env)[2])
+        self.assertEqual(len(self.requests),1)
+        self.updater.mark_restart_requested(meta)
+        self.assertFalse(self.updater.prepare(self.env)[2])
 
     def test_forged_target_expiry_origin_rejected_before_get(self):
         cases=[('source',{'from':'untrusted'}),('target',{'agent_name':'another.owner'}),
@@ -121,6 +146,21 @@ class OfferTests(unittest.TestCase):
             self.updater.confirm(env)
         self.assertEqual(self.updater.state.read()['current']['job_id'],meta['job_id'])
         self.assertIsNone(self.updater.state.read()['pending'])
+
+    def test_authenticated_update_source_pin_does_not_relax_other_provision(self):
+        self.provisioner.trusted_update_source='workpulse#u_internalowner'
+        env=copy.deepcopy(self.env);env['from']='workpulse#u_internalowner'
+        self.provisioner.validate_source(env)
+        with self.assertRaises(ProvisionError):
+            self.provisioner.validate_source(self.env)
+        env['meta']['action']='install_skill'
+        with self.assertRaises(ProvisionError):
+            self.provisioner.validate_source(env)
+        legacy=copy.deepcopy(self.env);legacy['meta']['action']='install_skill'
+        self.provisioner.validate_source(legacy)
+        env['meta']['action']='update_self';env['meta']['system']=False
+        with self.assertRaises(ProvisionError):
+            self.provisioner.validate_source(env)
 
     def test_no_bootstrap_shim_reports_manual_required(self):
         with patch.dict(os.environ,{},clear=True):

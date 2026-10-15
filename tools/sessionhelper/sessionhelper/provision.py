@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import sqlite3
 import tarfile
@@ -96,6 +97,12 @@ class Provisioner:
     def validate_source(self, env: dict) -> None:
         meta = env.get("meta") or {}
         expected_from = f"workpulse#{self.cfg.key_id}"
+        if meta.get("action") == "update_self" or meta.get("type") == "helper_update_confirm":
+            pinned = getattr(self, "trusted_update_source", None)
+            if pinned is not None:
+                if not isinstance(pinned, str) or not re.fullmatch(r"workpulse#[A-Za-z0-9_.-]{1,128}", pinned):
+                    raise ProvisionError("provision source denied")
+                expected_from = pinned
         if str(env.get("from") or "") != expected_from or meta.get("system") is not True:
             raise ProvisionError("provision source denied")
 

@@ -19,6 +19,7 @@ import urllib.request
 from urllib.parse import urlsplit
 
 from . import __version__
+from .config import env_get
 
 FIELDS = ('job_id', 'release_id', 'agent_id', 'owner_id', 'version', 'sha256')
 MAX_BYTES = 32 * 1024 * 1024
@@ -60,7 +61,7 @@ class SelfUpdater:
         self.cfg, self.validate_source, self.agent_name = cfg, source_validator, agent_name
         self.allow_loopback = allow_loopback
         self.health_nonce = None
-        configured = launcher or os.environ.get('SH_UPDATE_LAUNCHER', '')
+        configured = launcher or env_get('SH_UPDATE_LAUNCHER', '')
         if not configured or not Path(configured).is_absolute():
             raise UpdateRejected('manual_required')
         path = Path(configured)
@@ -159,7 +160,8 @@ class SelfUpdater:
             return meta, known['stage'], False
         if data['pending']:
             if all(data['pending'].get(k) == meta[k] for k in FIELDS):
-                return meta, 'installed', False
+                needs_restart = not data['pending'].get('restart_requested', False) and data['pending']['starts'] == 0
+                return meta, 'installed', needs_restart
             raise UpdateRejected('update_busy')
         if not re.fullmatch(r'\d+(?:\.\d+){2,3}', meta['version']):
             raise UpdateRejected('version_invalid')
@@ -216,6 +218,15 @@ class SelfUpdater:
         # Arm after full verified slot creation; guard's transaction rechecks pending/terminal.
         self.state.arm(meta)
         return meta, 'installed', True
+
+    def mark_restart_requested(self, meta):
+        with self.state.locked():
+            data = self.state.read()
+            pending = data['pending']
+            if not pending or not all(pending.get(k) == meta[k] for k in FIELDS):
+                raise UpdateRejected('offer_mismatch')
+            pending['restart_requested'] = True
+            self.guard.atomic_json(self.state.path, data)
 
     def health(self):
         pending = self.state.read()['pending']

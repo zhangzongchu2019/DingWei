@@ -111,6 +111,20 @@ class GuardTests(unittest.TestCase):
         self.assertEqual(self.state.read()['terminal'][a['job_id']]['stage'], 'rolled_back')
         self.assertEqual(self.state.select(), (self.factory, None))
 
+    def test_guard_preserves_original_business_workdir(self):
+        observer = self.root / 'observed-cwd'
+        (self.factory / 'sessionhelper/__main__.py').write_text(
+            'import os;from pathlib import Path;Path(' + repr(str(observer)) + ').write_text(os.getcwd())\n')
+        self.assertEqual(run(self.factory, self.state.root), 0)
+        self.assertEqual(observer.read_text(), os.getcwd())
+
+    def test_auxiliary_uses_running_trial_without_consuming_budget(self):
+        a = self.item('a'); self.state.arm(a)
+        self.assertEqual(self.state.select(trial=False), (self.factory, None))
+        self.state.select()
+        self.assertEqual(self.state.select(trial=False), (self.state.slot(a), None))
+        self.assertEqual(self.state.read()['pending']['starts'], 1)
+
     def test_terminal_job_id_cannot_be_reused_for_different_tuple(self):
         a = self.item('a'); self.state.arm(a); self.state.select(); self.state.confirm(a)
         b = self.item('b'); b['job_id'] = a['job_id']

@@ -246,7 +246,7 @@ class SessionHelper:
         self.provisioner = Provisioner(cfg)
         self.helper_updater = None
         self._helper_update_preparing = False
-        if not os.environ.get("SH_UPDATE_LAUNCHER"):
+        if not env_get("SH_UPDATE_LAUNCHER", ""):
             self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
         self.adapter = self._build_adapter()
         from .agent_disk_metrics import BoundedDiskPublisher
@@ -638,7 +638,7 @@ class SessionHelper:
              "desktop_inbox_v1": self.cfg.mode == "desktop",
              "processed_semantics": "saved_to_desktop_inbox" if self.cfg.mode == "desktop" else "accepted_to_cli",
              "helper_version": __version__,
-             "helper_update_v1": bool(os.environ.get("SH_UPDATE_LAUNCHER")) and sys.platform.startswith("linux") and bool(getattr(self, "enroll_credential", None)),
+             "helper_update_v1": bool(env_get("SH_UPDATE_LAUNCHER", "")) and sys.platform.startswith("linux") and bool(getattr(self, "enroll_credential", None)),
              # 只作 Hub 统计（组长裁定 C）；附注是否附加由 upload_addendum_due 在合并时自判。
              "file_upload_v1": self.upload_configured(),
              **(outbound_capabilities or {})},
@@ -678,8 +678,17 @@ class SessionHelper:
             if self.cfg.debug:
                 print(f"[sessionHelper][debug] WS 握手成功,耗时 {time.monotonic()-_t0:.2f}s", flush=True)
             print(f"[sessionHelper] connected self={self.book.self_addr} version={__version__}", flush=True)
+            # Dedicated Agent clients use a placeholder key locally; pin the actual
+            # server system address from authenticated WS response, never offer text.
+            response_headers = getattr(getattr(ws, "response", None), "headers", {})
+            self.provisioner.trusted_update_source = None
+            if (getattr(self, "enroll_credential", None) is not None and
+                    response_headers.get("X-DW-Helper-Update") == "helper-update/v1"):
+                update_source = response_headers.get("X-DW-Helper-Update-Source", "")
+                if re.fullmatch(r"workpulse#[A-Za-z0-9_.-]{1,128}", update_source):
+                    self.provisioner.trusted_update_source = update_source
             self._connection_started_at = time.monotonic()
-            if not os.environ.get("SH_UPDATE_LAUNCHER"):
+            if not env_get("SH_UPDATE_LAUNCHER", ""):
                 self.provisioner.confirm_update_connected()
             # M2 protocol admission. This raises the bar above one-shot clients
             # such as send.py, but is not cryptographic helper identity: a
@@ -865,6 +874,8 @@ class SessionHelper:
     def _get_self_updater(self):
         if self.enroll_credential is None:
             raise UpdateRejected("manual_required")
+        if not getattr(self.provisioner, "trusted_update_source", None):
+            raise UpdateRejected("hub_unsupported")
         if self.helper_updater is None:
             self.helper_updater = SelfUpdater(self.cfg, self.provisioner.validate_source,
                                               self.enroll_credential.agent_name)
@@ -902,6 +913,7 @@ class SessionHelper:
                         await self._send_update_receipt(ws, meta, "downloaded")
                     await self._send_update_receipt(ws, meta, stage)
                     if restart:
+                        updater.mark_restart_requested(meta)
                         self.provisioner.request_restart()
                 finally:
                     self._helper_update_preparing = False
