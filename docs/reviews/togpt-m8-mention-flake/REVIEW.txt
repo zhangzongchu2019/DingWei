@@ -120,3 +120,35 @@ fixtures identify this as a deterministic fixture precondition repair.  The
 separate S-MENTION-FRESH-TARGET review must decide whether messages sent
 before publication are durably queued; this test-only change makes no claim
 about that product contract.
+
+Additional inherited directory-mirror fixture
+---------------------------------------------
+While the independent reviewer exercised the reply slice, it found
+`TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary` can call
+`BroadcastOnlineDirectories` after the three clients completed their dial but
+before the final `review` client is published to `sessionClients`. The
+directory snapshot can therefore contain a partial mirror set.
+
+This is inherited, not introduced here: the r5 test body is byte-identical,
+`internal/m8/hub.go` is unchanged by this branch, and `HandleSessionWS` still
+sends onboarding before publishing `sessionClients` to directory broadcasters.
+The test now waits for all three canonical registered names (`alice-home`,
+`alice-developer`, `alice-review`, with their test-key tail) before snapshot.
+This is a concrete condition, not a sleep or product change.
+
+```
+go test -v -count=30 ./internal/m8 \
+  -run '^TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary$'
+rc=0
+raw log=/tmp/m8-fixture-races/online-directory-fixed-v30.log
+sha256=15094ed89f988dfc431f40df404d6b1efb40297df796de89e20acf55d52eac49
+```
+
+The reviewer’s original failure remains recorded as an inherited fixture
+finding; it is not folded into a product reply or delivery PASS.
+
+The complete post-change inventory was rerun after this fourth fixture update:
+`go test -v -count=1 ./internal/m8`, rc=0, no FAIL; raw log
+`/tmp/m8-fixture-races/r5-447fb-directory-fixed-full-v.log`, SHA256
+`58a356ce50faa74d9cb30a14e06d6e73dc427117d34cb742bfa797db9807e338`.
+The same eight environment-gated SKIPs listed above remain non-PASS.

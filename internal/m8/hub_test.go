@@ -3767,6 +3767,15 @@ func TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary(t *testing.T) {
 	defer developer.Close(websocket.StatusNormalClosure, "done")
 	review := dialSession(t, ctx, srv.URL, "review", key.ID, secret)
 	defer review.Close(websocket.StatusNormalClosure, "done")
+	// The directory snapshot reads sessionClients.  The client has received its
+	// onboarding frame before that map is published, so wait for all three
+	// server-side registrations instead of snapshotting a partial mirror set.
+	tail := keyTail(key.ID)
+	waitSessionsOnlineTogether(t, hub, key.ID,
+		"alice-home-"+tail,
+		"alice-developer-"+tail,
+		"alice-review-"+tail,
+	)
 
 	if err := hub.BroadcastOnlineDirectories(ctx); err != nil {
 		t.Fatal(err)
