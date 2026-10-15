@@ -11,6 +11,7 @@ package main
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"testing"
 
@@ -157,7 +158,15 @@ func TestOpenSpoolPool_RefusesHubDB(t *testing.T) {
 	if err := rows.Err(); err != nil {
 		t.Fatalf("遍历账失败: %v", err)
 	}
-	if strings.Join(versions, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql" {
+	// Compare exactly with the Hub ledger seeded above. Adding a legitimate
+	// Hub migration must not look like a fanout mutation, while every added,
+	// removed or changed ledger row still fails this equality.
+	wantVersions := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		wantVersions = append(wantVersions, entry.Name)
+	}
+	sort.Strings(wantVersions)
+	if strings.Join(versions, ",") != strings.Join(wantVersions, ",") {
 		t.Errorf("Hub 库的账被动了：%v", versions)
 	}
 }
