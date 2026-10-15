@@ -1,0 +1,5 @@
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	100.564s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	120.263s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	10.734s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/migrate	26.036s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/pgtest	9.830s

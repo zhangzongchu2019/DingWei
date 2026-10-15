@@ -1,0 +1,15 @@
+2026/10/14 22:50:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 22:50:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 22:50:43 feishu dispatch rejected reason=short_name_not_resolvable open_id="" target="ant" bot_channel=""
+2026/10/14 22:50:43 amr decision=candidate_rejected handled=true err=目标会话无法补全为在线 canonical 地址：ant
+2026/10/14 22:50:43 amr notification=failed reason=source_offline session=bee
+--- FAIL: TestFailureNoticeTrustedContextStopsAgentAndDirectReply (0.11s)
+    failure_notice_route_test.go:28: notice reached Agent parser or generated feedback
+2026/10/14 22:50:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 22:50:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 22:50:43 [channel] deliver session=bee channel=feishu addr="ou_owner" resolved="ou_owner" fell_back=false bot="alpha-bot"
+--- FAIL: TestFailureNoticeTrustedContextStopsRealChannelOutbound (0.13s)
+    failure_notice_route_test.go:56: notice reached channel/feedback: &{ID:channel-fb76faa0930dc5260b96c2b6bc7f9333 ChatEntityID:ch-alpha:personal:ou_owner Direction:out BotChannelID:ch-alpha FeishuMsgID:channel-fb76faa0930dc5260b96c2b6bc7f9333 ChatType:personal SenderOpenID: IngressProvenance:untrusted Content:{"text":"【Agent：bee】\nquoted channel mention\n\n回复方式：发送 #bee \u003c内容\u003e。"} SensitiveContent: Status:processing Attempts:1 Err: CreatedAt:2026-10-15 05:50:43 +0000 UTC ProcessedAt:2026-10-15 05:50:43 +0000 UTC} <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.250s
+FAIL

@@ -34,6 +34,14 @@ func (h *Hub) routeIPCSendBodyAMR(ctx context.Context, c *sessionClient, origina
 	if h == nil || c == nil {
 		return
 	}
+	// A notice-triggered IPC body cannot start an Agent/channel AMR fan-out.
+	// Client references only select an owned repository record; flags alone do not.
+	for _, id := range []string{metaString(original.Meta, "source_delivery_id"), metaString(original.Meta, "in_reply_to")} {
+		routeCtx, err := h.failureNoticeRouteContext(ctx, amrTurnKey{KeyID: c.keyID, Session: c.sessionName, DeliveryID: id})
+		if err != nil || failureNoticeRouteStopped(routeCtx) {
+			return
+		}
+	}
 	maxTargets := h.ipcBodyAMRMaxTargets()
 	candidates, lookedLikeCandidate := parseAMRCandidatesDetailed(original.Body, c.sessionName, maxTargets)
 	feedback := amrParseFeedback(original.Body, candidates, lookedLikeCandidate, maxTargets)
@@ -884,6 +892,15 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	// Replies may quote an @ token but must never turn it into a new command.
 	ctx, cancel := context.WithTimeout(context.Background(), p.routeTimeout)
 	defer cancel()
+	routeCtx, contextErr := p.hub.failureNoticeRouteContext(ctx, job.key)
+	if contextErr != nil {
+		p.closeJob("non_candidate")
+		return
+	}
+	if failureNoticeRouteStopped(routeCtx) {
+		p.closeJob("non_candidate")
+		return
+	}
 	inbound, inboundFound := p.inboundOf(ctx, job.key.DeliveryID)
 	if inboundFound && (metaBool(inbound.Meta, metaKeyMentionVerbatim) || kindOf(inbound) == kindReply) {
 		p.closeJob("non_candidate")

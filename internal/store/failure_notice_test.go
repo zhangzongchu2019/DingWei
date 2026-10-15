@@ -65,6 +65,17 @@ func TestFailureNoticeAtomicRollbackAndSameIDRetry(t *testing.T) {
 	if !strings.HasPrefix(env.Body, "【系统投递失败通知】") || strings.ContainsAny(env.Body, "@#") || strings.Contains(env.Body, "private original") {
 		t.Fatalf("unsafe body %q", env.Body)
 	}
+	if env.ID != id || env.From != "workpulse#source" || env.To != "sender#source" || notice.SourceMessageID != d.ID {
+		t.Fatal("notice wire identity/correlation differs from durable row")
+	}
+	for key, want := range map[string]any{"type": "delivery", "delivery_id": id, "delivery_version": float64(1), "ack_required": true, "reply_policy": "no_reply", "conversation_terminal": true, "suppress_reply_origin": true, "no_mirror": true} {
+		if env.Meta[key] != want {
+			t.Fatalf("rollback wire contract %s=%v want %v", key, env.Meta[key], want)
+		}
+	}
+	if env.Meta["system"] == true {
+		t.Fatal("old helper would drop the notice instead of injecting")
+	}
 	if notice.KeyID != "source" || notice.SessionName != "sender" || notice.Provenance != model.FailureNoticeProvenance || env.Meta["kind"] != "reply" {
 		t.Fatalf("notice identity/semantics %+v %+v", notice, env.Meta)
 	}
