@@ -95,6 +95,20 @@ func helperUpdateHealthMeta(job *helperUpdateJob) map[string]any {
 	}
 }
 
+// testSessionSupportsHelperUpdate snapshots the registered client while Hub's
+// registry lock is held, then lets the production accessor take the client's
+// state lock. Tests must not read sessionClients directly while cleanup can
+// remove a disconnected session.
+func testSessionSupportsHelperUpdate(h *Hub, keyID, sessionName string) bool {
+	h.mu.Lock()
+	var c *sessionClient
+	if sessions := h.sessionClients[keyID]; sessions != nil {
+		c = sessions[sessionName]
+	}
+	h.mu.Unlock()
+	return h.sessionSupportsHelperUpdate(c)
+}
+
 func TestIssueHelperUpdateSendsTrustedTargetBoundOffer(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("d", 64)
@@ -110,7 +124,7 @@ func TestIssueHelperUpdateSendsTrustedTargetBoundOffer(t *testing.T) {
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 	e.sendEnv(conn, model.Envelope{ID: "caps-update", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 	waitFor(t, time.Second, "helper update capability", func() bool {
-		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+		return testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts")
 	})
 	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
@@ -149,7 +163,7 @@ func TestIssueHelperUpdateDefersUntilHelperUpdateCapability(t *testing.T) {
 	if _, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest); err == nil || !strings.Contains(err.Error(), "manual_required") {
 		t.Fatalf("legacy helper issue err=%v, want manual_required", err)
 	}
-	if e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"]) {
+	if testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts") {
 		t.Fatal("legacy helper unexpectedly has update capability")
 	}
 	stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
@@ -158,7 +172,7 @@ func TestIssueHelperUpdateDefersUntilHelperUpdateCapability(t *testing.T) {
 	}
 	e.sendEnv(conn, model.Envelope{ID: "caps-upgrade", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 	waitFor(t, time.Second, "helper update capability after bootstrap", func() bool {
-		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+		return testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts")
 	})
 	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
@@ -197,7 +211,7 @@ func TestOfflineHelperUpdateReplayWaitsForAuthenticatedCapability(t *testing.T) 
 	}
 	e.sendEnv(conn, model.Envelope{ID: "caps-offline-replay", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 	waitFor(t, time.Second, "helper update capability after offline replay", func() bool {
-		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+		return testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts")
 	})
 	if got := e.readEnvUntil(conn, time.Second, func(env model.Envelope) bool {
 		return metaString(env.Meta, "job_id") == job.JobID && metaString(env.Meta, "action") == "update_self"
@@ -231,7 +245,7 @@ func TestHelperUpdateHealthRequiresFreshAuthenticatedConnection(t *testing.T) {
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 	e.sendEnv(conn, model.Envelope{ID: "caps-health", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 	waitFor(t, time.Second, "helper update capability", func() bool {
-		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+		return testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts")
 	})
 	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
@@ -285,7 +299,7 @@ func TestHelperUpdateHealthRequiresFreshAuthenticatedConnection(t *testing.T) {
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 	e.sendEnv(conn, model.Envelope{ID: "caps-health-reconnected", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 	waitFor(t, time.Second, "helper update capability after reconnect", func() bool {
-		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+		return testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts")
 	})
 	freshHealth := helperUpdateHealthMeta(job)
 	e.sendEnv(conn, model.Envelope{ID: "health-fresh-" + randomHex(4), From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: freshHealth})
@@ -331,7 +345,7 @@ func TestHelperUpdateHealthRejectsMissingFreshNonce(t *testing.T) {
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 	e.sendEnv(conn, model.Envelope{ID: "caps-nonce", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 	waitFor(t, time.Second, "helper update capability", func() bool {
-		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+		return testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts")
 	})
 	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
@@ -385,7 +399,7 @@ func TestHelperUpdateReceiptUsesAuthenticatedJobTuple(t *testing.T) {
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 	e.sendEnv(conn, model.Envelope{ID: "caps-receipt", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 	waitFor(t, time.Second, "helper update capability", func() bool {
-		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+		return testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts")
 	})
 	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
@@ -416,7 +430,7 @@ func TestHelperUpdateFailureReceiptPersistsAllowlistedReason(t *testing.T) {
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 	e.sendEnv(conn, model.Envelope{ID: "caps-failure-reason", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 	waitFor(t, time.Second, "helper update capability", func() bool {
-		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+		return testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts")
 	})
 	job, err := e.hub.IssueHelperUpdate(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
@@ -447,7 +461,7 @@ func TestHelperUpdateReceiptNeverRegressesStage(t *testing.T) {
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 	e.sendEnv(conn, model.Envelope{ID: "caps-stage", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 	waitFor(t, time.Second, "helper update capability", func() bool {
-		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+		return testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts")
 	})
 	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
@@ -485,7 +499,7 @@ func TestHelperUpdateHealthNeverResurrectsTerminalJob(t *testing.T) {
 			waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 			e.sendEnv(conn, model.Envelope{ID: "caps-terminal", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 			waitFor(t, time.Second, "helper update capability", func() bool {
-				return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+				return testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts")
 			})
 			job, err := e.hub.IssueHelperUpdate(e.ctx, "zzc", e.agID, digest)
 			if err != nil {
@@ -508,7 +522,7 @@ func TestHelperUpdateHealthNeverResurrectsTerminalJob(t *testing.T) {
 			waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 			e.sendEnv(conn, model.Envelope{ID: "caps-terminal-reconnect", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 			waitFor(t, time.Second, "helper update capability after reconnect", func() bool {
-				return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+				return testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts")
 			})
 			e.sendEnv(conn, model.Envelope{ID: "health-terminal-" + randomHex(4), From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: helperUpdateHealthMeta(job)})
 			if got := e.readEnvUntil(conn, 100*time.Millisecond, func(env model.Envelope) bool { return metaString(env.Meta, "type") == "helper_update_confirm" }); got != nil {
@@ -563,7 +577,7 @@ func TestGetHelperUpdateJobRechecksPrincipalOwnership(t *testing.T) {
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 	e.sendEnv(conn, model.Envelope{ID: "caps-get-job", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 	waitFor(t, time.Second, "helper update capability", func() bool {
-		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+		return testSessionSupportsHelperUpdate(e.hub, AgentKeyID("zzc"), "opus50ts")
 	})
 	job, err := e.hub.IssueHelperUpdate(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
