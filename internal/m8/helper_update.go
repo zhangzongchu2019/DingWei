@@ -448,6 +448,8 @@ func (h *Hub) RecoverHelperUpdates(ctx context.Context) error {
 			continue
 		} else if ag == nil || ag.State != identity.AgentActive {
 			next, reason = "failed", "agent_inactive"
+		} else if ag.OwnerLC != job.OwnerID {
+			next, reason = "failed", "owner_changed"
 		} else if owner, err := h.Identity.Store.GetUser(ctx, job.OwnerID); err != nil {
 			continue
 		} else if owner == nil || owner.State != identity.UserActive {
