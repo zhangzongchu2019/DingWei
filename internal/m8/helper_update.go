@@ -321,14 +321,19 @@ func (h *Hub) IssueHelperUpdateForActor(ctx context.Context, actorID, agentID, r
 	if catalog == nil {
 		return nil, fmt.Errorf("helper update release unavailable")
 	}
-	job, err := h.createHelperUpdateJob(ctx, *catalog, ag.ID, ag.OwnerLC, ag.NameLC(), actor.UserIDLC())
-	if err != nil {
-		return nil, err
-	}
 	keyID := AgentKeyID(ag.OwnerLC)
 	h.mu.Lock()
 	c := h.sessionClients[keyID][ag.NameLC()]
 	h.mu.Unlock()
+	// A connected legacy helper cannot safely consume this offer. It must first
+	// be bootstrapped manually; do not leave an offer for it to replay later.
+	if c != nil && !h.sessionSupportsHelperUpdate(c) {
+		return nil, fmt.Errorf("helper_update_manual_required")
+	}
+	job, err := h.createHelperUpdateJob(ctx, *catalog, ag.ID, ag.OwnerLC, ag.NameLC(), actor.UserIDLC())
+	if err != nil {
+		return nil, err
+	}
 	if c == nil {
 		return job, nil // durable offered state is recovered on the next session.
 	}
@@ -370,7 +375,7 @@ func (h *Hub) confirmHelperUpdateHealth(ctx context.Context, c *sessionClient, e
 	if metaString(env.Meta, "type") != "helper_update_health" {
 		return false
 	}
-	if c == nil || c.metricsAgentID == "" {
+	if c == nil || c.metricsAgentID == "" || !h.sessionSupportsHelperUpdate(c) {
 		return true // This control is credential-agent-only; never fall through to routing.
 	}
 	job, raw, err := h.helperUpdateJob(ctx, c.metricsAgentID)
@@ -418,6 +423,21 @@ func helperUpdateReceiptStage(stage string) bool {
 	}
 }
 
+func helperUpdateStageRank(stage string) int {
+	switch stage {
+	case "offered":
+		return 0
+	case "downloaded":
+		return 1
+	case "installed":
+		return 2
+	case "restarted":
+		return 3
+	default:
+		return -1
+	}
+}
+
 func helperUpdateAuditReason(v string) string {
 	switch v {
 	case "", "sha_mismatch", "lock_changed", "download_failed", "install_failed", "health_timeout", "rollback", "busy", "offer_expired":
@@ -446,6 +466,9 @@ func (h *Hub) recordHelperUpdateReceipt(ctx context.Context, c *sessionClient, e
 		metaString(env.Meta, "job_id") != job.JobID || metaString(env.Meta, "release_id") != job.ReleaseID ||
 		metaString(env.Meta, "sha256") != job.SHA256 || metaString(env.Meta, "lock_sha256") != job.LockSHA256 {
 		return true
+	}
+	if stage != "failed" && stage != "rolled_back" && helperUpdateStageRank(stage) <= helperUpdateStageRank(job.Stage) {
+		return true // duplicate or stale receipt: no state regression and no audit effect.
 	}
 	updated := *job
 	updated.Stage = stage
