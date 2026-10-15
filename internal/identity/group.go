@@ -276,7 +276,7 @@ func sortGroupMembers(ms []GroupMember) {
 type MentionCandidate struct {
 	Agent    Agent
 	FullName string
-	// Insert 选中后插入的写法：在「所在全部编组成员的并集」（含自己）里短名唯一 ⇒ 短名，否则 full_name（业主裁定 9.5）。
+	// Insert uses the public full name for another owner. Same-owner unique short names remain short.
 	// 并集算上自己：自己与某候选同短名时，写短名对 Hub 来说就是歧义，必须写全名。
 	Insert string
 }
@@ -323,7 +323,7 @@ func (s *Service) MentionCandidates(ctx context.Context, selfID string) ([]Menti
 		}
 		c := MentionCandidate{Agent: *ag, FullName: s.fullName(ctx, ag)}
 		c.Insert = c.FullName
-		if names[ag.NameLC()] == 1 {
+		if union[selfID] != nil && ag.OwnerLC == union[selfID].OwnerLC && names[ag.NameLC()] == 1 {
 			c.Insert = ag.Name
 		}
 		out = append(out, c)

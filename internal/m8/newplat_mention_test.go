@@ -100,7 +100,7 @@ func TestNewPlatformMentionCandidates(t *testing.T) {
 	want := []string{
 		"Opus50TS.zzc|Opus50TS|codex|on|Opus50TS", // 在线优先
 		"Beta.zzc|Beta||off|Beta",                 // 两组都有，只出现一次
-		"Gamma.lb|Gamma||off|Gamma",
+		"Gamma.lb|Gamma||off|Gamma.lb",
 		"kimi.lb|kimi||off|kimi.lb", // 与自己（Kimi.zzc）同短名 ⇒ 插全名
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {

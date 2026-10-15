@@ -34,6 +34,7 @@ if (mutation === 'receipt-as-html') mutate('row.dataset.status = String(m.status
 
 const NAME = 'dev.zzc';
 const CANDS = [
+  { full_name: 'foreign.lisa', name: 'foreign', cli: 'codex', online: true, insert: 'foreign.lisa' },
   { full_name: 'beta.zzc', name: 'beta', cli: 'codex', online: true, insert: 'beta' },
   { full_name: 'quill.zzc', name: 'quill', cli: 'claude', online: false, insert: 'quill' },
   { full_name: 'twin.lisa', name: 'twin', cli: 'codex', online: true, insert: 'twin.lisa' },
@@ -167,6 +168,16 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       reply = { ok: true };
       await input.click(); await page.keyboard.type('再来一句'); await send();
       assert.strictEqual(await receipt.isHidden(), true, 'receipts clear on the next send without mentions');
+    });
+
+    await test('a unique cross-owner candidate inserts and sends its public full name', async () => {
+      await reset(); await input.click();
+      await pick('for', 'foreign（foreign.lisa）');
+      assert.strictEqual(await input.inputValue(), '@foreign.lisa ');
+      await page.keyboard.type('hello');
+      const body = await send();
+      assert.deepStrictEqual(body.mentions, ['foreign.lisa']);
+      assert.strictEqual(body.text, '@foreign.lisa hello');
     });
 
     await test('no pageerror and no unexpected console error across the whole run', async () => {

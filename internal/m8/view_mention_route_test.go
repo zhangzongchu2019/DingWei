@@ -292,7 +292,7 @@ func TestViewMentionRoute(t *testing.T) {
 	// 同组跨属主：明确 Agent 来源，不继承接收者业主的权限。
 	t.Run("same group other owner delivers as an attributed Agent message", func(t *testing.T) {
 		_, _, r := e.post(t, "55555555555555555555555555555555", "格四", []string{"Gamma.lb"})
-		want := []string{"Gamma.lb|delivered||已转给 Gamma，回复请到 Gamma 的页面查看"}
+		want := []string{"Gamma.lb|delivered||已转给 Gamma.lb，回复请到 Gamma.lb 的页面查看"}
 		if got := vmReceipts(r); strings.Join(got, "\n") != strings.Join(want, "\n") {
 			t.Fatalf("回执=%q", got)
 		}
@@ -466,7 +466,7 @@ func TestViewMentionRouteLegacyInput(t *testing.T) {
 	}
 	want := []string{
 		"Beta.zzc|delivered||已转给 Beta，回复请到 Beta 的页面查看",
-		"Gamma.lb|delivered||已转给 Gamma，回复请到 Gamma 的页面查看",
+		"Gamma.lb|delivered||已转给 Gamma.lb，回复请到 Gamma.lb 的页面查看",
 	}
 	if got := vmReceipts(r); strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("回执=%q", got)

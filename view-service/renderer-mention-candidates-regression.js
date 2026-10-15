@@ -296,6 +296,14 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.notStrictEqual(light, dark, 'popup background must change with the theme');
     });
 
+    await test('a unique other-owner candidate still inserts its full name', async () => {
+      await reset([{ full_name: 'foreign.lisa', name: 'foreign', cli: 'codex', online: true, insert: 'foreign.lisa' }]);
+      await input.fill(''); await typeAt('@for');
+      await page.waitForFunction(() => document.querySelectorAll('#mentionPopup .mention-row:not(.mention-note)').length === 1);
+      await page.keyboard.press('Enter');
+      assert.strictEqual(await input.inputValue(), '@foreign.lisa ');
+    });
+
     await test('no pageerror and no unexpected console error across the whole run', async () => {
       assert.deepStrictEqual(pageErrors, []);
       assert.deepStrictEqual(consoleErrors.filter((t) => !/status of (404|500)/.test(t)), []);
