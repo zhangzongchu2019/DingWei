@@ -85,6 +85,9 @@ func TestConsoleHelperUpdateAuthorizationAndCatalogOnly(t *testing.T) {
 	defer conn.CloseNow()
 	waitSessionOnline(t, h, AgentKeyID("zzc"), "opus50ts")
 	// A claimed target version alone is not proof of updater support.
+	if st, raw := call("GET", v.tokZZC, "", ""); st != 200 || strings.Contains(raw, `"eligible":true`) {
+		t.Fatalf("without capability advertised actionable: %d %s", st, raw)
+	}
 	if st, raw := call("POST", v.tokZZC, npOrigin, body); st != 200 || !strings.Contains(raw, `"error":"manual_required"`) {
 		t.Fatalf("new version without capability=%d %s", st, raw)
 	}
