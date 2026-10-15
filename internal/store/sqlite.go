@@ -2085,6 +2085,78 @@ func (s *SQLite) ExpireSessionDeliveries(ctx context.Context, keyID, sessionName
 	return expired, nil
 }
 
+// ResolveCapabilityPendingSessionDeliveries settles only the narrow
+// registered-but-not-yet-capability-confirmed admission state. The conditional
+// state predicates make repeated capability reports and reconnects idempotent.
+func (s *SQLite) ResolveCapabilityPendingSessionDeliveries(ctx context.Context, keyID, sessionName string, deliveryACK bool, now time.Time) ([]model.SessionDelivery, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	nowText := now.UTC().Format(time.RFC3339Nano)
+	cutoff := now.Add(-30 * time.Minute).UTC().Format(time.RFC3339Nano)
+	var dead []model.SessionDelivery
+	collect := func(query string, args ...any) error {
+		rows, err := tx.QueryContext(ctx, query, args...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			d, err := scanSessionDelivery(rows)
+			if err != nil {
+				return err
+			}
+			dead = append(dead, *d)
+		}
+		return rows.Err()
+	}
+	if err := collect(`UPDATE session_delivery SET state='dead',last_error='delivery_capability_unconfirmed_expired',lease_until=NULL,updated_at=?
+		WHERE key_id=? AND session_name=? AND state='capability_pending' AND provenance='capability_pending_ack_v1' AND (attempts>=12 OR created_at<=?)
+		RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`, nowText, keyID, sessionName, cutoff); err != nil {
+		return nil, err
+	}
+	if deliveryACK {
+		_, err = tx.ExecContext(ctx, `UPDATE session_delivery SET state='queued',next_attempt_at=?,lease_until=NULL,updated_at=?
+			WHERE key_id=? AND session_name=? AND state='capability_pending' AND provenance='capability_pending_ack_v1'`, nowText, nowText, keyID, sessionName)
+	} else {
+		err = collect(`UPDATE session_delivery SET state='dead',last_error='delivery_ack_unsupported',lease_until=NULL,updated_at=?
+			WHERE key_id=? AND session_name=? AND state='capability_pending' AND provenance='capability_pending_ack_v1'
+			RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`, nowText, keyID, sessionName)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return dead, nil
+}
+
+// ExpireCapabilityPendingSessionDeliveries is the startup/periodic counterpart
+// to ExpireSessionDeliveries: capability-pending rows have no ACK-capable
+// client to enter the normal drain loop.
+func (s *SQLite) ExpireCapabilityPendingSessionDeliveries(ctx context.Context, now time.Time) ([]model.SessionDelivery, error) {
+	nowText := now.UTC().Format(time.RFC3339Nano)
+	rows, err := s.db.QueryContext(ctx, `UPDATE session_delivery SET state='dead',last_error='delivery_capability_unconfirmed_expired',lease_until=NULL,updated_at=?
+		WHERE state='capability_pending' AND provenance='capability_pending_ack_v1' AND (attempts>=12 OR created_at<=?)
+		RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`, nowText, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var expired []model.SessionDelivery
+	for rows.Next() {
+		d, err := scanSessionDelivery(rows)
+		if err != nil {
+			return nil, err
+		}
+		expired = append(expired, *d)
+	}
+	return expired, rows.Err()
+}
+
 func (s *SQLite) ClaimSessionDelivery(ctx context.Context, keyID, sessionName string, now time.Time) (*model.SessionDelivery, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

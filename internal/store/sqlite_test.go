@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -115,6 +116,120 @@ func TestExpireSessionDeliveriesReturnsOnlyNewTerminalRows(t *testing.T) {
 		if err != nil || got == nil || got.State != want {
 			t.Fatalf("%s state=%+v err=%v, want %s", id, got, err, want)
 		}
+	}
+}
+
+func TestCapabilityPendingDeliveryResolvesOnceAndOldClaimFilterIgnoresIt(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	pending := model.SessionDelivery{ID: "dw-dlv_pending", KeyID: "fresh", SessionName: "home", Envelope: `{}`, SourceMessageID: "source", SourceType: "session_inbound", Provenance: "capability_pending_ack_v1", State: "capability_pending", CreatedAt: now}
+	if err := db.EnqueueSessionDelivery(ctx, pending); err != nil {
+		t.Fatal(err)
+	}
+	// This is the a14-compatible claim predicate: unknown pending state must be
+	// inert to an older binary, rather than being injected or causing a query error.
+	claimed, err := db.ClaimSessionDelivery(ctx, pending.KeyID, pending.SessionName, now.Add(time.Second))
+	if err != nil || claimed != nil {
+		t.Fatalf("old claim filter must ignore capability_pending: delivery=%+v err=%v", claimed, err)
+	}
+	dead, err := db.ResolveCapabilityPendingSessionDeliveries(ctx, pending.KeyID, pending.SessionName, true, now)
+	if err != nil || len(dead) != 0 {
+		t.Fatalf("ack=true resolve dead=%+v err=%v", dead, err)
+	}
+	claimed, err = db.ClaimSessionDelivery(ctx, pending.KeyID, pending.SessionName, now.Add(time.Second))
+	if err != nil || claimed == nil || claimed.ID != pending.ID || claimed.Attempts != 1 {
+		t.Fatalf("promoted pending claim=%+v err=%v", claimed, err)
+	}
+	if dead, err := db.ResolveCapabilityPendingSessionDeliveries(ctx, pending.KeyID, pending.SessionName, true, now); err != nil || len(dead) != 0 {
+		t.Fatalf("duplicate capability report changed settled delivery dead=%+v err=%v", dead, err)
+	}
+}
+
+func TestCapabilityPendingDeliveryRejectsAndExpiresWithoutReconnect(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	unsupported := model.SessionDelivery{ID: "dw-dlv_noack", KeyID: "fresh", SessionName: "noack", Envelope: `{}`, SourceMessageID: "source-noack", SourceType: "session_inbound", Provenance: "capability_pending_ack_v1", State: "capability_pending", CreatedAt: now}
+	expiring := model.SessionDelivery{ID: "dw-dlv_expire", KeyID: "fresh", SessionName: "never", Envelope: `{}`, SourceMessageID: "source-expire", SourceType: "session_inbound", Provenance: "capability_pending_ack_v1", State: "capability_pending", CreatedAt: now.Add(-31 * time.Minute)}
+	known := model.SessionDelivery{ID: "dw-dlv_known", KeyID: "fresh", SessionName: "noack", Envelope: `{}`, SourceMessageID: "source-known", SourceType: "session_inbound", CreatedAt: now}
+	for _, d := range []model.SessionDelivery{unsupported, expiring, known} {
+		if err := db.EnqueueSessionDelivery(ctx, d); err != nil {
+			t.Fatal(err)
+		}
+	}
+	dead, err := db.ResolveCapabilityPendingSessionDeliveries(ctx, unsupported.KeyID, unsupported.SessionName, false, now)
+	if err != nil || len(dead) != 1 || dead[0].ID != unsupported.ID || dead[0].LastError != "delivery_ack_unsupported" {
+		t.Fatalf("ack=false dead=%+v err=%v", dead, err)
+	}
+	if claimed, err := db.ClaimSessionDelivery(ctx, known.KeyID, known.SessionName, now); err != nil || claimed == nil || claimed.ID != known.ID {
+		t.Fatalf("ack=false must not alter known queued delivery: %+v err=%v", claimed, err)
+	}
+	expired, err := db.ExpireCapabilityPendingSessionDeliveries(ctx, now)
+	if err != nil || len(expired) != 1 || expired[0].ID != expiring.ID || expired[0].LastError != "delivery_capability_unconfirmed_expired" {
+		t.Fatalf("never-reconnected expiry=%+v err=%v", expired, err)
+	}
+	for _, id := range []string{unsupported.ID, expiring.ID} {
+		got, err := db.GetSessionDelivery(ctx, id)
+		if err != nil || got == nil || got.State != "dead" {
+			t.Fatalf("dead delivery id=%s got=%+v err=%v", id, got, err)
+		}
+	}
+}
+
+func TestCapabilityPendingConcurrentCapabilityReconnectAndExpirySettleOnce(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	pending := model.SessionDelivery{ID: "dw-dlv-concurrent-settle", KeyID: "fresh", SessionName: "home", Envelope: `{}`, SourceMessageID: "source", SourceType: "session_inbound", Provenance: "capability_pending_ack_v1", State: "capability_pending", CreatedAt: now.Add(-31 * time.Minute)}
+	if err := db.EnqueueSessionDelivery(ctx, pending); err != nil {
+		t.Fatal(err)
+	}
+	// A previous terminal row shares the same endpoint and provenance. The
+	// concurrent settlers below must leave it untouched, proving their state
+	// predicates do not re-settle a terminal row.
+	alreadyDead := model.SessionDelivery{ID: "dw-dlv-concurrent-prior-dead", KeyID: pending.KeyID, SessionName: pending.SessionName, Envelope: `{}`, SourceMessageID: "prior", SourceType: "session_inbound", Provenance: pending.Provenance, State: "dead", LastError: "prior_terminal", CreatedAt: now.Add(-31 * time.Minute)}
+	if err := db.EnqueueSessionDelivery(ctx, alreadyDead); err != nil {
+		t.Fatal(err)
+	}
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	deadCounts := make(chan int, 3)
+	for _, settle := range []func() ([]model.SessionDelivery, error){
+		func() ([]model.SessionDelivery, error) {
+			return db.ResolveCapabilityPendingSessionDeliveries(ctx, pending.KeyID, pending.SessionName, true, now)
+		},
+		func() ([]model.SessionDelivery, error) {
+			return db.ResolveCapabilityPendingSessionDeliveries(ctx, pending.KeyID, pending.SessionName, false, now)
+		},
+		func() ([]model.SessionDelivery, error) { return db.ExpireCapabilityPendingSessionDeliveries(ctx, now) },
+	} {
+		wg.Add(1)
+		go func(settle func() ([]model.SessionDelivery, error)) {
+			defer wg.Done()
+			<-start
+			dead, err := settle()
+			if err != nil {
+				t.Errorf("concurrent settle: %v", err)
+				return
+			}
+			deadCounts <- len(dead)
+		}(settle)
+	}
+	close(start)
+	wg.Wait()
+	close(deadCounts)
+	totalDead := 0
+	for count := range deadCounts {
+		totalDead += count
+	}
+	if totalDead != 1 {
+		t.Fatalf("capability/reconnect/expiry terminal rows=%d, want exactly 1", totalDead)
+	}
+	got, err := db.GetSessionDelivery(ctx, pending.ID)
+	if err != nil || got == nil || got.State != "dead" {
+		t.Fatalf("concurrent settle delivery=%+v err=%v", got, err)
+	}
+	prior, err := db.GetSessionDelivery(ctx, alreadyDead.ID)
+	if err != nil || prior == nil || prior.State != "dead" || prior.LastError != "prior_terminal" {
+		t.Fatalf("concurrent settle touched prior terminal row=%+v err=%v", prior, err)
 	}
 }
 
