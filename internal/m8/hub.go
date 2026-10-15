@@ -1356,7 +1356,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		if h.confirmHelperUpdateHealth(r.Context(), c, env) {
 			continue
 		}
-		if h.handleProvisionAck(r.Context(), c, env) {
+		if h.recordHelperUpdateReceipt(r.Context(), c, env) || h.handleProvisionAck(r.Context(), c, env) {
 			continue
 		}
 		if err := h.RouteEnvelope(r.Context(), env); err != nil {

@@ -305,6 +305,43 @@ func (h *Hub) confirmHelperUpdateHealth(ctx context.Context, c *sessionClient, e
 	return true
 }
 
+func helperUpdateReceiptStage(stage string) bool {
+	switch stage {
+	case "downloaded", "installed", "restarted", "failed", "rolled_back":
+		return true
+	default:
+		return false
+	}
+}
+
+// recordHelperUpdateReceipt consumes only a receipt whose frozen tuple belongs
+// to this authenticated Agent connection. The stage is durable but is not
+// confirmation: only a fresh post-restart health nonce may promote confirmed.
+func (h *Hub) recordHelperUpdateReceipt(ctx context.Context, c *sessionClient, env model.Envelope) bool {
+	if metaString(env.Meta, "type") != "provision_ack" || metaString(env.Meta, "action") != "update_self" {
+		return false
+	}
+	if c == nil || c.metricsAgentID == "" {
+		return true
+	}
+	job, raw, err := h.helperUpdateJob(ctx, c.metricsAgentID)
+	if err != nil || job == nil || helperUpdateTerminal(job.Stage) {
+		return true
+	}
+	stage := metaString(env.Meta, "stage")
+	if !helperUpdateReceiptStage(stage) || h.now().UTC().After(job.ExpiresAt) ||
+		metaString(env.Meta, "job_id") != job.JobID || metaString(env.Meta, "release_id") != job.ReleaseID ||
+		metaString(env.Meta, "sha256") != job.SHA256 || metaString(env.Meta, "lock_sha256") != job.LockSHA256 {
+		return true
+	}
+	updated := *job
+	updated.Stage = stage
+	if ok, err := h.updateHelperUpdateJob(ctx, raw, updated); err == nil && ok {
+		_ = h.Repo.WriteAudit(ctx, c.keyID, "helper_update_"+stage, job.JobID)
+	}
+	return true
+}
+
 func helperUpdateTerminal(stage string) bool {
 	switch stage {
 	case "confirmed", "expired", "agent_inactive", "owner_inactive", "release_unavailable", "failed":
