@@ -43,7 +43,7 @@
 —— 安装配置 DingWei 客户端(sessionHelper) ——
 
 [Linux]
-1. 下载接入包: curl -fsSL https://dingwei.wegoab.com/dl/dingwei-linux.tar.gz -o ~/dingwei.tgz && tar xzf ~/dingwei.tgz -C ~/dingwei
+1. 获取发布单批准的版本（Git 精确 commit，或批准的 helper 源码升级包＋独立 SHA256）；按 [当前退役与引导说明](../operator/helper-update-delivery.md) 操作。旧匿名接入包下载已退役。
 2. 前提: 本机已装并登录好 AI CLI(claude/codex/opencode 任一)
 3. 改 config: 填 SH_KEY_ID=<key_id> SH_SECRET=<secret> SH_SESSION_NAME=<会话名> SH_CLI=<cli> SH_CLI_CWD=<工作目录>
 4. 首次信任工作目录(claude 需要): cd <工作目录> && claude --dangerously-skip-permissions → 选“信任” → /exit
@@ -51,9 +51,9 @@
 6. 自愈: 配 cron 每2分钟跑 guard.sh(掉线自愈)
 
 [macOS]
-1. 前提: 装好 claude + 包装脚本(key 写死进脚本，勿用变量)
-2. 下载: env -u SSL_CERT_FILE curl -fsSL https://dingwei.wegoab.com/dl/dingwei-mac.tar.gz -o ~/Downloads/dingwei-mac.tar.gz
-3. 解压: mkdir -p ~/dingwei && tar xzf ~/Downloads/dingwei-mac.tar.gz -C ~/dingwei
+1. 前提: 安装并登录所需 CLI；凭据仅留在本机私有配置，不写入脚本或安装包。
+2. 获取发布单批准的精确 Git commit 或 helper 源码包并核验独立 SHA256；macOS 首版只做手动升级，见 [当前说明](../operator/helper-update-delivery.md)。
+3. 按已批准发布单检查清单并安全展开到独立源码目录；不要将 key、env 或私有状态放进包内。
 4. 改 config-*: 填 key_id/secret/会话名/CLI/工作目录
 5. 首次信任工作目录(=SH_CLI_CWD，不是安装目录): cd <SH_CLI_CWD> && claude-deepseek --dangerously-skip-permissions → Enter信任 → /exit
 6. 后台运行: cd ~/dingwei && ./deploy-macos/install-launchd.sh "$PWD/config-你的"

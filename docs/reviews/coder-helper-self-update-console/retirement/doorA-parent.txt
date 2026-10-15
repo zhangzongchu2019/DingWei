@@ -1,0 +1,263 @@
+=== AUTHED GET /admin
+status: 200
+header Content-Type: text/html; charset=utf-8
+header Location: 
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<!doctype html><meta charset=utf-8><title>WorkPulse</title>
+<h3>WorkPulse 后台</h3><p>服务运行中。</p>
+<p>消息总数: 0 | queued: 0 | processing: 0 | done: 0 | dead: 0</p>
+<p>总控队列深度: 0 | total: 0 | queued: 0 | llm_pending: 0 | done: 0 | failed: 0 | expired: 0 | failed_rate: 0.00% | expired_rate: 0.00%</p>
+<p>L2 in_flight: 0 | p50: 0ms | p95: 0ms | triage_failed_rate: 0.00%</p>
+<ul>
+<li><a href="/portal">团队门户</a></li><li><a href="/admin/messages">最近 100 条消息</a></li>
+<li><a href="/admin/members">成员 / 租户候选</a></li><li><a href="/admin/bot-channels">机器人管道</a></li>
+<li><a href="/admin/projects">项目组 / 排期文档</a></li>
+<li><a href="/admin/services">租户 / 成员空间</a></li><li><a href="/admin/api-keys">凭证 API key</a></li>
+<li><a href="/admin/sessions">会话端点 / 通配 / 镜像</a></li>
+<li><a href="/admin/agent-groups">Agent 编组（最简入口）</a></li>
+<li><a href="/admin/provision">Provision 下发</a></li>
+<li><a href="/admin/control-plane">总控指标看板</a></li>
+<li><a href="/admin/files">文件对象浏览</a></li>
+<li><a href="/admin/config">运行配置</a></li>
+</ul>
+
+=== AUTHED GET /admin/files
+status: 200
+header Content-Type: text/html; charset=utf-8
+header Location: 
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<!doctype html><meta charset=utf-8><title>文件对象</title><h3>文件对象</h3><p><a href="/admin">返回</a></p><table><tr><th>fileid</th><th>原名</th><th>字节</th><th>sha256</th><th>上传时刻</th><th>来源</th><th>archived</th><th>预计清理</th><th>内容</th></tr><tr><td><code>0123456789abcdef0123456789abcdef</code></td><td>a.png</td><td>4</td><td><code>abcd</code></td><td>2026-09-18T00:00:00Z</td><td>owner/agent</td><td>false</td><td>2026-09-26T00:00:00Z</td><td><a href="/admin/files/0123456789abcdef0123456789abcdef/content">预览/下载</a></td></tr></table>
+
+=== AUTHED GET /admin/files/0123456789abcdef0123456789abcdef/content
+status: 200
+header Content-Type: image/png
+header Location: 
+header Content-Disposition: 
+header Cache-Control: 
+body:
+data
+
+=== AUTHED GET /admin/provision
+status: 200
+header Content-Type: text/html; charset=utf-8
+header Location: 
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<!doctype html><meta charset=utf-8><title>Provision 下发</title><h3>Provision 下发</h3><p><a href="/admin">返回后台首页</a></p>
+<form method=post action=/admin/provision enctype="multipart/form-data">
+<p>目标类型 <select name=target_mode><option value=session>单会话</option><option value=owner>owner 全部在线会话</option><option value=key>key 全部在线会话</option></select>
+ key_id <input name=key_id> session <input name=session_name> owner <input name=owner_key> 灰度台数 <input name=limit size=4 placeholder="1"></p>
+<p>action <select name=provision_action><option value=update_self>update_self</option><option value=install_skill>install_skill</option><option value=install_mcp>install_mcp</option></select>
+ version <input name=version> target <input name=target value=self></p>
+<p>url <input name=url size=70> sha256 <input name=sha256 size=68></p>
+<p>extra(JSON) <textarea name=extra rows=3 cols=80>{}</textarea></p>
+<p>上传制品 <input type=file name=artifact> <button name=op value=send>下发</button> <button name=op value=package_self>打包当前 sessionHelper</button></p>
+</form>
+<h4>在线会话</h4><table border=1 cellpadding=4><tr><th>key_id</th><th>session</th><th>conn_seq</th><th>owner</th><th>tool</th><th>model</th><th>last_seen</th></tr><tr><td colspan=7>暂无在线会话。</td></tr></table><h4>最近 Provision 回执 / 审计</h4><table border=1 cellpadding=4><tr><th>time</th><th>action</th><th>actor/from</th><th>detail</th></tr><tr><td colspan=4>暂无 provision 审计。</td></tr></table>
+
+=== AUTHED GET /admin/bot-channels
+status: 200
+header Content-Type: text/html; charset=utf-8
+header Location: 
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<!doctype html><meta charset=utf-8><title>机器人管道</title><h3>机器人管道</h3>
+<p>数据来源：后台录入的飞书自建应用。bot_name 就是寻址地址第三段，例如 <code>ou_xxx#key_id#UnifiedRobot</code> 会选择 UnifiedRobot 管道发送；接收由各自长连接或 webhook 完成。</p>
+<form method=post action=/admin/bot-channels>
+<p>ID <input name=id> 名称 <input name=name> app_id <input name=app_id> app_secret <input name=app_secret type=password placeholder="留空不改"> 用途 <input name=purpose value=general>
+verification_token <input name=verification_token type=password placeholder="可选，留空不改"> encrypt_key <input name=encrypt_key type=password placeholder="可选，留空不改">
+<label><input type=checkbox name=cannot_send>禁发</label><label><input type=checkbox name=cannot_receive>禁收</label>
+<label><input type=checkbox name=disabled>禁用</label> <button>保存管道</button></p>
+</form>
+<table border=1 cellpadding=4><tr><th>ID</th><th>bot_name</th><th>app_id</th><th>secret</th><th>webhook token</th><th>encrypt_key</th><th>用途</th><th>收/发</th><th>启用</th><th>WS状态</th><th>操作</th></tr><tr><td colspan=11>暂无机器人管道。请在此录入 app_id/app_secret；secret/token/encrypt_key 只写入不回显。</td></tr></table>
+
+=== AUTHED GET /admin/members
+status: 200
+header Content-Type: text/html; charset=utf-8
+header Location: 
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<!doctype html><meta charset=utf-8><title>成员配置</title><h3>成员配置</h3>
+<p>数据来源：候选池来自飞书入站发送者和“刷新采集”拉取的机器人所在群成员；录为成员后成为排期、权限、佐证对账的 owner。</p>
+<form method=post action=/admin/members><input type=hidden name=action value=refresh_seen><button>刷新采集</button></form>
+<h4>候选池</h4>
+<table border=1 cellpadding=4><tr><th>open_id</th><th>名称</th><th>管道</th><th>来源</th><th>最后看到</th><th>状态/操作</th></tr><tr><td colspan=6>暂无候选人。先让用户给机器人发消息，或点击“刷新采集”从机器人所在群拉取成员。</td></tr></table>
+<details><summary>手动添加兜底</summary>
+<form method=post action=/admin/members>
+<p>owner_key <input name=owner_key> 名称 <input name=display_name> 飞书open_id <input name=feishu_open_id>
+角色 <select name=role><option>member</option><option>collaborator</option><option>manager</option><option>system</option></select>
+<label><input type=checkbox name=evidence_optout>关闭佐证</label>
+<label><input type=checkbox name=disabled>禁用</label> <button>保存成员</button></p>
+</form>
+</details>
+<h4>已录入成员</h4>
+<table border=1 cellpadding=4><tr><th>owner_key</th><th>名称</th><th>open_id</th><th>角色</th><th>佐证关闭</th><th>启用</th><th>操作</th></tr><tr><td>systemtaskintl</td><td>SYSTEM-V-TASK-INTERNAL</td><td></td><td>system</td><td>false</td><td>true</td><td><form method=post action=/admin/members><input type=hidden name=action value=delete><input type=hidden name=owner_key value="systemtaskintl"><button>删除/禁用</button></form></td></tr></table>
+
+=== AUTHED GET /admin/config
+status: 200
+header Content-Type: text/html; charset=utf-8
+header Location: 
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<!doctype html><meta charset=utf-8><title>运行配置</title><h3>运行配置</h3>
+<p>数据来源：预置项写入 app_config 表。这里不配置监听端口、DB 路径、WP_SECRET_KEY 等 bootstrap 项；这些仍来自 .env / Secret。</p>
+<table border=1 cellpadding=4><tr><th>配置项</th><th>说明</th><th>默认值</th><th>当前值</th><th>设置</th></tr><tr><td>排期触发词（废弃）<br><code>triggers.schedule</code></td><td>历史配置项。当前排期入口只由系统关键词（#四字甲乙类 / sys:调度）触发，未命中系统关键词的消息静默。</td><td><code>[&#34;+&#34;,&#34;-&#34;,&#34;改&#34;,&#34;顺延&#34;,&#34;全量&#34;,&#34;确认&#34;,&#34;取消&#34;]</code></td><td><pre>[&#34;+&#34;,&#34;-&#34;,&#34;改&#34;,&#34;顺延&#34;,&#34;全量&#34;,&#34;确认&#34;,&#34;取消&#34;]</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="triggers.schedule"><input name=value_json value="[&#34;+&#34;,&#34;-&#34;,&#34;改&#34;,&#34;顺延&#34;,&#34;全量&#34;,&#34;确认&#34;,&#34;取消&#34;]" size=38><button>保存</button></form></td></tr><tr><td>佐证默认关闭<br><code>evidence.default_opt_out</code></td><td>新成员是否默认关闭 AI 佐证抽取。</td><td><code>false</code></td><td><pre>false</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="evidence.default_opt_out"><input name=value_json value="false" size=38><button>保存</button></form></td></tr><tr><td>全局排期文件<br><code>global_schedule.path</code></td><td>§M3 联动导出的全局日程 JSON 路径；为空则使用启动环境。</td><td><code>&#34;&#34;</code></td><td><pre>&#34;&#34;</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="global_schedule.path"><input name=value_json value="&#34;&#34;" size=38><button>保存</button></form></td></tr><tr><td>群通知时间<br><code>notify.group_cron</code></td><td>R16 群通知 cron，默认 UTC 0 点；可填 0 0 或完整五段 cron。</td><td><code>&#34;0 0&#34;</code></td><td><pre>&#34;0 0&#34;</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="notify.group_cron"><input name=value_json value="&#34;0 0&#34;" size=38><button>保存</button></form></td></tr><tr><td>个人提醒时间<br><code>notify.personal_cron</code></td><td>R16 个人 DM 提醒 cron，默认 UTC 0 点和 6 点；可填 0 0,6 或完整五段 cron。</td><td><code>&#34;0 0,6&#34;</code></td><td><pre>&#34;0 0,6&#34;</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="notify.personal_cron"><input name=value_json value="&#34;0 0,6&#34;" size=38><button>保存</button></form></td></tr><tr><td>项目佐证覆盖时间<br><code>schedule.evidence_cron</code></td><td>项目级 evidence_cron 覆盖使用的兼容配置；R16 群/个人通知使用 notify.*_cron。</td><td><code>&#34;0 0,6 * * *&#34;</code></td><td><pre>&#34;0 0,6 * * *&#34;</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="schedule.evidence_cron"><input name=value_json value="&#34;0 0,6 * * *&#34;" size=38><button>保存</button></form></td></tr><tr><td>佐证通报时区<br><code>schedule.evidence_tz</code></td><td>R8 定时佐证 cron 使用的 IANA 时区；默认 UTC，除非运行配置显式指定其它时区。</td><td><code>&#34;UTC&#34;</code></td><td><pre>&#34;UTC&#34;</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="schedule.evidence_tz"><input name=value_json value="&#34;UTC&#34;" size=38><button>保存</button></form></td></tr><tr><td>排期通知群<br><code>schedule.notify_chat</code></td><td>R8 定时佐证完成后发送摘要的飞书群 chat_id；为空则使用 WP_SCHEDULE_NOTIFY_CHAT。</td><td><code>&#34;&#34;</code></td><td><pre>&#34;&#34;</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="schedule.notify_chat"><input name=value_json value="&#34;&#34;" size=38><button>保存</button></form></td></tr><tr><td>排期通知机器人<br><code>schedule.notify_bot</code></td><td>发送排期协调/佐证通知的 bot_channel_id；为空则使用 WP_SCHEDULE_NOTIFY_BOT。</td><td><code>&#34;default&#34;</code></td><td><pre>&#34;default&#34;</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="schedule.notify_bot"><input name=value_json value="&#34;default&#34;" size=38><button>保存</button></form></td></tr><tr><td>Transcript 目录<br><code>schedule.transcript_dirs</code></td><td>逗号分隔的额外 transcript 数据源；成员 sessionHelper 接入后优先用 WorkPulse 已收集消息。</td><td><code>&#34;&#34;</code></td><td><pre>&#34;&#34;</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="schedule.transcript_dirs"><input name=value_json value="&#34;&#34;" size=38><button>保存</button></form></td></tr><tr><td>会话采集保留天数<br><code>collect.retain_days</code></td><td>sessionHelper 静默采集消息的保留天数；佐证前会清理超过该天数的 collect 消息。</td><td><code>31</code></td><td><pre>31</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="collect.retain_days"><input name=value_json value="31" size=38><button>保存</button></form></td></tr><tr><td>数据保留下限<br><code>cleanup.retention_days</code></td><td>清理保护下限，默认至少保留 31 天。</td><td><code>31</code></td><td><pre>31</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="cleanup.retention_days"><input name=value_json value="31" size=38><button>保存</button></form></td></tr><tr><td>M8 投递超时<br><code>m8.route.default_timeout_ms</code></td><td>外部 WS 服务同步转发默认超时。</td><td><code>5000</code></td><td><pre>5000</pre></td><td><form method=post action=/admin/config><input type=hidden name=key value="m8.route.default_timeout_ms"><input name=value_json value="5000" size=38><button>保存</button></form></td></tr></table>
+<h4>系统关键词</h4>
+<p>系统关键词必须在消息头部出现；群聊可在前面 @ 机器人。自然语言关键词走固定路径：record=进度上报/汇报，只记录不唤醒 deepseek；coordinate=排期修改/调整，唤醒 deepseek。<code>sys:调度</code> 是隐藏兼容别名。</p>
+<form method=post action=/admin/config>
+<input type=hidden name=action value=upsert_system_route>
+<p>关键词 <input name=keyword placeholder="#进度汇报"> 路径 <select name=route_action><option value=record>record</option><option value=coordinate>coordinate</option><option value=auto>auto</option></select> 服务 <input name=service_name value=scheduler> 优先级 <input name=priority value=10 size=4> <button>保存关键词</button></p>
+</form>
+<table border=1 cellpadding=4><tr><th>关键词</th><th>服务</th><th>路径</th><th>优先级</th><th>操作</th></tr><tr><td><code>#上报工作</code></td><td>scheduler</td><td>record</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#上报工作"><button>删除</button></form></td></tr><tr><td><code>#上报日程</code></td><td>scheduler</td><td>record</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#上报日程"><button>删除</button></form></td></tr><tr><td><code>#工作上报</code></td><td>scheduler</td><td>record</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#工作上报"><button>删除</button></form></td></tr><tr><td><code>#工作提交</code></td><td>scheduler</td><td>record</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#工作提交"><button>删除</button></form></td></tr><tr><td><code>#工作汇报</code></td><td>scheduler</td><td>record</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#工作汇报"><button>删除</button></form></td></tr><tr><td><code>#提交工作</code></td><td>scheduler</td><td>record</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#提交工作"><button>删除</button></form></td></tr><tr><td><code>#提交日程</code></td><td>scheduler</td><td>record</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#提交日程"><button>删除</button></form></td></tr><tr><td><code>#日程上报</code></td><td>scheduler</td><td>record</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#日程上报"><button>删除</button></form></td></tr><tr><td><code>#日程提交</code></td><td>scheduler</td><td>record</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#日程提交"><button>删除</button></form></td></tr><tr><td><code>#汇报工作</code></td><td>scheduler</td><td>record</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#汇报工作"><button>删除</button></form></td></tr><tr><td><code>#汇报进度</code></td><td>scheduler</td><td>record</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#汇报进度"><button>删除</button></form></td></tr><tr><td><code>#系统安全</code></td><td>sec-ops</td><td>fanout</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#系统安全"><button>删除</button></form></td></tr><tr><td><code>#进度汇报</code></td><td>scheduler</td><td>record</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#进度汇报"><button>删除</button></form></td></tr><tr><td><code>sys:调度</code></td><td>scheduler</td><td>auto</td><td>10</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="sys:调度"><button>删除</button></form></td></tr><tr><td><code>#修改工作</code></td><td>scheduler</td><td>coordinate</td><td>20</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#修改工作"><button>删除</button></form></td></tr><tr><td><code>#修改日程</code></td><td>scheduler</td><td>coordinate</td><td>20</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#修改日程"><button>删除</button></form></td></tr><tr><td><code>#修改进度</code></td><td>scheduler</td><td>coordinate</td><td>20</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#修改进度"><button>删除</button></form></td></tr><tr><td><code>#工作修改</code></td><td>scheduler</td><td>coordinate</td><td>20</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#工作修改"><button>删除</button></form></td></tr><tr><td><code>#工作调整</code></td><td>scheduler</td><td>coordinate</td><td>20</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#工作调整"><button>删除</button></form></td></tr><tr><td><code>#日程修改</code></td><td>scheduler</td><td>coordinate</td><td>20</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#日程修改"><button>删除</button></form></td></tr><tr><td><code>#日程调整</code></td><td>scheduler</td><td>coordinate</td><td>20</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#日程调整"><button>删除</button></form></td></tr><tr><td><code>#调整工作</code></td><td>scheduler</td><td>coordinate</td><td>20</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#调整工作"><button>删除</button></form></td></tr><tr><td><code>#调整日程</code></td><td>scheduler</td><td>coordinate</td><td>20</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#调整日程"><button>删除</button></form></td></tr><tr><td><code>#调整进度</code></td><td>scheduler</td><td>coordinate</td><td>20</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#调整进度"><button>删除</button></form></td></tr><tr><td><code>#进度修改</code></td><td>scheduler</td><td>coordinate</td><td>20</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#进度修改"><button>删除</button></form></td></tr><tr><td><code>#进度调整</code></td><td>scheduler</td><td>coordinate</td><td>20</td><td><form method=post action=/admin/config><input type=hidden name=action value=delete_system_route><input type=hidden name=keyword value="#进度调整"><button>删除</button></form></td></tr></table>
+<details><summary>高级：原始 key-value</summary>
+<form method=post action=/admin/config>
+<p>key <input name=key> value_json <textarea name=value_json rows=3 cols=60>{}</textarea> <button>保存配置</button></p>
+</form>
+<table border=1 cellpadding=4><tr><th>key</th><th>value_json</th><th>updated</th><th>操作</th></tr><tr><td colspan=4>暂无自定义配置。常用项请直接使用上面的预置项。</td></tr></table></details>
+
+=== AUTHED GET /admin/sessions
+status: 200
+header Content-Type: text/html; charset=utf-8
+header Location: 
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<!doctype html><meta charset=utf-8><title>会话端点 / 通配 / 镜像</title><h3>会话端点 / 通配 / 镜像</h3>
+<p>数据来源：sessionHelper 连接 <code>/ws/session/{会话名}?key_id=</code> 后自动写入。断开时会置为离线。路由分三层：①系统默认 M1-M7 指令优先且只读；②会话名精确选择器 <code>#会话名</code> 自动路由且只读；③用户通配在本页按会话行配置。</p>
+<p>客户端 IP：仅当连接来自本机可信反代时信任 <code>X-Forwarded-For</code>/<code>X-Real-IP</code>，否则使用 RemoteAddr，防止伪造。</p>
+<p>镜像默认回本会话 key 绑定的飞书账号，只需选择机器人账号；open_id 与 key_id 由后台自动推断。需要镜像到其他人或群时，可展开高级填写完整地址。</p>
+<h4>系统默认</h4><p>排期、进度、风险、查询、mirror on/off 等 M1-M7/M10 内置指令优先级最高，不在此处修改。</p>
+<table border=1 cellpadding=4><tr><th>key_id</th><th>会话名</th><th>连接序号</th><th>工具</th><th>大模型</th><th>完整会话名</th><th>producer</th><th>target_group</th><th>last_seen</th><th>在线</th><th>client_ip</th><th>清单/派发隔离</th><th>会话自动</th><th>用户通配</th><th>镜像</th><th>镜像目标/操作</th></tr><tr><td colspan=16>暂无在线会话。启动 sessionHelper 后会自动出现；离线会话默认隐藏，避免测试残留干扰。</td></tr></table><h4>成员会话目录</h4>
+<p>数据来源：成员 open_id、API key 绑定账号和在线 sessionHelper。跨成员寻址格式：<code>@成员#会话名 内容</code>；若成员只有一个在线会话，也可用 <code>@成员 内容</code>。</p>
+<table border=1 cellpadding=4><tr><th>成员</th><th>owner_key</th><th>在线会话</th><th>可用地址</th><th>状态</th></tr><tr><td colspan=5>暂无成员在线会话。成员启动 sessionHelper 后会出现在这里。</td></tr></table>
+
+=== AUTHED GET /admin/api-keys
+status: 200
+header Content-Type: text/html; charset=utf-8
+header Location: 
+header Content-Disposition: 
+header Cache-Control: 
+body: <redacted: credential material>
+
+=== ANON GET /admin
+status: 303
+header Content-Type: text/html; charset=utf-8
+header Location: /admin/login
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<a href="/admin/login">See Other</a>.
+
+
+
+=== ANON GET /admin/files
+status: 303
+header Content-Type: text/html; charset=utf-8
+header Location: /admin/login
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<a href="/admin/login">See Other</a>.
+
+
+
+=== ANON GET /admin/provision
+status: 303
+header Content-Type: text/html; charset=utf-8
+header Location: /admin/login
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<a href="/admin/login">See Other</a>.
+
+
+
+=== ANON GET /admin/api-keys
+status: 303
+header Content-Type: text/html; charset=utf-8
+header Location: /admin/login
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<a href="/admin/login">See Other</a>.
+
+
+
+=== ANON GET /admin/bot-channels
+status: 303
+header Content-Type: text/html; charset=utf-8
+header Location: /admin/login
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<a href="/admin/login">See Other</a>.
+
+
+
+=== ANON GET /admin/members
+status: 303
+header Content-Type: text/html; charset=utf-8
+header Location: /admin/login
+header Content-Disposition: 
+header Cache-Control: 
+body:
+<a href="/admin/login">See Other</a>.
+
+
+
+=== AUTHED POST /admin/api-keys
+status: 400
+header Content-Type: text/plain; charset=utf-8
+header Location: 
+header Content-Disposition: 
+header Cache-Control: 
+body:
+action required
+
+
+=== AUTHED POST /admin/bot-channels
+status: 200
+header Content-Type: application/json
+header Location: 
+header Content-Disposition: 
+header Cache-Control: 
+body:
+{"message":"bot channel deleted","ok":true}
+
+
+=== AUTHED POST /admin/provision
+status: 400
+header Content-Type: text/plain; charset=utf-8
+header Location: 
+header Content-Disposition: 
+header Cache-Control: 
+body:
+invalid provision action
+
+
+=== ANON POST /admin/provision
+status: 303
+header Content-Type: 
+header Location: /admin/login
+header Content-Disposition: 
+header Cache-Control: 
+body:
+
+
+=== ANON POST /admin/api-keys
+status: 303
+header Content-Type: 
+header Location: /admin/login
+header Content-Disposition: 
+header Cache-Control: 
+body:
+
+

@@ -1,0 +1,7 @@
+  🔴 go test 取载荷失败,原样输出如下:
+      go: creating work dir: mkdir /tmp/go-build4081200267: no space left on device
+      
+  🔴 装置异常: Error: Command failed: go test ./internal/m8/ -run TestConsolePlatformPayloadDump -count=1
+go: creating work dir: mkdir /tmp/go-build4081200267: no space left on device
+
+    at genericNodeError (node:internal/errors:983:15)

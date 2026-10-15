@@ -1,0 +1,53 @@
+{
+  "source_commit": "04a170c2a9691b235df0ca7edb1447f2f7ca8afe",
+  "source_tree": "53dcb731b9e722d56c35abcd8b553e8485172432",
+  "assets": [
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/repin/REPORT.md",
+      "bytes": 2617,
+      "sha256": "c04a5cadf5eb5337da4baac6fbbd426e1b7a990650d693f437a151b7af372932"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/repin/admin-full-race.log.txt",
+      "bytes": 65,
+      "sha256": "7e3164359d554f2875f393d7baac31ba6cbb6477e6b45221abf504fa5497054c"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/repin/positive.log.txt",
+      "bytes": 63,
+      "sha256": "a4add6b665b8dee583011a9e1e4e5eda16005fa13cc93a050b5289b61cb06c0d"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/repin/restore-controls.log.txt",
+      "bytes": 1816,
+      "sha256": "f5ef5ba365dd16eb986c7aab20bdcc93a8e2d18f1cfdcab9d1238e5d487f0bf9"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/repin/verify-output-scope.py",
+      "bytes": 1345,
+      "sha256": "a4dd840d6cc183007882ff9a3083e6b29acd63cbc57ac001723a9f82439dd95b"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/repin/withdraw.py",
+      "bytes": 987,
+      "sha256": "61aa9dd828b7e8f7b7e409ca65709f20ae4337b939656f390f4bae844f8284a3"
+    }
+  ],
+  "source_pins": [
+    {
+      "path": "internal/admin/gate_baseline_pin_test.go",
+      "bytes": 5903,
+      "sha256": "817acbf17e9fceb7dcdc88fa065a417968dd15dfb5b5c361877a66ce13c14301"
+    },
+    {
+      "path": "internal/admin/admin.go",
+      "bytes": 119560,
+      "sha256": "bfcb54ba222da1315603213d74b8463695a21b7f7dc69161835f3e0c95c31982"
+    },
+    {
+      "path": "internal/admin/gate_baseline_dump_test.go",
+      "bytes": 5588,
+      "sha256": "28b620bbd439e820219549a749eb2726b07a9cd143c311f9c89453e7d4f4562d"
+    }
+  ]
+}

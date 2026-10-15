@@ -1,0 +1,69 @@
+{
+  "source_commit": "6186f2b9aaf926146728fbbebdd3bd504804e493",
+  "source_tree": "0fd4650cad8c369dda69340a78241bf4fd7a4e99",
+  "core_pin": "3adabde30d56e25bcf145d9d8bd8e36a3d14222e",
+  "assets": [
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/core-api-3ad/.gitattributes",
+      "bytes": 22,
+      "sha256": "9f4d0a982bf7cce378dce4fe0be69771bf6428ec8a9e2634fde23828e59cbb5a"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/core-api-3ad/REPORT.md",
+      "bytes": 2358,
+      "sha256": "e5328713c74a02f2783521a1f7b76e193c6618b2a0d8f4289eca7dba93c27cfd"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/core-api-3ad/canonical.log.txt",
+      "bytes": 35034,
+      "sha256": "5599db7005eebdb7d087b2ffb05c814c71d59143bc348e67340e20c5f842a38d"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/core-api-3ad/chromium.log.txt",
+      "bytes": 772,
+      "sha256": "1d766da1f28fab44bc3a46f0577e4d32179af8b8e98ad12632360025e750bcbb"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/core-api-3ad/standard-go.log.txt",
+      "bytes": 188,
+      "sha256": "7bd811df63d9f4a9ff372b91c6883c0aee221cfe3440684a2a2b998e761bb202"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/core-api-3ad/targeted-race.log.txt",
+      "bytes": 61,
+      "sha256": "b4bfd7d9af2cadb89030eedc8a1a5ba5bc0b73adfb815ca0d87a6fd0c5fd91c8"
+    }
+  ],
+  "source_pins": [
+    {
+      "path": "internal/m8/console_helper_updates.go",
+      "bytes": 7828,
+      "sha256": "3e7b96a690cbe1b4ded9acca5bbc3b97e1e97c1e618f9fba670ef2653ef6d65b"
+    },
+    {
+      "path": "internal/m8/console_helper_updates_test.go",
+      "bytes": 8466,
+      "sha256": "2d06dbbeec5d0ce855488782f0ce32ee743b6d4ede653c1dad2b73a8b26bc7fc"
+    },
+    {
+      "path": "internal/m8/console_helper_updates.js",
+      "bytes": 7364,
+      "sha256": "36a11bdef0e793125b4d1a0fa2d303d7fc792fa840260946706ba3d4d42b072d"
+    },
+    {
+      "path": "internal/m8/helper_update.go",
+      "bytes": 22655,
+      "sha256": "03e3929a7d4b13f545edaa683de6d90d54eef539d9944581610698088163b84f"
+    },
+    {
+      "path": "internal/admin/admin.go",
+      "bytes": 119901,
+      "sha256": "db88d89b8acfb901b6b9eeefed87927de84facd36d746fbdbce61a89bb5cbcbb"
+    },
+    {
+      "path": "docs/operator/helper-update-console-api.md",
+      "bytes": 3133,
+      "sha256": "bc1b5c85e1f82e7817c18f417142e73599bad6c608cb113c33cad627800a5448"
+    }
+  ]
+}

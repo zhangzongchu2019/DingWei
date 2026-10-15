@@ -1,0 +1,26 @@
+[
+  {
+    "case": "download",
+    "rc": 1,
+    "intended": true,
+    "log": "/tmp/coder-self-update-retire-withdraw-download.log"
+  },
+  {
+    "case": "upload-before-read",
+    "rc": 1,
+    "intended": true,
+    "log": "/tmp/coder-self-update-retire-withdraw-upload-before-read.log"
+  },
+  {
+    "case": "package",
+    "rc": 1,
+    "intended": true,
+    "log": "/tmp/coder-self-update-retire-withdraw-package.log"
+  },
+  {
+    "case": "upload-ui",
+    "rc": 1,
+    "intended": true,
+    "log": "/tmp/coder-self-update-retire-withdraw-upload-ui.log"
+  }
+]

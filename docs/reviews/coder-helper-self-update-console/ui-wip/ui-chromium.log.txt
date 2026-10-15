@@ -1,0 +1,12 @@
+PASS does not fetch catalog until panel opened
+PASS single uses registered SHA and one opaque Agent ID only
+PASS batch submits only explicitly selected eligible owned rows
+PASS old helper is manual-required with disabled action
+PASS installed and restarted stay unconfirmed, confirmed is explicit
+PASS rollback and failure reason visible without claiming success
+PASS empty catalog disables all issuance
+PASS rendered remote names are text, not HTML
+PASS failed refresh removes stale actionable rows
+PASS refresh removes selections for newly ineligible or absent Agents
+PASS late response after close cannot repaint reopened snapshot
+TOTAL 11 Chromium helper-update UI checks (HTTP intercepted)

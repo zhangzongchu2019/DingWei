@@ -1,0 +1,5 @@
+--- FAIL: TestProvisionDownloadRetiredEvenWhenArtifactExists (0.01s)
+    main_test.go:142: retired GET /dl/artifact.tar.gz: status=200 body="must-not-be-served"
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.016s
+FAIL

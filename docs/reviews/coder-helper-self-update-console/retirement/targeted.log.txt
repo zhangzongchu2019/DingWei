@@ -1,0 +1,2 @@
+ok  	github.com/zhangzongchu2019/dingwei/internal/admin	0.593s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.020s

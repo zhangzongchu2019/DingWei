@@ -1,5 +1,7 @@
 # provision 发送方测试计划 · zzc-tester
 
+> 2026-10-15 退役说明：本页是历史协议/测试资料，不是当前发布或上传指令。匿名 `/dl` 与后台公开上传、在线打包已退役；旧测试结果不代表现行行为。当前约束见 [helper 下发与退役说明](../operator/helper-update-delivery.md)。已有合法 skill/MCP 地址下发保持原授权校验；helper 自升级改走可信目录与作业。
+
 > 测试对象: feat/provision-sender (Hub.SendProvision + /admin/provision + 制品打包 + fleet 灰度)
 > 测试依据: sessionHelper-provision-发送方-spec.md v0.1
 > 测试平台: Linux(美洲机) + macOS(zzc-mac)

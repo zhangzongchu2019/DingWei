@@ -1,0 +1,15 @@
+PASS does not fetch catalog until panel opened
+fixture status:  posts: [{"release_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","agent_ids":["mine1"]}] trace: [
+  'å\x8D‡çº§çŠ¶æ€\x81åŠ è½½ä¸­â€¦',
+  '',
+  'æ­£åœ¨ä¸‹å\x8F‘â€¦',
+  'One.ownerï¼šå·²ä¸‹å\x8F‘ï¼Œç­‰å¾…å\x8D‡çº§ç¡®è®¤',
+  'å\x8D‡çº§çŠ¶æ€\x81åŠ è½½ä¸­â€¦',
+  '',
+  'å\x8D‡çº§çŠ¶æ€\x81åŠ è½½ä¸­â€¦',
+  ''
+]
+page.waitForFunction: Timeout 30000ms exceeded.
+    at /data/ai-dev-data/helper-self-update-console/view-service/console-helper-update-regression.js:26:196
+    at async test (/data/ai-dev-data/helper-self-update-console/view-service/console-helper-update-regression.js:21:318)
+    at async /data/ai-dev-data/helper-self-update-console/view-service/console-helper-update-regression.js:26:3

@@ -1,0 +1,154 @@
+{
+  "source_commit": "8f32debe0cdca0b34fe14c10ca1772d82d4d746b",
+  "source_tree": "56500242d2d71bc13fad3d53a2870823567b300b",
+  "core_pin": "bf4703a9a260939125e300c780eb9492f06c948d",
+  "assets": [
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/REPORT.md",
+      "bytes": 4402,
+      "sha256": "4b10bf7f31ef13d5e8f419d1b818b3c7c0a3e67e9009900aa60cd45f760cd953"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/api-initial-enospc.log.txt",
+      "bytes": 489,
+      "sha256": "345226c8e0ce49c4ee372844056514e7ef701a39b8524af94388ffc445513788"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/api-later-build-enospc.log.txt",
+      "bytes": 1661,
+      "sha256": "dbb704bb41ee59baf73604dad0ad8fdaa0045034aba4ed81eb44fc36f9a1c492"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/api-race.log.txt",
+      "bytes": 60,
+      "sha256": "f4b059519da384ba2fc625cccdeea13d7dd8e98bf5ecde22287894dc8c60d0cf"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/broad-console.log.txt",
+      "bytes": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/enroll.log.txt",
+      "bytes": 2095,
+      "sha256": "0866464a62da6c558c7418c942822cdb2c0ad55202bd7c9a25e007c5428855cb"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/group-code.log.txt",
+      "bytes": 713,
+      "sha256": "410950fc56ef955805c4177dbeffb59c5c01739856565ceb36344454c934f432"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/groups-entry-enospc.log.txt",
+      "bytes": 387,
+      "sha256": "139732a59a3c80f018516461da452fb615efaf2879d2aca5341ebc1a614e61b9"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/groups-entry-initial.log.txt",
+      "bytes": 325,
+      "sha256": "14d4902cf70e6cdf1e984025e0ef865132e160be7321e9a1e59ea023c415aa8a"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/groups-entry-tmpfs-attempt.log.txt",
+      "bytes": 325,
+      "sha256": "14d4902cf70e6cdf1e984025e0ef865132e160be7321e9a1e59ea023c415aa8a"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/route-auth.log.txt",
+      "bytes": 62,
+      "sha256": "ce059f1c164cbaf09a2ea655b26cf7e39ac2c283b7f88b7649bb130f03f71e7d"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/ui-chromium.log.txt",
+      "bytes": 695,
+      "sha256": "0b4577c1d54a640d0c260a48f8c9e242080d48054fb0a64de8a1c1c8f99d6798"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/ui-initial-fixture-charset-failure.log.txt",
+      "bytes": 912,
+      "sha256": "a19cfe969371dec7ddd0138e1ae1102f8aa20022b7d644cf969d846f5b767d52"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/withdraw-catalog-input.log.txt",
+      "bytes": 483,
+      "sha256": "0fb8cf31353782f79f81e92b2e8967bd6477671c930d4d649b448b1f8642e5c5"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/withdraw-origin.log.txt",
+      "bytes": 510,
+      "sha256": "754f7200eceb721a70e404d89e299876f0f5f90c6280ab0f9eb10b2849ba5a9d"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/withdraw-ownership.log.txt",
+      "bytes": 565,
+      "sha256": "21824d580a34d62d8b566c496519ac458db8547bf81031a929c033e587836ccd"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/withdraw-page-asset.log.txt",
+      "bytes": 507,
+      "sha256": "ba0553b3abe503081e624deeef17e1cfb626791c53ff8e4d81c5eb38d0ff7d92"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/withdraw-stage.log.txt",
+      "bytes": 776,
+      "sha256": "9b7162884cf4abac525d6c9425de83b2b1a5f51b4e5ee15e20069cac4978b8ec"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/withdrawal-runner.py",
+      "bytes": 1928,
+      "sha256": "da68b94084260f0129a38825471222c36de760ccd0a865bbed4a80951c1ac0eb"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/withdrawals.json",
+      "bytes": 531,
+      "sha256": "c0313b2e8c6111c06c2e3e18372a2684b0020ed92881dd83123f341a0d87833e"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/ui-wip/.gitattributes",
+      "bytes": 79,
+      "sha256": "d26dbe0d2473624f952ade8d6ef6a4931d9a44a7345fc73d2ee5845075c02fb7"
+    }
+  ],
+  "source_pins": [
+    {
+      "path": "cmd/workpulse/console_routes.go",
+      "bytes": 13168,
+      "sha256": "fea551a57897c0e588e039ac5fd0c143558dc6c8ed802ca959b834ab633c7bf4"
+    },
+    {
+      "path": "internal/m8/console_auth.go",
+      "bytes": 149822,
+      "sha256": "d197bbb017ff4bacc0338a1a2108503c92eaf33c1ec094a972e42d331c697003"
+    },
+    {
+      "path": "internal/m8/console_helper_updates.go",
+      "bytes": 7764,
+      "sha256": "3df8c0e12e8271f6c116c81737a92a5e91902bd75181436a58adc1be0c226287"
+    },
+    {
+      "path": "internal/m8/console_helper_updates.js",
+      "bytes": 7364,
+      "sha256": "36a11bdef0e793125b4d1a0fa2d303d7fc792fa840260946706ba3d4d42b072d"
+    },
+    {
+      "path": "internal/m8/console_helper_updates_asset.go",
+      "bytes": 101,
+      "sha256": "8d52fa5eebb006acde3d68cc8893160966e3e657570497bc39352de0969814f5"
+    },
+    {
+      "path": "internal/m8/console_helper_updates_test.go",
+      "bytes": 7492,
+      "sha256": "ec203e389ae4993582e48dd47e99f3df48bb58ef9aad9fd51939d2c8aa97e111"
+    },
+    {
+      "path": "view-service/console-helper-update-regression.js",
+      "bytes": 8135,
+      "sha256": "7ee5be541007968e8a3266e1dc02b8d0db3a788916d35a6f35e6e2a3afba0ba3"
+    },
+    {
+      "path": "docs/operator/helper-update-console-api.md",
+      "bytes": 2638,
+      "sha256": "429eeb3f8fcafd3d548f639e3ae7e88ad1c403bf944378b32b43c31800379f77"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+--- FAIL: TestConsoleHelperUpdateAuthorizationAndCatalogOnly (0.00s)
+    console_helper_updates_test.go:18: TempDir: mkdir /tmp/TestConsoleHelperUpdateAuthorizationAndCatalogOnly3786699121: no space left on device
+--- FAIL: TestConsoleHelperUpdaterVersionAndEligibility (0.00s)
+    console_helper_updates_test.go:136: TempDir: mkdir /tmp/TestConsoleHelperUpdaterVersionAndEligibility1451487014: no space left on device
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.041s
+FAIL

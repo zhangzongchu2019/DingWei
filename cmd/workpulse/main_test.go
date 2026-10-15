@@ -125,32 +125,32 @@ func TestHandleFeishuWebhookURLVerification(t *testing.T) {
 	}
 }
 
-func TestProvisionDownloadServesFilesButNotDirectoryListing(t *testing.T) {
+func TestProvisionDownloadRetiredEvenWhenArtifactExists(t *testing.T) {
 	dl := t.TempDir()
 	t.Setenv("WP_PROVISION_DL_DIR", dl)
-	if err := os.WriteFile(dl+"/artifact.tar.gz", []byte("artifact"), 0o644); err != nil {
+	const privateArtifact = "must-not-be-served"
+	if err := os.WriteFile(dl+"/artifact.tar.gz", []byte(privateArtifact), 0600); err != nil {
 		t.Fatal(err)
 	}
+	mux := http.NewServeMux()
+	registerRetiredProvisionDownloads(mux)
+	for _, path := range []string{"/dl", "/dl/", "/dl/artifact.tar.gz", "/dl/missing", "/dl/nested/artifact.tar.gz"} {
+		for _, method := range []string{http.MethodGet, http.MethodHead, http.MethodPost} {
+			rec := httptest.NewRecorder()
+			mux.ServeHTTP(rec, httptest.NewRequest(method, path, nil))
+			if rec.Code != http.StatusNotFound || strings.Contains(rec.Body.String(), privateArtifact) || rec.Header().Get("Last-Modified") != "" {
+				t.Fatalf("retired %s %s: status=%d body=%q", method, path, rec.Code, rec.Body.String())
+			}
+		}
+	}
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/dl/artifact.tar.gz", nil)
-	req.SetPathValue("file", "artifact.tar.gz")
-	provisionDownload(rec, req)
-	if rec.Code != http.StatusOK || rec.Body.String() != "artifact" {
-		t.Fatalf("file response code=%d body=%q", rec.Code, rec.Body.String())
-	}
-	rec = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodGet, "/dl/", nil)
-	req.SetPathValue("file", "")
-	provisionDownload(rec, req)
+	provisionDownload(rec, httptest.NewRequest(http.MethodGet, "/dl/../artifact.tar.gz", nil))
 	if rec.Code != http.StatusNotFound {
-		t.Fatalf("directory listing should be denied, code=%d body=%s", rec.Code, rec.Body.String())
+		t.Fatalf("retired traversal: status=%d", rec.Code)
 	}
-	rec = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodGet, "/dl/../artifact.tar.gz", nil)
-	req.SetPathValue("file", "../artifact.tar.gz")
-	provisionDownload(rec, req)
-	if rec.Code != http.StatusNotFound {
-		t.Fatalf("path traversal should be denied, code=%d body=%s", rec.Code, rec.Body.String())
+	// Retirement blocks access; it must not delete operations-owned old objects.
+	if data, err := os.ReadFile(dl + "/artifact.tar.gz"); err != nil || string(data) != privateArtifact {
+		t.Fatal("retirement changed the existing artifact")
 	}
 }
 

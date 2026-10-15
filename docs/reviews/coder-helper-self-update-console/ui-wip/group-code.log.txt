@@ -1,0 +1,19 @@
+PASS valid case-sensitive code/body/cookies/explicit 204
+PASS invalid code "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+PASS invalid code "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+PASS invalid code "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+PASS invalid code " aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+PASS foreign Agent tamper rejected
+PASS disabled stale selection rejected
+PASS no own Agent rejected
+PASS picker populated with no visible groups
+PASS truthful HTTP 401
+PASS truthful HTTP 403
+PASS truthful HTTP 404
+PASS truthful HTTP 409
+PASS unexpected 200 not treated as joined
+PASS plain error retained
+PASS single flight and abort result unknown, no retry
+PASS 204 remains success when listing refresh fails
+OBSERVATIONS 17
+INLINE_SYNTAX 1

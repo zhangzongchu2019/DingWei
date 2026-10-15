@@ -1,0 +1,20 @@
+--- r12-admin.go
++++ 16f86731-admin.go
+@@ -49,14 +49,15 @@
+ header Cache-Control: 
+ body:
+ <!doctype html><meta charset=utf-8><title>Provision 下发</title><h3>Provision 下发</h3><p><a href="/admin">返回后台首页</a></p>
+-<form method=post action=/admin/provision enctype="multipart/form-data">
++<p>公开上传与在线打包已退役（public_upload_retired）。helper 升级请使用 Console 中运维登记的版本；已有 skill/MCP 制品地址下发不变。</p>
++<form method=post action=/admin/provision>
+ <p>目标类型 <select name=target_mode><option value=session>单会话</option><option value=owner>owner 全部在线会话</option><option value=key>key 全部在线会话</option></select>
+  key_id <input name=key_id> session <input name=session_name> owner <input name=owner_key> 灰度台数 <input name=limit size=4 placeholder="1"></p>
+ <p>action <select name=provision_action><option value=update_self>update_self</option><option value=install_skill>install_skill</option><option value=install_mcp>install_mcp</option></select>
+  version <input name=version> target <input name=target value=self></p>
+ <p>url <input name=url size=70> sha256 <input name=sha256 size=68></p>
+ <p>extra(JSON) <textarea name=extra rows=3 cols=80>{}</textarea></p>
+-<p>上传制品 <input type=file name=artifact> <button name=op value=send>下发</button> <button name=op value=package_self>打包当前 sessionHelper</button></p>
++<p><button name=op value=send>下发已有制品地址</button></p>
+ </form>
+ <h4>在线会话</h4><table border=1 cellpadding=4><tr><th>key_id</th><th>session</th><th>conn_seq</th><th>owner</th><th>tool</th><th>model</th><th>last_seen</th></tr><tr><td colspan=7>暂无在线会话。</td></tr></table><h4>最近 Provision 回执 / 审计</h4><table border=1 cellpadding=4><tr><th>time</th><th>action</th><th>actor/from</th><th>detail</th></tr><tr><td colspan=4>暂无 provision 审计。</td></tr></table>
+ 

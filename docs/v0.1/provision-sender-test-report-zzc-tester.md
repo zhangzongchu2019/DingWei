@@ -1,5 +1,7 @@
 # provision 发送方测试报告 · zzc-tester
 
+> 2026-10-15 退役说明：本页是历史协议/测试资料，不是当前发布或上传指令。匿名 `/dl` 与后台公开上传、在线打包已退役；旧测试结果不代表现行行为。当前约束见 [helper 下发与退役说明](../operator/helper-update-delivery.md)。已有合法 skill/MCP 地址下发保持原授权校验；helper 自升级改走可信目录与作业。
+
 > 测试时间: 2026-07-08 19:48–20:05 PDT (2026-07-09 02:48–03:05 UTC)
 > 测试版本: main@07c2de9 (评审三轮通过后合并)
 > 测试平台: Linux 美洲机 (zzc-tester) + macOS (zzc-mac)

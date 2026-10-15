@@ -5,8 +5,6 @@
 package admin
 
 import (
-	"archive/tar"
-	"compress/gzip"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -21,7 +19,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -1821,14 +1818,15 @@ func (s *Server) provisionPage(w http.ResponseWriter, r *http.Request) {
 	}
 	writeHTMLHeader(w, "Provision 下发")
 	_, _ = w.Write([]byte(`<h3>Provision 下发</h3><p><a href="` + base + `">返回后台首页</a></p>
-<form method=post action=` + base + `/provision enctype="multipart/form-data">
+<p>公开上传与在线打包已退役（public_upload_retired）。helper 升级请使用 Console 中运维登记的版本；已有 skill/MCP 制品地址下发不变。</p>
+<form method=post action=` + base + `/provision>
 <p>目标类型 <select name=target_mode><option value=session>单会话</option><option value=owner>owner 全部在线会话</option><option value=key>key 全部在线会话</option></select>
  key_id <input name=key_id> session <input name=session_name> owner <input name=owner_key> 灰度台数 <input name=limit size=4 placeholder="1"></p>
 <p>action <select name=provision_action><option value=update_self>update_self</option><option value=install_skill>install_skill</option><option value=install_mcp>install_mcp</option></select>
  version <input name=version> target <input name=target value=self></p>
 <p>url <input name=url size=70> sha256 <input name=sha256 size=68></p>
 <p>extra(JSON) <textarea name=extra rows=3 cols=80>{}</textarea></p>
-<p>上传制品 <input type=file name=artifact> <button name=op value=send>下发</button> <button name=op value=package_self>打包当前 sessionHelper</button></p>
+<p><button name=op value=send>下发已有制品地址</button></p>
 </form>
 <h4>在线会话</h4><table border=1 cellpadding=4><tr><th>key_id</th><th>session</th><th>conn_seq</th><th>owner</th><th>tool</th><th>model</th><th>last_seen</th></tr>`))
 	count := 0
@@ -1848,19 +1846,18 @@ func (s *Server) provisionPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) manageProvision(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseMultipartForm(64 << 20); err != nil && !errors.Is(err, http.ErrNotMultipart) {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	// Reject before parsing multipart data: no uploaded body, temporary file or
+	// public artifact is created by this retired convenience path.
+	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(r.Header.Get("Content-Type"))), "multipart/") {
+		writePublicUploadRetired(w)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "invalid provision form", http.StatusBadRequest)
 		return
 	}
 	if r.FormValue("op") == "package_self" {
-		info, err := s.packageSessionHelper(r, strings.TrimSpace(r.FormValue("version")))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		_ = s.Repo.WriteAudit(r.Context(), adminUser(r), "admin_provision_package", info.URL+":"+info.SHA256)
-		slog.Info("admin provision package", "url", info.URL, "sha256", info.SHA256, "version", info.Version, "actor", adminUser(r))
-		writeJSON(w, info)
+		writePublicUploadRetired(w)
 		return
 	}
 	req, err := s.provisionRequestFromForm(r)
@@ -1920,11 +1917,10 @@ type provisionRequest struct {
 	Extra   map[string]any
 }
 
-type provisionArtifactInfo struct {
-	URL     string `json:"url"`
-	SHA256  string `json:"sha256"`
-	Version string `json:"version"`
-	Path    string `json:"path"`
+func writePublicUploadRetired(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusGone)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": "public_upload_retired", "message": "公开上传和在线打包已退役；请使用经批准的 Git/手动流程，helper 升级从 Console 已登记版本下发"})
 }
 
 func (s *Server) provisionRequestFromForm(r *http.Request) (provisionRequest, error) {
@@ -1945,16 +1941,6 @@ func (s *Server) provisionRequestFromForm(r *http.Request) (provisionRequest, er
 		if err := json.Unmarshal([]byte(extraText), &req.Extra); err != nil {
 			return req, fmt.Errorf("extra must be json object: %w", err)
 		}
-	}
-	if file, header, err := r.FormFile("artifact"); err == nil {
-		defer file.Close()
-		info, err := s.saveProvisionUpload(r, file, header.Filename)
-		if err != nil {
-			return req, err
-		}
-		req.URL, req.SHA256 = info.URL, info.SHA256
-	} else if err != http.ErrMissingFile {
-		return req, err
 	}
 	if req.URL == "" || req.SHA256 == "" || req.Version == "" || req.Target == "" {
 		return req, errors.New("action/url/sha256/version/target required")
@@ -2064,112 +2050,6 @@ func (s *Server) provisionLastVersion(ctx context.Context, key string) string {
 
 func provisionVersionKey(action, keyID, sessionName, target string) string {
 	return store.ProvisionVersionKey(action, keyID, sessionName, target)
-}
-
-func (s *Server) saveProvisionUpload(r *http.Request, src io.Reader, name string) (provisionArtifactInfo, error) {
-	base := provisionDownloadDir()
-	if err := os.MkdirAll(base, 0o755); err != nil {
-		return provisionArtifactInfo{}, err
-	}
-	filename := safeProvisionFilename(name)
-	if filename == "" {
-		filename = "artifact-" + token()
-	}
-	dst := filepath.Join(base, filename)
-	f, err := os.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
-	if os.IsExist(err) {
-		dst = filepath.Join(base, token()+"-"+filename)
-		f, err = os.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
-	}
-	if err != nil {
-		return provisionArtifactInfo{}, err
-	}
-	defer f.Close()
-	h := sha256.New()
-	if _, err := io.Copy(io.MultiWriter(f, h), src); err != nil {
-		return provisionArtifactInfo{}, err
-	}
-	return provisionArtifactInfo{URL: publicProvisionURL(r, filepath.Base(dst)), SHA256: hex.EncodeToString(h.Sum(nil)), Path: dst}, nil
-}
-
-func (s *Server) packageSessionHelper(r *http.Request, version string) (provisionArtifactInfo, error) {
-	root, err := findRepoRoot()
-	if err != nil {
-		return provisionArtifactInfo{}, err
-	}
-	src := filepath.Join(root, "tools", "sessionhelper")
-	if version == "" {
-		version = readSessionHelperVersion(filepath.Join(src, "sessionhelper", "__init__.py"))
-	}
-	if version == "" {
-		return provisionArtifactInfo{}, errors.New("version required")
-	}
-	base := provisionDownloadDir()
-	if err := os.MkdirAll(base, 0o755); err != nil {
-		return provisionArtifactInfo{}, err
-	}
-	name := "sessionhelper-" + safeProvisionFilename(version) + ".tar.gz"
-	dst := filepath.Join(base, name)
-	f, err := os.Create(dst)
-	if err != nil {
-		return provisionArtifactInfo{}, err
-	}
-	h := sha256.New()
-	gz := gzip.NewWriter(io.MultiWriter(f, h))
-	tw := tar.NewWriter(gz)
-	err = filepath.WalkDir(src, func(path string, d os.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		rel, err := filepath.Rel(src, path)
-		if err != nil || rel == "." {
-			return err
-		}
-		if shouldSkipProvisionPackage(rel, d) {
-			if d.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		info, err := d.Info()
-		if err != nil {
-			return err
-		}
-		hdr, err := tar.FileInfoHeader(info, "")
-		if err != nil {
-			return err
-		}
-		hdr.Name = filepath.ToSlash(rel)
-		if err := tw.WriteHeader(hdr); err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		in, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer in.Close()
-		_, err = io.Copy(tw, in)
-		return err
-	})
-	closeErr := tw.Close()
-	gzErr := gz.Close()
-	fileErr := f.Close()
-	if err != nil {
-		return provisionArtifactInfo{}, err
-	}
-	if closeErr != nil {
-		return provisionArtifactInfo{}, closeErr
-	}
-	if gzErr != nil {
-		return provisionArtifactInfo{}, gzErr
-	}
-	if fileErr != nil {
-		return provisionArtifactInfo{}, fileErr
-	}
-	return provisionArtifactInfo{URL: publicProvisionURL(r, name), SHA256: hex.EncodeToString(h.Sum(nil)), Version: version, Path: dst}, nil
 }
 
 func (s *Server) upsertConfig(w http.ResponseWriter, r *http.Request) {
@@ -2538,10 +2418,6 @@ func firstNonEmpty(values ...string) string {
 	return ""
 }
 
-func provisionDownloadDir() string {
-	return firstNonEmpty(os.Getenv("WP_PROVISION_DL_DIR"), filepath.Join("data", "dl"))
-}
-
 func provisionAllowedHosts() map[string]bool {
 	raw := firstNonEmpty(os.Getenv("WP_PROVISION_ALLOWED_HOSTS"), os.Getenv("SH_PROVISION_ALLOWED_HOSTS"), "dingwei.wegoab.com")
 	out := map[string]bool{}
@@ -2579,80 +2455,6 @@ func validSHA256(v string) bool {
 		}
 	}
 	return true
-}
-
-func publicProvisionURL(r *http.Request, filename string) string {
-	scheme := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto"))
-	if scheme == "" {
-		if r.TLS != nil {
-			scheme = "https"
-		} else {
-			scheme = "http"
-		}
-	}
-	return scheme + "://" + r.Host + "/dl/" + url.PathEscape(filename)
-}
-
-func safeProvisionFilename(name string) string {
-	name = filepath.Base(strings.TrimSpace(name))
-	name = strings.Map(func(r rune) rune {
-		switch {
-		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
-			return r
-		case r == '.', r == '-', r == '_':
-			return r
-		default:
-			return '-'
-		}
-	}, name)
-	name = strings.Trim(name, ".-")
-	return name
-}
-
-func findRepoRoot() (string, error) {
-	wd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	for {
-		if _, err := os.Stat(filepath.Join(wd, "tools", "sessionhelper", "sessionhelper", "__init__.py")); err == nil {
-			return wd, nil
-		}
-		next := filepath.Dir(wd)
-		if next == wd {
-			return "", errors.New("repo root not found")
-		}
-		wd = next
-	}
-}
-
-func readSessionHelperVersion(path string) string {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return ""
-	}
-	for _, line := range strings.Split(string(data), "\n") {
-		line = strings.TrimSpace(line)
-		if !strings.HasPrefix(line, "__version__") {
-			continue
-		}
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) == 2 {
-			return strings.Trim(strings.TrimSpace(parts[1]), `"'`)
-		}
-	}
-	return ""
-}
-
-func shouldSkipProvisionPackage(rel string, d os.DirEntry) bool {
-	base := filepath.Base(rel)
-	if base == "__pycache__" || base == ".venv" || base == ".pytest_cache" {
-		return true
-	}
-	if strings.HasPrefix(base, "config") && base != "config.example" && !strings.HasSuffix(base, ".py") {
-		return true
-	}
-	return !d.IsDir() && (strings.HasSuffix(base, ".pyc") || strings.HasSuffix(base, ".pyo"))
 }
 
 type provisionVersionPart struct {

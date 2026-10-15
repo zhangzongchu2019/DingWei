@@ -1,0 +1,6 @@
+# github.com/zhangzongchu2019/dingwei/cmd/workpulse [github.com/zhangzongchu2019/dingwei/cmd/workpulse.test]
+/tmp/coder-retired-withdraw-0wnd2cok/provision_retired.go:13:62: undefined: filepath
+/tmp/coder-retired-withdraw-0wnd2cok/provision_retired.go:13:76: undefined: os
+/tmp/coder-retired-withdraw-0wnd2cok/provision_retired.go:13:143: undefined: httptest
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse [build failed]
+FAIL

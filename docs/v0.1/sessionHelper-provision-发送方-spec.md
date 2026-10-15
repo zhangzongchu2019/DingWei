@@ -1,5 +1,7 @@
 # provision 发送方(服务端)规格 v0.1
 
+> 2026-10-15 退役说明：本页是历史协议/测试资料，不是当前发布或上传指令。匿名 `/dl` 与后台公开上传、在线打包已退役；旧测试结果不代表现行行为。当前约束见 [helper 下发与退役说明](../operator/helper-update-delivery.md)。已有合法 skill/MCP 地址下发保持原授权校验；helper 自升级改走可信目录与作业。
+
 > 背景:provision 客户端(sessionHelper)已能**接收+执行** update_self/install_skill/install_mcp(见 provision.py,已上线 2.1.0)。
 > 缺口:**服务端没有"发送 provision 指令"的入口** → 现在没法触发一次真实下发。本规格补齐发送侧,让下发通道闭环、可 dogfood。
 
@@ -16,14 +18,12 @@ func (h *Hub) SendProvision(ctx, keyID, sessionName, action, url, sha256, versio
 ## 二、Admin 页面 /admin/provision(鉴权同其它 admin 页)
 - **目标选择**:①单个会话 ②某账号(owner)全部在线会话 ③某 key 全部会话(fleet 批量);
 - **字段**:action(update_self/install_skill/install_mcp)、url、sha256、version、target、extra(JSON);
-- **便捷**:可选"上传制品"→服务端存到 `/dl/` + 自动算 sha256 回填(省手工算);
+- **退役**：公开上传不再保存制品，返回 `public_upload_retired`；合法的已有 skill/MCP URL 仍按原授权下发。
 - **提交**:对每个目标会话调 `SendProvision`;结果表格显示每会话发送成功/失败;
 - **审计**:谁在何时对谁发了什么(action/version/sha256)落库 + 日志。
 
-## 三、制品打包助手(给 update_self 用)
-- 一个 admin 动作/脚本:**打包当前仓的 sessionHelper**(tools/sessionhelper)→ tar → 放 `/dl/sessionhelper-<version>.tar.gz` → 算 sha256;
-- update_self 的 url 指向它、version 用 `__version__`、sha256 用算出的值;
-- 客户端收到后:sha256 校验→版本 > 当前才装(防降级已在客户端)→替换重启→失败回滚。
+## 三、旧制品打包助手已退役
+后台 `package_self` 返回 `public_upload_retired`，不再遍历源码或生成匿名下载链接。helper 新包必须从已批准 Git commit 按白名单构建，登记目录并校验 SHA；首次手动引导与后续可信 offer 见当前说明。
 
 ## 四、fleet 批量下发
 - "某账号全部在线会话"→ 遍历该 owner 的在线会话逐个 `SendProvision`(复用 owner 跨 key 解析);
