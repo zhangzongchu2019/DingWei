@@ -49,6 +49,11 @@ func TestSessionDeliverySucceedsOutsideRestartWindow(t *testing.T) {
 	defer source.Close(websocket.StatusNormalClosure, "done")
 	target := dialSession(t, ctx, srv.URL, "target", key.ID, secret)
 	defer target.Close(websocket.StatusNormalClosure, "done")
+	// WebSocket onboarding completes before the server publishes a session into
+	// sessionClients.  This test exercises ordinary delivery, not that
+	// registration window, so wait for both endpoints deterministically.
+	waitSessionOnline(t, hub, key.ID, "source")
+	waitSessionOnline(t, hub, key.ID, "target")
 	if err := writeEnvelope(ctx, source, model.Envelope{ID: "outside-window", To: "target#" + key.ID, From: "source#" + key.ID, Body: "ping"}); err != nil {
 		t.Fatal(err)
 	}
