@@ -148,7 +148,7 @@ def matrix(image, evidence, keep=False):
         (evidence/'RESULT.json').write_text(json.dumps(result,indent=2)+'\n')
         return 0
     finally:
-        try:(evidence/'docker.log').write_bytes(docker('logs',name))
+        try:(evidence/'docker.log').write_bytes(subprocess.run(['docker','logs',name],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=60).stdout)
         except (OSError,subprocess.SubprocessError):pass
         if not (evidence/'RESULT.json').exists():
             (evidence/'RESULT.json').write_text(json.dumps({'rc':1,'checks_completed':checks,'scope':'real Docker guard fixture, incomplete'},indent=2)+'\n')
