@@ -3542,6 +3542,28 @@ func (s *SQLite) UpsertAppConfig(ctx context.Context, key, valueJSON string) err
 	return err
 }
 
+func (s *SQLite) CompareAndSwapAppConfig(ctx context.Context, key string, expectedExists bool, expectedValueJSON, valueJSON string) (bool, error) {
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	if !expectedExists {
+		result, err := s.db.ExecContext(ctx,
+			`INSERT INTO app_config(key, value_json, updated_at) VALUES(?,?,?) ON CONFLICT(key) DO NOTHING`,
+			key, valueJSON, now)
+		if err != nil {
+			return false, err
+		}
+		n, err := result.RowsAffected()
+		return n == 1, err
+	}
+	result, err := s.db.ExecContext(ctx,
+		`UPDATE app_config SET value_json=?, updated_at=? WHERE key=? AND value_json=?`,
+		valueJSON, now, key, expectedValueJSON)
+	if err != nil {
+		return false, err
+	}
+	n, err := result.RowsAffected()
+	return n == 1, err
+}
+
 func (s *SQLite) ListAppConfig(ctx context.Context) ([]model.AppConfig, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT key, value_json, updated_at FROM app_config ORDER BY key`)
 	if err != nil {
