@@ -1,0 +1,6 @@
+# Operator supplies an immutable base; no image/package upload is performed.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+RUN apt-get update && apt-get install -y --no-install-recommends tini bash python3-venv && rm -rf /var/lib/apt/lists/*
+COPY requirements-runtime.lock /tmp/requirements-runtime.lock
+RUN python3 -m venv /opt/dingwei/sessionhelper-venv && /opt/dingwei/sessionhelper-venv/bin/python -m pip install --require-hashes --only-binary=:all: -r /tmp/requirements-runtime.lock
