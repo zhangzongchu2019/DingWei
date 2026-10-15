@@ -327,6 +327,15 @@ func TestFreshTargetFailureNotifiesActualOnlineSender(t *testing.T) {
 
 func TestFreshTargetStartupSweepNotifiesActualOnlineSource(t *testing.T) {
 	h, db, ctx := newTestHub(t)
+	// New starts the same one-shot sweep before a process can accept a source
+	// websocket. Stop that empty initial worker, re-arm its once guard, then
+	// exercise the exact startup-sweep function with a real online source. The
+	// separate periodic test covers a source that never reconnects.
+	close(h.capabilityPendingCleanupStop)
+	h.capabilityPendingCleanupStop = nil
+	h.capabilityPendingCleanupWG.Wait()
+	h.capabilityPendingCleanupOnce = sync.Once{}
+
 	if err := h.UpsertService(ctx, model.RegisteredService{ID: "svc-fresh-startup", Name: "fresh-startup", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -341,15 +350,6 @@ func TestFreshTargetStartupSweepNotifiesActualOnlineSource(t *testing.T) {
 	source := dialSessionWithHeaderRaw(t, ctx, srv.URL, "source", key.ID, secret, nil)
 	defer source.Close(websocket.StatusNormalClosure, "done")
 	waitSessionOnline(t, h, key.ID, "source")
-
-	// New starts the same one-shot sweep before a process can accept a source
-	// websocket. Stop that empty initial worker, re-arm its once guard, then
-	// exercise the exact startup-sweep function with a real online source. The
-	// separate periodic test covers a source that never reconnects.
-	close(h.capabilityPendingCleanupStop)
-	h.capabilityPendingCleanupStop = nil
-	h.capabilityPendingCleanupWG.Wait()
-	h.capabilityPendingCleanupOnce = sync.Once{}
 
 	original := model.Envelope{ID: "fresh-startup-original", From: sessionAddress("source", key.ID), To: sessionAddress("never", key.ID), Body: "must report expiry", TS: time.Now().Unix()}
 	raw, err := json.Marshal(original)
