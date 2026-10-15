@@ -1,0 +1,29 @@
+{
+  "internal/m8/hub_test.go": {
+    "unchanged": true,
+    "sha256": "c502594cf3b4c98e3ba428097d56d76a611249f6359d8926d4be0a029ebb2d59"
+  },
+  "internal/m8/terminal.go": {
+    "unchanged": true,
+    "sha256": "09b45d327e04d7a814073f319392d3ca08b16b772a5065b07dae644e78655bd8"
+  },
+  "internal/m8/reply_origin.go": {
+    "unchanged": true,
+    "sha256": "d3ee3714f34750537ac3b7cd7a166d5987e91a628b3f271bb2523e9245c17321"
+  },
+  "internal/m8/reply_to_origin.go": {
+    "unchanged": true,
+    "sha256": "8bc293012600865a70291a9bb3a9b3dc9b710c8cc214a13b5ca77b1033216f94"
+  },
+  "internal/m8/amr.go": {
+    "unchanged": true,
+    "sha256": "329e38a89a5a63f828939c123649b2b729367c13ffc44177e84c1072db6b4cf9"
+  },
+  "resolveOwnerSessionByShort": {
+    "unchanged": true
+  },
+  "session_registration_before_receive_loop": {
+    "unchanged": true,
+    "sha256": "7ce213b49f9b6e6798a08693ef89ad6a7b0fe83ec040010b521c87d6706c3b9e"
+  }
+}
