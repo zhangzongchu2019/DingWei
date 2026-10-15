@@ -157,6 +157,11 @@ async function main() {
       }));
       return;
     }
+    // The real approval-list API returns an empty requests array when no grants exist.
+    if (req.method === 'GET' && /^\/api\/console\/agents\/[^/]+\/spec-grant-requests$/.test(req.url)) {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({ requests: [] })); return;
+    }
     if (req.url === '/api/console/hosted/options') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ nodes: [], combos: [], accounts: [], plans: [], quota: { remaining: {} } })); return; } // G3 托管区的挂载请求;本件不测它,只让桩认得路由
     if (req.url === '/api/console/enroll/applications') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ applications: [] })); return; } // G3 新增面板的挂载请求;本件不测它,只让桩认得这条路由
     if (req.url === '/api/console/agent-groups') {
@@ -234,6 +239,15 @@ async function main() {
     const pageErrors = [];
     const consoleErrors = [];
   async function test(name, fn) {
+    // Restore HTTP fixture state even when an assertion throws before local cleanup.
+    // Counters remain monotonic; cookies and the shared page intentionally persist.
+    const saved = { raceGroupResponses, raceGroupRequest, failGroupLoad, failGroupAction,
+      slowGroupLoad, emptyGroupInventory, auditGroupMode, auditGroup: structuredClone(auditGroup),
+      failPlatformLoad, failAgentsLoad, includeOfflineOwned };
+    const savedAgents = structuredClone(agents), savedQueue = agentsQueue.slice();
+    const savedWrites = groupWrites.slice(), savedJoins = groupJoinWrites.slice();
+    const contextsBefore = new Set(browser.contexts());
+    const pagesBefore = new Set(browser.contexts().flatMap((context) => context.pages()));
     try {
       await fn();
       passed += 1;
@@ -241,6 +255,21 @@ async function main() {
     } catch (error) {
       failures.push(`${name}: ${error.message}`);
       console.log(`  FAIL ${name}: ${error.message}`);
+    } finally {
+      try {
+        for (const context of browser.contexts()) {
+          if (!contextsBefore.has(context)) await context.close();
+          else for (const page of context.pages()) if (!pagesBefore.has(page)) await page.close();
+        }
+      } finally {
+        ({ raceGroupResponses, raceGroupRequest, failGroupLoad, failGroupAction,
+          slowGroupLoad, emptyGroupInventory, auditGroupMode, auditGroup,
+          failPlatformLoad, failAgentsLoad, includeOfflineOwned } = saved);
+        agents.splice(0, agents.length, ...savedAgents);
+        agentsQueue.splice(0, agentsQueue.length, ...savedQueue);
+        groupWrites.splice(0, groupWrites.length, ...savedWrites);
+        groupJoinWrites.splice(0, groupJoinWrites.length, ...savedJoins);
+      }
     }
   }
 
