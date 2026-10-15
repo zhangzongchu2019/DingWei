@@ -52,3 +52,71 @@ Scope
 -----
 Only internal/m8/hub_test.go changes.  No Hub routing, delivery durability,
 production operation, deployment, credential, or helper behavior changed.
+
+
+S-M8-FIXTURE-RACES follow-up
+-----------------------------
+Snapshot UTC: 2026-10-15T01:50:00Z
+
+The coordinator grouped four fixtures under the same registration-readiness
+issue: the cross-member mention/reply fixture above, the four routing-flow
+fixture, and TerminalViewCookie's terminal-state fixture.  The latter two
+also treated successful client websocket upgrade as if it implied server-side
+runtime publication.  That is not guaranteed: onboarding is written before
+`sessionClients` is published, and terminal-view setup reads the terminal
+installed by that registered handler.
+
+This follow-up therefore adds three `waitSessionOnline` preconditions:
+
+* both `home` and `developer` before TestSessionAddressingFourFlows sends;
+* `home` before TestTerminalViewCookiePersistsAndRestoresUnlock opens its
+  terminal view;
+* the previously delivered two waits remain in the cross-member mention
+  fixture.
+
+All waits use the existing observable Hub registration condition.  No timeout
+was extended and no product routing, delivery, terminal, or persistence code
+changed.
+
+Full m8 inventory after the fixture changes
+-------------------------------------------
+```
+go test -v -count=1 ./internal/m8
+rc=0
+raw log=/tmp/m8-fixture-races/r5-447fb-fixture-fixed-full-v.log
+sha256=6d630dbb5788beb9a4aea581e03675927989e9fbf39ab2d6fe8a266a5fb07f67
+```
+
+There were no FAIL entries.  The non-PASS entries are these eight existing
+environment-gated SKIPs:
+
+* TestDeviceClaimAcrossActualClientAndHub
+* TestDeviceClaimAcrossActualClientAndPostgres
+* TestMuxProductHTTP1EightSeats
+* TestConsolePlatformPayloadDump
+* TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel
+* TestDesktopMCPRoundTripAcrossRealHub
+* TestEnvelopeReadTimeoutEnvironmentChild
+* TestSpecMCPEndToEnd
+
+They are unchanged from r5 for this candidate: the diff touches only the
+three named hub_test fixtures, none of those tests or their product paths.
+They are recorded as existing environment SKIPs, not PASS.
+
+Focused repetition
+------------------
+```
+go test -v -count=30 ./internal/m8 \
+  -run '^(TestSessionAddressingFourFlows|TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource|TestTerminalViewCookiePersistsAndRestoresUnlock)$'
+rc=0
+raw log=/tmp/m8-fixture-races/fixture-races-fixed-v30.log
+sha256=4f72e8429ce25a9db5194ee56badb70bbb6c03dbd566f3f0d37e14110b87f976
+```
+
+The historical flakes did not reproduce locally before the waits either, so
+there is no fabricated removal/withdrawal-red claim.  The source ordering and
+the already-established `waitSessionOnline` pattern in the AMR and grouping
+fixtures identify this as a deterministic fixture precondition repair.  The
+separate S-MENTION-FRESH-TARGET review must decide whether messages sent
+before publication are durably queued; this test-only change makes no claim
+about that product contract.

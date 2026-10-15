@@ -1399,6 +1399,11 @@ func TestSessionAddressingFourFlows(t *testing.T) {
 	defer home.Close(websocket.StatusNormalClosure, "done")
 	developer := dialSession(t, ctx, srv.URL, "developer", keyID, secret)
 	defer developer.Close(websocket.StatusNormalClosure, "done")
+	// dialSession returns after the client receives onboarding, but the server
+	// publishes sessionClients afterwards.  These four routing assertions need
+	// the server-side registration precondition, not a timing sleep.
+	waitSessionOnline(t, hub, keyID, "home")
+	waitSessionOnline(t, hub, keyID, "developer")
 
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "fm1",
@@ -4747,6 +4752,9 @@ func TestTerminalViewCookiePersistsAndRestoresUnlock(t *testing.T) {
 	sessionName := "home"
 	session := dialSession(t, ctx, srv.URL, sessionName, key.ID, secret)
 	defer session.Close(websocket.StatusNormalClosure, "done")
+	// HandleTerminalViewWS looks up the terminal installed by the registered
+	// session handler.  A websocket upgrade alone does not establish it.
+	waitSessionOnline(t, hub, key.ID, sessionName)
 	view := dialTerminalView(t, ctx, srv.URL, sessionName)
 	defer view.Close(websocket.StatusNormalClosure, "done")
 
