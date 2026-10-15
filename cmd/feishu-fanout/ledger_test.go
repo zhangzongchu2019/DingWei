@@ -11,9 +11,9 @@ package main
 
 import (
 	"context"
-	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/fanout"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
@@ -112,7 +112,39 @@ func TestOpenSpoolPool_RefusesHubDB(t *testing.T) {
 		t.Fatalf("关造库池失败: %v", err)
 	}
 
+	probe, err := repo.OpenPG(ctx, dsn)
+	if err != nil {
+		t.Fatalf("开核对池失败: %v", err)
+	}
+	t.Cleanup(func() { _ = probe.Close() })
+	type ledgerRow struct {
+		Version, Digest string
+		AppliedAt       time.Time
+	}
+	// Snapshot actual complete rows, not an inferred list of migration names.
+	// Rejection must preserve both migration contents and application timestamps.
+	snapshotLedger := func() []ledgerRow {
+		t.Helper()
+		rows, err := probe.Query(ctx, ac, `SELECT version,digest,applied_at FROM schema_migrations ORDER BY version`)
+		if err != nil {
+			t.Fatalf("读 Hub 库的账失败: %v", err)
+		}
+		defer rows.Close()
+		var result []ledgerRow
+		for rows.Next() {
+			var row ledgerRow
+			if err := rows.Scan(&row.Version, &row.Digest, &row.AppliedAt); err != nil {
+				t.Fatalf("扫描账失败: %v", err)
+			}
+			result = append(result, row)
+		}
+		if err := rows.Err(); err != nil {
+			t.Fatalf("遍历账失败: %v", err)
+		}
+		return result
+	}
 	// FANOUT_PG_DSN 指到这个库 ⇒ 产品入口必须拒（裁定 R-G2-LEDGER-DOMAIN：两库各自独立）。
+	before := snapshotLedger()
 	pool, rep, err := openSpoolPool(ctx, dsn)
 	if err == nil {
 		_ = pool.Close()
@@ -132,42 +164,19 @@ func TestOpenSpoolPool_RefusesHubDB(t *testing.T) {
 	}
 
 	// 🔴 拒绝之后还要核库：Hub 库里不得出现任何 fanout 表，账上也不得多出 0400。
-	probe, err := repo.OpenPG(ctx, dsn)
-	if err != nil {
-		t.Fatalf("开核对池失败: %v", err)
-	}
-	t.Cleanup(func() { _ = probe.Close() })
 	for _, tbl := range []string{"outbound", "inbound_msg", "inbound_sink", "waive_audit", "selfcheck"} {
 		if tableInDB(t, probe, tbl) {
 			t.Errorf("Hub 库里出现了 fanout 表 %s —— 拒绝必须发生在第一条 DDL 之前", tbl)
 		}
 	}
-	rows, err := probe.Query(ctx, ac, `SELECT version FROM schema_migrations ORDER BY version`)
-	if err != nil {
-		t.Fatalf("读 Hub 库的账失败: %v", err)
+	after := snapshotLedger()
+	if len(before) != len(after) {
+		t.Fatalf("Hub 库的账被动了：before=%+v after=%+v", before, after)
 	}
-	defer rows.Close()
-	var versions []string
-	for rows.Next() {
-		var v string
-		if err := rows.Scan(&v); err != nil {
-			t.Fatalf("扫描账失败: %v", err)
+	for i := range before {
+		if before[i].Version != after[i].Version || before[i].Digest != after[i].Digest || !before[i].AppliedAt.Equal(after[i].AppliedAt) {
+			t.Errorf("Hub 库的账被动了：row=%d before=%+v after=%+v", i, before[i], after[i])
 		}
-		versions = append(versions, v)
-	}
-	if err := rows.Err(); err != nil {
-		t.Fatalf("遍历账失败: %v", err)
-	}
-	// Compare exactly with the Hub ledger seeded above. Adding a legitimate
-	// Hub migration must not look like a fanout mutation, while every added,
-	// removed or changed ledger row still fails this equality.
-	wantVersions := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		wantVersions = append(wantVersions, entry.Name)
-	}
-	sort.Strings(wantVersions)
-	if strings.Join(versions, ",") != strings.Join(wantVersions, ",") {
-		t.Errorf("Hub 库的账被动了：%v", versions)
 	}
 }
 
