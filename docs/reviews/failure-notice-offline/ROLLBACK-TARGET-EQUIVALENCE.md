@@ -1,0 +1,7 @@
+# R3 rollback target calibration
+
+Leader requested rollback target c7db5cc159f9b8d77caffad20ef728f769533175, allowing the measured97a920ab substitute only with explicit byte comparison of AMR-related code. Full-file comparison confirms identical bytes in amr.go, reply_to_origin.go, reply_origin.go, channel_delivery.go and terminal.go; the helper app/production driver/unified queue files are identical as well. The entire helper product directory and identity directory have zero diff. Exact hashes/lengths are in ROLLBACK-TARGET-EQUIVALENCE.json.
+
+All internal/m8 differences were enumerated: only fresh_target_delivery.go and hub.go have product changes; the other three files are tests. hub.go differs by exactly four added lines for durable-notice draining/preference, recorded in rollback-target-hub-diff.patch. No AMR parser, reply-to-origin, channel resolver, authenticated session-event ingress or RouteEnvelope code changed. The substitute includes the storage/expiry feature so the real notice factory is available; it does not claim the entire c7 and97 Hub/store are byte-identical.
+
+Thus the exact97 real-driver10-case rollback matrix already submitted is used under the leader's explicit same-AMR-bytes substitution rule. It is not relabeled as a directly executed c7 binary or production rollback test. This correction adds only documentation/evidence; no code or tests changed, so the measured cb0052a1 fixture results remain applicable.
