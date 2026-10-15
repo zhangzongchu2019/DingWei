@@ -86,6 +86,24 @@ class SelfUpdater:
         except OSError:
             raise UpdateRejected('lock_changed') from None
 
+    def pending_runtime_lock_sha256(self, pending):
+        digest = self.runtime_lock_sha256()
+        try:
+            marker = self.state.slot(pending) / '.helper-update-binding.json'
+            fd = os.open(marker, os.O_RDONLY | os.O_NOFOLLOW)
+            with os.fdopen(fd, 'rb') as stream:
+                raw = stream.read(4097)
+            if len(raw) > 4096:
+                raise ValueError()
+            binding = json.loads(raw)
+            if (not isinstance(binding, dict) or
+                    any(binding.get(k) != pending.get(k) for k in FIELDS) or
+                    binding.get('lock_sha256') != digest):
+                raise ValueError()
+        except (OSError, ValueError, TypeError, self.guard.UpdateError):
+            raise UpdateRejected('lock_changed') from None
+        return digest
+
     def validate_offer(self, env):
         self.validate_source(env)  # existing local-Hub system-envelope check, before URL/journal work
         meta = env.get('meta') or {}
@@ -209,6 +227,11 @@ class SelfUpdater:
                         target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
                         with target.open('xb') as out:
                             out.write(content); out.flush(); os.fsync(out.fileno())
+                # Preserve the already-verified job/lock binding beside candidate
+                # code; the stable guard's six-field journal stays unchanged.
+                with (slot / '.helper-update-binding.json').open('xb') as out:
+                    out.write(json.dumps({k: meta[k] for k in (*FIELDS, 'lock_sha256')}, sort_keys=True).encode())
+                    out.flush(); os.fsync(out.fileno())
                 for directory in sorted((p for p in slot.rglob('*') if p.is_dir()), reverse=True):
                     fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
                     try: os.fsync(fd)
@@ -250,7 +273,7 @@ class SelfUpdater:
         pending = self.state.read()['pending']
         if not pending or pending['version'] != __version__:
             return None  # manual factory bootstrap has no update health transaction
-        self.health_lock_sha256 = self.runtime_lock_sha256()
+        self.health_lock_sha256 = self.pending_runtime_lock_sha256(pending)
         self.health_nonce = uuid.uuid4().hex
         return {'type':'helper_update_health', 'health_nonce':self.health_nonce, 'lock_sha256':self.health_lock_sha256, **{k: pending[k] for k in FIELDS},
                 'action':'update_self', 'stage':'restarted', 'helper_version':__version__,
@@ -264,7 +287,7 @@ class SelfUpdater:
         if not self.health_nonce or meta.get('health_nonce') != self.health_nonce or meta.get('version') != __version__:
             raise UpdateRejected('confirmation_mismatch')
         if (not self.health_lock_sha256 or meta.get('lock_sha256') != self.health_lock_sha256 or
-                self.runtime_lock_sha256() != self.health_lock_sha256):
+                self.pending_runtime_lock_sha256(self.state.read()['pending'] or {}) != self.health_lock_sha256):
             raise UpdateRejected('confirmation_mismatch')
         self.state.confirm(meta)
         self.health_nonce = None

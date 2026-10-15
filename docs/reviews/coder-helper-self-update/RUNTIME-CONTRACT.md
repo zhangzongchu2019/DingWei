@@ -52,3 +52,13 @@ the local helper tests. Actual serializer-to-Hub and real Docker gates remain op
 5. **Capability on every send.** Every offer send and replay, including reconnect resume, requires the current authenticated connection to have advertised `helper_update_v1`.
 
 Required tests: offline issuance then first connection refused; reconnect before install refused; installed → new connection → confirmed; lost confirm → retried health → idempotent echo without side effects; stale/changed nonce, tuple or lock rejected; failed and rolled_back refused; legacy reconnect without capability receives no offer; real helper serializer → Hub.
+
+### Helper send-time job-lock enforcement
+
+After verifying the release, prepare fsyncs `.helper-update-binding.json` inside
+the new private slot before arming it. It binds the six canonical job fields and
+the verified lock hash. After process restart, health compares that binding to
+the durable pending tuple and the immutable mounted lock; missing, changed or
+wrong-job binding fails closed with `lock_changed`. Confirm repeats the binding
+check. The marker is runtime private state, not part of the exported package,
+and the stable guard journal remains unchanged.

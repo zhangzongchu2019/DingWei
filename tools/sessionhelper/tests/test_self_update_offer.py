@@ -174,11 +174,33 @@ class OfferTests(unittest.TestCase):
                     self.assertIsNotNone(self.updater.state.read()['pending'])
             lock=self.mount/'requirements-runtime.lock'; original=lock.read_bytes()
             lock.write_bytes(original+b'\n# changed after health\n')
-            with self.assertRaisesRegex(UpdateRejected,'confirmation_mismatch'):
+            with self.assertRaisesRegex(UpdateRejected,'lock_changed'):
                 self.updater.confirm({'from':self.env['from'],'meta':{**health,'type':'helper_update_confirm','system':True}})
             lock.write_bytes(original)
             confirmed=self.updater.confirm({'from':self.env['from'],'meta':{**health,'type':'helper_update_confirm','system':True}})
             self.assertEqual(receipt(confirmed,'confirmed')['lock_sha256'],self.pin['lock_sha256'])
+
+    def test_restarted_health_fails_closed_if_job_lock_binding_changes(self):
+        meta,_,_=self.updater.prepare(self.env)
+        self.updater.state.select()
+        marker=self.updater.state.slot(meta)/'.helper-update-binding.json'
+        original=marker.read_bytes()
+        lock=self.mount/'requirements-runtime.lock'; original_lock=lock.read_bytes()
+        with patch.object(runtime,'__version__','0.2.3.2'):
+            def reopened():
+                return SelfUpdater(self.cfg,self.provisioner.validate_source,'agent.owner',
+                                   launcher=str(self.mount/'helper_update_guard.py'),allow_loopback=True)
+            lock.write_bytes(original_lock+b'\n# changed while stopped\n')
+            with self.assertRaisesRegex(UpdateRejected,'lock_changed'):reopened().health()
+            lock.write_bytes(original_lock)
+            for field in ('job_id','lock_sha256'):
+                binding=json.loads(original);binding[field]='changed';marker.write_text(json.dumps(binding))
+                with self.assertRaisesRegex(UpdateRejected,'lock_changed'):reopened().health()
+            marker.unlink()
+            with self.assertRaisesRegex(UpdateRejected,'lock_changed'):reopened().health()
+            marker.write_bytes(original)
+            self.assertEqual(reopened().health()['lock_sha256'],self.pin['lock_sha256'])
+            self.assertIsNotNone(self.updater.state.read()['pending'])
 
     def test_authenticated_update_source_pin_does_not_relax_other_provision(self):
         self.provisioner.trusted_update_source='workpulse#u_internalowner'
