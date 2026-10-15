@@ -325,6 +325,43 @@ func TestFreshTargetFailureNotifiesActualOnlineSender(t *testing.T) {
 	}
 }
 
+func TestFreshTargetNewStartupSweepExpiresRealEnvelope(t *testing.T) {
+	ctx := context.Background()
+	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "fresh-startup-real-envelope.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	bootstrap := New(db, ConsoleAuthDisabled())
+	if err := bootstrap.UpsertService(ctx, model.RegisteredService{ID: "svc-fresh-startup-real", Name: "fresh-startup-real", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	_, key, err := bootstrap.IssueAPIKey(ctx, "svc-fresh-startup-real", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	bootstrap.Close()
+
+	original := model.Envelope{ID: "fresh-new-startup-original", From: sessionAddress("source", key.ID), To: sessionAddress("never", key.ID), Body: "constructor sweep must expire this", TS: time.Now().Unix()}
+	raw, err := json.Marshal(original)
+	if err != nil {
+		t.Fatal(err)
+	}
+	delivery := model.SessionDelivery{ID: "dw-dlv-new-startup-real", KeyID: key.ID, SessionName: "never", Envelope: string(raw), SourceMessageID: original.ID, SourceType: "session_inbound", Provenance: capabilityPendingProvenance, State: capabilityPendingState, CreatedAt: time.Now().UTC().Add(-capabilityPendingTTL - time.Second)}
+	if err := db.EnqueueSessionDelivery(ctx, delivery); err != nil {
+		t.Fatal(err)
+	}
+	h := New(db, ConsoleAuthDisabled())
+	defer h.Close()
+	got, err := db.GetSessionDelivery(ctx, delivery.ID)
+	if err != nil || got == nil || got.State != "dead" || got.LastError != "delivery_capability_unconfirmed_expired" {
+		t.Fatalf("New startup sweep real-envelope delivery=%+v err=%v", got, err)
+	}
+}
+
 func TestFreshTargetStartupSweepNotifiesActualOnlineSource(t *testing.T) {
 	h, db, ctx := newTestHub(t)
 	// New starts the same one-shot sweep before a process can accept a source
