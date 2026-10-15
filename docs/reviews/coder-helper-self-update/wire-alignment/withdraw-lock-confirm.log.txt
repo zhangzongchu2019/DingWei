@@ -1,0 +1,37 @@
+test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion) ... 
+  test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion) (field='lock_sha256') ... FAIL
+  test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion) (field='health_nonce') ... FAIL
+test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion) ... FAIL
+
+======================================================================
+FAIL: test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion) (field='lock_sha256')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-self-update/tools/sessionhelper/tests/test_self_update_offer.py", line 172, in test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion
+    with self.assertRaisesRegex((UpdateRejected,self.updater.guard.UpdateError),'confirmation_mismatch'):
+AssertionError: (<class 'sessionhelper.self_update.UpdateRejected'>, <class '_dw_stable_guard.UpdateError'>) not raised
+
+======================================================================
+FAIL: test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion) (field='health_nonce')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-self-update/tools/sessionhelper/tests/test_self_update_offer.py", line 174, in test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion
+    self.assertIsNotNone(self.updater.state.read()['pending'])
+AssertionError: unexpectedly None
+
+======================================================================
+FAIL: test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion)
+----------------------------------------------------------------------
+sessionhelper.self_update.UpdateRejected: confirmation_mismatch
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-self-update/tools/sessionhelper/tests/test_self_update_offer.py", line 177, in test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion
+    with self.assertRaisesRegex(UpdateRejected,'lock_changed'):
+AssertionError: "lock_changed" does not match "confirmation_mismatch"
+
+----------------------------------------------------------------------
+Ran 1 test in 0.638s
+
+FAILED (failures=3)

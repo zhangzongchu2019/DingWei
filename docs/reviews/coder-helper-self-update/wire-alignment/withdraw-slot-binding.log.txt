@@ -1,0 +1,14 @@
+test_restarted_health_fails_closed_if_job_lock_binding_changes (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_restarted_health_fails_closed_if_job_lock_binding_changes) ... FAIL
+
+======================================================================
+FAIL: test_restarted_health_fails_closed_if_job_lock_binding_changes (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_restarted_health_fails_closed_if_job_lock_binding_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-self-update/tools/sessionhelper/tests/test_self_update_offer.py", line 194, in test_restarted_health_fails_closed_if_job_lock_binding_changes
+    with self.assertRaisesRegex(UpdateRejected,'lock_changed'):reopened().health()
+AssertionError: UpdateRejected not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.639s
+
+FAILED (failures=1)

@@ -1,0 +1,106 @@
+{
+  "source_commit": "8f2adda26ba4e3adb6034b8d0d8fc46ac24d1f88",
+  "source_tree": "4ec5a5a706563c8c462b84fd635ee25515626986",
+  "assets": [
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-alignment/.gitattributes",
+      "bytes": 22,
+      "sha256": "9f4d0a982bf7cce378dce4fe0be69771bf6428ec8a9e2634fde23828e59cbb5a"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-alignment/REPORT.md",
+      "bytes": 3865,
+      "sha256": "6205ea22679701f4411c757043904a9bbb615e9984f5b2df4d33984f2d027852"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-alignment/canonical.log.txt",
+      "bytes": 34929,
+      "sha256": "1c9fa94c490fc6c70e63fea2dec057b053ca255888a483c53f51b07c4029211e"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-alignment/full-helper.log.txt",
+      "bytes": 251221,
+      "sha256": "5140c368cc5a75353b17f0620bd435b10a6103d39403cee4804ecda0cd6fd33e"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-alignment/initial-home-isolation-failure.log.txt",
+      "bytes": 4087,
+      "sha256": "c7c46c6e5be2a898f1ec79cfdabfb02e95fd5781a50db1e848ffb5572c5e9f29"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-alignment/initial-prospective-exact-reason-failure.log.txt",
+      "bytes": 4183,
+      "sha256": "3b1b477f143f358fcc8240eb7f0a16f2ba0d075114865ede33e2f9fd170d0dcf"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-alignment/prior-8751-canonical.log.txt",
+      "bytes": 34968,
+      "sha256": "aa5cb64b3b6cdc83c240121fd2ad625421b1282453991498276706fbabdee4b9"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-alignment/prior-8751-full.log.txt",
+      "bytes": 149667,
+      "sha256": "c5351daa0bcd33fe2d8d055512352a25ebfc18fb9d179b5a1388895b4cee1167"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-alignment/targeted.log.txt",
+      "bytes": 3771,
+      "sha256": "61619422b61fd4ad88c48507d420cd55767676db5ab47aeaf0198cc6918bff5b"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-alignment/withdraw-health-retry.log.txt",
+      "bytes": 2106,
+      "sha256": "a45be9325d33f5a3af761e02ab643e32c3b4dd336beb34dd46360105054eabb7"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-alignment/withdraw-lock-confirm.log.txt",
+      "bytes": 3479,
+      "sha256": "8be8060f88735931db5e72653a241cb122bc5af0cc7051b1ac511e2582c957d8"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-alignment/withdraw-slot-binding.log.txt",
+      "bytes": 983,
+      "sha256": "6cfc7b260e226e92da74307980f02e49918589ba13c9f526d4a672db50bc43fb"
+    }
+  ],
+  "source_pins": [
+    {
+      "path": "tools/sessionhelper/sessionhelper/self_update.py",
+      "bytes": 17275,
+      "sha256": "5a490e7dfc9a29d49f839b6fd544e29bef8abf4cf6b328a2da2a9beeecfd360e"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_self_update_offer.py",
+      "bytes": 18222,
+      "sha256": "b875cac78367d4249340dfc288eb50c550804f0029a263bb4475b2fedda62c58"
+    },
+    {
+      "path": "tools/sessionhelper/update_launcher/guard.py",
+      "bytes": 11044,
+      "sha256": "4f32800140484a2fd783f9a8579d17eb7ad7fb340901810912ab67ad85143cd0"
+    },
+    {
+      "path": "tools/sessionhelper/package_release.py",
+      "bytes": 8276,
+      "sha256": "d8163e3ee5249f2548932ec944631a16c4a74e2e130b9ce990b880d813ba9e26"
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/app.py",
+      "bytes": 95362,
+      "sha256": "2299bcd043ff45613ec26f11ac92600d0c06962d14848c23d66c79e77e8d46e1"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/RUNTIME-CONTRACT.md",
+      "bytes": 8657,
+      "sha256": "c3ee6a5370437a167cfc3876d1a47af95bb3d48b6b1fb3a985cdffd5dcc9fa38"
+    }
+  ],
+  "results": {
+    "targeted": 0,
+    "full_helper": 0,
+    "canonical": 0,
+    "lock_confirm_withdrawal": 1,
+    "health_retry_withdrawal": 1,
+    "slot_binding_withdrawal": 1
+  }
+}
