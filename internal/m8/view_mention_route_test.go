@@ -21,7 +21,7 @@ import (
 )
 
 // R-V2-0102-VIEW-MENTION-ROUTE（要点板 runbooks/PLAN-R-V2-0102-VIEW-MENTION-ROUTE-opus50tc2k.md 第四节＋第七至九节）：
-// view 页提及同组同 owner 的 Agent ⇒ 当前会话照收原文，被提及方另收一封；只认结构化 mentions。
+// view 页提及同组 Agent ⇒ 当前会话照收原文，被提及方另收一封；只认结构化 mentions。
 
 type vmFrames struct{ ch chan model.Envelope }
 
@@ -97,8 +97,11 @@ type vmEnv struct {
 	a, x, q, z, y *vmFrames
 	n             *vmFrames // Nack：在线但不报 delivery_ack_v1（组长 NOACK 050053）
 	qConn         *websocket.Conn
+	yConn         *websocket.Conn
+	groupCode     string
 	xConn         *websocket.Conn // Beta 的连接（R-V2-0103 回流用例从这里发回合事件）
 	qCred         string
+	yCred         string
 }
 
 type vmResp struct {
@@ -120,6 +123,7 @@ func newVMEnv(t *testing.T) *vmEnv {
 	e.qCred, e.ids["Quill"] = v.enrollFor("zzc", "dev-q", "Quill")
 	zCred, zID := v.enrollFor("zzc", "dev-z", "Outsider")
 	yCred, yID := v.enrollFor("lbl", "dev-y", "Gamma")
+	e.yCred = yCred
 	e.ids["Beta"], e.ids["Outsider"], e.ids["Gamma"] = xID, zID, yID
 	nCred, nID := v.enrollFor("zzc", "dev-n", "Nack")
 	e.ids["Nack"] = nID
@@ -130,6 +134,7 @@ func newVMEnv(t *testing.T) *vmEnv {
 	if err != nil {
 		t.Fatal(err)
 	}
+	e.groupCode = g.Code
 	for _, n := range []string{"Beta", "Quill", "Opus50TS", "W1", "W2", "W3", "Nack"} {
 		if err := v.svc.JoinGroup(ctx, "zzc", g.Code, e.ids[n]); err != nil {
 			t.Fatalf("join %s: %v", n, err)
@@ -153,7 +158,11 @@ func newVMEnv(t *testing.T) *vmEnv {
 	e.x = xFrames
 	_, e.n = dial(nCred, "zzc", "nack") // 不发 session_capabilities ⇒ 不报 ack
 	_, e.z = dial(zCred, "zzc", "outsider")
-	_, e.y = dial(yCred, "lbl", "gamma")
+	e.yConn, e.y = dial(yCred, "lbl", "gamma")
+	if err := writeEnvelope(ctx, e.yConn, model.Envelope{ID: "caps-y", To: "workpulse#" + AgentKeyID("lbl"), Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, "gamma supports ACK", func() bool { ack, _ := v.hub.viewMentionPeerACK(ctx, AgentKeyID("lbl"), "gamma"); return ack })
 	// Quill 自报 delivery_ack_v1 ⇒ 走持久投递（有 delivery_id，可查回入站）
 	e.qConn, e.q = dial(e.qCred, "zzc", "quill")
 	if err := writeEnvelope(ctx, e.qConn, model.Envelope{ID: "caps-q", To: "workpulse#" + AgentKeyID("zzc"),
@@ -280,15 +289,16 @@ func TestViewMentionRoute(t *testing.T) {
 		e.z.none(t, "格三", 400*time.Millisecond)
 	})
 
-	// 格 4（组长 SCOPE）：同组但他人 owner ⇒ 不投、回执逐字「暂不支持转给其他用户的 Agent」。
-	t.Run("same group other owner is refused with the ruled text", func(t *testing.T) {
+	// 同组跨属主：明确 Agent 来源，不继承接收者业主的权限。
+	t.Run("same group other owner delivers as an attributed Agent message", func(t *testing.T) {
 		_, _, r := e.post(t, "55555555555555555555555555555555", "格四", []string{"Gamma.lb"})
-		want := []string{"Gamma.lb|rejected|cross_owner|未转给 Gamma：暂不支持转给其他用户的 Agent"}
+		want := []string{"Gamma.lb|delivered||已转给 Gamma.lb，回复请到 Gamma.lb 的页面查看"}
 		if got := vmReceipts(r); strings.Join(got, "\n") != strings.Join(want, "\n") {
 			t.Fatalf("回执=%q", got)
 		}
 		e.a.next(t, "格四")
-		e.y.none(t, "格四", 400*time.Millisecond)
+		y := e.y.next(t, "格四")
+		assertCrossOwnerView(t, y)
 	})
 
 	// 格 6：mentions 内重复（含大小写）只投一次；同 request_id 重放不再投。
@@ -456,7 +466,7 @@ func TestViewMentionRouteLegacyInput(t *testing.T) {
 	}
 	want := []string{
 		"Beta.zzc|delivered||已转给 Beta，回复请到 Beta 的页面查看",
-		"Gamma.lb|rejected|cross_owner|未转给 Gamma：暂不支持转给其他用户的 Agent",
+		"Gamma.lb|delivered||已转给 Gamma.lb，回复请到 Gamma.lb 的页面查看",
 	}
 	if got := vmReceipts(r); strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("回执=%q", got)
@@ -465,7 +475,7 @@ func TestViewMentionRouteLegacyInput(t *testing.T) {
 	if x := e.x.next(t, "格十一"); x.Body != "格十一\r" || metaString(x.Meta, "mentioned_from") != "Kimi.zzc" {
 		t.Fatalf("X=%+v", x)
 	}
-	e.y.none(t, "格十一", 300*time.Millisecond)
+	assertCrossOwnerView(t, e.y.next(t, "格十一"))
 }
 
 // 格 13（tosonnet55tc2k 复核必补 1）：对端在线但本次连接尚未发 session_capabilities，而端点登记曾报 ack ⇒

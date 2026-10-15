@@ -1,0 +1,21 @@
+=== RUN   TestGroupCrossOwnerCannotForgeGroupSender
+2026/10/14 18:24:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:24:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:24:48 session handshake timing key_id=u_zzc session=kimi total=2ms register=1ms accept=0s conn_seq=0s onboard=2ms register_lock=0s
+2026/10/14 18:24:48 session handshake timing key_id=u_zzc session=beta total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:48 session handshake timing key_id=u_zzc session=nack total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:48 session handshake timing key_id=u_zzc session=outsider total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:48 session handshake timing key_id=u_lbl session=gamma total=2ms register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:24:48 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:24:48 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:48 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:24:48 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:24:48 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_5bfdfde339a315c6292a1d290cfaa4a1 source_message_id=ff371407fdffcf9dccfa7d4796974f49
+    group_cross_owner_test.go:328: condition not met before timeout (1s): forged source rejected
+2026/10/14 18:24:49 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:24:49 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:24:49 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+--- FAIL: TestGroupCrossOwnerCannotForgeGroupSender (1.25s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	1.264s
+FAIL

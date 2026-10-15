@@ -1,0 +1,162 @@
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:29 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:29 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:29 session version warning key_id=FB-u1-20261015-db2b83c8 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:29 session handshake timing key_id=FB-u1-20261015-db2b83c8 session=u1-home-83c8 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:39:29 session version warning key_id=FB-u1-20261015-db2b83c8 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:29 session handshake timing key_id=FB-u1-20261015-db2b83c8 session=u1-developer-83c8 total=1ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.12s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:29 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:29 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:29 session version warning key_id=FB-u1-20261015-20de865d owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:29 session handshake timing key_id=FB-u1-20261015-20de865d session=u1-home-865d total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:39:29 session version warning key_id=FB-u1-20261015-20de865d owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:29 session handshake timing key_id=FB-u1-20261015-20de865d session=u1-developer-865d total=2ms auth=1ms accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.12s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-ae354340 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-ae354340 session=u1-home-4340 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-ae354340 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-ae354340 session=u1-developer-4340 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.11s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-2ad67b25 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-2ad67b25 session=u1-home-7b25 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-2ad67b25 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-2ad67b25 session=u1-developer-7b25 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.11s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-751dc550 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-751dc550 session=u1-home-c550 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-751dc550 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-751dc550 session=u1-developer-c550 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.12s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-1c61efd3 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-1c61efd3 session=u1-home-efd3 total=1ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-1c61efd3 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-1c61efd3 session=u1-developer-efd3 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.12s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-bbff974f owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-bbff974f session=u1-home-974f total=3ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-bbff974f owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-bbff974f session=u1-developer-974f total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.13s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-2f0585f8 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-2f0585f8 session=u1-home-85f8 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-2f0585f8 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-2f0585f8 session=u1-developer-85f8 total=1ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.12s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-e49366fa owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-e49366fa session=u1-home-66fa total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-e49366fa owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-e49366fa session=u1-developer-66fa total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.12s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-83058f37 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-83058f37 session=u1-home-8f37 total=3ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-83058f37 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-83058f37 session=u1-developer-8f37 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.12s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-bec1463d owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-bec1463d session=u1-home-463d total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:39:30 session version warning key_id=FB-u1-20261015-bec1463d owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:30 session handshake timing key_id=FB-u1-20261015-bec1463d session=u1-developer-463d total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.12s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-c70548ff owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-c70548ff session=u1-home-48ff total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-c70548ff owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-c70548ff session=u1-developer-48ff total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.11s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-0d3c3941 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-0d3c3941 session=u1-home-3941 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-0d3c3941 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-0d3c3941 session=u1-developer-3941 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.13s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-990b0716 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-990b0716 session=u1-home-0716 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-990b0716 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-990b0716 session=u1-developer-0716 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.13s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-1e6c7c5e owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-1e6c7c5e session=u1-home-7c5e total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-1e6c7c5e owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-1e6c7c5e session=u1-developer-7c5e total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.12s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-f94bb19a owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-f94bb19a session=u1-home-b19a total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-f94bb19a owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-f94bb19a session=u1-developer-b19a total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.13s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-98380cd0 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-98380cd0 session=u1-home-0cd0 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-98380cd0 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-98380cd0 session=u1-developer-0cd0 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.12s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-3c7fe649 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-3c7fe649 session=u1-home-e649 total=3ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-3c7fe649 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-3c7fe649 session=u1-developer-e649 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.12s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-8956fdf3 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-8956fdf3 session=u1-home-fdf3 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:39:31 session version warning key_id=FB-u1-20261015-8956fdf3 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:31 session handshake timing key_id=FB-u1-20261015-8956fdf3 session=u1-developer-fdf3 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.13s)
+=== RUN   TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope
+2026/10/14 18:39:32 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:39:32 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:39:32 session version warning key_id=FB-u1-20261015-0246bfa7 owner=u1 session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:32 session handshake timing key_id=FB-u1-20261015-0246bfa7 session=u1-home-bfa7 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:39:32 session version warning key_id=FB-u1-20261015-0246bfa7 owner=u1 session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:39:32 session handshake timing key_id=FB-u1-20261015-0246bfa7 session=u1-developer-bfa7 total=1ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope (0.11s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	2.427s

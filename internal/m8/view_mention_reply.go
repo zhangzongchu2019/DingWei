@@ -39,8 +39,9 @@ func mentionReplyLongNote(label string) string {
 }
 
 type mentionReplySource struct {
-	ok            bool   // 入站是 view_mention 派生信封
-	mentionedFrom string // A 的 full_name
+	ok                 bool   // 入站是 view_mention 派生信封
+	mentionedFrom      string // A 的 full_name
+	crossOwnerAttested bool   // Only a Hub-derived cross-owner View delivery may mirror.
 }
 
 type mentionReplyTurn struct {
@@ -57,7 +58,7 @@ type mentionMirror struct {
 
 	mu      sync.Mutex
 	turns   map[amrTurnKey]*mentionReplyTurn
-	lookups map[string]*list.Element // delivery_id → *mentionReplyLookup（LRU）
+	lookups map[string]*list.Element // key/session/delivery_id → *mentionReplyLookup（LRU）
 	order   *list.List
 	// done 已发出（或已放弃）的回合：终态后同键的重复终态、迟到文本一律忽略——一轮只发一张，
 	// 也不留永不结束的在途轮（同 AMR 的 completed，amr.go F8/T-040；tosonnet55tc2k 复核必改）。
@@ -140,8 +141,11 @@ func (m *mentionMirror) deliveryDead(d model.SessionDelivery, reason string) {
 
 // lookup 按 delivery_id 查回入站信封判定是否 view_mention 派生信封；结果（含「不是」）进 LRU。
 func (m *mentionMirror) lookup(keyID, sessionName, deliveryID string) (mentionReplySource, bool) {
+	// A cached match belongs to the authenticated recipient, not to any other
+	// Agent that happens to repeat the same delivery ID in its event stream.
+	cacheKey := keyID + "\x00" + sessionName + "\x00" + deliveryID
 	m.mu.Lock()
-	if el, hit := m.lookups[deliveryID]; hit {
+	if el, hit := m.lookups[cacheKey]; hit {
 		m.order.MoveToFront(el)
 		src := el.Value.(*mentionReplyLookup).source
 		m.mu.Unlock()
@@ -159,10 +163,10 @@ func (m *mentionMirror) lookup(keyID, sessionName, deliveryID string) (mentionRe
 	if d != nil && d.KeyID == keyID && d.SessionName == sessionName {
 		var env model.Envelope
 		if json.Unmarshal([]byte(d.Envelope), &env) == nil && metaString(env.Meta, "route_source") == "view_mention" {
-			src = mentionReplySource{ok: true, mentionedFrom: metaString(env.Meta, "mentioned_from")}
+			src = mentionReplySource{ok: true, mentionedFrom: metaString(env.Meta, "mentioned_from"), crossOwnerAttested: metaBool(env.Meta, metaKeyViewMention)}
 		}
 	}
-	m.remember(deliveryID, src)
+	m.remember(cacheKey, src)
 	return src, true
 }
 
@@ -220,7 +224,8 @@ func (m *mentionMirror) evictOldestLocked() {
 	}
 }
 
-// resolve 复核 A、X 都是未吊销的新平台 Agent 且同 owner（沿用 SCOPE 034953）；返回 A 与 X 的显示名。
+// resolve keeps same-owner behavior; cross-owner mirrors require a Hub-derived
+// delivery and current group permission. No unrelated output is copied.
 func (m *mentionMirror) resolve(xKeyID, xSession string, src mentionReplySource) (a *identity.Agent, xFull, xLabel string, ok bool) {
 	ctx := context.Background()
 	h := m.hub
@@ -229,8 +234,14 @@ func (m *mentionMirror) resolve(xKeyID, xSession string, src mentionReplySource)
 		return nil, "", "", false
 	}
 	x, found := h.newPlatformAgentAt(ctx, xKeyID, xSession)
-	if !found || identity.Lower(x.OwnerLC) != identity.Lower(a.OwnerLC) || x.ID == a.ID {
+	if !found || x.ID == a.ID {
 		return nil, "", "", false
+	}
+	if identity.Lower(x.OwnerLC) != identity.Lower(a.OwnerLC) {
+		allowed, err := h.Identity.AgentsCanCommunicate(ctx, a, x)
+		if !src.crossOwnerAttested || err != nil || !allowed {
+			return nil, "", "", false
+		}
 	}
 	xFull = h.Identity.FullName(ctx, x)
 	xLabel = xFull

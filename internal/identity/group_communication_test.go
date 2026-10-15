@@ -62,3 +62,28 @@ func TestGroupLeaderOnlyCommunicationAndBypass(t *testing.T) {
 	outsider.State = identity.AgentSuspended
 	check(leader, outsider, false)
 }
+
+func TestMentionCandidateOtherOwnerAlwaysFullName(t *testing.T) {
+	f := newFixture(t)
+	self, same, other := f.hosted(t, "zzc", "Lead"), f.hosted(t, "zzc", "Local"), f.hosted(t, "lbl", "Foreign")
+	g, err := f.svc.CreateGroup(bg, "zzc", self.ID, tg())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, a := range []*identity.Agent{same, other} {
+		if err := f.svc.JoinGroup(bg, a.OwnerLC, g.Code, a.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cs, err := f.svc.MentionCandidates(bg, self.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	for _, c := range cs {
+		got[c.Agent.ID] = c.Insert
+	}
+	if got[same.ID] != "Local" || got[other.ID] != "Foreign.lb" {
+		t.Fatalf("same-owner insert=%q; cross-owner insert=%q", got[same.ID], got[other.ID])
+	}
+}

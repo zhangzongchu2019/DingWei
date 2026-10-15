@@ -222,8 +222,8 @@ func TestMentionReplyMirror(t *testing.T) {
 		}
 	})
 
-	// 格 9：owner 不同（入站 mentioned_from 指向他人 Agent）⇒ 不回流。
-	t.Run("a different owner is never mirrored to", func(t *testing.T) {
+	// 伪造 mentioned_from、没有 Hub View 派生证明 ⇒ 不得跨属主回流。
+	t.Run("unattested cross-owner mention metadata is never mirrored", func(t *testing.T) {
 		before := len(e.aReplies(t))
 		dlv := seedDeliveryToBeta(t, e, map[string]any{"route_source": "view_mention", "mentioned_from": "Gamma.lb"})
 		emitTurnEvent(t, ctx, e.xConn, textEv(dlv, "t9", "不该出现", nil))

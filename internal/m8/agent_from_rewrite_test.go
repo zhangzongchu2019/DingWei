@@ -193,11 +193,16 @@ func TestNewPlatformAgentOwnerResolutionSelectorIsolationAndRoster(t *testing.T)
 	if strings.Join(names, ",") != "kimi,opus50ts" {
 		t.Fatalf("new-platform roster=%v", names)
 	}
-	// Exact-address send may cross owners only after the existing group policy
-	// approves it; unlike the selector shorthand it uses the RouteEnvelope fallback.
+	// Both exact-address and full-name selectors may cross owners after the
+	// existing group policy approves; short selectors remain owner-scoped.
 	e.sendEnv(a, model.Envelope{From: "opus50ts#" + placeholderFromKey, To: "Outsider.lb#" + placeholderFromKey, Body: "group-approved-full-address"})
 	if got := e.readEnvUntil(other, envelopeReadTimeout, func(env model.Envelope) bool { return env.Body == "group-approved-full-address" }); got == nil || got.To != sessionAddress("outsider", AgentKeyID("lbl")) {
 		t.Fatalf("group-approved cross-owner full_name address was not delivered: %+v", got)
+	}
+
+	e.sendEnv(a, model.Envelope{From: "opus50ts#" + placeholderFromKey, To: "#Outsider.lb", Body: "group-approved-full-selector"})
+	if got := e.readEnvUntil(other, envelopeReadTimeout, func(env model.Envelope) bool { return env.Body == "group-approved-full-selector" }); got == nil || got.To != sessionAddress("outsider", AgentKeyID("lbl")) || got.From != sessionAddress("opus50ts", AgentKeyID("zzc")) {
+		t.Fatalf("group-approved cross-owner full_name selector was not delivered with its real sender: %+v", got)
 	}
 
 	// A name that exists only under another owner must be rejected, not globally
@@ -212,15 +217,7 @@ func TestNewPlatformAgentOwnerResolutionSelectorIsolationAndRoster(t *testing.T)
 	if leaked := e.readEnvUntil(other, 250*time.Millisecond, func(env model.Envelope) bool { return env.Body == "must-not-cross-owner" }); leaked != nil {
 		t.Fatalf("short selector crossed owner boundary: %+v", leaked)
 	}
-	e.sendEnv(a, model.Envelope{From: "opus50ts#" + placeholderFromKey, To: "#Outsider.lb", Body: "full-name-must-not-cross-owner"})
-	if rejected := e.readEnvUntil(a, envelopeReadTimeout, func(env model.Envelope) bool {
-		return strings.Contains(env.Body, "目标会话无法补全为在线 canonical 地址")
-	}); rejected == nil {
-		t.Fatal("cross-owner full_name selector was not rejected like a missing target")
-	}
-	if leaked := e.readEnvUntil(other, 250*time.Millisecond, func(env model.Envelope) bool { return env.Body == "full-name-must-not-cross-owner" }); leaked != nil {
-		t.Fatalf("full_name selector crossed owner boundary: %+v", leaked)
-	}
+
 }
 
 func TestNewPlatformAMRSelectorNormalizesFullName(t *testing.T) {

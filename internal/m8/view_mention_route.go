@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -14,24 +15,23 @@ import (
 
 // view 页提及同组 Agent 的投递（R-V2-0102-VIEW-MENTION-ROUTE；要点板 runbooks/PLAN-R-V2-0102-VIEW-MENTION-ROUTE-opus50tc2k.md）。
 // 只认页面发来的结构化 mentions（候选浮层选中的 full_name），不从正文解析（组长 NOFALLBACK 035027）。
-// 放行＝该页 Agent 的候选集合（identity.MentionCandidates）∩ 与该 Agent 同 owner（组长 SCOPE 034953）。
+// 放行＝该页 Agent 的当前编组候选集合；跨属主按 Agent 来信处理，不继承目标业主权限。
 // 派生信封 Meta type 留空 ⇒ 走可靠投递（reliablePrimaryEnvelope），离线目标进持久投递；
 // mention_verbatim ⇒ 目标那一轮输出里再写提及不再转投（amr.go process 的一跳封顶）。
 
 const (
-	viewMentionMaxTargets = 5  // 每条最多投 5 个目标（组长 035235 第 3 条）
-	viewMentionMaxInput   = 32 // 请求里最多看前 32 项，其余不回执
+	metaKeyViewMention    = "_hub_view_mention" // Hub-only attestation; stripped from Agent WS ingress.
+	viewMentionMaxTargets = 5                   // 每条最多投 5 个目标（组长 035235 第 3 条）
+	viewMentionMaxInput   = 32                  // 请求里最多看前 32 项，其余不回执
 )
 
 // viewMentionResult 逐目标回执，随 /input 响应同步返回给页面。
 type viewMentionResult struct {
 	FullName string `json:"full_name"`
 	Status   string `json:"status"`           // delivered | queued | rejected | failed
-	Reason   string `json:"reason,omitempty"` // cross_owner | not_in_group | over_limit | offline | error
+	Reason   string `json:"reason,omitempty"` // not_in_group | over_limit | offline | error
 	Message  string `json:"message"`
 }
-
-const viewMentionCrossOwnerText = "暂不支持转给其他用户的 Agent"
 
 // routeViewMentions 当前会话已投成功之后调用。selfFullName＝该 view 页的 Agent；requestID 空（旧口径）时随机生成派生号。
 // Identity 为空（旧平台）一律不做，返回 nil。
@@ -78,10 +78,6 @@ func (h *Hub) routeViewMentions(ctx context.Context, selfFullName, requestID, te
 			continue
 		}
 		label := firstNonEmpty(c.Insert, c.FullName)
-		if identity.Lower(c.Agent.OwnerLC) != identity.Lower(self.OwnerLC) {
-			out = append(out, viewMentionResult{FullName: c.FullName, Status: "rejected", Reason: "cross_owner", Message: "未转给 " + label + "：" + viewMentionCrossOwnerText})
-			continue
-		}
 		if accepted >= viewMentionMaxTargets {
 			out = append(out, viewMentionResult{FullName: c.FullName, Status: "rejected", Reason: "over_limit", Message: "未转给 " + label + "：每条最多转给 5 个 Agent"})
 			continue
@@ -116,6 +112,29 @@ func (h *Hub) deliverViewMention(ctx context.Context, self *identity.Agent, self
 			metaKeyMentionVerbatim: true,
 			"console_principal_id": strings.TrimSpace(principalID), hubIngressMetaKey: hubIngressViewV2,
 		},
+	}
+	if identity.Lower(c.Agent.OwnerLC) != identity.Lower(self.OwnerLC) {
+		// This is an Agent-mediated cross-owner message, never a command from
+		// the recipient's owner. Do not carry the View owner-exemption marker.
+		sender := firstNonEmpty(strings.TrimSpace(principalID), self.OwnerLC)
+		if u, err := h.Identity.Store.GetUser(ctx, sender); err == nil {
+			sender = firstNonEmpty(u.DisplayName, u.UserID)
+		}
+		env.From = sessionAddress(self.NameLC(), AgentKeyID(self.OwnerLC))
+		env.Meta["source_kind"] = "agent"
+		env.Meta["source_display_name"] = fmt.Sprintf("%s 经 %s 的 View", sender, selfFull)
+		env.Meta["cross_owner"] = true
+		env.Meta[metaKeyViewMention] = true
+		env.Meta["view_sender_principal_id"] = firstNonEmpty(strings.TrimSpace(principalID), self.OwnerLC)
+		env.Meta["source_key_id"] = AgentKeyID(self.OwnerLC)
+		env.Meta["source_session_name"] = self.NameLC()
+		delete(env.Meta, "console_principal_id")
+		env.Meta[hubIngressMetaKey] = hubIngressAgent
+		// Recheck live membership at delivery as well as candidate enumeration.
+		from := address{Kind: addressSession, KeyID: AgentKeyID(self.OwnerLC), SessionName: self.NameLC()}
+		if err := h.enforceAgentGrouping(ctx, from, env, keyID, c.Agent.NameLC()); err != nil {
+			return viewMentionResult{FullName: c.FullName, Status: "rejected", Reason: "not_in_group", Message: "未转给 " + label + "：不在本组或已不可用"}
+		}
 	}
 	if err := h.routeToSession(ctx, keyID, c.Agent.NameLC(), env, false); err != nil {
 		log.Printf("view mention decision=failed from=%s to=%s online=%t err=%v", selfFull, c.FullName, online, err)
