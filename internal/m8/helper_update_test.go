@@ -11,7 +11,7 @@ import (
 
 func TestHelperUpdateCatalogValidation(t *testing.T) {
 	valid := strings.Repeat("a", 64)
-	catalog := helperUpdateCatalog{SHA256: valid, LockSHA256: valid, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: valid, LockSHA256: valid, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
 	if err := validateHelperUpdateCatalog(catalog); err != nil {
 		t.Fatalf("valid catalog: %v", err)
 	}
@@ -29,14 +29,14 @@ func TestHelperUpdateCatalogValidation(t *testing.T) {
 func TestHelperUpdateCatalogAndJobAreDurableAndSingleUse(t *testing.T) {
 	h, _, ctx := newTestHub(t)
 	digest := strings.Repeat("c", 64)
-	catalog := helperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
 	if err := h.RegisterHelperUpdateCatalog(ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
 	if err := h.RegisterHelperUpdateCatalog(ctx, "ops", catalog); err == nil {
 		t.Fatal("catalog registration replay accepted")
 	}
-	got, err := h.helperUpdateCatalog(ctx, digest)
+	got, err := h.HelperUpdateCatalog(ctx, digest)
 	if err != nil || got == nil || got.Version != catalog.Version {
 		t.Fatalf("catalog=%+v err=%v", got, err)
 	}
@@ -59,7 +59,7 @@ func TestHelperUpdateCatalogAndJobAreDurableAndSingleUse(t *testing.T) {
 func TestIssueHelperUpdateSendsTrustedTargetBoundOffer(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("d", 64)
-	catalog := helperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
 	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func TestIssueHelperUpdateSendsTrustedTargetBoundOffer(t *testing.T) {
 func TestHelperUpdateHealthRequiresFreshAuthenticatedTuple(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("e", 64)
-	catalog := helperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
 	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestHelperUpdateHealthRequiresFreshAuthenticatedTuple(t *testing.T) {
 func TestHelperUpdateHealthRejectsWrongNonce(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("f", 64)
-	catalog := helperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
 	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func TestHelperUpdateHealthRejectsWrongNonce(t *testing.T) {
 func TestRecoverHelperUpdatesTerminalizesExpiredJob(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("1", 64)
-	catalog := helperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
 	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -181,7 +181,7 @@ func TestRecoverHelperUpdatesTerminalizesExpiredJob(t *testing.T) {
 
 func TestHelperUpdateKeysAreNamespaced(t *testing.T) {
 	sha := strings.Repeat("b", 64)
-	if got, want := helperUpdateCatalogKey(strings.ToUpper(sha)), helperUpdateCatalogPrefix+sha; got != want {
+	if got, want := HelperUpdateCatalogKey(strings.ToUpper(sha)), HelperUpdateCatalogPrefix+sha; got != want {
 		t.Fatalf("catalog key=%q want %q", got, want)
 	}
 	if got, want := helperUpdateJobKey("agent-1"), "helper_update.job.agent-1"; got != want {

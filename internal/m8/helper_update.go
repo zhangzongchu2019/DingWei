@@ -18,12 +18,12 @@ import (
 )
 
 const (
-	helperUpdateCatalogPrefix = "helper_update.catalog."
+	HelperUpdateCatalogPrefix = "helper_update.catalog."
 	helperUpdateJobPrefix     = "helper_update.job."
 	helperUpdateWireVersion   = "helper-update/v1"
 )
 
-type helperUpdateCatalog struct {
+type HelperUpdateCatalog struct {
 	SHA256     string    `json:"sha256"`
 	Version    string    `json:"version"`
 	URL        string    `json:"url"`
@@ -52,8 +52,8 @@ type helperUpdateJob struct {
 	Revision    int       `json:"revision"`
 }
 
-func helperUpdateCatalogKey(sha string) string {
-	return helperUpdateCatalogPrefix + strings.ToLower(strings.TrimSpace(sha))
+func HelperUpdateCatalogKey(sha string) string {
+	return HelperUpdateCatalogPrefix + strings.ToLower(strings.TrimSpace(sha))
 }
 func helperUpdateJobKey(agentID string) string {
 	return helperUpdateJobPrefix + strings.TrimSpace(agentID)
@@ -68,7 +68,7 @@ func validHelperUpdateSHA256(v string) bool {
 	return err == nil
 }
 
-func validateHelperUpdateCatalog(v helperUpdateCatalog) error {
+func validateHelperUpdateCatalog(v HelperUpdateCatalog) error {
 	if !validHelperUpdateSHA256(v.SHA256) {
 		return fmt.Errorf("helper update sha256 invalid")
 	}
@@ -92,11 +92,11 @@ func marshalHelperUpdate(v any) (string, error) {
 	return string(b), nil
 }
 
-func (h *Hub) helperUpdateCatalog(ctx context.Context, sha string) (*helperUpdateCatalog, error) {
+func (h *Hub) HelperUpdateCatalog(ctx context.Context, sha string) (*HelperUpdateCatalog, error) {
 	if h.Repo == nil {
 		return nil, fmt.Errorf("helper update repository unavailable")
 	}
-	key := helperUpdateCatalogKey(sha)
+	key := HelperUpdateCatalogKey(sha)
 	rows, err := h.Repo.ListAppConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list helper update catalog: %w", err)
@@ -105,7 +105,7 @@ func (h *Hub) helperUpdateCatalog(ctx context.Context, sha string) (*helperUpdat
 		if row.Key != key {
 			continue
 		}
-		var catalog helperUpdateCatalog
+		var catalog HelperUpdateCatalog
 		if err := json.Unmarshal([]byte(row.ValueJSON), &catalog); err != nil {
 			return nil, fmt.Errorf("decode helper update catalog: %w", err)
 		}
@@ -142,7 +142,7 @@ func (h *Hub) helperUpdateJob(ctx context.Context, agentID string) (*helperUpdat
 // RegisterHelperUpdateCatalog is intentionally an operations-only primitive.
 // The command-line caller added by the Hub slice is its sole production entry;
 // Console callers can select only a pre-registered SHA.
-func (h *Hub) RegisterHelperUpdateCatalog(ctx context.Context, actor string, catalog helperUpdateCatalog) error {
+func (h *Hub) RegisterHelperUpdateCatalog(ctx context.Context, actor string, catalog HelperUpdateCatalog) error {
 	if strings.TrimSpace(actor) == "" {
 		return fmt.Errorf("catalog operator required")
 	}
@@ -158,17 +158,17 @@ func (h *Hub) RegisterHelperUpdateCatalog(ctx context.Context, actor string, cat
 	if err != nil {
 		return err
 	}
-	created, err := h.Repo.CompareAndSwapAppConfig(ctx, helperUpdateCatalogKey(catalog.SHA256), false, "", payload)
+	created, err := h.Repo.CompareAndSwapAppConfig(ctx, HelperUpdateCatalogKey(catalog.SHA256), false, "", payload)
 	if err != nil {
 		return err
 	}
 	if !created {
 		return fmt.Errorf("helper update catalog already registered")
 	}
-	return h.Repo.WriteAudit(ctx, actor, "helper_update_catalog_registered", helperUpdateCatalogKey(catalog.SHA256))
+	return h.Repo.WriteAudit(ctx, actor, "helper_update_catalog_registered", HelperUpdateCatalogKey(catalog.SHA256))
 }
 
-func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog helperUpdateCatalog, agentID, ownerID, agentName, issuer string) (*helperUpdateJob, error) {
+func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog HelperUpdateCatalog, agentID, ownerID, agentName, issuer string) (*helperUpdateJob, error) {
 	if strings.TrimSpace(agentID) == "" || strings.TrimSpace(ownerID) == "" || strings.TrimSpace(agentName) == "" {
 		return nil, fmt.Errorf("helper update agent identity required")
 	}
@@ -212,7 +212,7 @@ func (h *Hub) IssueHelperUpdate(ctx context.Context, agentID, releaseSHA, issuer
 	if err != nil || owner == nil || owner.State != identity.UserActive {
 		return nil, fmt.Errorf("helper update owner inactive")
 	}
-	catalog, err := h.helperUpdateCatalog(ctx, releaseSHA)
+	catalog, err := h.HelperUpdateCatalog(ctx, releaseSHA)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +350,7 @@ func (h *Hub) RecoverHelperUpdates(ctx context.Context) error {
 			next = "agent_inactive"
 		} else if owner, err := h.Identity.Store.GetUser(ctx, job.OwnerID); err != nil || owner == nil || owner.State != identity.UserActive {
 			next = "owner_inactive"
-		} else if catalog, err := h.helperUpdateCatalog(ctx, job.SHA256); err != nil || catalog == nil {
+		} else if catalog, err := h.HelperUpdateCatalog(ctx, job.SHA256); err != nil || catalog == nil {
 			next = "release_unavailable"
 		}
 		if next == "" {
