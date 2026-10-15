@@ -182,12 +182,21 @@ func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog HelperUpdateCat
 	if err != nil {
 		return nil, err
 	}
-	created, err := h.Repo.CompareAndSwapAppConfig(ctx, helperUpdateJobKey(agentID), false, "", payload)
+	previous, previousRaw, err := h.helperUpdateJob(ctx, agentID)
+	if err != nil {
+		return nil, err
+	}
+	expectedExists := previous != nil
+	expectedRaw := previousRaw
+	if previous != nil && !helperUpdateTerminal(previous.Stage) {
+		return nil, fmt.Errorf("helper update job already exists")
+	}
+	created, err := h.Repo.CompareAndSwapAppConfig(ctx, helperUpdateJobKey(agentID), expectedExists, expectedRaw, payload)
 	if err != nil {
 		return nil, err
 	}
 	if !created {
-		return nil, fmt.Errorf("helper update job already exists")
+		return nil, fmt.Errorf("helper update job changed concurrently")
 	}
 	if err := h.Repo.WriteAudit(ctx, issuer, "helper_update_offered", job.JobID); err != nil {
 		return nil, err

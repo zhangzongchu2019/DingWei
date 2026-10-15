@@ -54,6 +54,22 @@ func TestHelperUpdateCatalogAndJobAreDurableAndSingleUse(t *testing.T) {
 	if err != nil || stored == nil || stored.JobID != job.JobID {
 		t.Fatalf("stored=%+v err=%v", stored, err)
 	}
+	stored.Stage = "failed"
+	if ok, err := h.updateHelperUpdateJob(ctx, rawForJob(t, h, ctx, "agent-1"), *stored); err != nil || !ok {
+		t.Fatalf("terminal setup ok=%v err=%v", ok, err)
+	}
+	if next, err := h.createHelperUpdateJob(ctx, *got, "agent-1", "owner", "agent", "owner"); err != nil || next.JobID == job.JobID {
+		t.Fatalf("authorized retry=%+v err=%v", next, err)
+	}
+}
+
+func rawForJob(t *testing.T, h *Hub, ctx context.Context, agentID string) string {
+	t.Helper()
+	_, raw, err := h.helperUpdateJob(ctx, agentID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return raw
 }
 
 func TestIssueHelperUpdateSendsTrustedTargetBoundOffer(t *testing.T) {
