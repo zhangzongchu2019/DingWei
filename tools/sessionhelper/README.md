@@ -271,3 +271,21 @@ python3 -m unittest discover -s tools/sessionhelper/tests
 Runtime pins: websockets15.0.1 (Python3.9+), pexpect4.9.0, ptyprocess0.7.0, certifi2026.7.22. The lock includes PyPI SHA256 hashes for published wheels, including Linux/Mac variants; source builds are disabled. `requirements.txt` remains a compatibility entry into the same runtime lock. `run.sh` never upgrades pip, silently changes an existing venv, or installs PyInstaller. New-install failures preserve the partial venv; inspect it and select a new path rather than overwriting it. Matching versions are checked through installed distribution metadata, not a fresh download or a full installed-file attestation.
 
 Packaging uses `requirements-build.txt` separately after the runtime lock (the Mac build entry follows this order). PyInstaller is pinned there; its transitive build dependencies are not a full hashed build-environment lock. A native binary still requires its own reviewed build and artifact hashes. This change does not claim Mac runtime or Python3.9 execution was tested on this Linux/Python3.12 seat.
+
+
+### Agent disk metrics: Codex daemon work directory
+
+For a started, helper-managed Codex driver (`transport_mode=daemon_ws`,
+`manage_daemon=True`), **daemon mode uses the driver-configured working directory**
+(`driver._workdir`): the local daemon start command and `thread/start` both use
+this cwd. It does not use an RPC subprocess PID, because this transport has none.
+The disk basis stays `cli_workdir_filesystem` and refers to that configured local
+thread directory's filesystem. The existing collector opens the absolute
+candidate with `O_DIRECTORY|O_NOFOLLOW`, checks that it is a real directory with
+stable descriptor/named device and inode, then samples that descriptor's
+`fstatvfs`. Invalid candidates report unavailable; no helper-current-directory
+fallback is used. External daemons (`manage_daemon is not True`) remain `workdir_unbound` (「未知」).
+Claude, OpenCode, direct/proxy Codex and PTY CLI retain their existing owned-process
+binding; tmux/remote/unsupported sources remain unknown. This is authenticated
+helper self-report, not external-daemon namespace attestation. See the full
+[A6 disk contract](../../docs/reviews/coder-a6-real-disk/CONTRACT.md).

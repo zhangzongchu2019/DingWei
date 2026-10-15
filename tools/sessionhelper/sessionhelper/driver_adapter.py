@@ -91,6 +91,14 @@ class DriverAdapter:
         if not self._started:
             return None
         if self._which == "codex":
+            if getattr(self.driver, "_transport_mode", None) == "daemon_ws":
+                # Managed local daemon threads are started with this cwd. The
+                # sampler validates the directory with O_NOFOLLOW/fstat before
+                # publishing; never substitute the helper's own cwd.
+                if getattr(self.driver, "_manage_daemon", False) is not True:
+                    return None
+                workdir = getattr(self.driver, "_workdir", None)
+                return workdir if isinstance(workdir, str) and os.path.isabs(workdir) else None
             rpc = getattr(self.driver, "_rpc", None)
             proc = getattr(rpc, "_proc", None)
         elif self._which in ("claude", "opencode"):
