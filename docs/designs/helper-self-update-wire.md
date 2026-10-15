@@ -27,15 +27,15 @@ Hub validates that the URL has the exact registered origin. A durable job
 carries that same origin. Its trusted `provision`/`update_self` envelope
 contains `job_id`, `offer_id`, `release_id`, `agent_id`, `owner_id`,
 `agent_name`, `version`, `sha256`, `lock_sha256`, `url`,
-`file_service_origin`, `platform`, `issuer`, `expires_at`, and `health_nonce`.
+	`file_service_origin`, `platform`, `issuer`, and `expires_at`.
 
 The authenticated Agent WebSocket advertises `X-DW-Helper-Update:
 helper-update/v1` and `X-DW-Helper-Update-Source`. A connected helper must
 first send `session_capabilities.helper_update_v1=true`; otherwise the Hub
 returns `helper_update_manual_required` and creates no offer.
 
-`provision_ack` records only ordered lifecycle stages. A
-The helper-generated health nonce and mounted lock hash fields, plus receipt
+`provision_ack` records only ordered lifecycle stages. The helper-generated
+health nonce and mounted lock hash fields, plus receipt
 and rollback serialization, are specified by the authoritative helper
 contract. Hub records the authenticated connection sequence when the job first
 reaches `installed` or `restarted`; only a strictly later authenticated
