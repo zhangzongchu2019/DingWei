@@ -1,0 +1,5 @@
+--- FAIL: TestFailureNoticeRecentDeadBackfillAndConcurrentSweep (0.11s)
+    failure_notice_test.go:179: backfill duplicated/outside window: 7
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.122s
+FAIL

@@ -154,6 +154,7 @@ func TestFailureNoticeRecentDeadBackfillAndConcurrentSweep(t *testing.T) {
 	for _, reason := range reasons {
 		d := noticeOriginal(t, db, "recent-"+reason, "dead", reason, now.Add(-2*time.Hour))
 		db.db.ExecContext(ctx, `UPDATE session_delivery SET updated_at=? WHERE id=?`, now.Add(-29*time.Minute).Format(time.RFC3339Nano), d.ID)
+		noticeOriginal(t, db, "31min-"+reason, "dead", reason, now.Add(-31*time.Minute))
 	}
 	noticeOriginal(t, db, "historical-retry", "dead", "retry_exhausted", now.Add(-time.Minute))
 	noticeOriginal(t, db, "too-old", "dead", "delivery_expired", now.Add(-31*time.Minute))
@@ -177,7 +178,11 @@ func TestFailureNoticeRecentDeadBackfillAndConcurrentSweep(t *testing.T) {
 	if count != 3 {
 		t.Fatalf("backfill duplicated/outside window: %d", count)
 	}
-	for _, id := range []string{"historical-retry", "too-old", "unknown", "future"} {
+	excluded := []string{"historical-retry", "too-old", "unknown", "future"}
+	for _, reason := range reasons {
+		excluded = append(excluded, "31min-"+reason)
+	}
+	for _, id := range excluded {
 		n, _ := db.GetSessionDelivery(ctx, model.FailureNoticeDeliveryID(id))
 		if n != nil {
 			t.Fatalf("unproven old terminal backfilled: %s", id)
