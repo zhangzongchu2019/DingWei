@@ -1,0 +1,32 @@
+Fconnection handler failed
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/failure-notice-offline/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+
+======================================================================
+FAIL: test_old_protocol_injects_once_after_lost_ack_and_persistent_restart (__main__.OfflineFailureNoticeCompatibility.test_old_protocol_injects_once_after_lost_ack_and_persistent_restart)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/failure-notice-offline-evidence/test_offline_failure_notice_mutant.py", line 83, in test_old_protocol_injects_once_after_lost_ack_and_persistent_restart
+    self.assertEqual(f.read().splitlines(), ["effect"])
+AssertionError: Lists differ: ['effect', 'effect'] != ['effect']
+
+First list contains 1 additional elements.
+First extra element 1:
+'effect'
+
+- ['effect', 'effect']
++ ['effect']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.688s
+
+FAILED (failures=1)

@@ -510,3 +510,7 @@ func TestFreshTargetCleanupIsNoopWithoutRepository(t *testing.T) {
 	h.startCapabilityPendingCleanup()
 	h.Close()
 }
+
+func (r *blockingCapabilityPendingSweepRepo) SweepSessionDeliveryFailures(ctx context.Context, now time.Time) ([]model.SessionDelivery, error) {
+	return r.ExpireCapabilityPendingSessionDeliveries(ctx, now)
+}

@@ -1,0 +1,3 @@
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	22.474s
+BUILD_TESTS_OK python=42 shell=2

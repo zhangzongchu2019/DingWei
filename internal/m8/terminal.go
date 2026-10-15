@@ -746,7 +746,7 @@ func sessionClientEnvelope(env model.Envelope) model.Envelope {
 	wire := env
 	wire.Meta = make(map[string]any, len(env.Meta))
 	for key, value := range env.Meta {
-		if key != hubIngressMetaKey {
+		if key != hubIngressMetaKey && key != hubFailureNoticeMetaKey {
 			wire.Meta[key] = value
 		}
 	}

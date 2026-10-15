@@ -1,0 +1,12 @@
+--- FAIL: TestFailureNoticeSafeTargetAndChineseReason (0.65s)
+    --- FAIL: TestFailureNoticeSafeTargetAndChineseReason/retry_exhausted (0.16s)
+        failure_notice_test.go:288: safe target or Chinese meaning missing
+    --- FAIL: TestFailureNoticeSafeTargetAndChineseReason/delivery_ack_unsupported (0.16s)
+        failure_notice_test.go:288: safe target or Chinese meaning missing
+    --- FAIL: TestFailureNoticeSafeTargetAndChineseReason/delivery_capability_unconfirmed_expired (0.16s)
+        failure_notice_test.go:288: safe target or Chinese meaning missing
+    --- FAIL: TestFailureNoticeSafeTargetAndChineseReason/delivery_expired (0.16s)
+        failure_notice_test.go:288: safe target or Chinese meaning missing
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.652s
+FAIL

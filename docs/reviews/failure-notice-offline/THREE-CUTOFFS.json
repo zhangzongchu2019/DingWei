@@ -1,0 +1,28 @@
+{
+  "scope": "test-only explicit31-minute negative for each permitted historical reason; no product changes",
+  "parent": "c71bf98096d24866c20f49cb223b75a246ef3353",
+  "source": {
+    "internal/store/failure_notice_test.go": {
+      "bytes": 13411,
+      "sha256": "c4162a7b75bd391b8d55331df746e6e54880508b234be2c7ebf02953cecc1a87"
+    }
+  },
+  "product_source_unchanged_from_parent": true,
+  "command": "go test -race ./internal/store -run '^TestFailureNotice' -count=1 -timeout=3m",
+  "rc": 0,
+  "withdrawal": {
+    "mutation": "only historical cutoff30min to32min",
+    "rc": 1,
+    "assertion": "actual7 notices expected3;31-minute rows incorrectly included"
+  },
+  "logs": {
+    "three-cutoffs-race.log": {
+      "bytes": 64,
+      "sha256": "24605d617d2eca6fe4de78ceb5ed86c057bb488c54c6d797f24d3348ff708856"
+    },
+    "three-cutoffs-withdrawal.log": {
+      "bytes": 215,
+      "sha256": "5b8a2f6b224fd956c230db05cc186e6770c2c6f852c42c6e4396dd7b490e407e"
+    }
+  }
+}

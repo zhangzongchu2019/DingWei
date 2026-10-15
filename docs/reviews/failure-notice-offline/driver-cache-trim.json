@@ -1,0 +1,7 @@
+{
+  "cache_root": "/home/dev/.cache/go-build",
+  "policy": "own rebuildable regular -a/-d entries older48h, oldestfirst, target600MiB stopping after final complete entry",
+  "bytes_removed": 631764960,
+  "files_removed": 412,
+  "source_evidence_production_untouched": true
+}

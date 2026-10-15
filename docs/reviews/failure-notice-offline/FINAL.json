@@ -1,0 +1,197 @@
+{
+  "scope": "complete offline author candidate; independent review pending; no deployment",
+  "base": "7651602335267ef2f8b9957d795e0cfddbd9c08f",
+  "parent_slice1": "97a920aba0dd261c95089e9e96691e63a26e2686",
+  "source": {
+    "docs/designs/FAILURE-NOTICE-OFFLINE.md": {
+      "bytes": 5576,
+      "sha256": "cd7c06e5b0a0e45658c33ef8d86f524d76e43f4d00e67c356f0695cf752ebe6f"
+    },
+    "internal/m8/amr.go": {
+      "bytes": 66224,
+      "sha256": "2adc1c1a1bd6576c853022aaac5843eeb43afff720a9955e2d641f2ae939d4f4"
+    },
+    "internal/m8/failure_notice_offline_test.go": {
+      "bytes": 6330,
+      "sha256": "859245a0f659d77facef3dd6f2ba1f4b0f1ecb911598c21ecda40f05fd7ab041"
+    },
+    "internal/m8/failure_notice_route.go": {
+      "bytes": 1115,
+      "sha256": "a6f87111e34e3df12431299a05db3c8d9f0db41bd0358a31719969ac1ecb9b6c"
+    },
+    "internal/m8/failure_notice_route_test.go": {
+      "bytes": 5646,
+      "sha256": "13877d97dfe871b9c67a6d85f34b171ac2e3cec66d162afe24d262e7f854d370"
+    },
+    "internal/m8/fresh_target_delivery.go": {
+      "bytes": 7596,
+      "sha256": "e7968e17549ad06cac7b420ddc5dd26ebdec3316dd7cebfb8f72a674dd6eccef"
+    },
+    "internal/m8/fresh_target_delivery_test.go": {
+      "bytes": 19741,
+      "sha256": "87b7d322e7a2a6362a4cede14ac82cc3ad8b5a3792530435dd3caf6cbf8e62b3"
+    },
+    "internal/m8/hub.go": {
+      "bytes": 241829,
+      "sha256": "13eb0f42db25e44f370fa582ed597aa0a2ff9f1ed8c3c03719a619c00563c10a"
+    },
+    "internal/m8/reply_to_origin.go": {
+      "bytes": 9942,
+      "sha256": "5534e2bc28cd04229045bf5a739533fcdd70f6661f8735393b06a37f42c66aef"
+    },
+    "internal/m8/terminal.go": {
+      "bytes": 83977,
+      "sha256": "956520b0c50c39174d18a33084f9047c65d749f02efc81494b5bd7b789b784bd"
+    },
+    "internal/model/failure_notice.go": {
+      "bytes": 625,
+      "sha256": "333dcf84879e2c8a632f25402490730b223b91afe97c3637ff7010fe50075b2a"
+    },
+    "internal/store/failure_notice.go": {
+      "bytes": 5486,
+      "sha256": "414a40321012f544edf2795ef220cce2198d092f20bdbb44c33e4d5d5f186218"
+    },
+    "internal/store/failure_notice_test.go": {
+      "bytes": 10760,
+      "sha256": "3deee1c6ec5e79b38bec1ded3cfc686e4931dd44276abae40953f66d5bb1679b"
+    },
+    "internal/store/sqlite.go": {
+      "bytes": 176533,
+      "sha256": "8fc646021ede500921365917db30e477ed127b03337e6ce5df844cd4cbdc6892"
+    },
+    "tools/sessionhelper/tests/test_offline_failure_notice.py": {
+      "bytes": 5266,
+      "sha256": "bde98a634cf2320388eb9568c5d1f3ff8df9a17d0cb7230c975ca69d063a1143"
+    }
+  },
+  "commands": [
+    {
+      "command": "go test -p 1 ./cmd/workpulse/... ./internal/m8/... ./internal/store/... -count=1 -timeout=20m",
+      "rc": 0
+    },
+    {
+      "command": "go test -race ./internal/m8 -run 'Test(FailureNotice|OfflineFailureNotice)' -count=1 -timeout=5m",
+      "rc": 0
+    },
+    {
+      "command": "go test -race ./internal/store -run '^TestFailureNotice' -count=1 -timeout=5m",
+      "rc": 0
+    },
+    {
+      "command": "PYTHONPATH=tools/sessionhelper python -B -m unittest discover -s tools/sessionhelper/tests -v",
+      "rc": 0,
+      "tests": 641,
+      "seconds": 336.921
+    },
+    {
+      "command": "bash scripts/run-build-tests.sh",
+      "rc": 0,
+      "result": "BUILD_TESTS_OK python=42 shell=2"
+    }
+  ],
+  "withdrawals": {
+    "atomic_partial_commit": 1,
+    "Agent_and_channel_routing": 1,
+    "recursive_notice": 1,
+    "helper_duplicate_effect": 1,
+    "parent_kind_reply_control": 0
+  },
+  "included_logs": {
+    "final-build-summary.log": {
+      "bytes": 99,
+      "sha256": "bf4d0ecb5bebefec9f1bbc2725c45ecfcbd575b26fe2e2cd643efe20e1e45197"
+    },
+    "final-go.log": {
+      "bytes": 332,
+      "sha256": "56b5f4f20b5551abd36000fba3636728f1126ec669bb196bfabca049a2f02ff3"
+    },
+    "final-helper-summary.log": {
+      "bytes": 102,
+      "sha256": "cbf2f4aeb85bf279cbc074867295416b3c583222bc6a01af1e107475abf0e326"
+    },
+    "final-routing-race.log": {
+      "bytes": 61,
+      "sha256": "5e68afd5c4c79fce8fd9905b50541260658e920e8b6b8ea7e7ed788169bbdb0d"
+    },
+    "final-store-race.log": {
+      "bytes": 64,
+      "sha256": "0a93ad6f9ff3aac090b94e7a196b8897c5b4fea23ec6de935a0db6a31270669c"
+    },
+    "rollback-parent.log": {
+      "bytes": 60,
+      "sha256": "7c582e7423ea11c6af3a0184decf5ef048078aac4a2c6cd0ca8338cb14db3d87"
+    },
+    "slice1-atomic-withdrawal.log": {
+      "bytes": 660,
+      "sha256": "058d9c540126bd97a91ed95c90c297a933beb8580de6c24da1647f25e6bab3a7"
+    },
+    "slice1-race.log": {
+      "bytes": 125,
+      "sha256": "c5b3dea8fa0db42446f0a7122db96d8f2d0851d1c314a32dd94de3adb8a9dc78"
+    },
+    "slice1-targeted.log": {
+      "bytes": 123,
+      "sha256": "86871f9cb68aeae595a36feb485fcdd3cb74f7fceaf214c4bd138446d87ebc7a"
+    },
+    "slice2-existing-routing.log": {
+      "bytes": 61,
+      "sha256": "5523e519642c3b9da0ae9df9f4a6ab87ff1dbe4cbac11d6b73857229b3592c9a"
+    },
+    "slice2-helper-final-import.log": {
+      "bytes": 2004,
+      "sha256": "3cfb023a979905ffca25ab1167909a400f29a692918817354f155721530a86d4"
+    },
+    "slice2-helper-withdrawal.log": {
+      "bytes": 1731,
+      "sha256": "af307d3bbe4a629546ba35d66d733ba28e5b8990ed9edcbe7f0a08b39738beae"
+    },
+    "slice2-recursion-inconclusive.log": {
+      "bytes": 60,
+      "sha256": "48682ee573067e8df73564f426e1497694151fdd66ca572c3bb24d6bddb7dbd0"
+    },
+    "slice2-recursion-withdrawal.log": {
+      "bytes": 499,
+      "sha256": "9b3aef49113a052956ecd1ce82c46f69db749a1a5c725f5b59c19d1e3afdfd79"
+    },
+    "slice2-routing-withdrawal.log": {
+      "bytes": 1880,
+      "sha256": "c22bba67b0bc723436328edbf9c211b942f5d10e8d5c4bcdb23aaebedd9b46b2"
+    }
+  },
+  "local_log_pins_only": {
+    "final-helper-full.log": {
+      "bytes": 301980,
+      "sha256": "9a8f3d5c87064bd3b4e7b5b6d6975f5ed24a48896a041cc21a53380e8ebea88b"
+    },
+    "final-build.log": {
+      "bytes": 34652,
+      "sha256": "cc8d2b836172ef905468492ef58f60955564e382830c15dd2ebf48ab6b5b174c"
+    },
+    "final-go-enospc.log": {
+      "bytes": 179996,
+      "sha256": "1b210fc8616a20d5cad2f924bcd091eff9d49aecb1ee47dc9adf54c19a126fcf"
+    },
+    "final-helper-full-enospc.log": {
+      "bytes": 8192,
+      "sha256": "9d9d4ca9f18addcae7277723a17a4ec3e9d85d2fb397aec99e1108edf6b617de"
+    },
+    "pre-final-import-helper-full.log": {
+      "bytes": 363738,
+      "sha256": "136937bb56fe170c96fa6d160fdcaccaf0459d7ce8cccbfa64b0d7398290dbeb"
+    },
+    "pre-final-self-guard-go.log": {
+      "bytes": 331,
+      "sha256": "431ba3fde983f53a744de9e385fb647540b4be8d222598c1f387776bf3db2678"
+    }
+  },
+  "local_evidence_path": "/data/ai-dev-data/failure-notice-offline-evidence",
+  "limitations": [
+    "Historical ambiguous arbitrary LastError retry-exhausted rows not guessed into backfill; explicit recent four-reason rows only",
+    "Known ACK source only; unknown/noACK retains best effort",
+    "Once-only adapter invocation proven after processed-ledger ACK loss/restart; no arbitrary external CLI mid-crash exactly-once claim",
+    "Old helper compatibility uses unchanged base helper production source, not a deployed old binary",
+    "Parent routing implementation rollback tested in overlay, not deployed whole Hub rollback",
+    "Initial broad runs ENOSPC; final clean reruns pass",
+    "Early recursion withdrawal omitted identity, inconclusive rc0 retained; corrected fixture withdrawal rc1"
+  ]
+}

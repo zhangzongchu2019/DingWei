@@ -1,0 +1,56 @@
+{
+  "scope": "narrow test-fixture baseline race correction; independent re-review pending",
+  "parent": "f5601ae8e4630903d0680784132f802bc5c3d982",
+  "fixture": {
+    "internal/m8/failure_notice_driver_e2e_test.go": {
+      "bytes": 11423,
+      "sha256": "8f6a93938bd659663708ae25a1c39a03eab0de7f0a42cc9e408d438cb8c9718e"
+    }
+  },
+  "rollback_fixture_identical": true,
+  "product_changed": false,
+  "change": "snapshot positiveStart; require replyOriginRouted == positiveStart.replyOriginRouted+1 before baseline snapshot; existing closed threshold retained; final notice invariants unchanged",
+  "no_sleep_or_assertion_relaxation": true,
+  "command": "DW_FAILURE_NOTICE_PYTHON=<locked-python> go test -race ./internal/m8 -run '^TestFailureNoticeDriverTurnEndToEnd$' -count=3 -timeout=4m -v",
+  "runs": {
+    "current": {
+      "rc": 0,
+      "top_level": 3,
+      "subtests": 30,
+      "seconds": 16.992
+    },
+    "entire97_rollback": {
+      "rc": 0,
+      "top_level": 3,
+      "subtests": 30,
+      "seconds": 16.657,
+      "AMR_byte_equivalence_to_c7": "ROLLBACK-TARGET-EQUIVALENCE.json"
+    }
+  },
+  "independent_original_rc1": "reviewer reported all10 subtests passed but positive plain-return counter increment raced baseline; remains non-PASS, raw log held by reviewer",
+  "author_first_rollback_attempt": {
+    "rc": 1,
+    "cause": "explicit mkdir/TempDir ENOSPC before matrix, log included",
+    "passed": false
+  },
+  "logs": {
+    "barrier-current-race.log": {
+      "bytes": 11145,
+      "sha256": "992470f0d8e3559e6d99487e77c2a31bb2263bb5f2f2bd217edc0db73d7d1322"
+    },
+    "barrier-rollback97-race.log": {
+      "bytes": 13801,
+      "sha256": "9ac83805a01a331ba1fb62effd66aaefc69eb4eaa09624e85ca4d9e3a9320573"
+    },
+    "barrier-rollback97-enospc.log": {
+      "bytes": 1167,
+      "sha256": "c95003371ba68685a7f9d496e41119570aef904679f51c036417e529c68549c8"
+    }
+  },
+  "cleanup": {
+    "bytes": 196,
+    "sha256": "9d84b6431fd38c586a8f16cf58bd34959c5517d0645563f7356266d87dc87b74"
+  },
+  "previous_manifests": "DRIVER-E2E.json pins the previous fixture snapshot; this receipt supersedes its fixture pin only",
+  "no_full_build_rerun": "test-only synchronization change; product and Python fixtures unchanged; new matrices rerun"
+}

@@ -1,0 +1,58 @@
+{
+  "requested_rollback_target": "c7db5cc159f9b8d77caffad20ef728f769533175",
+  "tested_substitute": "97a920aba0dd261c95089e9e96691e63a26e2686",
+  "tested_tree": "89916cabb72fed111f2cd4288de2a60bc4bd4363",
+  "comparison": "entire selected file bytes, not snippets or function names",
+  "equal_files": {
+    "internal/m8/amr.go": {
+      "bytes": 65530,
+      "sha256_both": "c321f78a415f3aeb0c3dc5708c23837bddc6bc37c67cacaae40e27c80c798b7f"
+    },
+    "internal/m8/reply_to_origin.go": {
+      "bytes": 9827,
+      "sha256_both": "cb4f5d5e3dfe31632cabfde6c040bfad2f75faf21f329f84786d6b2ff5a383ee"
+    },
+    "internal/m8/reply_origin.go": {
+      "bytes": 11771,
+      "sha256_both": "68c24f22bd8c5fe6f1f5777f942168b829cd48f636c02bb5a9d94cc9a4290abc"
+    },
+    "internal/m8/channel_delivery.go": {
+      "bytes": 9077,
+      "sha256_both": "79f8b04f0c584b8ebf4df5ecf147501981849ec689e469c9bcc99a4e1a70c6c7"
+    },
+    "internal/m8/terminal.go": {
+      "bytes": 83943,
+      "sha256_both": "09b45d327e04d7a814073f319392d3ca08b16b772a5065b07dae644e78655bd8"
+    },
+    "tools/sessionhelper/sessionhelper/app.py": {
+      "bytes": 90782,
+      "sha256_both": "6ed3002efeab98662fc282b35a4f6682256bfd2943cd549ef20fd35a0f34efaf"
+    },
+    "tools/sessionhelper/sessionhelper/driver_adapter.py": {
+      "bytes": 30119,
+      "sha256_both": "3087ccf5700c84fa6277e05ac829026fff48e53912626583b532ca1c006457fd"
+    },
+    "tools/sessionhelper/sessionhelper/codexDriver.py": {
+      "bytes": 60153,
+      "sha256_both": "586792d868bfbb69057cb1f172ae2768fa6593ccc98be16f84d16c7287c90042"
+    },
+    "tools/sessionhelper/sessionhelper/unified_queue.py": {
+      "bytes": 10068,
+      "sha256_both": "f43daa008298291353fefcecddf58e46b48bc317e407fe1dfce5430cd06d6502"
+    }
+  },
+  "whole_directories_no_diff": [
+    "tools/sessionhelper/sessionhelper",
+    "internal/identity"
+  ],
+  "all_m8_differences": [
+    "internal/m8/failure_notice_offline_test.go",
+    "internal/m8/fresh_target_delivery.go",
+    "internal/m8/fresh_target_delivery_test.go",
+    "internal/m8/hub.go",
+    "internal/m8/restart_window_test.go"
+  ],
+  "hub_difference_scope": "four added lines: durable notice drain after expiry and durable-notice preference before legacy retry notifier; no AMR parser, reply-origin, channel resolver, authenticated event-ingress or RouteEnvelope difference",
+  "not_whole_Hub_equivalence": true,
+  "no_test_rerun_needed": "already measured exact97 routing/helper bytes; explicit leader substitution condition met"
+}

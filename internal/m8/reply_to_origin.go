@@ -68,6 +68,10 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 		p.replyToOriginUnavailable(job, "本轮来源记录不属于当前会话,内容未自动回程")
 		return
 	}
+	if trustedFailureNoticeDelivery(delivery, job.key) {
+		p.bumpReplyOrigin(&p.stats.replyOriginSkipped)
+		return
+	}
 	var inbound model.Envelope
 	if e := json.Unmarshal([]byte(delivery.Envelope), &inbound); e != nil {
 		p.replyToOriginUnavailable(job, "本轮的来源记录无法解析,内容未自动回程")

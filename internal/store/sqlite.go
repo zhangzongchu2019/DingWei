@@ -2061,8 +2061,13 @@ func scanSessionDelivery(row rowScanner) (*model.SessionDelivery, error) {
 const sessionDeliverySelect = `SELECT id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at FROM session_delivery`
 
 func (s *SQLite) ExpireSessionDeliveries(ctx context.Context, keyID, sessionName string, now time.Time) ([]model.SessionDelivery, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
 	nowText := now.UTC().Format(time.RFC3339Nano)
-	rows, err := s.db.QueryContext(ctx, `UPDATE session_delivery
+	rows, err := tx.QueryContext(ctx, `UPDATE session_delivery
 		SET state='dead',last_error='delivery_expired',lease_until=NULL,updated_at=?
 		WHERE key_id=? AND session_name=? AND state NOT IN ('processed','dead','cancelled') AND (attempts>=12 OR created_at<=?)
 		RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`,
@@ -2080,6 +2085,17 @@ func (s *SQLite) ExpireSessionDeliveries(ctx context.Context, keyID, sessionName
 		expired = append(expired, *d)
 	}
 	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	for _, d := range expired {
+		if _, err := enqueueDeliveryFailureNoticeTx(ctx, tx, d, "delivery_expired", now); err != nil {
+			return nil, err
+		}
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	return expired, nil
@@ -2128,6 +2144,11 @@ func (s *SQLite) ResolveCapabilityPendingSessionDeliveries(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
+	for _, d := range dead {
+		if _, err := enqueueDeliveryFailureNoticeTx(ctx, tx, d, d.LastError, now); err != nil {
+			return nil, err
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
@@ -2138,8 +2159,13 @@ func (s *SQLite) ResolveCapabilityPendingSessionDeliveries(ctx context.Context, 
 // to ExpireSessionDeliveries: capability-pending rows have no ACK-capable
 // client to enter the normal drain loop.
 func (s *SQLite) ExpireCapabilityPendingSessionDeliveries(ctx context.Context, now time.Time) ([]model.SessionDelivery, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
 	nowText := now.UTC().Format(time.RFC3339Nano)
-	rows, err := s.db.QueryContext(ctx, `UPDATE session_delivery SET state='dead',last_error='delivery_capability_unconfirmed_expired',lease_until=NULL,updated_at=?
+	rows, err := tx.QueryContext(ctx, `UPDATE session_delivery SET state='dead',last_error='delivery_capability_unconfirmed_expired',lease_until=NULL,updated_at=?
 		WHERE state='capability_pending' AND provenance='capability_pending_ack_v1' AND (attempts>=12 OR created_at<=?)
 		RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`, nowText, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
 	if err != nil {
@@ -2154,7 +2180,21 @@ func (s *SQLite) ExpireCapabilityPendingSessionDeliveries(ctx context.Context, n
 		}
 		expired = append(expired, *d)
 	}
-	return expired, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	for _, d := range expired {
+		if _, err := enqueueDeliveryFailureNoticeTx(ctx, tx, d, d.LastError, now); err != nil {
+			return nil, err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return expired, nil
 }
 
 func (s *SQLite) ClaimSessionDelivery(ctx context.Context, keyID, sessionName string, now time.Time) (*model.SessionDelivery, error) {
@@ -2199,6 +2239,35 @@ func (s *SQLite) ClaimSessionDelivery(ctx context.Context, keyID, sessionName st
 }
 
 func (s *SQLite) UpdateSessionDelivery(ctx context.Context, id, state, errText string, nextAttemptAt time.Time) error {
+	if state == "dead" && model.DeliveryFailureReasonAllowed(errText) {
+		now := s.now().UTC()
+		if nextAttemptAt.IsZero() {
+			nextAttemptAt = now
+		}
+		tx, err := s.db.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+		result, err := tx.ExecContext(ctx, `UPDATE session_delivery SET state='dead',last_error=?,next_attempt_at=?,lease_until=NULL,updated_at=? WHERE id=? AND state NOT IN ('processed','dead','cancelled')`, errText, nextAttemptAt.UTC().Format(time.RFC3339Nano), now.Format(time.RFC3339Nano), id)
+		if err != nil {
+			return err
+		}
+		n, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if n > 0 {
+			d, err := scanSessionDelivery(tx.QueryRowContext(ctx, sessionDeliverySelect+` WHERE id=?`, id))
+			if err != nil {
+				return err
+			}
+			if _, err := enqueueDeliveryFailureNoticeTx(ctx, tx, *d, errText, now); err != nil {
+				return err
+			}
+		}
+		return tx.Commit()
+	}
 	if nextAttemptAt.IsZero() {
 		nextAttemptAt = time.Now().UTC()
 	}
@@ -2230,6 +2299,13 @@ func (s *SQLite) FailSessionDeliveryRetryable(ctx context.Context, id, reason st
 	if maxFailed > 0 && failed >= maxFailed {
 		if _, err = tx.ExecContext(ctx, `UPDATE session_delivery SET state='dead',failed_count=?,last_error=?,lease_until=NULL,next_attempt_at=?,updated_at=? WHERE id=?`,
 			failed, reason, nowText, nowText, id); err != nil {
+			return false, 0, time.Time{}, err
+		}
+		d, err := scanSessionDelivery(tx.QueryRowContext(ctx, sessionDeliverySelect+` WHERE id=?`, id))
+		if err != nil {
+			return false, 0, time.Time{}, err
+		}
+		if _, err := enqueueDeliveryFailureNoticeTx(ctx, tx, *d, "retry_exhausted", now); err != nil {
 			return false, 0, time.Time{}, err
 		}
 		return true, failed, time.Time{}, tx.Commit()
