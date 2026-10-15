@@ -2066,6 +2066,10 @@ func TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope(t *testing.T) {
 
 	developer := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
 	defer developer.Close(websocket.StatusNormalClosure, "done")
+	// The selector resolves the canonical endpoint from the registered runtime
+	// set.  A completed dial only consumed onboarding; wait for publication
+	// before exercising selector routing.
+	waitSessionOnline(t, hub, key.ID, developerName)
 	if err := writeEnvelope(ctx, home, model.Envelope{ID: "selector", To: "#developer", From: homeName + "#" + key.ID, Body: "请核对X"}); err != nil {
 		t.Fatal(err)
 	}

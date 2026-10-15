@@ -152,3 +152,28 @@ The complete post-change inventory was rerun after this fourth fixture update:
 `/tmp/m8-fixture-races/r5-447fb-directory-fixed-full-v.log`, SHA256
 `58a356ce50faa74d9cb30a14e06d6e73dc427117d34cb742bfa797db9807e338`.
 The same eight environment-gated SKIPs listed above remain non-PASS.
+
+Additional inherited selector fixture
+-------------------------------------
+`TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope` dials `developer`
+and immediately routes `#developer`.  Selector routing resolves the canonical
+endpoint from the published runtime set, while `dialSession` completes after
+onboarding and before `sessionClients` publication.  The fixture now waits
+for `developerName` to become online before writing the selector envelope.
+The test body and `hub.go` publication ordering were unchanged from r5 before
+this test-only line; no selector or delivery product code changes.
+
+All five registration-dependent fixtures were then run together:
+```
+go test -v -count=30 ./internal/m8 \
+  -run '^(TestSessionAddressingFourFlows|TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource|TestTerminalViewCookiePersistsAndRestoresUnlock|TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary|TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope)$'
+rc=0
+raw log=/tmp/m8-fixture-races/five-fixtures-fixed-v30.log
+sha256=052ba79be5dc6ba1bcce8268842b3badb417eae7836e7d0720e93944febd99bf
+```
+
+Full m8 was rerun after this final fixture addition:
+`go test -v -count=1 ./internal/m8`, rc=0, no FAIL; raw log
+`/tmp/m8-fixture-races/five-fixtures-fixed-full-v.log`, SHA256
+`630081ac5e030b50d13f34ef9afa3322eb6abac3945216c89b2216ee8b9c3690`.
+The existing eight environment-gated SKIPs remain non-PASS.
