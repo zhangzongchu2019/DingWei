@@ -68,6 +68,13 @@ func (h *Hub) HandleAgentWS(w http.ResponseWriter, r *http.Request) {
 	}
 	keyID := AgentKeyID(ag.OwnerLC)
 	sessionName := ag.NameLC()
+	// S-HELPER-SELF-UPDATE-DW123: these are capability/discovery headers, not
+	// authentication.  The bearer credential above remains the only identity
+	// proof.  In particular the helper must use the exact source advertised by
+	// this authenticated Hub for update-only provision validation; it must not
+	// derive an owner key from a display name or accept a broad workpulse suffix.
+	w.Header().Set("X-DW-Helper-Update", "helper-update/v1")
+	w.Header().Set("X-DW-Helper-Update-Source", sessionAddress("workpulse", keyID))
 
 	// 同一凭据已在线（V1 A5：不顶掉在线者）：先探活旧连接；活着就拒新连接，死了才让 serveSession 换掉它。
 	h.mu.Lock()

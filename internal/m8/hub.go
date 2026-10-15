@@ -1166,6 +1166,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	if a.onRegistered != nil {
 		go a.onRegistered()
 	}
+	if c.metricsAgentID != "" {
+		go h.resumeHelperUpdateOffer(context.Background(), c)
+	}
 	if h.markSessionSeen(ownerKey, sessionName) {
 		h.notifyNewSession(r.Context(), ownerKey, sessionName)
 	}
@@ -1350,7 +1353,10 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		if h.handleControlSubtaskResult(r.Context(), c, env) {
 			continue
 		}
-		if h.handleProvisionAck(r.Context(), c, env) {
+		if h.confirmHelperUpdateHealth(r.Context(), c, env) {
+			continue
+		}
+		if h.recordHelperUpdateReceipt(r.Context(), c, env) || h.handleProvisionAck(r.Context(), c, env) {
 			continue
 		}
 		if err := h.RouteEnvelope(r.Context(), env); err != nil {

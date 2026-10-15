@@ -136,6 +136,9 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 		log.Printf("newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>")
 	}
 	hub.Identity = svc
+	if err := hub.RecoverHelperUpdates(ctx); err != nil {
+		log.Printf("helper update: startup recovery: %v", err)
+	}
 	hub.Onboarding = ob
 	hub.AgentCredentialOnly = true
 	hub.PublicOrigin = cfg.publicOrigin
