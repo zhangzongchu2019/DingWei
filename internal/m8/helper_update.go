@@ -36,19 +36,20 @@ type helperUpdateCatalog struct {
 // is part of the document so CAS transitions have an explicit audit value in
 // addition to app_config's physical compare-and-swap predicate.
 type helperUpdateJob struct {
-	JobID      string    `json:"job_id"`
-	ReleaseID  string    `json:"release_id"`
-	AgentID    string    `json:"agent_id"`
-	OwnerID    string    `json:"owner_id"`
-	AgentName  string    `json:"agent_name"`
-	Version    string    `json:"version"`
-	SHA256     string    `json:"sha256"`
-	LockSHA256 string    `json:"lock_sha256"`
-	URL        string    `json:"url"`
-	Platform   string    `json:"platform"`
-	Stage      string    `json:"stage"`
-	ExpiresAt  time.Time `json:"expires_at"`
-	Revision   int       `json:"revision"`
+	JobID       string    `json:"job_id"`
+	ReleaseID   string    `json:"release_id"`
+	AgentID     string    `json:"agent_id"`
+	OwnerID     string    `json:"owner_id"`
+	AgentName   string    `json:"agent_name"`
+	Version     string    `json:"version"`
+	SHA256      string    `json:"sha256"`
+	LockSHA256  string    `json:"lock_sha256"`
+	URL         string    `json:"url"`
+	Platform    string    `json:"platform"`
+	Stage       string    `json:"stage"`
+	ExpiresAt   time.Time `json:"expires_at"`
+	HealthNonce string    `json:"health_nonce"`
+	Revision    int       `json:"revision"`
 }
 
 func helperUpdateCatalogKey(sha string) string {
@@ -175,7 +176,7 @@ func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog helperUpdateCat
 	job := helperUpdateJob{
 		JobID: randomHex(16), ReleaseID: catalog.SHA256, AgentID: agentID, OwnerID: ownerID, AgentName: agentName,
 		Version: catalog.Version, SHA256: catalog.SHA256, LockSHA256: catalog.LockSHA256, URL: catalog.URL,
-		Platform: catalog.Platform, Stage: "offered", ExpiresAt: now.Add(30 * time.Minute), Revision: 1,
+		Platform: catalog.Platform, Stage: "offered", ExpiresAt: now.Add(30 * time.Minute), HealthNonce: randomHex(16), Revision: 1,
 	}
 	payload, err := marshalHelperUpdate(job)
 	if err != nil {
@@ -237,25 +238,69 @@ func (h *Hub) IssueHelperUpdate(ctx context.Context, agentID, releaseSHA, issuer
 
 func (h *Hub) sendHelperUpdateOffer(ctx context.Context, c *sessionClient, job *helperUpdateJob) error {
 	meta := map[string]any{
-		"type":        "provision",
-		"system":      true,
-		"no_mirror":   true,
-		"action":      "update_self",
-		"target":      "self",
-		"job_id":      job.JobID,
-		"release_id":  job.ReleaseID,
-		"agent_id":    job.AgentID,
-		"owner_id":    job.OwnerID,
-		"agent_name":  job.AgentName,
-		"version":     job.Version,
-		"sha256":      job.SHA256,
-		"lock_sha256": job.LockSHA256,
-		"url":         job.URL,
-		"platform":    job.Platform,
-		"expires_at":  job.ExpiresAt.UTC().Format(time.RFC3339),
+		"type":         "provision",
+		"system":       true,
+		"no_mirror":    true,
+		"action":       "update_self",
+		"target":       "self",
+		"job_id":       job.JobID,
+		"release_id":   job.ReleaseID,
+		"agent_id":     job.AgentID,
+		"owner_id":     job.OwnerID,
+		"agent_name":   job.AgentName,
+		"version":      job.Version,
+		"sha256":       job.SHA256,
+		"lock_sha256":  job.LockSHA256,
+		"url":          job.URL,
+		"platform":     job.Platform,
+		"expires_at":   job.ExpiresAt.UTC().Format(time.RFC3339),
+		"health_nonce": job.HealthNonce,
 	}
 	return c.write(ctx, model.Envelope{
 		ID: randomHex(16), To: sessionAddress(c.sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID),
 		TS: time.Now().Unix(), Meta: meta,
 	})
+}
+
+func (h *Hub) confirmHelperUpdateHealth(ctx context.Context, c *sessionClient, env model.Envelope) bool {
+	if metaString(env.Meta, "type") != "helper_update_health" {
+		return false
+	}
+	if c == nil || c.metricsAgentID == "" {
+		return true // This control is credential-agent-only; never fall through to routing.
+	}
+	job, raw, err := h.helperUpdateJob(ctx, c.metricsAgentID)
+	if err != nil || job == nil {
+		return true
+	}
+	// All fields are echoed by the helper, but all identity-sensitive values are
+	// compared with the durable job and authenticated connection, never trusted
+	// because they appeared in the incoming envelope.
+	if h.now().UTC().After(job.ExpiresAt) || job.Stage == "confirmed" ||
+		job.AgentID != c.metricsAgentID || job.OwnerID != strings.TrimPrefix(c.keyID, "u_") ||
+		job.AgentName != c.sessionName || c.version != job.Version ||
+		metaString(env.Meta, "job_id") != job.JobID || metaString(env.Meta, "release_id") != job.ReleaseID ||
+		metaString(env.Meta, "sha256") != job.SHA256 || metaString(env.Meta, "lock_sha256") != job.LockSHA256 ||
+		metaString(env.Meta, "health_nonce") != job.HealthNonce {
+		return true
+	}
+	updated := *job
+	updated.Stage = "confirmed"
+	updated.Revision++
+	payload, err := marshalHelperUpdate(updated)
+	if err != nil {
+		return true
+	}
+	ok, err := h.Repo.CompareAndSwapAppConfig(ctx, helperUpdateJobKey(job.AgentID), true, raw, payload)
+	if err != nil || !ok {
+		return true
+	}
+	_ = h.Repo.WriteAudit(ctx, c.keyID, "helper_update_confirmed", job.JobID)
+	_ = c.write(ctx, model.Envelope{
+		ID: randomHex(16), To: sessionAddress(c.sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID), TS: time.Now().Unix(),
+		Meta: map[string]any{"type": "helper_update_confirm", "system": true, "no_mirror": true,
+			"job_id": job.JobID, "release_id": job.ReleaseID, "agent_id": job.AgentID, "owner_id": job.OwnerID,
+			"version": job.Version, "sha256": job.SHA256, "lock_sha256": job.LockSHA256, "health_nonce": job.HealthNonce},
+	})
+	return true
 }

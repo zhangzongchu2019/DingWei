@@ -1350,6 +1350,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		if h.handleControlSubtaskResult(r.Context(), c, env) {
 			continue
 		}
+		if h.confirmHelperUpdateHealth(r.Context(), c, env) {
+			continue
+		}
 		if h.handleProvisionAck(r.Context(), c, env) {
 			continue
 		}
