@@ -91,7 +91,7 @@ func helperUpdateHealthMeta(job *helperUpdateJob) map[string]any {
 	return map[string]any{
 		"type": "helper_update_health", "job_id": job.JobID, "release_id": job.ReleaseID,
 		"agent_id": job.AgentID, "owner_id": job.OwnerID, "version": job.Version,
-		"sha256": job.SHA256, "lock_sha256": job.LockSHA256, "health_nonce": job.HealthNonce,
+		"sha256": job.SHA256, "health_nonce": randomHex(16),
 	}
 }
 
@@ -214,9 +214,10 @@ func TestHelperUpdateHealthRequiresFreshAuthenticatedConnection(t *testing.T) {
 	waitFor(t, time.Second, "helper update capability after reconnect", func() bool {
 		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
 	})
-	e.sendEnv(conn, model.Envelope{ID: "health-fresh-" + randomHex(4), From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: helperUpdateHealthMeta(job)})
+	freshHealth := helperUpdateHealthMeta(job)
+	e.sendEnv(conn, model.Envelope{ID: "health-fresh-" + randomHex(4), From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: freshHealth})
 	confirm := e.readEnvUntil(conn, time.Second, func(env model.Envelope) bool { return metaString(env.Meta, "type") == "helper_update_confirm" })
-	if confirm == nil || metaString(confirm.Meta, "health_nonce") != job.HealthNonce {
+	if confirm == nil || metaString(confirm.Meta, "health_nonce") != metaString(freshHealth, "health_nonce") {
 		t.Fatalf("missing exact confirmation: %+v", confirm)
 	}
 	stored, _, err = e.hub.helperUpdateJob(e.ctx, e.agID)
@@ -225,7 +226,7 @@ func TestHelperUpdateHealthRequiresFreshAuthenticatedConnection(t *testing.T) {
 	}
 }
 
-func TestHelperUpdateHealthRejectsWrongNonce(t *testing.T) {
+func TestHelperUpdateHealthRejectsMissingFreshNonce(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("f", 64)
 	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
@@ -247,8 +248,12 @@ func TestHelperUpdateHealthRejectsWrongNonce(t *testing.T) {
 		t.Fatal("missing update offer")
 	}
 	bad := helperUpdateHealthMeta(job)
-	bad["health_nonce"] = "wrong"
-	e.sendEnv(conn, model.Envelope{ID: "health-bad-" + randomHex(4), From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: bad})
+	bad["health_nonce"] = ""
+	// The direct call isolates nonce validation from the separately covered
+	// real-WebSocket reconnect boundary.
+	c := *e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"]
+	c.connSeq = job.OfferConnSeq + 1
+	e.hub.confirmHelperUpdateHealth(e.ctx, &c, model.Envelope{Meta: bad})
 	stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
 	if err != nil || stored == nil || stored.Stage != "offered" || stored.Revision != 2 {
 		t.Fatalf("wrong nonce changed job: %+v err=%v", stored, err)

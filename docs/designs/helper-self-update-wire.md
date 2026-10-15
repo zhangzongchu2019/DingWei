@@ -33,10 +33,10 @@ returns `helper_update_manual_required` and creates no offer.
 
 `provision_ack` records only ordered lifecycle stages. A
 `helper_update_health` must echo `job_id`, `release_id`, `agent_id`,
-`owner_id`, `version`, `sha256`, `lock_sha256`, and the exact offer-issued
-`health_nonce`. It is accepted only on an authenticated connection with a
-strictly later Hub connection sequence than the connection that first received
-the offer, reporting the offered version. A replayed offer never resets that
-boundary. Failed, rolled-back, and confirmed jobs are terminal and cannot be
-confirmed again. The Hub responds with trusted `helper_update_confirm` echoing
-the identical tuple and nonce.
+`owner_id`, `version`, and `sha256`, plus a fresh helper-generated
+`health_nonce`. It does not carry `lock_sha256`. It is accepted only on an
+authenticated connection with a strictly later Hub connection sequence than
+the connection that first received the offer, reporting the offered version.
+A replayed offer never resets that boundary. Failed, rolled-back, and
+confirmed jobs are terminal and cannot be confirmed again. The Hub responds
+with trusted `helper_update_confirm` echoing the tuple and that fresh nonce.

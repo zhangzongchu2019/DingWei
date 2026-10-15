@@ -55,7 +55,6 @@ type helperUpdateJob struct {
 	Stage             string    `json:"stage"`
 	Reason            string    `json:"reason,omitempty"`
 	ExpiresAt         time.Time `json:"expires_at"`
-	HealthNonce       string    `json:"health_nonce"`
 	// OfferConnSeq is the authenticated connection that first received this
 	// offer. Health may only confirm from a later connection, after the helper
 	// has restarted into the staged slot; it is never client supplied.
@@ -313,7 +312,7 @@ func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog HelperUpdateCat
 	job := helperUpdateJob{
 		JobID: randomHex(16), ReleaseID: catalog.SHA256, AgentID: agentID, OwnerID: ownerID, AgentName: agentName,
 		Version: catalog.Version, SHA256: catalog.SHA256, LockSHA256: catalog.LockSHA256, URL: catalog.URL, FileServiceOrigin: catalog.FileServiceOrigin,
-		Platform: catalog.Platform, Issuer: issuer, Stage: "offered", ExpiresAt: now.Add(30 * time.Minute), HealthNonce: randomHex(16), Revision: 1,
+		Platform: catalog.Platform, Issuer: issuer, Stage: "offered", ExpiresAt: now.Add(30 * time.Minute), Revision: 1,
 	}
 	job.OfferID = job.JobID
 	payload, err := marshalHelperUpdate(job)
@@ -450,7 +449,6 @@ func (h *Hub) sendHelperUpdateOffer(ctx context.Context, c *sessionClient, job *
 		"platform":            job.Platform,
 		"issuer":              job.Issuer,
 		"expires_at":          job.ExpiresAt.UTC().Format(time.RFC3339),
-		"health_nonce":        job.HealthNonce,
 	}
 	return c.write(ctx, model.Envelope{
 		ID: randomHex(16), To: sessionAddress(c.sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID),
@@ -478,8 +476,8 @@ func (h *Hub) confirmHelperUpdateHealth(ctx context.Context, c *sessionClient, e
 		metaString(env.Meta, "job_id") != job.JobID || metaString(env.Meta, "release_id") != job.ReleaseID ||
 		metaString(env.Meta, "agent_id") != job.AgentID || metaString(env.Meta, "owner_id") != job.OwnerID ||
 		metaString(env.Meta, "version") != job.Version ||
-		metaString(env.Meta, "sha256") != job.SHA256 || metaString(env.Meta, "lock_sha256") != job.LockSHA256 ||
-		metaString(env.Meta, "health_nonce") != job.HealthNonce {
+		metaString(env.Meta, "sha256") != job.SHA256 ||
+		!validHelperUpdateHealthNonce(metaString(env.Meta, "health_nonce")) {
 		return true
 	}
 	updated := *job
@@ -498,9 +496,19 @@ func (h *Hub) confirmHelperUpdateHealth(ctx context.Context, c *sessionClient, e
 		ID: randomHex(16), To: sessionAddress(c.sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID), TS: time.Now().Unix(),
 		Meta: map[string]any{"type": "helper_update_confirm", "system": true, "no_mirror": true,
 			"job_id": job.JobID, "release_id": job.ReleaseID, "agent_id": job.AgentID, "owner_id": job.OwnerID,
-			"version": job.Version, "sha256": job.SHA256, "lock_sha256": job.LockSHA256, "health_nonce": job.HealthNonce},
+			"version": job.Version, "sha256": job.SHA256, "health_nonce": metaString(env.Meta, "health_nonce")},
 	})
 	return true
+}
+
+// The helper creates a fresh UUID-hex nonce after its post-restart health
+// checks. It is an echo-binding value for this confirmation, not offer state.
+func validHelperUpdateHealthNonce(v string) bool {
+	if len(v) != 32 {
+		return false
+	}
+	_, err := hex.DecodeString(v)
+	return err == nil
 }
 
 func helperUpdateReceiptStage(stage string) bool {
