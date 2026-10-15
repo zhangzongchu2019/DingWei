@@ -77,6 +77,14 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 		p.replyToOriginUnavailable(job, "本轮的来源记录无法解析,内容未自动回程")
 		return
 	}
+	// Human View input is answered in this session's event stream, not by
+	// routing to the reserved workpulse sender as though it were an Agent.
+	// Consult the Hub's persisted attestation so older rows without no_reply
+	// are covered; client-supplied source_kind/auth_mode are not authority.
+	if trustedHumanViewDirectDelivery(delivery, inbound) {
+		p.bumpReplyOrigin(&p.stats.replyOriginSkipped)
+		return
+	}
 	// control 类(mcs/ack/board 等)不产生会话回程。
 	if isControlEnvelope(inbound) {
 		log.Printf("[reply-origin] R1 跳过 reason=control_inbound session=%s delivery_id=%s", job.key.Session, job.key.DeliveryID)
@@ -205,4 +213,20 @@ func (p *amrProcessor) replyToOriginUnavailable(job amrRouteJob, reason string) 
 	//    hub.go:3005 写死了「凡是内部状态码、原因码、阶段名,一律传 ""」——
 	//    传 "reply_to_origin" 会渲染成「投递失败 … → reply_to_origin」,读起来像投给了一个叫它的会话。
 	p.notifySourceVisible(job.key, "", reason, true, job.body)
+}
+
+// trustedHumanViewDirectDelivery is used only after the durable row has been
+// bound to the authenticated emitting key/session. View-mention derivatives
+// and ordinary Agent traffic retain their existing return policies.
+func trustedHumanViewDirectDelivery(delivery *model.SessionDelivery, inbound model.Envelope) bool {
+	if delivery.SourceType != "view_inbound" {
+		return false
+	}
+	var provenance displayProvenance
+	if json.Unmarshal([]byte(delivery.Provenance), &provenance) != nil ||
+		provenance.AttestedBy != "hub" || provenance.Kind != "human" || provenance.TrustDecision != "trusted" {
+		return false
+	}
+	from, err := parseAddress(inbound.From)
+	return err == nil && from.Kind == addressSession && from.SessionName == "workpulse" && from.KeyID == delivery.KeyID
 }

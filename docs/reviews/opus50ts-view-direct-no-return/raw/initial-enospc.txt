@@ -1,0 +1,36 @@
+=== RUN   TestViewDirectNoReturn
+=== RUN   TestViewDirectNoReturn/same-owner/new
+    view_direct_no_return_test.go:56: TempDir: mkdir /tmp/TestViewDirectNoReturnsame-ownernew822579210: no space left on device
+=== RUN   TestViewDirectNoReturn/same-owner/legacy-missing-policy
+    view_direct_no_return_test.go:56: TempDir: mkdir /tmp/TestViewDirectNoReturnsame-ownerlegacy-missing-policy2163038043: no space left on device
+=== RUN   TestViewDirectNoReturn/cross-owner/new
+    view_direct_no_return_test.go:56: TempDir: mkdir /tmp/TestViewDirectNoReturncross-ownernew4285202054: no space left on device
+=== RUN   TestViewDirectNoReturn/cross-owner/legacy-missing-policy
+    view_direct_no_return_test.go:56: TempDir: mkdir /tmp/TestViewDirectNoReturncross-ownerlegacy-missing-policy2897792607: no space left on device
+--- FAIL: TestViewDirectNoReturn (0.00s)
+    --- FAIL: TestViewDirectNoReturn/same-owner/new (0.00s)
+    --- FAIL: TestViewDirectNoReturn/same-owner/legacy-missing-policy (0.00s)
+    --- FAIL: TestViewDirectNoReturn/cross-owner/new (0.00s)
+    --- FAIL: TestViewDirectNoReturn/cross-owner/legacy-missing-policy (0.00s)
+=== RUN   TestViewDirectHumanClaimsCannotSuppressAgentReturn
+    view_direct_no_return_test.go:138: TempDir: mkdir /tmp/TestViewDirectHumanClaimsCannotSuppressAgentReturn745228061: no space left on device
+--- FAIL: TestViewDirectHumanClaimsCannotSuppressAgentReturn (0.00s)
+=== RUN   TestViewDirectTrustedLegacyClassification
+=== RUN   TestViewDirectTrustedLegacyClassification/agent-type
+=== RUN   TestViewDirectTrustedLegacyClassification/empty-provenance
+=== RUN   TestViewDirectTrustedLegacyClassification/agent-kind
+=== RUN   TestViewDirectTrustedLegacyClassification/untrusted
+=== RUN   TestViewDirectTrustedLegacyClassification/wrong-attester
+=== RUN   TestViewDirectTrustedLegacyClassification/different-key
+=== RUN   TestViewDirectTrustedLegacyClassification/agent-sender
+--- PASS: TestViewDirectTrustedLegacyClassification (0.00s)
+    --- PASS: TestViewDirectTrustedLegacyClassification/agent-type (0.00s)
+    --- PASS: TestViewDirectTrustedLegacyClassification/empty-provenance (0.00s)
+    --- PASS: TestViewDirectTrustedLegacyClassification/agent-kind (0.00s)
+    --- PASS: TestViewDirectTrustedLegacyClassification/untrusted (0.00s)
+    --- PASS: TestViewDirectTrustedLegacyClassification/wrong-attester (0.00s)
+    --- PASS: TestViewDirectTrustedLegacyClassification/different-key (0.00s)
+    --- PASS: TestViewDirectTrustedLegacyClassification/agent-sender (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.009s
+FAIL

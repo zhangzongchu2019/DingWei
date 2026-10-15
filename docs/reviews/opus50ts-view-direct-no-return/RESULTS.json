@@ -1,0 +1,150 @@
+{
+  "base": "b0f449bd7b2883808c3bce322ede635d56aa6a83",
+  "utc": "2026-10-15T12:23:02.838399+00:00",
+  "scope": "author local verification only; no independent PASS, merge or deployment",
+  "environment": {
+    "go": "go1.22.2 linux/amd64",
+    "python": "3.12.3",
+    "locked_python": "/data/ai-dev-data/spec5ff-wave1-validation/venv/bin/python3",
+    "gates": "isolated HOME, reused existing Go module/build caches; no live SH/DW credential environment",
+    "log_timezone": "test process logs use inherited local timezone; this receipt UTC is explicit"
+  },
+  "source": {
+    "internal/m8/reply_to_origin.go": {
+      "bytes": 11129,
+      "sha256": "9d873b3eb1c500f7eda11a364349ed75ea8776202522009749efab805d77d8e7"
+    },
+    "internal/m8/view_input_v2.go": {
+      "bytes": 7639,
+      "sha256": "9d3b79129b6d06604e7c7f57b402331f6d4f10bf6b68936ce510065c19a0b178"
+    },
+    "internal/m8/view_direct_no_return_test.go": {
+      "bytes": 9272,
+      "sha256": "1038ce53a4bc3ab9efd5cdce648c331ff79154316f9be8b6481881dcd300e9d1"
+    }
+  },
+  "runs": {
+    "initial-enospc": {
+      "command": "go test ./internal/m8 -run ^TestViewDirect -count=1 -v; environment failure before temporary fixture setup",
+      "rc": 1,
+      "log": "docs/reviews/opus50ts-view-direct-no-return/raw/initial-enospc.txt",
+      "bytes": 2585,
+      "sha256": "8e55f28b6c7f32da1299e5c09f4a36fba2305bda2b0e7810baed1aa74832ace4",
+      "top_level_passes": 1,
+      "explicit_skips_non_PASS": []
+    },
+    "targeted": {
+      "command": "go test ./internal/m8 -run ^TestViewDirect -count=1 -v; before explicit-mention supplemental test was appended",
+      "rc": 0,
+      "log": "docs/reviews/opus50ts-view-direct-no-return/raw/targeted.txt",
+      "bytes": 14683,
+      "sha256": "df6b6842fac828c68c3d37b0184955f28d34c43e51a89d593fd68a1d10e809c0",
+      "top_level_passes": 3,
+      "explicit_skips_non_PASS": []
+    },
+    "withdraw-input-policy": {
+      "command": "go test ./internal/m8 -run ^TestViewDirectNoReturn$/.*/new$ -count=1 -v; remove explicit View no_reply only",
+      "rc": 1,
+      "log": "docs/reviews/opus50ts-view-direct-no-return/raw/withdraw-input-policy.txt",
+      "bytes": 5755,
+      "sha256": "8fa554d97a13ff89a671efc487abd36fcf178d5a1ca0f88498cbef0402e6f696",
+      "top_level_passes": 0,
+      "explicit_skips_non_PASS": []
+    },
+    "withdraw-legacy-guard": {
+      "command": "go test ./internal/m8 -run ^TestViewDirectNoReturn$/.*/legacy-missing-policy$ -count=1 -v; disable trusted historical View guard only",
+      "rc": 1,
+      "log": "docs/reviews/opus50ts-view-direct-no-return/raw/withdraw-legacy-guard.txt",
+      "bytes": 8170,
+      "sha256": "708d9d85d5e2bebc6ee559c0e0c85b0e6165af50d59aead76ac4cd1c794a15fb",
+      "top_level_passes": 0,
+      "explicit_skips_non_PASS": []
+    },
+    "race": {
+      "command": "go test -race ./internal/m8 -run ^(TestViewDirect|TestGroupReply|TestGroupCrossOwnerViewReplyIsolation|TestMentionReplyMirror) -count=1 -timeout 6m -v; GroupReplyMCP explicitly skipped here",
+      "rc": 0,
+      "log": "docs/reviews/opus50ts-view-direct-no-return/raw/race.txt",
+      "bytes": 64268,
+      "sha256": "22483ae60bbdafa4f8fd69e010050b5653511c987d78c0d85168b5f4894f8529",
+      "top_level_passes": 10,
+      "explicit_skips_non_PASS": [
+        {
+          "name": "TestGroupReplyMCP",
+          "reason": "group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+        }
+      ]
+    },
+    "mcp-race": {
+      "command": "DW_SPEC_E2E_PYTHON=<locked-python> go test -race ./internal/m8 -run ^(TestViewDirectOutputCanStillMentionAgent|TestGroupReplyMCP)$ -count=1 -timeout 3m -v",
+      "rc": 0,
+      "log": "docs/reviews/opus50ts-view-direct-no-return/raw/mcp-race.txt",
+      "bytes": 8393,
+      "sha256": "5d50f681791d28f5de455b73ff0b7416fd32c579d6d3c7a10611f5587912f92f",
+      "top_level_passes": 2,
+      "explicit_skips_non_PASS": []
+    },
+    "full-m8": {
+      "command": "go test ./internal/m8 -count=1 -timeout 10m -v; all helper opt-in interpreters set to locked private Python",
+      "rc": 0,
+      "log": "docs/reviews/opus50ts-view-direct-no-return/raw/full-m8.txt",
+      "bytes": 554952,
+      "sha256": "6b3563c950f6b14ec79d5aaad78bae57c8c397eaeff6763d7b90a09877dd6813",
+      "top_level_passes": 642,
+      "explicit_skips_non_PASS": [
+        {
+          "name": "TestMuxProductHTTP1EightSeats",
+          "reason": "console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+        },
+        {
+          "name": "TestConsolePlatformPayloadDump",
+          "reason": "console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+        },
+        {
+          "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "reason": "console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+        },
+        {
+          "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+          "reason": "hub_timeout_contract_test.go:50: subprocess probe only"
+        }
+      ]
+    },
+    "build": {
+      "command": "PATH=<locked-venv>/bin:$PATH ./scripts/run-build-tests.sh; isolated HOME, helper opt-in interpreters set",
+      "rc": 0,
+      "log": "docs/reviews/opus50ts-view-direct-no-return/raw/build.txt",
+      "bytes": 34744,
+      "sha256": "bc60bb9b5de558c037e73c9f5e4eb6cf0f5625a6dbaad5c1a72f1257348a5517",
+      "top_level_passes": 3,
+      "explicit_skips_non_PASS": []
+    }
+  },
+  "gate_runner": [
+    {
+      "name": "full-m8",
+      "cmd": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-timeout",
+        "10m",
+        "-v"
+      ],
+      "rc": 0,
+      "seconds": 143.058,
+      "home": "/tmp/opus50ts-view-direct-home-s2zayjiu"
+    },
+    {
+      "name": "build",
+      "cmd": [
+        "./scripts/run-build-tests.sh"
+      ],
+      "rc": 0,
+      "seconds": 49.66,
+      "home": "/tmp/opus50ts-view-direct-home-s2zayjiu"
+    }
+  ],
+  "full_m8_total_pass_lines_including_subtests": 955,
+  "diff_check_rc": 0
+}
