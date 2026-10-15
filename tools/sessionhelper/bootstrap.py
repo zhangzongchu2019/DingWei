@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import shlex
 import subprocess
 import tempfile
 import uuid
@@ -124,6 +125,63 @@ def in_container(container, script, *args):
                   '/opt/dingwei/sessionhelper-venv/bin/python', '-c', script, *args)
 
 
+def check_entry(inspection):
+    """Recognize the supported unchanged entry; unknown launchers fail closed."""
+    cfg = inspection.get('Config', {})
+    argv = cfg.get('Entrypoint', []) + cfg.get('Cmd', [])
+    if not argv or argv[0] not in ('/usr/bin/tini', '/sbin/tini', '/tini', 'tini'):
+        raise BootstrapError('entry_unsupported')
+    argv = argv[1:]
+    while argv and argv[0] in ('-g', '--'):
+        argv = argv[1:]
+    if len(argv) != 3 or argv[0] not in ('bash', '/bin/bash', '/usr/bin/bash') or argv[1] not in ('-c', '-lc'):
+        raise BootstrapError('entry_unsupported')
+    # shlex's default wordchars split paths; whitespace_split preserves shell words.
+    lex = shlex.shlex(argv[2], posix=True, punctuation_chars=';&|')
+    lex.whitespace_split = True
+    tokens = list(lex)
+    commands, current = [], []
+    for token in tokens:
+        if token in (';', '&&'):
+            commands.append(current); current = []
+        else:
+            current.append(token)
+    commands.append(current)
+    env = dict(value.split('=', 1) for value in cfg.get('Env', []) if '=' in value)
+    pythonpath = env.get('PYTHONPATH')
+    sourced = False
+    for command in commands[:-1]:
+        if command in (['source', '/run/secrets/sessionhelper_env'], ['.', '/run/secrets/sessionhelper_env']):
+            sourced = True
+        elif command in (['set', '-a'], ['set', '+a']):
+            pass
+        elif command == ['export', 'PYTHONPATH=/opt/dingwei/sessionhelper-src']:
+            pythonpath = '/opt/dingwei/sessionhelper-src'
+        else:
+            raise BootstrapError('entry_unsupported')
+    final = commands[-1]
+    if final and final[0] == 'exec':
+        final = final[1:]
+    if not sourced or final != ['/opt/dingwei/sessionhelper-venv/bin/python', '-m', 'sessionhelper']:
+        raise BootstrapError('entry_unsupported')
+    if pythonpath is not None and pythonpath != '/opt/dingwei/sessionhelper-src':
+        raise BootstrapError('entry_unsupported')
+
+
+def check_shared_mount(inspection, source):
+    """Refuse replacing a source tree mounted by another running container."""
+    ids = docker('ps', '-q').decode().split()
+    if not ids:
+        return
+    for other in json.loads(docker('inspect', *ids)):
+        if other['Id'] == inspection['Id']:
+            continue
+        for mount in other.get('Mounts', []):
+            other_source = Path(mount['Source']).resolve()
+            if source == other_source or source in other_source.parents or other_source in source.parents:
+                raise BootstrapError('source_mount_shared')
+
+
 def preflight(root, mount, container, restart_check=False):
     manifest = verified_source(root)
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', container):
@@ -134,26 +192,41 @@ def preflight(root, mount, container, restart_check=False):
     if (len(matching) != 1 or matching[0]['RW'] or Path(matching[0]['Source']).resolve() != Path(mount).resolve()
             or inspection['HostConfig']['RestartPolicy']['Name'] != 'unless-stopped'):
         raise BootstrapError('manual_required')
+    check_entry(inspection)
+    check_shared_mount(inspection, Path(mount).resolve())
     pins = dependency_pins(Path(root) / 'requirements-runtime.lock')
     script = '''import importlib.metadata,json,os,pathlib,sys
 pins=json.loads(sys.argv[1])
 if any(importlib.metadata.version(k)!=v for k,v in pins.items()): raise SystemExit(31)
+if os.environ.get('PYTHONPATH')!='/opt/dingwei/sessionhelper-src': raise SystemExit(35)
 p=pathlib.Path(os.path.expanduser(os.environ.get('SH_STATE_DIR','~/.dingwei')))/'update'
 if not p.is_absolute() or p.is_symlink(): raise SystemExit(32)
-p.mkdir(mode=0o700,parents=True,exist_ok=True)
-if p.stat().st_uid!=os.getuid() or p.stat().st_mode&0o077: raise SystemExit(33)
+if sys.argv[3]=='1': p.mkdir(mode=0o700,parents=True,exist_ok=True)
+if p.exists() and (p.stat().st_uid!=os.getuid() or p.stat().st_mode&0o077 or not p.is_dir()): raise SystemExit(33)
 p=p.resolve()
-marker=p/('.bootstrap-'+sys.argv[2]);marker.write_text(sys.argv[2]);os.chmod(marker,0o600)
+if sys.argv[3]=='1':
+ marker=p/('.bootstrap-'+sys.argv[2]);marker.write_text(sys.argv[2]);os.chmod(marker,0o600)
 print(str(p))'''
     nonce = uuid.uuid4().hex
-    state = in_container(container, script, json.dumps(pins), nonce).decode().strip()
+    state = in_container(container, script, json.dumps(pins), nonce,
+                         '1' if restart_check else '0').decode().strip()
     if restart_check:
-        docker('restart', container)  # explicit owner --check-restart-persistence only
-    check = '''import os,pathlib,sys
+        cleanup = '''import pathlib,sys
 p=pathlib.Path(sys.argv[1]);marker=p/('.bootstrap-'+sys.argv[2])
-if marker.read_text()!=sys.argv[2] or p.stat().st_uid!=os.getuid(): raise SystemExit(34)
-marker.unlink()'''
-    in_container(container, check, state, nonce)
+if marker.exists(): marker.unlink()'''
+        check = '''import os,pathlib,sys
+p=pathlib.Path(sys.argv[1]);marker=p/('.bootstrap-'+sys.argv[2])
+if marker.read_text()!=sys.argv[2] or p.stat().st_uid!=os.getuid(): raise SystemExit(34)'''
+        try:
+            docker('restart', container)  # explicit owner --check-restart-persistence only
+            in_container(container, check, state, nonce)
+        finally:
+            # Best effort when the container cannot be reached after failed restart.
+            # A leftover nonce never acts as proof; only success writes proof below.
+            try:
+                in_container(container, cleanup, state, nonce)
+            except subprocess.SubprocessError:
+                pass
     proof_script = """import json,pathlib,sys,time
 p=pathlib.Path(sys.argv[1])/'bootstrap-preflight.json'
 expected={'container':sys.argv[2],'manifest':sys.argv[3]}

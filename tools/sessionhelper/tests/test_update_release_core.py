@@ -250,17 +250,23 @@ class PackageTests(unittest.TestCase):
         calls = []
         def docker(*args):
             calls.append(args)
+            if args[0] == 'ps':
+                return b'synthetic-container-id'
             if args[0] == 'inspect':
                 return json.dumps([{'Id':'synthetic-container-id','Mounts':[{'Destination':'/opt/dingwei/sessionhelper-src',
-                    'Source':str(mount),'RW':False}], 'HostConfig':{'RestartPolicy':{'Name':'unless-stopped'}}}]).encode()
+                    'Source':str(mount),'RW':False}], 'HostConfig':{'RestartPolicy':{'Name':'unless-stopped'}},
+                    'Config':{'Entrypoint':['/usr/bin/tini','--'], 'Cmd':['bash','-c',
+                    'source /run/secrets/sessionhelper_env; exec /opt/dingwei/sessionhelper-venv/bin/python -m sessionhelper'],
+                    'Env':['PYTHONPATH=/opt/dingwei/sessionhelper-src']}}]).encode()
             self.assertEqual(args, ('restart', 'synthetic'))
             return b'synthetic'
         def local_probe(container, script, *args):
             # Actual state ownership/mode/marker/proof/dependency Python, no Docker claim.
-            env = dict(os.environ, SH_STATE_DIR=str(state_parent))
+            env = dict(os.environ, SH_STATE_DIR=str(state_parent), PYTHONPATH='/opt/dingwei/sessionhelper-src')
             return subprocess.check_output([sys.executable, '-c', script, *args], env=env)
         with patch.object(bootstrap, 'docker', side_effect=docker), patch.object(bootstrap, 'in_container', side_effect=local_probe):
             self.assertFalse(bootstrap.preflight(stage, mount, 'synthetic')['restart_verified'])
+            self.assertFalse(state_parent.exists(), 'plain inspection must not initialize state')
             verified = bootstrap.preflight(stage, mount, 'synthetic', restart_check=True)
             self.assertTrue(verified['restart_verified'])
             self.assertEqual(verified['state'], str(state_parent / 'update'))

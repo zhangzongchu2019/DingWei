@@ -182,32 +182,70 @@ def run(factory, root, args=()):
     trampoline = 'import runpy,sys;sys.path.insert(0,sys.argv.pop(1));runpy.run_module("sessionhelper",run_name="__main__",alter_sys=True)'
     child = subprocess.Popen([sys.executable, '-c', trampoline, str(path), *args], env=env, start_new_session=True)
     old = {}
-    def forward(sig, frame):
+    stopping = None
+    stop_deadline = None
+
+    def terminate():
+        # A rejected candidate may ignore TERM. Always reap it before rollback exit.
         if child.poll() is None:
-            os.killpg(child.pid, sig)
+            try:
+                os.killpg(child.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        try:
+            child.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(child.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            child.wait()
+
+    def forward(sig, frame):
+        nonlocal stopping, stop_deadline
+        if stopping is None:
+            stopping, stop_deadline = sig, time.monotonic() + 5
+        if child.poll() is None:
+            try:
+                os.killpg(child.pid, sig)
+            except ProcessLookupError:
+                pass
     try:
         for sig in (signal.SIGTERM, signal.SIGINT):
             old[sig] = signal.signal(sig, forward)
         while child.poll() is None:
-            if pending:
+            if stopping is not None:
+                # Docker restart is not a failed trial. Selection on the next
+                # start still enforces the original persisted deadline/budget.
+                if time.monotonic() >= stop_deadline:
+                    terminate()
+                    break
+            elif pending:
                 live = state.read()
-                if not live['pending']:
-                    pending = None  # trusted runtime confirmed or terminalized this job
+                terminal = live['terminal'].get(pending['job_id'], {})
+                exact = all(terminal.get(k) == pending[k] for k in TUPLE)
+                if exact and terminal.get('stage') == 'confirmed':
+                    pending = None
+                elif not live['pending'] or not all(live['pending'].get(k) == pending[k] for k in TUPLE):
+                    terminate()
+                    return 75
                 elif time.time() >= pending['deadline']:
-                    os.killpg(child.pid, signal.SIGTERM)
-                    try:
-                        child.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        os.killpg(child.pid, signal.SIGKILL); child.wait()
+                    terminate()
                     state.fail(pending, 'health_timeout')
                     return 75
             time.sleep(0.05)
+        if stopping is not None:
+            return 128 + stopping
         code = child.returncode
         if pending:
-            state.fail(pending)
-            return 75  # supervisor restarts previous/current, not the failed candidate
+            live = state.read()
+            terminal = live['terminal'].get(pending['job_id'], {})
+            if not (terminal.get('stage') == 'confirmed' and all(terminal.get(k) == pending[k] for k in TUPLE)):
+                state.fail(pending)
+                return 75  # supervisor restarts current/previous after a real failure
         return code
     finally:
+        terminate()
         for sig, handler in old.items():
             signal.signal(sig, handler)
 

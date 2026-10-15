@@ -41,6 +41,12 @@ def build(repo, commit, output):
     tree = git(repo, 'rev-parse', commit + '^{tree}').decode().strip()
     if git(repo, 'status', '--porcelain', '--untracked-files=all', '--', PREFIX).strip():
         raise PackageError('source_not_clean')
+    # Ignored files do not appear in status, but mixing private state into the
+    # packaging input must fail even though immutable Git export would omit it.
+    local_names = git(repo, 'ls-files', '-z', '--others', '--ignored', '--exclude-standard', '--', PREFIX)
+    for raw_name in local_names.split(b'\0'):
+        if raw_name and FORBIDDEN.search(raw_name.decode()[len(PREFIX):]):
+            raise PackageError('forbidden_private_state')
     listing = git(repo, 'ls-tree', '-r', '-z', commit, '--', PREFIX)
     blobs = {}
     for raw in listing.split(b'\0'):
