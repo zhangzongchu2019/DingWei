@@ -94,6 +94,23 @@ func (e *agentEnv) dial(cred, query string) (*websocket.Conn, int, string) {
 	return nil, resp.StatusCode, strings.TrimSpace(string(b))
 }
 
+func (e *agentEnv) dialWithHeaders(cred, query string) (*websocket.Conn, http.Header) {
+	e.t.Helper()
+	h := http.Header{}
+	h.Set("Authorization", "Bearer "+cred)
+	conn, resp, err := websocket.Dial(e.ctx, e.wsURL(query), &websocket.DialOptions{HTTPHeader: h})
+	if err != nil {
+		if resp != nil {
+			defer resp.Body.Close()
+		}
+		e.t.Fatalf("dial: %v", err)
+	}
+	if resp == nil {
+		e.t.Fatal("dial succeeded without HTTP response")
+	}
+	return conn, resp.Header
+}
+
 // reader 持续读一条连接（处理控制帧），返回一个在连接结束时收到关闭码的通道。
 func reader(conn *websocket.Conn) <-chan websocket.StatusCode {
 	done := make(chan websocket.StatusCode, 1)
@@ -128,6 +145,18 @@ func TestAgentWS_IdentityFromCredentialNotFromURL(t *testing.T) {
 	e.hub.mu.Unlock()
 	if c.ownerKey != "u_zzc" || c.tool != "claude" || c.version != "0.3.0" || c.osName != "linux" {
 		t.Fatalf("client fields: owner=%q tool=%q version=%q os=%q", c.ownerKey, c.tool, c.version, c.osName)
+	}
+}
+
+func TestAgentWSAdvertisesTrustedHelperUpdateSource(t *testing.T) {
+	e := newAgentEnv(t)
+	conn, headers := e.dialWithHeaders(e.cred, "version=0.2.3.1")
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	if got, want := headers.Get("X-DW-Helper-Update"), "helper-update/v1"; got != want {
+		t.Fatalf("update capability header=%q want %q", got, want)
+	}
+	if got, want := headers.Get("X-DW-Helper-Update-Source"), "workpulse#u_zzc"; got != want {
+		t.Fatalf("update source header=%q want %q", got, want)
 	}
 }
 
