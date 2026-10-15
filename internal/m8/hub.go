@@ -1031,6 +1031,17 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	}
 	var err error
 	h.loadSeenSessions(r.Context())
+	// Only a brand-new endpoint has an unknown delivery_ack_v1 capability. A
+	// reconnect of a previously recorded no-ACK endpoint must keep the existing
+	// visible failure behavior rather than entering the fresh-target queue.
+	endpointPreviouslyKnown := false
+	if h.Repo != nil {
+		_, endpointPreviouslyKnown, err = h.Repo.SessionEndpointDeliveryACK(r.Context(), keyID, sessionName)
+		if err != nil {
+			http.Error(w, "load session endpoint failed", http.StatusInternalServerError)
+			return
+		}
+	}
 	sessionName, err = h.registerSessionEndpoint(r.Context(), model.SessionEndpoint{
 		KeyID:           keyID,
 		SessionName:     sessionName,
@@ -1077,8 +1088,10 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	obsConn := obs.Default.OpenWS("session")
 	var obsReadErr error
 	defer func() { obsConn.Closed(obsReadErr) }()
-	h.beginCapabilityPendingAdmission(keyID, sessionName)
-	defer h.endCapabilityPendingAdmission(keyID, sessionName)
+	if !endpointPreviouslyKnown {
+		h.beginCapabilityPendingAdmission(keyID, sessionName)
+		defer h.endCapabilityPendingAdmission(keyID, sessionName)
+	}
 	conn.SetReadLimit(16 << 20) // 终端 PTY 全屏输出可能远超默认 32KB
 	connSeq, err := h.Repo.IncrementSessionEndpointConnSeq(r.Context(), keyID, sessionName)
 	if err != nil {
