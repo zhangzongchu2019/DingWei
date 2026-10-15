@@ -1,0 +1,24 @@
+=== RUN   TestGroupCrossOwnerViewReplyIsolation
+=== RUN   TestGroupCrossOwnerViewReplyIsolation/client_cannot_forge_the_Hub-only_View_attestation
+2026/10/14 18:24:37 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:24:37 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:24:37 session handshake timing key_id=u_zzc session=kimi total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:37 session handshake timing key_id=u_zzc session=beta total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:37 session handshake timing key_id=u_zzc session=nack total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:37 session handshake timing key_id=u_zzc session=outsider total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:37 session handshake timing key_id=u_lbl session=gamma total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:37 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:24:37 session handshake timing key_id=u_zzc session=quill total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:37 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:24:37 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:24:37 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_3af826f4a7ebb6e3768df8b7f94e9302 source_message_id=819f59c1de09d2780936ab89a99fa746
+    group_cross_owner_test.go:281: client forged trusted View attestation
+2026/10/14 18:24:37 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:24:37 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:24:37 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/14 18:24:37 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+--- FAIL: TestGroupCrossOwnerViewReplyIsolation (0.25s)
+    --- FAIL: TestGroupCrossOwnerViewReplyIsolation/client_cannot_forge_the_Hub-only_View_attestation (0.25s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.259s
+FAIL

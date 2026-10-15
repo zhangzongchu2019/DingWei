@@ -1,0 +1,31 @@
+=== RUN   TestGroupCrossOwnerViewReplyIsolation
+=== RUN   TestGroupCrossOwnerViewReplyIsolation/only_correlated_reply_is_displayed,_never_unrelated_output_or_helper_input
+2026/10/14 18:24:21 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:24:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:24:21 session handshake timing key_id=u_zzc session=kimi total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:21 session handshake timing key_id=u_zzc session=beta total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:21 session handshake timing key_id=u_zzc session=nack total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:21 session handshake timing key_id=u_zzc session=outsider total=7ms register=5ms accept=0s conn_seq=1ms onboard=1ms register_lock=0s
+2026/10/14 18:24:21 session handshake timing key_id=u_lbl session=gamma total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:21 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:24:21 session handshake timing key_id=u_zzc session=quill total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:24:21 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:24:21 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:24:21 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_395e6b260f74f91c8912191ff5ed49c2 source_message_id=22222222222222222222222222222222-m-e795ed931a66
+2026/10/14 18:24:21 view mention decision=routed from=Kimi.zzc to=Gamma.lb online=true
+2026/10/14 18:24:21 mention reply decision=skipped reason=identity session=gamma delivery_id=dw-dlv_395e6b260f74f91c8912191ff5ed49c2
+2026/10/14 18:24:21 [reply-origin] lookup session=gamma delivery_id=unrelated-delivery cost=362.086µs err=<nil> found=false
+2026/10/14 18:24:21 [reply-origin] R1 回程未发生 session=gamma delivery_id=unrelated-delivery reason=本轮的来源记录已不可用,内容未自动回程
+2026/10/14 18:24:21 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+2026/10/14 18:24:21 [reply-origin] lookup session=gamma delivery_id=dw-dlv_395e6b260f74f91c8912191ff5ed49c2 cost=222.504µs err=<nil> found=true
+2026/10/14 18:24:21 [reply-origin] R1 回程未发生 session=gamma delivery_id=dw-dlv_395e6b260f74f91c8912191ff5ed49c2 reason=自动回程投递失败:组内找不到该Agent
+2026/10/14 18:24:21 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+    group_cross_owner_test.go:231: A 页 3s 内未见第 1 条 mention_reply（现 0 条）
+2026/10/14 18:24:24 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:24:24 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:24:24 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+--- FAIL: TestGroupCrossOwnerViewReplyIsolation (3.30s)
+    --- FAIL: TestGroupCrossOwnerViewReplyIsolation/only_correlated_reply_is_displayed,_never_unrelated_output_or_helper_input (3.30s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	3.310s
+FAIL

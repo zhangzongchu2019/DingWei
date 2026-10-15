@@ -1,0 +1,23 @@
+=== RUN   TestMentionCandidateOtherOwnerAlwaysFullName
+    group_communication_test.go:87: same-owner insert="Local"; cross-owner insert="Foreign"
+--- FAIL: TestMentionCandidateOtherOwnerAlwaysFullName (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/identity	0.014s
+=== RUN   TestNewPlatformMentionCandidates
+2026/10/14 18:38:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:38:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:38:23 session handshake timing key_id=u_zzc session=opus50ts total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+    newplat_mention_test.go:107: candidates:
+        Opus50TS.zzc|Opus50TS|codex|on|Opus50TS
+        Beta.zzc|Beta||off|Beta
+        Gamma.lb|Gamma||off|Gamma
+        kimi.lb|kimi||off|kimi.lb
+        want:
+        Opus50TS.zzc|Opus50TS|codex|on|Opus50TS
+        Beta.zzc|Beta||off|Beta
+        Gamma.lb|Gamma||off|Gamma.lb
+        kimi.lb|kimi||off|kimi.lb
+--- FAIL: TestNewPlatformMentionCandidates (0.16s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.172s
+FAIL
