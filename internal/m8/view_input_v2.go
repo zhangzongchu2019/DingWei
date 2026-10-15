@@ -151,7 +151,7 @@ func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, reques
 		// Hub restart between response loss and retry cannot create a second turn.
 		ID: requestID, To: sessionAddress(routeSession, keyID), From: sessionAddress("workpulse", keyID),
 		Body: terminalSubmission(text), TS: time.Now().Unix(),
-		Meta: map[string]any{"source_kind": "user", "source_display_name": "View",
+		Meta: map[string]any{"source_kind": "user", "source_display_name": "View", "reply_policy": replyPolicyNoReply,
 			"auth_mode": "view_page_v2", "page_id": pageID, "request_id": requestID,
 			"console_principal_id": strings.TrimSpace(principalID), hubIngressMetaKey: hubIngressViewV2},
 	}
