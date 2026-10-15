@@ -151,6 +151,34 @@ func TestHelperUpdateHealthRejectsWrongNonce(t *testing.T) {
 	}
 }
 
+func TestRecoverHelperUpdatesTerminalizesExpiredJob(t *testing.T) {
+	e := newAgentEnv(t)
+	digest := strings.Repeat("1", 64)
+	catalog := helperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
+		t.Fatal(err)
+	}
+	job, err := e.hub.createHelperUpdateJob(e.ctx, catalog, e.agID, "zzc", "opus50ts", "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	stored, raw, err := e.hub.helperUpdateJob(e.ctx, e.agID)
+	if err != nil || stored == nil {
+		t.Fatalf("job=%+v err=%v", stored, err)
+	}
+	stored.ExpiresAt = time.Now().UTC().Add(-time.Minute)
+	if ok, err := e.hub.updateHelperUpdateJob(e.ctx, raw, *stored); err != nil || !ok {
+		t.Fatalf("expire setup ok=%v err=%v", ok, err)
+	}
+	if err := e.hub.RecoverHelperUpdates(e.ctx); err != nil {
+		t.Fatal(err)
+	}
+	got, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
+	if err != nil || got == nil || got.Stage != "expired" || got.JobID != job.JobID {
+		t.Fatalf("recovered=%+v err=%v", got, err)
+	}
+}
+
 func TestHelperUpdateKeysAreNamespaced(t *testing.T) {
 	sha := strings.Repeat("b", 64)
 	if got, want := helperUpdateCatalogKey(strings.ToUpper(sha)), helperUpdateCatalogPrefix+sha; got != want {

@@ -1166,6 +1166,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	if a.onRegistered != nil {
 		go a.onRegistered()
 	}
+	if c.metricsAgentID != "" {
+		go h.resumeHelperUpdateOffer(context.Background(), c)
+	}
 	if h.markSessionSeen(ownerKey, sessionName) {
 		h.notifyNewSession(r.Context(), ownerKey, sessionName)
 	}

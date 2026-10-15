@@ -304,3 +304,80 @@ func (h *Hub) confirmHelperUpdateHealth(ctx context.Context, c *sessionClient, e
 	})
 	return true
 }
+
+func helperUpdateTerminal(stage string) bool {
+	switch stage {
+	case "confirmed", "expired", "agent_inactive", "owner_inactive", "release_unavailable", "failed":
+		return true
+	default:
+		return false
+	}
+}
+
+func (h *Hub) updateHelperUpdateJob(ctx context.Context, raw string, job helperUpdateJob) (bool, error) {
+	job.Revision++
+	payload, err := marshalHelperUpdate(job)
+	if err != nil {
+		return false, err
+	}
+	return h.Repo.CompareAndSwapAppConfig(ctx, helperUpdateJobKey(job.AgentID), true, raw, payload)
+}
+
+// RecoverHelperUpdates is called after the new-platform identity store is
+// wired. It never resurrects terminal jobs. Nonterminal jobs whose tuple is no
+// longer eligible become terminal with an auditable reason; valid offered jobs
+// wait for their authenticated Agent session to reconnect.
+func (h *Hub) RecoverHelperUpdates(ctx context.Context) error {
+	if h.Repo == nil || h.Identity == nil {
+		return nil
+	}
+	rows, err := h.Repo.ListAppConfig(ctx)
+	if err != nil {
+		return err
+	}
+	for _, row := range rows {
+		if !strings.HasPrefix(row.Key, helperUpdateJobPrefix) {
+			continue
+		}
+		var job helperUpdateJob
+		if err := json.Unmarshal([]byte(row.ValueJSON), &job); err != nil || helperUpdateTerminal(job.Stage) {
+			continue
+		}
+		next := ""
+		if h.now().UTC().After(job.ExpiresAt) {
+			next = "expired"
+		} else if ag, err := h.Identity.Store.GetAgent(ctx, job.AgentID); err != nil || ag == nil || ag.State != identity.AgentActive {
+			next = "agent_inactive"
+		} else if owner, err := h.Identity.Store.GetUser(ctx, job.OwnerID); err != nil || owner == nil || owner.State != identity.UserActive {
+			next = "owner_inactive"
+		} else if catalog, err := h.helperUpdateCatalog(ctx, job.SHA256); err != nil || catalog == nil {
+			next = "release_unavailable"
+		}
+		if next == "" {
+			continue
+		}
+		job.Stage = next
+		if ok, err := h.updateHelperUpdateJob(ctx, row.ValueJSON, job); err == nil && ok {
+			_ = h.Repo.WriteAudit(ctx, "workpulse", "helper_update_"+next, job.JobID)
+		}
+	}
+	return nil
+}
+
+func (h *Hub) resumeHelperUpdateOffer(ctx context.Context, c *sessionClient) {
+	if c == nil || c.metricsAgentID == "" {
+		return
+	}
+	job, raw, err := h.helperUpdateJob(ctx, c.metricsAgentID)
+	if err != nil || job == nil || job.Stage != "offered" {
+		return
+	}
+	if h.now().UTC().After(job.ExpiresAt) {
+		job.Stage = "expired"
+		if ok, err := h.updateHelperUpdateJob(ctx, raw, *job); err == nil && ok {
+			_ = h.Repo.WriteAudit(ctx, "workpulse", "helper_update_expired", job.JobID)
+		}
+		return
+	}
+	_ = h.sendHelperUpdateOffer(ctx, c, job)
+}
