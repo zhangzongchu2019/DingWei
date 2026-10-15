@@ -17,7 +17,7 @@ func TestHelperUpdateRegisterIsOperatorOnlyCLI(t *testing.T) {
 	var out bytes.Buffer
 	if err := runHelperUpdateRegister(context.Background(), []string{
 		"--operator", "ops", "--sha256", sha, "--lock-sha256", strings.Repeat("b", 64),
-		"--version", "0.2.3.1", "--url", "https://files.example/helper.tgz",
+		"--version", "0.2.3.1", "--url", "https://files.example/helper.tgz", "--file-service-origin", "https://files.example",
 	}, &out); err != nil {
 		t.Fatal(err)
 	}
@@ -35,5 +35,11 @@ func TestHelperUpdateRegisterIsOperatorOnlyCLI(t *testing.T) {
 	}
 	if err := runHelperUpdateRegister(context.Background(), []string{"--sha256", sha}, &out); err == nil {
 		t.Fatal("missing operator accepted")
+	}
+	if err := runHelperUpdateRegister(context.Background(), []string{
+		"--operator", "ops", "--sha256", strings.Repeat("c", 64), "--lock-sha256", strings.Repeat("d", 64),
+		"--version", "0.2.3.1", "--url", "https://files.example/helper.tgz",
+	}, &out); err == nil {
+		t.Fatal("catalog without registered file-service origin accepted")
 	}
 }

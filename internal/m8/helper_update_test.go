@@ -12,7 +12,7 @@ import (
 
 func TestHelperUpdateCatalogValidation(t *testing.T) {
 	valid := strings.Repeat("a", 64)
-	catalog := HelperUpdateCatalog{SHA256: valid, LockSHA256: valid, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: valid, LockSHA256: valid, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
 	if err := validateHelperUpdateCatalog(catalog); err != nil {
 		t.Fatalf("valid catalog: %v", err)
 	}
@@ -34,12 +34,17 @@ func TestHelperUpdateCatalogValidation(t *testing.T) {
 	if err := validateHelperUpdateCatalog(catalog); err == nil {
 		t.Fatal("non-TLS catalog URL accepted")
 	}
+	catalog.URL = "https://files.example/helper.tgz"
+	catalog.FileServiceOrigin = "https://other.example"
+	if err := validateHelperUpdateCatalog(catalog); err == nil {
+		t.Fatal("catalog URL from unregistered file-service origin accepted")
+	}
 }
 
 func TestHelperUpdateCatalogAndJobAreDurableAndSingleUse(t *testing.T) {
 	h, _, ctx := newTestHub(t)
 	digest := strings.Repeat("c", 64)
-	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
 	if err := h.RegisterHelperUpdateCatalog(ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +52,7 @@ func TestHelperUpdateCatalogAndJobAreDurableAndSingleUse(t *testing.T) {
 		t.Fatal("catalog registration replay accepted")
 	}
 	got, err := h.HelperUpdateCatalog(ctx, digest)
-	if err != nil || got == nil || got.Version != catalog.Version {
+	if err != nil || got == nil || got.Version != catalog.Version || got.FileServiceOrigin != catalog.FileServiceOrigin {
 		t.Fatalf("catalog=%+v err=%v", got, err)
 	}
 	job, err := h.createHelperUpdateJob(context.Background(), *got, "agent-1", "owner", "agent", "owner")
@@ -85,7 +90,7 @@ func rawForJob(t *testing.T, h *Hub, ctx context.Context, agentID string) string
 func TestIssueHelperUpdateSendsTrustedTargetBoundOffer(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("d", 64)
-	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
 	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -118,12 +123,15 @@ func TestIssueHelperUpdateSendsTrustedTargetBoundOffer(t *testing.T) {
 	if got, want := offer.From, "workpulse#u_zzc"; got != want {
 		t.Fatalf("offer source=%q want %q", got, want)
 	}
+	if got, want := metaString(offer.Meta, "file_service_origin"), "https://files.example"; got != want {
+		t.Fatalf("offer origin=%q want %q", got, want)
+	}
 }
 
 func TestIssueHelperUpdateDefersUntilHelperUpdateCapability(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("6", 64)
-	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
 	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +164,7 @@ func TestIssueHelperUpdateDefersUntilHelperUpdateCapability(t *testing.T) {
 func TestHelperUpdateHealthRequiresFreshAuthenticatedTuple(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("e", 64)
-	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
 	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -194,7 +202,7 @@ func TestHelperUpdateHealthRequiresFreshAuthenticatedTuple(t *testing.T) {
 func TestHelperUpdateHealthRejectsWrongNonce(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("f", 64)
-	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
 	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +233,7 @@ func TestHelperUpdateHealthRejectsWrongNonce(t *testing.T) {
 func TestHelperUpdateReceiptUsesAuthenticatedJobTuple(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("2", 64)
-	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
 	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -256,7 +264,7 @@ func TestHelperUpdateReceiptUsesAuthenticatedJobTuple(t *testing.T) {
 func TestHelperUpdateReceiptNeverRegressesStage(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("4", 64)
-	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
 	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -301,18 +309,46 @@ func TestIssueHelperUpdateForActorRejectsCrossOwner(t *testing.T) {
 		t.Fatalf("agents=%+v err=%v", agents, err)
 	}
 	digest := strings.Repeat("3", 64)
-	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}); err != nil {
+	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", agents[0].ID, digest); err == nil {
+	if _, err := e.hub.IssueHelperUpdate(e.ctx, "zzc", agents[0].ID, digest); err == nil {
 		t.Fatal("cross-owner helper update accepted")
+	}
+}
+
+func TestGetHelperUpdateJobRechecksPrincipalOwnership(t *testing.T) {
+	e := newAgentEnv(t)
+	digest := strings.Repeat("f", 64)
+	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}); err != nil {
+		t.Fatal(err)
+	}
+	conn, _, _ := e.dial(e.cred, "version=0.2.3.1")
+	defer conn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	e.sendEnv(conn, model.Envelope{ID: "caps-get-job", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "helper update capability", func() bool {
+		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+	})
+	job, err := e.hub.IssueHelperUpdate(e.ctx, "zzc", e.agID, digest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, err := e.hub.GetHelperUpdateJob(e.ctx, "zzc", e.agID); err != nil || got == nil || got.JobID != job.JobID {
+		t.Fatalf("owned job=%+v err=%v", got, err)
+	}
+	if err := e.svc.Store.CreateUser(e.ctx, identity.User{UserID: "other", ShortName: "other", State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := e.hub.GetHelperUpdateJob(e.ctx, "other", e.agID); err == nil || got != nil {
+		t.Fatalf("cross-owner job read got=%+v err=%v", got, err)
 	}
 }
 
 func TestRecoverHelperUpdatesTerminalizesExpiredJob(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("1", 64)
-	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
 	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -350,7 +386,7 @@ func TestHelperUpdateKeysAreNamespaced(t *testing.T) {
 func TestListHelperUpdateCatalogsAndOwnerJobsFilter(t *testing.T) {
 	h, _, ctx := newTestHub(t)
 	digest := strings.Repeat("9", 64)
-	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
 	if err := h.RegisterHelperUpdateCatalog(ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}

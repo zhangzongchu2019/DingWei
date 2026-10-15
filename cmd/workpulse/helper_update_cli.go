@@ -13,7 +13,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
-const helperUpdateRegisterUsage = "workpulse helper-update-register --operator <ops-id> --sha256 <sha256> --lock-sha256 <sha256> --version <version> --url <catalog-url>"
+const helperUpdateRegisterUsage = "workpulse helper-update-register --operator <ops-id> --sha256 <sha256> --lock-sha256 <sha256> --version <version> --url <artifact-url> --file-service-origin <origin>"
 
 // runHelperUpdateRegister is deliberately a Hub-host operator command. Console
 // routes may select only entries created here and never accept arbitrary URLs.
@@ -25,6 +25,7 @@ func runHelperUpdateRegister(ctx context.Context, args []string, out io.Writer) 
 	lock := fs.String("lock-sha256", "", "")
 	version := fs.String("version", "", "")
 	url := fs.String("url", "", "")
+	fileServiceOrigin := fs.String("file-service-origin", "", "")
 	platform := fs.String("platform", "linux", "")
 	if err := fs.Parse(args); err != nil || fs.NArg() != 0 || strings.TrimSpace(*operator) == "" {
 		return errors.New("usage: " + helperUpdateRegisterUsage)
@@ -41,7 +42,7 @@ func runHelperUpdateRegister(ctx context.Context, args []string, out io.Writer) 
 	hub := m8.New(db, m8.ConsoleAuthMode{})
 	defer hub.Close()
 	if err := hub.RegisterHelperUpdateCatalog(ctx, *operator, m8.HelperUpdateCatalog{
-		SHA256: *sha, LockSHA256: *lock, Version: *version, URL: *url, Platform: *platform,
+		SHA256: *sha, LockSHA256: *lock, Version: *version, URL: *url, FileServiceOrigin: *fileServiceOrigin, Platform: *platform,
 	}); err != nil {
 		return fmt.Errorf("helper-update-register: %w", err)
 	}
