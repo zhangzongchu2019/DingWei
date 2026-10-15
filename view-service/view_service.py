@@ -1022,12 +1022,10 @@ class _Handler(BaseHTTPRequestHandler):
             return self.send_error(401)
         if COST_ACCOUNTING_MODE == "active":
             _ensure_ready(session)
-        self.send_response(200)
-        self.send_header("Content-Type", "text/event-stream")
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("X-Accel-Buffering", "no")
-        self.end_headers()
-        # 转发 hub 的内网 SSE(C2),逐行透传(含 id:／event: 行),并记成本
+        # Fetch the upstream response before committing a browser 200.  In
+        # particular, a Hub 404 used to become a successful-but-empty SSE
+        # response here, which made EventSource reconnect forever without any
+        # actionable reason in the renderer.
         u = urlparse(HUB_INTERNAL)
         conn = http.client.HTTPConnection(u.hostname, u.port or 80, timeout=3600)
         try:
@@ -1042,6 +1040,31 @@ class _Handler(BaseHTTPRequestHandler):
                 headers["Last-Event-ID"] = last_event_id
             conn.request("GET", target, headers=headers)
             resp = conn.getresponse()
+            if resp.status != 200:
+                # The Hub intentionally returns only a small, stable reason
+                # token. Never relay arbitrary upstream text to the browser or
+                # log it: this path is part of the internal trust boundary.
+                raw_reason = resp.read(256).decode("utf-8", "replace").strip().splitlines()[0:1]
+                reason = raw_reason[0] if raw_reason else "upstream_events_unavailable"
+                if reason not in {"view_identity_unresolved", "event_stream_unavailable"}:
+                    reason = "upstream_events_unavailable"
+                print(f"view_events_upstream_unavailable status={resp.status} reason={reason}", file=sys.stderr, flush=True)
+                self.send_response(200)
+                self.send_header("Content-Type", "text/event-stream")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("X-Accel-Buffering", "no")
+                self.end_headers()
+                frame = ("event: stream_unavailable\ndata: " + json.dumps({"reason": reason}, separators=(",", ":")) + "\n\n").encode("utf-8")
+                self.wfile.write(frame)
+                self.wfile.flush()
+                self.close_connection = True
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Accel-Buffering", "no")
+            self.end_headers()
+            # 转发 hub 的内网 SSE(C2),逐行透传(含 id:／event: 行),并记成本
             for frame in _bounded_sse_frames(resp):
                 event_id = ""
                 for line in frame.splitlines():

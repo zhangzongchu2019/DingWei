@@ -1244,6 +1244,11 @@
     const RECONNECT_BACKOFF_MS = [1000, 2000, 5000, 10000, 30000];
     let reconnectAttempt = 0;      // 第几次重连(0 = 当前是连着的)
     let reconnectTimer = null;
+    // A reasoned upstream refusal is not a generic transport outage. Keep the
+    // reason visible while the same bounded backoff retries, so an Agent whose
+    // helper has no event stream does not look like a permanently reconnecting
+    // browser network failure.
+    let streamUnavailableReason = '';
     let statusTimer = null;
     let rendered = 0;
     const messageBuffers = new Map();
@@ -4060,7 +4065,16 @@
     //    做法(不额外占状态栏空间):让保留下来的 🕐 那一栏兼任连接状态。
     function renderConnectionState() {
       if (!clockStatus) return;
-      if (streamGapRecoveryActive()) {
+      if (streamUnavailableReason) {
+        clockStatus.classList.add('offline');
+        const reason = streamUnavailableReason === 'event_stream_unavailable'
+          ? '该 Agent 在线，但还没有可显示的会话输出；有输出后会自动出现'
+          : streamUnavailableReason === 'view_identity_unresolved'
+            ? '无法识别该 Agent 会话（可能已删除或重命名）'
+            : 'View 服务暂时无法获取该会话事件，稍后自动重试';
+        clockStatus.title = `${reason}；将按退避策略重试。`;
+        localTime.textContent = streamUnavailableReason === 'event_stream_unavailable' ? '等待会话输出' : reason;
+      } else if (streamGapRecoveryActive()) {
         clockStatus.classList.remove('offline');
         clockStatus.title = '事件流已连接；检测到事件序号缺口，正在自动补收，补齐后此提示自动消失。';
         localTime.textContent = '已连接 · 正在补收缺失事件';
@@ -4090,6 +4104,11 @@
     // Only parsed event dispatch returning successfully clears consecutive retry failures.
     function markStreamConnected() {
       streamTransportOpen = true; streamHasAcceptedEvent = true;
+      // Opening a TCP/SSE transport does not prove that it can supply an event.
+      // Keep a reasoned upstream refusal visible until a real event has been
+      // parsed and applied; a reconnect can otherwise flicker to a misleading
+      // "connected, waiting" state before the next refusal arrives.
+      streamUnavailableReason = '';
       if (!reconnectTimerForGap) clearReconnectTimer();
       reconnectAttempt = 0;
       renderConnectionState();
@@ -4301,6 +4320,17 @@
       beginTimelineReplay();
       setStatus('idle');
       eventSource = new EventSource(eventsStreamUrl());
+      eventSource.addEventListener('stream_unavailable', msg => {
+        if (generation !== eventSourceGeneration) return;
+        let reason = 'upstream_events_unavailable';
+        try {
+          const parsed = JSON.parse(msg.data);
+          if (parsed && (parsed.reason === 'event_stream_unavailable' || parsed.reason === 'view_identity_unresolved')) reason = parsed.reason;
+        } catch (_) {}
+        streamUnavailableReason = reason;
+        closeEventStream();
+        scheduleReconnect();
+      });
       eventSource.addEventListener('replay_gap', msg => {
         if (generation !== eventSourceGeneration) return;
         handleReplayGap(msg);
@@ -4312,6 +4342,9 @@
         //    (REPLAY_HARD_LIMIT_MS)是从 arm 那一刻起算的,而 backoff 最长 30s ⇒
         //    提前 arm 会让窗口在重放到达之前就过期,等于没修。
         // R-V2-0105 件一：已收到过带序号的事件 ⇒ 本次连接带 after、Hub 只补缺口，不需要清空窗口。
+        // A sequenced stream reconnects with an after cursor and retains its
+        // rendered suffix. The legacy unsequenced fallback keeps its existing
+        // replay-reset behavior, including after a reasoned refusal.
         if (streamEverOpened && streamHasAcceptedEvent && !seqStreamSeen) markStreamReconnect();
         streamEverOpened = true;
         opened = true;
