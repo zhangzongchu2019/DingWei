@@ -260,3 +260,26 @@ func TestHelperUpdateKeysAreNamespaced(t *testing.T) {
 		t.Fatalf("job key=%q want %q", got, want)
 	}
 }
+
+func TestListHelperUpdateCatalogsAndOwnerJobsFilter(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	digest := strings.Repeat("9", 64)
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	if err := h.RegisterHelperUpdateCatalog(ctx, "ops", catalog); err != nil {
+		t.Fatal(err)
+	}
+	items, err := h.ListHelperUpdateCatalogs(ctx)
+	if err != nil || len(items) != 1 || items[0].SHA256 != digest {
+		t.Fatalf("catalogs=%+v err=%v", items, err)
+	}
+	if _, err := h.createHelperUpdateJob(ctx, catalog, "agent-1", "owner-a", "a", "owner-a"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.createHelperUpdateJob(ctx, catalog, "agent-2", "owner-b", "b", "owner-b"); err != nil {
+		t.Fatal(err)
+	}
+	jobs, err := h.ListHelperUpdateJobsForOwner(ctx, "owner-a")
+	if err != nil || len(jobs) != 1 || jobs[0].AgentID != "agent-1" {
+		t.Fatalf("jobs=%+v err=%v", jobs, err)
+	}
+}

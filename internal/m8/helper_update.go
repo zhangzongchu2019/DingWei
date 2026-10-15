@@ -57,6 +57,10 @@ type helperUpdateJob struct {
 	Revision    int       `json:"revision"`
 }
 
+// HelperUpdateJob is the read-only Console projection of a durable job. The
+// only state-changing public entry remains IssueHelperUpdateForActor.
+type HelperUpdateJob = helperUpdateJob
+
 func HelperUpdateCatalogKey(sha string) string {
 	return HelperUpdateCatalogPrefix + strings.ToLower(strings.TrimSpace(sha))
 }
@@ -148,6 +152,55 @@ func (h *Hub) HelperUpdateCatalog(ctx context.Context, sha string) (*HelperUpdat
 		return &catalog, nil
 	}
 	return nil, nil
+}
+
+// ListHelperUpdateCatalogs exposes only valid, operator-registered releases;
+// callers never receive a route for creating arbitrary catalog URLs.
+func (h *Hub) ListHelperUpdateCatalogs(ctx context.Context) ([]HelperUpdateCatalog, error) {
+	if h.Repo == nil {
+		return nil, fmt.Errorf("helper update repository unavailable")
+	}
+	rows, err := h.Repo.ListAppConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list helper update catalogs: %w", err)
+	}
+	items := make([]HelperUpdateCatalog, 0)
+	for _, row := range rows {
+		if !strings.HasPrefix(row.Key, HelperUpdateCatalogPrefix) {
+			continue
+		}
+		var catalog HelperUpdateCatalog
+		if err := json.Unmarshal([]byte(row.ValueJSON), &catalog); err != nil {
+			continue
+		}
+		if validateHelperUpdateCatalog(catalog) == nil {
+			items = append(items, catalog)
+		}
+	}
+	return items, nil
+}
+
+// ListHelperUpdateJobsForOwner is a server-side ownership filter for Console
+// status pages. A caller still authenticates the actor before invoking it.
+func (h *Hub) ListHelperUpdateJobsForOwner(ctx context.Context, ownerID string) ([]HelperUpdateJob, error) {
+	if h.Repo == nil {
+		return nil, fmt.Errorf("helper update repository unavailable")
+	}
+	rows, err := h.Repo.ListAppConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list helper update jobs: %w", err)
+	}
+	items := make([]HelperUpdateJob, 0)
+	for _, row := range rows {
+		if !strings.HasPrefix(row.Key, helperUpdateJobPrefix) {
+			continue
+		}
+		var job helperUpdateJob
+		if err := json.Unmarshal([]byte(row.ValueJSON), &job); err == nil && job.OwnerID == strings.TrimSpace(ownerID) {
+			items = append(items, job)
+		}
+	}
+	return items, nil
 }
 
 func (h *Hub) helperUpdateJob(ctx context.Context, agentID string) (*helperUpdateJob, string, error) {
