@@ -1,0 +1,143 @@
+{
+  "source_commit": "16f86731346667b33bd94f2bc2d839021788a957",
+  "source_tree": "78b9b0828cac2a9103e0c595eac6170bbd680d56",
+  "assets": [
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/REPORT.md",
+      "bytes": 3160,
+      "sha256": "06eebb0d49505a976f7c2e775055153635061919d374271e77a3086d82ff9bfe"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/affected-full-race.log.txt",
+      "bytes": 78468,
+      "sha256": "b18b7d022b8d235c097ccfab09b32537dc943103bafa7fe4c470e66287dfd680"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/canonical-build.log.txt",
+      "bytes": 35243,
+      "sha256": "a15b8828127dd69fda7e179754fdde41778806c7209289c310ca7c46809b06e4"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/doorA-current.txt",
+      "bytes": 26798,
+      "sha256": "4c7b45af8b8b0f4f950a1eae23ddda12175a5ae4daf0d67110910e87a456f859"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/doorA-parent.txt",
+      "bytes": 26750,
+      "sha256": "ea1766cb001d2cc60f0235d3b3b4725f4f18776847b1102af88651785f4356cd"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/doorA.diff.txt",
+      "bytes": 1954,
+      "sha256": "45e6cfb1db8316006eb8cb3fc38b30ff62a16587f480f0325adf4d136ac1ba43"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/targeted.log.txt",
+      "bytes": 125,
+      "sha256": "1a6e010a785370687b6be970406e6a17afdce4f5aa3347cf27c9a2b51b82296d"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/withdraw-download-draft-compile.log.txt",
+      "bytes": 434,
+      "sha256": "e9777e62fd027a5324fb62eb6dc1d2b1a046f6b6680cb4a398cbc247f4d24c40"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/withdraw-download.log.txt",
+      "bytes": 233,
+      "sha256": "a4e9912a7df2a4c554f4c14c16de2f7efdc66365494a9815c016cdc3c3ae3441"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/withdraw-package.log.txt",
+      "bytes": 512,
+      "sha256": "a40654ace6cdee1c0b255a829d598d1dd6e684aa4798c26a2c7f76d2d5029ef8"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/withdraw-upload-before-read.log.txt",
+      "bytes": 541,
+      "sha256": "afbed2f7a53cbb936715857b4110220b894a97a4f6a6635076f654435c3573e3"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/withdraw-upload-ui.log.txt",
+      "bytes": 501,
+      "sha256": "263d33d2e90f518c5cea5e68fed73b56cc1fe351f7e1d586fdda9c8d4f7ab6b0"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/withdrawal-runner.py",
+      "bytes": 2426,
+      "sha256": "6b14006bd56ca03631b76e96db9c8d5c98e5bb27ede7d8aa49188115076f1849"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/withdrawal-summary.json",
+      "bytes": 555,
+      "sha256": "6189fb0d5a3ced551997a548e8b39ab176cfb39c1ee281998e76b3163f773184"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/retirement/.gitattributes",
+      "bytes": 114,
+      "sha256": "038a2b6e89cdff5b1af0d4aa37d1c31f38a7e8937c3a498a9439d5efd40b5a9e"
+    }
+  ],
+  "source_pins": [
+    {
+      "path": "cmd/workpulse/main.go",
+      "bytes": 37966,
+      "sha256": "49959937b448f2cec04c1feb2a241147e061cd75433e8af27f5167fcd731d5ba"
+    },
+    {
+      "path": "cmd/workpulse/main_test.go",
+      "bytes": 28400,
+      "sha256": "32cc59fd19bdfda71c7a63a422c6b8fd6cc342e74653f52193ce84f5d7d735f8"
+    },
+    {
+      "path": "cmd/workpulse/provision_retired.go",
+      "bytes": 431,
+      "sha256": "d5415ad4ca27bde7107f348c093dabecd6a75f8b35eade253ecdfc3a08b7bf16"
+    },
+    {
+      "path": "docs/effective-config-audit.md",
+      "bytes": 2959,
+      "sha256": "6e58eade8b0027efa67670f7d156bc14b66ce0dfbcc5e1a38c57f1988787b99d"
+    },
+    {
+      "path": "docs/operator/helper-update-delivery.md",
+      "bytes": 2347,
+      "sha256": "189c14ff066757618f46fd7c2e68cc2673f1b1b457135b86aa064545de30dec8"
+    },
+    {
+      "path": "docs/v0.1/provision-sender-test-plan-zzc-tester.md",
+      "bytes": 8295,
+      "sha256": "3da906ae2c97935610b2b2a442e48d47020b8316d0e1f24c07b43b864cbab783"
+    },
+    {
+      "path": "docs/v0.1/provision-sender-test-report-zzc-tester.md",
+      "bytes": 4930,
+      "sha256": "92d2163831343cb68b8f4eb9285a74b463a20bf6cd7e5ade01d5d6f0140edfcc"
+    },
+    {
+      "path": "docs/v0.1/sessionHelper-provision-\u53d1\u9001\u65b9-spec.md",
+      "bytes": 3459,
+      "sha256": "b998ebb60cf3946350da2d45fbb2b9c533ee6c5976fac06037e0ec8aeae18b9d"
+    },
+    {
+      "path": "docs/v0.1/sessionHelper-provision-\u901a\u9053-spec.md",
+      "bytes": 4685,
+      "sha256": "9ab33fbda77dba59839427330a96d0ca750174a279b90eaeab36790b794f90b7"
+    },
+    {
+      "path": "docs/v0.1/\u81ea\u52a9\u7533\u8bf7key-spec.md",
+      "bytes": 4675,
+      "sha256": "c7e70571af1cc0d4de22aa5169d7c944b478fdbb8d39eb75ab2bb7342eb894ce"
+    },
+    {
+      "path": "internal/admin/admin.go",
+      "bytes": 119560,
+      "sha256": "bfcb54ba222da1315603213d74b8463695a21b7f7dc69161835f3e0c95c31982"
+    },
+    {
+      "path": "internal/admin/admin_test.go",
+      "bytes": 53031,
+      "sha256": "fdf66853ea40bfc06a5751f9b52018d74218291956136655c896fd7bdf7615aa"
+    }
+  ]
+}
