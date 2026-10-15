@@ -12,6 +12,9 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
+	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
 const (
@@ -189,4 +192,70 @@ func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog helperUpdateCat
 		return nil, err
 	}
 	return &job, nil
+}
+
+// IssueHelperUpdate creates one durable, target-bound offer and delivers it to
+// the authenticated Agent's current session.  The Console authorization check
+// is intentionally outside this primitive; it supplies issuer only after
+// proving owner/manager scope.  We still re-check the target Agent and owner
+// here so a stale Console page cannot offer to disabled identities.
+func (h *Hub) IssueHelperUpdate(ctx context.Context, agentID, releaseSHA, issuer string) (*helperUpdateJob, error) {
+	if h.Identity == nil {
+		return nil, fmt.Errorf("helper update identity unavailable")
+	}
+	ag, err := h.Identity.Store.GetAgent(ctx, strings.TrimSpace(agentID))
+	if err != nil || ag == nil || ag.State != identity.AgentActive {
+		return nil, fmt.Errorf("helper update agent inactive")
+	}
+	owner, err := h.Identity.Store.GetUser(ctx, ag.OwnerLC)
+	if err != nil || owner == nil || owner.State != identity.UserActive {
+		return nil, fmt.Errorf("helper update owner inactive")
+	}
+	catalog, err := h.helperUpdateCatalog(ctx, releaseSHA)
+	if err != nil {
+		return nil, err
+	}
+	if catalog == nil {
+		return nil, fmt.Errorf("helper update release unavailable")
+	}
+	job, err := h.createHelperUpdateJob(ctx, *catalog, ag.ID, ag.OwnerLC, ag.NameLC(), issuer)
+	if err != nil {
+		return nil, err
+	}
+	keyID := AgentKeyID(ag.OwnerLC)
+	h.mu.Lock()
+	c := h.sessionClients[keyID][ag.NameLC()]
+	h.mu.Unlock()
+	if c == nil {
+		return job, nil // durable offered state is recovered on the next session.
+	}
+	if err := h.sendHelperUpdateOffer(ctx, c, job); err != nil {
+		return job, err
+	}
+	return job, nil
+}
+
+func (h *Hub) sendHelperUpdateOffer(ctx context.Context, c *sessionClient, job *helperUpdateJob) error {
+	meta := map[string]any{
+		"type":        "provision",
+		"system":      true,
+		"no_mirror":   true,
+		"action":      "update_self",
+		"target":      "self",
+		"job_id":      job.JobID,
+		"release_id":  job.ReleaseID,
+		"agent_id":    job.AgentID,
+		"owner_id":    job.OwnerID,
+		"agent_name":  job.AgentName,
+		"version":     job.Version,
+		"sha256":      job.SHA256,
+		"lock_sha256": job.LockSHA256,
+		"url":         job.URL,
+		"platform":    job.Platform,
+		"expires_at":  job.ExpiresAt.UTC().Format(time.RFC3339),
+	}
+	return c.write(ctx, model.Envelope{
+		ID: randomHex(16), To: sessionAddress(c.sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID),
+		TS: time.Now().Unix(), Meta: meta,
+	})
 }

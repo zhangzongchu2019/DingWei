@@ -4,6 +4,9 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
 func TestHelperUpdateCatalogValidation(t *testing.T) {
@@ -50,6 +53,40 @@ func TestHelperUpdateCatalogAndJobAreDurableAndSingleUse(t *testing.T) {
 	stored, _, err := h.helperUpdateJob(ctx, "agent-1")
 	if err != nil || stored == nil || stored.JobID != job.JobID {
 		t.Fatalf("stored=%+v err=%v", stored, err)
+	}
+}
+
+func TestIssueHelperUpdateSendsTrustedTargetBoundOffer(t *testing.T) {
+	e := newAgentEnv(t)
+	digest := strings.Repeat("d", 64)
+	catalog := helperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
+		t.Fatal(err)
+	}
+	conn, _, body := e.dial(e.cred, "version=0.2.3.0")
+	if conn == nil {
+		t.Fatalf("dial: %s", body)
+	}
+	defer conn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	job, err := e.hub.IssueHelperUpdate(e.ctx, e.agID, digest, "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	offer := e.readEnvUntil(conn, time.Second, func(env model.Envelope) bool {
+		return metaString(env.Meta, "action") == "update_self"
+	})
+	if offer == nil {
+		t.Fatal("missing update offer")
+	}
+	if got, want := metaString(offer.Meta, "job_id"), job.JobID; got != want {
+		t.Fatalf("job id=%q want %q", got, want)
+	}
+	if got, want := metaString(offer.Meta, "owner_id"), "zzc"; got != want {
+		t.Fatalf("owner id=%q want %q", got, want)
+	}
+	if got, want := offer.From, "workpulse#u_zzc"; got != want {
+		t.Fatalf("offer source=%q want %q", got, want)
 	}
 }
 
