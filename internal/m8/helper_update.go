@@ -56,7 +56,11 @@ type helperUpdateJob struct {
 	Reason            string    `json:"reason,omitempty"`
 	ExpiresAt         time.Time `json:"expires_at"`
 	HealthNonce       string    `json:"health_nonce"`
-	Revision          int       `json:"revision"`
+	// OfferConnSeq is the authenticated connection that first received this
+	// offer. Health may only confirm from a later connection, after the helper
+	// has restarted into the staged slot; it is never client supplied.
+	OfferConnSeq int `json:"offer_conn_seq"`
+	Revision     int `json:"revision"`
 }
 
 // HelperUpdateJob is the read-only Console projection of a durable job. The
@@ -383,10 +387,40 @@ func (h *Hub) IssueHelperUpdate(ctx context.Context, principalID, agentID, relea
 	if c == nil {
 		return job, nil // durable offered state is recovered on the next session.
 	}
+	job, err = h.recordHelperUpdateOfferConnection(ctx, c, job)
+	if err != nil {
+		return job, err
+	}
 	if err := h.sendHelperUpdateOffer(ctx, c, job); err != nil {
 		return job, err
 	}
 	return job, nil
+}
+
+// recordHelperUpdateOfferConnection freezes the connection which received the
+// first offer. A reconnect may receive a replay, but must not overwrite this
+// boundary: confirmation must prove a later authenticated connection.
+func (h *Hub) recordHelperUpdateOfferConnection(ctx context.Context, c *sessionClient, job *helperUpdateJob) (*helperUpdateJob, error) {
+	if c == nil || job == nil || job.OfferConnSeq > 0 {
+		return job, nil
+	}
+	stored, raw, err := h.helperUpdateJob(ctx, job.AgentID)
+	if err != nil || stored == nil {
+		return nil, fmt.Errorf("helper update offer job unavailable: %w", err)
+	}
+	if stored.JobID != job.JobID || helperUpdateTerminal(stored.Stage) {
+		return stored, fmt.Errorf("helper update offer no longer active")
+	}
+	updated := *stored
+	updated.OfferConnSeq = c.connSeq
+	ok, err := h.updateHelperUpdateJob(ctx, raw, updated)
+	if err != nil {
+		return stored, err
+	}
+	if !ok {
+		return stored, fmt.Errorf("helper update offer changed concurrently")
+	}
+	return &updated, nil
 }
 
 // IssueHelperUpdateForActor is retained while callers move to the frozen
@@ -438,10 +472,12 @@ func (h *Hub) confirmHelperUpdateHealth(ctx context.Context, c *sessionClient, e
 	// All fields are echoed by the helper, but all identity-sensitive values are
 	// compared with the durable job and authenticated connection, never trusted
 	// because they appeared in the incoming envelope.
-	if h.now().UTC().After(job.ExpiresAt) || job.Stage == "confirmed" ||
+	if h.now().UTC().After(job.ExpiresAt) || helperUpdateTerminal(job.Stage) || job.OfferConnSeq <= 0 || c.connSeq <= job.OfferConnSeq ||
 		job.AgentID != c.metricsAgentID || job.OwnerID != strings.TrimPrefix(c.keyID, "u_") ||
 		job.AgentName != c.sessionName || c.version != job.Version ||
 		metaString(env.Meta, "job_id") != job.JobID || metaString(env.Meta, "release_id") != job.ReleaseID ||
+		metaString(env.Meta, "agent_id") != job.AgentID || metaString(env.Meta, "owner_id") != job.OwnerID ||
+		metaString(env.Meta, "version") != job.Version ||
 		metaString(env.Meta, "sha256") != job.SHA256 || metaString(env.Meta, "lock_sha256") != job.LockSHA256 ||
 		metaString(env.Meta, "health_nonce") != job.HealthNonce {
 		return true
@@ -616,6 +652,11 @@ func (h *Hub) resumeHelperUpdateOffer(ctx context.Context, c *sessionClient) {
 			h.writeHelperUpdateAudit(ctx, "workpulse", "helper_update_failed", job, "offer_expired")
 		}
 		return
+	}
+	// The persisted first-offer connection is deliberately retained: this is a
+	// replay for recovery, not evidence that a candidate restarted on c.
+	if updated, err := h.recordHelperUpdateOfferConnection(ctx, c, job); err == nil {
+		job = updated
 	}
 	_ = h.sendHelperUpdateOffer(ctx, c, job)
 }

@@ -87,6 +87,14 @@ func rawForJob(t *testing.T, h *Hub, ctx context.Context, agentID string) string
 	return raw
 }
 
+func helperUpdateHealthMeta(job *helperUpdateJob) map[string]any {
+	return map[string]any{
+		"type": "helper_update_health", "job_id": job.JobID, "release_id": job.ReleaseID,
+		"agent_id": job.AgentID, "owner_id": job.OwnerID, "version": job.Version,
+		"sha256": job.SHA256, "lock_sha256": job.LockSHA256, "health_nonce": job.HealthNonce,
+	}
+}
+
 func TestIssueHelperUpdateSendsTrustedTargetBoundOffer(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("d", 64)
@@ -161,7 +169,7 @@ func TestIssueHelperUpdateDefersUntilHelperUpdateCapability(t *testing.T) {
 	}
 }
 
-func TestHelperUpdateHealthRequiresFreshAuthenticatedTuple(t *testing.T) {
+func TestHelperUpdateHealthRequiresFreshAuthenticatedConnection(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("e", 64)
 	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
@@ -172,7 +180,6 @@ func TestHelperUpdateHealthRequiresFreshAuthenticatedTuple(t *testing.T) {
 	if conn == nil {
 		t.Fatalf("dial: %s", body)
 	}
-	defer conn.CloseNow()
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
 	e.sendEnv(conn, model.Envelope{ID: "caps-health", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
 	waitFor(t, time.Second, "helper update capability", func() bool {
@@ -185,16 +192,35 @@ func TestHelperUpdateHealthRequiresFreshAuthenticatedTuple(t *testing.T) {
 	if e.readEnvUntil(conn, time.Second, func(env model.Envelope) bool { return metaString(env.Meta, "job_id") == job.JobID }) == nil {
 		t.Fatal("missing update offer")
 	}
-	e.sendEnv(conn, model.Envelope{ID: "health-" + randomHex(4), From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{
-		"type": "helper_update_health", "job_id": job.JobID, "release_id": job.ReleaseID, "sha256": job.SHA256,
-		"lock_sha256": job.LockSHA256, "health_nonce": job.HealthNonce,
-	}})
+	// The offer connection cannot confirm itself: the candidate must restart and
+	// reconnect with a later authenticated endpoint sequence.
+	e.sendEnv(conn, model.Envelope{ID: "health-same-" + randomHex(4), From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: helperUpdateHealthMeta(job)})
+	if got := e.readEnvUntil(conn, 100*time.Millisecond, func(env model.Envelope) bool { return metaString(env.Meta, "type") == "helper_update_confirm" }); got != nil {
+		t.Fatalf("same offer connection confirmed: %+v", got)
+	}
+	stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
+	if err != nil || stored == nil || stored.Stage != "offered" {
+		t.Fatalf("same connection changed job: %+v err=%v", stored, err)
+	}
+	conn.CloseNow()
+
+	conn, _, body = e.dial(e.cred, "version=0.2.3.1")
+	if conn == nil {
+		t.Fatalf("redial: %s", body)
+	}
+	defer conn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	e.sendEnv(conn, model.Envelope{ID: "caps-health-reconnected", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "helper update capability after reconnect", func() bool {
+		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+	})
+	e.sendEnv(conn, model.Envelope{ID: "health-fresh-" + randomHex(4), From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: helperUpdateHealthMeta(job)})
 	confirm := e.readEnvUntil(conn, time.Second, func(env model.Envelope) bool { return metaString(env.Meta, "type") == "helper_update_confirm" })
 	if confirm == nil || metaString(confirm.Meta, "health_nonce") != job.HealthNonce {
 		t.Fatalf("missing exact confirmation: %+v", confirm)
 	}
-	stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
-	if err != nil || stored == nil || stored.Stage != "confirmed" || stored.Revision != 2 {
+	stored, _, err = e.hub.helperUpdateJob(e.ctx, e.agID)
+	if err != nil || stored == nil || stored.Stage != "confirmed" || stored.Revision != 3 {
 		t.Fatalf("stored=%+v err=%v", stored, err)
 	}
 }
@@ -220,12 +246,11 @@ func TestHelperUpdateHealthRejectsWrongNonce(t *testing.T) {
 	if e.readEnvUntil(conn, time.Second, func(env model.Envelope) bool { return metaString(env.Meta, "job_id") == job.JobID }) == nil {
 		t.Fatal("missing update offer")
 	}
-	e.sendEnv(conn, model.Envelope{ID: "health-bad-" + randomHex(4), From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{
-		"type": "helper_update_health", "job_id": job.JobID, "release_id": job.ReleaseID, "sha256": job.SHA256,
-		"lock_sha256": job.LockSHA256, "health_nonce": "wrong",
-	}})
+	bad := helperUpdateHealthMeta(job)
+	bad["health_nonce"] = "wrong"
+	e.sendEnv(conn, model.Envelope{ID: "health-bad-" + randomHex(4), From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: bad})
 	stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
-	if err != nil || stored == nil || stored.Stage != "offered" || stored.Revision != 1 {
+	if err != nil || stored == nil || stored.Stage != "offered" || stored.Revision != 2 {
 		t.Fatalf("wrong nonce changed job: %+v err=%v", stored, err)
 	}
 }
@@ -257,7 +282,7 @@ func TestHelperUpdateReceiptUsesAuthenticatedJobTuple(t *testing.T) {
 	}})
 	waitFor(t, time.Second, "durable download receipt", func() bool {
 		stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
-		return err == nil && stored != nil && stored.Stage == "downloaded" && stored.Revision == 2
+		return err == nil && stored != nil && stored.Stage == "downloaded" && stored.Revision == 3
 	})
 }
 
@@ -293,8 +318,65 @@ func TestHelperUpdateReceiptNeverRegressesStage(t *testing.T) {
 		return err == nil && stored != nil && stored.Stage == "restarted"
 	})
 	stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
-	if err != nil || stored.Revision != 2 {
+	if err != nil || stored.Revision != 3 {
 		t.Fatalf("stale receipt changed revision: %+v err=%v", stored, err)
+	}
+}
+
+func TestHelperUpdateHealthNeverResurrectsTerminalJob(t *testing.T) {
+	e := newAgentEnv(t)
+	digest := strings.Repeat("7", 64)
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
+	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
+		t.Fatal(err)
+	}
+	conn, _, _ := e.dial(e.cred, "version=0.2.3.1")
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	e.sendEnv(conn, model.Envelope{ID: "caps-terminal", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "helper update capability", func() bool {
+		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+	})
+	job, err := e.hub.IssueHelperUpdate(e.ctx, "zzc", e.agID, digest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.readEnvUntil(conn, time.Second, func(env model.Envelope) bool { return metaString(env.Meta, "job_id") == job.JobID }) == nil {
+		t.Fatal("missing update offer")
+	}
+	stored, raw, err := e.hub.helperUpdateJob(e.ctx, e.agID)
+	if err != nil || stored == nil {
+		t.Fatalf("job=%+v err=%v", stored, err)
+	}
+	stored.Stage, stored.Reason = "failed", "sha_mismatch"
+	if ok, err := e.hub.updateHelperUpdateJob(e.ctx, raw, *stored); err != nil || !ok {
+		t.Fatalf("terminal setup ok=%v err=%v", ok, err)
+	}
+	conn.CloseNow()
+	conn, _, _ = e.dial(e.cred, "version=0.2.3.1")
+	defer conn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	e.sendEnv(conn, model.Envelope{ID: "caps-terminal-reconnect", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "helper update capability after reconnect", func() bool {
+		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+	})
+	e.sendEnv(conn, model.Envelope{ID: "health-terminal-" + randomHex(4), From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: helperUpdateHealthMeta(job)})
+	if got := e.readEnvUntil(conn, 100*time.Millisecond, func(env model.Envelope) bool { return metaString(env.Meta, "type") == "helper_update_confirm" }); got != nil {
+		t.Fatalf("terminal job resurrected: %+v", got)
+	}
+	stored, _, err = e.hub.helperUpdateJob(e.ctx, e.agID)
+	if err != nil || stored == nil || stored.Stage != "failed" {
+		t.Fatalf("terminal job changed: %+v err=%v", stored, err)
+	}
+}
+
+func TestHelperUpdateTerminalStagesIncludeRollback(t *testing.T) {
+	for _, stage := range []string{"confirmed", "failed", "rolled_back"} {
+		if !helperUpdateTerminal(stage) {
+			t.Fatalf("terminal stage %q was accepted for resurrection", stage)
+		}
+	}
+	if helperUpdateTerminal("restarted") {
+		t.Fatal("nonterminal restarted stage treated as terminal")
 	}
 }
 

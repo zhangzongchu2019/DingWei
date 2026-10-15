@@ -32,6 +32,11 @@ first send `session_capabilities.helper_update_v1=true`; otherwise the Hub
 returns `helper_update_manual_required` and creates no offer.
 
 `provision_ack` records only ordered lifecycle stages. A
-`helper_update_health` echo of the frozen tuple and `health_nonce` is accepted
-only on the fresh authenticated endpoint reporting the offered version; the
-Hub responds with trusted `helper_update_confirm` echoing that tuple.
+`helper_update_health` must echo `job_id`, `release_id`, `agent_id`,
+`owner_id`, `version`, `sha256`, `lock_sha256`, and the exact offer-issued
+`health_nonce`. It is accepted only on an authenticated connection with a
+strictly later Hub connection sequence than the connection that first received
+the offer, reporting the offered version. A replayed offer never resets that
+boundary. Failed, rolled-back, and confirmed jobs are terminal and cannot be
+confirmed again. The Hub responds with trusted `helper_update_confirm` echoing
+the identical tuple and nonce.
