@@ -1,0 +1,3 @@
+[helper-update] confirmation_rejected
+[helper-update] confirmation_rejected
+actual helper packets captured; synthetic Hub echo only

@@ -193,6 +193,9 @@ class OfferTests(unittest.TestCase):
             lock.write_bytes(original_lock+b'\n# changed while stopped\n')
             with self.assertRaisesRegex(UpdateRejected,'lock_changed'):reopened().health()
             lock.write_bytes(original_lock)
+            lock.unlink()
+            with self.assertRaisesRegex(UpdateRejected,'lock_changed'):reopened().health()
+            lock.write_bytes(original_lock)
             for field in ('job_id','lock_sha256'):
                 binding=json.loads(original);binding[field]='changed';marker.write_text(json.dumps(binding))
                 with self.assertRaisesRegex(UpdateRejected,'lock_changed'):reopened().health()
@@ -322,6 +325,91 @@ class AppDispatchTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(asyncio.TimeoutError):
             await asyncio.wait_for(status_loop(self.helper,self.ws),0.03)
         self.assertEqual(self.sent,[])
+
+
+async def capture_wire_packet_fixtures():
+    """Actual helper serializers/dispatch; synthetic Hub echo, not Hub E2E."""
+    import asyncio
+    from types import SimpleNamespace
+    from sessionhelper.protocol import envelope
+
+    async def capture_status(case):
+        case.helper.enroll_credential='synthetic'
+        case.ws.response=SimpleNamespace(headers={'X-DW-Helper-Update':'helper-update/v1'})
+        delivered=asyncio.Event()
+        async def send(value):case.sent.append(json.loads(value));delivered.set()
+        case.ws.send=send
+        task=asyncio.create_task(runtime.status_loop(case.helper,case.ws))
+        try:await asyncio.wait_for(delivered.wait(),1)
+        finally:
+            task.cancel()
+            try:await task
+            except asyncio.CancelledError:pass
+        return copy.deepcopy(case.sent[-1])
+
+    case=AppDispatchTests(methodName='runTest')
+    await case.asyncSetUp()
+    try:
+        await case.app.handle_helper_update(case.helper,case.ws,case.fixture.env)
+        downloaded,installed=copy.deepcopy(case.sent)
+        case.fixture.updater.state.select()
+        with patch.object(runtime,'__version__','0.2.3.2'):
+            health=await capture_status(case)
+            confirm=envelope(case.helper.book.self_addr,'',case.fixture.env['from'],
+                             {**health['meta'],'type':'helper_update_confirm','system':True})
+            negatives={}
+            for label in ('missing_lock','wrong_lock'):
+                packet=copy.deepcopy(confirm)
+                if label=='missing_lock':packet['meta'].pop('lock_sha256')
+                else:packet['meta']['lock_sha256']='0'*64
+                before=len(case.sent)
+                try:case.fixture.updater.confirm(packet)
+                except UpdateRejected as exc:reason=str(exc)
+                else:raise AssertionError('invalid lock confirmation accepted')
+                if reason!='confirmation_mismatch':raise AssertionError('unexpected rejection code')
+                await case.app.handle_update_confirmation(case.helper,case.ws,packet)
+                if len(case.sent)!=before:raise AssertionError('invalid confirmation emitted a receipt')
+                if case.fixture.updater.state.read()['pending'] is None:raise AssertionError('invalid confirmation mutated pending')
+                negatives[label]={'packet':packet,'rejected':reason,'emitted_receipts':0,'pending_preserved':True}
+            await case.app.handle_update_confirmation(case.helper,case.ws,confirm)
+            confirmed=copy.deepcopy(case.sent[-1])
+            if confirmed['meta'].get('stage')!='confirmed':raise AssertionError('valid echo not confirmed')
+    finally:case.doCleanups()
+
+    rollback_case=AppDispatchTests(methodName='runTest')
+    await rollback_case.asyncSetUp()
+    try:
+        rollback_case.fixture.env['meta']['job_id']='job-synthetic-rollback'
+        await rollback_case.app.handle_helper_update(rollback_case.helper,rollback_case.ws,rollback_case.fixture.env)
+        rollback_meta=rollback_case.fixture.env['meta']
+        rollback_case.fixture.updater.state.fail(rollback_meta)
+        rolled_back=await capture_status(rollback_case)
+        if rolled_back['meta'].get('stage')!='rolled_back':raise AssertionError('rollback serializer missing')
+    finally:rollback_case.doCleanups()
+    return {'provenance':{'boundary':'real helper dispatch/serializer + loopback package HTTP; synthetic trusted Hub confirm',
+                          'runtime_version_fixture':'0.2.3.2','real_hub':False,'real_docker':False},
+            'downloaded_receipt':downloaded,'installed_receipt':installed,
+            'health':health,'synthetic_hub_confirmation':confirm,'confirmed_receipt':confirmed,
+            'rollback_receipt':rolled_back,'negative_confirmations':negatives}
+
+
+class PacketFixtureTests(unittest.IsolatedAsyncioTestCase):
+    async def test_actual_serializers_and_missing_wrong_lock_confirmations(self):
+        packets=await capture_wire_packet_fixtures()
+        lock=packets['health']['meta']['lock_sha256']
+        self.assertRegex(lock,r'^[0-9a-f]{64}$')
+        for label in ('downloaded_receipt','installed_receipt','confirmed_receipt'):
+            meta=packets[label]['meta']
+            self.assertEqual(meta['lock_sha256'],lock)
+            for field in runtime.FIELDS:self.assertEqual(meta[field],packets['health']['meta'][field])
+        self.assertEqual(packets['synthetic_hub_confirmation']['meta']['health_nonce'],packets['health']['meta']['health_nonce'])
+        self.assertRegex(packets['rollback_receipt']['meta']['lock_sha256'],r'^[0-9a-f]{64}$')
+        self.assertEqual(packets['rollback_receipt']['meta']['stage'],'rolled_back')
+        for value in packets['negative_confirmations'].values():
+            self.assertEqual(value['rejected'],'confirmation_mismatch')
+            self.assertEqual(value['emitted_receipts'],0)
+            self.assertTrue(value['pending_preserved'])
+        self.assertNotIn('SYNTHETIC_NOT_TRANSMITTED',json.dumps(packets))
 
 
 if __name__ == '__main__':

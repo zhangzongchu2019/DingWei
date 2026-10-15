@@ -1,0 +1,59 @@
+{
+  "source_commit": "db18de7e1477250dc3df263769ed6e7e85c96805",
+  "source_tree": "5fece4bd7d48d664aabad6ef5d2d36d127cd5eec",
+  "runtime_source_commit": "8f2adda26ba4e3adb6034b8d0d8fc46ac24d1f88",
+  "assets": [
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-packets/.gitattributes",
+      "bytes": 22,
+      "sha256": "9f4d0a982bf7cce378dce4fe0be69771bf6428ec8a9e2634fde23828e59cbb5a"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-packets/PACKETS.json",
+      "bytes": 7073,
+      "sha256": "6f8dbc4e48148352dfa9b81659a8333fba69d709cc48351989693e95fd0c5bcb"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-packets/REPORT.md",
+      "bytes": 2415,
+      "sha256": "3dc1a02a8cc6a5e7decb859402f0df8a9140c0b2ae7d565a7e4d56e8231e8e0c"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-packets/capture.log.txt",
+      "bytes": 132,
+      "sha256": "c2014cb7030aac5e119c4abf25c64997a48c07b9ccf503b517d96d7dbc44d00e"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-packets/capture.py",
+      "bytes": 684,
+      "sha256": "161f75e16bfec9cf77ed449668c7c44f7530db8c37182090b914a6fc345fb795"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-packets/targeted.log.txt",
+      "bytes": 3774,
+      "sha256": "0458fefff4ce8ead97fc56daa4abc052fd4550334171495e92f99034be0aceea"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/wire-packets/withdraw-lock-confirm.log.txt",
+      "bytes": 2493,
+      "sha256": "4a112181599b437f99e424f4d5bbbbd096e00658ced88e0cfee40212cc002fff"
+    }
+  ],
+  "source_pins": [
+    {
+      "path": "tools/sessionhelper/sessionhelper/self_update.py",
+      "bytes": 17275,
+      "sha256": "5a490e7dfc9a29d49f839b6fd544e29bef8abf4cf6b328a2da2a9beeecfd360e"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_self_update_offer.py",
+      "bytes": 23403,
+      "sha256": "9cbbf70d0f1853778e0b91e7283551b611677b2c3884081828f169dc159e5f20"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update/RUNTIME-CONTRACT.md",
+      "bytes": 13646,
+      "sha256": "1ad315d64e3a18b4104bad605ddf935c70b4d1605f19c60e2e0a78635f672500"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+test_actual_serializers_and_missing_wrong_lock_confirmations (tools.sessionhelper.tests.test_self_update_offer.PacketFixtureTests.test_actual_serializers_and_missing_wrong_lock_confirmations) ... Executing <Task pending name='Task-2' coro=<PacketFixtureTests.test_actual_serializers_and_missing_wrong_lock_confirmations() running at /data/ai-dev-data/helper-self-update/tools/sessionhelper/tests/test_self_update_offer.py:398> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/lib/python3.12/asyncio/futures.py:387, Task.task_wakeup()] created at /usr/lib/python3.12/asyncio/base_events.py:449> cb=[_run_until_complete_cb() at /usr/lib/python3.12/asyncio/base_events.py:182] created at /usr/lib/python3.12/asyncio/runners.py:100> took 0.102 seconds
+FAIL
+
+======================================================================
+FAIL: test_actual_serializers_and_missing_wrong_lock_confirmations (tools.sessionhelper.tests.test_self_update_offer.PacketFixtureTests.test_actual_serializers_and_missing_wrong_lock_confirmations)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-self-update/tools/sessionhelper/tests/test_self_update_offer.py", line 398, in test_actual_serializers_and_missing_wrong_lock_confirmations
+    packets=await capture_wire_packet_fixtures()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-self-update/tools/sessionhelper/tests/test_self_update_offer.py", line 368, in capture_wire_packet_fixtures
+    else:raise AssertionError('invalid lock confirmation accepted')
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: invalid lock confirmation accepted
+
+----------------------------------------------------------------------
+Ran 1 test in 0.174s
+
+FAILED (failures=1)

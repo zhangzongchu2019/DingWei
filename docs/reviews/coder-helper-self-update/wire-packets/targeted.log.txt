@@ -1,0 +1,28 @@
+test_actual_handler_stages_and_requests_restart_once (tools.sessionhelper.tests.test_self_update_offer.AppDispatchTests.test_actual_handler_stages_and_requests_restart_once) ... ok
+test_busy_defers_without_fetch_or_restart (tools.sessionhelper.tests.test_self_update_offer.AppDispatchTests.test_busy_defers_without_fetch_or_restart) ... ok
+test_dropped_confirmation_retries_then_reconnect_uses_new_nonce (tools.sessionhelper.tests.test_self_update_offer.AppDispatchTests.test_dropped_confirmation_retries_then_reconnect_uses_new_nonce) ... ok
+test_old_hub_gets_no_new_health_control (tools.sessionhelper.tests.test_self_update_offer.AppDispatchTests.test_old_hub_gets_no_new_health_control) ... ok
+test_rollback_receipt_uses_same_stable_runtime_lock (tools.sessionhelper.tests.test_self_update_offer.AppDispatchTests.test_rollback_receipt_uses_same_stable_runtime_lock) ... ok
+test_untrusted_offer_is_not_reflected (tools.sessionhelper.tests.test_self_update_offer.AppDispatchTests.test_untrusted_offer_is_not_reflected) ... [helper-update] source_denied
+ok
+test_authenticated_update_source_pin_does_not_relax_other_provision (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_authenticated_update_source_pin_does_not_relax_other_provision) ... ok
+test_forged_target_expiry_origin_rejected_before_get (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_forged_target_expiry_origin_rejected_before_get) ... ok
+test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion) ... ok
+test_health_is_job_version_and_fresh_nonce_bound (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_health_is_job_version_and_fresh_nonce_bound) ... ok
+test_lock_changed_rejects_before_download_without_pip (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_lock_changed_rejects_before_download_without_pip) ... ok
+test_lost_installed_ack_can_retry_restart_without_redownload (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_lost_installed_ack_can_retry_restart_without_redownload) ... ok
+test_no_bootstrap_shim_reports_manual_required (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_no_bootstrap_shim_reports_manual_required) ... ok
+test_no_job_manual_factory_health_is_none (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_no_job_manual_factory_health_is_none) ... ok
+test_offer_expiring_during_download_never_arms_candidate (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_offer_expiring_during_download_never_arms_candidate) ... ok
+test_redirect_denied_without_followup_fetch (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_redirect_denied_without_followup_fetch) ... ok
+test_restarted_health_fails_closed_if_job_lock_binding_changes (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_restarted_health_fails_closed_if_job_lock_binding_changes) ... ok
+test_sha_failure_preserves_factory_and_does_not_arm (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_sha_failure_preserves_factory_and_does_not_arm) ... ok
+test_trusted_fetch_stage_duplicate_and_no_credentials (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_trusted_fetch_stage_duplicate_and_no_credentials) ... ok
+test_actual_serializers_and_missing_wrong_lock_confirmations (tools.sessionhelper.tests.test_self_update_offer.PacketFixtureTests.test_actual_serializers_and_missing_wrong_lock_confirmations) ... [helper-update] confirmation_rejected
+[helper-update] confirmation_rejected
+ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 12.448s
+
+OK
