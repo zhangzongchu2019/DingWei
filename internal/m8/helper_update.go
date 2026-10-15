@@ -392,12 +392,20 @@ func (h *Hub) RecoverHelperUpdates(ctx context.Context) error {
 		next := ""
 		if h.now().UTC().After(job.ExpiresAt) {
 			next = "expired"
-		} else if ag, err := h.Identity.Store.GetAgent(ctx, job.AgentID); err != nil || ag == nil || ag.State != identity.AgentActive {
+		} else if ag, err := h.Identity.Store.GetAgent(ctx, job.AgentID); err != nil {
+			continue
+		} else if ag == nil || ag.State != identity.AgentActive {
 			next = "agent_inactive"
-		} else if owner, err := h.Identity.Store.GetUser(ctx, job.OwnerID); err != nil || owner == nil || owner.State != identity.UserActive {
+		} else if owner, err := h.Identity.Store.GetUser(ctx, job.OwnerID); err != nil {
+			continue
+		} else if owner == nil || owner.State != identity.UserActive {
 			next = "owner_inactive"
-		} else if catalog, err := h.HelperUpdateCatalog(ctx, job.SHA256); err != nil || catalog == nil {
+		} else if catalog, err := h.HelperUpdateCatalog(ctx, job.SHA256); err == nil && catalog == nil {
 			next = "release_unavailable"
+		} else if err != nil {
+			// A transient config-store read must not terminalize a valid durable
+			// offer. The next startup/reconnect retries the same job.
+			continue
 		}
 		if next == "" {
 			continue
