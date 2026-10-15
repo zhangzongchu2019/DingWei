@@ -12,7 +12,7 @@ POST 只接收 `{"release_sha256":"<已登记 SHA256>","agent_ids":["<Agent ID>"
 
 GET 返回 releases（sha256、version、platform）和当前 owner 的 agents（agent_id、name、version、online、eligible、reason、可选 job）。job 仅含 job_id、version、stage、白名单 reason；不返回 URL、凭据、owner 信息、健康 nonce 或锁校验内部元组。使用核心只读目录／作业 API，不自行读取和解释 app_config 键值。
 
-当前版本来自该 Agent 凭据绑定的在线连接；离线时只用归属匹配的持久 session_endpoint.version 作为显示值，不把离线记录当作新确认。首版新下发只开放给在线、自备、active、Linux 且 helper 版本支持0.2.3.1更新协议的目标；旧 helper／未知平台显示 manual_required，离线目标等待连接后再操作。已存在作业的恢复和有效期继续由核心负责。
+当前版本来自该 Agent 凭据绑定的在线连接；离线时只用归属匹配的持久 session_endpoint.version 作为显示值，不把离线记录当作新确认。首版新下发只开放给在线、自备、active、Linux 、helper 版本支持0.2.3.1更新协议且实际声明 session_capabilities.helper_update_v1 的目标；旧 helper／未知平台显示 manual_required，离线目标等待连接后再操作。已存在作业的恢复和有效期继续由核心负责。
 
 阶段直接展示核心结果：offered 已下发，downloaded 已取包，installed 已安装待重启确认，restarted 已重启待版本确认，confirmed 已上线新版本；失败／回滚各自显示。不以安装回执冒充成功，也不由页面改阶段。
 

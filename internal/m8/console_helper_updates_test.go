@@ -84,6 +84,20 @@ func TestConsoleHelperUpdateAuthorizationAndCatalogOnly(t *testing.T) {
 	}
 	defer conn.CloseNow()
 	waitSessionOnline(t, h, AgentKeyID("zzc"), "opus50ts")
+	// A claimed target version alone is not proof of updater support.
+	if st, raw := call("POST", v.tokZZC, npOrigin, body); st != 200 || !strings.Contains(raw, `"error":"manual_required"`) {
+		t.Fatalf("new version without capability=%d %s", st, raw)
+	}
+	if job, _, _ := h.helperUpdateJob(v.ctx, v.agID); job != nil {
+		t.Fatal("uncapable helper created job")
+	}
+	v.sendEnv(conn, model.Envelope{ID: "console-caps", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "Console helper update capability", func() bool {
+		h.mu.Lock()
+		c := h.sessionClients[AgentKeyID("zzc")]["opus50ts"]
+		h.mu.Unlock()
+		return h.sessionSupportsHelperUpdate(c)
+	})
 	st, raw := call("GET", v.tokZZC, "", "")
 	if st != 200 {
 		t.Fatalf("GET=%d %s", st, raw)

@@ -99,6 +99,7 @@ func (h *Hub) helperAgentView(ag identity.Agent) consoleHelperAgent {
 		osName = c.osName
 	}
 	h.mu.Unlock()
+	capable := out.Online && h.sessionSupportsHelperUpdate(c)
 	switch {
 	case ag.OwnerLC == "" || ag.State != identity.AgentActive:
 		out.Reason = "inactive"
@@ -106,7 +107,7 @@ func (h *Hub) helperAgentView(ag identity.Agent) consoleHelperAgent {
 		out.Reason = "not_selfhost"
 	case !out.Online:
 		out.Reason = "offline"
-	case !helperUpdaterVersion(out.Version):
+	case !helperUpdaterVersion(out.Version) || !capable:
 		out.Reason = "manual_required"
 	case osName != "linux":
 		out.Reason = "manual_required"
@@ -244,6 +245,9 @@ func (h *Hub) issueConsoleHelperUpdates(w http.ResponseWriter, r *http.Request, 
 			out.OK = true
 		} else {
 			out.Error = "unavailable"
+			if strings.Contains(err.Error(), "helper_update_manual_required") {
+				out.Error = "manual_required"
+			}
 			if strings.Contains(err.Error(), "job already exists") || strings.Contains(err.Error(), "changed concurrently") {
 				out.Error = "job_conflict"
 			}
