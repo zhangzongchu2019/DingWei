@@ -3948,18 +3948,25 @@
         managed: '本席事件接收已停止，正文和草稿保留；不能用页面刷新保证恢复。请在 Console 查看本席原因并使用明确重新同步；重新同步也仅限服务端保留历史。',
       };
       streamAlertMode = 'gap';
-      // Retention alone is informational; a concurrent real integrity failure
-      // still warns without replacing the authoritative history issue.
-      const notice = x.kind === 'history' && !x.warningKind;
+      // Retention or an explicit restart alone is informational; a concurrent
+      // real integrity failure still warns.
+      const epochNotice = x.kind === 'tracking' && x.cause === 'epoch_changed' && !integrityApplyFailed;
+      const notice = (x.kind === 'history' || epochNotice) && !x.warningKind;
       streamAlert.setAttribute?.('data-tone', notice ? 'notice' : 'warning');
       streamAlert.setAttribute?.('role', notice ? 'status' : 'alert');
-      streamAlertText.textContent = notice ? descriptions.history : '⚠️ ' + descriptions[x.kind] + (x.detail ? ' ' + x.detail : '') + (x.outcome ? ' ' + x.outcome : x.warningKind ? ' ' + descriptions[x.warningKind] : '');
+      streamAlertText.textContent = notice ? (epochNotice ? '服务端已重启，更早的事件无法再逐条核对；当前内容完整保留。' : descriptions.history) : '⚠️ ' + descriptions[x.kind] + (x.detail ? ' ' + x.detail : '') + (x.outcome ? ' ' + x.outcome : x.warningKind ? ' ' + descriptions[x.warningKind] : '');
       streamAlertText.title = streamAlertText.textContent;
       streamRetryBtn.textContent = x.kind === 'recoverable' ? (x.retrying ? '补收中…' : '重试补收') : '查看范围';
       streamRetryBtn.disabled = !!x.retrying;
       streamAlert.hidden = false;
     }
-    function noteIntegrityIssue(kind, detail = '') {
+    function noteIntegrityIssue(kind, detail = '', cause = '') {
+      // A restart-only tracking notice must not replace an existing integrity
+      // failure (or its outcome). Only the explicit replay-gap reason qualifies;
+      // unknown tracking loss and an old unresolved gap still warn.
+      const epochNotice = kind === 'tracking' && cause === 'epoch_changed';
+      if (epochNotice && integrityIssue) { paintIntegrityIssue(); return; }
+      const previousEpochNotice = integrityIssue?.kind === 'tracking' && integrityIssue.cause === 'epoch_changed';
       // An authoritative retention gap stays visible across other local failures.
       // New transport/render details supplement it, never imply historical repair.
       // A repeated retention notification is not proof that a concurrent
@@ -3974,14 +3981,14 @@
         else if (kind === 'apply') integrityIssue.outcome = '另有事件未完整显示；当前完整性仍未确认。';
         paintIntegrityIssue(); return;
       }
-      if (integrityIssue && integrityIssue.kind !== 'recoverable' && kind === 'recoverable') return;
+      if (integrityIssue && !previousEpochNotice && integrityIssue.kind !== 'recoverable' && kind === 'recoverable') return;
       if (integrityIssue?.kind === 'recoverable' && kind === 'recoverable') {
         integrityIssue.through = Math.max(integrityIssue.through, lastContiguousSeq, ...seenAboveSeq);
         if (detail) integrityIssue.detail = detail;
         paintIntegrityIssue(); return;
       }
       clearTimeout(integrityRetryTimer); integrityRetryTimer = null;
-      integrityIssue = {kind, detail, epoch:lastEventEpoch, through:Math.max(lastContiguousSeq, ...seenAboveSeq), retrying:false};
+      integrityIssue = {kind, detail, cause, epoch:lastEventEpoch, through:Math.max(lastContiguousSeq, ...seenAboveSeq), retrying:false};
       paintIntegrityIssue();
     }
     function markIntegrityApplyFailed() {
@@ -4249,7 +4256,7 @@
       try { reason = JSON.parse(msg.data).reason || ''; } catch (_) {}
       // 新纪元保留现有内容，但不能据新基线声称旧历史已恢复。
       if (reason === 'overflow') noteIntegrityIssue('history');
-      else if (reason === 'epoch_changed') noteIntegrityIssue('tracking', '服务端事件纪元已改变，旧历史完整性无法确认。');
+      else if (reason === 'epoch_changed') noteIntegrityIssue('tracking', '服务端事件纪元已改变，旧历史完整性无法确认。', 'epoch_changed');
     }
 
     const managedParams = new URLSearchParams(location.search);
