@@ -2,13 +2,16 @@ package m8
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/coder/websocket"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
 func TestFreshTargetAdmissionQueuesBeforeCapabilityAndPromotesExactlyOnce(t *testing.T) {
@@ -248,4 +251,158 @@ func TestCapabilityPendingCleanupPeriodicSweepExpiresNeverReconnectedDelivery(t 
 	case <-time.After(time.Second):
 		t.Fatal("periodic cleanup loop did not stop")
 	}
+}
+
+func TestFreshTargetFailureNotifiesActualOnlineSender(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		cause string
+	}{
+		{name: "ack_false", cause: "delivery_ack_unsupported"},
+		{name: "expiry", cause: "delivery_capability_unconfirmed_expired"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h, db, ctx := newTestHub(t)
+			if err := h.UpsertService(ctx, model.RegisteredService{ID: "svc-fresh-notice", Name: "fresh-notice", DeliveryType: "ws", Enabled: true}); err != nil {
+				t.Fatal(err)
+			}
+			secret, key, err := h.IssueAPIKey(ctx, "svc-fresh-notice", "person")
+			if err != nil {
+				t.Fatal(err)
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("GET /ws/session/{sessionName}", h.HandleSessionWS)
+			srv := httptest.NewServer(mux)
+			defer srv.Close()
+			source := dialSessionWithHeaderRaw(t, ctx, srv.URL, "source", key.ID, secret, nil)
+			defer source.Close(websocket.StatusNormalClosure, "done")
+			waitSessionOnline(t, h, key.ID, "source")
+			original := model.Envelope{ID: "fresh-failure-" + tc.name, From: sessionAddress("source", key.ID), To: sessionAddress("target", key.ID), Body: "please deliver", TS: time.Now().Unix()}
+
+			if tc.name == "ack_false" {
+				registered := make(chan struct{})
+				release := make(chan struct{})
+				h.sessionBeforePublishHook = func(keyID, sessionName string) {
+					if keyID == key.ID && sessionName == "target" {
+						close(registered)
+						<-release
+					}
+				}
+				dialed := make(chan *websocket.Conn, 1)
+				go func() { dialed <- dialSessionWithHeaderRaw(t, ctx, srv.URL, "target", key.ID, secret, nil) }()
+				select {
+				case <-registered:
+				case <-time.After(time.Second):
+					t.Fatal("target did not reach admission window")
+				}
+				if err := h.routeToSession(ctx, key.ID, "target", original, false); err != nil {
+					t.Fatalf("fresh target route: %v", err)
+				}
+				close(release)
+				target := <-dialed
+				defer target.Close(websocket.StatusNormalClosure, "done")
+				_ = readEnvelopeIncludingSystem(t, ctx, target)
+				if err := writeEnvelope(ctx, target, model.Envelope{ID: "caps-noack", To: "workpulse#" + key.ID, Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": false}}); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				raw, err := json.Marshal(original)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: "dw-dlv-expiry-notice", KeyID: key.ID, SessionName: "target", Envelope: string(raw), SourceMessageID: original.ID, SourceType: "session_inbound", Provenance: capabilityPendingProvenance, State: capabilityPendingState, CreatedAt: time.Now().UTC().Add(-capabilityPendingTTL - time.Second)}); err != nil {
+					t.Fatal(err)
+				}
+				h.expireCapabilityPendingDeliveries(ctx, time.Now().UTC())
+			}
+
+			notice := readEnvelopeOfType(t, ctx, source, "delivery_status")
+			if metaString(notice.Meta, "reason_code") != tc.cause || metaString(notice.Meta, "delivery_id") == "" {
+				t.Fatalf("sender failure notice=%+v", notice)
+			}
+		})
+	}
+}
+
+func TestFreshTargetStartupSweepExpiresPreseededPendingDelivery(t *testing.T) {
+	ctx := context.Background()
+	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "fresh-startup.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	delivery := model.SessionDelivery{ID: "dw-dlv-preseeded", KeyID: "fresh-key", SessionName: "never", Envelope: `{}`, SourceMessageID: "preseeded", SourceType: "session_inbound", Provenance: capabilityPendingProvenance, State: capabilityPendingState, CreatedAt: time.Now().UTC().Add(-capabilityPendingTTL - time.Second)}
+	if err := db.EnqueueSessionDelivery(ctx, delivery); err != nil {
+		t.Fatal(err)
+	}
+	h := New(db, ConsoleAuthDisabled())
+	defer h.Close()
+	got, err := db.GetSessionDelivery(ctx, delivery.ID)
+	if err != nil || got == nil || got.State != "dead" || got.LastError != "delivery_capability_unconfirmed_expired" {
+		t.Fatalf("New startup sweep delivery=%+v err=%v", got, err)
+	}
+}
+
+func TestHubCloseWaitsForCapabilityPendingCleanup(t *testing.T) {
+	h, _, _ := newTestHub(t)
+	reached := make(chan struct{})
+	release := make(chan struct{})
+	h.capabilityPendingCleanupBeforeExit = func() {
+		close(reached)
+		<-release
+	}
+	closed := make(chan struct{})
+	go func() {
+		h.Close()
+		close(closed)
+	}()
+	select {
+	case <-reached:
+	case <-time.After(time.Second):
+		t.Fatal("cleanup goroutine did not receive Close stop")
+	}
+	select {
+	case <-closed:
+		close(release)
+		t.Fatal("Hub.Close returned before capability cleanup exited")
+	case <-time.After(100 * time.Millisecond):
+	}
+	close(release)
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("Hub.Close did not wait for capability cleanup exit")
+	}
+}
+
+func TestFreshTargetStartupSweepFailureDoesNotBlockHubConstruction(t *testing.T) {
+	ctx := context.Background()
+	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "fresh-startup-failure.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	// A closed repository makes the synchronous startup sweep fail. New must
+	// only log that operational failure, not prevent the Hub from starting.
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	started := time.Now()
+	h := New(db, ConsoleAuthDisabled())
+	if elapsed := time.Since(started); elapsed > time.Second {
+		h.Close()
+		t.Fatalf("New blocked on failed capability-pending startup sweep for %s", elapsed)
+	}
+	h.Close()
+}
+
+func TestFreshTargetCleanupIsNoopWithoutRepository(t *testing.T) {
+	h := New(nil, ConsoleAuthDisabled())
+	h.startCapabilityPendingCleanup()
+	h.Close()
 }

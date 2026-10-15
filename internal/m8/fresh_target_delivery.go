@@ -105,7 +105,9 @@ func (h *Hub) startCapabilityPendingCleanup() {
 		stop := make(chan struct{})
 		h.capabilityPendingCleanupStop = stop
 		ticker := time.NewTicker(capabilityPendingSweepEvery)
+		h.capabilityPendingCleanupWG.Add(1)
 		go func() {
+			defer h.capabilityPendingCleanupWG.Done()
 			defer ticker.Stop()
 			h.runCapabilityPendingCleanup(context.Background(), stop, ticker.C)
 		}()
@@ -121,6 +123,9 @@ func (h *Hub) runCapabilityPendingCleanup(ctx context.Context, stop <-chan struc
 		case <-ticks:
 			h.expireCapabilityPendingDeliveries(ctx, h.now().UTC())
 		case <-stop:
+			if h.capabilityPendingCleanupBeforeExit != nil {
+				h.capabilityPendingCleanupBeforeExit()
+			}
 			return
 		}
 	}

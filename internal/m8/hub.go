@@ -154,6 +154,7 @@ type Hub struct {
 	capabilityPendingAdmissions  map[string]*capabilityPendingAdmission
 	capabilityPendingCleanupStop chan struct{}
 	capabilityPendingCleanupOnce sync.Once
+	capabilityPendingCleanupWG   sync.WaitGroup
 	// sessionBeforePublishHook is a test seam for the registered-but-unpublished
 	// window. Production leaves it nil.
 	sessionBeforePublishHook func(keyID, sessionName string)
@@ -161,6 +162,9 @@ type Hub struct {
 	// route has observed the fresh admission, before it serializes its INSERT.
 	// It makes the late-insert capability race reproducible without sleeps.
 	freshTargetBeforePendingInsertHook func(keyID, sessionName string)
+	// capabilityPendingCleanupBeforeExit is test-only: it lets Close prove it
+	// waits for the pending-delivery cleanup goroutine to exit.
+	capabilityPendingCleanupBeforeExit func()
 	amr                                *amrProcessor
 	mentionMirror                      *mentionMirror // R-V2-0103：view 提及的回复回流（只显示）
 	startedAt                          time.Time
@@ -6599,6 +6603,7 @@ func (h *Hub) Close() {
 	if h.capabilityPendingCleanupStop != nil {
 		close(h.capabilityPendingCleanupStop)
 		h.capabilityPendingCleanupStop = nil
+		h.capabilityPendingCleanupWG.Wait()
 	}
 	// 关掉所有在线会话连接，并等各自的收尾跑完（最多 5 秒，防测试里有连接卡住时 Close 挂死）。
 	h.mu.Lock()

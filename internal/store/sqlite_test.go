@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -171,6 +172,53 @@ func TestCapabilityPendingDeliveryRejectsAndExpiresWithoutReconnect(t *testing.T
 		if err != nil || got == nil || got.State != "dead" {
 			t.Fatalf("dead delivery id=%s got=%+v err=%v", id, got, err)
 		}
+	}
+}
+
+func TestCapabilityPendingConcurrentCapabilityReconnectAndExpirySettleOnce(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	pending := model.SessionDelivery{ID: "dw-dlv-concurrent-settle", KeyID: "fresh", SessionName: "home", Envelope: `{}`, SourceMessageID: "source", SourceType: "session_inbound", Provenance: "capability_pending_ack_v1", State: "capability_pending", CreatedAt: now.Add(-31 * time.Minute)}
+	if err := db.EnqueueSessionDelivery(ctx, pending); err != nil {
+		t.Fatal(err)
+	}
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	deadCounts := make(chan int, 3)
+	for _, settle := range []func() ([]model.SessionDelivery, error){
+		func() ([]model.SessionDelivery, error) {
+			return db.ResolveCapabilityPendingSessionDeliveries(ctx, pending.KeyID, pending.SessionName, true, now)
+		},
+		func() ([]model.SessionDelivery, error) {
+			return db.ResolveCapabilityPendingSessionDeliveries(ctx, pending.KeyID, pending.SessionName, false, now)
+		},
+		func() ([]model.SessionDelivery, error) { return db.ExpireCapabilityPendingSessionDeliveries(ctx, now) },
+	} {
+		wg.Add(1)
+		go func(settle func() ([]model.SessionDelivery, error)) {
+			defer wg.Done()
+			<-start
+			dead, err := settle()
+			if err != nil {
+				t.Errorf("concurrent settle: %v", err)
+				return
+			}
+			deadCounts <- len(dead)
+		}(settle)
+	}
+	close(start)
+	wg.Wait()
+	close(deadCounts)
+	totalDead := 0
+	for count := range deadCounts {
+		totalDead += count
+	}
+	if totalDead != 1 {
+		t.Fatalf("capability/reconnect/expiry terminal rows=%d, want exactly 1", totalDead)
+	}
+	got, err := db.GetSessionDelivery(ctx, pending.ID)
+	if err != nil || got == nil || got.State != "dead" {
+		t.Fatalf("concurrent settle delivery=%+v err=%v", got, err)
 	}
 }
 
