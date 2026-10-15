@@ -2,7 +2,7 @@
 
 The sole authoritative packet contract is
 `docs/reviews/coder-helper-self-update/RUNTIME-CONTRACT.md` at
-`review/coder/helper-self-update@e9e5f3f86c8f4e029d974f0bdc07680a21a5e2f9`.
+`review/coder/helper-self-update@839c38609c6d5a80e1c8189abc5f976343c17773`.
 Fetch that exact Git object for health, receipt, confirmation, lock, and
 activation semantics. This note deliberately does not restate those packet
 rules; it only fixes Hub API names and state ownership.
