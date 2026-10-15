@@ -1,0 +1,60 @@
+{
+  "schema": "mcp-send-doc-author-evidence-v1",
+  "status": "OFFLINE_AUTHOR_EVIDENCE_PENDING_INDEPENDENT_CR",
+  "base": "3645b60b037534fc83c71245120cf8ce4613b53b",
+  "scope": "Description-only update: to uses Agent full name (name.suffix, oaagent.lbl); cross-user recipients must share a group. Existing explicit expect_reply guidance already present in r7 remains unchanged. No runtime or routing behavior change.",
+  "byte_proof": "Restoring the one changed to-description literal reproduces parent mcp_shim.py byte-for-byte.",
+  "targeted": {
+    "command": "PYTHONPATH=tools/sessionhelper <runtime-venv>/bin/python -B -m unittest -v tools/sessionhelper/tests/test_mcp_send_doc.py",
+    "tests": 2,
+    "rc": 0,
+    "scope": "Actual _dispatch tools/list metadata, no send or socket call."
+  },
+  "parent_withdrawal": {
+    "rc": 1,
+    "result": "Same metadata tests with exact parent shim: reply-guidance test green, full-name/group-scope test red."
+  },
+  "files": {
+    "tools/sessionhelper/sessionhelper/mcp_shim.py": {
+      "bytes": 25364,
+      "sha256": "96e126951dc8a4c856669c44476a84868bd0405751cf09adacde2eddcee62226"
+    },
+    "tools/sessionhelper/tests/test_mcp_send_doc.py": {
+      "bytes": 1448,
+      "sha256": "fc99f80fb436fd69f31d0e08eb653f562e982fc22a75962a48834dfdb6c7319e"
+    }
+  },
+  "local_logs": {
+    "mcp-send-doc-targeted.log": {
+      "bytes": 478,
+      "sha256": "e379077422a37131ab0545ac9d61449b2ddb2b5680aef697c2965f472e889987"
+    },
+    "mcp-send-doc-parent-red.log": {
+      "bytes": 1184,
+      "sha256": "9db9006a178bf45f6fbf82db449b0f578c66f8abd509f13963dc51b6889772bc"
+    },
+    "mcp-send-doc-build.log": {
+      "bytes": 34540,
+      "sha256": "6b69684bb6aa662a4bf560e7f1495e13301b1ae7d5fa3977550930baac78d0e7"
+    },
+    "mcp-send-doc-full.log": {
+      "bytes": 195128,
+      "sha256": "f6d957fae6c7c34d2e68013ba9a9a1f255d4f2b55ffe1382b8675935f5dccf20"
+    }
+  },
+  "canonical_build": {
+    "command": "sh scripts/run-build-tests.sh",
+    "rc": 0,
+    "python_files": 42,
+    "shell_files": 2,
+    "environment": "private HOME, pinned runtime venv, seat variables removed"
+  },
+  "full_helper_suite": {
+    "command": "PYTHONPATH=tools/sessionhelper <runtime-venv>/bin/python -B -m unittest discover -s tools/sessionhelper/tests",
+    "rc": 0,
+    "tests": 640,
+    "elapsed_seconds": 438.43,
+    "environment": "private HOME, pinned runtime venv, seat variables removed",
+    "warnings": "Existing ResourceWarning/DeprecationWarning output retained in local log."
+  }
+}
