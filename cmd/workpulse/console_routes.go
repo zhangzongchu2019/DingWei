@@ -27,6 +27,10 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 		mux.HandleFunc("GET /console/login/status", prefixHub.HandleConsoleLoginStatus)
 		mux.HandleFunc("GET /api/console/agents", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgents))
 	}
+	if newplat {
+		mux.HandleFunc("GET /api/console/helper-updates", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleHelperUpdates))
+		mux.HandleFunc("POST /api/console/helper-updates", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleHelperUpdates))
+	}
 	mux.HandleFunc("GET /api/console/agent-groups", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroups))
 	mux.HandleFunc("POST /api/console/agent-groups", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroups))
 	mux.HandleFunc("DELETE /api/console/agent-groups/{code}", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroup))

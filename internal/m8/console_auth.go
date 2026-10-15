@@ -268,6 +268,9 @@ func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 		page = strings.Replace(page, "const CONSOLE_MUX_ENABLED = false;", "const CONSOLE_MUX_ENABLED = true;", 1)
 		page += "<script>" + consoleMuxBrokerJS + "</script>"
 	}
+	if h.Onboarding != nil {
+		page += "<script>" + consoleHelperUpdatesJS + "</script>"
+	}
 	fmt.Fprint(w, page)
 }
 
