@@ -1,0 +1,42 @@
+{
+  "tools/sessionhelper/sessionhelper/driver_adapter.py": {
+    "bytes": 30693,
+    "sha256": "94757b538017823ad41006d1d0ce94c3c9614c00646eafbe16964912288a80c3"
+  },
+  "tools/sessionhelper/tests/test_codex_daemon_disk_workdir.py": {
+    "bytes": 5986,
+    "sha256": "a320afd390e230ce5b556482e8ca9c1d106b93ef36db91b012082584b0de8379"
+  },
+  "docs/reviews/a6-codex-daemon-workdir/REPORT.md": {
+    "bytes": 5263,
+    "sha256": "2b2c49869d40ebcae28eba402ff23e686fcde5a2bdec9938742ee479cd011f36"
+  },
+  "docs/reviews/a6-codex-daemon-workdir/RESULT.json": {
+    "bytes": 2569,
+    "sha256": "b8cb19d759feb56db3581f98e6ae1e3a1790dbf52b478352b88bec2629a5c454"
+  },
+  "docs/reviews/a6-codex-daemon-workdir/build-existing-go-cache.log.gz": {
+    "bytes": 3417,
+    "sha256": "84650fe67cd5f18a6321e88b00acb641903265b1796d6e99da4d906aa270d5f2"
+  },
+  "docs/reviews/a6-codex-daemon-workdir/build.log.gz": {
+    "bytes": 3442,
+    "sha256": "f9befc00dbe433189b76a8403fdc4b0e92082ce4fc71bd59483700761537df81"
+  },
+  "docs/reviews/a6-codex-daemon-workdir/helper-full.log.gz": {
+    "bytes": 24065,
+    "sha256": "ed311c1cf3304ab9b4cc6d6580d9beb41c62501ec990a2941de14048f5f62035"
+  },
+  "docs/reviews/a6-codex-daemon-workdir/targeted.log.gz": {
+    "bytes": 801,
+    "sha256": "1007ca6b36b2308c4b53340b3e727f16c51d25d20c97fff3b72e980d2d86351c"
+  },
+  "docs/reviews/a6-codex-daemon-workdir/withdrawal.log.gz": {
+    "bytes": 887,
+    "sha256": "cc42ea34129eead0272d77b332fc25c0f95e05ee0096e82d9f6b90fa0ea34b84"
+  },
+  "docs/reviews/a6-codex-daemon-workdir/withdrawal.py": {
+    "bytes": 1066,
+    "sha256": "3cc8c97bf7d6a67d60e85a8d62416fb053982038d84349fa658f83b9018d59bc"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "source_commit": "9822df07e770bd249c94eacc05dc185d8d2ffeb7",
+  "base": "b0f449bd7b2883808c3bce322ede635d56aa6a83",
+  "recorded_at": "2026-10-15T12:11:14.321441+00:00",
+  "executor": "coder56solzzc.zzc",
+  "python": "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+  "dependencies": {
+    "websockets": "15.0.1",
+    "pexpect": "4.9.0"
+  },
+  "targeted": {
+    "tests": 25,
+    "summary": "OK",
+    "command": "PYTHONPATH=tools/sessionhelper python -B -m unittest -v tools/sessionhelper/tests/test_codex_daemon_disk_workdir.py tools/sessionhelper/tests/test_agent_disk_metrics.py"
+  },
+  "helper_full": {
+    "tests": 647,
+    "seconds": 337.582,
+    "rc": 0,
+    "command": "python -B -m unittest discover -s tools/sessionhelper/tests -v",
+    "environment": "fresh temporary HOME, minimal environment with PYTHONPATH and locked Python PATH; no inherited seat variables"
+  },
+  "withdrawal": {
+    "rc": 1,
+    "command": "python -B docs/reviews/a6-codex-daemon-workdir/withdrawal.py",
+    "scope": "only exact base binding method restored in private process; six assertion failures including subtests; external/other-driver cases remain green"
+  },
+  "canonical_build": {
+    "status": "BLOCKED_ENV_ENOSPC",
+    "first_rc": 1,
+    "retry_rc": 1,
+    "retry_cache": {
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOPATH": "/home/dev/go"
+    },
+    "notes": "first module unpack ENOSPC; second actual Go test TempDir ENOSPC. Not PASS; leader support requested at exact source. No cache purge."
+  },
+  "logs": {
+    "build-existing-go-cache.log": {
+      "asset": "docs/reviews/a6-codex-daemon-workdir/build-existing-go-cache.log.gz",
+      "raw_sha256": "db70a15d78561f024f89364ba8f3cb27ade29a00c22c7fc5ee812cf814fd7671"
+    },
+    "build.log": {
+      "asset": "docs/reviews/a6-codex-daemon-workdir/build.log.gz",
+      "raw_sha256": "0d569ee9e13914d5f1516c45b71bcf896b8ff0a071a9c77d32d027a83398ffb1"
+    },
+    "helper-full.log": {
+      "asset": "docs/reviews/a6-codex-daemon-workdir/helper-full.log.gz",
+      "raw_sha256": "2ee5ebc723e46523e07b30233f0fc138a68ee0eb6314fb32059d2321994d3206"
+    },
+    "targeted.log": {
+      "asset": "docs/reviews/a6-codex-daemon-workdir/targeted.log.gz",
+      "raw_sha256": "793f73d953c63111069a009380fce63078c13cc5939dd0ba4f5ee52c96ebee31"
+    },
+    "withdrawal.log": {
+      "asset": "docs/reviews/a6-codex-daemon-workdir/withdrawal.log.gz",
+      "raw_sha256": "7b5dd2b0dea629af7eab598603ae67b87429f241d1ceb0d65cb9485815812862"
+    }
+  },
+  "deployment": "none"
+}
