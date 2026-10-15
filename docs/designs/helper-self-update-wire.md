@@ -1,7 +1,10 @@
-# Helper self-update wire contract (Hub section)
+# Helper self-update Hub integration note
 
-This document fixes implementation names only; it does not change the frozen
-DW123 design.
+The authoritative packet contract is
+`docs/reviews/coder-helper-self-update/RUNTIME-CONTRACT.md` on
+`review/coder/helper-self-update`. That document's Leader R3 binding amendment
+is authoritative over this Hub integration note; this file only fixes Hub API
+names and state ownership.
 
 ## Core API
 
@@ -32,11 +35,11 @@ first send `session_capabilities.helper_update_v1=true`; otherwise the Hub
 returns `helper_update_manual_required` and creates no offer.
 
 `provision_ack` records only ordered lifecycle stages. A
-`helper_update_health` must echo `job_id`, `release_id`, `agent_id`,
-`owner_id`, `version`, and `sha256`, plus a fresh helper-generated
-`health_nonce`. It does not carry `lock_sha256`. It is accepted only on an
-authenticated connection with a strictly later Hub connection sequence than
-the connection that first received the offer, reporting the offered version.
-A replayed offer never resets that boundary. Failed, rolled-back, and
-confirmed jobs are terminal and cannot be confirmed again. The Hub responds
-with trusted `helper_update_confirm` echoing the tuple and that fresh nonce.
+The helper-generated health nonce and mounted lock hash fields, plus receipt
+and rollback serialization, are specified by the authoritative helper
+contract. Hub records the authenticated connection sequence when the job first
+reaches `installed` or `restarted`; only a strictly later authenticated
+connection may confirm. `offered`, `downloaded`, `failed`, `rolled_back`, and
+expired jobs are rejected. A valid retried health for an already confirmed
+canonical job receives an idempotent confirmation echo without another state
+transition, revision, audit event, or activation.

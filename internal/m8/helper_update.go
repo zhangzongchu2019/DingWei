@@ -59,7 +59,12 @@ type helperUpdateJob struct {
 	// offer. Health may only confirm from a later connection, after the helper
 	// has restarted into the staged slot; it is never client supplied.
 	OfferConnSeq int `json:"offer_conn_seq"`
-	Revision     int `json:"revision"`
+	// ActivationConnSeq is recorded when the authenticated helper reports the
+	// installed/restarted lifecycle boundary. Health confirmation must arrive
+	// on a later connection, proving the candidate restart rather than merely
+	// a reconnect after an offer was delivered.
+	ActivationConnSeq int `json:"activation_conn_seq"`
+	Revision          int `json:"revision"`
 }
 
 // HelperUpdateJob is the read-only Console projection of a durable job. The
@@ -470,14 +475,24 @@ func (h *Hub) confirmHelperUpdateHealth(ctx context.Context, c *sessionClient, e
 	// All fields are echoed by the helper, but all identity-sensitive values are
 	// compared with the durable job and authenticated connection, never trusted
 	// because they appeared in the incoming envelope.
-	if h.now().UTC().After(job.ExpiresAt) || helperUpdateTerminal(job.Stage) || job.OfferConnSeq <= 0 || c.connSeq <= job.OfferConnSeq ||
+	if job.Stage == "failed" || job.Stage == "rolled_back" ||
+		(job.Stage != "confirmed" && h.now().UTC().After(job.ExpiresAt)) ||
+		(job.Stage != "confirmed" && job.Stage != "installed" && job.Stage != "restarted") ||
+		job.ActivationConnSeq <= 0 || c.connSeq <= job.ActivationConnSeq ||
 		job.AgentID != c.metricsAgentID || job.OwnerID != strings.TrimPrefix(c.keyID, "u_") ||
 		job.AgentName != c.sessionName || c.version != job.Version ||
 		metaString(env.Meta, "job_id") != job.JobID || metaString(env.Meta, "release_id") != job.ReleaseID ||
 		metaString(env.Meta, "agent_id") != job.AgentID || metaString(env.Meta, "owner_id") != job.OwnerID ||
 		metaString(env.Meta, "version") != job.Version ||
-		metaString(env.Meta, "sha256") != job.SHA256 ||
+		metaString(env.Meta, "sha256") != job.SHA256 || metaString(env.Meta, "lock_sha256") != job.LockSHA256 ||
 		!validHelperUpdateHealthNonce(metaString(env.Meta, "health_nonce")) {
+		return true
+	}
+	if job.Stage == "confirmed" {
+		// The helper can miss a confirmation during a reconnect. Re-echo a
+		// valid current nonce for the same canonical job without changing any
+		// durable state, audit record, revision, or activation.
+		h.sendHelperUpdateConfirm(ctx, c, job, metaString(env.Meta, "health_nonce"))
 		return true
 	}
 	updated := *job
@@ -492,13 +507,20 @@ func (h *Hub) confirmHelperUpdateHealth(ctx context.Context, c *sessionClient, e
 		return true
 	}
 	h.writeHelperUpdateAudit(ctx, c.keyID, "helper_update_confirmed", &updated, "")
+	h.sendHelperUpdateConfirm(ctx, c, &updated, metaString(env.Meta, "health_nonce"))
+	return true
+}
+
+func (h *Hub) sendHelperUpdateConfirm(ctx context.Context, c *sessionClient, job *helperUpdateJob, nonce string) {
+	if c == nil || job == nil {
+		return
+	}
 	_ = c.write(ctx, model.Envelope{
 		ID: randomHex(16), To: sessionAddress(c.sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID), TS: time.Now().Unix(),
 		Meta: map[string]any{"type": "helper_update_confirm", "system": true, "no_mirror": true,
 			"job_id": job.JobID, "release_id": job.ReleaseID, "agent_id": job.AgentID, "owner_id": job.OwnerID,
-			"version": job.Version, "sha256": job.SHA256, "health_nonce": metaString(env.Meta, "health_nonce")},
+			"version": job.Version, "sha256": job.SHA256, "lock_sha256": job.LockSHA256, "health_nonce": nonce},
 	})
-	return true
 }
 
 // The helper creates a fresh UUID-hex nonce after its post-restart health
@@ -569,6 +591,9 @@ func (h *Hub) recordHelperUpdateReceipt(ctx context.Context, c *sessionClient, e
 	}
 	updated := *job
 	updated.Stage = stage
+	if stage == "installed" || stage == "restarted" {
+		updated.ActivationConnSeq = c.connSeq
+	}
 	if ok, err := h.updateHelperUpdateJob(ctx, raw, updated); err == nil && ok {
 		h.writeHelperUpdateAudit(ctx, c.keyID, "helper_update_"+stage, &updated, helperUpdateAuditReason(metaString(env.Meta, "reason")))
 	}
