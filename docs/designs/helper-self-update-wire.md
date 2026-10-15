@@ -1,10 +1,11 @@
 # Helper self-update Hub integration note
 
-The authoritative packet contract is
-`docs/reviews/coder-helper-self-update/RUNTIME-CONTRACT.md` on
-`review/coder/helper-self-update`. That document's Leader R3 binding amendment
-is authoritative over this Hub integration note; this file only fixes Hub API
-names and state ownership.
+The sole authoritative packet contract is
+`docs/reviews/coder-helper-self-update/RUNTIME-CONTRACT.md` at
+`review/coder/helper-self-update@e9e5f3f86c8f4e029d974f0bdc07680a21a5e2f9`.
+Fetch that exact Git object for health, receipt, confirmation, lock, and
+activation semantics. This note deliberately does not restate those packet
+rules; it only fixes Hub API names and state ownership.
 
 ## Core API
 
@@ -27,19 +28,13 @@ Hub validates that the URL has the exact registered origin. A durable job
 carries that same origin. Its trusted `provision`/`update_self` envelope
 contains `job_id`, `offer_id`, `release_id`, `agent_id`, `owner_id`,
 `agent_name`, `version`, `sha256`, `lock_sha256`, `url`,
-	`file_service_origin`, `platform`, `issuer`, and `expires_at`.
+`file_service_origin`, `platform`, `issuer`, and `expires_at`.
 
 The authenticated Agent WebSocket advertises `X-DW-Helper-Update:
 helper-update/v1` and `X-DW-Helper-Update-Source`. A connected helper must
 first send `session_capabilities.helper_update_v1=true`; otherwise the Hub
 returns `helper_update_manual_required` and creates no offer.
 
-`provision_ack` records only ordered lifecycle stages. The helper-generated
-health nonce and mounted lock hash fields, plus receipt
-and rollback serialization, are specified by the authoritative helper
-contract. Hub records the authenticated connection sequence when the job first
-reaches `installed` or `restarted`; only a strictly later authenticated
-connection may confirm. `offered`, `downloaded`, `failed`, `rolled_back`, and
-expired jobs are rejected. A valid retried health for an already confirmed
-canonical job receives an idempotent confirmation echo without another state
-transition, revision, audit event, or activation.
+`provision_ack` records ordered lifecycle stages. Its packet fields and all
+health/confirmation semantics are defined only by the authoritative contract
+above.
