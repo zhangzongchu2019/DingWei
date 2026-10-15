@@ -19,7 +19,7 @@ func TestConsoleHelperUpdateAuthorizationAndCatalogOnly(t *testing.T) {
 	v := newViewEnv(t)
 	h := v.hub
 	digest := strings.Repeat("a", 64)
-	if err := h.RegisterHelperUpdateCatalog(v.ctx, "ops", HelperUpdateCatalog{SHA256: digest, LockSHA256: strings.Repeat("b", 64), Version: "0.2.3.2", URL: "https://files.example/approved.tgz", Platform: "linux"}); err != nil {
+	if err := h.RegisterHelperUpdateCatalog(v.ctx, "ops", HelperUpdateCatalog{SHA256: digest, LockSHA256: strings.Repeat("b", 64), Version: "0.2.3.2", URL: "https://files.example/approved.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}); err != nil {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()

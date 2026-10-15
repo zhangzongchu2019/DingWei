@@ -134,12 +134,7 @@ func (h *Hub) HandleConsoleHelperUpdates(w http.ResponseWriter, r *http.Request)
 	}
 }
 func (h *Hub) listConsoleHelperUpdates(w http.ResponseWriter, r *http.Request, actor string) {
-	catalogs, err := h.ListHelperUpdateCatalogs(r.Context())
-	if err != nil {
-		helperConsoleError(w, 503, "unavailable")
-		return
-	}
-	jobs, err := h.ListHelperUpdateJobsForOwner(r.Context(), actor)
+	catalogs, err := h.ListHelperUpdateCatalog(r.Context())
 	if err != nil {
 		helperConsoleError(w, 503, "unavailable")
 		return
@@ -178,13 +173,12 @@ func (h *Hub) listConsoleHelperUpdates(w http.ResponseWriter, r *http.Request, a
 				}
 			}
 		}
-		for i := range jobs {
-			j := &jobs[i]
-			if j.AgentID == ag.ID && j.OwnerID == actor {
-				v.Job = helperJobView(j)
-				break
-			}
+		job, err := h.GetHelperUpdateJob(r.Context(), actor, ag.ID)
+		if err != nil {
+			helperConsoleError(w, 503, "unavailable")
+			return
 		}
+		v.Job = helperJobView(job)
 		views = append(views, v)
 	}
 	sort.Slice(views, func(i, j int) bool { return views[i].AgentID < views[j].AgentID })
@@ -239,7 +233,7 @@ func (h *Hub) issueConsoleHelperUpdates(w http.ResponseWriter, r *http.Request, 
 			continue
 		}
 		// Mandatory second authorization in core: never pass a browser owner field.
-		job, err := h.IssueHelperUpdateForActor(r.Context(), actor, id, req.ReleaseSHA)
+		job, err := h.IssueHelperUpdate(r.Context(), actor, id, req.ReleaseSHA)
 		out.Job = helperJobView(job)
 		if err == nil {
 			out.OK = true

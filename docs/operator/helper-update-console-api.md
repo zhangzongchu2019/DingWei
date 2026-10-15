@@ -19,3 +19,12 @@ GET 返回 releases（sha256、version、platform）和当前 owner 的 agents�
 页面展开时才取目录，单个／批量都只选择已登记 SHA，无 URL 输入。15秒刷新仅在面板展开时运行；失败清除可操作快照，旧响应不覆盖新视图，选中目标失去资格或被移出列表时清除选择。所有远端文字用 textContent。
 
 实际 Hub/helper/Docker 全链门以及核心 REWORK 属于组合候选，不能以浏览器 HTTP 拦截测试替代。
+
+## Core API alignment (3adabde3)
+
+The Console adapter derives the principal from its authenticated session and calls
+`IssueHelperUpdate(ctx, principalID, agentID, releaseSHA)`,
+`ListHelperUpdateCatalog(ctx)`, and
+`GetHelperUpdateJob(ctx, principalID, agentID)` for each owned Agent.
+It does not use transitional aliases or enumerate durable job keys itself.
+Catalog registration and trusted file-service origin remain operations/core owned.
