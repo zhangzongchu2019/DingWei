@@ -13,6 +13,9 @@ import time
 import unittest
 from unittest.mock import patch
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
+
 try:
     from _home_isolation import HomeIsolation
 except ImportError:
@@ -28,14 +31,12 @@ def tearDownModule():
     _HOME.finish()
 
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
 from sessionhelper.config import Config
 from sessionhelper.provision import Provisioner, ProvisionError
 from sessionhelper.self_update import SelfUpdater, UpdateRejected, receipt
 import sessionhelper.self_update as runtime
 import package_release
-from tools.sessionhelper.tests import test_update_release_core as core
+import test_update_release_core as core
 
 
 class OfferTests(unittest.TestCase):
