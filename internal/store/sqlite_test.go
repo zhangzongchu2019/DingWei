@@ -118,6 +118,62 @@ func TestExpireSessionDeliveriesReturnsOnlyNewTerminalRows(t *testing.T) {
 	}
 }
 
+func TestCapabilityPendingDeliveryResolvesOnceAndOldClaimFilterIgnoresIt(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	pending := model.SessionDelivery{ID: "dw-dlv_pending", KeyID: "fresh", SessionName: "home", Envelope: `{}`, SourceMessageID: "source", SourceType: "session_inbound", Provenance: "capability_pending_ack_v1", State: "capability_pending", CreatedAt: now}
+	if err := db.EnqueueSessionDelivery(ctx, pending); err != nil {
+		t.Fatal(err)
+	}
+	// This is the a14-compatible claim predicate: unknown pending state must be
+	// inert to an older binary, rather than being injected or causing a query error.
+	claimed, err := db.ClaimSessionDelivery(ctx, pending.KeyID, pending.SessionName, now.Add(time.Second))
+	if err != nil || claimed != nil {
+		t.Fatalf("old claim filter must ignore capability_pending: delivery=%+v err=%v", claimed, err)
+	}
+	dead, err := db.ResolveCapabilityPendingSessionDeliveries(ctx, pending.KeyID, pending.SessionName, true, now)
+	if err != nil || len(dead) != 0 {
+		t.Fatalf("ack=true resolve dead=%+v err=%v", dead, err)
+	}
+	claimed, err = db.ClaimSessionDelivery(ctx, pending.KeyID, pending.SessionName, now.Add(time.Second))
+	if err != nil || claimed == nil || claimed.ID != pending.ID || claimed.Attempts != 1 {
+		t.Fatalf("promoted pending claim=%+v err=%v", claimed, err)
+	}
+	if dead, err := db.ResolveCapabilityPendingSessionDeliveries(ctx, pending.KeyID, pending.SessionName, true, now); err != nil || len(dead) != 0 {
+		t.Fatalf("duplicate capability report changed settled delivery dead=%+v err=%v", dead, err)
+	}
+}
+
+func TestCapabilityPendingDeliveryRejectsAndExpiresWithoutReconnect(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	unsupported := model.SessionDelivery{ID: "dw-dlv_noack", KeyID: "fresh", SessionName: "noack", Envelope: `{}`, SourceMessageID: "source-noack", SourceType: "session_inbound", Provenance: "capability_pending_ack_v1", State: "capability_pending", CreatedAt: now}
+	expiring := model.SessionDelivery{ID: "dw-dlv_expire", KeyID: "fresh", SessionName: "never", Envelope: `{}`, SourceMessageID: "source-expire", SourceType: "session_inbound", Provenance: "capability_pending_ack_v1", State: "capability_pending", CreatedAt: now.Add(-31 * time.Minute)}
+	known := model.SessionDelivery{ID: "dw-dlv_known", KeyID: "fresh", SessionName: "noack", Envelope: `{}`, SourceMessageID: "source-known", SourceType: "session_inbound", CreatedAt: now}
+	for _, d := range []model.SessionDelivery{unsupported, expiring, known} {
+		if err := db.EnqueueSessionDelivery(ctx, d); err != nil {
+			t.Fatal(err)
+		}
+	}
+	dead, err := db.ResolveCapabilityPendingSessionDeliveries(ctx, unsupported.KeyID, unsupported.SessionName, false, now)
+	if err != nil || len(dead) != 1 || dead[0].ID != unsupported.ID || dead[0].LastError != "delivery_ack_unsupported" {
+		t.Fatalf("ack=false dead=%+v err=%v", dead, err)
+	}
+	if claimed, err := db.ClaimSessionDelivery(ctx, known.KeyID, known.SessionName, now); err != nil || claimed == nil || claimed.ID != known.ID {
+		t.Fatalf("ack=false must not alter known queued delivery: %+v err=%v", claimed, err)
+	}
+	expired, err := db.ExpireCapabilityPendingSessionDeliveries(ctx, now)
+	if err != nil || len(expired) != 1 || expired[0].ID != expiring.ID || expired[0].LastError != "delivery_capability_unconfirmed_expired" {
+		t.Fatalf("never-reconnected expiry=%+v err=%v", expired, err)
+	}
+	for _, id := range []string{unsupported.ID, expiring.ID} {
+		got, err := db.GetSessionDelivery(ctx, id)
+		if err != nil || got == nil || got.State != "dead" {
+			t.Fatalf("dead delivery id=%s got=%+v err=%v", id, got, err)
+		}
+	}
+}
+
 func TestSessionDeliveryProvenancePersistsAndHistoricalRowsStayUnknown(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	const provenance = `{"kind":"feishu","display_name":"飞书","attested_by":"hub","trust_decision":"trusted"}`

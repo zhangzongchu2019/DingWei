@@ -147,13 +147,23 @@ type Hub struct {
 	viewV2Nonces      map[string]time.Time
 	viewV2Requests    map[string]viewV2RequestResult
 	deliveryNotices   map[string]time.Time
-	amr               *amrProcessor
-	mentionMirror     *mentionMirror // R-V2-0103：view 提及的回复回流（只显示）
-	startedAt         time.Time
-	restartWindow     time.Duration
-	fileIssuer        FileTicketIssuer
-	fileArchive       FileArchiveClient
-	filePermanent     FilePermanentClient
+	// capabilityPendingAdmissions covers only the small, live handshake window
+	// after an endpoint has been recorded but before its WebSocket client is
+	// published. It is deliberately in-memory, so an offline endpoint cannot
+	// claim this admission window.
+	capabilityPendingAdmissions  map[string]struct{}
+	capabilityPendingCleanupStop chan struct{}
+	capabilityPendingCleanupOnce sync.Once
+	// sessionBeforePublishHook is a test seam for the registered-but-unpublished
+	// window. Production leaves it nil.
+	sessionBeforePublishHook func(keyID, sessionName string)
+	amr                      *amrProcessor
+	mentionMirror            *mentionMirror // R-V2-0103：view 提及的回复回流（只显示）
+	startedAt                time.Time
+	restartWindow            time.Duration
+	fileIssuer               FileTicketIssuer
+	fileArchive              FileArchiveClient
+	filePermanent            FilePermanentClient
 	// Short-lived MCP spec approvals. Raw page capabilities stay here only
 	// until the authenticated helper polls them once; the repository persists
 	// only the hash in ConsolePageCapability.
@@ -308,36 +318,37 @@ var (
 
 func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 	h := &Hub{
-		Repo:               repo,
-		serviceClients:     map[string]*client{},
-		sessionClients:     map[string]map[string]*sessionClient{},
-		keyAccounts:        map[string]map[string]bool{},
-		botChannels:        map[string]string{},
-		botNames:           map[string]string{},
-		envelopeIDs:        map[string]string{},
-		replyDedup:         newReplyDedup(envDuration("REPLY_ORIGIN_DEDUP_TTL", replyDedupDefaultTTL)),
-		onlineTimers:       map[string]*time.Timer{},
-		seenSessions:       map[string]bool{},
-		terminals:          map[string]*terminalState{},
-		terminalLastSize:   map[string][2]int{},
-		syncTargets:        map[string]map[string]feishuSyncTarget{},
-		recentTerminal:     map[string][]terminalSyncItem{},
-		syncBuffers:        map[string]*feishuSyncBuffer{},
-		syncToolSummaries:  map[string]*terminalToolSummary{},
-		linkTokens:         map[string]ownerLinkToken{},
-		onboardPushed:      map[string]time.Time{},
-		consoleTouched:     map[string]time.Time{},
-		onboardContexts:    map[string]onboardContext{},
-		viewV2Nonces:       map[string]time.Time{},
-		viewV2Requests:     map[string]viewV2RequestResult{},
-		deliveryNotices:    map[string]time.Time{},
-		specGrantRequests:  map[string]*specGrantRequest{},
-		startedAt:          time.Now().UTC(),
-		restartWindow:      envDuration("WP_RESTART_STABILITY_WINDOW", time.Minute),
-		onlineDebounce:     2500 * time.Millisecond,
-		onboardInterval:    envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
-		newSessionNotice:   true,
-		consoleAuthEnabled: consoleAuthMode.Enabled(),
+		Repo:                        repo,
+		serviceClients:              map[string]*client{},
+		sessionClients:              map[string]map[string]*sessionClient{},
+		keyAccounts:                 map[string]map[string]bool{},
+		botChannels:                 map[string]string{},
+		botNames:                    map[string]string{},
+		envelopeIDs:                 map[string]string{},
+		replyDedup:                  newReplyDedup(envDuration("REPLY_ORIGIN_DEDUP_TTL", replyDedupDefaultTTL)),
+		onlineTimers:                map[string]*time.Timer{},
+		seenSessions:                map[string]bool{},
+		terminals:                   map[string]*terminalState{},
+		terminalLastSize:            map[string][2]int{},
+		syncTargets:                 map[string]map[string]feishuSyncTarget{},
+		recentTerminal:              map[string][]terminalSyncItem{},
+		syncBuffers:                 map[string]*feishuSyncBuffer{},
+		syncToolSummaries:           map[string]*terminalToolSummary{},
+		linkTokens:                  map[string]ownerLinkToken{},
+		onboardPushed:               map[string]time.Time{},
+		consoleTouched:              map[string]time.Time{},
+		onboardContexts:             map[string]onboardContext{},
+		viewV2Nonces:                map[string]time.Time{},
+		viewV2Requests:              map[string]viewV2RequestResult{},
+		deliveryNotices:             map[string]time.Time{},
+		capabilityPendingAdmissions: map[string]struct{}{},
+		specGrantRequests:           map[string]*specGrantRequest{},
+		startedAt:                   time.Now().UTC(),
+		restartWindow:               envDuration("WP_RESTART_STABILITY_WINDOW", time.Minute),
+		onlineDebounce:              2500 * time.Millisecond,
+		onboardInterval:             envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
+		newSessionNotice:            true,
+		consoleAuthEnabled:          consoleAuthMode.Enabled(),
 		L2Config: L2Config{
 			Workers:             4,
 			PollInterval:        200 * time.Millisecond,
@@ -350,6 +361,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 	h.mentionMirror = newMentionMirror(h)
 	h.sessionTouchMinInterval = envDuration("WP_SESSION_TOUCH_MIN_INTERVAL", 5*time.Second)
 	h.applyReplayGuardSettings()
+	h.startCapabilityPendingCleanup()
 	return h
 }
 
@@ -1065,6 +1077,8 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	obsConn := obs.Default.OpenWS("session")
 	var obsReadErr error
 	defer func() { obsConn.Closed(obsReadErr) }()
+	h.beginCapabilityPendingAdmission(keyID, sessionName)
+	defer h.endCapabilityPendingAdmission(keyID, sessionName)
 	conn.SetReadLimit(16 << 20) // 终端 PTY 全屏输出可能远超默认 32KB
 	connSeq, err := h.Repo.IncrementSessionEndpointConnSeq(r.Context(), keyID, sessionName)
 	if err != nil {
@@ -1089,6 +1103,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	onboardStart := time.Now()
 	h.startAgentNetworkSkillPush(skillCtx, c)
 	timingParts = append(timingParts, fmt.Sprintf("onboard=%s", time.Since(onboardStart).Round(time.Millisecond)))
+	if h.sessionBeforePublishHook != nil {
+		h.sessionBeforePublishHook(keyID, sessionName)
+	}
 	lockStart := time.Now()
 	var oldConn *websocket.Conn
 	var oldObs *obs.WSConn
@@ -1111,6 +1128,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		if !rejectDevice && c != nil && c.conn != nil {
 			h.sessionClients[keyID][sessionName] = c
 		}
+		delete(h.capabilityPendingAdmissions, terminalKey(keyID, sessionName))
 		h.keyAccounts[keyID] = stringSet(accounts)
 		reSize = h.terminalLastSize[terminalKey(keyID, sessionName)]
 	}()
@@ -4050,12 +4068,14 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		return err
 	}
 	var c *sessionClient
+	capabilityPendingAdmission := false
 	func() {
 		h.mu.Lock()
 		defer h.mu.Unlock()
 		if sessions := h.sessionClients[keyID]; sessions != nil {
 			c = sessions[sessionName]
 		}
+		_, capabilityPendingAdmission = h.capabilityPendingAdmissions[terminalKey(keyID, sessionName)]
 	}()
 	wantReceipt := outboundReceiptRequested(env)
 	receiptNonce := metaString(env.Meta, outboundReceiptNonceKey)
@@ -4070,11 +4090,12 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			return err
 		}
 	}
-	if wantReceipt && !(reliable && deliveryACK && h.Repo != nil) {
+	capabilityPending := c == nil && reliable && !deliveryACK && endpointKnown && capabilityPendingAdmission && h.freshTargetDeliveryRepo() != nil
+	if wantReceipt && !(reliable && (deliveryACK || capabilityPending) && h.Repo != nil) {
 		h.unclaimEnvelope(env.ID, sig)
 		return errors.New("confirmed outbound requires a durable target")
 	}
-	if c == nil && !(reliable && deliveryACK && endpointKnown && h.Repo != nil) {
+	if c == nil && !(reliable && (deliveryACK || capabilityPending) && endpointKnown && h.Repo != nil) {
 		log.Printf("session route decision=offline_rejected key_id=%s session=%s client_present=false reliable=%t endpoint_known=%t delivery_ack_v1=%t reason=session_offline",
 			keyID, sessionName, reliable, endpointKnown, deliveryACK)
 		if source, sourceErr := parseAddress(env.From); sourceErr == nil {
@@ -4084,7 +4105,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		h.unclaimEnvelope(env.ID, sig)
 		return fmt.Errorf("session %s offline", sessionName)
 	}
-	if reliable && deliveryACK && h.Repo != nil {
+	if reliable && (deliveryACK || capabilityPending) && h.Repo != nil {
 		if env.Meta == nil {
 			env.Meta = map[string]any{}
 		}
@@ -4117,7 +4138,12 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			h.unclaimEnvelope(env.ID, sig)
 			return err
 		}
-		if err := h.Repo.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: deliverySourceType(env), Provenance: provenanceJSON(env)}); err != nil {
+		delivery := model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: deliverySourceType(env), Provenance: provenanceJSON(env)}
+		if capabilityPending {
+			delivery.State = capabilityPendingState
+			delivery.Provenance = capabilityPendingProvenance
+		}
+		if err := h.Repo.EnqueueSessionDelivery(ctx, delivery); err != nil {
 			h.unclaimEnvelope(env.ID, sig)
 			return err
 		}
@@ -4130,8 +4156,12 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		if c != nil {
 			connSeq = c.connSeq
 		}
-		log.Printf("session route decision=durable_queued key_id=%s session=%s client_present=%t conn_seq=%d delivery_id=%s source_message_id=%s",
-			keyID, sessionName, c != nil, connSeq, deliveryID, env.ID)
+		decision := "durable_queued"
+		if capabilityPending {
+			decision = "capability_pending_queued"
+		}
+		log.Printf("session route decision=%s key_id=%s session=%s client_present=%t conn_seq=%d delivery_id=%s source_message_id=%s",
+			decision, keyID, sessionName, c != nil, connSeq, deliveryID, env.ID)
 		if c != nil {
 			h.drainSessionDeliveries(ctx, c)
 		}
@@ -4226,6 +4256,16 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 		if err := h.Repo.SetSessionEndpointDeliveryACK(context.Background(), c.keyID, c.sessionName, c.deliveryACKV1); err != nil {
 			log.Printf("session capability persist failed key_id=%s session=%s conn_seq=%d delivery_ack_v1=%t err=%v",
 				c.keyID, c.sessionName, c.connSeq, c.deliveryACKV1, err)
+		}
+	}
+	if repo := h.freshTargetDeliveryRepo(); repo != nil {
+		dead, err := repo.ResolveCapabilityPendingSessionDeliveries(context.Background(), c.keyID, c.sessionName, c.deliveryACKV1, h.now().UTC())
+		if err != nil {
+			log.Printf("capability pending resolution failed key_id=%s session=%s conn_seq=%d delivery_ack_v1=%t err=%v", c.keyID, c.sessionName, c.connSeq, c.deliveryACKV1, err)
+		} else {
+			for _, d := range dead {
+				h.finishCapabilityPendingDelivery(context.Background(), d, pendingCapabilityFailureReason(d))
+			}
 		}
 	}
 	if h.sessionSupportsDeliveryACK(c) {
@@ -6516,6 +6556,10 @@ func (h *Hub) Close() {
 	h.closeConsoleMux()
 	if h.amr != nil {
 		h.amr.close()
+	}
+	if h.capabilityPendingCleanupStop != nil {
+		close(h.capabilityPendingCleanupStop)
+		h.capabilityPendingCleanupStop = nil
 	}
 	// 关掉所有在线会话连接，并等各自的收尾跑完（最多 5 秒，防测试里有连接卡住时 Close 挂死）。
 	h.mu.Lock()
