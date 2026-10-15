@@ -151,19 +151,23 @@ type Hub struct {
 	// after an endpoint has been recorded but before its WebSocket client is
 	// published. It is deliberately in-memory, so an offline endpoint cannot
 	// claim this admission window.
-	capabilityPendingAdmissions  map[string]struct{}
+	capabilityPendingAdmissions  map[string]*capabilityPendingAdmission
 	capabilityPendingCleanupStop chan struct{}
 	capabilityPendingCleanupOnce sync.Once
 	// sessionBeforePublishHook is a test seam for the registered-but-unpublished
 	// window. Production leaves it nil.
 	sessionBeforePublishHook func(keyID, sessionName string)
-	amr                      *amrProcessor
-	mentionMirror            *mentionMirror // R-V2-0103：view 提及的回复回流（只显示）
-	startedAt                time.Time
-	restartWindow            time.Duration
-	fileIssuer               FileTicketIssuer
-	fileArchive              FileArchiveClient
-	filePermanent            FilePermanentClient
+	// freshTargetBeforePendingInsertHook pauses only a test immediately after a
+	// route has observed the fresh admission, before it serializes its INSERT.
+	// It makes the late-insert capability race reproducible without sleeps.
+	freshTargetBeforePendingInsertHook func(keyID, sessionName string)
+	amr                                *amrProcessor
+	mentionMirror                      *mentionMirror // R-V2-0103：view 提及的回复回流（只显示）
+	startedAt                          time.Time
+	restartWindow                      time.Duration
+	fileIssuer                         FileTicketIssuer
+	fileArchive                        FileArchiveClient
+	filePermanent                      FilePermanentClient
 	// Short-lived MCP spec approvals. Raw page capabilities stay here only
 	// until the authenticated helper polls them once; the repository persists
 	// only the hash in ConsolePageCapability.
@@ -341,7 +345,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 		viewV2Nonces:                map[string]time.Time{},
 		viewV2Requests:              map[string]viewV2RequestResult{},
 		deliveryNotices:             map[string]time.Time{},
-		capabilityPendingAdmissions: map[string]struct{}{},
+		capabilityPendingAdmissions: map[string]*capabilityPendingAdmission{},
 		specGrantRequests:           map[string]*specGrantRequest{},
 		startedAt:                   time.Now().UTC(),
 		restartWindow:               envDuration("WP_RESTART_STABILITY_WINDOW", time.Minute),
@@ -1089,8 +1093,8 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	var obsReadErr error
 	defer func() { obsConn.Closed(obsReadErr) }()
 	if !endpointPreviouslyKnown {
-		h.beginCapabilityPendingAdmission(keyID, sessionName)
-		defer h.endCapabilityPendingAdmission(keyID, sessionName)
+		admission := h.beginCapabilityPendingAdmission(keyID, sessionName)
+		defer h.endCapabilityPendingAdmission(keyID, sessionName, admission)
 	}
 	conn.SetReadLimit(16 << 20) // 终端 PTY 全屏输出可能远超默认 32KB
 	connSeq, err := h.Repo.IncrementSessionEndpointConnSeq(r.Context(), keyID, sessionName)
@@ -1141,7 +1145,6 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		if !rejectDevice && c != nil && c.conn != nil {
 			h.sessionClients[keyID][sessionName] = c
 		}
-		delete(h.capabilityPendingAdmissions, terminalKey(keyID, sessionName))
 		h.keyAccounts[keyID] = stringSet(accounts)
 		reSize = h.terminalLastSize[terminalKey(keyID, sessionName)]
 	}()
@@ -4081,14 +4084,14 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		return err
 	}
 	var c *sessionClient
-	capabilityPendingAdmission := false
+	var capabilityAdmission *capabilityPendingAdmission
 	func() {
 		h.mu.Lock()
 		defer h.mu.Unlock()
 		if sessions := h.sessionClients[keyID]; sessions != nil {
 			c = sessions[sessionName]
 		}
-		_, capabilityPendingAdmission = h.capabilityPendingAdmissions[terminalKey(keyID, sessionName)]
+		capabilityAdmission = h.capabilityPendingAdmissions[terminalKey(keyID, sessionName)]
 	}()
 	wantReceipt := outboundReceiptRequested(env)
 	receiptNonce := metaString(env.Meta, outboundReceiptNonceKey)
@@ -4103,7 +4106,30 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			return err
 		}
 	}
-	capabilityPending := c == nil && reliable && !deliveryACK && endpointKnown && capabilityPendingAdmission && h.freshTargetDeliveryRepo() != nil
+	capabilityPending := c == nil && reliable && !deliveryACK && endpointKnown && capabilityAdmission != nil && h.freshTargetDeliveryRepo() != nil
+	if capabilityPending {
+		if h.freshTargetBeforePendingInsertHook != nil {
+			h.freshTargetBeforePendingInsertHook(keyID, sessionName)
+		}
+		// Serialize the delayed INSERT with the first capability resolution. If
+		// resolution won first, use its settled capability instead of creating a
+		// stranded capability_pending row after it has drained.
+		capabilityAdmission.mu.Lock()
+		if capabilityAdmission.resolved {
+			deliveryACK = capabilityAdmission.deliveryACK
+			capabilityPending = false
+			capabilityAdmission.mu.Unlock()
+			if deliveryACK {
+				h.mu.Lock()
+				if sessions := h.sessionClients[keyID]; sessions != nil {
+					c = sessions[sessionName]
+				}
+				h.mu.Unlock()
+			}
+		} else {
+			defer capabilityAdmission.mu.Unlock()
+		}
+	}
 	if wantReceipt && !(reliable && (deliveryACK || capabilityPending) && h.Repo != nil) {
 		h.unclaimEnvelope(env.ID, sig)
 		return errors.New("confirmed outbound requires a durable target")
@@ -4271,8 +4297,8 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 				c.keyID, c.sessionName, c.connSeq, c.deliveryACKV1, err)
 		}
 	}
-	if repo := h.freshTargetDeliveryRepo(); repo != nil {
-		dead, err := repo.ResolveCapabilityPendingSessionDeliveries(context.Background(), c.keyID, c.sessionName, c.deliveryACKV1, h.now().UTC())
+	if h.freshTargetDeliveryRepo() != nil {
+		dead, err := h.resolveCapabilityPendingAdmission(context.Background(), c.keyID, c.sessionName, c.deliveryACKV1, h.now().UTC())
 		if err != nil {
 			log.Printf("capability pending resolution failed key_id=%s session=%s conn_seq=%d delivery_ack_v1=%t err=%v", c.keyID, c.sessionName, c.connSeq, c.deliveryACKV1, err)
 		} else {
