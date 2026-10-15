@@ -720,6 +720,14 @@ class SessionHelper:
                             await ipc_task
                         except asyncio.CancelledError:
                             pass
+                        except Exception as exc:
+                            # Optional IPC must not turn connection cleanup into
+                            # a reconnect/process failure. Never log raw errors:
+                            # bind errors may embed configured paths or secrets.
+                            self.ipc_bound.clear()
+                            print(f"[ipc_listener] ERROR listener task failed "
+                                  f"({type(exc).__name__}); Hub messaging remains enabled",
+                                  file=sys.stderr, flush=True)
                     # 移植自部署版(T-048 第四处,prodops 的 10 处清单未含,组长逐 + 行复查时发现):
                     # hb.cancel() 之后必须 await 它,否则任务被取消但从未被回收,
                     # Python 会打 "Task was destroyed but it is pending!",且清理逻辑不保证执行。
@@ -1251,6 +1259,12 @@ class SessionHelper:
         """本机 IPC 服务协程（_run_once 起它；用例经同一入口起，钉住整条接线）。"""
         from .ipc_listener import IPCSocketPathError, serve_ipc
 
+        # A fixed overlong configured path cannot become valid on a Hub
+        # reconnect. Keep IPC disabled without repeating the same diagnostic;
+        # a different configured endpoint is allowed another startup attempt.
+        if getattr(self, "_ipc_rejected_socket_path", None) == self.cfg.mcp_ipc_sock:
+            self.ipc_bound.clear()
+            return
         # 即使 datad_url 未配也装入一个 fail-loud handler。传 None 会让
         # MCP 调用退化成 NoneType/Transport closed,把配置缺失伪装成连接故障。
         vsapi_handler = self._make_vsapi_handler()
@@ -1263,6 +1277,7 @@ class SessionHelper:
                             bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only,
                             inbox_handler=self._make_desktop_inbox_handler(ws), spec_handler=self._make_spec_write_handler(ws))
         except IPCSocketPathError:
+            self._ipc_rejected_socket_path = self.cfg.mcp_ipc_sock
             # The listener already logged only the byte counts and cleared
             # readiness. Keep this optional endpoint failure out of the Hub
             # connection's task cleanup; normal message loops must survive.

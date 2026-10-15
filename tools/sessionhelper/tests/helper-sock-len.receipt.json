@@ -3,7 +3,7 @@
   "status": "OFFLINE_AUTHOR_EVIDENCE_PENDING_INDEPENDENT_CR",
   "parent": "de7f879b3bef474f0b1c1d2621d1e6efbe78e1aa",
   "choice": "Explicit listener startup failure; no short-path fallback. The MCP client already uses the configured endpoint, so relocation would silently mismatch client/server paths.",
-  "failure_contract": "serve_ipc clears readiness, counts os.fsencode bytes before unlink/socket creation, logs one stderr ERROR containing only actual/max byte counts, and raises IPCSocketPathError. app._ipc_server catches only this configuration exception and returns normally; it does not propagate into helper connection supervision/cleanup. No fallback, process exit, Hub disconnect or message-loop shutdown is introduced.",
+  "failure_contract": "serve_ipc validates encoded bytes before unlink/socket creation, clears readiness, emits one byte-count-only ERROR and raises IPCSocketPathError. app._ipc_server catches that configuration error and remembers the rejected fixed path, preventing duplicate diagnostics on Hub reconnects. A changed configured endpoint can retry. _run_once cleanup also consumes non-cancellation IPC task exceptions, clears readiness, and logs only their type; no raw exception/path and no propagation into the Hub connection caller.",
   "limits": {
     "linux_filesystem_address_bytes": 107,
     "other_platform_conservative_bytes": 103,
@@ -39,12 +39,12 @@
       "sha256": "dbdbeeda14523b39d70c7cc73d5e51c95c002f0121ee976e55b32b3c4192712e"
     },
     "tools/sessionhelper/sessionhelper/app.py": {
-      "bytes": 89769,
-      "sha256": "95e6440ef4f2161c8bf2c66f59a3e6348a2ff06649df77feae815de983601d4e"
+      "bytes": 90782,
+      "sha256": "6ed3002efeab98662fc282b35a4f6682256bfd2943cd549ef20fd35a0f34efaf"
     },
     "tools/sessionhelper/tests/test_ipc_socket_path_isolation.py": {
-      "bytes": 3921,
-      "sha256": "08e2c6ce2293834dd6694b5a0ca3880a0673e88b1b3b11308dce9bbd77ec26c5"
+      "bytes": 5364,
+      "sha256": "db94f329fef75ce39358ad55f9730ed235a9e4d193af7be57f677819447bff57"
     }
   },
   "local_logs": {
@@ -91,6 +91,22 @@
     "helper-sock-len-isolation-full.log": {
       "bytes": 333177,
       "sha256": "642676a78772162273777d6aab29ccd9ff9f9ddb72623cfc06e361e8e19e07c2"
+    },
+    "helper-sock-len-reconnect-targeted.log": {
+      "bytes": 1205,
+      "sha256": "088e6030889a2ae2a7b22c43c012509bb71aceb57b7e4b0a1c496a2cb529aeac"
+    },
+    "helper-sock-len-cleanup-withdraw-red.log": {
+      "bytes": 2769,
+      "sha256": "3703422ac46fec6972cc2dda4607fdf5213938d8fda49f98f917b53fe4e65980"
+    },
+    "helper-sock-len-reconnect-build.log": {
+      "bytes": 34576,
+      "sha256": "071615d0b65d08ac512788b9ad666ba1089430ccd815bba6a180420a89548fb4"
+    },
+    "helper-sock-len-reconnect-full.log": {
+      "bytes": 411653,
+      "sha256": "b133e7c7d05bd0f9288bb263c91add0a0fc896da40df58c2306cc10c4886bfe7"
     }
   },
   "real_oversize_probe": {
@@ -100,27 +116,33 @@
     "withdrawal": "Isolated package copy removes only validate_socket_path(socket_path) at serve_ipc entry. Same real filesystem socket probe fails with OS bind error escaped instead of explicit IPCSocketPathError. No mock socket in this probe."
   },
   "isolation_followup": {
-    "supersedes": "Initial 3cbc96ff listener-only delivery lacked the explicit app-level catch now required by leader.",
+    "scope": "Latest B1/B2 follow-up supersedes initial 3cbc listener-only and b9d4 single-connection evidence as final isolation matrix.",
     "targeted_command": "PYTHONPATH=tools/sessionhelper <runtime-venv>/bin/python -B -m unittest -v tools/sessionhelper/tests/test_ipc_socket_path.py tools/sessionhelper/tests/test_ipc_socket_path_isolation.py",
-    "tests": 4,
+    "tests": 5,
     "rc": 0,
-    "scope": "Actual SessionHelper._run_once and _ipc_server against a real local-only WebSocket server; other business/idle loops are test functions. After capability handshake and failed IPC startup, synthetic messages pass both directions and _run_once completes normally. No real Hub authentication, production server or CLI involved.",
-    "withdrawal": "An isolated package copy changes only except IPCSocketPathError return into raise. Same real loopback test rc1 from IPCSocketPathError propagated through _run_once cleanup."
+    "checks": [
+      "Actual SessionHelper._run_once/_ipc_server against a real local-only WebSocket stand-in, with two successive connections and actual closes; each exchanges synthetic messages after failed IPC startup.",
+      "The same fixed overlong config leaves readiness false across both connections and emits exactly one ERROR overall.",
+      "A distinct injected IPC OSError task failure is consumed during actual _run_once cleanup; next connection succeeds and raw diagnostic text is never logged."
+    ],
+    "limits": "Business/idle loops are controlled test functions; no production Hub/authentication/CLI or process-level backoff timing is claimed.",
+    "withdrawal": "Remove only B1 non-cancellation IPC cleanup catch in an isolated package copy. Same isolation suite rc1: typed overlong test remains green; injected task OSError escapes _run_once cleanup."
   },
+  "historical_logs": "Logs named isolation-* and earlier are preserved historical scope from the preceding b9d4/3cbc deliveries. Current final B1/B2 evidence is reconnect-* and cleanup-withdraw-red; no historical whole-suite result is substituted for the latest rerun.",
   "canonical_build": {
     "command": "sh scripts/run-build-tests.sh",
     "rc": 0,
     "python_files": 42,
     "shell_files": 2,
     "environment": "private HOME, pinned runtime venv, seat variables removed",
-    "scope": "Rerun after app-level startup catch was added."
+    "scope": "Rerun after B1 generic task-cleanup containment and B2 reconnect/diagnostic dedup changes."
   },
   "full_helper_suite": {
     "command": "PYTHONPATH=tools/sessionhelper <runtime-venv>/bin/python -B -m unittest discover -s tools/sessionhelper/tests",
     "rc": 0,
-    "tests": 637,
-    "elapsed_seconds": 336.361,
+    "tests": 638,
+    "elapsed_seconds": 338.746,
     "environment": "private HOME, pinned runtime venv, seat variables removed",
-    "scope": "Rerun after app-level IPC-only failure isolation was added. Existing warning output retained in local log."
+    "scope": "Rerun after final B1 cleanup containment and B2 two-connection diagnostic dedup changes. Existing warning output retained."
   }
 }

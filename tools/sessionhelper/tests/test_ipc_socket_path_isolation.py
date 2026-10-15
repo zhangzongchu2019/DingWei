@@ -1,4 +1,4 @@
-"""Real _run_once and loopback WebSocket; no production Hub, credentials or CLI."""
+"""Actual _run_once/reconnects and loopback WS; no production Hub, credentials or CLI."""
 import asyncio
 import contextlib
 import io
@@ -7,6 +7,7 @@ import os
 import tempfile
 from types import SimpleNamespace
 import unittest
+from unittest import mock
 
 import websockets
 from sessionhelper.app import SessionHelper
@@ -14,16 +15,17 @@ from sessionhelper.ipc_listener import IPC_SOCKET_PATH_MAX_BYTES
 
 
 class IPCStartupIsolationTests(unittest.IsolatedAsyncioTestCase):
-    async def test_long_ipc_path_does_not_break_hub_connection_or_message_loops(self):
+    async def scenario(self, unexpected_failure=False):
         connected, ipc_done = asyncio.Event(), asyncio.Event()
-        exchanged = []
+        exchanged, connections = [], []
 
         async def hub(ws):
-            capabilities = json.loads(await ws.recv())
-            self.assertEqual(capabilities, {"type": "synthetic-capabilities"})
+            self.assertEqual(json.loads(await ws.recv()), {"type": "synthetic-capabilities"})
+            connections.append(ws)
             connected.set()
             exchanged.append(await ws.recv())
             await ws.send("synthetic-inbound-after-ipc-failure")
+            await ws.close()  # Actual disconnect, then caller makes a new connection.
 
         async with websockets.serve(hub, "127.0.0.1", 0) as server:
             port = server.sockets[0].getsockname()[1]
@@ -56,6 +58,7 @@ class IPCStartupIsolationTests(unittest.IsolatedAsyncioTestCase):
                     self.assertFalse(helper.ipc_bound.is_set())
                     await ws.send("synthetic-outbound-after-ipc-failure")
                     exchanged.append(await ws.recv())
+                    await ws.wait_closed()
 
                 async def idle(*args):
                     await asyncio.Future()
@@ -66,13 +69,33 @@ class IPCStartupIsolationTests(unittest.IsolatedAsyncioTestCase):
                              "agent_disk_metrics_loop", "outbox_loop", "mirror_loop"):
                     setattr(helper, name, idle)
                 error_log = io.StringIO()
-                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(error_log):
-                    await asyncio.wait_for(SessionHelper._run_once(helper), 3)
-                self.assertEqual(exchanged, ["synthetic-outbound-after-ipc-failure", "synthetic-inbound-after-ipc-failure"])
-                self.assertEqual(error_log.getvalue().count("[ipc_listener] ERROR"), 1)
+                async def failed_listener(*args, **kwargs):
+                    raise OSError("synthetic-private-path-DO-NOT-LOG")
+                patch = mock.patch("sessionhelper.ipc_listener.serve_ipc", failed_listener) if unexpected_failure else contextlib.nullcontext()
+                with patch, contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(error_log):
+                    for _ in range(2):
+                        connected.clear()
+                        ipc_done.clear()
+                        await asyncio.wait_for(SessionHelper._run_once(helper), 3)
+                        self.assertFalse(helper.ipc_bound.is_set())
+                self.assertEqual(len(connections), 2)
+                self.assertIsNot(connections[0], connections[1])
+                self.assertEqual(exchanged, ["synthetic-outbound-after-ipc-failure", "synthetic-inbound-after-ipc-failure"] * 2)
                 self.assertNotIn(path, error_log.getvalue())
-                self.assertFalse(helper.ipc_bound.is_set())
+                self.assertNotIn("synthetic-private-path-DO-NOT-LOG", error_log.getvalue())
                 self.assertFalse(os.path.exists(path))
+                if unexpected_failure:
+                    self.assertEqual(error_log.getvalue().count("listener task failed (OSError)"), 2)
+                else:
+                    # The same fixed invalid config is diagnosed once, not on every reconnect.
+                    self.assertEqual(error_log.getvalue().count("[ipc_listener] ERROR"), 1)
+                    self.assertIn("108 bytes; maximum 107 bytes" if IPC_SOCKET_PATH_MAX_BYTES == 107 else "104 bytes; maximum 103 bytes", error_log.getvalue())
+
+    async def test_long_path_messages_and_reconnect_continue_with_one_error(self):
+        await self.scenario()
+
+    async def test_unexpected_ipc_task_error_is_consumed_during_cleanup(self):
+        await self.scenario(unexpected_failure=True)
 
 
 if __name__ == "__main__":
