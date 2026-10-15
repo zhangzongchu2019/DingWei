@@ -1,0 +1,54 @@
+S-M8-MENTION-FLAKE author diagnostic and test-only repair
+Snapshot UTC: 2026-10-15T01:12:14Z
+
+Base
+----
+integration/spec5ff-r5: de7f879b3bef474f0b1c1d2621d1e6efbe78e1aa
+tree: ca106b2ff8f8278915486ebd05cc04b269b03166
+
+Finding
+-------
+TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource opened two
+websockets then immediately dispatched a cross-member mention.  A client-side
+websocket upgrade completes before HandleSessionWS publishes the session in
+Hub.sessionClients: publication happens after the onboarding frame.  The test
+therefore sometimes asserted delivery before its target had satisfied the
+normal routing precondition.  This repair waits for the concrete, observable
+Hub registration condition for both source and target.  It does not extend a
+sleep and changes no product code or routing semantics.
+
+Reproduction record
+-------------------
+The reported r4 baseline was approximately 2 failures in 30 runs.  On this
+host the exact target did not fail in either initial sampled run, so that fact
+is retained rather than manufactured as a failure:
+
+  go test -v -count=30 ./internal/m8 -run '^TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource$'
+  rc=0, raw log /tmp/m8-mention-flake-baseline.log
+  sha256=a996fbe58dc80b614e25670c1fdad0646ebe499f47d6e62528a9c6d6b6a19a0d
+
+  go test -race -v -count=50 ./internal/m8 -run '^TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource$'
+  before patch rc=0, raw log /tmp/m8-mention-flake-race50.log
+  sha256=5d6f687cc70917755c7e126eecf5dcf80696e6f774563fa68d3eb940767b9749
+
+After the deterministic registration barrier:
+
+  go test -race -v -count=50 ./internal/m8 -run '^TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource$'
+  rc=0, raw log /tmp/m8-mention-flake-fixed-race50.log
+  sha256=e6e72bead1b1226a3dc33ea18361cedc0201203dafced21645d640007eb056ee
+
+  go test -v ./internal/m8 -run '^TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource$'
+  rc=0
+
+  go test ./internal/m8 -count=1
+  rc=0
+
+The original timing window is established by source order and by the existing
+identical waitSessionOnline discipline in the multi-session AMR fixture.  A
+removal of the two waits is probabilistic rather than a deterministic mutation;
+this run did not falsify it and no false "withdrawal red" is claimed.
+
+Scope
+-----
+Only internal/m8/hub_test.go changes.  No Hub routing, delivery durability,
+production operation, deployment, credential, or helper behavior changed.

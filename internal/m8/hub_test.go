@@ -1940,6 +1940,13 @@ func TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource(t *testing.T)
 	u2Name := "u2-u2-" + keyTail(u2Key.ID)
 	u2 := dialSession(t, ctx, srv.URL, "u2", u2Key.ID, u2Secret)
 	defer u2.Close(websocket.StatusNormalClosure, "done")
+	// A successful client websocket dial only means the HTTP upgrade completed.
+	// HandleSessionWS publishes sessionClients after onboarding, so routing the
+	// cross-member mention immediately here used to race that registration.  The
+	// production path resolves targets only after they are online; make the test
+	// assert that same precondition rather than extending a timing sleep.
+	waitSessionOnline(t, hub, u1Key.ID, u1HomeName)
+	waitSessionOnline(t, hub, u2Key.ID, u2Name)
 
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "cross-1",
