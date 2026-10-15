@@ -1,0 +1,66 @@
+{
+  "RECEIPT.json": {
+    "bytes": 3682,
+    "sha256": "7848b0f094afe2bac1a30d822497eb7fc1ab5f802d112eb25a469f6433f5a170"
+  },
+  "REPORT.md": {
+    "bytes": 4434,
+    "sha256": "c8874119236322d25355b5b3597d4892d8c19cce77ae1d79898f19bba610f508"
+  },
+  "canonical-build.log.gz": {
+    "bytes": 5399,
+    "sha256": "d085a9709fbf5fa577943631985694bc660eb32c6cb6ff69cb496ae99cf65c3e"
+  },
+  "core29.log.gz": {
+    "bytes": 1174,
+    "sha256": "91caa1edf782e5f08fff568b58a23ae4d72516ca7383517fbff4fafb4d047ddc"
+  },
+  "helper-full.log.gz": {
+    "bytes": 26436,
+    "sha256": "a5485a4f6493ace7abfd82ba0035e8569d3395825cebdf25339eccd11a424fe8"
+  },
+  "offer15.log.gz": {
+    "bytes": 584,
+    "sha256": "7252635d2e4083d8f95b2d890b4440d956c0dfac8e617baec8e8c5a87b62d946"
+  },
+  "original-five-red.log.gz": {
+    "bytes": 682,
+    "sha256": "8bc9ba29a4f91c4fa35fafc1f18103759e95a8cd5e1efbc940655cebccaf7851"
+  },
+  "original-review-probes.py": {
+    "bytes": 5589,
+    "sha256": "e3b9427b37d1b58e463d3d096fb9dd880901140ae3ca1db3a22e7836311468a7"
+  },
+  "targeted-draft-syntax-error.log.gz": {
+    "bytes": 1255,
+    "sha256": "3ed50c9f43278afe23164ac7043d91b5e511f252bc7ad92b5681f00799bf3471"
+  },
+  "withdraw-R1.log.gz": {
+    "bytes": 342,
+    "sha256": "3ec2e227b20b67730e3d31b925c418464fe17cfcdeccb2b8000b82a935582559"
+  },
+  "withdraw-R2.log.gz": {
+    "bytes": 358,
+    "sha256": "1f5166f0cf746cc6b3dca3d1ba391640e3567ec12b41ac23a400d62a75cb7894"
+  },
+  "withdraw-R3.log.gz": {
+    "bytes": 302,
+    "sha256": "3b9ce5ce897d46c3edaa2368b47817ebc79808e9070eba40c2a85002a28339d2"
+  },
+  "withdraw-R4.log.gz": {
+    "bytes": 343,
+    "sha256": "60fee3cf58095e2bcb5c269b9549670ec6a81fd57f6009aab791ce94afc062e3"
+  },
+  "withdraw-R5-shared.log.gz": {
+    "bytes": 325,
+    "sha256": "a8a1b12f8999373b25caaa8e9af1698b5b80f6330af38b6988a4a5b66c3d5cf7"
+  },
+  "withdraw-R5.log.gz": {
+    "bytes": 322,
+    "sha256": "0319b391ba04854881ef60d784b9a2aa68724b1e32240d9955956d3d717fb464"
+  },
+  "withdrawals.py": {
+    "bytes": 1667,
+    "sha256": "91e0b0d63c423e009a2c06cbd042fd6e9fca34ec353cbe2e11ab202e80d9609e"
+  }
+}
