@@ -591,6 +591,12 @@ func (h *Hub) recordHelperUpdateReceipt(ctx context.Context, c *sessionClient, e
 	}
 	updated := *job
 	updated.Stage = stage
+	if stage == "failed" || stage == "rolled_back" {
+		// The Console reads the durable job projection, not generic audit text.
+		// Persist only the existing allowlisted reason vocabulary; raw helper
+		// errors never enter app_config or a user-visible status.
+		updated.Reason = helperUpdateAuditReason(metaString(env.Meta, "reason"))
+	}
 	if stage == "installed" || stage == "restarted" {
 		updated.ActivationConnSeq = c.connSeq
 	}

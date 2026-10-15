@@ -404,6 +404,37 @@ func TestHelperUpdateReceiptUsesAuthenticatedJobTuple(t *testing.T) {
 	})
 }
 
+func TestHelperUpdateFailureReceiptPersistsAllowlistedReason(t *testing.T) {
+	e := newAgentEnv(t)
+	digest := strings.Repeat("3", 64)
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
+	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
+		t.Fatal(err)
+	}
+	conn, _, _ := e.dial(e.cred, "version=0.2.3.1")
+	defer conn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	e.sendEnv(conn, model.Envelope{ID: "caps-failure-reason", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "helper update capability", func() bool {
+		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+	})
+	job, err := e.hub.IssueHelperUpdate(e.ctx, "zzc", e.agID, digest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.readEnvUntil(conn, time.Second, func(env model.Envelope) bool { return metaString(env.Meta, "job_id") == job.JobID }) == nil {
+		t.Fatal("missing update offer")
+	}
+	e.sendEnv(conn, model.Envelope{ID: "receipt-failed-reason", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{
+		"type": "provision_ack", "action": "update_self", "stage": "failed", "reason": "install_failed",
+		"job_id": job.JobID, "release_id": job.ReleaseID, "sha256": job.SHA256, "lock_sha256": job.LockSHA256,
+	}})
+	waitFor(t, time.Second, "durable failure reason", func() bool {
+		stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
+		return err == nil && stored != nil && stored.Stage == "failed" && stored.Reason == "install_failed"
+	})
+}
+
 func TestHelperUpdateReceiptNeverRegressesStage(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("4", 64)
