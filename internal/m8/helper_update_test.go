@@ -237,7 +237,7 @@ func TestRecoverHelperUpdatesTerminalizesExpiredJob(t *testing.T) {
 		t.Fatal(err)
 	}
 	got, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
-	if err != nil || got == nil || got.Stage != "expired" || got.JobID != job.JobID {
+	if err != nil || got == nil || got.Stage != "failed" || got.Reason != "offer_expired" || got.JobID != job.JobID {
 		t.Fatalf("recovered=%+v err=%v", got, err)
 	}
 }

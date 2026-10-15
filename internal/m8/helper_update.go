@@ -37,6 +37,7 @@ type HelperUpdateCatalog struct {
 // addition to app_config's physical compare-and-swap predicate.
 type helperUpdateJob struct {
 	JobID       string    `json:"job_id"`
+	OfferID     string    `json:"offer_id"`
 	ReleaseID   string    `json:"release_id"`
 	AgentID     string    `json:"agent_id"`
 	OwnerID     string    `json:"owner_id"`
@@ -46,7 +47,9 @@ type helperUpdateJob struct {
 	LockSHA256  string    `json:"lock_sha256"`
 	URL         string    `json:"url"`
 	Platform    string    `json:"platform"`
+	Issuer      string    `json:"issuer"`
 	Stage       string    `json:"stage"`
+	Reason      string    `json:"reason,omitempty"`
 	ExpiresAt   time.Time `json:"expires_at"`
 	HealthNonce string    `json:"health_nonce"`
 	Revision    int       `json:"revision"`
@@ -176,8 +179,9 @@ func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog HelperUpdateCat
 	job := helperUpdateJob{
 		JobID: randomHex(16), ReleaseID: catalog.SHA256, AgentID: agentID, OwnerID: ownerID, AgentName: agentName,
 		Version: catalog.Version, SHA256: catalog.SHA256, LockSHA256: catalog.LockSHA256, URL: catalog.URL,
-		Platform: catalog.Platform, Stage: "offered", ExpiresAt: now.Add(30 * time.Minute), HealthNonce: randomHex(16), Revision: 1,
+		Platform: catalog.Platform, Issuer: issuer, Stage: "offered", ExpiresAt: now.Add(30 * time.Minute), HealthNonce: randomHex(16), Revision: 1,
 	}
+	job.OfferID = job.JobID
 	payload, err := marshalHelperUpdate(job)
 	if err != nil {
 		return nil, err
@@ -260,6 +264,7 @@ func (h *Hub) sendHelperUpdateOffer(ctx context.Context, c *sessionClient, job *
 		"action":       "update_self",
 		"target":       "self",
 		"job_id":       job.JobID,
+		"offer_id":     job.OfferID,
 		"release_id":   job.ReleaseID,
 		"agent_id":     job.AgentID,
 		"owner_id":     job.OwnerID,
@@ -269,6 +274,7 @@ func (h *Hub) sendHelperUpdateOffer(ctx context.Context, c *sessionClient, job *
 		"lock_sha256":  job.LockSHA256,
 		"url":          job.URL,
 		"platform":     job.Platform,
+		"issuer":       job.Issuer,
 		"expires_at":   job.ExpiresAt.UTC().Format(time.RFC3339),
 		"health_nonce": job.HealthNonce,
 	}
@@ -360,7 +366,7 @@ func (h *Hub) recordHelperUpdateReceipt(ctx context.Context, c *sessionClient, e
 
 func helperUpdateTerminal(stage string) bool {
 	switch stage {
-	case "confirmed", "expired", "agent_inactive", "owner_inactive", "release_unavailable", "failed":
+	case "confirmed", "failed", "rolled_back":
 		return true
 	default:
 		return false
@@ -397,18 +403,19 @@ func (h *Hub) RecoverHelperUpdates(ctx context.Context) error {
 			continue
 		}
 		next := ""
+		reason := ""
 		if h.now().UTC().After(job.ExpiresAt) {
-			next = "expired"
+			next, reason = "failed", "offer_expired"
 		} else if ag, err := h.Identity.Store.GetAgent(ctx, job.AgentID); err != nil {
 			continue
 		} else if ag == nil || ag.State != identity.AgentActive {
-			next = "agent_inactive"
+			next, reason = "failed", "agent_inactive"
 		} else if owner, err := h.Identity.Store.GetUser(ctx, job.OwnerID); err != nil {
 			continue
 		} else if owner == nil || owner.State != identity.UserActive {
-			next = "owner_inactive"
+			next, reason = "failed", "owner_inactive"
 		} else if catalog, err := h.HelperUpdateCatalog(ctx, job.SHA256); err == nil && catalog == nil {
-			next = "release_unavailable"
+			next, reason = "failed", "release_unavailable"
 		} else if err != nil {
 			// A transient config-store read must not terminalize a valid durable
 			// offer. The next startup/reconnect retries the same job.
@@ -418,8 +425,9 @@ func (h *Hub) RecoverHelperUpdates(ctx context.Context) error {
 			continue
 		}
 		job.Stage = next
+		job.Reason = reason
 		if ok, err := h.updateHelperUpdateJob(ctx, row.ValueJSON, job); err == nil && ok {
-			_ = h.Repo.WriteAudit(ctx, "workpulse", "helper_update_"+next, job.JobID)
+			_ = h.Repo.WriteAudit(ctx, "workpulse", "helper_update_"+next, job.JobID+":"+reason)
 		}
 	}
 	return nil
@@ -434,9 +442,9 @@ func (h *Hub) resumeHelperUpdateOffer(ctx context.Context, c *sessionClient) {
 		return
 	}
 	if h.now().UTC().After(job.ExpiresAt) {
-		job.Stage = "expired"
+		job.Stage, job.Reason = "failed", "offer_expired"
 		if ok, err := h.updateHelperUpdateJob(ctx, raw, *job); err == nil && ok {
-			_ = h.Repo.WriteAudit(ctx, "workpulse", "helper_update_expired", job.JobID)
+			_ = h.Repo.WriteAudit(ctx, "workpulse", "helper_update_failed", job.JobID+":offer_expired")
 		}
 		return
 	}
