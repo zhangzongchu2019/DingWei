@@ -30,7 +30,7 @@ class GuardTests(unittest.TestCase):
     def item(self, letter):
         sha = (hex(ord(letter))[2:] * 32)[:64]
         item = dict(job_id='job-' + letter, release_id='release-' + letter,
-                    agent_id='agent', version='0.2.3.' + str(ord(letter)), sha256=sha)
+                    agent_id='agent', owner_id='owner', version='0.2.3.' + str(ord(letter)), sha256=sha)
         slot = self.state.root / 'slots' / sha
         (slot / 'sessionhelper').mkdir(parents=True)
         (slot / 'sessionhelper' / '__main__.py').write_text('print("' + letter + '")\n')
@@ -96,7 +96,7 @@ class GuardTests(unittest.TestCase):
 
     def test_wrong_tuple_never_confirms(self):
         a = self.item('a'); self.state.arm(a); self.state.select()
-        for field in ('job_id', 'release_id', 'agent_id', 'version', 'sha256'):
+        for field in ('job_id', 'release_id', 'agent_id', 'owner_id', 'version', 'sha256'):
             bad = dict(a); bad[field] = 'wrong'
             with self.assertRaisesRegex(UpdateError, 'confirmation_mismatch'):
                 self.state.confirm(bad)

@@ -12,7 +12,7 @@ import time
 
 MAX_STARTS = 2
 HEALTH_SECONDS = 120
-TUPLE = ('job_id', 'release_id', 'agent_id', 'version', 'sha256')
+TUPLE = ('job_id', 'release_id', 'agent_id', 'owner_id', 'version', 'sha256')
 
 
 class UpdateError(RuntimeError):
