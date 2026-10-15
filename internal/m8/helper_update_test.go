@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
@@ -85,7 +86,7 @@ func TestIssueHelperUpdateSendsTrustedTargetBoundOffer(t *testing.T) {
 	}
 	defer conn.CloseNow()
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
-	job, err := e.hub.IssueHelperUpdate(e.ctx, e.agID, digest, "zzc")
+	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +120,7 @@ func TestHelperUpdateHealthRequiresFreshAuthenticatedTuple(t *testing.T) {
 	}
 	defer conn.CloseNow()
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
-	job, err := e.hub.IssueHelperUpdate(e.ctx, e.agID, digest, "zzc")
+	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +151,7 @@ func TestHelperUpdateHealthRejectsWrongNonce(t *testing.T) {
 	conn, _, _ := e.dial(e.cred, "version=0.2.3.1")
 	defer conn.CloseNow()
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
-	job, err := e.hub.IssueHelperUpdate(e.ctx, e.agID, digest, "zzc")
+	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +178,7 @@ func TestHelperUpdateReceiptUsesAuthenticatedJobTuple(t *testing.T) {
 	conn, _, _ := e.dial(e.cred, "version=0.2.3.0")
 	defer conn.CloseNow()
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
-	job, err := e.hub.IssueHelperUpdate(e.ctx, e.agID, digest, "zzc")
+	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,6 +193,25 @@ func TestHelperUpdateReceiptUsesAuthenticatedJobTuple(t *testing.T) {
 		stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
 		return err == nil && stored != nil && stored.Stage == "downloaded" && stored.Revision == 2
 	})
+}
+
+func TestIssueHelperUpdateForActorRejectsCrossOwner(t *testing.T) {
+	e := newAgentEnv(t)
+	if err := e.svc.Store.CreateUser(e.ctx, identity.User{UserID: "other", ShortName: "other", State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	e.enrollForOwner("other", "other-device", "OtherAgent")
+	agents, err := e.svc.Store.ListAgents(e.ctx, "other")
+	if err != nil || len(agents) != 1 {
+		t.Fatalf("agents=%+v err=%v", agents, err)
+	}
+	digest := strings.Repeat("3", 64)
+	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", agents[0].ID, digest); err == nil {
+		t.Fatal("cross-owner helper update accepted")
+	}
 }
 
 func TestRecoverHelperUpdatesTerminalizesExpiredJob(t *testing.T) {

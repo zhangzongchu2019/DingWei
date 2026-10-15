@@ -204,18 +204,25 @@ func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog HelperUpdateCat
 	return &job, nil
 }
 
-// IssueHelperUpdate creates one durable, target-bound offer and delivers it to
-// the authenticated Agent's current session.  The Console authorization check
-// is intentionally outside this primitive; it supplies issuer only after
-// proving owner/manager scope.  We still re-check the target Agent and owner
-// here so a stale Console page cannot offer to disabled identities.
-func (h *Hub) IssueHelperUpdate(ctx context.Context, agentID, releaseSHA, issuer string) (*helperUpdateJob, error) {
+// IssueHelperUpdateForActor creates one durable, target-bound offer after
+// enforcing the Console contract: an active owner or manager may only target
+// an active Agent belonging to that same owner. The Hub repeats these checks
+// rather than relying on a stale browser list or client supplied owner field.
+func (h *Hub) IssueHelperUpdateForActor(ctx context.Context, actorID, agentID, releaseSHA string) (*helperUpdateJob, error) {
 	if h.Identity == nil {
 		return nil, fmt.Errorf("helper update identity unavailable")
+	}
+	actorID = strings.TrimSpace(actorID)
+	actor, err := h.Identity.Store.GetUser(ctx, actorID)
+	if err != nil || actor == nil || actor.State != identity.UserActive {
+		return nil, fmt.Errorf("helper update actor inactive")
 	}
 	ag, err := h.Identity.Store.GetAgent(ctx, strings.TrimSpace(agentID))
 	if err != nil || ag == nil || ag.State != identity.AgentActive {
 		return nil, fmt.Errorf("helper update agent inactive")
+	}
+	if ag.OwnerLC != actor.UserIDLC() {
+		return nil, fmt.Errorf("helper update cross-owner denied")
 	}
 	owner, err := h.Identity.Store.GetUser(ctx, ag.OwnerLC)
 	if err != nil || owner == nil || owner.State != identity.UserActive {
@@ -228,7 +235,7 @@ func (h *Hub) IssueHelperUpdate(ctx context.Context, agentID, releaseSHA, issuer
 	if catalog == nil {
 		return nil, fmt.Errorf("helper update release unavailable")
 	}
-	job, err := h.createHelperUpdateJob(ctx, *catalog, ag.ID, ag.OwnerLC, ag.NameLC(), issuer)
+	job, err := h.createHelperUpdateJob(ctx, *catalog, ag.ID, ag.OwnerLC, ag.NameLC(), actor.UserIDLC())
 	if err != nil {
 		return nil, err
 	}
