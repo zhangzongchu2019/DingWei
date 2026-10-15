@@ -50,8 +50,8 @@ var newPlatformSpecTaskExempt = map[string]string{
 	"PATCH /api/specs/shared/{specID}":                                   "共享 spec 写：凭编辑能力令牌（无令牌按登录者判，均无 ⇒ 拒）",
 	"POST /api/specs/shared/{specID}/versions":                           "共享 spec 开新版：同上",
 	"GET /api/agent/console/task-driver/specs/{specID}/{revision}/tasks": "Agent 拉任务：专属凭据＋能力令牌",
-	"POST /api/agent/console/specs":                                      "Agent 建 spec：专属凭据＋能力令牌",
-	"PATCH /api/agent/console/specs/{specID}":                            "Agent 改 spec：专属凭据＋能力令牌",
+	"POST /api/agent/console/specs":                                      "Agent 建 spec：专属凭据及 direct-v1 协议",
+	"PATCH /api/agent/console/specs/{specID}":                            "Agent 改自建 spec：专属凭据及 direct-v1 协议",
 	"POST /api/agent/console/specs/{specID}/inferences":                  "Agent 回推论：专属凭据＋能力令牌",
 }
 
@@ -135,8 +135,8 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 			nSpecTask++
 		}
 	}
-	if nSpecTask != len(oldRec.patterns) || nSpecTask != 35 {
-		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 35)", nSpecTask, len(oldRec.patterns))
+	if nSpecTask != len(oldRec.patterns) || nSpecTask != 38 {
+		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 38)", nSpecTask, len(oldRec.patterns))
 	}
 	for p := range newPlatformSpecTaskExempt {
 		if !seen[p] {
@@ -156,8 +156,8 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 		{"PATCH", "/api/specs/shared/nope", 404}, // 查无此 spec 先于判权
 		{"POST", "/api/specs/shared/nope/versions", 404},
 		{"GET", "/api/agent/console/task-driver/specs/x/1/tasks", 403},
-		{"POST", "/api/agent/console/specs", 403},
-		{"PATCH", "/api/agent/console/specs/x", 403},
+		{"POST", "/api/agent/console/specs", 401},
+		{"PATCH", "/api/agent/console/specs/x", 401},
 		{"POST", "/api/agent/console/specs/x/inferences", 403},
 	} {
 		if st, loc, body := do(c.method, c.path, "", "application/json"); st != c.want {

@@ -931,6 +931,9 @@ async function main() {
     assert.strictEqual(readonlyShape.secondEntry, 0, '只读态同样不得出现「编辑」入口');
     const occurrenceCount = await page.evaluate(() => (document.getElementById('detail-screen').innerText.match(/SPEC_BODY_OCCURRENCE_SENTINEL/g) || []).length);
     assert.strictEqual(occurrenceCount, 1, `同一份正文在详情屏上必须只出现一次，实测 ${occurrenceCount}`);
+    // Finish the fixture's asynchronous broken-image fallback before measuring keyboard immutability.
+    await page.locator('#spec-rendered img.md-img[alt="missing"]').scrollIntoViewIfNeeded();
+    await page.locator('#spec-rendered .md-image-fallback').waitFor({ state: 'visible' });
     const readonlyRenderedBefore = await page.locator('#spec-rendered').innerText();
     await page.locator('#spec-rendered').click();
     await page.keyboard.type('FORBIDDEN_WRITE_SENTINEL');
