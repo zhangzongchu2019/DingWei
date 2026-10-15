@@ -169,6 +169,47 @@ func TestIssueHelperUpdateDefersUntilHelperUpdateCapability(t *testing.T) {
 	}
 }
 
+func TestOfflineHelperUpdateReplayWaitsForAuthenticatedCapability(t *testing.T) {
+	e := newAgentEnv(t)
+	digest := strings.Repeat("8", 64)
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
+	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
+		t.Fatal(err)
+	}
+	// The Agent is offline at issuance, so the job is durable but unarmed on
+	// any particular connection.
+	job, err := e.hub.IssueHelperUpdate(e.ctx, "zzc", e.agID, digest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if job.OfferConnSeq != 0 {
+		t.Fatalf("offline issue recorded offer connection: %+v", job)
+	}
+	conn, _, _ := e.dial(e.cred, "version=0.2.2.1")
+	defer conn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	// sendHelperUpdateOffer records OfferConnSeq before writing. Its remaining
+	// zero therefore proves that legacy registration did not replay an offer,
+	// without cancelling a WebSocket read just to assert silence.
+	stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
+	if err != nil || stored == nil || stored.OfferConnSeq != 0 {
+		t.Fatalf("legacy reconnect replayed update offer: %+v err=%v", stored, err)
+	}
+	e.sendEnv(conn, model.Envelope{ID: "caps-offline-replay", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "helper update capability after offline replay", func() bool {
+		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+	})
+	if got := e.readEnvUntil(conn, time.Second, func(env model.Envelope) bool {
+		return metaString(env.Meta, "job_id") == job.JobID && metaString(env.Meta, "action") == "update_self"
+	}); got == nil {
+		t.Fatal("capable reconnect did not receive deferred update offer")
+	}
+	stored, _, err = e.hub.helperUpdateJob(e.ctx, e.agID)
+	if err != nil || stored == nil || stored.OfferConnSeq <= 0 {
+		t.Fatalf("capable replay did not persist offer connection: %+v err=%v", stored, err)
+	}
+}
+
 func TestHelperUpdateHealthRequiresFreshAuthenticatedConnection(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("e", 64)

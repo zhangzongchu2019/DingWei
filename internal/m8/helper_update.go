@@ -647,7 +647,10 @@ func (h *Hub) RecoverHelperUpdates(ctx context.Context) error {
 }
 
 func (h *Hub) resumeHelperUpdateOffer(ctx context.Context, c *sessionClient) {
-	if c == nil || c.metricsAgentID == "" {
+	if c == nil || c.metricsAgentID == "" || !h.sessionSupportsHelperUpdate(c) {
+		// An offline-issued job stays durable, but it must never be replayed to a
+		// legacy connection merely because registration completed. A later
+		// authenticated capability frame invokes this function again.
 		return
 	}
 	job, raw, err := h.helperUpdateJob(ctx, c.metricsAgentID)
