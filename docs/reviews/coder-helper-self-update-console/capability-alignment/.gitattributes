@@ -1,0 +1,2 @@
+# Raw execution receipts retain exact whitespace.
+*.log.txt -whitespace

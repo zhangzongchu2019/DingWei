@@ -1,0 +1,12 @@
+[
+  {
+    "case": "positive",
+    "rc": 0,
+    "intended": true
+  },
+  {
+    "case": "withdraw-cap-read",
+    "rc": 1,
+    "intended": true
+  }
+]

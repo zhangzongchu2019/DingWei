@@ -1,0 +1,159 @@
+{
+  "source_commit": "d23c34bc9bd85481b9cf9869361caa6b54377fb6",
+  "source_tree": "ed7f62694efa439a9983cd7f3afae4fa39618a13",
+  "core_pin": "b91dbfd473f0c2a1591b1724c22893cc2f858579",
+  "assets": [
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/.gitattributes",
+      "bytes": 72,
+      "sha256": "287f18c036849d295b5c86f0630155d8738c7120a386aeb20556170d6e0e4c73"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/REPORT.md",
+      "bytes": 4645,
+      "sha256": "d01e0ee224522d80eb336ebab505c9b56b6a4278832bf28540aff31c722e64fc"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/all-race-timeout.log.txt",
+      "bytes": 290000,
+      "sha256": "e133aac0dc21f4e7c6e238dc08f543a3783208a0c94f3c572ae365f4fc2f78f6"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/canonical-exact-head.log.txt",
+      "bytes": 34964,
+      "sha256": "1e30efde3fa4912a645a24ed97d0f75313dca456efa5c8b4556bde4068c25cdd"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/cap-read-probe-results.json",
+      "bytes": 146,
+      "sha256": "b9b487ee72545795412dbd447d912bf8aac1d49b877957430e60e38ea322907f"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/cap-read-probe.py",
+      "bytes": 1805,
+      "sha256": "f144f87dd45bace1e9414ed86f9275abcaa52a78dff704507a895a00fafcdf00"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/capability-api-race.log.txt",
+      "bytes": 61,
+      "sha256": "42ce82a1a89faa5cdf7cb7b731f92a582faa2ede58c7bf960982a7abd549f85e"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/final-targeted-race.log.txt",
+      "bytes": 61,
+      "sha256": "7993e207223c424139931c9fb98f9de8db4ba305bbd81798d24fcd658a98cc51"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/groups-entry.log.txt",
+      "bytes": 860,
+      "sha256": "b12d51605b7809a48eb96f9aea8d1be162013572da9baac2007b59f693e52a99"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/m8-standard.log.txt",
+      "bytes": 62,
+      "sha256": "60c980e9ff72a2bf934712796aec1c2fd1749339eee632ed3ebb80343fbf161a"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/ui12-chromium.log.txt",
+      "bytes": 772,
+      "sha256": "1d766da1f28fab44bc3a46f0577e4d32179af8b8e98ad12632360025e750bcbb"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/withdraw-cap-read.log.txt",
+      "bytes": 1047,
+      "sha256": "43f7e20395ad99555a6bef4c44a77e7f32e9e0b4dbc9b7da08fb1e8b44f53cd5"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/withdraw-catalog-input.log.txt",
+      "bytes": 483,
+      "sha256": "2ff28bbc419055aff8af9fbb2c50c504ac8d58e2e90bcecc4ed1070ef685e6dd"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/withdraw-origin.log.txt",
+      "bytes": 510,
+      "sha256": "6959d73037f7284ee733f03c4c24a834d6b2d8cec0e00799312134526317aaa8"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/withdraw-ownership.log.txt",
+      "bytes": 565,
+      "sha256": "6ffdac713912ddd4433c80fabfe3934773b877613d29fef1a21f29cbf905fd7f"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/withdraw-page-asset.log.txt",
+      "bytes": 507,
+      "sha256": "d3839b44bde1f656c2e339cd5dd4c593edf050c34f7096a9aad63506514b1cc4"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/withdraw-stage.log.txt",
+      "bytes": 777,
+      "sha256": "a69c13a909fed99e2f73bd2eb3aaa3d6cf0fc6db5e367bd214ac39d7de751527"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/withdrawal-runner.py",
+      "bytes": 1928,
+      "sha256": "da68b94084260f0129a38825471222c36de760ccd0a865bbed4a80951c1ac0eb"
+    },
+    {
+      "path": "docs/reviews/coder-helper-self-update-console/capability-alignment/withdrawals.json",
+      "bytes": 531,
+      "sha256": "c0313b2e8c6111c06c2e3e18372a2684b0020ed92881dd83123f341a0d87833e"
+    }
+  ],
+  "source_pins": [
+    {
+      "path": "cmd/workpulse/console_routes.go",
+      "bytes": 13168,
+      "sha256": "fea551a57897c0e588e039ac5fd0c143558dc6c8ed802ca959b834ab633c7bf4"
+    },
+    {
+      "path": "internal/m8/console_auth.go",
+      "bytes": 149822,
+      "sha256": "d197bbb017ff4bacc0338a1a2108503c92eaf33c1ec094a972e42d331c697003"
+    },
+    {
+      "path": "internal/m8/console_helper_updates.go",
+      "bytes": 7945,
+      "sha256": "890181a9dd4b93ac965349e739646aa15994b2b72a95053f8b27b18be4f92957"
+    },
+    {
+      "path": "internal/m8/console_helper_updates.js",
+      "bytes": 7364,
+      "sha256": "36a11bdef0e793125b4d1a0fa2d303d7fc792fa840260946706ba3d4d42b072d"
+    },
+    {
+      "path": "internal/m8/console_helper_updates_asset.go",
+      "bytes": 101,
+      "sha256": "8d52fa5eebb006acde3d68cc8893160966e3e657570497bc39352de0969814f5"
+    },
+    {
+      "path": "internal/m8/console_helper_updates_test.go",
+      "bytes": 8422,
+      "sha256": "53b1badb0e0fa8f2518f02b25a376c80cf6b5de08e80cef19324228d82a7286e"
+    },
+    {
+      "path": "view-service/console-helper-update-regression.js",
+      "bytes": 9747,
+      "sha256": "e62b08e0922e1b8dadf1f34679ba056c7ab05841c4ab34db3f0ce94c5c577378"
+    },
+    {
+      "path": "docs/operator/helper-update-console-api.md",
+      "bytes": 2691,
+      "sha256": "8bdf5a1a4b5362deb25234239ba4d081d0f0d847f6342dd7bcb2bed730423825"
+    },
+    {
+      "path": "internal/m8/helper_update.go",
+      "bytes": 19985,
+      "sha256": "a10855c44ba69f893c2402be7626517140807ed048b39591756c8e36222362c4"
+    },
+    {
+      "path": "internal/m8/hub.go",
+      "bytes": 242450,
+      "sha256": "2d962aceb86b90117a9af1981db64674a433cd546969395284e1da19a05d5eb8"
+    },
+    {
+      "path": "internal/m8/agent_ws.go",
+      "bytes": 8321,
+      "sha256": "62e7fea9863edcde6a127029ee4d5a170c7c6097d2c6f3132e2e194430590a9e"
+    }
+  ]
+}
