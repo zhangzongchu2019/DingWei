@@ -108,6 +108,23 @@ func marshalHelperUpdate(v any) (string, error) {
 	return string(b), nil
 }
 
+func (h *Hub) writeHelperUpdateAudit(ctx context.Context, actor, action string, job *helperUpdateJob, reason string) {
+	if h.Repo == nil {
+		return
+	}
+	detail := map[string]any{"reason": reason}
+	if job != nil {
+		detail["job_id"] = job.JobID
+		detail["agent_id"] = job.AgentID
+		detail["release_id"] = job.ReleaseID
+		detail["revision"] = job.Revision
+	}
+	payload, err := json.Marshal(detail)
+	if err == nil {
+		_ = h.Repo.WriteAudit(ctx, actor, action, string(payload))
+	}
+}
+
 func (h *Hub) HelperUpdateCatalog(ctx context.Context, sha string) (*HelperUpdateCatalog, error) {
 	if h.Repo == nil {
 		return nil, fmt.Errorf("helper update repository unavailable")
@@ -181,7 +198,8 @@ func (h *Hub) RegisterHelperUpdateCatalog(ctx context.Context, actor string, cat
 	if !created {
 		return fmt.Errorf("helper update catalog already registered")
 	}
-	return h.Repo.WriteAudit(ctx, actor, "helper_update_catalog_registered", HelperUpdateCatalogKey(catalog.SHA256))
+	detail, _ := json.Marshal(map[string]string{"sha256": catalog.SHA256, "version": catalog.Version})
+	return h.Repo.WriteAudit(ctx, actor, "helper_update_catalog_registered", string(detail))
 }
 
 func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog HelperUpdateCatalog, agentID, ownerID, agentName, issuer string) (*helperUpdateJob, error) {
@@ -215,9 +233,7 @@ func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog HelperUpdateCat
 	if !created {
 		return nil, fmt.Errorf("helper update job changed concurrently")
 	}
-	if err := h.Repo.WriteAudit(ctx, issuer, "helper_update_offered", job.JobID); err != nil {
-		return nil, err
-	}
+	h.writeHelperUpdateAudit(ctx, issuer, "helper_update_offered", &job, "")
 	return &job, nil
 }
 
@@ -330,7 +346,7 @@ func (h *Hub) confirmHelperUpdateHealth(ctx context.Context, c *sessionClient, e
 	if err != nil || !ok {
 		return true
 	}
-	_ = h.Repo.WriteAudit(ctx, c.keyID, "helper_update_confirmed", job.JobID)
+	h.writeHelperUpdateAudit(ctx, c.keyID, "helper_update_confirmed", &updated, "")
 	_ = c.write(ctx, model.Envelope{
 		ID: randomHex(16), To: sessionAddress(c.sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID), TS: time.Now().Unix(),
 		Meta: map[string]any{"type": "helper_update_confirm", "system": true, "no_mirror": true,
@@ -346,6 +362,15 @@ func helperUpdateReceiptStage(stage string) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func helperUpdateAuditReason(v string) string {
+	switch v {
+	case "", "sha_mismatch", "lock_changed", "download_failed", "install_failed", "health_timeout", "rollback", "busy", "offer_expired":
+		return v
+	default:
+		return "unknown"
 	}
 }
 
@@ -372,7 +397,7 @@ func (h *Hub) recordHelperUpdateReceipt(ctx context.Context, c *sessionClient, e
 	updated := *job
 	updated.Stage = stage
 	if ok, err := h.updateHelperUpdateJob(ctx, raw, updated); err == nil && ok {
-		_ = h.Repo.WriteAudit(ctx, c.keyID, "helper_update_"+stage, job.JobID)
+		h.writeHelperUpdateAudit(ctx, c.keyID, "helper_update_"+stage, &updated, helperUpdateAuditReason(metaString(env.Meta, "reason")))
 	}
 	return true
 }
@@ -440,7 +465,7 @@ func (h *Hub) RecoverHelperUpdates(ctx context.Context) error {
 		job.Stage = next
 		job.Reason = reason
 		if ok, err := h.updateHelperUpdateJob(ctx, row.ValueJSON, job); err == nil && ok {
-			_ = h.Repo.WriteAudit(ctx, "workpulse", "helper_update_"+next, job.JobID+":"+reason)
+			h.writeHelperUpdateAudit(ctx, "workpulse", "helper_update_"+next, &job, reason)
 		}
 	}
 	return nil
@@ -457,7 +482,7 @@ func (h *Hub) resumeHelperUpdateOffer(ctx context.Context, c *sessionClient) {
 	if h.now().UTC().After(job.ExpiresAt) {
 		job.Stage, job.Reason = "failed", "offer_expired"
 		if ok, err := h.updateHelperUpdateJob(ctx, raw, *job); err == nil && ok {
-			_ = h.Repo.WriteAudit(ctx, "workpulse", "helper_update_failed", job.JobID+":offer_expired")
+			h.writeHelperUpdateAudit(ctx, "workpulse", "helper_update_failed", job, "offer_expired")
 		}
 		return
 	}
