@@ -10,6 +10,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/url"
 	"strings"
 	"time"
 
@@ -80,6 +82,17 @@ func validateHelperUpdateCatalog(v HelperUpdateCatalog) error {
 	}
 	if strings.TrimSpace(v.Version) == "" || strings.TrimSpace(v.URL) == "" {
 		return fmt.Errorf("helper update version/url required")
+	}
+	u, err := url.Parse(strings.TrimSpace(v.URL))
+	if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+		return fmt.Errorf("helper update catalog url invalid")
+	}
+	loopback := strings.EqualFold(u.Hostname(), "localhost")
+	if ip := net.ParseIP(u.Hostname()); ip != nil && ip.IsLoopback() {
+		loopback = true
+	}
+	if u.Scheme != "https" && !(u.Scheme == "http" && loopback) {
+		return fmt.Errorf("helper update catalog url requires https")
 	}
 	if strings.TrimSpace(v.Platform) != "linux" {
 		return fmt.Errorf("helper update platform must be linux")

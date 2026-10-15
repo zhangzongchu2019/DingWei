@@ -25,6 +25,15 @@ func TestHelperUpdateCatalogValidation(t *testing.T) {
 	if err := validateHelperUpdateCatalog(catalog); err == nil {
 		t.Fatal("non-linux catalog accepted")
 	}
+	catalog.Platform = "linux"
+	catalog.URL = "https://files.example/helper.tgz?credential=bad"
+	if err := validateHelperUpdateCatalog(catalog); err == nil {
+		t.Fatal("catalog URL query accepted")
+	}
+	catalog.URL = "http://files.example/helper.tgz"
+	if err := validateHelperUpdateCatalog(catalog); err == nil {
+		t.Fatal("non-TLS catalog URL accepted")
+	}
 }
 
 func TestHelperUpdateCatalogAndJobAreDurableAndSingleUse(t *testing.T) {
