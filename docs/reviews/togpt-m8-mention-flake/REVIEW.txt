@@ -1,0 +1,179 @@
+S-M8-MENTION-FLAKE author diagnostic and test-only repair
+Snapshot UTC: 2026-10-15T01:12:14Z
+
+Base
+----
+integration/spec5ff-r5: de7f879b3bef474f0b1c1d2621d1e6efbe78e1aa
+tree: ca106b2ff8f8278915486ebd05cc04b269b03166
+
+Finding
+-------
+TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource opened two
+websockets then immediately dispatched a cross-member mention.  A client-side
+websocket upgrade completes before HandleSessionWS publishes the session in
+Hub.sessionClients: publication happens after the onboarding frame.  The test
+therefore sometimes asserted delivery before its target had satisfied the
+normal routing precondition.  This repair waits for the concrete, observable
+Hub registration condition for both source and target.  It does not extend a
+sleep and changes no product code or routing semantics.
+
+Reproduction record
+-------------------
+The reported r4 baseline was approximately 2 failures in 30 runs.  On this
+host the exact target did not fail in either initial sampled run, so that fact
+is retained rather than manufactured as a failure:
+
+  go test -v -count=30 ./internal/m8 -run '^TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource$'
+  rc=0, raw log /tmp/m8-mention-flake-baseline.log
+  sha256=a996fbe58dc80b614e25670c1fdad0646ebe499f47d6e62528a9c6d6b6a19a0d
+
+  go test -race -v -count=50 ./internal/m8 -run '^TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource$'
+  before patch rc=0, raw log /tmp/m8-mention-flake-race50.log
+  sha256=5d6f687cc70917755c7e126eecf5dcf80696e6f774563fa68d3eb940767b9749
+
+After the deterministic registration barrier:
+
+  go test -race -v -count=50 ./internal/m8 -run '^TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource$'
+  rc=0, raw log /tmp/m8-mention-flake-fixed-race50.log
+  sha256=e6e72bead1b1226a3dc33ea18361cedc0201203dafced21645d640007eb056ee
+
+  go test -v ./internal/m8 -run '^TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource$'
+  rc=0
+
+  go test ./internal/m8 -count=1
+  rc=0
+
+The original timing window is established by source order and by the existing
+identical waitSessionOnline discipline in the multi-session AMR fixture.  A
+removal of the two waits is probabilistic rather than a deterministic mutation;
+this run did not falsify it and no false "withdrawal red" is claimed.
+
+Scope
+-----
+Only internal/m8/hub_test.go changes.  No Hub routing, delivery durability,
+production operation, deployment, credential, or helper behavior changed.
+
+
+S-M8-FIXTURE-RACES follow-up
+-----------------------------
+Snapshot UTC: 2026-10-15T01:50:00Z
+
+The coordinator grouped four fixtures under the same registration-readiness
+issue: the cross-member mention/reply fixture above, the four routing-flow
+fixture, and TerminalViewCookie's terminal-state fixture.  The latter two
+also treated successful client websocket upgrade as if it implied server-side
+runtime publication.  That is not guaranteed: onboarding is written before
+`sessionClients` is published, and terminal-view setup reads the terminal
+installed by that registered handler.
+
+This follow-up therefore adds three `waitSessionOnline` preconditions:
+
+* both `home` and `developer` before TestSessionAddressingFourFlows sends;
+* `home` before TestTerminalViewCookiePersistsAndRestoresUnlock opens its
+  terminal view;
+* the previously delivered two waits remain in the cross-member mention
+  fixture.
+
+All waits use the existing observable Hub registration condition.  No timeout
+was extended and no product routing, delivery, terminal, or persistence code
+changed.
+
+Full m8 inventory after the fixture changes
+-------------------------------------------
+```
+go test -v -count=1 ./internal/m8
+rc=0
+raw log=/tmp/m8-fixture-races/r5-447fb-fixture-fixed-full-v.log
+sha256=6d630dbb5788beb9a4aea581e03675927989e9fbf39ab2d6fe8a266a5fb07f67
+```
+
+There were no FAIL entries.  The non-PASS entries are these eight existing
+environment-gated SKIPs:
+
+* TestDeviceClaimAcrossActualClientAndHub
+* TestDeviceClaimAcrossActualClientAndPostgres
+* TestMuxProductHTTP1EightSeats
+* TestConsolePlatformPayloadDump
+* TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel
+* TestDesktopMCPRoundTripAcrossRealHub
+* TestEnvelopeReadTimeoutEnvironmentChild
+* TestSpecMCPEndToEnd
+
+They are unchanged from r5 for this candidate: the diff touches only the
+three named hub_test fixtures, none of those tests or their product paths.
+They are recorded as existing environment SKIPs, not PASS.
+
+Focused repetition
+------------------
+```
+go test -v -count=30 ./internal/m8 \
+  -run '^(TestSessionAddressingFourFlows|TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource|TestTerminalViewCookiePersistsAndRestoresUnlock)$'
+rc=0
+raw log=/tmp/m8-fixture-races/fixture-races-fixed-v30.log
+sha256=4f72e8429ce25a9db5194ee56badb70bbb6c03dbd566f3f0d37e14110b87f976
+```
+
+The historical flakes did not reproduce locally before the waits either, so
+there is no fabricated removal/withdrawal-red claim.  The source ordering and
+the already-established `waitSessionOnline` pattern in the AMR and grouping
+fixtures identify this as a deterministic fixture precondition repair.  The
+separate S-MENTION-FRESH-TARGET review must decide whether messages sent
+before publication are durably queued; this test-only change makes no claim
+about that product contract.
+
+Additional inherited directory-mirror fixture
+---------------------------------------------
+While the independent reviewer exercised the reply slice, it found
+`TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary` can call
+`BroadcastOnlineDirectories` after the three clients completed their dial but
+before the final `review` client is published to `sessionClients`. The
+directory snapshot can therefore contain a partial mirror set.
+
+This is inherited, not introduced here: the r5 test body is byte-identical,
+`internal/m8/hub.go` is unchanged by this branch, and `HandleSessionWS` still
+sends onboarding before publishing `sessionClients` to directory broadcasters.
+The test now waits for all three canonical registered names (`alice-home`,
+`alice-developer`, `alice-review`, with their test-key tail) before snapshot.
+This is a concrete condition, not a sleep or product change.
+
+```
+go test -v -count=30 ./internal/m8 \
+  -run '^TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary$'
+rc=0
+raw log=/tmp/m8-fixture-races/online-directory-fixed-v30.log
+sha256=15094ed89f988dfc431f40df404d6b1efb40297df796de89e20acf55d52eac49
+```
+
+The reviewer’s original failure remains recorded as an inherited fixture
+finding; it is not folded into a product reply or delivery PASS.
+
+The complete post-change inventory was rerun after this fourth fixture update:
+`go test -v -count=1 ./internal/m8`, rc=0, no FAIL; raw log
+`/tmp/m8-fixture-races/r5-447fb-directory-fixed-full-v.log`, SHA256
+`58a356ce50faa74d9cb30a14e06d6e73dc427117d34cb742bfa797db9807e338`.
+The same eight environment-gated SKIPs listed above remain non-PASS.
+
+Additional inherited selector fixture
+-------------------------------------
+`TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope` dials `developer`
+and immediately routes `#developer`.  Selector routing resolves the canonical
+endpoint from the published runtime set, while `dialSession` completes after
+onboarding and before `sessionClients` publication.  The fixture now waits
+for `developerName` to become online before writing the selector envelope.
+The test body and `hub.go` publication ordering were unchanged from r5 before
+this test-only line; no selector or delivery product code changes.
+
+All five registration-dependent fixtures were then run together:
+```
+go test -v -count=30 ./internal/m8 \
+  -run '^(TestSessionAddressingFourFlows|TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource|TestTerminalViewCookiePersistsAndRestoresUnlock|TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary|TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope)$'
+rc=0
+raw log=/tmp/m8-fixture-races/five-fixtures-fixed-v30.log
+sha256=052ba79be5dc6ba1bcce8268842b3badb417eae7836e7d0720e93944febd99bf
+```
+
+Full m8 was rerun after this final fixture addition:
+`go test -v -count=1 ./internal/m8`, rc=0, no FAIL; raw log
+`/tmp/m8-fixture-races/five-fixtures-fixed-full-v.log`, SHA256
+`630081ac5e030b50d13f34ef9afa3322eb6abac3945216c89b2216ee8b9c3690`.
+The existing eight environment-gated SKIPs remain non-PASS.

@@ -1399,6 +1399,11 @@ func TestSessionAddressingFourFlows(t *testing.T) {
 	defer home.Close(websocket.StatusNormalClosure, "done")
 	developer := dialSession(t, ctx, srv.URL, "developer", keyID, secret)
 	defer developer.Close(websocket.StatusNormalClosure, "done")
+	// dialSession returns after the client receives onboarding, but the server
+	// publishes sessionClients afterwards.  These four routing assertions need
+	// the server-side registration precondition, not a timing sleep.
+	waitSessionOnline(t, hub, keyID, "home")
+	waitSessionOnline(t, hub, keyID, "developer")
 
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "fm1",
@@ -1940,6 +1945,13 @@ func TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource(t *testing.T)
 	u2Name := "u2-u2-" + keyTail(u2Key.ID)
 	u2 := dialSession(t, ctx, srv.URL, "u2", u2Key.ID, u2Secret)
 	defer u2.Close(websocket.StatusNormalClosure, "done")
+	// A successful client websocket dial only means the HTTP upgrade completed.
+	// HandleSessionWS publishes sessionClients after onboarding, so routing the
+	// cross-member mention immediately here used to race that registration.  The
+	// production path resolves targets only after they are online; make the test
+	// assert that same precondition rather than extending a timing sleep.
+	waitSessionOnline(t, hub, u1Key.ID, u1HomeName)
+	waitSessionOnline(t, hub, u2Key.ID, u2Name)
 
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "cross-1",
@@ -2054,6 +2066,10 @@ func TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope(t *testing.T) {
 
 	developer := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
 	defer developer.Close(websocket.StatusNormalClosure, "done")
+	// The selector resolves the canonical endpoint from the registered runtime
+	// set.  A completed dial only consumed onboarding; wait for publication
+	// before exercising selector routing.
+	waitSessionOnline(t, hub, key.ID, developerName)
 	if err := writeEnvelope(ctx, home, model.Envelope{ID: "selector", To: "#developer", From: homeName + "#" + key.ID, Body: "请核对X"}); err != nil {
 		t.Fatal(err)
 	}
@@ -3755,6 +3771,15 @@ func TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary(t *testing.T) {
 	defer developer.Close(websocket.StatusNormalClosure, "done")
 	review := dialSession(t, ctx, srv.URL, "review", key.ID, secret)
 	defer review.Close(websocket.StatusNormalClosure, "done")
+	// The directory snapshot reads sessionClients.  The client has received its
+	// onboarding frame before that map is published, so wait for all three
+	// server-side registrations instead of snapshotting a partial mirror set.
+	tail := keyTail(key.ID)
+	waitSessionsOnlineTogether(t, hub, key.ID,
+		"alice-home-"+tail,
+		"alice-developer-"+tail,
+		"alice-review-"+tail,
+	)
 
 	if err := hub.BroadcastOnlineDirectories(ctx); err != nil {
 		t.Fatal(err)
@@ -4740,6 +4765,9 @@ func TestTerminalViewCookiePersistsAndRestoresUnlock(t *testing.T) {
 	sessionName := "home"
 	session := dialSession(t, ctx, srv.URL, sessionName, key.ID, secret)
 	defer session.Close(websocket.StatusNormalClosure, "done")
+	// HandleTerminalViewWS looks up the terminal installed by the registered
+	// session handler.  A websocket upgrade alone does not establish it.
+	waitSessionOnline(t, hub, key.ID, sessionName)
 	view := dialTerminalView(t, ctx, srv.URL, sessionName)
 	defer view.Close(websocket.StatusNormalClosure, "done")
 
