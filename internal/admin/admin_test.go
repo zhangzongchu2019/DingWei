@@ -17,6 +17,7 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/bus"
 	"github.com/zhangzongchu2019/dingwei/internal/datad"
+	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/scheduler"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
@@ -319,6 +320,41 @@ func TestAdminM9ConfigCRUDAndRouteConflict(t *testing.T) {
 	postForm(t, mux, "/admin/members", url.Values{"action": {"delete"}, "owner_key": {"dev:personal:alice"}})
 	if m, _ := db.GetMemberByOwnerKey(ctx, "dev:personal:alice"); m == nil || m.Active {
 		t.Fatalf("member not disabled: %+v", m)
+	}
+}
+
+func TestAdminConfigRejectsHubManagedHelperUpdateKeys(t *testing.T) {
+	srv, db, mux, ctx := newAdminTestServer(t)
+	srv.sessions["tok"] = "admin"
+	keys := []string{m8.HelperUpdateCatalogPrefix + strings.Repeat("a", 64), "helper_update.job.agent-1"}
+	for _, key := range keys {
+		// Add is forbidden before a value exists.
+		for _, form := range []url.Values{
+			{"key": {key}, "value_json": {`{"forged":true}`}},
+		} {
+			rec := postFormRaw(mux, "/admin/config", form)
+			if rec.Code != http.StatusForbidden {
+				t.Fatalf("key=%q form=%v status=%d body=%s", key, form, rec.Code, rec.Body.String())
+			}
+		}
+		if err := db.UpsertAppConfig(ctx, key, `{"seed":true}`); err != nil {
+			t.Fatal(err)
+		}
+		for _, form := range []url.Values{
+			{"key": {key}, "value_json": {`{"forged":true}`}}, // modify
+			{"key": {key}, "action": {"delete"}},              // delete
+		} {
+			rec := postFormRaw(mux, "/admin/config", form)
+			if rec.Code != http.StatusForbidden {
+				t.Fatalf("key=%q form=%v status=%d body=%s", key, form, rec.Code, rec.Body.String())
+			}
+		}
+		if err := db.DeleteAppConfig(ctx, key); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if rows, err := db.ListAppConfig(ctx); err != nil || len(rows) != 0 {
+		t.Fatalf("Hub-managed config mutated rows=%+v err=%v", rows, err)
 	}
 }
 

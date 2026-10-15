@@ -26,35 +26,37 @@ const (
 )
 
 type HelperUpdateCatalog struct {
-	SHA256     string    `json:"sha256"`
-	Version    string    `json:"version"`
-	URL        string    `json:"url"`
-	LockSHA256 string    `json:"lock_sha256"`
-	Platform   string    `json:"platform"`
-	Registered time.Time `json:"registered_at"`
+	SHA256            string    `json:"sha256"`
+	Version           string    `json:"version"`
+	URL               string    `json:"url"`
+	FileServiceOrigin string    `json:"file_service_origin"`
+	LockSHA256        string    `json:"lock_sha256"`
+	Platform          string    `json:"platform"`
+	Registered        time.Time `json:"registered_at"`
 }
 
 // helperUpdateJob is persisted under helper_update.job.<agent_id>.  Revision
 // is part of the document so CAS transitions have an explicit audit value in
 // addition to app_config's physical compare-and-swap predicate.
 type helperUpdateJob struct {
-	JobID       string    `json:"job_id"`
-	OfferID     string    `json:"offer_id"`
-	ReleaseID   string    `json:"release_id"`
-	AgentID     string    `json:"agent_id"`
-	OwnerID     string    `json:"owner_id"`
-	AgentName   string    `json:"agent_name"`
-	Version     string    `json:"version"`
-	SHA256      string    `json:"sha256"`
-	LockSHA256  string    `json:"lock_sha256"`
-	URL         string    `json:"url"`
-	Platform    string    `json:"platform"`
-	Issuer      string    `json:"issuer"`
-	Stage       string    `json:"stage"`
-	Reason      string    `json:"reason,omitempty"`
-	ExpiresAt   time.Time `json:"expires_at"`
-	HealthNonce string    `json:"health_nonce"`
-	Revision    int       `json:"revision"`
+	JobID             string    `json:"job_id"`
+	OfferID           string    `json:"offer_id"`
+	ReleaseID         string    `json:"release_id"`
+	AgentID           string    `json:"agent_id"`
+	OwnerID           string    `json:"owner_id"`
+	AgentName         string    `json:"agent_name"`
+	Version           string    `json:"version"`
+	SHA256            string    `json:"sha256"`
+	LockSHA256        string    `json:"lock_sha256"`
+	URL               string    `json:"url"`
+	FileServiceOrigin string    `json:"file_service_origin"`
+	Platform          string    `json:"platform"`
+	Issuer            string    `json:"issuer"`
+	Stage             string    `json:"stage"`
+	Reason            string    `json:"reason,omitempty"`
+	ExpiresAt         time.Time `json:"expires_at"`
+	HealthNonce       string    `json:"health_nonce"`
+	Revision          int       `json:"revision"`
 }
 
 // HelperUpdateJob is the read-only Console projection of a durable job. The
@@ -87,21 +89,40 @@ func validateHelperUpdateCatalog(v HelperUpdateCatalog) error {
 	if strings.TrimSpace(v.Version) == "" || strings.TrimSpace(v.URL) == "" {
 		return fmt.Errorf("helper update version/url required")
 	}
+	origin, err := canonicalHelperUpdateOrigin(v.FileServiceOrigin)
+	if err != nil {
+		return err
+	}
 	u, err := url.Parse(strings.TrimSpace(v.URL))
 	if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
 		return fmt.Errorf("helper update catalog url invalid")
+	}
+	urlOrigin, err := canonicalHelperUpdateOrigin(u.Scheme + "://" + u.Host)
+	if err != nil || urlOrigin != origin {
+		return fmt.Errorf("helper update catalog url/origin mismatch")
+	}
+	if strings.TrimSpace(v.Platform) != "linux" {
+		return fmt.Errorf("helper update platform must be linux")
+	}
+	return nil
+}
+
+// canonicalHelperUpdateOrigin limits an artifact to the one operations-
+// registered file-service origin. Paths, credentials, queries and fragments
+// are never part of the trusted origin.
+func canonicalHelperUpdateOrigin(raw string) (string, error) {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (u.Path != "" && u.Path != "/") {
+		return "", fmt.Errorf("helper update file_service_origin invalid")
 	}
 	loopback := strings.EqualFold(u.Hostname(), "localhost")
 	if ip := net.ParseIP(u.Hostname()); ip != nil && ip.IsLoopback() {
 		loopback = true
 	}
 	if u.Scheme != "https" && !(u.Scheme == "http" && loopback) {
-		return fmt.Errorf("helper update catalog url requires https")
+		return "", fmt.Errorf("helper update file_service_origin requires https")
 	}
-	if strings.TrimSpace(v.Platform) != "linux" {
-		return fmt.Errorf("helper update platform must be linux")
-	}
-	return nil
+	return strings.ToLower(u.Scheme) + "://" + strings.ToLower(u.Host), nil
 }
 
 func marshalHelperUpdate(v any) (string, error) {
@@ -180,6 +201,11 @@ func (h *Hub) ListHelperUpdateCatalogs(ctx context.Context) ([]HelperUpdateCatal
 	return items, nil
 }
 
+// ListHelperUpdateCatalog is the frozen, read-only Console catalog API.
+func (h *Hub) ListHelperUpdateCatalog(ctx context.Context) ([]HelperUpdateCatalog, error) {
+	return h.ListHelperUpdateCatalogs(ctx)
+}
+
 // ListHelperUpdateJobsForOwner is a server-side ownership filter for Console
 // status pages. A caller still authenticates the actor before invoking it.
 func (h *Hub) ListHelperUpdateJobsForOwner(ctx context.Context, ownerID string) ([]HelperUpdateJob, error) {
@@ -201,6 +227,26 @@ func (h *Hub) ListHelperUpdateJobsForOwner(ctx context.Context, ownerID string) 
 		}
 	}
 	return items, nil
+}
+
+// GetHelperUpdateJob requires the authenticated principal, then rechecks the
+// stored owner before returning a target-specific projection.
+func (h *Hub) GetHelperUpdateJob(ctx context.Context, principalID, agentID string) (*HelperUpdateJob, error) {
+	if h.Identity == nil {
+		return nil, fmt.Errorf("helper update identity unavailable")
+	}
+	principal, err := h.Identity.Store.GetUser(ctx, strings.TrimSpace(principalID))
+	if err != nil || principal == nil || principal.State != identity.UserActive {
+		return nil, fmt.Errorf("helper update principal inactive")
+	}
+	job, _, err := h.helperUpdateJob(ctx, agentID)
+	if err != nil || job == nil {
+		return job, err
+	}
+	if job.OwnerID != principal.UserIDLC() {
+		return nil, fmt.Errorf("helper update cross-owner denied")
+	}
+	return job, nil
 }
 
 func (h *Hub) helperUpdateJob(ctx context.Context, agentID string) (*helperUpdateJob, string, error) {
@@ -262,7 +308,7 @@ func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog HelperUpdateCat
 	now := h.now().UTC()
 	job := helperUpdateJob{
 		JobID: randomHex(16), ReleaseID: catalog.SHA256, AgentID: agentID, OwnerID: ownerID, AgentName: agentName,
-		Version: catalog.Version, SHA256: catalog.SHA256, LockSHA256: catalog.LockSHA256, URL: catalog.URL,
+		Version: catalog.Version, SHA256: catalog.SHA256, LockSHA256: catalog.LockSHA256, URL: catalog.URL, FileServiceOrigin: catalog.FileServiceOrigin,
 		Platform: catalog.Platform, Issuer: issuer, Stage: "offered", ExpiresAt: now.Add(30 * time.Minute), HealthNonce: randomHex(16), Revision: 1,
 	}
 	job.OfferID = job.JobID
@@ -294,12 +340,12 @@ func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog HelperUpdateCat
 // enforcing the Console contract: an active owner or manager may only target
 // an active Agent belonging to that same owner. The Hub repeats these checks
 // rather than relying on a stale browser list or client supplied owner field.
-func (h *Hub) IssueHelperUpdateForActor(ctx context.Context, actorID, agentID, releaseSHA string) (*helperUpdateJob, error) {
+func (h *Hub) IssueHelperUpdate(ctx context.Context, principalID, agentID, releaseSHA string) (*helperUpdateJob, error) {
 	if h.Identity == nil {
 		return nil, fmt.Errorf("helper update identity unavailable")
 	}
-	actorID = strings.TrimSpace(actorID)
-	actor, err := h.Identity.Store.GetUser(ctx, actorID)
+	principalID = strings.TrimSpace(principalID)
+	actor, err := h.Identity.Store.GetUser(ctx, principalID)
 	if err != nil || actor == nil || actor.State != identity.UserActive {
 		return nil, fmt.Errorf("helper update actor inactive")
 	}
@@ -343,27 +389,34 @@ func (h *Hub) IssueHelperUpdateForActor(ctx context.Context, actorID, agentID, r
 	return job, nil
 }
 
+// IssueHelperUpdateForActor is retained while callers move to the frozen
+// principal-bearing IssueHelperUpdate name.
+func (h *Hub) IssueHelperUpdateForActor(ctx context.Context, actorID, agentID, releaseSHA string) (*helperUpdateJob, error) {
+	return h.IssueHelperUpdate(ctx, actorID, agentID, releaseSHA)
+}
+
 func (h *Hub) sendHelperUpdateOffer(ctx context.Context, c *sessionClient, job *helperUpdateJob) error {
 	meta := map[string]any{
-		"type":         "provision",
-		"system":       true,
-		"no_mirror":    true,
-		"action":       "update_self",
-		"target":       "self",
-		"job_id":       job.JobID,
-		"offer_id":     job.OfferID,
-		"release_id":   job.ReleaseID,
-		"agent_id":     job.AgentID,
-		"owner_id":     job.OwnerID,
-		"agent_name":   job.AgentName,
-		"version":      job.Version,
-		"sha256":       job.SHA256,
-		"lock_sha256":  job.LockSHA256,
-		"url":          job.URL,
-		"platform":     job.Platform,
-		"issuer":       job.Issuer,
-		"expires_at":   job.ExpiresAt.UTC().Format(time.RFC3339),
-		"health_nonce": job.HealthNonce,
+		"type":                "provision",
+		"system":              true,
+		"no_mirror":           true,
+		"action":              "update_self",
+		"target":              "self",
+		"job_id":              job.JobID,
+		"offer_id":            job.OfferID,
+		"release_id":          job.ReleaseID,
+		"agent_id":            job.AgentID,
+		"owner_id":            job.OwnerID,
+		"agent_name":          job.AgentName,
+		"version":             job.Version,
+		"sha256":              job.SHA256,
+		"lock_sha256":         job.LockSHA256,
+		"url":                 job.URL,
+		"file_service_origin": job.FileServiceOrigin,
+		"platform":            job.Platform,
+		"issuer":              job.Issuer,
+		"expires_at":          job.ExpiresAt.UTC().Format(time.RFC3339),
+		"health_nonce":        job.HealthNonce,
 	}
 	return c.write(ctx, model.Envelope{
 		ID: randomHex(16), To: sessionAddress(c.sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID),
