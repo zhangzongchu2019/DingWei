@@ -331,6 +331,30 @@ func TestHelperUpdateHealthRequiresFreshAuthenticatedConnection(t *testing.T) {
 	if err != nil || stored == nil || stored.Stage != "confirmed" || stored.Revision != 4 {
 		t.Fatalf("idempotent confirmation mutated job: %+v err=%v", stored, err)
 	}
+	// Idempotent replay is available only within the offer validity window. An
+	// expired confirmed job is left untouched and receives no confirmation.
+	raw := rawForJob(t, e.hub, e.ctx, e.agID)
+	stored.ExpiresAt = e.hub.now().UTC().Add(-time.Second)
+	if ok, err := e.hub.updateHelperUpdateJob(e.ctx, raw, *stored); err != nil || !ok {
+		t.Fatalf("expire confirmed job ok=%v err=%v", ok, err)
+	}
+	conn.CloseNow()
+	conn, _, body = e.dial(e.cred, "version=0.2.3.1")
+	if conn == nil {
+		t.Fatalf("expired redial: %s", body)
+	}
+	defer conn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	e.sendEnv(conn, model.Envelope{ID: "caps-health-expired", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	expiredHealth := helperUpdateHealthMeta(stored)
+	e.sendEnv(conn, model.Envelope{ID: "health-expired-" + randomHex(4), From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: expiredHealth})
+	if got := e.readEnvUntil(conn, 100*time.Millisecond, func(env model.Envelope) bool { return metaString(env.Meta, "type") == "helper_update_confirm" }); got != nil {
+		t.Fatalf("expired confirmed job replayed: %+v", got)
+	}
+	stored, _, err = e.hub.helperUpdateJob(e.ctx, e.agID)
+	if err != nil || stored == nil || stored.Stage != "confirmed" || stored.Revision != 5 {
+		t.Fatalf("expired health mutated job: %+v err=%v", stored, err)
+	}
 }
 
 func TestHelperUpdateHealthRejectsMissingFreshNonce(t *testing.T) {

@@ -476,7 +476,7 @@ func (h *Hub) confirmHelperUpdateHealth(ctx context.Context, c *sessionClient, e
 	// compared with the durable job and authenticated connection, never trusted
 	// because they appeared in the incoming envelope.
 	if job.Stage == "failed" || job.Stage == "rolled_back" ||
-		(job.Stage != "confirmed" && h.now().UTC().After(job.ExpiresAt)) ||
+		h.now().UTC().After(job.ExpiresAt) ||
 		(job.Stage != "confirmed" && job.Stage != "installed" && job.Stage != "restarted") ||
 		job.ActivationConnSeq <= 0 || c.connSeq <= job.ActivationConnSeq ||
 		job.AgentID != c.metricsAgentID || job.OwnerID != strings.TrimPrefix(c.keyID, "u_") ||
