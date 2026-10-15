@@ -64,6 +64,10 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 		p.replyToOriginUnavailable(job, "本轮的来源记录已不可用,内容未自动回程")
 		return
 	}
+	if delivery.KeyID != job.key.KeyID || delivery.SessionName != job.key.Session {
+		p.replyToOriginUnavailable(job, "本轮来源记录不属于当前会话,内容未自动回程")
+		return
+	}
 	var inbound model.Envelope
 	if e := json.Unmarshal([]byte(delivery.Envelope), &inbound); e != nil {
 		p.replyToOriginUnavailable(job, "本轮的来源记录无法解析,内容未自动回程")
@@ -81,7 +85,28 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 		p.bumpReplyOrigin(&p.stats.replyOriginSkipped)
 		return
 	}
-	origin := originAddrOf(inbound)
+	// Explicit no-reply requests (including View display-only mentions) never
+	// inject a response into the originating Agent. Legacy missing policy stays compatible.
+	if policy := replyPolicyOf(inbound); policy == replyPolicyNoReply || policy == "ack_only" {
+		p.bumpReplyOrigin(&p.stats.replyOriginSkipped)
+		return
+	}
+	// New-platform Agent traffic follows the same opt-in policy as the helper:
+	// a generic MCP send without expect_reply does not request an automatic return.
+	// Historical non-Agent/legacy missing-policy handling remains compatible.
+	if replyPolicyOf(inbound) != replyPolicyExpectReply && p.hub.Identity != nil {
+		source := firstNonEmpty(trustedAgentSource(inbound), inbound.From)
+		if addr, err := parseAddress(source); err == nil && addr.Kind == addressSession {
+			if _, ok := p.hub.newPlatformAgentAt(ctx, addr.KeyID, addr.SessionName); ok {
+				p.bumpReplyOrigin(&p.stats.replyOriginSkipped)
+				return
+			}
+		}
+	}
+	origin := trustedAgentSource(inbound)
+	if origin == "" {
+		origin = originAddrOf(inbound)
+	}
 	if origin == "" {
 		origin = inbound.From
 	}
@@ -108,15 +133,17 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 		Body: job.body,
 		TS:   time.Now().Unix(),
 		Meta: map[string]any{
-			"type":               "agent_route",
-			"no_mirror":          true,
-			metaKeyKind:          kindReply,
-			metaKeyReplyPolicy:   replyPolicyNoReply,
-			metaKeyInReplyTo:     delivery.SourceMessageID,
-			metaKeyDedupKey:      "reply-origin:" + job.key.DeliveryID + ":" + job.key.TurnID,
-			"source_delivery_id": job.key.DeliveryID,
-			"source_turn_id":     job.key.TurnID,
-			"route_source":       replyToOriginRouteSource,
+			"type":                   "agent_route",
+			"no_mirror":              true,
+			metaKeyKind:              kindReply,
+			metaKeyReplyPolicy:       replyPolicyNoReply,
+			metaKeyInReplyTo:         delivery.SourceMessageID,
+			metaKeyDedupKey:          "reply-origin:" + job.key.DeliveryID + ":" + job.key.TurnID,
+			"source_delivery_id":     job.key.DeliveryID,
+			"source_turn_id":         job.key.TurnID,
+			"route_source":           replyToOriginRouteSource,
+			metaKeyMentionVerbatim:   true,
+			metaKeyReplyOriginReturn: true,
 		},
 	}
 	// Preserve the source conversation context used by routeToFeishu to choose

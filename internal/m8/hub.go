@@ -1275,6 +1275,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		}
 		delete(env.Meta, "provenance")
 		delete(env.Meta, metaKeyViewMention)
+		delete(env.Meta, metaKeyReplyOriginReturn)
 		delete(env.Meta, "source_key_id")
 		delete(env.Meta, "source_session_name")
 		delete(env.Meta, hubIngressMetaKey)
@@ -3123,6 +3124,23 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 	}
 	switch to.Kind {
 	case addressSession:
+		// Only a Hub-generated automatic reply uses the durable exact source
+		// address. It still passes the current group policy before any delivery.
+		if metaBool(env.Meta, metaKeyReplyOriginReturn) && kindOf(env) == kindReply &&
+			metaString(env.Meta, "route_source") == replyToOriginRouteSource && from.Kind == addressSession && !isAddressableFeishuID(to.SessionName) {
+			if h.Identity != nil {
+				if _, ok := h.newPlatformAgentAt(ctx, from.KeyID, from.SessionName); !ok {
+					return errGroupAgentNotFound
+				}
+				if _, ok := h.newPlatformAgentAt(ctx, to.KeyID, to.SessionName); !ok {
+					return errGroupAgentNotFound
+				}
+			}
+			if err := h.enforceAgentGrouping(ctx, from, env, to.KeyID, to.SessionName); err != nil {
+				return err
+			}
+			return h.routeToSession(ctx, to.KeyID, to.SessionName, env, false)
+		}
 		// send.py addresses a Feishu account/group as <ou_/oc_/on_ id>#<key>.
 		// Recognize that shape before session/group resolution: a channel target is
 		// not an Agent endpoint and must never be rejected by the Agent grouping gate.
@@ -3690,6 +3708,25 @@ func (h *Hub) prepareSessionSelector(ctx context.Context, sourceKeyID, sourceSes
 	memberName, sessionName, body, ok := parseMemberMention(text)
 	if !ok {
 		return false, env, nil
+	}
+	if h.Identity != nil {
+		// New-platform member selectors use the same user-short-name directory as
+		// public FullName resolution, never the retired legacy member table.
+		user, err := h.Identity.Store.GetUserByShortName(ctx, identity.Lower(memberName))
+		if err != nil || user.State != identity.UserActive {
+			return true, env, errGroupAgentNotFound
+		}
+		publicName := sessionName + "." + user.ShortName
+		target := h.resolveNewPlatformVisibleSession(ctx, publicName)
+		if !target.found {
+			return true, env, errGroupAgentNotFound
+		}
+		if env.Meta == nil {
+			env.Meta = map[string]any{}
+		}
+		env.Meta["source_key_id"], env.Meta["source_session_name"] = sourceKeyID, sourceSession
+		env.To, env.From, env.Body = sessionAddress(publicName, sourceKeyID), sessionAddress(sourceSession, sourceKeyID), body
+		return true, env, nil
 	}
 	target, err := h.resolveMemberByName(ctx, memberName)
 	if err != nil {
