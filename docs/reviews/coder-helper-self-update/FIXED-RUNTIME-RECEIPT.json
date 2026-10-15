@@ -1,0 +1,65 @@
+{
+  "canonical": {
+    "marker": "BUILD_TESTS_OK python=42 shell=2",
+    "rc": 0
+  },
+  "development_artifact": {
+    "bytes": 189019,
+    "sha256": "7502236630ea80b62e312a1ab7833a59aaaaa39a35fb6b632584ccbfe1e416c2",
+    "status": "local only, not a release acceptance",
+    "version": "0.2.3.1"
+  },
+  "environment": {
+    "home_tmpdir": "isolated; seat SH_/DW_/DINGWEI_ variables removed",
+    "pexpect": "4.9.0",
+    "python": "3.12.3",
+    "websockets": "15.0.1"
+  },
+  "helper_full": {
+    "rc": 0,
+    "seconds": 347.732,
+    "tests": 679
+  },
+  "integration_status": {
+    "actual_hub": "pending matching Hub commit/wire",
+    "package_upload": "none",
+    "production": "not touched",
+    "real_docker": "BLOCK: local API permission denied; isolated runner requested"
+  },
+  "source_commit": "11ae56db5c0cd904931de24c5e8307871699abef",
+  "source_pins": {
+    "VERSION": {
+      "bytes": 8,
+      "sha256": "9bf2c1a11289aa4d42710f64acbc4df80768f8fe650725adff93895a8ddbdfc0"
+    },
+    "tools/sessionhelper/bootstrap.py": {
+      "bytes": 9502,
+      "sha256": "584e6138d06388914d20b9a997aa75f3e6440c92a5858d7273b44a932b1728b0"
+    },
+    "tools/sessionhelper/package_release.py": {
+      "bytes": 7831,
+      "sha256": "ffa202ec0066fc8238d4eb81ef68e526592bdcb2d372da55cf0d96d21e55c57d"
+    },
+    "tools/sessionhelper/sessionhelper/__init__.py": {
+      "bytes": 54,
+      "sha256": "735de902d0e5b25b50035e0423e88a46679516d151a163d0a010de330ddc275f"
+    },
+    "tools/sessionhelper/sessionhelper/app.py": {
+      "bytes": 95362,
+      "sha256": "2299bcd043ff45613ec26f11ac92600d0c06962d14848c23d66c79e77e8d46e1"
+    },
+    "tools/sessionhelper/sessionhelper/provision.py": {
+      "bytes": 19020,
+      "sha256": "8766669fd50bd2130bb64bd6ecc514e5f5c7006eae476b2611a5a7b01c3cd056"
+    },
+    "tools/sessionhelper/sessionhelper/self_update.py": {
+      "bytes": 14234,
+      "sha256": "6a66cf18504ca7054bbee18a0ecae24de30a4c2ba8b120799ea08557fb93ea4c"
+    },
+    "tools/sessionhelper/update_launcher/guard.py": {
+      "bytes": 9255,
+      "sha256": "22132a6bdb43e6eaafc0110af0ee8cfe7db702adb4baef57d2de65e8f07d60b7"
+    }
+  },
+  "source_tree": "cdec06b442156269c0cb89e77ceb4465c6e4a506"
+}

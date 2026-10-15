@@ -1,0 +1,73 @@
+{
+  "canonical": {
+    "marker": "BUILD_TESTS_OK python=42 shell=2",
+    "rc": 0
+  },
+  "helper_full": {
+    "rc": 0,
+    "seconds": 348.447,
+    "tests": 681
+  },
+  "local_development_artifact": {
+    "bytes": 189187,
+    "commit": "4dc54181b5963bab58c6420e5c7a6bb4469a79f6",
+    "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "sha256": "50f3241b3184f9ffa88916066ccd7d3ee63d35a932e9117a2bc7fa0c37f6f280",
+    "tree": "c264aec20619a01de44641e9741f50b37f8b4d6b",
+    "version": "0.2.3.1"
+  },
+  "locked_dependencies": {
+    "pexpect": "4.9.0",
+    "websockets": "15.0.1"
+  },
+  "not_completed": [
+    "actual Hub/helper interoperability E2E (Hub commit/wire pending)",
+    "real Linux Docker unless-stopped restart/rollback (API permission denied; isolated executor requested)"
+  ],
+  "operations": {
+    "deployment": false,
+    "real_agent_changes": false,
+    "upload": false
+  },
+  "source_commit": "4dc54181b5963bab58c6420e5c7a6bb4469a79f6",
+  "source_pins": {
+    "VERSION": {
+      "bytes": 8,
+      "sha256": "9bf2c1a11289aa4d42710f64acbc4df80768f8fe650725adff93895a8ddbdfc0"
+    },
+    "tools/sessionhelper/bootstrap.py": {
+      "bytes": 9516,
+      "sha256": "a2898e595f058ae05ccb270e7cc20055c789528957bd490e28f1ce8ea782163e"
+    },
+    "tools/sessionhelper/package_release.py": {
+      "bytes": 7831,
+      "sha256": "ffa202ec0066fc8238d4eb81ef68e526592bdcb2d372da55cf0d96d21e55c57d"
+    },
+    "tools/sessionhelper/sessionhelper/__init__.py": {
+      "bytes": 54,
+      "sha256": "735de902d0e5b25b50035e0423e88a46679516d151a163d0a010de330ddc275f"
+    },
+    "tools/sessionhelper/sessionhelper/app.py": {
+      "bytes": 95362,
+      "sha256": "2299bcd043ff45613ec26f11ac92600d0c06962d14848c23d66c79e77e8d46e1"
+    },
+    "tools/sessionhelper/sessionhelper/provision.py": {
+      "bytes": 19020,
+      "sha256": "8766669fd50bd2130bb64bd6ecc514e5f5c7006eae476b2611a5a7b01c3cd056"
+    },
+    "tools/sessionhelper/sessionhelper/self_update.py": {
+      "bytes": 14755,
+      "sha256": "a8f7804c0af106a335683458ad47fb01f334a901cca71885c4e3dc6223c83165"
+    },
+    "tools/sessionhelper/update_launcher/guard.py": {
+      "bytes": 9598,
+      "sha256": "0f64979dab5af92b18d797e8020bd4168ab655cf9401da720d64cfebcad63fb8"
+    }
+  },
+  "source_tree": "c264aec20619a01de44641e9741f50b37f8b4d6b",
+  "withdrawals": {
+    "pending_priority": 1,
+    "post_download_expiry": 1,
+    "secret_scan": 1
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "FIXED-RUNTIME-RECEIPT.json": {
+    "bytes": 2195,
+    "sha256": "a60edc816455808e87df218f08ad8a6710bf2e8cdf4f81a92e03afc25e1cde82"
+  },
+  "fixed-build-gate.log.gz": {
+    "bytes": 5354,
+    "sha256": "7879361dd80d0ee5814d21f3e02967597f83f05cd8b13663e20cc8c0e17006ba"
+  },
+  "fixed-helper-full.log.gz": {
+    "bytes": 29999,
+    "sha256": "2bdd64cb55df26e48c8aad144170ca72b623e73812f26235a49cb3831f801c8b"
+  }
+}

@@ -59,6 +59,8 @@ from .routing import (  # noqa: F401
     truthy_meta,
 )
 from .provision import Provisioner, is_provision_envelope
+from .self_update import (SelfUpdater, UpdateRejected, receipt as update_receipt,
+                          status_loop as update_status_loop)
 
 
 
@@ -239,7 +241,10 @@ class SessionHelper:
         # remain a single transaction or one message can consume another's reply.
         self.adapter_handle_lock = asyncio.Lock()
         self.provisioner = Provisioner(cfg)
-        self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
+        self.helper_updater = None
+        self._helper_update_preparing = False
+        if not env_get("SH_UPDATE_LAUNCHER", ""):
+            self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
         self.adapter = self._build_adapter()
         from .agent_disk_metrics import BoundedDiskPublisher
         self.agent_disk_publisher = BoundedDiskPublisher()
@@ -600,6 +605,7 @@ class SessionHelper:
              "desktop_inbox_v1": self.cfg.mode == "desktop",
              "processed_semantics": "saved_to_desktop_inbox" if self.cfg.mode == "desktop" else "accepted_to_cli",
              "helper_version": __version__,
+             "helper_update_v1": bool(env_get("SH_UPDATE_LAUNCHER", "")) and sys.platform.startswith("linux") and bool(getattr(self, "enroll_credential", None)),
              # 只作 Hub 统计（组长裁定 C）；附注是否附加由 upload_addendum_due 在合并时自判。
              "file_upload_v1": self.upload_configured(),
              **(outbound_capabilities or {})},
@@ -639,8 +645,18 @@ class SessionHelper:
             if self.cfg.debug:
                 print(f"[sessionHelper][debug] WS 握手成功,耗时 {time.monotonic()-_t0:.2f}s", flush=True)
             print(f"[sessionHelper] connected self={self.book.self_addr} version={__version__}", flush=True)
+            # Dedicated Agent clients use a placeholder key locally; pin the actual
+            # server system address from authenticated WS response, never offer text.
+            response_headers = getattr(getattr(ws, "response", None), "headers", {})
+            self.provisioner.trusted_update_source = None
+            if (getattr(self, "enroll_credential", None) is not None and
+                    response_headers.get("X-DW-Helper-Update") == "helper-update/v1"):
+                update_source = response_headers.get("X-DW-Helper-Update-Source", "")
+                if re.fullmatch(r"workpulse#[A-Za-z0-9_.-]{1,128}", update_source):
+                    self.provisioner.trusted_update_source = update_source
             self._connection_started_at = time.monotonic()
-            self.provisioner.confirm_update_connected()
+            if not env_get("SH_UPDATE_LAUNCHER", ""):
+                self.provisioner.confirm_update_connected()
             # M2 protocol admission. This raises the bar above one-shot clients
             # such as send.py, but is not cryptographic helper identity: a
             # holder of the shared API secret can imitate this JSON message.
@@ -675,6 +691,7 @@ class SessionHelper:
                         self.terminal_loop(ws),
                         self.session_event_loop(ws),
                         self.agent_disk_metrics_loop(ws),
+                        update_status_loop(self, ws),
                         self.outbox_loop(ws),
                         self.mirror_loop(ws),
                     ])
@@ -733,6 +750,9 @@ class SessionHelper:
                 continue
             if is_mirror_control(env):
                 self.apply_mirror_control(env)
+                continue
+            if isinstance(env.get("meta"), dict) and env["meta"].get("type") == "helper_update_confirm":
+                await self.handle_update_confirmation(ws, env)
                 continue
             if is_provision_envelope(env):
                 await self.handle_provision(ws, env)
@@ -805,6 +825,9 @@ class SessionHelper:
                 self.file_inbound_queue.task_done()
 
     async def handle_provision(self, ws, env: dict) -> None:
+        if (env.get("meta") or {}).get("action") == "update_self":
+            await self.handle_helper_update(ws, env)
+            return
         result = await asyncio.to_thread(self.provisioner.handle, env)
         ack = envelope(
             session_addr("workpulse", self.cfg.key_id),
@@ -814,6 +837,65 @@ class SessionHelper:
         )
         await ws.send(json.dumps(ack, ensure_ascii=False))
         print(f"[provision] action={result.action} target={result.target} ok={result.ok} message={result.message}", flush=True)
+
+    def _get_self_updater(self):
+        if self.enroll_credential is None:
+            raise UpdateRejected("manual_required")
+        if not getattr(self.provisioner, "trusted_update_source", None):
+            raise UpdateRejected("hub_unsupported")
+        if self.helper_updater is None:
+            self.helper_updater = SelfUpdater(self.cfg, self.provisioner.validate_source,
+                                              self.enroll_credential.agent_name)
+        return self.helper_updater
+
+    async def _send_update_receipt(self, ws, meta, stage, reason=""):
+        payload = update_receipt(meta, stage, reason)
+        await ws.send(json.dumps(envelope(session_addr("workpulse", self.cfg.key_id), "",
+                                         self.book.self_addr, payload), ensure_ascii=False))
+
+    async def handle_helper_update(self, ws, env):
+        # Validate trusted source before reflecting any proposed job fields or doing I/O.
+        try:
+            self.provisioner.validate_source(env)
+        except Exception:
+            print("[helper-update] source_denied", flush=True)
+            return
+        meta = env.get("meta") or {}
+        restart = False
+        try:
+            updater = self._get_self_updater()
+            if (self.adapter_handle_lock.locked() or self.pending_inbound or
+                    not self.file_inbound_queue.empty() or self.delivery_busy_acked or
+                    not await asyncio.to_thread(self.adapter.is_idle)):
+                await self._send_update_receipt(ws, meta, "offered", "busy")
+                return
+            async with self.adapter_handle_lock:
+                if not await asyncio.to_thread(self.adapter.is_idle):
+                    await self._send_update_receipt(ws, meta, "offered", "busy")
+                    return
+                self._helper_update_preparing = True
+                try:
+                    meta, stage, restart = await asyncio.to_thread(updater.prepare, env)
+                    if restart:
+                        await self._send_update_receipt(ws, meta, "downloaded")
+                    await self._send_update_receipt(ws, meta, stage)
+                    if restart:
+                        updater.mark_restart_requested(meta)
+                        self.provisioner.request_restart()
+                finally:
+                    self._helper_update_preparing = False
+        except UpdateRejected as exc:
+            await self._send_update_receipt(ws, meta, "failed", str(exc))
+        except Exception:
+            await self._send_update_receipt(ws, meta, "failed", "update_failed")
+
+    async def handle_update_confirmation(self, ws, env):
+        try:
+            meta = self._get_self_updater().confirm(env)
+            await self._send_update_receipt(ws, meta, "confirmed")
+        except Exception:
+            # Never reflect a failed confirmation or log raw Hub/candidate fields.
+            print("[helper-update] confirmation_rejected", flush=True)
 
     async def buffer_if_busy(self, ws, env: dict) -> bool:
         # Route all CLI inbound messages through the drain loop so recv_loop

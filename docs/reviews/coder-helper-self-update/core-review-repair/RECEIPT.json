@@ -1,0 +1,127 @@
+{
+  "canonical": {
+    "marker": "BUILD_TESTS_OK python=42 shell=2",
+    "rc": 0
+  },
+  "helper_full": {
+    "rc": 0,
+    "seconds": 350.354,
+    "tests": 691
+  },
+  "local_only_development_artifact": {
+    "bytes": 190474,
+    "commit": "0214773ebdf47d5d2f24bd158d025a50998980ea",
+    "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "sha256": "656bb4fe99afb393893e0bae433b9bcb2365b357d077d442d2a91fb2a77f6256",
+    "tree": "5ad7e486b81f4d53228b6ba4b84383c40c4d2682",
+    "version": "0.2.3.1"
+  },
+  "locked_dependencies": {
+    "pexpect": "4.9.0",
+    "python": "3.12.3",
+    "websockets": "15.0.1"
+  },
+  "open_gates": [
+    "actual authenticated new Hub/helper WS E2E",
+    "real isolated Linux Docker restart/rollback"
+  ],
+  "operations": {
+    "deploy": false,
+    "real_agent_operation": false,
+    "upload": false
+  },
+  "original_five_probes": {
+    "behavioral_failures": 5,
+    "rc": 1
+  },
+  "runner": "coder56solzzc",
+  "source_commit": "0214773ebdf47d5d2f24bd158d025a50998980ea",
+  "source_pins": {
+    "VERSION": {
+      "bytes": 8,
+      "sha256": "9bf2c1a11289aa4d42710f64acbc4df80768f8fe650725adff93895a8ddbdfc0"
+    },
+    "tools/sessionhelper/SELF_UPDATE.md": {
+      "bytes": 7628,
+      "sha256": "e84477a52b938fbdd7fc7cadbe3c31f5917566b5f4953390bd09b15bc55359b7"
+    },
+    "tools/sessionhelper/bootstrap.py": {
+      "bytes": 12908,
+      "sha256": "f64dd401e925ad09f8eec4a211a480b07df0b216c7754c7fd844c5b7059be668"
+    },
+    "tools/sessionhelper/package_release.py": {
+      "bytes": 8276,
+      "sha256": "d8163e3ee5249f2548932ec944631a16c4a74e2e130b9ce990b880d813ba9e26"
+    },
+    "tools/sessionhelper/sessionhelper/__init__.py": {
+      "bytes": 54,
+      "sha256": "735de902d0e5b25b50035e0423e88a46679516d151a163d0a010de330ddc275f"
+    },
+    "tools/sessionhelper/sessionhelper/app.py": {
+      "bytes": 95362,
+      "sha256": "2299bcd043ff45613ec26f11ac92600d0c06962d14848c23d66c79e77e8d46e1"
+    },
+    "tools/sessionhelper/sessionhelper/provision.py": {
+      "bytes": 19020,
+      "sha256": "8766669fd50bd2130bb64bd6ecc514e5f5c7006eae476b2611a5a7b01c3cd056"
+    },
+    "tools/sessionhelper/sessionhelper/self_update.py": {
+      "bytes": 14755,
+      "sha256": "a8f7804c0af106a335683458ad47fb01f334a901cca71885c4e3dc6223c83165"
+    },
+    "tools/sessionhelper/tests/test_self_update_offer.py": {
+      "bytes": 12146,
+      "sha256": "6c4d884f5eea322bebe13e5cac10fadf49d69a04587df91ea79e548bc2e2f072"
+    },
+    "tools/sessionhelper/tests/test_update_core_review_regressions.py": {
+      "bytes": 11377,
+      "sha256": "9961517dbeaca9b97ffd340e90ba891ef3f95bade421312585cf77866f92eb3e"
+    },
+    "tools/sessionhelper/tests/test_update_release_core.py": {
+      "bytes": 16647,
+      "sha256": "e00a8f388d8a0abc18b5dd7bad382a2f64d40eef047dba371bc93d73ba9441e4"
+    },
+    "tools/sessionhelper/update_launcher/guard.py": {
+      "bytes": 11044,
+      "sha256": "4f32800140484a2fd783f9a8579d17eb7ad7fb340901810912ab67ad85143cd0"
+    }
+  },
+  "source_tree": "5ad7e486b81f4d53228b6ba4b84383c40c4d2682",
+  "targeted": {
+    "core_tests": 29,
+    "offer_tests": 15,
+    "rc": 0
+  },
+  "withdrawals": [
+    {
+      "case": "R1",
+      "log": "withdraw-R1.log.gz",
+      "rc": 1
+    },
+    {
+      "case": "R2",
+      "log": "withdraw-R2.log.gz",
+      "rc": 1
+    },
+    {
+      "case": "R3",
+      "log": "withdraw-R3.log.gz",
+      "rc": 1
+    },
+    {
+      "case": "R4",
+      "log": "withdraw-R4.log.gz",
+      "rc": 1
+    },
+    {
+      "case": "R5",
+      "log": "withdraw-R5.log.gz",
+      "rc": 1
+    },
+    {
+      "case": "R5-shared",
+      "log": "withdraw-R5-shared.log.gz",
+      "rc": 1
+    }
+  ]
+}
