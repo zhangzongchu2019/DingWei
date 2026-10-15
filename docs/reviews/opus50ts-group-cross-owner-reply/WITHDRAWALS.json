@@ -1,0 +1,47 @@
+[
+  {
+    "name": "REPLY-WITHDRAW-POLICY",
+    "file": "internal/m8/amr.go",
+    "run": "^TestGroupReplyAMR$/full-name"
+  },
+  {
+    "name": "REPLY-WITHDRAW-CAPTURE",
+    "file": "internal/m8/reply_origin.go",
+    "run": "^TestGroupReplyTrueSourceAndDeliveryBinding$"
+  },
+  {
+    "name": "REPLY-WITHDRAW-RETURN-SOURCE",
+    "file": "internal/m8/reply_to_origin.go",
+    "run": "^TestGroupReplyTrueSourceAndDeliveryBinding$"
+  },
+  {
+    "name": "REPLY-WITHDRAW-EXACT-RETURN",
+    "file": "internal/m8/hub.go",
+    "run": "^TestGroupReplyAMR$/full-name"
+  },
+  {
+    "name": "REPLY-WITHDRAW-GROUP",
+    "file": "internal/m8/hub.go",
+    "run": "^TestGroupReplyMembership$/removed"
+  },
+  {
+    "name": "REPLY-WITHDRAW-ONEHOP",
+    "file": "internal/m8/amr.go",
+    "run": "^TestGroupReplyChannelOneHop$"
+  },
+  {
+    "name": "REPLY-WITHDRAW-DELIVERY-BINDING",
+    "file": "internal/m8/reply_to_origin.go",
+    "run": "^TestGroupReplyTrueSourceAndDeliveryBinding$"
+  },
+  {
+    "name": "REPLY-WITHDRAW-MARKER",
+    "file": "internal/m8/hub.go",
+    "run": "^TestGroupReplyMarkerCannotBeSpoofed$"
+  },
+  {
+    "name": "REPLY-WITHDRAW-MCP-OPTIN",
+    "file": "internal/m8/reply_to_origin.go",
+    "run": "^TestGroupReplyMCP$"
+  }
+]

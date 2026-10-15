@@ -29,18 +29,18 @@ import (
 
 // ---- envelope Meta 字段键(冻结命名) ----
 const (
-	metaKeyProtocolClass       = "protocol_class"
-	metaKeyKind                = "kind"
-	metaKeyReplyPolicy         = "reply_policy"
-	metaKeyConversationTermnl  = "conversation_terminal"
-	metaKeyConversationID      = "conversation_id"
-	metaKeyInReplyTo           = "in_reply_to"
-	metaKeyReplyTo             = "reply_to"
-	metaKeyOriginKind          = "origin_kind"
-	metaKeyOriginAddr          = "origin_addr"
-	metaKeyHopCount            = "hop_count"
-	metaKeyMaxHops             = "max_hops"
-	metaKeyDedupKey            = "dedup_key"
+	metaKeyProtocolClass      = "protocol_class"
+	metaKeyKind               = "kind"
+	metaKeyReplyPolicy        = "reply_policy"
+	metaKeyConversationTermnl = "conversation_terminal"
+	metaKeyConversationID     = "conversation_id"
+	metaKeyInReplyTo          = "in_reply_to"
+	metaKeyReplyTo            = "reply_to"
+	metaKeyOriginKind         = "origin_kind"
+	metaKeyOriginAddr         = "origin_addr"
+	metaKeyHopCount           = "hop_count"
+	metaKeyMaxHops            = "max_hops"
+	metaKeyDedupKey           = "dedup_key"
 )
 
 // ---- 枚举值(冻结) ----
@@ -287,6 +287,20 @@ func (d *replyDedup) size() int {
 	return len(d.seen)
 }
 
+// trustedAgentSource recovers the authenticated source preserved by the Hub
+// when a member selector rewrites From into the target owner's namespace.
+func trustedAgentSource(env model.Envelope) string {
+	key, session := metaString(env.Meta, "source_key_id"), metaString(env.Meta, "source_session_name")
+	if key != "" && session != "" {
+		return sessionAddress(session, key)
+	}
+	return ""
+}
+
+// Hub-only marker: an automatic return may address the durable exact origin,
+// even across owners. WS admission strips client claims of this marker.
+const metaKeyReplyOriginReturn = "_hub_reply_origin_return"
+
 // ---- 路由前钩子(段2:挂在 RouteEnvelope 顶部) ----
 
 // applyReplyOriginTermination 在 conversation-class 消息进入路由前应用终止兜底 + origin 捕获。
@@ -311,7 +325,9 @@ func (h *Hub) applyReplyOriginTermination(env model.Envelope) (model.Envelope, b
 	if env.Meta == nil {
 		env.Meta = map[string]any{}
 	}
-	if originAddrOf(env) == "" {
+	if source := trustedAgentSource(env); source != "" {
+		env.Meta[metaKeyOriginAddr] = source
+	} else if originAddrOf(env) == "" {
 		env.Meta[metaKeyOriginAddr] = env.From
 		if originKindOf(env) == "" {
 			env.Meta[metaKeyOriginKind] = originKindSessionHelper

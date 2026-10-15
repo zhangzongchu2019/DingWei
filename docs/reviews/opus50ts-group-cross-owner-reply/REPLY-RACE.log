@@ -1,0 +1,214 @@
+=== RUN   TestGroupReplyAMR
+=== RUN   TestGroupReplyAMR/full-name
+2026/10/14 18:51:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:51:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:51:09 session handshake timing key_id=u_zzc session=kimi total=12ms register=9ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 18:51:09 session handshake timing key_id=u_zzc session=beta total=12ms register=9ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 18:51:09 session handshake timing key_id=u_zzc session=nack total=10ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:09 session handshake timing key_id=u_zzc session=outsider total=11ms register=8ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 18:51:09 session handshake timing key_id=u_lbl session=gamma total=13ms register=9ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 18:51:09 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:09 session handshake timing key_id=u_zzc session=quill total=24ms register=22ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:09 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:09 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:09 amr decision=inbound_unavailable session=beta delivery_id=original-source-turn candidates=1 hop_inherit=0
+2026/10/14 18:51:09 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_23dcfc05f8ff23d46f53eedaa443383d source_message_id=amr-10451d01504aa9504580a9b07abc5f76
+2026/10/14 18:51:09 amr decision=dispatched candidates=1
+2026/10/14 18:51:09 [reply-origin] lookup session=gamma delivery_id=dw-dlv_23dcfc05f8ff23d46f53eedaa443383d cost=1.412305ms err=<nil> found=true
+2026/10/14 18:51:09 session route decision=durable_queued key_id=u_zzc session=beta client_present=true conn_seq=1 delivery_id=dw-dlv_36da0d5a1cfb3930579cc2e2f8bf86d0 source_message_id=reply-origin-b94d564722f1324609a4e180fd2285f6
+2026/10/14 18:51:09 [reply-origin] R1 已回程 session=gamma to=beta#u_zzc delivery_id=dw-dlv_23dcfc05f8ff23d46f53eedaa443383d in_reply_to=amr-10451d01504aa9504580a9b07abc5f76 hop=1
+2026/10/14 18:51:09 [reply-origin] lookup session=beta delivery_id=dw-dlv_36da0d5a1cfb3930579cc2e2f8bf86d0 cost=1.52976ms err=<nil> found=true
+2026/10/14 18:51:09 [reply-origin] R2 跳过 reason=inbound_is_reply session=beta delivery_id=dw-dlv_36da0d5a1cfb3930579cc2e2f8bf86d0
+2026/10/14 18:51:09 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:09 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:09 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+=== RUN   TestGroupReplyAMR/member-selector
+2026/10/14 18:51:10 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/14 18:51:10 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=beta conn_seq=1 client_present=false
+2026/10/14 18:51:11 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:51:11 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:51:11 session handshake timing key_id=u_zzc session=kimi total=16ms register=11ms accept=0s conn_seq=2ms onboard=3ms register_lock=0s
+2026/10/14 18:51:11 session handshake timing key_id=u_zzc session=beta total=14ms register=11ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 18:51:11 session handshake timing key_id=u_zzc session=nack total=14ms register=12ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:12 session handshake timing key_id=u_zzc session=outsider total=10ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:12 session handshake timing key_id=u_lbl session=gamma total=12ms register=8ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 18:51:12 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:12 session handshake timing key_id=u_zzc session=quill total=10ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:12 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:12 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:12 amr decision=inbound_unavailable session=beta delivery_id=original-source-turn candidates=1 hop_inherit=0
+2026/10/14 18:51:12 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_d61fbb4f01deeaa3cc80245475425d4e source_message_id=amr-c4385dc0fa96de7f788d495578440d7b
+2026/10/14 18:51:12 amr decision=dispatched candidates=1
+2026/10/14 18:51:12 [reply-origin] lookup session=gamma delivery_id=dw-dlv_d61fbb4f01deeaa3cc80245475425d4e cost=1.795084ms err=<nil> found=true
+2026/10/14 18:51:12 session route decision=durable_queued key_id=u_zzc session=beta client_present=true conn_seq=1 delivery_id=dw-dlv_f7a56772ddd55285b129b85c304dee12 source_message_id=reply-origin-9cb4b30260a877489d748de84b814a05
+2026/10/14 18:51:12 [reply-origin] R1 已回程 session=gamma to=beta#u_zzc delivery_id=dw-dlv_d61fbb4f01deeaa3cc80245475425d4e in_reply_to=amr-c4385dc0fa96de7f788d495578440d7b hop=1
+2026/10/14 18:51:12 [reply-origin] lookup session=beta delivery_id=dw-dlv_f7a56772ddd55285b129b85c304dee12 cost=1.453443ms err=<nil> found=true
+2026/10/14 18:51:12 [reply-origin] R2 跳过 reason=inbound_is_reply session=beta delivery_id=dw-dlv_f7a56772ddd55285b129b85c304dee12
+2026/10/14 18:51:12 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:12 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:12 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+=== RUN   TestGroupReplyAMR/same-owner
+2026/10/14 18:51:13 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/14 18:51:13 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=beta conn_seq=1 client_present=false
+2026/10/14 18:51:14 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:51:14 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:51:14 session handshake timing key_id=u_zzc session=kimi total=22ms register=14ms accept=0s conn_seq=3ms onboard=4ms register_lock=0s
+2026/10/14 18:51:14 session handshake timing key_id=u_zzc session=beta total=16ms register=13ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 18:51:14 session handshake timing key_id=u_zzc session=nack total=16ms register=13ms accept=1ms conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 18:51:14 session handshake timing key_id=u_zzc session=outsider total=10ms register=7ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:14 session handshake timing key_id=u_lbl session=gamma total=11ms register=8ms accept=0s conn_seq=1ms onboard=2ms register_lock=0s
+2026/10/14 18:51:14 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:15 session handshake timing key_id=u_zzc session=quill total=11ms register=9ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:15 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:15 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:15 amr decision=inbound_unavailable session=beta delivery_id=original-source-turn candidates=1 hop_inherit=0
+2026/10/14 18:51:15 session route decision=durable_queued key_id=u_zzc session=quill client_present=true conn_seq=1 delivery_id=dw-dlv_917509b51f6c77e26965756b869cf4da source_message_id=amr-0e1aba0f8cd36c0d213775f558d7ac31
+2026/10/14 18:51:15 amr decision=dispatched candidates=1
+2026/10/14 18:51:15 [reply-origin] lookup session=quill delivery_id=dw-dlv_917509b51f6c77e26965756b869cf4da cost=1.330254ms err=<nil> found=true
+2026/10/14 18:51:15 session route decision=durable_queued key_id=u_zzc session=beta client_present=true conn_seq=1 delivery_id=dw-dlv_9b758ece619f43e19785f7bbd3aefffb source_message_id=reply-origin-dacacd9a17dd45b553385770a1a16edc
+2026/10/14 18:51:15 [reply-origin] R1 已回程 session=quill to=beta#u_zzc delivery_id=dw-dlv_917509b51f6c77e26965756b869cf4da in_reply_to=amr-0e1aba0f8cd36c0d213775f558d7ac31 hop=1
+2026/10/14 18:51:15 [reply-origin] lookup session=beta delivery_id=dw-dlv_9b758ece619f43e19785f7bbd3aefffb cost=1.500611ms err=<nil> found=true
+2026/10/14 18:51:15 [reply-origin] R2 跳过 reason=inbound_is_reply session=beta delivery_id=dw-dlv_9b758ece619f43e19785f7bbd3aefffb
+2026/10/14 18:51:15 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:15 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:15 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestGroupReplyAMR (8.57s)
+    --- PASS: TestGroupReplyAMR/full-name (2.77s)
+    --- PASS: TestGroupReplyAMR/member-selector (2.89s)
+    --- PASS: TestGroupReplyAMR/same-owner (2.92s)
+=== RUN   TestGroupReplyMembership
+=== RUN   TestGroupReplyMembership/removed
+2026/10/14 18:51:16 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=quill conn_seq=1 client_present=false
+2026/10/14 18:51:16 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=beta conn_seq=1 client_present=false
+2026/10/14 18:51:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:51:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:51:17 session handshake timing key_id=u_zzc session=kimi total=13ms register=9ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 18:51:17 session handshake timing key_id=u_zzc session=beta total=10ms register=7ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:17 session handshake timing key_id=u_zzc session=nack total=11ms register=8ms accept=1ms conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 18:51:17 session handshake timing key_id=u_zzc session=outsider total=10ms register=8ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 18:51:17 session handshake timing key_id=u_lbl session=gamma total=11ms register=8ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 18:51:17 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:17 session handshake timing key_id=u_zzc session=quill total=11ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:17 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:17 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:17 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_8277fe1c309db6fb6dddd8d7ebcbceb1 source_message_id=014dda3431560a8c1db0973385a3478e
+2026/10/14 18:51:17 [reply-origin] lookup session=gamma delivery_id=dw-dlv_8277fe1c309db6fb6dddd8d7ebcbceb1 cost=1.371831ms err=<nil> found=true
+2026/10/14 18:51:17 [reply-origin] R1 回程未发生 session=gamma delivery_id=dw-dlv_8277fe1c309db6fb6dddd8d7ebcbceb1 reason=自动回程投递失败:组内找不到该Agent
+2026/10/14 18:51:17 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+2026/10/14 18:51:18 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:18 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:18 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+=== RUN   TestGroupReplyMembership/deleted
+2026/10/14 18:51:18 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/14 18:51:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:51:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:51:20 session handshake timing key_id=u_zzc session=kimi total=14ms register=10ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 18:51:20 session handshake timing key_id=u_zzc session=beta total=11ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:20 session handshake timing key_id=u_zzc session=nack total=12ms register=9ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:20 session handshake timing key_id=u_zzc session=outsider total=11ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:20 session handshake timing key_id=u_lbl session=gamma total=12ms register=8ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 18:51:20 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:20 session handshake timing key_id=u_zzc session=quill total=10ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:20 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:20 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:20 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_2ea69779acb630b44ae03c598f233aa6 source_message_id=a547d7ce41d8cbdc20a96e40486f629d
+2026/10/14 18:51:20 [reply-origin] lookup session=gamma delivery_id=dw-dlv_2ea69779acb630b44ae03c598f233aa6 cost=1.484841ms err=<nil> found=true
+2026/10/14 18:51:20 [reply-origin] R1 回程未发生 session=gamma delivery_id=dw-dlv_2ea69779acb630b44ae03c598f233aa6 reason=自动回程投递失败:组内找不到该Agent
+2026/10/14 18:51:20 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+2026/10/14 18:51:20 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:20 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:20 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+=== RUN   TestGroupReplyMembership/leader-only
+2026/10/14 18:51:21 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/14 18:51:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:51:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:51:23 session handshake timing key_id=u_zzc session=kimi total=15ms register=9ms accept=0s conn_seq=2ms onboard=4ms register_lock=0s
+2026/10/14 18:51:23 session handshake timing key_id=u_zzc session=beta total=11ms register=9ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:23 session handshake timing key_id=u_zzc session=nack total=10ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:23 session handshake timing key_id=u_zzc session=outsider total=11ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:23 session handshake timing key_id=u_lbl session=gamma total=12ms register=8ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 18:51:23 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:23 session handshake timing key_id=u_zzc session=quill total=12ms register=10ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:23 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:23 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:23 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_a552475f3adeefd730316f6d7ac1c68c source_message_id=d6ce58ce432c46bcc1fd5a6ca5774b3e
+2026/10/14 18:51:23 [reply-origin] lookup session=gamma delivery_id=dw-dlv_a552475f3adeefd730316f6d7ac1c68c cost=1.629014ms err=<nil> found=true
+2026/10/14 18:51:23 [reply-origin] R1 回程未发生 session=gamma delivery_id=dw-dlv_a552475f3adeefd730316f6d7ac1c68c reason=自动回程投递失败:组内找不到该Agent
+2026/10/14 18:51:23 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+2026/10/14 18:51:23 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:23 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:23 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestGroupReplyMembership (8.15s)
+    --- PASS: TestGroupReplyMembership/removed (2.65s)
+    --- PASS: TestGroupReplyMembership/deleted (2.74s)
+    --- PASS: TestGroupReplyMembership/leader-only (2.76s)
+=== RUN   TestGroupReplyMCP
+2026/10/14 18:51:24 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/14 18:51:25 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:51:25 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:51:25 session handshake timing key_id=u_zzc session=kimi total=14ms register=10ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 18:51:25 session handshake timing key_id=u_zzc session=beta total=14ms register=11ms accept=0s conn_seq=3ms onboard=0s register_lock=0s
+2026/10/14 18:51:25 session handshake timing key_id=u_zzc session=nack total=11ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:25 session handshake timing key_id=u_zzc session=outsider total=10ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:26 session handshake timing key_id=u_lbl session=gamma total=13ms register=9ms accept=0s conn_seq=1ms onboard=2ms register_lock=0s
+2026/10/14 18:51:26 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:26 session handshake timing key_id=u_zzc session=quill total=13ms register=10ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:26 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:26 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:26 session handshake timing key_id=u_zzc session=kimi total=11ms register=9ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:26 session capability file_upload_v1=true key_id=u_zzc session=kimi conn_seq=2
+2026/10/14 18:51:26 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=2 reason=session_reconnected released=0
+2026/10/14 18:51:26 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_424a11033154d643858b1ba1cc41f987 source_message_id=e661b7d0c5de4cfcab5da52eb6686e83
+2026/10/14 18:51:26 [reply-origin] lookup session=gamma delivery_id=dw-dlv_424a11033154d643858b1ba1cc41f987 cost=3.92414ms err=<nil> found=true
+2026/10/14 18:51:26 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=2 delivery_id=dw-dlv_0266f2945aaae058bc6be9f4385ae50f source_message_id=reply-origin-ff01536bb87a5dfc3fd539f58c7df952
+2026/10/14 18:51:26 [reply-origin] R1 已回程 session=gamma to=kimi#u_zzc delivery_id=dw-dlv_424a11033154d643858b1ba1cc41f987 in_reply_to=e661b7d0c5de4cfcab5da52eb6686e83 hop=1
+2026/10/14 18:51:26 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_be984d4dc97dd69a7e3c28cd665f0084 source_message_id=646ce8a6034243f594577c2af82ea8d2
+2026/10/14 18:51:26 [reply-origin] lookup session=gamma delivery_id=dw-dlv_be984d4dc97dd69a7e3c28cd665f0084 cost=1.470435ms err=<nil> found=true
+2026/10/14 18:51:26 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_1f36a75c2396f855e4356af9b9037186 source_message_id=9b253608285c4e6cb169c977293e2002
+2026/10/14 18:51:26 [reply-origin] lookup session=gamma delivery_id=dw-dlv_1f36a75c2396f855e4356af9b9037186 cost=1.412723ms err=<nil> found=true
+2026/10/14 18:51:26 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=2 reason=session_disconnected released=0
+2026/10/14 18:51:26 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:26 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:26 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestGroupReplyMCP (3.04s)
+=== RUN   TestGroupReplyTrueSourceAndDeliveryBinding
+2026/10/14 18:51:27 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/14 18:51:27 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=2 client_present=false
+2026/10/14 18:51:27 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/14 18:51:27 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/14 18:51:28 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:51:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:51:28 [reply-origin] lookup session=bee delivery_id=dlv-true-source cost=1.434238ms err=<nil> found=true
+2026/10/14 18:51:28 [reply-origin] R1 已回程 session=bee to=real-agent#k2 delivery_id=dlv-true-source in_reply_to=source-message hop=0
+2026/10/14 18:51:28 [reply-origin] lookup session=bee delivery_id=dlv-true-source cost=1.322876ms err=<nil> found=true
+2026/10/14 18:51:28 [reply-origin] R1 回程未发生 session=bee delivery_id=dlv-true-source reason=本轮来源记录不属于当前会话,内容未自动回程
+2026/10/14 18:51:28 amr notification=failed reason=source_offline session=bee
+--- PASS: TestGroupReplyTrueSourceAndDeliveryBinding (2.15s)
+=== RUN   TestGroupReplyChannelOneHop
+2026/10/14 18:51:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:51:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:51:31 [reply-origin] lookup session=bee delivery_id=dlv-channel-content cost=1.49503ms err=<nil> found=true
+2026/10/14 18:51:31 [reply-origin] R1 已回程 session=bee to=ant#FB-owner-20261015-52d6f663 delivery_id=dlv-channel-content in_reply_to=dlv-channel-content hop=0
+2026/10/14 18:51:31 [reply-origin] lookup session=bee delivery_id=dlv-channel-reply cost=1.356684ms err=<nil> found=true
+2026/10/14 18:51:31 [reply-origin] R2 跳过 reason=inbound_is_reply session=bee delivery_id=dlv-channel-reply
+--- PASS: TestGroupReplyChannelOneHop (2.18s)
+=== RUN   TestGroupReplyMarkerCannotBeSpoofed
+2026/10/14 18:51:33 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:51:33 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:51:33 session handshake timing key_id=u_zzc session=kimi total=13ms register=9ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 18:51:33 session handshake timing key_id=u_zzc session=beta total=11ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:51:33 session handshake timing key_id=u_zzc session=nack total=10ms register=8ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 18:51:33 session handshake timing key_id=u_zzc session=outsider total=10ms register=8ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 18:51:33 session handshake timing key_id=u_lbl session=gamma total=13ms register=9ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 18:51:33 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:33 session handshake timing key_id=u_zzc session=quill total=48ms register=44ms accept=0s conn_seq=3ms onboard=0s register_lock=0s
+2026/10/14 18:51:33 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:33 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:51:33 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_80bb4605a1ffee5a5a2cccb55cd78c39 source_message_id=d8c0bb1c49caa20e70f1253fed67d48c
+2026/10/14 18:51:33 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:33 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:51:33 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestGroupReplyMarkerCannotBeSpoofed (2.47s)
+PASS
+2026/10/14 18:51:34 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	27.615s

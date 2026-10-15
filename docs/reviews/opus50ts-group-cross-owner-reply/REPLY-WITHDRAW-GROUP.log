@@ -1,0 +1,26 @@
+=== RUN   TestGroupReplyMembership
+=== RUN   TestGroupReplyMembership/removed
+2026/10/14 18:53:35 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:35 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:35 session handshake timing key_id=u_zzc session=kimi total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:35 session handshake timing key_id=u_zzc session=beta total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:35 session handshake timing key_id=u_zzc session=nack total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:35 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:35 session handshake timing key_id=u_lbl session=gamma total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:35 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:53:35 session handshake timing key_id=u_zzc session=quill total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:35 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:53:35 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:53:35 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_74ab0cb8f79e072018a000f4a935b9b4 source_message_id=b16d02728feada8b386096c585608aa1
+2026/10/14 18:53:35 [reply-origin] lookup session=gamma delivery_id=dw-dlv_74ab0cb8f79e072018a000f4a935b9b4 cost=79.386µs err=<nil> found=true
+2026/10/14 18:53:35 session route decision=durable_queued key_id=u_zzc session=beta client_present=true conn_seq=1 delivery_id=dw-dlv_4d023dafd6c164d82a98c8b4028294bc source_message_id=reply-origin-8e95067d505f667d03504e74d5e71e65
+2026/10/14 18:53:35 [reply-origin] R1 已回程 session=gamma to=beta#u_zzc delivery_id=dw-dlv_74ab0cb8f79e072018a000f4a935b9b4 in_reply_to=b16d02728feada8b386096c585608aa1 hop=1
+    group_reply_test.go:91: 不应收到 "membership-blocked-response"，实得 {ID:reply-origin-8e95067d505f667d03504e74d5e71e65 To:beta#u_zzc From:gamma#u_lbl Body:membership-blocked-response TS:1792029215 Meta:map[_hub_reply_origin_return:true ack_required:true conversation_id:b16d02728feada8b386096c585608aa1 dedup_key:reply-origin:dw-dlv_74ab0cb8f79e072018a000f4a935b9b4:reply-turn delivery_id:dw-dlv_4d023dafd6c164d82a98c8b4028294bc delivery_version:1 hop_count:2 in_reply_to:b16d02728feada8b386096c585608aa1 kind:reply mention_verbatim:true no_mirror:true origin_addr:gamma#u_lbl origin_kind:session_helper reply_policy:no_reply route_source:reply_to_origin source_delivery_id:dw-dlv_74ab0cb8f79e072018a000f4a935b9b4 source_message_id:reply-origin-8e95067d505f667d03504e74d5e71e65 source_turn_id:reply-turn type:delivery]}
+2026/10/14 18:53:35 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:53:35 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/14 18:53:35 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+--- FAIL: TestGroupReplyMembership (0.23s)
+    --- FAIL: TestGroupReplyMembership/removed (0.23s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.238s
+FAIL

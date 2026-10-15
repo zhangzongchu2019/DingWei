@@ -1,0 +1,525 @@
+=== RUN   TestAMRLogHygieneUnsupportedNameStillLoggedPerLine
+--- PASS: TestAMRLogHygieneUnsupportedNameStillLoggedPerLine (0.60s)
+=== RUN   TestAMRLogHygieneDecisionPrefixOnlyRealSignal
+--- PASS: TestAMRLogHygieneDecisionPrefixOnlyRealSignal (0.60s)
+=== RUN   TestAMRLogHygieneMissingIdentityCountedNotLogged
+--- PASS: TestAMRLogHygieneMissingIdentityCountedNotLogged (0.62s)
+=== RUN   TestAMRLogHygieneInvalidJSONStillLogged
+--- PASS: TestAMRLogHygieneInvalidJSONStillLogged (0.00s)
+=== RUN   TestAMRLogHygieneHeartbeatFieldsBoundToOwnCounters
+--- PASS: TestAMRLogHygieneHeartbeatFieldsBoundToOwnCounters (0.00s)
+=== RUN   TestAMRRouteResultNoticeIncludesDeliveryID
+2026/10/14 18:55:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestAMRRouteResultNoticeIncludesDeliveryID (2.03s)
+=== RUN   TestAMRFailureNoticeCarriesReplyOriginSuppressionMarker
+2026/10/14 18:55:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:19 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+--- PASS: TestAMRFailureNoticeCarriesReplyOriginSuppressionMarker (2.00s)
+=== RUN   TestAMRWaitsForExistingTurnCompletedAndAggregatesFragments
+2026/10/14 18:55:19 amr decision=ignored reason=completed_turn counted_late=false session=source delivery_id=d1 turn_id=t1 kind=state_change text_len=0 aggregated=1
+--- PASS: TestAMRWaitsForExistingTurnCompletedAndAggregatesFragments (0.00s)
+=== RUN   TestAMRHasNoPerSessionRolloutDimension
+--- PASS: TestAMRHasNoPerSessionRolloutDimension (0.00s)
+=== RUN   TestAMRFragmentClassifierHandlesDuplicateSnapshotAndAppend
+--- PASS: TestAMRFragmentClassifierHandlesDuplicateSnapshotAndAppend (0.00s)
+=== RUN   TestAMRFailClosedForReplayMissingIdentityAndNoTerminal
+--- PASS: TestAMRFailClosedForReplayMissingIdentityAndNoTerminal (0.00s)
+=== RUN   TestAMRIncompleteAndFailedRemainDistinct
+2026/10/14 18:55:19 amr decision=incomplete reason=empty
+2026/10/14 18:55:19 amr decision=failed reason=terminal_failed
+--- PASS: TestAMRIncompleteAndFailedRemainDistinct (0.00s)
+=== RUN   TestAMRTerminalSuccessIsFailClosed
+=== RUN   TestAMRTerminalSuccessIsFailClosed/missing_outcome
+=== RUN   TestAMRTerminalSuccessIsFailClosed/claude_success
+=== RUN   TestAMRTerminalSuccessIsFailClosed/completed
+=== RUN   TestAMRTerminalSuccessIsFailClosed/claude_interrupted_subtype
+=== RUN   TestAMRTerminalSuccessIsFailClosed/explicit_error
+=== RUN   TestAMRTerminalSuccessIsFailClosed/unknown_status
+--- PASS: TestAMRTerminalSuccessIsFailClosed (0.00s)
+    --- PASS: TestAMRTerminalSuccessIsFailClosed/missing_outcome (0.00s)
+    --- PASS: TestAMRTerminalSuccessIsFailClosed/claude_success (0.00s)
+    --- PASS: TestAMRTerminalSuccessIsFailClosed/completed (0.00s)
+    --- PASS: TestAMRTerminalSuccessIsFailClosed/claude_interrupted_subtype (0.00s)
+    --- PASS: TestAMRTerminalSuccessIsFailClosed/explicit_error (0.00s)
+    --- PASS: TestAMRTerminalSuccessIsFailClosed/unknown_status (0.00s)
+=== RUN   TestAMRUnknownTerminalValuesAreCounted
+2026/10/14 18:55:19 amr decision=failed reason=terminal_failed
+--- PASS: TestAMRUnknownTerminalValuesAreCounted (0.00s)
+=== RUN   TestAMRTTLClosesOpenCodeLikeTurnAsIncomplete
+2026/10/14 18:55:19 amr decision=incomplete reason=turn_ttl
+--- PASS: TestAMRTTLClosesOpenCodeLikeTurnAsIncomplete (0.00s)
+=== RUN   TestAMRExpiryUsesBoundedNoticeQueue
+2026/10/14 18:55:19 amr decision=incomplete reason=turn_ttl
+2026/10/14 18:55:19 amr decision=incomplete reason=turn_ttl
+2026/10/14 18:55:19 amr notification=suppressed reason=notice_queue_full
+--- PASS: TestAMRExpiryUsesBoundedNoticeQueue (0.00s)
+=== RUN   TestAMRTruncatesAtHeadAndStillQueuesAtTerminal
+--- PASS: TestAMRTruncatesAtHeadAndStillQueuesAtTerminal (0.00s)
+=== RUN   TestAMRLateAfterTerminalIsCounted
+2026/10/14 18:55:19 amr decision=incomplete reason=empty
+2026/10/14 18:55:19 amr decision=ignored reason=completed_turn counted_late=true session=source delivery_id=d turn_id=t kind=assistant_text text_len=4 aggregated=1
+--- PASS: TestAMRLateAfterTerminalIsCounted (0.00s)
+=== RUN   TestAMRLateAfterTerminalLogCarriesAttribution
+--- PASS: TestAMRLateAfterTerminalLogCarriesAttribution (0.00s)
+=== RUN   TestAMRPerSessionCapacityEvictsOldest
+2026/10/14 18:55:19 amr decision=incomplete reason=session_capacity_eviction
+--- PASS: TestAMRPerSessionCapacityEvictsOldest (0.00s)
+=== RUN   TestAMRRouteAttemptsEveryTargetAndCountsPartialSuccess
+2026/10/14 18:55:21 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:21 amr decision=inbound_unavailable session=source delivery_id=d candidates=3 hop_inherit=0
+2026/10/14 18:55:21 amr decision=dispatched candidates=3
+2026/10/14 18:55:21 amr notification=failed reason=source_offline session=source
+--- PASS: TestAMRRouteAttemptsEveryTargetAndCountsPartialSuccess (2.15s)
+=== RUN   TestAMRStateConservationAfterPositiveCandidate
+2026/10/14 18:55:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:23 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/10/14 18:55:23 amr decision=dispatched candidates=1
+2026/10/14 18:55:23 amr notification=failed reason=source_offline session=source
+--- PASS: TestAMRStateConservationAfterPositiveCandidate (2.05s)
+=== RUN   TestAMRRoutesMentionsAnywhereAndHonorsPairedFences
+=== RUN   TestAMRRoutesMentionsAnywhereAndHonorsPairedFences/mid_sentence
+2026/10/14 18:55:25 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:25 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:25 session version warning key_id=FB-owner-20261015-b2623ff0 owner=owner session=source version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:25 session handshake timing key_id=FB-owner-20261015-b2623ff0 session=owner-source-3ff0 total=21ms auth=1ms accounts=1ms owner=2ms register=10ms accept=0s conn_seq=2ms onboard=5ms register_lock=0s
+2026/10/14 18:55:25 session version warning key_id=FB-owner-20261015-b2623ff0 owner=owner session=target version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:25 session handshake timing key_id=FB-owner-20261015-b2623ff0 session=owner-target-3ff0 total=20ms auth=2ms accounts=2ms owner=6ms register=8ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 18:55:25 amr decision=inbound_unavailable session=owner-source-3ff0 delivery_id=d candidates=1 hop_inherit=0
+2026/10/14 18:55:25 amr decision=dispatched candidates=1
+=== RUN   TestAMRRoutesMentionsAnywhereAndHonorsPairedFences/paired_fence
+2026/10/14 18:55:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:27 session version warning key_id=FB-owner-20261015-7878965a owner=owner session=source version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:27 session handshake timing key_id=FB-owner-20261015-7878965a session=owner-source-965a total=18ms auth=1ms accounts=1ms owner=2ms register=8ms accept=0s conn_seq=1ms onboard=4ms register_lock=0s
+2026/10/14 18:55:27 session version warning key_id=FB-owner-20261015-7878965a owner=owner session=target version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:27 session handshake timing key_id=FB-owner-20261015-7878965a session=owner-target-965a total=16ms auth=2ms accounts=1ms owner=4ms register=7ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 18:55:27 amr decision=inbound_unavailable session=owner-source-965a delivery_id=d candidates=1 hop_inherit=0
+2026/10/14 18:55:27 amr decision=dispatched candidates=1
+=== RUN   TestAMRRoutesMentionsAnywhereAndHonorsPairedFences/unmatched_opener_does_not_swallow
+2026/10/14 18:55:29 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:29 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:29 session version warning key_id=FB-owner-20261015-c6ace013 owner=owner session=source version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:29 session handshake timing key_id=FB-owner-20261015-c6ace013 session=owner-source-e013 total=19ms auth=1ms accounts=1ms owner=2ms register=9ms accept=0s conn_seq=2ms onboard=4ms register_lock=0s
+2026/10/14 18:55:29 session version warning key_id=FB-owner-20261015-c6ace013 owner=owner session=target version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:29 session handshake timing key_id=FB-owner-20261015-c6ace013 session=owner-target-e013 total=16ms auth=1ms accounts=1ms owner=4ms register=7ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:55:29 amr decision=inbound_unavailable session=owner-source-e013 delivery_id=d candidates=1 hop_inherit=0
+2026/10/14 18:55:29 amr decision=dispatched candidates=1
+--- PASS: TestAMRRoutesMentionsAnywhereAndHonorsPairedFences (6.70s)
+    --- PASS: TestAMRRoutesMentionsAnywhereAndHonorsPairedFences/mid_sentence (2.23s)
+    --- PASS: TestAMRRoutesMentionsAnywhereAndHonorsPairedFences/paired_fence (2.16s)
+    --- PASS: TestAMRRoutesMentionsAnywhereAndHonorsPairedFences/unmatched_opener_does_not_swallow (2.31s)
+=== RUN   TestAMRMidBodyMarkdownHeadingIsNotCandidate
+--- PASS: TestAMRMidBodyMarkdownHeadingIsNotCandidate (0.00s)
+=== RUN   TestAMRSoftFailureClassificationKeepsSecurityBoundary
+=== RUN   TestAMRSoftFailureClassificationKeepsSecurityBoundary/unsupported_Chinese_name_is_ordinary_text
+2026/10/14 18:55:29 amr decision=token_skipped reason=unsupported_name tokens=[张宗楚] source=source
+=== RUN   TestAMRSoftFailureClassificationKeepsSecurityBoundary/URL_is_ordinary_text
+=== RUN   TestAMRSoftFailureClassificationKeepsSecurityBoundary/mention_without_body
+=== RUN   TestAMRSoftFailureClassificationKeepsSecurityBoundary/address-like_over_limit_remains_fail_closed
+--- PASS: TestAMRSoftFailureClassificationKeepsSecurityBoundary (0.00s)
+    --- PASS: TestAMRSoftFailureClassificationKeepsSecurityBoundary/unsupported_Chinese_name_is_ordinary_text (0.00s)
+    --- PASS: TestAMRSoftFailureClassificationKeepsSecurityBoundary/URL_is_ordinary_text (0.00s)
+    --- PASS: TestAMRSoftFailureClassificationKeepsSecurityBoundary/mention_without_body (0.00s)
+    --- PASS: TestAMRSoftFailureClassificationKeepsSecurityBoundary/address-like_over_limit_remains_fail_closed (0.00s)
+=== RUN   TestAMRChannelFirstMakesLaterMentionVisible
+--- PASS: TestAMRChannelFirstMakesLaterMentionVisible (0.00s)
+=== RUN   TestAMRNotificationExplainsItCannotBeRepliedTo
+--- PASS: TestAMRNotificationExplainsItCannotBeRepliedTo (0.00s)
+=== RUN   TestAMRRoutedEnvelopeIsReliable
+--- PASS: TestAMRRoutedEnvelopeIsReliable (0.00s)
+=== RUN   TestAMRFragmentBranchesAreDistinguishable
+--- PASS: TestAMRFragmentBranchesAreDistinguishable (0.00s)
+=== RUN   TestAMRQuietTurnSurvivesWhileSourceConnected
+2026/10/14 18:55:29 amr decision=incomplete reason=turn_ttl
+--- PASS: TestAMRQuietTurnSurvivesWhileSourceConnected (0.00s)
+=== RUN   TestAMRQuietTurnKeptWhenSourceStillConnected
+--- PASS: TestAMRQuietTurnKeptWhenSourceStillConnected (0.00s)
+=== RUN   TestAMRQuietTurnStillBoundedByMaxAge
+2026/10/14 18:55:29 amr decision=incomplete reason=turn_ttl
+--- PASS: TestAMRQuietTurnStillBoundedByMaxAge (0.00s)
+=== RUN   TestAMRVerbatimTurnDeliversOriginalText
+2026/10/14 18:55:32 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:32 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:32 session version warning key_id=FB-owner-20261015-9f6e49dc owner=owner session=ant version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:32 session handshake timing key_id=FB-owner-20261015-9f6e49dc session=owner-ant-49dc total=18ms auth=1ms accounts=1ms owner=2ms register=8ms accept=0s conn_seq=1ms onboard=4ms register_lock=0s
+2026/10/14 18:55:32 session version warning key_id=FB-owner-20261015-9f6e49dc owner=owner session=bee version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:32 session handshake timing key_id=FB-owner-20261015-9f6e49dc session=owner-bee-49dc total=17ms auth=2ms accounts=1ms owner=4ms register=7ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 18:55:32 session version warning key_id=FB-owner-20261015-9f6e49dc owner=owner session=cat version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:32 session handshake timing key_id=FB-owner-20261015-9f6e49dc session=owner-cat-49dc total=19ms auth=3ms accounts=1ms owner=4ms register=8ms accept=0s conn_seq=1ms onboard=1ms register_lock=0s
+2026/10/14 18:55:32 amr decision=inbound_unavailable session=owner-ant-49dc delivery_id=dw-dlv_seed-c1 candidates=2 hop_inherit=0
+2026/10/14 18:55:32 amr decision=dispatched candidates=2
+--- PASS: TestAMRVerbatimTurnDeliversOriginalText (2.28s)
+=== RUN   TestAMRVerbatimInboundAloneIsNotReparsed
+2026/10/14 18:55:34 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:34 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:34 session version warning key_id=FB-owner-20261015-16658f6a owner=owner session=ant version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:34 session handshake timing key_id=FB-owner-20261015-16658f6a session=owner-ant-8f6a total=19ms auth=1ms accounts=1ms owner=2ms register=8ms accept=0s conn_seq=2ms onboard=5ms register_lock=0s
+2026/10/14 18:55:34 session version warning key_id=FB-owner-20261015-16658f6a owner=owner session=bee version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:34 session handshake timing key_id=FB-owner-20261015-16658f6a session=owner-bee-8f6a total=17ms auth=2ms accounts=1ms owner=4ms register=7ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:55:34 session version warning key_id=FB-owner-20261015-16658f6a owner=owner session=cat version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:34 session handshake timing key_id=FB-owner-20261015-16658f6a session=owner-cat-8f6a total=17ms auth=2ms accounts=1ms owner=4ms register=7ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 18:55:34 amr decision=inbound_unavailable session=owner-ant-8f6a delivery_id=dw-dlv_seed-c2 candidates=2 hop_inherit=0
+2026/10/14 18:55:34 amr decision=dispatched candidates=2
+2026/10/14 18:55:34 [reply-origin] lookup session=owner-bee-8f6a delivery_id=dw-dlv_amr-29554d8d5453d0f511d5a3119f562c7d cost=1.361585ms err=<nil> found=true
+2026/10/14 18:55:34 [reply-origin] R1 已回程 session=owner-bee-8f6a to=owner-ant-8f6a#FB-owner-20261015-16658f6a delivery_id=dw-dlv_amr-29554d8d5453d0f511d5a3119f562c7d in_reply_to=amr-29554d8d5453d0f511d5a3119f562c7d hop=1
+--- PASS: TestAMRVerbatimInboundAloneIsNotReparsed (2.25s)
+=== RUN   TestAMRVerbatimQuotedChainStopsAfterFirstHop
+2026/10/14 18:55:36 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:36 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:36 session version warning key_id=FB-owner-20261015-d48e1be8 owner=owner session=ant version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:36 session handshake timing key_id=FB-owner-20261015-d48e1be8 session=owner-ant-1be8 total=18ms auth=1ms accounts=1ms owner=2ms register=8ms accept=0s conn_seq=1ms onboard=4ms register_lock=0s
+2026/10/14 18:55:36 session version warning key_id=FB-owner-20261015-d48e1be8 owner=owner session=bee version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:36 session handshake timing key_id=FB-owner-20261015-d48e1be8 session=owner-bee-1be8 total=16ms auth=2ms accounts=1ms owner=4ms register=7ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 18:55:36 session version warning key_id=FB-owner-20261015-d48e1be8 owner=owner session=cat version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:36 session handshake timing key_id=FB-owner-20261015-d48e1be8 session=owner-cat-1be8 total=19ms auth=2ms accounts=1ms owner=4ms register=7ms accept=0s conn_seq=2ms onboard=3ms register_lock=0s
+2026/10/14 18:55:36 amr decision=inbound_unavailable session=owner-ant-1be8 delivery_id=dw-dlv_seed-c3 candidates=2 hop_inherit=0
+2026/10/14 18:55:36 amr decision=dispatched candidates=2
+2026/10/14 18:55:36 [reply-origin] lookup session=owner-bee-1be8 delivery_id=dw-dlv_amr-d188d0bf4415807b8f7d6e3f04c69dc6 cost=1.487487ms err=<nil> found=true
+2026/10/14 18:55:36 [reply-origin] R1 已回程 session=owner-bee-1be8 to=owner-ant-1be8#FB-owner-20261015-d48e1be8 delivery_id=dw-dlv_amr-d188d0bf4415807b8f7d6e3f04c69dc6 in_reply_to=amr-d188d0bf4415807b8f7d6e3f04c69dc6 hop=1
+--- PASS: TestAMRVerbatimQuotedChainStopsAfterFirstHop (2.19s)
+=== RUN   TestAMRVerbatimDerivedEnvelopeInheritsInboundHop
+2026/10/14 18:55:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:38 session version warning key_id=FB-owner-20261015-42e20ff8 owner=owner session=ant version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:38 session handshake timing key_id=FB-owner-20261015-42e20ff8 session=owner-ant-0ff8 total=18ms auth=1ms accounts=1ms owner=2ms register=8ms accept=0s conn_seq=1ms onboard=4ms register_lock=0s
+2026/10/14 18:55:38 session version warning key_id=FB-owner-20261015-42e20ff8 owner=owner session=bee version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:38 session handshake timing key_id=FB-owner-20261015-42e20ff8 session=owner-bee-0ff8 total=15ms auth=1ms accounts=1ms owner=3ms register=7ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 18:55:38 session version warning key_id=FB-owner-20261015-42e20ff8 owner=owner session=cat version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:38 session handshake timing key_id=FB-owner-20261015-42e20ff8 session=owner-cat-0ff8 total=24ms auth=2ms accounts=1ms owner=9ms register=9ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 18:55:38 amr decision=self_skipped session=owner-bee-0ff8 selector=#bee
+2026/10/14 18:55:38 amr decision=dispatched candidates=1
+2026/10/14 18:55:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:40 session version warning key_id=FB-owner-20261015-d3198b01 owner=owner session=ant version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:41 session handshake timing key_id=FB-owner-20261015-d3198b01 session=owner-ant-8b01 total=21ms auth=1ms accounts=1ms owner=3ms register=10ms accept=0s conn_seq=1ms onboard=5ms register_lock=0s
+2026/10/14 18:55:41 session version warning key_id=FB-owner-20261015-d3198b01 owner=owner session=bee version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:41 session handshake timing key_id=FB-owner-20261015-d3198b01 session=owner-bee-8b01 total=17ms auth=2ms accounts=1ms owner=5ms register=7ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 18:55:41 session version warning key_id=FB-owner-20261015-d3198b01 owner=owner session=cat version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:41 session handshake timing key_id=FB-owner-20261015-d3198b01 session=owner-cat-8b01 total=20ms auth=3ms accounts=1ms owner=5ms register=9ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:55:41 amr decision=self_skipped session=owner-bee-8b01 selector=#bee
+2026/10/14 18:55:41 [reply-origin] R4 hop 兜底丢弃 id=amr-a9f79da8230f1f0a42d00ee4326d1e1a from=owner-bee-8b01#FB-owner-20261015-d3198b01 hop=16 max=16
+2026/10/14 18:55:41 amr decision=dispatched candidates=1
+--- PASS: TestAMRVerbatimDerivedEnvelopeInheritsInboundHop (4.47s)
+=== RUN   TestAMRVerbatimQuotedSelfMentionIsNotRoutedToSelf
+2026/10/14 18:55:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:43 session version warning key_id=FB-owner-20261015-2e69947b owner=owner session=ant version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:43 session handshake timing key_id=FB-owner-20261015-2e69947b session=owner-ant-947b total=21ms auth=2ms accounts=1ms owner=3ms register=9ms accept=0s conn_seq=2ms onboard=6ms register_lock=0s
+2026/10/14 18:55:43 session version warning key_id=FB-owner-20261015-2e69947b owner=owner session=bee version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:43 session handshake timing key_id=FB-owner-20261015-2e69947b session=owner-bee-947b total=18ms auth=4ms accounts=3ms owner=2ms register=7ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 18:55:43 session version warning key_id=FB-owner-20261015-2e69947b owner=owner session=cat version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:43 session handshake timing key_id=FB-owner-20261015-2e69947b session=owner-cat-947b total=18ms auth=2ms accounts=1ms owner=5ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:55:43 amr decision=self_skipped session=owner-bee-947b selector=#bee
+2026/10/14 18:55:43 amr decision=dispatched candidates=1
+--- PASS: TestAMRVerbatimQuotedSelfMentionIsNotRoutedToSelf (2.26s)
+=== RUN   TestAMRVerbatimSelfOnlyQuoteStillReturnsToOrigin
+2026/10/14 18:55:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:45 session version warning key_id=FB-owner-20261015-ebd61ff0 owner=owner session=ant version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:45 session handshake timing key_id=FB-owner-20261015-ebd61ff0 session=owner-ant-1ff0 total=21ms auth=2ms accounts=1ms owner=2ms register=10ms accept=0s conn_seq=2ms onboard=5ms register_lock=0s
+2026/10/14 18:55:45 session version warning key_id=FB-owner-20261015-ebd61ff0 owner=owner session=bee version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:45 session handshake timing key_id=FB-owner-20261015-ebd61ff0 session=owner-bee-1ff0 total=17ms auth=1ms accounts=1ms owner=4ms register=8ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:55:45 session version warning key_id=FB-owner-20261015-ebd61ff0 owner=owner session=cat version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:45 session handshake timing key_id=FB-owner-20261015-ebd61ff0 session=owner-cat-1ff0 total=18ms auth=2ms accounts=1ms owner=5ms register=7ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 18:55:45 amr decision=self_skipped session=owner-bee-1ff0 selector=#bee
+2026/10/14 18:55:45 [reply-origin] lookup session=owner-bee-1ff0 delivery_id=dw-dlv_2e6a908ab2d3a9eb41c72dfb152f9db5 cost=1.337171ms err=<nil> found=true
+2026/10/14 18:55:45 [reply-origin] R1 已回程 session=owner-bee-1ff0 to=owner-ant-1ff0#FB-owner-20261015-ebd61ff0 delivery_id=dw-dlv_2e6a908ab2d3a9eb41c72dfb152f9db5 in_reply_to=seed-8c267427f27cc12c hop=0
+--- PASS: TestAMRVerbatimSelfOnlyQuoteStillReturnsToOrigin (2.21s)
+=== RUN   TestAMRVerbatimTurnDeliveryIDMatchesSessionDelivery
+2026/10/14 18:55:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:47 session version warning key_id=FB-owner-20261015-afb9681f owner=owner session=ant version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:47 session handshake timing key_id=FB-owner-20261015-afb9681f session=owner-ant-681f total=19ms auth=1ms accounts=1ms owner=2ms register=9ms accept=0s conn_seq=2ms onboard=5ms register_lock=0s
+2026/10/14 18:55:47 session version warning key_id=FB-owner-20261015-afb9681f owner=owner session=bee version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:47 session handshake timing key_id=FB-owner-20261015-afb9681f session=owner-bee-681f total=17ms auth=2ms accounts=1ms owner=4ms register=7ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 18:55:47 session version warning key_id=FB-owner-20261015-afb9681f owner=owner session=cat version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:55:47 session handshake timing key_id=FB-owner-20261015-afb9681f session=owner-cat-681f total=21ms auth=3ms accounts=1ms owner=5ms register=9ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 18:55:47 session delivery lease release decision=requeue key_id=FB-owner-20261015-afb9681f session=owner-bee-681f conn_seq=1 reason=session_reconnected released=0
+2026/10/14 18:55:47 amr decision=inbound_unavailable session=owner-ant-681f delivery_id=dw-dlv_seed-c6 candidates=2 hop_inherit=0
+2026/10/14 18:55:47 session route decision=durable_queued key_id=FB-owner-20261015-afb9681f session=owner-bee-681f client_present=true conn_seq=1 delivery_id=dw-dlv_17dd14643b6e425121f454f093a70cd9 source_message_id=amr-369a51ac684469ea4de61c0c9c09c7ad
+2026/10/14 18:55:47 amr decision=dispatched candidates=2
+2026/10/14 18:55:47 [reply-origin] lookup session=owner-bee-681f delivery_id=dw-dlv_17dd14643b6e425121f454f093a70cd9 cost=1.317632ms err=<nil> found=true
+2026/10/14 18:55:47 [reply-origin] R1 已回程 session=owner-bee-681f to=owner-ant-681f#FB-owner-20261015-afb9681f delivery_id=dw-dlv_17dd14643b6e425121f454f093a70cd9 in_reply_to=amr-369a51ac684469ea4de61c0c9c09c7ad hop=1
+2026/10/14 18:55:47 session delivery lease release decision=requeue key_id=FB-owner-20261015-afb9681f session=owner-bee-681f conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestAMRVerbatimTurnDeliveryIDMatchesSessionDelivery (2.32s)
+=== RUN   TestChannelReservedNamesAndNamingRules
+--- PASS: TestChannelReservedNamesAndNamingRules (0.00s)
+=== RUN   TestChannelMentionParsesChannelsAndRejectsMembers
+=== RUN   TestChannelMentionParsesChannelsAndRejectsMembers/渠道被识别
+=== RUN   TestChannelMentionParsesChannelsAndRejectsMembers/反向:业主名会话名不得被当成渠道
+=== RUN   TestChannelMentionParsesChannelsAndRejectsMembers/地址切分
+--- PASS: TestChannelMentionParsesChannelsAndRejectsMembers (0.00s)
+    --- PASS: TestChannelMentionParsesChannelsAndRejectsMembers/渠道被识别 (0.00s)
+    --- PASS: TestChannelMentionParsesChannelsAndRejectsMembers/反向:业主名会话名不得被当成渠道 (0.00s)
+    --- PASS: TestChannelMentionParsesChannelsAndRejectsMembers/地址切分 (0.00s)
+=== RUN   TestChannelMentionDoesNotBecomeAgentCandidate
+--- PASS: TestChannelMentionDoesNotBecomeAgentCandidate (0.00s)
+=== RUN   TestChannelDeliveryNoAddressGoesToOwner
+2026/10/14 18:55:48 session delivery drain skipped decision=stale_or_offline_client key_id=FB-owner-20261015-afb9681f session=owner-bee-681f conn_seq=1 client_present=false
+2026/10/14 18:55:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:50 [channel] deliver session=bee channel=feishu addr="" resolved="ou_owner" fell_back=true bot="alpha-bot"
+--- PASS: TestChannelDeliveryNoAddressGoesToOwner (2.17s)
+=== RUN   TestChannelDeliveryAddressableIDIsNotFallenBack
+2026/10/14 18:55:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestChannelDeliveryAddressableIDIsNotFallenBack/ou
+2026/10/14 18:55:52 [channel] deliver session=bee channel=feishu addr="ou_realuser" resolved="ou_realuser" fell_back=false bot="alpha-bot"
+=== RUN   TestChannelDeliveryAddressableIDIsNotFallenBack/oc
+2026/10/14 18:55:52 [channel] deliver session=bee channel=feishu addr="oc_realgroup" resolved="oc_realgroup" fell_back=false bot="alpha-bot"
+--- PASS: TestChannelDeliveryAddressableIDIsNotFallenBack (2.08s)
+    --- PASS: TestChannelDeliveryAddressableIDIsNotFallenBack/ou (0.00s)
+    --- PASS: TestChannelDeliveryAddressableIDIsNotFallenBack/oc (0.00s)
+=== RUN   TestChannelDeliveryUniqueNameSelectsNonFirstMember
+2026/10/14 18:55:54 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:54 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:54 [channel] deliver session=bee channel=feishu addr="目标乙" resolved="ou_second" fell_back=false bot="alpha-bot"
+--- PASS: TestChannelDeliveryUniqueNameSelectsNonFirstMember (2.05s)
+=== RUN   TestChannelDeliveryUniqueGroupNameRoutesToGroup
+2026/10/14 18:55:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:56 [channel] deliver session=bee channel=feishu addr="发布群" resolved="oc_named" fell_back=false bot="alpha-bot"
+--- PASS: TestChannelDeliveryUniqueGroupNameRoutesToGroup (2.05s)
+=== RUN   TestChannelDeliveryDuplicateNameFallsBackWithOwnershipNote
+2026/10/14 18:55:58 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:55:58 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:55:58 [channel] deliver session=bee channel=feishu addr="同名目标" resolved="ou_owner" fell_back=true bot="alpha-bot"
+--- PASS: TestChannelDeliveryDuplicateNameFallsBackWithOwnershipNote (2.04s)
+=== RUN   TestChannelDeliveryDuplicateNameWithSameOwnerStillIdentifiesBothTargets
+2026/10/14 18:56:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:00 [channel] deliver session=bee channel=feishu addr="同归属重名" resolved="ou_owner" fell_back=true bot="alpha-bot"
+--- PASS: TestChannelDeliveryDuplicateNameWithSameOwnerStillIdentifiesBothTargets (2.16s)
+=== RUN   TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing
+=== RUN   TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing/members
+2026/10/14 18:56:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:02 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+=== RUN   TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing/groups
+2026/10/14 18:56:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:04 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+--- PASS: TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing (4.19s)
+    --- PASS: TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing/members (2.10s)
+    --- PASS: TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing/groups (2.09s)
+=== RUN   TestChannelDeliveryMissingNameFallsBackWithNotFoundNote
+2026/10/14 18:56:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:06 [channel] deliver session=bee channel=feishu addr="不存在的名字" resolved="ou_owner" fell_back=true bot="alpha-bot"
+--- PASS: TestChannelDeliveryMissingNameFallsBackWithNotFoundNote (2.08s)
+=== RUN   TestChannelDeliveryDefaultBotIsAlphabeticallyFirst
+2026/10/14 18:56:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:08 [channel] deliver session=bee channel=feishu addr="oc_g" resolved="oc_g" fell_back=false bot="alpha-bot"
+--- PASS: TestChannelDeliveryDefaultBotIsAlphabeticallyFirst (2.07s)
+=== RUN   TestChannelDeliveryWithoutOwnerOpenIDDoesNotRouteSilently
+2026/10/14 18:56:10 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:10 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:10 [channel] deliver session=bee channel=feishu addr="" resolved="" fell_back=true bot="alpha-bot"
+2026/10/14 18:56:10 amr notification=failed reason=source_offline session=bee
+--- PASS: TestChannelDeliveryWithoutOwnerOpenIDDoesNotRouteSilently (2.11s)
+=== RUN   TestChannelDeliveryIsWiredIntoProcess
+2026/10/14 18:56:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:13 [channel] deliver session=bee channel=feishu addr="oc_group" resolved="oc_group" fell_back=false bot="alpha-bot"
+--- PASS: TestChannelDeliveryIsWiredIntoProcess (2.12s)
+=== RUN   TestChannelDeliveryFromRealProcessEntryReachesOutbound
+2026/10/14 18:56:15 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:15 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:15 [channel] deliver session=bee channel=feishu addr="渠道真实目标" resolved="ou_channel_real_entry" fell_back=false bot="alpha-bot"
+--- PASS: TestChannelDeliveryFromRealProcessEntryReachesOutbound (2.07s)
+=== RUN   TestChannelMentionNotDispatchedAsMember
+2026/10/14 18:56:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestChannelMentionNotDispatchedAsMember (2.13s)
+=== RUN   TestReplyDedupSlidingBlocksPeriodicResends
+--- PASS: TestReplyDedupSlidingBlocksPeriodicResends (0.00s)
+=== RUN   TestReplyDedupCapEvictsOldest
+--- PASS: TestReplyDedupCapEvictsOldest (0.01s)
+=== RUN   TestReplyDedupPassesOnceAfterWindowThenBlocksAgain
+--- PASS: TestReplyDedupPassesOnceAfterWindowThenBlocksAgain (0.00s)
+=== RUN   TestReplyDedupOverCapDropsAllExpiredFirst
+--- PASS: TestReplyDedupOverCapDropsAllExpiredFirst (0.00s)
+=== RUN   TestAMRSweepAlsoSweepsReplyDedup
+2026/10/14 18:56:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:19 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+--- PASS: TestAMRSweepAlsoSweepsReplyDedup (2.09s)
+=== RUN   TestReplyOriginHubTermination
+2026/10/14 18:56:21 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:21 session name warning key_id=FB-person-20261015-3bca340e owner= session=home: 无法确认该 key 绑定成员 owner_key
+2026/10/14 18:56:21 session version warning key_id=FB-person-20261015-3bca340e owner= session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:56:21 session handshake timing key_id=FB-person-20261015-3bca340e session=home total=12ms auth=1ms accounts=1ms owner=1ms register=6ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 18:56:21 session name warning key_id=FB-person-20261015-3bca340e owner= session=developer: 无法确认该 key 绑定成员 owner_key
+2026/10/14 18:56:21 session version warning key_id=FB-person-20261015-3bca340e owner= session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:56:21 session handshake timing key_id=FB-person-20261015-3bca340e session=developer total=12ms auth=2ms accounts=1ms owner=1ms register=5ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:56:21 [reply-origin] R4 hop 兜底丢弃 id=hop-drop from=developer#FB-person-20261015-3bca340e hop=16 max=16
+2026/10/14 18:56:21 [reply-origin] R5 dedup 丢弃 id=dk2 dedup_key=dk
+--- PASS: TestReplyOriginHubTermination (2.11s)
+=== RUN   TestReplyDedup
+--- PASS: TestReplyDedup (0.00s)
+=== RUN   TestApplyReplyOriginTermination
+2026/10/14 18:56:21 [reply-origin] R4 hop 兜底丢弃 id=e1 from=b#k hop=16 max=16
+2026/10/14 18:56:21 [reply-origin] R5 dedup 丢弃 id=e1 dedup_key=dk1
+--- PASS: TestApplyReplyOriginTermination (0.00s)
+=== RUN   TestReplyOriginFeishuSkipIsAnError
+2026/10/14 18:56:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:23 [feishu] skip_mirror env_id=reply-origin-skip to=ou_sender#k1#UnifiedRobot type="agent_route"
+2026/10/14 18:56:23 [feishu] skip_mirror env_id=reply-origin-skip to=ou_sender#k1#UnifiedRobot type="agent_route"
+--- PASS: TestReplyOriginFeishuSkipIsAnError (2.10s)
+=== RUN   TestReplyToFeishuOriginPassesRealOutboundBoundary
+2026/10/14 18:56:25 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:25 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:25 [reply-origin] lookup session=bee delivery_id=dw-dlv-feishu-return cost=1.369371ms err=<nil> found=true
+2026/10/14 18:56:25 [reply-origin] R1 已回程 session=bee to=ou_sender#k1#UnifiedRobot delivery_id=dw-dlv-feishu-return in_reply_to=msg-feishu-return hop=0
+--- PASS: TestReplyToFeishuOriginPassesRealOutboundBoundary (2.18s)
+=== RUN   TestReplyToOriginDefersToSameTargetSyncEvenWhenOutputIsLate
+=== RUN   TestReplyToOriginDefersToSameTargetSyncEvenWhenOutputIsLate/1.5s
+2026/10/14 18:56:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:27 [reply-origin] lookup session=bee delivery_id=dw-dlv-late-1.5s cost=1.360462ms err=<nil> found=true
+2026/10/14 18:56:27 [reply-origin] 已由同步送达，跳过回程 session=bee to=ou_sender#k1#UnifiedRobot delivery_id=dw-dlv-late-1.5s
+=== RUN   TestReplyToOriginDefersToSameTargetSyncEvenWhenOutputIsLate/2.2s
+2026/10/14 18:56:32 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:32 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:32 [reply-origin] lookup session=bee delivery_id=dw-dlv-late-2.2s cost=1.348162ms err=<nil> found=true
+2026/10/14 18:56:32 [reply-origin] 已由同步送达，跳过回程 session=bee to=ou_sender#k1#UnifiedRobot delivery_id=dw-dlv-late-2.2s
+--- PASS: TestReplyToOriginDefersToSameTargetSyncEvenWhenOutputIsLate (10.57s)
+    --- PASS: TestReplyToOriginDefersToSameTargetSyncEvenWhenOutputIsLate/1.5s (4.91s)
+    --- PASS: TestReplyToOriginDefersToSameTargetSyncEvenWhenOutputIsLate/2.2s (5.66s)
+=== RUN   TestReplyToOriginDefersToSameTargetMirror
+2026/10/14 18:56:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:38 [reply-origin] lookup session=bee delivery_id=dw-dlv-mirror cost=1.412364ms err=<nil> found=true
+2026/10/14 18:56:38 [reply-origin] 已由同步送达，跳过回程 session=bee to=ou_sender#k1#UnifiedRobot delivery_id=dw-dlv-mirror
+--- PASS: TestReplyToOriginDefersToSameTargetMirror (2.11s)
+=== RUN   TestReplyToOriginOtherSyncTargetDoesNotSuppressReturn
+2026/10/14 18:56:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:40 [reply-origin] lookup session=bee delivery_id=dw-dlv-other-sync cost=1.357275ms err=<nil> found=true
+2026/10/14 18:56:40 [reply-origin] R1 已回程 session=bee to=ou_sender#k1#UnifiedRobot delivery_id=dw-dlv-other-sync in_reply_to=msg-other-sync hop=0
+--- PASS: TestReplyToOriginOtherSyncTargetDoesNotSuppressReturn (2.10s)
+=== RUN   TestReplyToOriginGroupIsNotSuppressedBySenderPersonalSync
+2026/10/14 18:56:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:42 [reply-origin] lookup session=bee delivery_id=dw-dlv-group-personal-sync cost=1.480286ms err=<nil> found=true
+2026/10/14 18:56:42 [reply-origin] R1 已回程 session=bee to=oc_group#k1#UnifiedRobot delivery_id=dw-dlv-group-personal-sync in_reply_to=msg-group-personal-sync hop=0
+--- PASS: TestReplyToOriginGroupIsNotSuppressedBySenderPersonalSync (3.54s)
+=== RUN   TestReplyToOriginGroupWithoutSyncUsesGroupConversation
+2026/10/14 18:56:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:46 [reply-origin] lookup session=bee delivery_id=dw-dlv-group-no-sync cost=1.49069ms err=<nil> found=true
+2026/10/14 18:56:46 [reply-origin] R1 已回程 session=bee to=oc_group#k1#UnifiedRobot delivery_id=dw-dlv-group-no-sync in_reply_to=msg-group-no-sync hop=0
+--- PASS: TestReplyToOriginGroupWithoutSyncUsesGroupConversation (2.37s)
+=== RUN   TestReplyToOriginDefersToSameGroupSyncExactlyOnce
+2026/10/14 18:56:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:48 [reply-origin] lookup session=bee delivery_id=dw-dlv-group-group-sync cost=1.477329ms err=<nil> found=true
+2026/10/14 18:56:48 [reply-origin] 已由同步送达，跳过回程 session=bee to=oc_group#k1#UnifiedRobot delivery_id=dw-dlv-group-group-sync
+--- PASS: TestReplyToOriginDefersToSameGroupSyncExactlyOnce (3.41s)
+=== RUN   TestReplyToOriginR1RoutesTurnOutputBackToSender
+2026/10/14 18:56:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:52 [reply-origin] lookup session=bee delivery_id=dw-dlv_r1 cost=1.697448ms err=<nil> found=true
+2026/10/14 18:56:52 [reply-origin] R1 已回程 session=bee to=ant#k1 delivery_id=dw-dlv_r1 in_reply_to=msg-r1 hop=0
+--- PASS: TestReplyToOriginR1RoutesTurnOutputBackToSender (2.11s)
+=== RUN   TestReplyToOriginTransportDeliveryTypeStillRoutes
+2026/10/14 18:56:54 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:54 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:54 [reply-origin] lookup session=bee delivery_id=dw-dlv_transport cost=1.399263ms err=<nil> found=true
+2026/10/14 18:56:54 [reply-origin] R1 已回程 session=bee to=ant#k1 delivery_id=dw-dlv_transport in_reply_to=msg-transport hop=0
+--- PASS: TestReplyToOriginTransportDeliveryTypeStillRoutes (2.14s)
+=== RUN   TestReplyToOriginTrueControlTypesStillSkip
+=== RUN   TestReplyToOriginTrueControlTypesStillSkip/delivery_ack
+2026/10/14 18:56:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:56 [reply-origin] lookup session=bee delivery_id=dw-dlv_delivery_ack cost=1.554477ms err=<nil> found=true
+2026/10/14 18:56:56 [reply-origin] R1 跳过 reason=control_inbound session=bee delivery_id=dw-dlv_delivery_ack
+=== RUN   TestReplyToOriginTrueControlTypesStillSkip/provision
+2026/10/14 18:56:58 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:56:58 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:56:58 [reply-origin] lookup session=bee delivery_id=dw-dlv_provision cost=1.457408ms err=<nil> found=true
+2026/10/14 18:56:58 [reply-origin] R1 跳过 reason=control_inbound session=bee delivery_id=dw-dlv_provision
+=== RUN   TestReplyToOriginTrueControlTypesStillSkip/mirror_control
+2026/10/14 18:57:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:57:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:57:00 [reply-origin] lookup session=bee delivery_id=dw-dlv_mirror_control cost=1.581403ms err=<nil> found=true
+2026/10/14 18:57:00 [reply-origin] R1 跳过 reason=control_inbound session=bee delivery_id=dw-dlv_mirror_control
+--- PASS: TestReplyToOriginTrueControlTypesStillSkip (6.23s)
+    --- PASS: TestReplyToOriginTrueControlTypesStillSkip/delivery_ack (2.08s)
+    --- PASS: TestReplyToOriginTrueControlTypesStillSkip/provision (2.05s)
+    --- PASS: TestReplyToOriginTrueControlTypesStillSkip/mirror_control (2.10s)
+=== RUN   TestReplyToOriginSystemNotificationTurnStopsWithoutFailureNotice
+2026/10/14 18:57:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:57:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:57:02 [reply-origin] R1 跳过 reason=system_notification session=bee delivery_id=opaque-delivery-coordinate
+--- PASS: TestReplyToOriginSystemNotificationTurnStopsWithoutFailureNotice (2.14s)
+=== RUN   TestReplyToOriginR2StopsOnReplyInboundButExplicitStillFlows
+2026/10/14 18:57:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:57:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:57:04 [reply-origin] lookup session=bee delivery_id=dw-dlv_r2a cost=1.365783ms err=<nil> found=true
+2026/10/14 18:57:04 [reply-origin] R2 跳过 reason=inbound_is_reply session=bee delivery_id=dw-dlv_r2a
+2026/10/14 18:57:04 [reply-origin] lookup session=bee delivery_id=dw-dlv_r2b cost=1.342822ms err=<nil> found=true
+2026/10/14 18:57:04 [reply-origin] R1 已回程 session=bee to=ant#k1 delivery_id=dw-dlv_r2b in_reply_to=msg-r2b hop=0
+--- PASS: TestReplyToOriginR2StopsOnReplyInboundButExplicitStillFlows (2.07s)
+=== RUN   TestReplyToOriginR3CarriesHopForward
+2026/10/14 18:57:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:57:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:57:06 [reply-origin] lookup session=bee delivery_id=dw-dlv_r3 cost=1.57644ms err=<nil> found=true
+2026/10/14 18:57:06 [reply-origin] R1 已回程 session=bee to=ant#k1 delivery_id=dw-dlv_r3 in_reply_to=msg-r3 hop=4
+--- PASS: TestReplyToOriginR3CarriesHopForward (2.17s)
+=== RUN   TestReplyToOriginR4CarriesStableDedupKey
+2026/10/14 18:57:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:57:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:57:08 [reply-origin] lookup session=bee delivery_id=dw-dlv_r4 cost=1.388869ms err=<nil> found=true
+2026/10/14 18:57:08 [reply-origin] R1 已回程 session=bee to=ant#k1 delivery_id=dw-dlv_r4 in_reply_to=msg-r4 hop=0
+2026/10/14 18:57:08 [reply-origin] lookup session=bee delivery_id=dw-dlv_r4 cost=1.314538ms err=<nil> found=true
+2026/10/14 18:57:08 [reply-origin] R1 已回程 session=bee to=ant#k1 delivery_id=dw-dlv_r4 in_reply_to=msg-r4 hop=0
+--- PASS: TestReplyToOriginR4CarriesStableDedupKey (2.11s)
+=== RUN   TestReplyToOriginMissingDeliveryNotifiesOnlineSession
+2026/10/14 18:57:10 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:57:10 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:57:10 [reply-origin] lookup session=bee delivery_id=dw-dlv_missing cost=1.225972ms err=<nil> found=false
+2026/10/14 18:57:10 [reply-origin] R1 回程未发生 session=bee delivery_id=dw-dlv_missing reason=本轮的来源记录已不可用,内容未自动回程
+2026/10/14 18:57:10 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+--- PASS: TestReplyToOriginMissingDeliveryNotifiesOnlineSession (2.08s)
+=== RUN   TestReplyToOriginC2InterleavedSendersEachGetTheirOwnReply
+2026/10/14 18:57:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:57:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:57:13 [reply-origin] lookup session=bee delivery_id=dw-dlv_c2a cost=1.408557ms err=<nil> found=true
+2026/10/14 18:57:13 [reply-origin] R1 已回程 session=bee to=ant#k1 delivery_id=dw-dlv_c2a in_reply_to=msg-c2a hop=0
+2026/10/14 18:57:13 [reply-origin] lookup session=bee delivery_id=dw-dlv_c2b cost=1.623593ms err=<nil> found=true
+2026/10/14 18:57:13 [reply-origin] R1 已回程 session=bee to=cat#k1 delivery_id=dw-dlv_c2b in_reply_to=msg-c2b hop=0
+--- PASS: TestReplyToOriginC2InterleavedSendersEachGetTheirOwnReply (2.08s)
+=== RUN   TestReplyToOriginIsWiredIntoProcessNonCandidateBranch
+2026/10/14 18:57:15 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:57:15 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:57:15 [reply-origin] lookup session=bee delivery_id=dw-dlv_wire cost=1.339279ms err=<nil> found=true
+2026/10/14 18:57:15 [reply-origin] R1 已回程 session=bee to=ant#k1 delivery_id=dw-dlv_wire in_reply_to=msg-wire hop=0
+--- PASS: TestReplyToOriginIsWiredIntoProcessNonCandidateBranch (2.13s)
+=== RUN   TestAMRUnsupportedChineseNameReturnsWholeTurnThroughRealIngress
+2026/10/14 18:57:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:57:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:57:17 amr decision=token_skipped reason=unsupported_name tokens=[张宗楚] source=bee
+2026/10/14 18:57:17 amr notification=failed reason=source_offline session=bee
+2026/10/14 18:57:17 [reply-origin] lookup session=bee delivery_id=dw-dlv_soft cost=1.386642ms err=<nil> found=true
+2026/10/14 18:57:17 [reply-origin] R1 已回程 session=bee to=ant#k1 delivery_id=dw-dlv_soft in_reply_to=msg-soft hop=0
+--- PASS: TestAMRUnsupportedChineseNameReturnsWholeTurnThroughRealIngress (2.08s)
+=== RUN   TestAMRPreviouslyUnlistedSessionUsesDefaultTurnPipeline
+--- PASS: TestAMRPreviouslyUnlistedSessionUsesDefaultTurnPipeline (0.00s)
+=== RUN   TestAMRFailureNotificationCarriesRestartWindowSignal
+2026/10/14 18:57:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:57:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:57:19 session name warning key_id=FB-owner-20261015-9b32528c owner= session=source: 无法确认该 key 绑定成员 owner_key
+2026/10/14 18:57:19 session version warning key_id=FB-owner-20261015-9b32528c owner= session=source version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:57:19 session handshake timing key_id=FB-owner-20261015-9b32528c session=source total=13ms auth=1ms accounts=1ms owner=1ms register=7ms accept=0s conn_seq=1ms onboard=1ms register_lock=0s
+2026/10/14 18:57:19 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=5 restart_window_seconds=60
+--- PASS: TestAMRFailureNotificationCarriesRestartWindowSignal (2.06s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	127.146s

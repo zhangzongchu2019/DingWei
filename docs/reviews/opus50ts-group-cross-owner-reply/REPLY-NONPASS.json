@@ -1,0 +1,52 @@
+[
+  {
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestDeviceClaimAcrossActualClientAndHub"
+  },
+  {
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestDeviceClaimAcrossActualClientAndPostgres"
+  },
+  {
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestMuxProductHTTP1EightSeats"
+  },
+  {
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestConsolePlatformPayloadDump"
+  },
+  {
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel"
+  },
+  {
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestDesktopMCPRoundTripAcrossRealHub"
+  },
+  {
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/identity/identitytest",
+    "Test": null
+  },
+  {
+    "Action": "fail",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary"
+  },
+  {
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestEnvelopeReadTimeoutEnvironmentChild"
+  },
+  {
+    "Action": "fail",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": null
+  }
+]

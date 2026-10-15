@@ -880,6 +880,17 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	p.stats.workerHeartbeat = time.Now().UTC()
 	p.mu.Unlock()
 
+	// The one-hop boundary precedes every parser branch, including channels.
+	// Replies may quote an @ token but must never turn it into a new command.
+	ctx, cancel := context.WithTimeout(context.Background(), p.routeTimeout)
+	defer cancel()
+	inbound, inboundFound := p.inboundOf(ctx, job.key.DeliveryID)
+	if inboundFound && (metaBool(inbound.Meta, metaKeyMentionVerbatim) || kindOf(inbound) == kindReply) {
+		p.closeJob("non_candidate")
+		p.replyToOrigin(job)
+		return
+	}
+
 	candidates, lookedLikeCandidate := parseAMRCandidatesDetailed(job.body, job.key.Session, p.maxTargets)
 	feedback := amrParseFeedback(job.body, candidates, lookedLikeCandidate, p.maxTargets)
 	// 🔴 G2-b:渠道候选走渠道投递,不进 Agent 寻址(prepareSessionSelector 解不了它们)。
@@ -912,8 +923,6 @@ func (p *amrProcessor) process(job amrRouteJob) {
 		}
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), p.routeTimeout)
-	defer cancel()
 	prepared := make([]amrPreparedTarget, 0, len(candidates))
 	results := make([]amrTargetResult, 0, len(candidates))
 	// S-MENTION-BESTEFFORT ③ 的连锁处置(原样送达后,收件方引用原文会让提及再被解析):
@@ -928,13 +937,6 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	//      Hub 对 reliable 信封且对端自报 delivery_ack_v1 时成立(delivery_id.go 契约;判据见
 	//      TestAMRVerbatimTurnDeliveryIDMatchesSessionDelivery)。查不到时打一行可见日志,不再静默。
 	self := sessionAddress(job.key.Session, job.key.KeyID)
-	inbound, inboundFound := p.inboundOf(ctx, job.key.DeliveryID)
-	if inboundFound && metaBool(inbound.Meta, metaKeyMentionVerbatim) {
-		log.Printf("amr decision=routing_suppressed reason=verbatim_inbound session=%s delivery_id=%s candidates=%d", job.key.Session, job.key.DeliveryID, len(candidates))
-		p.closeJob("non_candidate")
-		p.replyToOrigin(job)
-		return
-	}
 	if !inboundFound && job.key.DeliveryID != "" {
 		log.Printf("amr decision=inbound_unavailable session=%s delivery_id=%s candidates=%d hop_inherit=0", job.key.Session, job.key.DeliveryID, len(candidates))
 	}
@@ -1544,7 +1546,7 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 		return []amrCandidate{{channel: channel, channelAddr: addr, body: body, replyPolicy: "no_reply"}}, true
 	}
 	if owner, session, body, ok := parseMemberMention(text); ok && session != "" && body != "" && len(body) <= amrRouteBodyMax {
-		return []amrCandidate{{selector: "@" + owner + "#" + session, body: body, replyPolicy: "no_reply"}}, true
+		return []amrCandidate{{selector: "@" + owner + "#" + session, body: body, replyPolicy: "expect_reply"}}, true
 	}
 
 	remaining := text
@@ -1585,7 +1587,7 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 	skipped := make([]string, 0, 2) // T-091:不合规 token,跳过但须可见
 	out := make([]amrCandidate, 0, len(tokens))
 	for _, token := range tokens {
-		replyPolicy := "no_reply"
+		replyPolicy := "expect_reply"
 		if strings.HasSuffix(token, "!") {
 			replyPolicy = "expect_reply"
 			token = strings.TrimSuffix(token, "!")

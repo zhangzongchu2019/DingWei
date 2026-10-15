@@ -1,0 +1,19 @@
+{
+  "internal/m8/hub_test.go": {
+    "unchanged_vs_r5": true,
+    "sha256": "c502594cf3b4c98e3ba428097d56d76a611249f6359d8926d4be0a029ebb2d59"
+  },
+  "internal/m8/terminal.go": {
+    "unchanged_vs_r5": true,
+    "sha256": "09b45d327e04d7a814073f319392d3ca08b16b772a5065b07dae644e78655bd8"
+  },
+  "BroadcastOnlineDirectories": {
+    "unchanged_vs_r5": true
+  },
+  "resolveOwnerSessionByShort": {
+    "unchanged_vs_r5": true
+  },
+  "session_registration_pre_receive": {
+    "unchanged_vs_r5": true
+  }
+}

@@ -1,0 +1,366 @@
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:55 session version warning key_id=FB-alice-20261015-fe91ed91 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:55 session handshake timing key_id=FB-alice-20261015-fe91ed91 session=alice-home-ed91 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:53:55 session version warning key_id=FB-alice-20261015-fe91ed91 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:55 session handshake timing key_id=FB-alice-20261015-fe91ed91 session=alice-developer-ed91 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:55 session version warning key_id=FB-alice-20261015-fe91ed91 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:55 session handshake timing key_id=FB-alice-20261015-fe91ed91 session=alice-review-ed91 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:55 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:55 online directory broadcast timing owner=alice total=1ms snapshot=1ms fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.12s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:55 session version warning key_id=FB-alice-20261015-3b0e028b owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:55 session handshake timing key_id=FB-alice-20261015-3b0e028b session=alice-home-028b total=3ms auth=0s accounts=0s owner=0s register=2ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:55 session version warning key_id=FB-alice-20261015-3b0e028b owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:55 session handshake timing key_id=FB-alice-20261015-3b0e028b session=alice-developer-028b total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:55 session version warning key_id=FB-alice-20261015-3b0e028b owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:55 session handshake timing key_id=FB-alice-20261015-3b0e028b session=alice-review-028b total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:55 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:55 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.12s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-b5fe1f97 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-b5fe1f97 session=alice-home-1f97 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-b5fe1f97 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-b5fe1f97 session=alice-developer-1f97 total=3ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-b5fe1f97 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-b5fe1f97 session=alice-review-1f97 total=1ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:56 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.12s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-63870e3b owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-63870e3b session=alice-home-0e3b total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-63870e3b owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-63870e3b session=alice-developer-0e3b total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-63870e3b owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-63870e3b session=alice-review-0e3b total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:56 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.12s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-95253e1e owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-95253e1e session=alice-home-3e1e total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-95253e1e owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-95253e1e session=alice-developer-3e1e total=1ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-95253e1e owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-95253e1e session=alice-review-3e1e total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:56 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.12s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-d3d6d494 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-d3d6d494 session=alice-home-d494 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-d3d6d494 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-d3d6d494 session=alice-developer-d494 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-d3d6d494 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-d3d6d494 session=alice-review-d494 total=1ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 online directory snapshot timing owner=alice total=3ms members=0s endpoints=3ms snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:56 online directory broadcast timing owner=alice total=3ms snapshot=3ms fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.12s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-039ea4c2 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-039ea4c2 session=alice-home-a4c2 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-039ea4c2 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-039ea4c2 session=alice-developer-a4c2 total=4ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-039ea4c2 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-039ea4c2 session=alice-review-a4c2 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:56 online directory broadcast timing owner=alice total=3ms snapshot=0s fanout=3ms clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.15s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-e256437f owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-e256437f session=alice-home-437f total=4ms auth=0s accounts=0s owner=0s register=1ms accept=2ms conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-e256437f owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-e256437f session=alice-developer-437f total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 session version warning key_id=FB-alice-20261015-e256437f owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:56 session handshake timing key_id=FB-alice-20261015-e256437f session=alice-review-437f total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:56 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:56 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.20s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:57 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:57 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-b0087a52 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-b0087a52 session=alice-home-7a52 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=1ms onboard=1ms register_lock=0s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-b0087a52 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-b0087a52 session=alice-developer-7a52 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-b0087a52 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-b0087a52 session=alice-review-7a52 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:57 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.20s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:57 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:57 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-fe25ea83 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-fe25ea83 session=alice-home-ea83 total=7ms auth=0s accounts=3ms owner=0s register=0s accept=0s conn_seq=0s onboard=3ms register_lock=0s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-fe25ea83 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-fe25ea83 session=alice-developer-ea83 total=4ms auth=0s accounts=0s owner=0s register=3ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-fe25ea83 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-fe25ea83 session=alice-review-ea83 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:57 online directory broadcast timing owner=alice total=0s snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.13s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:57 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:57 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-2d3739e3 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-2d3739e3 session=alice-home-39e3 total=3ms auth=0s accounts=0s owner=0s register=1ms accept=1ms conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-2d3739e3 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-2d3739e3 session=alice-developer-39e3 total=5ms auth=0s accounts=0s owner=0s register=0s accept=4ms conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-2d3739e3 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-2d3739e3 session=alice-review-39e3 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:57 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.13s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:57 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:57 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-8147b2c1 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-8147b2c1 session=alice-home-b2c1 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-8147b2c1 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-8147b2c1 session=alice-developer-b2c1 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-8147b2c1 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-8147b2c1 session=alice-review-b2c1 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:57 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.12s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:57 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:57 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-6aed5fb1 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-6aed5fb1 session=alice-home-5fb1 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-6aed5fb1 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-6aed5fb1 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-6aed5fb1 session=alice-review-5fb1 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-6aed5fb1 session=alice-developer-5fb1 total=4ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=2ms register_lock=0s
+2026/10/14 18:53:57 online directory snapshot timing owner=alice total=3ms members=0s endpoints=3ms snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:57 online directory broadcast timing owner=alice total=4ms snapshot=3ms fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.15s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:57 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:57 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-658da0e8 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-658da0e8 session=alice-home-a0e8 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-658da0e8 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-658da0e8 session=alice-developer-a0e8 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:57 session version warning key_id=FB-alice-20261015-658da0e8 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:57 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=2 clients=2
+2026/10/14 18:53:57 session handshake timing key_id=FB-alice-20261015-658da0e8 session=alice-review-a0e8 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:53:57 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=1ms clients=2
+    hub_test.go:3765: read envelope: failed to get reader: context deadline exceeded
+--- FAIL: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (2.12s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:53:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:53:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:53:59 session version warning key_id=FB-alice-20261015-aeada9fc owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:59 session handshake timing key_id=FB-alice-20261015-aeada9fc session=alice-home-a9fc total=22ms auth=0s accounts=0s owner=0s register=0s accept=5ms conn_seq=16ms onboard=1ms register_lock=0s
+2026/10/14 18:53:59 session version warning key_id=FB-alice-20261015-aeada9fc owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:59 session handshake timing key_id=FB-alice-20261015-aeada9fc session=alice-developer-a9fc total=4ms auth=0s accounts=0s owner=0s register=3ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:59 session version warning key_id=FB-alice-20261015-aeada9fc owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:53:59 session handshake timing key_id=FB-alice-20261015-aeada9fc session=alice-review-a9fc total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:53:59 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:53:59 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.28s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-0df68834 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-0df68834 session=alice-home-8834 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-0df68834 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-0df68834 session=alice-developer-8834 total=4ms auth=0s accounts=0s owner=0s register=3ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-0df68834 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-0df68834 session=alice-review-8834 total=2ms auth=0s accounts=0s owner=0s register=2ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:00 online directory broadcast timing owner=alice total=3ms snapshot=3ms fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.20s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-62334017 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-62334017 session=alice-home-4017 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-62334017 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-62334017 session=alice-developer-4017 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-62334017 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-62334017 session=alice-review-4017 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:00 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.21s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-6d90439e owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-6d90439e session=alice-home-439e total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-6d90439e owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-6d90439e session=alice-developer-439e total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-6d90439e owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-6d90439e session=alice-review-439e total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:00 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.14s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-c293a206 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-c293a206 session=alice-home-a206 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-c293a206 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-c293a206 session=alice-developer-a206 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-c293a206 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-c293a206 session=alice-review-a206 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:00 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.11s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-81395e5e owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-81395e5e session=alice-home-5e5e total=3ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-81395e5e owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-81395e5e session=alice-developer-5e5e total=2ms auth=0s accounts=0s owner=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-81395e5e owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-81395e5e session=alice-review-5e5e total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 online directory snapshot timing owner=alice total=1ms members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:00 online directory broadcast timing owner=alice total=1ms snapshot=1ms fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.11s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-5894fda7 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-5894fda7 session=alice-home-fda7 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-5894fda7 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-5894fda7 session=alice-developer-fda7 total=1ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:00 session version warning key_id=FB-alice-20261015-5894fda7 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:00 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=2 clients=2
+2026/10/14 18:54:00 session handshake timing key_id=FB-alice-20261015-5894fda7 session=alice-review-fda7 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:54:00 online directory broadcast timing owner=alice total=2ms snapshot=0s fanout=1ms clients=2
+    hub_test.go:3765: read envelope: failed to get reader: context deadline exceeded
+--- FAIL: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (2.12s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:02 session version warning key_id=FB-alice-20261015-593a253d owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:02 session handshake timing key_id=FB-alice-20261015-593a253d session=alice-home-253d total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:54:02 session version warning key_id=FB-alice-20261015-593a253d owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:02 session handshake timing key_id=FB-alice-20261015-593a253d session=alice-developer-253d total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:02 session version warning key_id=FB-alice-20261015-593a253d owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:02 session handshake timing key_id=FB-alice-20261015-593a253d session=alice-review-253d total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:02 online directory snapshot timing owner=alice total=1ms members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:02 online directory broadcast timing owner=alice total=1ms snapshot=1ms fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.10s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-78f4e594 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-78f4e594 session=alice-home-e594 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-78f4e594 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-78f4e594 session=alice-developer-e594 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-78f4e594 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-78f4e594 session=alice-review-e594 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:03 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.11s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-0f4040f1 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-0f4040f1 session=alice-home-40f1 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-0f4040f1 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-0f4040f1 session=alice-developer-40f1 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-0f4040f1 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-0f4040f1 session=alice-review-40f1 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:03 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.10s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-534e5ead owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-534e5ead session=alice-home-5ead total=3ms auth=1ms accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-534e5ead owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-534e5ead session=alice-developer-5ead total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-534e5ead owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-534e5ead session=alice-review-5ead total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:03 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.12s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-bd6c7da6 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-bd6c7da6 session=alice-home-7da6 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-bd6c7da6 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-bd6c7da6 session=alice-developer-7da6 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-bd6c7da6 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-bd6c7da6 session=alice-review-7da6 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 online directory snapshot timing owner=alice total=1ms members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:03 online directory broadcast timing owner=alice total=1ms snapshot=1ms fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.10s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-ddffaa96 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-ddffaa96 session=alice-home-aa96 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-ddffaa96 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-ddffaa96 session=alice-developer-aa96 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-ddffaa96 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-ddffaa96 session=alice-review-aa96 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 online directory snapshot timing owner=alice total=1ms members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:03 online directory broadcast timing owner=alice total=1ms snapshot=1ms fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.11s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-71ff8e65 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-71ff8e65 session=alice-home-8e65 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-71ff8e65 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-71ff8e65 session=alice-developer-8e65 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-71ff8e65 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-71ff8e65 session=alice-review-8e65 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:03 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.12s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-58d6a83f owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-58d6a83f session=alice-home-a83f total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-58d6a83f owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-58d6a83f session=alice-developer-a83f total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-58d6a83f owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-58d6a83f session=alice-review-a83f total=1ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=3
+2026/10/14 18:54:03 online directory broadcast timing owner=alice total=1ms snapshot=0s fanout=0s clients=3
+--- PASS: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (0.11s)
+=== RUN   TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary
+2026/10/14 18:54:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 18:54:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-833660c8 owner=alice session=home version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-833660c8 session=alice-home-60c8 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-833660c8 owner=alice session=developer version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-833660c8 session=alice-developer-60c8 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/14 18:54:03 session version warning key_id=FB-alice-20261015-833660c8 owner=alice session=review version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 18:54:03 online directory snapshot timing owner=alice total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=2 clients=2
+2026/10/14 18:54:03 session handshake timing key_id=FB-alice-20261015-833660c8 session=alice-review-60c8 total=3ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/14 18:54:03 online directory broadcast timing owner=alice total=2ms snapshot=0s fanout=1ms clients=2
+    hub_test.go:3765: read envelope: failed to get reader: context deadline exceeded
+--- FAIL: TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary (2.11s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	10.093s
+FAIL

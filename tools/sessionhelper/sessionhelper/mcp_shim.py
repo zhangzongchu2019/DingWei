@@ -180,7 +180,7 @@ _SEND_TOOL_SCHEMA = {
         "reply_policy": {
             "type": "string",
             "enum": ["expect_reply", "no_reply", "ack_only"],
-            "description": "可选: 收方处理后是否产生 content-reply, 缺省不产 auto-reply(保守)",
+            "description": "可选: 要让收方回复回到发起 Agent，请明确设为 expect_reply；缺省不产 auto-reply，no_reply 不回传",
         },
         "kind": {
             "type": "string",
