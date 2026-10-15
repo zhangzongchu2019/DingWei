@@ -220,6 +220,7 @@ type sessionClient struct {
 	skillInstalled bool
 	skillCancel    context.CancelFunc
 	deliveryACKV1  bool
+	helperUpdateV1 bool // authenticated helper explicitly supports update_self v1
 	desktopInboxV1 bool
 	helperReady    bool
 	deviceID       string
@@ -1160,6 +1161,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	if a.onRegistered != nil {
 		go a.onRegistered()
 	}
+	if c.metricsAgentID != "" {
+		go h.resumeHelperUpdateOffer(context.Background(), c)
+	}
 	if h.markSessionSeen(ownerKey, sessionName) {
 		h.notifyNewSession(r.Context(), ownerKey, sessionName)
 	}
@@ -1344,7 +1348,10 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		if h.handleControlSubtaskResult(r.Context(), c, env) {
 			continue
 		}
-		if h.handleProvisionAck(r.Context(), c, env) {
+		if h.confirmHelperUpdateHealth(r.Context(), c, env) {
+			continue
+		}
+		if h.recordHelperUpdateReceipt(r.Context(), c, env) || h.handleProvisionAck(r.Context(), c, env) {
 			continue
 		}
 		if err := h.RouteEnvelope(r.Context(), env); err != nil {
@@ -4283,6 +4290,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	wasDeliveryACKV1 := c.deliveryACKV1
 	c.helperReady = true
 	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
+	c.helperUpdateV1 = metaBool(env.Meta, "helper_update_v1")
 	c.desktopInboxV1 = metaBool(env.Meta, "desktop_inbox_v1") && metaString(env.Meta, "processed_semantics") == "saved_to_desktop_inbox"
 	c.stateMu.Unlock()
 	h.writeOutboundCapabilities(c, env)
@@ -4312,7 +4320,19 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 		}
 		go h.drainSessionDeliveries(context.Background(), c)
 	}
+	if h.sessionSupportsHelperUpdate(c) {
+		go h.resumeHelperUpdateOffer(context.Background(), c)
+	}
 	return true
+}
+
+func (h *Hub) sessionSupportsHelperUpdate(c *sessionClient) bool {
+	if c == nil {
+		return false
+	}
+	c.stateMu.Lock()
+	defer c.stateMu.Unlock()
+	return c.helperUpdateV1
 }
 
 func sessionHelperReady(c *sessionClient) bool {

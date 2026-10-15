@@ -2174,6 +2174,12 @@ func (s *Server) packageSessionHelper(r *http.Request, version string) (provisio
 
 func (s *Server) upsertConfig(w http.ResponseWriter, r *http.Request) {
 	key := strings.TrimSpace(r.FormValue("key"))
+	// Helper-update catalog and job documents are Hub-owned CAS state. The
+	// legacy admin config form must never create, mutate, or delete them.
+	if strings.HasPrefix(key, m8.HelperUpdateCatalogPrefix) || strings.HasPrefix(key, "helper_update.job.") {
+		http.Error(w, "helper update config is Hub-managed", http.StatusForbidden)
+		return
+	}
 	switch r.FormValue("action") {
 	case "upsert_system_route":
 		priority, _ := strconv.Atoi(strings.TrimSpace(r.FormValue("priority")))

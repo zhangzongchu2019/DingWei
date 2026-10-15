@@ -129,6 +129,10 @@ type Repository interface {
 	WriteAudit(ctx context.Context, actor, action, target string) error
 	ListRecentAudit(ctx context.Context, actionPrefix string, limit int) ([]model.AuditLog, error)
 	UpsertAppConfig(ctx context.Context, key, valueJSON string) error
+	// CompareAndSwapAppConfig atomically writes valueJSON only when the current
+	// value matches the supplied expectation.  expectedExists=false means the
+	// key must be absent.  It is used for durable helper-update job transitions.
+	CompareAndSwapAppConfig(ctx context.Context, key string, expectedExists bool, expectedValueJSON, valueJSON string) (bool, error)
 	ListAppConfig(ctx context.Context) ([]model.AppConfig, error)
 	DeleteAppConfig(ctx context.Context, key string) error
 	CleanupBefore(ctx context.Context, cutoff time.Time, confirm bool) (model.CleanupResult, error)
