@@ -1,0 +1,93 @@
+{
+  "schema": "helper-sock-len-author-evidence-v1",
+  "status": "OFFLINE_AUTHOR_EVIDENCE_PENDING_INDEPENDENT_CR",
+  "parent": "de7f879b3bef474f0b1c1d2621d1e6efbe78e1aa",
+  "choice": "Explicit listener startup failure; no short-path fallback. The MCP client already uses the configured endpoint, so relocation would silently mismatch client/server paths.",
+  "failure_contract": "Before unlink/socket creation: clear readiness, count os.fsencode bytes, log one stderr ERROR containing only actual and maximum byte counts, raise IPCSocketPathError(ValueError). Listener startup coroutine fails; this change does not add a process-wide exit/restart policy.",
+  "limits": {
+    "linux_filesystem_address_bytes": 107,
+    "other_platform_conservative_bytes": 103,
+    "reason": "Linux sun_path 108 bytes including terminating NUL; elsewhere use existing setup.py portable budget. Actual bind boundary exercised on Linux only."
+  },
+  "targeted": {
+    "command": "PYTHONPATH=tools/sessionhelper <runtime-venv>/bin/python -B -m unittest -v tools/sessionhelper/tests/test_ipc_socket_path.py",
+    "cases": 3,
+    "rc": 0,
+    "checks": [
+      "real maximum-length bind and IPC error response, ready flag set then cleared on cancellation",
+      "oversized path: exact error type and one diagnostic line, no path leakage, no socket creation, preexisting file retained, stale ready flag cleared",
+      "multibyte oversized path counted by encoded bytes rather than character count"
+    ]
+  },
+  "withdrawal": {
+    "change": "Remove only the explicit ERROR print in an isolated package copy; keep production worktree unchanged.",
+    "rc": 1,
+    "result": "Maximum-length bind remains green; both negative diagnostic assertions fail because stderr is empty."
+  },
+  "development_fixture_error": "Initial test omitted required send_handler argument. Corrected by passing None for unsupported-message test; original development log retained separately. Not a product counterexample.",
+  "files": {
+    "tools/sessionhelper/sessionhelper/ipc_listener.py": {
+      "bytes": 23443,
+      "sha256": "33074654c62334a1ca6dd09c5ff7ca31ff116fcd148d3897948234b6bc2c1d44"
+    },
+    "tools/sessionhelper/tests/test_ipc_socket_path.py": {
+      "bytes": 3152,
+      "sha256": "d7d5ff1aab2c3c09097f1072ccdca23fc4e85f14644033b492c13bd2b3afddaf"
+    },
+    "tools/sessionhelper/tests/ipc_socket_path_probe.py": {
+      "bytes": 741,
+      "sha256": "dbdbeeda14523b39d70c7cc73d5e51c95c002f0121ee976e55b32b3c4192712e"
+    }
+  },
+  "local_logs": {
+    "helper-sock-len-targeted.log": {
+      "bytes": 783,
+      "sha256": "c7e692dce755207960e794c901407317b26f13154eb98cb927576ba2164d87b0"
+    },
+    "helper-sock-len-withdraw-red.log": {
+      "bytes": 3911,
+      "sha256": "01093077ed6818b410d7570a663075838118ea327334b92dcb8077b01b90bb12"
+    },
+    "helper-sock-len-initial-fixture-error.log": {
+      "bytes": 4920,
+      "sha256": "f7ef2881e92577f2094cba1b5b0456da35f1c1b25a9d541984307e46fbea774d"
+    },
+    "helper-sock-len-build.log": {
+      "bytes": 34570,
+      "sha256": "31abbc85a435e065ffe9323afda6b61e9fa96151d3bdb5695c9ca3da20f5d9db"
+    },
+    "helper-sock-len-guard-withdraw-red.log": {
+      "bytes": 609,
+      "sha256": "d51d044c3f2133e8617cedaf0ec07e03e51d5823c11caf13f52286e190e82849"
+    },
+    "helper-sock-len-real-oversize-green.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "helper-sock-len-full.log": {
+      "bytes": 41249,
+      "sha256": "5e13e364300e06e6640df7ca60bd564a6e21762f78b0d5f58ebb086c6ac276a4"
+    }
+  },
+  "real_oversize_probe": {
+    "command": "PYTHONPATH=tools/sessionhelper <runtime-venv>/bin/python -B tools/sessionhelper/tests/ipc_socket_path_probe.py",
+    "rc": 0,
+    "withdraw_guard_rc": 1,
+    "withdrawal": "Isolated package copy removes only validate_socket_path(socket_path) at serve_ipc entry. Same real filesystem socket probe fails with OS bind error escaped instead of explicit IPCSocketPathError. No mock socket in this probe."
+  },
+  "canonical_build": {
+    "command": "sh scripts/run-build-tests.sh",
+    "rc": 0,
+    "python_files": 42,
+    "shell_files": 2,
+    "environment": "private HOME, pinned runtime venv, seat variables removed"
+  },
+  "full_helper_suite": {
+    "command": "PYTHONPATH=tools/sessionhelper <runtime-venv>/bin/python -B -m unittest discover -s tools/sessionhelper/tests",
+    "rc": 0,
+    "tests": 636,
+    "elapsed_seconds": 336.374,
+    "environment": "private HOME, pinned runtime venv, seat variables removed",
+    "warnings": "Existing ResourceWarning/DeprecationWarning output retained in local raw log; not hidden."
+  }
+}
