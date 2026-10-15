@@ -1,10 +1,10 @@
-# Helper runtime integration — implementation wire proposal
+# Helper runtime integration — authoritative wire contract
 
 Frozen design fc3e4b45; does not change its authorization or state contract.
 
 New helper version0.2.3.1. Stable mounted source guard gates candidates; old overwrite-in-place update_self is bypassed by SessionHelper.handle_provision. Shared-key/no launcher installs report manual_required. Existing non-update install_skill/install_mcp handling remains unchanged (public-upload retirement is Hub work).
 
-Current wire proposal sent to Hub author for alignment: existing trusted provision envelope action=update_self,target=self; job_id/release_id/agent_id/owner_id/agent_name/version/sha256/lock_sha256/platform=linux/expires_at(RFC3339)/url and Hub-configured file_service_origin. Agent name is compared with dedicated credential. SHA/hash/IDs are frozen in journal. File-service origin is accepted only after existing local-Hub source validation; HTTPS, exact origin, no redirects/proxy/credential headers.
+Authoritative wire, implemented by the separately owned helper and Hub components: existing trusted provision envelope action=update_self,target=self; job_id/release_id/agent_id/owner_id/agent_name/version/sha256/lock_sha256/platform=linux/expires_at(RFC3339)/url and Hub-configured file_service_origin. Agent name is compared with dedicated credential. The six canonical job fields are frozen in the guard journal; the verified job/lock binding is retained in private slot metadata. File-service origin is accepted only after existing local-Hub source validation; HTTPS, exact origin, no redirects/proxy/credential headers.
 
 Hub WebSocket response feature header X-DW-Helper-Update: helper-update/v1 gates new control frames; session_capabilities.helper_update_v1 advertises dedicated Agent+stable launcher+Linux. On fresh authenticated reconnect, healthy candidate sends helper_update_health with tuple and fresh health_nonce; trusted helper_update_confirm must echo nonce/tuple and current compiled version. Driver/IPC readiness checked before sending; no pending job means no health deadline/confirmation. Old Hub receives no new control subtype. This wire must be matched with actual Hub commit before combined E2E/acceptance.
 
@@ -35,7 +35,7 @@ all six frozen job fields and runtime version, and echo the same lock hash; the
 mounted lock must still have that hash. Receipts include lock_sha256; rollback
 receipts derive it from that same mounted lock. No guard journal format change.
 
-The Hub owner supplies the authoritative combined contract: health must arrive
+This file is the sole authoritative wire contract. The Hub implementation must ensure health arrives
 on a connection strictly later than the install/activation boundary (not merely
 offer issuance), only eligible post-install or idempotently confirmed identical
 jobs qualify, and offered/downloaded/failed/rolled_back/stale jobs do not. A valid
@@ -62,3 +62,47 @@ the durable pending tuple and the immutable mounted lock; missing, changed or
 wrong-job binding fails closed with `lock_changed`. Confirm repeats the binding
 check. The marker is runtime private state, not part of the exported package,
 and the stable guard journal remains unchanged.
+
+## Leader R3 clarification — activation boundary and lost confirmation
+
+This section incorporates the latest accepted reviewer clarification and is
+binding on both implementations. It refines the Leader R3 amendment above; it
+does not change the frozen design or claim any implementation/test closure.
+Hub-side `docs/designs/helper-self-update-wire.md` must match or point to this
+file; it is not an alternative contract.
+
+1. **Connection boundary is installation/activation, never issuance.** A health
+   confirmation requires an authenticated connection established strictly after
+   the job's recorded installation/activation boundary. An offline-issued offer
+   may first arrive on a later connection, but that first delivery connection
+   is still pre-restart and cannot confirm. Confirmation is refused while the
+   job is `offered` or `downloaded`, on the activation connection itself, and
+   for `failed`, `rolled_back`, expired or otherwise stale jobs. Replaying an
+   offer cannot move or bypass the activation boundary.
+2. **Dropped confirmation is recoverable without another transition.** For the
+   same canonical job already `confirmed`, a valid retried health, including a
+   new helper nonce after reconnect, receives an idempotent confirmation echo.
+   Agent/owner/job/release/version/package SHA/lock SHA and applicable connection
+   and expiry checks still apply. The Hub echoes that health's current nonce;
+   it does not compare it with an offer nonce. There is no repeated stage write,
+   revision increment, audit event or activation. `failed` and `rolled_back`
+   never resurrect.
+
+Required combined matrix (not replaced by separate local helper/core tests):
+
+- Drop the first confirmation, retry health on the live connection and after
+  reconnect; the same confirmed canonical job receives the current nonce echo
+  without any additional transition/revision/audit/activation.
+- Reject stale or changed confirmation nonce, changed/stale canonical tuple or
+  lock, and expired jobs. A newly generated helper nonce on a valid retry is
+  expected, rather than an offer-nonce mismatch.
+- Refuse confirmation on the same pre-activation socket and after offline
+  issuance on the first offer-delivery connection; refuse offered/downloaded.
+- Refuse failed/rolled_back jobs, retaining terminal state and side effects.
+- Feed JSON produced by the real helper serializer into the authenticated Hub
+  path, including its runtime lock hash, rather than a hand-built substitute.
+
+Ownership remains unchanged: togpt56 implements and tests Hub freshness, terminal
+state and idempotency; coder implements helper lock serialization/verification
+and the combined E2E fixture. The local helper receipt at source8f2adda2 does
+not prove these Hub or full-chain gates.
