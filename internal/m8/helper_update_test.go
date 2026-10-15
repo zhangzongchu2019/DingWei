@@ -95,6 +95,10 @@ func TestIssueHelperUpdateSendsTrustedTargetBoundOffer(t *testing.T) {
 	}
 	defer conn.CloseNow()
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	e.sendEnv(conn, model.Envelope{ID: "caps-update", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "helper update capability", func() bool {
+		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+	})
 	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
 		t.Fatal(err)
@@ -116,6 +120,39 @@ func TestIssueHelperUpdateSendsTrustedTargetBoundOffer(t *testing.T) {
 	}
 }
 
+func TestIssueHelperUpdateDefersUntilHelperUpdateCapability(t *testing.T) {
+	e := newAgentEnv(t)
+	digest := strings.Repeat("6", 64)
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
+		t.Fatal(err)
+	}
+	conn, _, _ := e.dial(e.cred, "version=0.2.3.0")
+	defer conn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	if _, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest); err == nil || !strings.Contains(err.Error(), "manual_required") {
+		t.Fatalf("legacy helper issue err=%v, want manual_required", err)
+	}
+	if e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"]) {
+		t.Fatal("legacy helper unexpectedly has update capability")
+	}
+	stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
+	if err != nil || stored != nil {
+		t.Fatalf("legacy helper created durable job: %+v err=%v", stored, err)
+	}
+	e.sendEnv(conn, model.Envelope{ID: "caps-upgrade", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "helper update capability after bootstrap", func() bool {
+		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+	})
+	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := e.readEnvUntil(conn, time.Second, func(env model.Envelope) bool { return metaString(env.Meta, "job_id") == job.JobID }); got == nil {
+		t.Fatal("capable helper did not receive deferred update offer")
+	}
+}
+
 func TestHelperUpdateHealthRequiresFreshAuthenticatedTuple(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("e", 64)
@@ -129,6 +166,10 @@ func TestHelperUpdateHealthRequiresFreshAuthenticatedTuple(t *testing.T) {
 	}
 	defer conn.CloseNow()
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	e.sendEnv(conn, model.Envelope{ID: "caps-health", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "helper update capability", func() bool {
+		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+	})
 	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
 		t.Fatal(err)
@@ -160,6 +201,10 @@ func TestHelperUpdateHealthRejectsWrongNonce(t *testing.T) {
 	conn, _, _ := e.dial(e.cred, "version=0.2.3.1")
 	defer conn.CloseNow()
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	e.sendEnv(conn, model.Envelope{ID: "caps-nonce", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "helper update capability", func() bool {
+		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+	})
 	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
 		t.Fatal(err)
@@ -187,6 +232,10 @@ func TestHelperUpdateReceiptUsesAuthenticatedJobTuple(t *testing.T) {
 	conn, _, _ := e.dial(e.cred, "version=0.2.3.0")
 	defer conn.CloseNow()
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	e.sendEnv(conn, model.Envelope{ID: "caps-receipt", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "helper update capability", func() bool {
+		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+	})
 	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
 		t.Fatal(err)
@@ -214,6 +263,10 @@ func TestHelperUpdateReceiptNeverRegressesStage(t *testing.T) {
 	conn, _, _ := e.dial(e.cred, "version=0.2.3.0")
 	defer conn.CloseNow()
 	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	e.sendEnv(conn, model.Envelope{ID: "caps-stage", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "helper update capability", func() bool {
+		return e.hub.sessionSupportsHelperUpdate(e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"])
+	})
 	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
 	if err != nil {
 		t.Fatal(err)

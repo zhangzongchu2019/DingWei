@@ -321,14 +321,19 @@ func (h *Hub) IssueHelperUpdateForActor(ctx context.Context, actorID, agentID, r
 	if catalog == nil {
 		return nil, fmt.Errorf("helper update release unavailable")
 	}
-	job, err := h.createHelperUpdateJob(ctx, *catalog, ag.ID, ag.OwnerLC, ag.NameLC(), actor.UserIDLC())
-	if err != nil {
-		return nil, err
-	}
 	keyID := AgentKeyID(ag.OwnerLC)
 	h.mu.Lock()
 	c := h.sessionClients[keyID][ag.NameLC()]
 	h.mu.Unlock()
+	// A connected legacy helper cannot safely consume this offer. It must first
+	// be bootstrapped manually; do not leave an offer for it to replay later.
+	if c != nil && !h.sessionSupportsHelperUpdate(c) {
+		return nil, fmt.Errorf("helper_update_manual_required")
+	}
+	job, err := h.createHelperUpdateJob(ctx, *catalog, ag.ID, ag.OwnerLC, ag.NameLC(), actor.UserIDLC())
+	if err != nil {
+		return nil, err
+	}
 	if c == nil {
 		return job, nil // durable offered state is recovered on the next session.
 	}
@@ -370,7 +375,7 @@ func (h *Hub) confirmHelperUpdateHealth(ctx context.Context, c *sessionClient, e
 	if metaString(env.Meta, "type") != "helper_update_health" {
 		return false
 	}
-	if c == nil || c.metricsAgentID == "" {
+	if c == nil || c.metricsAgentID == "" || !h.sessionSupportsHelperUpdate(c) {
 		return true // This control is credential-agent-only; never fall through to routing.
 	}
 	job, raw, err := h.helperUpdateJob(ctx, c.metricsAgentID)
