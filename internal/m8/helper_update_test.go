@@ -1,6 +1,7 @@
 package m8
 
 import (
+	"context"
 	"strings"
 	"testing"
 )
@@ -19,6 +20,36 @@ func TestHelperUpdateCatalogValidation(t *testing.T) {
 	catalog.Platform = "darwin"
 	if err := validateHelperUpdateCatalog(catalog); err == nil {
 		t.Fatal("non-linux catalog accepted")
+	}
+}
+
+func TestHelperUpdateCatalogAndJobAreDurableAndSingleUse(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	digest := strings.Repeat("c", 64)
+	catalog := helperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	if err := h.RegisterHelperUpdateCatalog(ctx, "ops", catalog); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.RegisterHelperUpdateCatalog(ctx, "ops", catalog); err == nil {
+		t.Fatal("catalog registration replay accepted")
+	}
+	got, err := h.helperUpdateCatalog(ctx, digest)
+	if err != nil || got == nil || got.Version != catalog.Version {
+		t.Fatalf("catalog=%+v err=%v", got, err)
+	}
+	job, err := h.createHelperUpdateJob(context.Background(), *got, "agent-1", "owner", "agent", "owner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if job.Stage != "offered" || job.Revision != 1 || job.ExpiresAt.IsZero() {
+		t.Fatalf("job=%+v", job)
+	}
+	if _, err := h.createHelperUpdateJob(ctx, *got, "agent-1", "owner", "agent", "owner"); err == nil {
+		t.Fatal("second active job accepted")
+	}
+	stored, _, err := h.helperUpdateJob(ctx, "agent-1")
+	if err != nil || stored == nil || stored.JobID != job.JobID {
+		t.Fatalf("stored=%+v err=%v", stored, err)
 	}
 }
 

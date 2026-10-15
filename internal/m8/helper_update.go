@@ -5,12 +5,16 @@ package m8
 // this file deliberately contains only Hub-owned state and wire validation.
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
 const (
@@ -85,4 +89,110 @@ func marshalHelperUpdate(v any) (string, error) {
 		return "", err
 	}
 	return string(b), nil
+}
+
+func (h *Hub) helperUpdateCatalog(ctx context.Context, sha string) (*helperUpdateCatalog, error) {
+	if h.Repo == nil {
+		return nil, fmt.Errorf("helper update repository unavailable")
+	}
+	key := helperUpdateCatalogKey(sha)
+	for _, row := range mustListAppConfig(ctx, h.Repo) {
+		if row.Key != key {
+			continue
+		}
+		var catalog helperUpdateCatalog
+		if err := json.Unmarshal([]byte(row.ValueJSON), &catalog); err != nil {
+			return nil, fmt.Errorf("decode helper update catalog: %w", err)
+		}
+		if err := validateHelperUpdateCatalog(catalog); err != nil {
+			return nil, err
+		}
+		return &catalog, nil
+	}
+	return nil, nil
+}
+
+// mustListAppConfig is named after the expected repository capability, not
+// panic behavior: it returns nil on an unavailable store so callers can turn
+// the condition into a stable, non-leaking control-plane error.
+func mustListAppConfig(ctx context.Context, repo store.Repository) []model.AppConfig {
+	rows, err := repo.ListAppConfig(ctx)
+	if err != nil {
+		return nil
+	}
+	return rows
+}
+
+func (h *Hub) helperUpdateJob(ctx context.Context, agentID string) (*helperUpdateJob, string, error) {
+	if h.Repo == nil {
+		return nil, "", fmt.Errorf("helper update repository unavailable")
+	}
+	key := helperUpdateJobKey(agentID)
+	for _, row := range mustListAppConfig(ctx, h.Repo) {
+		if row.Key != key {
+			continue
+		}
+		var job helperUpdateJob
+		if err := json.Unmarshal([]byte(row.ValueJSON), &job); err != nil {
+			return nil, "", fmt.Errorf("decode helper update job: %w", err)
+		}
+		return &job, row.ValueJSON, nil
+	}
+	return nil, "", nil
+}
+
+// RegisterHelperUpdateCatalog is intentionally an operations-only primitive.
+// The command-line caller added by the Hub slice is its sole production entry;
+// Console callers can select only a pre-registered SHA.
+func (h *Hub) RegisterHelperUpdateCatalog(ctx context.Context, actor string, catalog helperUpdateCatalog) error {
+	if strings.TrimSpace(actor) == "" {
+		return fmt.Errorf("catalog operator required")
+	}
+	if err := validateHelperUpdateCatalog(catalog); err != nil {
+		return err
+	}
+	catalog.SHA256 = strings.ToLower(strings.TrimSpace(catalog.SHA256))
+	catalog.LockSHA256 = strings.ToLower(strings.TrimSpace(catalog.LockSHA256))
+	if catalog.Registered.IsZero() {
+		catalog.Registered = h.now().UTC()
+	}
+	payload, err := marshalHelperUpdate(catalog)
+	if err != nil {
+		return err
+	}
+	created, err := h.Repo.CompareAndSwapAppConfig(ctx, helperUpdateCatalogKey(catalog.SHA256), false, "", payload)
+	if err != nil {
+		return err
+	}
+	if !created {
+		return fmt.Errorf("helper update catalog already registered")
+	}
+	return h.Repo.WriteAudit(ctx, actor, "helper_update_catalog_registered", helperUpdateCatalogKey(catalog.SHA256))
+}
+
+func (h *Hub) createHelperUpdateJob(ctx context.Context, catalog helperUpdateCatalog, agentID, ownerID, agentName, issuer string) (*helperUpdateJob, error) {
+	if strings.TrimSpace(agentID) == "" || strings.TrimSpace(ownerID) == "" || strings.TrimSpace(agentName) == "" {
+		return nil, fmt.Errorf("helper update agent identity required")
+	}
+	now := h.now().UTC()
+	job := helperUpdateJob{
+		JobID: randomHex(16), ReleaseID: catalog.SHA256, AgentID: agentID, OwnerID: ownerID, AgentName: agentName,
+		Version: catalog.Version, SHA256: catalog.SHA256, LockSHA256: catalog.LockSHA256, URL: catalog.URL,
+		Platform: catalog.Platform, Stage: "offered", ExpiresAt: now.Add(30 * time.Minute), Revision: 1,
+	}
+	payload, err := marshalHelperUpdate(job)
+	if err != nil {
+		return nil, err
+	}
+	created, err := h.Repo.CompareAndSwapAppConfig(ctx, helperUpdateJobKey(agentID), false, "", payload)
+	if err != nil {
+		return nil, err
+	}
+	if !created {
+		return nil, fmt.Errorf("helper update job already exists")
+	}
+	if err := h.Repo.WriteAudit(ctx, issuer, "helper_update_offered", job.JobID); err != nil {
+		return nil, err
+	}
+	return &job, nil
 }
