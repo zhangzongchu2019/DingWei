@@ -18,9 +18,30 @@ import asyncio
 import json
 import os
 import socket
+import sys
 from typing import Any, Callable, Awaitable
 
 from .file_upload import UploadRejected
+
+
+# Filesystem AF_UNIX addresses require a terminating NUL: Linux sun_path is
+# 108 bytes; use the existing setup contract's 103-byte portable budget elsewhere.
+IPC_SOCKET_PATH_MAX_BYTES = 107 if sys.platform.startswith("linux") else 103
+
+
+class IPCSocketPathError(ValueError):
+    """The configured filesystem endpoint cannot be bound on this platform."""
+
+
+def validate_socket_path(socket_path: str) -> None:
+    actual = len(os.fsencode(socket_path))
+    if actual > IPC_SOCKET_PATH_MAX_BYTES:
+        # Do not log the path: a user-controlled state directory may contain
+        # sensitive material. Do not silently relocate a configured endpoint.
+        message = (f"IPC socket startup failed: path too long ({actual} bytes; "
+                   f"maximum {IPC_SOCKET_PATH_MAX_BYTES} bytes)")
+        print(f"[ipc_listener] ERROR {message}", file=sys.stderr, flush=True)
+        raise IPCSocketPathError(message)
 
 
 # ── message type ──────────────────────────────────────────────────────
@@ -475,6 +496,11 @@ async def serve_ipc(
     Connections are served on a raw socket (not asyncio streams) so that
     descriptors passed with SCM_RIGHTS are received instead of silently dropped.
     """
+    # Validate before any unlink or socket side effects. Failed startup must
+    # not leave a previously set readiness event suggesting a live listener.
+    if bound is not None:
+        bound.clear()
+    validate_socket_path(socket_path)
     if replace_existing:
         if os.path.exists(socket_path):
             os.unlink(socket_path)
