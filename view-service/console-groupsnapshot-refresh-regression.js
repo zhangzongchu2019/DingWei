@@ -4,20 +4,36 @@
 // 它读的就是 groupSnapshot。旧写法把 groupSnapshot=data 关在 if(groupMode) 里 ⇒
 // 不开编组 tab 就永远拿不到数据,而且这个错【不报错】,只是树空着。
 const fs = require('fs'), assert = require('assert');
-const SRC = '../internal/m8/console_auth.go';
+const SRC = require('path').join(__dirname, '../internal/m8/console_auth.go');
 
+// Select the application block by a named declaration, not the first script tag
+// (the preceding tag embeds the broker). Compile each actual named declaration
+// to find its end without counting braces inside strings, comments or regexes.
 function extract(goSource) {
-  const i = goSource.indexOf('<script>'), j = goSource.indexOf('</script>', i);
-  assert.ok(i > 0 && j > i, '抽取失败:未找到页面脚本段');
-  let block = goSource.slice(i + '<script>'.length, j);
-  assert.ok(block.includes('refreshGroups'), '抽取越界:片段里应含 refreshGroups');
-  for (const re of [/^\s*refreshPlatform\(\);\s*$/m, /^\s*refreshAgents\(\);\s*$/m,
-                    /^\s*refreshGroups\(\);\s*$/m, /^\s*setInterval\(refreshAgents,15000\);\s*$/m]) {
-    const before = block;
-    block = block.replace(re, '\n');
-    assert.notStrictEqual(block, before, `桩失效:自举段未命中 ${re}`);
+  const blocks = Array.from(goSource.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/g), m => m[1]);
+  const matches = blocks.filter(block => /^[ \t]*async\s+function\s+refreshGroups\s*\(/m.test(block));
+  assert.strictEqual(matches.length, 1, 'expected one Console application script defining refreshGroups');
+  const block = matches[0];
+  function declaration(name, isFunction) {
+    const re = isFunction
+      ? new RegExp('^[ \t]*(?:async\\s+)?function\\s+' + name + '\\s*\\(', 'm')
+      : new RegExp('^[ \t]*(?:const|let|var)\\s+' + name + '\\b', 'm');
+    const found = re.exec(block);
+    assert.ok(found, 'actual Console declaration missing: ' + name);
+    const lines = block.slice(found.index).split('\n');
+    for (let end = 1; end <= lines.length; end++) {
+      const candidate = lines.slice(0, end).join('\n');
+      try { new (require('vm').Script)(candidate); return candidate; }
+      catch (error) { if (!(error instanceof SyntaxError)) throw error; }
+    }
+    throw new Error('incomplete Console declaration: ' + name);
   }
-  return block;
+  const state = ['tabs', 'agentSnapshot', 'agentListSnapshot', 'agentsRequestSeq', 'consoleFetchTimeoutMs'];
+  const functions = ['dwShortName', 'memberName', 'memberShort', 'agentTreeMemberLabel',
+    'agentTreeMemberOnline', 'agentTreeMemberDisabled', 'agentTreeCanOpen',
+    'renderAgentList', 'renderAgentNav', 'agentsClock', 'applyAgentStale',
+    'applyAgentSnapshot', 'refreshAgents', 'refreshGroups'];
+  return state.map(name => declaration(name, false)).concat(functions.map(name => declaration(name, true))).join('\n');
 }
 
 function makeEnv() {
@@ -33,6 +49,12 @@ function makeEnv() {
       insertBefore(node, ref) { const at = ref ? this.children.indexOf(ref) : -1;
         if (at < 0) this.children.push(node); else this.children.splice(at, 0, node); return node; },
       querySelector() { return null; },
+      querySelectorAll(selector) {
+        assert.strictEqual(selector, 'button', 'unexpected fixture selector');
+        const found = [];
+        function visit(node) { (node.children || []).forEach(child => { if (child.tag === 'button') found.push(child); visit(child); }); }
+        visit(this); return found;
+      },
       remove() { n.removed = true; }, removed: false };
     return n;
   }

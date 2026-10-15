@@ -5,15 +5,36 @@ const fs = require('fs');
 const path = require('path');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'internal', 'm8', 'console_auth.go'), 'utf8');
-const start = source.indexOf('<script>'), end = source.indexOf('</script>', start);
-assert.ok(start > 0 && end > start, '未找到控制台页面脚本');
-let script = source.slice(start + '<script>'.length, end);
-for (const re of [/^\s*refreshPlatform\(\);\s*$/m, /^\s*refreshAgents\(\);\s*$/m,
-                  /^\s*refreshGroups\(\);\s*$/m, /^\s*setInterval\(refreshAgents,15000\);\s*$/m]) {
-  const before = script;
-  script = script.replace(re, '\n');
-  assert.notStrictEqual(script, before, `页面自举锚点未命中: ${re}`);
+// Select the application block by a named declaration, not the first script tag
+// (the preceding tag embeds the broker). Compile each actual named declaration
+// to find its end without counting braces inside strings, comments or regexes.
+function extract(goSource) {
+  const blocks = Array.from(goSource.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/g), m => m[1]);
+  const matches = blocks.filter(block => /^[ \t]*async\s+function\s+refreshGroups\s*\(/m.test(block));
+  assert.strictEqual(matches.length, 1, 'expected one Console application script defining refreshGroups');
+  const block = matches[0];
+  function declaration(name, isFunction) {
+    const re = isFunction
+      ? new RegExp('^[ \t]*(?:async\\s+)?function\\s+' + name + '\\s*\\(', 'm')
+      : new RegExp('^[ \t]*(?:const|let|var)\\s+' + name + '\\b', 'm');
+    const found = re.exec(block);
+    assert.ok(found, 'actual Console declaration missing: ' + name);
+    const lines = block.slice(found.index).split('\n');
+    for (let end = 1; end <= lines.length; end++) {
+      const candidate = lines.slice(0, end).join('\n');
+      try { new (require('vm').Script)(candidate); return candidate; }
+      catch (error) { if (!(error instanceof SyntaxError)) throw error; }
+    }
+    throw new Error('incomplete Console declaration: ' + name);
+  }
+  const state = ['tabs', 'agentSnapshot', 'agentListSnapshot', 'agentsRequestSeq', 'consoleFetchTimeoutMs'];
+  const functions = ['dwShortName', 'memberName', 'memberShort', 'agentTreeMemberLabel',
+    'agentTreeMemberOnline', 'agentTreeMemberDisabled', 'agentTreeCanOpen',
+    'renderAgentList', 'renderAgentNav', 'agentsClock', 'applyAgentStale',
+    'applyAgentSnapshot', 'refreshAgents', 'refreshGroups'];
+  return state.map(name => declaration(name, false)).concat(functions.map(name => declaration(name, true))).join('\n');
 }
+let script = extract(source);
 if (process.argv.includes('--mutate=drop-fresh-online-overlay')) {
   const before = script;
   script = script.replace(
@@ -32,6 +53,12 @@ function element(tag) {
     setAttribute(name, value) { this.attrs[name] = String(value); },
     insertBefore(node) { this.children.push(node); },
     querySelector() { return null; },
+    querySelectorAll(selector) {
+        assert.strictEqual(selector, 'button', 'unexpected fixture selector');
+        const found = [];
+        function visit(node) { (node.children || []).forEach(child => { if (child.tag === 'button') found.push(child); visit(child); }); }
+        visit(this); return found;
+      },
     remove() {},
   };
 }
