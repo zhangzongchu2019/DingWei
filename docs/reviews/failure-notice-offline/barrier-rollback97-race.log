@@ -1,0 +1,134 @@
+=== RUN   TestFailureNoticeDriverTurnEndToEnd
+2026/10/14 23:47:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:47:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 23:47:42 session handshake timing key_id=u_zzc session=opus50ts total=14ms register=9ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 23:47:43 session handshake timing key_id=u_zzc session=kimi total=15ms register=12ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 23:47:43 session capability file_upload_v1=true key_id=u_zzc session=kimi conn_seq=1
+2026/10/14 23:47:43 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_full_agent
+2026/10/14 23:47:43 amr decision=dispatched candidates=1
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_member_session
+2026/10/14 23:47:43 amr decision=dispatched candidates=1
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_short_session
+2026/10/14 23:47:43 amr decision=dispatched candidates=1
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_channel
+2026/10/14 23:47:44 [channel] deliver session=kimi channel=feishu addr="ou_notice_owner" resolved="ou_notice_owner" fell_back=false bot="notice-test-bot"
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_plain_return
+2026/10/14 23:47:44 [reply-origin] lookup session=kimi delivery_id=dw-r3-control-plain_return cost=1.797118ms err=<nil> found=true
+2026/10/14 23:47:44 [reply-origin] R1 已回程 session=kimi to=opus50ts#u_zzc delivery_id=dw-r3-control-plain_return in_reply_to=dw-r3-control-plain_return hop=0
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_full_agent
+2026/10/14 23:47:44 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-0eea65cf7e11dcc5e0611c7336edbfe66b41eef956ccdeb6b27f84ac7ccd4e52
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_member_session
+2026/10/14 23:47:44 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-c50009bb04fda68fd8219ff51dbf916932c2413a39935169f5e7b153fa0dc502
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_short_session
+2026/10/14 23:47:44 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-212de48bbca666f99467d7c8e0d01f5d6be7d9c6440eefd495a7939cfa265dd8
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_channel
+2026/10/14 23:47:45 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-ddd3df53b89c20833cc8aee020f865b6868361044f850b5dc3967cd070bee239
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_plain_return
+2026/10/14 23:47:45 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-33737e7cbe749857c10e907bad298a275ef8ebc65873a31163989a09260d7ea9
+2026/10/14 23:47:45 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=0
+2026/10/14 23:47:45 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+2026/10/14 23:47:45 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+--- PASS: TestFailureNoticeDriverTurnEndToEnd (5.12s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_full_agent (0.31s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_member_session (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_short_session (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_channel (0.22s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_plain_return (0.20s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_full_agent (0.19s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_member_session (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_short_session (0.22s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_channel (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_plain_return (0.21s)
+=== RUN   TestFailureNoticeDriverTurnEndToEnd
+2026/10/14 23:47:46 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+2026/10/14 23:47:46 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+2026/10/14 23:47:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:47:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 23:47:48 session handshake timing key_id=u_zzc session=opus50ts total=13ms register=9ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 23:47:48 session handshake timing key_id=u_zzc session=kimi total=10ms register=8ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 23:47:48 session capability file_upload_v1=true key_id=u_zzc session=kimi conn_seq=1
+2026/10/14 23:47:48 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_full_agent
+2026/10/14 23:47:48 amr decision=dispatched candidates=1
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_member_session
+2026/10/14 23:47:48 amr decision=dispatched candidates=1
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_short_session
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_channel
+2026/10/14 23:47:49 amr decision=dispatched candidates=1
+2026/10/14 23:47:49 [channel] deliver session=kimi channel=feishu addr="ou_notice_owner" resolved="ou_notice_owner" fell_back=false bot="notice-test-bot"
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_plain_return
+2026/10/14 23:47:49 [reply-origin] lookup session=kimi delivery_id=dw-r3-control-plain_return cost=1.429896ms err=<nil> found=true
+2026/10/14 23:47:49 [reply-origin] R1 已回程 session=kimi to=opus50ts#u_zzc delivery_id=dw-r3-control-plain_return in_reply_to=dw-r3-control-plain_return hop=0
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_full_agent
+2026/10/14 23:47:49 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-0eea65cf7e11dcc5e0611c7336edbfe66b41eef956ccdeb6b27f84ac7ccd4e52
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_member_session
+2026/10/14 23:47:49 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-c50009bb04fda68fd8219ff51dbf916932c2413a39935169f5e7b153fa0dc502
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_short_session
+2026/10/14 23:47:50 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-212de48bbca666f99467d7c8e0d01f5d6be7d9c6440eefd495a7939cfa265dd8
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_channel
+2026/10/14 23:47:50 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-ddd3df53b89c20833cc8aee020f865b6868361044f850b5dc3967cd070bee239
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_plain_return
+2026/10/14 23:47:50 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-33737e7cbe749857c10e907bad298a275ef8ebc65873a31163989a09260d7ea9
+2026/10/14 23:47:50 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=0
+2026/10/14 23:47:50 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+2026/10/14 23:47:50 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+--- PASS: TestFailureNoticeDriverTurnEndToEnd (5.20s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_full_agent (0.31s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_member_session (0.22s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_short_session (0.20s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_channel (0.23s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_plain_return (0.20s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_full_agent (0.22s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_member_session (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_short_session (0.22s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_channel (0.20s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_plain_return (0.22s)
+=== RUN   TestFailureNoticeDriverTurnEndToEnd
+2026/10/14 23:47:51 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+2026/10/14 23:47:51 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+2026/10/14 23:47:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:47:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 23:47:53 session handshake timing key_id=u_zzc session=opus50ts total=15ms register=11ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 23:47:53 session handshake timing key_id=u_zzc session=kimi total=13ms register=10ms accept=0s conn_seq=3ms onboard=0s register_lock=0s
+2026/10/14 23:47:53 session capability file_upload_v1=true key_id=u_zzc session=kimi conn_seq=1
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_full_agent
+2026/10/14 23:47:53 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_member_session
+2026/10/14 23:47:53 amr decision=dispatched candidates=1
+2026/10/14 23:47:54 amr decision=dispatched candidates=1
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_short_session
+2026/10/14 23:47:54 amr decision=dispatched candidates=1
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_channel
+2026/10/14 23:47:54 [channel] deliver session=kimi channel=feishu addr="ou_notice_owner" resolved="ou_notice_owner" fell_back=false bot="notice-test-bot"
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_plain_return
+2026/10/14 23:47:54 [reply-origin] lookup session=kimi delivery_id=dw-r3-control-plain_return cost=1.420922ms err=<nil> found=true
+2026/10/14 23:47:54 [reply-origin] R1 已回程 session=kimi to=opus50ts#u_zzc delivery_id=dw-r3-control-plain_return in_reply_to=dw-r3-control-plain_return hop=0
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_full_agent
+2026/10/14 23:47:55 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-0eea65cf7e11dcc5e0611c7336edbfe66b41eef956ccdeb6b27f84ac7ccd4e52
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_member_session
+2026/10/14 23:47:55 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-c50009bb04fda68fd8219ff51dbf916932c2413a39935169f5e7b153fa0dc502
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_short_session
+2026/10/14 23:47:55 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-212de48bbca666f99467d7c8e0d01f5d6be7d9c6440eefd495a7939cfa265dd8
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_channel
+2026/10/14 23:47:55 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-ddd3df53b89c20833cc8aee020f865b6868361044f850b5dc3967cd070bee239
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_plain_return
+2026/10/14 23:47:55 [reply-origin] R1 跳过 reason=system_notification session=kimi delivery_id=dw-dlv-failure-33737e7cbe749857c10e907bad298a275ef8ebc65873a31163989a09260d7ea9
+2026/10/14 23:47:56 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=0
+2026/10/14 23:47:56 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+2026/10/14 23:47:56 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+--- PASS: TestFailureNoticeDriverTurnEndToEnd (5.29s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_full_agent (0.32s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_member_session (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_short_session (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_channel (0.23s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_plain_return (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_full_agent (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_member_session (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_short_session (0.22s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_channel (0.24s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_plain_return (0.19s)
+PASS
+2026/10/14 23:47:56 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+2026/10/14 23:47:56 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	16.657s

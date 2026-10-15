@@ -175,6 +175,7 @@ func TestFailureNoticeDriverTurnEndToEnd(t *testing.T) {
 	}
 	// Positive controls prove every configured reference can really forward, and
 	// ordinary non-reference output really returns through the same driver path.
+	positiveStart, _ := h.amr.snapshotStats()
 	for _, c := range cases {
 		t.Run("positive_"+c.name, func(t *testing.T) {
 			id := "dw-r3-control-" + c.name
@@ -190,7 +191,12 @@ func TestFailureNoticeDriverTurnEndToEnd(t *testing.T) {
 			}
 		})
 	}
-	waitFor(t, 3*time.Second, "positive control jobs fully closed", func() bool { s, _ := h.amr.snapshotStats(); return s.closed >= uint64(len(cases)) })
+	// closed is incremented before replyToOrigin returns. Peer wire receipt also
+	// precedes its final counter update, so neither is a completion barrier.
+	waitFor(t, 3*time.Second, "positive plain return counter committed before baseline", func() bool {
+		s, _ := h.amr.snapshotStats()
+		return s.closed >= uint64(len(cases)) && s.replyOriginRouted == positiveStart.replyOriginRouted+1
+	})
 	baseline, _ := h.amr.snapshotStats()
 	for index, c := range cases {
 		t.Run("notice_"+c.name, func(t *testing.T) {
