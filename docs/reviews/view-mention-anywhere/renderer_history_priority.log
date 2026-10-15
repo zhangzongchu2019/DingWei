@@ -1,8 +1,0 @@
-PASS history retained: noteIntegrityIssue('recoverable')
-PASS history retained: noteIntegrityIssue('tracking','纪元改变')
-PASS history retained: markIntegrityApplyFailed()
-PASS history retained: noteIntegrityIssue('managed','父链已停止')
-PASS history retained: showStreamAlert('conn')
-PASS history retained: hideStreamAlert();maybeClearRecoveredGap()
-PASS history escalates temporary gap, never success
-TOTAL 7 new severity observations

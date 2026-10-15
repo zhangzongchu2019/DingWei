@@ -6,6 +6,8 @@ The popup and selected-insert checks now share mentionPrefixAllowed: start of te
 
 Product file: view-service/renderer-canary-sse.html. Existing two mention browser suites have their mutation anchors updated to the actual predicate; no existing assertion is removed. The route suite adds selected-full-name send cases for Chinese, parentheses, Chinese full stop and legacy whitespace, name-character negative cases (a/Z/0/dot), and Chinese-adjacent typed-text NOFALLBACK.
 
+Raw logs are stored as deterministic .log.gz files to preserve exact output bytes (including original trailing whitespace) without introducing textual diff-check errors. Uncompressed originals remain in the private evidence directory; manifest records both compressed and original SHA256.
+
 ## Commands and results
 
 Browser environment: NODE_PATH=/data/ai-dev-data/a1-enroll-browser-private/node_modules PW_CHANNEL=chrome. Actual system Chrome with local HTTP fixtures only; no real Agent forwarding, production browser, or production access.

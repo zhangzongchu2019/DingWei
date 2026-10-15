@@ -1,9 +1,0 @@
-PASS VS zero/6.5 cannot masquerade as Agent disk
-PASS initial absent sample is unknown, not zero
-PASS VS positive value also rejected
-PASS raw agent scope is not identity attestation
-PASS unsupported stale legacy value is discarded
-PASS missing/error disk cannot become a numeric zero
-PASS memory and time still use existing resource snapshot
-PASS Agent label and missing binding explanation present
-OBSERVATIONS 8 INLINE_SYNTAX rc0

@@ -1,8 +1,0 @@
-PASS a mention reply arriving on the event stream becomes its own card headed 「来自 Beta 的回复」, rendered as markdown
-PASS the card is not merged into a turn of this page's own agent
-PASS the same message_id twice is drawn once
-PASS HTML in the reply is shown as text, never executed
-PASS a failed turn is one status line with the failed style
-PASS an old page without the mention_reply branch ignores the event without errors
-PASS no pageerror and no unexpected console error across the whole run
-mention reply browser: passed=7 failed=0 mutation=none
