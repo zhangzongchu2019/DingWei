@@ -1,0 +1,137 @@
+=== RUN   TestFailureNoticeAtomicRollbackAndSameIDRetry
+--- PASS: TestFailureNoticeAtomicRollbackAndSameIDRetry (2.18s)
+=== RUN   TestFailureNoticeGlobalSweepEveryNonterminalState
+--- PASS: TestFailureNoticeGlobalSweepEveryNonterminalState (2.07s)
+=== RUN   TestFailureNoticeRecentDeadBackfillAndConcurrentSweep
+--- PASS: TestFailureNoticeRecentDeadBackfillAndConcurrentSweep (2.19s)
+=== RUN   TestFailureNoticeRetryExhaustionIsAtomic
+--- PASS: TestFailureNoticeRetryExhaustionIsAtomic (2.11s)
+=== RUN   TestFailureNoticeOnlyKnownACKSessionSource
+=== RUN   TestFailureNoticeOnlyKnownACKSessionSource/unknown
+=== RUN   TestFailureNoticeOnlyKnownACKSessionSource/no-ack
+=== RUN   TestFailureNoticeOnlyKnownACKSessionSource/feishu
+=== RUN   TestFailureNoticeOnlyKnownACKSessionSource/notice
+--- PASS: TestFailureNoticeOnlyKnownACKSessionSource (8.44s)
+    --- PASS: TestFailureNoticeOnlyKnownACKSessionSource/unknown (1.97s)
+    --- PASS: TestFailureNoticeOnlyKnownACKSessionSource/no-ack (2.04s)
+    --- PASS: TestFailureNoticeOnlyKnownACKSessionSource/feishu (2.18s)
+    --- PASS: TestFailureNoticeOnlyKnownACKSessionSource/notice (2.24s)
+=== RUN   TestFailureNoticeDistinctTargetsSharingOriginalMessageID
+--- PASS: TestFailureNoticeDistinctTargetsSharingOriginalMessageID (2.20s)
+=== RUN   TestFailureNoticeSafeTargetAndChineseReason
+=== RUN   TestFailureNoticeSafeTargetAndChineseReason/retry_exhausted
+=== RUN   TestFailureNoticeSafeTargetAndChineseReason/delivery_ack_unsupported
+=== RUN   TestFailureNoticeSafeTargetAndChineseReason/delivery_capability_unconfirmed_expired
+=== RUN   TestFailureNoticeSafeTargetAndChineseReason/delivery_expired
+--- PASS: TestFailureNoticeSafeTargetAndChineseReason (8.15s)
+    --- PASS: TestFailureNoticeSafeTargetAndChineseReason/retry_exhausted (2.07s)
+    --- PASS: TestFailureNoticeSafeTargetAndChineseReason/delivery_ack_unsupported (2.02s)
+    --- PASS: TestFailureNoticeSafeTargetAndChineseReason/delivery_capability_unconfirmed_expired (2.03s)
+    --- PASS: TestFailureNoticeSafeTargetAndChineseReason/delivery_expired (2.03s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	28.363s
+=== RUN   TestFailureNoticeDriverTurnEndToEnd
+2026/10/14 23:39:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:39:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 23:39:31 session handshake timing key_id=u_zzc session=opus50ts total=14ms register=10ms accept=0s conn_seq=2ms onboard=2ms register_lock=0s
+2026/10/14 23:39:31 session handshake timing key_id=u_zzc session=kimi total=11ms register=9ms accept=0s conn_seq=2ms onboard=0s register_lock=0s
+2026/10/14 23:39:31 session capability file_upload_v1=true key_id=u_zzc session=kimi conn_seq=1
+2026/10/14 23:39:31 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_full_agent
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_member_session
+2026/10/14 23:39:31 amr decision=dispatched candidates=1
+2026/10/14 23:39:32 amr decision=dispatched candidates=1
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_short_session
+2026/10/14 23:39:32 amr decision=dispatched candidates=1
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_channel
+2026/10/14 23:39:32 [channel] deliver session=kimi channel=feishu addr="ou_notice_owner" resolved="ou_notice_owner" fell_back=false bot="notice-test-bot"
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/positive_plain_return
+2026/10/14 23:39:32 [reply-origin] lookup session=kimi delivery_id=dw-r3-control-plain_return cost=1.502232ms err=<nil> found=true
+2026/10/14 23:39:32 [reply-origin] R1 已回程 session=kimi to=opus50ts#u_zzc delivery_id=dw-r3-control-plain_return in_reply_to=dw-r3-control-plain_return hop=0
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_full_agent
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_member_session
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_short_session
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_channel
+=== RUN   TestFailureNoticeDriverTurnEndToEnd/notice_plain_return
+2026/10/14 23:39:33 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=0
+2026/10/14 23:39:33 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+2026/10/14 23:39:34 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+--- PASS: TestFailureNoticeDriverTurnEndToEnd (5.10s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_full_agent (0.31s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_member_session (0.22s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_short_session (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_channel (0.23s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/positive_plain_return (0.20s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_full_agent (0.22s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_member_session (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_short_session (0.21s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_channel (0.22s)
+    --- PASS: TestFailureNoticeDriverTurnEndToEnd/notice_plain_return (0.21s)
+=== RUN   TestOfflineFailureNoticeStartupAndPeriodicWithoutReconnect
+2026/10/14 23:39:34 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+2026/10/14 23:39:34 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+2026/10/14 23:39:36 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:39:36 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestOfflineFailureNoticeStartupAndPeriodicWithoutReconnect (2.09s)
+=== RUN   TestOfflineFailureNoticeActualSourceReconnectAndLostACK
+2026/10/14 23:39:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:39:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 23:39:38 session name warning key_id=FB-owner-20261015-1ea27a58 owner= session=source: 无法确认该 key 绑定成员 owner_key
+2026/10/14 23:39:38 session version warning key_id=FB-owner-20261015-1ea27a58 owner= session=source version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 23:39:38 session handshake timing key_id=FB-owner-20261015-1ea27a58 session=source total=16ms auth=1ms accounts=1ms owner=1ms register=8ms accept=1ms conn_seq=2ms onboard=1ms register_lock=0s
+2026/10/14 23:39:38 session delivery lease release decision=requeue key_id=FB-owner-20261015-1ea27a58 session=source conn_seq=1 reason=session_reconnected released=0
+2026/10/14 23:39:38 session delivery lease release decision=requeue key_id=FB-owner-20261015-1ea27a58 session=source conn_seq=1 reason=session_disconnected released=0
+2026/10/14 23:39:38 session name warning key_id=FB-owner-20261015-1ea27a58 owner= session=source: 无法确认该 key 绑定成员 owner_key
+2026/10/14 23:39:38 session version warning key_id=FB-owner-20261015-1ea27a58 owner= session=source version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 23:39:38 session handshake timing key_id=FB-owner-20261015-1ea27a58 session=source total=15ms auth=1ms accounts=1ms owner=1ms register=6ms accept=2ms conn_seq=3ms onboard=0s register_lock=0s
+2026/10/14 23:39:38 session delivery lease release decision=requeue key_id=FB-owner-20261015-1ea27a58 session=source conn_seq=2 reason=session_reconnected released=0
+2026/10/14 23:39:38 session delivery lease release decision=requeue key_id=FB-owner-20261015-1ea27a58 session=source conn_seq=2 reason=session_disconnected released=1
+2026/10/14 23:39:38 session name warning key_id=FB-owner-20261015-1ea27a58 owner= session=source: 无法确认该 key 绑定成员 owner_key
+2026/10/14 23:39:38 session version warning key_id=FB-owner-20261015-1ea27a58 owner= session=source version="" required=0.2.3.0: 未上报版本,要求 0.2.3.0
+2026/10/14 23:39:38 session handshake timing key_id=FB-owner-20261015-1ea27a58 session=source total=10ms auth=1ms accounts=1ms owner=1ms register=5ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/10/14 23:39:38 session delivery lease release decision=requeue key_id=FB-owner-20261015-1ea27a58 session=source conn_seq=3 reason=session_reconnected released=0
+2026/10/14 23:39:38 session delivery lease release decision=requeue key_id=FB-owner-20261015-1ea27a58 session=source conn_seq=3 reason=session_disconnected released=0
+--- PASS: TestOfflineFailureNoticeActualSourceReconnectAndLostACK (2.27s)
+=== RUN   TestFailureNoticeRetryExhaustionCannotNotifyAgain
+2026/10/14 23:39:39 session delivery drain skipped decision=stale_or_offline_client key_id=FB-owner-20261015-1ea27a58 session=source conn_seq=2 client_present=false
+2026/10/14 23:39:39 session delivery drain skipped decision=stale_or_offline_client key_id=FB-owner-20261015-1ea27a58 session=source conn_seq=3 client_present=false
+2026/10/14 23:39:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:39:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestFailureNoticeRetryExhaustionCannotNotifyAgain (2.22s)
+=== RUN   TestFailureNoticeTrustedContextStopsAgentAndDirectReply
+2026/10/14 23:39:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:39:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 23:39:42 [reply-origin] lookup session=bee delivery_id=notice-context cost=1.386923ms err=<nil> found=true
+--- PASS: TestFailureNoticeTrustedContextStopsAgentAndDirectReply (2.04s)
+=== RUN   TestFailureNoticeTrustedContextStopsRealChannelOutbound
+2026/10/14 23:39:44 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:39:44 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestFailureNoticeTrustedContextStopsRealChannelOutbound (2.02s)
+=== RUN   TestFailureNoticeClientClaimCannotCreateContextOrSuppressNormalReply
+2026/10/14 23:39:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:39:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 23:39:46 [reply-origin] lookup session=bee delivery_id=dw-dlv-failure-20e467a7fad774f3db481ab0a93b558f42cfe0e3edf51bf1298a4a8e83468630 cost=1.351481ms err=<nil> found=true
+2026/10/14 23:39:46 [reply-origin] R1 已回程 session=bee to=ant#k1 delivery_id=dw-dlv-failure-20e467a7fad774f3db481ab0a93b558f42cfe0e3edf51bf1298a4a8e83468630 in_reply_to=message-dw-dlv-failure-20e467a7fad774f3db481ab0a93b558f42cfe0e3edf51bf1298a4a8e83468630 hop=0
+--- PASS: TestFailureNoticeClientClaimCannotCreateContextOrSuppressNormalReply (2.01s)
+=== RUN   TestFailureNoticeRollbackKindReplyStillStopsAMRAndReturn
+2026/10/14 23:39:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:39:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 23:39:49 [reply-origin] lookup session=bee delivery_id=rollback-notice cost=1.40252ms err=<nil> found=true
+2026/10/14 23:39:49 [reply-origin] R2 跳过 reason=inbound_is_reply session=bee delivery_id=rollback-notice
+--- PASS: TestFailureNoticeRollbackKindReplyStillStopsAMRAndReturn (2.14s)
+=== RUN   TestFailureNoticeIPCBodyStopsBeforeSharedParser
+=== RUN   TestFailureNoticeIPCBodyStopsBeforeSharedParser/source_delivery_id
+2026/10/14 23:39:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:39:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 23:39:51 amr decision=token_skipped reason=unsupported_name tokens=[张宗楚] source=ipc-source
+2026/10/14 23:39:51 feishu dispatch rejected reason=short_name_not_resolvable open_id="" target="primary" bot_channel=""
+=== RUN   TestFailureNoticeIPCBodyStopsBeforeSharedParser/in_reply_to
+2026/10/14 23:39:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/14 23:39:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/14 23:39:53 amr decision=token_skipped reason=unsupported_name tokens=[张宗楚] source=ipc-source
+2026/10/14 23:39:53 feishu dispatch rejected reason=short_name_not_resolvable open_id="" target="primary" bot_channel=""
+--- PASS: TestFailureNoticeIPCBodyStopsBeforeSharedParser (4.26s)
+    --- PASS: TestFailureNoticeIPCBodyStopsBeforeSharedParser/source_delivery_id (2.15s)
+    --- PASS: TestFailureNoticeIPCBodyStopsBeforeSharedParser/in_reply_to (2.11s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	25.194s

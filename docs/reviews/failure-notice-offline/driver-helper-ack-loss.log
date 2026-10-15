@@ -1,0 +1,30 @@
+test_old_protocol_injects_once_after_lost_ack_and_persistent_restart (tools.sessionhelper.tests.test_offline_failure_notice.OfflineFailureNoticeCompatibility.test_old_protocol_injects_once_after_lost_ack_and_persistent_restart) ... connection handler failed
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/failure-notice-offline/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+connection handler failed
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/failure-notice-offline/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-deps-lock-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.948s
+
+OK

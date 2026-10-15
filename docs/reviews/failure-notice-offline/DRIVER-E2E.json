@@ -1,0 +1,145 @@
+{
+  "scope": "R3 test-only combined driver turn path; author evidence, independent review pending",
+  "parent": "70d68285d0c3e9e894ddf655c05f2ed2ef63010c",
+  "product_changes": false,
+  "fixture": {
+    "internal/m8/failure_notice_driver_e2e_test.go": {
+      "bytes": 11141,
+      "sha256": "d6e6e47fafca1477b24ab15b1c7e2d54339f4bbe5254177e95d84e23c7663ea4"
+    },
+    "internal/m8/testdata/failure_notice_driver_client.py": {
+      "bytes": 4188,
+      "sha256": "ef281d192820728518acb4d2d1347f2d1dbfe82f146a7cdc45abf006c803b61e"
+    }
+  },
+  "current_product_pins": {
+    "internal/model/failure_notice.go": {
+      "bytes": 625,
+      "sha256": "333dcf84879e2c8a632f25402490730b223b91afe97c3637ff7010fe50075b2a"
+    },
+    "internal/store/failure_notice.go": {
+      "bytes": 6795,
+      "sha256": "1bc75258fae81c755d74b9348d8cb709e8251076e5a49d8f6a9831d499cfd583"
+    },
+    "internal/m8/amr.go": {
+      "bytes": 66224,
+      "sha256": "2adc1c1a1bd6576c853022aaac5843eeb43afff720a9955e2d641f2ae939d4f4"
+    },
+    "internal/m8/reply_to_origin.go": {
+      "bytes": 9942,
+      "sha256": "5534e2bc28cd04229045bf5a739533fcdd70f6661f8735393b06a37f42c66aef"
+    },
+    "internal/m8/hub.go": {
+      "bytes": 241829,
+      "sha256": "13eb0f42db25e44f370fa582ed597aa0a2ff9f1ed8c3c03719a619c00563c10a"
+    },
+    "tools/sessionhelper/sessionhelper/app.py": {
+      "bytes": 90782,
+      "sha256": "6ed3002efeab98662fc282b35a4f6682256bfd2943cd549ef20fd35a0f34efaf"
+    },
+    "tools/sessionhelper/sessionhelper/driver_adapter.py": {
+      "bytes": 30119,
+      "sha256": "3087ccf5700c84fa6277e05ac829026fff48e53912626583b532ca1c006457fd"
+    },
+    "tools/sessionhelper/sessionhelper/codexDriver.py": {
+      "bytes": 60153,
+      "sha256": "586792d868bfbb69057cb1f172ae2768fa6593ccc98be16f84d16c7287c90042"
+    },
+    "tools/sessionhelper/sessionhelper/unified_queue.py": {
+      "bytes": 10068,
+      "sha256": "f43daa008298291353fefcecddf58e46b48bc317e407fe1dfce5430cd06d6502"
+    }
+  },
+  "rollback": {
+    "head": "97a920aba0dd261c95089e9e96691e63a26e2686",
+    "tree": "89916cabb72fed111f2cd4288de2a60bc4bd4363",
+    "only_changes": "two identical new fixture files, no product modifications",
+    "known_scope": "AMR/helper rollback path only; obsolete storage policy not accepted"
+  },
+  "commands": [
+    {
+      "command": "DW_FAILURE_NOTICE_PYTHON=<locked-python> go test -race ./internal/m8 -run '^TestFailureNoticeDriverTurnEndToEnd$' -count=1 -timeout=4m -v",
+      "current_rc": 0,
+      "rollback_rc": 0,
+      "named_subtests_each": 10
+    },
+    {
+      "command": "DW_FAILURE_NOTICE_PYTHON=<locked-python> go test -race ./internal/store ./internal/m8 -run '^Test(FailureNotice|OfflineFailureNotice)' -count=1 -timeout=5m -v",
+      "rc": 0
+    },
+    {
+      "command": "PYTHONPATH=tools/sessionhelper <locked-python> -B -m unittest -v tools/sessionhelper/tests/test_offline_failure_notice.py",
+      "rc": 0,
+      "tests": 1
+    }
+  ],
+  "withdrawals": {
+    "current_AMR_trusted_and_kind_reply_parser_guards_removed": 1,
+    "rollback97_kind_reply_parser_guard_removed": 1,
+    "notice_ID_prefix_changed_to_noncanonical": 1
+  },
+  "logs": {
+    "driver-current-final.log": {
+      "bytes": 3757,
+      "sha256": "4b06c95a615714c6c1a9d7b4fc73a0d2f95ce5206bbbf0852bf5529ad0dbef1c"
+    },
+    "driver-rollback-final.log": {
+      "bytes": 4645,
+      "sha256": "6c2942688a3803f35f1f3a86d451463b7b8fff408c2edf5a5ee72b7f96e2dd8b"
+    },
+    "driver-combined-race.log": {
+      "bytes": 13965,
+      "sha256": "b363e0cbc89200469691910825d0f2624fb02523bdb39891e116adbfa472eb82"
+    },
+    "driver-helper-ack-loss.log": {
+      "bytes": 2004,
+      "sha256": "613000b557bedca6bfcbde2d5b75cf7953687a34d54b630e27b10708b9b72cfb"
+    },
+    "driver-route-withdrawal.log": {
+      "bytes": 4140,
+      "sha256": "d71fa0986e069400595dba67e7e5376a67800534ab3ea88e9a67dbe97034db4c"
+    },
+    "driver-id-withdrawal.log": {
+      "bytes": 3047,
+      "sha256": "3ebff085681aa2943df300cb75e946f36968ea0ddd245ae4951c783a19c5ce06"
+    },
+    "driver-e2e-rollback97-withdrawal.log": {
+      "bytes": 4141,
+      "sha256": "1da1d660f825bcf7ccec54e4d24f48d0148c4b17f5addeea9cfefd5b95ea4ffa"
+    }
+  },
+  "development_log_pins_only": {
+    "driver-e2e-draft.log": {
+      "bytes": 345,
+      "sha256": "2928aebe05cd53ca277abff9593a16c85a14de9db6ac5da74451eff07b083a8d"
+    },
+    "driver-e2e-second.log": {
+      "bytes": 2773,
+      "sha256": "60d833d4ab6a4abeef9d7bc990d777a334cd5fe9546156129aebcf0a54d35373"
+    },
+    "driver-e2e-third.log": {
+      "bytes": 3466,
+      "sha256": "f492d80aa5f70bcdb6f2cf67f9023933b57d5d28789985053367c1ef64f369ef"
+    },
+    "driver-e2e-rollback97-race.log": {
+      "bytes": 117,
+      "sha256": "cd52c878420aa0117b9ec0a0b8559512f101ebfb13709cad561e117c31538bd8"
+    },
+    "driver-rollback-incomplete-during-space-pressure.log": {
+      "bytes": 5,
+      "sha256": "4f8e9e45f8a9e1843b81eaf3bdf52a6b778d415d23bf985774a9d34a43f69bd5"
+    }
+  },
+  "cache_cleanup": {
+    "bytes": 275,
+    "sha256": "2a63c32437de10e3d0f9a58c8b6077f75155a7575b1fce6ceeb022f226acc2dc"
+  },
+  "limits": [
+    "Fake external Codex app-server process, no real model or installed production Codex invocation",
+    "Current+rollback execute actual helper/driver/Hub path, not direct AMR worker calls",
+    "ACK-loss/restart remains a separately named real helper observation, not arbitrary crash exactly-once proof",
+    "Prior product full/build/helper641 remain prior scoped evidence; no product bytes changed in this append",
+    "Initial no-tests rollback rc0 and inconclusive single-FAIL run are excluded from passing evidence",
+    "No integration/deployment/production access"
+  ]
+}
