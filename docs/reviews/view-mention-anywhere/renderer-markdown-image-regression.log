@@ -1,0 +1,91 @@
+renderer-markdown-image(ts-No.79 · 板件锚 96d82d6e · 图片按类型自动显示)
+  renderer  /data/ai-dev-data/view-mention-anywhere/view-service/renderer-canary-sse.html
+  sha256    2d6a7bcc885427fd…
+  nginx     /data/ai-dev-data/view-mention-anywhere/deploy/nginx-dingwei.conf
+  白名单    image/* 8 种:jpg png gif webp avif heic bmp tiff(🔴 单一来源 = nginx conf,夹具的 Content-Type 也从这里解析)
+  注入形状  复用 ts-No.76 共享清单 12 条 ＋ 图片语法专属 9 条 · canary=window.__dwPwned
+  🔴 结论口径:本件只证明「这些形状/这些扩展名如此」,**不得**读成「无 XSS」或「所有图片格式都能显示」
+· G0 🔴 静态对账:图片扩展名判据只有一份,且 == nginx `types{image/*}`(派工单①「不许另写一份清单」) … 
+     nginx 内联图片白名单(8):jpg png gif webp avif heic bmp tiff
+     renderer FILE_EXT_KIND 的 image 行(9):png jpg jpeg gif webp avif heic bmp tiff
+     renderer FILE_EXT_NEVER_INLINE(6):svg svgz html htm xhtml xml
+     🔵 判据链:markdown → isInlineImageUrl → isOwnFileUrl(本站边界) ＋ kindFromExt(FILE_EXT_NEVER_INLINE → FILE_EXT_KIND)
+     🔵 单一事实源:deploy/nginx-dingwei.conf 的 types{image/*};renderer 只有一份 FILE_EXT_KIND,由本条对账
+     ✅ 静态对账过
+✅
+· G0b 🔵 夹具自证:图片字节真能解码 · 本站边界前提成立 · nginx 不放行的扩展名夹具也 404 … 
+     🔵 自证:PNG 2x2 可解码 · HEAD/GET 200 · .svg 404(与 nginx 同形)
+     🔵 自证:isOwnFileUrl 本站=true 外站=false · kindFromExt(png)=image kindFromExt(svg)=download
+     🔵 这三行是**量装置**:它们证明后面几格的前提成立,不是产品结论
+✅
+· G1 🔴 阳格:8 种图片扩展名 × 两条语法(「![alt](url)」与「[text](url)」)⇒ 全部就地渲染成 <img>,且感叹号消失 … 
+     🔵 [流式渲染中(turn_completed 之前)] 就地 <img> 16/16 · 全部真解码 · 感叹号 0 · 重复附件卡 0 · on*/危险协议/活元素 0
+
+     🔵 [回合重建后(turn_completed 之后)] 就地 <img> 16/16 · 全部真解码 · 感叹号 0 · 重复附件卡 0 · on*/危险协议/活元素 0
+✅
+· G2 🔴 阴格①:非图片扩展名(svg/exe/html/php/pdf/mp4/txt/docx/bin/无扩展)⇒ **仍是链接**,一张图都不许出;svg 也绝不进 <svg> … 
+     🔵 [流式渲染中(turn_completed 之前)] 就地 <img> 0 · <svg> 0 · 20 条 URL 全部仍是链接 · 附件卡 20 张(其中出图的 0 张)
+
+     🔵 [回合重建后(turn_completed 之后)] 就地 <img> 0 · <svg> 0 · 20 条 URL 全部仍是链接 · 附件卡 20 张(其中出图的 0 张)
+✅
+· G3 🔴 阴格③:注入腿 —— ts-No.76 的 12 条相关形状 ＋ 图片语法专属 9 条 ⇒ 一律不得变活 … 
+     🔵 [流式渲染中(turn_completed 之前)] 注入 21 形状:on* 0 · 危险协议 0 · 活元素 0 · canary 未置 · 就地出图仅 Q07 那一张(alt 是死文本)
+
+     🔵 [回合重建后(turn_completed 之后)] 注入 21 形状:on* 0 · 危险协议 0 · 活元素 0 · canary 未置 · 就地出图仅 Q07 那一张(alt 是死文本)
+✅
+· G4 🔴 边界腿:外站图片 URL 仍是链接,且**外部请求数 = 0**(钉产品件自己那句「不对任意外站 URL 做任何请求」) … 
+     🔵 请求账目:总 3 条 · 外部 0 条 · 就地 <img> 0 张 · 附件卡 0 张
+     🔵 外部请求逐条(应为空):[]
+✅
+· G5 🔴 一图不显示两处:markdown 写法 ⇒ 就地出图且**附件卡让位**;裸 URL ⇒ 老路(卡里出图)原样不动 … 
+     🔵 [流式渲染中(turn_completed 之前)] 就地 2 张(u1/u3)· 附件卡 1 张(u2,里面有图)· 重复 0 · <img> 总数 3
+
+     🔵 [回合重建后(turn_completed 之后)] 就地 2 张(u1/u3)· 附件卡 1 张(u2,里面有图)· 重复 0 · <img> 总数 3
+✅
+· G6 🔴 图取不到时:就地那张撤掉,**附件卡接手**(解不了码 ⇒ 下载链接;404 ⇒ 「已过 7 天保留期」那句仍在) … 
+     🔵 就地 <img> 0(两张都撤了)· 附件卡 2 张接手:坏图给「⬇ 下载图片」,过期给「文件不存在或链接无效（服务端 404）。若是 7 天前的链接…」
+✅
+· G8 🔵 反证(防"渲染成空也算通过"):正常 markdown 全在,且与就地图片共存 … 
+     🔵 正常渲染全在:{"strong":1,"em":1,"a":1,"code":8,"pre":1,"table":1,"heading":1,"quote":1,"br":2,"checkbox":1} · 就地图片 1 张与之共存
+✅
+· G9 🔴 一个文件两条路不得两种结果:HEAD 不可用(405)⇒ 按扩展名降级,8 种图片扩展名都得判成 image … 
+     🔵 8 种扩展名在**降级路径**上全部 data-kind=image · dispatch=ext(与 HEAD 路径同结论)
+✅
+· PC M-G1 阳性对照:图片判据掏空(isInlineImageUrl 恒 false) ⇒ **必须观测到观测量移动**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=406c4f54eeb9393d… 由产品字节 2d6a7bcc885427fd… 在本进程内合成)
+     ✅ 变异生效,观测量有牙:就地 <img> 16→0 · 感叹号 false→false(信息项,见下)
+        变异前 {"mdImgs":16,"bang":false} → 变异后 {"mdImgs":0,"bang":false}
+✅
+· PC M-G2 阳性对照:拆掉写死的 deny-set ＋ 往表里塞 svg:image(④ 那层守卫) ⇒ **必须观测到观测量移动**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=12696ef0d2bc50c7… 由产品字节 2d6a7bcc885427fd… 在本进程内合成)
+     ✅ 变异生效,观测量有牙:.svg 就地 <img> 0→2 · .md 里 <svg> 0→0
+        变异前 {"svgImgs":0,"mdSvg":0} → 变异后 {"svgImgs":2,"mdSvg":0}
+✅
+· PC M-G3 阳性对照:escapeHtml 去掉 " → &quot;(ts-No.76 认定的承重墙) ⇒ **必须观测到观测量移动**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=7c15042ffe88108e… 由产品字节 2d6a7bcc885427fd… 在本进程内合成)
+     ✅ 变异生效,观测量有牙:on* 属性 0→3 · 活元素 0→0 · canary null→null
+        变异前 {"onAttrs":0,"live":0,"canary":null} → 变异后 {"onAttrs":3,"live":0,"canary":null}
+✅
+· PC M-G4 阳性对照:去掉"附件卡让位"(一图两处) ⇒ **必须观测到观测量移动**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=f44cf9e07bb8c1ca… 由产品字节 2d6a7bcc885427fd… 在本进程内合成)
+     ✅ 变异生效,观测量有牙:同一 URL 的附件卡 0→1(就地 <img> 恒为 1)
+        变异前 {"cards":0,"imgs":1} → 变异后 {"cards":1,"imgs":1}
+✅
+· PC M-G5 阳性对照:去掉本站 /f/ 边界(外站图也就地渲染) ⇒ **必须观测到观测量移动**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=ed2d74865c735c75… 由产品字节 2d6a7bcc885427fd… 在本进程内合成)
+     ✅ 变异生效,观测量有牙:外站就地 <img> 0→0 · 外部请求 0→4
+        变异前 {"extImgs":0,"external":0} → 变异后 {"extImgs":0,"external":4}
+✅
+通过 15 / 失败 0   (renderer sha256=2d6a7bcc885427fd…)
+  🔵 这条绿【看不见什么】(边界随绿一起打印,不用谁去翻交付件):
+     ① 只证明「nginx 那 8 种扩展名在本站 /f/ 直链上会就地出图」—— 🔴 **不得**读成「所有图片都能预览」。
+     ② 🔴 **外站图片 URL 一律不出图**(G4 钉的就是这条):业主要外站图也预览的话,得先解除产品件里
+        「不对任意外站 URL 做任何请求」那条不变量 —— 那是产品可见决定,归业主,本格没替他改。
+     ③ 🔴 **格式解码能力没验**:8 种扩展名喂的都是同一份合法 PNG 字节(本格验的是"按扩展名分派",不是"能不能解那个格式")。
+        🔵 唯一例外:G2/M-G2 的 .svg 喂的是**真 SVG 字节**(本件自己写的 2x2 无脚本 svg)——
+        因为声明成 image/svg+xml 却喂 PNG 字节会解码失败 ⇒ 就地那张被 error 分支撤掉 ⇒ **观测量看不见变异**(第一跑实测撞到)。
+        Chrome 能不能真解 avif/heic/tiff **不在本格**;若解不了,产品行为是"就地那张撤掉、附件卡给下载出路"(G6 钉了)。
+     ④ 注入腿只覆盖清单里那些形状(复用 ts-No.76 ＋ 9 条图片专属)—— 🔴 **不得**读成「无 XSS」。
+     ⑤ 单档 1280×900 · headless · 默认(浅色)主题;**暗色与窄档未跑**。
+     ⑥ 只验 timeline 里 assistant 正文的 markdown 路径;**console 外壳 / Specs 独立页 / 草稿输入框**未跑。
+     ⑦ 🔴 本席是 Linux + Playwright 自带 chromium,**业主那台 macOS + 系统 Chrome 上没跑过**(同型缺口已登记)。

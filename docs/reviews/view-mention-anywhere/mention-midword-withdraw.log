@@ -1,0 +1,27 @@
+PASS typing @ at the start opens a popup above the input, right next to it, with the first row highlighted
+PASS rows show 短名（长名), a CLI icon and an online dot; two agents with the same short name are told apart by the long name
+PASS typing letters filters by the prefix of the short name or of the long name; the highlight returns to the first row
+PASS arrow keys move the highlight; Enter selects the row INSTEAD of sending and inserts "@name "
+PASS ambiguous short names insert what the Hub says (the full name); Tab also selects
+PASS after a mention is inserted, Enter sends the message with it (normal sending is untouched)
+PASS clicking a row selects it and keeps the focus in the input
+PASS Escape closes the popup and leaves the text alone
+FAIL name-character prefixes (an e-mail) open nothing; a new line still works: Expected values to be strictly equal:
+
+false !== true
+
+PASS while an input method is composing, keys are not intercepted (no selection, no navigation)
+PASS no selectable row (here: no match) ⇒ Enter sends as usual instead of being swallowed
+PASS an empty group is said so plainly
+PASS a failed load says so with a retry, never blocks typing or sending; retry works
+PASS an older, slower answer never overwrites a newer one
+PASS a slow interface gets ONE request however fast the user types (the in-flight one is reused)
+PASS a failing interface gets ONE request however fast the user types; reopening or Retry asks again
+PASS on a short viewport the popup is capped to the room above the input and is never clipped at the top
+PASS at 420x300 the popup stays inside the viewport and its first row is visible
+PASS at 320x240 the popup stays inside the viewport and its first row is visible
+PASS the popup follows the dark theme
+PASS a unique other-owner candidate still inserts its full name
+PASS no pageerror and no unexpected console error across the whole run
+mention candidates browser: passed=21 failed=1 mutation=trigger-mid-word
+MUTATION-VERDICT: trigger-mid-word KILLED
