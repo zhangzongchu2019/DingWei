@@ -158,6 +158,28 @@ class OfferTests(unittest.TestCase):
         self.assertEqual(self.updater.state.read()['current']['job_id'],meta['job_id'])
         self.assertIsNone(self.updater.state.read()['pending'])
 
+    def test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion(self):
+        meta,_,_=self.updater.prepare(self.env)
+        self.updater.state.select()
+        with patch.object(runtime,'__version__','0.2.3.2'):
+            health=self.updater.health()
+            self.assertEqual(health['lock_sha256'],self.pin['lock_sha256'])
+            self.assertEqual(receipt(meta,'installed')['lock_sha256'],self.pin['lock_sha256'])
+            self.assertNotIn('lock_sha256',self.updater.state.read()['pending'])
+            for field in (*runtime.FIELDS,'lock_sha256','health_nonce'):
+                with self.subTest(field=field):
+                    bad={**health,field:'changed','type':'helper_update_confirm','system':True}
+                    with self.assertRaisesRegex((UpdateRejected,self.updater.guard.UpdateError),'confirmation_mismatch'):
+                        self.updater.confirm({'from':self.env['from'],'meta':bad})
+                    self.assertIsNotNone(self.updater.state.read()['pending'])
+            lock=self.mount/'requirements-runtime.lock'; original=lock.read_bytes()
+            lock.write_bytes(original+b'\n# changed after health\n')
+            with self.assertRaisesRegex(UpdateRejected,'confirmation_mismatch'):
+                self.updater.confirm({'from':self.env['from'],'meta':{**health,'type':'helper_update_confirm','system':True}})
+            lock.write_bytes(original)
+            confirmed=self.updater.confirm({'from':self.env['from'],'meta':{**health,'type':'helper_update_confirm','system':True}})
+            self.assertEqual(receipt(confirmed,'confirmed')['lock_sha256'],self.pin['lock_sha256'])
+
     def test_authenticated_update_source_pin_does_not_relax_other_provision(self):
         self.provisioner.trusted_update_source='workpulse#u_internalowner'
         env=copy.deepcopy(self.env);env['from']='workpulse#u_internalowner'
@@ -219,6 +241,56 @@ class AppDispatchTests(unittest.IsolatedAsyncioTestCase):
         await self.app.handle_helper_update(self.helper,self.ws,env)
         self.assertEqual(self.sent,[])
         self.assertEqual(self.fixture.requests,[])
+
+    async def test_dropped_confirmation_retries_then_reconnect_uses_new_nonce(self):
+        import asyncio
+        from types import SimpleNamespace
+        meta,_,_=self.fixture.updater.prepare(self.fixture.env)
+        self.fixture.updater.state.select()
+        self.helper.enroll_credential='synthetic'
+        self.ws.response=SimpleNamespace(headers={'X-DW-Helper-Update':'helper-update/v1'})
+        first_retry=asyncio.Event()
+        async def send(value):
+            self.sent.append(json.loads(value))
+            if len(self.sent)>=2:first_retry.set()
+        self.ws.send=send
+        with patch.object(runtime,'__version__','0.2.3.2'), patch.object(runtime,'HEALTH_RETRY_SECONDS',0.01):
+            task=asyncio.create_task(runtime.status_loop(self.helper,self.ws))
+            try:
+                await asyncio.wait_for(first_retry.wait(),1)
+            finally:
+                task.cancel()
+                with self.assertRaises(asyncio.CancelledError):await task
+            first,second=[x['meta'] for x in self.sent[:2]]
+            self.assertNotEqual(first['health_nonce'],second['health_nonce'])
+            # A reconnect constructs a fresh updater over the SAME durable pending job.
+            reconnected=SelfUpdater(self.fixture.cfg,self.fixture.provisioner.validate_source,'agent.owner',
+                                   launcher=str(self.fixture.mount/'helper_update_guard.py'),allow_loopback=True)
+            health=reconnected.health()
+            self.assertEqual(health['job_id'],meta['job_id'])
+            self.assertNotIn(health['health_nonce'],(first['health_nonce'],second['health_nonce']))
+            with self.assertRaisesRegex(UpdateRejected,'confirmation_mismatch'):
+                reconnected.confirm({'from':self.fixture.env['from'],'meta':{**second,'type':'helper_update_confirm','system':True}})
+            reconnected.confirm({'from':self.fixture.env['from'],'meta':{**health,'type':'helper_update_confirm','system':True}})
+            self.assertIsNone(reconnected.state.read()['pending'])
+
+    async def test_rollback_receipt_uses_same_stable_runtime_lock(self):
+        import asyncio
+        from types import SimpleNamespace
+        meta,_,_=self.fixture.updater.prepare(self.fixture.env)
+        self.fixture.updater.state.fail(meta)
+        self.helper.enroll_credential='synthetic'
+        self.ws.response=SimpleNamespace(headers={'X-DW-Helper-Update':'helper-update/v1'})
+        delivered=asyncio.Event()
+        async def send(value):self.sent.append(json.loads(value));delivered.set()
+        self.ws.send=send
+        task=asyncio.create_task(runtime.status_loop(self.helper,self.ws))
+        try:await asyncio.wait_for(delivered.wait(),1)
+        finally:
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):await task
+        self.assertEqual(self.sent[0]['meta']['stage'],'rolled_back')
+        self.assertEqual(self.sent[0]['meta']['lock_sha256'],self.fixture.pin['lock_sha256'])
 
     async def test_old_hub_gets_no_new_health_control(self):
         import asyncio

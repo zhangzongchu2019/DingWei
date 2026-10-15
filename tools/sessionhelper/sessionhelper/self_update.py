@@ -23,6 +23,7 @@ from .config import env_get
 
 FIELDS = ('job_id', 'release_id', 'agent_id', 'owner_id', 'version', 'sha256')
 MAX_BYTES = 32 * 1024 * 1024
+HEALTH_RETRY_SECONDS = 5.0
 
 
 class UpdateRejected(RuntimeError):
@@ -61,6 +62,7 @@ class SelfUpdater:
         self.cfg, self.validate_source, self.agent_name = cfg, source_validator, agent_name
         self.allow_loopback = allow_loopback
         self.health_nonce = None
+        self.health_lock_sha256 = None
         configured = launcher or env_get('SH_UPDATE_LAUNCHER', '')
         if not configured or not Path(configured).is_absolute():
             raise UpdateRejected('manual_required')
@@ -72,6 +74,17 @@ class SelfUpdater:
         self.package = load_stable(self.mount / 'helper_update_package.py', '_dw_stable_package')
         state_root = Path(os.path.expanduser(cfg.state_dir or '~/.dingwei')) / 'update'
         self.state = self.guard.State(state_root, self.mount / 'factory')
+
+    def runtime_lock_sha256(self):
+        # The stable mounted runtime lock is shared by every accepted slot.
+        # lock_changed is refused before activation; never read candidate state.
+        lock = self.mount / 'requirements-runtime.lock'
+        if lock.is_symlink() or not lock.is_file():
+            raise UpdateRejected('lock_changed')
+        try:
+            return hashlib.sha256(lock.read_bytes()).hexdigest()
+        except OSError:
+            raise UpdateRejected('lock_changed') from None
 
     def validate_offer(self, env):
         self.validate_source(env)  # existing local-Hub system-envelope check, before URL/journal work
@@ -105,7 +118,7 @@ class SelfUpdater:
         if origin(meta['url'], self.allow_loopback) not in allowed:
             raise UpdateRejected('origin_denied')
         lock = self.mount / 'requirements-runtime.lock'
-        if not lock.is_file() or hashlib.sha256(lock.read_bytes()).hexdigest() != meta['lock_sha256']:
+        if self.runtime_lock_sha256() != meta['lock_sha256']:
             raise UpdateRejected('lock_changed')
         pins = re.findall(r'^([A-Za-z0-9_-]+)==([^\s\\]+)', lock.read_text(), re.M)
         try:
@@ -237,8 +250,9 @@ class SelfUpdater:
         pending = self.state.read()['pending']
         if not pending or pending['version'] != __version__:
             return None  # manual factory bootstrap has no update health transaction
+        self.health_lock_sha256 = self.runtime_lock_sha256()
         self.health_nonce = uuid.uuid4().hex
-        return {'type':'helper_update_health', 'health_nonce':self.health_nonce, **{k: pending[k] for k in FIELDS},
+        return {'type':'helper_update_health', 'health_nonce':self.health_nonce, 'lock_sha256':self.health_lock_sha256, **{k: pending[k] for k in FIELDS},
                 'action':'update_self', 'stage':'restarted', 'helper_version':__version__,
                 'from_version':pending.get('from_version') or __version__}
 
@@ -249,13 +263,18 @@ class SelfUpdater:
             raise UpdateRejected('confirmation_invalid')
         if not self.health_nonce or meta.get('health_nonce') != self.health_nonce or meta.get('version') != __version__:
             raise UpdateRejected('confirmation_mismatch')
+        if (not self.health_lock_sha256 or meta.get('lock_sha256') != self.health_lock_sha256 or
+                self.runtime_lock_sha256() != self.health_lock_sha256):
+            raise UpdateRejected('confirmation_mismatch')
         self.state.confirm(meta)
         self.health_nonce = None
+        self.health_lock_sha256 = None
         return {**meta, 'from_version':self.state.read()['last_result'].get('from_version') or __version__}
 
 
 def receipt(meta, stage, reason=''):
     return {'type':'provision_ack', 'action':'update_self', 'target':'self',
+            'lock_sha256':meta.get('lock_sha256', ''),
             **{k: meta.get(k, '') for k in FIELDS}, 'from_version':meta.get('from_version') or __version__,
             'to_version':meta.get('version', ''), 'stage':stage, 'reason':reason,
             'ok':stage not in ('failed','rolled_back'), 'message':reason,
@@ -283,7 +302,8 @@ async def status_loop(helper, ws):
         if not pending:
             result = updater.state.read().get('last_result')
             if result and result.get('stage') == 'rolled_back':
-                meta = receipt(result, 'rolled_back', result.get('reason', 'candidate_failed'))
+                meta = receipt({**result, 'lock_sha256':updater.runtime_lock_sha256()},
+                               'rolled_back', result.get('reason', 'candidate_failed'))
                 await ws.send(json.dumps(envelope(session_addr('workpulse', helper.cfg.key_id), '', helper.book.self_addr, meta)))
             await asyncio.Future()
         ready = not helper.cfg.mcp_ipc_sock or helper.ipc_bound.is_set()
@@ -295,5 +315,8 @@ async def status_loop(helper, ws):
             health = updater.health()
             if health:
                 await ws.send(json.dumps(envelope(session_addr('workpulse', helper.cfg.key_id), '', helper.book.self_addr, health)))
-            await asyncio.Future()
+            # A lost confirmation must not strand a healthy pending trial.
+            # Each retry supersedes its nonce; reconnect creates a new status loop.
+            await asyncio.sleep(HEALTH_RETRY_SECONDS)
+            continue
         await asyncio.sleep(0.1)

@@ -23,3 +23,22 @@ Latest targeted32 core/offer/app tests plus setup/receive/old-provision regressi
 ## Boundary follow-up
 
 The exact11ae56d fixed snapshot passed full679 in347.732s and canonical42+2; receipts and source pins are in FIXED-RUNTIME-RECEIPT.json. Subsequent bounded fixes recheck offer expiry after download and before arming, normalize legitimate parent HOME aliases to the same private state path in preflight/guard (a symlink at the update root remains rejected), and retain original from_version through candidate confirmation/rollback rather than reporting new->new. Latest targeted34 checks pass; expiry revalidation withdrawal fails1. Full/gate rerun for this follow-up is pending; no inherited exact-head full PASS claim. No actual Hub/Docker/production acceptance.
+
+## Helper bounded health/receipt alignment (reviewer joint direction)
+
+Health uses a new helper-generated nonce for each attempt and includes the SHA256
+of the immutable mounted `requirements-runtime.lock`. A pending healthy trial
+retries every five seconds so a dropped confirmation does not strand it; a new
+connection creates a new status loop and nonce over the same canonical job.
+Confirmation must pass trusted-Hub source validation, match the latest nonce,
+all six frozen job fields and runtime version, and echo the same lock hash; the
+mounted lock must still have that hash. Receipts include lock_sha256; rollback
+receipts derive it from that same mounted lock. No guard journal format change.
+
+The Hub owner supplies the authoritative combined contract: health must arrive
+on a connection strictly later than the install/activation boundary (not merely
+offer issuance), only eligible post-install or idempotently confirmed identical
+jobs qualify, and offered/downloaded/failed/rolled_back/stale jobs do not. A valid
+retry of an already-confirmed job echoes the current helper nonce without another
+mutation, audit or activation. These are Hub obligations and are not proved by
+the local helper tests. Actual serializer-to-Hub and real Docker gates remain open.
