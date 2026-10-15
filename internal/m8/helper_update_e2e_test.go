@@ -21,12 +21,21 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
+	"github.com/zhangzongchu2019/dingwei/internal/store"
+	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
 
 type updateE2EPlan struct {
-	Mount    string `json:"mount"`
-	Artifact string `json:"artifact"`
-	Pin      struct {
+	Mount      string `json:"mount"`
+	Artifact   string `json:"artifact"`
+	FactoryPin struct {
+		Version string `json:"version"`
+		Commit  string `json:"commit"`
+		Tree    string `json:"tree"`
+	} `json:"factory_pin"`
+	Pin struct {
+		Commit  string `json:"commit"`
+		Tree    string `json:"tree"`
 		SHA     string `json:"sha256"`
 		Lock    string `json:"lock_sha256"`
 		Version string `json:"version"`
@@ -36,6 +45,24 @@ type updateE2EPlan struct {
 func TestHelperSelfUpdateEndToEnd(t *testing.T) {
 	t.Run("install_restart_confirm", func(t *testing.T) { runHelperSelfUpdateE2E(t, false) })
 	t.Run("sha_mismatch_keeps_factory", func(t *testing.T) { runHelperSelfUpdateE2E(t, true) })
+}
+
+// Run this test overlay against unchanged r14 product sources, with its actual
+// CLI binary and two immutable package commits. Not a same-version Hub rebuild.
+func TestHelper0232MixedVersionEndToEnd(t *testing.T) {
+	if os.Getenv("DW_HELPER_E2E_RELEASE_COMMIT") == "" {
+		t.Skip("explicit immutable release pins required")
+	}
+	if dwversion.Version != "0.2.3.1" {
+		t.Fatalf("mixed gate requires unchanged r14 Hub0.2.3.1, got %s", dwversion.Version)
+	}
+	if os.Getenv("DW_HELPER_E2E_FACTORY_COMMIT") != "2a8947291acde2ac6e6504a56f1902a808a49f57" {
+		t.Fatal("factory must be exact r14")
+	}
+	if os.Getenv("DW_HELPER_E2E_HUB_BINARY") == "" {
+		t.Fatal("actual r14 CLI binary required")
+	}
+	runHelperSelfUpdateE2E(t, false)
 }
 
 func runHelperSelfUpdateE2E(t *testing.T, corrupt bool) {
@@ -59,7 +86,11 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command(python, "-B", filepath.Join(root, "internal/m8/testdata/helper_update_e2e_setup.py"), root, strings.TrimSpace(string(revision)), base)
+	setupPath := os.Getenv("DW_HELPER_E2E_SETUP")
+	if setupPath == "" {
+		setupPath = filepath.Join(root, "internal/m8/testdata/helper_update_e2e_setup.py")
+	}
+	cmd := exec.Command(python, "-B", setupPath, root, strings.TrimSpace(string(revision)), base)
 	setup, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("local Git package setup: %v: %s", err, setup)
@@ -70,6 +101,28 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt bool) {
 	}
 	v := newViewEnv(t)
 	h := v.hub
+	mixed := os.Getenv("DW_HELPER_E2E_RELEASE_COMMIT") != ""
+	var cliDB string
+	if mixed {
+		if plan.FactoryPin.Version != "0.2.3.1" || plan.Pin.Version != "0.2.3.2" {
+			t.Fatal("wrong actual package version pair")
+		}
+		cliDB = filepath.Join(base, "hub-catalog.db")
+		db, e := store.OpenSQLite(cliDB)
+		if e != nil {
+			t.Fatal(e)
+		}
+		if e = db.Migrate(v.ctx); e != nil {
+			t.Fatal(e)
+		}
+		t.Cleanup(func() { _ = db.Close() })
+		h = New(db, ConsoleAuthDisabled())
+		t.Cleanup(h.Close)
+		h.Identity = v.hub.Identity
+		h.Onboarding = v.hub.Onboarding
+		h.newSessionNotice = false
+		t.Logf("MIXED Hub commit=%s tree=%s actualVersion=%s factoryCommit=%s factoryTree=%s factoryVersion=%s candidateCommit=%s candidateTree=%s candidateVersion=%s packageSHA=%s lockSHA=%s", strings.TrimSpace(string(revision)), "860e3728da369cffc5687cb8da6d29ffc910fa59", dwversion.Version, plan.FactoryPin.Commit, plan.FactoryPin.Tree, plan.FactoryPin.Version, plan.Pin.Commit, plan.Pin.Tree, plan.Pin.Version, plan.Pin.SHA, plan.Pin.Lock)
+	}
 	payload, err := os.ReadFile(plan.Artifact)
 	if err != nil {
 		t.Fatal(err)
@@ -175,14 +228,27 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt bool) {
 		t.Fatalf("helper did not authenticate/capability version %s: %s", version, diagnostic())
 	}
 	first := start()
-	waitVersion("0.2.3.1")
+	waitVersion(plan.FactoryPin.Version)
 	waitFor(t, 8*time.Second, "production CLIAdapter ready output reached authenticated Hub", func() bool {
 		h.mu.Lock()
 		defer h.mu.Unlock()
 		terminal := h.terminals[terminalKey(AgentKeyID("zzc"), ag.NameLC())]
 		return terminal != nil && strings.Contains(terminal.buffer, "SYNTHETIC_READY")
 	})
-	if err = h.RegisterHelperUpdateCatalog(v.ctx, "ops", HelperUpdateCatalog{SHA256: plan.Pin.SHA, LockSHA256: plan.Pin.Lock, Version: plan.Pin.Version, URL: artifacts.URL + "/candidate.tgz", FileServiceOrigin: artifacts.URL, Platform: "linux"}); err != nil {
+	if mixed {
+		binary := os.Getenv("DW_HELPER_E2E_HUB_BINARY")
+		versionOutput, e := exec.Command(binary, "version").CombinedOutput()
+		if e != nil || !bytes.Contains(versionOutput, []byte("0.2.3.1")) {
+			t.Fatalf("old CLI version: %v %s", e, versionOutput)
+		}
+		cli := exec.Command(binary, "helper-update-register", "--operator", "synthetic-local-ops", "--sha256", plan.Pin.SHA, "--lock-sha256", plan.Pin.Lock, "--version", plan.Pin.Version, "--platform", "linux", "--url", artifacts.URL+"/candidate.tgz", "--file-service-origin", artifacts.URL)
+		cli.Env = []string{"PATH=/usr/bin:/bin", "HOME=" + home, "TMPDIR=" + base, "WP_DB_PATH=" + cliDB, "WP_DATA_DIR=" + base, "WP_SECRET_KEY=LOCAL_SYNTHETIC_NOT_PRODUCTION"}
+		out, e := cli.CombinedOutput()
+		if e != nil || !bytes.Contains(out, []byte("HELPER_UPDATE_CATALOG_REGISTERED")) {
+			t.Fatalf("real r14 CLI registration: %v %s", e, out)
+		}
+		t.Logf("actual unchanged r14 CLI registered packageSHA=%s", plan.Pin.SHA)
+	} else if err = h.RegisterHelperUpdateCatalog(v.ctx, "ops", HelperUpdateCatalog{SHA256: plan.Pin.SHA, LockSHA256: plan.Pin.Lock, Version: plan.Pin.Version, URL: artifacts.URL + "/candidate.tgz", FileServiceOrigin: artifacts.URL, Platform: "linux"}); err != nil {
 		t.Fatal(err)
 	}
 	body, _ := json.Marshal(map[string]any{"release_sha256": plan.Pin.SHA, "agent_ids": []string{v.agID}})
@@ -219,7 +285,7 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt bool) {
 		if len(entries) != 0 {
 			t.Fatal("bad SHA installed a candidate slot")
 		}
-		waitVersion("0.2.3.1")
+		waitVersion(plan.FactoryPin.Version)
 		t.Log("PASS real HTTPS SHA mismatch -> authenticated failed receipt -> factory remains running, no slot/restart; NOT Docker")
 		return
 	}
@@ -241,6 +307,7 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt bool) {
 		t.Fatalf("update did not request external restart; stage=%s downloads=%d: %s", stage, downloads.Load(), diagnostic())
 	}
 	waitFor(t, 3*time.Second, "old helper disconnected", func() bool { return !h.AgentOnline(v.agID) })
+	t.Log("actual factory process exited for external test-supervised restart; old authenticated connection closed")
 	second := start()
 	_ = second
 	waitVersion(plan.Pin.Version)
@@ -248,6 +315,10 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt bool) {
 		job, _, _ := h.helperUpdateJob(v.ctx, v.agID)
 		return job != nil && job.Stage == "confirmed"
 	})
+	if mixed {
+		job, _, _ := h.helperUpdateJob(v.ctx, v.agID)
+		t.Logf("confirmed canonical job=%s actualVersion=%s activationConnSeq=%d", job.JobID, job.Version, job.ActivationConnSeq)
+	}
 	journal, err := os.ReadFile(filepath.Join(state, "update/journal.json"))
 	if err != nil {
 		t.Fatal(err)

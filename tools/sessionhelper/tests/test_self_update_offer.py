@@ -41,6 +41,10 @@ import test_update_release_core as core
 
 class OfferTests(unittest.TestCase):
     def setUp(self):
+        # This upgrade fixture is specifically factory 0.2.3.1 -> 0.2.3.2,
+        # independent of the checkout under test. Never patch production code.
+        factory_version = patch.object(runtime, "__version__", "0.2.3.1")
+        factory_version.start(); self.addCleanup(factory_version.stop)
         self.fixture = core.PackageTests(methodName='runTest')
         self.fixture.setUp(); self.addCleanup(self.fixture.doCleanups)
         base = self.fixture.base
