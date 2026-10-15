@@ -182,6 +182,13 @@ func TestCapabilityPendingConcurrentCapabilityReconnectAndExpirySettleOnce(t *te
 	if err := db.EnqueueSessionDelivery(ctx, pending); err != nil {
 		t.Fatal(err)
 	}
+	// A previous terminal row shares the same endpoint and provenance. The
+	// concurrent settlers below must leave it untouched, proving their state
+	// predicates do not re-settle a terminal row.
+	alreadyDead := model.SessionDelivery{ID: "dw-dlv-concurrent-prior-dead", KeyID: pending.KeyID, SessionName: pending.SessionName, Envelope: `{}`, SourceMessageID: "prior", SourceType: "session_inbound", Provenance: pending.Provenance, State: "dead", LastError: "prior_terminal", CreatedAt: now.Add(-31 * time.Minute)}
+	if err := db.EnqueueSessionDelivery(ctx, alreadyDead); err != nil {
+		t.Fatal(err)
+	}
 	start := make(chan struct{})
 	var wg sync.WaitGroup
 	deadCounts := make(chan int, 3)
@@ -219,6 +226,10 @@ func TestCapabilityPendingConcurrentCapabilityReconnectAndExpirySettleOnce(t *te
 	got, err := db.GetSessionDelivery(ctx, pending.ID)
 	if err != nil || got == nil || got.State != "dead" {
 		t.Fatalf("concurrent settle delivery=%+v err=%v", got, err)
+	}
+	prior, err := db.GetSessionDelivery(ctx, alreadyDead.ID)
+	if err != nil || prior == nil || prior.State != "dead" || prior.LastError != "prior_terminal" {
+		t.Fatalf("concurrent settle touched prior terminal row=%+v err=%v", prior, err)
 	}
 }
 
