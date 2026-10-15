@@ -12,9 +12,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/zhangzongchu2019/dingwei/internal/model"
-	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
 const (
@@ -96,7 +93,11 @@ func (h *Hub) helperUpdateCatalog(ctx context.Context, sha string) (*helperUpdat
 		return nil, fmt.Errorf("helper update repository unavailable")
 	}
 	key := helperUpdateCatalogKey(sha)
-	for _, row := range mustListAppConfig(ctx, h.Repo) {
+	rows, err := h.Repo.ListAppConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list helper update catalog: %w", err)
+	}
+	for _, row := range rows {
 		if row.Key != key {
 			continue
 		}
@@ -112,23 +113,16 @@ func (h *Hub) helperUpdateCatalog(ctx context.Context, sha string) (*helperUpdat
 	return nil, nil
 }
 
-// mustListAppConfig is named after the expected repository capability, not
-// panic behavior: it returns nil on an unavailable store so callers can turn
-// the condition into a stable, non-leaking control-plane error.
-func mustListAppConfig(ctx context.Context, repo store.Repository) []model.AppConfig {
-	rows, err := repo.ListAppConfig(ctx)
-	if err != nil {
-		return nil
-	}
-	return rows
-}
-
 func (h *Hub) helperUpdateJob(ctx context.Context, agentID string) (*helperUpdateJob, string, error) {
 	if h.Repo == nil {
 		return nil, "", fmt.Errorf("helper update repository unavailable")
 	}
 	key := helperUpdateJobKey(agentID)
-	for _, row := range mustListAppConfig(ctx, h.Repo) {
+	rows, err := h.Repo.ListAppConfig(ctx)
+	if err != nil {
+		return nil, "", fmt.Errorf("list helper update jobs: %w", err)
+	}
+	for _, row := range rows {
 		if row.Key != key {
 			continue
 		}
