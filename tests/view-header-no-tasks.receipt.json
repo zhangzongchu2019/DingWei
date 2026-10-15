@@ -1,0 +1,258 @@
+{
+  "schema": "remove-view-tasks-link-author-evidence-v1",
+  "status": "AUTHOR_TESTED_PENDING_INDEPENDENT_CR_NOT_DEPLOYED",
+  "parent": "c5674fbe8aaa75c65202235307c1d475f7f2ac5f",
+  "product_scope": "Exactly one anchor line removed; all remaining renderer bytes including generic topbar CSS are identical to parent. No anchor-only styles existed.",
+  "parent_renderer_sha256": "febde2d9e6e9df5f81381319af76f815b0485a6c0de9edc8c036529b5013c198",
+  "renderer_sha256": "7f7d025c62ca3afaab1e435127bb750cac5655f83c4c6a0bbf588ef1ca36236f",
+  "files": {
+    "view-service/renderer-canary-sse.html": {
+      "bytes": 316709,
+      "sha256": "7f7d025c62ca3afaab1e435127bb750cac5655f83c4c6a0bbf588ef1ca36236f"
+    },
+    "view-service/owned-task-board-regression.cjs": {
+      "bytes": 9876,
+      "sha256": "e10efac6bb6516d64555981b689282230d1ebfb28bcc607d60a1dd24fa6c0508"
+    },
+    "view-service/three-slice-coexistence.cjs": {
+      "bytes": 11887,
+      "sha256": "d882cdbac2d984a54db27fa2164b2eb08f54be5371b28eda62196a68f75b4684"
+    },
+    "tests/view-header-no-tasks.cjs": {
+      "bytes": 2127,
+      "sha256": "97cb4e5def97a16be29afca7d896574404d46a01d28bb12b2268aa75aad8845d"
+    }
+  },
+  "protected_files_unchanged_sha256": {
+    "internal/m8/console_auth.go": "f57cef6ba084d7bbf2c210a552b0d8d16e72e8939eaf7c6678d553f81df9b0ab",
+    "internal/m8/console_task_board_page.go": "4c12d19e306ca2d85f89a372af3c34ac3db558474557954f0f6c21172c34917b",
+    "internal/m8/console_specs_page.go": "2bfb5b69c0d88f1e128bbe571663f1d532f3a991e78607de1a9835241f2ee6bb",
+    "cmd/workpulse/console_routes.go": "bc8694d6ebb856cb239eb4e4e461bd660611d947497296738adf390e2fc79fa1",
+    "cmd/workpulse/console_routes_test.go": "bec5defd2364a236eb89a0f3c616d0048d12057db4d9781c60ea746579b87396",
+    "deploy/invariants-dingwei-gray.json": "8f6a2057d3ea510365d3fcee414b105c21754e707f7dcd913e846a882fc6960f"
+  },
+  "hash_pin_scan": "Exact parent renderer SHA occurred only in docs/reviews/opus50ts-group-cross-owner/RENDERER-UNCHANGED.json (historical evidence, retained). No active renderer literal-hash pin found. Deploy invariants obtain expected manifest/workpulse hashes from deployment environment; no production values modified.",
+  "new_browser": {
+    "command": "NODE_PATH=<playwright directory> PW_CHANNEL=chrome node tests/view-header-no-tasks.cjs",
+    "rc": 0,
+    "cases": 2,
+    "scope": "Actual full renderer, intercepted HTTP at synthetic origin, wide/narrow header retains brand and contains no /console/tasks anchor."
+  },
+  "parent_withdrawal": {
+    "command": "same browser fixture with exact-parent renderer as argv",
+    "rc": 1,
+    "assertion": "View topbar must not contain a /console/tasks link; parent produces one anchor."
+  },
+  "related_browser": {
+    "console_task_board": {
+      "command": "NODE_PATH=<playwright directory> PW_CHANNEL=chrome node view-service/console-task-board-regression.js",
+      "rc": 0,
+      "assertions": 48,
+      "floor": 44,
+      "scope": "After disk cleanup, observed real stdout summary failed=0; K13 remains historical deferred. Initial empty stdout log is not used as final proof."
+    },
+    "file_card": {
+      "command": "same browser env node tests/file-card-streaming.cjs",
+      "rc": 0,
+      "cases": 10
+    },
+    "console_browser_extra": {
+      "rc": 1,
+      "passed": 15,
+      "failed": 5,
+      "exact_parent_rc": 1,
+      "exact_parent_passed": 15,
+      "exact_parent_failed": 5,
+      "same_failures": [
+        "lets a human start from zero groups without a hidden-control deadlock",
+        "runs the zero-group human workflow without hidden actions or long tasks",
+        "opens Agent groups inside console with the owner-only online Agent selector",
+        "shows a visible successful retry result",
+        "ignores an older group snapshot that arrives after the latest response"
+      ],
+      "scope": "Unmodified Console source and harness; exact-parent rerun used byte-identical parent console_auth.go in private harness copy. These existing broader group/enrollment fixture failures are retained, not counted as PASS and not repaired in this task."
+    }
+  },
+  "node_regressions": {
+    "owned-board": {
+      "name": "owned-board",
+      "command": [
+        "node",
+        "view-service/owned-task-board-regression.cjs"
+      ],
+      "rc": 0
+    },
+    "integrity": {
+      "name": "integrity",
+      "command": [
+        "node",
+        "internal/m8/testdata/renderer_integrity_recovery.cjs"
+      ],
+      "rc": 0
+    },
+    "history": {
+      "name": "history",
+      "command": [
+        "node",
+        "internal/m8/testdata/renderer_history_priority.cjs"
+      ],
+      "rc": 0
+    },
+    "a4-overflow": {
+      "name": "a4-overflow",
+      "command": [
+        "node",
+        "tests/a4-overflow-preserve.cjs"
+      ],
+      "rc": 0
+    },
+    "a5-replay": {
+      "name": "a5-replay",
+      "command": [
+        "node",
+        "tests/a5-replay-state.cjs"
+      ],
+      "rc": 0
+    },
+    "a5-gap": {
+      "name": "a5-gap",
+      "command": [
+        "node",
+        "tests/a5-real-gap-timer.cjs"
+      ],
+      "rc": 0
+    },
+    "a6-real": {
+      "name": "a6-real",
+      "command": [
+        "node",
+        "tests/a6-agent-disk-real.cjs"
+      ],
+      "rc": 0
+    },
+    "a6-unknown": {
+      "name": "a6-unknown",
+      "command": [
+        "node",
+        "tests/a6-agent-disk-unknown.cjs"
+      ],
+      "rc": 0
+    },
+    "coexistence": {
+      "command": [
+        "node",
+        "view-service/three-slice-coexistence.cjs"
+      ],
+      "rc": 0,
+      "cases": 7
+    }
+  },
+  "m8": {
+    "command": "DW_SPEC_E2E_PYTHON=<pinned runtime Python> go test ./internal/m8/... -count=1 -timeout 20m",
+    "rc": 0,
+    "elapsed_seconds": 116.092
+  },
+  "task_route": {
+    "command": "go test ./cmd/workpulse -run '^TestConsoleTasksCompatibilityRoute$' -count=1 -timeout 5m",
+    "rc": 0
+  },
+  "canonical_build": {
+    "command": "sh scripts/run-build-tests.sh",
+    "rc": 0,
+    "python_files": 42,
+    "shell_files": 2,
+    "environment": "private HOME, pinned runtime venv, seat variables removed"
+  },
+  "fixture_adjustments": "Two legacy positive header-link assertions become negative. Existing coexistence fixture also had stale openTaskBoardWorkspace() extraction and missing A6 agentDiskState dependency: extracted current signature and real A6 source block, no stub; all other existing behavioral assertions retained. Initial stale-fixture failures retained locally.",
+  "environment_failure": "Initial disk exhaustion produced ENOSPC in browser output/build and prevented Go completion. Only explicitly known task-created obsolete temporary HOME/cache directories from earlier author runs were removed, recovering about1GB; relevant browser/build/Go checks then reran. No product/user data or credentials deleted.",
+  "local_logs": {
+    "remove-view-tasks-link-browser.log": {
+      "bytes": 190,
+      "sha256": "be40a9eab612b58d0661ffd6e3f6fc47df36ea2a44f6f55a8244ead36a29c164"
+    },
+    "remove-view-tasks-link-parent-red.log": {
+      "bytes": 363,
+      "sha256": "46fe8d014f7e94e423e10f3dd0684b18b277de7ddb3592f04f44b36e7ae72f24"
+    },
+    "remove-view-tasks-link-m8.log": {
+      "bytes": 62,
+      "sha256": "d9c064642ff0ba7894afcda170c877dadd8048f093bfdf6262dfc4c99d5dbb7b"
+    },
+    "remove-view-tasks-link-routes.log": {
+      "bytes": 62,
+      "sha256": "e8e18bea673100b0261e08a9958e1181a687b8e09e5f362c294e521f1c693bdd"
+    },
+    "remove-view-tasks-link-build.log": {
+      "bytes": 34649,
+      "sha256": "b61d725827b0c4ac7e3a608b0ac051743ea7b3507fb31c9805795bb19850142f"
+    },
+    "remove-view-tasks-link-build-enospc.log": {
+      "bytes": 3172,
+      "sha256": "33e3ee6da8fba56760ecd6a525e86367d77870232e48dae89ade9e3aee897846"
+    },
+    "remove-view-tasks-link-file-card-enospc.log": {
+      "bytes": 1031,
+      "sha256": "b645fc101f995308be156ca997474a0d422e3eb5511840a4b8daa9638a0cb50b"
+    },
+    "remove-view-tasks-link-console-parent.log": {
+      "bytes": 3294,
+      "sha256": "0e9b85669098168239acc1c172865c4f8b66fb07bb9dcd639272cbc2e8f1e3d5"
+    },
+    "remove-view-tasks-link-validation/integrity.log": {
+      "bytes": 1638,
+      "sha256": "8997f6235c62cf0403e755487f654114363b346857abc88428e99f3c2a3fe0f0"
+    },
+    "remove-view-tasks-link-validation/file-card.log": {
+      "bytes": 989,
+      "sha256": "7ec9e151f7fcc1ea30e6a54c1188406ec0ee19485e82b518fd69102e0af5870c"
+    },
+    "remove-view-tasks-link-validation/owned-board.log": {
+      "bytes": 977,
+      "sha256": "a18b65642ec6ca17bc6eabef516887075da6321bbefa34bfa432720411e9a452"
+    },
+    "remove-view-tasks-link-validation/coexistence.log": {
+      "bytes": 936,
+      "sha256": "796eb74949a7232e64db8b7aa1d0d740ce11ed4a14d7642dc82ce20e85733b13"
+    },
+    "remove-view-tasks-link-validation/console-task-board.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "remove-view-tasks-link-validation/coexistence-final.log": {
+      "bytes": 682,
+      "sha256": "7f022f3f62693b18e84ccc733f02f5ceb221dbb1f341c6def3e3a236bc4531a2"
+    },
+    "remove-view-tasks-link-validation/history.log": {
+      "bytes": 446,
+      "sha256": "cbfdea2c0e5100bdb43eb335977bd24983baf5f727131f8c82db21a40df5fd5d"
+    },
+    "remove-view-tasks-link-validation/coexistence-updated.log": {
+      "bytes": 895,
+      "sha256": "bb412b350db4642e9345ca50f5b64f0d0595148ab028a8a64625caded49aa02f"
+    },
+    "remove-view-tasks-link-validation/console-browser.log": {
+      "bytes": 3294,
+      "sha256": "0e9b85669098168239acc1c172865c4f8b66fb07bb9dcd639272cbc2e8f1e3d5"
+    },
+    "remove-view-tasks-link-validation/a4-overflow.log": {
+      "bytes": 340,
+      "sha256": "9b7b955b7cbc5090ac329c80c49f14d0b73cc404134ed118994d56f472dad86a"
+    },
+    "remove-view-tasks-link-validation/a6-unknown.log": {
+      "bytes": 433,
+      "sha256": "dbd63a57996fa569e9eaf30a1b876cde9d3e3f629484a47ae7419d8394ec799c"
+    },
+    "remove-view-tasks-link-validation/a5-gap.log": {
+      "bytes": 742,
+      "sha256": "f966084d7dc5d1fd1042fe4309524ec665fc708957115fcf91dd2e97c6fb020e"
+    },
+    "remove-view-tasks-link-validation/a6-real.log": {
+      "bytes": 984,
+      "sha256": "6566658b4483498194d495b15a117b4d535e23fc99ab08c0e147ba17d91339de"
+    },
+    "remove-view-tasks-link-validation/a5-replay.log": {
+      "bytes": 461,
+      "sha256": "b7ee747d87f6d3466481f0741d71cca2050713ff4c7d1c7c0e09074fa0eeaefa"
+    }
+  }
+}
