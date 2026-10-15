@@ -142,6 +142,7 @@ p=pathlib.Path(os.path.expanduser(os.environ.get('SH_STATE_DIR','~/.dingwei')))/
 if not p.is_absolute() or p.is_symlink(): raise SystemExit(32)
 p.mkdir(mode=0o700,parents=True,exist_ok=True)
 if p.stat().st_uid!=os.getuid() or p.stat().st_mode&0o077: raise SystemExit(33)
+p=p.resolve()
 marker=p/('.bootstrap-'+sys.argv[2]);marker.write_text(sys.argv[2]);os.chmod(marker,0o600)
 print(str(p))'''
     nonce = uuid.uuid4().hex

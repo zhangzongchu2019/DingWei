@@ -9,6 +9,7 @@ from pathlib import Path
 import shutil
 import sys
 import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -57,6 +58,7 @@ class OfferTests(unittest.TestCase):
                 outer.requests.append(dict(self.headers))
                 if self.path == '/redirect':
                     self.send_response(302);self.send_header('Location','/source.tgz');self.end_headers();return
+                if self.path == '/slow': time.sleep(0.6)
                 body=outer.artifact.read_bytes()
                 self.send_response(200);self.send_header('Content-Length',str(len(body)));self.end_headers();self.wfile.write(body)
             def log_message(self,*args): pass
@@ -116,6 +118,14 @@ class OfferTests(unittest.TestCase):
         self.assertIsNone(self.updater.state.read()['pending'])
         self.assertEqual(self.updater.state.select(),(self.mount/'factory',None))
 
+    def test_offer_expiring_during_download_never_arms_candidate(self):
+        self.env['meta']['expires_at']=(datetime.now(timezone.utc)+timedelta(seconds=0.4)).isoformat()
+        self.env['meta']['url']=self.env['meta']['url'].replace('/source.tgz','/slow')
+        with self.assertRaisesRegex(UpdateRejected,'offer_expired'):
+            self.updater.prepare(self.env)
+        self.assertIsNone(self.updater.state.read()['pending'])
+        self.assertEqual(self.updater.state.select(),(self.mount/'factory',None))
+
     def test_redirect_denied_without_followup_fetch(self):
         self.env['meta']['url']=self.env['meta']['url'].replace('/source.tgz','/redirect')
         with self.assertRaisesRegex(UpdateRejected,'redirect_denied'):
@@ -143,7 +153,8 @@ class OfferTests(unittest.TestCase):
             with self.assertRaisesRegex(UpdateRejected,'confirmation_mismatch'):
                 self.updater.confirm(env)
             env['meta'].update(second,type='helper_update_confirm',system=True)
-            self.updater.confirm(env)
+            confirmed=self.updater.confirm(env)
+            self.assertEqual(receipt(confirmed,'confirmed')['from_version'],'0.2.3.1')
         self.assertEqual(self.updater.state.read()['current']['job_id'],meta['job_id'])
         self.assertIsNone(self.updater.state.read()['pending'])
 

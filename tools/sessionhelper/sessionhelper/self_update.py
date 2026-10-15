@@ -157,12 +157,15 @@ class SelfUpdater:
             known = data['terminal'][meta['job_id']]
             if not all(known.get(k) == meta[k] for k in FIELDS):
                 raise UpdateRejected('offer_mismatch')
+            meta['from_version'] = known.get('from_version') or __version__
             return meta, known['stage'], False
         if data['pending']:
             if all(data['pending'].get(k) == meta[k] for k in FIELDS):
+                meta['from_version'] = data['pending'].get('from_version') or __version__
                 needs_restart = not data['pending'].get('restart_requested', False) and data['pending']['starts'] == 0
                 return meta, 'installed', needs_restart
             raise UpdateRejected('update_busy')
+        meta['from_version'] = __version__
         if not re.fullmatch(r'\d+(?:\.\d+){2,3}', meta['version']):
             raise UpdateRejected('version_invalid')
         def numbers(v):
@@ -215,6 +218,8 @@ class SelfUpdater:
                     os.close(directory)
             finally:
                 shutil.rmtree(work, ignore_errors=True)
+        # Download may outlast a nearly expired offer. Recheck all gates before arming.
+        self.validate_offer(env)
         # Arm after full verified slot creation; guard's transaction rechecks pending/terminal.
         self.state.arm(meta)
         return meta, 'installed', True
@@ -234,7 +239,8 @@ class SelfUpdater:
             return None  # manual factory bootstrap has no update health transaction
         self.health_nonce = uuid.uuid4().hex
         return {'type':'helper_update_health', 'health_nonce':self.health_nonce, **{k: pending[k] for k in FIELDS},
-                'action':'update_self', 'stage':'restarted', 'helper_version':__version__}
+                'action':'update_self', 'stage':'restarted', 'helper_version':__version__,
+                'from_version':pending.get('from_version') or __version__}
 
     def confirm(self, env):
         self.validate_source(env)
@@ -245,12 +251,12 @@ class SelfUpdater:
             raise UpdateRejected('confirmation_mismatch')
         self.state.confirm(meta)
         self.health_nonce = None
-        return meta
+        return {**meta, 'from_version':self.state.read()['last_result'].get('from_version') or __version__}
 
 
 def receipt(meta, stage, reason=''):
     return {'type':'provision_ack', 'action':'update_self', 'target':'self',
-            **{k: meta.get(k, '') for k in FIELDS}, 'from_version':__version__,
+            **{k: meta.get(k, '') for k in FIELDS}, 'from_version':meta.get('from_version') or __version__,
             'to_version':meta.get('version', ''), 'stage':stage, 'reason':reason,
             'ok':stage not in ('failed','rolled_back'), 'message':reason,
             'system':True, 'no_mirror':True}

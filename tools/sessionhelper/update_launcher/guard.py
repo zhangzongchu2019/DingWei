@@ -46,6 +46,7 @@ class State:
         if not self.root.is_absolute() or self.root.is_symlink():
             raise UpdateError('state_invalid')
         self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        self.root = self.root.resolve()  # a symlinked HOME parent must match the preflight's real path
         if self.root.stat().st_uid != os.getuid():
             raise UpdateError('state_owner_invalid')
         if self.root.stat().st_mode & 0o077:
@@ -103,14 +104,14 @@ class State:
                     return 'pending'
                 raise UpdateError('update_busy')
             data['pending'] = {k: item[k] for k in TUPLE}
-            data['pending'].update(starts=0, deadline=now + HEALTH_SECONDS)
+            data['pending'].update(starts=0, deadline=now + HEALTH_SECONDS, from_version=item.get('from_version', ''))
             atomic_json(self.path, data)
             return 'pending'
 
     def _rollback(self, data, reason):
         pending = data['pending']
-        data['terminal'][pending['job_id']] = {**{k: pending[k] for k in TUPLE}, 'stage': 'rolled_back'}
-        data['last_result'] = {**{k: pending[k] for k in TUPLE}, 'stage': 'rolled_back', 'reason': reason}
+        data['terminal'][pending['job_id']] = {**{k: pending[k] for k in TUPLE}, 'stage': 'rolled_back', 'from_version': pending.get('from_version', '')}
+        data['last_result'] = {**{k: pending[k] for k in TUPLE}, 'stage': 'rolled_back', 'reason': reason, 'from_version': pending.get('from_version', '')}
         data['pending'] = None
         atomic_json(self.path, data)
 
@@ -156,8 +157,8 @@ class State:
             if time.time() >= pending['deadline']:
                 raise UpdateError('health_timeout')
             data['previous'], data['current'] = data['current'], {k: pending[k] for k in TUPLE}
-            data['terminal'][pending['job_id']] = {**data['current'], 'stage': 'confirmed'}
-            data['last_result'] = {**data['current'], 'stage': 'confirmed', 'reason': ''}
+            data['terminal'][pending['job_id']] = {**data['current'], 'stage': 'confirmed', 'from_version': pending.get('from_version', '')}
+            data['last_result'] = {**data['current'], 'stage': 'confirmed', 'reason': '', 'from_version': pending.get('from_version', '')}
             data['pending'] = None
             atomic_json(self.path, data)
 

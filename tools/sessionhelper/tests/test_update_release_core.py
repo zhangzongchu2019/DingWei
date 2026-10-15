@@ -125,6 +125,17 @@ class GuardTests(unittest.TestCase):
         self.assertEqual(self.state.select(trial=False), (self.state.slot(a), None))
         self.assertEqual(self.state.read()['pending']['starts'], 1)
 
+    def test_parent_home_alias_resolves_to_same_private_state(self):
+        real = self.root / 'real-home'; real.mkdir(mode=0o700)
+        alias = self.root / 'home-alias'; alias.symlink_to(real, target_is_directory=True)
+        state = State(alias / 'update', self.factory)
+        self.assertEqual(state.root, real / 'update')
+        self.assertEqual(state.select(), (self.factory, None))
+        # A link at the update-root itself is still rejected.
+        linked = self.root / 'linked-update'; linked.symlink_to(real / 'update', target_is_directory=True)
+        with self.assertRaisesRegex(UpdateError, 'state_invalid'):
+            State(linked, self.factory)
+
     def test_terminal_job_id_cannot_be_reused_for_different_tuple(self):
         a = self.item('a'); self.state.arm(a); self.state.select(); self.state.confirm(a)
         b = self.item('b'); b['job_id'] = a['job_id']
