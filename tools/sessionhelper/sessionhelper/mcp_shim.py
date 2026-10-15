@@ -159,7 +159,7 @@ _SEND_TOOL_SCHEMA = {
     "properties": {
         "to": {
             "type": "string",
-            "description": "接收方全名(如 zzc-manager-2642), 缺 #key 由 helper 补全",
+            "description": "对方 Agent 全名（名字.后缀，例如 oaagent.lbl）；跨用户发送须双方同在一个编组",
         },
         "body": {
             "type": "string",
