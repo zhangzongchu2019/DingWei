@@ -3,6 +3,9 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require('playwright');
 const source=fs.readFileSync(process.argv[2]||path.join(__dirname,'../internal/m8/console_helper_updates.js'),'utf8');
+const go=fs.readFileSync(path.join(__dirname,'../internal/m8/console_auth.go'),'utf8');
+const marker='const consolePageHTML = `',start=go.indexOf(marker),end=go.indexOf('`\n\nfunc (h *Hub) HandleConsoleAgents',start);assert(start>=0&&end>start);
+const fullHTML=go.slice(start+marker.length,end)+'<script>'+source+'</script>';
 const SHA='a'.repeat(64),NEW='b'.repeat(64);
 const base=()=>({releases:[{sha256:SHA,version:'0.2.3.1',platform:'linux'}],agents:[
  {agent_id:'mine1',name:'One.owner',version:'0.2.3.1',eligible:true,online:true},
@@ -11,14 +14,15 @@ const base=()=>({releases:[{sha256:SHA,version:'0.2.3.1',platform:'linux'}],agen
 ]});
 (async()=>{
  const browser=await chromium.launch({channel:process.env.PW_CHANNEL||'chrome',headless:true,args:['--no-sandbox']});let passed=0;
- async function test(name,fn){const page=await browser.newPage();page.on('dialog',d=>d.accept());let snapshot=base(),gets=0,posts=[],fail=false,pending=null;
+ async function test(name,fn,full=false){const page=await browser.newPage();page.on('dialog',d=>d.accept());let snapshot=base(),gets=0,posts=[],fail=false,pending=null;
   await page.route('http://console.test/**',async route=>{
-   const req=route.request();if(req.url()==='http://console.test/')return route.fulfill({contentType:'text/html; charset=utf-8',body:'<!doctype html><meta charset=utf-8><body><section id="agentRoster"><h3>Agent 列表</h3></section><script>'+source+'</script></body>'});
+   const req=route.request();if(req.url()==='http://console.test/')return route.fulfill({contentType:'text/html; charset=utf-8',body:full?fullHTML:'<!doctype html><meta charset=utf-8><body><section id="agentRoster"><h3>Agent 列表</h3></section><script>'+source+'</script></body>'});
+   if(full&&new URL(req.url()).pathname!=='/api/console/helper-updates')return route.fulfill({json:{items:[],role:'owner',agents:[{agent_id:'mine1',name:'One',session:'one',full_name:'One.owner',online:true,origin:'selfhost',state:'active'}],applications:[],requests:[],groups:[],owned_agents:[]}});
    assert.equal(new URL(req.url()).pathname,'/api/console/helper-updates');
    if(req.method()==='GET'){gets++;const payload=structuredClone(snapshot);if(pending){const hold=pending;pending=null;await hold.wait;try{await route.fulfill({json:payload});}catch(_){}finally{hold.done();}return;}return route.fulfill({status:fail?503:200,json:fail?{error:'unavailable'}:payload});}
    const body=req.postDataJSON();posts.push(body);return route.fulfill({json:{results:body.agent_ids.map(id=>({agent_id:id,ok:true,job:{job_id:'job-'+id,version:'0.2.3.1',stage:'offered'}}))}});
   });
-  try{await page.goto('http://console.test/');await page.locator('#helperUpdateOpen').waitFor();await fn({page,get snapshot(){return snapshot;},set snapshot(v){snapshot=v;},get gets(){return gets;},posts,set fail(v){fail=v;},hold(wait){return new Promise(done=>pending={wait,done});}});console.log('PASS '+name);passed++;}
+  try{await page.goto('http://console.test/');if(full)await page.evaluate(()=>openGroupWorkspace());await page.locator('#helperUpdateOpen').waitFor();await fn({page,get snapshot(){return snapshot;},set snapshot(v){snapshot=v;},get gets(){return gets;},posts,set fail(v){fail=v;},hold(wait){return new Promise(done=>pending={wait,done});}});console.log('PASS '+name);passed++;}
   catch(e){console.error('fixture status:',await page.locator('#helperUpdateStatus').textContent(),'posts:',JSON.stringify(posts));throw e;}finally{await page.close();}
  }
  try{
@@ -33,6 +37,7 @@ const base=()=>({releases:[{sha256:SHA,version:'0.2.3.1',platform:'linux'}],agen
   await test('failed refresh removes stale actionable rows',async h=>{await h.page.click('#helperUpdateOpen');await h.page.locator('[data-agent-id=mine1] input').check();h.fail=true;await h.page.click('#helperUpdateRefresh');await h.page.waitForFunction(()=>document.getElementById('helperUpdateStatus').textContent.includes('加载失败'));assert.equal(await h.page.locator('#helperUpdateRows tr').count(),0);assert.equal(await h.page.locator('#helperUpdateBatch').isDisabled(),true);});
   await test('refresh removes selections for newly ineligible or absent Agents',async h=>{await h.page.click('#helperUpdateOpen');await h.page.locator('[data-agent-id=mine1] input').check();h.snapshot.agents=h.snapshot.agents.filter(a=>a.agent_id!=='mine1');await h.page.click('#helperUpdateRefresh');await h.page.waitForFunction(()=>!document.querySelector('[data-agent-id=mine1]'));assert.equal(await h.page.locator('#helperUpdateBatch').isDisabled(),true);});
   await test('late response after close cannot repaint reopened snapshot',async h=>{let release;const finished=h.hold(new Promise(r=>release=r));const started=h.page.waitForRequest('**/api/console/helper-updates');await h.page.click('#helperUpdateOpen');await started;await h.page.click('#helperUpdateOpen');h.snapshot.releases=[{sha256:NEW,version:'0.2.3.9',platform:'linux'}];h.snapshot.agents[0].version='0.2.3.9';await h.page.click('#helperUpdateOpen');await h.page.waitForFunction(()=>document.getElementById('helperUpdateRelease').value==='b'.repeat(64));release();await finished;assert.equal(await h.page.locator('#helperUpdateRelease').inputValue(),NEW);assert.match(await h.page.locator('[data-agent-id=mine1]').innerText(),/0.2.3.9/);});
+  await test('full production Console mounts once and survives workspace close/reopen',async h=>{const errors=[];h.page.on('pageerror',e=>errors.push(e.message));await h.page.click('#helperUpdateOpen');await h.page.locator('[data-agent-id=mine1] input').last().waitFor();assert.equal(await h.page.locator('#helperUpdatePanel').count(),1);await h.page.evaluate(()=>closeTab('__agent-groups'));await h.page.waitForFunction(()=>!document.getElementById('helperUpdatePanel'));await h.page.evaluate(()=>openGroupWorkspace());await h.page.locator('#helperUpdateOpen').click();await h.page.locator('#helperUpdateRows [data-agent-id=mine1] button').click();await h.page.waitForFunction(()=>document.getElementById('helperUpdateStatus').textContent.includes('等待升级确认'));assert.equal(h.posts.length,1);assert.equal(await h.page.locator('#helperUpdatePanel').count(),1);assert.deepEqual(errors,[]);},true);
   console.log('TOTAL '+passed+' Chromium helper-update UI checks (HTTP intercepted)');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e.stack);process.exitCode=1;});
