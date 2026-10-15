@@ -418,6 +418,21 @@ func helperUpdateReceiptStage(stage string) bool {
 	}
 }
 
+func helperUpdateStageRank(stage string) int {
+	switch stage {
+	case "offered":
+		return 0
+	case "downloaded":
+		return 1
+	case "installed":
+		return 2
+	case "restarted":
+		return 3
+	default:
+		return -1
+	}
+}
+
 func helperUpdateAuditReason(v string) string {
 	switch v {
 	case "", "sha_mismatch", "lock_changed", "download_failed", "install_failed", "health_timeout", "rollback", "busy", "offer_expired":
@@ -446,6 +461,9 @@ func (h *Hub) recordHelperUpdateReceipt(ctx context.Context, c *sessionClient, e
 		metaString(env.Meta, "job_id") != job.JobID || metaString(env.Meta, "release_id") != job.ReleaseID ||
 		metaString(env.Meta, "sha256") != job.SHA256 || metaString(env.Meta, "lock_sha256") != job.LockSHA256 {
 		return true
+	}
+	if stage != "failed" && stage != "rolled_back" && helperUpdateStageRank(stage) <= helperUpdateStageRank(job.Stage) {
+		return true // duplicate or stale receipt: no state regression and no audit effect.
 	}
 	updated := *job
 	updated.Stage = stage

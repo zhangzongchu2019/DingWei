@@ -204,6 +204,39 @@ func TestHelperUpdateReceiptUsesAuthenticatedJobTuple(t *testing.T) {
 	})
 }
 
+func TestHelperUpdateReceiptNeverRegressesStage(t *testing.T) {
+	e := newAgentEnv(t)
+	digest := strings.Repeat("4", 64)
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", Platform: "linux"}
+	if err := e.hub.RegisterHelperUpdateCatalog(e.ctx, "ops", catalog); err != nil {
+		t.Fatal(err)
+	}
+	conn, _, _ := e.dial(e.cred, "version=0.2.3.0")
+	defer conn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	job, err := e.hub.IssueHelperUpdateForActor(e.ctx, "zzc", e.agID, digest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.readEnvUntil(conn, time.Second, func(env model.Envelope) bool { return metaString(env.Meta, "job_id") == job.JobID }) == nil {
+		t.Fatal("missing update offer")
+	}
+	for _, stage := range []string{"restarted", "downloaded"} {
+		e.sendEnv(conn, model.Envelope{ID: "receipt-" + stage, From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{
+			"type": "provision_ack", "action": "update_self", "stage": stage, "job_id": job.JobID,
+			"release_id": job.ReleaseID, "sha256": job.SHA256, "lock_sha256": job.LockSHA256,
+		}})
+	}
+	waitFor(t, time.Second, "restart receipt", func() bool {
+		stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
+		return err == nil && stored != nil && stored.Stage == "restarted"
+	})
+	stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
+	if err != nil || stored.Revision != 2 {
+		t.Fatalf("stale receipt changed revision: %+v err=%v", stored, err)
+	}
+}
+
 func TestIssueHelperUpdateForActorRejectsCrossOwner(t *testing.T) {
 	e := newAgentEnv(t)
 	if err := e.svc.Store.CreateUser(e.ctx, identity.User{UserID: "other", ShortName: "other", State: identity.UserActive}); err != nil {
