@@ -1,0 +1,5 @@
+--- FAIL: TestAgentDirectRevisionOneOwnershipAndAudit (0.17s)
+    console_spec_direct_test.go:47: kind=principal error=<nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.174s
+FAIL

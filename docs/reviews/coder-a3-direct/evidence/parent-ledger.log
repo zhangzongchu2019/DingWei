@@ -1,0 +1,5 @@
+--- FAIL: TestOpenSpoolPool_RefusesHubDB (3.94s)
+    ledger_test.go:161: Hub 库的账被动了：[0001_core_baseline.sql 0100_identity_baseline.sql 0101_group_communication.sql 0102_device_claim.sql 0300_console_transport_slot.sql]
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout	3.957s
+FAIL

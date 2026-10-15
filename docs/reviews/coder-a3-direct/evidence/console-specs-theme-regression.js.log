@@ -1,0 +1,1 @@
+PASS spec theme: light=rgb(244, 247, 251)|rgb(248, 245, 255)|rgb(238, 248, 241)|rgb(255, 247, 235) dark=rgb(27, 37, 48)|rgb(37, 32, 51)|rgb(24, 42, 34)|rgb(48, 37, 26) src=/console/specs?embedded=1 state=kept fresh-open=dark

@@ -1,0 +1,5 @@
+AssertionError [ERR_ASSERTION]: owner rows must offer deletion
+
+0 !== 2
+
+    at /data/ai-dev-data/a3-direct/view-service/console-spec-direct-regression.js:37:10

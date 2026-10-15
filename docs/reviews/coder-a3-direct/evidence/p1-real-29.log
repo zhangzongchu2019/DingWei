@@ -1,0 +1,33 @@
+(node:398465) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS 登录：真键盘输入口令，首登强制改密后进入 console
+PASS 入网：两个新平台 Agent 经真客户端入网代码申请、属主批准、连入 /ws/agent
+PASS console 平台项：下发 Specs 与 任务管理 两个入口
+PASS Specs 页：点 Specs 入口，iframe 里空库出现「添加 spec」入口
+PASS 建 spec：真键盘填标题、正文（CodeMirror）、验收判据、原文引用与规范锚定
+PASS 提交复核：打开 spec，提交复核后状态 editing → review
+PASS 补验收字段并存新版：来源、核验人、用例，保存为第 2 版
+PASS 复核并审结：填复核 Agent 与疑点，保存复核后审结，状态 → final
+PASS 拆解：手工添加任务（任务名、内容、完成定义、工时），提示「已拆解」
+PASS 任务管理页：点任务管理入口，iframe 里见该 spec 与它的任务
+PASS 指派候选：研发与验收下拉里恰是两个在线 Agent
+PASS 指派候选（反）：断开一个 Agent 后候选缩小为 kimi，重连后恢复两个
+PASS 指派：研发＝kimi、验收＝opus50ts，编辑完成后刷新仍在
+PASS 任务结案：回 Specs 点「任务结案」
+PASS 开工并签发令牌：对已指派的 spec 开工；人在会话里给研发 Agent 签 console-tasks 令牌
+PASS Agent 拉任务：新平台 Agent 凭「专属凭据＋能力令牌」拉到分给自己的任务
+PASS Agent 拉任务（反）：不带能力令牌被拒
+PASS Agent 拉任务（反）：别的 Agent（opus）的凭据配 kimi 的令牌被拒
+PASS Agent 拉任务（反）：错页面 id 的令牌被拒（console-specs:new 令牌拉任务）
+PASS Agent 拉任务（反）：乱写的令牌被拒；对照：正确令牌仍能拉
+PASS Agent 拉任务（反）：伪造的 Agent 凭据配有效令牌被拒
+PASS Agent 拉任务（反）：console-tasks 令牌打 spec 新建口被拒（令牌页面方向的另一头）
+PASS 跨属主：第二个用户 bobtwo 经口令登录，批准自己的 Agent 入网并连入 /ws/agent
+PASS 跨属主（反）：bobtwo 的 spec 列表里没有 adminone 的 spec
+PASS 跨属主（反）：他人 Agent 凭自己合法的 console-tasks 令牌，拉不到 adminone 的 spec 任务
+PASS 跨属主（反）：他人 Agent（bob）的凭据配 adminone 研发 Agent 的令牌被拒
+PASS 令牌属主比对（纵深防御）：令牌属主≠Agent 属主（数据被污染）时仍被拒
+PASS 吊销（反）：属主吊销研发 Agent 后，它从候选消失，原凭据＋原令牌不再能拉
+PASS 页面无错：console 与 pageerror 两路全程为空
+pgtest: STOPPED=1 CLEANED=1
+P1 spec/task real-hub browser: passed=29 failed=0 skipped=0 mutation=none

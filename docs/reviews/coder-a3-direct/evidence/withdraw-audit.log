@@ -1,0 +1,5 @@
+--- FAIL: TestAgentDirectRevisionOneOwnershipAndAudit (0.13s)
+    console_spec_direct_test.go:77: audit actions=[agent_create revise]
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.138s
+FAIL
