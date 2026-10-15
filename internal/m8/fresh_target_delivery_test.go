@@ -325,7 +325,7 @@ func TestFreshTargetFailureNotifiesActualOnlineSender(t *testing.T) {
 	}
 }
 
-func TestFreshTargetStartupSweepExpiresPreseededPendingDelivery(t *testing.T) {
+func TestFreshTargetStartupSweepNotifiesActualOnlineSource(t *testing.T) {
 	h, db, ctx := newTestHub(t)
 	if err := h.UpsertService(ctx, model.RegisteredService{ID: "svc-fresh-startup", Name: "fresh-startup", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
