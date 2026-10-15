@@ -1,5 +1,7 @@
 # sessionHelper 自动下发通道(provision)规格 v0.1
 
+> 2026-10-15 退役说明：本页是历史协议/测试资料，不是当前发布或上传指令。匿名 `/dl` 与后台公开上传、在线打包已退役；旧测试结果不代表现行行为。当前约束见 [helper 下发与退役说明](../operator/helper-update-delivery.md)。已有合法 skill/MCP 地址下发保持原授权校验；helper 自升级改走可信目录与作业。
+
 > 目标：中央 DingWei 按指令下发,让每台 sessionHelper 能**自更新、装 skill、装 MCP**——终结手动 scp/tar。
 > 🔴 这是**远程下载即执行(RCE 级)**能力,安全是第一约束。
 
@@ -19,7 +21,7 @@ sessionHelper: ①验来源(仅 from=workpulse/system) ②下载 ③校验sha256
   "meta": {
     "type":"provision", "system":true, "no_mirror":true,
     "action":"update_self | install_skill | install_mcp",
-    "url":"https://dingwei.wegoab.com/dl/<artifact>",     // 下载地址(白名单host)
+    "url":"https://<approved-artifact-host>/<approved-object>",     // 下载地址(白名单host)
     "sha256":"<hex>",                                 // 必带,校验
     "version":"<语义版本或hash>",                      // 幂等/防降级
     "target":"<skill名/mcp名/‘self’>",                // 装到哪

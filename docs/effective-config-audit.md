@@ -42,7 +42,7 @@ them from their owning subsystem or `/proc/<pid>/environ`:
   `WP_SCHEDULE_NOTIFY_CHAT`, `WP_SCHEDULE_NOTIFY_BOT`,
   `WP_SCHEDULE_EVIDENCE_CRON`, `WP_SCHEDULE_EVIDENCE_TZ`,
   `WP_SCHEDULE_PERSONAL_DIR`, `WP_SCHEDULE_TEAM_FILE`,
-  `WP_TRANSCRIPT_DIRS`, `WP_PROVISION_DL_DIR`,
+  `WP_TRANSCRIPT_DIRS`,
   `WP_PROVISION_ALLOWED_HOSTS`;
 - `WP_ADMIN_USER`, `WP_DATA_DIR`, `WP_L2_DEEPSEEK_BASE_URL`,
   `WP_L2_DEEPSEEK_MODEL`, `WP_L2_WORKERS`, `DATAD_URL`, `FCS_RPC_URL`,
@@ -53,3 +53,9 @@ them from their owning subsystem or `/proc/<pid>/environ`:
 Test-only diagnostics such as `WP_DEBUG_HOLD_LOCK` are also excluded from the
 production snapshot. `NOTIFY_SOCKET` and `WATCHDOG_USEC` belong to the service
 manager contract rather than DingWei configuration.
+
+Retired setting: `WP_PROVISION_DL_DIR` is no longer read. The legacy anonymous
+download surface always returns 404, and admin public uploads/online packaging
+return `public_upload_retired` before saving any artifact. Old files are not
+removed by the Hub; operations owns their private retention/removal. See
+[the retirement contract](operator/helper-update-delivery.md).

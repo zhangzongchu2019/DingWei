@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -301,7 +300,7 @@ func run(logger *slog.Logger) error {
 	}
 	registerConsoleRoutes(mux, prefixHub, newplatOn)
 	mux.HandleFunc("GET /links/{ownerKey}", prefixHub.HandleOwnerLinksPage)
-	mux.HandleFunc("GET /dl/{file}", provisionDownload)
+	registerRetiredProvisionDownloads(mux)
 
 	// View Service 对接内网口(仅 127.0.0.1 / 内网,不进公开 mux):
 	// C2 事件订阅 / C3 鉴权 / C3 输入回投。View Service 作为内部消费者调用。
@@ -712,28 +711,6 @@ func collectorOrNil(g feishu.Gateway) admin.SeenPersonCollector {
 		return c
 	}
 	return nil
-}
-
-func provisionDownloadDir() string {
-	if v := strings.TrimSpace(os.Getenv("WP_PROVISION_DL_DIR")); v != "" {
-		return v
-	}
-	return "data/dl"
-}
-
-func provisionDownload(w http.ResponseWriter, r *http.Request) {
-	name := filepath.Base(strings.TrimSpace(r.PathValue("file")))
-	if name == "." || name == "" || name != strings.TrimSpace(r.PathValue("file")) {
-		http.NotFound(w, r)
-		return
-	}
-	path := filepath.Join(provisionDownloadDir(), name)
-	info, err := os.Stat(path)
-	if err != nil || info.IsDir() {
-		http.NotFound(w, r)
-		return
-	}
-	http.ServeFile(w, r, path)
 }
 
 func upsertInboundEntity(ctx context.Context, repo store.Repository, m model.Message) error {

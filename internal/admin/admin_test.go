@@ -1,12 +1,7 @@
 package admin
 
 import (
-	"archive/tar"
-	"bytes"
-	"compress/gzip"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -701,9 +696,14 @@ func TestAdminProvisionPageRequiresAuthAndShowsOnlineSessions(t *testing.T) {
 	}
 	srv.sessions["tok"] = "admin"
 	body := getAuth(t, mux, "/admin/provision").Body.String()
-	for _, want := range []string{"Provision 下发", "developer", "alice", "install_skill", "打包当前 sessionHelper", "最近 Provision 回执", "skill installed"} {
+	for _, want := range []string{"Provision 下发", "developer", "alice", "install_skill", "public_upload_retired", "最近 Provision 回执", "skill installed"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("provision page missing %q in %s", want, body)
+		}
+	}
+	for _, retired := range []string{"type=file", "name=artifact", "value=package_self", "multipart/form-data"} {
+		if strings.Contains(body, retired) {
+			t.Fatalf("retired public producer still visible: %s", retired)
 		}
 	}
 }
@@ -788,63 +788,56 @@ func TestAdminProvisionValidatesURLHost(t *testing.T) {
 	}
 }
 
-func TestAdminProvisionPackageSessionHelperCreatesDownloadArtifact(t *testing.T) {
-	srv, _, _, _ := newAdminTestServer(t)
-	dl := t.TempDir()
+type unreadProvisionBody struct{ reads int }
+
+func (b *unreadProvisionBody) Read(_ []byte) (int, error) { b.reads++; return 0, io.ErrUnexpectedEOF }
+func (b *unreadProvisionBody) Close() error               { return nil }
+
+func TestAdminPublicProvisionUploadRetiredBeforeBodyOrFileWrite(t *testing.T) {
+	srv, _, mux, _ := newAdminTestServer(t)
+	srv.sessions["tok"] = "admin"
+	dl := filepath.Join(t.TempDir(), "must-not-create")
 	t.Setenv("WP_PROVISION_DL_DIR", dl)
-	secretConfig := filepath.Join("..", "..", "tools", "sessionhelper", "config-secret.json")
-	if err := os.WriteFile(secretConfig, []byte(`{"secret":true}`), 0o600); err != nil {
-		t.Fatal(err)
+	unauthBody := &unreadProvisionBody{}
+	unauth := httptest.NewRequest(http.MethodPost, "/admin/provision", unauthBody)
+	unauth.Header.Set("Content-Type", "multipart/form-data; boundary=synthetic")
+	unauthResult := httptest.NewRecorder()
+	mux.ServeHTTP(unauthResult, unauth)
+	if unauthResult.Code != http.StatusSeeOther || unauthResult.Header().Get("Location") != "/admin/login" || unauthBody.reads != 0 {
+		t.Fatalf("retirement bypassed authentication: status=%d reads=%d", unauthResult.Code, unauthBody.reads)
 	}
-	t.Cleanup(func() { _ = os.Remove(secretConfig) })
-	req := httptest.NewRequest(http.MethodPost, "http://localhost/admin/provision", nil)
-	info, err := srv.packageSessionHelper(req, "9.9.9-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	data, err := os.ReadFile(info.Path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	sum := sha256.Sum256(data)
-	if got := hex.EncodeToString(sum[:]); got != info.SHA256 {
-		t.Fatalf("sha=%s want %s", got, info.SHA256)
-	}
-	if !strings.Contains(info.URL, "/dl/sessionhelper-9.9.9-test.tar.gz") || info.Version != "9.9.9-test" {
-		t.Fatalf("info=%+v", info)
-	}
-	names := tarNames(t, data)
-	if !names["sessionhelper/config.py"] {
-		t.Fatalf("package missing sessionhelper/config.py names=%v", names)
-	}
-	if !names["config.example"] {
-		t.Fatalf("package missing config.example names=%v", names)
-	}
-	for name := range names {
-		if strings.HasPrefix(filepath.Base(name), "config-") && strings.HasSuffix(name, ".json") {
-			t.Fatalf("package leaked config json: %s", name)
+	for _, action := range []string{"install_skill", "install_mcp", "update_self"} {
+		body := &unreadProvisionBody{}
+		req := httptest.NewRequest(http.MethodPost, "/admin/provision?provision_action="+action, body)
+		req.Header.Set("Content-Type", "multipart/form-data; boundary=synthetic")
+		req.ContentLength = 65 << 20
+		req.AddCookie(&http.Cookie{Name: "wp_admin", Value: "tok"})
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		if rec.Code != http.StatusGone || !strings.Contains(rec.Body.String(), "public_upload_retired") || body.reads != 0 {
+			t.Fatalf("action=%s status=%d reads=%d body=%s", action, rec.Code, body.reads, rec.Body.String())
 		}
+	}
+	rec := postFormRaw(mux, "/admin/provision", url.Values{"op": {"package_self"}, "version": {"9.9.9-test"}})
+	if rec.Code != http.StatusGone || !strings.Contains(rec.Body.String(), "public_upload_retired") {
+		t.Fatalf("online packaging status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if _, err := os.Stat(dl); !os.IsNotExist(err) {
+		t.Fatalf("retired upload created artifact directory: %v", err)
 	}
 }
 
-func tarNames(t *testing.T, data []byte) map[string]bool {
-	t.Helper()
-	gz, err := gzip.NewReader(bytes.NewReader(data))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer gz.Close()
-	tr := tar.NewReader(gz)
-	out := map[string]bool{}
-	for {
-		hdr, err := tr.Next()
-		if err != nil {
-			if err == io.EOF {
-				return out
-			}
-			t.Fatal(err)
+func TestAdminExistingNonUpdateArtifactURLStillValidates(t *testing.T) {
+	srv, _, _, _ := newAdminTestServer(t)
+	t.Setenv("WP_PROVISION_ALLOWED_HOSTS", "artifacts.example.invalid")
+	for _, action := range []string{"install_skill", "install_mcp"} {
+		form := url.Values{"provision_action": {action}, "url": {"https://artifacts.example.invalid/approved"}, "sha256": {strings.Repeat("a", 64)}, "version": {"1.2.3"}, "target": {"demo"}}
+		req := httptest.NewRequest(http.MethodPost, "/admin/provision", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		got, err := srv.provisionRequestFromForm(req)
+		if err != nil || got.Action != action || got.URL != form.Get("url") || got.SHA256 != form.Get("sha256") {
+			t.Fatalf("existing artifact action=%s req=%+v err=%v", action, got, err)
 		}
-		out[hdr.Name] = true
 	}
 }
 
