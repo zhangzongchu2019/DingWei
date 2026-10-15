@@ -18,6 +18,8 @@ const (
 	capabilityPendingSweepEvery = time.Minute
 )
 
+var capabilityPendingStartupSweepTimeout = 5 * time.Second
+
 // freshTargetDeliveryRepository is deliberately a narrow optional extension.
 // Older repository implementations continue to reject an unregistered target
 // rather than silently accepting a delivery they cannot resolve safely.
@@ -99,9 +101,12 @@ func (h *Hub) startCapabilityPendingCleanup() {
 	}
 	h.capabilityPendingCleanupOnce.Do(func() {
 		// Startup expiry is synchronous so a just-constructed Hub has already
-		// swept historical pending rows before it accepts new routes. Subsequent
-		// expiry is handled by the periodic loop below.
-		h.expireCapabilityPendingDeliveries(context.Background(), h.now().UTC())
+		// swept historical pending rows before it accepts new routes. Bound that
+		// first pass: a stalled repository must not prevent Hub startup forever;
+		// the periodic loop below will retry it.
+		startupCtx, cancel := context.WithTimeout(context.Background(), capabilityPendingStartupSweepTimeout)
+		h.expireCapabilityPendingDeliveries(startupCtx, h.now().UTC())
+		cancel()
 		stop := make(chan struct{})
 		h.capabilityPendingCleanupStop = stop
 		ticker := time.NewTicker(capabilityPendingSweepEvery)

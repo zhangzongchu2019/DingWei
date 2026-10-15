@@ -401,6 +401,48 @@ func TestFreshTargetStartupSweepFailureDoesNotBlockHubConstruction(t *testing.T)
 	h.Close()
 }
 
+type blockingCapabilityPendingSweepRepo struct {
+	*store.SQLite
+	entered chan struct{}
+}
+
+func (r *blockingCapabilityPendingSweepRepo) ExpireCapabilityPendingSessionDeliveries(ctx context.Context, _ time.Time) ([]model.SessionDelivery, error) {
+	select {
+	case r.entered <- struct{}{}:
+	default:
+	}
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func TestFreshTargetStartupSweepTimeoutDoesNotBlockHubConstruction(t *testing.T) {
+	base, err := store.OpenSQLite(filepath.Join(t.TempDir(), "fresh-startup-timeout.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer base.Close()
+	if err := base.Migrate(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	repo := &blockingCapabilityPendingSweepRepo{SQLite: base, entered: make(chan struct{}, 1)}
+	oldTimeout := capabilityPendingStartupSweepTimeout
+	capabilityPendingStartupSweepTimeout = 20 * time.Millisecond
+	t.Cleanup(func() { capabilityPendingStartupSweepTimeout = oldTimeout })
+
+	started := time.Now()
+	h := New(repo, ConsoleAuthDisabled())
+	elapsed := time.Since(started)
+	defer h.Close()
+	select {
+	case <-repo.entered:
+	default:
+		t.Fatal("startup sweep did not enter repository")
+	}
+	if elapsed > time.Second {
+		t.Fatalf("New blocked on capability-pending startup sweep for %s", elapsed)
+	}
+}
+
 func TestFreshTargetCleanupIsNoopWithoutRepository(t *testing.T) {
 	h := New(nil, ConsoleAuthDisabled())
 	h.startCapabilityPendingCleanup()
