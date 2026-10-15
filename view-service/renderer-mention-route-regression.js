@@ -22,16 +22,18 @@ function mutate(from, to) {
   if (hits !== 1) { console.error(`MUTATION-ANCHOR-STALE: mutation ${mutation} anchor must match exactly once, hits=${hits}: ${from.slice(0, 160)}`); process.exit(3); }
   html = html.replace(from, to);
 }
-const MUTATIONS = ['mutation-anchor-selftest', 'no-mentions-sent', 'no-text-check', 'no-receipt', 'receipt-as-html', 'no-prune', 'prune-during-ime'];
+const MUTATIONS = ['mutation-anchor-selftest', 'no-mentions-sent', 'no-text-check', 'no-receipt', 'receipt-as-html', 'no-prune', 'prune-during-ime', 'old-prefix', 'old-insert-prefix'];
 if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation}`); process.exit(3); }
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x');
 if (mutation === 'no-mentions-sent') mutate('const withMentions = (o) => (mentions.length ? { ...o, mentions } : o);', 'const withMentions = (o) => o;');
-if (mutation === 'no-text-check') mutate("if ((i === 0 || /\\s/.test(before)) && !/[A-Za-z0-9.]/.test(after)) return true;", 'if (true) return true;');
+if (mutation === 'no-text-check') mutate("if (mentionPrefixAllowed(text, i) && !/[A-Za-z0-9.]/.test(after)) return true;", 'if (true) return true;');
 if (mutation === 'no-receipt') mutate('        renderMentionReceipts(result && result.mentions);\n', '');
 if (mutation === 'no-prune') mutate("humanInput.addEventListener('input', (e) => { if (!e.isComposing) mentionPrunePicked(); });", '');
 if (mutation === 'prune-during-ime') mutate("humanInput.addEventListener('input', (e) => { if (!e.isComposing) mentionPrunePicked(); });", "humanInput.addEventListener('input', () => mentionPrunePicked());");
 if (mutation === 'receipt-as-html') mutate('row.dataset.status = String(m.status || \'\'); row.textContent = m.message;', 'row.dataset.status = String(m.status || \'\'); row.innerHTML = m.message;');
 
+if (mutation === 'old-prefix') mutate("return at === 0 || !/[A-Za-z0-9.]/.test(text.charAt(at - 1));", "return at === 0 || /\\s/.test(text.charAt(at - 1));");
+if (mutation === 'old-insert-prefix') mutate("if (mentionPrefixAllowed(text, i) && !/[A-Za-z0-9.]/.test(after)) return true;", "if ((i === 0 || /\\s/.test(text.charAt(i - 1))) && !/[A-Za-z0-9.]/.test(after)) return true;");
 const NAME = 'dev.zzc';
 const CANDS = [
   { full_name: 'foreign.lisa', name: 'foreign', cli: 'codex', online: true, insert: 'foreign.lisa' },
@@ -84,6 +86,27 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
   };
   const send = async () => { const n = inputs.length; await page.keyboard.press('Enter'); await page.waitForFunction(() => document.getElementById('humanInput').value === ''); assert.strictEqual(inputs.length, n + 1, 'one POST /input'); return inputs[inputs.length - 1]; };
   try {
+    for (const [prefix, suffix] of [['请', ''], ['（', '）'], ['中文。', ''], ['hello ', '']]) {
+      await test('non-name prefix selects and forwards full-name mention: ' + prefix, async () => {
+        await reset(); await input.click(); await page.keyboard.type(prefix);
+        await pick('tw', 'twin（twin.lisa）'); await page.keyboard.type(suffix + '看看');
+        const body = await send();
+        assert.strictEqual(body.text, prefix + '@twin.lisa ' + suffix + '看看');
+        assert.deepStrictEqual(body.mentions, ['twin.lisa']);
+      });
+    }
+    await test('name-character prefixes never trigger candidates or infer targets', async () => {
+      for (const prefix of ['a', 'Z', '0', '.']) {
+        await reset(); await input.click(); await page.keyboard.type(prefix + '@twin.lisa');
+        assert.strictEqual(await page.locator('#mentionPopup').isHidden(), true);
+        const body = await send(); assert.ok(!('mentions' in body));
+      }
+    });
+    await test('hand-typed full-name after Chinese still does not forward', async () => {
+      await reset(); await input.click(); await page.keyboard.type('请@twin.lisa');
+      await page.keyboard.press('Escape');
+      const body = await send(); assert.ok(!('mentions' in body));
+    });
     await test('picking a candidate sends its full_name as a structured mention alongside the unchanged text', async () => {
       await reset(); await input.click();
       await pick('be', 'beta（beta.zzc）'); await page.keyboard.type('你好 ');
