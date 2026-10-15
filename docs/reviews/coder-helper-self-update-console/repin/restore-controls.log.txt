@@ -1,0 +1,18 @@
+2026/10/15 12:38:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/15 12:38:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/15 12:38:58 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/15 12:38:58 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/15 12:39:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/15 12:39:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- FAIL: TestGateDoorABytesMatchThePinnedBaseline (6.43s)
+    gate_baseline_pin_test.go:84: 🔴 门 A 的输出字节与已批准基线**不同**。
+          本树 sha256 = 9f95522818d3767018d1f43c53539fbcd687420e733370548eb91953b5295db8
+          基线 sha256 = 4c7b45af8b8b0f4f950a1eae23ddda12175a5ae4daf0d67110910e87a456f859(2026-10-15 授权退役后的基线,见常量注释)
+        判据:并存期旧 admin(/admin/*,wp_admin)是业主的「回退的地方」,
+              本次搬迁**不得**改它的任何输出(派工第五节阴格:并存,不是迁移)。
+        定位:DW_ADMIN_BASELINE_OUT=/tmp/doorA-now.txt go test ./internal/admin/ -run TestGateDumpDoorABaseline -count=1
+              然后在基线树上同样跑一次,diff 两份输出(差异是逐行可读的状态码/头/正文)。
+        🔴 不许就地重算哈希:确需改门 A 的输出 ⇒ 先报组长。
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/admin	6.453s
+FAIL
