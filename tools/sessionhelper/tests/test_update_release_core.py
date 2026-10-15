@@ -9,6 +9,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -24,7 +25,10 @@ class GuardTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.factory = self.root / 'factory'
         (self.factory / 'sessionhelper').mkdir(parents=True)
-        (self.factory / 'sessionhelper' / '__main__.py').write_text('print("factory")\n')
+        (self.factory / 'sessionhelper' / '__init__.py').write_text('')
+        self.factory_marker = self.root / 'factory-executed'
+        (self.factory / 'sessionhelper' / '__main__.py').write_text(
+            'from pathlib import Path;Path(' + repr(str(self.factory_marker)) + ').write_text("SYNTHETIC_FACTORY");print("SYNTHETIC_FACTORY")\n')
         self.state = State(self.root / 'state', self.factory)
 
     def item(self, letter):
@@ -33,15 +37,30 @@ class GuardTests(unittest.TestCase):
                     agent_id='agent', owner_id='owner', version='0.2.3.' + str(ord(letter)), sha256=sha)
         slot = self.state.root / 'slots' / sha
         (slot / 'sessionhelper').mkdir(parents=True)
+        (slot / 'sessionhelper' / '__init__.py').write_text('')
         (slot / 'sessionhelper' / '__main__.py').write_text('print("' + letter + '")\n')
         return item
+
+    def run_captured(self, *args):
+        output = self.root / 'child-output.log'
+        real_popen = subprocess.Popen
+        def captured(*pargs, **kwargs):
+            return real_popen(*pargs, **dict(kwargs, stdout=log, stderr=subprocess.STDOUT))
+        with output.open('w') as log, patch('update_launcher.guard.subprocess.Popen', side_effect=captured):
+            result = run(*args)
+        text = output.read_text()
+        self.assertNotIn('首次运行请在交互终端执行', text)
+        return result, text
 
     def test_manual_factory_has_no_job_or_deadline(self):
         selected, pending = self.state.select()
         self.assertEqual(selected, self.factory)
         self.assertIsNone(pending)
         self.assertIsNone(self.state.read()['pending'])
-        self.assertEqual(run(self.factory, self.state.root, ['--version']), 0)
+        rc, output = self.run_captured(self.factory, self.state.root, ['--version'])
+        self.assertEqual(rc, 0, output)
+        self.assertEqual(self.factory_marker.read_text(), 'SYNTHETIC_FACTORY')
+        self.assertIn('SYNTHETIC_FACTORY', output)
 
     def test_consecutive_factory_a_b_c_and_restart_each_trial(self):
         previous = None
@@ -115,7 +134,8 @@ class GuardTests(unittest.TestCase):
         observer = self.root / 'observed-cwd'
         (self.factory / 'sessionhelper/__main__.py').write_text(
             'import os;from pathlib import Path;Path(' + repr(str(observer)) + ').write_text(os.getcwd())\n')
-        self.assertEqual(run(self.factory, self.state.root), 0)
+        rc, output = self.run_captured(self.factory, self.state.root)
+        self.assertEqual(rc, 0, output)
         self.assertEqual(observer.read_text(), os.getcwd())
 
     def test_auxiliary_uses_running_trial_without_consuming_budget(self):
@@ -145,10 +165,14 @@ class GuardTests(unittest.TestCase):
 
     def test_actual_hung_candidate_deadline_is_independent(self):
         a = self.item('a')
-        (self.state.slot(a) / 'sessionhelper/__main__.py').write_text('import time;time.sleep(60)\n')
+        marker = self.root / 'hung-candidate-executed'
+        (self.state.slot(a) / 'sessionhelper/__main__.py').write_text(
+            'import time;from pathlib import Path;Path(' + repr(str(marker)) + ').write_text("SYNTHETIC_HUNG_CANDIDATE");time.sleep(60)\n')
         self.state.arm(a, now=time.time() - 119.8)
         started = time.monotonic()
-        self.assertEqual(run(self.factory, self.state.root), 75)
+        rc, output = self.run_captured(self.factory, self.state.root)
+        self.assertEqual(rc, 75, output)
+        self.assertEqual(marker.read_text(), 'SYNTHETIC_HUNG_CANDIDATE')
         self.assertLess(time.monotonic() - started, 3)
         self.assertEqual(self.state.read()['last_result']['reason'], 'health_timeout')
 

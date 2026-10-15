@@ -115,12 +115,14 @@ class ReviewRegressionTests(unittest.TestCase):
     def running_candidate(self):
         td=tempfile.TemporaryDirectory();self.addCleanup(td.cleanup);root=Path(td.name)
         factory=root/'factory';(factory/'sessionhelper').mkdir(parents=True)
-        (factory/'sessionhelper/__main__.py').write_text('pass\n')
+        (factory/'sessionhelper/__init__.py').write_text('')
+        (factory/'sessionhelper/__main__.py').write_text('print("SYNTHETIC_FACTORY_FALLBACK")\n')
         st=State(root/'state',factory)
         item=dict(job_id='review-job',release_id='review-release',agent_id='review-agent',owner_id='review-owner',version='0.2.3.1',sha256='a'*64)
         slot=st.root/'slots'/item['sha256'];(slot/'sessionhelper').mkdir(parents=True)
+        (slot/'sessionhelper/__init__.py').write_text('')
         ready=root/'ready'
-        (slot/'sessionhelper/__main__.py').write_text('import os,time\nfrom pathlib import Path\nPath('+repr(str(ready))+').write_text(str(os.getpid()))\nwhile True: time.sleep(.05)\n')
+        (slot/'sessionhelper/__main__.py').write_text('import os,time\nfrom pathlib import Path\nPath('+repr(str(ready))+').write_text(str(os.getpid()))\nprint("SYNTHETIC_SLOT_EXECUTED",flush=True)\nwhile True: time.sleep(.05)\n')
         st.arm(item)
         code='import sys;sys.path.insert(0,'+repr(str(CORE))+');from update_launcher.guard import run;raise SystemExit(run(sys.argv[1],sys.argv[2]))'
         log=(root/'guard.log').open('w');self.addCleanup(log.close)
@@ -128,6 +130,10 @@ class ReviewRegressionTests(unittest.TestCase):
         deadline=time.monotonic()+4
         while not ready.exists() and time.monotonic()<deadline:time.sleep(.01)
         self.assertTrue(ready.exists(),'actual candidate failed to start')
+        deadline=time.monotonic()+1
+        while 'SYNTHETIC_SLOT_EXECUTED' not in (root/'guard.log').read_text() and time.monotonic()<deadline:time.sleep(.01)
+        self.assertIn('SYNTHETIC_SLOT_EXECUTED',(root/'guard.log').read_text())
+        self.assertNotIn('首次运行请在交互终端执行',(root/'guard.log').read_text())
         childpid=int(ready.read_text())
         def cleanup():
             for pid in (childpid,proc.pid):
@@ -173,6 +179,8 @@ class ReviewRegressionTests(unittest.TestCase):
         self.assertIsNotNone(st.read()['pending'])
         third=subprocess.run([sys.executable,'-B','-c',code,str(st.factory),str(st.root)],capture_output=True,timeout=3)
         self.assertEqual(third.returncode,0,third.stderr)
+        self.assertIn(b'SYNTHETIC_FACTORY_FALLBACK',third.stdout)
+        self.assertNotIn('首次运行请在交互终端执行'.encode(),third.stdout+third.stderr)
         self.assertIsNone(st.read()['pending'])
         self.assertEqual(st.read()['terminal'][item['job_id']]['stage'],'rolled_back')
 

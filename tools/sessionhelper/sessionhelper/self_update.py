@@ -59,7 +59,9 @@ def origin(url, allow_loopback=False, hub=False):
 
 class SelfUpdater:
     def __init__(self, cfg, source_validator, agent_name, *, launcher=None, allow_loopback=False):
-        self.cfg, self.validate_source, self.agent_name = cfg, source_validator, agent_name
+        # Enrollment preserves display case; Hub session/offer names are canonical
+        # ASCII lower-case for the same credential-bound Agent identity.
+        self.cfg, self.validate_source, self.agent_name = cfg, source_validator, agent_name.lower()
         self.allow_loopback = allow_loopback
         self.health_nonce = None
         self.health_lock_sha256 = None

@@ -13,6 +13,9 @@ import time
 import unittest
 from unittest.mock import patch
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
+
 try:
     from _home_isolation import HomeIsolation
 except ImportError:
@@ -28,14 +31,12 @@ def tearDownModule():
     _HOME.finish()
 
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
 from sessionhelper.config import Config
 from sessionhelper.provision import Provisioner, ProvisionError
 from sessionhelper.self_update import SelfUpdater, UpdateRejected, receipt
 import sessionhelper.self_update as runtime
 import package_release
-from tools.sessionhelper.tests import test_update_release_core as core
+import test_update_release_core as core
 
 
 class OfferTests(unittest.TestCase):
@@ -96,6 +97,12 @@ class OfferTests(unittest.TestCase):
         self.assertEqual(len(self.requests),1)
         self.updater.mark_restart_requested(meta)
         self.assertFalse(self.updater.prepare(self.env)[2])
+
+    def test_enrolled_agent_name_matches_hub_canonical_case(self):
+        updater=SelfUpdater(self.cfg,self.provisioner.validate_source,'Agent.Owner',
+                            launcher=str(self.mount/'helper_update_guard.py'),allow_loopback=True)
+        self.assertEqual(updater.validate_offer(self.env)['agent_name'],'agent.owner')
+        self.assertEqual(self.requests,[])
 
     def test_forged_target_expiry_origin_rejected_before_get(self):
         cases=[('source',{'from':'untrusted'}),('target',{'agent_name':'another.owner'}),
