@@ -250,10 +250,10 @@ func TestHelperUpdateHealthRejectsMissingFreshNonce(t *testing.T) {
 	bad := helperUpdateHealthMeta(job)
 	bad["health_nonce"] = ""
 	// The direct call isolates nonce validation from the separately covered
-	// real-WebSocket reconnect boundary.
-	c := *e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"]
-	c.connSeq = job.OfferConnSeq + 1
-	e.hub.confirmHelperUpdateHealth(e.ctx, &c, model.Envelope{Meta: bad})
+	// real-WebSocket reconnect boundary. It deliberately does not read the
+	// live session map while the WebSocket server may be tearing it down.
+	c := &sessionClient{metricsAgentID: e.agID, keyID: AgentKeyID("zzc"), sessionName: "opus50ts", version: job.Version, connSeq: job.OfferConnSeq + 1, helperUpdateV1: true}
+	e.hub.confirmHelperUpdateHealth(e.ctx, c, model.Envelope{Meta: bad})
 	stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
 	if err != nil || stored == nil || stored.Stage != "offered" || stored.Revision != 2 {
 		t.Fatalf("wrong nonce changed job: %+v err=%v", stored, err)
