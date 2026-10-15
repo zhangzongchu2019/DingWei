@@ -97,6 +97,12 @@ class OfferTests(unittest.TestCase):
         self.updater.mark_restart_requested(meta)
         self.assertFalse(self.updater.prepare(self.env)[2])
 
+    def test_enrolled_agent_name_matches_hub_canonical_case(self):
+        updater=SelfUpdater(self.cfg,self.provisioner.validate_source,'Agent.Owner',
+                            launcher=str(self.mount/'helper_update_guard.py'),allow_loopback=True)
+        self.assertEqual(updater.validate_offer(self.env)['agent_name'],'agent.owner')
+        self.assertEqual(self.requests,[])
+
     def test_forged_target_expiry_origin_rejected_before_get(self):
         cases=[('source',{'from':'untrusted'}),('target',{'agent_name':'another.owner'}),
                ('expires',{'expires_at':(datetime.now(timezone.utc)-timedelta(seconds=1)).isoformat()}),
