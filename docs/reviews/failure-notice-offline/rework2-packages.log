@@ -1,0 +1,4 @@
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	15.275s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/migrate	30.802s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/pgtest	13.582s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	119.955s

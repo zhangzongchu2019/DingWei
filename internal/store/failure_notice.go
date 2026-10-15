@@ -6,13 +6,15 @@ import (
 	"encoding/json"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
 // enqueueDeliveryFailureNoticeTx commits with the original terminal transition.
 // Only previously ACK-capable session senders are eligible for durable notices.
-// It never copies an original body, arbitrary last_error, target or credentials.
+// Only the persisted target session label is rendered, after strict sanitization.
+// Original bodies, raw addresses/keys, arbitrary last_error and credentials are never copied.
 func enqueueDeliveryFailureNoticeTx(ctx context.Context, tx *sql.Tx, d model.SessionDelivery, reason string, now time.Time) (bool, error) {
 	if !model.DeliveryFailureReasonAllowed(reason) || d.SourceType != "session_inbound" || d.Provenance == model.FailureNoticeProvenance {
 		return false, nil
@@ -38,7 +40,7 @@ func enqueueDeliveryFailureNoticeTx(ctx context.Context, tx *sql.Tx, d model.Ses
 	}
 	id := model.FailureNoticeDeliveryID(d.ID)
 	notice := model.Envelope{ID: id, From: "workpulse#" + source[1], To: original.From, TS: now.Unix(),
-		Body: "【系统投递失败通知】\n原消息未能完成投递；原因码：" + reason + "。本通知不要求回复。",
+		Body: "【系统投递失败通知】\n发往" + safeFailureNoticeTarget(d.SessionName) + "的原消息未能完成投递；原因：" + failureNoticeReasonText(reason) + "（原因码：" + reason + "）。本通知不要求回复。",
 		Meta: map[string]any{"type": "delivery", "delivery_id": id, "delivery_version": 1, "ack_required": true,
 			"source_message_id": d.ID, "failed_message_id": original.ID, "failed_delivery_id": d.ID, "reason_code": reason,
 			"kind": "reply", "reply_policy": "no_reply", "conversation_terminal": true, "suppress_reply_origin": true, "no_mirror": true}}
@@ -55,6 +57,34 @@ func enqueueDeliveryFailureNoticeTx(ctx context.Context, tx *sql.Tx, d model.Ses
 	}
 	n, err := r.RowsAffected()
 	return n > 0, err
+}
+
+// Do not parse an address supplied in the envelope: account keys are not display names.
+// Reject rather than partially quote unsafe names (commands, control/bidi or markup).
+func safeFailureNoticeTarget(session string) string {
+	if session == "" || len(session) > 192 || len([]rune(session)) > 64 {
+		return "目标 Agent（名称无法安全显示）"
+	}
+	for _, r := range session {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '.' && r != '-' && r != '_' {
+			return "目标 Agent（名称无法安全显示）"
+		}
+	}
+	return "Agent「" + session + "」"
+}
+
+func failureNoticeReasonText(reason string) string {
+	switch reason {
+	case "retry_exhausted":
+		return "重试次数已用尽，仍未确认完成投递"
+	case "delivery_ack_unsupported":
+		return "目标不支持投递确认，无法确认完成投递"
+	case "delivery_capability_unconfirmed_expired":
+		return "等待目标确认投递能力已超时"
+	case "delivery_expired":
+		return "投递等待已超时"
+	}
+	return "无法确认完成投递"
 }
 
 func collectFailureRows(ctx context.Context, tx *sql.Tx, query string, args ...any) ([]model.SessionDelivery, error) {
@@ -76,7 +106,8 @@ func collectFailureRows(ctx context.Context, tx *sql.Tx, query string, args ...a
 
 // SweepSessionDeliveryFailures includes every expirable nonterminal state,
 // even if neither endpoint ever reconnects. Backfill is limited to explicit
-// allowlisted reasons and the last 30 minutes of terminal-transition time.
+// three stored reasons and the last 30 minutes of terminal-transition time.
+// Historical retry_exhausted is always excluded, even when explicitly stored.
 // No old timestamp or ambiguous arbitrary retry error is guessed into scope.
 func (s *SQLite) SweepSessionDeliveryFailures(ctx context.Context, now time.Time) ([]model.SessionDelivery, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -98,7 +129,7 @@ func (s *SQLite) SweepSessionDeliveryFailures(ctx context.Context, now time.Time
 			return nil, err
 		}
 	}
-	recent, err := collectFailureRows(ctx, tx, sessionDeliverySelect+` WHERE state='dead' AND updated_at>=? AND updated_at<=? AND last_error IN ('retry_exhausted','delivery_ack_unsupported','delivery_capability_unconfirmed_expired','delivery_expired')
+	recent, err := collectFailureRows(ctx, tx, sessionDeliverySelect+` WHERE state='dead' AND updated_at>=? AND updated_at<=? AND last_error IN ('delivery_ack_unsupported','delivery_capability_unconfirmed_expired','delivery_expired')
  AND source_type='session_inbound' AND EXISTS (SELECT 1 FROM session_endpoint ep WHERE ep.delivery_ack_v1=1 AND ep.session_name<>'workpulse' AND (ep.session_name || '#' || ep.key_id)=json_extract(CASE WHEN json_valid(envelope_json) THEN envelope_json ELSE '{}' END,'$.from'))
  AND NOT EXISTS (SELECT 1 FROM session_delivery n WHERE n.source_type='failure_notice' AND n.source_message_id=session_delivery.id) ORDER BY updated_at,id LIMIT 1000`, cutoff, stamp)
 	// Dedup is the deterministic primary key in the INSERT, not an in-memory flag.

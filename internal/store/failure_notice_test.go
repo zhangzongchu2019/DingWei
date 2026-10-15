@@ -150,11 +150,12 @@ func TestFailureNoticeGlobalSweepEveryNonterminalState(t *testing.T) {
 func TestFailureNoticeRecentDeadBackfillAndConcurrentSweep(t *testing.T) {
 	db, now := noticeFixture(t)
 	ctx := context.Background()
-	reasons := []string{"retry_exhausted", "delivery_ack_unsupported", "delivery_capability_unconfirmed_expired", "delivery_expired"}
+	reasons := []string{"delivery_ack_unsupported", "delivery_capability_unconfirmed_expired", "delivery_expired"}
 	for _, reason := range reasons {
 		d := noticeOriginal(t, db, "recent-"+reason, "dead", reason, now.Add(-2*time.Hour))
 		db.db.ExecContext(ctx, `UPDATE session_delivery SET updated_at=? WHERE id=?`, now.Add(-29*time.Minute).Format(time.RFC3339Nano), d.ID)
 	}
+	noticeOriginal(t, db, "historical-retry", "dead", "retry_exhausted", now.Add(-time.Minute))
 	noticeOriginal(t, db, "too-old", "dead", "delivery_expired", now.Add(-31*time.Minute))
 	noticeOriginal(t, db, "unknown", "dead", "cli_unavailable", now.Add(-time.Minute))
 	noticeOriginal(t, db, "future", "dead", "delivery_expired", now.Add(time.Minute))
@@ -173,10 +174,10 @@ func TestFailureNoticeRecentDeadBackfillAndConcurrentSweep(t *testing.T) {
 	}
 	var count int
 	db.db.QueryRowContext(ctx, `SELECT count(*) FROM session_delivery WHERE source_type='failure_notice'`).Scan(&count)
-	if count != 4 {
+	if count != 3 {
 		t.Fatalf("backfill duplicated/outside window: %d", count)
 	}
-	for _, id := range []string{"too-old", "unknown", "future"} {
+	for _, id := range []string{"historical-retry", "too-old", "unknown", "future"} {
 		n, _ := db.GetSessionDelivery(ctx, model.FailureNoticeDeliveryID(id))
 		if n != nil {
 			t.Fatalf("unproven old terminal backfilled: %s", id)
@@ -253,5 +254,52 @@ func TestFailureNoticeDistinctTargetsSharingOriginalMessageID(t *testing.T) {
 		if n == nil {
 			t.Fatalf("existing source uniqueness index collapsed failure for target %s", target)
 		}
+	}
+}
+
+func TestFailureNoticeSafeTargetAndChineseReason(t *testing.T) {
+	reasons := map[string]string{
+		"retry_exhausted":                         "重试次数已用尽，仍未确认完成投递",
+		"delivery_ack_unsupported":                "目标不支持投递确认，无法确认完成投递",
+		"delivery_capability_unconfirmed_expired": "等待目标确认投递能力已超时",
+		"delivery_expired":                        "投递等待已超时",
+	}
+	for reason, meaning := range reasons {
+		t.Run(reason, func(t *testing.T) {
+			db, now := noticeFixture(t)
+			ctx := context.Background()
+			raw, _ := json.Marshal(model.Envelope{ID: "m", From: "sender#source", To: "untrusted-address#RAW_PRIVATE_KEY", Body: "SECRET_BODY $(touch /tmp/COMMAND) @someone #route"})
+			d := model.SessionDelivery{ID: "safe-target", KeyID: "RAW_ACCOUNT_KEY", SessionName: "目标Agent.Ab_2-9", Envelope: string(raw), SourceMessageID: "m", SourceType: "session_inbound", State: "queued", CreatedAt: now}
+			if err := db.EnqueueSessionDelivery(ctx, d); err != nil {
+				t.Fatal(err)
+			}
+			if err := db.UpdateSessionDelivery(ctx, d.ID, "dead", reason, now); err != nil {
+				t.Fatal(err)
+			}
+			n, err := db.GetSessionDelivery(ctx, model.FailureNoticeDeliveryID(d.ID))
+			if err != nil || n == nil {
+				t.Fatalf("missing notice %v", err)
+			}
+			var e model.Envelope
+			if err := json.Unmarshal([]byte(n.Envelope), &e); err != nil {
+				t.Fatal(err)
+			}
+			if !strings.HasPrefix(e.Body, "【系统投递失败通知】\n") || !strings.Contains(e.Body, "Agent「目标Agent.Ab_2-9」") || !strings.Contains(e.Body, meaning) {
+				t.Fatal("safe target or Chinese meaning missing")
+			}
+			for _, secret := range []string{"RAW_PRIVATE_KEY", "RAW_ACCOUNT_KEY", "SECRET_BODY", "COMMAND", "untrusted-address", "@", "#"} {
+				if strings.Contains(e.Body, secret) {
+					t.Fatal("unsafe source content reached body")
+				}
+			}
+		})
+	}
+	for _, bad := range []string{"", "evil@route", "seat#SECRET", "$(command)", "x\ny", "<script>", "a\u202eb", strings.Repeat("a", 65), strings.Repeat("界", 65)} {
+		if safeFailureNoticeTarget(bad) != "目标 Agent（名称无法安全显示）" {
+			t.Fatal("unsafe or oversized target rendered")
+		}
+	}
+	if safeFailureNoticeTarget(strings.Repeat("a", 64)) != "Agent「"+strings.Repeat("a", 64)+"」" {
+		t.Fatal("bounded valid target rejected")
 	}
 }

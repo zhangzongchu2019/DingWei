@@ -1,4 +1,6 @@
-# S-FAILURE-NOTICE-OFFLINE — complete candidate for independent review
+# S-FAILURE-NOTICE-OFFLINE — pre-REWORK candidate evidence
+
+This report describes exact predecessor1dd0f096d936a3696734b9f849d416166e8ac618. Its independent storage REWORK is superseded by REWORK2.md/REWORK2.json; the two policy/body corrections and current source pins are recorded there. Full helper/build history below remains evidence for the unchanged helper/routing bytes, not an independent PASS.
 
 Author: coder56solzzc. Reviewer: opus50ts. Base: `7651602335267ef2f8b9957d795e0cfddbd9c08f`.
 Slice one: `97a920aba0dd261c95089e9e96691e63a26e2686`; this follow-up completes routing and compatibility coverage. This is author evidence, not an independent PASS or deployment permission.

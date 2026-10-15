@@ -1,0 +1,84 @@
+{
+  "scope": "two bounded storage corrections; independent re-review pending; no deployment",
+  "parent": "1dd0f096d936a3696734b9f849d416166e8ac618",
+  "slice1_baseline": "97a920aba0dd261c95089e9e96691e63a26e2686",
+  "source": {
+    "internal/store/failure_notice.go": {
+      "bytes": 6795,
+      "sha256": "1bc75258fae81c755d74b9348d8cb709e8251076e5a49d8f6a9831d499cfd583"
+    },
+    "internal/store/failure_notice_test.go": {
+      "bytes": 13222,
+      "sha256": "488c89a7f3d62e5f03e291f7bc7307e5c6f1b30d7806396ad440f9c129bd8e01"
+    },
+    "docs/designs/FAILURE-NOTICE-OFFLINE.md": {
+      "bytes": 6079,
+      "sha256": "75b543e3ed10f7fe133ec2a7f0378bbcd61f6f0693e520a92befb660dd1dba8d"
+    }
+  },
+  "commands": [
+    {
+      "command": "go test -race ./internal/store ./internal/m8 -run 'Test(FailureNotice|OfflineFailureNotice|FreshTarget|RetryableFailedDeliveryCaps|ExpireSessionDeliveries|CapabilityPending)' -count=1 -timeout=5m",
+      "rc": 0
+    },
+    {
+      "command": "go test -p 1 ./internal/store/... ./internal/m8/... -count=1 -timeout=20m",
+      "rc": 0
+    },
+    {
+      "command": "bash scripts/run-build-tests.sh",
+      "rc": 0,
+      "result": "BUILD_TESTS_OK python=42 shell=2",
+      "environment": "isolated HOME; locked runtime venv; explicit existing GOCACHE/GOMODCACHE"
+    }
+  ],
+  "withdrawals": {
+    "SQL_historical_retry_member_restored": 1,
+    "generic_body_literal_restored": 1
+  },
+  "logs": {
+    "rework2-backfill-withdrawal-initial-compile-inconclusive.log": {
+      "bytes": 347,
+      "sha256": "b07d8c58c7c69e5658f399dcf5378fb5df72b8acb0402c1d935a643da69fa611"
+    },
+    "rework2-backfill-withdrawal.log": {
+      "bytes": 215,
+      "sha256": "1e37292319bcd2fb50479f09d7536f81c5ee9bc9a7ea5019081327135e4a71f9"
+    },
+    "rework2-body-withdrawal-initial-compile-inconclusive.log": {
+      "bytes": 347,
+      "sha256": "b07d8c58c7c69e5658f399dcf5378fb5df72b8acb0402c1d935a643da69fa611"
+    },
+    "rework2-body-withdrawal.log": {
+      "bytes": 797,
+      "sha256": "72007007e19b3a22628cbe49b17ce3d5eaaaa72a284965e2a1cd43d7e945d140"
+    },
+    "rework2-build-summary.log": {
+      "bytes": 99,
+      "sha256": "68f36dffdb8da71420d3a91f9c0aa89898762479b766ad2ce0f300a1a194575a"
+    },
+    "rework2-packages.log": {
+      "bytes": 269,
+      "sha256": "81fd094ef010409f9695700987b259f762f879854bcf95b9eb03fba6a827efb4"
+    },
+    "rework2-race.log": {
+      "bytes": 125,
+      "sha256": "c03dd9f5e9064c6ef03e2bdb6d55001306c8a78f88c9fdb9322d5f5262667ea6"
+    }
+  },
+  "local_long_log_pins_only": {
+    "build.log": {
+      "bytes": 34648,
+      "sha256": "82d433513ad60b1d0c92d5f324a5fd49a6594f30f709f0688402c45b2ccdc9ba"
+    },
+    "build-aborted-duplicate-cache.log": {
+      "bytes": 15330,
+      "sha256": "986abbcf709a1c4b0546b4e93b84bc6d072d32b39dede2d419754e78f520d447"
+    }
+  },
+  "first_build_aborted_rc": 143,
+  "inconclusive_compile_withdrawals_not_counted": true,
+  "predecessor_receipts": "FINAL.json and SLICE1.json are historical pinned snapshots, not current source manifests",
+  "helper_routing_product_changed": false,
+  "helper641": "prior exact helper product/test bytes unchanged; no repeat required for storage-only delta"
+}

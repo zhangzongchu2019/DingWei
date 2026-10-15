@@ -1,0 +1,5 @@
+# github.com/zhangzongchu2019/dingwei/internal/store [github.com/zhangzongchu2019/dingwei/internal/store.test]
+internal/store/failure_notice_test.go:298:6: undefined: safeFailureNoticeTarget
+internal/store/failure_notice_test.go:302:5: undefined: safeFailureNoticeTarget
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store [build failed]
+FAIL
