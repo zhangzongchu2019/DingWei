@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -325,24 +326,48 @@ func TestFreshTargetFailureNotifiesActualOnlineSender(t *testing.T) {
 }
 
 func TestFreshTargetStartupSweepExpiresPreseededPendingDelivery(t *testing.T) {
-	ctx := context.Background()
-	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "fresh-startup.db"))
+	h, db, ctx := newTestHub(t)
+	if err := h.UpsertService(ctx, model.RegisteredService{ID: "svc-fresh-startup", Name: "fresh-startup", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := h.IssueAPIKey(ctx, "svc-fresh-startup", "person")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
-	if err := db.Migrate(ctx); err != nil {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", h.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	source := dialSessionWithHeaderRaw(t, ctx, srv.URL, "source", key.ID, secret, nil)
+	defer source.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, h, key.ID, "source")
+
+	// New starts the same one-shot sweep before a process can accept a source
+	// websocket. Stop that empty initial worker, re-arm its once guard, then
+	// exercise the exact startup-sweep function with a real online source. The
+	// separate periodic test covers a source that never reconnects.
+	close(h.capabilityPendingCleanupStop)
+	h.capabilityPendingCleanupStop = nil
+	h.capabilityPendingCleanupWG.Wait()
+	h.capabilityPendingCleanupOnce = sync.Once{}
+
+	original := model.Envelope{ID: "fresh-startup-original", From: sessionAddress("source", key.ID), To: sessionAddress("never", key.ID), Body: "must report expiry", TS: time.Now().Unix()}
+	raw, err := json.Marshal(original)
+	if err != nil {
 		t.Fatal(err)
 	}
-	delivery := model.SessionDelivery{ID: "dw-dlv-preseeded", KeyID: "fresh-key", SessionName: "never", Envelope: `{}`, SourceMessageID: "preseeded", SourceType: "session_inbound", Provenance: capabilityPendingProvenance, State: capabilityPendingState, CreatedAt: time.Now().UTC().Add(-capabilityPendingTTL - time.Second)}
+	delivery := model.SessionDelivery{ID: "dw-dlv-preseeded", KeyID: key.ID, SessionName: "never", Envelope: string(raw), SourceMessageID: original.ID, SourceType: "session_inbound", Provenance: capabilityPendingProvenance, State: capabilityPendingState, CreatedAt: time.Now().UTC().Add(-capabilityPendingTTL - time.Second)}
 	if err := db.EnqueueSessionDelivery(ctx, delivery); err != nil {
 		t.Fatal(err)
 	}
-	h := New(db, ConsoleAuthDisabled())
-	defer h.Close()
+	h.startCapabilityPendingCleanup()
 	got, err := db.GetSessionDelivery(ctx, delivery.ID)
 	if err != nil || got == nil || got.State != "dead" || got.LastError != "delivery_capability_unconfirmed_expired" {
-		t.Fatalf("New startup sweep delivery=%+v err=%v", got, err)
+		t.Fatalf("startup sweep delivery=%+v err=%v", got, err)
+	}
+	notice := readEnvelopeOfType(t, ctx, source, "delivery_status")
+	if metaString(notice.Meta, "reason_code") != "delivery_capability_unconfirmed_expired" || metaString(notice.Meta, "delivery_id") != delivery.ID {
+		t.Fatalf("startup sweep sender failure notice=%+v", notice)
 	}
 }
 
