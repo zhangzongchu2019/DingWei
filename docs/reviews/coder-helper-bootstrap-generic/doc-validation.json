@@ -1,0 +1,18 @@
+{
+  "syntax": [
+    {
+      "document": "oaagent-helper-bootstrap-mcp.md",
+      "bash_n": 14,
+      "python_ast": 10
+    },
+    {
+      "document": "helper-bootstrap-generic.md",
+      "bash_n": 17,
+      "python_ast": 11
+    }
+  ],
+  "missing_parameters_rejected": 12,
+  "old_versions_accepted": 3,
+  "unreviewed_version_rejected": true,
+  "isolated_retention": "passed"
+}
