@@ -39,9 +39,10 @@ Existing trusted helper jobs retain `sha_mismatch`, `install_failed`,
 
 ## Regression boundary
 
-The isolated E2E test constructs a hash-matching new-layout artifact with a
-`layout-v2` member. The old verifier rejects it as `manifest_invalid`; helper
-normalizes it to `package_invalid`, the authenticated matching job persists it,
-and the Console API projects it. The same test asserts no slot is created and
-the factory remains running, so rejection cannot restart or activate a
-candidate.
+The isolated E2E test uses an immutable r15 factory and an immutable r17
+artifact, each built by that revision's own `package_release.py`. The old
+verifier rejects the real newer layout as `manifest_invalid`; helper normalizes
+it to `package_invalid`, the authenticated matching job persists it, and the
+Console API projects it. The same test asserts no slot is created and the
+factory remains running, so rejection cannot restart or activate a candidate.
+This is deliberately distinct from a generic malformed-archive test.

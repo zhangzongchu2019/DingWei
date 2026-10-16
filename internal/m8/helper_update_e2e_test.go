@@ -93,7 +93,15 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt, newLayout bool) {
 	}
 	cmd := exec.Command(python, "-B", setupPath, root, strings.TrimSpace(string(revision)), base)
 	if newLayout {
-		cmd.Env = append(os.Environ(), "DW_HELPER_E2E_NEW_LAYOUT=1")
+		// The compatibility boundary is two immutable releases, each packaged by
+		// the packager that shipped with that release. Do not simulate this by
+		// appending a member to a current package: that only proves a generic
+		// manifest rejection, not the old-layout/new-layout regression.
+		cmd.Env = append(os.Environ(),
+			"DW_HELPER_E2E_FACTORY_COMMIT=b5faf73c8fe4d5c71720daf4eed5b133b8d45dbd",
+			"DW_HELPER_E2E_RELEASE_COMMIT=5c2636ed9f04727b2e2b3de8ec4d80d11dd3c6de",
+			"DW_HELPER_E2E_IMMUTABLE_LAYOUT_CROSS=1",
+		)
 	}
 	setup, err := cmd.CombinedOutput()
 	if err != nil {
@@ -105,7 +113,10 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt, newLayout bool) {
 	}
 	v := newViewEnv(t)
 	h := v.hub
-	mixed := os.Getenv("DW_HELPER_E2E_RELEASE_COMMIT") != ""
+	// The retained r14 Hub overlay uses explicit immutable pins too. The
+	// layout-negative case below instead uses this revision's Hub and only
+	// fixes the helper factory/candidate revisions.
+	mixed := os.Getenv("DW_HELPER_E2E_RELEASE_COMMIT") != "" && !newLayout
 	var cliDB string
 	if mixed {
 		if plan.FactoryPin.Version != "0.2.3.1" || plan.Pin.Version != "0.2.3.2" {
@@ -309,7 +320,7 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt, newLayout bool) {
 		}
 		waitVersion(plan.FactoryPin.Version)
 		if newLayout {
-			t.Log("PASS real HTTPS new-layout package -> old verifier package_invalid -> authenticated durable Console projection -> factory remains running, no slot/restart; NOT Docker")
+			t.Log("PASS immutable r15 factory verifier rejected immutable r17 package built by r17 packager -> package_invalid -> authenticated durable Console projection -> factory remains running, no slot/restart; NOT Docker")
 		} else {
 			t.Log("PASS real HTTPS SHA mismatch -> authenticated failed receipt -> factory remains running, no slot/restart; NOT Docker")
 		}
