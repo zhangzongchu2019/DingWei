@@ -179,6 +179,89 @@ func TestConsoleHelperUpdaterVersionAndEligibility(t *testing.T) {
 	}
 }
 
+func TestConsoleHelperUpdateReasonProjectionIsAllowlisted(t *testing.T) {
+	v := newViewEnv(t)
+	digest := strings.Repeat("a", 64)
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: strings.Repeat("b", 64), Version: "0.2.3.2", URL: "https://files.example/new-layout.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
+	if err := v.hub.RegisterHelperUpdateCatalog(v.ctx, "ops", catalog); err != nil {
+		t.Fatal(err)
+	}
+	conn, _, raw := v.dial(v.cred, "version=0.2.3.1&os=linux")
+	if conn == nil {
+		t.Fatalf("dial: %s", raw)
+	}
+	defer conn.CloseNow()
+	waitSessionOnline(t, v.hub, AgentKeyID("zzc"), "opus50ts")
+	v.sendEnv(conn, model.Envelope{ID: "console-package-invalid-caps", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "Console helper update capability", func() bool {
+		return testSessionSupportsHelperUpdate(v.hub, AgentKeyID("zzc"), "opus50ts")
+	})
+	job, err := v.hub.IssueHelperUpdate(v.ctx, "zzc", v.agID, digest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v.readEnvUntil(conn, time.Second, func(env model.Envelope) bool { return metaString(env.Meta, "job_id") == job.JobID }) == nil {
+		t.Fatal("missing update offer")
+	}
+	// The old-layout helper rejects the offered new-layout artifact after it has
+	// authenticated the exact durable job tuple.
+	v.sendEnv(conn, model.Envelope{ID: "console-package-invalid-receipt", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{
+		"type": "provision_ack", "action": "update_self", "stage": "failed", "reason": "package_invalid",
+		"job_id": job.JobID, "release_id": job.ReleaseID, "sha256": job.SHA256, "lock_sha256": job.LockSHA256,
+	}})
+	waitFor(t, time.Second, "durable package_invalid receipt", func() bool {
+		stored, _, err := v.hub.helperUpdateJob(v.ctx, v.agID)
+		return err == nil && stored != nil && stored.Stage == "failed" && stored.Reason == "package_invalid"
+	})
+	setReason := func(reason string) {
+		t.Helper()
+		stored, raw, err := v.hub.helperUpdateJob(v.ctx, v.agID)
+		if err != nil || stored == nil {
+			t.Fatalf("stored job: %v %#v", err, stored)
+		}
+		stored.Stage, stored.Reason = "failed", reason
+		if ok, err := v.hub.updateHelperUpdateJob(v.ctx, raw, *stored); err != nil || !ok {
+			t.Fatalf("set reason %q: ok=%v err=%v", reason, ok, err)
+		}
+	}
+	getReason := func() string {
+		t.Helper()
+		mux := http.NewServeMux()
+		mux.HandleFunc("GET /api/console/helper-updates", v.hub.RequireConsolePrincipal(v.hub.HandleConsoleHelperUpdates))
+		srv := httptest.NewServer(mux)
+		defer srv.Close()
+		req, _ := http.NewRequest(http.MethodGet, srv.URL+"/api/console/helper-updates", nil)
+		req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: v.tokZZC})
+		res, err := srv.Client().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		var body struct {
+			Agents []consoleHelperAgent `json:"agents"`
+		}
+		if res.StatusCode != http.StatusOK || json.NewDecoder(res.Body).Decode(&body) != nil {
+			t.Fatalf("Console job projection status=%d body=%+v", res.StatusCode, body)
+		}
+		for _, agent := range body.Agents {
+			if agent.AgentID == v.agID && agent.Job != nil {
+				return agent.Job.Reason
+			}
+		}
+		t.Fatalf("Console omitted target job: %+v", body)
+		return "" // unreachable
+	}
+
+	// This actual matched-job receipt reaches the Console projection unchanged.
+	if got := getReason(); got != "package_invalid" {
+		t.Fatalf("package-invalid Console reason=%q", got)
+	}
+	setReason("helper-internal-detail-must-not-leak")
+	if got := getReason(); got != "unknown" {
+		t.Fatalf("unknown Console reason=%q, want unknown", got)
+	}
+}
+
 func TestConsoleHelperUpdateHandlerOriginDefense(t *testing.T) {
 	v := newViewEnv(t)
 	r := httptest.NewRequest("POST", "/api/console/helper-updates", strings.NewReader("{}"))

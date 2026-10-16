@@ -558,11 +558,34 @@ func helperUpdateStageRank(stage string) int {
 }
 
 func helperUpdateAuditReason(v string) string {
-	switch v {
-	case "", "sha_mismatch", "lock_changed", "download_failed", "install_failed", "health_timeout", "rollback", "busy", "offer_expired":
+	if helperUpdateReasonKnown(v) {
 		return v
+	}
+	return "unknown"
+}
+
+// helperUpdateReasonKnown is the closed, non-sensitive vocabulary persisted in
+// an update job or projected to Console.  Keep the currently emitted helper
+// failure reasons here (including rollback reasons), plus the small set of
+// pre-existing Hub/legacy values required to read old jobs.  In particular,
+// never persist an arbitrary exception string from a helper receipt.
+func helperUpdateReasonKnown(v string) bool {
+	switch v {
+	case "",
+		// Current helper update_self receipts.
+		"manual_required", "hub_unsupported", "busy", "target_mismatch",
+		"offer_invalid", "platform_unsupported", "offer_expired",
+		"origin_invalid", "origin_denied", "lock_changed", "redirect_denied",
+		"download_failed", "download_limit", "sha256_mismatch", "offer_mismatch",
+		"update_busy", "version_invalid", "version_not_new", "package_invalid",
+		"release_mismatch", "state_invalid", "slot_exists", "update_failed",
+		"candidate_failed", "health_timeout", "slot_invalid",
+		// Durable Hub recovery and older trusted-helper jobs.
+		"agent_inactive", "owner_changed", "owner_inactive", "release_unavailable",
+		"sha_mismatch", "install_failed", "rollback", "expired", "start_failed", "rolled_back":
+		return true
 	default:
-		return "unknown"
+		return false
 	}
 }
 

@@ -43,8 +43,9 @@ type updateE2EPlan struct {
 }
 
 func TestHelperSelfUpdateEndToEnd(t *testing.T) {
-	t.Run("install_restart_confirm", func(t *testing.T) { runHelperSelfUpdateE2E(t, false) })
-	t.Run("sha_mismatch_keeps_factory", func(t *testing.T) { runHelperSelfUpdateE2E(t, true) })
+	t.Run("install_restart_confirm", func(t *testing.T) { runHelperSelfUpdateE2E(t, false, false) })
+	t.Run("sha_mismatch_keeps_factory", func(t *testing.T) { runHelperSelfUpdateE2E(t, true, false) })
+	t.Run("new_layout_rejected_keeps_factory_and_projects_reason", func(t *testing.T) { runHelperSelfUpdateE2E(t, false, true) })
 }
 
 // Run this test overlay against unchanged r14 product sources, with its actual
@@ -62,10 +63,10 @@ func TestHelper0232MixedVersionEndToEnd(t *testing.T) {
 	if os.Getenv("DW_HELPER_E2E_HUB_BINARY") == "" {
 		t.Fatal("actual r14 CLI binary required")
 	}
-	runHelperSelfUpdateE2E(t, false)
+	runHelperSelfUpdateE2E(t, false, false)
 }
 
-func runHelperSelfUpdateE2E(t *testing.T, corrupt bool) {
+func runHelperSelfUpdateE2E(t *testing.T, corrupt, newLayout bool) {
 	python := os.Getenv("DW_HELPER_E2E_PYTHON")
 	if python == "" {
 		python = os.Getenv("DW_SPEC_E2E_PYTHON")
@@ -91,6 +92,17 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt bool) {
 		setupPath = filepath.Join(root, "internal/m8/testdata/helper_update_e2e_setup.py")
 	}
 	cmd := exec.Command(python, "-B", setupPath, root, strings.TrimSpace(string(revision)), base)
+	if newLayout {
+		// The compatibility boundary is two immutable releases, each packaged by
+		// the packager that shipped with that release. Do not simulate this by
+		// appending a member to a current package: that only proves a generic
+		// manifest rejection, not the old-layout/new-layout regression.
+		cmd.Env = append(os.Environ(),
+			"DW_HELPER_E2E_FACTORY_COMMIT=b5faf73c8fe4d5c71720daf4eed5b133b8d45dbd",
+			"DW_HELPER_E2E_RELEASE_COMMIT=5c2636ed9f04727b2e2b3de8ec4d80d11dd3c6de",
+			"DW_HELPER_E2E_IMMUTABLE_LAYOUT_CROSS=1",
+		)
+	}
 	setup, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("local Git package setup: %v: %s", err, setup)
@@ -101,7 +113,10 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt bool) {
 	}
 	v := newViewEnv(t)
 	h := v.hub
-	mixed := os.Getenv("DW_HELPER_E2E_RELEASE_COMMIT") != ""
+	// The retained r14 Hub overlay uses explicit immutable pins too. The
+	// layout-negative case below instead uses this revision's Hub and only
+	// fixes the helper factory/candidate revisions.
+	mixed := os.Getenv("DW_HELPER_E2E_RELEASE_COMMIT") != "" && !newLayout
 	var cliDB string
 	if mixed {
 		if plan.FactoryPin.Version != "0.2.3.1" || plan.Pin.Version != "0.2.3.2" {
@@ -265,11 +280,29 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt bool) {
 	if response.StatusCode != 200 || !bytes.Contains(wire, []byte(`"ok":true`)) {
 		t.Fatalf("Console issue failed: status%d %s", response.StatusCode, wire)
 	}
-	if corrupt {
-		waitFor(t, 8*time.Second, "real helper rejected SHA and reported failed job", func() bool {
+	if corrupt || newLayout {
+		wantReason := "sha256_mismatch"
+		if newLayout {
+			wantReason = "package_invalid"
+		}
+		waitFor(t, 8*time.Second, "real helper rejected package and reported failed job", func() bool {
 			job, _, _ := h.helperUpdateJob(v.ctx, v.agID)
-			return job != nil && job.Stage == "failed"
+			return job != nil && job.Stage == "failed" && job.Reason == wantReason
 		})
+		projection, err := http.NewRequest(http.MethodGet, server.URL+"/api/console/helper-updates", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		projection.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: v.tokZZC})
+		projected, err := server.Client().Do(projection)
+		if err != nil {
+			t.Fatal(err)
+		}
+		projectionBody, _ := io.ReadAll(projected.Body)
+		_ = projected.Body.Close()
+		if projected.StatusCode != http.StatusOK || !bytes.Contains(projectionBody, []byte(`"reason":"`+wantReason+`"`)) {
+			t.Fatalf("Console failure projection status=%d body=%s", projected.StatusCode, projectionBody)
+		}
 		if downloads.Load() != 1 {
 			t.Fatalf("SHA negative downloads=%d, expected one actual fetch", downloads.Load())
 		}
@@ -286,7 +319,11 @@ func runHelperSelfUpdateE2E(t *testing.T, corrupt bool) {
 			t.Fatal("bad SHA installed a candidate slot")
 		}
 		waitVersion(plan.FactoryPin.Version)
-		t.Log("PASS real HTTPS SHA mismatch -> authenticated failed receipt -> factory remains running, no slot/restart; NOT Docker")
+		if newLayout {
+			t.Log("PASS immutable r15 factory verifier rejected immutable r17 package built by r17 packager -> package_invalid -> authenticated durable Console projection -> factory remains running, no slot/restart; NOT Docker")
+		} else {
+			t.Log("PASS real HTTPS SHA mismatch -> authenticated failed receipt -> factory remains running, no slot/restart; NOT Docker")
+		}
 		return
 	}
 	select {
