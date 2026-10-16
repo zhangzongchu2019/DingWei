@@ -28,7 +28,8 @@ def main():
             root = Path(td)
             for name in ('package_release.py', 'bootstrap.py', 'requirements-runtime.lock',
                          'update_launcher/guard.py', 'update_launcher/__init__.py',
-                         'update_launcher/launcher_main.py', 'tests/test_update_release_core.py'):
+                         'update_launcher/launcher_main.py', 'update_launcher/mcp_forwarder.py',
+                         'tests/test_update_release_core.py'):
                 dest = root / name; dest.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(source / name, dest)
             target = root / file
