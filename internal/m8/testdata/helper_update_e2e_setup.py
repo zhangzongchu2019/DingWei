@@ -5,6 +5,8 @@ No remote upload or installed Agent. Candidate version is a synthetic fixture.
 import io
 import os
 import json
+import hashlib
+import gzip
 from pathlib import Path
 import subprocess
 import sys
@@ -47,6 +49,31 @@ else:
         'commit', '-qm', 'synthetic next-version candidate')
     candidate = work / 'candidate.tgz'
     pin = package_release.build(fixture, git('rev-parse', 'HEAD'), candidate)
+if os.environ.get('DW_HELPER_E2E_NEW_LAYOUT') == '1':
+    # A validly transported v2-layout artifact has an extra manifest member.
+    # The installed legacy verifier deliberately rejects that layout as
+    # manifest_invalid; self_update normalizes it to package_invalid.
+    files = {}
+    with tarfile.open(candidate, 'r:gz') as archive:
+        for member in archive:
+            files[member.name] = archive.extractfile(member).read()
+    manifest_name = 'helper-release/MANIFEST.json'
+    manifest = json.loads(files[manifest_name])
+    layout_name = 'layout-v2/layout.json'
+    layout_content = b'{"format":2}\n'
+    files['helper-release/' + layout_name] = layout_content
+    manifest['files'][layout_name] = {'bytes': len(layout_content), 'sha256': hashlib.sha256(layout_content).hexdigest()}
+    files[manifest_name] = (json.dumps(manifest, sort_keys=True, indent=2) + '\n').encode()
+    candidate.unlink()
+    with candidate.open('xb') as dest:
+        with gzip.GzipFile(filename='', fileobj=dest, mode='wb', mtime=0) as compressed:
+            with tarfile.open(fileobj=compressed, mode='w') as archive:
+                for name, content in sorted(files.items()):
+                    info = tarfile.TarInfo(name)
+                    info.size, info.mode, info.mtime = len(content), 0o644, 0
+                    archive.addfile(info, io.BytesIO(content))
+    pin['sha256'] = hashlib.sha256(candidate.read_bytes()).hexdigest()
+    pin['bytes'] = candidate.stat().st_size
 _, files = package_release.verify(base, base_pin['sha256'])
 mount = work / 'mounted-source'; mount.mkdir()
 for name, content in files.items():
