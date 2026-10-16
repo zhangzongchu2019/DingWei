@@ -17,6 +17,20 @@ Agent was used.
   `package_invalid`, the matching trusted durable job and Console projection
   retain it, and factory remains running with no candidate slot or restart.
 
+## Full helper E2E matrix after setup repair
+
+The default synthetic setup path retains `io` because it uses `io.BytesIO` to
+extract its Git archive. Command:
+
+```text
+DW_HELPER_E2E_PYTHON=/home/dev/a3venv/bin/python go test ./internal/m8 -run '^TestHelperSelfUpdateEndToEnd$' -count=1 -v
+```
+
+Exit: `0` in `11.343s`. All three subcases passed:
+`install_restart_confirm` (`5.10s`), `sha_mismatch_keeps_factory` (`3.17s`),
+and immutable `new_layout_rejected_keeps_factory_and_projects_reason`
+(`3.05s`).
+
 ## Canonical
 
 - First attempted command: `./build.sh --test-only`.

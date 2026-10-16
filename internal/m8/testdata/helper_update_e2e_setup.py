@@ -5,6 +5,7 @@ immutable revision's packager from that Git object, rather than manufacturing
 an extra member in a package made by the current checkout.
 """
 import importlib.util
+import io
 import os
 import json
 from pathlib import Path
