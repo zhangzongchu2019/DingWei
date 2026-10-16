@@ -442,7 +442,7 @@ func TestHelperUpdateReceiptUsesAuthenticatedJobTuple(t *testing.T) {
 	})
 }
 
-func TestHelperUpdateFailureReceiptPersistsAllowlistedReason(t *testing.T) {
+func TestHelperUpdateFailureReceiptPersistsPackageInvalidReason(t *testing.T) {
 	e := newAgentEnv(t)
 	digest := strings.Repeat("3", 64)
 	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: digest, Version: "0.2.3.1", URL: "https://files.example/helper.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
@@ -464,12 +464,12 @@ func TestHelperUpdateFailureReceiptPersistsAllowlistedReason(t *testing.T) {
 		t.Fatal("missing update offer")
 	}
 	e.sendEnv(conn, model.Envelope{ID: "receipt-failed-reason", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{
-		"type": "provision_ack", "action": "update_self", "stage": "failed", "reason": "install_failed",
+		"type": "provision_ack", "action": "update_self", "stage": "failed", "reason": "package_invalid",
 		"job_id": job.JobID, "release_id": job.ReleaseID, "sha256": job.SHA256, "lock_sha256": job.LockSHA256,
 	}})
 	waitFor(t, time.Second, "durable failure reason", func() bool {
 		stored, _, err := e.hub.helperUpdateJob(e.ctx, e.agID)
-		return err == nil && stored != nil && stored.Stage == "failed" && stored.Reason == "install_failed"
+		return err == nil && stored != nil && stored.Stage == "failed" && stored.Reason == "package_invalid"
 	})
 }
 

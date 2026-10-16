@@ -179,6 +179,68 @@ func TestConsoleHelperUpdaterVersionAndEligibility(t *testing.T) {
 	}
 }
 
+func TestConsoleHelperUpdateReasonProjectionIsAllowlisted(t *testing.T) {
+	v := newViewEnv(t)
+	digest := strings.Repeat("a", 64)
+	catalog := HelperUpdateCatalog{SHA256: digest, LockSHA256: strings.Repeat("b", 64), Version: "0.2.3.2", URL: "https://files.example/new-layout.tgz", FileServiceOrigin: "https://files.example", Platform: "linux"}
+	if err := v.hub.RegisterHelperUpdateCatalog(v.ctx, "ops", catalog); err != nil {
+		t.Fatal(err)
+	}
+	_, err := v.hub.createHelperUpdateJob(v.ctx, catalog, v.agID, "zzc", "opus50ts", "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	setReason := func(reason string) {
+		t.Helper()
+		stored, raw, err := v.hub.helperUpdateJob(v.ctx, v.agID)
+		if err != nil || stored == nil {
+			t.Fatalf("stored job: %v %#v", err, stored)
+		}
+		stored.Stage, stored.Reason = "failed", reason
+		if ok, err := v.hub.updateHelperUpdateJob(v.ctx, raw, *stored); err != nil || !ok {
+			t.Fatalf("set reason %q: ok=%v err=%v", reason, ok, err)
+		}
+	}
+	getReason := func() string {
+		t.Helper()
+		mux := http.NewServeMux()
+		mux.HandleFunc("GET /api/console/helper-updates", v.hub.RequireConsolePrincipal(v.hub.HandleConsoleHelperUpdates))
+		srv := httptest.NewServer(mux)
+		defer srv.Close()
+		req, _ := http.NewRequest(http.MethodGet, srv.URL+"/api/console/helper-updates", nil)
+		req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: v.tokZZC})
+		res, err := srv.Client().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		var body struct {
+			Agents []consoleHelperAgent `json:"agents"`
+		}
+		if res.StatusCode != http.StatusOK || json.NewDecoder(res.Body).Decode(&body) != nil {
+			t.Fatalf("Console job projection status=%d body=%+v", res.StatusCode, body)
+		}
+		for _, agent := range body.Agents {
+			if agent.AgentID == v.agID && agent.Job != nil {
+				return agent.Job.Reason
+			}
+		}
+		t.Fatalf("Console omitted target job: %+v", body)
+		return "" // unreachable
+	}
+
+	// This is the trusted receipt outcome when a new-layout package reaches an
+	// old-layout helper: the Console projection must retain the safe code.
+	setReason("package_invalid")
+	if got := getReason(); got != "package_invalid" {
+		t.Fatalf("package-invalid Console reason=%q", got)
+	}
+	setReason("helper-internal-detail-must-not-leak")
+	if got := getReason(); got != "unknown" {
+		t.Fatalf("unknown Console reason=%q, want unknown", got)
+	}
+}
+
 func TestConsoleHelperUpdateHandlerOriginDefense(t *testing.T) {
 	v := newViewEnv(t)
 	r := httptest.NewRequest("POST", "/api/console/helper-updates", strings.NewReader("{}"))

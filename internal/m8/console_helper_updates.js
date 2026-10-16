@@ -4,7 +4,7 @@
 'use strict';
 const API='/api/console/helper-updates';
 const stages={offered:'已下发',downloaded:'已取包',installed:'已安装，等待重启确认',restarted:'已重启，等待版本确认',confirmed:'已上线新版本',rolled_back:'已回滚',failed:'失败',expired:'已过期',agent_inactive:'Agent 已停用',owner_inactive:'业主已停用',release_unavailable:'版本不可用'};
-const reasons={manual_required:'需要先手动升级 helper',offline:'离线，等待连接',not_selfhost:'仅支持自备 Agent',inactive:'Agent 已停用',unknown_version:'当前版本未知',lock_changed:'依赖锁已变化',sha_mismatch:'包校验失败',origin_denied:'包来源不允许',job_conflict:'已有升级作业',forbidden:'无权操作该 Agent',unavailable:'暂不可用',failed:'下发失败'};
+const reasons={manual_required:'需要先手动升级 helper',offline:'离线，等待连接',not_selfhost:'仅支持自备 Agent',inactive:'Agent 已停用',unknown_version:'当前版本未知',lock_changed:'依赖锁已变化',sha_mismatch:'升级包校验失败',sha256_mismatch:'升级包校验失败',package_invalid:'升级包与该 Agent 布局不匹配或包校验失败',origin_denied:'升级包来源不允许',offer_expired:'升级请求已过期',health_timeout:'升级后健康检查超时',rolled_back:'升级已回滚',agent_inactive:'Agent 已停用',owner_inactive:'业主已停用',release_unavailable:'版本不可用',job_conflict:'已有升级作业',forbidden:'无权操作该 Agent',unavailable:'暂不可用',unknown:'升级失败，原因未知',failed:'下发失败'};
 let dispose=null;
 function node(tag,text){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;}
 function mount(){
@@ -29,7 +29,7 @@ function mount(){
   agents.forEach(a=>{
    const row=node('tr');row.dataset.agentId=a.agent_id;
    const cell=node('td'),check=node('input');check.type='checkbox';check.setAttribute('aria-label','选择 '+a.name);check.dataset.eligible=String(a.eligible===true);check.checked=selected.has(a.agent_id);check.onchange=()=>{if(check.checked)selected.add(a.agent_id);else selected.delete(a.agent_id);controls();};cell.append(check);
-   const state=node('td');const job=a.job;state.textContent=job?(stages[job.stage]||'状态未知')+(job.version?'（目标 '+job.version+'）':'')+(job.reason?' · '+(reasons[job.reason]||'失败，原因码：'+job.reason):''):(a.eligible?'尚未下发':(reasons[a.reason]||'暂不可升级'));
+   const state=node('td');const job=a.job;state.textContent=job?(stages[job.stage]||'状态未知')+(job.version?'（目标 '+job.version+'）':'')+(job.reason?' · '+(reasons[job.reason]||reasons.unknown):''):(a.eligible?'尚未下发':(reasons[a.reason]||'暂不可升级'));
    const op=node('td'),one=node('button','升级');one.type='button';one.dataset.eligible=String(a.eligible===true);one.onclick=()=>issue([a.agent_id]);op.append(one);row.append(cell,node('td',a.name),node('td',a.version||'未知'),state,op);rows.append(row);
   });controls();
  }

@@ -34,10 +34,11 @@ func helperJobView(j *HelperUpdateJob) *consoleHelperJob {
 		return nil
 	}
 	reason := j.Reason
-	switch reason {
-	case "", "lock_changed", "sha_mismatch", "origin_denied", "expired", "agent_inactive", "owner_inactive", "release_unavailable", "start_failed", "health_timeout", "rolled_back":
-	default:
-		reason = "failed"
+	if !helperUpdateReasonKnown(reason) {
+		// Console receives only a closed reason vocabulary.  This deliberately
+		// does not expose a future helper's exception text or implementation
+		// detail just because an old durable row contains it.
+		reason = "unknown"
 	}
 	return &consoleHelperJob{JobID: j.JobID, Version: j.Version, Stage: j.Stage, Reason: reason}
 }
