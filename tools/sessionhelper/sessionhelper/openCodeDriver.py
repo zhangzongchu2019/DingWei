@@ -22,6 +22,7 @@ import queue
 import shlex
 import shutil
 import sqlite3
+from contextlib import AbstractContextManager
 import subprocess
 import threading
 import time
@@ -31,6 +32,7 @@ from typing import Iterator, Optional
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
+from .sqlite_utils import connection as sqlite_connection
 from .config import env_get
 from .contract import (
     Capabilities,
@@ -89,8 +91,8 @@ class _DeliveryStore:
                 message_id TEXT NOT NULL, state TEXT NOT NULL, detail TEXT NOT NULL,
                 updated_at REAL NOT NULL)""")
 
-    def _connect(self):
-        return sqlite3.connect(self._path, timeout=10)
+    def _connect(self) -> AbstractContextManager[sqlite3.Connection]:
+        return sqlite_connection(self._path, timeout=10)
 
     def get(self, envelope_id: str):
         with self._lock, self._connect() as db:

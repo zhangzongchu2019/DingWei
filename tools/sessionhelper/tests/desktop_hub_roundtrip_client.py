@@ -53,6 +53,7 @@ async def main():
         async def read(ident):
             packet=await read_packet(ident)
             assert 'error' not in packet
+            assert not packet['result'].get('isError', False)
             return json.loads(packet['result']['content'][0]['text'])
         hook_command = None
         async def hook_request():
@@ -107,8 +108,13 @@ async def main():
         assert command=={'operation':'reply'}
         args={'message_id':message['id'],'body':'DW_SYNTHETIC_ANSWER'}
         if bootstrap['mode']=='enrolled_group_removed':
-            await send(11,'dw_reply_message',args); assert 'error' in await read_packet(11)
-            await send(12,'dw_reply_message',args); assert 'error' in await read_packet(12)
+            for ident in (11, 12):
+                await send(ident,'dw_reply_message',args)
+                packet = await read_packet(ident)
+                assert 'error' not in packet and packet['result']['isError'] is True
+                failure = json.loads(packet['result']['content'][0]['text'])
+                assert failure['error'] == 'helper_rejected' and failure['retryable'] is False
+                assert child.returncode is None
             rejection=helper.adapter.wait_message({'wait_seconds':1})
             unread=helper.adapter.request({'operation':'status'})['unread']
             assert rejection['state']=='reply_rejected' and unread==1

@@ -25,7 +25,7 @@ class DesktopPilotTest(unittest.TestCase):
                     result = await asyncio.to_thread(_desktop_wait, {"wait_seconds":5})
                     self.assertEqual(result["message"]["id"], pilot.message_id)
                     self.assertFalse(result["model_execution_verified"])
-                    with self.assertRaises(ValueError):
+                    with self.assertRaisesRegex(RuntimeError, "helper_rejected"):
                         await asyncio.to_thread(_desktop_reply, {"message_id":pilot.message_id,"body":"DW_DESKTOP_OK"})
                     reply = await asyncio.to_thread(_send_message, {"to":pilot.target,"body":"DW_DESKTOP_OK","in_reply_to":pilot.message_id})
                     self.assertFalse(reply["sent_to_hub"])

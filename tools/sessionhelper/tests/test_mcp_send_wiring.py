@@ -167,7 +167,7 @@ class HandleConnectionWiringTest(unittest.TestCase):
                 self.assertTrue(ready.wait(2), "Unix socket fixture did not start")
                 with mock.patch.object(mcp_shim, "_IPC_SOCK", socket_path), \
                      mock.patch.object(mcp_shim, "_IPC_TIMEOUT", 1.0):
-                    with self.assertRaisesRegex(RuntimeError, "未配置.*datad_url") as caught:
+                    with self.assertRaisesRegex(mcp_shim._IPCFailure, "helper_rejected") as caught:
                         invoke()
                 self.assertNotIn("Transport closed", str(caught.exception))
                 worker.join(timeout=2)

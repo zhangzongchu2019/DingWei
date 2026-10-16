@@ -7,7 +7,6 @@ import json
 import os
 import re
 import shutil
-import sqlite3
 import tarfile
 import tempfile
 import time
@@ -16,6 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
+from .sqlite_utils import connection as sqlite_connection
 from . import __version__
 from .config import Config, detect_os, env_get
 
@@ -326,7 +326,7 @@ class Provisioner:
 
     def audit(self, env: dict, result: ProvisionResult) -> None:
         self.audit_db.parent.mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(self.audit_db) as conn:
+        with sqlite_connection(self.audit_db) as conn:
             conn.execute(
                 "CREATE TABLE IF NOT EXISTS provision_audit(ts INTEGER, action TEXT, target TEXT, version TEXT, ok INTEGER, message TEXT, source TEXT)"
             )
