@@ -1,0 +1,40 @@
+[
+  {
+    "name": "helper-root",
+    "cwd": "/data/ai-dev-data/helper-0233-fdfix",
+    "command": [
+      "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools/sessionhelper/tests",
+      "-v"
+    ],
+    "started_utc": "2026-10-16T16:18:28.355468+00:00",
+    "finished_utc": "2026-10-16T16:24:43.027678+00:00",
+    "exit": 0,
+    "outer_home": "disposable synthetic directory",
+    "helper_configuration": "removed inherited SH_, DINGWEI_, DATAD_ variables"
+  },
+  {
+    "name": "helper-cwd",
+    "cwd": "/data/ai-dev-data/helper-0233-fdfix/tools/sessionhelper",
+    "command": [
+      "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-v"
+    ],
+    "started_utc": "2026-10-16T16:24:43.030100+00:00",
+    "finished_utc": "2026-10-16T16:30:56.814693+00:00",
+    "exit": 0,
+    "outer_home": "disposable synthetic directory",
+    "helper_configuration": "removed inherited SH_, DINGWEI_, DATAD_ variables"
+  }
+]

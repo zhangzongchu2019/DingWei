@@ -1,0 +1,68 @@
+test_close_once_on_success_body_and_transaction_exit_failure (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_close_once_on_success_body_and_transaction_exit_failure) ... 
+  test_close_once_on_success_body_and_transaction_exit_failure (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_close_once_on_success_body_and_transaction_exit_failure) (body=False, transaction=False, row=False) ... FAIL
+  test_close_once_on_success_body_and_transaction_exit_failure (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_close_once_on_success_body_and_transaction_exit_failure) (body=True, transaction=False, row=False) ... FAIL
+  test_close_once_on_success_body_and_transaction_exit_failure (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_close_once_on_success_body_and_transaction_exit_failure) (body=False, transaction=True, row=False) ... FAIL
+  test_close_once_on_success_body_and_transaction_exit_failure (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_close_once_on_success_body_and_transaction_exit_failure) (body=True, transaction=True, row=False) ... FAIL
+  test_close_once_on_success_body_and_transaction_exit_failure (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_close_once_on_success_body_and_transaction_exit_failure) (body=False, transaction=False, row=True) ... FAIL
+test_commit_rollback_and_early_return_persist_correctly (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_commit_rollback_and_early_return_persist_correctly) ... ok
+test_gc_disabled_rlimit128_all_openers_and_long_run (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_gc_disabled_rlimit128_all_openers_and_long_run) ... FAIL
+
+======================================================================
+FAIL: test_close_once_on_success_body_and_transaction_exit_failure (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_close_once_on_success_body_and_transaction_exit_failure) (body=False, transaction=False, row=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-hjqvsg2d/tools/sessionhelper/tests/test_sqlite_connection_lifetime.py", line 206, in test_close_once_on_success_body_and_transaction_exit_failure
+    self.assertEqual(db.closes, 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_close_once_on_success_body_and_transaction_exit_failure (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_close_once_on_success_body_and_transaction_exit_failure) (body=True, transaction=False, row=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-hjqvsg2d/tools/sessionhelper/tests/test_sqlite_connection_lifetime.py", line 206, in test_close_once_on_success_body_and_transaction_exit_failure
+    self.assertEqual(db.closes, 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_close_once_on_success_body_and_transaction_exit_failure (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_close_once_on_success_body_and_transaction_exit_failure) (body=False, transaction=True, row=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-hjqvsg2d/tools/sessionhelper/tests/test_sqlite_connection_lifetime.py", line 206, in test_close_once_on_success_body_and_transaction_exit_failure
+    self.assertEqual(db.closes, 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_close_once_on_success_body_and_transaction_exit_failure (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_close_once_on_success_body_and_transaction_exit_failure) (body=True, transaction=True, row=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-hjqvsg2d/tools/sessionhelper/tests/test_sqlite_connection_lifetime.py", line 206, in test_close_once_on_success_body_and_transaction_exit_failure
+    self.assertEqual(db.closes, 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_close_once_on_success_body_and_transaction_exit_failure (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_close_once_on_success_body_and_transaction_exit_failure) (body=False, transaction=False, row=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-hjqvsg2d/tools/sessionhelper/tests/test_sqlite_connection_lifetime.py", line 206, in test_close_once_on_success_body_and_transaction_exit_failure
+    self.assertEqual(db.closes, 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_gc_disabled_rlimit128_all_openers_and_long_run (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_gc_disabled_rlimit128_all_openers_and_long_run)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-hjqvsg2d/tools/sessionhelper/tests/test_sqlite_connection_lifetime.py", line 154, in test_gc_disabled_rlimit128_all_openers_and_long_run
+    self.assertEqual(child.returncode, 0, child.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "/tmp/dw-withdraw-hjqvsg2d/tools/sessionhelper/tests/test_sqlite_connection_lifetime.py", line 211, in <module>
+    fd_worker()
+  File "/tmp/dw-withdraw-hjqvsg2d/tools/sessionhelper/tests/test_sqlite_connection_lifetime.py", line 125, in fd_worker
+    assert current == baseline, (name, i, baseline, current)
+           ^^^^^^^^^^^^^^^^^^^
+AssertionError: ('inbox', 0, 0, 17)
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.317s
+
+FAILED (failures=6)

@@ -1,0 +1,10 @@
+MCP_TRANSPORT_READINGS errors=18 survived=18 recovery_same_process=18
+test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) ... ok
+test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) ... ok
+test_invalid_tool_arguments_remain_protocol_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_invalid_tool_arguments_remain_protocol_errors) ... ok
+test_unexpected_handler_error_is_contained_and_baseexception_is_not (test_mcp_shim_transport_errors.ShimTransportTests.test_unexpected_handler_error_is_contained_and_baseexception_is_not) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 4.225s
+
+OK

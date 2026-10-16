@@ -1,0 +1,178 @@
+{
+  "observed_utc": "2026-10-16T16:19:11.539555+00:00",
+  "implementation_commit": "2d9c81a74c4e40d2ed6b8ec8b185f694c59a97dc",
+  "canonical": {
+    "exit": 0,
+    "python_files": 47,
+    "shell_gates": 2,
+    "log": "canonical.log"
+  },
+  "go_all": {
+    "exit": 0,
+    "command": "go test -count=1 ./internal/version ./...",
+    "tested_packages": 51,
+    "packages_without_tests": 12,
+    "log": "go-all.log"
+  },
+  "helper": [
+    {
+      "name": "helper-root",
+      "cwd": "/data/ai-dev-data/helper-0233-fdfix",
+      "command": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-v"
+      ],
+      "started_utc": "2026-10-16T16:18:28.355468+00:00",
+      "finished_utc": "2026-10-16T16:24:43.027678+00:00",
+      "exit": 0,
+      "outer_home": "disposable synthetic directory",
+      "helper_configuration": "removed inherited SH_, DINGWEI_, DATAD_ variables",
+      "tests": 709,
+      "duration_seconds": 374.128
+    },
+    {
+      "name": "helper-cwd",
+      "cwd": "/data/ai-dev-data/helper-0233-fdfix/tools/sessionhelper",
+      "command": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "started_utc": "2026-10-16T16:24:43.030100+00:00",
+      "finished_utc": "2026-10-16T16:30:56.814693+00:00",
+      "exit": 0,
+      "outer_home": "disposable synthetic directory",
+      "helper_configuration": "removed inherited SH_, DINGWEI_, DATAD_ variables",
+      "tests": 709,
+      "duration_seconds": 373.28
+    }
+  ],
+  "fd_readings": {
+    "helper-root": {
+      "baseline_db_fd": 0,
+      "final_db_fd": 0,
+      "gc_enabled": false,
+      "long_run_db_fds": {
+        "1": 0,
+        "100": 0,
+        "1000": 0,
+        "10000": 0
+      },
+      "long_run_iterations": 10000,
+      "nofile": 128,
+      "total_fd_baseline": 4,
+      "total_fd_final": 4,
+      "workloads": {
+        "audit": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "claude": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "cli_parts": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "cli_recent": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "codex": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "desktop": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "inbox": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "legacy": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "opencode": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "stop_hook": {
+          "calls": 200,
+          "peak_db_fd": 0
+        }
+      }
+    },
+    "helper-cwd": {
+      "baseline_db_fd": 0,
+      "final_db_fd": 0,
+      "gc_enabled": false,
+      "long_run_db_fds": {
+        "1": 0,
+        "100": 0,
+        "1000": 0,
+        "10000": 0
+      },
+      "long_run_iterations": 10000,
+      "nofile": 128,
+      "total_fd_baseline": 4,
+      "total_fd_final": 4,
+      "workloads": {
+        "audit": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "claude": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "cli_parts": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "cli_recent": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "codex": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "desktop": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "inbox": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "legacy": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "opencode": {
+          "calls": 200,
+          "peak_db_fd": 0
+        },
+        "stop_hook": {
+          "calls": 200,
+          "peak_db_fd": 0
+        }
+      }
+    }
+  },
+  "finished_utc": "2026-10-16T16:31:21.542469+00:00"
+}
