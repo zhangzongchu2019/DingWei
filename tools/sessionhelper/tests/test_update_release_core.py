@@ -193,7 +193,7 @@ class PackageTests(unittest.TestCase):
         (self.base / 'update_launcher').mkdir()
         (self.base / 'sessionhelper/__init__.py').write_text('__version__ = "0.2.3.1"\n')
         (self.base / 'sessionhelper/__main__.py').write_text('print("synthetic factory")\n')
-        for name in ('bootstrap.py', 'package_release.py', 'requirements-runtime.lock', 'update_launcher/guard.py', 'update_launcher/launcher_main.py'):
+        for name in ('bootstrap.py', 'package_release.py', 'requirements-runtime.lock', 'update_launcher/guard.py', 'update_launcher/launcher_main.py', 'update_launcher/mcp_forwarder.py'):
             shutil.copyfile(ROOT / name, self.base / name)
         self.git('init', '-q')
         self.commit()

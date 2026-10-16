@@ -82,6 +82,33 @@ class OfferTests(unittest.TestCase):
             'url':'http://127.0.0.1:'+str(self.server.server_port)+'/source.tgz','platform':'linux',
             'expires_at':(datetime.now(timezone.utc)+timedelta(minutes=29)).isoformat()}}
 
+    def test_mcp_module_and_factory_script_after_actual_self_update(self):
+        from test_mcp_forwarder import assert_tools, probe, snapshot
+        # The downloaded release contains the real shim, not a tools/list mock.
+        shutil.copyfile(ROOT/'sessionhelper/mcp_shim.py', self.fixture.base/'sessionhelper/mcp_shim.py')
+        commit = self.fixture.commit()
+        self.artifact = Path(self.fixture.tmp.name)/'mcp-upgrade.tgz'
+        pin = package_release.build(self.fixture.repo, commit, self.artifact)
+        self.env['meta'].update(sha256=pin['sha256'], lock_sha256=pin['lock_sha256'])
+        factory = self.mount/'factory/sessionhelper'
+        shutil.copyfile(ROOT/'sessionhelper/mcp_shim.py', factory/'mcp_shim.py')
+        (factory/'__init__.py').write_text('__version__ = "0.2.3.1"\n')
+        state = Path(self.cfg.state_dir)
+        assert_tools(self, probe(self.mount, state), '0.2.3.1')
+        meta, stage, restart = self.updater.prepare(self.env)
+        self.assertEqual((stage, restart), ('installed', True))
+        # Pending is not current: MCP must not trial-start/consume its budget.
+        before = snapshot(state)
+        assert_tools(self, probe(self.mount, state), '0.2.3.1')
+        self.assertEqual(snapshot(state), before)
+        self.updater.state.select()  # isolated guard trial and exact confirmation
+        self.updater.state.confirm(meta)
+        before = snapshot(state), snapshot(self.mount)
+        assert_tools(self, probe(self.mount, state), '0.2.3.2')
+        assert_tools(self, probe(self.mount, state, 'factory-script'), '0.2.3.1')
+        self.assertEqual((snapshot(state), snapshot(self.mount)), before)
+        self.assertEqual(len(self.requests), 1)
+
     def test_trusted_fetch_stage_duplicate_and_no_credentials(self):
         meta,stage,restart=self.updater.prepare(self.env)
         self.assertEqual((stage,restart),('installed',True))

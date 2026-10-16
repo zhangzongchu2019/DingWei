@@ -61,7 +61,8 @@ def build(repo, commit, output):
             raise PackageError('forbidden_private_state')
         allowed = ((relative.startswith('sessionhelper/') and relative.endswith('.py')) or
                    relative in ('requirements-runtime.lock', 'bootstrap.py', 'package_release.py',
-                                'update_launcher/guard.py', 'update_launcher/launcher_main.py'))
+                                'update_launcher/guard.py', 'update_launcher/launcher_main.py',
+                                'update_launcher/mcp_forwarder.py'))
         if not allowed:
             continue
         if mode not in (b'100644', b'100755') or kind != b'blob':
@@ -70,7 +71,8 @@ def build(repo, commit, output):
         inspect_member(relative, content)
         blobs[relative] = content
     required = ('sessionhelper/__init__.py', 'sessionhelper/__main__.py', 'requirements-runtime.lock',
-                'bootstrap.py', 'package_release.py', 'update_launcher/guard.py', 'update_launcher/launcher_main.py')
+                'bootstrap.py', 'package_release.py', 'update_launcher/guard.py', 'update_launcher/launcher_main.py',
+                'update_launcher/mcp_forwarder.py')
     if any(name not in blobs for name in required):
         raise PackageError('release_incomplete')
     version = None
@@ -82,6 +84,7 @@ def build(repo, commit, output):
     files = {'factory/' + k: v for k, v in blobs.items() if k.startswith('sessionhelper/')}
     files.update({'sessionhelper/__init__.py': b'"""Stable stdlib launcher; do not replace during self-update."""\n',
                   'sessionhelper/__main__.py': blobs['update_launcher/launcher_main.py'],
+                  'sessionhelper/mcp_shim.py': blobs['update_launcher/mcp_forwarder.py'],
                   'helper_update_guard.py': blobs['update_launcher/guard.py'],
                   'requirements-runtime.lock': blobs['requirements-runtime.lock'],
                   'bootstrap.py': blobs['bootstrap.py'],
@@ -139,7 +142,7 @@ def verify(artifact, expected_sha=None):
             raise ValueError()
         for name, content in files.items():
             allowed = (name.startswith('factory/sessionhelper/') and name.endswith('.py')) or name in (
-                'sessionhelper/__init__.py', 'sessionhelper/__main__.py', 'helper_update_guard.py',
+                'sessionhelper/__init__.py', 'sessionhelper/__main__.py', 'sessionhelper/mcp_shim.py', 'helper_update_guard.py',
                 'bootstrap.py', 'helper_update_package.py', 'requirements-runtime.lock')
             if not allowed or pins[name] != {'bytes': len(content), 'sha256': digest(content)}:
                 raise ValueError()
