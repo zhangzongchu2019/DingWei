@@ -1,0 +1,457 @@
+MCP_TRANSPORT_READINGS errors=18 survived=18 recovery_same_process=18
+test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) ... 
+  test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='send_message') ... FAIL
+  test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='dw_inbox') ... FAIL
+  test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='dw_wait_message') ... FAIL
+  test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='dw_reply_message') ... FAIL
+  test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='heartbeat_report') ... FAIL
+  test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='project_context') ... FAIL
+  test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='dw_spec_create') ... FAIL
+  test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='dw_spec_update') ... FAIL
+  test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='upload_file') ... FAIL
+test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) ... 
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='missing', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='refused', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='reset', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='timeout', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='rejected', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='eof', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='badjson', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='truncated', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='utf8', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='array', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='null', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='scalar', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='missing_ok', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='wrong_ok', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='unsafe_rejected', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='bad_outcome', tool='send_message') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='vsapi_rejected', tool='heartbeat_report') ... FAIL
+  test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='upload_rejected', tool='upload_file') ... FAIL
+test_invalid_tool_arguments_remain_protocol_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_invalid_tool_arguments_remain_protocol_errors) ... ok
+test_unexpected_handler_error_is_contained_and_baseexception_is_not (test_mcp_shim_transport_errors.ShimTransportTests.test_unexpected_handler_error_is_contained_and_baseexception_is_not) ... ERROR
+
+======================================================================
+ERROR: test_unexpected_handler_error_is_contained_and_baseexception_is_not (test_mcp_shim_transport_errors.ShimTransportTests.test_unexpected_handler_error_is_contained_and_baseexception_is_not)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 230, in test_unexpected_handler_error_is_contained_and_baseexception_is_not
+    result = mcp_shim._dispatch(mcp_shim.Request('2.0', 'tools/call',
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/sessionhelper/mcp_shim.py", line 542, in _dispatch
+    result = _handlers[name](dict(arguments))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 228, in broken
+    def broken(args): raise RuntimeError(SENTINEL)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: fixture-private-path-token-DO-NOT-RETURN
+
+======================================================================
+FAIL: test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 225, in test_all_nine_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='dw_inbox')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 225, in test_all_nine_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='dw_wait_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 225, in test_all_nine_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 127, in read
+    if time.monotonic() > deadline: raise AssertionError('shim response deadline')
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim response deadline
+
+======================================================================
+FAIL: test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='dw_reply_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 225, in test_all_nine_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='heartbeat_report')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 225, in test_all_nine_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='project_context')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 225, in test_all_nine_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='dw_spec_create')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 225, in test_all_nine_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='dw_spec_update')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 225, in test_all_nine_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_all_nine_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_nine_tools_return_sanitized_execution_errors) (tool='upload_file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 225, in test_all_nine_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='missing', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='refused', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='reset', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='timeout', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='rejected', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='eof', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='badjson', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='truncated', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='utf8', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='array', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='null', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='scalar', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='missing_ok', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='wrong_ok', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='unsafe_rejected', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='bad_outcome', tool='send_message')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='vsapi_rejected', tool='heartbeat_report')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+======================================================================
+FAIL: test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) (mode='upload_rejected', tool='upload_file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 220, in test_eighteen_failures_preserve_process_and_allow_explicit_recovery
+    with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 164, in exercise
+    reply = child.read()
+            ^^^^^^^^^^^^
+  File "/tmp/dw-withdraw-5c_qwqzf/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 130, in read
+    if not chunk: raise AssertionError('shim stdout closed')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: shim stdout closed
+
+----------------------------------------------------------------------
+Ran 4 tests in 7.724s
+
+FAILED (failures=27, errors=1)

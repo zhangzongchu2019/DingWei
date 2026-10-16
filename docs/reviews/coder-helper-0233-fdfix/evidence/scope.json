@@ -1,0 +1,88 @@
+{
+  "baseline": "b5faf73c8fe4d5c71720daf4eed5b133b8d45dbd",
+  "implementation_commit": "2d9c81a74c4e40d2ed6b8ec8b185f694c59a97dc",
+  "baseline_sqlite_open_sites": [
+    {
+      "path": "tools/sessionhelper/sessionhelper/claudeDriver.py",
+      "line": 105
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/cli.py",
+      "line": 808
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/codexDriver.py",
+      "line": 93
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/desktop.py",
+      "line": 51
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/desktop_stop_hook.py",
+      "line": 87
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/inbox.py",
+      "line": 35
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/inbox.py",
+      "line": 184
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/openCodeDriver.py",
+      "line": 93
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/provision.py",
+      "line": 329
+    }
+  ],
+  "current_sqlite_open_sites": [
+    {
+      "path": "tools/sessionhelper/sessionhelper/sqlite_utils.py",
+      "line": 10
+    }
+  ],
+  "current_transaction_scope_wrappers": [
+    {
+      "path": "tools/sessionhelper/sessionhelper/claudeDriver.py",
+      "line": 107
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/cli.py",
+      "line": 810
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/codexDriver.py",
+      "line": 95
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/desktop.py",
+      "line": 54
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/desktop_stop_hook.py",
+      "line": 95
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/inbox.py",
+      "line": 38
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/inbox.py",
+      "line": 185
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/openCodeDriver.py",
+      "line": 95
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/provision.py",
+      "line": 329
+    }
+  ],
+  "r16_changed_paths_overlap": [],
+  "runtime_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+}

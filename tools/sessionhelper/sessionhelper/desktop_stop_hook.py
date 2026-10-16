@@ -11,9 +11,17 @@ import os
 from pathlib import Path
 import re
 import sqlite3
+
 import stat
 import sys
 from urllib.parse import quote
+
+if __package__:
+    from .sqlite_utils import connection as sqlite_connection
+else:
+    # Keep the existing direct-file Stop hook entry point usable.
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from sessionhelper.sqlite_utils import connection as sqlite_connection
 
 
 REASON = (
@@ -84,7 +92,7 @@ def continuation(binding_path, event):
         return {}
     db_path = _private_path(binding["inbox_path"])
     # mode=rw must never create an inbox for a wrong/nonexistent profile.
-    with sqlite3.connect("file:" + quote(str(db_path), safe="/") + "?mode=rw",
+    with sqlite_connection("file:" + quote(str(db_path), safe="/") + "?mode=rw",
                          uri=True, timeout=0.05) as db:
         db.execute("BEGIN IMMEDIATE")
         paused = db.execute("SELECT value FROM desktop_setting WHERE key='paused'").fetchone()

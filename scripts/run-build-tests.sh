@@ -13,6 +13,8 @@ export PYTHONPATH
 PYTHON_TESTS='
 tools/sessionhelper/test_supervise_connection_loops.py
 tools/sessionhelper/tests/test_update_release_core.py
+tools/sessionhelper/tests/test_sqlite_connection_lifetime.py
+tools/sessionhelper/tests/test_mcp_shim_transport_errors.py
 tools/sessionhelper/tests/test_update_core_review_regressions.py
 tools/sessionhelper/tests/test_self_update_offer.py
 tools/sessionhelper/tests/test_connection_receive_quiescence.py
@@ -73,4 +75,4 @@ printf '%s\n' "$SHELL_TESTS" | while IFS= read -r test_file; do
   echo "TEST shell $test_file"
   bash "$test_file"
 done
-echo 'BUILD_TESTS_OK python=45 shell=2'
+echo 'BUILD_TESTS_OK python=47 shell=2'

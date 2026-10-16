@@ -1,0 +1,9 @@
+SQLITE_FD_READINGS {"baseline_db_fd": 0, "final_db_fd": 0, "gc_enabled": false, "long_run_db_fds": {"1": 0, "100": 0, "1000": 0, "10000": 0}, "long_run_iterations": 10000, "nofile": 128, "total_fd_baseline": 4, "total_fd_final": 4, "workloads": {"audit": {"calls": 200, "peak_db_fd": 0}, "claude": {"calls": 200, "peak_db_fd": 0}, "cli_parts": {"calls": 200, "peak_db_fd": 0}, "cli_recent": {"calls": 200, "peak_db_fd": 0}, "codex": {"calls": 200, "peak_db_fd": 0}, "desktop": {"calls": 200, "peak_db_fd": 0}, "inbox": {"calls": 200, "peak_db_fd": 0}, "legacy": {"calls": 200, "peak_db_fd": 0}, "opencode": {"calls": 200, "peak_db_fd": 0}, "stop_hook": {"calls": 200, "peak_db_fd": 0}}}
+test_close_once_on_success_body_and_transaction_exit_failure (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_close_once_on_success_body_and_transaction_exit_failure) ... ok
+test_commit_rollback_and_early_return_persist_correctly (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_commit_rollback_and_early_return_persist_correctly) ... ok
+test_gc_disabled_rlimit128_all_openers_and_long_run (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_gc_disabled_rlimit128_all_openers_and_long_run) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 24.979s
+
+OK

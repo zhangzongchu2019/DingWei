@@ -1,0 +1,50 @@
+{
+  "utc": "2026-10-16T16:09:47.269302+00:00",
+  "fixed_source_sha256": {
+    "sqlite": "d32fd1f0ef01ec10c380385388963bb984007f686c82be3ca540bbfdd0ec0b99",
+    "shim": "737f2146e4ba7559da5d7c0503ed18d3a0a4f04f1e20353b77acc432719922eb"
+  },
+  "checkout_unchanged": true,
+  "results": [
+    {
+      "repair": "sqlite",
+      "variant": "fixed",
+      "exit": 0,
+      "tests": [
+        "3"
+      ],
+      "log": "sqlite-fixed.log",
+      "sha256": "03b2154476b184afb32f5ca55eeae63f8a19e438ce34566ab261c54e8056899d"
+    },
+    {
+      "repair": "sqlite",
+      "variant": "withdrawn",
+      "exit": 1,
+      "tests": [
+        "3"
+      ],
+      "log": "sqlite-withdrawn.log",
+      "sha256": "165f8d38a35302762c2d7ad8471679340b2dd6c0e23b42276078694c272fa788"
+    },
+    {
+      "repair": "shim",
+      "variant": "fixed",
+      "exit": 0,
+      "tests": [
+        "4"
+      ],
+      "log": "shim-fixed.log",
+      "sha256": "5b28c587f18f8ffc705246323c60b5920aa983b03edd09f7e7b1caa546faeccb"
+    },
+    {
+      "repair": "shim",
+      "variant": "withdrawn",
+      "exit": 1,
+      "tests": [
+        "4"
+      ],
+      "log": "shim-withdrawn.log",
+      "sha256": "6bfce6e0440e1ee5df98dc06271cbcb2bb073f1cc998522e32b825c71941d454"
+    }
+  ]
+}

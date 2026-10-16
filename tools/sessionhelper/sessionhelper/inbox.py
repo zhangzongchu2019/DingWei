@@ -5,9 +5,12 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+from contextlib import AbstractContextManager
 import sys
 import threading
 import time
+
+from .sqlite_utils import connection as sqlite_connection
 
 
 class DeliveryInbox:
@@ -31,10 +34,8 @@ class DeliveryInbox:
         self._initialize()
         self._import_legacy_shared_inbox()
 
-    def _connect(self) -> sqlite3.Connection:
-        db = sqlite3.connect(self.path, timeout=5)
-        db.row_factory = sqlite3.Row
-        return db
+    def _connect(self) -> AbstractContextManager[sqlite3.Connection]:
+        return sqlite_connection(self.path, timeout=5, row_factory=sqlite3.Row)
 
     def _initialize(self) -> None:
         with self._lock, self._connect() as db:
@@ -181,7 +182,7 @@ class DeliveryInbox:
             )
 
     def _pending_legacy_rows(self, legacy_path: str) -> list[sqlite3.Row]:
-        with sqlite3.connect(f"file:{legacy_path}?mode=ro", uri=True, timeout=5) as db:
+        with sqlite_connection(f"file:{legacy_path}?mode=ro", uri=True, timeout=5) as db:
             db.row_factory = sqlite3.Row
             table = db.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='delivery_inbox'"

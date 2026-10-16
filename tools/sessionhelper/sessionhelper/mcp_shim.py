@@ -89,6 +89,44 @@ _IPC_TIMEOUT = 5.0
 _SPEC_IPC_TIMEOUT = 35.0
 
 
+class _IPCFailure(RuntimeError):
+    """An IPC failure carrying only a fixed, caller-safe category."""
+
+    def __init__(self, category: str):
+        self.category = category
+        super().__init__(category)
+
+
+def _transport_failure(exc: OSError) -> _IPCFailure:
+    return _IPCFailure("ipc_timeout" if isinstance(exc, TimeoutError) else "ipc_unavailable")
+
+
+def _decode_ipc_response(data: bytes) -> dict[str, Any]:
+    try:
+        if b"\n" not in data:
+            raise ValueError
+        response = json.loads(data.split(b"\n", 1)[0].decode("utf-8"))
+    except (ValueError, UnicodeError):
+        raise _IPCFailure("ipc_invalid_response") from None
+    if not isinstance(response, dict) or type(response.get("ok")) is not bool:
+        raise _IPCFailure("ipc_invalid_response")
+    if not response["ok"]:
+        raise _IPCFailure("helper_rejected")
+    return response
+
+
+def _tool_failure(request_id, category: str) -> Response:
+    # A missing response never proves that a side effect did not occur.
+    # Do not echo exceptions, paths or helper error bodies, and never resend.
+    return Response(id=request_id, result={
+        "isError": True,
+        "content": [{"type": "text", "text": json.dumps({
+            "error": category, "outcome": "unknown", "retryable": False,
+            "message": "Tool failed; do not automatically resend.",
+        })}],
+    })
+
+
 def _ipc_send(payload: dict[str, Any]) -> dict[str, Any]:
     return _ipc_request({"type": "mcp_send", **payload})
 
@@ -112,13 +150,16 @@ def _ipc_request(payload: dict[str, Any], *, timeout=None) -> dict[str, Any]:
             chunks.append(chunk)
             if b"\n" in chunk:
                 break
-        response = json.loads(b"".join(chunks).decode("utf-8"))
+        response = _decode_ipc_response(b"".join(chunks))
+    except OSError as exc:
+        raise _transport_failure(exc) from None
     finally:
         sock.close()
 
-    if not response.get("ok"):
-        raise RuntimeError(response.get("error", "IPC send failed"))
-    return response.get("outcome", response)
+    outcome = response.get("outcome", response)
+    if not isinstance(outcome, dict):
+        raise _IPCFailure("ipc_invalid_response")
+    return outcome
 
 
 # ── IPC vsapi_v1 (T18: generic datad pipe) ────────────────────────────
@@ -145,11 +186,11 @@ def _ipc_vsapi(method: str, path: str, body: dict[str, Any] | None = None) -> di
             chunks.append(chunk)
             if b"\n" in chunk:
                 break
-        response = json.loads(b"".join(chunks).decode("utf-8"))
+        response = _decode_ipc_response(b"".join(chunks))
+    except OSError as exc:
+        raise _transport_failure(exc) from None
     finally:
         sock.close()
-    if not response.get("ok"):
-        raise RuntimeError(response.get("error", "vsapi call failed"))
     return response.get("result", response)
 
 
@@ -283,18 +324,15 @@ def _desktop_wait(args):
         data = bytearray()
         while b'\n' not in data:
             if cancelled.is_set(): raise ValueError('desktop wait cancelled')
-            if time.monotonic() >= deadline: raise ValueError('desktop wait transport timeout')
+            if time.monotonic() >= deadline: raise _IPCFailure('ipc_timeout')
             try: chunk = sock.recv(4096)
             except _socket.timeout: continue
-            if not chunk: raise ValueError('desktop wait disconnected')
+            if not chunk: raise _IPCFailure('ipc_invalid_response')
             data.extend(chunk)
-            if len(data)>512*1024: raise ValueError('desktop wait result exceeds limit')
-        result = json.loads(bytes(data).split(b'\n',1)[0])
-        if not isinstance(result,dict) or result.get('ok') is not True:
-            raise ValueError('desktop wait unavailable')
-        return result
-    except (OSError, RuntimeError):
-        raise ValueError('desktop wait unavailable') from None
+            if len(data)>512*1024: raise _IPCFailure('ipc_invalid_response')
+        return _decode_ipc_response(bytes(data))
+    except OSError as exc:
+        raise _transport_failure(exc) from None
     finally:
         sock.close()
 
@@ -311,10 +349,7 @@ def _desktop_reply(args):
         raise ValueError('invalid message_id')
     if not isinstance(body,str) or not body.strip() or len(body.encode('utf-8'))>65536:
         raise ValueError('invalid reply body')
-    try:
-        return _ipc_request({'type':'desktop_inbox_v1','operation':'reply','message_id':message_id,'body':body},timeout=12)
-    except (OSError,RuntimeError):
-        raise ValueError('reply outcome unavailable; do not blindly resend') from None
+    return _ipc_request({'type':'desktop_inbox_v1','operation':'reply','message_id':message_id,'body':body},timeout=12)
 
 
 # ── T18 MCP tool: heartbeat_report ────────────────────────────────────
@@ -452,15 +487,17 @@ def _ipc_upload(path: str, timeout: float = 300.0) -> dict[str, Any]:
                 if not chunk:
                     break
                 reply.extend(chunk)
+        except OSError as exc:
+            raise _transport_failure(exc) from None
         finally:
             sock.close()
     finally:
         os.close(fd)
-    response = json.loads(bytes(reply).decode("utf-8"))
-    if not response.get("ok"):
-        reason = response.get("reason")
-        raise RuntimeError(response.get("error", "file upload failed") + (f" ({reason})" if reason else ""))
-    return response["result"]
+    response = _decode_ipc_response(bytes(reply))
+    result = response.get("result")
+    if not isinstance(result, dict):
+        raise _IPCFailure("ipc_invalid_response")
+    return result
 
 
 @register("upload_file", "上传工作区内的文件，返回公开 7 天的下载链接（不要上传凭据、令牌、密钥、登录态文件）", {
@@ -504,11 +541,15 @@ def _dispatch(req: Request) -> Response:
         try:
             result = _handlers[name](dict(arguments))
             return Response(id=req.id, result={"content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}]})
+        except _IPCFailure as exc:
+            return _tool_failure(req.id, exc.category)
         except (TypeError, ValueError) as exc:
             return Response(
                 id=req.id,
-                error={"code": -32602, "message": str(exc)},
+                error={"code": -32602, "message": "invalid tool arguments"},
             )
+        except Exception:
+            return _tool_failure(req.id, "tool_failed")
 
     # -- initialize ----------------------------------------------------
     if req.method == "initialize":

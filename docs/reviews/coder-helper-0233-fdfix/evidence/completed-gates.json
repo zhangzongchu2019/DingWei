@@ -1,0 +1,17 @@
+{
+  "observed_utc": "2026-10-16T16:19:11.539555+00:00",
+  "implementation_commit": "2d9c81a74c4e40d2ed6b8ec8b185f694c59a97dc",
+  "canonical": {
+    "exit": 0,
+    "python_files": 47,
+    "shell_gates": 2,
+    "log": "canonical.log"
+  },
+  "go_all": {
+    "exit": 0,
+    "command": "go test -count=1 ./internal/version ./...",
+    "tested_packages": 51,
+    "packages_without_tests": 12,
+    "log": "go-all.log"
+  }
+}

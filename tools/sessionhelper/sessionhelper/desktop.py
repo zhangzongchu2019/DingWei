@@ -10,9 +10,12 @@ import json
 import os
 import queue
 import sqlite3
+from contextlib import AbstractContextManager
 import stat
 import threading
 import time
+
+from .sqlite_utils import connection as sqlite_connection
 
 
 class DesktopAdapter:
@@ -47,10 +50,8 @@ class DesktopAdapter:
             row = db.execute("SELECT value FROM desktop_setting WHERE key='paused'").fetchone()
             self.paused = bool(row and row[0] == "1")
 
-    def _connect(self):
-        db = sqlite3.connect(self.path, timeout=5)
-        db.row_factory = sqlite3.Row
-        return db
+    def _connect(self) -> AbstractContextManager[sqlite3.Connection]:
+        return sqlite_connection(self.path, timeout=5, row_factory=sqlite3.Row)
 
     def handle(self, env):
         return self.handle_delivery(env, on_injected=None)

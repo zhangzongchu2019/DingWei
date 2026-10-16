@@ -8,6 +8,7 @@ import re
 import shlex
 import signal
 import sqlite3
+from contextlib import AbstractContextManager
 import subprocess
 import threading
 import time
@@ -19,6 +20,7 @@ from pathlib import Path
 
 import pexpect
 
+from .sqlite_utils import connection as sqlite_connection
 from .config import Config, env_get
 
 
@@ -803,9 +805,9 @@ class OpenCodeDBReader:
     def exists(self) -> bool:
         return self.path.exists()
 
-    def connect(self) -> sqlite3.Connection:
+    def connect(self) -> AbstractContextManager[sqlite3.Connection]:
         uri = f"file:{self.path}?mode=ro"
-        return sqlite3.connect(uri, uri=True, timeout=1.0)
+        return sqlite_connection(uri, uri=True, timeout=1.0)
 
     def recent_messages(self, since: float, limit: int = 200) -> list[dict]:
         try:
