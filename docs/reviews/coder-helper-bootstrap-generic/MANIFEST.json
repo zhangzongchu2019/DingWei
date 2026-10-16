@@ -1,0 +1,22 @@
+{
+  "scripts/helper-bootstrap-inventory.py": {
+    "bytes": 10747,
+    "sha256": "6f88e393aa5617335f64f8c2d220128d90d8c378c7ddd069fd5ab74ed6e8d910"
+  },
+  "scripts/tests/test_helper_bootstrap_inventory.py": {
+    "bytes": 7445,
+    "sha256": "9f8a6ebb27c62bd16b70df5a31988763496b9a1f31bc5ab74ad53d70246b17e1"
+  },
+  "docs/runbooks/helper-bootstrap-generic.md": {
+    "bytes": 40430,
+    "sha256": "07e575d5fda8150942f7465593bcdcc6ee6a7bd0e88e7e5fdfc5e342f16fdce0"
+  },
+  "docs/reviews/coder-helper-bootstrap-generic/doc-validation.json": {
+    "bytes": 375,
+    "sha256": "14e705c8fc0b0bda2e9b6213726533af8d43e57dae80dc7097426ca4aa2aea1b"
+  },
+  "docs/reviews/coder-helper-bootstrap-generic/inventory-tests.txt": {
+    "bytes": 1348,
+    "sha256": "8d223dceb9d4e227efe6c240a95b739e1da4bd6d549bb9f6ff77bf33cac0cc2e"
+  }
+}
