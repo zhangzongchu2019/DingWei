@@ -186,10 +186,33 @@ func TestConsoleHelperUpdateReasonProjectionIsAllowlisted(t *testing.T) {
 	if err := v.hub.RegisterHelperUpdateCatalog(v.ctx, "ops", catalog); err != nil {
 		t.Fatal(err)
 	}
-	_, err := v.hub.createHelperUpdateJob(v.ctx, catalog, v.agID, "zzc", "opus50ts", "zzc")
+	conn, _, raw := v.dial(v.cred, "version=0.2.3.1&os=linux")
+	if conn == nil {
+		t.Fatalf("dial: %s", raw)
+	}
+	defer conn.CloseNow()
+	waitSessionOnline(t, v.hub, AgentKeyID("zzc"), "opus50ts")
+	v.sendEnv(conn, model.Envelope{ID: "console-package-invalid-caps", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "helper_update_v1": true}})
+	waitFor(t, time.Second, "Console helper update capability", func() bool {
+		return testSessionSupportsHelperUpdate(v.hub, AgentKeyID("zzc"), "opus50ts")
+	})
+	job, err := v.hub.IssueHelperUpdate(v.ctx, "zzc", v.agID, digest)
 	if err != nil {
 		t.Fatal(err)
 	}
+	if v.readEnvUntil(conn, time.Second, func(env model.Envelope) bool { return metaString(env.Meta, "job_id") == job.JobID }) == nil {
+		t.Fatal("missing update offer")
+	}
+	// The old-layout helper rejects the offered new-layout artifact after it has
+	// authenticated the exact durable job tuple.
+	v.sendEnv(conn, model.Envelope{ID: "console-package-invalid-receipt", From: "opus50ts#enrolled", To: "workpulse#enrolled", Meta: map[string]any{
+		"type": "provision_ack", "action": "update_self", "stage": "failed", "reason": "package_invalid",
+		"job_id": job.JobID, "release_id": job.ReleaseID, "sha256": job.SHA256, "lock_sha256": job.LockSHA256,
+	}})
+	waitFor(t, time.Second, "durable package_invalid receipt", func() bool {
+		stored, _, err := v.hub.helperUpdateJob(v.ctx, v.agID)
+		return err == nil && stored != nil && stored.Stage == "failed" && stored.Reason == "package_invalid"
+	})
 	setReason := func(reason string) {
 		t.Helper()
 		stored, raw, err := v.hub.helperUpdateJob(v.ctx, v.agID)
@@ -229,9 +252,7 @@ func TestConsoleHelperUpdateReasonProjectionIsAllowlisted(t *testing.T) {
 		return "" // unreachable
 	}
 
-	// This is the trusted receipt outcome when a new-layout package reaches an
-	// old-layout helper: the Console projection must retain the safe code.
-	setReason("package_invalid")
+	// This actual matched-job receipt reaches the Console projection unchanged.
 	if got := getReason(); got != "package_invalid" {
 		t.Fatalf("package-invalid Console reason=%q", got)
 	}
