@@ -4,8 +4,10 @@ import json
 import os
 from pathlib import Path
 import shutil
+import socket
 import subprocess
 import sys
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,7 +32,7 @@ def snapshot(root):
             if p.is_file() else None) for p in [root, *root.rglob('*')]}
 
 
-def probe(mount, state, shape='module', cwd=None):
+def probe(mount, state, shape='module', cwd=None, timeout=10):
     env = {'PATH': os.environ.get('PATH', ''), 'HOME': str(state.parent / 'home'),
            'SH_STATE_DIR': str(state), 'PYTHONPATH': str(mount),
            'PYTHONDONTWRITEBYTECODE': '1'}
@@ -43,7 +45,7 @@ def probe(mount, state, shape='module', cwd=None):
         args = ['-m', 'sessionhelper.mcp_shim']
     return subprocess.run([sys.executable, '-B', *args], input=REQUESTS,
                           cwd=cwd or mount, env=env, capture_output=True,
-                          text=True, timeout=10)
+                          text=True, timeout=timeout)
 
 
 def assert_tools(test, proc, version):
@@ -139,6 +141,36 @@ class ForwarderTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('No module named sessionhelper.mcp_shim', result.stderr)
         self.assertFalse(result.stdout)
+
+    def check_special_journal(self):
+        # snapshot() reads ordinary files; never use it on an intentional FIFO.
+        started = time.monotonic()
+        assert_tools(self, probe(self.mount, self.state, timeout=2), '0.2.3.1')
+        self.assertLess(time.monotonic() - started, 2.5)
+        self.assertFalse((self.state / 'update/state.lock').exists())
+
+    def special_journal_path(self):
+        update = self.state / 'update'
+        update.mkdir(parents=True)
+        return update / 'journal.json'
+
+    def test_fifo_journal_without_writer_falls_back_within_timeout(self):
+        os.mkfifo(self.special_journal_path())
+        self.check_special_journal()
+
+    def test_directory_journal_falls_back_within_timeout(self):
+        self.special_journal_path().mkdir()
+        self.check_special_journal()
+
+    def test_socket_journal_falls_back_within_timeout(self):
+        with socket.socket(socket.AF_UNIX) as listener:
+            listener.bind(str(self.special_journal_path()))
+            self.check_special_journal()
+
+    def test_oversized_journal_falls_back_within_timeout(self):
+        with self.special_journal_path().open('wb') as stream:
+            stream.truncate(1024 * 1024 + 1)
+        self.check_special_journal()
 
 
 if __name__ == '__main__':

@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import sys
 
 MAX_JOURNAL_BYTES = 1024 * 1024
@@ -25,8 +26,15 @@ def selected_root(mount: Path) -> Path:
         journal = update / 'journal.json'
         if journal.is_symlink():
             return factory
-        with journal.open('rb') as stream:
-            raw = stream.read(MAX_JOURNAL_BYTES + 1)
+        fd = os.open(journal, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        try:
+            info = os.fstat(fd)
+            if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_JOURNAL_BYTES:
+                return factory
+            with os.fdopen(fd, 'rb', closefd=False) as stream:
+                raw = stream.read(MAX_JOURNAL_BYTES + 1)
+        finally:
+            os.close(fd)
         if len(raw) > MAX_JOURNAL_BYTES:
             return factory
         data = json.loads(raw)
