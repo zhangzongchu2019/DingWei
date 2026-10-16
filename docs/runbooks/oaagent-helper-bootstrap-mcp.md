@@ -36,6 +36,7 @@
 - `OA_COMMIT`、`OA_TREE`：包含稳定转发器的经审精确提交及 tree
 - `OA_INSTRUCTIONS_URL`、`OA_INSTRUCTIONS_SHA256`
 - runtime lock 保持 `5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0`
+
 SHA 须与本份经审执行单及 prodops 核准的 Git 制品记录独立核对，不能只信下载响应。本文件定稿审过后，由 prodops 上传说明并在外部交付记录提供独立 URL/SHA。执行人先 export 这两个变量；缺失或为空即停，不能猜造链接或把本文件自己的哈希写回文件。到期后停止下载并向 leader 申请新链接，不能自行换包或接受新 SHA。
 
 ```bash
@@ -365,10 +366,11 @@ console.table(bootstrapProjection.agents.map(({agent_id,name,version,online,elig
 在宿主运行以下一次隔离的 MCP stdio 探测：只发送 initialize/initialized/tools/list，不调用任何工具、不发送业务消息。它不是 helper/guard 子命令。
 
 ```bash
+: "${OA_MCP_EXPECTED_VERSION:=0.2.3.2}"
 docker exec -i "$OA_CONTAINER" bash -c \
   'set -a; source /run/secrets/sessionhelper_env; exec "$@"' oaagent-mcp-check \
-  /opt/dingwei/sessionhelper-venv/bin/python -B - <<'PY' | tee "$OA_WORK/mcp-tools-list.json"
-import json, os, subprocess
+  /opt/dingwei/sessionhelper-venv/bin/python -B - "$OA_MCP_EXPECTED_VERSION" <<'PY' | tee "$OA_WORK/mcp-tools-list.json"
+import json, os, subprocess, sys
 requests = [
  {'jsonrpc':'2.0','id':1,'method':'initialize','params':{}},
  {'jsonrpc':'2.0','method':'notifications/initialized'},
@@ -380,7 +382,7 @@ result = subprocess.run(['/opt/dingwei/sessionhelper-venv/bin/python','-B','-m',
 assert result.returncode == 0 and not result.stderr, 'STOP: MCP stdio failed; retain private error locally'
 replies = {x['id']:x for x in map(json.loads,result.stdout.splitlines())}
 version = replies[1]['result']['serverInfo']['version']
-assert version == '0.2.3.2', 'STOP: unexpected factory version'
+assert version == sys.argv[1], 'STOP: unexpected MCP version'
 names = sorted(x['name'] for x in replies[2]['result']['tools'])
 assert names == sorted(['send_message','dw_inbox','dw_wait_message','dw_reply_message',
  'heartbeat_report','project_context','dw_spec_create','dw_spec_update','upload_file'])
@@ -429,9 +431,9 @@ PY
 ### 6.5 业主从 Console 单次下发自升级验收（首升完成后单独进行）
 
 1. 业主打开 Console 的 helper 升级入口，确认列表能看到精确 **oaagent.lbl**（核 agent_id），在线版本0.2.3.2且可升级。看不到或不可选则停下，记录 reason，不能改权限/能力或用别的 Agent 替代。
-2. **当前登记的 r14 包本身也是0.2.3.2。** r14 `self_update.py` 的 `_prepare` 明确拒绝目标版本小于等于运行版本（`version_not_new`）。因此首升后再下发当前这个包不能证明安装/重启/确认成功。完整测试须由运维另行登记经审、授权的**高于0.2.3.2**版本包，锁哈希保持不变，并由 leader 确认该验收窗口。若目录只有当前包，停在此处报“自升级验收待可用新版本包”，不能把同版本拒绝记为通过，也不能手改包清单、伪造版本或放宽产品限制。
+2. **本次手动首升候选本身是0.2.3.2。** `self_update.py` 的 `_prepare` 明确拒绝目标版本小于等于运行版本（`version_not_new`）。因此首升后再下发当前这个包不能证明安装/重启/确认成功。完整测试须由运维另行登记经审、授权的**高于0.2.3.2**版本包，锁哈希保持不变，并由 leader 确认该验收窗口。若目录只有当前包，停在此处报“自升级验收待可用新版本包”，不能把同版本拒绝记为通过，也不能手改包清单、伪造版本或放宽产品限制。
 3. 具备上述新包后，Console 仅选 oaagent 这一个 Agent，选择已登记的目标 SHA，**下发一次**。此时才创建升级作业；记录 job_id、目标版本、SHA、下发 UTC。不得批量选择、重复点击或自填 URL。
-4. 观察同一作业的下载、安装、重启及最终 confirmed/上线新版本结果。核目标版本真实重连，当前能力仍有效，重做 IPC/一次往返/A6，并重启对应 Codex或开新会话，重做6.2a 的 module tools/list（版本须等于新目标）；factory 脚本形态也须九工具可用但版本仍为原出厂0.2.3.2，不把 factory 输出当活动槽位版本；保留去敏状态。只有 confirmed 且版本/Agent/job/SHA 对应、功能检查正常，才报自升级验收完成。
+4. 观察同一作业的下载、安装、重启及最终 confirmed/上线新版本结果。核目标版本真实重连，当前能力仍有效，重做 IPC/一次往返/A6，并重启对应 Codex或开新会话，重做6.2a 的 module tools/list（先将 `OA_MCP_EXPECTED_VERSION` 显式设为核准新目标，版本须与之相等）；factory 脚本形态也须九工具可用但版本仍为原出厂0.2.3.2，不把 factory 输出当活动槽位版本；保留去敏状态。只有 confirmed 且版本/Agent/job/SHA 对应、功能检查正常，才报自升级验收完成。
 5. 失败/rolled_back/expired、同版本拒绝或长时间未 confirmed 都记为失败或未完成，立即停报 leader，不重发、不改 journal/current。不执行本节时，本件只能证明手动首升结果，不能宣称自升级已验收。
 
 ## 7. 回滚（仅执行人在已批准首升/回滚窗口内使用）
