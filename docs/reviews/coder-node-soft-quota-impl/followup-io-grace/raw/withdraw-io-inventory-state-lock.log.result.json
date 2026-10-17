@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/inventory",
+    "-v",
+    "-count=1",
+    "-timeout=30s"
+  ],
+  "rc": 1,
+  "seconds": 2.8758175869006664,
+  "external_DSN_environment_not_inherited": true
+}

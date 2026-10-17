@@ -1,0 +1,11 @@
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold/space_warning
+    node_quota_test.go:307: first warning stopped running seat {QuotaConsent:[] AgentID:ag_fakeb NodeID:nd_warning CLI:codex LLM:gpt CredKind:token_file AccountRef:{String:acct_29ff3996a6bd6258 Valid:true} Plan:2c4g State:error StateDetail:soft_quota_held ImageRef:hub.local/dingwei/base-codex@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef Model: CreatedBy:zzc} <nil>
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold/usage_warning
+    node_quota_test.go:307: first warning stopped running seat {QuotaConsent:[] AgentID:ag_fakeb NodeID:nd_warning CLI:codex LLM:gpt CredKind:token_file AccountRef:{String:acct_f4a1bd0f93cc0dbb Valid:true} Plan:2c4g State:error StateDetail:soft_quota_held ImageRef:hub.local/dingwei/base-codex@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef Model: CreatedBy:zzc} <nil>
+--- FAIL: TestQuotaUsageWarningNotifiesWithoutPrematureHold (4.24s)
+    --- FAIL: TestQuotaUsageWarningNotifiesWithoutPrematureHold/space_warning (2.14s)
+    --- FAIL: TestQuotaUsageWarningNotifiesWithoutPrematureHold/usage_warning (2.09s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	4.243s
+FAIL

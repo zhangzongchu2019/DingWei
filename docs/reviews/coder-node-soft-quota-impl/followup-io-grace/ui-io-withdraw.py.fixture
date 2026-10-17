@@ -1,0 +1,9 @@
+from pathlib import Path
+import subprocess,json,hashlib
+lab=Path('/data/ai-dev-data/coder-soft-quota-lab');root=lab/'io-withdrawal';pin='b8074831205c25376cf777c347ebdc985f3e4816';file='internal/m8/console_auth.go';p=root/file;old=p.read_text();mutant=old.replace('a.hosted.quota_usage_unknown?', 'false?',1);assert mutant!=old
+try:
+ p.write_text(mutant)
+ rc=subprocess.call(['python3',str(lab/'run-local.py'),'withdraw-io-console-unknown.log','node','view-service/console-soft-quota-regression.js'],cwd=root)
+ raw=(lab/'evidence/withdraw-io-console-unknown.log').read_text();assert rc==1 and 'AssertionError' in raw
+ (lab/'evidence/IO-UI-WITHDRAWAL.json').write_text(json.dumps({'code_pin':pin,'case':{'name':'console-unknown','file':file,'test':'console-soft-quota-regression.js','rc':rc,'assertion_red':True,'original_sha256':hashlib.sha256(old.encode()).hexdigest(),'mutant_sha256':hashlib.sha256(mutant.encode()).hexdigest()}},indent=2)+'\n')
+finally:p.write_text(old)

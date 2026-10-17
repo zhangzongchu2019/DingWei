@@ -1,0 +1,230 @@
+{
+  "code_pin": "b8074831205c25376cf777c347ebdc985f3e4816",
+  "cases": [
+    {
+      "name": "statfs-state-lock",
+      "file": "internal/nodeagent/softquota_io.go",
+      "test": "TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/statfs",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "dd99be2207c0e151c5d595b096cfd2407423935a981b0c2d7ea8d6c4750f65d5",
+      "mutant_sha256": "419345c491557adc50043d04d282da3772f8f9ef074db464008d6e3ed54d9220"
+    },
+    {
+      "name": "resources-state-lock",
+      "file": "internal/nodeagent/softquota_io.go",
+      "test": "TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/resources",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "dd99be2207c0e151c5d595b096cfd2407423935a981b0c2d7ea8d6c4750f65d5",
+      "mutant_sha256": "eede320a7642b420c6e4c9ebe3a6c2eedc81cf8c0fdc5470bd2f8d9b63aa78ae"
+    },
+    {
+      "name": "inventory-state-lock",
+      "file": "internal/nodeagent/softquota_io.go",
+      "test": "TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/inventory",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "dd99be2207c0e151c5d595b096cfd2407423935a981b0c2d7ea8d6c4750f65d5",
+      "mutant_sha256": "6bc82b7d304ceabe9248926ef78267a7327477509304e60153b6e4940ceacaff"
+    },
+    {
+      "name": "write-state-lock",
+      "file": "internal/nodeagent/softquota_io.go",
+      "test": "TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "dd99be2207c0e151c5d595b096cfd2407423935a981b0c2d7ea8d6c4750f65d5",
+      "mutant_sha256": "647a46b896e83f4024261b2091470c53fbd95337b3c65aa0f1c8293d680da35b"
+    },
+    {
+      "name": "write-budget",
+      "file": "internal/nodeagent/softquota_io.go",
+      "test": "TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "dd99be2207c0e151c5d595b096cfd2407423935a981b0c2d7ea8d6c4750f65d5",
+      "mutant_sha256": "ba4e2773cb13b270856032a47172d0bac6a657ea671909005cfb3a2445c8256d"
+    },
+    {
+      "name": "write-failure-admission",
+      "file": "internal/nodeagent/softquota_io.go",
+      "test": "TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "dd99be2207c0e151c5d595b096cfd2407423935a981b0c2d7ea8d6c4750f65d5",
+      "mutant_sha256": "7f42888e721a131d6fb1ab9f567c51d98720e465f4ddae272086b2b058c8eb22"
+    },
+    {
+      "name": "unknown-immediate-stop",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "926d2503efe381074c4aab7fa5df174ced5ccd4569849bcbf686a83ced1fef4c"
+    },
+    {
+      "name": "unknown-never-expires",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "28ce0e6cdfe9a98ea9d7351007327a49024fad7fe3f8eba7daa93b6694313339"
+    },
+    {
+      "name": "unknown-reuse-old-good",
+      "file": "internal/nodeagent/softquota_io.go",
+      "test": "TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "dd99be2207c0e151c5d595b096cfd2407423935a981b0c2d7ea8d6c4750f65d5",
+      "mutant_sha256": "9ff7a893c0a4706c584a019cf46cb4f3c3424689eb5f0de669b3745bb5560e08"
+    },
+    {
+      "name": "missing-anchor-reset",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftMissingAgeAnchorIsRejectedWithoutReset",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "b7488f69b4787a22d4eb098bef970775a03798d69c9888bb8d2fad4eeaab9d41"
+    },
+    {
+      "name": "emergency-bytes",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "a2811a660f98f0461576ed7616a869520a5636654181d2453fa8c301b018a0a6"
+    },
+    {
+      "name": "emergency-equality",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "d9d6d548d3fbd92b5282b971c9bd0bfcedc9c56081c61aff89715a186b56c85f"
+    },
+    {
+      "name": "extra-inode-emergency",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftInodeReserveRemainsAdmissionOnly",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "11f7828c50eac9b23a75edfdbd10c3ec8381a4fda688bd8a0755724883d1ab8c"
+    },
+    {
+      "name": "actual-total-rounding",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftReservesUseActualFilesystemTotalWithoutEarlyTruncation",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "ea5d9d5b38ce3196c3953701bb574b13f66ec3166bcfc7706009d3a4b9e701ca"
+    },
+    {
+      "name": "sampler-per-tick",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "e3823e76197063d1d36f78965cbd65a37f5b1f83926c12e767b347169b9fc7f8"
+    },
+    {
+      "name": "unknown-anchor-reset",
+      "file": "internal/nodeagent/softquota_io.go",
+      "test": "TestSoftStatfsRecoveryWithinGraceAndRestartDoesNotResetAnchor",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "dd99be2207c0e151c5d595b096cfd2407423935a981b0c2d7ea8d6c4750f65d5",
+      "mutant_sha256": "db7d1bbf2f684fc9d13e181cf09ce08b3a3c1f8a483700c9914699ad6d808cb9"
+    },
+    {
+      "name": "unknown-no-notification",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "7451ebe7c38da1bd7342766eab172abcdae78911b99f27e9496ad428a75c3727"
+    },
+    {
+      "name": "hub-warning-held",
+      "file": "internal/hosted/node_quota.go",
+      "test": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "3d84defe2ac2b9221ed46a9b37e48a14c8274cd73b1a1c17fa31aad996c66b93",
+      "mutant_sha256": "8fdf0637afd6beb357f04adde54cdc136cad86550b18506669b1118ec4f4a882"
+    },
+    {
+      "name": "hub-unknown-overlay",
+      "file": "internal/hosted/overlay.go",
+      "test": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "23091d123bf942b8edc89626baa4e1418bc28839f5611a48c46bf47f11a6e06e",
+      "mutant_sha256": "85071a7a198a1e205f0684e3e236be5ebee0b3160a64faa23883f75f953f047a"
+    },
+    {
+      "name": "inode-admission",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftInodeReserveRemainsAdmissionOnly",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "66583245d1c75ff3d0992ad7ce761b7b497aaa8b6f2f9050e42f8850f2fa5e86"
+    },
+    {
+      "name": "scan-held-state-lock",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftReserveRunsWhileMetadataWalkIsBlocked",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "49d199e37de9293d6abf7727f996352eda55f2819bcb17987f149845bd83dfcb"
+    },
+    {
+      "name": "late-writer-gate",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftEmergencyCannotStopBeforeLateWriterStart",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "0e7c0efb0fa914e8428a798bf455ccf326d62c1f9c1acadf0c7edcb867312ae4"
+    },
+    {
+      "name": "serial-scan-reserve",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftReserveRunsWhileMetadataWalkIsBlocked",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "4d59634280cc6224d716805904ddc77c1fa56462f4c4cc40b14ed0e698f2d689"
+    },
+    {
+      "name": "scan-budget",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftScanBudgetUnknownAndOutboxAcknowledgement",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "1161f63ef20c06293ad555841571fd1ac772a56939ead82199d89123e1ab9ab4"
+    },
+    {
+      "name": "stop-budget",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "59bb5ad3a7f0cb71ee7477785e1ae2c2347a0da00daee5a9d3eefc9ae1ca991d",
+      "mutant_sha256": "372c2c7241a2a958caa084e715f33870fe8db1aaa95ed4fa2eb2a78dbf440870"
+    }
+  ]
+}

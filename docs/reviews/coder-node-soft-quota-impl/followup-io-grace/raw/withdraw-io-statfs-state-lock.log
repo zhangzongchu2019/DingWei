@@ -1,0 +1,24 @@
+=== RUN   TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity
+=== RUN   TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/statfs
+    softquota_io_test.go:191: hung snapshot admitted writer
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:195: hung snapshot reported ready
+    softquota_io_test.go:202: blocked probe did not mark report snapshot unknown
+    softquota_io_test.go:213: blocked statfs held reserve/admit/report
+--- FAIL: TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity (1.01s)
+    --- FAIL: TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/statfs (1.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.020s
+FAIL

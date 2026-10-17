@@ -1,0 +1,118 @@
+=== RUN   TestSoftInodeReserveRemainsAdmissionOnly
+--- PASS: TestSoftInodeReserveRemainsAdmissionOnly (0.01s)
+=== RUN   TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood
+=== RUN   TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood/error
+=== RUN   TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood/invalid
+--- PASS: TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood (0.03s)
+    --- PASS: TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood/error (0.01s)
+    --- PASS: TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood/invalid (0.01s)
+=== RUN   TestSoftStatfsRecoveryWithinGraceAndRestartDoesNotResetAnchor
+--- PASS: TestSoftStatfsRecoveryWithinGraceAndRestartDoesNotResetAnchor (0.01s)
+=== RUN   TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity
+=== RUN   TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/statfs
+=== RUN   TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/resources
+=== RUN   TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/inventory
+--- PASS: TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity (0.07s)
+    --- PASS: TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/statfs (0.03s)
+    --- PASS: TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/resources (0.02s)
+    --- PASS: TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/inventory (0.02s)
+=== RUN   TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers
+--- PASS: TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers (0.06s)
+=== RUN   TestSoftMissingAgeAnchorIsRejectedWithoutReset
+--- PASS: TestSoftMissingAgeAnchorIsRejectedWithoutReset (0.01s)
+=== RUN   TestSoftStateWriteBudgetConfiguration
+--- PASS: TestSoftStateWriteBudgetConfiguration (0.00s)
+=== RUN   TestSoftReservesUseActualFilesystemTotalWithoutEarlyTruncation
+--- PASS: TestSoftReservesUseActualFilesystemTotalWithoutEarlyTruncation (0.00s)
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+--- PASS: TestSoftReserveRunsWhileMetadataWalkIsBlocked (0.02s)
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+--- PASS: TestSoftReserveRunsWhileEngineStopIsBlocked (0.04s)
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+--- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.04s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.01s)
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+--- PASS: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.00s)
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+--- PASS: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (0.01s)
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+--- PASS: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.05s)
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+--- PASS: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.12s)
+=== RUN   TestSoftHoldStopsWithoutDeletionPersistsAndGatesEveryEntry
+--- PASS: TestSoftHoldStopsWithoutDeletionPersistsAndGatesEveryEntry (0.02s)
+=== RUN   TestSoftWarningHysteresisUnknownBudgetAndStopFailure
+--- PASS: TestSoftWarningHysteresisUnknownBudgetAndStopFailure (0.03s)
+=== RUN   TestSoftReservationBytesInodesInventoryConcurrencyAndReplay
+--- PASS: TestSoftReservationBytesInodesInventoryConcurrencyAndReplay (0.01s)
+=== RUN   TestSoftStartFreshUsageReserveAndNoCredentialSideEffects
+--- PASS: TestSoftStartFreshUsageReserveAndNoCredentialSideEffects (0.01s)
+=== RUN   TestSoftQuotaStateMetadataCorruptionAndUncleanRecovery
+--- PASS: TestSoftQuotaStateMetadataCorruptionAndUncleanRecovery (0.01s)
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/#00
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/ID
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/DockerRootDir
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/MemoryLimit
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/SwapLimit
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/CpuCfsPeriod
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/CpuCfsQuota
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/PidsLimit
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/CgroupDriver
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/CgroupVersion
+--- PASS: TestSoftEngineCapabilityAndIdentityPreflight (0.01s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/#00 (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/ID (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/DockerRootDir (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/MemoryLimit (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/SwapLimit (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/CpuCfsPeriod (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/CpuCfsQuota (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/PidsLimit (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/CgroupDriver (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/CgroupVersion (0.00s)
+=== RUN   TestSoftCreatePositiveAndFailureRetainsData
+=== RUN   TestSoftCreatePositiveAndFailureRetainsData/false
+=== RUN   TestSoftCreatePositiveAndFailureRetainsData/true
+--- PASS: TestSoftCreatePositiveAndFailureRetainsData (0.02s)
+    --- PASS: TestSoftCreatePositiveAndFailureRetainsData/false (0.01s)
+    --- PASS: TestSoftCreatePositiveAndFailureRetainsData/true (0.01s)
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/#00
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/label
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/mount
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/id
+--- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers (0.07s)
+    --- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/#00 (0.02s)
+    --- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/label (0.01s)
+    --- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/mount (0.02s)
+    --- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/id (0.02s)
+=== RUN   TestSoftScanBudgetUnknownAndOutboxAcknowledgement
+--- PASS: TestSoftScanBudgetUnknownAndOutboxAcknowledgement (0.03s)
+=== RUN   TestSoftResourceAndCommittedDiskReserve
+--- PASS: TestSoftResourceAndCommittedDiskReserve (0.01s)
+=== RUN   TestSoftPrivateWriteFailureStillStopsAndCannotResumeAfterCrash
+--- PASS: TestSoftPrivateWriteFailureStillStopsAndCannotResumeAfterCrash (0.01s)
+=== RUN   TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount
+--- PASS: TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount (0.04s)
+=== RUN   TestSoftUnknownAndAgeGateRecovery
+--- PASS: TestSoftUnknownAndAgeGateRecovery (0.02s)
+=== RUN   TestSoftMemoryCommitAndAvailableReserveSeparate
+--- PASS: TestSoftMemoryCommitAndAvailableReserveSeparate (0.01s)
+=== RUN   TestSoftUnrecordedContainerIsNeverAdopted
+--- PASS: TestSoftUnrecordedContainerIsNeverAdopted (0.01s)
+=== RUN   TestSoftApprovalReferencesAndDefaultSocketAliases
+--- PASS: TestSoftApprovalReferencesAndDefaultSocketAliases (0.00s)
+=== RUN   TestSoftHoldDurableBeforeStop
+--- PASS: TestSoftHoldDurableBeforeStop (0.01s)
+=== RUN   TestSoftRegistrationUsesDirectoryBackendAndReplayGate
+--- PASS: TestSoftRegistrationUsesDirectoryBackendAndReplayGate (0.02s)
+=== RUN   TestSoftMonitorMeasuresAgainOnPeriodicTick
+--- PASS: TestSoftMonitorMeasuresAgainOnPeriodicTick (0.05s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.854s

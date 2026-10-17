@@ -1,0 +1,6 @@
+=== RUN   TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount
+    softquota_test.go:678: stop batch unbounded or false success
+--- FAIL: TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount (2.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	2.028s
+FAIL

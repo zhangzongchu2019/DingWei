@@ -1,0 +1,12 @@
+{
+  "code_pin": "b8074831205c25376cf777c347ebdc985f3e4816",
+  "case": {
+    "name": "console-unknown",
+    "file": "internal/m8/console_auth.go",
+    "test": "console-soft-quota-regression.js",
+    "rc": 1,
+    "assertion_red": true,
+    "original_sha256": "114b9e32eea968e3a406b7082c31b7d90257e39e1de070e9f92696ffa9f170f7",
+    "mutant_sha256": "d953370ef5e2e7457b370fd89d01f6965a407a9ee392c2d178b592b635682f6e"
+  }
+}

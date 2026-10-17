@@ -1,0 +1,11 @@
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold/space_warning
+    node_quota_test.go:311: warning UI/hold mismatch map[account_kind:token_file account_registered_at:2026-10-17T09:12:50Z image_version:hub.local/dingwei/base-codex@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef model: node_name:warning plan:2c4g quota_mode:soft quota_notice:无硬磁盘配额 quota_usage_unknown:false quota_warning:true state:running upgradable:false]
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold/usage_warning
+    node_quota_test.go:311: warning UI/hold mismatch map[account_kind:token_file account_registered_at:2026-10-17T09:12:52Z image_version:hub.local/dingwei/base-codex@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef model: node_name:warning plan:2c4g quota_mode:soft quota_notice:无硬磁盘配额 quota_usage_unknown:false quota_warning:true state:running upgradable:false]
+--- FAIL: TestQuotaUsageWarningNotifiesWithoutPrematureHold (4.07s)
+    --- FAIL: TestQuotaUsageWarningNotifiesWithoutPrematureHold/space_warning (2.09s)
+    --- FAIL: TestQuotaUsageWarningNotifiesWithoutPrematureHold/usage_warning (1.99s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	4.077s
+FAIL
