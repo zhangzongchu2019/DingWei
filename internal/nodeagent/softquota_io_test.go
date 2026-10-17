@@ -240,11 +240,12 @@ func TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers(t *testing.T) 
 	q.policy.StateWriteBudget = 20 * time.Millisecond
 	entered, release, finished := make(chan struct{}), make(chan struct{}), make(chan struct{})
 	var calls atomic.Int32
+	var enterOnce, finishOnce sync.Once
 	q.writeState = func(path string, raw []byte) error {
 		calls.Add(1)
-		close(entered)
+		enterOnce.Do(func() { close(entered) })
 		<-release
-		defer close(finished)
+		defer finishOnce.Do(func() { close(finished) })
 		return writeSoftState(path, raw)
 	}
 	q.mu.Lock()
@@ -280,6 +281,9 @@ func TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers(t *testing.T) 
 	}
 	waitReserve(t, stopped, "state write timeout prevented fail-closed stop")
 	<-enforced
+	if _, _, ready := q.report(); ready || !q.broken {
+		t.Fatal("private-write failure did not block admission/report")
+	}
 	for i := 0; i < 20; i++ {
 		q.mu.Lock()
 		err := q.persistLocked()
