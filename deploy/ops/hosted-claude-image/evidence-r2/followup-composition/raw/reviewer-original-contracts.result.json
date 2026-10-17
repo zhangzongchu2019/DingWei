@@ -1,0 +1,16 @@
+{
+  "source": "81f0aa08118e22b0abeafb2d575fe16a603aa460",
+  "argv": [
+    "python3",
+    "/data/ai-dev-data/claude-packager-composition-lab/reviewer-probes.py",
+    "-v"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 0.581,
+  "started_utc": "2026-10-17T21:32:12.097210+00:00",
+  "finished_utc": "2026-10-17T21:32:12.677847+00:00",
+  "sha256": "a415cd5b0d0fc83b2c126d993fb1a57237e54bec4e8319ce2e74e4ea78b3bb8e",
+  "tests": 2,
+  "semantic_assertion_red": false,
+  "errors": false
+}

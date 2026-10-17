@@ -1,0 +1,22 @@
+{
+  "source": "a46db36e668ef2c1c4dbfbc910fbcefdf22612f0",
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "deploy/ops/hosted-image",
+    "-p",
+    "test_*.py",
+    "-v"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 2.097,
+  "started_utc": "2026-10-17T21:18:57.290818+00:00",
+  "finished_utc": "2026-10-17T21:18:59.388295+00:00",
+  "sha256": "40b8d9161574b7bded8c3ca90dc32d261089166f60c7a2702d5965a40b929218",
+  "tests": 36,
+  "semantic_assertion_red": false,
+  "errors": false
+}

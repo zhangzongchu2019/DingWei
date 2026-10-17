@@ -1,0 +1,52 @@
+[
+  {
+    "source": "c84184fcf6db2d43cdce5d8ec95fba16f85d87ec",
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "deploy/ops/hosted-claude-image",
+      "-p",
+      "test_claude_start.py",
+      "-v"
+    ],
+    "rc": 0,
+    "elapsed_seconds": 6.688,
+    "start": "2026-10-17T21:36:27.775291+00:00",
+    "end": "2026-10-17T21:36:34.463067+00:00",
+    "sha256": "01767fec3c315ae2fcd7f0718abf13742962aeb8af1dda6638a2755b11982b45"
+  },
+  {
+    "source": "c84184fcf6db2d43cdce5d8ec95fba16f85d87ec",
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "deploy/ops/hosted-image",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "rc": 0,
+    "elapsed_seconds": 2.24,
+    "start": "2026-10-17T21:36:34.463495+00:00",
+    "end": "2026-10-17T21:36:36.703907+00:00",
+    "sha256": "96eff4cc50abd2118fcb3d7577b395f997181b4f14adf0c40244a63d471295ea"
+  },
+  {
+    "source": "c84184fcf6db2d43cdce5d8ec95fba16f85d87ec",
+    "argv": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "rc": 0,
+    "elapsed_seconds": 161.081,
+    "start": "2026-10-17T21:36:36.704387+00:00",
+    "end": "2026-10-17T21:39:17.785911+00:00",
+    "sha256": "dfe06b1e7dfaef1df18e9cb3cd7c2879ec9381e6a63dcb8052c97f43d02ecde3"
+  }
+]

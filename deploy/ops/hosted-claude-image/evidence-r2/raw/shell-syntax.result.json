@@ -1,0 +1,16 @@
+{
+  "source": "a46db36e668ef2c1c4dbfbc910fbcefdf22612f0",
+  "argv": [
+    "sh",
+    "-n",
+    "deploy/ops/hosted-claude-image/build-image.sh"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 0.001,
+  "started_utc": "2026-10-17T21:18:59.458547+00:00",
+  "finished_utc": "2026-10-17T21:18:59.459870+00:00",
+  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "tests": null,
+  "semantic_assertion_red": false,
+  "errors": false
+}

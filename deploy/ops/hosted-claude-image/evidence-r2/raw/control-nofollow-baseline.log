@@ -1,0 +1,6 @@
+test_regular_symlink_is_rejected_before_external_read (test_claude_start.ClaudePackager.test_regular_symlink_is_rejected_before_external_read) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.126s
+
+OK

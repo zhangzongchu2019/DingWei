@@ -1,0 +1,107 @@
+{
+  "repository": "git@git.code.tencent.com:wego-ai/dingwei.git",
+  "ref": "refs/heads/review/coder/hosted-claude-packager",
+  "source": "81f0aa08118e22b0abeafb2d575fe16a603aa460",
+  "tree": "6db7c0d4afe045888cb754403cd85038bd13ca3e",
+  "parent_delivery": "be1dbb8d659456b494d306596a2790cd1965488c",
+  "review": "d3b174ea663636a51aa5c0ce71568768891788e7",
+  "files": {
+    "deploy/ops/hosted-claude-image/BUILD-CLAUDE-0234.md": {
+      "blob": "f5bf99c626475582d0c2aff9cf9ba642faadd33e",
+      "sha256": "5b3b09a2aa131bf374ec3c9699aa7bd84b3ace40b9ff156bc24e6c9c45ebe179"
+    },
+    "deploy/ops/hosted-claude-image/DEVELOPMENT-DELIVERY.md": {
+      "blob": "a55f019b06b4821b2cb39b00b1eb6168081eb25a",
+      "sha256": "ffeca640b91186815d528628fbf985c3e89c4da727e136251c8a12236a635e70"
+    },
+    "deploy/ops/hosted-claude-image/Dockerfile": {
+      "blob": "f21f338165e5b4a9916d58de53eae3b92f47be71",
+      "sha256": "e4eef4f4e7be5f47147ac0e346dd5a21b63c271d3ca71e27c3e534b3a6a20207"
+    },
+    "deploy/ops/hosted-claude-image/IMPLEMENTATION-NOTE.md": {
+      "blob": "c1270d957449c454f66e7d44f0976b0bb47cd344",
+      "sha256": "e8d37316803c2ca4ba53dd42b56727eb33a5deeb9693a731fe90776512bc31d2"
+    },
+    "deploy/ops/hosted-claude-image/PACKAGER-CONTRACT.md": {
+      "blob": "4707933d2582980ad7e2ffc4f163a45f17d70c1e",
+      "sha256": "4c0b4279e3824e67496533aeb3bbd841ddd9a48e1aac2d81dacd7dc4b2f7c1cf"
+    },
+    "deploy/ops/hosted-claude-image/build-image.sh": {
+      "blob": "b4e06bdf3fe10f28fd88e46cf14c4773b8ddc674",
+      "sha256": "7a8f845e723059d9490dae73bc8072eea2ae9b620187b0b57aecf4d996361b7a"
+    },
+    "deploy/ops/hosted-claude-image/claude-package-lock.json": {
+      "blob": "3759350437f484423da95c56e484a679d1695872",
+      "sha256": "24ed2a68ea9d8c1687c6ced57c42eb25246e40a99844d89dde32367ec361eb1b"
+    },
+    "deploy/ops/hosted-claude-image/claude-start.py": {
+      "blob": "1f316f1bd08f6aa132c3eca86dfb8b76ecf837a6",
+      "sha256": "90ebb44c93bcc1970fee921660f5fe178b8fa5e9d3aefe0694e0207880a42b0d"
+    },
+    "deploy/ops/hosted-claude-image/claude.py": {
+      "blob": "4922fd0730b8339a8968bf3a29b5c4d8c4491c78",
+      "sha256": "6d2e989ca8daf6303c61da1bd09c3dd4428d8a1485f02bf00af5bff6f4723cc3"
+    },
+    "deploy/ops/hosted-claude-image/combos.json": {
+      "blob": "27eb678bb4dbcd304e7a388e88e6e8a434bd4af1",
+      "sha256": "98fca92756f314d5159535b777c4952ed3697872a76bb18a7804d16f1847a63c"
+    },
+    "deploy/ops/hosted-claude-image/context-map.json": {
+      "blob": "70f7d16ef919176fab2eb03574e1797aa414e20e",
+      "sha256": "cea79ed763c3e3c30d96bc57291a4e58b218af905fa5f525d2cbbcf6e649bc35"
+    },
+    "deploy/ops/hosted-claude-image/dockerignore": {
+      "blob": "184304216d7cf071bee1dc7f4ab61e5c7854f4cd",
+      "sha256": "8ec771a8b5364673db4c10fa2fba4630fafa45a6f6314c4b137436152b443c9d"
+    },
+    "deploy/ops/hosted-claude-image/prepare_context.py": {
+      "blob": "ec1053ce0a2aa28246209b85425661439bde93f0",
+      "sha256": "5cd4fd935c300d8d55d6d2d04530f351e3b493cce22af23497d87d980ecbd91a"
+    },
+    "deploy/ops/hosted-claude-image/test_claude_start.py": {
+      "blob": "d70fd8e72de640f632d35134795477161a475003",
+      "sha256": "99c38ab8c02ef55013dc867c6f6951ec2d2883f22479a4677c80c8741f56edf2"
+    },
+    "deploy/ops/hosted-claude-image/verify_inputs.py": {
+      "blob": "dd99298c77a65db4d4f98869ed887b2b60b38582",
+      "sha256": "c17db59f89f6760a31fe47b31ae9d6beb7da45abd8bc4a91ec9c3efe019fd643"
+    }
+  },
+  "changed_files": [
+    "deploy/ops/hosted-claude-image/PACKAGER-CONTRACT.md",
+    "deploy/ops/hosted-claude-image/dockerignore",
+    "deploy/ops/hosted-claude-image/prepare_context.py",
+    "deploy/ops/hosted-claude-image/test_claude_start.py"
+  ],
+  "prepare_context_unchanged_function_AST": [
+    "sha",
+    "safe_rel",
+    "open_dir",
+    "read_at",
+    "regular",
+    "json_bytes",
+    "git",
+    "git_blob",
+    "source_inputs",
+    "h3_snapshot",
+    "check_wheels",
+    "main"
+  ],
+  "prepare_context_changed_functions": [
+    "unpack_package",
+    "prepare"
+  ],
+  "other_source_pins_unchanged": [
+    "deploy/ops/hosted-claude-image/BUILD-CLAUDE-0234.md",
+    "deploy/ops/hosted-claude-image/DEVELOPMENT-DELIVERY.md",
+    "deploy/ops/hosted-claude-image/Dockerfile",
+    "deploy/ops/hosted-claude-image/IMPLEMENTATION-NOTE.md",
+    "deploy/ops/hosted-claude-image/build-image.sh",
+    "deploy/ops/hosted-claude-image/claude-package-lock.json",
+    "deploy/ops/hosted-claude-image/claude-start.py",
+    "deploy/ops/hosted-claude-image/claude.py",
+    "deploy/ops/hosted-claude-image/combos.json",
+    "deploy/ops/hosted-claude-image/context-map.json",
+    "deploy/ops/hosted-claude-image/verify_inputs.py"
+  ]
+}

@@ -1,0 +1,9 @@
+test_guard_is_included_by_ignore_contract (__main__.Contracts.test_guard_is_included_by_ignore_contract) ... ok
+test_runtime_directories_traversable_for_seat_uid (__main__.Contracts.test_runtime_directories_traversable_for_seat_uid) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.472s
+
+OK
+guard_mapping {"copy_source": "start.py", "source_exists": true, "ignore_lines": ["*", "!Dockerfile", "!helper/", "!helper/**", "!wheels/", "!wheels/**", "!runtime-debs/", "!runtime-debs/**", "!security-debs/", "!security-debs/**", "!native/", "!native/package/", "!native/package/**", "!claude/", "!claude/package/", "!claude/package/**", "!node/", "!node/node-v22.23.3-linux-x64.tar.xz", "!start.py", "!claude-start.py", "!claude.py"]}
+copied_runtime_directory_modes {"helper/factory": "0o755", "helper/factory/sessionhelper": "0o755", "helper/sessionhelper": "0o755", "claude/package": "0o755", "claude/package/bin": "0o755", "native/package": "0o755", "native/package/bin": "0o755"}

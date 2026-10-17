@@ -106,6 +106,81 @@ class ContextFixtures(unittest.TestCase):
         with mock.patch.object(pc, 'git', return_value=b'b'*40):
             with self.assertRaises(pc.Rejected): pc.prepare(self.root, commit, self.wheels, self.root/'native', self.root, self.root, self.root/'out')
 
+    def test_source_kit_clean_checkout_without_bytecode_environment(self):
+        # Exercise the real packager in a new repository with NO ignore rules.
+        repo = self.root/'source'; repo.mkdir()
+        helper = repo/'tools/sessionhelper'; helper.mkdir(parents=True)
+        original = HERE.parents[2]/'tools/sessionhelper'
+        members = {
+            'package_release.py': (original/'package_release.py').read_bytes(),
+            'requirements-runtime.lock': (original/'requirements-runtime.lock').read_bytes(),
+            'sessionhelper/__init__.py': b'__version__ = "0.2.3.4"\n',
+            'sessionhelper/__main__.py': b'# inert fixture only\n',
+            'bootstrap.py': b'# inert bootstrap\n',
+            'update_launcher/guard.py': b'# inert guard\n',
+            'update_launcher/launcher_main.py': b'# inert root\n',
+            'update_launcher/mcp_forwarder.py': b'# inert forwarder\n',
+        }
+        for name, data in members.items():
+            path = helper/name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
+        def git(*args):
+            return subprocess.check_output(['git', '-c', 'core.hooksPath=/dev/null',
+                '-c', 'user.name=coder56solzzc', '-c', 'user.email=coder56solzzc@dingwei.local',
+                '-C', str(repo), *args], stderr=subprocess.DEVNULL, text=True).strip()
+        git('init', '-q'); git('add', '.'); git('commit', '-qm', 'synthetic source kit fixture')
+        commit = git('rev-parse', 'HEAD')
+        self.assertFalse((repo/'.gitignore').exists())
+        script = r'''import importlib.util, pathlib, subprocess, sys
+assert not sys.dont_write_bytecode
+repo = pathlib.Path(sys.argv[1])
+spec = importlib.util.spec_from_file_location('source_kit_clean_fixture', sys.argv[3])
+pc = importlib.util.module_from_spec(spec); spec.loader.exec_module(pc)
+def status():
+    return subprocess.check_output(['git', '-C', str(repo), 'status', '--porcelain', '--untracked-files=all'])
+assert status() == b''
+assert not list(repo.rglob('.gitignore'))
+for _ in range(2):
+    files = pc.source_kit(repo, sys.argv[2])
+    assert 'factory/sessionhelper/__init__.py' in files
+    assert not sys.dont_write_bytecode
+    assert not list(repo.rglob('__pycache__'))
+    assert status() == b''
+# Real dirt is still rejected, not hidden/deleted by the bytecode fix.
+dirty = repo/'tools/sessionhelper/unapproved.py'; dirty.write_text('# real dirt\n')
+try:
+    pc.source_kit(repo, sys.argv[2])
+except ValueError as exc:
+    assert str(exc) == 'source_not_clean', str(exc)
+else:
+    raise AssertionError('genuine untracked source accepted')
+assert dirty.exists()
+assert not sys.dont_write_bytecode
+print('CLEAN_SOURCE_KIT_REPEAT_AND_DIRTY_REFUSAL_OK')
+'''
+        env = dict(os.environ)
+        for name in ('PYTHONDONTWRITEBYTECODE', 'PYTHONPYCACHEPREFIX', 'PYTHONPATH', 'PYTHONSTARTUP'):
+            env.pop(name, None)
+        import sys
+        result = subprocess.run([sys.executable, '-c', script, str(repo), commit, str(HERE/'prepare_context.py')],
+                                env=env, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+        self.assertIn('CLEAN_SOURCE_KIT_REPEAT_AND_DIRTY_REFUSAL_OK', result.stdout)
+
+    def test_source_kit_loader_failure_restores_bytecode_setting(self):
+        import sys
+        for previous in (False, True):
+            with self.subTest(previous=previous), mock.patch.object(sys, 'dont_write_bytecode', previous):
+                loader = mock.Mock()
+                def fail(module):
+                    self.assertTrue(sys.dont_write_bytecode)
+                    raise RuntimeError('synthetic loader failure')
+                loader.exec_module.side_effect = fail
+                spec = importlib.util.spec_from_loader('source_kit_failure_fixture', loader)
+                with mock.patch.object(pc.importlib.util, 'spec_from_file_location', return_value=spec):
+                    with self.assertRaisesRegex(RuntimeError, 'synthetic loader failure'):
+                        pc.source_kit(self.root, 'a'*40)
+                self.assertIs(sys.dont_write_bytecode, previous)
+
     def test_context_allowlist_assembly_no_source_directory_copy(self):
         # Explicitly synthetic orchestration: input format validators above run independently.
         commit = 'a'*40

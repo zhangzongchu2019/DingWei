@@ -1,0 +1,6 @@
+test_staged_copy_sources_survive_actual_ignore_rules (test_claude_start.ClaudePackager.test_staged_copy_sources_survive_actual_ignore_rules) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.274s
+
+OK

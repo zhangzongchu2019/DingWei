@@ -1,0 +1,6 @@
+test_pre_docker_script_remains_closed_with_valid_composition (test_claude_start.ClaudePackager.test_pre_docker_script_remains_closed_with_valid_composition) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.554s
+
+OK

@@ -14,6 +14,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import zipfile
@@ -120,7 +121,14 @@ def checked_native(path, lock):
 
 def source_kit(repo, commit):
     spec = importlib.util.spec_from_file_location('hosted_package_release', repo / 'tools/sessionhelper/package_release.py')
-    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    mod = importlib.util.module_from_spec(spec)
+    # Loading the packager must not dirty the source it is about to verify.
+    previous = sys.dont_write_bytecode
+    try:
+        sys.dont_write_bytecode = True
+        spec.loader.exec_module(mod)
+    finally:
+        sys.dont_write_bytecode = previous
     with tempfile.TemporaryDirectory(prefix='hosted-source-kit-') as temp:
         artifact = Path(temp) / 'helper.tgz'
         mod.build(repo, commit, artifact)

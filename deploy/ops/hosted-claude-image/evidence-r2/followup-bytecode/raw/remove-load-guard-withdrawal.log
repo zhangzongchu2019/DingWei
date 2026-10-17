@@ -1,0 +1,45 @@
+test_source_kit_clean_checkout_without_bytecode_environment (test_build_definition.ContextFixtures.test_source_kit_clean_checkout_without_bytecode_environment) ... FAIL
+test_source_kit_loader_failure_restores_bytecode_setting (test_build_definition.ContextFixtures.test_source_kit_loader_failure_restores_bytecode_setting) ... 
+  test_source_kit_loader_failure_restores_bytecode_setting (test_build_definition.ContextFixtures.test_source_kit_loader_failure_restores_bytecode_setting) (previous=False) ... FAIL
+
+======================================================================
+FAIL: test_source_kit_clean_checkout_without_bytecode_environment (test_build_definition.ContextFixtures.test_source_kit_clean_checkout_without_bytecode_environment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/test_build_definition.py", line 166, in test_source_kit_clean_checkout_without_bytecode_environment
+    self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 11, in <module>
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/tmp67faabzn/source/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+
+======================================================================
+FAIL: test_source_kit_loader_failure_restores_bytecode_setting (test_build_definition.ContextFixtures.test_source_kit_loader_failure_restores_bytecode_setting) (previous=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/test_build_definition.py", line 181, in test_source_kit_loader_failure_restores_bytecode_setting
+    pc.source_kit(self.root, 'a'*40)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 123, in source_kit
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1199, in _execute_mock_call
+    result = effect(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/test_build_definition.py", line 175, in fail
+    self.assertTrue(sys.dont_write_bytecode)
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.144s
+
+FAILED (failures=2)

@@ -1,0 +1,16 @@
+{
+  "source": "a46db36e668ef2c1c4dbfbc910fbcefdf22612f0",
+  "argv": [
+    "python3",
+    "deploy/test_build_entrypoints.py",
+    "-v"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 0.069,
+  "started_utc": "2026-10-17T21:18:59.388663+00:00",
+  "finished_utc": "2026-10-17T21:18:59.457974+00:00",
+  "sha256": "1b04844a04720de667b89d65149f7e04f58abf23eb71800bf7992d1bc9360488",
+  "tests": 11,
+  "semantic_assertion_red": false,
+  "errors": false
+}

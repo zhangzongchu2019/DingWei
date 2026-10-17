@@ -1,0 +1,31 @@
+test_regular_symlink_is_rejected_before_external_read (test_claude_start.ClaudePackager.test_regular_symlink_is_rejected_before_external_read) ... FAIL
+
+======================================================================
+FAIL: test_regular_symlink_is_rejected_before_external_read (test_claude_start.ClaudePackager.test_regular_symlink_is_rejected_before_external_read)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-r2-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 268, in test_regular_symlink_is_rejected_before_external_read
+    prepare.regular(link)
+  File "/data/ai-dev-data/claude-packager-r2-lab/mutant/deploy/ops/hosted-claude-image/prepare_context.py", line 87, in regular
+    return read_at(fd, path.name, limit=limit)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-r2-lab/mutant/deploy/ops/hosted-claude-image/prepare_context.py", line 65, in read_at
+    chunk = os.read(stream, 1 << 20)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1199, in _execute_mock_call
+    result = effect(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-r2-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 265, in check
+    self.fail('external synthetic secret was read')
+AssertionError: external synthetic secret was read
+
+----------------------------------------------------------------------
+Ran 1 test in 0.131s
+
+FAILED (failures=1)

@@ -1,0 +1,10 @@
+{
+  "review": "d3b174ea663636a51aa5c0ce71568768891788e7",
+  "original_sha256": "0c595612fc3a66013bf9d11cbfe29b4b0acd665a3ded37a60179cb9bd3aaf304",
+  "adapted_sha256": "59f9c55114c07adbe7204ab53ea5aa4ba4293163e73b59f400d439a9ef7b565f",
+  "only_change": {
+    "from": "/tmp/ots-r2-be1/deploy/ops/hosted-claude-image/test_claude_start.py",
+    "to": "/data/ai-dev-data/claude-packager-composition-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py"
+  },
+  "assertions_unchanged": true
+}

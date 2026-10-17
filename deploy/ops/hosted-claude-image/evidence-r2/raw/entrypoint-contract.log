@@ -1,0 +1,16 @@
+test_build_make_and_ci_share_the_canonical_test_entrypoint (__main__.BuildEntrypointContractTest.test_build_make_and_ci_share_the_canonical_test_entrypoint) ... ok
+test_build_sh_owns_gate_flags_and_deploy_provenance (__main__.BuildEntrypointContractTest.test_build_sh_owns_gate_flags_and_deploy_provenance) ... ok
+test_docker_builder_runs_gate_and_verifies_embedded_commit (__main__.BuildEntrypointContractTest.test_docker_builder_runs_gate_and_verifies_embedded_commit) ... ok
+test_every_deploy_and_view_service_test_is_wired_once (__main__.BuildEntrypointContractTest.test_every_deploy_and_view_service_test_is_wired_once) ... ok
+test_install_never_reuses_or_directly_builds_an_unverified_binary (__main__.BuildEntrypointContractTest.test_install_never_reuses_or_directly_builds_an_unverified_binary) ... ok
+test_make_build_and_docker_do_not_copy_build_flags (__main__.BuildEntrypointContractTest.test_make_build_and_docker_do_not_copy_build_flags) ... ok
+test_nodeagent_is_a_peer_release_artifact (__main__.BuildEntrypointContractTest.test_nodeagent_is_a_peer_release_artifact) ... ok
+test_ts3_helper_regressions_are_wired_once (__main__.BuildEntrypointContractTest.test_ts3_helper_regressions_are_wired_once) ... ok
+test_update_modules_and_canonical_counts_are_wired (__main__.BuildEntrypointContractTest.test_update_modules_and_canonical_counts_are_wired) ... ok
+test_view_page_store_has_one_configurable_timeout (__main__.BuildEntrypointContractTest.test_view_page_store_has_one_configurable_timeout) ... ok
+test_view_unlock_integration_has_one_configurable_timeout (__main__.BuildEntrypointContractTest.test_view_unlock_integration_has_one_configurable_timeout) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.006s
+
+OK
