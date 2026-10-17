@@ -85,12 +85,19 @@ class HostedSendTest(unittest.TestCase):
 
     def test_invalid_shapes_and_unknown_metadata(self):
         for patch in ({'to': []}, {'body': {}}, {'body': ' '}, {'request_id': []}, {'kind': {}},
-                      {'extra': str(self.layout.auth)}, {'file': ''}, {'body': 'x' * 65537}):
+                      {'extra': str(self.layout.auth)}, {'file': ''}, {'body': 'x' * 65537}, {'body': '\ud800'}):
             payload = dict(type='mcp_send', to='peer', body='hi'); payload.update(patch)
             result = fx.raw_ipc(self.layout.sock, payload)
             self.assertFalse(result['ok'])
             self.assertNotIn('private', json.dumps(result))
         self.assertEqual(self.sent, [])
+
+    def test_restricted_body_byte_boundary_including_json_overhead(self):
+        for body in ('x' * 65536, '中' * 21845):
+            self.assertTrue(fx.raw_ipc(self.layout.sock, dict(type='mcp_send', to='peer', body=body))['ok'])
+        self.assertEqual(len(self.sent), 2)
+        self.assertFalse(fx.raw_ipc(self.layout.sock, dict(type='mcp_send', to='peer', body='中' * 21846))['ok'])
+        self.assertEqual(len(self.sent), 2)
 
     def test_upload_stays_available_and_secret_upload_stays_denied(self):
         path = self.layout.root / 'report.txt'; path.write_text('public report')

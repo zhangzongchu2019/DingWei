@@ -213,8 +213,13 @@ async def _handle_body_send(writer, msg, send_handler, passed_fds):
         await _write_one(writer, {"ok": False, "error": "operation_not_allowed"})
         return
     to, body, request_id = msg.get("to"), msg.get("body"), msg.get("request_id", "")
+    try:
+        body_bytes = len(body.encode("utf-8")) if isinstance(body, str) else -1
+    except UnicodeError:
+        await _write_one(writer, {"ok": False, "error": "invalid_request"})
+        return
     if (not isinstance(to, str) or not to.strip() or len(to) > 512 or
-            not isinstance(body, str) or not body.strip() or len(body.encode("utf-8")) > 65536 or
+            not isinstance(body, str) or not body.strip() or body_bytes > 65536 or
             not isinstance(request_id, str) or len(request_id) > 128 or
             any(not isinstance(msg[k], str) or len(msg[k]) > 512 for k in REPLY_ORIGIN_KEYS if k in msg)):
         await _write_one(writer, {"ok": False, "error": "invalid_request"})
@@ -447,7 +452,7 @@ async def _recv_request(loop: asyncio.AbstractEventLoop, conn: socket.socket, fd
     return bytes(buf.split(b"\n", 1)[0] + b"\n") if b"\n" in buf else bytes(buf)
 
 
-async def _serve_socket_connection(conn: socket.socket, dispatch) -> None:
+async def _serve_socket_connection(conn: socket.socket, dispatch, *, stream_limit: int = 65536) -> None:
     loop = asyncio.get_running_loop()
     fds: list[int] = []
     try:
@@ -461,7 +466,7 @@ async def _serve_socket_connection(conn: socket.socket, dispatch) -> None:
         except _IPCError as exc:
             await _write_one(writer, {"ok": False, "error": str(exc)})
             return
-        reader = asyncio.StreamReader(limit=1024 * 1024)
+        reader = asyncio.StreamReader(limit=stream_limit)
         reader.feed_data(line)
         reader.feed_eof()
         try:
@@ -562,7 +567,8 @@ async def serve_ipc(
             bound.set()
         while True:
             conn, _ = await loop.sock_accept(listener)
-            task = asyncio.create_task(_serve_socket_connection(conn, dispatch))
+            task = asyncio.create_task(_serve_socket_connection(
+                conn, dispatch, stream_limit=1024 * 1024 if send_body_only and not upload_only else 65536))
             tasks.add(task)
             task.add_done_callback(tasks.discard)
     finally:
