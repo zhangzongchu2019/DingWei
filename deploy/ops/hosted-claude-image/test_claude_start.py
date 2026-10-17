@@ -1,0 +1,53 @@
+"""Offline launcher fixtures; never invokes Claude, helper, Docker, or real credentials."""
+import importlib.util
+import json
+import os
+from pathlib import Path
+import tempfile
+import unittest
+from unittest import mock
+
+HERE = Path(__file__).resolve().parent
+spec = importlib.util.spec_from_file_location('claude_start_fixture', HERE / 'claude-start.py')
+start = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(start)
+
+
+class ClaudeStart(unittest.TestCase):
+    def test_definition_keeps_combo_unverified_and_builder_fail_closed(self):
+        combo = json.loads((HERE / 'combos.json').read_text())
+        self.assertEqual(combo, [{'cli': 'claude', 'llm': 'claude', 'cred_kind': 'token_file', 'verified': False}])
+        out = __import__('subprocess').run(['sh', str(HERE / 'build-image.sh')], text=True, capture_output=True)
+        self.assertEqual(out.returncode, 2)
+        self.assertNotIn('docker', out.stdout.lower())
+
+    def test_restricted_mcp_and_json_object_credential(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cred = root / 'account-credential'
+            cred.write_text('{"opaque":"synthetic"}')
+            cred.chmod(0o600)
+            env = {'SH_WS_BASE': 'wss://hub.invalid', 'SH_ENROLL_TOKEN_FILE': str(root/'enroll'),
+                   'SH_CRED_FILE': str(cred), 'SH_CRED_KIND': 'token_file', 'SH_CLI': 'claude',
+                   'HOME': str(root/'work')}
+            with mock.patch.object(start, '_shared_guard'), mock.patch.object(start, 'SEAT_UID', os.getuid()):
+                out = start.prepare(env)
+            self.assertEqual((out['SH_IPC_UPLOAD_ONLY'], out['SH_IPC_SEND_BODY_ONLY']), ('0', '1'))
+            self.assertEqual(out['SH_CLI_CMD'], start.CLAUDE_BIN)
+            self.assertEqual(json.loads((root/'work'/'.claude.json').read_text()), {'opaque': 'synthetic'})
+            mcp = json.loads((root/'work'/'.claude'/'mcp.json').read_text())['mcpServers']['dingwei-send']
+            self.assertEqual(mcp['env']['SH_IPC_SEND_BODY_ONLY'], '1')
+            self.assertNotIn('file', json.dumps(mcp))
+
+    def test_rejects_non_object_or_wrong_cli(self):
+        for raw, cli in (('[]', 'claude'), ('{}', 'codex')):
+            with self.subTest(raw=raw, cli=cli), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp); cred = root/'credential'; cred.write_text(raw); cred.chmod(0o600)
+                env = {'SH_WS_BASE': 'wss://hub.invalid', 'SH_ENROLL_TOKEN_FILE': str(root/'enroll'),
+                       'SH_CRED_FILE': str(cred), 'SH_CRED_KIND': 'token_file', 'SH_CLI': cli, 'HOME': str(root/'work')}
+                with mock.patch.object(start, '_shared_guard'), mock.patch.object(start, 'SEAT_UID', os.getuid()), self.assertRaises(SystemExit):
+                    start.prepare(env)
+
+
+if __name__ == '__main__':
+    unittest.main()

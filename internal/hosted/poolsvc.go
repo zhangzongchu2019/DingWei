@@ -75,7 +75,7 @@ const MaxSecretBytes = 64 << 10
 
 var ErrSecretTooLarge = errors.New("hosted: secret too large")
 
-// validateSecret 登记／换密共用：非空、不超限、无 NUL；token_file 须为合法 JSON。错误文本不含输入内容。
+// validateSecret 登记／换密共用的通用闸：非空、不超限、无 NUL；token_file 须为合法 JSON。错误文本不含输入内容。
 // MinAPIKeyBytes api_key 最短长度（复核 tosonnet55tc2k 第 1 批提示 3：防「后四位」即整串）。
 const MinAPIKeyBytes = 8
 
@@ -94,6 +94,24 @@ func validateSecret(kind, secret string) error {
 	}
 	if kind == "token_file" && !json.Valid([]byte(secret)) {
 		return fmt.Errorf("%w: token_file 须为 JSON", ErrParams)
+	}
+	return nil
+}
+
+// validateCredential keeps provider-specific token-file ABIs at the pool boundary.
+// Claude's initial hosted ABI is deliberately narrow: an opaque JSON object only.
+// It does not claim compatibility with an unapproved vendor login-file schema and
+// never includes input bytes in its error.  Codex keeps its existing JSON ABI.
+func validateCredential(cli, kind, secret string) error {
+	if err := validateSecret(kind, secret); err != nil {
+		return err
+	}
+	if cli != "claude" || kind != "token_file" {
+		return nil
+	}
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(secret), &obj); err != nil || obj == nil {
+		return fmt.Errorf("%w: Claude token_file 须为 JSON 对象", ErrParams)
 	}
 	return nil
 }
@@ -122,7 +140,7 @@ func (p *PoolService) registerOwned(ctx context.Context, owner, name, kind, cli,
 	if name == "" || len(name) > AccountNameMaxLen || (kind != "api_key" && kind != "token_file") || cli == "" || llm == "" {
 		return Account{}, fmt.Errorf("%w: name/kind/cli/llm 均必填", ErrParams)
 	}
-	if err := validateSecret(kind, secret); err != nil {
+	if err := validateCredential(cli, kind, secret); err != nil {
 		return Account{}, err
 	}
 	n, err := p.st.CountOwnedAccounts(ctx, owner)
@@ -160,7 +178,7 @@ func (p *PoolService) UpdateSecretOwned(ctx context.Context, owner, accountID, s
 	if err != nil {
 		return 0, err
 	}
-	if err := validateSecret(a.Kind, secret); err != nil {
+	if err := validateCredential(a.CLI, a.Kind, secret); err != nil {
 		return 0, err
 	}
 	enc, kv, err := p.st.EncryptAccountSecret(ctx, p.master, []byte(secret))

@@ -27,7 +27,8 @@ func TestStaticRegistriesFailClosed(t *testing.T) {
 	// 正常表：verified 逐字、List 全量
 	good := filepath.Join(dir, "combos.json")
 	os.WriteFile(good, []byte(`[{"cli":"codex","llm":"gpt","cred_kind":"token_file","verified":true},
-		{"cli":"codex","llm":"gpt","cred_kind":"api_key","verified":false}]`), 0o600)
+		{"cli":"codex","llm":"gpt","cred_kind":"api_key","verified":false},
+		{"cli":"claude","llm":"claude","cred_kind":"token_file","verified":false}]`), 0o600)
 	c1, err := LoadCombos(good)
 	if err != nil {
 		t.Fatal(err)
@@ -38,7 +39,10 @@ func TestStaticRegistriesFailClosed(t *testing.T) {
 	if v, ok := c1.Lookup("codex", "gpt", "api_key"); !ok || v {
 		t.Fatal("未验通组合应 verified=false")
 	}
-	if len(c1.List()) != 2 {
+	if v, ok := c1.Lookup("claude", "claude", "token_file"); !ok || v {
+		t.Fatal("Claude entry must exist but remain unverified")
+	}
+	if len(c1.List()) != 3 {
 		t.Fatal("List 应全量")
 	}
 	// 畸形：JSON 坏 / 行缺字段 ⇒ 报错

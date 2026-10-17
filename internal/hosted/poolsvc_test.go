@@ -7,6 +7,25 @@ import (
 	"testing"
 )
 
+func TestClaudeTokenFileABI(t *testing.T) {
+	// This is a structure-only contract.  It deliberately does not inspect or
+	// accept a real provider login state before an owner-approved ABI exists.
+	for _, raw := range []string{`{}`, `{"opaque":"synthetic"}`} {
+		if err := validateCredential("claude", "token_file", raw); err != nil {
+			t.Fatalf("Claude JSON object should pass: %v", err)
+		}
+	}
+	for _, raw := range []string{`[]`, `null`, `"string"`, `not-json`} {
+		if err := validateCredential("claude", "token_file", raw); err == nil {
+			t.Fatalf("Claude non-object must fail: %q", raw)
+		}
+	}
+	// Existing Codex token-file semantics are intentionally unchanged.
+	if err := validateCredential("codex", "token_file", `[]`); err != nil {
+		t.Fatalf("Codex generic JSON ABI regressed: %v", err)
+	}
+}
+
 func mkMasterKeyPath(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()

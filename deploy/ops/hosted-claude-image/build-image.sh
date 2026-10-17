@@ -1,0 +1,13 @@
+#!/bin/sh
+# Future isolated builder only. It intentionally refuses until a reviewed,
+# hash-pinned offline Claude artifact and context packager exist.
+set -eu
+: "${HOSTED_BUILD_ENGINE:?approved isolated Docker unix socket required}"
+: "${CLAUDE_OFFLINE_LOCK:?reviewed offline Claude artifact lock required}"
+: "${CLAUDE_NATIVE_TAR:?reviewed offline Claude artifact required}"
+case "$HOSTED_BUILD_ENGINE" in unix:///*) ;; *) echo 'isolated unix Engine required' >&2; exit 2;; esac
+case "$HOSTED_BUILD_ENGINE" in unix:///var/run/docker.sock|unix:///run/docker.sock)
+  echo 'default host Engine forbidden' >&2; exit 2 ;;
+esac
+echo 'Claude context packager is not approved; refusing before Docker access' >&2
+exit 2
