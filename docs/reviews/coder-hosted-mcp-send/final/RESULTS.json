@@ -1,0 +1,53 @@
+[
+  {
+    "name": "canonical",
+    "command": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "cwd": ".",
+    "rc": 1,
+    "seconds": 37.716
+  },
+  {
+    "name": "helper-root",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools/sessionhelper/tests",
+      "-q"
+    ],
+    "cwd": ".",
+    "rc": 1,
+    "seconds": 386.076
+  },
+  {
+    "name": "helper-cwd",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-q"
+    ],
+    "cwd": "tools/sessionhelper",
+    "rc": 1,
+    "seconds": 391.418
+  },
+  {
+    "name": "version",
+    "command": [
+      "go",
+      "test",
+      "./internal/version"
+    ],
+    "cwd": ".",
+    "rc": 0,
+    "seconds": 0.134
+  }
+]

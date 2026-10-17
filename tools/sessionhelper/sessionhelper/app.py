@@ -1324,6 +1324,7 @@ class SessionHelper:
                             allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock),
                             upload_handler=self._make_upload_handler(ws) if self.upload_policy.enabled else None,
                             bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only,
+                            send_body_only=getattr(self.cfg, "ipc_send_body_only", False),
                             inbox_handler=self._make_desktop_inbox_handler(ws), spec_handler=self._make_spec_write_handler(ws))
         except IPCSocketPathError:
             self._ipc_rejected_socket_path = self.cfg.mcp_ipc_sock

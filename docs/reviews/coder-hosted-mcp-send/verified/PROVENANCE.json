@@ -1,0 +1,7 @@
+{
+  "commit": "8e0b9e3728d183bf5498525b3c20968917e8a6c0",
+  "tree": "fc22541e7d9f5c3f6e8c7aaacc7540714416d3bc",
+  "start_utc": "2026-10-17T01:09:40.112327+00:00",
+  "python": "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+  "scope": "private outer HOME; ambient seat/model/PG variables removed; existing PG integration explicitly excluded from canonical"
+}

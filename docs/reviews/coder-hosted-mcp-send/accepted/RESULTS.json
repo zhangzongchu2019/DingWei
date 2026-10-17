@@ -1,0 +1,36 @@
+[
+  {
+    "name": "canonical",
+    "rc": 2,
+    "seconds": 119.96,
+    "cmd": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ]
+  },
+  {
+    "name": "helper-root",
+    "rc": 1,
+    "seconds": 385.658,
+    "cmd": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools/sessionhelper/tests",
+      "-q"
+    ]
+  },
+  {
+    "name": "version",
+    "rc": 0,
+    "seconds": 0.273,
+    "cmd": [
+      "go",
+      "test",
+      "-count=1",
+      "./internal/version"
+    ]
+  }
+]

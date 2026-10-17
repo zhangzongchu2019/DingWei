@@ -1,0 +1,42 @@
+test_invalid_utf8_id_refused_before_send_and_same_listener_recovers (test_hosted_mcp_send.HostedSendTest.test_invalid_utf8_id_refused_before_send_and_same_listener_recovers) ... ERROR
+Task exception was never retrieved
+future: <Task finished name='Task-3' coro=<_serve_socket_connection() done, defined at /tmp/coder-h1-id-withdraw-z2vemr1l/repo/tools/sessionhelper/sessionhelper/ipc_listener.py:455> exception=UnicodeEncodeError('utf-8', '{"ok": true, "outcome": {"sent": true, "to": "peer#FB-2642"}, "request_id": "\ud800"}', 77, 78, 'surrogates not allowed')>
+Traceback (most recent call last):
+  File "/tmp/coder-h1-id-withdraw-z2vemr1l/repo/tools/sessionhelper/sessionhelper/ipc_listener.py", line 491, in _serve_socket_connection
+    await dispatch(reader, writer, fds)
+  File "/tmp/coder-h1-id-withdraw-z2vemr1l/repo/tools/sessionhelper/sessionhelper/ipc_listener.py", line 553, in dispatch
+    await _handle_connection(reader, writer, send_handler, vsapi_handler, file_handler,
+  File "/tmp/coder-h1-id-withdraw-z2vemr1l/repo/tools/sessionhelper/sessionhelper/ipc_listener.py", line 145, in _handle_connection
+    return await _handle_body_send(writer, msg, send_handler, passed_fds or [])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-h1-id-withdraw-z2vemr1l/repo/tools/sessionhelper/sessionhelper/ipc_listener.py", line 234, in _handle_body_send
+    await _write_one(writer, {"ok": True, "outcome": outcome, "request_id": request_id})
+  File "/tmp/coder-h1-id-withdraw-z2vemr1l/repo/tools/sessionhelper/sessionhelper/ipc_listener.py", line 94, in _write_one
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'utf-8' codec can't encode character '\ud800' in position 77: surrogates not allowed
+
+======================================================================
+ERROR: test_invalid_utf8_id_refused_before_send_and_same_listener_recovers (test_hosted_mcp_send.HostedSendTest.test_invalid_utf8_id_refused_before_send_and_same_listener_recovers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h1-id-withdraw-z2vemr1l/repo/tools/sessionhelper/tests/test_hosted_mcp_send.py", line 100, in test_invalid_utf8_id_refused_before_send_and_same_listener_recovers
+    result = fx.raw_ipc(self.layout.sock, payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-h1-id-withdraw-z2vemr1l/repo/tools/sessionhelper/tests/test_file_upload.py", line 204, in raw_ipc
+    return json.loads(bytes(reply))
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.505s
+
+FAILED (errors=1)

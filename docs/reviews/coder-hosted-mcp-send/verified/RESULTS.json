@@ -1,0 +1,54 @@
+[
+  {
+    "name": "version",
+    "cwd": ".",
+    "cmd": [
+      "go",
+      "test",
+      "-count=1",
+      "./internal/version"
+    ],
+    "rc": 0,
+    "seconds": 0.421
+  },
+  {
+    "name": "canonical-no-pg",
+    "cwd": ".",
+    "cmd": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "rc": 0,
+    "seconds": 80.788
+  },
+  {
+    "name": "helper-cwd",
+    "cwd": "tools/sessionhelper",
+    "cmd": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-q"
+    ],
+    "rc": 0,
+    "seconds": 386.82
+  },
+  {
+    "name": "helper-root",
+    "cwd": ".",
+    "cmd": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools/sessionhelper/tests",
+      "-q"
+    ],
+    "rc": 0,
+    "seconds": 388.427
+  }
+]

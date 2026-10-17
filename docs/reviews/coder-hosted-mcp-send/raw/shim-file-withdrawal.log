@@ -1,0 +1,13 @@
+======================================================================
+ERROR: test_stdio_rejects_file_without_open_or_send_and_survives (test_hosted_mcp_send.HostedSendTest.test_stdio_rejects_file_without_open_or_send_and_survives)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h1-withdraw-p0bgx0ki/tests/test_hosted_mcp_send.py", line 151, in test_stdio_rejects_file_without_open_or_send_and_survives
+    self.assertTrue(result['isError'])
+                    ~~~~~~^^^^^^^^^^^
+KeyError: 'isError'
+
+----------------------------------------------------------------------
+Ran 11 tests in 4.588s
+
+FAILED (errors=1)

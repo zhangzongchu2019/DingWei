@@ -1,0 +1,17 @@
+test_body_and_reply_metadata_use_existing_sender (test_hosted_mcp_send.HostedSendTest.test_body_and_reply_metadata_use_existing_sender) ... ok
+test_error_is_sanitized_one_call_no_retry_then_recovers (test_hosted_mcp_send.HostedSendTest.test_error_is_sanitized_one_call_no_retry_then_recovers) ... ok
+test_fd_send_denied_and_fd_closed (test_hosted_mcp_send.HostedSendTest.test_fd_send_denied_and_fd_closed) ... ok
+test_invalid_shapes_and_unknown_metadata (test_hosted_mcp_send.HostedSendTest.test_invalid_shapes_and_unknown_metadata) ... ok
+test_invalid_utf8_id_refused_before_send_and_same_listener_recovers (test_hosted_mcp_send.HostedSendTest.test_invalid_utf8_id_refused_before_send_and_same_listener_recovers) ... ok
+test_restricted_body_byte_boundary_including_json_overhead (test_hosted_mcp_send.HostedSendTest.test_restricted_body_byte_boundary_including_json_overhead) ... ok
+test_secret_paths_denied_before_any_listener_open (test_hosted_mcp_send.HostedSendTest.test_secret_paths_denied_before_any_listener_open) ... ok
+test_stdio_rejects_file_without_open_or_send_and_survives (test_hosted_mcp_send.HostedSendTest.test_stdio_rejects_file_without_open_or_send_and_survives) ... ok
+test_unrelated_operations_never_dispatch (test_hosted_mcp_send.HostedSendTest.test_unrelated_operations_never_dispatch) ... ok
+test_upload_stays_available_and_secret_upload_stays_denied (test_hosted_mcp_send.HostedSendTest.test_upload_stays_available_and_secret_upload_stays_denied) ... ok
+test_legacy_upload_only_has_priority_when_both_set (test_hosted_mcp_send.ModesTest.test_legacy_upload_only_has_priority_when_both_set) ... ok
+test_mode_configuration_and_bad_value (test_hosted_mcp_send.ModesTest.test_mode_configuration_and_bad_value) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 5.092s
+
+OK

@@ -1,0 +1,68 @@
+======================================================================
+ERROR: test_error_is_sanitized_one_call_no_retry_then_recovers (test_hosted_mcp_send.HostedSendTest.test_error_is_sanitized_one_call_no_retry_then_recovers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h1-withdraw-pl_ias9q/tests/test_hosted_mcp_send.py", line 121, in test_error_is_sanitized_one_call_no_retry_then_recovers
+    self.assertEqual(result, {'ok': False, 'error': 'send_failed'})
+  File "/usr/lib/python3.12/unittest/case.py", line 885, in assertEqual
+    assertion_func(first, second, msg=msg)
+  File "/usr/lib/python3.12/unittest/case.py", line 1184, in assertDictEqual
+    self.fail(self._formatMessage(msg, standardMsg))
+TypeError: 'bool' object is not callable
+
+======================================================================
+ERROR: test_fd_send_denied_and_fd_closed (test_hosted_mcp_send.HostedSendTest.test_fd_send_denied_and_fd_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h1-withdraw-pl_ias9q/tests/test_hosted_mcp_send.py", line 115, in test_fd_send_denied_and_fd_closed
+    self.assertEqual(result['error'], 'operation_not_allowed')
+  File "/usr/lib/python3.12/unittest/case.py", line 885, in assertEqual
+    assertion_func(first, second, msg=msg)
+  File "/usr/lib/python3.12/unittest/case.py", line 1251, in assertMultiLineEqual
+    self.fail(self._formatMessage(msg, standardMsg))
+TypeError: 'bool' object is not callable
+
+======================================================================
+ERROR: test_secret_paths_denied_before_any_listener_open (test_hosted_mcp_send.HostedSendTest.test_secret_paths_denied_before_any_listener_open)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h1-withdraw-pl_ias9q/tests/test_hosted_mcp_send.py", line 76, in test_secret_paths_denied_before_any_listener_open
+    self.assertEqual(result, {'ok': False, 'error': 'operation_not_allowed'})
+  File "/usr/lib/python3.12/unittest/case.py", line 885, in assertEqual
+    assertion_func(first, second, msg=msg)
+  File "/usr/lib/python3.12/unittest/case.py", line 1184, in assertDictEqual
+    self.fail(self._formatMessage(msg, standardMsg))
+TypeError: 'bool' object is not callable
+
+======================================================================
+ERROR: test_unrelated_operations_never_dispatch (test_hosted_mcp_send.HostedSendTest.test_unrelated_operations_never_dispatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h1-withdraw-pl_ias9q/tests/test_hosted_mcp_send.py", line 82, in test_unrelated_operations_never_dispatch
+    self.assertEqual(result, {'ok': False, 'error': 'operation_not_allowed'})
+  File "/usr/lib/python3.12/unittest/case.py", line 885, in assertEqual
+    assertion_func(first, second, msg=msg)
+  File "/usr/lib/python3.12/unittest/case.py", line 1184, in assertDictEqual
+    self.fail(self._formatMessage(msg, standardMsg))
+TypeError: 'bool' object is not callable
+
+======================================================================
+FAIL: test_invalid_shapes_and_unknown_metadata (test_hosted_mcp_send.HostedSendTest.test_invalid_shapes_and_unknown_metadata)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h1-withdraw-pl_ias9q/tests/test_hosted_mcp_send.py", line 91, in test_invalid_shapes_and_unknown_metadata
+    self.assertFalse(result['ok'])
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_restricted_body_byte_boundary_including_json_overhead (test_hosted_mcp_send.HostedSendTest.test_restricted_body_byte_boundary_including_json_overhead)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h1-withdraw-pl_ias9q/tests/test_hosted_mcp_send.py", line 97, in test_restricted_body_byte_boundary_including_json_overhead
+    self.assertTrue(fx.raw_ipc(self.layout.sock, dict(type='mcp_send', to='peer', body=body))['ok'])
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 11 tests in 4.593s
+
+FAILED (failures=2, errors=4)
