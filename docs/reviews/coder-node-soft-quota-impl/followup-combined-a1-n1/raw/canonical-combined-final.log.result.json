@@ -1,0 +1,9 @@
+{
+  "command": [
+    "./build.sh",
+    "--test-only"
+  ],
+  "rc": 0,
+  "seconds": 254.32191478298046,
+  "external_DSN_environment_not_inherited": true
+}

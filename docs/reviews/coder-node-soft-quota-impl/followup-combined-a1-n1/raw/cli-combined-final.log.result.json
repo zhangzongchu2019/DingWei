@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHostedAdmin",
+    "-v",
+    "-count=1",
+    "-timeout=300s"
+  ],
+  "rc": 0,
+  "seconds": 201.77291045803577,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,0 +1,41 @@
+{
+  "code_pin": "f3e6448d80089a5328d015f97280e0b8388630b6",
+  "cases": [
+    {
+      "name": "inode-emergency",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftInodeEmergencyBoundariesPersistStopAndRetainData",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "4edeb669b78ecf5b789491b268f772c737183181684a334c8cb784d12fbf1ae5",
+      "mutant_sha256": "57512913ee9bb5c18c44298fe64763435ff11283d93c10e29431134584226182"
+    },
+    {
+      "name": "inode-independent-percent",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftInodeEmergencyBoundariesPersistStopAndRetainData",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "4edeb669b78ecf5b789491b268f772c737183181684a334c8cb784d12fbf1ae5",
+      "mutant_sha256": "b6ad66a7d20ecb4a929844b1ba59854375d3c3575079f62e37b118c45469d057"
+    },
+    {
+      "name": "n1-legacy-cli",
+      "file": "cmd/workpulse/hosted_admin.go",
+      "test": "TestHostedAdminQuotaRegistrationCLIToNormalize",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "3dd2bb53d3674fd489b1b406fb1b9d3ea438858fdb6ef93e312070d3fc98f729",
+      "mutant_sha256": "9f01f8de5d8f45450837174d4f50390ee2ef05bb3824c6ff3f0728a63d612d1e"
+    },
+    {
+      "name": "n1-revision",
+      "file": "cmd/workpulse/hosted_admin.go",
+      "test": "TestHostedAdminQuotaRegistrationCLIToNormalize",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "3dd2bb53d3674fd489b1b406fb1b9d3ea438858fdb6ef93e312070d3fc98f729",
+      "mutant_sha256": "73e480dea2966efe2f90903e5e8aaaf954b12136edcc60a354c9848b75b54517"
+    }
+  ]
+}

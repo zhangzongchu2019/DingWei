@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-17T09:42:13.394286+00:00",
+  "scope": "owned private caches/HOME/disposable TMPDIR/detached mutation worktree only; shared module cache and other seats untouched",
+  "fixture_processes_before_cleanup": 0,
+  "mutation_worktree_clean_and_removed": true,
+  "paths": [
+    {
+      "path": "/data/ai-dev-data/coder-soft-quota-lab/gocache",
+      "bytes_before": 714677571,
+      "exists_after": false
+    },
+    {
+      "path": "/data/ai-dev-data/coder-soft-quota-lab/home",
+      "bytes_before": 83050385,
+      "exists_after": false
+    },
+    {
+      "path": "/tmp/sq-o5qkn73u",
+      "bytes_before": 569765,
+      "exists_after": false
+    }
+  ]
+}

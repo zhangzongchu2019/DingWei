@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftInodeEmergencyBoundariesPersistStopAndRetainData$",
+    "-v",
+    "-count=1",
+    "-timeout=120s"
+  ],
+  "rc": 1,
+  "seconds": 12.793116029817611,
+  "external_DSN_environment_not_inherited": true
+}
