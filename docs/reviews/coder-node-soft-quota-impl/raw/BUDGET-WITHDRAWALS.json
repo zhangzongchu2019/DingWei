@@ -1,0 +1,32 @@
+{
+  "code_pin": "0d43a75ea7d3dc025edeb5e7a414ab00e12a1bf8",
+  "cases": [
+    {
+      "name": "scan-budget",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftScanBudgetUnknownAndOutboxAcknowledgement",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "7eee1a5b5e117609c19f1eb9638bfe077331ed06addc4e1afc16927b7fc338e7",
+      "mutant_sha256": "30be0915fd4fd307fb15fc60da6ea47477489391c71fdf1bb0f4e6326ca22978"
+    },
+    {
+      "name": "stop-batch-budget",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "7eee1a5b5e117609c19f1eb9638bfe077331ed06addc4e1afc16927b7fc338e7",
+      "mutant_sha256": "1ab69c95ee09a70d46be8b187d8442a53c2ee6b0e5c1a22d40f481594db8f651"
+    },
+    {
+      "name": "periodic-scan",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftMonitorMeasuresAgainOnPeriodicTick",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "7eee1a5b5e117609c19f1eb9638bfe077331ed06addc4e1afc16927b7fc338e7",
+      "mutant_sha256": "73fe0e47b09dfc4737901c38cc452b3d8202fd439c04177f6f79c6b56ebc7ae5"
+    }
+  ]
+}

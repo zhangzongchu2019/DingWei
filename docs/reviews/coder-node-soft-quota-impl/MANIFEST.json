@@ -1,0 +1,810 @@
+{
+  "docs/reviews/coder-node-soft-quota-impl/CLEANUP-FIRST.json": {
+    "bytes": 604,
+    "sha256": "a2efdcc2d6ed2e99afd3988da25b5a4ffa7dbc69fecc5a815b9db75c6360adb2"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/CLEANUP.json": {
+    "bytes": 667,
+    "sha256": "bda64712c267c6bcf81c9782fd444cb315ba5b2f950a1900f90d35a12235d752"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/IMPLEMENTATION.md": {
+    "bytes": 9657,
+    "sha256": "4e581f109ae7f6861a5364d25d8d41262e7a1af55fc6a9ba0ebb85d800a7c5d5"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/REPORT.md": {
+    "bytes": 8584,
+    "sha256": "b86b627a0f9d78a690f63ed1dd2ab7f8feb3e8f18f445c5eb20ae6ee4e91332d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/RESULTS.json": {
+    "bytes": 5275,
+    "sha256": "0532d46fbde8bd02dcb32df60e2f429de4af96e917a167ec1eae9f86bbf6c8ae"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/SOURCE-PINS.json": {
+    "bytes": 6976,
+    "sha256": "885af6b94e9392ad4376cc43898da6f17567afbee7b70befddf5b77a01eaf61e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/budget-withdraw.py.fixture": {
+    "bytes": 1825,
+    "sha256": "e70066f87172ce9634575b5ec79072b239e8520fa57420bd5860ce6d4fb16954"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/extra-withdraw.py.fixture": {
+    "bytes": 2245,
+    "sha256": "a84e35be93a4949772ff792287e50060b4329e72c48155b5df2ade296dd9ba22"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/BROWSER-REGRESSION.json": {
+    "bytes": 298,
+    "sha256": "3852859246822c3d6c90f4b9def907fe6bad69a21be2664e55dbc256a4dd4284"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/BUDGET-WITHDRAWALS.json": {
+    "bytes": 1241,
+    "sha256": "6f5c4308ed7bf347c756caed46570e8ce5a7b55278026588d7a6ac0508d92c22"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/EXTRA-WITHDRAWALS.json": {
+    "bytes": 2470,
+    "sha256": "c2634b258454bbed9081b80c1b091f48f23748d714dc0f936ebda1e10ab951ce"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/WITHDRAWALS-FIRST.json": {
+    "bytes": 13767,
+    "sha256": "711c3cafcd07705239f8a6a2fc4b0d0265b1192bba33cf5140704ca6bd7739dd"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/WITHDRAWALS.json": {
+    "bytes": 13765,
+    "sha256": "8a445ada30ecfa5969d24c3076b16c5ebae044032e4e228c929bd8f338463e7d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/canonical-08dd27c.log": {
+    "bytes": 39985,
+    "sha256": "e2611d4be49eac601a6464b2647bbd777625c2c7f998b9f6ccd2a849212a90ac"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/canonical-08dd27c.log.result.json": {
+    "bytes": 165,
+    "sha256": "547f404370c60830a38905daf24487d67e4a480b06ad01f96699569682e9b9f3"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/canonical-0d43a75.log": {
+    "bytes": 39766,
+    "sha256": "2a05acaa2d6c5e33cf01b63ccec1335a0cb23d3a4caafde6cf4e4d077bf12589"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/canonical-0d43a75.log.result.json": {
+    "bytes": 153,
+    "sha256": "814cb8e8941e9720c59b9fb1487b4c9659b74229f18018e198e00e71d0acfabc"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/canonical-0efc288.log": {
+    "bytes": 40418,
+    "sha256": "00d3d14e9625d1c5a5cf529784c425a39cd339894b23de6e59c4c12719e41ee8"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/canonical-0efc288.log.result.json": {
+    "bytes": 165,
+    "sha256": "ee9217098aa96345e72c5d1a34adb08206c786869899714fa4f45acfddb11d9e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/canonical-726216b.log": {
+    "bytes": 39395,
+    "sha256": "7cdfb125cfb040c07bbbcad98f96cf65b58a1d79eb140cd03990f887200c4c62"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/canonical-726216b.log.result.json": {
+    "bytes": 164,
+    "sha256": "6b18055980c90a907d279dc65a700562569d6fd627fea544801873070d3eb522"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/canonical-fc3db12.log": {
+    "bytes": 39391,
+    "sha256": "d43404e39adba6f28f691cf219828dd465cb61d633ba0335d2d4392983527053"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/canonical-fc3db12.log.result.json": {
+    "bytes": 164,
+    "sha256": "c69891ed192ffe4502f12d93ca86df5ca15d4f43c2e2e3c2fa6dd6aad964d215"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/canonical-final.log": {
+    "bytes": 4851,
+    "sha256": "d4f8258ce7a1ce008e031c5e47340262b8bd77b5b7a51f929c575d9ffb5e4059"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/canonical-final.log.result.json": {
+    "bytes": 164,
+    "sha256": "7d5c2f037b464f0d4d22f1f8aa2b6e238ef982b4da0af851850840557e67f691"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/compile-correction.log": {
+    "bytes": 326,
+    "sha256": "22c5418ebbce1b4a8b72a1937cb9e9dda0e2865c10a7e28427d9a668c96cc7fe"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/compile-correction.log.result.json": {
+    "bytes": 271,
+    "sha256": "34965d4d64c682fba4478ca4e90b71ed11b945b977fa631a284d56ac2fe4e64e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-agent-mgmt-hosted-regression.js.log": {
+    "bytes": 4383,
+    "sha256": "bada5e64319542155be61567ba1ade725a29008468c8a5232c4cc8f9bde07973"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-agent-mgmt-hosted-regression.js.log.result.json": {
+    "bytes": 187,
+    "sha256": "1b88764eed487a05f03b2f88937897f08e8e0d5d51360702f61de3f5ac2d6fa2"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-hosted-lifecycle-jobs-regression.js.log": {
+    "bytes": 1749,
+    "sha256": "972c4a3a63e4cf3df5ed1e1bace7bcbcfa2dc37e18462c590fc61504bc7fdac5"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-hosted-lifecycle-jobs-regression.js.log.result.json": {
+    "bytes": 192,
+    "sha256": "0bb6001ae5f317a3cf97f6149806c119d1aba068da98076b8546796647108b03"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-hosted-model-regression.js.log": {
+    "bytes": 774,
+    "sha256": "b971bded91f6909861802b905403f09c53144efa101982b3d1a15ecd497a4162"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-hosted-model-regression.js.log.result.json": {
+    "bytes": 182,
+    "sha256": "8262b0d364ff508102f22346c06550260022fd2d64bb5a2dffbfdadb339bb770"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-legacy-08dd27c.log": {
+    "bytes": 4139,
+    "sha256": "53334568b9f58b24d9e6e129c2a7064ee6247a553a3eb6415d0a4f4d16573c0c"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-legacy-08dd27c.log.result.json": {
+    "bytes": 187,
+    "sha256": "bf39a2b2a0b09e87229082b6fe3264e527335dda2f3b6a5279c1f7882fd7ff87"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-legacy-r21-control.log": {
+    "bytes": 4139,
+    "sha256": "fae3c0ee3d38cf5127a9ca91b821a181152d9af2a94378a8a271d3bfd6f15811"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-legacy-r21-control.log.result.json": {
+    "bytes": 188,
+    "sha256": "a72b0e8a88257cddff3630688958d87a0f147db41ca244f4217a1ab339d5f68d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-quota-regression.js.log": {
+    "bytes": 1515,
+    "sha256": "c3b060ed6fb63d8a33b0d46b18d2b8d19e28f6cfd44b8825d00b8b427aa9ef08"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-quota-regression.js.log.result.json": {
+    "bytes": 175,
+    "sha256": "9c31514e8d2c33a63e74844d1a3cfc606111a55e34ed7bdb5ae280a2f60dc495"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-soft-08dd27c.log": {
+    "bytes": 36,
+    "sha256": "7a0c09427fbfbda5979245bcc4812a0264a2a5cd1d27f7d8b31f75c9de84b03f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-soft-08dd27c.log.result.json": {
+    "bytes": 179,
+    "sha256": "685af82e0c6617dd1c2ebcab9b23a440c1d868914aa10c02ad3550179d0b62e3"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-soft-726216b.log": {
+    "bytes": 36,
+    "sha256": "7a0c09427fbfbda5979245bcc4812a0264a2a5cd1d27f7d8b31f75c9de84b03f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-soft-726216b.log.result.json": {
+    "bytes": 180,
+    "sha256": "56daff43e5410567f155e19d6bf9d5ac8570ab6b1cfe4ba624f77d7b4bdc697e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-soft-quota-2.log": {
+    "bytes": 36,
+    "sha256": "7a0c09427fbfbda5979245bcc4812a0264a2a5cd1d27f7d8b31f75c9de84b03f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-soft-quota-2.log.result.json": {
+    "bytes": 181,
+    "sha256": "fd553fa3cd28901f595e7c9cb92009b60b6c97295a9ce1594c5e1a82b25d2336"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-soft-quota.log": {
+    "bytes": 382,
+    "sha256": "57af7f4e32618267efcaa079085cde07a862f811c82c19592a86a768ca5b8afc"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/console-soft-quota.log.result.json": {
+    "bytes": 180,
+    "sha256": "2db27f6056443109bf79dc4576696ba255980063afd00837800aeff569b51fbb"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/corrected-targets.log": {
+    "bytes": 7773,
+    "sha256": "843e42c9acbe686fc7bbf9140fb9c37ca6747d058e42ed02bd5cfe48c01b067f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/corrected-targets.log.result.json": {
+    "bytes": 375,
+    "sha256": "9b54a6b7fd15effbf7b397b19fca12cb260ad449ccd97af9cb0a66e86c8ed085"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/durable-and-fd.log": {
+    "bytes": 455,
+    "sha256": "66ffaee96975768c4e5d8c4e3fee5c719a542a1cd979ee505ceb5c2c6fbba7dc"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/durable-and-fd.log.result.json": {
+    "bytes": 281,
+    "sha256": "ff053310bc7cee8d16d44bf2d99a66cc6c216b0ac3c62a041c32b8c5d9e1eb57"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/extra-withdraw-driver.log": {
+    "bytes": 501,
+    "sha256": "a2f28eddf30e5e6f54a7537a0f02ddb0c4ec48e3d587e91b932589a3d9496cdc"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/extra-withdraw-restored-browser.log": {
+    "bytes": 36,
+    "sha256": "7a0c09427fbfbda5979245bcc4812a0264a2a5cd1d27f7d8b31f75c9de84b03f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/extra-withdraw-restored-browser.log.result.json": {
+    "bytes": 180,
+    "sha256": "a4b5736b0c55bdd7687e7cdc03ba1cf5f60b423010f6b70666de5026705937a5"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/extra-withdraw-restored-go.log": {
+    "bytes": 208,
+    "sha256": "b57326ffb6884919c21f64527e6f4945e07a0f73b583b49a5ce4542613169c7e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/extra-withdraw-restored-go.log.result.json": {
+    "bytes": 287,
+    "sha256": "203e136496eb99183084f6a5de5f49a26a357f1457fee0258f29d72d5578af48"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/hosted-and-gate-full.log": {
+    "bytes": 65310,
+    "sha256": "e1ff1ce3b006c7b3b095c3e6dbcc4e08ea73fe460dbedaf5d5391a7bbc6fdf26"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/hosted-and-gate-full.log.result.json": {
+    "bytes": 282,
+    "sha256": "6654ae492e47c239240ac742846fd7eb5a0477ec2e3445808542b484d6ed59df"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/hosted-contract-targeted.log": {
+    "bytes": 755,
+    "sha256": "58c9b5b4607a54fcfbb52a9c8dbd58dcd852fa0078e67de86894ea8da8f6db52"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/hosted-contract-targeted.log.result.json": {
+    "bytes": 319,
+    "sha256": "60594e703e7ceb5328183fbb1551bee05fb20315ff15fd63c5e083605a209ac1"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/hosted-soft-final-targets.log": {
+    "bytes": 863,
+    "sha256": "9b671f767f98acfe0d3e7352c9493cacd6dea65c552c4e1c998d75bb80126b98"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/hosted-soft-final-targets.log.result.json": {
+    "bytes": 336,
+    "sha256": "6089a3abe9d63666b0c3a8eb89785299f9c934e16b265358016829d389954421"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/hosted-soft-first.log": {
+    "bytes": 415,
+    "sha256": "2fe78a534b7d60016d342dfbf475685a800a4e2499b4cfb0ce2dab84b4c1e55d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/hosted-soft-first.log.result.json": {
+    "bytes": 272,
+    "sha256": "a1f4d3a1dd964ca3569149c881bf56b045e6509a04faa223dea70422ed7a48bc"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/hosted-soft-updated.log": {
+    "bytes": 665,
+    "sha256": "2b9296b61a20462906d7245624d5f6ae03d88b86b8cfb0db7fb750e64d9ec684"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/hosted-soft-updated.log.result.json": {
+    "bytes": 292,
+    "sha256": "4463180c9aa0a514e5953c04b36ea09746fb3e2b930d6c11431925709f843d82"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-check-last.log": {
+    "bytes": 20180,
+    "sha256": "24388fc4d8d2271850122d597d1328fe63b9d6fb3ac8058dddb139e33ac29594"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-check-last.log.result.json": {
+    "bytes": 212,
+    "sha256": "357512ec0417c9eedfd0648cf6be55c3c1a27a67395d5d91ef08781083d20e5e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-codepin-final.log": {
+    "bytes": 20181,
+    "sha256": "27e00313f76711375c4ae5ec5adfe3522853b002b564e4d645d21879596a2c95"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-codepin-final.log.result.json": {
+    "bytes": 212,
+    "sha256": "e8ed2e57f0b1c3d4538c84ec835e7382672ade3516a016875fad1148ee890efb"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-freeze.log": {
+    "bytes": 20325,
+    "sha256": "265cd57307763948313ef5bc6385eaeaa155e5c7de6964bdde166296bb6b9009"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-freeze.log.result.json": {
+    "bytes": 212,
+    "sha256": "14ea76be9f09d4c353710490df308a2d0c97dc0aa2f8be28f58bd9643bb67fda"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-full-0d43a75.log": {
+    "bytes": 21066,
+    "sha256": "bff38f68d723ea377e40eb6f9c8b903d4a3ab983d41dc49d4875404d387ed3c6"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-full-0d43a75.log.result.json": {
+    "bytes": 212,
+    "sha256": "82aa4dc8c22b4c9a8c15b7f12721e1d7afa21818a49e242124a1bc7e69ef636f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-full-726216b.log": {
+    "bytes": 20527,
+    "sha256": "ee427ab65baf4d653b542ec6a5d4b695a406da6c9f102f47d720d46a5964a7d6"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-full-726216b.log.result.json": {
+    "bytes": 212,
+    "sha256": "6266ee098d635c21fdcb137c7c886985965af702c0b592d05db17075dcf5a299"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-full-current.log": {
+    "bytes": 19578,
+    "sha256": "03b5d43975b244a6a29d65067a6b70ba9856d652aa404c443ae7ed3c73c085a5"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-full-current.log.result.json": {
+    "bytes": 212,
+    "sha256": "f138edc70bd36ddac945c45fe366c944d610f6e610abf3822808b36903831f1e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-full-fc3db12.log": {
+    "bytes": 20807,
+    "sha256": "939ac39b83f832b17ad37af4ffbf1dc0396d8a4fcc672dad5b040c615ad7e8d5"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-full-fc3db12.log.result.json": {
+    "bytes": 212,
+    "sha256": "ad6da92b1b0dd33e80e6776d5c6788999171b3a452607259d4fc9089e7d44b3d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-full-final-draft.log": {
+    "bytes": 20180,
+    "sha256": "6c88402f61ee7f178f273f582eb7ac4b5349ec989a839a81d0b1365143ca828c"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-full-final-draft.log.result.json": {
+    "bytes": 212,
+    "sha256": "8a32633d1f2eef487f4c244c69b4ebea0c309d4b9c7fbb5d3a3b354bd326dc40"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-full-pre-freeze.log": {
+    "bytes": 19576,
+    "sha256": "1440819ac79256dc452cb28f9d028ac8d7adc243b231e8994a45bdcad1ecc481"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-full-pre-freeze.log.result.json": {
+    "bytes": 212,
+    "sha256": "5d85ceeb6b204b72778d8ba8cc42fb2b09f92d5c48c4caff4c8736d90d26088b"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-initial.log": {
+    "bytes": 67,
+    "sha256": "f60665548fb1f9fdfd8d30f6679917ef26ddd2d32510b2ba219d7df93dc8869a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-new-targeted.log": {
+    "bytes": 6290,
+    "sha256": "c2d10c1eb338a8b2ae8f53836adcc800538d894d49bce164ad0e1404da74d7c1"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-new-targeted.log.result.json": {
+    "bytes": 271,
+    "sha256": "54d59d020438c3d3a3c4a7cf75b7b011a281faed24e2a4a118dafc0d1c34cf1d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-pre-codepin.log": {
+    "bytes": 20325,
+    "sha256": "aeab343d32f077045dbbc21837849e46e4d30cfb3db9539aeec4828fa589600c"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-pre-codepin.log.result.json": {
+    "bytes": 212,
+    "sha256": "37b189670dde0ca156650a0df8e8cce00cbf0419677901806a9d22255c9e1b0c"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-race-0d43a75.log": {
+    "bytes": 22569,
+    "sha256": "7761d406c241cf04464927a5d6845db06d1e8152016e0609ddd63ad621a167ce"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-race-0d43a75.log.result.json": {
+    "bytes": 225,
+    "sha256": "2f3677edcae4c21d72db71ac1095b74d68a791216836c0365b3fe47e83936f3c"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-race-0efc288.log": {
+    "bytes": 20288,
+    "sha256": "08c52de8530c98848f45e5eac3ea5533a71dc2db919a1466f1d45394fb15e8ba"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-race-0efc288.log.result.json": {
+    "bytes": 226,
+    "sha256": "7859d8b7d38b7acd00d7377b61d68525bfa7f9679066b9b6b932cef7d9fcf95e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-race-726216b.log": {
+    "bytes": 22607,
+    "sha256": "43939cea4ca5f0cfa020ac0f57b1329c2f02d5c53df913b0ad141bf98c8e4881"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-race-726216b.log.result.json": {
+    "bytes": 226,
+    "sha256": "3b6e9b39d14712fc5781a95ad1858df6f1840d8732475da0fdd0465e16fa7239"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-race-fc3db12.log": {
+    "bytes": 22599,
+    "sha256": "5729279848c95de29a9e898d406cf006e467233bbc8bb3209b402a84e0b4678b"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-race-fc3db12.log.result.json": {
+    "bytes": 226,
+    "sha256": "0aab22b858b32cd4d7c242e22ef4c5951c9ff5c2cc8be612c57885419492bd46"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-targeted-4.log": {
+    "bytes": 6290,
+    "sha256": "f7f5ba13b4c432113a2fea76e9fbd0c24c95bd7530f6444b3ed1638a0e6c4bdc"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/nodeagent-targeted-4.log.result.json": {
+    "bytes": 271,
+    "sha256": "e908629f3e4478cc395e690c3d8cd31a33fc4ebfa28676fd72677934926feb71"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/periodic-budget-targets.log": {
+    "bytes": 456,
+    "sha256": "d20f126cafdc05d4821ab128ba4678d0de34287012b0d38042755a196024a266"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/periodic-budget-targets.log.result.json": {
+    "bytes": 368,
+    "sha256": "a86b441d1008a7e4ac4477c7a65e17a054896fa1402ee6544e30af101478afe8"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/python-provenance.log": {
+    "bytes": 239,
+    "sha256": "59ad59c55ece284fba52f627ef97ef39420f4e5249e54acbc86cfbea0773062d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/python-provenance.log.result.json": {
+    "bytes": 371,
+    "sha256": "ec72f1cf83389a93f9fa207e7696b71f35b870f26908e6e8ce0d11c44b9321ae"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/registration-gate-fixed.log": {
+    "bytes": 208,
+    "sha256": "b57326ffb6884919c21f64527e6f4945e07a0f73b583b49a5ce4542613169c7e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/registration-gate-fixed.log.result.json": {
+    "bytes": 287,
+    "sha256": "0b9f16f62456ff439cc7cfad2086fdf361ee8bae891a681cc8006436d88179f6"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/registration-gate.log": {
+    "bytes": 283,
+    "sha256": "2032492f949de2d5f041e01483d05678ca6a495ac09d0d5e39c824d60fbbd041"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/registration-gate.log.result.json": {
+    "bytes": 287,
+    "sha256": "3e8a992ff11835ff162cf08e8bb99ecb42d85a7d7f3c762011d4e5686bbeb5ec"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/related-packages-0efc288.log": {
+    "bytes": 66683,
+    "sha256": "e31f3a2de5c952d3cf7ea9d095257c493dee966b272603f790bebe4362d63386"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/related-packages-0efc288.log.result.json": {
+    "bytes": 283,
+    "sha256": "297e5d7056cfeb66c6caf8d4ec9755836142c7e18a3fb191b3814e47139651c9"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/related-packages-final.log": {
+    "bytes": 130,
+    "sha256": "74d9a77bcd6c79974452fdf58cfa82edbcee34176f41a01b14a613c24a7f07c7"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/related-packages-final.log.result.json": {
+    "bytes": 283,
+    "sha256": "478012e4adc0e54388a8bf68c744974423aa337bdd6fe438d2cd9e49eb7e03f5"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/soft-initial.log": {
+    "bytes": 4963,
+    "sha256": "2a215800d61e2252feddbaba9e256d21912849ab3baec5de9306c57d83ddf071"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/soft-targeted-2.log": {
+    "bytes": 5060,
+    "sha256": "4678d993a12148cc2f1bbe2dc09e2609101126e1ceaf1b36792ad25534d89d1f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/soft-targeted-3.log": {
+    "bytes": 4726,
+    "sha256": "86c7d25df0e85365d1f889226c0f7560db303e530afe9796e6ca691f0ab7085d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/soft-targeted.log": {
+    "bytes": 4726,
+    "sha256": "902fb0a4652fb7991c0eac0b85b1d0342df8e77d122b4d454f4df12889737504"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-apparent-charge.log": {
+    "bytes": 597,
+    "sha256": "0b238b1a2dad8231ae98aa68fb7ed4c48f0e77fbf2679557810cd88315d87255"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-apparent-charge.log.result.json": {
+    "bytes": 292,
+    "sha256": "1dec6143284b5252238f5b7a644e5e5b788c06bade95a4ef12170f92d9f48f76"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-approval-refs.log": {
+    "bytes": 263,
+    "sha256": "a94a97a40a8ac8447677112cf8c8bd2f529cd36ad9c9f8de7ae681900fd8ae81"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-approval-refs.log.result.json": {
+    "bytes": 283,
+    "sha256": "a37c2124f9a8a1aaa79d0e476256e1af974561b35913ab403c31f3adf6ba1879"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-atomic-state-replace.log": {
+    "bytes": 236,
+    "sha256": "d6feefbe2b21802b2bed33447f31a31e55f93a95d3be5b7ca9a7065947b251b0"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-atomic-state-replace.log.result.json": {
+    "bytes": 263,
+    "sha256": "9194601feba88d4cccb7b8bd5310b1784c69a6dbd95616993eb767795afd0cfd"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-bounded-log.log": {
+    "bytes": 285,
+    "sha256": "1932340a00ed836139798f6f86714e8ad5b67efa1b95b7572910e01b51aa4208"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-bounded-log.log.result.json": {
+    "bytes": 274,
+    "sha256": "ce401050063358f963001440bb1a7c24426a20df0778effe98cc160a4072142d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-byte-reserve.log": {
+    "bytes": 272,
+    "sha256": "6d4f7b63477bf678487eefad6910e7dbb0b5a94b5602c1a8eccddf47f1459a66"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-byte-reserve.log.result.json": {
+    "bytes": 293,
+    "sha256": "172961d9b5b2c70489fa4bf8088bb6f2ef9eeb22a0732a6b9a0115d956828da6"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-cpu-hard-limit.log": {
+    "bytes": 578,
+    "sha256": "d7f27bf357e6a4672a0d925d59c20429f101943e3d12bf55cc43e471b464892f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-cpu-hard-limit.log.result.json": {
+    "bytes": 273,
+    "sha256": "e7a28f7db88d5f496010cbacf2c5e99b6dd2877e535de8ce31d39759b7d3beda"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-cpu-reserve.log": {
+    "bytes": 236,
+    "sha256": "4f2e7bb6ba8b71c8cb6e2506c4a5276705f6b384683dfee6d2734bdd04624a17"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-cpu-reserve.log.result.json": {
+    "bytes": 273,
+    "sha256": "03af64ce08d885d522514b41f21701f22ef2bed759104d0171e78eed5f9232d9"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-disk-commitment.log": {
+    "bytes": 238,
+    "sha256": "3d81e7847e8259ba2ae59190c7bf3194a3c858d99828a79fce581b84c3efe387"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-disk-commitment.log.result.json": {
+    "bytes": 273,
+    "sha256": "79f084140f5e1065f3f43aa65e55bb8ab982f6d931e4ba548861253da0b6a53e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-driver.log": {
+    "bytes": 2159,
+    "sha256": "0d38472b309fe813c18dc7a85f1ee25bcb80cc6f63ee44c6585d2c3203fca348"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-durable-hold-before-stop.log": {
+    "bytes": 236,
+    "sha256": "d6feefbe2b21802b2bed33447f31a31e55f93a95d3be5b7ca9a7065947b251b0"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-durable-hold-before-stop.log.result.json": {
+    "bytes": 263,
+    "sha256": "6aad5a75e52bcae38414890d4bec04f2fd4735fd3f5b4ec0b2c8343ca43294d7"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-hard-priority.log": {
+    "bytes": 1636,
+    "sha256": "cba029194d58604eddeaff795802dcc6549900a2b900350ea2528074719aeaeb"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-hard-priority.log.result.json": {
+    "bytes": 283,
+    "sha256": "2a429f65ae28ce0320f4ab49bdda0bdec1619cfde29b864ab35924c79c13b16d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-hold-entry.log": {
+    "bytes": 316,
+    "sha256": "ddc0e849582fa36a45186e3ed35eb33baeb81f2827638d5c9f76df553ec4f832"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-hold-entry.log.result.json": {
+    "bytes": 293,
+    "sha256": "86f1babc27bab7f3876fecc0a9e5dccfc9b2f1c2afdc3a3268ca97b120baea89"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-hold-final-start.log": {
+    "bytes": 283,
+    "sha256": "031b40bf3a7fee6cde5bfed70ceb87789a6e2cac095d2b2de17727fea80599e2"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-hold-final-start.log.result.json": {
+    "bytes": 292,
+    "sha256": "fa3a7f0843aeb4733c0b05dfaa40aefb218c8385ddaba93505a5149b1e0416ee"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-inode-reserve.log": {
+    "bytes": 273,
+    "sha256": "6c14676c2a8da6cdde6d69eb246068d304f10ce3c9fdced25a696669ae5163fa"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-inode-reserve.log.result.json": {
+    "bytes": 293,
+    "sha256": "54e73a1c41881b47b341d7aca1d78fc3a19936ebf94ec1e7e6c96e97f2fd934a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-memory-available-invalid-build-control.log": {
+    "bytes": 271,
+    "sha256": "43584a65515bc6f08a723c8f222944e495958fd9cf5b6bacd5ffc6e8c761eccb"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-memory-available-invalid-build-control.log.result.json": {
+    "bytes": 282,
+    "sha256": "043a6b5015a243d4815815330993af1bcab110eb002629fe3b719a7d7ab9d733"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-memory-available.log": {
+    "bytes": 261,
+    "sha256": "d6bddcf5b85211d48f715f11d6e9144dff4122033c41d6a126c5c2f5780e6f8a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-memory-available.log.result.json": {
+    "bytes": 281,
+    "sha256": "7e4d699fe86114750f37b4737e0b7d9cae73a0de5f099e15702a47a863a63589"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-memory-commitment.log": {
+    "bytes": 262,
+    "sha256": "92e029a92ab095ddee7b02ad361963b0bb62770b61e6761efa42dc06ed0a0c47"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-memory-commitment.log.result.json": {
+    "bytes": 281,
+    "sha256": "23663b09000d85310babaf38876351b55b13068d025f3eb48006969de5a8b926"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-mode-enum.log": {
+    "bytes": 2333,
+    "sha256": "2bce4a88f7001fbbbde31a13dc5fa9781a89dd0ebca0f0a113ba852b00de982e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-mode-enum.log.result.json": {
+    "bytes": 280,
+    "sha256": "8fa7aabf49e27e17595d0bd8b39b3ab01776369b377e4d4a35e5d024943412eb"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-mode-policy-binding.log": {
+    "bytes": 266,
+    "sha256": "366fff939ecf2230379062055b353eb039bad98c2acc8bb726a62f8ab1cd7a1f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-mode-policy-binding.log.result.json": {
+    "bytes": 281,
+    "sha256": "284984799de960cdbd160e2acedbad1d1291f061af7b1f4fccbc2831ca55d272"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-owner-bind.log": {
+    "bytes": 821,
+    "sha256": "c05acc1f51ba72cb7db1a7fa14f83d6107f4362f6e22d895b45ddcf84b52e95c"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-owner-bind.log.result.json": {
+    "bytes": 283,
+    "sha256": "fb9ca2270fef7053f099a91f5ce5a68d2f9023f841e42368c32af58ff4e2550f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-owner-label-and-id.log": {
+    "bytes": 868,
+    "sha256": "c2264a75ea85ea4a4c78cf6235eaf5b5e6c20c4905477e4b4b893f7bd442660d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-owner-label-and-id.log.result.json": {
+    "bytes": 282,
+    "sha256": "f7b2b332900fc3143cbbe5de3a263495249fd82515896fdb63c7370160bfd7d0"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-periodic-scan.log": {
+    "bytes": 267,
+    "sha256": "5452f6c5c40ec2d302ba596dc2c7351af4bd56926fc7230fdb014f93752d52c6"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-periodic-scan.log.result.json": {
+    "bytes": 274,
+    "sha256": "f5c109fc0c1bfe894b34eed9e77e3a59269f1e7934570693e33f41650b181cbb"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-pid-hard-limit.log": {
+    "bytes": 581,
+    "sha256": "cbf039995b1715d1d6f41d8c7c09beb73abe3e52d6cef1513784af2c1761af63"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-pid-hard-limit.log.result.json": {
+    "bytes": 274,
+    "sha256": "3458cb58623ad7443fdc486a546b3ad335b994969b777c920c71db9ad9c04ddd"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-register-monitor-hook.log": {
+    "bytes": 287,
+    "sha256": "5af95fde153d4675fe7e6576a078acf03f975ca1e3fcfd2644108f4c022ee86a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-register-monitor-hook.log.result.json": {
+    "bytes": 287,
+    "sha256": "f1c7fba6e3ed02d4216603b7322f2b4f08a7fb5e362dbf0d75da99cb37298a85"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-register-replay-hook.log": {
+    "bytes": 473,
+    "sha256": "f1d67bffbf5e8063939d5514eb937224044812ba75ddc3a7d7aec601bfb96145"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-register-replay-hook.log.result.json": {
+    "bytes": 287,
+    "sha256": "3bdc14610519a9e33253e6362262e3fb3acd81b246cb1b7f323f21418edd432a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-register-soft-backend.log": {
+    "bytes": 337,
+    "sha256": "86123104aba7dacae77975e4756e21e57011ae7f67ab0be45dd371f6d1ebdd66"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-register-soft-backend.log.result.json": {
+    "bytes": 287,
+    "sha256": "94101e322b02a3b2c62c96ad99dad89b136db38af1759daf20a59cd1a30f31e4"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-scan-budget.log": {
+    "bytes": 252,
+    "sha256": "621cc20fae02f24f3602ebf8559706ad964a52c421726bf976a04c9835479e55"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-scan-budget.log.result.json": {
+    "bytes": 280,
+    "sha256": "edb79ce8b3ff0af84dc86c8dc926ac5a5f8a65ee3be8b1241353429f39314678"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-seat-count.log": {
+    "bytes": 278,
+    "sha256": "6babae5dc9e19ed2866724797bb72e7c937d2110abf4f832f65212cd2315cf39"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-seat-count.log.result.json": {
+    "bytes": 293,
+    "sha256": "821ddb45a3a2b1b42ab87b70014855a1cc142075ee33acf54f6142f60f31b892"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-socket-alias-invalid-build-control.log": {
+    "bytes": 275,
+    "sha256": "ef487fdaeb0f14a13a69ab253d32980922e27484898cb643868f8f851bfad20d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-socket-alias-invalid-build-control.log.result.json": {
+    "bytes": 283,
+    "sha256": "74dc2aa323b534ebada46bca1753568dcc203203a2a3b839bfedeee736cf9f72"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-socket-alias.log": {
+    "bytes": 299,
+    "sha256": "5a0495d249fe2616629693999886f21af68dc40b6db3f5486e7f5c9e0b133d61"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-socket-alias.log.result.json": {
+    "bytes": 283,
+    "sha256": "773187eca8f801a148558ae3585a840310ed054231aa75b125c559635c724f3b"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-soft-user-consent.log": {
+    "bytes": 266,
+    "sha256": "c716e23700d2cc358f8de536f9c6dcef5acb4726550303ac6638360dfb6494c9"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-soft-user-consent.log.result.json": {
+    "bytes": 284,
+    "sha256": "c3efada546bc48a6a0344c71c4ff71b520ba0eb9604d4b83d890f6e3a70c3646"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-stale-gate.log": {
+    "bytes": 231,
+    "sha256": "b2831c3f0ee613b0d0c91e5661273b86dba387a19901d5517c64643cd4508f1d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-stale-gate.log.result.json": {
+    "bytes": 267,
+    "sha256": "9e6fdee3ecea2080227d2b6134e103ab50dc9cbca5bd7abf2813191ef41f8fbc"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-stop-batch-budget.log": {
+    "bytes": 284,
+    "sha256": "817696f27fe102c6486e734227c779183ef735237974a5c8905f35fcee509f00"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-stop-batch-budget.log.result.json": {
+    "bytes": 290,
+    "sha256": "582f287d3295197143f407ef66bd728f0d828c70f1a45b58e71f9e7cdfd4317f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-ui-consent.log": {
+    "bytes": 549,
+    "sha256": "9b6b2a65ae971922974b459f509e75444c8f3a213ecef53bdb836c2bf35bca33"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-ui-consent.log.result.json": {
+    "bytes": 180,
+    "sha256": "f79a5a7ded7806f66c75ef26c7d6f913267d2b1aa10396e113f40555cd311047"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-ui-eligibility.log": {
+    "bytes": 330,
+    "sha256": "1afd1a82690a50d878e14401e410bb1bc0fc63485e3c632d77e6fc6531948b02"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-ui-eligibility.log.result.json": {
+    "bytes": 180,
+    "sha256": "d8f2bad518929e81911c9249ac8025112e53f6659ca0809158b7933599dc77c5"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-ui-held-roster.log": {
+    "bytes": 523,
+    "sha256": "f16c2d46fcdf074090d19043d2567f22b24b819169598904aab1c3223b576693"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-ui-held-roster.log.result.json": {
+    "bytes": 180,
+    "sha256": "b21df7a53beea47944e04d666834235235716d8524f4207f2945f6f20eb79fa7"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-ui-mode-notice.log": {
+    "bytes": 435,
+    "sha256": "a2d392f7e2bebf0257832b7621a1e32c1276b9f261b3eecb54bcee43f8448f9b"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-ui-mode-notice.log.result.json": {
+    "bytes": 180,
+    "sha256": "9a6812a6a21373a58866a9700f167f7d68fa2a43bdac934acd3e37fd85083d8c"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-unknown-gate.log": {
+    "bytes": 229,
+    "sha256": "1a4b8a11d02d00047a8cca8664402579dee3902c51b003f3f0b646ba21946942"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-unknown-gate.log.result.json": {
+    "bytes": 267,
+    "sha256": "06961951ae10e0cf331c0dda948e6a8b1d0b3e1d3139337946f70bf01793f872"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-unrecorded-final-writer.log": {
+    "bytes": 256,
+    "sha256": "4c16b8a678bfb66a4f458cd5026c72464d56aea8273e38b226e8aa7267797821"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-unrecorded-final-writer.log.result.json": {
+    "bytes": 274,
+    "sha256": "0f193faf11b58a505a3553e7abd2d792846ee01519a7514a0d7a7d90e685e7bd"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-unrecorded-target.log": {
+    "bytes": 247,
+    "sha256": "8717dc943bef3c6f122415ccf0a41b1c1ec0874d1b1fa42873e16b1fa00b5d43"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-unrecorded-target.log.result.json": {
+    "bytes": 275,
+    "sha256": "47beea3396bc3392230d6fd8ff281800d4f46aa177b97b8119170afd340f929a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-warning-hysteresis.log": {
+    "bytes": 266,
+    "sha256": "e3eddbffe629a958191dec95765357ce4cf400d7b0695eae14f589b1209260f5"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-warning-hysteresis.log.result.json": {
+    "bytes": 286,
+    "sha256": "d63d5bff46cfddb0cfff364e7951cf6c218b0e7b1f17fd7568b3743bd5cf474e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-warning.log": {
+    "bytes": 258,
+    "sha256": "3a488c0bb124bf85ace6f086f5ea9f21216562d3d7ebba748a1d39d2282c2a3f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdraw-warning.log.result.json": {
+    "bytes": 286,
+    "sha256": "53bb561787effb9ef1b2ea4a84b4fbaccd0da0444f0da4c47e5a2e06803e8fde"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdrawal-restored-nodeagent.log": {
+    "bytes": 20808,
+    "sha256": "1794715d9571a0e417bfa80424abf8aef81a5eec179d360ad9b44cfd5817bd98"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/raw/withdrawal-restored-nodeagent.log.result.json": {
+    "bytes": 212,
+    "sha256": "887e2e8b6b8714da7265652385786337443223b6b54cdbfd99fc82d1fe4dc7a4"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/run-local.py.fixture": {
+    "bytes": 1233,
+    "sha256": "7a479dfdd257fda23706c030aecd3951fcf42d4b95f8f4d445613fec23698da7"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/withdraw.py.fixture": {
+    "bytes": 8184,
+    "sha256": "620852d8fa61df8904c3e3d4f9dbc78b3e2bf87b666dc5eeddf0bb8f5f28c19b"
+  }
+}

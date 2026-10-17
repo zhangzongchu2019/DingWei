@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "Test(NodePolicy|DualUsage|Soft|SeatHardLimits|UsageRejects)",
+    "-v",
+    "-count=1"
+  ],
+  "rc": 0,
+  "seconds": 1.6722751699853688,
+  "external_DSN_environment_not_inherited": true
+}

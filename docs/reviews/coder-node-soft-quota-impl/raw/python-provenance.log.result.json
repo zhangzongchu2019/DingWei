@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "-c",
+    "import sys,importlib.metadata,json;print(json.dumps({\"executable\":sys.executable,\"version\":sys.version,\"packages\":{n:importlib.metadata.version(n) for n in [\"websockets\",\"pexpect\",\"ptyprocess\",\"certifi\"]}}))"
+  ],
+  "rc": 0,
+  "seconds": 0.08800709107890725,
+  "external_DSN_environment_not_inherited": true
+}

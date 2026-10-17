@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "TestSoft(MonitorMeasuresAgainOnPeriodicTick|ScanBudgetUnknownAndOutboxAcknowledgement|EnforcementBatchDeadlineNotMultipliedBySeatCount)",
+    "-v",
+    "-count=1",
+    "-timeout=120s"
+  ],
+  "rc": 0,
+  "seconds": 13.505014719907194,
+  "external_DSN_environment_not_inherited": true
+}

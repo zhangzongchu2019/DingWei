@@ -1,0 +1,13 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-v",
+    "-count=1",
+    "-timeout=120s"
+  ],
+  "rc": 0,
+  "seconds": 5.325819198973477,
+  "external_DSN_environment_not_inherited": true
+}

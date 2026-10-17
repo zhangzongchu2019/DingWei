@@ -1,0 +1,189 @@
+{
+  "utc": "2026-10-17T08:20:36.076614+00:00",
+  "code_pin": "0d43a75ea7d3dc025edeb5e7a414ab00e12a1bf8",
+  "mandatory_gates": {
+    "canonical-0d43a75.log": {
+      "command": [
+        "./build.sh",
+        "--test-only"
+      ],
+      "rc": 0,
+      "seconds": 137.68170404992998,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-full-0d43a75.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 5.293131469981745,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-race-0d43a75.log": {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 31.31542175891809,
+      "external_DSN_environment_not_inherited": true
+    }
+  },
+  "nodeagent_top_level_passes": 125,
+  "related_gate": {
+    "command": [
+      "go",
+      "test",
+      "./internal/hosted",
+      "./internal/nodegate",
+      "./cmd/nodeagent",
+      "./cmd/workpulse",
+      "-v",
+      "-count=1",
+      "-timeout=600s"
+    ],
+    "rc": 0,
+    "seconds": 395.21364183700643,
+    "external_DSN_environment_not_inherited": true
+  },
+  "related_gate_top_level_passes": 266,
+  "source_withdrawals_assertion_red": 39,
+  "invalid_initial_build_controls_not_counted": [
+    "memory-available",
+    "socket-alias"
+  ],
+  "inherited_browser_baseline_failures": [
+    "left list uses full_name",
+    "a create with a new group shows that group in the group list once online, led by the new agent"
+  ],
+  "browser_additional_scope": {
+    "new_dom_assertions": 10,
+    "model_lifecycle_quota_suites_rc0": true,
+    "legacy_original_r21_and_candidate": {
+      "pass": 30,
+      "fail": 2,
+      "old_test_unchanged": true
+    }
+  },
+  "actual_Docker_or_host_or_external_PG_or_real_keys_or_build_or_deploy": false,
+  "previous_mandatory_gates": {
+    "canonical-fc3db12.log": {
+      "command": [
+        "bash",
+        "./build.sh",
+        "--test-only"
+      ],
+      "rc": 0,
+      "seconds": 93.35808264301158,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-full-fc3db12.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=120s"
+      ],
+      "rc": 0,
+      "seconds": 5.828437796095386,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-race-fc3db12.log": {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=180s"
+      ],
+      "rc": 0,
+      "seconds": 13.144239998189732,
+      "external_DSN_environment_not_inherited": true
+    },
+    "extra-withdraw-restored-go.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/nodeagent",
+        "-run",
+        "^TestSoftRegistrationUsesDirectoryBackendAndReplayGate$",
+        "-v",
+        "-count=1",
+        "-timeout=60s"
+      ],
+      "rc": 0,
+      "seconds": 0.7891275868751109,
+      "external_DSN_environment_not_inherited": true
+    },
+    "extra-withdraw-restored-browser.log": {
+      "command": [
+        "node",
+        "view-service/console-soft-quota-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 4.726477381074801,
+      "external_DSN_environment_not_inherited": true
+    },
+    "hosted-soft-final-targets.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/hosted",
+        "-run",
+        "Test(QuotaRegistration|QuotaEvent|SoftNode|SoftCreate|SoftHeld|HardNodeResource|OptionsJSONMatchesContract)",
+        "-v",
+        "-count=1",
+        "-timeout=180s"
+      ],
+      "rc": 0,
+      "seconds": 10.74987602001056,
+      "external_DSN_environment_not_inherited": true
+    }
+  },
+  "budget_periodic_withdrawals": {
+    "code_pin": "0d43a75ea7d3dc025edeb5e7a414ab00e12a1bf8",
+    "cases": [
+      {
+        "name": "scan-budget",
+        "file": "internal/nodeagent/softquota.go",
+        "test": "TestSoftScanBudgetUnknownAndOutboxAcknowledgement",
+        "rc": 1,
+        "assertion_red": true,
+        "original_sha256": "7eee1a5b5e117609c19f1eb9638bfe077331ed06addc4e1afc16927b7fc338e7",
+        "mutant_sha256": "30be0915fd4fd307fb15fc60da6ea47477489391c71fdf1bb0f4e6326ca22978"
+      },
+      {
+        "name": "stop-batch-budget",
+        "file": "internal/nodeagent/softquota.go",
+        "test": "TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount",
+        "rc": 1,
+        "assertion_red": true,
+        "original_sha256": "7eee1a5b5e117609c19f1eb9638bfe077331ed06addc4e1afc16927b7fc338e7",
+        "mutant_sha256": "1ab69c95ee09a70d46be8b187d8442a53c2ee6b0e5c1a22d40f481594db8f651"
+      },
+      {
+        "name": "periodic-scan",
+        "file": "internal/nodeagent/softquota.go",
+        "test": "TestSoftMonitorMeasuresAgainOnPeriodicTick",
+        "rc": 1,
+        "assertion_red": true,
+        "original_sha256": "7eee1a5b5e117609c19f1eb9638bfe077331ed06addc4e1afc16927b7fc338e7",
+        "mutant_sha256": "73fe0e47b09dfc4737901c38cc452b3d8202fd439c04177f6f79c6b56ebc7ae5"
+      }
+    ]
+  }
+}

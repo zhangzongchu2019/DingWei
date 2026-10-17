@@ -1,0 +1,174 @@
+{
+  "baseline": "8944a7c12198129af74fbe9c7ad6d646ad5c5d24",
+  "code_pin": "0d43a75ea7d3dc025edeb5e7a414ab00e12a1bf8",
+  "code_tree": "f1e54ab3cdf63feea7565db3193821e2b238f101",
+  "files": {
+    "cmd/nodeagent/main.go": {
+      "blob": "3bfd1aee93828679cee84daf1bdf36305ec1dbe5",
+      "bytes": 6669,
+      "sha256": "5dc30f8182be1cd3efe264af7a52bfe395c3783ecdedf76ff666f88954e3be0d"
+    },
+    "cmd/workpulse/hosted_routes.go": {
+      "blob": "07d20f29505c0cd3f48281d34efd621e5f42f2eb",
+      "bytes": 25524,
+      "sha256": "451043f0c849ee09f7a030c6c396290bedbce3844d02337c4c2e3eea9b6f6455"
+    },
+    "deploy/nodeagent.env.example": {
+      "blob": "37cb1cede4abdf65ef0549890e05ec9b5d1d1ab5",
+      "bytes": 6708,
+      "sha256": "2b65f9a5165ca6956f8ec7b96e1febf1717fc3b218b5909ee81985f1828e9cb0"
+    },
+    "internal/hosted/lifecycle.go": {
+      "blob": "72dc7a6de6c102486c0c2277301292a108506f2a",
+      "bytes": 23183,
+      "sha256": "7350ac9d924b73aebc39abba55e19de44ec52b90f584e9821c91ecfa3f22804b"
+    },
+    "internal/hosted/lifecycle_job.go": {
+      "blob": "1a7f88b1d510dfd74931a93f632bfa91f6e70dbd",
+      "bytes": 8914,
+      "sha256": "cf25eeb192be18df4dc7788cb363fb7186182682ae4f4ce17fc3e469ab0178ec"
+    },
+    "internal/hosted/node_quota.go": {
+      "blob": "89ebb90a59a390a64aaf9c38d55d60737fe34127",
+      "bytes": 7679,
+      "sha256": "76a5228e0fb14fd832a088b3026808f2a843cdda4478e02719ef3524e37c6bf5"
+    },
+    "internal/hosted/node_quota_test.go": {
+      "blob": "3d0da9cf75888989b5ac5f95d9d1174b2aa715d2",
+      "bytes": 9079,
+      "sha256": "c59b05f63b8cd9ce9bb684ea5323b112a1ddf61cd961ca7a0b1b5eac7824f075"
+    },
+    "internal/hosted/nodecred.go": {
+      "blob": "473b0434b6373866c9cdcd0998b517e8c6c2581c",
+      "bytes": 5068,
+      "sha256": "256f2cf78f7514bd681816a72231ac5e3e46baeb0cb9e7707b6f53d1b45d4d7a"
+    },
+    "internal/hosted/orchestrator.go": {
+      "blob": "25d226b905b404ecccb558b6a431cdef58f82d9d",
+      "bytes": 23778,
+      "sha256": "b5d6a453e389ce6c827d4944e2d1c8483bfdac258d8263bcebc3e005bc16715b"
+    },
+    "internal/hosted/overlay.go": {
+      "blob": "6ab272f88bb43301a4b4dbc13e7d5cc657d29b5d",
+      "bytes": 5327,
+      "sha256": "bb970fd2a843e87591c74a428299858fdade64d10f61d0708a9b440666b0a897"
+    },
+    "internal/hosted/readapi.go": {
+      "blob": "ec9d9f37294ddd30251c17e2b4e3242c8c7637e4",
+      "bytes": 9553,
+      "sha256": "0d000e201b3ac06ae995e274af3cb138093233b53984278e26d941ef105ba62f"
+    },
+    "internal/hosted/store.go": {
+      "blob": "8b5f5952797d1810d260cc282730174279ee24d8",
+      "bytes": 31968,
+      "sha256": "2045366f36fd695f6567a5fbf5c4c577e3369d612366d98306d4e8a4fcf4293a"
+    },
+    "internal/m8/console_auth.go": {
+      "blob": "8e37804f9b7b94354465677ff2f0a101b2091c82",
+      "bytes": 148698,
+      "sha256": "2a1f90b1df7245bac47aaaedd61a4a97b22152fbae59472c0bb148f70beeea19"
+    },
+    "internal/nodeagent/capacity.go": {
+      "blob": "a372f7537ddb25fd4ea4f9cce05e678df921918b",
+      "bytes": 5347,
+      "sha256": "81c78151cbdb523ec662abbd0ddd7f56667c623fb0a4b5ad6c97f60069bc45ec"
+    },
+    "internal/nodeagent/engine_policy.go": {
+      "blob": "fd2932d63e72de329cd1bf93bd932b6b0a0df9a3",
+      "bytes": 2911,
+      "sha256": "dcc5d7fc270eb5bb13ab268d54065f58f43b0f8d5528aeb6ea567a1027d0e70e"
+    },
+    "internal/nodeagent/login.go": {
+      "blob": "725f2b406e507cf5b193238c59baf07496c202ab",
+      "bytes": 17136,
+      "sha256": "fba01f808e81f5f0b94ed1ef64ab240d1499597d1257e3c28287f9ca1c26b34c"
+    },
+    "internal/nodeagent/policy.go": {
+      "blob": "ac6be4b59da85535da4786b01eac1e69aea1ec46",
+      "bytes": 7180,
+      "sha256": "052fd5b6eb198e71360eaf58b85d9b26e2f7339ebd9afe25434f2033d1e30390"
+    },
+    "internal/nodeagent/run.go": {
+      "blob": "606084c04077f93e3de1bf3817a7d0e7f65500c3",
+      "bytes": 7676,
+      "sha256": "9cae37c60e1465aa642ec8e841847c4016883e1c8d37e603df2d45ea710264f1"
+    },
+    "internal/nodeagent/seat.go": {
+      "blob": "292207c673552eccc6245c422bc81fd0cbed56df",
+      "bytes": 38840,
+      "sha256": "b4b3215c0eeca3270ee64a05f9fe96d1f1840fe1a42736d45fe1ae363d2db341"
+    },
+    "internal/nodeagent/softquota.go": {
+      "blob": "ad88b9d6f33fa8d3099497f14ab8b7c44ffcae7c",
+      "bytes": 20873,
+      "sha256": "7eee1a5b5e117609c19f1eb9638bfe077331ed06addc4e1afc16927b7fc338e7"
+    },
+    "internal/nodeagent/softquota_test.go": {
+      "blob": "cf1caa13b725762f4515322f2491c0262f9b5e99",
+      "bytes": 34369,
+      "sha256": "c08ccca972b056bcacc4405a13f0f3ded71968306cb5de4f860f1076c4791031"
+    },
+    "internal/nodeagent/usage.go": {
+      "blob": "9512de10e8574cc032ea8626d32743de12d2d699",
+      "bytes": 4922,
+      "sha256": "3dc93f60e9f151a2f4b3167633d36bb62f2332ef7840677fb5c4431f2d1c1891"
+    },
+    "internal/nodegate/gate.go": {
+      "blob": "6b42b481da9aa1bb0fa82fdbb435e536e495cf2d",
+      "bytes": 7910,
+      "sha256": "2b7008d2359705bcb13199bec0fb05aeb63638b1741b4aa8f51dcf110438a3c4"
+    },
+    "view-service/console-soft-quota-regression.js": {
+      "blob": "b18e21ceef98d1d08ca0454415dcd062f6565d59",
+      "bytes": 5252,
+      "sha256": "3f5ef42208edc473e07b2cb2be797918465905b86b1d6d6d84b66d36c7467ca0"
+    }
+  },
+  "existing_test_files_unchanged": [
+    "internal/hosted/abort_test.go",
+    "internal/hosted/account_share_test.go",
+    "internal/hosted/backup_test.go",
+    "internal/hosted/keys_test.go",
+    "internal/hosted/lifecycle_online_test.go",
+    "internal/hosted/lifecycle_race_test.go",
+    "internal/hosted/lifecycle_test.go",
+    "internal/hosted/login_test.go",
+    "internal/hosted/nodecred_test.go",
+    "internal/hosted/online_test.go",
+    "internal/hosted/orchestrator_test.go",
+    "internal/hosted/plans_test.go",
+    "internal/hosted/poolsvc_test.go",
+    "internal/hosted/quotasvc_test.go",
+    "internal/hosted/readapi_test.go",
+    "internal/hosted/reconcile_test.go",
+    "internal/hosted/refresh_cred_test.go",
+    "internal/hosted/registry_test.go",
+    "internal/hosted/store_test.go",
+    "internal/hosted/tokensvc_test.go",
+    "internal/nodeagent/agent_test.go",
+    "internal/nodeagent/applied_marker_name_test.go",
+    "internal/nodeagent/backup_integrity_test.go",
+    "internal/nodeagent/backup_test.go",
+    "internal/nodeagent/capacity_test.go",
+    "internal/nodeagent/docker_internal_test.go",
+    "internal/nodeagent/login_test.go",
+    "internal/nodeagent/quota_rework_test.go",
+    "internal/nodeagent/quota_unit_test.go",
+    "internal/nodeagent/refresh_cred_test.go",
+    "internal/nodeagent/seat_test.go",
+    "internal/nodegate/gate_test.go",
+    "internal/nodegate/reconcile_gate_test.go"
+  ],
+  "baseline_nodeagent_test_functions": 100,
+  "helper_subtree_unchanged": true,
+  "related_gate_source_identity": {
+    "executed_pin": "0efc288bb41e064045bd0addb76f812ae3670b54",
+    "directories": [
+      "internal/hosted",
+      "internal/nodegate",
+      "cmd/nodeagent",
+      "cmd/workpulse"
+    ],
+    "byte_identical_to_final": true
+  }
+}
