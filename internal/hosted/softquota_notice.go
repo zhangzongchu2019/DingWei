@@ -19,7 +19,7 @@ func (n QuotaNotice) DeliveryID() string {
 }
 func (n QuotaNotice) Text() string {
 	reason := map[string]string{
-		"usage_warning": "用量接近告警线", "disk_warning": "磁盘用量接近告警线", "disk_limit": "用量达到上限，工作已暂停或正在停止，数据保留",
+		"usage_warning": "用量暂时无法测量，新建或启动已受限", "disk_warning": "磁盘用量已到或超过告警线，请核对 hold 状态", "disk_limit": "用量达到上限，工作已暂停或正在停止，数据保留",
 		"usage_unknown": "用量读数持续未知，工作已暂停或正在停止，数据保留", "private_state_unavailable": "私有状态不可用，禁止继续写入",
 		"unclean_restart": "异常退出后的保护性暂停", "node_space_emergency": "节点可用空间低于紧急线，工作已暂停或正在停止，数据保留",
 		"node_inode_emergency": "节点可用 inode 低于紧急线，工作已暂停或正在停止，数据保留", "node_space_unknown": "节点余量持续未知，工作已暂停或正在停止，数据保留",
