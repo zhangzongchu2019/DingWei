@@ -130,7 +130,10 @@ actual isolated Engine/build remains external to these variables and this code.
 1. Required variables and unix URI shape are checked before work. Python resolves
    lexical/symlink aliases, refuses both default host socket spellings and their
    aliases, and requires an existing Unix socket using metadata only. All Docker
-   commands use that same canonical endpoint. No socket is connected by this
+   commands use that same canonical endpoint. Whitespace/control characters and
+   URI escape/query/fragment delimiters are refused in both supplied and resolved
+   paths, so shell trimming or URL interpretation cannot select another endpoint.
+   No socket is connected by this
    metadata check.
 2. The already-reviewed packager produces the context. It alone selects source
    inputs; no recursive source-tree copy or alternative context path is added.

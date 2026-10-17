@@ -18,8 +18,15 @@ engine_socket=$(python3 - "$HOSTED_BUILD_ENGINE" <<'PY_ENGINE'
 import stat
 import sys
 from pathlib import Path
+def plain_path(value):
+    # URL delimiters/escapes or whitespace could be decoded/trimmed differently
+    # by Docker or shell command substitution. Fail closed, including symlinks.
+    if any(c.isspace() or ord(c) < 32 or ord(c) == 127 or c in '%?#' for c in value):
+        raise SystemExit('unambiguous isolated Engine socket path required')
+    return value
 try:
-    path = Path(sys.argv[1][len('unix://'):]).resolve()
+    path = Path(plain_path(sys.argv[1][len('unix://'):])).resolve()
+    plain_path(str(path))
     if path in (Path('/var/run/docker.sock').resolve(), Path('/run/docker.sock').resolve()):
         raise SystemExit('default host Engine alias forbidden')
     info = path.stat()

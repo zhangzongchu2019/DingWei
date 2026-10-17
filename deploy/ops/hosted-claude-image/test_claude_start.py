@@ -556,6 +556,26 @@ else:sys.exit(93)
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertTrue(all(row[:2]==['--host','unix://'+str(self.endpoint.resolve())] for row in rows))
 
+    def test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths(self):
+        import socket
+        self.builder_fixture()
+        for name in ['newline.sock\n','space.sock ','escape%2f.sock','query.sock?x','fragment.sock#x']:
+            with self.subTest(name=name), socket.socket(socket.AF_UNIX) as inert:
+                endpoint=self.root/name;inert.bind(str(endpoint))
+                # Even an existing socket cannot authorize a URI whose path may
+                # be trimmed/decoded; no actual Engine is contacted by this test.
+                result,rows=self.run_builder({'HOSTED_BUILD_ENGINE':'unix://'+str(endpoint)})
+                self.assertEqual(result.returncode,2,result.stderr)
+                self.assertIn('unambiguous isolated Engine socket path required',result.stderr)
+                self.assertFalse(rows);self.assertFalse(self.out.exists())
+                alias=self.root/'safe-looking-alias.sock';alias.symlink_to(name)
+                try:
+                    result,rows=self.run_builder({'HOSTED_BUILD_ENGINE':'unix://'+str(alias)})
+                    self.assertEqual(result.returncode,2,result.stderr)
+                    self.assertIn('unambiguous isolated Engine socket path required',result.stderr)
+                    self.assertFalse(rows);self.assertFalse(self.out.exists())
+                finally:alias.unlink()
+
     def test_default_alias_guard_even_when_default_socket_exists_metadata_model(self):
         import subprocess
         shell=(HERE/'build-image.sh').read_text()
