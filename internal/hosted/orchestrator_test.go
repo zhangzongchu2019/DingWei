@@ -230,6 +230,26 @@ func TestCreateHappyPathCodexFirst(t *testing.T) {
 	}
 }
 
+// Claude is registered in the same plan/admission path, but is intentionally
+// not creatable until an isolated image/login validation turns its combo green.
+func TestClaudeMinimumPlanRemainsUnverified(t *testing.T) {
+	o, _, _, _ := mkOrch(t)
+	ctx := context.Background()
+	a, err := o.pool.RegisterOwned(ctx, "zzc", "claude-fixture", "token_file", "claude", "claude", `{"opaque":"fixture"}`)
+	if err != nil {
+		t.Fatalf("Claude account registration: %v", err)
+	}
+	o.combos = fakeCombos{m: map[string]bool{
+		"codex|gpt|token_file":     true,
+		"claude|claude|token_file": false,
+	}}
+	_, err = o.Create(ctx, CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "claude-fixture", NodeID: "nd_free",
+		CLI: "claude", LLM: "claude", AccountID: a.ID, Plan: "1c1.5g40"})
+	if !errors.Is(err, ErrComboNotVerified) {
+		t.Fatalf("unverified Claude combo must stop before capacity/create, got %v", err)
+	}
+}
+
 func TestCreateRejections(t *testing.T) {
 	o, idp, _, s := mkOrch(t)
 	acctID := acctOf(t, o.pool)

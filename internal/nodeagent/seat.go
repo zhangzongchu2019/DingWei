@@ -272,13 +272,15 @@ var chownForSeatFn = func(path string) error {
 
 func chownForSeat(path string) error { return chownForSeatFn(path) }
 
-// seatEnv 席位容器环境变量。容器启动契约（R-G1-HOSTED-IMAGE-CONTRACT 一）：四个非凭据键
-// 由节点代理注入——SH_WS_BASE（Hub 的 ws 源）／SH_ENROLL_TOKEN_FILE／SH_CRED_FILE（均为路径）／
-// SH_CRED_KIND（api_key|token_file，create 参数 cred_kind 带入）。🔴 凭据内容永不进 env/日志。
+// seatEnv 席位容器环境变量。容器启动契约（R-G1-HOSTED-IMAGE-CONTRACT 一）：五个非凭据键
+// 由节点代理注入——SH_WS_BASE（Hub 的 ws 源）／SH_ENROLL_TOKEN_FILE／SH_ENROLL=1／SH_CRED_FILE（均为路径）／
+// SH_CRED_KIND（api_key|token_file，create 参数 cred_kind 带入）。SH_ENROLL=1 使无交互托管启动只走令牌入组。
+// 🔴 凭据内容永不进 env/日志。
 func (d *dockerOps) seatEnv(credKind, cli, model string) []string {
 	env := []string{
 		"SH_WS_BASE=" + d.hubWSBase,
 		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
+		"SH_ENROLL=1",
 		"SH_CRED_FILE=/work/account-credential",
 		"SH_CRED_KIND=" + credKind,
 		// 席位的 CLI 由 create／upgrade 参数 cli 定（组长 R-B12-SEATMODE 第 2 条取乙：基础镜像含多家 CLI，模式按席位定、不写死进镜像）。

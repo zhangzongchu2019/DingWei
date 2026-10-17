@@ -1,0 +1,8 @@
+[
+  {
+    "cli": "claude",
+    "llm": "claude",
+    "cred_kind": "token_file",
+    "verified": false
+  }
+]
