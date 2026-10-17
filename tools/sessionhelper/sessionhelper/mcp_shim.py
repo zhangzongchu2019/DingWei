@@ -27,10 +27,12 @@ from typing import Any, Callable
 
 if __package__:
     from . import __version__
+    from .ipc_permissions import send_body_only
 else:
     # Preserve existing MCP configurations that execute this file directly.
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from sessionhelper import __version__
+    from sessionhelper.ipc_permissions import send_body_only
 
 
 # ── JSON‑RPC 2.0 types ────────────────────────────────────────────────
@@ -81,6 +83,8 @@ _stdout_lock = threading.Lock()
 
 import socket as _socket
 import uuid as _uuid
+
+_SEND_BODY_ONLY = send_body_only(os.environ)
 
 _IPC_SOCK = os.environ.get("DINGWEI_MCP_IPC_SOCK", "")
 _IPC_TIMEOUT = 5.0
@@ -237,6 +241,9 @@ _SEND_TOOL_SCHEMA = {
 @register("send_message", "经 DingWei hub 向队友发送消息", _SEND_TOOL_SCHEMA)
 def _send_message(args: dict[str, Any]) -> dict[str, Any]:
     """Validate and forward."""
+    if _SEND_BODY_ONLY and ("file" in args or any(
+            not isinstance(args.get(k, ""), str) for k in ("to", "body", "reply_to", "in_reply_to", "reply_policy", "kind"))):
+        raise _IPCFailure("operation_not_allowed")
     to = (args.get("to") or "").strip()
     body = (args.get("body") or "").strip()
     file_path = (args.get("file") or "").strip()
@@ -527,12 +534,22 @@ def _dispatch(req: Request) -> Response:
             }
             for t in _tools.values()
         ]
+        if _SEND_BODY_ONLY:
+            tools = [t for t in tools if t["name"] in ("send_message", "upload_file")]
+            for tool in tools:
+                if tool["name"] == "send_message":
+                    schema = dict(tool["inputSchema"])
+                    schema["properties"] = {k: v for k, v in schema["properties"].items() if k != "file"}
+                    schema["required"] = ["to", "body"]
+                    tool["inputSchema"] = schema
         return Response(id=req.id, result={"tools": tools})
 
     # -- tools/call ----------------------------------------------------
     if req.method == "tools/call":
         name = (req.params or {}).get("name", "")
         arguments = (req.params or {}).get("arguments") or {}
+        if _SEND_BODY_ONLY and (not isinstance(name, str) or name not in ("send_message", "upload_file")):
+            return _tool_failure(req.id, "operation_not_allowed")
         if not isinstance(name, str) or name not in _handlers:
             return Response(
                 id=req.id,
@@ -560,7 +577,7 @@ def _dispatch(req: Request) -> Response:
         })
 
     # -- unknown method ------------------------------------------------
-    return Response(id=req.id, error={"code": -32601, "message": f"unknown method: {req.method!r}"})
+    return Response(id=req.id, error={"code": -32601, "message": "unknown method" if _SEND_BODY_ONLY else f"unknown method: {req.method!r}"})
 
 
 def _write(response: Response) -> None:

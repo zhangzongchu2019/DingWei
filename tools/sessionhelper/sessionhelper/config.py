@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from urllib.parse import urlencode
 
 from . import __version__
+from .ipc_permissions import send_body_only
 from .protocol import required_env
 
 
@@ -90,6 +91,8 @@ class Config:
     upload_max_bytes_per_hour: int = 1024 * 1024 * 1024
     # R-V2-IMAGE-R5（组长 UPLOAD-ONLY 裁定）：托管镜像设 1 ⇒ 本机 IPC 只接 file_upload_v1；缺省＝完整 IPC（自备 helper 不变）。
     ipc_upload_only: bool = False
+    # Hosted: upload plus text-only mcp_send; legacy upload_only wins if both set.
+    ipc_send_body_only: bool = False
 
     @property
     def registered_session_name(self) -> str:
@@ -251,6 +254,7 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         upload_max_per_hour=int(env.get("SH_UPLOAD_MAX_PER_HOUR", "20")),
         upload_max_bytes_per_hour=int(env.get("SH_UPLOAD_MAX_BYTES_PER_HOUR", str(1024 * 1024 * 1024))),
         ipc_upload_only=truthy(env.get("SH_IPC_UPLOAD_ONLY", "0")),
+        ipc_send_body_only=send_body_only(env),
     )
 
 

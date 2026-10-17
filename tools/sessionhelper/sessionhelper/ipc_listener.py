@@ -79,6 +79,8 @@ async def _read_one(reader: asyncio.StreamReader, timeout: float = 5.0) -> dict[
         line = await asyncio.wait_for(reader.readline(), timeout)
     except asyncio.TimeoutError:
         raise _IPCError("read timeout") from None
+    except ValueError:
+        raise _IPCError("request too large") from None
     if not line:
         raise _IPCError("client disconnected")
     try:
@@ -114,6 +116,7 @@ async def _handle_connection(
     upload_handler: _UploadHandler | None = None,
     passed_fds: list[int] | None = None,
     upload_only: bool = False,
+    send_body_only: bool = False,
     inbox_handler=None,
     spec_handler: _SpecHandler | None = None,
 ) -> None:
@@ -124,9 +127,12 @@ async def _handle_connection(
     try:
         msg = await _read_one(reader)
     except _IPCError as exc:
-        await _write_one(writer, {"ok": False, "error": str(exc)})
+        await _write_one(writer, {"ok": False, "error": "invalid_request" if send_body_only else str(exc)})
         return
 
+    if not isinstance(msg, dict):
+        await _write_one(writer, {"ok": False, "error": "invalid_request"})
+        return
     msg_type = msg.get("type", "")
 
     if msg_type == IPC_UPLOAD:
@@ -135,6 +141,8 @@ async def _handle_connection(
         # 托管席（组长 R-V2-IMAGE-R5-UPLOAD-ONLY）：本 socket 只为上传而开；发信／vsapi／读文件不经此提供。
         await _write_one(writer, {"ok": False, "error": "unavailable: this socket accepts file_upload_v1 only"})
         return
+    if send_body_only:
+        return await _handle_body_send(writer, msg, send_handler, passed_fds or [])
     if passed_fds:
         await _write_one(writer, {"ok": False, "error": "file descriptors are only accepted for file_upload_v1"})
         return
@@ -195,6 +203,29 @@ async def _handle_connection(
         await _write_one(writer, {"ok": False, "error": f"send failed: {exc}"})
         return
 
+    await _write_one(writer, {"ok": True, "outcome": outcome, "request_id": request_id})
+
+
+async def _handle_body_send(writer, msg, send_handler, passed_fds):
+    """Upload is dispatched earlier; this path can never open a caller path."""
+    allowed = {"type", "to", "body", "request_id", *REPLY_ORIGIN_KEYS}
+    if msg.get("type") != IPC_SEND or set(msg) - allowed or passed_fds:
+        await _write_one(writer, {"ok": False, "error": "operation_not_allowed"})
+        return
+    to, body, request_id = msg.get("to"), msg.get("body"), msg.get("request_id", "")
+    if (not isinstance(to, str) or not to.strip() or len(to) > 512 or
+            not isinstance(body, str) or not body.strip() or len(body.encode("utf-8")) > 65536 or
+            not isinstance(request_id, str) or len(request_id) > 128 or
+            any(not isinstance(msg[k], str) or len(msg[k]) > 512 for k in REPLY_ORIGIN_KEYS if k in msg)):
+        await _write_one(writer, {"ok": False, "error": "invalid_request"})
+        return
+    try:
+        # Exactly the existing authenticated send handler; Hub retains routing/group authorization.
+        outcome = await send_handler(to.strip(), body.strip(), extract_reply_origin_meta(msg))
+    except Exception:
+        # No exception text, caller path, credential or retry. A failed write may be ambiguous.
+        await _write_one(writer, {"ok": False, "error": "send_failed"})
+        return
     await _write_one(writer, {"ok": True, "outcome": outcome, "request_id": request_id})
 
 
@@ -430,7 +461,7 @@ async def _serve_socket_connection(conn: socket.socket, dispatch) -> None:
         except _IPCError as exc:
             await _write_one(writer, {"ok": False, "error": str(exc)})
             return
-        reader = asyncio.StreamReader()
+        reader = asyncio.StreamReader(limit=1024 * 1024)
         reader.feed_data(line)
         reader.feed_eof()
         try:
@@ -474,6 +505,7 @@ async def serve_ipc(
     upload_handler: _UploadHandler | None = None,
     bound: asyncio.Event | None = None,
     upload_only: bool = False,
+    send_body_only: bool = False,
     inbox_handler=None,
     spec_handler: _SpecHandler | None = None,
     replace_existing: bool = True,
@@ -493,6 +525,8 @@ async def serve_ipc(
                        file_upload_v1; *fd* arrives via SCM_RIGHTS.
     *upload_only*    – accept only file_upload_v1; every other type answers "unavailable"
                        (hosted seats, SH_IPC_UPLOAD_ONLY=1).
+    *send_body_only* – upload plus text-only mcp_send, deny all other operations;
+                       upload_only takes precedence if both flags are set.
     *bound*          – set once the socket is listening, cleared when the server stops
                        (a leftover socket file is not proof that anyone is listening).
 
@@ -513,7 +547,7 @@ async def serve_ipc(
     async def dispatch(reader, writer, fds):
         await _handle_connection(reader, writer, send_handler, vsapi_handler, file_handler,
                                  allowed_socket_dir=allowed_socket_dir,
-                                 upload_handler=upload_handler, passed_fds=fds, upload_only=upload_only, inbox_handler=inbox_handler,
+                                 upload_handler=upload_handler, passed_fds=fds, upload_only=upload_only, send_body_only=send_body_only, inbox_handler=inbox_handler,
                                  spec_handler=spec_handler)
 
     loop = asyncio.get_running_loop()

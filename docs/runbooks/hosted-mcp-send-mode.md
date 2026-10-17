@@ -1,0 +1,9 @@
+# Hosted text-only MCP send (0.2.3.4)
+
+Opt-in `SH_IPC_SEND_BODY_ONLY=1` on **both the helper and MCP shim** enables upload plus `mcp_send` with inline body. Default remains full IPC; legacy `SH_IPC_UPLOAD_ONLY=1` remains upload-only and takes precedence if both helper flags are true. Invalid new-flag values reject configuration. Hosted image/config wiring is a separate H3 delivery; this change does not alter installed seats.
+
+The listener rejects any file field (even empty), received descriptors on send, unknown fields, vsapi/file access/spec/desktop operations. It never opens a send path. The shim rejects file arguments before reading them and exposes only send_message/upload_file. The restricted flag must be part of the shim MCP env: otherwise a general-purpose shim could read a local file before converting it into inline body. This is a transport permission boundary, not an OS sandbox against malicious same-UID code reading its own filesystem.
+
+Upload retains the existing descriptor-based upload policy, protected paths/inodes, secret scanner, ticket and limit checks. Inline body still uses the original authenticated WSS sender and Hub group/routing authorization; `sent=true` is a socket write receipt, not durable delivery. The mode adds no independent credentials, direct network path, routing bypass or automatic resend. Listener failures return fixed categories; shim transport failures retain sanitized isError/unknown/no-auto-resend behavior.
+
+0.2.3.4 distinguishes new helper runtime bytes/permissions from the already reviewed 0.2.3.3 repair artifacts. A/B compatibility fields and the four-pin runtime lock stay unchanged. All root/Go/helper version lines and release-pin assertions move together. H2 backup changes and H3 image definition require independent review; this is not deployment authorization.
