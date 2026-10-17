@@ -14,7 +14,7 @@ HELPER_ROOT = '/opt/dingwei/sessionhelper-src'
 CLAUDE_BIN = '/usr/local/bin/claude'
 SHARED_START = '/opt/dingwei/codex_start.py'
 IPC_DIR = '/work/.dingwei/ipc'
-REQUIRED = ('SH_WS_BASE', 'SH_ENROLL_TOKEN_FILE', 'SH_CRED_FILE', 'SH_CRED_KIND', 'SH_CLI')
+REQUIRED = ('SH_WS_BASE', 'SH_ENROLL_TOKEN_FILE', 'SH_ENROLL', 'SH_CRED_FILE', 'SH_CRED_KIND', 'SH_CLI')
 
 
 def fail(key):
@@ -46,7 +46,8 @@ def _credential(path):
 
 def prepare(env):
     _shared_guard()
-    if any(not env.get(key) for key in REQUIRED) or env['SH_CLI'] != 'claude' or env['SH_CRED_KIND'] != 'token_file':
+    if (any(not env.get(key) for key in REQUIRED) or env['SH_ENROLL'] != '1' or
+            env['SH_CLI'] != 'claude' or env['SH_CRED_KIND'] != 'token_file'):
         fail('SH_CLI')
     if os.getuid() != SEAT_UID:
         fail('UID')
@@ -60,6 +61,12 @@ def prepare(env):
         config_dir.mkdir(mode=0o700, exist_ok=True)
         if config_dir.is_symlink() or config_dir.stat().st_uid != SEAT_UID:
             raise ValueError()
+        ipc_dir = Path(IPC_DIR)
+        ipc_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        if ipc_dir.is_symlink() or ipc_dir.stat().st_uid != SEAT_UID:
+            raise ValueError()
+        ipc_dir.chmod(0o700)
+        sock = str(ipc_dir / 'helper.sock')
         with tempfile.NamedTemporaryFile(dir=config_dir, prefix='.credentials.', delete=False) as out:
             out.write(raw); tmp = Path(out.name)
         tmp.chmod(0o600)
@@ -74,7 +81,7 @@ def prepare(env):
                         'PYTHONPATH': HELPER_ROOT,
                         'SH_STATE_DIR': '/work/.dingwei',
                         'SH_IPC_SEND_BODY_ONLY': '1',
-                        'DINGWEI_MCP_IPC_SOCK': '/work/.dingwei/ipc/helper.sock',
+                        'DINGWEI_MCP_IPC_SOCK': sock,
                     },
                 },
             },
@@ -83,14 +90,8 @@ def prepare(env):
         mcp_tmp.write_text(json.dumps(mcp, separators=(',', ':')))
         mcp_tmp.chmod(0o600)
         os.replace(mcp_tmp, mcp_dir / 'mcp.json')
-        ipc_dir = Path(IPC_DIR)
-        ipc_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
-        if ipc_dir.is_symlink() or ipc_dir.stat().st_uid != SEAT_UID:
-            raise ValueError()
-        ipc_dir.chmod(0o700)
     except (OSError, ValueError):
         fail('CLAUDE_HOME')
-    sock = str(Path(IPC_DIR) / 'helper.sock')
     env.update(HOME=str(home), SH_MODE=env.get('SH_MODE', 'cli'), SH_CLI='claude',
                SH_CLI_CMD=CLAUDE_BIN + ' --mcp-config ' + str(mcp_dir / 'mcp.json'), SH_CLI_CWD='/work', SH_COLLECT='0',
                SH_INBOX_DB='/work/inbox.sqlite3', SH_STATE_DIR='/work/.dingwei',

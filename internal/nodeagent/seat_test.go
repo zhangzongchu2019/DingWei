@@ -180,10 +180,10 @@ func TestCreateSeatSecuritySpecAndTokenFile(t *testing.T) {
 	if spec["User"] != "10001:10001" {
 		t.Fatal("必须非 root UID")
 	}
-	// B7＋容器启动契约：env 只许代理三键＋契约四键（路径/形态，非凭据）；凭据类零出现
+	// B7＋容器启动契约：env 只许代理三键＋契约五键（路径/形态，非凭据）；凭据类零出现
 	if env, _ := spec["Env"].([]any); len(env) > 0 {
 		allowed := map[string]bool{"HTTP_PROXY=": true, "HTTPS_PROXY=": true, "NO_PROXY=": true,
-			"SH_WS_BASE=": true, "SH_ENROLL_TOKEN_FILE=": true, "SH_CRED_FILE=": true, "SH_CRED_KIND=": true,
+			"SH_WS_BASE=": true, "SH_ENROLL_TOKEN_FILE=": true, "SH_ENROLL=": true, "SH_CRED_FILE=": true, "SH_CRED_KIND=": true,
 			"SH_MODE=": true, "SH_CLI=": true}
 		seen := map[string]bool{}
 		for _, e := range env {
@@ -199,9 +199,9 @@ func TestCreateSeatSecuritySpecAndTokenFile(t *testing.T) {
 				t.Fatalf("凭据永不经 env（B7），实得: %v", env)
 			}
 		}
-		for _, p := range []string{"SH_WS_BASE=", "SH_ENROLL_TOKEN_FILE=", "SH_CRED_FILE=", "SH_CRED_KIND=", "SH_MODE=", "SH_CLI="} {
+		for _, p := range []string{"SH_WS_BASE=", "SH_ENROLL_TOKEN_FILE=", "SH_ENROLL=", "SH_CRED_FILE=", "SH_CRED_KIND=", "SH_MODE=", "SH_CLI="} {
 			if !seen[p] {
-				t.Fatalf("契约四键缺 %s: %v", p, env)
+				t.Fatalf("契约五键缺 %s: %v", p, env)
 			}
 		}
 		// 契约验收反向：env 任何值不得出现本次下发的令牌内容（值级断言——poll_token 是 "tok"，
@@ -862,6 +862,7 @@ func TestSeatEnvHubViaProxyOffUnchanged(t *testing.T) {
 	want := []string{
 		"SH_WS_BASE=wss://dw.cmjrt.com:55055",
 		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
+		"SH_ENROLL=1",
 		"SH_CRED_FILE=/work/account-credential",
 		"SH_CRED_KIND=api_key",
 		"SH_MODE=cli",
@@ -1033,6 +1034,7 @@ func TestSeatCodexModelInject(t *testing.T) {
 	want := []string{
 		"SH_WS_BASE=wss://hub.test",
 		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
+		"SH_ENROLL=1",
 		"SH_CRED_FILE=/work/account-credential",
 		"SH_CRED_KIND=api_key",
 		"SH_MODE=cli",
@@ -1168,6 +1170,7 @@ func TestSeatModeSwitch(t *testing.T) {
 	want := []string{
 		"SH_WS_BASE=wss://hub.test",
 		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
+		"SH_ENROLL=1",
 		"SH_CRED_FILE=/work/account-credential",
 		"SH_CRED_KIND=api_key",
 		"SH_MODE=cli",
@@ -1220,6 +1223,7 @@ func TestSeatModeSwitch(t *testing.T) {
 	wantClaude := []string{
 		"SH_WS_BASE=wss://hub.test",
 		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
+		"SH_ENROLL=1",
 		"SH_CRED_FILE=/work/account-credential",
 		"SH_CRED_KIND=api_key",
 		"SH_MODE=cli",

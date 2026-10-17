@@ -110,7 +110,7 @@ class ClaudeStart(unittest.TestCase):
             cred = root / 'account-credential'
             cred.write_text('{"opaque":"synthetic"}')
             cred.chmod(0o600)
-            env = {'SH_WS_BASE': 'wss://hub.invalid', 'SH_ENROLL_TOKEN_FILE': str(root/'enroll'),
+            env = {'SH_WS_BASE': 'wss://hub.invalid', 'SH_ENROLL_TOKEN_FILE': str(root/'enroll'), 'SH_ENROLL': '1',
                    'SH_CRED_FILE': str(cred), 'SH_CRED_KIND': 'token_file', 'SH_CLI': 'claude',
                    'HOME': str(root/'work')}
             with mock.patch.object(start, '_shared_guard'), mock.patch.object(start, 'SEAT_UID', os.getuid()), \
@@ -123,13 +123,58 @@ class ClaudeStart(unittest.TestCase):
             self.assertEqual(json.loads((root/'work'/'.claude'/'.credentials.json').read_text()), {'opaque': 'synthetic'})
             mcp = json.loads((root/'work'/'.claude'/'mcp.json').read_text())['mcpServers']['dingwei-send']
             self.assertEqual(mcp['env']['SH_IPC_SEND_BODY_ONLY'], '1')
+            self.assertEqual(mcp['env']['DINGWEI_MCP_IPC_SOCK'], out['SH_MCP_IPC_SOCK'])
             self.assertNotIn('file', json.dumps(mcp))
+
+    def test_staged_public_guard_rejects_old_update_before_credential_read(self):
+        """Exercise the actual staged H3 public guard, not a launcher-local substitute.
+
+        The loader wrapper changes only test-local constants after the exact source is
+        loaded, so the staged source and its check_factory_only_state implementation
+        are the production H3 ones.  A credential read here would be an ordering bug.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            staged = root / 'start.py'
+            h3_source = HERE.parent / 'hosted-image' / 'start.py'
+            staged.write_bytes(h3_source.read_bytes())
+            self.assertEqual(hashlib.sha256(staged.read_bytes()).digest(),
+                             hashlib.sha256(h3_source.read_bytes()).digest())
+            state = root / 'state'
+            (state / 'update').mkdir(parents=True)
+            (state / 'update' / 'journal.json').write_text('{"synthetic":"old-update"}')
+            credential = root / 'credential'
+            credential.write_text('{"synthetic":"must-not-be-read"}')
+            credential.chmod(0o600)
+            env = {'SH_WS_BASE': 'wss://hub.invalid', 'SH_ENROLL_TOKEN_FILE': str(root/'enroll'), 'SH_ENROLL': '1',
+                   'SH_CRED_FILE': str(credential), 'SH_CRED_KIND': 'token_file', 'SH_CLI': 'claude',
+                   'HOME': str(root/'work')}
+
+            staged_spec = importlib.util.spec_from_file_location('staged_h3_start', staged)
+            original_loader = staged_spec.loader
+
+            class TestLoader:
+                def create_module(self, spec):
+                    return None
+
+                def exec_module(self, module):
+                    original_loader.exec_module(module)
+                    module.STATE_DIR = str(state)
+                    module.SEAT_UID = os.getuid()
+
+            staged_spec.loader = TestLoader()
+            with mock.patch.object(start.importlib.util, 'spec_from_file_location', return_value=staged_spec), \
+                 mock.patch.object(start, 'SHARED_START', str(staged)), \
+                 mock.patch.object(start, 'SEAT_UID', os.getuid()), \
+                 mock.patch.object(start, '_credential', side_effect=AssertionError('credential read before guard')):
+                with self.assertRaises(SystemExit):
+                    start.prepare(env)
 
     def test_rejects_non_object_or_wrong_cli(self):
         for raw, cli in (('[]', 'claude'), ('{}', 'codex')):
             with self.subTest(raw=raw, cli=cli), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp); cred = root/'credential'; cred.write_text(raw); cred.chmod(0o600)
-                env = {'SH_WS_BASE': 'wss://hub.invalid', 'SH_ENROLL_TOKEN_FILE': str(root/'enroll'),
+                env = {'SH_WS_BASE': 'wss://hub.invalid', 'SH_ENROLL_TOKEN_FILE': str(root/'enroll'), 'SH_ENROLL': '1',
                        'SH_CRED_FILE': str(cred), 'SH_CRED_KIND': 'token_file', 'SH_CLI': cli, 'HOME': str(root/'work')}
                 with mock.patch.object(start, '_shared_guard'), mock.patch.object(start, 'SEAT_UID', os.getuid()), self.assertRaises(SystemExit):
                     start.prepare(env)
