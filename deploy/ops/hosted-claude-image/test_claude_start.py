@@ -68,42 +68,6 @@ class ClaudeStart(unittest.TestCase):
             with self.assertRaises(verify.Rejected):
                 verify.verify(lock, *files)
 
-    def test_context_fixture_uses_only_verified_inputs(self):
-        def package(blob):
-            out = io.BytesIO()
-            with tarfile.open(fileobj=out, mode='w:gz') as tar:
-                info = tarfile.TarInfo('package/file'); info.size = len(blob); tar.addfile(info, io.BytesIO(blob))
-            return out.getvalue()
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); cli, native, node = (root/'cli.tgz', root/'native.tgz', root/'node-v22.23.3-linux-x64.tar.xz')
-            cli.write_bytes(package(b'cli')); native.write_bytes(package(b'native')); node.write_bytes(b'node')
-            def npmrow(p):
-                b=p.read_bytes(); import base64
-                return {'integrity':'sha512-'+base64.b64encode(hashlib.sha512(b).digest()).decode(),'shasum':hashlib.sha1(b).hexdigest(),'fileCount':1}
-            lock={'name':'@anthropic-ai/claude-code','version':'2.1.285','dist':npmrow(cli),
-                  'native':dict(name='@anthropic-ai/claude-code-linux-x64',version='2.1.285',**npmrow(native)),
-                  'runtime':{'name':'node','version':'22.23.3','platform':'linux-x64','file':node.name,'sha256':hashlib.sha256(node.read_bytes()).hexdigest()}}
-            lock_path=root/'lock.json'; lock_path.write_text(json.dumps(lock))
-            base=root/'base'; base.mkdir()
-            (base/'start.py').write_text('fixture common guard')
-            for name in ('helper','wheels','runtime-debs','security-debs'):(base/name).mkdir()
-            receipt={'commit':'a'*40,'tree':'b'*40,'files':{'start.py':hashlib.sha256((base/'start.py').read_bytes()).hexdigest()}}
-            (base/'BUILD-INPUTS.json').write_text(json.dumps(receipt))
-            out=root/'out'; prepare.prepare(lock_path,cli,native,node,base,out)
-            self.assertTrue((out/'claude'/'package'/'file').is_file())
-            self.assertTrue((out/'native'/'package'/'file').is_file())
-            self.assertEqual((out/'node'/node.name).read_bytes(),b'node')
-
-    def test_context_rejects_receipted_symlink_before_copy(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); base = root/'base'; base.mkdir(); outside = root/'synthetic-secret'; outside.write_text('not copied')
-            (base/'helper').mkdir(); (base/'helper'/'link').symlink_to(outside)
-            receipt = {'commit':'a'*40, 'tree':'b'*40, 'files':{'helper/link':hashlib.sha256(outside.read_bytes()).hexdigest(), 'start.py':'0'*64}}
-            (base/'start.py').write_text('guard'); receipt['files']['start.py']=hashlib.sha256((base/'start.py').read_bytes()).hexdigest()
-            (base/'BUILD-INPUTS.json').write_text(json.dumps(receipt))
-            with self.assertRaises(prepare.Rejected):
-                prepare._h3_files(base)
-
     def test_restricted_mcp_and_json_object_credential(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -133,6 +97,233 @@ class ClaudeStart(unittest.TestCase):
                        'SH_CRED_FILE': str(cred), 'SH_CRED_KIND': 'token_file', 'SH_CLI': cli, 'HOME': str(root/'work')}
                 with mock.patch.object(start, '_shared_guard'), mock.patch.object(start, 'SEAT_UID', os.getuid()), self.assertRaises(SystemExit):
                     start.prepare(env)
+
+class ClaudePackager(unittest.TestCase):
+    """Real H3 producer, synthetic Git source/deps; no mocked content validators."""
+    def setUp(self):
+        import base64
+        import subprocess
+        import zipfile
+        self.tmp = tempfile.TemporaryDirectory(prefix='claude-packager-')
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.repo = self.root/'repo'; self.repo.mkdir()
+        self.git('init', '-q')
+        def put(name, data):
+            path = self.repo/name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
+        def tar_blob(data):
+            out = io.BytesIO()
+            with tarfile.open(fileobj=out, mode='w:gz') as archive:
+                info = tarfile.TarInfo('package/bin/tool'); info.mode=0o755; info.size=len(data)
+                archive.addfile(info, io.BytesIO(data))
+            return out.getvalue()
+        def row(data):
+            return {'integrity':'sha512-'+base64.b64encode(hashlib.sha512(data).digest()).decode(), 'shasum':hashlib.sha1(data).hexdigest(), 'fileCount':1}
+        wheel = io.BytesIO()
+        with zipfile.ZipFile(wheel,'w') as archive:
+            archive.writestr('websockets-15.0.1.dist-info/METADATA','Name: websockets\nVersion: 15.0.1\n')
+        wheel_blob = wheel.getvalue()
+        self.runtime_lock = ('websockets==15.0.1 --hash=sha256:'+hashlib.sha256(wheel_blob).hexdigest()+'\n').encode()
+        common = HERE.parent/'hosted-image'
+        for name in ['Dockerfile','start.py','codex.py','dingwei-file','verify_runtime.py','dockerignore']:
+            put('deploy/ops/hosted-image/'+name,(common/name).read_bytes())
+        helper = 'tools/sessionhelper/'
+        for name, data in {'sessionhelper/__init__.py':b'__version__ = "0.2.3.4"\n', 'sessionhelper/__main__.py':b'# inert factory\n','sessionhelper/mcp_shim.py':b'# inert shim\n','update_launcher/guard.py':b'# inert guard\n','update_launcher/launcher_main.py':b'# inert root\n','update_launcher/mcp_forwarder.py':b'# inert forwarder\n','bootstrap.py':b'# inert bootstrap\n', 'requirements-runtime.lock':self.runtime_lock, 'package_release.py':(HERE.parents[2]/'tools/sessionhelper/package_release.py').read_bytes()}.items():
+            put(helper+name,data)
+        self.wheels = self.root/'wheels';self.wheels.mkdir();(self.wheels/'websockets-15.0.1-py3-none-any.whl').write_bytes(wheel_blob)
+        self.deb_dirs=[]
+        for folder in ['runtime-debs','security-debs']:
+            directory=self.root/folder;directory.mkdir();data=('synthetic '+folder).encode();(directory/'fixture.deb').write_bytes(data)
+            put('deploy/ops/hosted-image/'+folder+'-lock.json', json.dumps([{'file':'fixture.deb','sha256':hashlib.sha256(data).hexdigest()}]).encode());self.deb_dirs.append(directory)
+        h3_tar=tar_blob(b'synthetic Codex base -- do not execute');self.h3_tar=self.root/'codex.tgz';self.h3_tar.write_bytes(h3_tar)
+        put('deploy/ops/hosted-image/codex-package-lock.json',json.dumps({'dist':row(h3_tar)}).encode())
+        self.commit();anchor=self.git('rev-parse','HEAD');tree=self.git('rev-parse','HEAD^{tree}')
+        spec=importlib.util.spec_from_file_location('actual_h3_packager_fixture',common/'prepare_context.py');self.h3=importlib.util.module_from_spec(spec);spec.loader.exec_module(self.h3)
+        self.base=self.root/'base'
+        # Only replace the literal production lock SHA with this synthetic lock's
+        # SHA. Git, release-file mapping, wheel/deb/tar and receipt logic are real.
+        with mock.patch.object(self.h3,'LOCK_SHA',hashlib.sha256(self.runtime_lock).hexdigest()):
+            self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+        self.cli=self.root/'claude.tgz';self.native=self.root/'claude-native.tgz';self.node=self.root/'node-v22.23.3-linux-x64.tar.xz'
+        self.cli.write_bytes(tar_blob(b'synthetic Claude'));self.native.write_bytes(tar_blob(b'synthetic Claude native'));self.node.write_bytes(b'synthetic Node -- do not execute')
+        npm={'name':'@anthropic-ai/claude-code','version':'2.1.285','dist':row(self.cli.read_bytes()),'native':dict(name='@anthropic-ai/claude-code-linux-x64',version='2.1.285',**row(self.native.read_bytes())),'runtime':{'name':'node','version':'22.23.3','platform':'linux-x64','file':self.node.name,'sha256':hashlib.sha256(self.node.read_bytes()).hexdigest()}}
+        self.lock=self.root/'claude-lock.json';self.lock.write_text(json.dumps(npm))
+        for name in ['Dockerfile','claude-start.py','claude.py','dockerignore']:
+            put(prepare.PREFIX+name,(HERE/name).read_bytes())
+        put(prepare.PREFIX+'claude-package-lock.json',self.lock.read_bytes())
+        mapping=json.loads((HERE/'context-map.json').read_text());mapping['h3']={'commit':anchor,'tree':tree,'lock_sha256':hashlib.sha256(self.runtime_lock).hexdigest()}
+        put(prepare.PREFIX+'context-map.json',json.dumps(mapping).encode());self.commit();self.source=self.git('rev-parse','HEAD');self.out=self.root/'output'
+
+    def git(self,*args):
+        import subprocess
+        return subprocess.check_output(['git','-c','core.hooksPath=/dev/null','-c','user.name=coder56solzzc','-c','user.email=coder56solzzc@dingwei.local','-C',str(self.repo),*args],stderr=subprocess.DEVNULL,text=True).strip()
+    def commit(self):
+        self.git('add','.');self.git('commit','-qm','synthetic fixture only')
+    def run_prepare(self,**kwargs):
+        args={'repo':self.repo,'commit':self.source};args.update(kwargs)
+        prepare.prepare(self.lock,self.cli,self.native,self.node,self.base,self.out,**args)
+    def rehash(self):
+        receipt=json.loads((self.base/'BUILD-INPUTS.json').read_text())
+        receipt['files']={p.relative_to(self.base).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in self.base.rglob('*') if p.is_file() and p.name!='BUILD-INPUTS.json'}
+        (self.base/'BUILD-INPUTS.json').write_text(json.dumps(receipt))
+    def rejected(self):
+        with self.assertRaises((prepare.Rejected,OSError,ValueError)):
+            self.run_prepare()
+        self.assertFalse(self.out.exists())
+
+    def test_actual_h3_shape_composes_git_claude_overlay_and_common_guard(self):
+        self.run_prepare()
+        for dest,src in json.loads((HERE/'context-map.json').read_text())['overlay'].items():
+            self.assertEqual((self.out/dest).read_bytes(),(self.repo/src).read_bytes())
+        self.assertEqual((self.out/'start.py').read_bytes(),(self.base/'start.py').read_bytes())
+        self.assertFalse((self.out/'codex.py').exists());self.assertFalse((self.out/'native/package/bin/codex').exists())
+        self.assertEqual((self.out/'native/package/bin/tool').read_bytes(),b'synthetic Claude native')
+        self.assertFalse((self.out/'dockerignore').exists());self.assertTrue((self.out/'.dockerignore').is_file())
+        receipt=json.loads((self.out/'BUILD-INPUTS.json').read_text())
+        actual={p.relative_to(self.out).as_posix():p for p in self.out.rglob('*') if p.is_file() and p.name!='BUILD-INPUTS.json'}
+        self.assertEqual(set(actual),set(receipt['files']))
+        for name,p in actual.items():
+            self.assertEqual(receipt['files'][name],{'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'mode':p.stat().st_mode&0o777,'type':'regular'})
+        self.assertEqual(receipt['source']['commit'],self.source)
+        self.assertEqual(receipt['h3']['commit'],json.loads((self.base/'BUILD-INPUTS.json').read_text())['commit'])
+
+    def test_h3_git_or_locked_content_cannot_self_authorize_by_rehash(self):
+        for name in ['Dockerfile','start.py','helper/factory/sessionhelper/__init__.py','helper/helper_update_guard.py','helper/requirements-runtime.lock','wheels/websockets-15.0.1-py3-none-any.whl','runtime-debs/fixture.deb','security-debs/fixture.deb']:
+            with self.subTest(name=name):
+                path=self.base/name;original=path.read_bytes();path.write_bytes(original+b'\nUNAPPROVED fixture\n');self.rehash()
+                try:self.rejected()
+                finally:
+                    path.write_bytes(original);self.rehash()
+                    if self.out.exists():__import__('shutil').rmtree(self.out)
+
+    def test_regular_type_does_not_allow_changed_h3_modes(self):
+        for name in ['start.py','helper/factory/sessionhelper/__init__.py','wheels/websockets-15.0.1-py3-none-any.whl','runtime-debs/fixture.deb']:
+            with self.subTest(name=name):
+                p=self.base/name;p.chmod(0o755)
+                try:self.rejected()
+                finally:p.chmod(0o644)
+
+    def test_missing_extra_or_receipt_pollution_rejected(self):
+        receipt=self.base/'BUILD-INPUTS.json';original=receipt.read_bytes()
+        corrupt=json.loads(original);corrupt['files']['start.py']='0'*64;receipt.write_text(json.dumps(corrupt));self.rejected();receipt.write_bytes(original)
+        for field in ['commit','tree','lock_sha256']:
+            with self.subTest(field=field):
+                data=json.loads(original);data[field]='f'*len(data[field]);receipt.write_text(json.dumps(data));self.rejected();receipt.write_bytes(original)
+        for name in ['start.py','helper/sessionhelper/mcp_shim.py']:
+            p=self.base/name;data=p.read_bytes();p.unlink();self.rehash();self.rejected();p.write_bytes(data);p.chmod(0o644);self.rehash()
+        for name in ['helper/unapproved-secret','extra.py']:
+            p=self.base/name;p.write_text('synthetic-only');self.rehash();self.rejected();p.unlink();self.rehash()
+        (self.base/'helper/empty-extra').mkdir();self.rejected();(self.base/'helper/empty-extra').rmdir()
+        data=receipt.read_text();receipt.write_text(data[:-1]+',"commit":"duplicate"}');self.rejected();receipt.write_text(data)
+
+    def test_symlinks_specials_hardlinks_and_redirected_roots_never_read(self):
+        import socket
+        sentinel=self.root/'synthetic-secret';sentinel.write_bytes(b'synthetic outside data, never consumed')
+        p=self.base/'start.py';original=p.read_bytes()
+        original_read=prepare.os.read
+        def no_external_read(fd,count):
+            if os.fstat(fd).st_ino == sentinel.stat().st_ino:
+                self.fail('external synthetic secret must not be read')
+            return original_read(fd,count)
+        for kind in ['symlink','dangling','fifo','socket','hardlink','directory']:
+            with self.subTest(kind=kind):
+                p.unlink();sock=None
+                if kind=='symlink':p.symlink_to(sentinel)
+                elif kind=='dangling':p.symlink_to(self.root/'absent')
+                elif kind=='fifo':os.mkfifo(p)
+                elif kind=='socket':sock=socket.socket(socket.AF_UNIX);sock.bind(str(p))
+                elif kind=='hardlink':os.link(sentinel,p)
+                else:p.mkdir()
+                with mock.patch.object(prepare.os,'read',side_effect=no_external_read):
+                    self.rejected()
+                if sock:sock.close()
+                if kind=='directory':p.rmdir()
+                else:p.unlink()
+                p.write_bytes(original);p.chmod(0o644)
+        helper=self.base/'helper';saved=self.base/'saved-helper';helper.rename(saved);helper.symlink_to(saved,target_is_directory=True);self.rejected();helper.unlink();saved.rename(helper)
+        alias=self.root/'base-alias';alias.symlink_to(self.base,target_is_directory=True)
+        old=self.base;self.base=alias
+        try:self.rejected()
+        finally:self.base=old
+        ancestor=self.root/'ancestor';ancestor.symlink_to(self.root,target_is_directory=True);self.base=ancestor/'base'
+        try:self.rejected()
+        finally:self.base=old
+        for value in [sentinel, sentinel.parent]:
+            link=self.root/'untrusted-link';link.symlink_to(value,target_is_directory=value.is_dir())
+            with mock.patch.object(prepare.os,'read',side_effect=no_external_read), self.assertRaises((prepare.Rejected,OSError)):
+                if value.is_dir():prepare.open_dir(link)
+                else:prepare.regular(link)
+            link.unlink()
+        self.assertEqual(sentinel.read_bytes(),b'synthetic outside data, never consumed')
+
+    def test_regular_symlink_is_rejected_before_external_read(self):
+        target=self.root/'synthetic-secret';target.write_bytes(b'not a real credential')
+        link=self.root/'link';link.symlink_to(target)
+        original_read=prepare.os.read
+        def check(fd,count):
+            if os.fstat(fd).st_ino==target.stat().st_ino:
+                self.fail('external synthetic secret was read')
+            return original_read(fd,count)
+        with mock.patch.object(prepare.os,'read',side_effect=check), self.assertRaises((prepare.Rejected,OSError)):
+            prepare.regular(link)
+
+    def test_clean_git_source_and_lock_are_required_before_external_inputs(self):
+        tracked=self.repo/(prepare.PREFIX+'Dockerfile');old=tracked.read_bytes();tracked.write_bytes(b'changed')
+        with mock.patch.object(prepare,'regular',side_effect=AssertionError('input read before clean-source check')):
+            self.rejected()
+        tracked.write_bytes(old)
+        self.lock.write_bytes(self.lock.read_bytes()+b' ');self.rejected()
+        self.lock.write_bytes((self.repo/(prepare.PREFIX+'claude-package-lock.json')).read_bytes())
+        with self.assertRaises(prepare.Rejected):self.run_prepare(commit='a'*40)
+        self.assertFalse(self.out.exists())
+
+    def test_archive_links_traversal_and_duplicates_rejected_even_with_valid_hash(self):
+        for kind in ['symlink','hardlink','fifo','duplicate','traversal','alias']:
+            with self.subTest(kind=kind):
+                buf=io.BytesIO()
+                with tarfile.open(fileobj=buf,mode='w:gz') as archive:
+                    info=tarfile.TarInfo('../outside' if kind=='traversal' else ('package/./alias' if kind=='alias' else 'package/file'))
+                    info.size=1
+                    if kind=='symlink':info.type=tarfile.SYMTYPE;info.linkname='/synthetic-secret'
+                    elif kind=='hardlink':info.type=tarfile.LNKTYPE;info.linkname='package/other'
+                    elif kind=='fifo':info.type=tarfile.FIFOTYPE
+                    archive.addfile(info,io.BytesIO(b'x') if info.isfile() else None)
+                    if kind=='duplicate':archive.addfile(info,io.BytesIO(b'x'))
+                with self.assertRaises(prepare.Rejected):prepare.unpack_package(buf.getvalue(),'claude',2 if kind=='duplicate' else 1)
+
+    def test_pre_docker_script_remains_closed_with_valid_composition(self):
+        import subprocess
+        # Stubs are traps, not clients; this subprocess never contacts an Engine.
+        traps=self.root/'traps';traps.mkdir();marker=self.root/'DOCKER-WAS-CALLED'
+        for name in ['docker','podman']:
+            p=traps/name;p.write_text('#!/bin/sh\ntouch "'+str(marker)+'"\nexit 91\n');p.chmod(0o755)
+        # Test shell control flow using the real packager and a synthetic clean
+        # Git source; place only the shell and packager scripts at this layout.
+        scripts=self.repo/prepare.PREFIX
+        for name in ['build-image.sh','prepare_context.py','verify_inputs.py']:(scripts/name).write_bytes((HERE/name).read_bytes())
+        self.commit();self.source=self.git('rev-parse','HEAD')
+        env={'PATH':str(traps)+':/usr/bin:/bin','HOME':str(self.root),'PYTHONDONTWRITEBYTECODE':'1','HOSTED_BUILD_ENGINE':'unix:///isolated-fixture.sock','CLAUDE_SOURCE_COMMIT':self.source,'CLAUDE_OFFLINE_LOCK':str(self.lock),'CLAUDE_OFFLINE_TAR':str(self.cli),'CLAUDE_NATIVE_TAR':str(self.native),'CLAUDE_NODE_RUNTIME':str(self.node),'CLAUDE_BASE_CONTEXT':str(self.base),'HOSTED_BUILD_CONTEXT':str(self.out)}
+        result=subprocess.run(['sh',str(scripts/'build-image.sh')],env=env,text=True,capture_output=True)
+        self.assertEqual(result.returncode,2,result.stderr);self.assertIn('refusing before Docker access',result.stderr)
+        self.assertTrue((self.out/'BUILD-INPUTS.json').is_file());self.assertFalse(marker.exists())
+        shutil=__import__('shutil');shutil.rmtree(self.out)
+        (self.base/'start.py').write_bytes(b'polluted guard');self.rehash()
+        result=subprocess.run(['sh',str(scripts/'build-image.sh')],env=env,text=True,capture_output=True)
+        self.assertEqual(result.returncode,2,result.stderr);self.assertIn('Claude context rejected',result.stderr);self.assertFalse(self.out.exists());self.assertFalse(marker.exists())
+
+    def test_descriptor_budget_is_constant_and_output_alias_refused(self):
+        before=len(os.listdir('/proc/self/fd'))
+        for _ in range(100):
+            fd=prepare.open_dir(self.base)
+            try:prepare.read_at(fd,'BUILD-INPUTS.json',limit=4<<20)
+            finally:os.close(fd)
+        self.assertEqual(len(os.listdir('/proc/self/fd')),before)
+        self.out.mkdir();(self.out/'keep').write_bytes(b'preexisting output')
+        with self.assertRaises((prepare.Rejected,OSError)):self.run_prepare()
+        self.assertEqual((self.out/'keep').read_bytes(),b'preexisting output');(self.out/'keep').unlink();self.out.rmdir()
+        self.out.symlink_to(self.root/'missing-output')
+        self.rejected();self.out.unlink()
+        self.out=self.base/'nested-output';self.rejected()
 
 
 if __name__ == '__main__':

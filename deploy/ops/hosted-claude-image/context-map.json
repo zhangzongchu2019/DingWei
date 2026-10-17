@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "h3": {
+    "commit": "031c4284cab5c0401ae09d0180eeede1a32c7833",
+    "tree": "73b73d9c5d78f33116d2d6023450955734aa810e",
+    "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+  },
+  "common": {
+    "start.py": "deploy/ops/hosted-image/start.py"
+  },
+  "overlay": {
+    "Dockerfile": "deploy/ops/hosted-claude-image/Dockerfile",
+    "claude-start.py": "deploy/ops/hosted-claude-image/claude-start.py",
+    "claude.py": "deploy/ops/hosted-claude-image/claude.py",
+    ".dockerignore": "deploy/ops/hosted-claude-image/dockerignore"
+  },
+  "copy_prefixes": ["helper/", "wheels/", "runtime-debs/", "security-debs/"]
+}
