@@ -1,173 +1,232 @@
-package nodeagent
-
-// T-G4-13 · 容量上报真采集：CPU／内存／磁盘（席位根所在挂载）／容器清单／镜像缓存。
-// 三个触发面：周期心跳（默认 60s）· 变更触发（余量变化超阈值）· Hub 主动查（report_capacity 指令）；
-// 重连对账：每次连上 Hub 立刻发一次（Hub 侧据此把 offline 节点翻回 online 并对账容器实况）。
+package hosted
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"runtime"
+	"regexp"
 	"strings"
-	"syscall"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 )
 
-type Capacity struct {
-	ResourceLimitsVersion int                 `json:"resource_limits_version,omitempty"`
-	QuotaMode             string              `json:"quota_mode"`
-	QuotaPolicyRevision   string              `json:"quota_policy_revision"`
-	SoftReady             bool                `json:"soft_ready"`
-	SoftSeats             map[string]softSeat `json:"soft_seats,omitempty"`
-	QuotaEvents           []quotaEvent        `json:"quota_events,omitempty"`
-	NodeID                string              `json:"node_id"`
-	Labels                map[string]string   `json:"labels,omitempty"`
-	At                    time.Time           `json:"at"`
-	CPUTotal              int                 `json:"cpu_total"`
-	MemTotalMB            int64               `json:"mem_total_mb"`
-	MemFreeMB             int64               `json:"mem_free_mb"`
-	DiskTotalMB           int64               `json:"disk_total_mb"`
-	DiskFreeMB            int64               `json:"disk_free_mb"`
-	Seats                 []seatInfo          `json:"seats"`
-	Models                []string            `json:"models,omitempty"` // 包 B2：本节点可选模型清单（NODEAGENT_SEAT_CODEX_MODELS 上报；空＝不支持自选）
-	ImageCount            int                 `json:"image_count"`
-	ImageSizeMB           int64               `json:"image_size_mb"`
+var policyRevisionPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
+var quotaEventIDPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
+var nodeSeatID = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{1,63}$`)
+
+// Registration is administrator-owned. A capacity frame cannot enable soft or
+// change its approved policy revision. Empty registrations remain legacy hard.
+func normalizeQuotaRegistration(n *Node) error {
+	if n.QuotaMode == "" {
+		n.QuotaMode = "hard"
+	}
+	if n.QuotaMode != "hard" && n.QuotaMode != "soft" {
+		return fmt.Errorf("%w: quota_mode", ErrParams)
+	}
+	labels := map[string]string{}
+	if len(n.Labels) > 0 {
+		if err := json.Unmarshal(n.Labels, &labels); err != nil || labels == nil {
+			return fmt.Errorf("%w: node labels", ErrParams)
+		}
+	}
+	if n.QuotaMode == "soft" {
+		if !policyRevisionPattern.MatchString(n.QuotaPolicyRevision) {
+			return fmt.Errorf("%w: soft quota policy revision required", ErrParams)
+		}
+		labels["quota_mode"] = "soft"
+		labels["quota_policy_revision"] = n.QuotaPolicyRevision
+	} else {
+		if labels["quota_mode"] == "soft" {
+			return fmt.Errorf("%w: soft requires explicit registration", ErrParams)
+		}
+		labels["quota_mode"] = "hard"
+		delete(labels, "quota_policy_revision")
+	}
+	b, err := json.Marshal(labels)
+	n.Labels = b
+	return err
+}
+func registeredQuota(n Node) (mode, revision string) {
+	var labels map[string]string
+	if json.Unmarshal(n.Labels, &labels) != nil {
+		return "unknown", ""
+	}
+	mode = labels["quota_mode"]
+	if mode == "" {
+		mode = "hard"
+	}
+	return mode, labels["quota_policy_revision"]
+}
+func nodeQuotaEligible(n Node) bool {
+	mode, rev := registeredQuota(n)
+	var c struct {
+		Mode     string `json:"quota_mode"`
+		Revision string `json:"quota_policy_revision"`
+		Ready    bool   `json:"soft_ready"`
+	}
+	if json.Unmarshal(n.Capacity, &c) != nil {
+		return false
+	}
+	if mode == "hard" {
+		return c.Mode == "" || c.Mode == "hard"
+	}
+	return mode == "soft" && c.Mode == "soft" && policyRevisionPattern.MatchString(rev) && c.Revision == rev && c.Ready && n.LastSeenAt != nil && time.Since(*n.LastSeenAt) >= 0 && time.Since(*n.LastSeenAt) <= 60*time.Second
 }
 
-type seatInfo struct {
-	Name  string `json:"name"`
-	State string `json:"state"`
+type quotaEvent struct {
+	ID     string    `json:"id"`
+	SeatID string    `json:"seat_id"`
+	Reason string    `json:"reason"`
+	At     time.Time `json:"at"`
 }
 
-// collectCapacity 采集（meminfo 与 statfs 可注入——单测用 fixture）。
-func (d *dockerOps) collectCapacity(ctx context.Context) (Capacity, error) {
-	c := Capacity{NodeID: "", Labels: nil, At: time.Now().UTC()}
-	c.CPUTotal = runtime.NumCPU()
-	c.ResourceLimitsVersion = 1
-	c.QuotaMode = d.policyValue().Mode
-	c.QuotaPolicyRevision = d.policyValue().Revision()
-	if d.soft != nil {
-		c.SoftSeats, c.QuotaEvents, c.SoftReady = d.soft.report()
+func quotaEvents(raw json.RawMessage) ([]quotaEvent, error) {
+	var frame struct {
+		Events []quotaEvent `json:"quota_events"`
 	}
-	total, free, err := memInfoMB("/proc/meminfo")
-	if err != nil {
-		return c, err
+	if err := json.Unmarshal(raw, &frame); err != nil {
+		return nil, ErrParams
 	}
-	c.MemTotalMB, c.MemFreeMB = total, free
-	dt, df, err := diskMB(d.seatRoot)
-	if err != nil {
-		return c, err
+	if len(frame.Events) > 256 {
+		return nil, ErrParams
 	}
-	c.DiskTotalMB, c.DiskFreeMB = dt, df
-	c.Models = d.seatModels
+	for _, e := range frame.Events {
+		if !quotaEventIDPattern.MatchString(e.ID) || !nodeSeatID.MatchString(e.SeatID) || e.At.IsZero() {
+			return nil, ErrParams
+		}
+		switch e.Reason {
+		case "disk_warning", "disk_limit", "usage_unknown", "private_state_unavailable", "unclean_restart":
+		default:
+			return nil, ErrParams
+		}
+	}
+	return frame.Events, nil
+}
 
-	// 容器清单（seat- 前缀）
-	var containers []struct {
-		ID    string   `json:"Id"`
-		Names []string `json:"Names"`
-		State string   `json:"State"`
+// Capacity and idempotent audit receipts commit together. An authenticated node
+// only affects seats belonging to that node; it never retires or deletes data.
+func (s *Store) SetNodeQuotaCapacity(ctx context.Context, id string, capacity json.RawMessage) error {
+	events, err := quotaEvents(capacity)
+	if err != nil {
+		return err
 	}
-	if err := d.eng.call(ctx, "GET", "/containers/json?all=1", nil, &containers); err != nil {
-		return c, err
-	}
-	for _, ct := range containers {
-		for _, n := range ct.Names {
-			name := strings.TrimPrefix(n, "/")
-			if strings.HasPrefix(name, "seat-") && !strings.HasSuffix(name, "-new") {
-				c.Seats = append(c.Seats, seatInfo{Name: name, State: ct.State})
+	return s.pool.InTx(ctx, htx(), nil, func(tx repo.Tx) error {
+		var registered json.RawMessage
+		if err := tx.QueryRow(ctx, `SELECT labels FROM g4_node WHERE id=$1 FOR UPDATE`, id).Scan(&registered); err != nil {
+			return err
+		}
+		mode, revision := registeredQuota(Node{Labels: registered})
+		var cap struct {
+			Mode     string `json:"quota_mode"`
+			Revision string `json:"quota_policy_revision"`
+			Seats    map[string]struct {
+				Hold string `json:"hold"`
+				Stop string `json:"stop_state"`
+			} `json:"soft_seats"`
+		}
+		if json.Unmarshal(capacity, &cap) != nil || len(cap.Seats) > 100 {
+			return ErrParams
+		}
+		if len(events) > 0 && (mode != "soft" || cap.Mode != "soft" || cap.Revision != revision) {
+			return ErrParams
+		}
+		for _, e := range events {
+			detail, _ := json.Marshal(map[string]any{"event_id": e.ID, "seat_id": e.SeatID, "reason": e.Reason, "measured_at": e.At, "quota_mode": "soft", "notice": "无硬磁盘配额"})
+			if _, err := tx.Exec(ctx, `INSERT INTO g4_audit(actor,action,target,detail)
+SELECT $1,'node.soft_quota',$2,$3 WHERE NOT EXISTS
+(SELECT 1 FROM g4_audit WHERE action='node.soft_quota' AND target=$2 AND detail->>'event_id'=$4)`, "node:"+id, id, detail, e.ID); err != nil {
+				return err
+			}
+			if e.Reason != "disk_warning" {
+				if _, err := tx.Exec(ctx, `UPDATE g4_hosted_seat SET state='error',state_detail='soft_quota_held',updated_at=now()
+WHERE agent_id=$1 AND node_id=$2 AND state NOT IN ('destroyed','disabled')`, e.SeatID, id); err != nil {
+					return err
+				}
 			}
 		}
-	}
-	// 镜像缓存
-	var images []struct {
-		Size int64 `json:"Size"`
-	}
-	if err := d.eng.call(ctx, "GET", "/images/json", nil, &images); err != nil {
-		return c, err
-	}
-	c.ImageCount = len(images)
-	for _, im := range images {
-		c.ImageSizeMB += im.Size / 1024 / 1024
-	}
-	return c, nil
-}
-
-// memInfoMB 解析 /proc/meminfo 的 MemTotal／MemAvailable（MB）。
-func memInfoMB(path string) (int64, int64, error) {
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return 0, 0, err
-	}
-	var total, avail int64
-	for _, ln := range strings.Split(string(raw), "\n") {
-		var kb int64
-		if strings.HasPrefix(ln, "MemTotal:") {
-			fmt.Sscanf(ln, "MemTotal: %d kB", &kb)
-			total = kb / 1024
-		} else if strings.HasPrefix(ln, "MemAvailable:") {
-			fmt.Sscanf(ln, "MemAvailable: %d kB", &kb)
-			avail = kb / 1024
+		if mode == "soft" && cap.Mode == "soft" && cap.Revision == revision {
+			for seatID, v := range cap.Seats {
+				if !nodeSeatID.MatchString(seatID) {
+					return ErrParams
+				}
+				if v.Hold == "" {
+					continue
+				}
+				state := "error"
+				if v.Stop == "stopped" {
+					state = "stopped"
+				}
+				if _, err := tx.Exec(ctx, `UPDATE g4_hosted_seat SET state=$3,state_detail='soft_quota_held',updated_at=now()
+WHERE agent_id=$1 AND node_id=$2 AND state NOT IN ('destroyed','disabled')`, seatID, id, state); err != nil {
+					return err
+				}
+			}
 		}
-	}
-	if total == 0 {
-		return 0, 0, fmt.Errorf("meminfo 解析失败: %s", path)
-	}
-	return total, avail, nil
+		_, err = tx.Exec(ctx, `UPDATE g4_node SET state='online',capacity=$2,last_seen_at=now(),updated_at=now() WHERE id=$1`, id, capacity)
+		return err
+	})
 }
-
-// diskMB 席位根所在文件系统的总量/余量（MB）。
-func diskMB(path string) (int64, int64, error) {
-	var st syscall.Statfs_t
-	if err := syscall.Statfs(path, &st); err != nil {
-		return 0, 0, err
-	}
-	bs := int64(st.Bsize)
-	return int64(st.Blocks) * bs / 1024 / 1024, int64(st.Bavail) * bs / 1024 / 1024, nil
-}
-
-// capacityReport 指令响应（Hub 主动查）。
-func (d *dockerOps) reportCapacity(ctx context.Context, _ json.RawMessage) (json.RawMessage, error) {
-	c, err := d.collectCapacity(ctx)
+func NodeQuotaEventIDs(capacity json.RawMessage) []string {
+	events, err := quotaEvents(capacity)
 	if err != nil {
-		return nil, err
+		return nil
 	}
-	return json.Marshal(c)
+	ids := make([]string, 0, len(events))
+	for _, e := range events {
+		ids = append(ids, e.ID)
+	}
+	return ids
 }
 
-// changedBeyond 变更触发阈值：内存或磁盘余量变化超过 1 GiB，或席位清单变化。
-func changedBeyond(a, b Capacity) bool {
-	if a.QuotaMode != b.QuotaMode || a.SoftReady != b.SoftReady || len(a.QuotaEvents) != len(b.QuotaEvents) {
-		return true
+var ErrSoftQuotaHeld = fmt.Errorf("soft_quota_held")
+
+func softSeatHeld(n Node, id string) bool {
+	var c struct {
+		Seats map[string]struct {
+			Hold string `json:"hold"`
+		} `json:"soft_seats"`
 	}
-	if abs64(a.MemFreeMB-b.MemFreeMB) > 1024 || abs64(a.DiskFreeMB-b.DiskFreeMB) > 1024 {
-		return true
+	if json.Unmarshal(n.Capacity, &c) != nil {
+		return false
 	}
-	if len(a.Seats) != len(b.Seats) {
-		return true
+	return c.Seats[id].Hold != ""
+}
+func softSeatWarning(n Node, id string) bool {
+	var c struct {
+		Seats map[string]struct {
+			Warn bool `json:"warn"`
+		} `json:"soft_seats"`
 	}
-	seen := map[string]string{}
-	for _, s := range a.Seats {
-		seen[s.Name] = s.State
+	if json.Unmarshal(n.Capacity, &c) != nil {
+		return false
 	}
-	for _, s := range b.Seats {
-		if st, ok := seen[s.Name]; !ok || st != s.State {
-			return true
-		}
+	return c.Seats[id].Warn
+}
+func (l *Lifecycle) quotaStartGuard(ctx context.Context, seat Seat) error {
+	n, err := l.st.GetNode(ctx, seat.NodeID)
+	if err != nil {
+		return err
 	}
-	return false
+	mode, _ := registeredQuota(n)
+	if mode == "soft" && (!nodeQuotaEligible(n) || softSeatHeld(n, seat.AgentID) || seat.StateDetail == "soft_quota_held") {
+		return ErrSoftQuotaHeld
+	}
+	if mode != "hard" && mode != "soft" {
+		return ErrSoftQuotaHeld
+	}
+	return nil
+}
+func (l *Lifecycle) quotaResult(ctx context.Context, seat Seat, result NodeResult) bool {
+	if result.OK || !strings.Contains(result.Error, "soft_quota_blocked") {
+		return false
+	}
+	_ = l.st.SetSeatState(ctx, seat.AgentID, "error", "soft_quota_held", "soft_quota", nil)
+	return true
 }
 
-func abs64(x int64) int64 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-// Old hard nodes retain the exact v1 command shape. New nodes advertise their
-// resource extension before the Hub sends an explicit CPU bandwidth limit.
+// Old hard nodes retain the exact v1 command shape; explicit CPU bandwidth is
+// sent only after the node advertises the resource extension.
 func (s *Store) resourceParams(ctx context.Context, nodeID string, plan Plan) map[string]any {
 	r := map[string]any{"memory_mb": plan.MemMB, "cpu_shares": cpuShares(plan.VCPU), "disk_mb": plan.DiskMB}
 	n, err := s.GetNode(ctx, nodeID)
@@ -181,16 +240,4 @@ func (s *Store) resourceParams(ctx context.Context, nodeID string, plan Plan) ma
 		r["cpu_limit_millicores"] = plan.VCPU * 1000
 	}
 	return r
-}
-
-func softSeatWarning(n Node, id string) bool {
-	var c struct {
-		Seats map[string]struct {
-			Warn bool `json:"warn"`
-		} `json:"soft_seats"`
-	}
-	if json.Unmarshal(n.Capacity, &c) != nil {
-		return false
-	}
-	return c.Seats[id].Warn
 }

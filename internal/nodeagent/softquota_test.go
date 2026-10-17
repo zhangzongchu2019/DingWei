@@ -772,3 +772,27 @@ func TestSoftApprovalReferencesAndDefaultSocketAliases(t *testing.T) {
 		t.Fatal("approved distinct fixture socket rejected", err)
 	}
 }
+
+func TestNodeResourceCapabilityAndCPUMinimum(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	c, err := d.collectCapacity(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.QuotaMode != "hard" || c.ResourceLimitsVersion != 1 || len(c.QuotaPolicyRevision) != 64 {
+		t.Fatalf("capability %+v", c)
+	}
+	for _, cpu := range []int64{-1, 1, 9, 256001} {
+		r := seatResources{MemoryMB: 4096, CPUShares: 2048, DiskMB: 8, CPULimitMillicores: cpu}
+		if r.validate() == nil {
+			t.Fatal("invalid CPU limit accepted", cpu)
+		}
+	}
+	for _, cpu := range []int64{0, 10, 2000, 256000} {
+		r := seatResources{MemoryMB: 4096, CPUShares: 2048, DiskMB: 8, CPULimitMillicores: cpu}
+		if err := r.validate(); err != nil {
+			t.Fatal("valid CPU limit refused", cpu, err)
+		}
+	}
+}

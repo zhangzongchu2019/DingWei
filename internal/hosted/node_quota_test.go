@@ -215,3 +215,21 @@ func TestSoftHeldLifecycleRefusesBeforeSideEffects(t *testing.T) {
 		}
 	}
 }
+
+func TestHardNodeResourceExtensionNegotiated(t *testing.T) {
+	o, _, _, s := mkOrch(t)
+	_ = o
+	ctx := context.Background()
+	plan, _ := PlanByID("2c4g")
+	r := s.resourceParams(ctx, "nd_free", plan)
+	if _, ok := r["cpu_limit_millicores"]; ok {
+		t.Fatal("legacy hard command shape changed")
+	}
+	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"resource_limits_version":1,"quota_mode":"hard","mem_free_mb":16384}`)); err != nil {
+		t.Fatal(err)
+	}
+	r = s.resourceParams(ctx, "nd_free", plan)
+	if r["cpu_limit_millicores"] != 2000 {
+		t.Fatalf("explicit CPU limit missing %+v", r)
+	}
+}
