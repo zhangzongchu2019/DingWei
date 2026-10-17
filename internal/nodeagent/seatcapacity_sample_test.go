@@ -223,3 +223,43 @@ func TestCapacityMemoryMissingIsUnknownNotZero(t *testing.T) {
 		}
 	}
 }
+
+func TestCapacityLoginStatsUsesN2LabelAndPrivateMount(t *testing.T) {
+	q, p := softFixture(t)
+	id := "login-" + strings.Repeat("a", 32)
+	root := t.TempDir()
+	var mu sync.Mutex
+	mode := ""
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+		if strings.HasSuffix(r.URL.Path, "/json") {
+			label, node, mount := strings.TrimPrefix(id, "login-"), q.nodeID, seatDir(root, id)
+			if mode == "wrong_login" {
+				label = "different"
+			}
+			if mode == "wrong_node" {
+				node = "different"
+			}
+			if mode == "wrong_mount" {
+				mount = "/different"
+			}
+			json.NewEncoder(w).Encode(map[string]any{"Id": "login_cid", "Config": map[string]any{"Labels": map[string]string{managedSeatLabel: node, loginLabel: label}}, "Mounts": []map[string]string{{"Source": mount, "Destination": "/h"}}, "State": map[string]bool{"Running": true}})
+		} else {
+			json.NewEncoder(w).Encode(map[string]any{"read": time.Now(), "cpu_stats": map[string]any{"cpu_usage": map[string]uint64{"total_usage": 100}, "system_cpu_usage": 1000}, "memory_stats": map[string]any{"stats": map[string]uint64{"anon": 4096}}})
+		}
+	}))
+	t.Cleanup(srv.Close)
+	r := newSeatCapacityReader(&dockerOps{eng: newFakeEngine(srv.Client(), srv.URL), soft: q, policy: p, seatRoot: q.root})
+	if _, err := r.containerUsage(context.Background(), id, "login_cid", 8000, root, "/h"); err != nil {
+		t.Fatalf("valid N2 labels rejected: %v", err)
+	}
+	for _, bad := range []string{"wrong_login", "wrong_node", "wrong_mount"} {
+		mu.Lock()
+		mode = bad
+		mu.Unlock()
+		if _, err := r.containerUsage(context.Background(), id, "login_cid", 8000, root, "/h"); err == nil {
+			t.Fatalf("%s accepted", bad)
+		}
+	}
+}

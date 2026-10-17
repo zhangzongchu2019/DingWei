@@ -239,7 +239,11 @@ func (r *seatCapacityReader) containerUsage(ctx context.Context, id, cid string,
 		}
 		return ownedCapacityUsage{}, fmt.Errorf("capacity inspect unavailable")
 	}
-	if info.ID != cid || info.Config.Labels[managedSeatLabel] != r.d.soft.nodeID || info.Config.Labels[managedSeatIDLabel] != id {
+	owned := info.Config.Labels[managedSeatIDLabel] == id
+	if destination == "/h" {
+		owned = info.Config.Labels[loginLabel] == strings.TrimPrefix(id, "login-")
+	}
+	if info.ID != cid || info.Config.Labels[managedSeatLabel] != r.d.soft.nodeID || !owned {
 		return ownedCapacityUsage{}, fmt.Errorf("capacity ownership mismatch")
 	}
 	bound := false
