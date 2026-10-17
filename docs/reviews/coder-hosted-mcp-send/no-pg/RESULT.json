@@ -1,0 +1,6 @@
+{
+  "rc": 0,
+  "seconds": 79.637,
+  "excluded": "^TestDeviceClaimAcrossActualClientAndPostgres$",
+  "scope": "canonical with task-required PG exclusion; not unqualified canonical PASS"
+}

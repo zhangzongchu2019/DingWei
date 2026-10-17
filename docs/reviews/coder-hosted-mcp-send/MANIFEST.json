@@ -1,0 +1,234 @@
+{
+  "VERSION": {
+    "bytes": 8,
+    "sha256": "fc75b2a82bb684d627f1f068d37e18f78c9492244627d3dd06a019de3415209d"
+  },
+  "docs/runbooks/hosted-mcp-send-mode.md": {
+    "bytes": 1836,
+    "sha256": "9d3dac4eb3b7fd711d9c4c1b4f4aa12e4a04b70dfba4ba523c5381c3d97e2d97"
+  },
+  "internal/m8/hosted_body_send_test.go": {
+    "bytes": 3510,
+    "sha256": "2e9eb25389f079b9e684e94375c437eaa86e6c2361780a3b36dc768c45a98709"
+  },
+  "internal/version/helper_0233_test.go": {
+    "bytes": 1109,
+    "sha256": "2505f1e03aad4ae711a29b81647d0ba83ee5623450ddd2aac2094904bdd4ff5b"
+  },
+  "internal/version/version.go": {
+    "bytes": 4319,
+    "sha256": "21ae0021bfeed3e02196f87e01bc5ecbfeb0138add30d2670d3bb9ed2bf5ccfe"
+  },
+  "scripts/test-desktop-hub-roundtrip.sh": {
+    "bytes": 680,
+    "sha256": "63aa842f77f33072977615c6e1cb65ea3f4064df815d5dc20fcf297157ec8a9d"
+  },
+  "tools/sessionhelper/sessionhelper/__init__.py": {
+    "bytes": 54,
+    "sha256": "d3ada3336b01df25ba163900716b09179555250ea15c4bb7b8d10926f577896c"
+  },
+  "tools/sessionhelper/sessionhelper/app.py": {
+    "bytes": 93506,
+    "sha256": "ed545f9d09da675e391b749e4bba3f41b245482bfdc81050d2188c649ff246c6"
+  },
+  "tools/sessionhelper/sessionhelper/config.py": {
+    "bytes": 18067,
+    "sha256": "ef2b0f452b9f93e61314a76178fa347e21aba2e3c46166aaec85214d21337659"
+  },
+  "tools/sessionhelper/sessionhelper/ipc_listener.py": {
+    "bytes": 25973,
+    "sha256": "18d1c2a1b62e7a2502200bea6ef3cf3bf1b8840f1cc90d0158b7b54b41bfec7b"
+  },
+  "tools/sessionhelper/sessionhelper/ipc_permissions.py": {
+    "bytes": 369,
+    "sha256": "5e6afcd5e321dc2daa9b72897d497c8b6645f52fce4a5eb52f860042931c54c9"
+  },
+  "tools/sessionhelper/sessionhelper/mcp_shim.py": {
+    "bytes": 27551,
+    "sha256": "3f791d6d754848062f75e4bca1b53d4e8fc229b8e1fd848229fd2cb65389906e"
+  },
+  "tools/sessionhelper/tests/hosted_body_hub_client.py": {
+    "bytes": 3055,
+    "sha256": "25e7aeb9f87df5acf170cbd9dc11ee07ead54873a2cd44b26323db56fa920667"
+  },
+  "tools/sessionhelper/tests/test_home_isolation_wiring.py": {
+    "bytes": 16505,
+    "sha256": "a6f27e0021043ac81b54f594ad4cbed4d29d402eb9deefaf4104477e034d83dd"
+  },
+  "tools/sessionhelper/tests/test_hosted_mcp_send.py": {
+    "bytes": 9670,
+    "sha256": "2b79b27573c5968104edf440d4e4883016ce9ffb9978193822e45ad9edf618dc"
+  },
+  "tools/sessionhelper/tests/test_mcp_forwarder.py": {
+    "bytes": 7994,
+    "sha256": "ba7d8fdc49490a1457b37aae075e226d9182d1028046a7d85ddf1652723b5a67"
+  },
+  "tools/sessionhelper/tests/test_self_update_offer.py": {
+    "bytes": 25999,
+    "sha256": "9aa168bfb93e6d8eb1e7d1c17e86aa77d8204b8b2a7a1af2de31128e5a6e1b19"
+  },
+  "docs/reviews/coder-hosted-mcp-send/RESULTS.json": {
+    "bytes": 784,
+    "sha256": "c870735a03a390c9d1224d78a43e00b7eef386044538123c24029590b8382d92"
+  },
+  "docs/reviews/coder-hosted-mcp-send/WITHDRAWAL.json": {
+    "bytes": 1124,
+    "sha256": "9322813e4dd7f02090d23649601375b01dd9cbfc4654321e11c613c1ab6ee9bc"
+  },
+  "docs/reviews/coder-hosted-mcp-send/ATTEMPT-SCOPE.md": {
+    "bytes": 2366,
+    "sha256": "afd6caf2dc541f953764fe403078d8ec78bc076e981048023fddc12789dd3183"
+  },
+  "docs/reviews/coder-hosted-mcp-send/withdrawal.py": {
+    "bytes": 2189,
+    "sha256": "6629ce3b7dd6f07962a689740b61fa8fb6e0f153f35c97d3ed312d78a8444b11"
+  },
+  "docs/reviews/coder-hosted-mcp-send/REPORT.md": {
+    "bytes": 4418,
+    "sha256": "4cee96a04616dd490adc9751dd6fda8d59f37429100adc98dbc5210986403763"
+  },
+  "docs/reviews/coder-hosted-mcp-send/terminal/RESULTS.json": {
+    "bytes": 597,
+    "sha256": "f2428acb575d441b1f91e2a6b36adab29802377774067dc700aaa856df433a82"
+  },
+  "docs/reviews/coder-hosted-mcp-send/terminal/helper-root.log": {
+    "bytes": 49552,
+    "sha256": "9d1a62c3ab01df2a0e4998c1237807f651503e3614107cad116ab5504315e448"
+  },
+  "docs/reviews/coder-hosted-mcp-send/terminal/helper-cwd.log": {
+    "bytes": 74705,
+    "sha256": "7e5633e9692935639eb2fc840b51460ce5007f851ff13a8e07c7cc086f73c8ef"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/shim-file-withdrawal.log": {
+    "bytes": 692,
+    "sha256": "79dad4935727b7e7d40af1a5d0edf19c18b7f041383b1a2626cd5fc1e2ccd498"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/env-target.log": {
+    "bytes": 98,
+    "sha256": "4fb97cbd17e70d21e39dd3d83817f6882bb18695946ea562f63e2e8eff74f86c"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/target.log": {
+    "bytes": 98,
+    "sha256": "f450e1de5eee808e2ab16a7061558a5c0f3d14de6bd5d8293ee94dbaaabe35a9"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/version.log": {
+    "bytes": 65,
+    "sha256": "e978d4d548f29cd388e0bf10224f6f15179177e42a8eb4e891c8316295e1d01c"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/terminal-target.log": {
+    "bytes": 234,
+    "sha256": "74640155741d7c9c11b1db0fee4592b38500e883fe0cbab56b2a0788d069ab0a"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/wiring-withdrawal.log": {
+    "bytes": 4450,
+    "sha256": "fd2cef006910188aebf4d0c1e6fc189a5c9fc9fc9d5dad07d116a4c88c3b794e"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/helper-root.log": {
+    "bytes": 99169,
+    "sha256": "a7b2ca5ab76b8601c16a3848fdf37f8de5a7f4bd70e6b7a682fa89aac2265c69"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/child-isolation.log": {
+    "bytes": 97,
+    "sha256": "d846d1fe8e28d8c7ee19e0dc9b294d2898d754c3b9d083584803cd414dea6346"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/fixture-dependency-fix.log": {
+    "bytes": 791,
+    "sha256": "5589bb2a4d0ee4d42a7c25f7ba2cf7b1cc5bd43335d1c6a918e2ad19ef07ee2c"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/listener-withdrawal.log": {
+    "bytes": 4460,
+    "sha256": "dc24480dd19dfde2084d9fbe77b68bc2b404d66c77b76a4d244398cdf9fe5eba"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/helper-cwd.log": {
+    "bytes": 135596,
+    "sha256": "c9a27a56cade1f02502a046b5b89d3b08cc14daa71f2164873b63aad226c8b1c"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/hosted-real-hub.log": {
+    "bytes": 1533,
+    "sha256": "4e9ee95dfd8c67baed6e16a024b81adb06e662091275ed6843ec8b0f9fe4246f"
+  },
+  "docs/reviews/coder-hosted-mcp-send/raw/canonical.log": {
+    "bytes": 4824,
+    "sha256": "a8e0529652fa02645c16a38c44e20ba917594cc230484f49bf75bcc7a9e2e256"
+  },
+  "docs/reviews/coder-hosted-mcp-send/verified/RESULTS.json": {
+    "bytes": 792,
+    "sha256": "91952f4564762c42a4a4f1bbfc5a3897bc2e29592ff34d27d3ef8a6032e82712"
+  },
+  "docs/reviews/coder-hosted-mcp-send/verified/version.log": {
+    "bytes": 65,
+    "sha256": "e978d4d548f29cd388e0bf10224f6f15179177e42a8eb4e891c8316295e1d01c"
+  },
+  "docs/reviews/coder-hosted-mcp-send/verified/PROVENANCE.json": {
+    "bytes": 364,
+    "sha256": "78eb5c2fdd425d91a9f7f8462d6210ef7f5186b82357e425fd86000c3dfeb505"
+  },
+  "docs/reviews/coder-hosted-mcp-send/verified/helper-root.log": {
+    "bytes": 54370,
+    "sha256": "9b994f749f78da19a6aeec636b9e62471a71d055961d51de2ebca6994866e806"
+  },
+  "docs/reviews/coder-hosted-mcp-send/verified/helper-cwd.log": {
+    "bytes": 71594,
+    "sha256": "1009bada93d27dddae7fe4ae65ae5721637f61665cf6cf38ea2bb0c88d6021db"
+  },
+  "docs/reviews/coder-hosted-mcp-send/verified/canonical-no-pg.log": {
+    "bytes": 32635,
+    "sha256": "7008ac257c63470b1a1aede64b08908b928abe881b33a76decae8b404cfd6583"
+  },
+  "docs/reviews/coder-hosted-mcp-send/accepted/RESULTS.json": {
+    "bytes": 511,
+    "sha256": "29df713d5ab4082fd459f0c18040603ddac76dcf7c83021eb3084355c3544a86"
+  },
+  "docs/reviews/coder-hosted-mcp-send/accepted/version.log": {
+    "bytes": 65,
+    "sha256": "1b6ba4877e4177d22d2fd8b09da3ab94aa147a8a2a00e8405e06df78d32ff0db"
+  },
+  "docs/reviews/coder-hosted-mcp-send/accepted/helper-root.log": {
+    "bytes": 226484,
+    "sha256": "f180007cd701daa30b0496d12479a25060f653bf9500520626015a983587b0bb"
+  },
+  "docs/reviews/coder-hosted-mcp-send/accepted/canonical.log": {
+    "bytes": 37999,
+    "sha256": "075ef9da819a71c89bccce274ced05562ec6ab0bd4f174d803e9c9de6478f0c2"
+  },
+  "docs/reviews/coder-hosted-mcp-send/gates/canonical.log": {
+    "bytes": 7292,
+    "sha256": "7cfd67b3060a9a0f7bbe75142670c9f0c137a9eee113b8dffb93400270b908ed"
+  },
+  "docs/reviews/coder-hosted-mcp-send/no-pg/go-wrapper.sh": {
+    "bytes": 254,
+    "sha256": "1de4701c1e5379ca2dab047d28fbc26062cda7d89d90b89f63bdcf471552e9d4"
+  },
+  "docs/reviews/coder-hosted-mcp-send/no-pg/canonical-scoped.log": {
+    "bytes": 32635,
+    "sha256": "ea10f4ca7ccfed0420f6810368e540de298bb77ac426699b9fe55425d3c86e65"
+  },
+  "docs/reviews/coder-hosted-mcp-send/no-pg/RESULT.json": {
+    "bytes": 187,
+    "sha256": "defbdaa78ae6bed1b73049ca2731f8cbaca66db7f4ffb8433cd914f6473a2058"
+  },
+  "docs/reviews/coder-hosted-mcp-send/final/RESULTS.json": {
+    "bytes": 785,
+    "sha256": "b365b742c7c1134b3854cdcd18bda03bda91ccd217282d46dfacc77599963287"
+  },
+  "docs/reviews/coder-hosted-mcp-send/final/version.log": {
+    "bytes": 67,
+    "sha256": "2ab2b447bcba8344d0f6d6a451eb24abbe2b13e370d8d2f181187549ba56a846"
+  },
+  "docs/reviews/coder-hosted-mcp-send/final/helper-root.log": {
+    "bytes": 96996,
+    "sha256": "c035179b27b0dc8b356bfda3631d661130ed18ee8595d1e8836cfb24cf2c95a4"
+  },
+  "docs/reviews/coder-hosted-mcp-send/final/helper-cwd.log": {
+    "bytes": 43668,
+    "sha256": "4d3493379b4f5c1d31cc2b45fcab25cc7839d598eb67e6040896df449b32d9af"
+  },
+  "docs/reviews/coder-hosted-mcp-send/final/canonical.log": {
+    "bytes": 5870,
+    "sha256": "12703e9747cdb33075c69677c64e2a8faaa1b04bc7af7f2baf39cd8b5676c4df"
+  },
+  "docs/reviews/coder-hosted-mcp-send/stable/canonical.log": {
+    "bytes": 15581,
+    "sha256": "020e18b0710aa1523cedeeb872f1f2be4e975597719a442bf69ad7b021db1e7f"
+  }
+}

@@ -1,0 +1,1931 @@
+[ipc_listener] listening on /tmp/tmpq24ey7kn/ipc.sock
+[ipc_send] to=fixture-sender#fixture-owner bytes=16
+[ipc_listener] listening on /tmp/dwp-ktj7_60j/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-c49c98ffaf60aa1c
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-ktj7_60j/desktop-pilot-c49c98ffaf60aa1c-report.json
+[ipc_listener] listening on /tmp/dwp-6l67irzz/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-4a49145cfe053b03
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-6l67irzz/desktop-pilot-4a49145cfe053b03-report.json
+Fixture stays absent until dw_wait_message is pending; no Hub confirmation is simulated.
+[ipc_listener] listening on /tmp/dwp-wxaqpp8v/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-599957dce92dd5df
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-wxaqpp8v/desktop-pilot-599957dce92dd5df-report.json
+[ipc_listener] listening on /tmp/dwp-_q7_lg_j/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-5b223c2ceeb244dd
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-_q7_lg_j/desktop-pilot-5b223c2ceeb244dd-report.json
+Fixture stays absent until dw_wait_message is pending; no Hub confirmation is simulated.
+[ipc_listener] listening on /tmp/dww-zgmkk21h/mcp.sock
+[ipc_listener] listening on /tmp/dww-v47lotp8/mcp.sock
+[ipc_listener] listening on /tmp/dww-lvdiw0rg/mcp.sock
+[ipc_listener] listening on /tmp/dww-t6rz3wz2/mcp.sock
+[ipc_listener] listening on /tmp/dww-nccceamt/mcp.sock
+[ipc_listener] listening on /tmp/dww-gt0e7kjv/mcp.sock
+[ipc_listener] listening on /tmp/dww-nfmuybkf/mcp.sock
+[ipc_listener] listening on /tmp/dww-c147ju0e/mcp.sock
+[ipc_listener] listening on /tmp/dww-r_r7mecz/mcp.sock
+[ipc_listener] listening on /tmp/dww-r_r7mecz/mcp.sock
+[ipc_listener] listening on /tmp/dww-fcsm8p1d/mcp.sock
+[ipc_listener] listening on /tmp/dww-jiaypz7j/mcp.sock
+[ipc_listener] listening on /tmp/dww-rbgnehg1/mcp.sock
+[ipc_listener] listening on /tmp/dww-qrg6we4k/mcp.sock
+[driver-adapter][FAILED] driver start: initialize failed: {'code': -32001, 'message': 'app-server cannot start: config corrupt (FAKE_START_BAD)'}
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-75074751382a46e1a86380f8572857b2 -> failed (turn/start failed: {'code': -32000, 'message': '401 Unauthor)
+[delivery] failed id=dw-view-75074751382a46e1a86380f8572857b2 source=protocol (turn/start failed: {'code': -32000, 'message': '401 Unauthor)
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-0a463f11922e47f79111aabb684c506c -> processing (turn=turn_fake status=inProgress)
+[delivery] failed id=dw-view-0a463f11922e47f79111aabb684c506c source=protocol (turn failed: turn failed: FAKE_TURN_BOOM)
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001343
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001721
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001722
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001723
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001724
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001725
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001726
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001727
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001774
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001775
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001776
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001777
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001778
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001779
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001780
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001781
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001782
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001783
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001784
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001785
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001786
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001787
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001788
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001789
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001790
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001791
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001792
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001793
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001794
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001795
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001796
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001797
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001798
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001799
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001800
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001801
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001802
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001803
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001804
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001805
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001806
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001807
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001808
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001809
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001810
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001811
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001812
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001813
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001814
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001815
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001816
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001817
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001818
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001819
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001820
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001821
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001822
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001823
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001824
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001825
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001826
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001827
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001828
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001829
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001830
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001831
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001832
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001833
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001834
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001835
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001836
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001837
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001838
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001839
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001840
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001841
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001842
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001843
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001844
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001845
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001846
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001847
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001848
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001849
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001850
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001851
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001852
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001853
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001854
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001855
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001856
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001857
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001858
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001859
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001860
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001861
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001862
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001863
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001864
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001865
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001866
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001867
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001868
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001869
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001870
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001871
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001872
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001873
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001874
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001875
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001876
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001877
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001879
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001880
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001881
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001882
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001883
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001884
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001885
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001886
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001887
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001889
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001891
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001892
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001893
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001894
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001896
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001897
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001898
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001899
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001901
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001902
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001903
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001904
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001905
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001906
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001908
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001909
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001910
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001911
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001912
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001913
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001914
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001915
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001916
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001917
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001918
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001919
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001921
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001922
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001924
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001925
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001926
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001927
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001928
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001929
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001930
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001931
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001932
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001933
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001934
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001935
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001936
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001937
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001938
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001939
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001940
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001941
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001942
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001943
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001944
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001945
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001946
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001947
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001948
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001949
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001950
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001951
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001953
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001954
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001955
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001956
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001957
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001958
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001959
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001960
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001961
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001962
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001963
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001964
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001965
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001966
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001967
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001968
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001969
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001970
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001971
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001972
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001973
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001974
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001976
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001978
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001979
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001980
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001981
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001983
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001984
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001985
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001986
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001987
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001988
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001989
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001990
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001991
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001992
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001993
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001994
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001995
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001996
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001997
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001998
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001999
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002000
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002001
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002002
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002003
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002004
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002005
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002006
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002007
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002008
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002009
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002010
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002011
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002012
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002013
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002014
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002015
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002016
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002017
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002018
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002019
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002020
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002021
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002022
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002023
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002024
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002025
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002026
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002027
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002028
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002029
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002030
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002031
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002032
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002033
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002034
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002035
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002036
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002037
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002038
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002039
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002040
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002041
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002042
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002043
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002044
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002045
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002046
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002048
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002049
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002050
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002051
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002052
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002053
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002054
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002055
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002056
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002057
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002058
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002059
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002060
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002061
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002062
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002063
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002064
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002065
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002066
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002067
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002068
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002069
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002070
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002071
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002072
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002073
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002074
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002075
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002077
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002078
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002079
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002080
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002081
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002082
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002083
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002084
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002085
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002086
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002087
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002088
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002089
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002090
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002091
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002092
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002093
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002094
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002095
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002096
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002097
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002098
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002099
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002100
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002101
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002102
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002104
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002105
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002106
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002107
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002108
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002109
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002110
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002111
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002112
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002113
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002114
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002115
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002116
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002117
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002118
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002119
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002120
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002121
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002122
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002123
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002124
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002125
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002126
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002127
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002128
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002129
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002130
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002131
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002132
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002133
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002134
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002135
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002136
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002137
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002138
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002139
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002140
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002141
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002142
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002143
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002144
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002146
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002147
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002148
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002149
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002150
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002151
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002152
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002153
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002154
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002155
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002156
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002157
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002158
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002159
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002160
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002161
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002162
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002163
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002164
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002165
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002166
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002167
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002168
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002169
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002170
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002171
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002173
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002174
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002175
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002176
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002177
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002178
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002179
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002180
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002181
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002183
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002184
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002185
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002186
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002187
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002188
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002189
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002190
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002191
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002193
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002194
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002195
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002196
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002197
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002198
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002199
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002200
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002201
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002202
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002204
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002205
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002206
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002207
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002209
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002210
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002211
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002212
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002213
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002214
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002215
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002216
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002217
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002218
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002219
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002220
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002221
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002222
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002223
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002224
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002225
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002226
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002227
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002228
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002229
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002230
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002231
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002232
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002233
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002234
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002235
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002236
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002237
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002238
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002239
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002240
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002241
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002242
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002243
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002244
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002245
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002246
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002247
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002248
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002249
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002250
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002251
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002252
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002425
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002426
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002427
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002428
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002429
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002430
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002431
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002432
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002721
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002722
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002723
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002724
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002725
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002726
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002727
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002728
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002729
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002730
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002941
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002942
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002943
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002944
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002945
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002946
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002947
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002948
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002949
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002950
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003119
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003120
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003380
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003381
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003382
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003383
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003384
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003385
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003386
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003387
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003388
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003389
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003390
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003391
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003392
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003393
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003394
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003395
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003396
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003397
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003398
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003399
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003400
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003401
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003654
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003655
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003656
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003657
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003849
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003850
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003851
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003852
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003853
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003854
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003855
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003856
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003857
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003858
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003859
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003860
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004135
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004136
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004137
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004138
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004139
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004140
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004141
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004142
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004143
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004144
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004145
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004146
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004147
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004148
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004149
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004150
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004151
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004152
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004153
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004154
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004155
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004156
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004157
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004158
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004159
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004160
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004161
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004162
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004163
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004164
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004165
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004166
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004167
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004168
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004169
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004170
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004171
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004172
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004173
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004174
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004175
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004176
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004177
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004178
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004179
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004180
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004181
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004182
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004183
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004184
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004185
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004186
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004187
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004188
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004189
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004190
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004191
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004192
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004193
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004194
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004195
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004196
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004197
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004198
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004199
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004200
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004201
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004202
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004203
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004204
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004205
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004206
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004207
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004208
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004209
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004210
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004211
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004212
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004994
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004995
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004996
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004997
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004998
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004999
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005000
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005001
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005002
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005003
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005004
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005005
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005006
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005007
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005008
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005009
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005010
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005011
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005012
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005013
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005014
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005015
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005016
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005017
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005018
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005019
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005020
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005021
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005022
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005023
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005024
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005025
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005026
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005027
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005028
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005029
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005030
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005031
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005032
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005033
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005034
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005035
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005036
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005037
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005038
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005039
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005040
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005041
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005042
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005043
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005044
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005045
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005046
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005048
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005056
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005446
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005819
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005820
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005821
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:001368
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:001369
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:001370
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:001371
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002119
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002120
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002121
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002122
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002123
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002124
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002125
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002126
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002127
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002128
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002129
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002130
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003452
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003464
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003465
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003466
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003467
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003468
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003469
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003470
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003471
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003472
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003473
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003474
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003475
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003476
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003477
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003478
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003479
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003480
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003481
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003482
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003483
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003484
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003494
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003495
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003496
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003497
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003498
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003499
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003516
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003519
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003523
+[driver-adapter] bridge resubscribe skipped=5329 subscription=2
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4953 subscription=3
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=5000 subscription=4
+[driver-adapter] bridge resubscribe skipped=5000 subscription=5
+[driver-adapter] bridge resubscribe skipped=5000 subscription=6
+[driver-adapter] bridge resubscribe skipped=5000 subscription=7
+[driver-adapter] bridge resubscribe skipped=5000 subscription=8
+[driver-adapter] bridge resubscribe skipped=5000 subscription=9
+[driver-adapter] bridge resubscribe skipped=5000 subscription=10
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4000 subscription=2
+[driver-adapter] bridge resubscribe skipped=4000 subscription=3
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4003 subscription=4
+[driver-adapter] bridge resubscribe skipped=4003 subscription=5
+[driver-adapter] bridge resubscribe skipped=4003 subscription=6
+[driver-adapter] bridge resubscribe skipped=4003 subscription=7
+[driver-adapter] bridge resubscribe skipped=4003 subscription=8
+[driver-adapter] bridge resubscribe skipped=4003 subscription=9
+[driver-adapter] bridge resubscribe skipped=4003 subscription=10
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=3 subscription=2
+[driver-adapter] bridge resubscribe skipped=3 subscription=3
+[driver-adapter] bridge resubscribe skipped=3 subscription=4
+[driver-adapter] bridge resubscribe skipped=3 subscription=5
+[driver-adapter] bridge resubscribe skipped=3 subscription=6
+[driver-adapter] bridge resubscribe skipped=3 subscription=7
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=3 subscription=2
+[driver-adapter] bridge resubscribe skipped=3 subscription=3
+[driver-adapter] bridge resubscribe skipped=3 subscription=4
+[driver-adapter] bridge resubscribe skipped=3 subscription=5
+[driver-adapter] bridge resubscribe skipped=3 subscription=6
+[driver-adapter] bridge resubscribe skipped=3 subscription=7
+[driver-adapter] bridge resubscribe skipped=3 subscription=8
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4000 subscription=2
+[driver-adapter] bridge resubscribe skipped=4000 subscription=3
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4005 subscription=4
+[driver-adapter] bridge resubscribe skipped=4005 subscription=5
+[driver-adapter] bridge resubscribe skipped=4005 subscription=6
+[driver-adapter] bridge resubscribe skipped=4005 subscription=7
+[driver-adapter] bridge resubscribe skipped=4005 subscription=8
+[driver-adapter] bridge resubscribe skipped=4005 subscription=9
+[driver-adapter] bridge resubscribe skipped=4005 subscription=10
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=2 subscription=2
+[driver-adapter] driver reconnected attempt=2
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4 subscription=2
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=8 subscription=3
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=12 subscription=4
+[driver-adapter] bridge resubscribe skipped=12 subscription=5
+[driver-adapter] bridge resubscribe skipped=12 subscription=6
+[driver-adapter] bridge resubscribe skipped=12 subscription=7
+[driver-adapter] bridge resubscribe skipped=12 subscription=8
+[driver-adapter] bridge resubscribe skipped=12 subscription=9
+[driver-adapter] bridge resubscribe skipped=12 subscription=10
+[driver-adapter] bridge resubscribe skipped=12 subscription=11
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=5 subscription=2
+[driver-adapter] bridge resubscribe skipped=5 subscription=3
+[driver-adapter] bridge resubscribe skipped=5 subscription=4
+[driver-adapter] bridge resubscribe skipped=5 subscription=5
+[driver-adapter] bridge resubscribe skipped=5 subscription=6
+[driver-adapter] bridge resubscribe skipped=5 subscription=7
+[driver-adapter] bridge resubscribe skipped=5 subscription=8
+[driver-adapter] bridge resubscribe skipped=5 subscription=9
+[driver-adapter] bridge resubscribe skipped=5 subscription=10
+[driver-adapter] bridge resubscribe skipped=5 subscription=11
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] driver reconnected attempt=1
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] driver reconnected attempt=1
+[agent_skill] staged; no model turn
+[agent_skill] staged; no model turn
+[agent_skill] staged; no model turn
+[agent_skill] staged; no model turn
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[agent_skill] staged; no model turn
+[ipc_listener] listening on /tmp/ipc-len-ptxznsi4/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+MCP_TRANSPORT_READINGS errors=18 survived=18 recovery_same_process=18
+[helper-update] source_denied
+模型授权在所选工具自己的界面中完成；DW 不接收模型账号或密钥。
+两种接入方式都需要 sessionHelper。请选择：
+1. Codex 桌面应用 + DW-MCP
+2. CLI 托管（通过 DingWei Web 页面交互）
+请先在 Codex 桌面应用完成登录。自动提醒需真机验收；MCP 配置成功不代表自动唤醒已就绪。
+本次桌面应用： Codex.app 版本： fixture1 build： 1
+桌面持续监听：在原聊天要求 AI 调用 dw_wait_message；收到消息后用 dw_reply_message 回复再等待。取消或退出后需重新发起，不能自动唤醒空闲会话。
+配置已保存。启动时复制 #pair 指令并私发给当前 Hub 的官方飞书机器人，完成开户与设备配对。
+启动： /usr/bin/python3 -m sessionhelper --run-profile /tmp/tmp65sgusbc/setup-profile.json
+请按原生授权提示操作；CLI 模型授权码与 DW 配对码不同。
+过期/冲突后：先退出配对等待，再显式取消未认领申请： /usr/bin/python3 -m sessionhelper --cancel-pairing /tmp/tmp65sgusbc/setup-profile.json
+sessionHelper 后台进程已启动，PID： 1234 ；当前为 STARTING，连接状态请在 Web 或 DW-MCP 核实。
+[ipc_listener] listening on /tmp/spec-o3-kkrf82nw/ipc.sock
+[ipc_listener] listening on /tmp/spec-o3-vd29sr7j/ipc.sock
+[ipc_listener] listening on /tmp/spec-o3-8l6pbcem/ipc.sock
+[delivery][STALLED] id=env-c-idle idle_elapsed=91s no progress event; turn appears hung
+[delivery][STALLED] id=env-c-tool idle_elapsed=91s no progress event; turn appears hung
+[delivery][ABSOLUTE_TIMEOUT] id=env-c total_elapsed=901s; turn exceeded hard limit
+[delivery][STALLED] envelope=env-x idle stalled: no progress event for 91s
+[delivery][ABSOLUTE_TIMEOUT] envelope=env-x absolute turn timeout: total runtime 901s exceeded 900s limit
+[delivery][STALLED] envelope=env-x idle stalled: no progress event for 91s
+[delivery][STALLED] envelope=env-o no progress event for 91s — model may be misconfigured or session stalled. Protocol receipt guarantees admission, not processing.
+[delivery][ABSOLUTE_TIMEOUT] envelope=env-o absolute turn timeout: total runtime 901s exceeded 900s limit
+[delivery][STALLED] envelope=env-o no progress event for 91s — model may be misconfigured or session stalled. Protocol receipt guarantees admission, not processing.
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-593d1c4a484d43be814b6cd178f972dd -> processing (turn=turn-1)[driver-adapter] started, driver=codex
+
+[driver-adapter] deliver id=dw-dlv_X -> processing (turn=turn-1)
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-c9afece40ebe48879295ed416cc84e98 -> processing (turn=turn-1)
+[delivery] done id=dw-view-593d1c4a484d43be814b6cd178f972dd source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-two -> processing (turn=turn-2)
+[delivery] done id=dw-dlv_X source=fixture (turn=turn-1)
+[delivery] done id=dw-two source=fixture (turn=turn-2)
+[delivery][TIMEOUT] id=dw-view-c9afece40ebe48879295ed416cc84e98 turn=turn-1
+[driver-adapter] deliver id=dw-two -> processing (turn=turn-2)
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-190101a203a1419e8055a3557080e831 -> processing (turn=turn-1)
+[delivery] done id=dw-view-190101a203a1419e8055a3557080e831 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-agent -> processing (turn=turn-2)
+[delivery][TIMEOUT] id=dw-two turn=turn-2
+[delivery] done id=dw-agent source=fixture (turn=turn-2)
+[driver-adapter] deliver id=dw-feishu -> processing (turn=turn-3)
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-08dafc6ba06849b6a757a23641dfe3d4 -> processing (turn=turn-1)
+[delivery] done id=dw-feishu source=fixture (turn=turn-3)
+[delivery] done id=dw-view-08dafc6ba06849b6a757a23641dfe3d4 source=fixture (turn=turn-1)
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 397, in from_name
+    return next(cls.discover(name=name))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+  File "<string>", line 3, in <genexpr>
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 889, in version
+    return distribution(distribution_name).version
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 862, in distribution
+    return Distribution.from_name(distribution_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 399, in from_name
+    raise PackageNotFoundError(name)
+importlib.metadata.PackageNotFoundError: No package metadata was found for websockets
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 397, in from_name
+    return next(cls.discover(name=name))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+  File "<string>", line 3, in <genexpr>
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 889, in version
+    return distribution(distribution_name).version
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 862, in distribution
+    return Distribution.from_name(distribution_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 399, in from_name
+    raise PackageNotFoundError(name)
+importlib.metadata.PackageNotFoundError: No package metadata was found for websockets
+SYNTHETIC_SLOT_EXECUTED
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmpq2n6eef0/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 397, in from_name
+    return next(cls.discover(name=name))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+  File "<string>", line 3, in <genexpr>
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 889, in version
+    return distribution(distribution_name).version
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 862, in distribution
+    return Distribution.from_name(distribution_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 399, in from_name
+    raise PackageNotFoundError(name)
+importlib.metadata.PackageNotFoundError: No package metadata was found for websockets
+======================================================================
+ERROR: test_adapter_uses_owned_pid_not_configured_path (test_agent_disk_metrics.ProcessBinding.test_adapter_uses_owned_pid_not_configured_path)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_agent_disk_metrics.py", line 53, in test_adapter_uses_owned_pid_not_configured_path
+    from sessionhelper.cli import CLIAdapter
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/cli.py", line 21, in <module>
+    import pexpect
+ModuleNotFoundError: No module named 'pexpect'
+
+======================================================================
+ERROR: test_desktop_endpoint (unittest.loader._FailedTest.test_desktop_endpoint)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_desktop_endpoint
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 394, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/loader.py", line 337, in _get_module_from_name
+    __import__(name)
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_desktop_endpoint.py", line 7, in <module>
+    from websockets.sync.server import unix_serve
+ModuleNotFoundError: No module named 'websockets'
+
+
+======================================================================
+ERROR: test_guide_staging (unittest.loader._FailedTest.test_guide_staging)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_guide_staging
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 394, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/loader.py", line 337, in _get_module_from_name
+    __import__(name)
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_guide_staging.py", line 12, in <module>
+    from sessionhelper.cli import CLIAdapter
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/cli.py", line 21, in <module>
+    import pexpect
+ModuleNotFoundError: No module named 'pexpect'
+
+
+======================================================================
+ERROR: test_01_business_delivery_still_enters_injection_path (test_hub_notice_no_inject.HubNoticeNoInjectTest.test_01_business_delivery_still_enters_injection_path)
+判据①(阳格):type=delivery + ack_required 的普通业务投递仍必须被注入。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 197, in test_01_business_delivery_still_enters_injection_path
+    helper = build_helper(tmp)
+             ^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 102, in build_helper
+    helper = SessionHelper(load_config(env))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 248, in __init__
+    self.adapter = self._build_adapter()
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 277, in _build_adapter
+    from .cli import CLIAdapter
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/cli.py", line 21, in <module>
+    import pexpect
+ModuleNotFoundError: No module named 'pexpect'
+
+======================================================================
+ERROR: test_01b_plain_business_message_still_enters_injection_path (test_hub_notice_no_inject.HubNoticeNoInjectTest.test_01b_plain_business_message_still_enters_injection_path)
+判据①(阳格·真正对变异敏感的那一格):不带 delivery 元数据的业务消息仍须被注入。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 217, in test_01b_plain_business_message_still_enters_injection_path
+    helper = build_helper(tmp)
+             ^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 102, in build_helper
+    helper = SessionHelper(load_config(env))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 248, in __init__
+    self.adapter = self._build_adapter()
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 277, in _build_adapter
+    from .cli import CLIAdapter
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/cli.py", line 21, in <module>
+    import pexpect
+ModuleNotFoundError: No module named 'pexpect'
+
+======================================================================
+ERROR: test_01c_no_mirror_business_message_still_enters_injection_path (test_hub_notice_no_inject.HubNoticeNoInjectTest.test_01c_no_mirror_business_message_still_enters_injection_path)
+判据①(阳格·T-045 的原始受害形状):no_mirror=true 的业务信封仍须被注入。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 238, in test_01c_no_mirror_business_message_still_enters_injection_path
+    helper = build_helper(tmp)
+             ^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 102, in build_helper
+    helper = SessionHelper(load_config(env))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 248, in __init__
+    self.adapter = self._build_adapter()
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 277, in _build_adapter
+    from .cli import CLIAdapter
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/cli.py", line 21, in <module>
+    import pexpect
+ModuleNotFoundError: No module named 'pexpect'
+
+======================================================================
+ERROR: test_02_notice_leaves_trace_with_coordinates_but_no_body (test_hub_notice_no_inject.HubNoticeNoInjectTest.test_02_notice_leaves_trace_with_coordinates_but_no_body)
+判据②(阳格):通知必须留痕,且留痕要能定位;正文不得进日志。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 253, in test_02_notice_leaves_trace_with_coordinates_but_no_body
+    helper = build_helper(tmp)
+             ^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 102, in build_helper
+    helper = SessionHelper(load_config(env))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 248, in __init__
+    self.adapter = self._build_adapter()
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 277, in _build_adapter
+    from .cli import CLIAdapter
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/cli.py", line 21, in <module>
+    import pexpect
+ModuleNotFoundError: No module named 'pexpect'
+
+======================================================================
+ERROR: test_03_notice_is_not_injected_on_any_path (test_hub_notice_no_inject.HubNoticeNoInjectTest.test_03_notice_is_not_injected_on_any_path) (meta_type='delivery_failure')
+判据③(阴格):两类通知都不得注入 CLI ⇒ 断言「没有新增轮次」。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 274, in test_03_notice_is_not_injected_on_any_path
+    helper = build_helper(tmp)
+             ^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 102, in build_helper
+    helper = SessionHelper(load_config(env))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 248, in __init__
+    self.adapter = self._build_adapter()
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 277, in _build_adapter
+    from .cli import CLIAdapter
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/cli.py", line 21, in <module>
+    import pexpect
+ModuleNotFoundError: No module named 'pexpect'
+
+======================================================================
+ERROR: test_03_notice_is_not_injected_on_any_path (test_hub_notice_no_inject.HubNoticeNoInjectTest.test_03_notice_is_not_injected_on_any_path) (meta_type='delivery_result')
+判据③(阴格):两类通知都不得注入 CLI ⇒ 断言「没有新增轮次」。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 274, in test_03_notice_is_not_injected_on_any_path
+    helper = build_helper(tmp)
+             ^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 102, in build_helper
+    helper = SessionHelper(load_config(env))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 248, in __init__
+    self.adapter = self._build_adapter()
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 277, in _build_adapter
+    from .cli import CLIAdapter
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/cli.py", line 21, in <module>
+    import pexpect
+ModuleNotFoundError: No module named 'pexpect'
+
+======================================================================
+ERROR: test_03b_notice_does_not_swallow_the_next_business_message (test_hub_notice_no_inject.HubNoticeNoInjectTest.test_03b_notice_does_not_swallow_the_next_business_message)
+判据③的邻格:同一条连接上「通知 + 业务」先后到达,业务仍须被注入。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 291, in test_03b_notice_does_not_swallow_the_next_business_message
+    helper = build_helper(tmp)
+             ^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 102, in build_helper
+    helper = SessionHelper(load_config(env))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 248, in __init__
+    self.adapter = self._build_adapter()
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 277, in _build_adapter
+    from .cli import CLIAdapter
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/cli.py", line 21, in <module>
+    import pexpect
+ModuleNotFoundError: No module named 'pexpect'
+
+======================================================================
+ERROR: test_03c_helper_does_not_write_into_the_real_home (test_hub_notice_no_inject.HubNoticeNoInjectTest.test_03c_helper_does_not_write_into_the_real_home)
+本文件自己的卫生格:跑完不得在真 HOME 留下 provision 残留。
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 308, in test_03c_helper_does_not_write_into_the_real_home
+    helper = build_helper(tmp)
+             ^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_hub_notice_no_inject.py", line 102, in build_helper
+    helper = SessionHelper(load_config(env))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 248, in __init__
+    self.adapter = self._build_adapter()
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/app.py", line 277, in _build_adapter
+    from .cli import CLIAdapter
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/cli.py", line 21, in <module>
+    import pexpect
+ModuleNotFoundError: No module named 'pexpect'
+
+======================================================================
+ERROR: test_ipc_socket_path_isolation (unittest.loader._FailedTest.test_ipc_socket_path_isolation)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_ipc_socket_path_isolation
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 394, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/loader.py", line 337, in _get_module_from_name
+    __import__(name)
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_ipc_socket_path_isolation.py", line 12, in <module>
+    import websockets
+ModuleNotFoundError: No module named 'websockets'
+
+
+======================================================================
+ERROR: test_dropped_confirmation_retries_then_reconnect_uses_new_nonce (test_self_update_offer.AppDispatchTests.test_dropped_confirmation_retries_then_reconnect_uses_new_nonce)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 311, in test_dropped_confirmation_retries_then_reconnect_uses_new_nonce
+    import asyncio
+             ^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 182, in prepare
+    return self._prepare(env)
+           ^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 187, in _prepare
+    meta = self.validate_offer(env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 148, in validate_offer
+    raise UpdateRejected('lock_changed') from None
+sessionhelper.self_update.UpdateRejected: lock_changed
+
+======================================================================
+ERROR: test_rollback_receipt_uses_same_stable_runtime_lock (test_self_update_offer.AppDispatchTests.test_rollback_receipt_uses_same_stable_runtime_lock)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 343, in test_rollback_receipt_uses_same_stable_runtime_lock
+    import asyncio
+             ^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 182, in prepare
+    return self._prepare(env)
+           ^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 187, in _prepare
+    meta = self.validate_offer(env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 148, in validate_offer
+    raise UpdateRejected('lock_changed') from None
+sessionhelper.self_update.UpdateRejected: lock_changed
+
+======================================================================
+ERROR: test_enrolled_agent_name_matches_hub_canonical_case (test_self_update_offer.OfferTests.test_enrolled_agent_name_matches_hub_canonical_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 135, in test_enrolled_agent_name_matches_hub_canonical_case
+    updater=SelfUpdater(self.cfg,self.provisioner.validate_source,'Agent.Owner',
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 148, in validate_offer
+    raise UpdateRejected('lock_changed') from None
+sessionhelper.self_update.UpdateRejected: lock_changed
+
+======================================================================
+ERROR: test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion (test_self_update_offer.OfferTests.test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 200, in test_health_and_receipts_pin_immutable_runtime_lock_without_journal_expansion
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 182, in prepare
+    return self._prepare(env)
+           ^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 187, in _prepare
+    meta = self.validate_offer(env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 148, in validate_offer
+    raise UpdateRejected('lock_changed') from None
+sessionhelper.self_update.UpdateRejected: lock_changed
+
+======================================================================
+ERROR: test_health_is_job_version_and_fresh_nonce_bound (test_self_update_offer.OfferTests.test_health_is_job_version_and_fresh_nonce_bound)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 185, in test_health_is_job_version_and_fresh_nonce_bound
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 182, in prepare
+    return self._prepare(env)
+           ^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 187, in _prepare
+    meta = self.validate_offer(env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 148, in validate_offer
+    raise UpdateRejected('lock_changed') from None
+sessionhelper.self_update.UpdateRejected: lock_changed
+
+======================================================================
+ERROR: test_lost_installed_ack_can_retry_restart_without_redownload (test_self_update_offer.OfferTests.test_lost_installed_ack_can_retry_restart_without_redownload)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 124, in test_lost_installed_ack_can_retry_restart_without_redownload
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 182, in prepare
+    return self._prepare(env)
+           ^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 187, in _prepare
+    meta = self.validate_offer(env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 148, in validate_offer
+    raise UpdateRejected('lock_changed') from None
+sessionhelper.self_update.UpdateRejected: lock_changed
+
+======================================================================
+ERROR: test_restarted_health_fails_closed_if_job_lock_binding_changes (test_self_update_offer.OfferTests.test_restarted_health_fails_closed_if_job_lock_binding_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 222, in test_restarted_health_fails_closed_if_job_lock_binding_changes
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 182, in prepare
+    return self._prepare(env)
+           ^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 187, in _prepare
+    meta = self.validate_offer(env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 148, in validate_offer
+    raise UpdateRejected('lock_changed') from None
+sessionhelper.self_update.UpdateRejected: lock_changed
+
+======================================================================
+ERROR: test_trusted_fetch_stage_duplicate_and_no_credentials (test_self_update_offer.OfferTests.test_trusted_fetch_stage_duplicate_and_no_credentials)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 113, in test_trusted_fetch_stage_duplicate_and_no_credentials
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 182, in prepare
+    return self._prepare(env)
+           ^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 187, in _prepare
+    meta = self.validate_offer(env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/self_update.py", line 148, in validate_offer
+    raise UpdateRejected('lock_changed') from None
+sessionhelper.self_update.UpdateRejected: lock_changed
+
+======================================================================
+ERROR: test_actual_serializers_and_missing_wrong_lock_confirmations (test_self_update_offer.PacketFixtureTests.test_actual_serializers_and_missing_wrong_lock_confirmations)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 436, in test_actual_serializers_and_missing_wrong_lock_confirmations
+    class PacketFixtureTests(unittest.IsolatedAsyncioTestCase):
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 392, in capture_wire_packet_fixtures
+    try:
+        ^
+ValueError: not enough values to unpack (expected 2, got 1)
+
+======================================================================
+ERROR: test_sessionhelper (unittest.loader._FailedTest.test_sessionhelper)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_sessionhelper
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 394, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/loader.py", line 337, in _get_module_from_name
+    __import__(name)
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_sessionhelper.py", line 29, in <module>
+    from sessionhelper.cli import (
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/cli.py", line 21, in <module>
+    import pexpect
+ModuleNotFoundError: No module named 'pexpect'
+
+
+======================================================================
+ERROR: test_plain_preflight_must_not_create_state (test_update_core_review_regressions.ReviewRegressionTests.test_plain_preflight_must_not_create_state)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_update_core_review_regressions.py", line 51, in test_plain_preflight_must_not_create_state
+    bootstrap.preflight(stage,mount,'synthetic')
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/bootstrap.py", line 211, in preflight
+    state = in_container(container, script, json.dumps(pins), nonce,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1199, in _execute_mock_call
+    result = effect(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_update_core_review_regressions.py", line 45, in local
+    return subprocess.check_output([sys.executable,'-c',script,*args],env=dict(os.environ,SH_STATE_DIR=str(state),PYTHONPATH='/opt/dingwei/sessionhelper-src'))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/usr/bin/python3', '-c', "import importlib.metadata,json,os,pathlib,sys\npins=json.loads(sys.argv[1])\nif any(importlib.metadata.version(k)!=v for k,v in pins.items()): raise SystemExit(31)\nif os.environ.get('PYTHONPATH')!='/opt/dingwei/sessionhelper-src': raise SystemExit(35)\np=pathlib.Path(os.path.expanduser(os.environ.get('SH_STATE_DIR','~/.dingwei')))/'update'\nif not p.is_absolute() or p.is_symlink(): raise SystemExit(32)\nif sys.argv[3]=='1': p.mkdir(mode=0o700,parents=True,exist_ok=True)\nif p.exists() and (p.stat().st_uid!=os.getuid() or p.stat().st_mode&0o077 or not p.is_dir()): raise SystemExit(33)\np=p.resolve()\nif sys.argv[3]=='1':\n marker=p/('.bootstrap-'+sys.argv[2]);marker.write_text(sys.argv[2]);os.chmod(marker,0o600)\nprint(str(p))", '{"websockets": "15.0.1", "pexpect": "4.9.0", "ptyprocess": "0.7.0", "certifi": "2026.7.22"}', 'f7f6abbd999d40f79cd4501469df92bc', '0']' returned non-zero exit status 1.
+
+======================================================================
+ERROR: test_preflight_executes_real_state_probe_but_docker_is_controlled (test_update_release_core.PackageTests.test_preflight_executes_real_state_probe_but_docker_is_controlled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_update_release_core.py", line 292, in test_preflight_executes_real_state_probe_but_docker_is_controlled
+    self.assertFalse(bootstrap.preflight(stage, mount, 'synthetic')['restart_verified'])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/bootstrap.py", line 211, in preflight
+    state = in_container(container, script, json.dumps(pins), nonce,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1199, in _execute_mock_call
+    result = effect(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_update_release_core.py", line 290, in local_probe
+    return subprocess.check_output([sys.executable, '-c', script, *args], env=env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/usr/bin/python3', '-c', "import importlib.metadata,json,os,pathlib,sys\npins=json.loads(sys.argv[1])\nif any(importlib.metadata.version(k)!=v for k,v in pins.items()): raise SystemExit(31)\nif os.environ.get('PYTHONPATH')!='/opt/dingwei/sessionhelper-src': raise SystemExit(35)\np=pathlib.Path(os.path.expanduser(os.environ.get('SH_STATE_DIR','~/.dingwei')))/'update'\nif not p.is_absolute() or p.is_symlink(): raise SystemExit(32)\nif sys.argv[3]=='1': p.mkdir(mode=0o700,parents=True,exist_ok=True)\nif p.exists() and (p.stat().st_uid!=os.getuid() or p.stat().st_mode&0o077 or not p.is_dir()): raise SystemExit(33)\np=p.resolve()\nif sys.argv[3]=='1':\n marker=p/('.bootstrap-'+sys.argv[2]);marker.write_text(sys.argv[2]);os.chmod(marker,0o600)\nprint(str(p))", '{"websockets": "15.0.1", "pexpect": "4.9.0", "ptyprocess": "0.7.0", "certifi": "2026.7.22"}', '286717031ceb49aab4a83410250da299', '0']' returned non-zero exit status 1.
+
+======================================================================
+FAIL: test_direct_env_reads_match_whitelist_exactly (test_env_read_single_entry.EnvReadSingleEntryTest.test_direct_env_reads_match_whitelist_exactly)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_env_read_single_entry.py", line 55, in test_direct_env_reads_match_whitelist_exactly
+    self.assertEqual(problems, [], "改走 `from .config import env_get`；确属白名单类型的，"
+AssertionError: Lists differ: ["mcp_shim.py: 直接读环境变量 2 处，白名单允许 1 处 [(87, 'os.environ'), (89, 'os.environ')]"] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+"mcp_shim.py: 直接读环境变量 2 处，白名单允许 1 处 [(87, 'os.environ'), (89, 'os.environ')]"
+
+- ["mcp_shim.py: 直接读环境变量 2 处，白名单允许 1 处 [(87, 'os.environ'), (89, 'os.environ')]"]
++ [] : 改走 `from .config import env_get`；确属白名单类型的，到本文件 ALLOWED 里写明理由
+
+======================================================================
+FAIL: test_bootstrap_all_three_shapes_and_no_state_creation (test_mcp_forwarder.ForwarderTests.test_bootstrap_all_three_shapes_and_no_state_creation) (shape='module')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 99, in test_bootstrap_all_three_shapes_and_no_state_creation
+    with self.subTest(shape=shape):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp3nlgopwi/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_bootstrap_all_three_shapes_and_no_state_creation (test_mcp_forwarder.ForwarderTests.test_bootstrap_all_three_shapes_and_no_state_creation) (shape='factory-script')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 99, in test_bootstrap_all_three_shapes_and_no_state_creation
+    with self.subTest(shape=shape):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "/tmp/tmp3nlgopwi/mount/factory/sessionhelper/mcp_shim.py", line 35, in <module>
+    from sessionhelper.ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_bootstrap_all_three_shapes_and_no_state_creation (test_mcp_forwarder.ForwarderTests.test_bootstrap_all_three_shapes_and_no_state_creation) (shape='factory-module')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 99, in test_bootstrap_all_three_shapes_and_no_state_creation
+    with self.subTest(shape=shape):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp3nlgopwi/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_bootstrap_all_three_shapes_and_no_state_creation (test_mcp_forwarder.ForwarderTests.test_bootstrap_all_three_shapes_and_no_state_creation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 100, in test_bootstrap_all_three_shapes_and_no_state_creation
+    # PYTHONPATH factory only applies outside the stable package cwd.
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp3nlgopwi/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_current_selected_pending_previous_ignored_and_budget_unchanged (test_mcp_forwarder.ForwarderTests.test_current_selected_pending_previous_ignored_and_budget_unchanged)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 116, in test_current_selected_pending_previous_ignored_and_budget_unchanged
+    shutil.copytree(self.mount / 'factory', slot)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp2k5pq7g3/private/update/slots/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_directory_journal_falls_back_within_timeout (test_mcp_forwarder.ForwarderTests.test_directory_journal_falls_back_within_timeout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 163, in test_directory_journal_falls_back_within_timeout
+    def test_directory_journal_falls_back_within_timeout(self):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 148, in check_special_journal
+    # snapshot() reads ordinary files; never use it on an intentional FIFO.
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmpv5kebv9r/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_fifo_journal_without_writer_falls_back_within_timeout (test_mcp_forwarder.ForwarderTests.test_fifo_journal_without_writer_falls_back_within_timeout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 159, in test_fifo_journal_without_writer_falls_back_within_timeout
+    def test_fifo_journal_without_writer_falls_back_within_timeout(self):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 148, in check_special_journal
+    # snapshot() reads ordinary files; never use it on an intentional FIFO.
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmpcyxotzp_/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 125, in test_invalid_journals_and_current_slots_fall_back
+    with self.subTest(value=value):
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp36lplzfr/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 125, in test_invalid_journals_and_current_slots_fall_back
+    with self.subTest(value=value):
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp36lplzfr/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 125, in test_invalid_journals_and_current_slots_fall_back
+    with self.subTest(value=value):
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp36lplzfr/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value={'format': 2})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 125, in test_invalid_journals_and_current_slots_fall_back
+    with self.subTest(value=value):
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp36lplzfr/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value={'format': 1, 'current': None})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 125, in test_invalid_journals_and_current_slots_fall_back
+    with self.subTest(value=value):
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp36lplzfr/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value={'format': 1, 'current': []})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 125, in test_invalid_journals_and_current_slots_fall_back
+    with self.subTest(value=value):
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp36lplzfr/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value={'format': 1, 'current': {'sha256': '../outside'}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 125, in test_invalid_journals_and_current_slots_fall_back
+    with self.subTest(value=value):
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp36lplzfr/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value={'format': 1, 'current': {'sha256': 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 125, in test_invalid_journals_and_current_slots_fall_back
+    with self.subTest(value=value):
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp36lplzfr/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 129, in test_invalid_journals_and_current_slots_fall_back
+    for raw in ('{broken', 'x' * (1024 * 1024 + 1)):
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 92, in check_readonly
+    def check_readonly(self, version='0.2.3.1', shape='module', cwd=None):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp36lplzfr/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_oversized_journal_falls_back_within_timeout (test_mcp_forwarder.ForwarderTests.test_oversized_journal_falls_back_within_timeout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 173, in test_oversized_journal_falls_back_within_timeout
+    with self.special_journal_path().open('wb') as stream:
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 148, in check_special_journal
+    # snapshot() reads ordinary files; never use it on an intentional FIFO.
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmps8spq8pk/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_socket_journal_falls_back_within_timeout (test_mcp_forwarder.ForwarderTests.test_socket_journal_falls_back_within_timeout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 168, in test_socket_journal_falls_back_within_timeout
+    with socket.socket(socket.AF_UNIX) as listener:
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 148, in check_special_journal
+    # snapshot() reads ordinary files; never use it on an intentional FIFO.
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmpdi5wso62/mount/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_actual_handler_stages_and_requests_restart_once (test_self_update_offer.AppDispatchTests.test_actual_handler_stages_and_requests_restart_once)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 289, in test_actual_handler_stages_and_requests_restart_once
+    async def test_actual_handler_stages_and_requests_restart_once(self):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['failed'] != ['downloaded', 'installed']
+
+First differing element 0:
+'failed'
+'downloaded'
+
+Second list contains 1 additional elements.
+First extra element 1:
+'installed'
+
+- ['failed']
++ ['downloaded', 'installed']
+
+======================================================================
+FAIL: test_mcp_module_and_factory_script_after_actual_self_update (test_self_update_offer.OfferTests.test_mcp_module_and_factory_script_after_actual_self_update)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 97, in test_mcp_module_and_factory_script_after_actual_self_update
+    (factory/'__init__.py').write_text('__version__ = "0.2.3.1"\n')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmpg3mhzahe/mounted/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+======================================================================
+FAIL: test_offer_expiring_during_download_never_arms_candidate (test_self_update_offer.OfferTests.test_offer_expiring_during_download_never_arms_candidate)
+----------------------------------------------------------------------
+sessionhelper.self_update.UpdateRejected: lock_changed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 162, in test_offer_expiring_during_download_never_arms_candidate
+    self.env['meta']['expires_at']=(datetime.now(timezone.utc)+timedelta(seconds=0.4)).isoformat()
+AssertionError: "offer_expired" does not match "lock_changed"
+
+======================================================================
+FAIL: test_redirect_denied_without_followup_fetch (test_self_update_offer.OfferTests.test_redirect_denied_without_followup_fetch)
+----------------------------------------------------------------------
+sessionhelper.self_update.UpdateRejected: lock_changed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 169, in test_redirect_denied_without_followup_fetch
+    def test_redirect_denied_without_followup_fetch(self):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "redirect_denied" does not match "lock_changed"
+
+======================================================================
+FAIL: test_sha_failure_preserves_factory_and_does_not_arm (test_self_update_offer.OfferTests.test_sha_failure_preserves_factory_and_does_not_arm)
+----------------------------------------------------------------------
+sessionhelper.self_update.UpdateRejected: lock_changed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 154, in test_sha_failure_preserves_factory_and_does_not_arm
+    def test_sha_failure_preserves_factory_and_does_not_arm(self):
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "sha256_mismatch" does not match "lock_changed"
+
+======================================================================
+FAIL: test_gc_disabled_rlimit128_all_openers_and_long_run (test_sqlite_connection_lifetime.SQLiteLifetimeTests.test_gc_disabled_rlimit128_all_openers_and_long_run)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_sqlite_connection_lifetime.py", line 154, in test_gc_disabled_rlimit128_all_openers_and_long_run
+    self.assertEqual(child.returncode, 0, child.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_sqlite_connection_lifetime.py", line 211, in <module>
+    fd_worker()
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_sqlite_connection_lifetime.py", line 38, in fd_worker
+    from sessionhelper.cli import OpenCodeDBReader
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/sessionhelper/cli.py", line 21, in <module>
+    import pexpect
+ModuleNotFoundError: No module named 'pexpect'
+
+
+----------------------------------------------------------------------
+Ran 598 tests in 181.614s
+
+FAILED (failures=25, errors=24, skipped=50)

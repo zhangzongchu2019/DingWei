@@ -1,0 +1,68 @@
+TEST python tools/sessionhelper/test_supervise_connection_loops.py
+----------------------------------------------------------------------
+Ran 9 tests in 0.357s
+
+OK
+TEST python tools/sessionhelper/tests/test_update_release_core.py
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmpepl235yh/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+----------------------------------------------------------------------
+Ran 19 tests in 1.760s
+
+OK
+TEST python tools/sessionhelper/tests/test_sqlite_connection_lifetime.py
+SQLITE_FD_READINGS {"baseline_db_fd": 0, "final_db_fd": 0, "gc_enabled": false, "long_run_db_fds": {"1": 0, "100": 0, "1000": 0, "10000": 0}, "long_run_iterations": 10000, "nofile": 128, "total_fd_baseline": 4, "total_fd_final": 4, "workloads": {"audit": {"calls": 200, "peak_db_fd": 0}, "claude": {"calls": 200, "peak_db_fd": 0}, "cli_parts": {"calls": 200, "peak_db_fd": 0}, "cli_recent": {"calls": 200, "peak_db_fd": 0}, "codex": {"calls": 200, "peak_db_fd": 0}, "desktop": {"calls": 200, "peak_db_fd": 0}, "inbox": {"calls": 200, "peak_db_fd": 0}, "legacy": {"calls": 200, "peak_db_fd": 0}, "opencode": {"calls": 200, "peak_db_fd": 0}, "stop_hook": {"calls": 200, "peak_db_fd": 0}}}
+----------------------------------------------------------------------
+Ran 3 tests in 15.482s
+
+OK
+TEST python tools/sessionhelper/tests/test_mcp_shim_transport_errors.py
+MCP_TRANSPORT_READINGS errors=18 survived=18 recovery_same_process=18
+----------------------------------------------------------------------
+Ran 4 tests in 3.129s
+
+OK
+TEST python tools/sessionhelper/tests/test_update_core_review_regressions.py
+SYNTHETIC_SLOT_EXECUTED
+----------------------------------------------------------------------
+Ran 10 tests in 1.624s
+
+OK
+TEST python tools/sessionhelper/tests/test_self_update_offer.py
+Executing <Task finished name='Task-1' coro=<AppDispatchTests.asyncSetUp() done, defined at /data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py:269> result=None created at /usr/lib/python3.12/asyncio/runners.py:100> took 0.106 seconds
+Executing <Task finished name='Task-6' coro=<AppDispatchTests.asyncSetUp() done, defined at /data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py:269> result=None created at /usr/lib/python3.12/asyncio/runners.py:100> took 0.110 seconds
+Executing <Task finished name='Task-17' coro=<AppDispatchTests.asyncSetUp() done, defined at /data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py:269> result=None created at /usr/lib/python3.12/asyncio/runners.py:100> took 0.102 seconds
+Executing <Task finished name='Task-28' coro=<AppDispatchTests.asyncSetUp() done, defined at /data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py:269> result=None created at /usr/lib/python3.12/asyncio/runners.py:100> took 0.186 seconds
+[helper-update] source_denied
+Executing <Task pending name='Task-34' coro=<PacketFixtureTests.test_actual_serializers_and_missing_wrong_lock_confirmations() running at /data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py:436> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/lib/python3.12/asyncio/futures.py:387, Task.task_wakeup()] created at /usr/lib/python3.12/asyncio/base_events.py:449> cb=[_run_until_complete_cb() at /usr/lib/python3.12/asyncio/base_events.py:182] created at /usr/lib/python3.12/asyncio/runners.py:100> took 0.118 seconds
+[helper-update] confirmation_rejected
+[helper-update] confirmation_rejected
+Executing <Task pending name='Task-34' coro=<PacketFixtureTests.test_actual_serializers_and_missing_wrong_lock_confirmations() running at /data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py:436> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/lib/python3.12/asyncio/futures.py:387, Task.task_wakeup()] created at /usr/lib/python3.12/asyncio/base_events.py:449> cb=[_run_until_complete_cb() at /usr/lib/python3.12/asyncio/base_events.py:182] created at /usr/lib/python3.12/asyncio/runners.py:100> took 0.119 seconds
+======================================================================
+FAIL: test_mcp_module_and_factory_script_after_actual_self_update (tools.sessionhelper.tests.test_self_update_offer.OfferTests.test_mcp_module_and_factory_script_after_actual_self_update)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_self_update_offer.py", line 97, in test_mcp_module_and_factory_script_after_actual_self_update
+    assert_tools(self, probe(self.mount, state), '0.2.3.1')
+  File "/data/ai-dev-data/hosted-mcp-send-r19/tools/sessionhelper/tests/test_mcp_forwarder.py", line 52, in assert_tools
+    test.assertEqual(proc.returncode, 0, proc.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmpeobmxsps/mounted/factory/sessionhelper/mcp_shim.py", line 30, in <module>
+    from .ipc_permissions import send_body_only
+ModuleNotFoundError: No module named 'sessionhelper.ipc_permissions'
+
+
+----------------------------------------------------------------------
+Ran 22 tests in 14.361s
+
+FAILED (failures=1)

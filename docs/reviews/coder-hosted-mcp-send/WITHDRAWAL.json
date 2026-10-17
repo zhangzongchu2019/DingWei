@@ -1,0 +1,29 @@
+[
+  {
+    "name": "listener-withdrawal",
+    "file": "ipc_listener.py",
+    "rc": 1,
+    "baseline_sha256": "18d1c2a1b62e7a2502200bea6ef3cf3bf1b8840f1cc90d0158b7b54b41bfec7b",
+    "mutant_sha256": "93f6e1a7bb418b6eb80b9ec34ec52414c7748801dc7e095dbf55f599ec555c07",
+    "before": "    if send_body_only:\n        return await _handle_body_send(writer, msg, send_handler, passed_fds or [])\n",
+    "after": ""
+  },
+  {
+    "name": "shim-file-withdrawal",
+    "file": "mcp_shim.py",
+    "rc": 1,
+    "baseline_sha256": "3f791d6d754848062f75e4bca1b53d4e8fc229b8e1fd848229fd2cb65389906e",
+    "mutant_sha256": "21589937781f5509735c0f28c4d42ca0a1e4ca22b33536f3efc24aea88ab460d",
+    "before": "\"file\" in args or any(",
+    "after": "False or any("
+  },
+  {
+    "name": "wiring-withdrawal",
+    "file": "app.py",
+    "rc": 1,
+    "baseline_sha256": "ed545f9d09da675e391b749e4bba3f41b245482bfdc81050d2188c649ff246c6",
+    "mutant_sha256": "541136638a7e98ea49d54b36f4021dcbe893943a8864670aa0afb6b7ca940910",
+    "before": "send_body_only=getattr(self.cfg, \"ipc_send_body_only\", False)",
+    "after": "send_body_only=False"
+  }
+]
