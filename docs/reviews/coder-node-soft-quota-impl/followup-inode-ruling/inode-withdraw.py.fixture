@@ -1,0 +1,56 @@
+import pathlib,subprocess,hashlib,json,sys
+lab=pathlib.Path('/data/ai-dev-data/coder-soft-quota-lab');root=lab/'inode-withdrawal';pin='f713418da0166620da1859897410c0054393bcc8';runner=lab/'run-local.py'
+def src(p):return subprocess.check_output(['git','show',pin+':'+p],cwd=root).decode()
+f='internal/nodeagent/softquota.go';s=src(f);io='internal/nodeagent/softquota_io.go';i=src(io);cases=[]
+def add(n,p,old,new,t,pkg='./internal/nodeagent'):
+ original=src(p);assert old in original,n;mut=original.replace(old,new,1);cases.append((n,p,mut,pkg,t))
+add('statfs-state-lock',io,'space, spaceErr := q.disk(q.root)','q.mu.Lock(); space, spaceErr := q.disk(q.root); q.mu.Unlock()','TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/statfs')
+add('resources-state-lock',io,'cpu, total, available, resourceErr := q.resources()','q.mu.Lock(); cpu, total, available, resourceErr := q.resources(); q.mu.Unlock()','TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/resources')
+add('inventory-state-lock',io,'entries, inventoryErr := q.readInventory(q.root)','q.mu.Lock(); entries, inventoryErr := q.readInventory(q.root); q.mu.Unlock()','TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/inventory')
+add('write-state-lock',io,'req.reply <- req.writer(req.path, req.raw)','q.mu.Lock(); err := req.writer(req.path, req.raw); q.mu.Unlock(); req.reply <- err','TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers')
+add('write-budget',io,'context.WithTimeout(context.Background(), q.policy.StateWriteBudget)','context.WithCancel(context.Background())','TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers')
+add('write-failure-admission',io,'q.broken = true','q.broken = false','TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers')
+add('unknown-immediate-stop',f,'if unknown && (q.now().Sub(anchor)','if unknown && (true || q.now().Sub(anchor)','TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood')
+add('unknown-never-expires',f,'if unknown && (q.now().Sub(anchor)','if unknown && false && (q.now().Sub(anchor)','TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood')
+add('unknown-reuse-old-good',io,'return !q.spaceKnown || q.spaceErr != nil || q.spaceAt.IsZero() || q.now().Sub(q.spaceAt) > q.policy.MaxAge || q.now().Before(q.spaceAt) || q.samplingExpiredLocked()','return !q.spaceKnown','TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood')
+add('unknown-anchor-reset',io,'q.spaceErr = spaceErr','q.spaceErr = spaceErr; if spaceErr != nil { q.state.LastSpaceAt = q.now() }','TestSoftStatfsRecoveryWithinGraceAndRestartDoesNotResetAnchor')
+add('missing-anchor-reset',f,'if q.state.LastSpaceAt.IsZero() && q.state.UnknownStartedAt.IsZero() {','if false && q.state.LastSpaceAt.IsZero() && q.state.UnknownStartedAt.IsZero() {','TestSoftMissingAgeAnchorIsRejectedWithoutReset')
+add('emergency-bytes',f,'q.space.Free < q.emergencyThreshold(q.space)','false && q.space.Free < q.emergencyThreshold(q.space)','TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes')
+add('emergency-equality',f,'q.space.Free < q.emergencyThreshold(q.space)','q.space.Free <= q.emergencyThreshold(q.space)','TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes')
+add('actual-total-rounding',f,'space.Total/100*q.policy.ReservePercent + (space.Total%100*q.policy.ReservePercent+99)/100','space.Total/100*q.policy.ReservePercent','TestSoftReservesUseActualFilesystemTotalWithoutEarlyTruncation')
+add('sampler-per-tick',f,'d.soft.sampleNode()','go d.soft.sampleNode()','TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity')
+add('unknown-no-notification',f,'seat.SpaceWarning = true\n\t\t\tq.eventLocked(id, "usage_warning")','seat.SpaceWarning = true // withdrawn notification','TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood')
+add('hub-warning-held','internal/hosted/node_quota.go','e.Reason != "disk_warning" && e.Reason != "usage_warning"','e.Reason != "disk_warning"','TestQuotaUsageWarningNotifiesWithoutPrematureHold','./internal/hosted')
+add('hub-unknown-overlay','internal/hosted/overlay.go','m["quota_usage_unknown"] = true','m["quota_usage_unknown"] = false','TestQuotaUsageWarningNotifiesWithoutPrematureHold','./internal/hosted')
+add('inode-admission',f,'if q.space.FreeFiles < inodes {','if false && q.space.FreeFiles < inodes {','TestSoftInodeAdmissionRemainsAboveEmergencyLine')
+add('scan-held-state-lock',f,'u, err := q.usage(c, q.root, id)','q.mu.Lock(); u, err := q.usage(c, q.root, id); q.mu.Unlock()','TestSoftReserveRunsWhileMetadataWalkIsBlocked')
+a=s.index('func (q *softQuota) measure(');mut=s[:a]+s[a:].replace('context.WithTimeout(ctx, q.policy.ScanBudget)','context.WithCancel(ctx)',1);cases.append(('scan-budget',f,mut,'./internal/nodeagent','TestSoftScanBudgetUnknownAndOutboxAcknowledgement'))
+a=s.index('func (q *softQuota) stopHeld(');mut=s[:a]+s[a:].replace('context.WithTimeout(ctx, q.policy.StopTimeout)','context.WithCancel(ctx)',1);cases.append(('stop-budget',f,mut,'./internal/nodeagent','TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount'))
+# All starts retain the per-seat gate; withdraw only the paired stop acquisition.
+a=s.index('func (d *dockerOps) stopOwned(');b=s.index('\n\tif !d.soft.recorded',a)
+cases.append(('late-writer-gate',f,s[:a]+'func (d *dockerOps) stopOwned(ctx context.Context, id, cid string) error {'+s[b:],'./internal/nodeagent','TestSoftEmergencyCannotStopBeforeLateWriterStart'))
+# Slow scan must not serialize the reserve path.
+a=s.index('func (d *dockerOps) runSoft(');b=s.index('// Overflow-safe',a)
+serial='func (d *dockerOps) runSoft(ctx context.Context) { ticker := time.NewTicker(d.policy.ReserveInterval); defer ticker.Stop(); for { d.soft.sampleNode(); d.soft.measure(ctx); d.soft.checkReserve(); d.soft.enforce(ctx,d.stopOwned); select { case <-ctx.Done(): return; case <-ticker.C: } } }\n\n'
+cases.append(('serial-scan-reserve',f,s[:a]+serial+s[b:],'./internal/nodeagent','TestSoftReserveRunsWhileMetadataWalkIsBlocked'))
+add('inode-emergency-removed',f,'if !unknown && q.space.FreeFiles < q.inodeEmergencyThreshold(q.space) {','if false && !unknown && q.space.FreeFiles < q.inodeEmergencyThreshold(q.space) {','TestSoftInodeEmergencyBoundariesPersistStopAndRetainData')
+add('inode-emergency-equality',f,'q.space.FreeFiles < q.inodeEmergencyThreshold(q.space)','q.space.FreeFiles <= q.inodeEmergencyThreshold(q.space)','TestSoftInodeEmergencyBoundariesPersistStopAndRetainData')
+add('inode-shares-byte-config',f,'percent := q.policy.InodeEmergencyReservePercent','percent := uint64(q.policy.EmergencyReservePercent)','TestSoftInodeEmergencyBoundariesPersistStopAndRetainData')
+add('inode-emergency-wrong-reason',f,'q.holdLocked(id, "node_inode_emergency")','q.holdLocked(id, "node_space_emergency")','TestSoftInodeEmergencyBoundariesPersistStopAndRetainData')
+add('inode-emergency-default','internal/nodeagent/policy.go','InodeEmergencyReservePercent: 50','InodeEmergencyReservePercent: 40','TestSoftInodeEmergencyIndependentConfiguration')
+add('inode-emergency-range','internal/nodeagent/policy.go','p.InodeEmergencyReservePercent == 0 || p.InodeEmergencyReservePercent >= 100','false','TestSoftInodeEmergencyIndependentConfiguration')
+add('inode-emergency-env','internal/nodeagent/policy.go','"INODE_EMERGENCY_RESERVE_PERCENT": &p.InodeEmergencyReservePercent','"WITHDRAWN_INODE_EMERGENCY_RESERVE_PERCENT": &p.InodeEmergencyReservePercent','TestSoftInodeEmergencyIndependentConfiguration')
+add('inode-policy-binding','internal/nodeagent/policy.go','json:"inode_emergency_reserve_percent"','json:"-"','TestSoftInodeEmergencyIndependentConfiguration')
+a=s.index('func (q *softQuota) stopHeld(');mut=s[:a]+s[a:].replace('_ = q.persistLocked()','// withdrawal durable hold before Engine',1);cases.append(('inode-durable-before-stop',f,mut,'./internal/nodeagent','TestSoftInodeEmergencyBoundariesPersistStopAndRetainData'))
+selected=set(sys.argv[1:]);results=[]
+if selected:
+ results=[c for c in json.loads((lab/'evidence'/'INODE-WITHDRAWALS.json').read_text())['cases'] if c['name'] not in selected]
+ cases=[c for c in cases if c[0] in selected]
+for name,path,mutant,pkg,test in cases:
+ original=src(path)
+ try:
+  (root/path).write_text(mutant);log='withdraw-inode-'+name+'.log';rc=subprocess.call(['python3',str(runner),log,'go','test',pkg,'-run','^'+test,'-v','-count=1','-timeout=30s'],cwd=root);raw=(lab/'evidence'/log).read_text();good=rc==1 and '--- FAIL: '+test.split('/')[0] in raw and '[build failed]' not in raw and 'test timed out' not in raw and 'panic:' not in raw
+  results.append({'name':name,'file':path,'test':test,'rc':rc,'assertion_red':good,'original_sha256':hashlib.sha256(original.encode()).hexdigest(),'mutant_sha256':hashlib.sha256(mutant.encode()).hexdigest()});print(name,good,flush=True)
+ finally:(root/path).write_text(original)
+ (lab/'evidence'/'INODE-WITHDRAWALS.json').write_text(json.dumps({'code_pin':pin,'cases':results},indent=2)+'\n')
+assert all(c['assertion_red'] for c in results)

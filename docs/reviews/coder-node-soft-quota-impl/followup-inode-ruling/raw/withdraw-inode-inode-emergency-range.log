@@ -1,0 +1,6 @@
+=== RUN   TestSoftInodeEmergencyIndependentConfiguration
+    softquota_inode_test.go:30: invalid inode emergency accepted 0
+--- FAIL: TestSoftInodeEmergencyIndependentConfiguration (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.005s
+FAIL

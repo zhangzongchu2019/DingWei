@@ -1,0 +1,6 @@
+=== RUN   TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers
+    softquota_io_test.go:282: state fsync held quota mutex
+--- FAIL: TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers (1.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.018s
+FAIL

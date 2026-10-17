@@ -1,0 +1,12 @@
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+    softquota_reserve_test.go:192: emergency equality boundary hold= stops=0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+--- FAIL: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.04s)
+    --- FAIL: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.042s
+FAIL

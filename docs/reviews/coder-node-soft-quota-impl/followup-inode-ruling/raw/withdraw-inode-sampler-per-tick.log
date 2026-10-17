@@ -1,0 +1,14 @@
+=== RUN   TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity
+=== RUN   TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/statfs
+    softquota_io_test.go:232: expiry or bounded worker violated hold=usage_unknown reads=2
+=== RUN   TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/resources
+    softquota_io_test.go:232: expiry or bounded worker violated hold=usage_unknown reads=2
+=== RUN   TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/inventory
+    softquota_io_test.go:227: blocked statfs prevented expiry stop
+--- FAIL: TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity (1.05s)
+    --- FAIL: TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/statfs (0.02s)
+    --- FAIL: TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/resources (0.02s)
+    --- FAIL: TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/inventory (1.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.057s
+FAIL

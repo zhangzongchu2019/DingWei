@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/hosted",
+    "-run",
+    "TestQuota(EmergencyReasonsUseExistingAuditAndHoldPath|UsageWarningNotifiesWithoutPrematureHold)",
+    "-v",
+    "-count=1",
+    "-timeout=120s"
+  ],
+  "rc": 0,
+  "seconds": 13.866441034013405,
+  "external_DSN_environment_not_inherited": true
+}

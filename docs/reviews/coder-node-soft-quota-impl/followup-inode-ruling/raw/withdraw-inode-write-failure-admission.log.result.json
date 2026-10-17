@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers",
+    "-v",
+    "-count=1",
+    "-timeout=30s"
+  ],
+  "rc": 1,
+  "seconds": 2.226978519000113,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,0 +1,6 @@
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+    softquota_reserve_test.go:102: blocked scan suppressed emergency reserve stop
+--- FAIL: TestSoftReserveRunsWhileMetadataWalkIsBlocked (1.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.026s
+FAIL
