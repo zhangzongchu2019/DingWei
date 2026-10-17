@@ -1,0 +1,150 @@
+[
+  {
+    "name": "selection",
+    "source": "325736fe312bb59358d7d842929d285132789cd7",
+    "file": "internal/hosted/orchestrator.go",
+    "old": "return Node{}, capacityFailure(blockedReasons)",
+    "new": "return Node{}, ErrNoNodeCapacity",
+    "mutated_sha256": "681832804247e1a910af30d89cfcd59247487c74c6adb0baa96bef8f48547810",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityRequestReasonAndModelSelection$"
+    ]
+  },
+  {
+    "name": "transaction",
+    "source": "325736fe312bb59358d7d842929d285132789cd7",
+    "file": "internal/hosted/seat_capacity.go",
+    "old": "return capacityFailure(reasons)",
+    "new": "return ErrNoNodeCapacity",
+    "mutated_sha256": "258750a62f4f4934452fbfe21e7b194bb220d990c85f7f103ba2f89b775aebad",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityStoreSerializesConcurrentReservations$"
+    ]
+  },
+  {
+    "name": "start",
+    "source": "325736fe312bb59358d7d842929d285132789cd7",
+    "file": "internal/hosted/node_quota.go",
+    "old": "return capacityFailure(reasons)",
+    "new": "return ErrNoNodeCapacity",
+    "mutated_sha256": "ee041d8cc6fafbfdc2320a5f3eacfa17da79d4a9a91d3d05e7ebab25b75d7bcb",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityStartReasonAndUnknown$"
+    ]
+  },
+  {
+    "name": "http",
+    "source": "325736fe312bb59358d7d842929d285132789cd7",
+    "file": "cmd/workpulse/hosted_routes.go",
+    "old": "\tcase len(hosted.CapacityErrorReasons(err)) != 0:\n\t\twriteJSON(w, http.StatusConflict, map[string]any{\"error\": \"node_no_capacity\", \"capacity_reasons\": hosted.CapacityErrorReasons(err)})\n\t\treturn\n",
+    "new": "",
+    "mutated_sha256": "391997a78c4d19b1179870535179c2072494b46a2b9a777cc1a281e74f5416aa",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./cmd/workpulse",
+      "-run",
+      "^TestHostedCapacityReasonsActualHTTP$"
+    ]
+  },
+  {
+    "name": "job-write",
+    "source": "325736fe312bb59358d7d842929d285132789cd7",
+    "file": "internal/hosted/lifecycle_job.go",
+    "old": "\tif reasons := CapacityErrorReasons(err); len(reasons) != 0 {\n\t\t// Persist only canonical fixed tokens in the existing durable reason field.\n\t\treturn \"node_no_capacity:\" + strings.Join(reasons, \",\")\n\t}\n",
+    "new": "",
+    "mutated_sha256": "049986dd33041520015168d8d1330624c179afd90eac0832c97109e5991c7d34",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./cmd/workpulse",
+      "-run",
+      "^TestHostedCapacityReasonsActualHTTP$"
+    ]
+  },
+  {
+    "name": "job-read",
+    "source": "325736fe312bb59358d7d842929d285132789cd7",
+    "file": "internal/hosted/lifecycle_job.go",
+    "old": "\tif encoded, ok := strings.CutPrefix(j.Reason, \"node_no_capacity:\"); ok {\n\t\tv.Reason = \"node_no_capacity\"\n\t\tv.CapacityReasons = capacityReasons(strings.Split(encoded, \",\"))\n\t}\n",
+    "new": "",
+    "mutated_sha256": "ee0abfeb8585885637c64e168d74a8d7d875122f375990de8378d4b00fa2f2aa",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./cmd/workpulse",
+      "-run",
+      "^TestHostedCapacityReasonsActualHTTP$"
+    ]
+  },
+  {
+    "name": "allowlist",
+    "source": "325736fe312bb59358d7d842929d285132789cd7",
+    "file": "internal/hosted/seat_capacity.go",
+    "old": "present[\"load_unknown\"] = true\n\t\t}",
+    "new": "present[reason] = true\n\t\t}",
+    "mutated_sha256": "edec8e0a014e4603e5d98128c7ee079e50d5a2fe0241de8de4ae6cfbe3b19dda",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityReasonSanitizationAndCompatibility$"
+    ]
+  },
+  {
+    "name": "model-order",
+    "source": "325736fe312bb59358d7d842929d285132789cd7",
+    "file": "internal/hosted/orchestrator.go",
+    "old": "\t\tif model != \"\" {\n\t\t\tif !nodeHasModel(n, model) || n.LastSeenAt == nil || time.Since(*n.LastSeenAt) > 180*time.Second {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tmodelSeen = true\n\t\t}\n\t\tif mode == \"soft\" {\n\t\t\tv, err := o.st.nodeSeatCapacity(ctx, n)\n\t\t\tif err != nil || v == nil {\n\t\t\t\tblockedReasons = append(blockedReasons, \"load_unknown\")\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tif reasons := v.CanAdd(v.Policy(), capacityPlan(plan)); len(reasons) != 0 {\n\t\t\t\tblockedReasons = append(blockedReasons, reasons...)\n\t\t\t\tcontinue\n\t\t\t}\n\t\t}\n",
+    "new": "\t\tif mode == \"soft\" {\n\t\t\tv, err := o.st.nodeSeatCapacity(ctx, n)\n\t\t\tif err != nil || v == nil {\n\t\t\t\tblockedReasons = append(blockedReasons, \"load_unknown\")\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tif reasons := v.CanAdd(v.Policy(), capacityPlan(plan)); len(reasons) != 0 {\n\t\t\t\tblockedReasons = append(blockedReasons, reasons...)\n\t\t\t\tcontinue\n\t\t\t}\n\t\t}\n\t\tif model != \"\" {\n\t\t\tif !nodeHasModel(n, model) || n.LastSeenAt == nil || time.Since(*n.LastSeenAt) > 180*time.Second {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tmodelSeen = true\n\t\t}\n",
+    "mutated_sha256": "8908e268adc5c8eb663cbc7258e52fd93548fea178cfe8b406165543fecbaed5",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityRequestReasonAndModelSelection$"
+    ]
+  },
+  {
+    "name": "console",
+    "source": "325736fe312bb59358d7d842929d285132789cd7",
+    "file": "internal/m8/console_auth.go",
+    "old": "  if(code==='node_no_capacity'&&data&&Array.isArray(data.capacity_reasons)){\n    var labels={cpu:'CPU',memory:'\u5185\u5b58',disk:'\u78c1\u76d8',seat_limit:'\u5e2d\u4f4d\u6570\u4e0a\u9650',load_unknown:'\u8d44\u6e90\u8bfb\u6570\u672a\u77e5\uff0c\u6682\u505c\u65b0\u5efa\u4e0e\u542f\u52a8'},parts=[];\n    Object.keys(labels).forEach(function(k){if(data.capacity_reasons.indexOf(k)!==-1)parts.push(labels[k]);});\n    if(parts.length)return '\u6ca1\u6709\u8282\u70b9\u80fd\u5bb9\u7eb3\u672c\u6b21\u8bf7\u6c42\uff1a'+parts.join('\u3001');\n  }\n",
+    "new": "",
+    "mutated_sha256": "dee1a964d86c350b102ca2de076314017ca5428fd7fc3cbb668e78db03dd5886",
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ]
+  }
+]

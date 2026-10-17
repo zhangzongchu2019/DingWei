@@ -1,0 +1,41 @@
+import concurrent.futures,hashlib,io,json,pathlib,subprocess,tarfile,time
+repo=pathlib.Path('/data/ai-dev-data/seat-capacity-r22');lab=pathlib.Path('/data/ai-dev-data/coder-seat-capacity-lab');pin=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip();archive=subprocess.check_output(['git','archive',pin],cwd=repo)
+httptest=['go','test','-count=1','-v','./cmd/workpulse','-run','^TestHostedCapacityReasonsActualHTTP$']
+cases=[
+ ('selection','internal/hosted/orchestrator.go','return Node{}, capacityFailure(blockedReasons)','return Node{}, ErrNoNodeCapacity',['go','test','-count=1','-v','./internal/hosted','-run','^TestCapacityRequestReasonAndModelSelection$']),
+ ('transaction','internal/hosted/seat_capacity.go','return capacityFailure(reasons)','return ErrNoNodeCapacity',['go','test','-count=1','-v','./internal/hosted','-run','^TestCapacityStoreSerializesConcurrentReservations$']),
+ ('start','internal/hosted/node_quota.go','return capacityFailure(reasons)','return ErrNoNodeCapacity',['go','test','-count=1','-v','./internal/hosted','-run','^TestCapacityStartReasonAndUnknown$']),
+ ('http','cmd/workpulse/hosted_routes.go','''\tcase len(hosted.CapacityErrorReasons(err)) != 0:
+		writeJSON(w, http.StatusConflict, map[string]any{"error": "node_no_capacity", "capacity_reasons": hosted.CapacityErrorReasons(err)})
+		return
+''','',httptest),
+ ('job-write','internal/hosted/lifecycle_job.go','''	if reasons := CapacityErrorReasons(err); len(reasons) != 0 {
+		// Persist only canonical fixed tokens in the existing durable reason field.
+		return "node_no_capacity:" + strings.Join(reasons, ",")
+	}
+''','',httptest),
+ ('job-read','internal/hosted/lifecycle_job.go','''	if encoded, ok := strings.CutPrefix(j.Reason, "node_no_capacity:"); ok {
+		v.Reason = "node_no_capacity"
+		v.CapacityReasons = capacityReasons(strings.Split(encoded, ","))
+	}
+''','',httptest),
+ ('allowlist','internal/hosted/seat_capacity.go','present["load_unknown"] = true\n\t\t}', 'present[reason] = true\n\t\t}',['go','test','-count=1','-v','./internal/hosted','-run','^TestCapacityReasonSanitizationAndCompatibility$']),
+]
+s=(repo/'internal/hosted/orchestrator.go').read_text();start=s.index('\t\tif mode == "soft" {\n\t\t\tv, err := o.st.nodeSeatCapacity');end=s.index('\t\tif freeMB(n)',start);block=s[start:end];before=s.index('\t\tif model != "" {',s.index('func (o *Orchestrator) pickNode'));old=s[before:end];new=block+s[before:start]
+cases.append(('model-order','internal/hosted/orchestrator.go',old,new,['go','test','-count=1','-v','./internal/hosted','-run','^TestCapacityRequestReasonAndModelSelection$']))
+s=(repo/'internal/m8/console_auth.go').read_text();start=s.index("  if(code==='node_no_capacity'&&data&&Array.isArray(data.capacity_reasons)){");end=s.index("  if(code==='quota_exceeded'",start);cases.append(('console','internal/m8/console_auth.go',s[start:end],'',['node','view-service/console-soft-quota-regression.js']))
+metadata=[]
+for name,file,old,new,command in cases:
+ dst=lab/('reason-mutant-'+name);assert not dst.exists();dst.mkdir()
+ with tarfile.open(fileobj=io.BytesIO(archive)) as t:t.extractall(dst)
+ p=dst/file;s=p.read_text();assert s.count(old)==1,(name,s.count(old));p.write_text(s.replace(old,new))
+ metadata.append(dict(name=name,source=pin,file=file,old=old,new=new,mutated_sha256=hashlib.sha256(p.read_bytes()).hexdigest(),command=command))
+(lab/'evidence/reason-mutations.json').write_text(json.dumps(metadata,indent=2)+'\n')
+def run(case):
+ name,file,old,new,command=case;namefile='reason-withdraw-'+name+'.log'
+ rc=subprocess.call(['python3',str(lab/'run-local.py'),namefile,*command],cwd=lab/('reason-mutant-'+name),stdout=subprocess.DEVNULL)
+ raw=(lab/'evidence'/namefile).read_text();valid=rc==1 and ('--- FAIL:' in raw or 'AssertionError' in raw) and '[build failed]' not in raw and 'SyntaxError' not in raw
+ result=dict(name=name,rc=rc,assertion_red=valid);print(json.dumps(result),flush=True);return result
+with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(run,cases))
+(lab/'evidence/reason-withdrawals.json').write_text(json.dumps(dict(source=pin,results=results),indent=2)+'\n')
+raise SystemExit(0 if all(x['assertion_red'] for x in results) else 1)

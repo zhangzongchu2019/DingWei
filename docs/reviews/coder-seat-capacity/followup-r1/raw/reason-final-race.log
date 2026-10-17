@@ -1,0 +1,98 @@
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason/completed
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason/failed
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason/restart_waits_for_reconnect
+--- PASS: TestLifecycleJobPersistsProgressAndMachineReason (8.23s)
+    --- PASS: TestLifecycleJobPersistsProgressAndMachineReason/completed (3.02s)
+    --- PASS: TestLifecycleJobPersistsProgressAndMachineReason/failed (2.98s)
+    --- PASS: TestLifecycleJobPersistsProgressAndMachineReason/restart_waits_for_reconnect (2.23s)
+=== RUN   TestLifecycleJobDuplicatePolicy
+--- PASS: TestLifecycleJobDuplicatePolicy (2.13s)
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows/queued_restart_already_online
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows/running_enable_already_online
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows/ambiguous_queued_disable
+--- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows (6.35s)
+    --- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows/queued_restart_already_online (2.07s)
+    --- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows/running_enable_already_online (2.21s)
+    --- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows/ambiguous_queued_disable (2.07s)
+=== RUN   TestLifecycleOrderOnOneLog
+=== RUN   TestLifecycleOrderOnOneLog/upgrade
+=== RUN   TestLifecycleOrderOnOneLog/disable_then_enable
+=== RUN   TestLifecycleOrderOnOneLog/restart_resumes_first
+=== RUN   TestLifecycleOrderOnOneLog/destroy
+--- PASS: TestLifecycleOrderOnOneLog (8.26s)
+    --- PASS: TestLifecycleOrderOnOneLog/upgrade (2.17s)
+    --- PASS: TestLifecycleOrderOnOneLog/disable_then_enable (2.14s)
+    --- PASS: TestLifecycleOrderOnOneLog/restart_resumes_first (1.94s)
+    --- PASS: TestLifecycleOrderOnOneLog/destroy (2.01s)
+=== RUN   TestMinimumPlanDefinitionAndNetCapacity
+--- PASS: TestMinimumPlanDefinitionAndNetCapacity (0.00s)
+=== RUN   TestMinimumPlanSchemaUpgradesOldConstraint
+--- PASS: TestMinimumPlanSchemaUpgradesOldConstraint (1.96s)
+=== RUN   TestMinimumPlanQuotaDebitsAndEveryDimension
+--- PASS: TestMinimumPlanQuotaDebitsAndEveryDimension (1.94s)
+=== RUN   TestMinimumPlanOptionsAndRealCreateResources
+--- PASS: TestMinimumPlanOptionsAndRealCreateResources (2.04s)
+=== RUN   TestSoftNodeSchedulingConsentPriorityCapacityAndAudit
+--- PASS: TestSoftNodeSchedulingConsentPriorityCapacityAndAudit (1.93s)
+=== RUN   TestCapacityReasonSanitizationAndCompatibility
+--- PASS: TestCapacityReasonSanitizationAndCompatibility (0.00s)
+=== RUN   TestCapacityRequestReasonAndModelSelection
+=== RUN   TestCapacityRequestReasonAndModelSelection/cpu
+=== RUN   TestCapacityRequestReasonAndModelSelection/memory
+=== RUN   TestCapacityRequestReasonAndModelSelection/disk
+--- PASS: TestCapacityRequestReasonAndModelSelection (2.00s)
+    --- PASS: TestCapacityRequestReasonAndModelSelection/cpu (0.01s)
+    --- PASS: TestCapacityRequestReasonAndModelSelection/memory (0.01s)
+    --- PASS: TestCapacityRequestReasonAndModelSelection/disk (0.01s)
+=== RUN   TestCapacityStartReasonAndUnknown
+=== RUN   TestCapacityStartReasonAndUnknown/cpu
+=== RUN   TestCapacityStartReasonAndUnknown/memory
+=== RUN   TestCapacityStartReasonAndUnknown/disk
+=== RUN   TestCapacityStartReasonAndUnknown/load_unknown
+--- PASS: TestCapacityStartReasonAndUnknown (2.02s)
+    --- PASS: TestCapacityStartReasonAndUnknown/cpu (0.00s)
+    --- PASS: TestCapacityStartReasonAndUnknown/memory (0.00s)
+    --- PASS: TestCapacityStartReasonAndUnknown/disk (0.00s)
+    --- PASS: TestCapacityStartReasonAndUnknown/load_unknown (0.00s)
+=== RUN   TestCapacityRealCreatePendingEightNinthAndExistingStart
+--- PASS: TestCapacityRealCreatePendingEightNinthAndExistingStart (2.04s)
+=== RUN   TestCapacityStoreSerializesConcurrentReservations
+--- PASS: TestCapacityStoreSerializesConcurrentReservations (2.26s)
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/unknown
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/cpu_external
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/memory_reserve
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/disk_external
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale_wire
+--- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard (2.31s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/unknown (0.01s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/cpu_external (0.01s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/memory_reserve (0.01s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/disk_external (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale_wire (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	44.587s
+=== RUN   TestHostedCapacityReasonsActualHTTP
+=== RUN   TestHostedCapacityReasonsActualHTTP/cpu
+=== RUN   TestHostedCapacityReasonsActualHTTP/memory
+=== RUN   TestHostedCapacityReasonsActualHTTP/disk
+=== RUN   TestHostedCapacityReasonsActualHTTP/load_unknown
+=== RUN   TestHostedCapacityReasonsActualHTTP/stale
+--- PASS: TestHostedCapacityReasonsActualHTTP (3.30s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/cpu (0.03s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/memory (0.02s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/disk (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/load_unknown (0.02s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/stale (0.02s)
+=== RUN   TestHostedJobOwnerBySeat
+--- PASS: TestHostedJobOwnerBySeat (2.24s)
+=== RUN   TestHostedRoutesContractCodes
+--- PASS: TestHostedRoutesContractCodes (2.33s)
+=== RUN   TestLifecycleRecoveryIsWiredAtHostedStartup
+--- PASS: TestLifecycleRecoveryIsWiredAtHostedStartup (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	9.012s

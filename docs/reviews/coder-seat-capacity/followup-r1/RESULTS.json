@@ -1,0 +1,236 @@
+{
+  "initial-reason-withdraw-console.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 1,
+    "seconds": 12.250395305920392,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-browser.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 0,
+    "seconds": 64.42712020291947,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-cache-clean.log.result.json": {
+    "command": [
+      "go",
+      "clean",
+      "-cache",
+      "-testcache"
+    ],
+    "rc": 0,
+    "seconds": 0.30895250593312085,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-final-browser.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 0,
+    "seconds": 4.0656674089841545,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-final-canonical.log.result.json": {
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "rc": 0,
+    "seconds": 166.21528364019468,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-final-race.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted",
+      "./cmd/workpulse",
+      "-run",
+      "TestCapacity|TestMinimumPlan|TestLifecycle|TestHostedCapacity|TestHostedJob|TestHostedRoutesContractCodes|TestHostedBody|TestSoftNodeScheduling|TestModel"
+    ],
+    "rc": 0,
+    "seconds": 46.441724637988955,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-first.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted",
+      "./cmd/workpulse",
+      "-run",
+      "TestCapacityReason|TestCapacityRequestReason|TestCapacityStartReason|TestCapacityStoreSerializes|TestHostedCapacityReasonsActualHTTP"
+    ],
+    "rc": 0,
+    "seconds": 108.72843340807594,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-restored-browser.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 0,
+    "seconds": 5.1804572199471295,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-restored-http.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted",
+      "./cmd/workpulse",
+      "-run",
+      "TestCapacityRequestReasonAndModelSelection|TestCapacityStoreSerializesConcurrentReservations|TestHostedCapacityReasonsActualHTTP"
+    ],
+    "rc": 0,
+    "seconds": 9.846816302044317,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-withdraw-allowlist.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityReasonSanitizationAndCompatibility$"
+    ],
+    "rc": 1,
+    "seconds": 7.063986277906224,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-withdraw-console-assertion.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 1,
+    "seconds": 9.066499990876764,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-withdraw-console.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 1,
+    "seconds": 12.250395305920392,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-withdraw-http.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./cmd/workpulse",
+      "-run",
+      "^TestHostedCapacityReasonsActualHTTP$"
+    ],
+    "rc": 1,
+    "seconds": 64.35667701507919,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-withdraw-job-read.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./cmd/workpulse",
+      "-run",
+      "^TestHostedCapacityReasonsActualHTTP$"
+    ],
+    "rc": 1,
+    "seconds": 19.029624516842887,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-withdraw-job-write.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./cmd/workpulse",
+      "-run",
+      "^TestHostedCapacityReasonsActualHTTP$"
+    ],
+    "rc": 1,
+    "seconds": 52.82223645108752,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-withdraw-model-order.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityRequestReasonAndModelSelection$"
+    ],
+    "rc": 1,
+    "seconds": 8.472182287834585,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-withdraw-selection.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityRequestReasonAndModelSelection$"
+    ],
+    "rc": 1,
+    "seconds": 19.17603991390206,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-withdraw-start.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityStartReasonAndUnknown$"
+    ],
+    "rc": 1,
+    "seconds": 11.45608506212011,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reason-withdraw-transaction.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityStoreSerializesConcurrentReservations$"
+    ],
+    "rc": 1,
+    "seconds": 19.306361966067925,
+    "external_DSN_environment_not_inherited": true
+  }
+}

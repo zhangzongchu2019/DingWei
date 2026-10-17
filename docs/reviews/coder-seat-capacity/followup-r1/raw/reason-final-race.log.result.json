@@ -1,0 +1,16 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/hosted",
+    "./cmd/workpulse",
+    "-run",
+    "TestCapacity|TestMinimumPlan|TestLifecycle|TestHostedCapacity|TestHostedJob|TestHostedRoutesContractCodes|TestHostedBody|TestSoftNodeScheduling|TestModel"
+  ],
+  "rc": 0,
+  "seconds": 46.441724637988955,
+  "external_DSN_environment_not_inherited": true
+}

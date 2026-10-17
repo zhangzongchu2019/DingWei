@@ -1,0 +1,6 @@
+=== RUN   TestCapacityStoreSerializesConcurrentReservations
+    seat_capacity_test.go:171: capacity error: node_no_capacity reasons=[] want=[cpu disk]
+--- FAIL: TestCapacityStoreSerializesConcurrentReservations (2.32s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	2.326s
+FAIL
