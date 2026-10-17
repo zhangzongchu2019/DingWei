@@ -1,0 +1,5 @@
+--- FAIL: TestExportSeatExcludesCLIAndHelperPrivateState (0.02s)
+    backup_integrity_test.go:173: private contents present in decompressed backup entry ag_x1/.dingwei/update/slots/hash/factory.py
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.025s
+FAIL

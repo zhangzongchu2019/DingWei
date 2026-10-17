@@ -1,0 +1,54 @@
+{
+  "internal/nodeagent/backup.go": {
+    "bytes": 7990,
+    "sha256": "c4820f564ec54070f885b46e4a07bb451e4eb87e80c79d240add6e6a42b60b11"
+  },
+  "internal/nodeagent/backup_integrity_test.go": {
+    "bytes": 11757,
+    "sha256": "95fda52f7a942d2d2ee716f813c4d71b61f8922aeaa76f6741730c776cdc3b6d"
+  },
+  "docs/runbooks/hosted-backup-restore-boundary.md": {
+    "bytes": 4545,
+    "sha256": "ce1d7b57eb08f99b7a9cca009611457e0fe09bc6b90be3f659a8192ca3650187"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/WITHDRAWAL.json": {
+    "bytes": 249,
+    "sha256": "1e32979eb361d76d933c6141b7a5e881b724d10d6e58e149a3d0258c464a9e38"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/REPORT.md": {
+    "bytes": 3601,
+    "sha256": "d709a10d52df95a2cbba56b499e26c1d75e778c21c534516d1819a2cf1c76b1c"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/raw/hardlink-withdrawal.log": {
+    "bytes": 214,
+    "sha256": "07d1e4f4e6ecfdfd3b70e99b106c886aedc1426a2727a133da58c6e37b5aa84e"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/raw/exclusion-withdrawal.log": {
+    "bytes": 274,
+    "sha256": "6377f6c0ef73691b4342671044b9a586165e5426435cb8834c50bea30c6219a4"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/raw/test-inventory.log": {
+    "bytes": 3245,
+    "sha256": "0dd143c3550ef8493a53cc71187d53968ab23a0493d00ca3d63388fec9faf7e8"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/raw/nodeagent.log": {
+    "bytes": 67,
+    "sha256": "ff2b38d0fef6db6746dcd545e58138d6222bd05add5eca81cddba07ab6a7cdf2"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/residue/WITHDRAWAL.json": {
+    "bytes": 667,
+    "sha256": "c57563c4e9a2718b18a15ac426fea21dd05940adc733131e8640c57446ceda44"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/residue/TestExportSeatRefusesCredentialTempHardlinkBeforeUpload.log": {
+    "bytes": 218,
+    "sha256": "061689546eb9f05b781d8c9dfbbd85435c3c16560bdc0f4e83570e9c0b072ee3"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/residue/nodeagent.log": {
+    "bytes": 67,
+    "sha256": "b7088e42204d61cb80c8bb3fd0e7b282e4d911cfd7405a49c5d7b26e98831550"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/residue/TestExportSeatExcludesCredentialRefreshCrashResidue.log": {
+    "bytes": 255,
+    "sha256": "720c913aebafd0ecf8b2f829d5595078a891a9c42d7ae5052ac5e760fe84e6ed"
+  }
+}

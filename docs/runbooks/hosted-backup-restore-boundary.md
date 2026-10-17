@@ -1,0 +1,32 @@
+# Hosted backup: business files only, new login on restore
+
+The archive is rooted at the hosted `/work` bind. It omits root `account-credential`, `enroll-token.json`, `.dingwei` (including enrollment credentials, update slots/journal, IPC state, ledger and inbox state), root `inbox.sqlite3` and WAL/SHM companions, and CLI private configuration/login trees: `.codex`, `.claude`, `.claude.json` plus backup variants, `.gemini`, `.cline`, `.opencode`, `.config`, `.local/share/opencode`, `.local/share/cline`, root aider settings, and root `.env` variants. Entire CLI-private trees are excluded to cover refresh/auth copies and secrets in configuration. Consequently Codex/Claude private conversation histories/configuration are also omitted; this backup preserves business/workspace files, not a full CLI home/session snapshot. This intentional loss must be shown in the recovery execution plan.
+
+Patterns are anchored to the seat root: `project/.codex/...`, `data/inbox.sqlite3`, etc. are ordinary user data and are not filtered by basename. This is not general-purpose content DLP: a user copying a credential into an unrelated work file remains outside path filtering. Customized CLI credential/state locations must be reviewed and added before a seat uses them; do not assert arbitrary layouts are safe. No credential contents are read by the backup preflight. Protected regular files with multiple hard links are rejected before node-secret access or HTTP upload, so an alternate hard-link name cannot silently export the same known private inode. Symlinks are not followed by the tar command or private-tree metadata walk. As with existing destruction, the seat must be stopped and writers fenced before backup; this is not a defense against a hostile concurrent host modifying the tree.
+
+A restored archive has no helper identity, enrollment token, update journal/current slot, LLM auth or MCP configuration. Restore work into a newly authorized seat with the approved factory image/locked venv and fresh enrollment; the owner must log in or explicitly inject a current authorized account through the normal account-pool lifecycle. Never infer that restoring work resurrects an old Agent or its revoked credentials. Do not reuse the destroyed identity's journal or invent pending/current state. The image recreates MCP configuration and selects its approved factory. Privately retained original containers/state require separate rollback authorization and must not run concurrently with a replacement identity.
+
+The existing stop-before-backup, SHA verification, backup-failure no-delete rule, 14-day retention, node authentication and offline reconciliation remain in force. This change does not scrub historical archives: any historical sensitive backup inventory/disposal needs a separate owner decision. H2 is based on r19 without an independent VERSION change; integration with H1 receives the approved 0.2.3.4 release pins. Only local synthetic tar/HTTP tests were performed; no real backup, host, PG, account or key was accessed.
+
+
+## R1: atomic-refresh credential crash residue
+
+Root `.account-credential.*` is now excluded by the same anchored inventory used
+for tar and metadata-only hardlink preflight. These are product-owned temporary
+files, not arbitrary custom credential locations. No source credential or residue
+is deleted. Nested project files with that basename remain business data.
+Audit: nodeagent initial account/enroll-token writes use the already excluded
+canonical root names; refresh CreateTemp uses this newly covered root prefix.
+Hosted starter auth/marker atomic prefixes `.auth-*`/`.dw-marker-*` stay inside the
+excluded `.codex` tree; helper enrollment/credential atomic siblings are under the
+excluded `.dingwei` state tree for this default hosted layout. Custom external
+paths still require their own reviewed inventory, not arbitrary content scanning.
+
+Actual writer subprocess test exits77 through existing chownForSeatFn after real
+WriteString/Sync/Close and before Rename, leaving one real generated temporary
+file. The handler's real tar/gzip/loopback export contains neither the member nor
+synthetic credential content; nested same-name work survives, original residue
+remains. A temporary-credential hardlink alias is refused before secretFn/HTTP.
+Full nodeagent package rc0; remove only the new shared pattern and both new tests
+turn red (unchanged assertions). Raw results and exact source hashes in residue/.
+Local synthetic subprocess/tar/HTTP only; no Docker/PG/host/key/real Agent actions.

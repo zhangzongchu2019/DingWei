@@ -1,0 +1,12 @@
+[
+  {
+    "name": "exclusion-withdrawal",
+    "rc": 1,
+    "test": "^TestExportSeatExcludesCLIAndHelperPrivateState$"
+  },
+  {
+    "name": "hardlink-withdrawal",
+    "rc": 1,
+    "test": "^TestExportSeatRefusesCredentialHardlinkBeforeUpload$"
+  }
+]
