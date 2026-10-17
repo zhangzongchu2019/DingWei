@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHostedAdminQuotaRegistrationCLIToNormalize$",
+    "-v",
+    "-count=1",
+    "-timeout=120s"
+  ],
+  "rc": 1,
+  "seconds": 7.343101111007854,
+  "external_DSN_environment_not_inherited": true
+}

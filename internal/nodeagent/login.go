@@ -96,6 +96,7 @@ func (a *Agent) RegisterLoginHandlers(eng *engine, registry, localImagesCSV, cgr
 	if a.docker != nil {
 		l.d.policy = a.docker.policy
 		l.d.soft = a.docker.soft
+		l.d.seatRoot = a.docker.seatRoot
 	}
 	l.cleanupLeftovers(context.Background())
 	a.Register(CmdLoginStart, l.start)
@@ -135,6 +136,11 @@ func (l *loginOps) start(ctx context.Context, params json.RawMessage) (json.RawM
 	if p.UploadURL != l.hubOrigin+"/api/node/login/"+p.LoginID {
 		return nil, fmt.Errorf("%w: upload_url 非本 Hub 本会话登录端点", ErrParams)
 	}
+	if l.d.soft != nil {
+		if err := l.d.soft.loginStartGate(p.LoginID); err != nil {
+			return nil, err
+		}
+	}
 	if err := validateImageRef(p.Image, l.d.registry); err != nil {
 		return nil, err
 	}
@@ -164,6 +170,13 @@ func (l *loginOps) start(ctx context.Context, params json.RawMessage) (json.RawM
 	l.sessions[p.LoginID] = sess
 	l.mu.Unlock()
 
+	if l.d.soft != nil {
+		if err := l.d.soft.reserveLogin(p.LoginID, l.root); err != nil {
+			close(sess.ready)
+			l.forget(p.LoginID)
+			return nil, err
+		}
+	}
 	url, code, err := l.launch(ctx, p.LoginID, p.Image, p.UploadURL, sess)
 	if err != nil {
 		close(sess.ready)
@@ -205,21 +218,27 @@ func (l *loginOps) launch(ctx context.Context, id, image, uploadURL string, sess
 	if err != nil {
 		return "", "", fmt.Errorf("login_start_failed: create: %v", err)
 	}
+	if l.d.soft != nil {
+		if err := l.d.soft.track("login-"+id, cid); err != nil {
+			return "", "", err
+		}
+	}
 	runCtx, cancel := context.WithTimeout(context.Background(), loginTTL)
 	stream, err := l.d.eng.containerAttach(runCtx, cid)
 	if err != nil {
 		cancel()
 		return "", "", fmt.Errorf("login_start_failed: attach: %v", err)
 	}
+	start := func(c context.Context) error { return l.d.eng.containerStart(c, cid) }
 	if l.d.soft != nil {
-		if err := l.d.soft.commandGate(Command{Type: CmdLoginStart, Params: json.RawMessage(`{}`)}); err != nil {
-			return "", "", err
-		}
+		err = l.d.soft.start(ctx, "login-"+id, start)
+	} else {
+		err = start(ctx)
 	}
-	if err := l.d.eng.containerStart(ctx, cid); err != nil {
+	if err != nil {
 		stream.Close()
 		cancel()
-		return "", "", fmt.Errorf("login_start_failed: start: %v", err)
+		return "", "", fmt.Errorf("login_start_failed: start: %w", err)
 	}
 	found := make(chan [2]string, 1)
 	go func() { // 读输出：只认固定模式的链接行与码行；原文不留、不打日志；读完继续排空直到流结束
@@ -279,6 +298,10 @@ func (l *loginOps) spec(id, image, dir, netName string) map[string]any {
 	if l.d.seatProxy != "" {
 		env = append(env, "HTTPS_PROXY="+l.d.seatProxy, "HTTP_PROXY="+l.d.seatProxy, "https_proxy="+l.d.seatProxy, "http_proxy="+l.d.seatProxy)
 	}
+	labels := map[string]string{loginLabel: id}
+	if l.d.soft != nil {
+		labels[managedSeatLabel] = l.d.soft.nodeID
+	}
 	return map[string]any{
 		"Image":        engineImage(image),
 		"User":         "10001:10001",
@@ -288,7 +311,7 @@ func (l *loginOps) spec(id, image, dir, netName string) map[string]any {
 		"Tty":          false,
 		"AttachStdout": true,
 		"AttachStderr": true,
-		"Labels":       map[string]string{loginLabel: id},
+		"Labels":       labels,
 		"HostConfig": map[string]any{
 			"ReadonlyRootfs": true,
 			"Tmpfs":          map[string]string{"/tmp": "size=8m"},
@@ -318,7 +341,7 @@ func (l *loginOps) finish(ctx context.Context, id, cid, uploadURL string, stream
 	defer l.cleanup(context.Background(), id)
 	defer stream.Close()
 	code, err := l.d.eng.containerWait(ctx, cid)
-	if ctx.Err() == context.Canceled {
+	if ctx.Err() == context.Canceled || (l.d.soft != nil && l.d.soft.preserveLogin(id, l.root)) {
 		return
 	}
 	outcome := map[string]string{"status": "failed"}
@@ -435,6 +458,10 @@ func (l *loginOps) forget(id string) {
 
 // cleanup 删容器、网络、内存盘目录；都按「不存在即成功」。
 func (l *loginOps) cleanup(ctx context.Context, id string) {
+	if l.d.soft != nil {
+		l.cleanupSoft(ctx, id)
+		return
+	}
 	cname, nname := loginNames(id)
 	_ = l.d.eng.containerRemove(ctx, cname)
 	_ = l.d.eng.networkRemove(ctx, nname)
@@ -443,9 +470,34 @@ func (l *loginOps) cleanup(ctx context.Context, id string) {
 
 // cleanupLeftovers 进程启动清扫：带登录标签的容器、对应网络；内存盘下名字严格匹配 login-<32hex> 且属主为席位用户的目录。
 func (l *loginOps) cleanupLeftovers(ctx context.Context) {
+	if l.d.soft != nil {
+		// Reconcile even a retirement interrupted after directory/container removal.
+		// Held records are retained; an unexpected configured root fences the node.
+		q := l.d.soft
+		q.mu.Lock()
+		ids := []string{}
+		for key, s := range q.state.Seats {
+			if s.WriterKind == "login" {
+				if s.WriterRoot != l.root {
+					q.broken = true
+					continue
+				}
+				ids = append(ids, strings.TrimPrefix(key, "login-"))
+			}
+		}
+		q.mu.Unlock()
+		for _, id := range ids {
+			l.cleanup(ctx, id)
+		}
+	}
+
 	if items, err := l.d.eng.containersByLabel(ctx, loginLabel); err == nil {
 		for _, c := range items {
 			if id := c.Labels[loginLabel]; loginIDPattern.MatchString(id) {
+				if l.d.soft != nil && !l.d.soft.knownLogin(id, l.root) {
+					l.d.soft.blockUnknownLogin()
+					continue
+				}
 				l.cleanup(ctx, id)
 			}
 		}
@@ -461,7 +513,12 @@ func (l *loginOps) cleanupLeftovers(ctx context.Context) {
 		if !ownedBySeatUser(filepath.Join(l.root, e.Name())) {
 			continue
 		}
-		l.cleanup(ctx, strings.TrimPrefix(e.Name(), "login-"))
+		id := strings.TrimPrefix(e.Name(), "login-")
+		if l.d.soft != nil && !l.d.soft.knownLogin(id, l.root) {
+			l.d.soft.blockUnknownLogin()
+			continue
+		}
+		l.cleanup(ctx, id)
 	}
 }
 

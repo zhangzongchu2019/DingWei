@@ -13,6 +13,7 @@ import (
 
 var policyRevisionPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
 var quotaEventIDPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
+var loginWriterID = regexp.MustCompile(`^login-[0-9a-f]{32}$`)
 var nodeSeatID = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{1,63}$`)
 
 // Registration is administrator-owned. A capacity frame cannot enable soft or
@@ -75,10 +76,11 @@ func nodeQuotaEligible(n Node) bool {
 }
 
 type quotaEvent struct {
-	ID     string    `json:"id"`
-	SeatID string    `json:"seat_id"`
-	Reason string    `json:"reason"`
-	At     time.Time `json:"at"`
+	WriterKind string    `json:"writer_kind,omitempty"`
+	ID         string    `json:"id"`
+	SeatID     string    `json:"seat_id"`
+	Reason     string    `json:"reason"`
+	At         time.Time `json:"at"`
 }
 
 func quotaEvents(raw json.RawMessage) ([]quotaEvent, error) {
@@ -92,7 +94,7 @@ func quotaEvents(raw json.RawMessage) ([]quotaEvent, error) {
 		return nil, ErrParams
 	}
 	for _, e := range frame.Events {
-		if !quotaEventIDPattern.MatchString(e.ID) || !nodeSeatID.MatchString(e.SeatID) || e.At.IsZero() {
+		if (e.WriterKind != "" && (e.WriterKind != "login" || !loginWriterID.MatchString(e.SeatID))) || !quotaEventIDPattern.MatchString(e.ID) || !nodeSeatID.MatchString(e.SeatID) || e.At.IsZero() {
 			return nil, ErrParams
 		}
 		switch e.Reason {
@@ -121,24 +123,29 @@ func (s *Store) SetNodeQuotaCapacity(ctx context.Context, id string, capacity js
 			Mode     string `json:"quota_mode"`
 			Revision string `json:"quota_policy_revision"`
 			Seats    map[string]struct {
-				Hold string `json:"hold"`
-				Stop string `json:"stop_state"`
+				WriterKind string `json:"writer_kind"`
+				Hold       string `json:"hold"`
+				Stop       string `json:"stop_state"`
 			} `json:"soft_seats"`
 		}
-		if json.Unmarshal(capacity, &cap) != nil || len(cap.Seats) > 100 {
+		if json.Unmarshal(capacity, &cap) != nil || len(cap.Seats) > 102 {
 			return ErrParams
 		}
 		if len(events) > 0 && (mode != "soft" || cap.Mode != "soft" || cap.Revision != revision) {
 			return ErrParams
 		}
 		for _, e := range events {
-			detail, _ := json.Marshal(map[string]any{"event_id": e.ID, "seat_id": e.SeatID, "reason": e.Reason, "measured_at": e.At, "quota_mode": "soft", "notice": "无硬磁盘配额"})
+			fields := map[string]any{"event_id": e.ID, "seat_id": e.SeatID, "reason": e.Reason, "measured_at": e.At, "quota_mode": "soft", "notice": "无硬磁盘配额"}
+			if e.WriterKind != "" {
+				fields["writer_kind"] = e.WriterKind
+			}
+			detail, _ := json.Marshal(fields)
 			if _, err := tx.Exec(ctx, `INSERT INTO g4_audit(actor,action,target,detail)
 SELECT $1,'node.soft_quota',$2,$3 WHERE NOT EXISTS
 (SELECT 1 FROM g4_audit WHERE action='node.soft_quota' AND target=$2 AND detail->>'event_id'=$4)`, "node:"+id, id, detail, e.ID); err != nil {
 				return err
 			}
-			if e.Reason != "disk_warning" && e.Reason != "usage_warning" {
+			if e.WriterKind != "login" && e.Reason != "disk_warning" && e.Reason != "usage_warning" {
 				if _, err := tx.Exec(ctx, `UPDATE g4_hosted_seat SET state='error',state_detail='soft_quota_held',updated_at=now()
 WHERE agent_id=$1 AND node_id=$2 AND state NOT IN ('destroyed','disabled')`, e.SeatID, id); err != nil {
 					return err
@@ -149,6 +156,12 @@ WHERE agent_id=$1 AND node_id=$2 AND state NOT IN ('destroyed','disabled')`, e.S
 			for seatID, v := range cap.Seats {
 				if !nodeSeatID.MatchString(seatID) {
 					return ErrParams
+				}
+				if v.WriterKind != "" {
+					if v.WriterKind != "login" || !loginWriterID.MatchString(seatID) {
+						return ErrParams
+					}
+					continue
 				}
 				if v.Hold == "" {
 					continue

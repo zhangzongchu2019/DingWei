@@ -1,0 +1,17 @@
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize
+2026/10/17 09:41:19 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/default-hard
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/unknown-mode
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/missing-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/invalid-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/uppercase-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/labels-cannot-enable-soft
+--- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize (2.27s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/default-hard (0.04s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/unknown-mode (0.04s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/missing-revision (0.04s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/invalid-revision (0.05s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/uppercase-revision (0.05s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/labels-cannot-enable-soft (0.04s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	2.281s

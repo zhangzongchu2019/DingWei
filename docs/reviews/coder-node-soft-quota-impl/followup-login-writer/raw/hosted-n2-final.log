@@ -1,0 +1,493 @@
+=== RUN   TestCreateFailurePathsAbortTheIssue
+=== RUN   TestCreateFailurePathsAbortTheIssue/new_group_name_goes_through_IssueHostedAgentWithNewGroup
+=== RUN   TestCreateFailurePathsAbortTheIssue/run_job_failure_aborts
+=== RUN   TestCreateFailurePathsAbortTheIssue/create_timeout_aborts
+--- PASS: TestCreateFailurePathsAbortTheIssue (23.31s)
+    --- PASS: TestCreateFailurePathsAbortTheIssue/new_group_name_goes_through_IssueHostedAgentWithNewGroup (8.04s)
+    --- PASS: TestCreateFailurePathsAbortTheIssue/run_job_failure_aborts (7.92s)
+    --- PASS: TestCreateFailurePathsAbortTheIssue/create_timeout_aborts (7.34s)
+=== RUN   TestAccountNameUniquePerOwner
+--- PASS: TestAccountNameUniquePerOwner (8.42s)
+=== RUN   TestAccountLimitPerOwner
+--- PASS: TestAccountLimitPerOwner (9.06s)
+=== RUN   TestAccountSecretValidation
+--- PASS: TestAccountSecretValidation (7.72s)
+=== RUN   TestConcurrentCreateSameAccount
+--- PASS: TestConcurrentCreateSameAccount (6.48s)
+=== RUN   TestReleaseAndDestroyedNotCounted
+--- PASS: TestReleaseAndDestroyedNotCounted (5.34s)
+=== RUN   TestCreateVsDisableSerialized
+=== RUN   TestCreateVsDisableSerialized/create_first
+=== RUN   TestCreateVsDisableSerialized/disable_first
+--- PASS: TestCreateVsDisableSerialized (6.00s)
+    --- PASS: TestCreateVsDisableSerialized/create_first (2.65s)
+    --- PASS: TestCreateVsDisableSerialized/disable_first (3.35s)
+=== RUN   TestCreateSeatPKConflictIsNotAccountError
+--- PASS: TestCreateSeatPKConflictIsNotAccountError (2.87s)
+=== RUN   TestSchemaBackfillAndJobOp
+--- PASS: TestSchemaBackfillAndJobOp (3.14s)
+=== RUN   TestRollbackResetSQL
+--- PASS: TestRollbackResetSQL (2.66s)
+=== RUN   TestRefreshStartingTimeoutIsExistingSeat
+--- PASS: TestRefreshStartingTimeoutIsExistingSeat (3.32s)
+=== RUN   TestLegacyBoundAccountSharable
+--- PASS: TestLegacyBoundAccountSharable (3.98s)
+=== RUN   TestDefenseInDepthAccountBoundaries
+--- PASS: TestDefenseInDepthAccountBoundaries (3.01s)
+=== RUN   TestBackupPipelineEndToEnd
+--- PASS: TestBackupPipelineEndToEnd (2.24s)
+=== RUN   TestBackupHandlerAuthAndStates
+--- PASS: TestBackupHandlerAuthAndStates (2.54s)
+=== RUN   TestSweepExpiredBackupsReclaimsOnlyStalePending
+--- PASS: TestSweepExpiredBackupsReclaimsOnlyStalePending (2.11s)
+=== RUN   TestClientCancellationOrphanPendingIsEventuallySwept
+--- PASS: TestClientCancellationOrphanPendingIsEventuallySwept (2.00s)
+=== RUN   TestBackupIntegrityRejected
+=== RUN   TestBackupIntegrityRejected/not_a_gzip
+=== RUN   TestBackupIntegrityRejected/truncated_gzip
+=== RUN   TestBackupIntegrityRejected/checksum_mismatch
+=== RUN   TestBackupIntegrityRejected/empty_archive
+=== RUN   TestBackupIntegrityRejected/destroy_does_not_continue
+--- PASS: TestBackupIntegrityRejected (10.07s)
+    --- PASS: TestBackupIntegrityRejected/not_a_gzip (2.14s)
+    --- PASS: TestBackupIntegrityRejected/truncated_gzip (1.97s)
+    --- PASS: TestBackupIntegrityRejected/checksum_mismatch (1.94s)
+    --- PASS: TestBackupIntegrityRejected/empty_archive (2.02s)
+    --- PASS: TestBackupIntegrityRejected/destroy_does_not_continue (2.00s)
+=== RUN   TestBackupChecksumControlPlane
+=== RUN   TestBackupChecksumControlPlane/no_trailer_full_chain_ok
+=== RUN   TestBackupChecksumControlPlane/report_missing_blocks
+=== RUN   TestBackupChecksumControlPlane/report_mismatch_blocks
+=== RUN   TestBackupChecksumControlPlane/destroy_chain_via_trailer-dropping_proxy
+=== RUN   TestBackupChecksumControlPlane/missing_report_stops_destroy
+=== RUN   TestBackupChecksumControlPlane/hub_restart_loses_landed,_report_blocked
+--- PASS: TestBackupChecksumControlPlane (11.07s)
+    --- PASS: TestBackupChecksumControlPlane/no_trailer_full_chain_ok (1.89s)
+    --- PASS: TestBackupChecksumControlPlane/report_missing_blocks (1.88s)
+    --- PASS: TestBackupChecksumControlPlane/report_mismatch_blocks (1.87s)
+    --- PASS: TestBackupChecksumControlPlane/destroy_chain_via_trailer-dropping_proxy (1.93s)
+    --- PASS: TestBackupChecksumControlPlane/missing_report_stops_destroy (1.79s)
+    --- PASS: TestBackupChecksumControlPlane/hub_restart_loses_landed,_report_blocked (1.70s)
+=== RUN   TestBackupFailureClearsPending
+=== RUN   TestBackupFailureClearsPending/gateway_error
+=== RUN   TestBackupFailureClearsPending/node_failure
+=== RUN   TestBackupFailureClearsPending/node_claims_ok_without_uploading
+--- PASS: TestBackupFailureClearsPending (5.52s)
+    --- PASS: TestBackupFailureClearsPending/gateway_error (1.87s)
+    --- PASS: TestBackupFailureClearsPending/node_failure (1.83s)
+    --- PASS: TestBackupFailureClearsPending/node_claims_ok_without_uploading (1.82s)
+=== RUN   TestBackupUsesLongTimeout
+--- PASS: TestBackupUsesLongTimeout (1.95s)
+=== RUN   TestBackupDuplicateUploadWhilePending
+--- PASS: TestBackupDuplicateUploadWhilePending (2.17s)
+=== RUN   TestBackupNodeOfflineStopsDestroy
+--- PASS: TestBackupNodeOfflineStopsDestroy (2.41s)
+=== RUN   TestWrapUnwrapRoundtrip
+--- PASS: TestWrapUnwrapRoundtrip (0.00s)
+=== RUN   TestUnwrapWrongMasterFails
+--- PASS: TestUnwrapWrongMasterFails (0.00s)
+=== RUN   TestSealPerRecordNonceAndWrongKey
+--- PASS: TestSealPerRecordNonceAndWrongKey (0.00s)
+=== RUN   TestLoadMasterKeyPermAndForms
+--- PASS: TestLoadMasterKeyPermAndForms (0.00s)
+=== RUN   TestTeamKeyServiceFlow
+--- PASS: TestTeamKeyServiceFlow (2.02s)
+=== RUN   TestEnableRestartWaitForAgentConnect
+=== RUN   TestEnableRestartWaitForAgentConnect/restart
+=== RUN   TestEnableRestartWaitForAgentConnect/enable
+--- PASS: TestEnableRestartWaitForAgentConnect (4.15s)
+    --- PASS: TestEnableRestartWaitForAgentConnect/restart (2.20s)
+    --- PASS: TestEnableRestartWaitForAgentConnect/enable (1.96s)
+=== RUN   TestRestartTimeoutKeepsExistingSeat
+--- PASS: TestRestartTimeoutKeepsExistingSeat (2.17s)
+=== RUN   TestCreateTimeoutStillRetires
+--- PASS: TestCreateTimeoutStillRetires (2.13s)
+=== RUN   TestZZ_AgentConnectingBeforeStartingIsNotLost
+=== RUN   TestZZ_AgentConnectingBeforeStartingIsNotLost/restart
+    lifecycle_race_test.go:59: ZZ restart: Agent connected during the node command; seat is now online/
+=== RUN   TestZZ_AgentConnectingBeforeStartingIsNotLost/enable
+    lifecycle_race_test.go:59: ZZ enable: Agent connected during the node command; seat is now online/
+--- PASS: TestZZ_AgentConnectingBeforeStartingIsNotLost (4.51s)
+    --- PASS: TestZZ_AgentConnectingBeforeStartingIsNotLost/restart (2.35s)
+    --- PASS: TestZZ_AgentConnectingBeforeStartingIsNotLost/enable (2.16s)
+=== RUN   TestEnableRestartFailureAfterStarting
+=== RUN   TestEnableRestartFailureAfterStarting/restart_node_reports_failure
+=== RUN   TestEnableRestartFailureAfterStarting/restart_node_unreachable
+=== RUN   TestEnableRestartFailureAfterStarting/enable_node_reports_failure
+=== RUN   TestEnableRestartFailureAfterStarting/enable_node_unreachable
+--- PASS: TestEnableRestartFailureAfterStarting (8.79s)
+    --- PASS: TestEnableRestartFailureAfterStarting/restart_node_reports_failure (2.23s)
+    --- PASS: TestEnableRestartFailureAfterStarting/restart_node_unreachable (2.15s)
+    --- PASS: TestEnableRestartFailureAfterStarting/enable_node_reports_failure (2.27s)
+    --- PASS: TestEnableRestartFailureAfterStarting/enable_node_unreachable (2.15s)
+=== RUN   TestFailureAfterAgentConnectedKeepsOnline
+--- PASS: TestFailureAfterAgentConnectedKeepsOnline (2.36s)
+=== RUN   TestLateConnectAfterExistingTimeoutGoesOnline
+=== RUN   TestLateConnectAfterExistingTimeoutGoesOnline/restart
+=== RUN   TestLateConnectAfterExistingTimeoutGoesOnline/enable
+--- PASS: TestLateConnectAfterExistingTimeoutGoesOnline (4.69s)
+    --- PASS: TestLateConnectAfterExistingTimeoutGoesOnline/restart (2.19s)
+    --- PASS: TestLateConnectAfterExistingTimeoutGoesOnline/enable (2.50s)
+=== RUN   TestLateConnectOnlyForExistingTimeout
+=== RUN   TestLateConnectOnlyForExistingTimeout/start_failed_stays_error
+=== RUN   TestLateConnectOnlyForExistingTimeout/create_timeout_stays_error
+--- PASS: TestLateConnectOnlyForExistingTimeout (4.61s)
+    --- PASS: TestLateConnectOnlyForExistingTimeout/start_failed_stays_error (2.21s)
+    --- PASS: TestLateConnectOnlyForExistingTimeout/create_timeout_stays_error (2.40s)
+=== RUN   TestRestartFailureAfterAgentConnectedKeepsOnline
+=== RUN   TestRestartFailureAfterAgentConnectedKeepsOnline/node_reports_failure_from_online
+=== RUN   TestRestartFailureAfterAgentConnectedKeepsOnline/node_unreachable_from_error
+--- PASS: TestRestartFailureAfterAgentConnectedKeepsOnline (4.52s)
+    --- PASS: TestRestartFailureAfterAgentConnectedKeepsOnline/node_reports_failure_from_online (2.26s)
+    --- PASS: TestRestartFailureAfterAgentConnectedKeepsOnline/node_unreachable_from_error (2.26s)
+=== RUN   TestStartingWriteFailureUndoesResume
+=== RUN   TestStartingWriteFailureUndoesResume/restart
+=== RUN   TestStartingWriteFailureUndoesResume/enable
+--- PASS: TestStartingWriteFailureUndoesResume (4.75s)
+    --- PASS: TestStartingWriteFailureUndoesResume/restart (2.26s)
+    --- PASS: TestStartingWriteFailureUndoesResume/enable (2.49s)
+=== RUN   TestOnlineAfterExistingTimeoutKeepsDetailCondition
+--- PASS: TestOnlineAfterExistingTimeoutKeepsDetailCondition (0.00s)
+=== RUN   TestStartingWriteFailureDoesNotSuspendALiveCredential
+=== RUN   TestStartingWriteFailureDoesNotSuspendALiveCredential/restart
+=== RUN   TestStartingWriteFailureDoesNotSuspendALiveCredential/enable
+--- PASS: TestStartingWriteFailureDoesNotSuspendALiveCredential (5.61s)
+    --- PASS: TestStartingWriteFailureDoesNotSuspendALiveCredential/restart (2.69s)
+    --- PASS: TestStartingWriteFailureDoesNotSuspendALiveCredential/enable (2.92s)
+=== RUN   TestDestroyCleanupSurvivesClientCancellation
+--- PASS: TestDestroyCleanupSurvivesClientCancellation (2.97s)
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason/completed
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason/failed
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason/restart_waits_for_reconnect
+--- PASS: TestLifecycleJobPersistsProgressAndMachineReason (7.40s)
+    --- PASS: TestLifecycleJobPersistsProgressAndMachineReason/completed (2.17s)
+    --- PASS: TestLifecycleJobPersistsProgressAndMachineReason/failed (2.52s)
+    --- PASS: TestLifecycleJobPersistsProgressAndMachineReason/restart_waits_for_reconnect (2.71s)
+=== RUN   TestLifecycleJobDuplicatePolicy
+--- PASS: TestLifecycleJobDuplicatePolicy (2.63s)
+=== RUN   TestConcurrentDestroyRequestsShareOneJobAndOneBackup
+--- PASS: TestConcurrentDestroyRequestsShareOneJobAndOneBackup (3.13s)
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows/queued_restart_already_online
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows/running_enable_already_online
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows/ambiguous_queued_disable
+--- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows (12.45s)
+    --- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows/queued_restart_already_online (4.66s)
+    --- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows/running_enable_already_online (3.64s)
+    --- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows/ambiguous_queued_disable (4.15s)
+=== RUN   TestDestroyCanBeRetriedAfterHubDiesMidJob
+--- PASS: TestDestroyCanBeRetriedAfterHubDiesMidJob (3.31s)
+=== RUN   TestLifecycleOrderOnOneLog
+=== RUN   TestLifecycleOrderOnOneLog/upgrade
+=== RUN   TestLifecycleOrderOnOneLog/disable_then_enable
+=== RUN   TestLifecycleOrderOnOneLog/restart_resumes_first
+=== RUN   TestLifecycleOrderOnOneLog/destroy
+--- PASS: TestLifecycleOrderOnOneLog (10.02s)
+    --- PASS: TestLifecycleOrderOnOneLog/upgrade (2.55s)
+    --- PASS: TestLifecycleOrderOnOneLog/disable_then_enable (2.82s)
+    --- PASS: TestLifecycleOrderOnOneLog/restart_resumes_first (2.57s)
+    --- PASS: TestLifecycleOrderOnOneLog/destroy (2.08s)
+=== RUN   TestFailedGateStopsTheChain
+=== RUN   TestFailedGateStopsTheChain/backup_fail_no_retire
+=== RUN   TestFailedGateStopsTheChain/suspend_fail_no_stop
+=== RUN   TestFailedGateStopsTheChain/resume_fail_no_start
+=== RUN   TestFailedGateStopsTheChain/reissue_fail_no_upgrade_seat_back_online
+=== RUN   TestFailedGateStopsTheChain/enable_non_disabled_refused_no_side_effect
+--- PASS: TestFailedGateStopsTheChain (10.06s)
+    --- PASS: TestFailedGateStopsTheChain/backup_fail_no_retire (2.10s)
+    --- PASS: TestFailedGateStopsTheChain/suspend_fail_no_stop (2.05s)
+    --- PASS: TestFailedGateStopsTheChain/resume_fail_no_start (2.00s)
+    --- PASS: TestFailedGateStopsTheChain/reissue_fail_no_upgrade_seat_back_online (1.84s)
+    --- PASS: TestFailedGateStopsTheChain/enable_non_disabled_refused_no_side_effect (2.06s)
+=== RUN   TestRestartAfterFailedStopResumesCredential
+--- PASS: TestRestartAfterFailedStopResumesCredential (1.80s)
+=== RUN   TestOwnershipEnforced
+=== RUN   TestOwnershipEnforced/destroy
+=== RUN   TestOwnershipEnforced/destroy_admin
+=== RUN   TestOwnershipEnforced/upgrade
+=== RUN   TestOwnershipEnforced/disable
+--- PASS: TestOwnershipEnforced (7.61s)
+    --- PASS: TestOwnershipEnforced/destroy (1.93s)
+    --- PASS: TestOwnershipEnforced/destroy_admin (1.91s)
+    --- PASS: TestOwnershipEnforced/upgrade (1.91s)
+    --- PASS: TestOwnershipEnforced/disable (1.86s)
+=== RUN   TestHubParamsSatisfyNodeContract
+--- PASS: TestHubParamsSatisfyNodeContract (1.82s)
+=== RUN   TestDestroyOfflineNodeLeavesReconcileRecord
+--- PASS: TestDestroyOfflineNodeLeavesReconcileRecord (1.85s)
+=== RUN   TestUpgradeRollbackOnNodeFailure
+--- PASS: TestUpgradeRollbackOnNodeFailure (1.94s)
+=== RUN   TestConfirmRequiredGates
+--- PASS: TestConfirmRequiredGates (1.83s)
+=== RUN   TestDestroyReturnsAccountToPool
+--- PASS: TestDestroyReturnsAccountToPool (1.76s)
+=== RUN   TestUpgradeWhileDisabledRejected
+--- PASS: TestUpgradeWhileDisabledRejected (1.75s)
+=== RUN   TestReconcileOnNodeReconnect
+--- PASS: TestReconcileOnNodeReconnect (1.71s)
+=== RUN   TestReconcileDoesNotBackupTwice
+--- PASS: TestReconcileDoesNotBackupTwice (1.90s)
+=== RUN   TestNodeDownLeavesStateAndCredential
+=== RUN   TestNodeDownLeavesStateAndCredential/node_recorded_offline:_nothing_happens
+=== RUN   TestNodeDownLeavesStateAndCredential/disable:_stop_unreachable_⇒_suspend_undone
+=== RUN   TestNodeDownLeavesStateAndCredential/disable_on_already-suspended_credential:_no_resume_on_failure
+=== RUN   TestNodeDownLeavesStateAndCredential/enable:_start_unreachable_⇒_resume_undone,_still_disabled
+=== RUN   TestNodeDownLeavesStateAndCredential/restart:_unreachable_⇒_state_back_to_online,_no_credential_change
+=== RUN   TestNodeDownLeavesStateAndCredential/upgrade:_unreachable_⇒_node_offline,_not_rolled_back;_image_unchanged
+=== RUN   TestNodeDownLeavesStateAndCredential/node_reports_failure_(reachable):_start_failed_sentinel,_not_Go_text
+--- PASS: TestNodeDownLeavesStateAndCredential (18.05s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/node_recorded_offline:_nothing_happens (5.34s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/disable:_stop_unreachable_⇒_suspend_undone (1.76s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/disable_on_already-suspended_credential:_no_resume_on_failure (1.82s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/enable:_start_unreachable_⇒_resume_undone,_still_disabled (1.78s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/restart:_unreachable_⇒_state_back_to_online,_no_credential_change (1.76s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/upgrade:_unreachable_⇒_node_offline,_not_rolled_back;_image_unchanged (1.90s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/node_reports_failure_(reachable):_start_failed_sentinel,_not_Go_text (3.69s)
+=== RUN   TestDestroyBackupFailedTyped
+--- PASS: TestDestroyBackupFailedTyped (2.68s)
+=== RUN   TestReconcileGuards
+--- PASS: TestReconcileGuards (4.02s)
+=== RUN   TestDestroyStopsBeforeBackup
+=== RUN   TestDestroyStopsBeforeBackup/stop_unreachable
+=== RUN   TestDestroyStopsBeforeBackup/stop_reported_fail
+=== RUN   TestDestroyStopsBeforeBackup/backup_fails_after_stop
+--- PASS: TestDestroyStopsBeforeBackup (5.57s)
+    --- PASS: TestDestroyStopsBeforeBackup/stop_unreachable (1.82s)
+    --- PASS: TestDestroyStopsBeforeBackup/stop_reported_fail (1.90s)
+    --- PASS: TestDestroyStopsBeforeBackup/backup_fails_after_stop (1.85s)
+=== RUN   TestUpgradeUsesRecordedModel
+--- PASS: TestUpgradeUsesRecordedModel (1.87s)
+=== RUN   TestLoginStartHappy
+--- PASS: TestLoginStartHappy (1.95s)
+=== RUN   TestLoginStartExpiresOwnStaleSession
+--- PASS: TestLoginStartExpiresOwnStaleSession (1.85s)
+=== RUN   TestLoginOnePerUserAndCooldown
+--- PASS: TestLoginOnePerUserAndCooldown (1.84s)
+=== RUN   TestLoginConcurrencyCaps
+--- PASS: TestLoginConcurrencyCaps (1.86s)
+=== RUN   TestLoginEmailValidation
+--- PASS: TestLoginEmailValidation (1.91s)
+=== RUN   TestLoginCompleteRegisters
+--- PASS: TestLoginCompleteRegisters (1.79s)
+=== RUN   TestLoginCompleteOneShotExpiryAndFailures
+--- PASS: TestLoginCompleteOneShotExpiryAndFailures (1.94s)
+=== RUN   TestLoginRelogin
+--- PASS: TestLoginRelogin (1.73s)
+=== RUN   TestLoginStartNodeOutcomes
+=== RUN   TestLoginStartNodeOutcomes/old_node
+=== RUN   TestLoginStartNodeOutcomes/offline
+=== RUN   TestLoginStartNodeOutcomes/busy
+=== RUN   TestLoginStartNodeOutcomes/bad_payload
+--- PASS: TestLoginStartNodeOutcomes (6.74s)
+    --- PASS: TestLoginStartNodeOutcomes/old_node (1.70s)
+    --- PASS: TestLoginStartNodeOutcomes/offline (1.77s)
+    --- PASS: TestLoginStartNodeOutcomes/busy (1.66s)
+    --- PASS: TestLoginStartNodeOutcomes/bad_payload (1.61s)
+=== RUN   TestLoginSweepAndRecover
+--- PASS: TestLoginSweepAndRecover (1.74s)
+=== RUN   TestLoginUploadBoundToSessionNode
+--- PASS: TestLoginUploadBoundToSessionNode (1.79s)
+=== RUN   TestLoginAccountLimitPrecheck
+--- PASS: TestLoginAccountLimitPrecheck (1.72s)
+=== RUN   TestIDTokenEmail
+--- PASS: TestIDTokenEmail (0.00s)
+=== RUN   TestLoginTotalCapBindsWithThreeNodes
+--- PASS: TestLoginTotalCapBindsWithThreeNodes (1.81s)
+=== RUN   TestLoginPerNodeCapBindsWithOneNode
+--- PASS: TestLoginPerNodeCapBindsWithOneNode (1.70s)
+=== RUN   TestLoginPrechecksAndEmailInSameInsert
+--- PASS: TestLoginPrechecksAndEmailInSameInsert (1.88s)
+=== RUN   TestLoginDoneNotOverwrittenBySweepOrCancel
+--- PASS: TestLoginDoneNotOverwrittenBySweepOrCancel (1.75s)
+=== RUN   TestLoginClaimCompletingIsAtomic
+--- PASS: TestLoginClaimCompletingIsAtomic (1.72s)
+=== RUN   TestLoginTerminalStatesClearLinkAndCode
+=== RUN   TestLoginTerminalStatesClearLinkAndCode/done
+=== RUN   TestLoginTerminalStatesClearLinkAndCode/failed
+=== RUN   TestLoginTerminalStatesClearLinkAndCode/expired
+=== RUN   TestLoginTerminalStatesClearLinkAndCode/cancelled
+--- PASS: TestLoginTerminalStatesClearLinkAndCode (6.80s)
+    --- PASS: TestLoginTerminalStatesClearLinkAndCode/done (1.72s)
+    --- PASS: TestLoginTerminalStatesClearLinkAndCode/failed (1.66s)
+    --- PASS: TestLoginTerminalStatesClearLinkAndCode/expired (1.70s)
+    --- PASS: TestLoginTerminalStatesClearLinkAndCode/cancelled (1.72s)
+=== RUN   TestLoginStaleCompletingIsSwept
+--- PASS: TestLoginStaleCompletingIsSwept (1.68s)
+=== RUN   TestLoginSchemaUpgradesOldDefinition
+--- PASS: TestLoginSchemaUpgradesOldDefinition (1.81s)
+=== RUN   TestLoginStaleCompletingWithoutClaimedAt
+--- PASS: TestLoginStaleCompletingWithoutClaimedAt (1.73s)
+=== RUN   TestLoginQuotaAuditDoesNotMutateHostedSeat
+--- PASS: TestLoginQuotaAuditDoesNotMutateHostedSeat (1.83s)
+=== RUN   TestLoginQuotaEventRequiresTypedLoginIdentity
+--- PASS: TestLoginQuotaEventRequiresTypedLoginIdentity (0.00s)
+=== RUN   TestQuotaRegistrationAndCapacityCannotSelfDowngrade
+--- PASS: TestQuotaRegistrationAndCapacityCannotSelfDowngrade (0.00s)
+=== RUN   TestSoftNodeSchedulingConsentPriorityCapacityAndAudit
+--- PASS: TestSoftNodeSchedulingConsentPriorityCapacityAndAudit (1.80s)
+=== RUN   TestQuotaEventValidation
+--- PASS: TestQuotaEventValidation (0.00s)
+=== RUN   TestSoftCreateFailureDoesNotAbortOrReleaseIdentity
+--- PASS: TestSoftCreateFailureDoesNotAbortOrReleaseIdentity (1.75s)
+=== RUN   TestSoftHeldLifecycleRefusesBeforeSideEffects
+--- PASS: TestSoftHeldLifecycleRefusesBeforeSideEffects (1.77s)
+=== RUN   TestHardNodeResourceExtensionNegotiated
+--- PASS: TestHardNodeResourceExtensionNegotiated (1.70s)
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_emergency
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_inode_emergency
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_unknown
+--- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath (5.28s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_emergency (1.79s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_inode_emergency (1.66s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_unknown (1.82s)
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold/space_warning
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold/usage_warning
+--- PASS: TestQuotaUsageWarningNotifiesWithoutPrematureHold (3.47s)
+    --- PASS: TestQuotaUsageWarningNotifiesWithoutPrematureHold/space_warning (1.75s)
+    --- PASS: TestQuotaUsageWarningNotifiesWithoutPrematureHold/usage_warning (1.71s)
+=== RUN   TestNodeCredentialLifecycle
+--- PASS: TestNodeCredentialLifecycle (1.68s)
+=== RUN   TestStartingUntilAgentConnectsElseTimeout
+--- PASS: TestStartingUntilAgentConnectsElseTimeout (1.78s)
+=== RUN   TestMarkOnlineOnlyFromStarting
+--- PASS: TestMarkOnlineOnlyFromStarting (1.70s)
+=== RUN   TestCreateHappyPathCodexFirst
+--- PASS: TestCreateHappyPathCodexFirst (1.74s)
+=== RUN   TestCreateRejections
+--- PASS: TestCreateRejections (1.81s)
+=== RUN   TestRunJobFailureCleanup
+--- PASS: TestRunJobFailureCleanup (1.73s)
+=== RUN   TestSweepTimeouts
+--- PASS: TestSweepTimeouts (1.68s)
+=== RUN   TestPoolScheduling
+--- PASS: TestPoolScheduling (1.69s)
+=== RUN   TestCreateWithoutGroupSucceeds
+--- PASS: TestCreateWithoutGroupSucceeds (1.74s)
+=== RUN   TestCreateGroupErrorsPropagate
+--- PASS: TestCreateGroupErrorsPropagate (3.39s)
+=== RUN   TestHostedOverlay
+--- PASS: TestHostedOverlay (1.68s)
+=== RUN   TestRunJobMissingTokenFailsClosed
+--- PASS: TestRunJobMissingTokenFailsClosed (1.77s)
+=== RUN   TestOptionsViewAndJobProgress
+--- PASS: TestOptionsViewAndJobProgress (1.79s)
+=== RUN   TestHostedItemErrorCounted
+2026/10/17 10:05:46 hosted item agent=ag_x 查询失败，该行降级不出 hosted 子对象: ERROR: relation "g4_hosted_seat" does not exist (SQLSTATE 42P01)
+--- PASS: TestHostedItemErrorCounted (1.68s)
+=== RUN   TestOnlineOnlyViaMarkOnline
+--- PASS: TestOnlineOnlyViaMarkOnline (1.93s)
+=== RUN   TestNeverConnectsSweepedStartTimeout
+--- PASS: TestNeverConnectsSweepedStartTimeout (1.77s)
+=== RUN   TestCreateWithModelSelectsSupportingNode
+--- PASS: TestCreateWithModelSelectsSupportingNode (1.70s)
+=== RUN   TestCreateModelRejections
+--- PASS: TestCreateModelRejections (1.68s)
+=== RUN   TestPickNodeStaleFrameTreatedOffline
+--- PASS: TestPickNodeStaleFrameTreatedOffline (1.72s)
+=== RUN   TestNodeHasModelToleratesMissingKey
+--- PASS: TestNodeHasModelToleratesMissingKey (0.00s)
+=== RUN   TestPlanDiskTiersPinned
+--- PASS: TestPlanDiskTiersPinned (0.00s)
+=== RUN   TestCheckCreateDiskGate
+--- PASS: TestCheckCreateDiskGate (1.66s)
+=== RUN   TestOwnedAccountLifecycle
+--- PASS: TestOwnedAccountLifecycle (1.75s)
+=== RUN   TestTokenFileDisplayNoContentTail
+--- PASS: TestTokenFileDisplayNoContentTail (1.71s)
+=== RUN   TestQuotaCheckBoundaries
+--- PASS: TestQuotaCheckBoundaries (1.73s)
+=== RUN   TestQuotaListWithUsage
+--- PASS: TestQuotaListWithUsage (1.69s)
+=== RUN   TestCheckCreateCodeSplit
+--- PASS: TestCheckCreateCodeSplit (7.07s)
+=== RUN   TestOptionsJSONMatchesContract
+--- PASS: TestOptionsJSONMatchesContract (1.71s)
+=== RUN   TestOptionsEmptyListsAreArrays
+--- PASS: TestOptionsEmptyListsAreArrays (1.72s)
+=== RUN   TestOptionsPlanFitsEachGate
+=== RUN   TestOptionsPlanFitsEachGate/agents_left_0_greys_both_plans
+=== RUN   TestOptionsPlanFitsEachGate/memory_short_but_vcpu_ample
+=== RUN   TestOptionsPlanFitsEachGate/disk_short_but_vcpu_and_memory_ample
+=== RUN   TestOptionsPlanFitsEachGate/vcpu_short_but_memory_ample
+--- PASS: TestOptionsPlanFitsEachGate (6.96s)
+    --- PASS: TestOptionsPlanFitsEachGate/agents_left_0_greys_both_plans (1.68s)
+    --- PASS: TestOptionsPlanFitsEachGate/memory_short_but_vcpu_ample (1.74s)
+    --- PASS: TestOptionsPlanFitsEachGate/disk_short_but_vcpu_and_memory_ample (1.74s)
+    --- PASS: TestOptionsPlanFitsEachGate/vcpu_short_but_memory_ample (1.79s)
+=== RUN   TestJobReasonOnlyContractCodes
+--- PASS: TestJobReasonOnlyContractCodes (1.89s)
+=== RUN   TestJobProgressForOwnerBySeat
+--- PASS: TestJobProgressForOwnerBySeat (1.72s)
+=== RUN   TestOptionsModelsUnionOnlineOnly
+--- PASS: TestOptionsModelsUnionOnlineOnly (1.69s)
+=== RUN   TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess
+--- PASS: TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess (1.83s)
+=== RUN   TestReconcileSeatTimeoutDoesNotStallBatch
+--- PASS: TestReconcileSeatTimeoutDoesNotStallBatch (2.04s)
+=== RUN   TestEmptyCreatedByRefused
+--- PASS: TestEmptyCreatedByRefused (1.73s)
+=== RUN   TestUpgradeUnknownPlanNotSwallowed
+--- PASS: TestUpgradeUnknownPlanNotSwallowed (1.72s)
+=== RUN   TestRefreshCredHappyPath
+--- PASS: TestRefreshCredHappyPath (1.88s)
+=== RUN   TestRefreshCredOwnerOnly
+--- PASS: TestRefreshCredOwnerOnly (1.66s)
+=== RUN   TestRefreshCredStateGate
+--- PASS: TestRefreshCredStateGate (1.68s)
+=== RUN   TestRefreshCredAccountGate
+--- PASS: TestRefreshCredAccountGate (1.88s)
+=== RUN   TestRefreshCredNodeOutcomes
+=== RUN   TestRefreshCredNodeOutcomes/node_down
+=== RUN   TestRefreshCredNodeOutcomes/old_node
+=== RUN   TestRefreshCredNodeOutcomes/write_failed
+=== RUN   TestRefreshCredNodeOutcomes/restart_failed
+--- PASS: TestRefreshCredNodeOutcomes (6.71s)
+    --- PASS: TestRefreshCredNodeOutcomes/node_down (1.64s)
+    --- PASS: TestRefreshCredNodeOutcomes/old_node (1.72s)
+    --- PASS: TestRefreshCredNodeOutcomes/write_failed (1.69s)
+    --- PASS: TestRefreshCredNodeOutcomes/restart_failed (1.66s)
+=== RUN   TestRefreshCredAsJob
+--- PASS: TestRefreshCredAsJob (1.70s)
+=== RUN   TestRefreshCredRecoverJobs
+--- PASS: TestRefreshCredRecoverJobs (1.75s)
+=== RUN   TestRefreshCredResumesSuspendedCredential
+=== RUN   TestRefreshCredResumesSuspendedCredential/success_resumes
+=== RUN   TestRefreshCredResumesSuspendedCredential/old_node_undoes_resume
+=== RUN   TestRefreshCredResumesSuspendedCredential/write_failed_undoes_resume
+=== RUN   TestRefreshCredResumesSuspendedCredential/node_offline_undoes_resume
+=== RUN   TestRefreshCredResumesSuspendedCredential/starting_write_failed_undoes_resume
+=== RUN   TestRefreshCredResumesSuspendedCredential/already_active_not_suspended_on_failure
+=== RUN   TestRefreshCredResumesSuspendedCredential/resume_failure_refuses
+--- PASS: TestRefreshCredResumesSuspendedCredential (12.07s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/success_resumes (1.72s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/old_node_undoes_resume (1.78s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/write_failed_undoes_resume (1.73s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/node_offline_undoes_resume (1.76s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/starting_write_failed_undoes_resume (1.68s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/already_active_not_suspended_on_failure (1.71s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/resume_failure_refuses (1.69s)
+=== RUN   TestStaticRegistriesFailClosed
+--- PASS: TestStaticRegistriesFailClosed (0.00s)
+=== RUN   TestPlanTable
+--- PASS: TestPlanTable (0.00s)
+=== RUN   TestSchemaApplyRollbackRepeatable
+--- PASS: TestSchemaApplyRollbackRepeatable (1.77s)
+=== RUN   TestSchemaDropLeavesNoG4Tables
+--- PASS: TestSchemaDropLeavesNoG4Tables (1.82s)
+=== RUN   TestApplySchemaUpgradesOldHostedShapeWithoutLosingSeats
+--- PASS: TestApplySchemaUpgradesOldHostedShapeWithoutLosingSeats (1.87s)
+=== RUN   TestSchemaModelColumnMigration
+--- PASS: TestSchemaModelColumnMigration (1.68s)
+=== RUN   TestNodeSeatPoolQuotaFlow
+--- PASS: TestNodeSeatPoolQuotaFlow (1.86s)
+=== RUN   TestAccessCtxValid
+--- PASS: TestAccessCtxValid (1.67s)
+=== RUN   TestApplySchemaUpgradesPreA1PreB2Shape
+--- PASS: TestApplySchemaUpgradesPreA1PreB2Shape (1.77s)
+=== RUN   TestTokenWriteBackAndUnbindPrep
+--- PASS: TestTokenWriteBackAndUnbindPrep (1.85s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	468.100s

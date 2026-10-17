@@ -1,0 +1,117 @@
+{
+  "utc": "2026-10-17T09:42:13.099523+00:00",
+  "code_pin": "f3e6448d80089a5328d015f97280e0b8388630b6",
+  "gates": {
+    "canonical-combined-final.log": {
+      "command": [
+        "./build.sh",
+        "--test-only"
+      ],
+      "rc": 0,
+      "seconds": 254.32191478298046,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-combined-final.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 92.75857385690324,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-race-combined-final.log": {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 170.72918966412544,
+      "external_DSN_environment_not_inherited": true
+    },
+    "cli-combined-final.log": {
+      "command": [
+        "go",
+        "test",
+        "./cmd/workpulse",
+        "-run",
+        "^TestHostedAdmin",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 201.77291045803577,
+      "external_DSN_environment_not_inherited": true
+    },
+    "restored-combined-nodeagent.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/nodeagent",
+        "-run",
+        "^TestSoftInode",
+        "-v",
+        "-count=1",
+        "-timeout=120s"
+      ],
+      "rc": 0,
+      "seconds": 2.1045122160576284,
+      "external_DSN_environment_not_inherited": true
+    },
+    "restored-combined-cli.log": {
+      "command": [
+        "go",
+        "test",
+        "./cmd/workpulse",
+        "-run",
+        "^TestHostedAdminQuotaRegistrationCLIToNormalize$",
+        "-v",
+        "-count=1",
+        "-timeout=120s"
+      ],
+      "rc": 0,
+      "seconds": 6.157836300088093,
+      "external_DSN_environment_not_inherited": true
+    }
+  },
+  "counts": {
+    "canonical-combined-final.log": {
+      "top_level_passes": 4,
+      "skips": 0
+    },
+    "nodeagent-combined-final.log": {
+      "top_level_passes": 142,
+      "skips": 0
+    },
+    "nodeagent-race-combined-final.log": {
+      "top_level_passes": 142,
+      "skips": 0
+    },
+    "cli-combined-final.log": {
+      "top_level_passes": 4,
+      "skips": 0
+    },
+    "restored-combined-nodeagent.log": {
+      "top_level_passes": 3,
+      "skips": 0
+    },
+    "restored-combined-cli.log": {
+      "top_level_passes": 1,
+      "skips": 0
+    }
+  },
+  "current_combined_assertion_red": 4,
+  "component_withdrawals_keep_original_pins": true,
+  "B_N2_not_implemented": true,
+  "host_realDocker_externalPG_realkeys_deploy": false
+}

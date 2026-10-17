@@ -27,12 +27,16 @@ const managedSeatIDLabel = "dingwei.seat_id"
 var safeContainerID = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,128}$`)
 
 type quotaEvent struct {
-	ID     string    `json:"id"`
-	SeatID string    `json:"seat_id"`
-	Reason string    `json:"reason"`
-	At     time.Time `json:"at"`
+	WriterKind string    `json:"writer_kind,omitempty"`
+	ID         string    `json:"id"`
+	SeatID     string    `json:"seat_id"`
+	Reason     string    `json:"reason"`
+	At         time.Time `json:"at"`
 }
 type softSeat struct {
+	WriterKind   string        `json:"writer_kind,omitempty"`
+	WriterRoot   string        `json:"writer_root,omitempty"` // Private local path, never reported.
+	Retiring     bool          `json:"retiring,omitempty"`    // Engine removal confirmed; no remaining writer.
 	UsageWarning bool          `json:"usage_warning"`
 	SpaceWarning bool          `json:"space_warning"`
 	writerGate   chan struct{} // Per-seat only; never serialized or reported.
@@ -184,11 +188,14 @@ func newSoftQuota(p NodePolicy, root, path, nodeID string) (*softQuota, error) {
 		return fail(fmt.Errorf("soft quota state identity/version invalid"))
 	}
 	for id, s := range q.state.Seats {
-		if !validSeatID(id) || s == nil || s.Limit <= 0 || s.CreatedAt.IsZero() || s.Resources.validate() != nil || s.Resources.DiskMB > 1<<40 || s.Limit != s.Resources.DiskMB*1024*1024 || len(s.CIDs) > 4 || s.Usage.Allocated < 0 || s.Usage.Apparent < 0 {
+		if !validSeatID(id) || s == nil || !validSoftWriter(id, s) || s.Limit <= 0 || s.CreatedAt.IsZero() || s.Resources.validate() != nil || s.Resources.DiskMB > 1<<40 || s.Limit != s.Resources.DiskMB*1024*1024 || len(s.CIDs) > 4 || s.Usage.Allocated < 0 || s.Usage.Apparent < 0 {
 			return fail(fmt.Errorf("soft quota seat state invalid"))
 		}
 	}
 	for _, s := range q.state.Seats {
+		if s.WriterKind == "login" && (!loginRootOutside(s.WriterRoot, root) || !loginRootOutside(s.WriterRoot, filepath.Dir(path))) {
+			return fail(fmt.Errorf("soft quota login root aliases protected state"))
+		}
 		for _, cid := range s.CIDs {
 			if !safeContainerID.MatchString(cid) {
 				return fail(fmt.Errorf("soft quota container identity invalid"))
@@ -215,6 +222,11 @@ func (q *softQuota) close() {
 		return
 	}
 	if !q.broken {
+		for id, s := range q.state.Seats {
+			if s.WriterKind == "login" && !s.Retiring {
+				q.holdLocked(id, "unclean_restart")
+			}
+		}
 		q.state.Active = false
 		_ = q.persistLocked()
 	}
@@ -270,11 +282,15 @@ func (q *softQuota) eventLocked(id, reason string) {
 		q.broken = true
 		return
 	}
-	q.state.Events = append(q.state.Events, quotaEvent{hex.EncodeToString(b[:]), id, reason, q.now().UTC()})
+	kind := ""
+	if s := q.state.Seats[id]; s != nil {
+		kind = s.WriterKind
+	}
+	q.state.Events = append(q.state.Events, quotaEvent{ID: hex.EncodeToString(b[:]), SeatID: id, Reason: reason, At: q.now().UTC(), WriterKind: kind})
 }
 func (q *softQuota) holdLocked(id, reason string) {
 	s := q.state.Seats[id]
-	if s.Hold == "" {
+	if s.Hold == "" && !s.Retiring {
 		s.Hold = reason
 		s.StopState = "pending"
 		q.eventLocked(id, reason)
@@ -328,13 +344,19 @@ func (q *softQuota) admitLocked(add int64) error {
 func (q *softQuota) reserve(id string, r seatResources) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	if r.DiskMB <= 0 || r.DiskMB > 1<<40 {
+	if loginDirPattern.MatchString(id) || r.DiskMB <= 0 || r.DiskMB > 1<<40 {
 		return fmt.Errorf("%w: positive bounded disk limit required", ErrSoftQuota)
 	}
 	if _, exists := q.state.Seats[id]; exists {
 		return fmt.Errorf("%w: seat_already_registered", ErrSoftQuota)
 	}
-	if len(q.state.Seats) >= q.policy.MaxSeats {
+	count := 0
+	for _, s := range q.state.Seats {
+		if s.WriterKind == "" {
+			count++
+		}
+	}
+	if count >= q.policy.MaxSeats {
 		return fmt.Errorf("%w: seat_count", ErrSoftQuota)
 	}
 	limit := r.DiskMB * 1024 * 1024
@@ -365,6 +387,9 @@ func (q *softQuota) track(id, cid string) error {
 func (q *softQuota) forget(id string) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
+	if s := q.state.Seats[id]; s != nil && s.WriterKind == "login" {
+		return fmt.Errorf("%w: login_requires_confirmed_retirement", ErrSoftQuota)
+	}
 	delete(q.state.Seats, id)
 	return q.persistLocked()
 }
@@ -429,7 +454,7 @@ func (q *softQuota) start(ctx context.Context, id string, fn func(context.Contex
 	}
 	q.mu.Unlock()
 	c, cancel := context.WithTimeout(ctx, q.policy.ScanBudget)
-	usage, err := q.usage(c, q.root, id)
+	usage, err := q.writerUsage(c, id, seat)
 	if c.Err() != nil {
 		err = c.Err()
 	}
@@ -495,19 +520,21 @@ func (q *softQuota) measure(ctx context.Context) {
 	q.mu.Lock()
 	snapshot := make(map[string]*softSeat, len(q.state.Seats))
 	for id, seat := range q.state.Seats {
-		snapshot[id] = seat
+		if !seat.Retiring && !(seat.WriterKind == "login" && len(seat.CIDs) == 0) {
+			snapshot[id] = seat
+		}
 	}
 	began := q.now()
 	q.mu.Unlock()
 	c, cancel := context.WithTimeout(ctx, q.policy.ScanBudget)
 	defer cancel()
 	for id, seat := range snapshot {
-		u, err := q.usage(c, q.root, id)
+		u, err := q.writerUsage(c, id, seat)
 		if c.Err() != nil {
 			err = c.Err()
 		}
 		q.mu.Lock()
-		if q.state.Seats[id] != seat || seat.MeasuredAt.After(began) {
+		if q.state.Seats[id] != seat || seat.Retiring || seat.MeasuredAt.After(began) {
 			q.mu.Unlock()
 			continue
 		}
@@ -579,12 +606,19 @@ func (d *dockerOps) stopOwned(ctx context.Context, id, cid string) error {
 		}
 		return err
 	}
-	if v.ID != cid || v.Config.Labels[managedSeatLabel] != d.soft.nodeID || v.Config.Labels[managedSeatIDLabel] != id {
+	d.soft.mu.Lock()
+	writer := *d.soft.state.Seats[id]
+	d.soft.mu.Unlock()
+	dest, source, label, labelID := "/work", seatDir(d.seatRoot, id), managedSeatIDLabel, id
+	if writer.WriterKind == "login" {
+		dest, source, label, labelID = "/h", filepath.Join(writer.WriterRoot, id), loginLabel, strings.TrimPrefix(id, "login-")
+	}
+	if v.ID != cid || v.Config.Labels[managedSeatLabel] != d.soft.nodeID || v.Config.Labels[label] != labelID {
 		return fmt.Errorf("container ownership mismatch")
 	}
 	bound := false
 	for _, m := range v.Mounts {
-		if m.Destination == "/work" && m.Source == seatDir(d.seatRoot, id) {
+		if m.Destination == dest && m.Source == source {
 			bound = true
 		}
 	}
@@ -680,11 +714,16 @@ func (q *softQuota) admissionReserves(space fsSpace) (int64, uint64) {
 	return max(q.policy.ReserveBytes, bytes), max(q.policy.ReserveInodes, inodes)
 }
 
-// The original emergency contract applies to available bytes only. Inode I
-// remains the unchanged admission reserve, not an additional emergency stop line.
+// Byte emergency uses its own configured percentage of R. The separately
+// configured inode emergency is the leader-added scope in ruling eeb21f5b A1.
 func (q *softQuota) emergencyThreshold(space fsSpace) int64 {
 	reserve, _ := q.admissionReserves(space)
 	percent := q.policy.EmergencyReservePercent
+	return reserve/100*percent + (reserve%100*percent+99)/100
+}
+func (q *softQuota) inodeEmergencyThreshold(space fsSpace) uint64 {
+	_, reserve := q.admissionReserves(space)
+	percent := q.policy.InodeEmergencyReservePercent
 	return reserve/100*percent + (reserve%100*percent+99)/100
 }
 func (q *softQuota) checkReserve() {
@@ -708,6 +747,9 @@ func (q *softQuota) checkReserve() {
 		}
 		if !unknown && q.space.Free < q.emergencyThreshold(q.space) {
 			q.holdLocked(id, "node_space_emergency")
+		}
+		if !unknown && q.space.FreeFiles < q.inodeEmergencyThreshold(q.space) {
+			q.holdLocked(id, "node_inode_emergency")
 		}
 		if q.broken {
 			q.holdLocked(id, "private_state_unavailable")
@@ -784,6 +826,7 @@ func (q *softQuota) report() (map[string]softSeat, []quotaEvent, bool) {
 	for id, s := range q.state.Seats {
 		v := *s
 		v.CIDs = nil
+		v.WriterRoot = ""
 		seats[id] = v
 	}
 	events := append([]quotaEvent{}, q.state.Events...)

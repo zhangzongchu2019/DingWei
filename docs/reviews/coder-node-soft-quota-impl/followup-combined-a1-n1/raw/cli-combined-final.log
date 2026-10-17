@@ -1,0 +1,25 @@
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize
+2026/10/17 09:40:08 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/default-hard
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/unknown-mode
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/missing-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/invalid-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/uppercase-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/labels-cannot-enable-soft
+--- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize (8.33s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/default-hard (0.05s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/unknown-mode (0.06s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/missing-revision (0.06s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/invalid-revision (0.09s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/uppercase-revision (0.05s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/labels-cannot-enable-soft (0.05s)
+=== RUN   TestHostedAdminScenarios
+2026/10/17 09:40:12 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+--- PASS: TestHostedAdminScenarios (3.38s)
+=== RUN   TestHostedAdminVersionFlagsAndDefaults
+2026/10/17 09:40:15 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+--- PASS: TestHostedAdminVersionFlagsAndDefaults (2.39s)
+=== RUN   TestHostedAdminQuotasShape
+--- PASS: TestHostedAdminQuotasShape (2.22s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	16.340s

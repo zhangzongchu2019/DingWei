@@ -1,0 +1,15 @@
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/cpu
+    softquota_login_test.go:251: side effect before budget
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/memory
+    softquota_login_test.go:251: side effect before budget
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/disk
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/inode
+--- FAIL: TestSoftLoginBudgetAdmissionBeforeDocker (0.04s)
+    --- FAIL: TestSoftLoginBudgetAdmissionBeforeDocker/cpu (0.02s)
+    --- FAIL: TestSoftLoginBudgetAdmissionBeforeDocker/memory (0.01s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/disk (0.00s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/inode (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.047s
+FAIL

@@ -1,0 +1,6 @@
+=== RUN   TestLoginQuotaAuditDoesNotMutateHostedSeat
+    node_quota_login_test.go:30: login event changed seat: {QuotaConsent:[] AgentID:login-0123456789abcdef0123456789abcdef NodeID:nd_loginquota CLI:codex LLM:gpt CredKind:token_file AccountRef:{String: Valid:false} Plan:2c4g State:error StateDetail:soft_quota_held ImageRef: Model: CreatedBy:zzc} <nil>
+--- FAIL: TestLoginQuotaAuditDoesNotMutateHostedSeat (2.97s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	2.975s
+FAIL

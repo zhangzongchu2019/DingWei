@@ -1,0 +1,14 @@
+=== RUN   TestSoftInodeEmergencyIndependentConfiguration
+--- PASS: TestSoftInodeEmergencyIndependentConfiguration (0.00s)
+=== RUN   TestSoftInodeEmergencyBoundariesPersistStopAndRetainData
+=== RUN   TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/-1
+=== RUN   TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/0
+=== RUN   TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/1
+--- PASS: TestSoftInodeEmergencyBoundariesPersistStopAndRetainData (0.02s)
+    --- PASS: TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/-1 (0.01s)
+    --- PASS: TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/0 (0.01s)
+    --- PASS: TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/1 (0.01s)
+=== RUN   TestSoftInodeAdmissionRemainsAboveEmergencyLine
+--- PASS: TestSoftInodeAdmissionRemainsAboveEmergencyLine (0.01s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.039s

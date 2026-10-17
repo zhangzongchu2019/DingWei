@@ -1,0 +1,71 @@
+=== RUN   TestSoftInodeEmergencyIndependentConfiguration
+--- PASS: TestSoftInodeEmergencyIndependentConfiguration (0.02s)
+=== RUN   TestSoftInodeEmergencyBoundariesPersistStopAndRetainData
+=== RUN   TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/-1
+=== RUN   TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/0
+=== RUN   TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/1
+--- PASS: TestSoftInodeEmergencyBoundariesPersistStopAndRetainData (0.08s)
+    --- PASS: TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/-1 (0.03s)
+    --- PASS: TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/0 (0.03s)
+    --- PASS: TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/1 (0.02s)
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget/bytes
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget/inodes
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget/unknown
+--- PASS: TestSoftLoginRealStartEmergencyRetainsDataAndBudget (0.14s)
+    --- PASS: TestSoftLoginRealStartEmergencyRetainsDataAndBudget/bytes (0.06s)
+    --- PASS: TestSoftLoginRealStartEmergencyRetainsDataAndBudget/inodes (0.03s)
+    --- PASS: TestSoftLoginRealStartEmergencyRetainsDataAndBudget/unknown (0.05s)
+=== RUN   TestSoftLoginNormalFinishReleasesBudget
+--- PASS: TestSoftLoginNormalFinishReleasesBudget (0.07s)
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/cpu
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/memory
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/disk
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/inode
+--- PASS: TestSoftLoginBudgetAdmissionBeforeDocker (0.05s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/cpu (0.01s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/memory (0.01s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/disk (0.01s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/inode (0.02s)
+=== RUN   TestSoftLoginConsumesSharedCPUAndMemory
+--- PASS: TestSoftLoginConsumesSharedCPUAndMemory (0.04s)
+=== RUN   TestSoftLoginMeasurementOwnershipAndRestart
+--- PASS: TestSoftLoginMeasurementOwnershipAndRestart (0.07s)
+=== RUN   TestSoftLoginUnknownLeftoverFailsClosedAndPreserves
+--- PASS: TestSoftLoginUnknownLeftoverFailsClosedAndPreserves (0.01s)
+=== RUN   TestSoftLoginStartAndEmergencyAreSerialized
+--- PASS: TestSoftLoginStartAndEmergencyAreSerialized (0.05s)
+=== RUN   TestSoftLoginEmergencyMustStopActualLoginCID
+--- PASS: TestSoftLoginEmergencyMustStopActualLoginCID (0.03s)
+=== RUN   TestSoftLoginPersistentPoolAndStateValidation
+--- PASS: TestSoftLoginPersistentPoolAndStateValidation (0.01s)
+=== RUN   TestSoftLoginBudgetCannotBeForgottenBySeatTeardown
+--- PASS: TestSoftLoginBudgetCannotBeForgottenBySeatTeardown (0.02s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.615s
+=== RUN   TestLoginQuotaAuditDoesNotMutateHostedSeat
+--- PASS: TestLoginQuotaAuditDoesNotMutateHostedSeat (2.27s)
+=== RUN   TestLoginQuotaEventRequiresTypedLoginIdentity
+--- PASS: TestLoginQuotaEventRequiresTypedLoginIdentity (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	2.281s
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize
+2026/10/17 10:04:04 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/default-hard
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/unknown-mode
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/missing-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/invalid-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/uppercase-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/labels-cannot-enable-soft
+--- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize (2.51s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/default-hard (0.04s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/unknown-mode (0.04s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/missing-revision (0.04s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/invalid-revision (0.04s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/uppercase-revision (0.04s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/labels-cannot-enable-soft (0.05s)
+=== RUN   TestHostedAdminQuotasShape
+--- PASS: TestHostedAdminQuotasShape (2.10s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	4.614s

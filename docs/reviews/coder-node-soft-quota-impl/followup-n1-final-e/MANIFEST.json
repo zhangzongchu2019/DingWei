@@ -1,15 +1,15 @@
 {
   "docs/reviews/coder-node-soft-quota-impl/CURRENT.md": {
-    "bytes": 538,
-    "sha256": "39a66bdc30dad8df6e2a28a0ae02381e08f00ec8356502ca6bce0fc9c97127f7"
+    "bytes": 546,
+    "sha256": "ef45db81111ae0764c269b97ca36c28e194b2c97633363ed4f7f3d007f442a77"
   },
   "docs/reviews/coder-node-soft-quota-impl/followup-inode-ruling/MANIFEST.json": {
     "bytes": 20373,
-    "sha256": "dc6574a8ab4e4a1b3563ae22c968d27878a3e2f5468959b5414917899e913d00"
+    "sha256": "1140f7c68721cc3e76388f201cd56b939e1575cbdc396807f89f8367482834ac"
   },
   "docs/reviews/coder-node-soft-quota-impl/followup-io-grace/MANIFEST.json": {
     "bytes": 17283,
-    "sha256": "a5b0138f74d5ffd9db040603e79e503f64c777afd77138ff4d6cb487611d1851"
+    "sha256": "5edf5a6cee8adc46e9cdb0a94d34b4f5021ab57efbc229c20ca9074f62bc07a2"
   },
   "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/CLEANUP.json": {
     "bytes": 667,
@@ -97,6 +97,6 @@
   },
   "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/MANIFEST.json": {
     "bytes": 13270,
-    "sha256": "3796c81d23e63d612902eac3c321f8086de94536e1f323b2d80e75f76a5b96c3"
+    "sha256": "15e54db8be9070d3c8481a9ada89d6151318502dd58ec6a913d625c4f55ffeae"
   }
 }
