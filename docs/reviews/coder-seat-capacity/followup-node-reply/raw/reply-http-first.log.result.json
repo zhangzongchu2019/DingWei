@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHostedFinalNodeGateJobHTTP$"
+  ],
+  "rc": 0,
+  "seconds": 69.48128100507893,
+  "external_DSN_environment_not_inherited": true
+}

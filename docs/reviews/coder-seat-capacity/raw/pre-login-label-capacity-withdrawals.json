@@ -1,0 +1,83 @@
+{
+  "source": "3e7b9b0644d2afbd89ec29f3dca53371903247e7",
+  "results": [
+    {
+      "name": "node-reserve",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 1.2612681400496513
+    },
+    {
+      "name": "node-start",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 1.1692199979443103
+    },
+    {
+      "name": "sample-budget",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 1.100622485857457
+    },
+    {
+      "name": "store-pending",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 6.428384096128866
+    },
+    {
+      "name": "hub-freshness",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 6.374868808081374
+    },
+    {
+      "name": "foreign-cpu",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 0.9283912698738277
+    },
+    {
+      "name": "foreign-memory",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 1.4779341770336032
+    },
+    {
+      "name": "foreign-disk",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 1.1324475791770965
+    },
+    {
+      "name": "minimum-cpu",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 0.4527156560216099
+    },
+    {
+      "name": "minimum-memory",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 0.38028299901634455
+    },
+    {
+      "name": "minimum-disk",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 0.3409776799380779
+    },
+    {
+      "name": "cpu-recovery",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 0.6444707941263914
+    },
+    {
+      "name": "console",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 2.1833902369253337
+    }
+  ]
+}

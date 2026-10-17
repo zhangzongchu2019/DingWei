@@ -1,0 +1,4 @@
+=== RUN   TestCapacityLoginStatsUsesN2LabelAndPrivateMount
+--- PASS: TestCapacityLoginStatsUsesN2LabelAndPrivateMount (0.01s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.033s

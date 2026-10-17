@@ -911,6 +911,14 @@ func TestSoftRegistrationUsesDirectoryBackendAndReplayGate(t *testing.T) {
 	a.docker.soft.resources = q.resources
 	a.docker.soft.sampleNode()
 	a.docker.soft.usage = q.usage
+	if a.docker.soft.capacity == nil {
+		t.Fatal("production soft registration omitted B")
+	}
+	// New B wire-up is fail-closed until its independent sampler publishes data.
+	if v := a.docker.soft.capacityReport(); v == nil || v.Known {
+		t.Fatal("unsampled B must be unknown")
+	}
+	installCapacityFixture(a.docker.soft)
 	create := Command{CommandID: "create", Type: CmdCreateSeat, Params: json.RawMessage(`{"seat_id":"ag_registered","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8},"cred_kind":"token_file","cli":"codex"}`)}
 	if r := a.execute(context.Background(), create); !r.OK {
 		t.Fatalf("soft still used hard backend: %+v", r)

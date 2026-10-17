@@ -1,0 +1,13 @@
+=== RUN   TestOpusReviewNodeFinalGateReasonSurvivesJob
+    opus_final_gate_probe_test.go:27: healthy Hub frame; final authenticated node reply rejected CPU; calls=1 job={CapacityReasons:[cpu] Stage:failed Reason:node_no_capacity AgentID: Model:} seat_state=online/
+--- PASS: TestOpusReviewNodeFinalGateReasonSurvivesJob (1.99s)
+=== RUN   TestOpusReviewCreateFinalGateReasonSurvivesJob
+=== RUN   TestOpusReviewCreateFinalGateReasonSurvivesJob/pull_image
+    opus_final_gate_probe_test.go:41: final node gate refused on pull_image: calls=1 actual={CapacityReasons:[cpu] Stage:failed Reason:node_no_capacity AgentID: Model:}
+=== RUN   TestOpusReviewCreateFinalGateReasonSurvivesJob/create_seat
+    opus_final_gate_probe_test.go:41: final node gate refused on create_seat: calls=2 actual={CapacityReasons:[cpu] Stage:failed Reason:node_no_capacity AgentID: Model:}
+--- PASS: TestOpusReviewCreateFinalGateReasonSurvivesJob (3.75s)
+    --- PASS: TestOpusReviewCreateFinalGateReasonSurvivesJob/pull_image (1.87s)
+    --- PASS: TestOpusReviewCreateFinalGateReasonSurvivesJob/create_seat (1.88s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	6.769s

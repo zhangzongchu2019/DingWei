@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./internal/nodeagent",
+    "-run",
+    "^TestCapacitySamplerForeignLoadOwnershipAndUnknown$"
+  ],
+  "rc": 1,
+  "seconds": 3.1654861338902265,
+  "external_DSN_environment_not_inherited": true
+}

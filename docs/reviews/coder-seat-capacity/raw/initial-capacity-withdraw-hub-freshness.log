@@ -1,0 +1,6 @@
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale
+--- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard (2.45s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	2.460s

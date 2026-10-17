@@ -1,0 +1,12 @@
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /容量规则 v1：容量 8 席，已占 7，可新增 1/. Input:
+
+'Soft（剩余 16G / 8C / 盘 100G）【无硬磁盘配额】'
+
+    at /data/ai-dev-data/coder-seat-capacity-lab/capacity-mutant-console/view-service/console-soft-quota-regression.js:52:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'Soft（剩余 16G / 8C / 盘 100G）【无硬磁盘配额】',
+  expected: /容量规则 v1：容量 8 席，已占 7，可新增 1/,
+  operator: 'match',
+  diff: 'simple'
+}

@@ -1,0 +1,8 @@
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale_wire
+    seat_capacity_test.go:226: fresh heartbeat laundered old capacity: <nil>
+--- FAIL: TestCapacityUnknownReservesForeignLoadAndLegacyHard (3.16s)
+    --- FAIL: TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale_wire (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.172s
+FAIL

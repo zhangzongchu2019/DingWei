@@ -1,0 +1,303 @@
+[
+  {
+    "name": "node-reserve",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/nodeagent/softquota.go",
+    "old": "q.capacityAdmissionLocked(&r)",
+    "new": "error(nil)",
+    "sha256": "0d47e9ba02ac8de122d32ddbfcfcebd1f3686c8dff2c785ed25079ae8b490555",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestSoftCapacityRealReserveEightNinthAndRestart$"
+    ]
+  },
+  {
+    "name": "node-start",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/nodeagent/seatcapacity.go",
+    "old": "reasons := v.CanStart()",
+    "new": "reasons := []string{}",
+    "sha256": "31a8e3e642dd486774606297a7da1544638124ca073fbfbe25fa9165f71240a0",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestSoftCapacityRealReserveEightNinthAndRestart$"
+    ]
+  },
+  {
+    "name": "sample-budget",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/nodeagent/seatcapacity.go",
+    "old": "if q.capacity.sampling &&",
+    "new": "if false &&",
+    "sha256": "c8be2ebe3237d890f5c6dcfa6edc93b8e69eb0658d2a8e16a2901b1dd973f713",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacityBlockedSamplerIsSingleAndNeverLocksReserveOrReport$"
+    ]
+  },
+  {
+    "name": "store-pending",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/hosted/store.go",
+    "old": "checkSeatCapacityTx(ctx, tx, st)",
+    "new": "error(nil)",
+    "sha256": "d4de4e24382fd70437546caf9ffe983e6ff0972f2305c91e50e5fe0d5cd2c8ed",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityStoreSerializesConcurrentReservations$"
+    ]
+  },
+  {
+    "name": "hub-freshness",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/hosted/seat_capacity.go",
+    "old": "if !v.ValidateAt(time.Now(), 60*time.Second) {",
+    "new": "if !v.ValidateAt(time.Now(), 60*time.Second) && false {",
+    "sha256": "8624715b19a22c7fe98dd1a470548159cf86ffc64b53722b0ea349c313408074",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityUnknownReservesForeignLoadAndLegacyHard$/stale_wire$"
+    ]
+  },
+  {
+    "name": "foreign-cpu",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/nodeagent/seatcapacity_sample.go",
+    "old": "CPU: max(int64(0), busy-ownedCPU)",
+    "new": "CPU: max(int64(0), busy-ownedCPU)*0",
+    "sha256": "5f1a1fb30b5623a1cd5538cc1c6645669311cba607f43f32dae8386a9c0b057c",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacitySamplerForeignLoadOwnershipAndUnknown$"
+    ]
+  },
+  {
+    "name": "foreign-memory",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/nodeagent/seatcapacity_sample.go",
+    "old": "Memory: max(int64(0), total-available-ownedMemory)",
+    "new": "Memory: max(int64(0), total-available-ownedMemory)*0",
+    "sha256": "3206e1393cf42a444d7e2720587785aac90aff91fa592a444ad9c7293ca86655",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacitySamplerForeignLoadOwnershipAndUnknown$"
+    ]
+  },
+  {
+    "name": "foreign-disk",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/nodeagent/seatcapacity_sample.go",
+    "old": "Disk: max(int64(0), space.Total-space.Free-allocated)",
+    "new": "Disk: max(int64(0), space.Total-space.Free-allocated)*0",
+    "sha256": "259d28711a690074af7fc511aff38502edc5b5eddd5408ea9c3784ed60678d27",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacitySamplerForeignLoadOwnershipAndUnknown$"
+    ]
+  },
+  {
+    "name": "minimum-cpu",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/seatcapacity/capacity.go",
+    "old": "max(r.CPU, p.Minimum.CPU)",
+    "new": "r.CPU",
+    "sha256": "58b89b07a97d6a0f7eabe6d6cefa5267c05bf6a039b21eea594956f9c41b9fd2",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/seatcapacity",
+      "-run",
+      "^TestConfiguredMinimumFloorsEachReservation$/cpu$"
+    ]
+  },
+  {
+    "name": "minimum-memory",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/seatcapacity/capacity.go",
+    "old": "max(r.Memory, p.Minimum.Memory)",
+    "new": "r.Memory",
+    "sha256": "cfa3a3ebad72cb3aff067912dcfcb114cce96123816cd03bba30a6141ee04ec2",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/seatcapacity",
+      "-run",
+      "^TestConfiguredMinimumFloorsEachReservation$/memory$"
+    ]
+  },
+  {
+    "name": "minimum-disk",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/seatcapacity/capacity.go",
+    "old": "max(r.Disk, p.Minimum.Disk)",
+    "new": "r.Disk",
+    "sha256": "445267e0e95f7477ea88b45d59e87c0132fc68cc868cde2be5bd1141ba538df5",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/seatcapacity",
+      "-run",
+      "^TestConfiguredMinimumFloorsEachReservation$/disk$"
+    ]
+  },
+  {
+    "name": "cpu-recovery",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/nodeagent/seatcapacity_sample.go",
+    "old": "if err != nil && !errors.Is(err, errCapacityWarming) {",
+    "new": "if err != nil && !errors.Is(err, errCapacityWarming) && false {",
+    "sha256": "6037e9e58818c082bd9aadc2afada8179c268c1c103d2b095b7f2f45ff622e26",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacitySamplerForeignLoadOwnershipAndUnknown$"
+    ]
+  },
+  {
+    "name": "console",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/m8/console_auth.go",
+    "old": "+hostedNodeCapacityText(n)",
+    "new": "+''",
+    "sha256": "07da9412daa48f218da034cf2c3f665ea3a0bdf39e2f1f683f0901f7bdfc8106",
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ]
+  },
+  {
+    "name": "sku-definition",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/hosted/plans.go",
+    "old": "\t\"1c1.5g40\": {ID: \"1c1.5g40\", VCPU: 1, MemMB: 1536, DiskMB: 40960},\n",
+    "new": "",
+    "sha256": "b4d37d36318d48d214b9b66b712d8192d5169a44b399f61643ebc9c6e21db58c",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestMinimumPlanDefinitionAndNetCapacity$"
+    ]
+  },
+  {
+    "name": "sku-fraction",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/hosted/readapi.go",
+    "old": "MemGB: float64(p.MemMB) / 1024",
+    "new": "MemGB: float64(p.MemMB / 1024)",
+    "sha256": "61d08995119dc8c2ad48ad0cf92a8a971438c339060f891c6c2ccef7b06caaeb",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestMinimumPlanOptionsAndRealCreateResources$"
+    ]
+  },
+  {
+    "name": "sku-schema",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/hosted/schema.go",
+    "old": "ALTER TABLE g4_hosted_seat DROP CONSTRAINT IF EXISTS g4_hosted_seat_plan_check;\nALTER TABLE g4_hosted_seat ADD CONSTRAINT g4_hosted_seat_plan_check\n  CHECK (plan IN ('1c1.5g40','2c4g','4c8g'));",
+    "new": "-- withdrawn minimum-plan migration",
+    "sha256": "2b40c573471fb2fc6ec3fb53e8a12a345527a66a51086a6649fbcd550dda6f3c",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestMinimumPlanSchemaUpgradesOldConstraint$"
+    ]
+  },
+  {
+    "name": "n2-label",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/nodeagent/seatcapacity_sample.go",
+    "old": "if destination == \"/h\" {",
+    "new": "if destination == \"/h\" && false {",
+    "sha256": "3a700defa8a5782806d3ef0a83b8eec1ad19de25d4fde77178dcbeda899c39c0",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacityLoginStatsUsesN2LabelAndPrivateMount$"
+    ]
+  },
+  {
+    "name": "registration",
+    "source": "26f506c3ef47014db59b339133943c98585a8c54",
+    "file": "internal/nodeagent/seat.go",
+    "old": "q.capacity = &seatCapacityState{}",
+    "new": "q.capacity = nil",
+    "sha256": "41518ab0802b9233825a40fea96acecb9c1b922be2b6a7b8df6b9ef59ead0400",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestSoftRegistrationUsesDirectoryBackendAndReplayGate$"
+    ]
+  }
+]

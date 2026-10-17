@@ -1,0 +1,17 @@
+=== RUN   TestCapacityStartReasonAndUnknown
+=== RUN   TestCapacityStartReasonAndUnknown/cpu
+    seat_capacity_reason_test.go:163: capacity error: node_no_capacity reasons=[] want=[cpu]
+=== RUN   TestCapacityStartReasonAndUnknown/memory
+    seat_capacity_reason_test.go:163: capacity error: node_no_capacity reasons=[] want=[memory]
+=== RUN   TestCapacityStartReasonAndUnknown/disk
+    seat_capacity_reason_test.go:163: capacity error: node_no_capacity reasons=[] want=[disk]
+=== RUN   TestCapacityStartReasonAndUnknown/load_unknown
+    seat_capacity_reason_test.go:163: capacity error: node_no_capacity reasons=[] want=[load_unknown]
+--- FAIL: TestCapacityStartReasonAndUnknown (5.13s)
+    --- FAIL: TestCapacityStartReasonAndUnknown/cpu (0.00s)
+    --- FAIL: TestCapacityStartReasonAndUnknown/memory (0.01s)
+    --- FAIL: TestCapacityStartReasonAndUnknown/disk (0.01s)
+    --- FAIL: TestCapacityStartReasonAndUnknown/load_unknown (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	5.143s
+FAIL

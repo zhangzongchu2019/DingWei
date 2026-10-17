@@ -1,0 +1,30 @@
+=== RUN   TestSoftNodeSchedulingConsentPriorityCapacityAndAudit
+--- PASS: TestSoftNodeSchedulingConsentPriorityCapacityAndAudit (1.81s)
+=== RUN   TestSoftCreateFailureDoesNotAbortOrReleaseIdentity
+--- PASS: TestSoftCreateFailureDoesNotAbortOrReleaseIdentity (1.69s)
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_emergency
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_inode_emergency
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_unknown
+--- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath (5.13s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_emergency (1.71s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_inode_emergency (1.72s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_unknown (1.70s)
+=== RUN   TestCapacityRealCreatePendingEightNinthAndExistingStart
+--- PASS: TestCapacityRealCreatePendingEightNinthAndExistingStart (1.80s)
+=== RUN   TestCapacityStoreSerializesConcurrentReservations
+--- PASS: TestCapacityStoreSerializesConcurrentReservations (1.73s)
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/unknown
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/cpu_external
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/memory_reserve
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/disk_external
+--- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard (1.76s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/unknown (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/cpu_external (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/memory_reserve (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/disk_external (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	14.976s

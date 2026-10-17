@@ -1,0 +1,61 @@
+{
+  "results": [
+    {
+      "name": "selection",
+      "rc": 1,
+      "assertion_red": true,
+      "source": "325736fe312bb59358d7d842929d285132789cd7"
+    },
+    {
+      "name": "transaction",
+      "rc": 1,
+      "assertion_red": true,
+      "source": "325736fe312bb59358d7d842929d285132789cd7"
+    },
+    {
+      "name": "start",
+      "rc": 1,
+      "assertion_red": true,
+      "source": "325736fe312bb59358d7d842929d285132789cd7"
+    },
+    {
+      "name": "http",
+      "rc": 1,
+      "assertion_red": true,
+      "source": "325736fe312bb59358d7d842929d285132789cd7"
+    },
+    {
+      "name": "job-write",
+      "rc": 1,
+      "assertion_red": true,
+      "source": "325736fe312bb59358d7d842929d285132789cd7"
+    },
+    {
+      "name": "job-read",
+      "rc": 1,
+      "assertion_red": true,
+      "source": "325736fe312bb59358d7d842929d285132789cd7"
+    },
+    {
+      "name": "allowlist",
+      "rc": 1,
+      "assertion_red": true,
+      "source": "325736fe312bb59358d7d842929d285132789cd7"
+    },
+    {
+      "name": "model-order",
+      "rc": 1,
+      "assertion_red": true,
+      "source": "325736fe312bb59358d7d842929d285132789cd7"
+    },
+    {
+      "name": "console",
+      "rc": 1,
+      "assertion_red": true,
+      "source": "96aad97ab91927a697daaa2ae03370eeab9498ff",
+      "log": "reason-withdraw-console-assertion.log"
+    }
+  ],
+  "base_source": "325736fe312bb59358d7d842929d285132789cd7",
+  "final_test_source": "96aad97ab91927a697daaa2ae03370eeab9498ff"
+}

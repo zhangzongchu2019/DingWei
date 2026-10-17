@@ -1,0 +1,16 @@
+=== RUN   TestCapacityRequestReasonAndModelSelection
+=== RUN   TestCapacityRequestReasonAndModelSelection/cpu
+    seat_capacity_reason_test.go:83: capacity error: node_no_capacity reasons=[] want=[cpu]
+=== RUN   TestCapacityRequestReasonAndModelSelection/memory
+    seat_capacity_reason_test.go:83: capacity error: node_no_capacity reasons=[] want=[memory]
+=== RUN   TestCapacityRequestReasonAndModelSelection/disk
+    seat_capacity_reason_test.go:83: capacity error: node_no_capacity reasons=[] want=[disk]
+=== NAME  TestCapacityRequestReasonAndModelSelection
+    seat_capacity_reason_test.go:118: capacity error: node_no_capacity reasons=[] want=[cpu memory]
+--- FAIL: TestCapacityRequestReasonAndModelSelection (2.26s)
+    --- FAIL: TestCapacityRequestReasonAndModelSelection/cpu (0.00s)
+    --- FAIL: TestCapacityRequestReasonAndModelSelection/memory (0.00s)
+    --- FAIL: TestCapacityRequestReasonAndModelSelection/disk (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	2.276s
+FAIL

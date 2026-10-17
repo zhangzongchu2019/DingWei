@@ -23,6 +23,12 @@ func (u diskUsage) charged() int64 { return max(u.Allocated, u.Apparent) }
 
 const oPath = 0x200000 // Linux O_PATH (nodeagent already requires Linux/XFS/cgroups).
 func measureUsage(ctx context.Context, root, id string) (diskUsage, error) {
+	return measureUsageSeen(ctx, root, id, map[[2]uint64]bool{})
+}
+
+// Capacity's filesystem accounting needs the physical union, unlike per-seat
+// quota accounting. Share only inode metadata, never file contents, across seats.
+func measureUsageSeen(ctx context.Context, root, id string, seen map[[2]uint64]bool) (diskUsage, error) {
 	var usage diskUsage
 	if !validSeatID(id) {
 		return usage, ErrParams
@@ -45,7 +51,6 @@ func measureUsage(ctx context.Context, root, id string) (diskUsage, error) {
 		return usage, err
 	}
 	dev := st.Dev
-	seen := map[[2]uint64]bool{}
 	count := 0
 	var walk func(int, int) error
 	walk = func(fd, depth int) error {
@@ -71,7 +76,7 @@ func measureUsage(ctx context.Context, root, id string) (diskUsage, error) {
 			}
 			seen[key] = true
 			count++
-			if count > 1000000 {
+			if count > 1000000 || len(seen) > 1000000 {
 				return fmt.Errorf("usage entry budget exceeded")
 			}
 			if s.Blocks < 0 || s.Size < 0 || s.Blocks > math.MaxInt64/512 || usage.Allocated > math.MaxInt64-s.Blocks*512 || usage.Apparent > math.MaxInt64-s.Size {

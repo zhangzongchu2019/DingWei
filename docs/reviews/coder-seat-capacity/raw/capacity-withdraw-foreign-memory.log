@@ -1,0 +1,6 @@
+=== RUN   TestCapacitySamplerForeignLoadOwnershipAndUnknown
+    seatcapacity_sample_test.go:93: non-managed/reserve accounting: {At:2026-10-17 15:19:30.521551779 +0000 UTC m=+0.006749354 Known:true Total:{CPU:8000 Memory:17179869184 Disk:343597383680} Reserved:{CPU:2000 Memory:4294967296 Disk:42949672960} External:{CPU:3200 Memory:0 Disk:8589922304}}
+--- FAIL: TestCapacitySamplerForeignLoadOwnershipAndUnknown (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.025s
+FAIL

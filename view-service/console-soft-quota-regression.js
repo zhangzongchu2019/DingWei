@@ -14,16 +14,19 @@ if(mutation){
     consent:["if(softConsent&&softConsent.checked)body.allow_soft=true;","if(softConsent&&softConsent.checked)body.allow_soft=false;"],
     eligibility:["disabled:!n.online||n.quota_eligible===false","disabled:!n.online"],
     roster:["a.hosted.quota_mode==='soft'","false"],
+    capacity:["+hostedNodeCapacityText(n)","+''"],
   };
   assert(anchors[mutation],'unknown mutation');const [from,to]=anchors[mutation];assert.strictEqual(html.split(from).length-1,1,'mutation anchor');html=html.replace(from,to);
 }
 const options={
  nodes:[{id:'hard',name:'Hard',online:true,quota_mode:'hard',quota_eligible:true,free_mem_gb:16,free_vcpu:8,free_disk_gb:100},
- {id:'soft',name:'Soft',online:true,quota_mode:'soft',quota_eligible:true,free_mem_gb:16,free_vcpu:8,free_disk_gb:100},
- {id:'unknown',name:'Unready',online:true,quota_mode:'soft',quota_eligible:false,free_mem_gb:16,free_vcpu:8,free_disk_gb:100}],
+ {id:'soft',name:'Soft',online:true,quota_mode:'soft',quota_eligible:true,free_mem_gb:16,free_vcpu:8,free_disk_gb:100,seat_capacity:{version:1,known:true,total_slots:8,occupied:7,available_slots:1,cpu:{available:1000},memory:{available:1536*1048576},disk:{available:40*1073741824},reasons:[]}},
+ {id:'full',name:'Full',online:true,quota_mode:'soft',quota_eligible:false,free_mem_gb:16,free_vcpu:8,free_disk_gb:100,seat_capacity:{version:1,known:true,total_slots:8,occupied:8,available_slots:0,cpu:{available:0},memory:{available:4*1073741824},disk:{available:0},reasons:['cpu','disk']}},
+ {id:'unknown',name:'Unready',online:true,quota_mode:'soft',quota_eligible:false,free_mem_gb:16,free_vcpu:8,free_disk_gb:100,seat_capacity:{version:1,known:false}}],
  combos:[{cli:'codex',llm:'openai',cred_kind:'api_key',verified:true}],accounts:[{id:'fixture',name:'Fixture',llm:'openai',kind:'api_key',last4:'0000'}],
- plans:[{id:'2c4g',name:'2C/4G',fits:true}],models:[],quota:{remaining:{agents:4,vcpu:8,mem_gb:16,disk_gb:100}},
+ plans:[{id:'1c1.5g40',name:'1C/1.5G/40G',vcpu:1,mem_gb:1.5,fits:true},{id:'2c4g',name:'2C/4G',fits:true},{id:'4c8g',name:'4C/8G',fits:false}],models:[],quota:{remaining:{agents:4,vcpu:8,mem_gb:16,disk_gb:100}},
 };
+let refusal={error:'node_no_capacity',message:'UNTRUSTED_DETAIL'};
 const json=(res,status,body)=>{res.writeHead(status,{'content-type':'application/json'});res.end(JSON.stringify(body));};
 const server=http.createServer(async(req,res)=>{
  const p=req.url.split('?')[0];
@@ -32,7 +35,8 @@ const server=http.createServer(async(req,res)=>{
  if(p==='/api/console/agents')return json(res,200,{agents:[{agent_id:'ag_fixture',name:'FixtureSeat',full_name:'FixtureSeat.zzc',origin:'hosted',online:false,state:'active',hosted:{state:'abnormal',quota_mode:'soft',quota_hold:true}},{agent_id:'ag_unknown',name:'UnknownSeat',full_name:'UnknownSeat.zzc',origin:'hosted',online:true,state:'active',hosted:{state:'online',quota_mode:'soft',quota_warning:true,quota_usage_unknown:true}}]});
  if(p==='/api/console/agent-groups')return json(res,200,{principal:'owner',owned_agents:[],groups:[]});
  if(p==='/api/console/hosted/options')return json(res,200,options);
- if(p==='/api/console/hosted/agents'&&req.method==='POST')return json(res,409,{error:'node_no_capacity',message:'UNTRUSTED_DETAIL'});
+ if(p==='/api/console/hosted/agents'&&req.method==='POST')return json(res,409,refusal);
+ if(p==='/api/console/hosted/jobs/final-gate')return json(res,200,{stage:'failed',reason:'node_no_capacity',capacity_reasons:['cpu','memory','/private/credential']});
  if(p==='/api/console/enroll/applications')return json(res,200,{applications:[]});
  if(p==='/api/console/llm-accounts')return json(res,200,[]);
  res.writeHead(404);res.end();
@@ -47,17 +51,49 @@ const server=http.createServer(async(req,res)=>{
   assert.match(await page.locator('#hostedNode option[value=soft]').textContent(),/无硬磁盘配额/);
   assert.doesNotMatch(await page.locator('#hostedNode option[value=hard]').textContent(),/无硬磁盘配额/);
   assert.strictEqual(await page.locator('#hostedNode option[value=unknown]').evaluate(el=>el.disabled),true);
+  assert.match(await page.locator('#hostedNode option[value=soft]').textContent(),/容量规则 v1：容量 8 席，已占 7，可新增 1/);
+  assert.match(await page.locator('#hostedNode option[value=soft]').textContent(),/CPU 可用 1 核／内存 1.5GiB／盘 40GiB/);
+  assert.match(await page.locator('#hostedNode option[value=full]').textContent(),/拒绝原因：CPU、磁盘/);
+  assert.match(await page.locator('#hostedNode option[value=unknown]').textContent(),/读数未知，暂停新建与启动/);
+  assert.doesNotMatch(await page.locator('#hostedNode option[value=hard]').textContent(),/容量规则/);
   assert.strictEqual(await page.locator('#hostedAllowSoft').isChecked(),false);
   await page.locator('#hostedCli').selectOption('codex');await page.locator('#hostedLlm').selectOption('openai');await page.locator('#hostedAccount').selectOption('fixture');await page.locator('#hostedPlan').selectOption('2c4g');
+  assert.strictEqual(await page.locator('#hostedPlan option[value="1c1.5g40"]').textContent(),'1C/1.5G/40G');
+  assert.strictEqual(await page.locator('#hostedPlan option[value="1c1.5g40"]').evaluate(el=>el.disabled),false);
+  await page.locator('#hostedPlan').selectOption('1c1.5g40');
   for(const consent of [false,true]){
    await page.locator('#hostedName').fill(consent?'WithConsent':'NoConsent');await page.locator('#hostedNode').selectOption('soft');await page.locator('#hostedAllowSoft').setChecked(consent);
    const response=page.waitForResponse(r=>r.url().endsWith('/api/console/hosted/agents')&&r.request().method()==='POST');await page.locator('#hostedCreateBtn').click();const r=await response;
    if(consent)assert.strictEqual(r.request().postDataJSON().allow_soft,true);else assert(!('allow_soft' in r.request().postDataJSON()),'legacy default body shape');assert.strictEqual(r.request().postDataJSON().node_id,'soft');
+   assert.strictEqual(r.request().postDataJSON().plan_id,'1c1.5g40');
+  }
+  const reasonCases=[
+   [['cpu'],'没有节点能容纳本次请求：CPU'],
+   [['memory'],'没有节点能容纳本次请求：内存'],
+   [['disk'],'没有节点能容纳本次请求：磁盘'],
+   [['seat_limit'],'没有节点能容纳本次请求：席位数上限'],
+   [['load_unknown'],'没有节点能容纳本次请求：资源读数未知，暂停新建与启动'],
+   [['disk','cpu','cpu','/private/credential'],'没有节点能容纳本次请求：CPU、磁盘'],
+   [['/private/credential'],'没有节点有足够的剩余资源'],
+  ];
+  for(const [reasons,text] of reasonCases){
+   refusal={error:'node_no_capacity',capacity_reasons:reasons,message:'UNTRUSTED_DETAIL'};
+   const response=page.waitForResponse(r=>r.url().endsWith('/api/console/hosted/agents')&&r.request().method()==='POST');
+   await page.locator('#hostedCreateBtn').click();await response;
+   await page.waitForFunction(()=>document.querySelector('#hostedCreateBtn').disabled===false);
+   const feedback=await page.locator('#hostedFeedback').textContent();
+   assert(feedback.includes(text)&&!feedback.includes('UNTRUSTED_DETAIL')&&!feedback.includes('/private/credential'),'safe request-specific refusal: '+feedback);
   }
   assert.match(await page.locator('#rosterItems').textContent(),/无硬磁盘配额（磁盘保护，数据保留）/);
   assert.match(await page.locator('#rosterItems').textContent(),/磁盘测量暂不可用，暂停新建与启动/);
   assert.doesNotMatch(await page.locator('#rosterItems').textContent(),/接近限额/);
   assert.doesNotMatch(await page.locator('#hostedFeedback').textContent(),/UNTRUSTED_DETAIL/);
-  assert.deepStrictEqual(errors,[]);console.log('SOFT_QUOTA_BROWSER_OK assertions=12');
+  const jobText=await page.evaluate(()=>hostedOpFail({op:'restart',name:'FixtureSeat'},'node_no_capacity',['cpu','/private/credential']));
+  assert(jobText.includes('CPU')&&!jobText.includes('/private/credential'),'safe durable job projection');
+  await page.evaluate(()=>hostedTrackJob('final-gate','FixtureSeat'));
+  await page.waitForSelector('#hostedMaskBox [data-state="failed"]');
+  const createJobText=(await page.locator('#hostedMaskResult').textContent())+' '+(await page.locator('#hostedFeedback').textContent());
+  assert(createJobText.includes('CPU、内存')&&!createJobText.includes('/private/credential'),'safe new-seat job polling: '+createJobText);
+  assert.deepStrictEqual(errors,[]);console.log('SOFT_QUOTA_BROWSER_OK baseline_assertions=21 reason_scenarios=7 job_projection=1 create_job_poll=1');
  }finally{await context.close();await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});

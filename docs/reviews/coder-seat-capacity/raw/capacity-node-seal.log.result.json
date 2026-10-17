@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/nodeagent",
+    "./internal/seatcapacity"
+  ],
+  "rc": 1,
+  "seconds": 12.08456291211769,
+  "external_DSN_environment_not_inherited": true
+}

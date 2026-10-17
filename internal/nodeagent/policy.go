@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/seatcapacity"
 )
 
 // NodePolicy is operator configuration, never supplied in a seat command. Hard
@@ -43,15 +45,23 @@ type NodePolicy struct {
 	LoginPidsLimit               int64         `json:"login_pids_limit"`
 	LogMaxSizeMB                 int64         `json:"log_max_size_mb"`
 	LogMaxFiles                  int64         `json:"log_max_files"`
+
+	MinimumSeatCPUMillicores int64 `json:"minimum_seat_cpu_millicores"`
+	MinimumSeatMemoryBytes   int64 `json:"minimum_seat_memory_bytes"`
+	MinimumSeatDiskBytes     int64 `json:"minimum_seat_disk_bytes"`
 }
 
 func DefaultNodePolicy() NodePolicy {
-	return NodePolicy{StateWriteBudget: 5 * time.Second, Mode: "hard", ScanInterval: 30 * time.Second, ScanBudget: 5 * time.Second, MaxAge: 60 * time.Second,
+	return NodePolicy{MinimumSeatCPUMillicores: 1000, MinimumSeatMemoryBytes: 1536 << 20, MinimumSeatDiskBytes: 40 << 30,
+		StateWriteBudget: 5 * time.Second, Mode: "hard", ScanInterval: 30 * time.Second, ScanBudget: 5 * time.Second, MaxAge: 60 * time.Second,
 		StopTimeout: 10 * time.Second, ReserveInterval: 5 * time.Second, WarnPercent: 80, RecoveryPercent: 75,
 		EmergencyReservePercent: 50, InodeEmergencyReservePercent: 50, ReserveBytes: 32 << 30, ReservePercent: 10, ReserveInodes: 65536, ReserveInodePercent: 1, MaxSeats: 4,
 		ImageReserveBytes: 8 << 30, ShmBytes: 64 << 20, ReserveCPUMillicores: 2000, ReserveMemoryBytes: 4 << 30, PidsLimit: 512, LoginPidsLimit: 128, LogMaxSizeMB: 10, LogMaxFiles: 3}
 }
 func (p NodePolicy) Validate() error {
+	if err := p.capacityPolicy().Validate(); err != nil {
+		return fmt.Errorf("node policy: invalid minimum seat resources")
+	}
 	if p.Mode != "hard" && p.Mode != "soft" {
 		return fmt.Errorf("NODEAGENT_QUOTA_MODE: expected hard or soft")
 	}
@@ -100,6 +110,11 @@ func ParseNodePolicy(getenv func(string) string) (NodePolicy, error) {
 	if v := getenv("NODEAGENT_QUOTA_MODE"); v != "" {
 		p.Mode = v
 	}
+	// B replaces the old four-seat soft default with resource-derived capacity;
+	// an explicit operator cap still applies. Hard defaults remain unchanged.
+	if p.Mode == "soft" && getenv("NODEAGENT_MAX_SEATS") == "" {
+		p.MaxSeats = 100
+	}
 	durations := map[string]*time.Duration{"STATE_WRITE_BUDGET": &p.StateWriteBudget, "SCAN_INTERVAL": &p.ScanInterval, "SCAN_BUDGET": &p.ScanBudget, "MAX_AGE": &p.MaxAge, "STOP_TIMEOUT": &p.StopTimeout, "RESERVE_INTERVAL": &p.ReserveInterval}
 	for key, dst := range durations {
 		if v := getenv("NODEAGENT_" + key); v != "" {
@@ -112,6 +127,15 @@ func ParseNodePolicy(getenv func(string) string) (NodePolicy, error) {
 	}
 	ints := map[string]*int64{"EMERGENCY_RESERVE_PERCENT": &p.EmergencyReservePercent, "RESERVE_CPU_MILLICORES": &p.ReserveCPUMillicores, "RESERVE_MEMORY_BYTES": &p.ReserveMemoryBytes, "SHM_BYTES": &p.ShmBytes, "WARN_PERCENT": &p.WarnPercent, "RECOVERY_PERCENT": &p.RecoveryPercent, "RESERVE_BYTES": &p.ReserveBytes, "RESERVE_PERCENT": &p.ReservePercent, "IMAGE_RESERVE_BYTES": &p.ImageReserveBytes, "PIDS_LIMIT": &p.PidsLimit, "LOGIN_PIDS_LIMIT": &p.LoginPidsLimit, "LOG_MAX_SIZE_MB": &p.LogMaxSizeMB, "LOG_MAX_FILES": &p.LogMaxFiles}
 	for key, dst := range ints {
+		if v := getenv("NODEAGENT_" + key); v != "" {
+			n, e := strconv.ParseInt(v, 10, 64)
+			if e != nil {
+				return p, fmt.Errorf("NODEAGENT_%s: invalid integer", key)
+			}
+			*dst = n
+		}
+	}
+	for key, dst := range map[string]*int64{"MINIMUM_SEAT_CPU_MILLICORES": &p.MinimumSeatCPUMillicores, "MINIMUM_SEAT_MEMORY_BYTES": &p.MinimumSeatMemoryBytes, "MINIMUM_SEAT_DISK_BYTES": &p.MinimumSeatDiskBytes} {
 		if v := getenv("NODEAGENT_" + key); v != "" {
 			n, e := strconv.ParseInt(v, 10, 64)
 			if e != nil {
@@ -141,6 +165,10 @@ func ParseNodePolicy(getenv func(string) string) (NodePolicy, error) {
 
 // LoadNodePolicy reads configuration only; it never opens credentials or Docker.
 func LoadNodePolicy() (NodePolicy, error) { return ParseNodePolicy(os.Getenv) }
+
+func (p NodePolicy) capacityPolicy() seatcapacity.Policy {
+	return seatcapacity.Policy{Minimum: seatcapacity.Resources{CPU: p.MinimumSeatCPUMillicores, Memory: p.MinimumSeatMemoryBytes, Disk: p.MinimumSeatDiskBytes}, MaxSeats: p.MaxSeats}
+}
 
 // Revision binds the approved registration to the actual node thresholds.
 func (p NodePolicy) Revision() string {

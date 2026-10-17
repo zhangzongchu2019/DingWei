@@ -1,0 +1,11 @@
+{
+  "command": [
+    "go",
+    "clean",
+    "-cache",
+    "-testcache"
+  ],
+  "rc": 0,
+  "seconds": 0.25305531709454954,
+  "external_DSN_environment_not_inherited": true
+}

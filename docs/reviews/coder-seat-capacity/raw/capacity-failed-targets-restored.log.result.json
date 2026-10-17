@@ -1,0 +1,16 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/nodeagent",
+    "./internal/hosted",
+    "-run",
+    "TestCapacitySamplerForeignLoadOwnershipAndUnknown|TestCheckCreateCodeSplit|TestCapacityMemoryMissing"
+  ],
+  "rc": 0,
+  "seconds": 12.910862094955519,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./internal/hosted",
+    "-run",
+    "^TestCapacityUnknownReservesForeignLoadAndLegacyHard$/stale$"
+  ],
+  "rc": 0,
+  "seconds": 6.49112373101525,
+  "external_DSN_environment_not_inherited": true
+}

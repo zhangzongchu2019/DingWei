@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./internal/seatcapacity",
+    "-run",
+    "^TestConfiguredMinimumFloorsEachReservation$/cpu$"
+  ],
+  "rc": 1,
+  "seconds": 0.4056331280153245,
+  "external_DSN_environment_not_inherited": true
+}

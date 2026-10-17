@@ -1,0 +1,44 @@
+=== RUN   TestCapacityLoginStatsUsesN2LabelAndPrivateMount
+--- PASS: TestCapacityLoginStatsUsesN2LabelAndPrivateMount (0.02s)
+=== RUN   TestSoftCapacityRealReserveEightNinthAndRestart
+--- PASS: TestSoftCapacityRealReserveEightNinthAndRestart (0.04s)
+=== RUN   TestSoftRegistrationUsesDirectoryBackendAndReplayGate
+--- PASS: TestSoftRegistrationUsesDirectoryBackendAndReplayGate (0.04s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.280s
+=== RUN   TestConfiguredMinimumFloorsEachReservation
+=== RUN   TestConfiguredMinimumFloorsEachReservation/cpu
+=== RUN   TestConfiguredMinimumFloorsEachReservation/memory
+=== RUN   TestConfiguredMinimumFloorsEachReservation/disk
+--- PASS: TestConfiguredMinimumFloorsEachReservation (0.00s)
+    --- PASS: TestConfiguredMinimumFloorsEachReservation/cpu (0.00s)
+    --- PASS: TestConfiguredMinimumFloorsEachReservation/memory (0.00s)
+    --- PASS: TestConfiguredMinimumFloorsEachReservation/disk (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/seatcapacity	1.042s
+=== RUN   TestMinimumPlanDefinitionAndNetCapacity
+--- PASS: TestMinimumPlanDefinitionAndNetCapacity (0.00s)
+=== RUN   TestMinimumPlanSchemaUpgradesOldConstraint
+--- PASS: TestMinimumPlanSchemaUpgradesOldConstraint (2.26s)
+=== RUN   TestMinimumPlanQuotaDebitsAndEveryDimension
+--- PASS: TestMinimumPlanQuotaDebitsAndEveryDimension (1.73s)
+=== RUN   TestMinimumPlanOptionsAndRealCreateResources
+--- PASS: TestMinimumPlanOptionsAndRealCreateResources (1.87s)
+=== RUN   TestCapacityStoreSerializesConcurrentReservations
+--- PASS: TestCapacityStoreSerializesConcurrentReservations (1.88s)
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/unknown
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/cpu_external
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/memory_reserve
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/disk_external
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale_wire
+--- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard (1.90s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/unknown (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/cpu_external (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/memory_reserve (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/disk_external (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale_wire (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	10.769s

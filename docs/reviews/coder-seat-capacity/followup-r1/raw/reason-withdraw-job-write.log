@@ -1,0 +1,17 @@
+=== RUN   TestHostedCapacityReasonsActualHTTP
+=== RUN   TestHostedCapacityReasonsActualHTTP/cpu
+=== RUN   TestHostedCapacityReasonsActualHTTP/memory
+=== RUN   TestHostedCapacityReasonsActualHTTP/disk
+=== RUN   TestHostedCapacityReasonsActualHTTP/load_unknown
+=== RUN   TestHostedCapacityReasonsActualHTTP/stale
+=== NAME  TestHostedCapacityReasonsActualHTTP
+    hosted_capacity_reason_test.go:135: durable job reason 200 {"stage":"failed","reason":"internal_error"}
+--- FAIL: TestHostedCapacityReasonsActualHTTP (2.60s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/cpu (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/memory (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/disk (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/load_unknown (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/stale (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	2.608s
+FAIL

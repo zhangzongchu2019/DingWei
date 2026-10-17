@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS g4_hosted_seat (
   llm         TEXT NOT NULL,
   cred_kind   TEXT NOT NULL CHECK (cred_kind IN ('api_key','token_file')),
   account_ref TEXT REFERENCES g4_account_pool(id),
-  plan        TEXT NOT NULL CHECK (plan IN ('2c4g','4c8g')),
+  plan        TEXT NOT NULL CHECK (plan IN ('1c1.5g40','2c4g','4c8g')),
   model       TEXT NOT NULL DEFAULT '', -- 生效模型（包 B2 修订 3：建席时定死、落库；upgrade/restart 按记录值重算）
   state       TEXT NOT NULL DEFAULT 'queued'
               CHECK (state IN ('queued','pulling','starting','online','busy',
@@ -147,6 +147,13 @@ CREATE INDEX IF NOT EXISTS g4_backup_state_idx ON g4_backup(state, expires_at);
 -- 包 B2（R-V2-SEAT-B2-SCHEMA-20261005002126）：g4_ 首次加列。生产已有 g4_hosted_seat（托管面已开、
 -- 业主席位在跑）⇒ CREATE IF NOT EXISTS 不会加列，须幂等 ALTER；存量行 model='' ＝ 走节点默认。
 ALTER TABLE g4_hosted_seat ADD COLUMN IF NOT EXISTS model TEXT NOT NULL DEFAULT '';
+
+-- 2026-10-17: add the minimum plan without rewriting existing seats or quotas.
+-- ApplySchema executes this DDL in one implicit transaction, including replacement
+-- of the deployed inline CHECK; CREATE IF NOT EXISTS alone cannot upgrade it.
+ALTER TABLE g4_hosted_seat DROP CONSTRAINT IF EXISTS g4_hosted_seat_plan_check;
+ALTER TABLE g4_hosted_seat ADD CONSTRAINT g4_hosted_seat_plan_check
+  CHECK (plan IN ('1c1.5g40','2c4g','4c8g'));
 
 -- 0.2.1.101 账号包（R-V2-ACCOUNT-PER-USER）。整段 SchemaDDL 以单条多语句执行＝PG 隐式单事务：
 -- 下面的 DROP＋ADD 不会留下「无约束」窗口。全部幂等，每次启动执行。

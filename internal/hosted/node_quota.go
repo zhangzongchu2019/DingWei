@@ -239,6 +239,22 @@ func (l *Lifecycle) quotaStartGuard(ctx context.Context, seat Seat) error {
 	if mode == "soft" && (!nodeQuotaEligible(n) || softSeatHeld(n, seat.AgentID) || seat.StateDetail == "soft_quota_held") {
 		return ErrSoftQuotaHeld
 	}
+	if mode == "soft" {
+		v, err := l.st.nodeSeatCapacity(ctx, n)
+		if err != nil {
+			return err
+		}
+		var frame seatCapacityFrame
+		if json.Unmarshal(n.Capacity, &frame) != nil || v == nil {
+			return capacityFailure(nil)
+		}
+		if reasons := v.CanStart(); len(reasons) != 0 {
+			return capacityFailure(reasons)
+		}
+		if _, known := frame.Seats[seat.AgentID]; !known {
+			return capacityFailure(nil)
+		}
+	}
 	if mode != "hard" && mode != "soft" {
 		return ErrSoftQuotaHeld
 	}

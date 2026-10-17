@@ -1,0 +1,4 @@
+page.waitForFunction: Timeout 5000ms exceeded.
+    at /data/ai-dev-data/coder-seat-capacity-lab/reason-mutant-console/view-service/console-soft-quota-regression.js:82:15 {
+  name: 'TimeoutError'
+}

@@ -1,0 +1,6 @@
+=== RUN   TestCapacityLoginStatsUsesN2LabelAndPrivateMount
+    seatcapacity_sample_test.go:255: valid N2 labels rejected: capacity ownership mismatch
+--- FAIL: TestCapacityLoginStatsUsesN2LabelAndPrivateMount (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.009s
+FAIL

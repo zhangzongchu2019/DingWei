@@ -1,0 +1,6 @@
+=== RUN   TestCapacitySamplerForeignLoadOwnershipAndUnknown
+    seatcapacity_sample_test.go:122: failed sample reused old CPU window: <nil>
+--- FAIL: TestCapacitySamplerForeignLoadOwnershipAndUnknown (0.05s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.064s
+FAIL

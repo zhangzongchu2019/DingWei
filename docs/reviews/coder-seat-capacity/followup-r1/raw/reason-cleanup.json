@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-17T15:49:45.647750+00:00",
+  "before_bytes": {
+    "/data/ai-dev-data/coder-seat-capacity-lab/reason-mutant-allowlist": 29582997,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reason-mutant-console": 29582574,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reason-mutant-console-assertion": 29582550,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reason-mutant-http": 29582811,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reason-mutant-job-read": 29582829,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reason-mutant-job-write": 29582803,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reason-mutant-model-order": 29583005,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reason-mutant-selection": 29582991,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reason-mutant-start": 29582998,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reason-mutant-transaction": 29582998,
+    "/data/ai-dev-data/coder-seat-capacity-lab/gocache": 1306277828,
+    "/data/ai-dev-data/coder-seat-capacity-lab/home": 83357070,
+    "/tmp/sq-r1-ex7uz_oz": 569765
+  },
+  "gocache_bytes_after_go_clean": 232,
+  "remaining_paths": [],
+  "owned_children_before": 0,
+  "PG_markers_before": 0,
+  "source_worktree_retained": true,
+  "shared_module_cache_and_locked_venv_unchanged": true
+}

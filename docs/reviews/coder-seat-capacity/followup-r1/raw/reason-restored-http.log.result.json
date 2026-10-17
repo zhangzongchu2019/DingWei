@@ -1,0 +1,16 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/hosted",
+    "./cmd/workpulse",
+    "-run",
+    "TestCapacityRequestReasonAndModelSelection|TestCapacityStoreSerializesConcurrentReservations|TestHostedCapacityReasonsActualHTTP"
+  ],
+  "rc": 0,
+  "seconds": 9.846816302044317,
+  "external_DSN_environment_not_inherited": true
+}

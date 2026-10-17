@@ -1,0 +1,50 @@
+{
+  "source": "325736fe312bb59358d7d842929d285132789cd7",
+  "results": [
+    {
+      "name": "selection",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "transaction",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "start",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "http",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "job-write",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "job-read",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "allowlist",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "model-order",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "console",
+      "rc": 1,
+      "assertion_red": false
+    }
+  ]
+}

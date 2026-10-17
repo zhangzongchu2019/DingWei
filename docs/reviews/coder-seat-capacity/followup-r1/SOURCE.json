@@ -1,0 +1,29 @@
+{
+  "source": "96aad97ab91927a697daaa2ae03370eeab9498ff",
+  "tree": "b1443f79bb97cda006b6a11e9cff3785719d3056",
+  "production_pin": "325736fe312bb59358d7d842929d285132789cd7",
+  "production_tree": "80b4ae49550bb1abf7d32e07b50fb229a92ccfdd",
+  "late_test_only_delta": "one JS wait condition: wait for submit completion, then assert exact text",
+  "reviewed_predecessor": "7a600e52b272e816dfde9cda333d293704c4660c",
+  "review_evidence": "8511dcec27a9fb8962bbde1c04a953d6dcc83d66",
+  "changed_paths_sha256": {
+    "cmd/workpulse/hosted_capacity_reason_test.go": "4ed9636bfd1e1f1c03000f39c5853aabdd26fed0c54f454237dd54824eff1271",
+    "cmd/workpulse/hosted_routes.go": "79c3eca57d4ad5679fde5d31b5a57344d0b98c9c91fabdd742055b0f3bfd964e",
+    "internal/hosted/lifecycle_job.go": "fc40830cff03294ec62cbfb83a9c51f478edc4d1e76143fadc00b6db034f95aa",
+    "internal/hosted/node_quota.go": "a28cfe92627e5166636f3e7573bbabec5bd5c592cd2d11e5fd675330cba8e286",
+    "internal/hosted/orchestrator.go": "08a0a527a4479e20228b3fbfa787811082c96369908b5f7afdb55a337a8f2d91",
+    "internal/hosted/readapi.go": "44df8f0e8ef6e1f376910daf3c8e648214fb567a09a86e79bd2546ebe47de71a",
+    "internal/hosted/seat_capacity.go": "db0f5a15bef31d17a90e706c4ad913686f93458a0f8d17380d6889fb6944e929",
+    "internal/hosted/seat_capacity_reason_test.go": "80ed641c709ef440801179204fc7bdf8cf600e2655e6c490555fcc194d0e2182",
+    "internal/hosted/seat_capacity_test.go": "50fff4075fb4357188ed765a9b6e3d64145e88fb024802566be87137b8fafb74",
+    "internal/m8/console_auth.go": "975c26558ea0253d6aae75753ba96f87716b115c8343f3c599e7c72e2fadc13b",
+    "view-service/console-soft-quota-regression.js": "744e296de673d3af1175cf513780febcd109b60a9e5a2466bcc0913ff314d451"
+  },
+  "unchanged_subtrees": [
+    "internal/nodeagent",
+    "internal/seatcapacity",
+    "VERSION",
+    "tools/sessionhelper/requirements-runtime.lock"
+  ],
+  "no_rebase_from_r22": true
+}

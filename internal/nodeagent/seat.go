@@ -946,6 +946,7 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 			return err
 		}
 		d.soft = q
+		q.capacity = &seatCapacityState{}
 		d.quota = softDirectory{}
 		a.commandGate = q.commandGate
 		a.heartbeatInterval = 15 * time.Second

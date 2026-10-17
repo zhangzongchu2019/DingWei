@@ -1,0 +1,94 @@
+package nodeagent
+
+// Test-only overlay for B+r23 composition, never compiled in the r22 author
+// branch: N2's original real-login doubles only exist in the adopted r23 tree.
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
+	"net/url"
+	"testing"
+	"time"
+)
+
+func TestCapacityR23RealLoginBudgetAndSampler(t *testing.T) {
+	l, q, f, _ := softLoginFixture(t)
+	installCapacityFixture(q)
+	// Retain the actual N2 inspect/start/mount behavior; add only stats data to
+	// its existing loopback Engine double. No real Engine or credentials.
+	upstream, err := url.Parse(l.d.eng.base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proxy := httputil.NewSingleHostReverseProxy(upstream)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/containers/cid-login-"+lfID+"/stats" {
+			json.NewEncoder(w).Encode(map[string]any{"read": time.Now(), "cpu_stats": map[string]any{"cpu_usage": map[string]uint64{"total_usage": 100}, "system_cpu_usage": 1000}, "memory_stats": map[string]any{"stats": map[string]uint64{"anon": 4096}}})
+			return
+		}
+		proxy.ServeHTTP(w, r)
+	}))
+	// Install before l.start creates a finish goroutine; never swap a live
+	// client's pointer. Keep the proxy alive until cancellation/cleanup joins.
+	defer func() {
+		l.mu.Lock()
+		sess := l.sessions[lfID]
+		l.mu.Unlock()
+		if sess != nil && sess.cancel != nil {
+			sess.cancel()
+		}
+		f.letExit()
+		if sess != nil {
+			select {
+			case <-sess.done:
+			case <-time.After(3 * time.Second):
+				t.Error("login cleanup did not join")
+			}
+		}
+		srv.Close()
+	}()
+	l.d.eng = newFakeEngine(srv.Client(), srv.URL)
+	q.disk = func(string) (fsSpace, error) { return fsSpace{1 << 40, (1 << 40) - (8 << 30), 10000000, 10000000}, nil }
+	if _, err := l.start(context.Background(), lfParams(l, lfID)); err != nil {
+		t.Fatal(err)
+	}
+	records, _, _, view := q.reportWithCapacity()
+	key := "login-" + lfID
+	if records[key].WriterKind != "login" || records[key].WriterRoot != "" || view.Occupied != 0 || view.CPU.NodeReserve != 250 || view.Memory.NodeReserve != loginMemBytes || view.Disk.NodeReserve != loginMemBytes {
+		t.Fatalf("login is not a business seat: %+v %+v", records[key], view)
+	}
+	reader := newSeatCapacityReader(l.d)
+	tick := uint64(0)
+	reader.readCPU = func() (cpuCounters, error) { tick++; return cpuCounters{total: tick * 100, busy: tick * 50}, nil }
+	if _, err := reader.sample(context.Background()); err == nil {
+		t.Fatal("first CPU baseline admitted")
+	}
+	sample, err := reader.sample(context.Background())
+	if err != nil || !sample.Known || sample.External.Disk != 8<<30 {
+		t.Fatalf("login tmpfs subtracted from data2 disk, or /h ownership failed: %+v %v", sample, err)
+	}
+	if records[key].Hold != "" {
+		t.Fatal("B created a login hold")
+	}
+}
+
+func TestCapacityR23UnknownBlocksActualLoginStartWithoutHold(t *testing.T) {
+	l, q, f, _ := softLoginFixture(t)
+	installCapacityFixture(q)
+	q.capacity.snapshot.Known = false
+	if _, err := l.start(context.Background(), lfParams(l, lfID)); err == nil {
+		t.Fatal("unknown B capacity started login")
+	}
+	if f.count("POST /containers/cid-login-"+lfID+"/start") != 0 {
+		t.Fatal("unknown capacity reached Engine start")
+	}
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	for _, writer := range q.state.Seats {
+		if writer.Hold != "" {
+			t.Fatal("B refusal fabricated a hold")
+		}
+	}
+}

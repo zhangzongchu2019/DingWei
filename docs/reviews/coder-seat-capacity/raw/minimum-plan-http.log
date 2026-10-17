@@ -1,0 +1,6 @@
+=== RUN   TestHostedAdminQuotasShape
+--- PASS: TestHostedAdminQuotasShape (2.10s)
+=== RUN   TestHostedMinimumPlanHTTPOptionsCreateAndQuota
+--- PASS: TestHostedMinimumPlanHTTPOptionsCreateAndQuota (2.17s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	5.322s

@@ -1,0 +1,9 @@
+AssertionError [ERR_ASSERTION]: safe request-specific refusal: 没有节点有足够的剩余资源
+    at /data/ai-dev-data/coder-seat-capacity-lab/reason-mutant-console-assertion/view-service/console-soft-quota-regression.js:84:4 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

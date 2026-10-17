@@ -1,0 +1,10 @@
+{
+  "command": [
+    "go",
+    "list",
+    "./..."
+  ],
+  "rc": 0,
+  "seconds": 0.3224505989346653,
+  "external_DSN_environment_not_inherited": true
+}

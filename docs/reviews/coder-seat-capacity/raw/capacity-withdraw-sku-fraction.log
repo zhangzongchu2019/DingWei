@@ -1,0 +1,6 @@
+=== RUN   TestMinimumPlanOptionsAndRealCreateResources
+    minimum_plan_test.go:149: options: [{ID:1c1.5g40 Name:1C/1.5G/40G VCPU:1 MemGB:1 Fits:true} {ID:2c4g Name:2C/4G VCPU:2 MemGB:4 Fits:true} {ID:4c8g Name:4C/8G VCPU:4 MemGB:8 Fits:true}]
+--- FAIL: TestMinimumPlanOptionsAndRealCreateResources (2.74s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	2.746s
+FAIL

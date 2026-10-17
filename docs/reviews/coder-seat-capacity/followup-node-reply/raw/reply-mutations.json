@@ -1,0 +1,133 @@
+[
+  {
+    "name": "recognition",
+    "source": "7d5cba6039a7cd739fa13c7c16d52a6d8c88caaa",
+    "file": "internal/hosted/seat_capacity.go",
+    "old": "if result.OK || len(result.Error) > 160 {",
+    "new": "if true || result.OK || len(result.Error) > 160 {",
+    "mutated_sha256": "a378f4f64ff43828a8773ef9d275ee428acbdfe1f68aa0877937bfeee773ffff",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityFinalGateLifecycleJobs$"
+    ]
+  },
+  {
+    "name": "strict-prefix",
+    "source": "7d5cba6039a7cd739fa13c7c16d52a6d8c88caaa",
+    "file": "internal/hosted/seat_capacity.go",
+    "old": "strings.CutPrefix(result.Error, \"seat_capacity_blocked: seat_capacity_\")",
+    "new": "strings.CutPrefix(strings.TrimPrefix(result.Error, \"prefix \"), \"seat_capacity_blocked: seat_capacity_\")",
+    "mutated_sha256": "aab23bbe428dc5013faa4ac9bf05fd011ac4c73174f505c1b5fa1af5666b5a02",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityReplyStrictProtocolAndRegistration$"
+    ]
+  },
+  {
+    "name": "pull",
+    "source": "7d5cba6039a7cd739fa13c7c16d52a6d8c88caaa",
+    "file": "internal/hosted/orchestrator.go",
+    "old": "fail(\"pulling\", lifecycleJobReason(capacityErr))",
+    "new": "fail(\"pulling\", \"image_pull_failed\")",
+    "mutated_sha256": "df8315abdf66674748107f8e402595dc03510719c6de4cc5939a5869e980833a",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityFinalGateCreateJobsAndCleanup$"
+    ]
+  },
+  {
+    "name": "create",
+    "source": "7d5cba6039a7cd739fa13c7c16d52a6d8c88caaa",
+    "file": "internal/hosted/orchestrator.go",
+    "old": "fail(\"starting\", lifecycleJobReason(capacityErr))",
+    "new": "fail(\"starting\", \"start_failed\")",
+    "mutated_sha256": "222f52e081d5d10328899d12e1a134c5a4ac105e9a29de072713015da080b309",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityFinalGateCreateJobsAndCleanup$"
+    ]
+  },
+  {
+    "name": "create-read",
+    "source": "7d5cba6039a7cd739fa13c7c16d52a6d8c88caaa",
+    "file": "internal/hosted/readapi.go",
+    "old": "return withModel(capacityJobView(JobView{Stage: \"failed\", Reason: jobFailReason(seat.StateDetail)}, seat.StateDetail))",
+    "new": "return withModel(JobView{Stage: \"failed\", Reason: jobFailReason(seat.StateDetail)})",
+    "mutated_sha256": "44df8f0e8ef6e1f376910daf3c8e648214fb567a09a86e79bd2546ebe47de71a",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityFinalGateCreateJobsAndCleanup$"
+    ]
+  },
+  {
+    "name": "create-console",
+    "source": "7d5cba6039a7cd739fa13c7c16d52a6d8c88caaa",
+    "file": "internal/m8/console_auth.go",
+    "old": "if(reason==='node_no_capacity')return consoleErrorText(409,{error:reason,capacity_reasons:reasons});",
+    "new": "if(reason==='node_no_capacity')return CONSOLE_ERRORS.node_no_capacity;",
+    "mutated_sha256": "6fbb8759fc2dc4cc45960148da0d5b7a778cfc92eaa3ace3eb7ab168e2e2bb4b",
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ]
+  },
+  {
+    "name": "binding",
+    "source": "7d5cba6039a7cd739fa13c7c16d52a6d8c88caaa",
+    "file": "internal/hosted/seat_capacity.go",
+    "old": "\tif mode != \"soft\" || !policyRevisionPattern.MatchString(revision) || json.Unmarshal(node.Capacity, &frame) != nil || frame.Mode != \"soft\" || frame.Revision != revision || frame.Capacity == nil || frame.Capacity.Version != 1 {",
+    "new": "\tif false && (mode != \"soft\" || !policyRevisionPattern.MatchString(revision) || json.Unmarshal(node.Capacity, &frame) != nil || frame.Mode != \"soft\" || frame.Revision != revision || frame.Capacity == nil || frame.Capacity.Version != 1) {",
+    "mutated_sha256": "bff4121092bbe11d303ebca5523241b0bc059543669e565fb0a66ed53af9bee5",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityReplyStrictProtocolAndRegistration$"
+    ]
+  },
+  {
+    "name": "restart",
+    "source": "7d5cba6039a7cd739fa13c7c16d52a6d8c88caaa",
+    "file": "internal/hosted/lifecycle.go",
+    "old": "\tif capacityErr := l.st.capacityResult(ctx, seat.NodeID, res); capacityErr != nil {\n\t\tmoved, _ := l.st.TransitionSeatState(ctx, agentID, \"starting\", seat.State, seat.StateDetail, \"capacity_refused\", nil)\n\t\tif moved && !alreadyActive {\n\t\t\tl.undo(ctx, agentID, actorLC, \"suspend\")\n\t\t}\n\t\treturn capacityErr\n\t}\n\tif l.quotaResult",
+    "new": "\tif l.quotaResult",
+    "mutated_sha256": "009d89006d0f7b62a7aa4a055fe9830159cb89cf6cfd6d3dc77dff5a9591bbe7",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityFinalGateLifecycleJobs$"
+    ]
+  }
+]

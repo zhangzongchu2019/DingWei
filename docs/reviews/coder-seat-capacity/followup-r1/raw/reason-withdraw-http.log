@@ -1,0 +1,22 @@
+=== RUN   TestHostedCapacityReasonsActualHTTP
+=== RUN   TestHostedCapacityReasonsActualHTTP/cpu
+    hosted_capacity_reason_test.go:84: request reason 409 {"error":"node_no_capacity"}
+=== RUN   TestHostedCapacityReasonsActualHTTP/memory
+    hosted_capacity_reason_test.go:84: request reason 409 {"error":"node_no_capacity"}
+=== RUN   TestHostedCapacityReasonsActualHTTP/disk
+    hosted_capacity_reason_test.go:84: request reason 409 {"error":"node_no_capacity"}
+=== RUN   TestHostedCapacityReasonsActualHTTP/load_unknown
+    hosted_capacity_reason_test.go:84: request reason 409 {"error":"node_no_capacity"}
+=== RUN   TestHostedCapacityReasonsActualHTTP/stale
+    hosted_capacity_reason_test.go:84: request reason 409 {"error":"node_no_capacity"}
+=== NAME  TestHostedCapacityReasonsActualHTTP
+    hosted_capacity_reason_test.go:112: restart reason 409 {"error":"node_no_capacity"}
+--- FAIL: TestHostedCapacityReasonsActualHTTP (2.59s)
+    --- FAIL: TestHostedCapacityReasonsActualHTTP/cpu (0.01s)
+    --- FAIL: TestHostedCapacityReasonsActualHTTP/memory (0.00s)
+    --- FAIL: TestHostedCapacityReasonsActualHTTP/disk (0.01s)
+    --- FAIL: TestHostedCapacityReasonsActualHTTP/load_unknown (0.00s)
+    --- FAIL: TestHostedCapacityReasonsActualHTTP/stale (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	2.611s
+FAIL

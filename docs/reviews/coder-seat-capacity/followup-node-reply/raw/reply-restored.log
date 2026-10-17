@@ -1,0 +1,70 @@
+=== RUN   TestCapacityReplyStrictProtocolAndRegistration
+--- PASS: TestCapacityReplyStrictProtocolAndRegistration (3.11s)
+=== RUN   TestCapacityFinalGateLifecycleJobs
+=== RUN   TestCapacityFinalGateLifecycleJobs/restart/cpu
+=== RUN   TestCapacityFinalGateLifecycleJobs/restart/memory
+=== RUN   TestCapacityFinalGateLifecycleJobs/restart/disk
+=== RUN   TestCapacityFinalGateLifecycleJobs/restart/load_unknown
+=== RUN   TestCapacityFinalGateLifecycleJobs/enable/cpu
+=== RUN   TestCapacityFinalGateLifecycleJobs/enable/memory
+=== RUN   TestCapacityFinalGateLifecycleJobs/enable/disk
+=== RUN   TestCapacityFinalGateLifecycleJobs/enable/load_unknown
+=== RUN   TestCapacityFinalGateLifecycleJobs/refresh_cred/cpu
+=== RUN   TestCapacityFinalGateLifecycleJobs/refresh_cred/memory
+=== RUN   TestCapacityFinalGateLifecycleJobs/refresh_cred/disk
+=== RUN   TestCapacityFinalGateLifecycleJobs/refresh_cred/load_unknown
+=== RUN   TestCapacityFinalGateLifecycleJobs/upgrade/cpu
+=== RUN   TestCapacityFinalGateLifecycleJobs/upgrade/memory
+=== RUN   TestCapacityFinalGateLifecycleJobs/upgrade/disk
+=== RUN   TestCapacityFinalGateLifecycleJobs/upgrade/load_unknown
+=== RUN   TestCapacityFinalGateLifecycleJobs/engine
+=== RUN   TestCapacityFinalGateLifecycleJobs/near-match
+=== RUN   TestCapacityFinalGateLifecycleJobs/transport
+=== RUN   TestCapacityFinalGateLifecycleJobs/hold
+=== RUN   TestCapacityFinalGateLifecycleJobs/hard
+--- PASS: TestCapacityFinalGateLifecycleJobs (2.21s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/restart/cpu (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/restart/memory (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/restart/disk (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/restart/load_unknown (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/enable/cpu (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/enable/memory (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/enable/disk (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/enable/load_unknown (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/refresh_cred/cpu (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/refresh_cred/memory (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/refresh_cred/disk (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/refresh_cred/load_unknown (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/upgrade/cpu (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/upgrade/memory (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/upgrade/disk (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/upgrade/load_unknown (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/engine (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/near-match (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/transport (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/hold (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/hard (0.01s)
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/pull_image/cpu
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/pull_image/memory
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/pull_image/disk
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/pull_image/load_unknown
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/create_seat/cpu
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/create_seat/memory
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/create_seat/disk
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/create_seat/load_unknown
+--- PASS: TestCapacityFinalGateCreateJobsAndCleanup (2.10s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/pull_image/cpu (0.02s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/pull_image/memory (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/pull_image/disk (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/pull_image/load_unknown (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/create_seat/cpu (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/create_seat/memory (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/create_seat/disk (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/create_seat/load_unknown (0.01s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	8.497s
+=== RUN   TestHostedFinalNodeGateJobHTTP
+--- PASS: TestHostedFinalNodeGateJobHTTP (2.26s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	3.358s

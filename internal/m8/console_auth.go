@@ -808,6 +808,11 @@ function consoleErrorText(status,data){
     return '配对码不符'+(left===null?'':'（还可再试 '+left+' 次）');
   }
   if(code==='rate_limited'){var wait=data&&Number.isFinite(data.retry_after_s)?data.retry_after_s:null;return '操作过于频繁'+(wait===null?'，请稍后再试':'，请 '+wait+' 秒后再试');}
+  if(code==='node_no_capacity'&&data&&Array.isArray(data.capacity_reasons)){
+    var labels={cpu:'CPU',memory:'内存',disk:'磁盘',seat_limit:'席位数上限',load_unknown:'资源读数未知，暂停新建与启动'},parts=[];
+    Object.keys(labels).forEach(function(k){if(data.capacity_reasons.indexOf(k)!==-1)parts.push(labels[k]);});
+    if(parts.length)return '没有节点能容纳本次请求：'+parts.join('、');
+  }
   if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){   // 被触发的维度剩余为 0:按维度给具体文案
     var DIMS=[['agents','Agent 数量'],['vcpu','CPU'],['mem_gb','内存'],['disk_gb','磁盘']],used=[];
     DIMS.forEach(function(d){if(Number.isFinite(data.remaining[d[0]])&&data.remaining[d[0]]<=0)used.push(d[1]);});   // 契约把负数归 0;<=0 是组长采纳的防御写法;没有用完的维度时落到中性回退文案
@@ -1143,10 +1148,21 @@ function hostedModelList(opts){
     if(typeof m==='string'&&m&&out.indexOf(m)<0)out.push(m);});   // B2 契约：options.models＝字符串数组（在线节点并集、已去重；无则 []）；只认字符串
   return out;
 }
+function hostedNodeCapacityText(n){
+  var c=n.seat_capacity;
+  if(!c||c.version!==1)return n.quota_mode==='soft'?'【未发布席位容量规则】':'';
+  if(!c.known)return '【容量规则 v1：读数未知，暂停新建与启动】';
+  function amount(d,unit){return d&&Number.isFinite(d.available)?String(Number((d.available/unit).toFixed(2))):'未知';}
+  var names={cpu:'CPU',memory:'内存',disk:'磁盘',seat_limit:'节点席位上限',load_unknown:'容量读数未知',policy_invalid:'容量配置无效'};
+  var reason=(Array.isArray(c.reasons)?c.reasons:[]).map(function(r){return names[r]||'容量读数未知';});
+  return '【容量规则 v1：容量 '+c.total_slots+' 席，已占 '+c.occupied+'，可新增 '+c.available_slots+
+    '；CPU 可用 '+amount(c.cpu,1000)+' 核／内存 '+amount(c.memory,1073741824)+'GiB／盘 '+amount(c.disk,1073741824)+'GiB'+
+    (reason.length?'；拒绝原因：'+reason.join('、'):'')+'】';
+}
 function renderHostedForm(){
   var opts=hostedOptions;if(!opts)return;
   var combos=opts.combos||[],clis=[];combos.forEach(function(c){if(clis.indexOf(c.cli)<0)clis.push(c.cli);});
-  hostedFill('hostedNode',(opts.nodes||[]).map(function(n){return {value:n.id,text:n.name+'（剩余 '+n.free_mem_gb+'G / '+n.free_vcpu+'C'+(n.free_disk_gb!==undefined?' / 盘 '+n.free_disk_gb+'G':'')+'）'+(n.quota_mode==='soft'?'【无硬磁盘配额】':'')+(n.online?'':'（离线）'),disabled:!n.online||n.quota_eligible===false};}),'自动');
+  hostedFill('hostedNode',(opts.nodes||[]).map(function(n){return {value:n.id,text:n.name+'（剩余 '+n.free_mem_gb+'G / '+n.free_vcpu+'C'+(n.free_disk_gb!==undefined?' / 盘 '+n.free_disk_gb+'G':'')+'）'+(n.quota_mode==='soft'?'【无硬磁盘配额】':'')+hostedNodeCapacityText(n)+(n.online?'':'（离线）'),disabled:!n.online||n.quota_eligible===false};}),'自动');
   hostedFill('hostedCli',clis.map(function(c){var ok=combos.some(function(x){return x.cli===c&&x.verified;});return {value:c,text:c+(ok?'':'（未验通）'),disabled:!ok};}),'请选择 CLI');
   renderHostedLlm();
   hostedFill('hostedPlan',(opts.plans||[]).map(function(p){return {value:p.id,text:p.name+(p.fits?'':'（超出剩余额度）'),disabled:!p.fits};}),'请选择资源套餐');
@@ -1202,7 +1218,11 @@ async function refreshHostedOptions(){
     return null;
   }finally{clearTimeout(timer);}
 }
-function hostedMaskRender(name,stage,failReason,lastStage){
+function hostedCreateFailText(reason,reasons){
+  if(reason==='node_no_capacity')return consoleErrorText(409,{error:reason,capacity_reasons:reasons});
+  return HOSTED_FAIL_REASONS[reason]||('原因码 '+(reason||'未知'));
+}
+function hostedMaskRender(name,stage,failReason,lastStage,reasons){
   var box=document.getElementById('hostedMaskBox');if(!box)return;box.replaceChildren();
   var title=document.createElement('h3');title.textContent='创建 Agent：'+name;box.append(title);
   var at=HOSTED_STAGES.findIndex(function(x){return x[0]===(stage==='failed'?lastStage:stage);});
@@ -1212,7 +1232,7 @@ function hostedMaskRender(name,stage,failReason,lastStage){
     row.dataset.state=state;row.textContent=(state==='done'?'✓ ':state==='failed'?'✗ ':state==='current'?'… ':'○ ')+x[1];box.append(row);
   });
   var line=document.createElement('div');line.id='hostedMaskResult';
-  if(stage==='failed')line.textContent='创建失败：'+(HOSTED_FAIL_REASONS[failReason]||('创建失败（原因码 '+(failReason||'未知')+'）'));
+  if(stage==='failed')line.textContent='创建失败：'+(failReason==='node_no_capacity'?hostedCreateFailText(failReason,reasons):(HOSTED_FAIL_REASONS[failReason]||('创建失败（原因码 '+(failReason||'未知')+'）')));
   else if(stage==='online')line.textContent='已上线';
   var hint=document.createElement('div');hint.className='group-feedback';hint.textContent='点击任意处关闭（不影响后台创建）';
   box.append(line,hint);
@@ -1230,7 +1250,7 @@ async function hostedTrackJob(jobId,name){
       if(!r.ok)throw new Error('HTTP '+r.status);
       var d=await r.json();stage=String(d.stage||'');reason=String(d.reason||'');
     }catch(err){hostedJobTimer=setTimeout(tick,hostedPollMs);return;}   // 网络抖动:继续轮询,不当成失败
-    if(stage==='failed'){hostedMaskRender(name,'failed',reason,lastStage);enrollFeedback('hostedFeedback','创建 '+name+' 失败：'+(HOSTED_FAIL_REASONS[reason]||('原因码 '+(reason||'未知'))));return;}
+    if(stage==='failed'){hostedMaskRender(name,'failed',reason,lastStage,d.capacity_reasons);enrollFeedback('hostedFeedback','创建 '+name+' 失败：'+hostedCreateFailText(reason,d.capacity_reasons));return;}
     if(HOSTED_STAGES.some(function(x){return x[0]===stage;}))lastStage=stage;
     hostedMaskRender(name,stage,'',lastStage);
     if(stage==='online'){enrollFeedback('hostedFeedback',name+' 已上线');refreshGroups('hosted');refreshAgents();refreshRoster();refreshHostedOptions();return;}
@@ -1248,7 +1268,8 @@ var hostedOpInflight={},HOSTED_OP_MAX_MS=15*60*1000;
 function hostedOpInflightText(inf){
   return HOSTED_OPS[inf.op]+'中…'+(inf.stage==='queued'?'（排队）':'');
 }
-function hostedOpFail(inf,reason){
+function hostedOpFail(inf,reason,reasons){
+  if(reason==='node_no_capacity')return HOSTED_OPS[inf.op]+' '+inf.name+' 失败：'+consoleErrorText(409,{error:reason,capacity_reasons:reasons});
   return HOSTED_OPS[inf.op]+' '+inf.name+' 失败：'+(Object.prototype.hasOwnProperty.call(HOSTED_FAIL_REASONS,reason)?HOSTED_FAIL_REASONS[reason]:'操作未成功')+'（原因码 '+(reason||'未知')+'）';
 }
 function hostedOpTrack(a,op,jobId){
@@ -1266,7 +1287,7 @@ function hostedOpTrack(a,op,jobId){
       var d=await r.json();stage=String(d.stage||'');reason=String(d.reason||'');
     }catch(err){inf.timer=setTimeout(tick,hostedPollMs);return;}   // 网络抖动：继续轮询，不当成失败
     if(hostedOpInflight[a.agent_id]!==inf)return;
-    if(stage==='failed'){end();enrollFeedback('rosterFeedback',hostedOpFail(inf,reason));renderRoster();refreshRoster();return;}
+    if(stage==='failed'){end();enrollFeedback('rosterFeedback',hostedOpFail(inf,reason,d.capacity_reasons));renderRoster();refreshRoster();return;}
     if(stage==='completed'){   // 成功终态只按 A1 契约判定：前端不猜、不替后端兜 busy／销毁的错
       end();enrollFeedback('rosterFeedback',HOSTED_OPS[op]+' '+inf.name+' 已完成');renderRoster();refreshRoster();refreshGroups('hosted-op');refreshAgents();return;
     }

@@ -158,6 +158,10 @@ func (l *Lifecycle) Upgrade(ctx context.Context, agentID, actorLC, version strin
 		_ = l.st.SetSeatState(ctx, agentID, "online", "", "node_offline", nil)
 		return ErrNodeOffline
 	}
+	if capacityErr := l.st.capacityResult(ctx, seat.NodeID, res); capacityErr != nil {
+		_, _ = l.st.TransitionSeatState(ctx, agentID, "busy", seat.State, seat.StateDetail, "capacity_refused", nil)
+		return capacityErr
+	}
 	if l.quotaResult(ctx, seat, res) {
 		return ErrSoftQuotaHeld
 	}
@@ -214,6 +218,13 @@ func (l *Lifecycle) Restart(ctx context.Context, agentID, actorLC string, isAdmi
 			l.undo(ctx, agentID, actorLC, "suspend")
 		}
 		return ErrNodeOffline
+	}
+	if capacityErr := l.st.capacityResult(ctx, seat.NodeID, res); capacityErr != nil {
+		moved, _ := l.st.TransitionSeatState(ctx, agentID, "starting", seat.State, seat.StateDetail, "capacity_refused", nil)
+		if moved && !alreadyActive {
+			l.undo(ctx, agentID, actorLC, "suspend")
+		}
+		return capacityErr
 	}
 	if l.quotaResult(ctx, seat, res) {
 		if !alreadyActive {
@@ -285,6 +296,10 @@ func (l *Lifecycle) RefreshCred(ctx context.Context, agentID, actorLC string) er
 	if err != nil {
 		back("node_offline")
 		return ErrNodeOffline
+	}
+	if capacityErr := l.st.capacityResult(ctx, seat.NodeID, res); capacityErr != nil {
+		back("capacity_refused")
+		return capacityErr
 	}
 	if l.quotaResult(ctx, seat, res) {
 		return ErrSoftQuotaHeld
@@ -360,6 +375,15 @@ func (l *Lifecycle) Enable(ctx context.Context, agentID, actorLC string, isAdmin
 		return err
 	}
 	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "start_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
+	if err == nil {
+		if capacityErr := l.st.capacityResult(ctx, seat.NodeID, res); capacityErr != nil {
+			moved, _ := l.st.TransitionSeatState(ctx, agentID, "starting", seat.State, seat.StateDetail, "capacity_refused", nil)
+			if moved && !alreadyActive {
+				l.undo(ctx, agentID, actorLC, "suspend")
+			}
+			return capacityErr
+		}
+	}
 	if err == nil && l.quotaResult(ctx, seat, res) {
 		if !alreadyActive {
 			l.undo(ctx, agentID, actorLC, "suspend")

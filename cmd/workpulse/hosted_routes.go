@@ -79,6 +79,9 @@ func writeHostedError(w http.ResponseWriter, err error) {
 	var pe *hosted.PlanExceedsQuotaError
 	var be *hosted.BackupFailedError
 	switch {
+	case len(hosted.CapacityErrorReasons(err)) != 0:
+		writeJSON(w, http.StatusConflict, map[string]any{"error": "node_no_capacity", "capacity_reasons": hosted.CapacityErrorReasons(err)})
+		return
 	case errors.As(err, &qe):
 		writeRemaining(w, "quota_exceeded", qe.RemainingJSON())
 		return
@@ -316,15 +319,19 @@ func (d hostedDeps) handleQuotaList(w http.ResponseWriter, r *http.Request) {
 		Used  int64 `json:"used"`
 		Limit int64 `json:"limit"`
 	}
+	type usedMemory struct {
+		Used  float64 `json:"used"`
+		Limit float64 `json:"limit"`
+	}
 	type quotaRow struct {
 		User struct {
 			ID        string `json:"id"`
 			ShortName string `json:"short_name"`
 		} `json:"user"`
-		Agents usedLimit `json:"agents"`
-		VCPU   usedLimit `json:"vcpu"`
-		MemGB  usedLimit `json:"mem_gb"`
-		DiskGB usedLimit `json:"disk_gb"`
+		Agents usedLimit  `json:"agents"`
+		VCPU   usedLimit  `json:"vcpu"`
+		MemGB  usedMemory `json:"mem_gb"`
+		DiskGB usedLimit  `json:"disk_gb"`
 	}
 	out := make([]quotaRow, 0, len(rows))
 	for i, q := range rows {
@@ -332,7 +339,7 @@ func (d hostedDeps) handleQuotaList(w http.ResponseWriter, r *http.Request) {
 		row.User.ID, row.User.ShortName = users[i].ID, users[i].ShortName
 		row.Agents = usedLimit{int64(q.Usage.Agents), int64(q.Quota.AgentsLimit)}
 		row.VCPU = usedLimit{int64(q.Usage.VCPU), int64(q.Quota.VCPULimit)}
-		row.MemGB = usedLimit{q.Usage.MemMB / 1024, q.Quota.MemMBLimit / 1024}
+		row.MemGB = usedMemory{float64(q.Usage.MemMB) / 1024, float64(q.Quota.MemMBLimit) / 1024}
 		row.DiskGB = usedLimit{q.Usage.DiskMB / 1024, q.Quota.DiskMBLimit / 1024}
 		out = append(out, row)
 	}

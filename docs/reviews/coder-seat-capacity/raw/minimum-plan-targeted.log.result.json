@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./internal/hosted",
+    "-run",
+    "TestMinimumPlan|TestPlanTable|TestPlanDiskTiersPinned|TestOptionsViewAndJobProgress|TestOptionsContract|TestSchemaApplyRollbackRepeatable"
+  ],
+  "rc": 0,
+  "seconds": 49.31374427815899,
+  "external_DSN_environment_not_inherited": true
+}

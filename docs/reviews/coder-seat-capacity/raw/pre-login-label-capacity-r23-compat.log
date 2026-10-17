@@ -1,0 +1,45 @@
+=== RUN   TestCapacityR23RealLoginBudgetAndSampler
+    capacity_n2_compat_test.go:70: login tmpfs subtracted from data2 disk, or /h ownership failed: {At:2026-10-17 15:14:04.620878243 +0000 UTC m=+0.028813333 Known:false Total:{CPU:0 Memory:0 Disk:0} Reserved:{CPU:0 Memory:0 Disk:0} External:{CPU:0 Memory:0 Disk:0}} capacity ownership mismatch
+2026/10/17 15:14:04 http: proxy error: context canceled
+--- FAIL: TestCapacityR23RealLoginBudgetAndSampler (0.04s)
+=== RUN   TestCapacityR23UnknownBlocksActualLoginStartWithoutHold
+--- PASS: TestCapacityR23UnknownBlocksActualLoginStartWithoutHold (0.02s)
+=== RUN   TestCapacityLoginBudgetIsNotBusinessSeatOrFortyGiBFloor
+--- PASS: TestCapacityLoginBudgetIsNotBusinessSeatOrFortyGiBFloor (0.00s)
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget/bytes
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget/inodes
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget/unknown
+--- PASS: TestSoftLoginRealStartEmergencyRetainsDataAndBudget (0.06s)
+    --- PASS: TestSoftLoginRealStartEmergencyRetainsDataAndBudget/bytes (0.02s)
+    --- PASS: TestSoftLoginRealStartEmergencyRetainsDataAndBudget/inodes (0.02s)
+    --- PASS: TestSoftLoginRealStartEmergencyRetainsDataAndBudget/unknown (0.02s)
+=== RUN   TestSoftLoginNormalFinishReleasesBudget
+--- PASS: TestSoftLoginNormalFinishReleasesBudget (0.03s)
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/cpu
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/memory
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/disk
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/inode
+--- PASS: TestSoftLoginBudgetAdmissionBeforeDocker (0.02s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/cpu (0.01s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/memory (0.01s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/disk (0.01s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/inode (0.01s)
+=== RUN   TestSoftLoginConsumesSharedCPUAndMemory
+--- PASS: TestSoftLoginConsumesSharedCPUAndMemory (0.02s)
+=== RUN   TestSoftLoginMeasurementOwnershipAndRestart
+--- PASS: TestSoftLoginMeasurementOwnershipAndRestart (0.03s)
+=== RUN   TestSoftLoginUnknownLeftoverFailsClosedAndPreserves
+--- PASS: TestSoftLoginUnknownLeftoverFailsClosedAndPreserves (0.01s)
+=== RUN   TestSoftLoginStartAndEmergencyAreSerialized
+--- PASS: TestSoftLoginStartAndEmergencyAreSerialized (0.05s)
+=== RUN   TestSoftLoginEmergencyMustStopActualLoginCID
+--- PASS: TestSoftLoginEmergencyMustStopActualLoginCID (0.02s)
+=== RUN   TestSoftLoginPersistentPoolAndStateValidation
+--- PASS: TestSoftLoginPersistentPoolAndStateValidation (0.01s)
+=== RUN   TestSoftLoginBudgetCannotBeForgottenBySeatTeardown
+--- PASS: TestSoftLoginBudgetCannotBeForgottenBySeatTeardown (0.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.373s
+FAIL

@@ -1,0 +1,26 @@
+=== RUN   TestCapacityRequestReasonAndModelSelection
+=== RUN   TestCapacityRequestReasonAndModelSelection/cpu
+=== RUN   TestCapacityRequestReasonAndModelSelection/memory
+=== RUN   TestCapacityRequestReasonAndModelSelection/disk
+--- PASS: TestCapacityRequestReasonAndModelSelection (3.08s)
+    --- PASS: TestCapacityRequestReasonAndModelSelection/cpu (0.02s)
+    --- PASS: TestCapacityRequestReasonAndModelSelection/memory (0.01s)
+    --- PASS: TestCapacityRequestReasonAndModelSelection/disk (0.01s)
+=== RUN   TestCapacityStoreSerializesConcurrentReservations
+--- PASS: TestCapacityStoreSerializesConcurrentReservations (2.39s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	6.615s
+=== RUN   TestHostedCapacityReasonsActualHTTP
+=== RUN   TestHostedCapacityReasonsActualHTTP/cpu
+=== RUN   TestHostedCapacityReasonsActualHTTP/memory
+=== RUN   TestHostedCapacityReasonsActualHTTP/disk
+=== RUN   TestHostedCapacityReasonsActualHTTP/load_unknown
+=== RUN   TestHostedCapacityReasonsActualHTTP/stale
+--- PASS: TestHostedCapacityReasonsActualHTTP (2.90s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/cpu (0.02s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/memory (0.02s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/disk (0.02s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/load_unknown (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/stale (0.01s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	3.949s

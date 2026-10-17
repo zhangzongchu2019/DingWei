@@ -1,0 +1,9 @@
+AssertionError [ERR_ASSERTION]: safe new-seat job polling: 创建失败：没有节点有足够的剩余资源 创建 FixtureSeat 失败：没有节点有足够的剩余资源
+    at /data/ai-dev-data/coder-seat-capacity-lab/reply-mutant-create-console/view-service/console-soft-quota-regression.js:96:3 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

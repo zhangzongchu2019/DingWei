@@ -1,0 +1,112 @@
+{
+  "source": "26f506c3ef47014db59b339133943c98585a8c54",
+  "results": [
+    {
+      "name": "node-reserve",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 3.625460611889139
+    },
+    {
+      "name": "node-start",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 3.4066342278383672
+    },
+    {
+      "name": "sample-budget",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 3.587780361995101
+    },
+    {
+      "name": "store-pending",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 5.037825607927516
+    },
+    {
+      "name": "hub-freshness",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 4.897632455918938
+    },
+    {
+      "name": "foreign-cpu",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 2.963166936999187
+    },
+    {
+      "name": "foreign-memory",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 2.145631038118154
+    },
+    {
+      "name": "foreign-disk",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 3.2464125610422343
+    },
+    {
+      "name": "minimum-cpu",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 0.5378637460526079
+    },
+    {
+      "name": "minimum-memory",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 0.408127621980384
+    },
+    {
+      "name": "minimum-disk",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 0.453333443030715
+    },
+    {
+      "name": "cpu-recovery",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 3.0070467970799655
+    },
+    {
+      "name": "console",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 4.140384609112516
+    },
+    {
+      "name": "sku-definition",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 4.768603660166264
+    },
+    {
+      "name": "sku-fraction",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 7.4189291801303625
+    },
+    {
+      "name": "sku-schema",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 6.350763675989583
+    },
+    {
+      "name": "n2-label",
+      "rc": 1,
+      "assertion_red": true,
+      "seconds": 2.488143699010834
+    },
+    {
+      "name": "registration",
+      "rc": 1,
+      "assertion_red": true
+    }
+  ]
+}

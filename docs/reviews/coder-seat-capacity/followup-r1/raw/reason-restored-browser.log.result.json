@@ -1,0 +1,9 @@
+{
+  "command": [
+    "node",
+    "view-service/console-soft-quota-regression.js"
+  ],
+  "rc": 0,
+  "seconds": 5.1804572199471295,
+  "external_DSN_environment_not_inherited": true
+}

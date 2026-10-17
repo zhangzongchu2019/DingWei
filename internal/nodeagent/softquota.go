@@ -17,6 +17,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/seatcapacity"
 )
 
 var ErrSoftQuota = errors.New("soft_quota_blocked")
@@ -62,6 +64,7 @@ type softState struct {
 	Events           []quotaEvent         `json:"events"`
 }
 type softQuota struct {
+	capacity                                   *seatCapacityState
 	retiredLock                                *os.File
 	readInventory                              func(string) ([]os.DirEntry, error)
 	persistMu                                  sync.Mutex
@@ -359,6 +362,9 @@ func (q *softQuota) reserve(id string, r seatResources) error {
 	if count >= q.policy.MaxSeats {
 		return fmt.Errorf("%w: seat_count", ErrSoftQuota)
 	}
+	if err := q.capacityAdmissionLocked(&r); err != nil {
+		return err
+	}
 	limit := r.DiskMB * 1024 * 1024
 	if err := q.resourceBudgetLocked(r); err != nil {
 		return err
@@ -404,6 +410,9 @@ func (q *softQuota) commandGate(cmd Command) error {
 	if err := q.admitLocked(0); err != nil {
 		return err
 	}
+	if err := q.capacityAdmissionLocked(nil); err != nil {
+		return err
+	}
 	var p struct {
 		SeatID string `json:"seat_id"`
 	}
@@ -443,6 +452,10 @@ func (q *softQuota) acquireWriter(ctx context.Context, id string) (func(), error
 }
 func (q *softQuota) start(ctx context.Context, id string, fn func(context.Context) error) error {
 	q.mu.Lock()
+	if err := q.capacityAdmissionLocked(nil); err != nil {
+		q.mu.Unlock()
+		return err
+	}
 	if err := q.admitLocked(0); err != nil {
 		q.mu.Unlock()
 		return err
@@ -495,6 +508,9 @@ func (q *softQuota) start(ctx context.Context, id string, fn func(context.Contex
 	defer release()
 	q.mu.Lock()
 	gateErr = q.admitLocked(0)
+	if gateErr == nil {
+		gateErr = q.capacityAdmissionLocked(nil)
+	}
 	if q.state.Seats[id] != seat || seat.Hold != "" {
 		gateErr = ErrSoftQuota
 	}
@@ -653,7 +669,11 @@ func (d *dockerOps) runSoft(ctx context.Context) {
 		}
 	}
 	var wg sync.WaitGroup
-	wg.Add(3)
+	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		d.runSeatCapacity(ctx)
+	}()
 	go func() {
 		defer wg.Done()
 		ticker := time.NewTicker(d.policy.ScanInterval)
@@ -820,6 +840,11 @@ func (p NodePolicy) logConfig() map[string]any {
 
 // Capacity snapshots copy only metadata, never private state paths/credentials.
 func (q *softQuota) report() (map[string]softSeat, []quotaEvent, bool) {
+	seats, events, ready, _ := q.reportWithCapacity()
+	return seats, events, ready
+}
+
+func (q *softQuota) reportWithCapacity() (map[string]softSeat, []quotaEvent, bool, *seatcapacity.View) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	seats := map[string]softSeat{}
@@ -831,7 +856,12 @@ func (q *softQuota) report() (map[string]softSeat, []quotaEvent, bool) {
 	}
 	events := append([]quotaEvent{}, q.state.Events...)
 	ready := q.admitLocked(0) == nil
-	return seats, events, ready
+	var capacity *seatcapacity.View
+	if q.capacity != nil {
+		v := q.capacityViewLocked()
+		capacity = &v
+	}
+	return seats, events, ready, capacity
 }
 func (q *softQuota) acknowledge(ids []string) error {
 	q.mu.Lock()
@@ -859,8 +889,12 @@ func (d *dockerOps) preflightSeat(id string) error {
 }
 
 func hostResourceBudget() (cpu, total, available int64, err error) {
-	mt, mf, e := memInfoMB("/proc/meminfo")
-	return int64(runtime.NumCPU()) * 1000, mt << 20, mf << 20, e
+	raw, err := os.ReadFile("/proc/meminfo")
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	total, available, err = parseCapacityMemory(raw)
+	return int64(runtime.NumCPU()) * 1000, total, available, err
 }
 func (q *softQuota) resourceBudgetLocked(add seatResources) error {
 	if q.resourcesErr != nil || q.resourcesAt.IsZero() || q.now().Sub(q.resourcesAt) > q.policy.MaxAge || q.now().Before(q.resourcesAt) || q.samplingExpiredLocked() {

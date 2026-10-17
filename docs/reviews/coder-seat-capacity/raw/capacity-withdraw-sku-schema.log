@@ -1,0 +1,6 @@
+=== RUN   TestMinimumPlanSchemaUpgradesOldConstraint
+    minimum_plan_test.go:79: new plan rejected after upgrade: ERROR: new row for relation "g4_hosted_seat" violates check constraint "g4_hosted_seat_plan_check" (SQLSTATE 23514)
+--- FAIL: TestMinimumPlanSchemaUpgradesOldConstraint (2.14s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	2.154s
+FAIL

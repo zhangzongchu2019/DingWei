@@ -272,6 +272,7 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 		Model: req.Model, CreatedBy: req.By, // 生效值即请求值（建席时定死；空＝未指定）
 	})
 	if err != nil {
+		o.dropToken(ag.ID)
 		_, _ = o.idp.AbortHostedAgent(ctx, ag.ID, req.By)
 		return CreateOutcome{}, err
 	}
@@ -293,6 +294,7 @@ func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan P
 	consent := len(allowSoft) > 0 && allowSoft[0]
 	var candidates []Node
 	modelSeen := false
+	var blockedReasons []string
 	for _, n := range nodes {
 		if nodeID != "" && nodeID != "auto" && n.ID != nodeID {
 			continue
@@ -315,6 +317,17 @@ func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan P
 			}
 			modelSeen = true
 		}
+		if mode == "soft" {
+			v, err := o.st.nodeSeatCapacity(ctx, n)
+			if err != nil || v == nil {
+				blockedReasons = append(blockedReasons, "load_unknown")
+				continue
+			}
+			if reasons := v.CanAdd(v.Policy(), capacityPlan(plan)); len(reasons) != 0 {
+				blockedReasons = append(blockedReasons, reasons...)
+				continue
+			}
+		}
 		if freeMB(n) < plan.MemMB {
 			continue
 		}
@@ -323,6 +336,12 @@ func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan P
 	if len(candidates) == 0 {
 		if model != "" && !modelSeen {
 			return Node{}, ErrModelNotAvailable
+		}
+		// Union only over visible, consented, model-compatible soft candidates.
+		// Each reason means at least one such candidate failed that resource; it
+		// does not claim all nodes failed the same dimension or reveal node IDs.
+		if len(blockedReasons) != 0 {
+			return Node{}, capacityFailure(blockedReasons)
 		}
 		return Node{}, ErrNoNodeCapacity
 	}
@@ -387,6 +406,12 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 		return
 	}
 	if res, err := o.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "pull_image", Params: json.RawMessage(`{"image":` + jsonStr(seat.ImageRef) + `}`)}); err != nil || !res.OK {
+		if err == nil {
+			if capacityErr := o.st.capacityResult(ctx, seat.NodeID, res); capacityErr != nil {
+				fail("pulling", lifecycleJobReason(capacityErr))
+				return
+			}
+		}
 		fail("pulling", "image_pull_failed")
 		return
 	}
@@ -425,6 +450,12 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 		"model":           seat.Model,    // 包 B2 修订 3：落库记录值（不随节点默认漂移）
 	})
 	if res, err := o.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "create_seat", Params: params}); err != nil || !res.OK {
+		if err == nil {
+			if capacityErr := o.st.capacityResult(ctx, seat.NodeID, res); capacityErr != nil {
+				fail("starting", lifecycleJobReason(capacityErr))
+				return
+			}
+		}
 		n, ne := o.st.GetNode(ctx, seat.NodeID)
 		mode, _ := registeredQuota(n)
 		if (ne == nil && mode == "soft") || (!res.OK && strings.Contains(res.Error, "soft_quota_blocked")) {

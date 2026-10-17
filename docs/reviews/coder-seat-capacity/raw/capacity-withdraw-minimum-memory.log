@@ -1,0 +1,8 @@
+=== RUN   TestConfiguredMinimumFloorsEachReservation
+=== RUN   TestConfiguredMinimumFloorsEachReservation/memory
+    capacity_test.go:136: minimum not applied to actual reservation: {Version:1 MaxSeats:100 Known:true At:1970-01-01 00:01:40 +0000 UTC Minimum:{CPU:1000 Memory:4294967296 Disk:42949672960} CPU:{Total:32000 NodeReserve:0 ExternalUsed:0 ManagedReserved:4000 Allocatable:32000 Available:28000 Slots:32 RemainingSlots:28} Memory:{Total:17179869184 NodeReserve:0 ExternalUsed:0 ManagedReserved:6442450944 Allocatable:17179869184 Available:10737418240 Slots:4 RemainingSlots:2} Disk:{Total:1099511627776 NodeReserve:0 ExternalUsed:0 ManagedReserved:171798691840 Allocatable:1099511627776 Available:927712935936 Slots:25 RemainingSlots:21} TotalSlots:4 Occupied:4 AvailableSlots:2 Reasons:[]} []
+--- FAIL: TestConfiguredMinimumFloorsEachReservation (0.00s)
+    --- FAIL: TestConfiguredMinimumFloorsEachReservation/memory (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/seatcapacity	0.003s
+FAIL

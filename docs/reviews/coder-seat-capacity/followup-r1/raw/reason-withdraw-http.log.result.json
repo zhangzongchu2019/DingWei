@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHostedCapacityReasonsActualHTTP$"
+  ],
+  "rc": 1,
+  "seconds": 64.35667701507919,
+  "external_DSN_environment_not_inherited": true
+}

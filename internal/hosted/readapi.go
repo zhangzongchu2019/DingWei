@@ -10,21 +10,24 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/zhangzongchu2019/dingwei/internal/seatcapacity"
 )
 
 // ---------- options 读模型（GET /api/console/hosted/options） ----------
 
 type NodeOption struct {
-	QuotaMode     string `json:"quota_mode,omitempty"`
-	QuotaNotice   string `json:"quota_notice,omitempty"`
-	QuotaEligible *bool  `json:"quota_eligible,omitempty"`
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Pool          string `json:"pool"`
-	Online        bool   `json:"online"`
-	FreeMemGB     int64  `json:"free_mem_gb"`
-	FreeVCPU      int    `json:"free_vcpu"`
-	FreeDiskGB    int64  `json:"free_disk_gb"`
+	SeatCapacity  *seatcapacity.View `json:"seat_capacity,omitempty"`
+	QuotaMode     string             `json:"quota_mode,omitempty"`
+	QuotaNotice   string             `json:"quota_notice,omitempty"`
+	QuotaEligible *bool              `json:"quota_eligible,omitempty"`
+	ID            string             `json:"id"`
+	Name          string             `json:"name"`
+	Pool          string             `json:"pool"`
+	Online        bool               `json:"online"`
+	FreeMemGB     int64              `json:"free_mem_gb"`
+	FreeVCPU      int                `json:"free_vcpu"`
+	FreeDiskGB    int64              `json:"free_disk_gb"`
 }
 
 type ComboOption struct {
@@ -44,18 +47,18 @@ type AccountOption struct {
 }
 
 type PlanOption struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"` // 如 2C/4G
-	VCPU  int    `json:"vcpu"`
-	MemGB int64  `json:"mem_gb"`
-	Fits  bool   `json:"fits"` // false＝超剩余额度置灰（S3/B5；按全局剩余算，手选节点容量由创建时 node_no_capacity 兜底）
+	ID    string  `json:"id"`
+	Name  string  `json:"name"` // 如 2C/4G
+	VCPU  int     `json:"vcpu"`
+	MemGB float64 `json:"mem_gb"`
+	Fits  bool    `json:"fits"` // false＝超剩余额度置灰（S3/B5；按全局剩余算，手选节点容量由创建时 node_no_capacity 兜底）
 }
 
 type QuotaRemaining struct {
-	Agents int64 `json:"agents"`
-	VCPU   int64 `json:"vcpu"`
-	MemGB  int64 `json:"mem_gb"`
-	DiskGB int64 `json:"disk_gb"`
+	Agents int64   `json:"agents"`
+	VCPU   int64   `json:"vcpu"`
+	MemGB  float64 `json:"mem_gb"`
+	DiskGB int64   `json:"disk_gb"`
 }
 
 // QuotaView 契约第一节：quota: {remaining:{agents, vcpu, mem_gb, disk_gb}}——多包一层 remaining（页面读 opts.quota.remaining）。
@@ -115,6 +118,14 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 			notice = "无硬磁盘配额"
 		}
 		eligible := nodeQuotaEligible(n)
+		var capacity *seatcapacity.View
+		if mode == "soft" {
+			capacity, err = o.st.nodeSeatCapacity(ctx, n)
+			if err != nil {
+				return v, err
+			}
+			eligible = eligible && capacity != nil && capacity.Known && capacity.AvailableSlots > 0
+		}
 		var publicEligible *bool
 		publicMode := ""
 		if mode != "hard" || !eligible {
@@ -122,7 +133,8 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 			publicMode = mode
 		}
 		v.Nodes = append(v.Nodes, NodeOption{
-			QuotaMode: publicMode, QuotaNotice: notice, QuotaEligible: publicEligible,
+			SeatCapacity: capacity,
+			QuotaMode:    publicMode, QuotaNotice: notice, QuotaEligible: publicEligible,
 			ID: n.ID, Name: n.Name, Pool: pool, Online: n.State == "online",
 			FreeMemGB: c.MemFreeMB / 1024, FreeVCPU: max(0, c.CPUTotal-usedVCPU), FreeDiskGB: c.DiskFreeMB / 1024,
 		})
@@ -150,7 +162,7 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 	v.Quota.Remaining = QuotaRemaining{
 		Agents: max0(int64(quota.AgentsLimit) - int64(usage.Agents)),
 		VCPU:   max0(int64(quota.VCPULimit) - int64(usage.VCPU)),
-		MemGB:  max0(quota.MemMBLimit-usage.MemMB) / 1024,
+		MemGB:  float64(max0(quota.MemMBLimit-usage.MemMB)) / 1024,
 		DiskGB: max0(quota.DiskMBLimit-usage.DiskMB) / 1024,
 	}
 	for _, pid := range PlanIDs() {
@@ -160,11 +172,19 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 			quota.MemMBLimit-usage.MemMB >= p.MemMB &&
 			quota.DiskMBLimit-usage.DiskMB >= p.DiskMB
 		v.Plans = append(v.Plans, PlanOption{
-			ID: p.ID, Name: fmt.Sprintf("%dC/%dG", p.VCPU, p.MemMB/1024),
-			VCPU: p.VCPU, MemGB: p.MemMB / 1024, Fits: fits,
+			ID: p.ID, Name: planOptionName(p),
+			VCPU: p.VCPU, MemGB: float64(p.MemMB) / 1024, Fits: fits,
 		})
 	}
 	return v, nil
+}
+
+func planOptionName(p Plan) string {
+	name := fmt.Sprintf("%dC/%gG", p.VCPU, float64(p.MemMB)/1024)
+	if p.ID == "1c1.5g40" {
+		name += "/40G"
+	}
+	return name
 }
 
 // ---------- jobs 进度（GET /api/console/hosted/jobs/{job_id}） ----------
@@ -173,10 +193,11 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 // 生命周期完成为 completed；agent_id 仅完成时给。
 // 无 cancelled——排队不可取消、无取消端点。
 type JobView struct {
-	Stage   string `json:"stage"` // queued|pulling|starting|running|online|completed|failed
-	Reason  string `json:"reason,omitempty"`
-	AgentID string `json:"agent_id,omitempty"`
-	Model   string `json:"model,omitempty"` // 包 B2 修订 3：席位生效模型（空＝节点默认，键缺席——旧客户端与既有精确体测试不受影响）
+	CapacityReasons []string `json:"capacity_reasons,omitempty"`
+	Stage           string   `json:"stage"` // queued|pulling|starting|running|online|completed|failed
+	Reason          string   `json:"reason,omitempty"`
+	AgentID         string   `json:"agent_id,omitempty"`
+	Model           string   `json:"model,omitempty"` // 包 B2 修订 3：席位生效模型（空＝节点默认，键缺席——旧客户端与既有精确体测试不受影响）
 }
 
 // JobProgressFor jobs 端点的读面，归属按席位 created_by 判（组长裁定 lead-g4-joint-run-1 第 2 条）：
@@ -217,7 +238,7 @@ func jobViewOf(seat Seat) JobView {
 	case "busy":
 		return withModel(JobView{Stage: "online", AgentID: seat.AgentID}) // 升级/重启中：席位仍在线（蒙版用于创建链）
 	default: // error/failed/destroyed 等 ⇒ failed，reason＝状态机记录的机器码
-		return withModel(JobView{Stage: "failed", Reason: jobFailReason(seat.StateDetail)})
+		return withModel(capacityJobView(JobView{Stage: "failed", Reason: jobFailReason(seat.StateDetail)}, seat.StateDetail))
 	}
 }
 

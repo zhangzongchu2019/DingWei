@@ -1,0 +1,4 @@
+# github.com/zhangzongchu2019/dingwei/internal/hosted [github.com/zhangzongchu2019/dingwei/internal/hosted.test]
+internal/hosted/seat_capacity.go:68:17: assignment mismatch: 2 variables but strings.Cut returns 3 values
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted [build failed]
+FAIL

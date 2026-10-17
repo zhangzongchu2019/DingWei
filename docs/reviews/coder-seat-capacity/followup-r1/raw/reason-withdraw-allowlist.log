@@ -1,0 +1,6 @@
+=== RUN   TestCapacityReasonSanitizationAndCompatibility
+    seat_capacity_reason_test.go:40: capacity error: wrapped: node_no_capacity reasons=[cpu memory disk seat_limit] want=[cpu memory disk seat_limit load_unknown]
+--- FAIL: TestCapacityReasonSanitizationAndCompatibility (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	0.012s
+FAIL

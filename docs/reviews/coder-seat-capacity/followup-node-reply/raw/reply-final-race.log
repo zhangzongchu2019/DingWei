@@ -1,0 +1,205 @@
+=== RUN   TestRefreshStartingTimeoutIsExistingSeat
+--- PASS: TestRefreshStartingTimeoutIsExistingSeat (2.48s)
+=== RUN   TestEnableRestartWaitForAgentConnect
+=== RUN   TestEnableRestartWaitForAgentConnect/restart
+=== RUN   TestEnableRestartWaitForAgentConnect/enable
+--- PASS: TestEnableRestartWaitForAgentConnect (4.55s)
+    --- PASS: TestEnableRestartWaitForAgentConnect/restart (2.39s)
+    --- PASS: TestEnableRestartWaitForAgentConnect/enable (2.16s)
+=== RUN   TestRestartTimeoutKeepsExistingSeat
+--- PASS: TestRestartTimeoutKeepsExistingSeat (2.45s)
+=== RUN   TestEnableRestartFailureAfterStarting
+=== RUN   TestEnableRestartFailureAfterStarting/restart_node_reports_failure
+=== RUN   TestEnableRestartFailureAfterStarting/restart_node_unreachable
+=== RUN   TestEnableRestartFailureAfterStarting/enable_node_reports_failure
+=== RUN   TestEnableRestartFailureAfterStarting/enable_node_unreachable
+--- PASS: TestEnableRestartFailureAfterStarting (8.50s)
+    --- PASS: TestEnableRestartFailureAfterStarting/restart_node_reports_failure (2.11s)
+    --- PASS: TestEnableRestartFailureAfterStarting/restart_node_unreachable (2.06s)
+    --- PASS: TestEnableRestartFailureAfterStarting/enable_node_reports_failure (2.17s)
+    --- PASS: TestEnableRestartFailureAfterStarting/enable_node_unreachable (2.16s)
+=== RUN   TestRestartFailureAfterAgentConnectedKeepsOnline
+=== RUN   TestRestartFailureAfterAgentConnectedKeepsOnline/node_reports_failure_from_online
+=== RUN   TestRestartFailureAfterAgentConnectedKeepsOnline/node_unreachable_from_error
+--- PASS: TestRestartFailureAfterAgentConnectedKeepsOnline (4.02s)
+    --- PASS: TestRestartFailureAfterAgentConnectedKeepsOnline/node_reports_failure_from_online (2.09s)
+    --- PASS: TestRestartFailureAfterAgentConnectedKeepsOnline/node_unreachable_from_error (1.94s)
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason/completed
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason/failed
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason/restart_waits_for_reconnect
+--- PASS: TestLifecycleJobPersistsProgressAndMachineReason (6.09s)
+    --- PASS: TestLifecycleJobPersistsProgressAndMachineReason/completed (2.11s)
+    --- PASS: TestLifecycleJobPersistsProgressAndMachineReason/failed (1.97s)
+    --- PASS: TestLifecycleJobPersistsProgressAndMachineReason/restart_waits_for_reconnect (2.01s)
+=== RUN   TestLifecycleJobDuplicatePolicy
+--- PASS: TestLifecycleJobDuplicatePolicy (1.96s)
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows/queued_restart_already_online
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows/running_enable_already_online
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows/ambiguous_queued_disable
+--- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows (6.04s)
+    --- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows/queued_restart_already_online (1.98s)
+    --- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows/running_enable_already_online (2.06s)
+    --- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows/ambiguous_queued_disable (2.00s)
+=== RUN   TestLifecycleOrderOnOneLog
+=== RUN   TestLifecycleOrderOnOneLog/upgrade
+=== RUN   TestLifecycleOrderOnOneLog/disable_then_enable
+=== RUN   TestLifecycleOrderOnOneLog/restart_resumes_first
+=== RUN   TestLifecycleOrderOnOneLog/destroy
+--- PASS: TestLifecycleOrderOnOneLog (8.21s)
+    --- PASS: TestLifecycleOrderOnOneLog/upgrade (1.96s)
+    --- PASS: TestLifecycleOrderOnOneLog/disable_then_enable (2.16s)
+    --- PASS: TestLifecycleOrderOnOneLog/restart_resumes_first (2.02s)
+    --- PASS: TestLifecycleOrderOnOneLog/destroy (2.06s)
+=== RUN   TestRestartAfterFailedStopResumesCredential
+--- PASS: TestRestartAfterFailedStopResumesCredential (2.03s)
+=== RUN   TestUpgradeRollbackOnNodeFailure
+--- PASS: TestUpgradeRollbackOnNodeFailure (2.14s)
+=== RUN   TestUpgradeWhileDisabledRejected
+--- PASS: TestUpgradeWhileDisabledRejected (2.16s)
+=== RUN   TestUpgradeUsesRecordedModel
+--- PASS: TestUpgradeUsesRecordedModel (2.72s)
+=== RUN   TestSoftCreateFailureDoesNotAbortOrReleaseIdentity
+--- PASS: TestSoftCreateFailureDoesNotAbortOrReleaseIdentity (5.60s)
+=== RUN   TestUpgradeUnknownPlanNotSwallowed
+--- PASS: TestUpgradeUnknownPlanNotSwallowed (3.72s)
+=== RUN   TestRefreshCredHappyPath
+--- PASS: TestRefreshCredHappyPath (2.89s)
+=== RUN   TestRefreshCredOwnerOnly
+--- PASS: TestRefreshCredOwnerOnly (3.40s)
+=== RUN   TestRefreshCredStateGate
+--- PASS: TestRefreshCredStateGate (2.99s)
+=== RUN   TestRefreshCredAccountGate
+--- PASS: TestRefreshCredAccountGate (2.85s)
+=== RUN   TestRefreshCredNodeOutcomes
+=== RUN   TestRefreshCredNodeOutcomes/node_down
+=== RUN   TestRefreshCredNodeOutcomes/old_node
+=== RUN   TestRefreshCredNodeOutcomes/write_failed
+=== RUN   TestRefreshCredNodeOutcomes/restart_failed
+--- PASS: TestRefreshCredNodeOutcomes (13.15s)
+    --- PASS: TestRefreshCredNodeOutcomes/node_down (2.94s)
+    --- PASS: TestRefreshCredNodeOutcomes/old_node (3.35s)
+    --- PASS: TestRefreshCredNodeOutcomes/write_failed (3.81s)
+    --- PASS: TestRefreshCredNodeOutcomes/restart_failed (3.05s)
+=== RUN   TestRefreshCredAsJob
+--- PASS: TestRefreshCredAsJob (3.12s)
+=== RUN   TestRefreshCredRecoverJobs
+--- PASS: TestRefreshCredRecoverJobs (2.60s)
+=== RUN   TestRefreshCredResumesSuspendedCredential
+=== RUN   TestRefreshCredResumesSuspendedCredential/success_resumes
+=== RUN   TestRefreshCredResumesSuspendedCredential/old_node_undoes_resume
+=== RUN   TestRefreshCredResumesSuspendedCredential/write_failed_undoes_resume
+=== RUN   TestRefreshCredResumesSuspendedCredential/node_offline_undoes_resume
+=== RUN   TestRefreshCredResumesSuspendedCredential/starting_write_failed_undoes_resume
+=== RUN   TestRefreshCredResumesSuspendedCredential/already_active_not_suspended_on_failure
+=== RUN   TestRefreshCredResumesSuspendedCredential/resume_failure_refuses
+--- PASS: TestRefreshCredResumesSuspendedCredential (16.76s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/success_resumes (3.03s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/old_node_undoes_resume (3.08s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/write_failed_undoes_resume (2.21s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/node_offline_undoes_resume (2.21s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/starting_write_failed_undoes_resume (2.11s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/already_active_not_suspended_on_failure (2.07s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/resume_failure_refuses (2.04s)
+=== RUN   TestCapacityReplyStrictProtocolAndRegistration
+--- PASS: TestCapacityReplyStrictProtocolAndRegistration (2.07s)
+=== RUN   TestCapacityFinalGateLifecycleJobs
+=== RUN   TestCapacityFinalGateLifecycleJobs/restart/cpu
+=== RUN   TestCapacityFinalGateLifecycleJobs/restart/memory
+=== RUN   TestCapacityFinalGateLifecycleJobs/restart/disk
+=== RUN   TestCapacityFinalGateLifecycleJobs/restart/load_unknown
+=== RUN   TestCapacityFinalGateLifecycleJobs/enable/cpu
+=== RUN   TestCapacityFinalGateLifecycleJobs/enable/memory
+=== RUN   TestCapacityFinalGateLifecycleJobs/enable/disk
+=== RUN   TestCapacityFinalGateLifecycleJobs/enable/load_unknown
+=== RUN   TestCapacityFinalGateLifecycleJobs/refresh_cred/cpu
+=== RUN   TestCapacityFinalGateLifecycleJobs/refresh_cred/memory
+=== RUN   TestCapacityFinalGateLifecycleJobs/refresh_cred/disk
+=== RUN   TestCapacityFinalGateLifecycleJobs/refresh_cred/load_unknown
+=== RUN   TestCapacityFinalGateLifecycleJobs/upgrade/cpu
+=== RUN   TestCapacityFinalGateLifecycleJobs/upgrade/memory
+=== RUN   TestCapacityFinalGateLifecycleJobs/upgrade/disk
+=== RUN   TestCapacityFinalGateLifecycleJobs/upgrade/load_unknown
+=== RUN   TestCapacityFinalGateLifecycleJobs/engine
+=== RUN   TestCapacityFinalGateLifecycleJobs/near-match
+=== RUN   TestCapacityFinalGateLifecycleJobs/transport
+=== RUN   TestCapacityFinalGateLifecycleJobs/hold
+=== RUN   TestCapacityFinalGateLifecycleJobs/hard
+--- PASS: TestCapacityFinalGateLifecycleJobs (2.41s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/restart/cpu (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/restart/memory (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/restart/disk (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/restart/load_unknown (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/enable/cpu (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/enable/memory (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/enable/disk (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/enable/load_unknown (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/refresh_cred/cpu (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/refresh_cred/memory (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/refresh_cred/disk (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/refresh_cred/load_unknown (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/upgrade/cpu (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/upgrade/memory (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/upgrade/disk (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/upgrade/load_unknown (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/engine (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/near-match (0.02s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/transport (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/hold (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/hard (0.01s)
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/pull_image/cpu
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/pull_image/memory
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/pull_image/disk
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/pull_image/load_unknown
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/create_seat/cpu
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/create_seat/memory
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/create_seat/disk
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/create_seat/load_unknown
+--- PASS: TestCapacityFinalGateCreateJobsAndCleanup (2.08s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/pull_image/cpu (0.02s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/pull_image/memory (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/pull_image/disk (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/pull_image/load_unknown (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/create_seat/cpu (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/create_seat/memory (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/create_seat/disk (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/create_seat/load_unknown (0.01s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	118.317s
+=== RUN   TestRefreshCredRoute
+--- PASS: TestRefreshCredRoute (2.53s)
+=== RUN   TestHostedCapacityReasonsActualHTTP
+=== RUN   TestHostedCapacityReasonsActualHTTP/cpu
+=== RUN   TestHostedCapacityReasonsActualHTTP/memory
+=== RUN   TestHostedCapacityReasonsActualHTTP/disk
+=== RUN   TestHostedCapacityReasonsActualHTTP/load_unknown
+=== RUN   TestHostedCapacityReasonsActualHTTP/stale
+--- PASS: TestHostedCapacityReasonsActualHTTP (2.50s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/cpu (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/memory (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/disk (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/load_unknown (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/stale (0.01s)
+=== RUN   TestHostedFinalNodeGateJobHTTP
+--- PASS: TestHostedFinalNodeGateJobHTTP (2.22s)
+=== RUN   TestUpgradeRotationKeepsNewCredentialOnSharedWork
+2026/10/17 16:04:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 16:04:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 16:04:18 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/17 16:04:18 session handshake timing key_id=u_zzc session=seat1 total=17ms register=11ms accept=0s conn_seq=3ms onboard=2ms register_lock=0s
+2026/10/17 16:04:18 session capability file_upload_v1=true key_id=u_zzc session=seat1 conn_seq=1
+2026/10/17 16:04:18 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=1 reason=session_reconnected released=0
+2026/10/17 16:04:19 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=1 reason=session_disconnected released=0
+2026/10/17 16:04:19 session handshake timing key_id=u_zzc session=seat1 total=29ms register=25ms accept=0s conn_seq=3ms onboard=0s register_lock=0s
+2026/10/17 16:04:19 session capability file_upload_v1=true key_id=u_zzc session=seat1 conn_seq=2
+2026/10/17 16:04:19 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=2 reason=session_reconnected released=0
+2026/10/17 16:04:19 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=2 reason=session_disconnected released=0
+2026/10/17 16:04:19 session handshake timing key_id=u_zzc session=seat1 total=22ms register=18ms accept=0s conn_seq=4ms onboard=0s register_lock=0s
+2026/10/17 16:04:19 session capability file_upload_v1=true key_id=u_zzc session=seat1 conn_seq=3
+--- PASS: TestUpgradeRotationKeepsNewCredentialOnSharedWork (4.02s)
+PASS
+2026/10/17 16:04:19 session delivery lease release failed key_id=u_zzc session=seat1 conn_seq=3 reason=session_reconnected error="sql: database is closed"
+2026/10/17 16:04:19 session delivery lease release failed key_id=u_zzc session=seat1 conn_seq=3 reason=session_disconnected error="sql: database is closed"
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	12.437s

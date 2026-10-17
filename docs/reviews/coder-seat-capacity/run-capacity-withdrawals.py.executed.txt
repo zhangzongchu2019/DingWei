@@ -1,0 +1,51 @@
+import concurrent.futures, hashlib, io, json, pathlib, subprocess, tarfile, time
+lab=pathlib.Path('/data/ai-dev-data/coder-seat-capacity-lab')
+repo=pathlib.Path('/data/ai-dev-data/seat-capacity-r22')
+pin=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()
+archive=subprocess.check_output(['git','archive',pin],cwd=repo)
+cases=[
+ ('node-reserve','internal/nodeagent/softquota.go','q.capacityAdmissionLocked(&r)','error(nil)',['go','test','-count=1','-v','./internal/nodeagent','-run','^TestSoftCapacityRealReserveEightNinthAndRestart$']),
+ ('node-start','internal/nodeagent/seatcapacity.go','reasons := v.CanStart()','reasons := []string{}',['go','test','-count=1','-v','./internal/nodeagent','-run','^TestSoftCapacityRealReserveEightNinthAndRestart$']),
+ ('sample-budget','internal/nodeagent/seatcapacity.go','if q.capacity.sampling &&','if false &&',['go','test','-count=1','-v','./internal/nodeagent','-run','^TestCapacityBlockedSamplerIsSingleAndNeverLocksReserveOrReport$']),
+ ('store-pending','internal/hosted/store.go','checkSeatCapacityTx(ctx, tx, st)','error(nil)',['go','test','-count=1','-v','./internal/hosted','-run','^TestCapacityStoreSerializesConcurrentReservations$']),
+ ('hub-freshness','internal/hosted/seat_capacity.go','if !v.ValidateAt(time.Now(), 60*time.Second) {','if !v.ValidateAt(time.Now(), 60*time.Second) && false {',['go','test','-count=1','-v','./internal/hosted','-run','^TestCapacityUnknownReservesForeignLoadAndLegacyHard$/stale_wire$']),
+ ('foreign-cpu','internal/nodeagent/seatcapacity_sample.go','CPU: max(int64(0), busy-ownedCPU)','CPU: max(int64(0), busy-ownedCPU)*0',['go','test','-count=1','-v','./internal/nodeagent','-run','^TestCapacitySamplerForeignLoadOwnershipAndUnknown$']),
+ ('foreign-memory','internal/nodeagent/seatcapacity_sample.go','Memory: max(int64(0), total-available-ownedMemory)','Memory: max(int64(0), total-available-ownedMemory)*0',['go','test','-count=1','-v','./internal/nodeagent','-run','^TestCapacitySamplerForeignLoadOwnershipAndUnknown$']),
+ ('foreign-disk','internal/nodeagent/seatcapacity_sample.go','Disk: max(int64(0), space.Total-space.Free-allocated)','Disk: max(int64(0), space.Total-space.Free-allocated)*0',['go','test','-count=1','-v','./internal/nodeagent','-run','^TestCapacitySamplerForeignLoadOwnershipAndUnknown$']),
+ ('minimum-cpu','internal/seatcapacity/capacity.go','max(r.CPU, p.Minimum.CPU)','r.CPU',['go','test','-count=1','-v','./internal/seatcapacity','-run','^TestConfiguredMinimumFloorsEachReservation$/cpu$']),
+ ('minimum-memory','internal/seatcapacity/capacity.go','max(r.Memory, p.Minimum.Memory)','r.Memory',['go','test','-count=1','-v','./internal/seatcapacity','-run','^TestConfiguredMinimumFloorsEachReservation$/memory$']),
+ ('minimum-disk','internal/seatcapacity/capacity.go','max(r.Disk, p.Minimum.Disk)','r.Disk',['go','test','-count=1','-v','./internal/seatcapacity','-run','^TestConfiguredMinimumFloorsEachReservation$/disk$']),
+ ('cpu-recovery','internal/nodeagent/seatcapacity_sample.go','if err != nil && !errors.Is(err, errCapacityWarming) {','if err != nil && !errors.Is(err, errCapacityWarming) && false {',['go','test','-count=1','-v','./internal/nodeagent','-run','^TestCapacitySamplerForeignLoadOwnershipAndUnknown$']),
+ ('console','internal/m8/console_auth.go','+hostedNodeCapacityText(n)',"+''",['node','view-service/console-soft-quota-regression.js']),
+]
+cases += [
+ ('sku-definition','internal/hosted/plans.go','\t"1c1.5g40": {ID: "1c1.5g40", VCPU: 1, MemMB: 1536, DiskMB: 40960},\n','',['go','test','-count=1','-v','./internal/hosted','-run','^TestMinimumPlanDefinitionAndNetCapacity$']),
+ ('sku-fraction','internal/hosted/readapi.go','MemGB: float64(p.MemMB) / 1024','MemGB: float64(p.MemMB / 1024)',['go','test','-count=1','-v','./internal/hosted','-run','^TestMinimumPlanOptionsAndRealCreateResources$']),
+ ('sku-schema','internal/hosted/schema.go',"ALTER TABLE g4_hosted_seat DROP CONSTRAINT IF EXISTS g4_hosted_seat_plan_check;\nALTER TABLE g4_hosted_seat ADD CONSTRAINT g4_hosted_seat_plan_check\n  CHECK (plan IN ('1c1.5g40','2c4g','4c8g'));",'-- withdrawn minimum-plan migration',['go','test','-count=1','-v','./internal/hosted','-run','^TestMinimumPlanSchemaUpgradesOldConstraint$']),
+ ('n2-label','internal/nodeagent/seatcapacity_sample.go','if destination == "/h" {','if destination == "/h" && false {',['go','test','-count=1','-v','./internal/nodeagent','-run','^TestCapacityLoginStatsUsesN2LabelAndPrivateMount$']),
+]
+metadata=[]
+for name,file,old,new,command in cases:
+ dst=lab/('capacity-mutant-'+name)
+ assert not dst.exists(),str(dst)
+ dst.mkdir()
+ with tarfile.open(fileobj=io.BytesIO(archive)) as t:t.extractall(dst)
+ path=dst/file;assert not path.is_symlink()
+ data=path.read_text();assert data.count(old)==1,(name,data.count(old))
+ path.write_text(data.replace(old,new))
+ metadata.append(dict(name=name,source=pin,file=file,old=old,new=new,sha256=hashlib.sha256(path.read_bytes()).hexdigest(),command=command))
+(lab/'evidence'/'capacity-mutations.json').write_text(json.dumps(metadata,indent=2)+'\n')
+def run(case):
+ name,file,old,new,command=case
+ log='capacity-withdraw-'+name+'.log'
+ started=time.monotonic()
+ rc=subprocess.call(['python3',str(lab/'run-local.py'),log,*command],cwd=lab/('capacity-mutant-'+name),stdout=subprocess.DEVNULL)
+ raw=(lab/'evidence'/log).read_text()
+ assertion=('--- FAIL:' in raw or 'AssertionError' in raw)
+ valid=rc==1 and assertion and '[build failed]' not in raw and 'SyntaxError' not in raw
+ result=dict(name=name,rc=rc,assertion_red=valid,seconds=time.monotonic()-started)
+ print(json.dumps(result),flush=True)
+ return result
+with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:results=list(pool.map(run,cases))
+(lab/'evidence'/'capacity-withdrawals.json').write_text(json.dumps(dict(source=pin,results=results),indent=2)+'\n')
+raise SystemExit(0 if all(x['assertion_red'] for x in results) else 1)
