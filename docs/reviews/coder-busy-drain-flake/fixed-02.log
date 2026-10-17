@@ -1,0 +1,12 @@
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+test_busy_buffer_queues_busy_messages_and_drains_fifo (test_sessionhelper.SessionHelperTest.test_busy_buffer_queues_busy_messages_and_drains_fifo) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.529s
+
+OK

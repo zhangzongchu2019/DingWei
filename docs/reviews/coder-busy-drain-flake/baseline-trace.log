@@ -1,0 +1,79 @@
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+TRACE_JSON=[{"event": "drain-start", "at": 1121534.380836916, "pending": 2, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-one", "at": 1121534.582219968, "pending": 1, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-one", "at": 1121534.582695203, "pending": 1, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-two", "at": 1121534.884559067, "pending": 0, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-two", "at": 1121534.885026746, "pending": 0, "handled": ["one", "two"], "busy_acked": ["peer#FB-2642"]}, {"event": "drain-cancelled-or-finished", "at": 1121534.935223074, "pending": 0, "handled": ["one", "two"], "busy_acked": []}, {"event": "drain-start", "at": 1121534.93979917, "pending": 2, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-one", "at": 1121535.141230781, "pending": 1, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-one", "at": 1121535.142146937, "pending": 1, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-two", "at": 1121535.443032815, "pending": 0, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-two", "at": 1121535.443418522, "pending": 0, "handled": ["one", "two"], "busy_acked": ["peer#FB-2642"]}, {"event": "drain-cancelled-or-finished", "at": 1121535.493642663, "pending": 0, "handled": ["one", "two"], "busy_acked": []}, {"event": "drain-start", "at": 1121535.498080998, "pending": 2, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-one", "at": 1121535.699462629, "pending": 1, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-one", "at": 1121535.69985579, "pending": 1, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-two", "at": 1121536.002209558, "pending": 0, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-two", "at": 1121536.002597059, "pending": 0, "handled": ["one", "two"], "busy_acked": ["peer#FB-2642"]}, {"event": "drain-cancelled-or-finished", "at": 1121536.052825018, "pending": 0, "handled": ["one", "two"], "busy_acked": []}, {"event": "drain-start", "at": 1121536.057180929, "pending": 2, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-one", "at": 1121536.258386162, "pending": 1, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-one", "at": 1121536.259067118, "pending": 1, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-two", "at": 1121536.560628538, "pending": 0, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-two", "at": 1121536.56104865, "pending": 0, "handled": ["one", "two"], "busy_acked": ["peer#FB-2642"]}, {"event": "drain-cancelled-or-finished", "at": 1121536.562185671, "pending": 0, "handled": ["one", "two"], "busy_acked": []}, {"event": "drain-start", "at": 1121536.566447739, "pending": 2, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-one", "at": 1121536.767844036, "pending": 1, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-one", "at": 1121536.768714521, "pending": 1, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-two", "at": 1121537.069859618, "pending": 0, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-two", "at": 1121537.070250415, "pending": 0, "handled": ["one", "two"], "busy_acked": ["peer#FB-2642"]}, {"event": "drain-cancelled-or-finished", "at": 1121537.120429413, "pending": 0, "handled": ["one", "two"], "busy_acked": []}, {"event": "drain-start", "at": 1121537.124745321, "pending": 2, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-one", "at": 1121537.326013854, "pending": 1, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-one", "at": 1121537.326431246, "pending": 1, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-two", "at": 1121537.628151896, "pending": 0, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-two", "at": 1121537.62863579, "pending": 0, "handled": ["one", "two"], "busy_acked": ["peer#FB-2642"]}, {"event": "drain-cancelled-or-finished", "at": 1121537.678801269, "pending": 0, "handled": ["one", "two"], "busy_acked": []}, {"event": "drain-start", "at": 1121537.683563959, "pending": 2, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-one", "at": 1121537.885063067, "pending": 1, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-one", "at": 1121537.886112798, "pending": 1, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-two", "at": 1121538.186876725, "pending": 0, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-two", "at": 1121538.187377195, "pending": 0, "handled": ["one", "two"], "busy_acked": ["peer#FB-2642"]}, {"event": "drain-cancelled-or-finished", "at": 1121538.237615853, "pending": 0, "handled": ["one", "two"], "busy_acked": []}, {"event": "drain-start", "at": 1121538.242430874, "pending": 2, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-one", "at": 1121538.443683945, "pending": 1, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-one", "at": 1121538.444177244, "pending": 1, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-two", "at": 1121538.745598349, "pending": 0, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-two", "at": 1121538.746046393, "pending": 0, "handled": ["one", "two"], "busy_acked": ["peer#FB-2642"]}, {"event": "drain-cancelled-or-finished", "at": 1121538.796234441, "pending": 0, "handled": ["one", "two"], "busy_acked": []}, {"event": "drain-start", "at": 1121538.800673321, "pending": 2, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-one", "at": 1121539.001935082, "pending": 1, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-one", "at": 1121539.002406426, "pending": 1, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-two", "at": 1121539.304365235, "pending": 0, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-two", "at": 1121539.304849844, "pending": 0, "handled": ["one", "two"], "busy_acked": ["peer#FB-2642"]}, {"event": "drain-cancelled-or-finished", "at": 1121539.35509002, "pending": 0, "handled": ["one", "two"], "busy_acked": []}, {"event": "drain-start", "at": 1121539.372226513, "pending": 2, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-one", "at": 1121539.574045033, "pending": 1, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-one", "at": 1121539.575331686, "pending": 1, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-two", "at": 1121539.877216512, "pending": 0, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-two", "at": 1121539.877814876, "pending": 0, "handled": ["one", "two"], "busy_acked": ["peer#FB-2642"]}, {"event": "drain-cancelled-or-finished", "at": 1121539.926056434, "pending": 0, "handled": ["one", "two"], "busy_acked": []}, {"event": "drain-start", "at": 1121539.931468627, "pending": 2, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-one", "at": 1121540.132581524, "pending": 1, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-one", "at": 1121540.133102246, "pending": 1, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-two", "at": 1121540.433872002, "pending": 0, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-two", "at": 1121540.434601183, "pending": 0, "handled": ["one", "two"], "busy_acked": ["peer#FB-2642"]}, {"event": "drain-cancelled-or-finished", "at": 1121540.434643081, "pending": 0, "handled": ["one", "two"], "busy_acked": []}, {"event": "drain-start", "at": 1121540.439524538, "pending": 2, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-one", "at": 1121540.64067389, "pending": 1, "handled": [], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-one", "at": 1121540.641225904, "pending": 1, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-start-two", "at": 1121540.942716799, "pending": 0, "handled": ["one"], "busy_acked": ["peer#FB-2642"]}, {"event": "process-complete-two", "at": 1121540.943402553, "pending": 0, "handled": ["one", "two"], "busy_acked": ["peer#FB-2642"]}, {"event": "drain-cancelled-or-finished", "at": 1121540.993606226, "pending": 0, "handled": ["one", "two"], "busy_acked": []}]
+TRACE_RESULT={"run": 12, "failures": 0, "errors": 0}
+............
+----------------------------------------------------------------------
+Ran 12 tests in 6.629s
+
+OK

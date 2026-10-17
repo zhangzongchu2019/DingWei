@@ -1,0 +1,23 @@
+{
+  "baseline_runs": 12,
+  "baseline_failures": 1,
+  "fixed_single_runs": 50,
+  "fixed_single_failures": 0,
+  "helper_full": {
+    "helper-root": {
+      "rc": 0,
+      "seconds": 385.42,
+      "cwd": "/data/ai-dev-data/busy-drain-flake-r20",
+      "count": 730
+    },
+    "helper-cwd": {
+      "rc": 0,
+      "seconds": 384.596,
+      "cwd": "/data/ai-dev-data/busy-drain-flake-r20/tools/sessionhelper",
+      "count": 730
+    }
+  },
+  "source_scope": "only existing test wait/cancel block plus evidence;product0changes",
+  "assertions_byte_identical": true,
+  "withdrawal": "controlled awaited-completion scheduling: fixed0/original1;original natural12 had1failure"
+}

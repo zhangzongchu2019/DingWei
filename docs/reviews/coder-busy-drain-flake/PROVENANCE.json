@@ -1,0 +1,17 @@
+{
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "executable": "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+  "distributions": {
+    "websockets": "15.0.1",
+    "certifi": "2026.7.22",
+    "pexpect": "4.9.0",
+    "ptyprocess": "0.7.0"
+  },
+  "baseline": "d2cc9882da4f535f4bb9e8ad69ce7fcd78c3d23a",
+  "baseline_tree": "11fb5c66fe44399a8947a1e180650fa44bf89b80",
+  "test_file": "tools/sessionhelper/tests/test_sessionhelper.py",
+  "baseline_sha256": "3df7b9ada8123047e8f84582a9fd981fb0961ebd6d6526776d64eb60e7e58cad",
+  "fixed_sha256": "d7d2a11afb27a145da9a1082d0457acaadd928276e6349bc60482b73d596ebe3",
+  "final_assertions_byte_identical": true,
+  "original_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+}
