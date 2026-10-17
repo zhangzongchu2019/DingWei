@@ -1,0 +1,104 @@
+{
+  "code_pin": "0e5bb86d2b81956fdb6dd79e839804e3f834a4bc",
+  "cases": [
+    {
+      "name": "a1-inode-emergency",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftInodeEmergencyBoundariesPersistStopAndRetainData",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "b9e8dd6644998374bd37e4ed695812922ad7fe3a35f439aec8cb76b5a637fc71",
+      "mutant_sha256": "b37d8be64470c51b685e748ff63b86b5c68570faff53922dcaaa47ee98ee9001"
+    },
+    {
+      "name": "a1-independent-percent",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftInodeEmergencyBoundariesPersistStopAndRetainData",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "b9e8dd6644998374bd37e4ed695812922ad7fe3a35f439aec8cb76b5a637fc71",
+      "mutant_sha256": "438259c389363507fe4e6196d6c01df040d4db6a09f64a0875f48cd7e7c42b6b"
+    },
+    {
+      "name": "n1-actual-cli",
+      "file": "cmd/workpulse/hosted_admin.go",
+      "test": "TestHostedAdminQuotaRegistrationCLIToNormalize",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "3dd2bb53d3674fd489b1b406fb1b9d3ea438858fdb6ef93e312070d3fc98f729",
+      "mutant_sha256": "9f01f8de5d8f45450837174d4f50390ee2ef05bb3824c6ff3f0728a63d612d1e"
+    },
+    {
+      "name": "n1-policy-revision",
+      "file": "cmd/workpulse/hosted_admin.go",
+      "test": "TestHostedAdminQuotaRegistrationCLIToNormalize",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "3dd2bb53d3674fd489b1b406fb1b9d3ea438858fdb6ef93e312070d3fc98f729",
+      "mutant_sha256": "8e2bbab3bc29b7b0e2254c9c1f479d47b57cefadb88889c9a414ca5c9b2cfa4a"
+    },
+    {
+      "name": "n2-old-real-login-path",
+      "file": "internal/nodeagent/login.go",
+      "test": "TestSoftLoginEmergencyMustStopActualLoginCID",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "71c3f808a04eaff10b82975eb42e68933cf96bf881376ae2c21448966010c23f",
+      "mutant_sha256": "fba01f808e81f5f0b94ed1ef64ab240d1499597d1257e3c28287f9ca1c26b34c"
+    },
+    {
+      "name": "n2-stop-ownership-routing",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftLoginEmergencyMustStopActualLoginCID",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "b9e8dd6644998374bd37e4ed695812922ad7fe3a35f439aec8cb76b5a637fc71",
+      "mutant_sha256": "24a48cf790e5e2044b7ad64f42081fa12a86e7eae072c845f060c4dfd49c12bc"
+    },
+    {
+      "name": "n2-resource-reservation",
+      "file": "internal/nodeagent/softquota_login.go",
+      "test": "TestSoftLoginBudgetAdmissionBeforeDocker",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "dca9876d25c865db9dc21033aa5d1c316eb61c4d63a2163c927806732e0c356d",
+      "mutant_sha256": "baf4e0a86d424fc8d1e5f1cd1af5648639d04769bd41835d1f1643271f03e1b7"
+    },
+    {
+      "name": "n2-hold-cleanup",
+      "file": "internal/nodeagent/login.go",
+      "test": "TestSoftLoginRealStartEmergencyRetainsDataAndBudget",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "71c3f808a04eaff10b82975eb42e68933cf96bf881376ae2c21448966010c23f",
+      "mutant_sha256": "664fe143bab269215b635d77bef6239f464f9e9c6087c7dce20753a9d66ffe6f"
+    },
+    {
+      "name": "n2-typed-event-audit",
+      "file": "internal/hosted/node_quota.go",
+      "test": "TestLoginQuotaAuditDoesNotMutateHostedSeat",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "1a5370ed7e5471e3c21bd165852e150329e6365434ba7f7f1b4a277170e8ffc3",
+      "mutant_sha256": "59bf02ce75c19a2d4a51f7bb3cfc5b1c698849455df4e25e8f519c286a62979d"
+    },
+    {
+      "name": "n2-typed-capacity",
+      "file": "internal/hosted/node_quota.go",
+      "test": "TestLoginQuotaAuditDoesNotMutateHostedSeat",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "1a5370ed7e5471e3c21bd165852e150329e6365434ba7f7f1b4a277170e8ffc3",
+      "mutant_sha256": "79876f86ddc6e8bbca21042d7a20fe6fecae600847dd0574986233f6fc20e8dc"
+    },
+    {
+      "name": "n2-seat-teardown-forget",
+      "file": "internal/nodeagent/softquota.go",
+      "test": "TestSoftLoginBudgetCannotBeForgottenBySeatTeardown",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "b9e8dd6644998374bd37e4ed695812922ad7fe3a35f439aec8cb76b5a637fc71",
+      "mutant_sha256": "c34f662cd41dcee6bad6045ddcf80e07ea6f7b9b0d05cf7bfd493823b2a57063"
+    }
+  ]
+}

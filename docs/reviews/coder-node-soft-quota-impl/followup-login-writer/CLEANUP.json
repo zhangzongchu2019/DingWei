@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-17T10:08:55.227809+00:00",
+  "scope": "Owned marker-matched fixture processes; private caches/HOME/TMPDIR and clean detached mutation checkout only. Shared module caches and other seats untouched.",
+  "fixture_processes_matching_owned_markers": 0,
+  "mutation_worktree_clean_and_removed": true,
+  "paths": [
+    {
+      "path": "/data/ai-dev-data/coder-soft-quota-lab/gocache",
+      "bytes_before": 968390357,
+      "exists_after": false
+    },
+    {
+      "path": "/data/ai-dev-data/coder-soft-quota-lab/home",
+      "bytes_before": 83050377,
+      "exists_after": false
+    },
+    {
+      "path": "/tmp/sq-eweacsgb",
+      "bytes_before": 1139530,
+      "exists_after": false
+    }
+  ]
+}

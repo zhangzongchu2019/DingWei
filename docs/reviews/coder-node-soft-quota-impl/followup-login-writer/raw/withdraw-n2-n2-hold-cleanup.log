@@ -1,0 +1,14 @@
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget/bytes
+    softquota_login_test.go:169: held login data deleted stat /tmp/sq-eweacsgb/TestSoftLoginRealStartEmergencyRetainsDataAndBudgetbytes33119882/003/login-0123456789abcdef0123456789abcdef/preserved-business: no such file or directory
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget/inodes
+    softquota_login_test.go:169: held login data deleted stat /tmp/sq-eweacsgb/TestSoftLoginRealStartEmergencyRetainsDataAndBudgetinodes2326080620/003/login-0123456789abcdef0123456789abcdef/preserved-business: no such file or directory
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget/unknown
+    softquota_login_test.go:169: held login data deleted stat /tmp/sq-eweacsgb/TestSoftLoginRealStartEmergencyRetainsDataAndBudgetunknown1478433048/003/login-0123456789abcdef0123456789abcdef/preserved-business: no such file or directory
+--- FAIL: TestSoftLoginRealStartEmergencyRetainsDataAndBudget (0.08s)
+    --- FAIL: TestSoftLoginRealStartEmergencyRetainsDataAndBudget/bytes (0.03s)
+    --- FAIL: TestSoftLoginRealStartEmergencyRetainsDataAndBudget/inodes (0.02s)
+    --- FAIL: TestSoftLoginRealStartEmergencyRetainsDataAndBudget/unknown (0.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.091s
+FAIL

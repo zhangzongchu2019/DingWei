@@ -1,0 +1,31 @@
+import pathlib,subprocess,json,hashlib
+lab=pathlib.Path('/data/ai-dev-data/coder-soft-quota-lab');root=lab/'n2-withdrawal';pin='0e5bb86d2b81956fdb6dd79e839804e3f834a4bc'
+def source(p):return subprocess.check_output(['git','show',pin+':'+p],cwd=root).decode()
+f='internal/nodeagent/softquota.go';s=source(f);cli='cmd/workpulse/hosted_admin.go';c=source(cli);login='internal/nodeagent/login.go';l=source(login);writer='internal/nodeagent/softquota_login.go';w=source(writer);hub='internal/hosted/node_quota.go';h=source(hub)
+cases=[
+ ('a1-inode-emergency',f,s.replace('if !unknown && q.space.FreeFiles < q.inodeEmergencyThreshold(q.space) {','if false && !unknown && q.space.FreeFiles < q.inodeEmergencyThreshold(q.space) {',1),'./internal/nodeagent','TestSoftInodeEmergencyBoundariesPersistStopAndRetainData'),
+ ('a1-independent-percent',f,s.replace('percent := q.policy.InodeEmergencyReservePercent','percent := uint64(q.policy.EmergencyReservePercent)',1),'./internal/nodeagent','TestSoftInodeEmergencyBoundariesPersistStopAndRetainData'),
+ ('n1-actual-cli',cli,subprocess.check_output(['git','show','17115394397412d92be660df9c2cc2f1865c23a6:'+cli],cwd=root).decode(),'./cmd/workpulse','TestHostedAdminQuotaRegistrationCLIToNormalize'),
+ ('n1-policy-revision',cli,c.replace('QuotaPolicyRevision: *quotaRevision','QuotaPolicyRevision: ""',1).replace('secret, err := st.RegisterNode','_ = quotaRevision\n secret, err := st.RegisterNode',1),'./cmd/workpulse','TestHostedAdminQuotaRegistrationCLIToNormalize'),
+ ('n2-old-real-login-path',login,subprocess.check_output(['git','show','f3e6448d80089a5328d015f97280e0b8388630b6:'+login],cwd=root).decode(),'./internal/nodeagent','TestSoftLoginEmergencyMustStopActualLoginCID'),
+ ('n2-stop-ownership-routing',f,s.replace('if writer.WriterKind == "login" {','if false && writer.WriterKind == "login" {',1),'./internal/nodeagent','TestSoftLoginEmergencyMustStopActualLoginCID'),
+ ('n2-resource-reservation',writer,w.replace('q.resourceBudgetLocked(r)','q.resourceBudgetLocked(seatResources{})',1),'./internal/nodeagent','TestSoftLoginBudgetAdmissionBeforeDocker'),
+ ('n2-hold-cleanup',login,l.replace('if l.d.soft != nil {\n\t\tl.cleanupSoft(ctx, id)\n\t\treturn\n\t}', '',1),'./internal/nodeagent','TestSoftLoginRealStartEmergencyRetainsDataAndBudget'),
+ ('n2-typed-event-audit',hub,h.replace('e.WriterKind != "login" && e.Reason','e.Reason',1),'./internal/hosted','TestLoginQuotaAuditDoesNotMutateHostedSeat'),
+ ('n2-typed-capacity',hub,h.replace('if v.WriterKind != "" {','if false && v.WriterKind != "" {',1),'./internal/hosted','TestLoginQuotaAuditDoesNotMutateHostedSeat'),
+]
+cases.append(('n2-seat-teardown-forget',f,s.replace('if s := q.state.Seats[id]; s != nil && s.WriterKind == "login" {','if s := q.state.Seats[id]; false && s != nil && s.WriterKind == "login" {',1),'./internal/nodeagent','TestSoftLoginBudgetCannotBeForgottenBySeatTeardown'))
+results=[]
+for name,path,mut,pkg,test in cases:
+ original=source(path);assert mut!=original
+ try:
+  (root/path).write_text(mut)
+  log='withdraw-n2-'+name+'.log'
+  rc=subprocess.call(['python3',str(lab/'run-local.py'),log,'go','test',pkg,'-run','^'+test+'$','-v','-count=1','-timeout=120s'],cwd=root)
+  raw=(lab/'evidence'/log).read_text()
+  good=rc==1 and '--- FAIL: '+test in raw and '[build failed]' not in raw and 'test timed out' not in raw and 'panic:' not in raw
+  results.append({'name':name,'file':path,'test':test,'rc':rc,'assertion_red':good,'original_sha256':hashlib.sha256(original.encode()).hexdigest(),'mutant_sha256':hashlib.sha256(mut.encode()).hexdigest()})
+  print(name,good,flush=True)
+ finally:(root/path).write_text(original)
+ (lab/'evidence/N2-WITHDRAWALS.json').write_text(json.dumps({'code_pin':pin,'cases':results},indent=2)+'\n')
+assert all(c['assertion_red'] for c in results)

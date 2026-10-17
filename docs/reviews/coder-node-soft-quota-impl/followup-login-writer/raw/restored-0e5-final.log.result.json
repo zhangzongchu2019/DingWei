@@ -1,0 +1,16 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./internal/nodeagent",
+    "./internal/hosted",
+    "./cmd/workpulse",
+    "-run",
+    "^Test(SoftLogin|LoginQuota|SoftInodeEmergency|HostedAdminQuota)"
+  ],
+  "rc": 0,
+  "seconds": 10.07844026805833,
+  "external_DSN_environment_not_inherited": true
+}

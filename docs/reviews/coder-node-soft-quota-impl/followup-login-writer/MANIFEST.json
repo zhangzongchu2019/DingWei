@@ -1,0 +1,194 @@
+{
+  "docs/reviews/coder-node-soft-quota-impl/CURRENT.md": {
+    "bytes": 546,
+    "sha256": "ef45db81111ae0764c269b97ca36c28e194b2c97633363ed4f7f3d007f442a77"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/MANIFEST.json": {
+    "bytes": 37952,
+    "sha256": "ea398fb45c40e31b65cbb91c691a8a21890f232f446dcd12d4582bf9f98ab628"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-combined-a1-n1/MANIFEST.json": {
+    "bytes": 6649,
+    "sha256": "8e7c4dd7a904f290a8d174236e2d9e1190bb0ba060d711d51b7ca381278fba01"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-inode-ruling/MANIFEST.json": {
+    "bytes": 20373,
+    "sha256": "1140f7c68721cc3e76388f201cd56b939e1575cbdc396807f89f8367482834ac"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-io-grace/MANIFEST.json": {
+    "bytes": 17283,
+    "sha256": "5edf5a6cee8adc46e9cdb0a94d34b4f5021ab57efbc229c20ca9074f62bc07a2"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/CLEANUP.json": {
+    "bytes": 711,
+    "sha256": "f85b25d55e02e0f764242f7f0264add2e726a7da6c183f34509a6860ddaad7ea"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/REPORT.md": {
+    "bytes": 9128,
+    "sha256": "08ec8a0d0b0b961187a4ab39e07ad6c4fa66bf667412e45fe0814e6f6acb4e4b"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/RESULTS.json": {
+    "bytes": 3226,
+    "sha256": "3ea2282d328c199bb6afaa6d5584db9a072e8fe4aec143797f58b4ed0dc0987b"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/SOURCE-PINS.json": {
+    "bytes": 4540,
+    "sha256": "29f1655389b38691d6523aaaaaf8fcb79e983aef7fcaea10867aac6d97b04a9a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/n2-withdraw.py.fixture": {
+    "bytes": 3802,
+    "sha256": "0c87475a003a44f90d19f3574fd8beb125b45c80a98bb2fdff43bd559d250ac2"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/N2-WITHDRAWALS.json": {
+    "bytes": 4376,
+    "sha256": "eed9a381387598ce004afde047a55ecf4a68a8d1f7a8e3ff0bbe70b6a69c55c0"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/canonical-0e5-final.log": {
+    "bytes": 39673,
+    "sha256": "40038546c8d72f2ee7db8926416312d761709be7ddfd914b90c7502dea56cbf3"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/canonical-0e5-final.log.result.json": {
+    "bytes": 153,
+    "sha256": "9efe7f7dece413b0e094174ea36c764fdc59641d2517c85d2c2df9b7f44f6028"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/cli-n2-final.log": {
+    "bytes": 1968,
+    "sha256": "bac9c4485132c9de22e8345edf79a92874d26a3e4211b45959364d779d4fd1ba"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/cli-n2-final.log.result.json": {
+    "bytes": 222,
+    "sha256": "944248fa43bde7c393d95dbe77aa23294e9bcf48b75c7b18098371cb30d5e0da"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/hosted-n2-final.log": {
+    "bytes": 28606,
+    "sha256": "02151572c74cb7710ab9133f79d18cd66dadb49b3f0cb8f834937765791efde3"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/hosted-n2-final.log.result.json": {
+    "bytes": 188,
+    "sha256": "a9b8b4c32ca5a543a0574d3d84a9d907f47417b99131035e2ef0bedf38b5c6c8"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/nodeagent-0e5-final.log": {
+    "bytes": 27433,
+    "sha256": "ce23cbcad525c5cd35f34202e7e470c6c8f87e9e89f0b1d329470f814b6212f0"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/nodeagent-0e5-final.log.result.json": {
+    "bytes": 192,
+    "sha256": "cbefc05337de40167f98936f909eeaf66a84539b768859090b8fb0742a9b26f4"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/nodeagent-race-0e5-final.log": {
+    "bytes": 29370,
+    "sha256": "622a75a4fe70aa445333e26b81d74a3cd6b8760df794c5ae567a5be74a2e98ab"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/nodeagent-race-0e5-final.log.result.json": {
+    "bytes": 205,
+    "sha256": "ba73734fe7e5c9557d4de2705ced86a5b12ce1ed6d4547cf3a850502af81f0cb"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/restored-0e5-final.log": {
+    "bytes": 4650,
+    "sha256": "8d4dd3a61218987dc1f4daa26da2edf618658e3ab2e0cc78314572be840ccd97"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/restored-0e5-final.log.result.json": {
+    "bytes": 322,
+    "sha256": "f404ba3b5953f6b59947b48b6b9f64aa8986f5a94e4a11c1f54d816e3d7bb31f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-a1-independent-percent.log": {
+    "bytes": 732,
+    "sha256": "8f5808012b6da8c01eaf3556126ffc415eac5f2a0a05833f0da4041b22accf6e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-a1-independent-percent.log.result.json": {
+    "bytes": 291,
+    "sha256": "35bb5d0138e2556b2831bc3dc3a72155685e55b8f59bb2be951b920534edbbf0"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-a1-inode-emergency.log": {
+    "bytes": 732,
+    "sha256": "56d52914e763a44bd334eb595169ecc74b671b8a7f26665dec9db4ab80a70706"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-a1-inode-emergency.log.result.json": {
+    "bytes": 291,
+    "sha256": "fe9a02ed9ee0049aad3a42684d4f36194b40da3242f5ac5a75a906a69a8b20bd"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n1-actual-cli.log": {
+    "bytes": 901,
+    "sha256": "12a0816214b6dccfe0ff5e652e63863e39c85616815dfe6f8574a81e7726b6cb"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n1-actual-cli.log.result.json": {
+    "bytes": 275,
+    "sha256": "b28691efb7d11f55a164f554da192a45cc20eb440080de2210cb6fa9c7d86736"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n1-policy-revision.log": {
+    "bytes": 540,
+    "sha256": "8de978a5707dd5db0e8dba6808fdcd3f1d4a3607957e07f59ea5eda2cf5406b6"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n1-policy-revision.log.result.json": {
+    "bytes": 275,
+    "sha256": "bb4adb4471b01843973861f273987cb9bacc3055909fc322c871b7533e351aad"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-hold-cleanup.log": {
+    "bytes": 1365,
+    "sha256": "ab9d50abf6eba8fd2813a6a2a91193ef4d88b8faba36f11fe0ce8cc956923db8"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-hold-cleanup.log.result.json": {
+    "bytes": 285,
+    "sha256": "39b12d9c6bc0fe9993fb32590d4ff72a6d6731c431a9d32948d6e7f6d76ebfb9"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-old-real-login-path.log": {
+    "bytes": 268,
+    "sha256": "3ed492e9a4d171d7cc678f6ee5905737c5991cb6bddd86a853738df8da374a9a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-old-real-login-path.log.result.json": {
+    "bytes": 278,
+    "sha256": "5781b7d34be9201fdf516fe6bb7ef5de2b335c571ade762f0965a427723e5fec"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-resource-reservation.log": {
+    "bytes": 805,
+    "sha256": "0eeb585debfe0bac472926a6222765a42c6ee66030454008d23fe45779b1f354"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-resource-reservation.log.result.json": {
+    "bytes": 275,
+    "sha256": "695aa503c6ff3ff023a3ff951c2c761c535b8cb62c647bc8865a276a903a27e1"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-seat-teardown-forget.log": {
+    "bytes": 284,
+    "sha256": "12f3d8c3baf9ebf13d4bf8a099d3671c0cdd69cea44c575179dac7c9edcfe07a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-seat-teardown-forget.log.result.json": {
+    "bytes": 284,
+    "sha256": "6c29b3c09a4075de43817b58b182cac47dd27affcf9326bb2d39753ac66dc1ba"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-stop-ownership-routing.log": {
+    "bytes": 268,
+    "sha256": "fe4d93315a8627e5560ae7446c6903a250a42197d8c7e26d48b7aee60e68c1d6"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-stop-ownership-routing.log.result.json": {
+    "bytes": 278,
+    "sha256": "86bba8745609f7fd6656d8a8f376341d589379f5ae6661986428a2d9bb63dbef"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-typed-capacity.log": {
+    "bytes": 493,
+    "sha256": "de1b89716404179e5c0ff8431cc091ceaedb789d4c78b9052677837ca15397e8"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-typed-capacity.log.result.json": {
+    "bytes": 274,
+    "sha256": "4d1578fda697f4cd48de0cd18063ff78312d8f76f66726274e200d47accf2a48"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-typed-event-audit.log": {
+    "bytes": 491,
+    "sha256": "9e1b2102f29ea9def37307a02705e4590795cd5163215020d67cbaf8293215a5"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/raw/withdraw-n2-n2-typed-event-audit.log.result.json": {
+    "bytes": 273,
+    "sha256": "95cd73ce0f72217e1652af17f7defff4f64f29d469c78768b8da43a316186a2b"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-login-writer/run-local.py.fixture": {
+    "bytes": 1233,
+    "sha256": "7a479dfdd257fda23706c030aecd3951fcf42d4b95f8f4d445613fec23698da7"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/MANIFEST.json": {
+    "bytes": 4953,
+    "sha256": "b5acca09cb8387c0d188df32349cea86c097f5fea2520635bd5001deebd36d44"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/MANIFEST.json": {
+    "bytes": 13270,
+    "sha256": "15e54db8be9070d3c8481a9ada89d6151318502dd58ec6a913d625c4f55ffeae"
+  }
+}

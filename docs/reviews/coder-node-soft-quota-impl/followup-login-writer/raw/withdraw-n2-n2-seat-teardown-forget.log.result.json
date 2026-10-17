@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftLoginBudgetCannotBeForgottenBySeatTeardown$",
+    "-v",
+    "-count=1",
+    "-timeout=120s"
+  ],
+  "rc": 1,
+  "seconds": 2.283794555114582,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,9 +1,9 @@
-# Current combined delivery
+# Current A1/A2/A3 + N1/N2 delivery
 
-See [A1+A2+A3 and N1 combination](followup-combined-a1-n1/REPORT.md).
-Actual code/test pin: `f3e6448d80089a5328d015f97280e0b8388630b6`.
-The latest direct leader instruction restores D/A1 in this delivery, superseding
-prior E's A1 deferral. A1 and completed N1 are both retained; N2 remains deferred.
-All older packets retain historical source/scope attribution. The current
-combination is pending opus50ts formal review; no independent PASS is presumed.
-B starts separately only after this candidate PASS. No deployment GO/freeze change.
+See [login-writer successor](followup-login-writer/REPORT.md).
+Actual code/test pin: `0e5bb86d2b81956fdb6dd79e839804e3f834a4bc`.
+Latest direct leader instruction requires N1 actual CLI and N2 real login writer
+management together with A1; the earlier N2 deferral is superseded. A2/A3 retained.
+Prior packets keep historical source/scope attribution. Formal opus50ts review
+is pending; no independent PASS inferred. B starts separately after this PASS.
+No deployment GO, host action or dataconn freeze change.

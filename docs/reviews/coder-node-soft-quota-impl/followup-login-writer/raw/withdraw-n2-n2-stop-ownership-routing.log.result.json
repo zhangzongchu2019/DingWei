@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftLoginEmergencyMustStopActualLoginCID$",
+    "-v",
+    "-count=1",
+    "-timeout=120s"
+  ],
+  "rc": 1,
+  "seconds": 4.684334299061447,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,0 +1,6 @@
+=== RUN   TestSoftLoginEmergencyMustStopActualLoginCID
+    softquota_login_test.go:420: Free=1 did not stop the actual loginCID
+--- FAIL: TestSoftLoginEmergencyMustStopActualLoginCID (0.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.025s
+FAIL

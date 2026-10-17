@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/hosted",
+    "-run",
+    "^TestLoginQuotaAuditDoesNotMutateHostedSeat$",
+    "-v",
+    "-count=1",
+    "-timeout=120s"
+  ],
+  "rc": 1,
+  "seconds": 3.7318605640903115,
+  "external_DSN_environment_not_inherited": true
+}

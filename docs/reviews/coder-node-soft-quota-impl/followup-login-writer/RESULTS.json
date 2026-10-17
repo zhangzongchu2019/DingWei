@@ -1,0 +1,110 @@
+{
+  "utc": "2026-10-17T10:08:06.608988+00:00",
+  "code_pin": "0e5bb86d2b81956fdb6dd79e839804e3f834a4bc",
+  "gates": {
+    "canonical-0e5-final.log": {
+      "actual_run_pin": "0e5bb86d2b81956fdb6dd79e839804e3f834a4bc",
+      "command": [
+        "./build.sh",
+        "--test-only"
+      ],
+      "rc": 0,
+      "seconds": 104.30392207601108,
+      "external_DSN_environment_not_inherited": true,
+      "top_level_passes": 4,
+      "skips": 0,
+      "sha256": "40038546c8d72f2ee7db8926416312d761709be7ddfd914b90c7502dea56cbf3"
+    },
+    "nodeagent-0e5-final.log": {
+      "actual_run_pin": "0e5bb86d2b81956fdb6dd79e839804e3f834a4bc",
+      "command": [
+        "go",
+        "test",
+        "-count=1",
+        "-v",
+        "./internal/nodeagent"
+      ],
+      "rc": 0,
+      "seconds": 12.097337047103792,
+      "external_DSN_environment_not_inherited": true,
+      "top_level_passes": 152,
+      "skips": 0,
+      "sha256": "ce23cbcad525c5cd35f34202e7e470c6c8f87e9e89f0b1d329470f814b6212f0"
+    },
+    "nodeagent-race-0e5-final.log": {
+      "actual_run_pin": "0e5bb86d2b81956fdb6dd79e839804e3f834a4bc",
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "-count=1",
+        "-v",
+        "./internal/nodeagent"
+      ],
+      "rc": 0,
+      "seconds": 16.737124451901764,
+      "external_DSN_environment_not_inherited": true,
+      "top_level_passes": 152,
+      "skips": 0,
+      "sha256": "622a75a4fe70aa445333e26b81d74a3cd6b8760df794c5ae567a5be74a2e98ab"
+    },
+    "restored-0e5-final.log": {
+      "actual_run_pin": "0e5bb86d2b81956fdb6dd79e839804e3f834a4bc",
+      "command": [
+        "go",
+        "test",
+        "-count=1",
+        "-v",
+        "./internal/nodeagent",
+        "./internal/hosted",
+        "./cmd/workpulse",
+        "-run",
+        "^Test(SoftLogin|LoginQuota|SoftInodeEmergency|HostedAdminQuota)"
+      ],
+      "rc": 0,
+      "seconds": 10.07844026805833,
+      "external_DSN_environment_not_inherited": true,
+      "top_level_passes": 16,
+      "skips": 0,
+      "sha256": "8d4dd3a61218987dc1f4daa26da2edf618658e3ab2e0cc78314572be840ccd97"
+    },
+    "cli-n2-final.log": {
+      "actual_run_pin": "cf76c473de081678e213c378ebcf334a140b1778",
+      "command": [
+        "go",
+        "test",
+        "-count=1",
+        "-v",
+        "./cmd/workpulse",
+        "-run",
+        "^TestHostedAdmin"
+      ],
+      "rc": 0,
+      "seconds": 77.53706807922572,
+      "external_DSN_environment_not_inherited": true,
+      "top_level_passes": 4,
+      "skips": 0,
+      "sha256": "bac9c4485132c9de22e8345edf79a92874d26a3e4211b45959364d779d4fd1ba"
+    },
+    "hosted-n2-final.log": {
+      "actual_run_pin": "cf76c473de081678e213c378ebcf334a140b1778",
+      "command": [
+        "go",
+        "test",
+        "-count=1",
+        "-v",
+        "./internal/hosted"
+      ],
+      "rc": 0,
+      "seconds": 472.3555598510429,
+      "external_DSN_environment_not_inherited": true,
+      "top_level_passes": 150,
+      "skips": 0,
+      "sha256": "02151572c74cb7710ab9133f79d18cd66dadb49b3f0cb8f834937765791efde3"
+    }
+  },
+  "source_withdrawals_assertion_red": 11,
+  "restored_target_green": true,
+  "B_deferred": true,
+  "no_real_Docker_host_externalPG_realkeys_deploy": true
+}

@@ -1,0 +1,15 @@
+import os,sys,subprocess,json,tempfile,pathlib,time
+lab=pathlib.Path('/data/ai-dev-data/coder-soft-quota-lab')
+config=lab/'runtime.json'
+if config.exists(): cfg=json.loads(config.read_text())
+else:
+ cfg={'tmp':tempfile.mkdtemp(prefix='sq-',dir='/tmp'),'modcache':subprocess.check_output(['go','env','GOMODCACHE'],text=True).strip()};config.write_text(json.dumps(cfg))
+(lab/'home').mkdir(exist_ok=True)
+env={'PATH':'/data/ai-dev-data/helper-deps-lock-venv/bin:'+os.environ['PATH'],'HOME':str(lab/'home'),'TMPDIR':cfg['tmp'],'GOCACHE':str(lab/'gocache'),'GOMODCACHE':cfg['modcache'],'HUB_TEST_PG_STRICT':'1','DW_DESKTOP_INTEGRATION_PYTHON':'/data/ai-dev-data/helper-deps-lock-venv/bin/python','PYTHONDONTWRITEBYTECODE':'1'}
+env['NODE_PATH']='/tmp/coder-a3-playwright/node_modules';env['PW_CHANNEL']='chrome'
+name,*command=sys.argv[1:]
+start=time.monotonic()
+with (lab/'evidence'/name).open('w') as log:
+ rc=subprocess.call(command,env=env,stdout=log,stderr=subprocess.STDOUT)
+(lab/'evidence'/(name+'.result.json')).write_text(json.dumps({'command':command,'rc':rc,'seconds':time.monotonic()-start,'external_DSN_environment_not_inherited':True},indent=2)+'\n')
+print(name,'rc',rc,'seconds',round(time.monotonic()-start,3));sys.exit(rc)

@@ -1,0 +1,110 @@
+{
+  "baseline": "8944a7c12198129af74fbe9c7ad6d646ad5c5d24",
+  "code_pin": "0e5bb86d2b81956fdb6dd79e839804e3f834a4bc",
+  "code_tree": "363a17979fd280f43cf0a61169793eede8734b6b",
+  "previous_A1_A2_A3_N1_pin": "f3e6448d80089a5328d015f97280e0b8388630b6",
+  "authority": "Latest direct leader instruction requires N1 actual CLI + N2 real login lifecycle together with A1; supersedes older deferral; B remains separate after PASS.",
+  "increment_vs_combined": {
+    "internal/hosted/node_quota.go": {
+      "blob": "3f60f5cef8b89c1073f6404acaf2942971951de7",
+      "bytes": 8802,
+      "sha256": "1a5370ed7e5471e3c21bd165852e150329e6365434ba7f7f1b4a277170e8ffc3"
+    },
+    "internal/hosted/node_quota_login_test.go": {
+      "blob": "6102b859550d78fbbc0ce3d88d30390b23caa5da",
+      "bytes": 2432,
+      "sha256": "dbc88de0f591564f4af4901d421fc2196d2eb8ff3a2a41072f69ec9d64651ee8"
+    },
+    "internal/nodeagent/login.go": {
+      "blob": "f91f78dfeb718aa7b8f08615dd435932c1bb0ba4",
+      "bytes": 18485,
+      "sha256": "71c3f808a04eaff10b82975eb42e68933cf96bf881376ae2c21448966010c23f"
+    },
+    "internal/nodeagent/softquota.go": {
+      "blob": "7fed577a368bf4c887d52d5ca0fc71103c1939ab",
+      "bytes": 28846,
+      "sha256": "b9e8dd6644998374bd37e4ed695812922ad7fe3a35f439aec8cb76b5a637fc71"
+    },
+    "internal/nodeagent/softquota_login.go": {
+      "blob": "9eb22cc7d1efff65e8a41c7ae5ac65f83f4b4d4b",
+      "bytes": 5944,
+      "sha256": "dca9876d25c865db9dc21033aa5d1c316eb61c4d63a2163c927806732e0c356d"
+    },
+    "internal/nodeagent/softquota_login_test.go": {
+      "blob": "8baf708491dedaa0bdf41e2de9c66a4eed72ad0f",
+      "bytes": 15079,
+      "sha256": "03c58703434f71d8a855bfdcf7a885f71387a18a99929d7bc8f12be6aff9634a"
+    }
+  },
+  "component_identities": {
+    "cmd/workpulse": {
+      "source_pin": "f3e6448d80089a5328d015f97280e0b8388630b6",
+      "object": "20d705d57ba729094637ab7921e26527a0c7f967"
+    },
+    "internal/nodegate": {
+      "source_pin": "f3e6448d80089a5328d015f97280e0b8388630b6",
+      "object": "734269e6eb8b88147eb57d747878c2e0c7026350"
+    },
+    "internal/m8": {
+      "source_pin": "f3e6448d80089a5328d015f97280e0b8388630b6",
+      "object": "91f2e6db4a61fc1bc2ac64a46aeab5f0be780481"
+    },
+    "tools/sessionhelper": {
+      "source_pin": "f3e6448d80089a5328d015f97280e0b8388630b6",
+      "object": "eb9210d4300f8c8e2f0f3ddf5261816260ad4eed"
+    },
+    "deploy/nodeagent.env.example": {
+      "source_pin": "f3e6448d80089a5328d015f97280e0b8388630b6",
+      "object": "ba668400372077dddb5d02ff369abf59843cdd15"
+    },
+    "scripts/run-build-tests.sh": {
+      "source_pin": "f3e6448d80089a5328d015f97280e0b8388630b6",
+      "object": "4530106fe419e8a59411beb13d6d4618e3a927d2"
+    }
+  },
+  "early_scoped_runs": {
+    "internal/hosted": {
+      "actual_run_pin": "cf76c473de081678e213c378ebcf334a140b1778",
+      "final_subtree_identical": "8ee730c8f8d86f01c6e988c16f3f459721295f9d"
+    },
+    "cmd/workpulse": {
+      "actual_run_pin": "cf76c473de081678e213c378ebcf334a140b1778",
+      "final_subtree_identical": "20d705d57ba729094637ab7921e26527a0c7f967"
+    }
+  },
+  "existing_test_files_unchanged": [
+    "internal/hosted/abort_test.go",
+    "internal/hosted/account_share_test.go",
+    "internal/hosted/backup_test.go",
+    "internal/hosted/keys_test.go",
+    "internal/hosted/lifecycle_online_test.go",
+    "internal/hosted/lifecycle_race_test.go",
+    "internal/hosted/lifecycle_test.go",
+    "internal/hosted/login_test.go",
+    "internal/hosted/nodecred_test.go",
+    "internal/hosted/online_test.go",
+    "internal/hosted/orchestrator_test.go",
+    "internal/hosted/plans_test.go",
+    "internal/hosted/poolsvc_test.go",
+    "internal/hosted/quotasvc_test.go",
+    "internal/hosted/readapi_test.go",
+    "internal/hosted/reconcile_test.go",
+    "internal/hosted/refresh_cred_test.go",
+    "internal/hosted/registry_test.go",
+    "internal/hosted/store_test.go",
+    "internal/hosted/tokensvc_test.go",
+    "internal/nodeagent/agent_test.go",
+    "internal/nodeagent/applied_marker_name_test.go",
+    "internal/nodeagent/backup_integrity_test.go",
+    "internal/nodeagent/backup_test.go",
+    "internal/nodeagent/capacity_test.go",
+    "internal/nodeagent/docker_internal_test.go",
+    "internal/nodeagent/login_test.go",
+    "internal/nodeagent/quota_rework_test.go",
+    "internal/nodeagent/quota_unit_test.go",
+    "internal/nodeagent/refresh_cred_test.go",
+    "internal/nodeagent/seat_test.go",
+    "internal/nodegate/gate_test.go",
+    "internal/nodegate/reconcile_gate_test.go"
+  ]
+}
