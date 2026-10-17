@@ -680,16 +680,11 @@ func (q *softQuota) admissionReserves(space fsSpace) (int64, uint64) {
 	return max(q.policy.ReserveBytes, bytes), max(q.policy.ReserveInodes, inodes)
 }
 
-// Byte emergency uses its own configured percentage of R. The separately
-// configured inode emergency is the leader-added scope in ruling eeb21f5b A1.
+// The original emergency contract applies to available bytes only. Inode I
+// remains the unchanged admission reserve, not an additional emergency stop line.
 func (q *softQuota) emergencyThreshold(space fsSpace) int64 {
 	reserve, _ := q.admissionReserves(space)
 	percent := q.policy.EmergencyReservePercent
-	return reserve/100*percent + (reserve%100*percent+99)/100
-}
-func (q *softQuota) inodeEmergencyThreshold(space fsSpace) uint64 {
-	_, reserve := q.admissionReserves(space)
-	percent := q.policy.InodeEmergencyReservePercent
 	return reserve/100*percent + (reserve%100*percent+99)/100
 }
 func (q *softQuota) checkReserve() {
@@ -713,9 +708,6 @@ func (q *softQuota) checkReserve() {
 		}
 		if !unknown && q.space.Free < q.emergencyThreshold(q.space) {
 			q.holdLocked(id, "node_space_emergency")
-		}
-		if !unknown && q.space.FreeFiles < q.inodeEmergencyThreshold(q.space) {
-			q.holdLocked(id, "node_inode_emergency")
 		}
 		if q.broken {
 			q.holdLocked(id, "private_state_unavailable")

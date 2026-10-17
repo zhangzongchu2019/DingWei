@@ -14,41 +14,40 @@ import (
 // NodePolicy is operator configuration, never supplied in a seat command. Hard
 // remains the default; a failed hard quota never selects soft automatically.
 type NodePolicy struct {
-	StateWriteBudget             time.Duration `json:"state_write_budget"`
-	ShmBytes                     int64         `json:"shm_bytes"`
-	SoftApprovalRef              string        `json:"soft_approval_ref,omitempty"`
-	HostRootTrustRef             string        `json:"host_root_trust_ref,omitempty"`
-	NetworkApprovalRef           string        `json:"network_approval_ref,omitempty"`
-	EngineID                     string        `json:"engine_id,omitempty"`
-	EngineRoot                   string        `json:"engine_root,omitempty"`
-	Mode                         string        `json:"quota_mode"`
-	ScanInterval                 time.Duration `json:"scan_interval"`
-	ScanBudget                   time.Duration `json:"scan_budget"`
-	MaxAge                       time.Duration `json:"max_age"`
-	StopTimeout                  time.Duration `json:"stop_timeout"`
-	ReserveInterval              time.Duration `json:"reserve_interval"`
-	EmergencyReservePercent      int64         `json:"emergency_reserve_percent"`
-	InodeEmergencyReservePercent uint64        `json:"inode_emergency_reserve_percent"`
-	WarnPercent                  int64         `json:"warn_percent"`
-	RecoveryPercent              int64         `json:"recovery_percent"`
-	ReserveBytes                 int64         `json:"reserve_bytes"`
-	ReservePercent               int64         `json:"reserve_percent"`
-	ReserveInodes                uint64        `json:"reserve_inodes"`
-	ReserveInodePercent          uint64        `json:"reserve_inode_percent"`
-	MaxSeats                     int           `json:"max_seats"`
-	ImageReserveBytes            int64         `json:"image_reserve_bytes"`
-	ReserveCPUMillicores         int64         `json:"reserve_cpu_millicores"`
-	ReserveMemoryBytes           int64         `json:"reserve_memory_bytes"`
-	PidsLimit                    int64         `json:"pids_limit"`
-	LoginPidsLimit               int64         `json:"login_pids_limit"`
-	LogMaxSizeMB                 int64         `json:"log_max_size_mb"`
-	LogMaxFiles                  int64         `json:"log_max_files"`
+	StateWriteBudget        time.Duration `json:"state_write_budget"`
+	ShmBytes                int64         `json:"shm_bytes"`
+	SoftApprovalRef         string        `json:"soft_approval_ref,omitempty"`
+	HostRootTrustRef        string        `json:"host_root_trust_ref,omitempty"`
+	NetworkApprovalRef      string        `json:"network_approval_ref,omitempty"`
+	EngineID                string        `json:"engine_id,omitempty"`
+	EngineRoot              string        `json:"engine_root,omitempty"`
+	Mode                    string        `json:"quota_mode"`
+	ScanInterval            time.Duration `json:"scan_interval"`
+	ScanBudget              time.Duration `json:"scan_budget"`
+	MaxAge                  time.Duration `json:"max_age"`
+	StopTimeout             time.Duration `json:"stop_timeout"`
+	ReserveInterval         time.Duration `json:"reserve_interval"`
+	EmergencyReservePercent int64         `json:"emergency_reserve_percent"`
+	WarnPercent             int64         `json:"warn_percent"`
+	RecoveryPercent         int64         `json:"recovery_percent"`
+	ReserveBytes            int64         `json:"reserve_bytes"`
+	ReservePercent          int64         `json:"reserve_percent"`
+	ReserveInodes           uint64        `json:"reserve_inodes"`
+	ReserveInodePercent     uint64        `json:"reserve_inode_percent"`
+	MaxSeats                int           `json:"max_seats"`
+	ImageReserveBytes       int64         `json:"image_reserve_bytes"`
+	ReserveCPUMillicores    int64         `json:"reserve_cpu_millicores"`
+	ReserveMemoryBytes      int64         `json:"reserve_memory_bytes"`
+	PidsLimit               int64         `json:"pids_limit"`
+	LoginPidsLimit          int64         `json:"login_pids_limit"`
+	LogMaxSizeMB            int64         `json:"log_max_size_mb"`
+	LogMaxFiles             int64         `json:"log_max_files"`
 }
 
 func DefaultNodePolicy() NodePolicy {
 	return NodePolicy{StateWriteBudget: 5 * time.Second, Mode: "hard", ScanInterval: 30 * time.Second, ScanBudget: 5 * time.Second, MaxAge: 60 * time.Second,
 		StopTimeout: 10 * time.Second, ReserveInterval: 5 * time.Second, WarnPercent: 80, RecoveryPercent: 75,
-		EmergencyReservePercent: 50, InodeEmergencyReservePercent: 50, ReserveBytes: 32 << 30, ReservePercent: 10, ReserveInodes: 65536, ReserveInodePercent: 1, MaxSeats: 4,
+		EmergencyReservePercent: 50, ReserveBytes: 32 << 30, ReservePercent: 10, ReserveInodes: 65536, ReserveInodePercent: 1, MaxSeats: 4,
 		ImageReserveBytes: 8 << 30, ShmBytes: 64 << 20, ReserveCPUMillicores: 2000, ReserveMemoryBytes: 4 << 30, PidsLimit: 512, LoginPidsLimit: 128, LogMaxSizeMB: 10, LogMaxFiles: 3}
 }
 func (p NodePolicy) Validate() error {
@@ -69,9 +68,6 @@ func (p NodePolicy) Validate() error {
 	}
 	if p.EmergencyReservePercent <= 0 || p.EmergencyReservePercent >= 100 {
 		return fmt.Errorf("node policy: invalid emergency reserve percentage")
-	}
-	if p.InodeEmergencyReservePercent == 0 || p.InodeEmergencyReservePercent >= 100 {
-		return fmt.Errorf("node policy: invalid inode emergency reserve percentage")
 	}
 	if p.RecoveryPercent <= 0 || p.WarnPercent <= p.RecoveryPercent || p.WarnPercent >= 100 || p.ReserveBytes <= 0 || p.ReserveBytes > 1<<50 || p.ReservePercent <= 0 || p.ReservePercent >= 100 || p.ReserveInodes == 0 || p.ReserveInodePercent == 0 || p.ReserveInodePercent >= 100 || p.MaxSeats <= 0 || p.MaxSeats > 100 || p.ImageReserveBytes <= 0 || p.ImageReserveBytes > 1<<50 {
 		return fmt.Errorf("node policy: invalid soft thresholds")
@@ -120,7 +116,7 @@ func ParseNodePolicy(getenv func(string) string) (NodePolicy, error) {
 			*dst = n
 		}
 	}
-	for key, dst := range map[string]*uint64{"RESERVE_INODES": &p.ReserveInodes, "RESERVE_INODE_PERCENT": &p.ReserveInodePercent, "INODE_EMERGENCY_RESERVE_PERCENT": &p.InodeEmergencyReservePercent} {
+	for key, dst := range map[string]*uint64{"RESERVE_INODES": &p.ReserveInodes, "RESERVE_INODE_PERCENT": &p.ReserveInodePercent} {
 		if v := getenv("NODEAGENT_" + key); v != "" {
 			n, e := strconv.ParseUint(v, 10, 64)
 			if e != nil {
