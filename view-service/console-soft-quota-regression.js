@@ -79,7 +79,7 @@ const server=http.createServer(async(req,res)=>{
    refusal={error:'node_no_capacity',capacity_reasons:reasons,message:'UNTRUSTED_DETAIL'};
    const response=page.waitForResponse(r=>r.url().endsWith('/api/console/hosted/agents')&&r.request().method()==='POST');
    await page.locator('#hostedCreateBtn').click();await response;
-   await page.waitForFunction(expected=>document.querySelector('#hostedFeedback').textContent.includes(expected),text);
+   await page.waitForFunction(()=>document.querySelector('#hostedCreateBtn').disabled===false);
    const feedback=await page.locator('#hostedFeedback').textContent();
    assert(feedback.includes(text)&&!feedback.includes('UNTRUSTED_DETAIL')&&!feedback.includes('/private/credential'),'safe request-specific refusal: '+feedback);
   }
