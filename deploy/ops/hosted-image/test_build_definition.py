@@ -1,5 +1,6 @@
 """Offline source/context/startup fixtures. Never invokes Docker, pip or helper."""
 import base64
+import contextlib
 import hashlib
 import importlib.util
 import io
@@ -136,7 +137,7 @@ class StartupAndDefinition(unittest.TestCase):
             env = dict(SH_WS_BASE='wss://fixture.invalid', SH_ENROLL_TOKEN_FILE=str(root/'enroll'),
                        SH_CRED_FILE=str(cred), SH_CRED_KIND='token_file', CODEX_HOME=str(home),
                        SH_IPC_UPLOAD_ONLY='1', SH_IPC_SEND_BODY_ONLY='0', PYTHONPATH='/wrong', SH_MODE='driver')
-            with mock.patch.object(start, 'SEAT_UID', os.getuid()), mock.patch.object(start, 'IPC_DIR', str(root/'ipc')):
+            with mock.patch.object(start, 'SEAT_UID', os.getuid()), mock.patch.object(start, 'IPC_DIR', str(root/'ipc')), mock.patch.object(start, 'STATE_DIR', str(root/'state')):
                 result = start.prepare(env)
                 cfg = tomllib.loads((home/'config.toml').read_text())
                 mcp = cfg['mcp_servers']['dingwei-send']
@@ -153,6 +154,48 @@ class StartupAndDefinition(unittest.TestCase):
                 start.prepare(env)
                 self.assertEqual((home/'auth.json').read_bytes(), auth)
                 self.assertEqual(tomllib.loads((home/'config.toml').read_text())['mcp_servers'], cfg['mcp_servers'])
+
+    def test_existing_update_state_stops_before_credentials_without_read_or_reset(self):
+        cases = ('current032', 'pending', 'previous', 'null', 'malformed', 'slot', 'symlink', 'fifo')
+        for case in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as tmp:
+                state = Path(tmp)/'state'; update = state/'update'; update.mkdir(parents=True)
+                journal = update/'journal.json'
+                if case == 'slot':
+                    (update/'slots'/'synthetic-old-slot').mkdir(parents=True)
+                elif case == 'symlink':
+                    journal.symlink_to(Path(tmp)/'private-do-not-read')
+                elif case == 'fifo':
+                    os.mkfifo(journal)
+                else:
+                    data = {'format': 1, 'current': None}
+                    if case == 'current032': data['current'] = {'sha256': 'a'*64, 'version': '0.2.3.2'}
+                    if case in ('pending', 'previous'): data[case] = {'sha256': 'b'*64}
+                    journal.write_text('broken fixture' if case == 'malformed' else json.dumps(data))
+                before = sorted(str(p.relative_to(state)) for p in state.rglob('*'))
+                diagnostic = io.StringIO()
+                with contextlib.redirect_stderr(diagnostic), mock.patch.object(start, 'STATE_DIR', str(state)), \
+                     mock.patch.object(Path, 'read_bytes', side_effect=AssertionError('must not read credentials or journal')), \
+                     mock.patch.object(start.subprocess, 'run', side_effect=AssertionError('must not launch')):
+                    with self.assertRaises(SystemExit) as raised:
+                        start.prepare({})
+                    self.assertEqual(raised.exception.code, 2)
+                self.assertEqual(diagnostic.getvalue(), 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n')
+                self.assertEqual(sorted(str(p.relative_to(state)) for p in state.rglob('*')), before)
+
+    def test_factory_only_state_accepts_absent_empty_rejects_redirected_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp)/'state'
+            with mock.patch.object(start, 'STATE_DIR', str(state)):
+                start.check_factory_only_state()
+                (state/'update').mkdir(parents=True)
+                start.check_factory_only_state()
+                (state/'update').rmdir()
+                (state/'update').symlink_to(Path(tmp)/'elsewhere')
+                with self.assertRaises(SystemExit): start.check_factory_only_state()
+            linked = Path(tmp)/'linked'; linked.symlink_to(state)
+            with mock.patch.object(start, 'STATE_DIR', str(linked)), self.assertRaises(SystemExit):
+                start.check_factory_only_state()
 
     def test_runtime_metadata_exact_lock_no_build_distributions(self):
         from types import SimpleNamespace
@@ -177,6 +220,10 @@ class StartupAndDefinition(unittest.TestCase):
         self.assertEqual(second.returncode, 2)
         self.assertIn(b'default host Engine forbidden', second.stderr)
         with tempfile.TemporaryDirectory() as tmp:
+            env['HOSTED_BUILD_ENGINE'] = 'unix:///run/docker.sock'
+            direct = subprocess.run(['sh', str(HERE/'build-image.sh')], env=env, capture_output=True)
+            self.assertNotEqual(direct.returncode, 0)
+            self.assertIn(b'default host Engine alias forbidden', direct.stderr)
             alias = Path(tmp)/'engine.sock'; alias.symlink_to('/var/run/docker.sock')
             env['HOSTED_BUILD_ENGINE'] = 'unix://' + str(alias)
             third = subprocess.run(['sh', str(HERE/'build-image.sh')], env=env, capture_output=True)

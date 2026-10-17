@@ -24,6 +24,7 @@ MARKER_NAME = '.dw-applied-credential.sha256'
 _HEX64 = re.compile(r'[0-9a-f]{64}')
 # r5（R-V2-IMAGE-R5；要点 runbooks/PLAN-R-V2-IMAGE-R5-opus50tc2k.md 第一、七节）：helper 本机 IPC 只开上传。
 # 独立子目录：既有 mcp_send 的 file 模式只许读 socket 所在目录，放在 /work/.dingwei 本身会让 Agent 经发信读出状态件。
+STATE_DIR = '/work/.dingwei'
 IPC_DIR = '/work/.dingwei/ipc'
 IPC_SOCK_NAME = 'helper.sock'
 
@@ -97,7 +98,31 @@ def need_rewrite(home, source_info, digest):
     return source_info.st_mtime_ns > auth_info.st_mtime_ns
 
 
+def check_factory_only_state():
+    """Hosted image has no approved slot updater: only pristine update state is supported.
+
+    Inspect metadata/names only, never import slot code or read a journal/credential.
+    Existing state needs a separately reviewed stopped migration; do not reset it here.
+    """
+    try:
+        state = Path(STATE_DIR)
+        if state.is_symlink():
+            fail('HELPER_UPDATE_STATE')
+        if state.exists() and not state.is_dir():
+            fail('HELPER_UPDATE_STATE')
+        update = state / 'update'
+        try:
+            mode = update.lstat().st_mode
+        except FileNotFoundError:
+            return
+        if not stat.S_ISDIR(mode) or next(update.iterdir(), None) is not None:
+            fail('HELPER_UPDATE_STATE')
+    except OSError:
+        fail('HELPER_UPDATE_STATE')
+
+
 def prepare(env):
+    check_factory_only_state()
     model = env.get('CODEX_MODEL', '')
     if model and (len(model) > 64 or re.fullmatch(r'[A-Za-z0-9._-]+', model) is None):
         fail('CODEX_MODEL')

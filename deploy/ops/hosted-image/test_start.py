@@ -22,6 +22,7 @@ import json, os, sys
 sys.path.insert(0, sys.argv[1])
 import start
 start.SEAT_UID = os.getuid()
+start.STATE_DIR = str(__import__('pathlib').Path(os.environ['R5_TEST_IPC_DIR']).parent)
 start.IPC_DIR = os.environ['R5_TEST_IPC_DIR']  # r5：离线格不碰真 /work
 if sys.argv[2]:
     start.CODEX_BIN = sys.argv[2]

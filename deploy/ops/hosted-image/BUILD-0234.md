@@ -11,3 +11,23 @@ Docker RUN operations are network=none. Venv install is no-index/require-hashes/
 Final UID/GID10001, HOME=/work, no credentials in layers, root helper launcher/factory under /opt/dingwei/sessionhelper-src and absolute interpreter /opt/dingwei/sessionhelper-venv/bin/python. hosted-start preserves existing credential ownership/atomic auth+marker behavior and API-key wrapper, forces helper text-only IPC (legacy upload-only off), writes the matching restricted MCP stanza with explicit root/state/socket and never points at factory. Helper and shim thus use the same confirmed-slot selection. Nodeagent supplies driver/model/route env; the starter preserves SH_MODE. `/usr/local/bin/codex` remains the login-container override entry, and regular hosted-start execs the absolute venv interpreter. Init and **ReadonlyRootfs are enforced by nodeagent buildSpec**, not by a Dockerfile promise; test a real container with nodeagent's no-capabilities/read-only-rootfs/8MiB tmpfs,/work bind contract before pilot. The starter tests replace UID/IPC path locally and do not claim real UID10001/container compatibility.
 
 This starter intentionally rewrites model/trust/MCP config on every image boot, consistent with its existing rewrite contract; it does not preserve user-added MCP entries. Auth renewal/marker ordering is retained. If the actual Codex app-server ignores the generated MCP config, source/ABI differs, tmpfs is too small, CA/proxy traffic fails, or nodeagent lacks supervision, STOP. No helper self-update lifecycle or container RestartPolicy has been added. Actual Codex model/MCP invocation, LLM account login and one-seat Hub/Agent acceptance need separately approved runtime tests and owner credentials. Nothing here authorizes those operations.
+
+
+## R1/R2 follow-up: factory-only hosted state
+
+This candidate supports factory-only startup, not unattended slot migration. Before
+reading LLM credentials or creating login/config files, hosted-start rejects a
+symlinked/non-directory state root or update path, and ANY nonempty update directory:
+current/pending/previous journals (even null/malformed), slots, links and special files.
+Absent/empty update directory passes. Journal/slot contents are never read/imported,
+removed or rewritten. Existing history requires separately reviewed stopped migration;
+do not delete it to force startup. Even a stated034 slot is refused because version
+text alone cannot establish trusted restricted-mode source identity.
+No concurrent state writer or later slot introduction is supported. This is a startup
+precondition, not a sandbox against malicious same-UID writers; future updater and
+migration require authenticated source-policy and lifecycle review.
+
+Default Engine rejection resolves paths and refuses /var/run/docker.sock,
+/run/docker.sock and symlink aliases before preparing context. This accidental-default
+fence cannot establish that any other socket belongs to an approved isolated builder;
+the operator must independently verify that identity.
