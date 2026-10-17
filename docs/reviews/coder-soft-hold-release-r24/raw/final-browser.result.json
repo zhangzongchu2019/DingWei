@@ -1,0 +1,13 @@
+{
+  "source": "1a9110c2f54e2864c9567991df235ca6d1c9826b",
+  "argv": [
+    "bash",
+    "-c",
+    "NODE_PATH=/tmp/coder-a3-playwright/node_modules PW_CHANNEL=chrome node cmd/workpulse/testdata/hosted_quota_page.cjs"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 3.063,
+  "started_utc": "2026-10-17T17:06:18.586974+00:00",
+  "finished_utc": "2026-10-17T17:06:21.650051+00:00",
+  "sha256": "cfdb84e18fac95a1c0eb49405f39e53a64f5dafa5c1967cffbfaa3125c0d1f6f"
+}

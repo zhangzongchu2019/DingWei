@@ -1,0 +1,36 @@
+=== RUN   TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart
+--- PASS: TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart (1.25s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	2.309s
+=== RUN   TestSoftHoldReleaseGenerationPersistentStoppedOnly
+--- PASS: TestSoftHoldReleaseGenerationPersistentStoppedOnly (0.01s)
+=== RUN   TestSoftHoldReleaseLedgerReplayCannotClearLaterHold
+--- PASS: TestSoftHoldReleaseLedgerReplayCannotClearLaterHold (0.01s)
+=== RUN   TestSoftHoldReleaseEverySafetyGate
+=== RUN   TestSoftHoldReleaseEverySafetyGate/usage_above_recovery
+=== RUN   TestSoftHoldReleaseEverySafetyGate/usage_unknown
+=== RUN   TestSoftHoldReleaseEverySafetyGate/root_unknown
+=== RUN   TestSoftHoldReleaseEverySafetyGate/byte_reserve
+=== RUN   TestSoftHoldReleaseEverySafetyGate/inode_reserve
+=== RUN   TestSoftHoldReleaseEverySafetyGate/broken_state
+=== RUN   TestSoftHoldReleaseEverySafetyGate/pending_stop
+=== RUN   TestSoftHoldReleaseEverySafetyGate/failed_stop
+=== RUN   TestSoftHoldReleaseEverySafetyGate/usage_stale
+=== RUN   TestSoftHoldReleaseEverySafetyGate/root_stale
+=== RUN   TestSoftHoldReleaseEverySafetyGate/retiring
+--- PASS: TestSoftHoldReleaseEverySafetyGate (0.08s)
+    --- PASS: TestSoftHoldReleaseEverySafetyGate/usage_above_recovery (0.01s)
+    --- PASS: TestSoftHoldReleaseEverySafetyGate/usage_unknown (0.01s)
+    --- PASS: TestSoftHoldReleaseEverySafetyGate/root_unknown (0.01s)
+    --- PASS: TestSoftHoldReleaseEverySafetyGate/byte_reserve (0.01s)
+    --- PASS: TestSoftHoldReleaseEverySafetyGate/inode_reserve (0.01s)
+    --- PASS: TestSoftHoldReleaseEverySafetyGate/broken_state (0.01s)
+    --- PASS: TestSoftHoldReleaseEverySafetyGate/pending_stop (0.01s)
+    --- PASS: TestSoftHoldReleaseEverySafetyGate/failed_stop (0.01s)
+    --- PASS: TestSoftHoldReleaseEverySafetyGate/usage_stale (0.01s)
+    --- PASS: TestSoftHoldReleaseEverySafetyGate/root_stale (0.01s)
+    --- PASS: TestSoftHoldReleaseEverySafetyGate/retiring (0.01s)
+=== RUN   TestSoftHoldReleaseCommandWhitelistAndMalformed
+--- PASS: TestSoftHoldReleaseCommandWhitelistAndMalformed (0.01s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.143s

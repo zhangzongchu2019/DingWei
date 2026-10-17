@@ -1,0 +1,25 @@
+{
+  "source": "aca4d9ddec1ea4bbf13e4447b3b1283a872573a1",
+  "argv": [
+    "go",
+    "test",
+    "-p",
+    "1",
+    "-race",
+    "-json",
+    "-count=1",
+    "-timeout=15m",
+    "-run",
+    "^Test(SoftHold|SoftQuota|SoftNode|Quota|Opus)",
+    "./internal/hosted"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 57.168,
+  "started_utc": "2026-10-17T17:40:35.411874+00:00",
+  "finished_utc": "2026-10-17T17:41:32.579577+00:00",
+  "sha256": "ce0de3d20e9dd0b18f16eb543b0421b7cea421a9fe99a7bc903ba9a9d3e23748",
+  "top_level_pass": 16,
+  "subcase_pass": 30,
+  "failures": [],
+  "skips": []
+}

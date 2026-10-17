@@ -957,6 +957,7 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 	a.Register(CmdPullImage, d.pull)
 	a.Register(CmdCreateSeat, d.create)
 	a.Register(CmdStopSeat, d.stop)
+	a.Register(CmdReleaseHold, d.releaseHold)
 	a.Register(CmdStartSeat, d.start)
 	a.Register(CmdRestartSeat, d.restart)
 	a.Register(CmdUpgradeSeat, d.upgrade)

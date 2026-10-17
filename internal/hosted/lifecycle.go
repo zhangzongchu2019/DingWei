@@ -191,7 +191,7 @@ func (l *Lifecycle) Restart(ctx context.Context, agentID, actorLC string, isAdmi
 	if err := l.quotaStartGuard(ctx, seat); err != nil {
 		return err
 	}
-	if seat.State != "online" && seat.State != "error" {
+	if seat.State != "online" && seat.State != "error" && !(seat.State == "stopped" && seat.StateDetail == "soft_quota_released") {
 		return ErrInvalidState
 	}
 	// 🔴 复验阻断 3：凭据处于暂停的席位重启时若不先 Resume，席位回 online 而凭据仍 4401，

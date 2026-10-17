@@ -1,0 +1,4 @@
+=== RUN   TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart
+--- PASS: TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart (1.73s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	2.753s

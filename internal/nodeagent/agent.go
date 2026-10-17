@@ -98,6 +98,7 @@ const (
 	// 账号登录（0.2.1.101，R-V2-ACCOUNT-LOGIN-FLOW）：节点起一次性登录容器（codex 设备码），凭证由节点主动上传 Hub。
 	CmdLoginStart  = "login_start"
 	CmdLoginCancel = "login_cancel"
+	CmdReleaseHold = "release_soft_hold"
 )
 
 // noLedgerCommands 不入账本的指令：其结果含一次性登录链接与码（不该长期落盘）；幂等由处理器自己按 login_id 保证。
@@ -106,7 +107,7 @@ var noLedgerCommands = map[string]bool{CmdLoginStart: true, CmdLoginCancel: true
 var commandWhitelist = map[string]bool{
 	CmdPullImage: true, CmdCreateSeat: true, CmdStopSeat: true, CmdStartSeat: true,
 	CmdRestartSeat: true, CmdUpgradeSeat: true, CmdDestroySeat: true, CmdReportCapacity: true,
-	CmdExportSeat: true, CmdRefreshCredSeat: true, CmdLoginStart: true, CmdLoginCancel: true,
+	CmdReleaseHold: true, CmdExportSeat: true, CmdRefreshCredSeat: true, CmdLoginStart: true, CmdLoginCancel: true,
 }
 
 const reconnectBase = 2 * time.Second

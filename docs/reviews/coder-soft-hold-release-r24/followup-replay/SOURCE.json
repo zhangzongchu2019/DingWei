@@ -1,0 +1,132 @@
+{
+  "repository": "git@git.code.tencent.com:wego-ai/dingwei.git",
+  "ref": "refs/heads/review/coder/hold-release",
+  "source": "aca4d9ddec1ea4bbf13e4447b3b1283a872573a1",
+  "tree": "548f0b73161ed1b44aa87ea6aec7434b83519247",
+  "prior_delivery": "82743cb651b68a9cbd3a429d6f7c41a2bd55de94",
+  "review": "7aa8a555efcd1ee69d2bdd15e7c65c1ecf838b1a",
+  "delta_files": [
+    "internal/hosted/node_quota.go",
+    "internal/hosted/softquota_replay_test.go"
+  ],
+  "files": {
+    "cmd/workpulse/hosted_quota_routes.go": {
+      "blob": "e38cbb3b1cff49cbb27f859ca5054721f5c9f879",
+      "sha256": "cc0c2755f384e78334de9f9194225112b391a3d87bb501a1e2a51dbaefe136cc",
+      "unchanged_from_82743cb6": true
+    },
+    "cmd/workpulse/hosted_quota_routes_test.go": {
+      "blob": "028a2b52ca4fc86bf91ba608e24d0348f12a70b5",
+      "sha256": "537db61950e6d06cf7ca7b1b5ec03e98d7f28e70e9fe56e7120bd15500400c85",
+      "unchanged_from_82743cb6": true
+    },
+    "cmd/workpulse/newplat_hosted.go": {
+      "blob": "b5783246c4068e2c97f0f59a991aab29278db0f0",
+      "sha256": "db799170e0332c6bf173f0de310089a9a09a3277219eb4d2c32bccf101a15258",
+      "unchanged_from_82743cb6": true
+    },
+    "cmd/workpulse/testdata/hosted_quota_page.cjs": {
+      "blob": "1c33466d7ff65b81d474b9f65d0c56758bca9f20",
+      "sha256": "346cafe5bb805f4004e2e4a9857c8c292acdca4acd8d3a130dc870df6872b646",
+      "unchanged_from_82743cb6": true
+    },
+    "docs/runbooks/soft-hold-release.md": {
+      "blob": "f8ee8b8b3dbf4e58e2c970036e212eb66c8d581b",
+      "sha256": "93d959ec5422279be01b5923180437ee1fe0ba710e1adc0aa096f46af6ec021c",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/hosted/lifecycle.go": {
+      "blob": "1a365953e8b78344a94d212315f71cc966f9063a",
+      "sha256": "0e60879a768af1e6176d57e645f36364b47de749e1162fe08efe8c9c9e175a3b",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/hosted/node_quota.go": {
+      "blob": "c00c05d1daa89557480838d762763760722a3f85",
+      "sha256": "4be28c6efe20482136d56f6b252d02ccd6f5d0316c4b8db112901bf0d2aa4c0a",
+      "unchanged_from_82743cb6": false
+    },
+    "internal/hosted/schema.go": {
+      "blob": "824fd601a419b9c73f4ebbe7b305fe6f2421bc66",
+      "sha256": "8fced4807ea6b74e660319788cc7f7b75342368929891aa4b945aea681d05411",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/hosted/softquota_monitor.go": {
+      "blob": "9dc8f8af64ca068b75fb73908e967b1bda6465a9",
+      "sha256": "2017e883571c0c6df0aab92e7cdffb758515051cd860140635b2700aa7bc0a54",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/hosted/softquota_notice.go": {
+      "blob": "22fd0ded7d010c713d8e2e55fd1b019f499676ff",
+      "sha256": "37dcd621c2a6a1ea90aaf07ea86376d3022cc8d1dcf9c70c768e722390c59d9f",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/hosted/softquota_notice_test.go": {
+      "blob": "e7f8b80d91c5781919fb2102d585b60534de8e66",
+      "sha256": "591d59bf0951c14489fd0a9798c2f94afa74b45d9ac3a6494d01f56cc90e3829",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/hosted/softquota_release_test.go": {
+      "blob": "6ff3f311159df26726968f508a62fa42aafe32fc",
+      "sha256": "b5f0fb6542c1130851df6fa8f0e1b252815f41983d698a3ad7f8a34177ad2a0f",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/hosted/store_test.go": {
+      "blob": "42abd6346f8e2c3b28e30b38a8e98616d344fbec",
+      "sha256": "aa573d8e8d2b62f2da9d67861ed72a301036e646615e77b6e11298041c3fe042",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/m8/hosted_quota_notice.go": {
+      "blob": "1fbf8dc660461105f5a7c763b2f6e1919d9da935",
+      "sha256": "94a4fa6683894d6db5cd497ef0beb5cf264acf08d171f2db08e404f73412fdc6",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/m8/hosted_quota_notice_test.go": {
+      "blob": "b7646fc724c7a7b7816c42198ad49eb1ea48666d",
+      "sha256": "51a2c37407d09c6a26d9068ea844fb1ed6a3aa14795e8c494478ecc5897cdcdf",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/nodeagent/agent.go": {
+      "blob": "2d11bafffa92fa28a6dd1325ccdd0282c58cbc4e",
+      "sha256": "2201bb0ad62ea360947ba41c0cf0172e9f7a930485316edb2bc7c58e64805485",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/nodeagent/capacity.go": {
+      "blob": "433458b42be0e64fe770d562e79ab3b13cb1c8a9",
+      "sha256": "b70f35dee542256e316c3bdd457a8515e50c74c8b03ebf8cbe47bc07c10334b2",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/nodeagent/seat.go": {
+      "blob": "3f6f98fa0bc8d0b7079fa2a78542dff73d659bc8",
+      "sha256": "25f53d8daadeefc3e61ae267e4f74bb6b29b21b99bd794ee41a374e63a595988",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/nodeagent/softquota.go": {
+      "blob": "f442c764fe93e4e07106b16c274b626e1f1d12bb",
+      "sha256": "0cc53cc698a57ec44e0970256672f108b51816e0c399733f1759a8a4467a8613",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/nodeagent/softquota_release.go": {
+      "blob": "2b20a7c49ca9d753ca3de94821913e1d34069c10",
+      "sha256": "5b5003fba8c2b08a47c7019a1ef07c687e6e390a776de7c5b0cc2d55e23d92b9",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/nodeagent/softquota_release_test.go": {
+      "blob": "18927de6a6ca3c6932319dabc722c1168bf27d26",
+      "sha256": "9438133325f576108a07b89b8e7b06c7ab38f11a382f05e7bfa8faf9776260b8",
+      "unchanged_from_82743cb6": true
+    },
+    "internal/hosted/softquota_replay_test.go": {
+      "blob": "36270f3e69e77cace53e494e16d71ff4ea8712f5",
+      "sha256": "c80b3fc5253d529ca3d1bbee25d0b628c5bb38d48095559138b34d6fd461edce",
+      "unchanged_from_82743cb6": false
+    }
+  },
+  "unchanged_subtrees": {
+    "internal/nodeagent": "0c17e2d2dcf849c3e74b05ede1ea295735053108",
+    "internal/m8": "31ab0ec16d9f986a0d7d9985594cd51ef8417791",
+    "cmd/workpulse": "84d43848c04976d1e718a79e3abdd8d1b290ca23",
+    "internal/seatcapacity": "17b5698b94d6fde55a7262f7904f8229032515df",
+    "VERSION": "08f8a82b868956a580f3f4eb51d515658e333c50",
+    "tools/sessionhelper": "eb9210d4300f8c8e2f0f3ddf5261816260ad4eed"
+  }
+}

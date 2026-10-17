@@ -19,6 +19,8 @@ import (
 )
 
 type Capacity struct {
+	HoldReleaseVersion    int                 `json:"hold_release_version,omitempty"`
+	SoftQuotaPolicy       *softQuotaSummary   `json:"soft_quota_policy,omitempty"`
 	SeatCapacity          *seatcapacity.View  `json:"seat_capacity,omitempty"`
 	DiskSnapshotValid     *bool               `json:"disk_snapshot_valid,omitempty"`
 	DiskSnapshotAt        *time.Time          `json:"disk_snapshot_at,omitempty"`
@@ -56,6 +58,8 @@ func (d *dockerOps) collectCapacity(ctx context.Context) (Capacity, error) {
 	c.QuotaPolicyRevision = d.policyValue().Revision()
 	if d.soft != nil {
 		c.SoftSeats, c.QuotaEvents, c.SoftReady, c.SeatCapacity = d.soft.reportWithCapacity()
+		c.HoldReleaseVersion = 1
+		c.SoftQuotaPolicy = d.soft.summary()
 	}
 	if d.soft != nil {
 		d.soft.mu.Lock()

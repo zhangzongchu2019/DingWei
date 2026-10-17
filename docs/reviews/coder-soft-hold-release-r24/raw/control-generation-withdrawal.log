@@ -1,0 +1,6 @@
+=== RUN   TestSoftHoldReleaseGenerationPersistentStoppedOnly
+    softquota_release_test.go:59: stale approval cleared new hold
+--- FAIL: TestSoftHoldReleaseGenerationPersistentStoppedOnly (0.03s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.069s
+FAIL

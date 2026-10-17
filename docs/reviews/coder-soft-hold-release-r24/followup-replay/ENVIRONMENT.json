@@ -1,0 +1,12 @@
+{
+  "PATH": "/data/ai-dev-data/helper-deps-lock-venv/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin",
+  "LANG": "C.UTF-8",
+  "TZ": "UTC",
+  "HOME": "/data/ai-dev-data/coder-hold-replay-lab/home",
+  "GOCACHE": "/data/ai-dev-data/coder-hold-replay-lab/cache",
+  "GOMODCACHE": "/home/dev/go/pkg/mod",
+  "GOPATH": "/home/dev/go",
+  "TMPDIR": "/tmp/h-r1-cunzl797",
+  "HUB_TEST_PG_STRICT": "1",
+  "CGO_ENABLED": "1"
+}

@@ -1,0 +1,19 @@
+{
+  "utc": "2026-10-17T17:43:13.791634+00:00",
+  "owned_processes": [],
+  "before_bytes": {
+    "/data/ai-dev-data/coder-hold-replay-lab/cache": 314266677,
+    "/data/ai-dev-data/coder-hold-replay-lab/home": 83050353,
+    "/tmp/h-r1-cunzl797": 0,
+    "/data/ai-dev-data/coder-hold-replay-lab/mutant": 31940253
+  },
+  "cache_after_go_clean_bytes": 232,
+  "after_bytes": {
+    "/data/ai-dev-data/coder-hold-replay-lab/cache": 0,
+    "/data/ai-dev-data/coder-hold-replay-lab/home": 0,
+    "/tmp/h-r1-cunzl797": 0,
+    "/data/ai-dev-data/coder-hold-replay-lab/mutant": 0
+  },
+  "shared_module_cache": "untouched",
+  "preserved": "main source checkout; local and Git evidence only"
+}

@@ -1,0 +1,22 @@
+{
+  "source": "1a9110c2f54e2864c9567991df235ca6d1c9826b",
+  "argv": [
+    "go",
+    "test",
+    "-p",
+    "1",
+    "-race",
+    "-count=1",
+    "-v",
+    "-run",
+    "^TestQQQuota",
+    "./internal/nodeagent",
+    "./internal/m8",
+    "./cmd/workpulse"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 27.924,
+  "started_utc": "2026-10-17T17:08:47.104337+00:00",
+  "finished_utc": "2026-10-17T17:09:15.028358+00:00",
+  "sha256": "a503c6f56dffd79db0f03ba7e04688599421471464372986fa12ddd37a59c0a6"
+}

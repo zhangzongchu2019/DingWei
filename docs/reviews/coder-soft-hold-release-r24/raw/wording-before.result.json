@@ -1,0 +1,18 @@
+{
+  "source": "35bf1ba3afdc52c67a3000a77eea388f12a80f69",
+  "argv": [
+    "go",
+    "test",
+    "-race",
+    "-count=1",
+    "-v",
+    "-run",
+    "^TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold$",
+    "./internal/hosted"
+  ],
+  "rc": 1,
+  "elapsed_seconds": 3.799,
+  "started_utc": "2026-10-17T17:05:16.873466+00:00",
+  "finished_utc": "2026-10-17T17:05:20.672872+00:00",
+  "sha256": "79009308f51ba574a9a0890d5777a3e91fbccc48e81ccd241942e9e067d5b93b"
+}

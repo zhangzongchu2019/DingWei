@@ -1,0 +1,6 @@
+=== RUN   TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart
+    softquota_release_test.go:201: node snapshot without owner intent released hold
+--- FAIL: TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart (1.67s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	1.696s
+FAIL

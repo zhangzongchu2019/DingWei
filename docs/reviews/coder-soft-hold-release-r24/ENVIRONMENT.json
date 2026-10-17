@@ -1,0 +1,5 @@
+{
+  "go": "go version go1.22.2 linux/amd64",
+  "python": "{\"python\": \"3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]\", \"websockets\": \"15.0.1\", \"certifi\": \"2026.7.22\"}",
+  "version": "0.2.3.4"
+}

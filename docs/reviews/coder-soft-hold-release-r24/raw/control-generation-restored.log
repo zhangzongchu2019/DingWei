@@ -1,0 +1,4 @@
+=== RUN   TestSoftHoldReleaseGenerationPersistentStoppedOnly
+--- PASS: TestSoftHoldReleaseGenerationPersistentStoppedOnly (0.02s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.039s

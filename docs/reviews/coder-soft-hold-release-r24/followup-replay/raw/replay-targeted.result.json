@@ -1,0 +1,20 @@
+{
+  "source": "82743cb651b68a9cbd3a429d6f7c41a2bd55de94",
+  "argv": [
+    "go",
+    "test",
+    "-p",
+    "1",
+    "-race",
+    "-count=1",
+    "-v",
+    "-run",
+    "^TestSoft(Hold|QuotaMonitor)",
+    "./internal/hosted"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 145.52,
+  "started_utc": "2026-10-17T17:38:02.684758+00:00",
+  "finished_utc": "2026-10-17T17:40:28.204997+00:00",
+  "sha256": "4ed1a9f94423de1b1736d5595bb3473e254c3896e14a7900eb9ea24cb290c0a6"
+}

@@ -36,22 +36,24 @@ type quotaEvent struct {
 	At         time.Time `json:"at"`
 }
 type softSeat struct {
-	WriterKind   string        `json:"writer_kind,omitempty"`
-	WriterRoot   string        `json:"writer_root,omitempty"` // Private local path, never reported.
-	Retiring     bool          `json:"retiring,omitempty"`    // Engine removal confirmed; no remaining writer.
-	UsageWarning bool          `json:"usage_warning"`
-	SpaceWarning bool          `json:"space_warning"`
-	writerGate   chan struct{} // Per-seat only; never serialized or reported.
-	UsageUnknown bool          `json:"usage_unknown"`
-	Limit        int64         `json:"limit_bytes"`
-	Resources    seatResources `json:"resources"`
-	CIDs         []string      `json:"container_ids"`
-	Usage        diskUsage     `json:"usage"`
-	MeasuredAt   time.Time     `json:"measured_at"`
-	CreatedAt    time.Time     `json:"created_at"`
-	Hold         string        `json:"hold,omitempty"`
-	StopState    string        `json:"stop_state,omitempty"`
-	Warn         bool          `json:"warn"`
+	WriterKind    string        `json:"writer_kind,omitempty"`
+	WriterRoot    string        `json:"writer_root,omitempty"` // Private local path, never reported.
+	Retiring      bool          `json:"retiring,omitempty"`    // Engine removal confirmed; no remaining writer.
+	UsageWarning  bool          `json:"usage_warning"`
+	SpaceWarning  bool          `json:"space_warning"`
+	writerGate    chan struct{} // Per-seat only; never serialized or reported.
+	UsageUnknown  bool          `json:"usage_unknown"`
+	Limit         int64         `json:"limit_bytes"`
+	Resources     seatResources `json:"resources"`
+	CIDs          []string      `json:"container_ids"`
+	Usage         diskUsage     `json:"usage"`
+	MeasuredAt    time.Time     `json:"measured_at"`
+	CreatedAt     time.Time     `json:"created_at"`
+	Hold          string        `json:"hold,omitempty"`
+	HoldID        string        `json:"hold_id,omitempty"`
+	LastReleaseID string        `json:"last_release_id,omitempty"`
+	StopState     string        `json:"stop_state,omitempty"`
+	Warn          bool          `json:"warn"`
 }
 type softState struct {
 	LastSpaceAt      time.Time            `json:"last_space_at"`
@@ -205,6 +207,15 @@ func newSoftQuota(p NodePolicy, root, path, nodeID string) (*softQuota, error) {
 			}
 		}
 	}
+	for _, s := range q.state.Seats {
+		if s.Hold != "" && s.HoldID == "" {
+			var token [16]byte
+			if _, err := rand.Read(token[:]); err != nil {
+				return fail(fmt.Errorf("hold generation unavailable"))
+			}
+			s.HoldID = hex.EncodeToString(token[:])
+		}
+	}
 	if q.state.Active {
 		for id := range q.state.Seats {
 			q.holdLocked(id, "unclean_restart")
@@ -275,28 +286,29 @@ func writeSoftState(path string, raw []byte) error {
 	}
 	return err
 }
-func (q *softQuota) eventLocked(id, reason string) {
+func (q *softQuota) eventLocked(id, reason string) string {
 	if len(q.state.Events) >= 256 {
 		q.broken = true
-		return
+		return ""
 	}
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
 		q.broken = true
-		return
+		return ""
 	}
 	kind := ""
 	if s := q.state.Seats[id]; s != nil {
 		kind = s.WriterKind
 	}
 	q.state.Events = append(q.state.Events, quotaEvent{ID: hex.EncodeToString(b[:]), SeatID: id, Reason: reason, At: q.now().UTC(), WriterKind: kind})
+	return hex.EncodeToString(b[:])
 }
 func (q *softQuota) holdLocked(id, reason string) {
 	s := q.state.Seats[id]
 	if s.Hold == "" && !s.Retiring {
 		s.Hold = reason
 		s.StopState = "pending"
-		q.eventLocked(id, reason)
+		s.HoldID = q.eventLocked(id, reason)
 	}
 }
 func (q *softQuota) admitLocked(add int64) error {

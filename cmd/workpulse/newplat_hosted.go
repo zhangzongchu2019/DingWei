@@ -15,6 +15,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/hosted"
@@ -74,6 +75,15 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 	life := hosted.NewLifecycle(hst, poolSvc, idp, idp, gate, images, backups)
 	if err := life.RecoverJobs(ctx); err != nil {
 		return false, err
+	}
+	quotaOwner := strings.TrimSpace(os.Getenv("DW_G4_HOLD_OWNER_USER_ID"))
+	quotaOps := strings.TrimSpace(os.Getenv("DW_G4_QUOTA_OPS_AGENT_FULL_NAME"))
+	if quotaOwner == "" || quotaOps == "" {
+		log.Printf("hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration")
+	}
+	(hostedQuotaRoutes{store: hst, gw: gate, identity: svc, actor: actor, owner: quotaOwner, ops: quotaOps, origin: cfg.publicOrigin}).register(mux)
+	if quotaOwner != "" {
+		go runQuotaNotices(ctx, hst, hub, quotaOwner, quotaOps)
 	}
 	gate.OnConnect = orch.ReconcileNode // 节点重连对账（离线销毁补清——组长 7fabddb0 ⑤）
 	// 0.2.1.101 账号登录（R-V2-ACCOUNT-LOGIN-FLOW）：上次进程留下的进行中会话一律 expired；周期到期清扫

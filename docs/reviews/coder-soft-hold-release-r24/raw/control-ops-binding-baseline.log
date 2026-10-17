@@ -1,0 +1,4 @@
+=== RUN   TestQQQuotaExactOpsBinding
+--- PASS: TestQQQuotaExactOpsBinding (1.84s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	2.879s

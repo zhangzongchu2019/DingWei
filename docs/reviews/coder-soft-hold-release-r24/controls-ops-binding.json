@@ -1,0 +1,28 @@
+{
+  "case": "ops-binding",
+  "source": "1a9110c2f54e2864c9567991df235ca6d1c9826b",
+  "file": "cmd/workpulse/hosted_quota_routes.go",
+  "test": "TestQQQuotaExactOpsBinding",
+  "original_sha256": "cc0c2755f384e78334de9f9194225112b391a3d87bb501a1e2a51dbaefe136cc",
+  "baseline": {
+    "rc": 0,
+    "elapsed_seconds": 5.245,
+    "assertion_red": false,
+    "log_sha256": "0c6399d86035aa15944d959ba7daa4f8b7636730dd1e0fc035116f33f0632166",
+    "source_file_sha256": "cc0c2755f384e78334de9f9194225112b391a3d87bb501a1e2a51dbaefe136cc"
+  },
+  "withdrawal": {
+    "rc": 1,
+    "elapsed_seconds": 7.215,
+    "assertion_red": true,
+    "log_sha256": "051f8e04d402e3e9886c84034d9dc5c52735196660a6d77019733ee9967f5ed8",
+    "source_file_sha256": "8558a5eecb9dd43748f4386ebbd3166b34790d9b786e6b8ce6d9d097123c62f1"
+  },
+  "restored": {
+    "rc": 0,
+    "elapsed_seconds": 5.637,
+    "assertion_red": false,
+    "log_sha256": "5393e4f5be474fbe6c26814ecfb40afbd29183667683e06b6dbb7d5885cf84ab",
+    "source_file_sha256": "cc0c2755f384e78334de9f9194225112b391a3d87bb501a1e2a51dbaefe136cc"
+  }
+}

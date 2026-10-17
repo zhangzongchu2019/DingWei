@@ -1,0 +1,6 @@
+{
+  "go_list_rc": 0,
+  "packages": 64,
+  "docs_packages": 0,
+  "probe_suffix": ".go.fixture"
+}

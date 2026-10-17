@@ -1,0 +1,21 @@
+{
+  "source": "35bf1ba3afdc52c67a3000a77eea388f12a80f69",
+  "argv": [
+    "go",
+    "test",
+    "-race",
+    "-json",
+    "-count=1",
+    "-timeout=45m",
+    "./internal/nodeagent",
+    "./internal/hosted",
+    "./cmd/workpulse",
+    "./internal/nodegate",
+    "./internal/seatcapacity"
+  ],
+  "rc": 1,
+  "elapsed_seconds": 323.491,
+  "started_utc": "2026-10-17T16:57:34.140381+00:00",
+  "finished_utc": "2026-10-17T17:02:57.631016+00:00",
+  "sha256": "340aa1dcad983667355d7d54ce34c688a451f58b299c9abe8ca7cc65592661fe"
+}

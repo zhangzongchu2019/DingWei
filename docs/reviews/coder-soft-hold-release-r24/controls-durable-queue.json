@@ -1,0 +1,28 @@
+{
+  "case": "durable-queue",
+  "source": "1a9110c2f54e2864c9567991df235ca6d1c9826b",
+  "file": "internal/m8/hosted_quota_notice.go",
+  "test": "TestQQQuotaMustPersistBeforeNoticeReceipt",
+  "original_sha256": "94a4fa6683894d6db5cd497ef0beb5cf264acf08d171f2db08e404f73412fdc6",
+  "baseline": {
+    "rc": 0,
+    "elapsed_seconds": 5.082,
+    "assertion_red": false,
+    "log_sha256": "72003ade912bbe0390985639c2886e90106f1fb259c3d97a51abc3797a9c25db",
+    "source_file_sha256": "94a4fa6683894d6db5cd497ef0beb5cf264acf08d171f2db08e404f73412fdc6"
+  },
+  "withdrawal": {
+    "rc": 1,
+    "elapsed_seconds": 3.956,
+    "assertion_red": true,
+    "log_sha256": "a8f1aa871a87f00fcfb088a03d19bfc838adbd049d10ae5345e5f3e4044a47fd",
+    "source_file_sha256": "47cf750893087d5dbea2d497f92e42e93132c30066f0f27bee53fc7533da6d50"
+  },
+  "restored": {
+    "rc": 0,
+    "elapsed_seconds": 4.862,
+    "assertion_red": false,
+    "log_sha256": "2b5fb27f04f9f01feba9de3ebdc2204afbe4745c0f96f8fd816b72cd9a0d1844",
+    "source_file_sha256": "94a4fa6683894d6db5cd497ef0beb5cf264acf08d171f2db08e404f73412fdc6"
+  }
+}

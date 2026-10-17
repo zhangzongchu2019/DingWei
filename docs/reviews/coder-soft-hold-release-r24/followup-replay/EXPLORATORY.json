@@ -1,0 +1,5 @@
+{
+  "excluded_from_final_readings": true,
+  "label": "replay-targeted",
+  "reason": "Exploratory command launched while source/test edits were still uncommitted; its source field is only launch-time HEAD82743cb6, not an immutable executed-source claim. Cold compilation and successful output retained, not counted as a gate for either82743cb6 or aca4d9d. Final exact run and all controls use frozen aca4d9d plus the byte-identical reviewer fixture."
+}

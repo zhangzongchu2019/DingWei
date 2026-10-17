@@ -1,0 +1,13 @@
+{
+  "source": "35bf1ba3afdc52c67a3000a77eea388f12a80f69",
+  "argv": [
+    "bash",
+    "-c",
+    "DW_DESKTOP_INTEGRATION_PYTHON=/data/ai-dev-data/helper-deps-lock-venv/bin/python go test -p 1 ./internal/m8 -run \"^(TestDesktopMCPRoundTripAcrossRealHub|TestDeviceClaimAcrossActualClientAndHub|TestHostedBodySendAcrossRealHub)$\" -count=1 -timeout=180s -v"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 9.369,
+  "started_utc": "2026-10-17T17:02:38.211443+00:00",
+  "finished_utc": "2026-10-17T17:02:47.580542+00:00",
+  "sha256": "15940a8724a37f1ac9ed1d515943b29329277115808a37e32bc5c9fdb5fea8fc"
+}

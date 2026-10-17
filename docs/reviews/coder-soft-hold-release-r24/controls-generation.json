@@ -1,0 +1,28 @@
+{
+  "case": "generation",
+  "source": "1a9110c2f54e2864c9567991df235ca6d1c9826b",
+  "file": "internal/nodeagent/softquota_release.go",
+  "test": "TestSoftHoldReleaseGenerationPersistentStoppedOnly",
+  "original_sha256": "5b5003fba8c2b08a47c7019a1ef07c687e6e390a776de7c5b0cc2d55e23d92b9",
+  "baseline": {
+    "rc": 0,
+    "elapsed_seconds": 1.657,
+    "assertion_red": false,
+    "log_sha256": "53d0b02d9ddd931a244b26d64b719b384e8f123ada64d8ebe51975647ea09148",
+    "source_file_sha256": "5b5003fba8c2b08a47c7019a1ef07c687e6e390a776de7c5b0cc2d55e23d92b9"
+  },
+  "withdrawal": {
+    "rc": 1,
+    "elapsed_seconds": 1.082,
+    "assertion_red": true,
+    "log_sha256": "9b7f91ad04ee1a1a14a065832892ec58d4dcac417b906089a7c99b0145afcd1b",
+    "source_file_sha256": "84cfde0cf7a529f97135ce76f1fc92fe08fd263ac104ccf9c47755cef0fdddec"
+  },
+  "restored": {
+    "rc": 0,
+    "elapsed_seconds": 1.969,
+    "assertion_red": false,
+    "log_sha256": "b216aef62ea13db41b5b40793ee0070a44492f6a1c3ea771ab8d7b04a7a2ac02",
+    "source_file_sha256": "5b5003fba8c2b08a47c7019a1ef07c687e6e390a776de7c5b0cc2d55e23d92b9"
+  }
+}

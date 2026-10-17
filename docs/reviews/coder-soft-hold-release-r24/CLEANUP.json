@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-17T17:23:17.046873+00:00",
+  "before_bytes": {
+    "/data/ai-dev-data/coder-hold-release-lab/cache": 1599196260,
+    "/data/ai-dev-data/coder-hold-release-lab/home": 83357293,
+    "/data/ai-dev-data/coder-hold-release-lab/tmp": 569765,
+    "/tmp/h-o17y2yiy": 1139530,
+    "/data/ai-dev-data/coder-hold-release-lab/mutant": 30248916
+  },
+  "private_cache_after_go_clean_bytes": 232,
+  "after_bytes": {
+    "/data/ai-dev-data/coder-hold-release-lab/cache": 0,
+    "/data/ai-dev-data/coder-hold-release-lab/home": 0,
+    "/data/ai-dev-data/coder-hold-release-lab/tmp": 0,
+    "/tmp/h-o17y2yiy": 0,
+    "/data/ai-dev-data/coder-hold-release-lab/mutant": 0
+  },
+  "live_scope_processes": [],
+  "shared_module_cache_cleaned": false,
+  "primary_author_worktree_retained": "/data/ai-dev-data/hold-release-r24",
+  "retained": "source branch, raw evidence, scripts and fixtures only; no runtime/cache/HOME/TMP/mutant remains",
+  "pg_cleanup": "final strict pgtest owned cleanup and residue checks all passed; initial reported PIDs were absent on follow-up"
+}

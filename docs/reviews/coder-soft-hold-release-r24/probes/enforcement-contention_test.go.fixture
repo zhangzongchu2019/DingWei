@@ -1,0 +1,3 @@
+package nodeagent
+import("testing";"time")
+func TestQQQuotaReleaseRefusesActiveEnforcementWithoutWaiting(t *testing.T){q,_,id:=heldReleaseFixture(t);q.enforceMu.Lock();defer q.enforceMu.Unlock();done:=make(chan error,1);go func(){done<-q.releaseHold("ag_release",id)}();select{case err:=<-done:if err!=errHoldRelease{t.Fatalf("active enforcement allowed release: %v",err)};case <-time.After(10*time.Second):t.Fatal("release waited behind enforcement")}}
