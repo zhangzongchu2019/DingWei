@@ -232,3 +232,80 @@ func TestExportSeatRefusesCredentialHardlinkBeforeUpload(t *testing.T) {
 		t.Fatal("private alias refusal must precede upload")
 	}
 }
+
+// Exercise the actual atomic writer's process-death window, not a hand-named fake.
+func TestExportSeatExcludesCredentialRefreshCrashResidue(t *testing.T) {
+	if root := os.Getenv("DW_TEST_BACKUP_CRASH_ROOT"); root != "" {
+		chownForSeatFn = func(string) error { os.Exit(77); return nil }
+		d := &dockerOps{seatRoot: root}
+		_ = d.writeCredentialFileAtomic("ag_x1", &credentialFile{Content: "SYNTHETIC-REFRESH-CRASH-CREDENTIAL"})
+		os.Exit(78)
+	}
+	root := t.TempDir()
+	dir := seatDir(root, "ag_x1")
+	if err := os.MkdirAll(filepath.Join(dir, "project"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	nested := filepath.Join(dir, "project", ".account-credential.user")
+	if err := os.WriteFile(nested, []byte("business file retained"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=^TestExportSeatExcludesCredentialRefreshCrashResidue$")
+	cmd.Env = append(os.Environ(), "DW_TEST_BACKUP_CRASH_ROOT="+root)
+	err := cmd.Run()
+	exit, ok := err.(*exec.ExitError)
+	if !ok || exit.ExitCode() != 77 {
+		t.Fatalf("writer did not stop at post-write/pre-rename boundary: %v", err)
+	}
+	leftovers, err := filepath.Glob(filepath.Join(dir, ".account-credential.*"))
+	if err != nil || len(leftovers) != 1 {
+		t.Fatalf("expected one real writer residue: %v %v", leftovers, err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "account-credential")); !os.IsNotExist(err) {
+		t.Fatal("writer unexpectedly renamed")
+	}
+	var body []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { body, _ = io.ReadAll(r.Body); w.WriteHeader(200) }))
+	defer srv.Close()
+	d := &exportSeatDeps{seatRoot: root, hubOrigin: srv.URL, hc: srv.Client(), secretFn: func() (string, error) { return "synthetic-node", nil }}
+	if _, err := d.handle(context.Background(), exportParams(srv.URL)); err != nil {
+		t.Fatal(err)
+	}
+	got := tarEntries(t, body)
+	for name, content := range got {
+		if strings.HasPrefix(name, "ag_x1/.account-credential.") || strings.Contains(content, "SYNTHETIC-REFRESH-CRASH-CREDENTIAL") {
+			t.Fatalf("crash credential residue exported in %s", name)
+		}
+	}
+	if got["ag_x1/project/.account-credential.user"] != "business file retained" {
+		t.Fatal("nested business file lost")
+	}
+	if _, err := os.Stat(leftovers[0]); err != nil {
+		t.Fatal("export must not delete original residue")
+	}
+}
+
+func TestExportSeatRefusesCredentialTempHardlinkBeforeUpload(t *testing.T) {
+	root := t.TempDir()
+	dir := seatDir(root, "ag_x1")
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	private := filepath.Join(dir, ".account-credential.synthetic")
+	if err := os.WriteFile(private, []byte("SYNTHETIC-PRIVATE"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Link(private, filepath.Join(dir, "business-alias")); err != nil {
+		t.Fatal(err)
+	}
+	uploads := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { uploads++; w.WriteHeader(200) }))
+	defer srv.Close()
+	d := &exportSeatDeps{seatRoot: root, hubOrigin: srv.URL, hc: srv.Client(), secretFn: func() (string, error) { t.Fatal("must refuse before secret access"); return "", nil }}
+	if _, err := d.handle(context.Background(), exportParams(srv.URL)); err == nil {
+		t.Fatal("private temporary-file hardlink alias accepted")
+	}
+	if uploads != 0 {
+		t.Fatal("must refuse before upload")
+	}
+}

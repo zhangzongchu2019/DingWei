@@ -33,7 +33,7 @@ const BackupSHA256Trailer = "X-Backup-Sha256"
 // and helper journals/credentials must not be restored as a new live identity.
 // Work files remain; restoring a backup requires fresh enrollment and LLM login.
 var backupExcluded = []string{
-	"account-credential", "enroll-token.json",
+	"account-credential", ".account-credential.*", "enroll-token.json",
 	".dingwei", "inbox.sqlite3", "inbox.sqlite3-wal", "inbox.sqlite3-shm",
 	".codex", ".claude", ".claude.json", ".claude.json.*",
 	".gemini", ".cline", ".opencode", ".config",

@@ -1,0 +1,16 @@
+[
+  {
+    "test": "TestExportSeatExcludesCredentialRefreshCrashResidue",
+    "rc": 1,
+    "original_sha256": "c4820f564ec54070f885b46e4a07bb451e4eb87e80c79d240add6e6a42b60b11",
+    "mutant_sha256": "cccad39d9e39889c909b690e205876bd4ae5cafd42324c674c18c176a1092c66",
+    "removed": "root .account-credential.* shared exclusion"
+  },
+  {
+    "test": "TestExportSeatRefusesCredentialTempHardlinkBeforeUpload",
+    "rc": 1,
+    "original_sha256": "c4820f564ec54070f885b46e4a07bb451e4eb87e80c79d240add6e6a42b60b11",
+    "mutant_sha256": "cccad39d9e39889c909b690e205876bd4ae5cafd42324c674c18c176a1092c66",
+    "removed": "root .account-credential.* shared exclusion"
+  }
+]
