@@ -1,0 +1,9 @@
+{
+  "internal/seatcapacity/capacity.go": "d8b4c1f42a500e6ed0c78ad381d64181cc71bb0d1adf88d4d7d48c25b479ce7f",
+  "internal/seatcapacity/capacity_test.go": "eb4ebc8ef8cfb2c42f0aa4965cf357ee81ec21e03a24fdb1c4773baa98e75973",
+  "internal/nodeagent/policy.go": "77c4316c3a2775d1760172651807bd5dde746bb39ed342801cf89cf148948c0b",
+  "internal/nodeagent/seatcapacity_test.go": "fb617796035fda9d921d4a6d29d8b86cbf2c2aeb7a3f23a31d5181bb3e78aee6",
+  "docs/reviews/coder-seat-capacity-interim/STATUS.md": "fd6e2f2b1ff7a6cc358541f40fb2dc82ec8e0cc8fb347e3ba3704f961818726e",
+  "docs/reviews/coder-seat-capacity-interim/raw/capacity-policy.log": "d0149b04dc095e0f911dad429a096a7e698e8628959ac500e44ac1a131f01655",
+  "docs/reviews/coder-seat-capacity-interim/raw/capacity-policy.log.result.json": "697d8b795b51e39846fb80c62a04c04f63e96867003c3ad100b1f10cafb88d82"
+}

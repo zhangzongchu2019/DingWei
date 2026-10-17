@@ -9,48 +9,57 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/seatcapacity"
 )
 
 // NodePolicy is operator configuration, never supplied in a seat command. Hard
 // remains the default; a failed hard quota never selects soft automatically.
 type NodePolicy struct {
-	StateWriteBudget        time.Duration `json:"state_write_budget"`
-	ShmBytes                int64         `json:"shm_bytes"`
-	SoftApprovalRef         string        `json:"soft_approval_ref,omitempty"`
-	HostRootTrustRef        string        `json:"host_root_trust_ref,omitempty"`
-	NetworkApprovalRef      string        `json:"network_approval_ref,omitempty"`
-	EngineID                string        `json:"engine_id,omitempty"`
-	EngineRoot              string        `json:"engine_root,omitempty"`
-	Mode                    string        `json:"quota_mode"`
-	ScanInterval            time.Duration `json:"scan_interval"`
-	ScanBudget              time.Duration `json:"scan_budget"`
-	MaxAge                  time.Duration `json:"max_age"`
-	StopTimeout             time.Duration `json:"stop_timeout"`
-	ReserveInterval         time.Duration `json:"reserve_interval"`
-	EmergencyReservePercent int64         `json:"emergency_reserve_percent"`
-	WarnPercent             int64         `json:"warn_percent"`
-	RecoveryPercent         int64         `json:"recovery_percent"`
-	ReserveBytes            int64         `json:"reserve_bytes"`
-	ReservePercent          int64         `json:"reserve_percent"`
-	ReserveInodes           uint64        `json:"reserve_inodes"`
-	ReserveInodePercent     uint64        `json:"reserve_inode_percent"`
-	MaxSeats                int           `json:"max_seats"`
-	ImageReserveBytes       int64         `json:"image_reserve_bytes"`
-	ReserveCPUMillicores    int64         `json:"reserve_cpu_millicores"`
-	ReserveMemoryBytes      int64         `json:"reserve_memory_bytes"`
-	PidsLimit               int64         `json:"pids_limit"`
-	LoginPidsLimit          int64         `json:"login_pids_limit"`
-	LogMaxSizeMB            int64         `json:"log_max_size_mb"`
-	LogMaxFiles             int64         `json:"log_max_files"`
+	MinimumSeatCPUMillicores int64         `json:"minimum_seat_cpu_millicores"`
+	MinimumSeatMemoryBytes   int64         `json:"minimum_seat_memory_bytes"`
+	MinimumSeatDiskBytes     int64         `json:"minimum_seat_disk_bytes"`
+	StateWriteBudget         time.Duration `json:"state_write_budget"`
+	ShmBytes                 int64         `json:"shm_bytes"`
+	SoftApprovalRef          string        `json:"soft_approval_ref,omitempty"`
+	HostRootTrustRef         string        `json:"host_root_trust_ref,omitempty"`
+	NetworkApprovalRef       string        `json:"network_approval_ref,omitempty"`
+	EngineID                 string        `json:"engine_id,omitempty"`
+	EngineRoot               string        `json:"engine_root,omitempty"`
+	Mode                     string        `json:"quota_mode"`
+	ScanInterval             time.Duration `json:"scan_interval"`
+	ScanBudget               time.Duration `json:"scan_budget"`
+	MaxAge                   time.Duration `json:"max_age"`
+	StopTimeout              time.Duration `json:"stop_timeout"`
+	ReserveInterval          time.Duration `json:"reserve_interval"`
+	EmergencyReservePercent  int64         `json:"emergency_reserve_percent"`
+	WarnPercent              int64         `json:"warn_percent"`
+	RecoveryPercent          int64         `json:"recovery_percent"`
+	ReserveBytes             int64         `json:"reserve_bytes"`
+	ReservePercent           int64         `json:"reserve_percent"`
+	ReserveInodes            uint64        `json:"reserve_inodes"`
+	ReserveInodePercent      uint64        `json:"reserve_inode_percent"`
+	MaxSeats                 int           `json:"max_seats"`
+	ImageReserveBytes        int64         `json:"image_reserve_bytes"`
+	ReserveCPUMillicores     int64         `json:"reserve_cpu_millicores"`
+	ReserveMemoryBytes       int64         `json:"reserve_memory_bytes"`
+	PidsLimit                int64         `json:"pids_limit"`
+	LoginPidsLimit           int64         `json:"login_pids_limit"`
+	LogMaxSizeMB             int64         `json:"log_max_size_mb"`
+	LogMaxFiles              int64         `json:"log_max_files"`
 }
 
 func DefaultNodePolicy() NodePolicy {
-	return NodePolicy{StateWriteBudget: 5 * time.Second, Mode: "hard", ScanInterval: 30 * time.Second, ScanBudget: 5 * time.Second, MaxAge: 60 * time.Second,
+	return NodePolicy{MinimumSeatCPUMillicores: 1000, MinimumSeatMemoryBytes: 1536 << 20, MinimumSeatDiskBytes: 40 << 30,
+		StateWriteBudget: 5 * time.Second, Mode: "hard", ScanInterval: 30 * time.Second, ScanBudget: 5 * time.Second, MaxAge: 60 * time.Second,
 		StopTimeout: 10 * time.Second, ReserveInterval: 5 * time.Second, WarnPercent: 80, RecoveryPercent: 75,
 		EmergencyReservePercent: 50, ReserveBytes: 32 << 30, ReservePercent: 10, ReserveInodes: 65536, ReserveInodePercent: 1, MaxSeats: 4,
 		ImageReserveBytes: 8 << 30, ShmBytes: 64 << 20, ReserveCPUMillicores: 2000, ReserveMemoryBytes: 4 << 30, PidsLimit: 512, LoginPidsLimit: 128, LogMaxSizeMB: 10, LogMaxFiles: 3}
 }
 func (p NodePolicy) Validate() error {
+	if err := p.capacityPolicy().Validate(); err != nil {
+		return fmt.Errorf("node policy: invalid minimum seat resources")
+	}
 	if p.Mode != "hard" && p.Mode != "soft" {
 		return fmt.Errorf("NODEAGENT_QUOTA_MODE: expected hard or soft")
 	}
@@ -116,6 +125,15 @@ func ParseNodePolicy(getenv func(string) string) (NodePolicy, error) {
 			*dst = n
 		}
 	}
+	for key, dst := range map[string]*int64{"MINIMUM_SEAT_CPU_MILLICORES": &p.MinimumSeatCPUMillicores, "MINIMUM_SEAT_MEMORY_BYTES": &p.MinimumSeatMemoryBytes, "MINIMUM_SEAT_DISK_BYTES": &p.MinimumSeatDiskBytes} {
+		if v := getenv("NODEAGENT_" + key); v != "" {
+			n, e := strconv.ParseInt(v, 10, 64)
+			if e != nil {
+				return p, fmt.Errorf("NODEAGENT_%s: invalid integer", key)
+			}
+			*dst = n
+		}
+	}
 	for key, dst := range map[string]*uint64{"RESERVE_INODES": &p.ReserveInodes, "RESERVE_INODE_PERCENT": &p.ReserveInodePercent} {
 		if v := getenv("NODEAGENT_" + key); v != "" {
 			n, e := strconv.ParseUint(v, 10, 64)
@@ -137,6 +155,10 @@ func ParseNodePolicy(getenv func(string) string) (NodePolicy, error) {
 
 // LoadNodePolicy reads configuration only; it never opens credentials or Docker.
 func LoadNodePolicy() (NodePolicy, error) { return ParseNodePolicy(os.Getenv) }
+
+func (p NodePolicy) capacityPolicy() seatcapacity.Policy {
+	return seatcapacity.Policy{Minimum: seatcapacity.Resources{CPU: p.MinimumSeatCPUMillicores, Memory: p.MinimumSeatMemoryBytes, Disk: p.MinimumSeatDiskBytes}, MaxSeats: p.MaxSeats}
+}
 
 // Revision binds the approved registration to the actual node thresholds.
 func (p NodePolicy) Revision() string {

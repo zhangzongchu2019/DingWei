@@ -1,0 +1,16 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/seatcapacity",
+    "./internal/nodeagent",
+    "-run",
+    "TestSeatCapacityMinimumConfiguration|TestOwnerEight|TestDimensions|TestUnknownIsNever|TestExistingStart"
+  ],
+  "rc": 0,
+  "seconds": 13.82625098596327,
+  "external_DSN_environment_not_inherited": true
+}
