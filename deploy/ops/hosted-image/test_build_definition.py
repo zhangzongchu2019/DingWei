@@ -176,6 +176,13 @@ class StartupAndDefinition(unittest.TestCase):
         second = subprocess.run(['sh', str(HERE/'build-image.sh')], env=env, capture_output=True)
         self.assertEqual(second.returncode, 2)
         self.assertIn(b'default host Engine forbidden', second.stderr)
+        with tempfile.TemporaryDirectory() as tmp:
+            alias = Path(tmp)/'engine.sock'; alias.symlink_to('/var/run/docker.sock')
+            env['HOSTED_BUILD_ENGINE'] = 'unix://' + str(alias)
+            third = subprocess.run(['sh', str(HERE/'build-image.sh')], env=env, capture_output=True)
+            self.assertNotEqual(third.returncode, 0)
+            self.assertIn(b'default host Engine alias forbidden', third.stderr)
+
 
     def test_offline_build_security_contract(self):
         docker = (HERE/'Dockerfile').read_text(); shell = (HERE/'build-image.sh').read_text()
