@@ -76,7 +76,7 @@ func measureUsageSeen(ctx context.Context, root, id string, seen map[[2]uint64]b
 			}
 			seen[key] = true
 			count++
-			if count > 1000000 {
+			if count > 1000000 || len(seen) > 1000000 {
 				return fmt.Errorf("usage entry budget exceeded")
 			}
 			if s.Blocks < 0 || s.Size < 0 || s.Blocks > math.MaxInt64/512 || usage.Allocated > math.MaxInt64-s.Blocks*512 || usage.Apparent > math.MaxInt64-s.Size {
