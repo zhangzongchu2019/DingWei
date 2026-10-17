@@ -85,12 +85,24 @@ class ClaudeStart(unittest.TestCase):
                   'runtime':{'name':'node','version':'22.23.3','platform':'linux-x64','file':node.name,'sha256':hashlib.sha256(node.read_bytes()).hexdigest()}}
             lock_path=root/'lock.json'; lock_path.write_text(json.dumps(lock))
             base=root/'base'; base.mkdir()
-            for name in ('Dockerfile','codex_start.py','claude-start.py','claude.py'):(base/name).write_text('fixture')
+            (base/'start.py').write_text('fixture common guard')
             for name in ('helper','wheels','runtime-debs','security-debs'):(base/name).mkdir()
+            receipt={'commit':'a'*40,'tree':'b'*40,'files':{'start.py':hashlib.sha256((base/'start.py').read_bytes()).hexdigest()}}
+            (base/'BUILD-INPUTS.json').write_text(json.dumps(receipt))
             out=root/'out'; prepare.prepare(lock_path,cli,native,node,base,out)
             self.assertTrue((out/'claude'/'package'/'file').is_file())
             self.assertTrue((out/'native'/'package'/'file').is_file())
             self.assertEqual((out/'node'/node.name).read_bytes(),b'node')
+
+    def test_context_rejects_receipted_symlink_before_copy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); base = root/'base'; base.mkdir(); outside = root/'synthetic-secret'; outside.write_text('not copied')
+            (base/'helper').mkdir(); (base/'helper'/'link').symlink_to(outside)
+            receipt = {'commit':'a'*40, 'tree':'b'*40, 'files':{'helper/link':hashlib.sha256(outside.read_bytes()).hexdigest(), 'start.py':'0'*64}}
+            (base/'start.py').write_text('guard'); receipt['files']['start.py']=hashlib.sha256((base/'start.py').read_bytes()).hexdigest()
+            (base/'BUILD-INPUTS.json').write_text(json.dumps(receipt))
+            with self.assertRaises(prepare.Rejected):
+                prepare._h3_files(base)
 
     def test_restricted_mcp_and_json_object_credential(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -101,11 +113,14 @@ class ClaudeStart(unittest.TestCase):
             env = {'SH_WS_BASE': 'wss://hub.invalid', 'SH_ENROLL_TOKEN_FILE': str(root/'enroll'),
                    'SH_CRED_FILE': str(cred), 'SH_CRED_KIND': 'token_file', 'SH_CLI': 'claude',
                    'HOME': str(root/'work')}
-            with mock.patch.object(start, '_shared_guard'), mock.patch.object(start, 'SEAT_UID', os.getuid()):
+            with mock.patch.object(start, '_shared_guard'), mock.patch.object(start, 'SEAT_UID', os.getuid()), \
+                 mock.patch.object(start, 'IPC_DIR', str(root/'ipc')):
                 out = start.prepare(env)
             self.assertEqual((out['SH_IPC_UPLOAD_ONLY'], out['SH_IPC_SEND_BODY_ONLY']), ('0', '1'))
-            self.assertEqual(out['SH_CLI_CMD'], start.CLAUDE_BIN)
-            self.assertEqual(json.loads((root/'work'/'.claude.json').read_text()), {'opaque': 'synthetic'})
+            self.assertIn('--mcp-config', out['SH_CLI_CMD'])
+            self.assertTrue(out['SH_ENROLL'])
+            self.assertEqual(out['SH_MCP_IPC_SOCK'], out['DINGWEI_MCP_IPC_SOCK'])
+            self.assertEqual(json.loads((root/'work'/'.claude'/'.credentials.json').read_text()), {'opaque': 'synthetic'})
             mcp = json.loads((root/'work'/'.claude'/'mcp.json').read_text())['mcpServers']['dingwei-send']
             self.assertEqual(mcp['env']['SH_IPC_SEND_BODY_ONLY'], '1')
             self.assertNotIn('file', json.dumps(mcp))

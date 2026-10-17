@@ -23,7 +23,7 @@ RUN mkdir /opt/node-unpack \
     && rm -rf /tmp/node.tar.xz /opt/node-unpack
 COPY claude/package/ /opt/claude/node_modules/@anthropic-ai/claude-code/
 COPY native/package/ /opt/claude/node_modules/@anthropic-ai/claude-code-linux-x64/
-COPY codex_start.py /opt/dingwei/codex_start.py
+COPY start.py /opt/dingwei/codex_start.py
 COPY claude-start.py /usr/local/bin/hosted-claude-start
 COPY claude.py /usr/local/bin/claude
 RUN test -f /opt/claude/node_modules/@anthropic-ai/claude-code/bin/claude.exe \
