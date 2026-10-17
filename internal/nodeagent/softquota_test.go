@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"syscall"
@@ -795,4 +797,72 @@ func TestNodeResourceCapabilityAndCPUMinimum(t *testing.T) {
 			t.Fatal("valid CPU limit refused", cpu, err)
 		}
 	}
+}
+
+func TestSoftHoldDurableBeforeStop(t *testing.T) {
+	q, _ := softFixture(t)
+	reserveFixture(t, q, "ag_one")
+	q.track("ag_one", "cid")
+	q.usage = func(context.Context, string, string) (diskUsage, error) { return diskUsage{9 << 20, 9 << 20}, nil }
+	durable := false
+	q.scan(context.Background(), func(context.Context, string, string) error {
+		raw, err := os.ReadFile(q.path)
+		if err != nil {
+			return err
+		}
+		var state softState
+		if err = json.Unmarshal(raw, &state); err != nil {
+			return err
+		}
+		seat := state.Seats["ag_one"]
+		durable = seat != nil && seat.Hold == "disk_limit"
+		if !durable {
+			return errors.New("stop preceded durable hold")
+		}
+		return nil
+	})
+	if !durable {
+		t.Fatal("hold was not durable before stopping writer")
+	}
+}
+
+func TestUsageFDStability(t *testing.T) {
+	if os.Getenv("DW_SOFT_QUOTA_FD_PROBE") != "1" {
+		exe, err := os.Executable()
+		if err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command(exe, "-test.run", "^TestUsageFDStability$", "-test.v")
+		cmd.Env = append(os.Environ(), "DW_SOFT_QUOTA_FD_PROBE=1")
+		out, err := cmd.CombinedOutput()
+		if err != nil || !strings.Contains(string(out), "FD_PROBE_OK") {
+			t.Fatalf("isolated FD probe %v: %s", err, out)
+		}
+		t.Log(string(out))
+		return
+	}
+	// Only this child test process changes GC/RLIMIT; no parent/host limits change.
+	debug.SetGCPercent(-1)
+	var limit syscall.Rlimit
+	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &limit); err != nil {
+		t.Fatal(err)
+	}
+	limit.Cur = 128
+	if err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &limit); err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	os.Mkdir(seatDir(root, "ag_fd"), 0700)
+	os.WriteFile(filepath.Join(seatDir(root, "ag_fd"), "file"), []byte("fixture"), 0600)
+	before, _ := os.ReadDir("/proc/self/fd")
+	for i := 0; i < 1000; i++ {
+		if _, err := measureUsage(context.Background(), root, "ag_fd"); err != nil {
+			t.Fatal(i, err)
+		}
+	}
+	after, _ := os.ReadDir("/proc/self/fd")
+	if len(before) != len(after) {
+		t.Fatalf("FD growth %d→%d", len(before), len(after))
+	}
+	t.Logf("FD_PROBE_OK before=%d after=%d iterations=1000 GC=off RLIMIT=128", len(before), len(after))
 }
