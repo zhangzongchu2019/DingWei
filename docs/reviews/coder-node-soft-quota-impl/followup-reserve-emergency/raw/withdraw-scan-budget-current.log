@@ -1,0 +1,6 @@
+=== RUN   TestSoftScanBudgetUnknownAndOutboxAcknowledgement
+    softquota_test.go:568: scan budget ignored
+--- FAIL: TestSoftScanBudgetUnknownAndOutboxAcknowledgement (2.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	2.025s
+FAIL

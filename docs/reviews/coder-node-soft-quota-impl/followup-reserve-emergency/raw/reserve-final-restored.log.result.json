@@ -1,0 +1,16 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "./internal/hosted",
+    "-run",
+    "Test(SoftReserveRuns|SoftEmergency|SoftReserveCan|SoftBlockedWriter|SoftScanBudget|SoftEnforcementBatch|SoftMonitorMeasures|QuotaEmergency)",
+    "-v",
+    "-count=1",
+    "-timeout=120s"
+  ],
+  "rc": 0,
+  "seconds": 8.451620911015198,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftBlockedWriterDoesNotSerializeOtherSeatStops",
+    "-v",
+    "-count=1",
+    "-timeout=30s"
+  ],
+  "rc": 1,
+  "seconds": 1.8693033528979868,
+  "external_DSN_environment_not_inherited": true
+}

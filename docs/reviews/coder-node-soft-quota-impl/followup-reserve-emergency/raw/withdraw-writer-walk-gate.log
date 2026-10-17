@@ -1,0 +1,6 @@
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+    softquota_reserve_test.go:301: writer walk gate prevented stopping existing writer
+--- FAIL: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (1.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.023s
+FAIL

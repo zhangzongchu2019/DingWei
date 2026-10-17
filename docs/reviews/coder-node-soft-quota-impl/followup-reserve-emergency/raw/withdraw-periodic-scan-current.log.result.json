@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftMonitorMeasuresAgainOnPeriodicTick",
+    "-v",
+    "-count=1",
+    "-timeout=30s"
+  ],
+  "rc": 1,
+  "seconds": 2.2622168778907508,
+  "external_DSN_environment_not_inherited": true
+}

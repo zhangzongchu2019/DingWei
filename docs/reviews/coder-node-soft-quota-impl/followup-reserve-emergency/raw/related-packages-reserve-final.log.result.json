@@ -1,0 +1,16 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/hosted",
+    "./internal/nodegate",
+    "./cmd/nodeagent",
+    "./cmd/workpulse",
+    "-v",
+    "-count=1",
+    "-timeout=600s"
+  ],
+  "rc": 0,
+  "seconds": 398.90154344099574,
+  "external_DSN_environment_not_inherited": true
+}

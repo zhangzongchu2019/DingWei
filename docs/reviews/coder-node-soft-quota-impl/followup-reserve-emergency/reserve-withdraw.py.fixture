@@ -1,0 +1,63 @@
+import pathlib,subprocess,hashlib,json,sys
+lab=pathlib.Path('/data/ai-dev-data/coder-soft-quota-lab');root=lab/'reserve-withdrawal';pin='8a3efd78d675f74bff9cf1974bd6d17c0c0a2c62';runner=lab/'run-local.py'
+file='internal/nodeagent/softquota.go';original=subprocess.check_output(['git','show',pin+':'+file],cwd=root).decode()
+a=original.index('func (d *dockerOps) runSoft(');b=original.index('// Both emergency thresholds',a)
+serial='''func (d *dockerOps) runSoft(ctx context.Context) {
+ scan := time.NewTicker(d.policy.ScanInterval); defer scan.Stop()
+ reserve := time.NewTicker(d.policy.ReserveInterval); defer reserve.Stop()
+ d.soft.scan(ctx, d.stopOwned)
+ for { select {
+ case <-ctx.Done(): return
+ case <-scan.C: d.soft.scan(ctx,d.stopOwned)
+ case <-reserve.C: d.soft.checkReserve();d.soft.enforce(ctx,d.stopOwned)
+ } }
+}
+'''
+serialSource=original[:a]+serial+original[b:]
+def scoped(src,scope,old,new):
+ at=src.index(old,src.index(scope));return src[:at]+src[at:].replace(old,new,1)
+lockWalk=scoped(original,'func (q *softQuota) measure(', 'u, err := q.usage(c, q.root, id)','q.mu.Lock(); u, err := q.usage(c, q.root, id); q.mu.Unlock()')
+start=original.index('func (d *dockerOps) stopOwned(');end=original.index('\n\tif !d.soft.recorded',start)
+noWriterGate=original[:start]+'func (d *dockerOps) stopOwned(ctx context.Context, id, cid string) error {'+original[end:]
+noPersist=scoped(original,'func (q *softQuota) checkReserve()', '_ = q.persistLocked()', '// withdrawn immediate reserve persistence')
+noPeriodic=scoped(original,'func (d *dockerOps) runSoft(', 'ticker := time.NewTicker(d.policy.ScanInterval)', 'measured := false; ticker := time.NewTicker(d.policy.ScanInterval)')
+noPeriodic=scoped(noPeriodic,'func (d *dockerOps) runSoft(', 'd.soft.measure(ctx)','if !measured { d.soft.measure(ctx); measured = true }')
+cases=[
+ ('reserve-serial-scan',file,serialSource,'./internal/nodeagent','TestSoftReserveRunsWhileMetadataWalkIsBlocked'),
+ ('reserve-serial-engine',file,serialSource,'./internal/nodeagent','TestSoftReserveRunsWhileEngineStopIsBlocked'),
+ ('reserve-walk-state-lock',file,lockWalk,'./internal/nodeagent','TestSoftReserveRunsWhileMetadataWalkIsBlocked'),
+ ('reserve-late-writer-gate',file,noWriterGate,'./internal/nodeagent','TestSoftEmergencyCannotStopBeforeLateWriterStart'),
+ ('emergency-bytes',file,original.replace('q.space.Free < bytes','q.space.Free < bytes && false'),'./internal/nodeagent','TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes'),
+ ('emergency-inodes',file,scoped(original,'func (q *softQuota) checkReserve()', 'q.space.FreeFiles < inodes','q.space.FreeFiles < inodes && false'),'./internal/nodeagent','TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes'),
+ ('reserve-durable-intent',file,noPersist,'./internal/nodeagent','TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion'),
+ ('scan-budget-current',file,scoped(original,'func (q *softQuota) measure(', 'context.WithTimeout(ctx, q.policy.ScanBudget)','context.WithCancel(ctx)'),'./internal/nodeagent','TestSoftScanBudgetUnknownAndOutboxAcknowledgement'),
+ ('stop-budget-current',file,scoped(original,'func (q *softQuota) stopHeld(', 'context.WithTimeout(ctx, q.policy.StopTimeout)','context.WithCancel(ctx)'),'./internal/nodeagent','TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount'),
+ ('periodic-scan-current',file,noPeriodic,'./internal/nodeagent','TestSoftMonitorMeasuresAgainOnPeriodicTick'),
+]
+policy='internal/nodeagent/policy.go';po=subprocess.check_output(['git','show',pin+':'+policy],cwd=root).decode();cases.append(('emergency-default',policy,po.replace('EmergencyReservePercent: 50','EmergencyReservePercent: 40'),'./internal/nodeagent','TestSoftEmergencyConfigAndUnknownSpaceFailClosed'))
+hub='internal/hosted/node_quota.go';ho=subprocess.check_output(['git','show',pin+':'+hub],cwd=root).decode();cases.append(('emergency-hub-allowlist',hub,ho.replace(', "node_space_emergency", "node_inode_emergency", "node_space_unknown"',''),'./internal/hosted','TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath'))
+# Reintroduce a node-global writer gate to prove an unrelated seat still stops.
+globalGate=original.replace('type softQuota struct {','type softQuota struct {\n globalWriterGate chan struct{}',1).replace('q := &softQuota{','q := &softQuota{globalWriterGate:make(chan struct{},1),',1).replace('gate := seat.writerGate','gate := q.globalWriterGate',1)
+cases.append(('perseat-stop-independence',file,globalGate,'./internal/nodeagent','TestSoftBlockedWriterDoesNotSerializeOtherSeatStops'))
+# Move acquisition back ahead of the fresh walk; reserve must still stop an
+# already running writer while a pre-start metadata walk remains blocked.
+a=original.index('\tgateCtx, gateCancel :=',original.index('func (q *softQuota) start('));b=original.index('\n\tq.mu.Lock()',a)
+block=original[a:b]
+without=original[:a]+original[b:]
+pos=without.index('\n\tq.mu.Lock()',without.index('func (q *softQuota) start('))
+premature=without[:pos]+'\n'+block+without[pos:]
+cases.append(('writer-walk-gate',file,premature,'./internal/nodeagent','TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart'))
+
+selected=set(sys.argv[1:])
+results=[]
+if selected:
+ results=[c for c in json.loads((lab/'evidence'/'RESERVE-WITHDRAWALS.json').read_text())['cases'] if c['name'] not in selected]
+ cases=[c for c in cases if c[0] in selected]
+for name,path,mutant,pkg,test in cases:
+ old=subprocess.check_output(['git','show',pin+':'+path],cwd=root).decode();assert old!=mutant,name
+ try:
+  (root/path).write_text(mutant);log='withdraw-'+name+'.log';rc=subprocess.call(['python3',str(runner),log,'go','test',pkg,'-run','^'+test,'-v','-count=1','-timeout=30s'],cwd=root);raw=(lab/'evidence'/log).read_text();good=rc==1 and '--- FAIL: '+test.split('/')[0] in raw and '[build failed]' not in raw and 'test timed out' not in raw
+  results.append({'name':name,'file':path,'test':test,'rc':rc,'assertion_red':good,'original_sha256':hashlib.sha256(old.encode()).hexdigest(),'mutant_sha256':hashlib.sha256(mutant.encode()).hexdigest()});print(name,good,flush=True)
+ finally:(root/path).write_text(old)
+ (lab/'evidence'/'RESERVE-WITHDRAWALS.json').write_text(json.dumps({'code_pin':pin,'cases':results},indent=2)+'\n')
+assert all(c['assertion_red'] for c in results)

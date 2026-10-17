@@ -1,0 +1,6 @@
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+    softquota_reserve_test.go:224: R/2 default missing
+--- FAIL: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.004s
+FAIL

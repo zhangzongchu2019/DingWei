@@ -1,0 +1,19 @@
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+    softquota_reserve_test.go:178: reserve hold was not durable before enforcer
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+    softquota_reserve_test.go:178: reserve hold was not durable before enforcer
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+--- FAIL: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.07s)
+    --- FAIL: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.01s)
+    --- FAIL: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.077s
+FAIL

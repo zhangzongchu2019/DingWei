@@ -1,0 +1,6 @@
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+    softquota_reserve_test.go:409: one blocked writer serialized unrelated stop: first=unknown second=unknown
+--- FAIL: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.12s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.126s
+FAIL

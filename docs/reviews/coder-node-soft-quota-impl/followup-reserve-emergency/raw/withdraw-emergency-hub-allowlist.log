@@ -1,0 +1,14 @@
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_emergency
+    node_quota_test.go:257: hosted: 参数不合要求
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_inode_emergency
+    node_quota_test.go:257: hosted: 参数不合要求
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_unknown
+    node_quota_test.go:257: hosted: 参数不合要求
+--- FAIL: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath (6.82s)
+    --- FAIL: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_emergency (2.21s)
+    --- FAIL: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_inode_emergency (2.37s)
+    --- FAIL: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_unknown (2.23s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	6.823s
+FAIL

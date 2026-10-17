@@ -1,0 +1,246 @@
+{
+  "docs/reviews/coder-node-soft-quota-impl/CURRENT.md": {
+    "bytes": 435,
+    "sha256": "d4cb81a38ba971f14f58316309c9ad53a7c97ca2aab023254506088c6064078d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/CLEANUP.json": {
+    "bytes": 668,
+    "sha256": "33a6a3e54f42900ea915fa67a08e3c12e7c78a7de8642345871b08cb5fc03d9a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/REPORT.md": {
+    "bytes": 8319,
+    "sha256": "081410a6688039e9e2ab3afaabc7314c60695ca5a1e241cdb6fc0e3689296623"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/RESULTS.json": {
+    "bytes": 2328,
+    "sha256": "c2def740dbdf1c16112ecf83038ce0bc53dc700d60a45cd75ddc33b05b8b2b1a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/SOURCE-PINS.json": {
+    "bytes": 8322,
+    "sha256": "ed45a363fd5c5a7585e9ec627686ffd5c100fcd183cf8893aa43b41c964d0012"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/RESERVE-WITHDRAWALS.json": {
+    "bytes": 5636,
+    "sha256": "73ce42ad2b741ff205b68e5de97d5b07543d59b5d68a7fff7c2814e6661b45b9"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/canonical-reserve-final.log": {
+    "bytes": 41696,
+    "sha256": "e3f136f0807ced0a8545e52aaa55122dd46c5ab2a9e710b433cb676577712248"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/canonical-reserve-final.log.result.json": {
+    "bytes": 152,
+    "sha256": "bf71dcb4001a2be64d274016faf6861331e260baf53fb5a149a63354782d6e19"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/canonical-reserve-fix.log": {
+    "bytes": 42751,
+    "sha256": "a4e3515b0df2115749976d032574e48c9274dd0d7de39183731fd7d25e594180"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/canonical-reserve-fix.log.result.json": {
+    "bytes": 152,
+    "sha256": "08de29d32848eaed9a52aae17d0fdc3f1ae37b6743cb9e6b98efd7f6aa148813"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/nodeagent-full-reserve-final.log": {
+    "bytes": 22753,
+    "sha256": "b856005b1521fe24990188b362db8ee5157c50462a0115a6c3fee5f88be205f3"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/nodeagent-full-reserve-final.log.result.json": {
+    "bytes": 212,
+    "sha256": "dd18c09ddcb318f523804df3b8577a05dad67c7b9d7f11c58abded079e1c3f3e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/nodeagent-full-reserve-fix.log": {
+    "bytes": 22621,
+    "sha256": "1652838d820324cc6ed129182f34148cd20550d1c5c9be265898d87738911687"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/nodeagent-full-reserve-fix.log.result.json": {
+    "bytes": 212,
+    "sha256": "2afa82f352637b4281e61a1453cff665e1857b3b114d5fa0c87fa5c3640a3a0d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/nodeagent-race-reserve-final.log": {
+    "bytes": 24835,
+    "sha256": "c8c7adc979b26f0d1af9642711e2e6c92a249f50fcb1541aaa7df795cce8b091"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/nodeagent-race-reserve-final.log.result.json": {
+    "bytes": 226,
+    "sha256": "ae139fc515a58985d00c3c016187b091421bd12c279463a04e3d279cffae83ca"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/nodeagent-race-reserve-fix.log": {
+    "bytes": 24414,
+    "sha256": "ab6e2499190ed7fdc00d9abba3b1e227ac5d257c908ad7c2f380095a45daf4a4"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/nodeagent-race-reserve-fix.log.result.json": {
+    "bytes": 226,
+    "sha256": "942649a03f98541eeee1efd2079a7088c2261e006f6ddcd030f9e85c49cdd04d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/perseat-writer-targets.log": {
+    "bytes": 19832,
+    "sha256": "583c777294e05ac8969cbd5e837b2309c061d1537de3767a35d5c9253afc7f21"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/perseat-writer-targets.log.result.json": {
+    "bytes": 287,
+    "sha256": "980c31dba5f0d343113b575768e84a3c43c1abc3c40c324fdb402f464167c348"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/related-packages-reserve-final.log": {
+    "bytes": 67497,
+    "sha256": "247c26ce0bc01a01c3a5dfd4f50692d6b9518889d91b339187e540e3122db38a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/related-packages-reserve-final.log.result.json": {
+    "bytes": 283,
+    "sha256": "35d1dae25684a1dcf2182cd5cb4f86c5c98b191b8363d1238d6b35746806f2e4"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/related-packages-reserve-fix.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/reserve-emergency-race-targets.log": {
+    "bytes": 18512,
+    "sha256": "63dd4084308a0e73ac570611977aea65d6e3667ad7ad952d17eb09179d616196"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/reserve-emergency-race-targets.log.result.json": {
+    "bytes": 288,
+    "sha256": "c08809b86a2bbb6e32b31a28a7f43430db65f7af5b5428de922cebd3313a0635"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/reserve-final-restored.log": {
+    "bytes": 3171,
+    "sha256": "b2dd50ea83f0c816ef78c30b3e58738061f866271331e187a9712846bd7e537c"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/reserve-final-restored.log.result.json": {
+    "bytes": 396,
+    "sha256": "114a704bc7196b4b3ff1a072b5a85d967155fdd1e52c5d2d964d4b2c258baf88"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/reserve-withdraw-restored.log": {
+    "bytes": 3039,
+    "sha256": "f28eff4ad579ad842e11984c81381b0f828333b59a7606bce44dbe5ca90dd11a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/reserve-withdraw-restored.log.result.json": {
+    "bytes": 378,
+    "sha256": "112511b82ffe83ca1f6fd4998e0bcc090555219075a1fbb0498d7b537184166d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-emergency-bytes.log": {
+    "bytes": 843,
+    "sha256": "f33ad7158caaddf4f2e917b57a569451116f88ae1ddadfab6fb99d89a3fae09d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-emergency-bytes.log.result.json": {
+    "bytes": 302,
+    "sha256": "7045bbaa13607ca115dc7ecab0cb68dba2501dacca02d43b232342b25a06fefd"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-emergency-default.log": {
+    "bytes": 258,
+    "sha256": "b132f453d936905093c60be7deb5cdf085c1b268b204398e0b7ca34c2ec165ab"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-emergency-default.log.result.json": {
+    "bytes": 281,
+    "sha256": "68cfdb1b57e37dc3df0252c4c7dbd0384ab7866aeff4dfc3fe3208c9894a0aee"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-emergency-hub-allowlist.log": {
+    "bytes": 909,
+    "sha256": "95b8110795cf4b1a47cb70ac7db47bf012136086e5c06a1dff607f27adc77e93"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-emergency-hub-allowlist.log.result.json": {
+    "bytes": 281,
+    "sha256": "0bcd2feb02f3f98f3d680f8ea9555b4f30b8de481d5d775f140c638178c9e9fd"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-emergency-inodes-broad-control.log": {
+    "bytes": 985,
+    "sha256": "cb14b9631da088b3b67b9d5728332aca01015d56ed284a47f445a0755cf0cd83"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-emergency-inodes-broad-control.log.result.json": {
+    "bytes": 302,
+    "sha256": "0fd842a75ba067a03327ffb9a40ad957648670654e1d6fef884c9216228085d9"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-emergency-inodes.log": {
+    "bytes": 849,
+    "sha256": "302c693de35c28b0928256556e7e162b854a92befd8d93ad6e0b7b494981a0a1"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-emergency-inodes.log.result.json": {
+    "bytes": 303,
+    "sha256": "13f3791a49fa6619bacc9976430deabf20afde19203f421c50145f68b92842d7"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-periodic-scan-current.log": {
+    "bytes": 267,
+    "sha256": "32974301f4019b33666e961c96eb58a68b5e0cd27ed007d7ccd2fcd0df9b267d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-periodic-scan-current.log.result.json": {
+    "bytes": 275,
+    "sha256": "0e6761d3e585074ccfb4d14f9728eb00215bc86f0fc7abf1f5b1760ef066a413"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-perseat-stop-independence.log": {
+    "bytes": 319,
+    "sha256": "af780bf87b51d7280fea3bf88d6049a5813407e816127d99c3e8cfde3d3451a4"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-perseat-stop-independence.log.result.json": {
+    "bytes": 284,
+    "sha256": "e40a0dd80fb175488ba57b771ac2a655cb0aa8dab417cba466d3eb01a7849e7f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-reserve-durable-intent.log": {
+    "bytes": 1459,
+    "sha256": "ddc0f20f47e8a690880a83cd7ed38719046a688b08ce11f7633c3f4a9975897a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-reserve-durable-intent.log.result.json": {
+    "bytes": 296,
+    "sha256": "de34d7be1dd92b163b63fa07c526864a7eadd5a4d2b475708582da7b193d2d1a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-reserve-late-writer-gate.log": {
+    "bytes": 284,
+    "sha256": "d6062dd454542495fb4508720f6349b3eee7756f8d1f7bb790c0693b16b0717b"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-reserve-late-writer-gate.log.result.json": {
+    "bytes": 281,
+    "sha256": "eea309b4f961ba03b549a329cd762f700fc543b41f96675eb17e145d49c860bd"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-reserve-serial-engine.log": {
+    "bytes": 276,
+    "sha256": "f716859924ec3f15f5ea3ac182f25cb07b39c72f1925131dc4000134ac102f9e"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-reserve-serial-engine.log.result.json": {
+    "bytes": 275,
+    "sha256": "546f6a01fa379136f54c0fb222043c396145a6af129e52ac3a8ee8349660a931"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-reserve-serial-scan.log": {
+    "bytes": 278,
+    "sha256": "e9afb85797b3b491c679ae24f47b4e2e15c1958d32059e54013dbb1e9671c3d2"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-reserve-serial-scan.log.result.json": {
+    "bytes": 278,
+    "sha256": "03e8fa8e0c75b03a382b09c85461c2b506426b07e0f631734c26ae5084f708bf"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-reserve-walk-state-lock.log": {
+    "bytes": 278,
+    "sha256": "09b793141ff8d417aa5240a0c1695ab71b95607d6fd2a68413f2d6fb8a4b7e6c"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-reserve-walk-state-lock.log.result.json": {
+    "bytes": 277,
+    "sha256": "61e994fcf93d2ab69edea2ac4c89659c04864872c125d781d35546131b774be5"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-scan-budget-current.log": {
+    "bytes": 252,
+    "sha256": "3d404cc038546af10850c4f622be857fbefc1027fb3b5d1845ff487d847fc649"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-scan-budget-current.log.result.json": {
+    "bytes": 282,
+    "sha256": "b144c0701f489e1da14b9dd6ba5ddf4bf35d926dd5bf34797b70524376089489"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-stop-budget-current.log": {
+    "bytes": 284,
+    "sha256": "e75d8e1cdd155ad1eea30a2940f41b30a9008488d21ef74d7b1a9dd5e78297a2"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-stop-budget-current.log.result.json": {
+    "bytes": 288,
+    "sha256": "4c908053a3e2ec24920fd3385c1f3e3e820ee3e69a66a8e791e099ffd9e6410a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-writer-walk-gate.log": {
+    "bytes": 298,
+    "sha256": "5b21c3b224516387bd967048ad4331ea3b396116060f5c19f0b7b53ae81fe523"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/raw/withdraw-writer-walk-gate.log.result.json": {
+    "bytes": 285,
+    "sha256": "9b9f32dafc0ebc5223541ec31608a95897316cfaba59005f633d791e1233edb4"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/reserve-withdraw.py.fixture": {
+    "bytes": 6296,
+    "sha256": "db116e2956cfb3b6d370f21cf0b531946d8208aa25ff4c68016b61a1d1487ab7"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/run-local.py.fixture": {
+    "bytes": 1233,
+    "sha256": "7a479dfdd257fda23706c030aecd3951fcf42d4b95f8f4d445613fec23698da7"
+  }
+}

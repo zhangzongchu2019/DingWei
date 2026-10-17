@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftScanBudgetUnknownAndOutboxAcknowledgement",
+    "-v",
+    "-count=1",
+    "-timeout=30s"
+  ],
+  "rc": 1,
+  "seconds": 4.2240810240618885,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,0 +1,95 @@
+{
+  "utc": "2026-10-17T08:44:10.635881+00:00",
+  "code_pin": "8a3efd78d675f74bff9cf1974bd6d17c0c0a2c62",
+  "gates": {
+    "canonical-reserve-final.log": {
+      "command": [
+        "./build.sh",
+        "--test-only"
+      ],
+      "rc": 0,
+      "seconds": 107.3692744600121,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-full-reserve-final.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 7.482133048120886,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-race-reserve-final.log": {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 11.612543948926032,
+      "external_DSN_environment_not_inherited": true
+    },
+    "related-packages-reserve-final.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/hosted",
+        "./internal/nodegate",
+        "./cmd/nodeagent",
+        "./cmd/workpulse",
+        "-v",
+        "-count=1",
+        "-timeout=600s"
+      ],
+      "rc": 0,
+      "seconds": 398.90154344099574,
+      "external_DSN_environment_not_inherited": true
+    },
+    "reserve-final-restored.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/nodeagent",
+        "./internal/hosted",
+        "-run",
+        "Test(SoftReserveRuns|SoftEmergency|SoftReserveCan|SoftBlockedWriter|SoftScanBudget|SoftEnforcementBatch|SoftMonitorMeasures|QuotaEmergency)",
+        "-v",
+        "-count=1",
+        "-timeout=120s"
+      ],
+      "rc": 0,
+      "seconds": 8.451620911015198,
+      "external_DSN_environment_not_inherited": true
+    }
+  },
+  "counts": {
+    "nodeagent-full-reserve-final.log": {
+      "passes": 132,
+      "skips": 0
+    },
+    "nodeagent-race-reserve-final.log": {
+      "passes": 132,
+      "skips": 0
+    },
+    "related-packages-reserve-final.log": {
+      "passes": 267,
+      "skips": 0
+    },
+    "perseat-writer-targets.log": {
+      "passes": 70,
+      "skips": 0
+    }
+  },
+  "current_source_assertion_red": 14,
+  "prior39_not_relabelled": true,
+  "host_realDocker_externalPG_realkeys_deploy": false
+}

@@ -1,0 +1,262 @@
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+--- PASS: TestSoftReserveRunsWhileMetadataWalkIsBlocked (0.03s)
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+--- PASS: TestSoftReserveRunsWhileEngineStopIsBlocked (0.04s)
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+--- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.09s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+--- PASS: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.01s)
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+--- PASS: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (0.02s)
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+--- PASS: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.05s)
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+--- PASS: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.12s)
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+--- PASS: TestSoftReserveRunsWhileMetadataWalkIsBlocked (0.02s)
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+--- PASS: TestSoftReserveRunsWhileEngineStopIsBlocked (0.04s)
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+--- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.08s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+--- PASS: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.01s)
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+--- PASS: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (0.02s)
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+--- PASS: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.06s)
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+--- PASS: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.12s)
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+--- PASS: TestSoftReserveRunsWhileMetadataWalkIsBlocked (0.03s)
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+--- PASS: TestSoftReserveRunsWhileEngineStopIsBlocked (0.04s)
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+--- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.08s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+--- PASS: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.01s)
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+--- PASS: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (0.02s)
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+--- PASS: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.06s)
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+--- PASS: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.13s)
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+--- PASS: TestSoftReserveRunsWhileMetadataWalkIsBlocked (0.02s)
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+--- PASS: TestSoftReserveRunsWhileEngineStopIsBlocked (0.03s)
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+--- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.07s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+--- PASS: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.01s)
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+--- PASS: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (0.01s)
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+--- PASS: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.05s)
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+--- PASS: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.13s)
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+--- PASS: TestSoftReserveRunsWhileMetadataWalkIsBlocked (0.02s)
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+--- PASS: TestSoftReserveRunsWhileEngineStopIsBlocked (0.03s)
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+--- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.08s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+--- PASS: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.01s)
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+--- PASS: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (0.01s)
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+--- PASS: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.05s)
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+--- PASS: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.12s)
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+--- PASS: TestSoftReserveRunsWhileMetadataWalkIsBlocked (0.02s)
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+--- PASS: TestSoftReserveRunsWhileEngineStopIsBlocked (0.03s)
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+--- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.10s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+--- PASS: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.02s)
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+--- PASS: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (0.01s)
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+--- PASS: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.05s)
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+--- PASS: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.12s)
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+--- PASS: TestSoftReserveRunsWhileMetadataWalkIsBlocked (0.02s)
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+--- PASS: TestSoftReserveRunsWhileEngineStopIsBlocked (0.03s)
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+--- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.09s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+--- PASS: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.01s)
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+--- PASS: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (0.02s)
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+--- PASS: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.05s)
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+--- PASS: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.12s)
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+--- PASS: TestSoftReserveRunsWhileMetadataWalkIsBlocked (0.02s)
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+--- PASS: TestSoftReserveRunsWhileEngineStopIsBlocked (0.03s)
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+--- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.08s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+--- PASS: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.01s)
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+--- PASS: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (0.02s)
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+--- PASS: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.05s)
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+--- PASS: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.12s)
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+--- PASS: TestSoftReserveRunsWhileMetadataWalkIsBlocked (0.02s)
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+--- PASS: TestSoftReserveRunsWhileEngineStopIsBlocked (0.04s)
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+--- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.08s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+--- PASS: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.01s)
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+--- PASS: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (0.02s)
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+--- PASS: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.04s)
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+--- PASS: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.12s)
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+--- PASS: TestSoftReserveRunsWhileMetadataWalkIsBlocked (0.02s)
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+--- PASS: TestSoftReserveRunsWhileEngineStopIsBlocked (0.03s)
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+--- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.09s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+--- PASS: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.01s)
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+--- PASS: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (0.01s)
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+--- PASS: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.05s)
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+--- PASS: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.12s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	4.467s

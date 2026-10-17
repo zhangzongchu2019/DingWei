@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion",
+    "-v",
+    "-count=1",
+    "-timeout=30s"
+  ],
+  "rc": 1,
+  "seconds": 1.8745166698936373,
+  "external_DSN_environment_not_inherited": true
+}
