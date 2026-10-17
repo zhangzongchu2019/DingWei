@@ -147,12 +147,21 @@ VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING`, id, e.ID, recipient, e.Sea
 				fields["writer_kind"] = e.WriterKind
 			}
 			detail, _ := json.Marshal(fields)
-			if _, err := tx.Exec(ctx, `INSERT INTO g4_audit(actor,action,target,detail)
+			receipt, err := tx.Exec(ctx, `INSERT INTO g4_audit(actor,action,target,detail)
 SELECT $1,'node.soft_quota',$2,$3 WHERE NOT EXISTS
-(SELECT 1 FROM g4_audit WHERE action='node.soft_quota' AND target=$2 AND detail->>'event_id'=$4)`, "node:"+id, id, detail, e.ID); err != nil {
+(SELECT 1 FROM g4_audit WHERE action='node.soft_quota' AND target=$2 AND detail->>'event_id'=$4)`, "node:"+id, id, detail, e.ID)
+			if err != nil {
 				return err
 			}
-			if e.WriterKind != "login" && e.Reason != "disk_warning" && e.Reason != "usage_warning" {
+			// Pending events are history until ACK, not the current hold. Apply a
+			// legacy event-only state transition once; a same-frame seat snapshot
+			// is authoritative even when the event is first received after release.
+			first, err := receipt.RowsAffected()
+			if err != nil {
+				return err
+			}
+			_, hasSnapshot := cap.Seats[e.SeatID]
+			if first == 1 && !hasSnapshot && e.WriterKind != "login" && e.Reason != "disk_warning" && e.Reason != "usage_warning" {
 				if _, err := tx.Exec(ctx, `UPDATE g4_hosted_seat SET state='error',state_detail='soft_quota_held',updated_at=now()
 WHERE agent_id=$1 AND node_id=$2 AND state NOT IN ('destroyed','disabled')`, e.SeatID, id); err != nil {
 					return err
@@ -174,6 +183,8 @@ WHERE agent_id=$1 AND node_id=$2 AND state NOT IN ('destroyed','disabled')`, e.S
 					if quotaEventIDPattern.MatchString(v.LastReleaseID) {
 						// A lost command reply is resolved by an authenticated node
 						// snapshot plus the exact, prior owner intent; never resend.
+						// Only quota-held errors can converge to stopped. Other failures
+						// and terminal states retain their original meaning.
 						detail, _ := json.Marshal(map[string]string{"seat_id": seatID, "hold_id": v.LastReleaseID})
 						if _, err := tx.Exec(ctx, `INSERT INTO g4_audit(actor,action,target,detail)
 SELECT $4,'node.soft_quota.release_confirmed',$2,$5
@@ -181,8 +192,8 @@ WHERE EXISTS (SELECT 1 FROM g4_audit WHERE target=$2 AND action='node.soft_quota
 AND NOT EXISTS (SELECT 1 FROM g4_audit WHERE target=$2 AND action='node.soft_quota.release_confirmed' AND detail->>'seat_id'=$1 AND detail->>'hold_id'=$3)`, seatID, id, v.LastReleaseID, "node:"+id, detail); err != nil {
 							return err
 						}
-						if _, err := tx.Exec(ctx, `UPDATE g4_hosted_seat SET state_detail='soft_quota_released',updated_at=now()
-WHERE agent_id=$1 AND node_id=$2 AND state='stopped' AND state_detail='soft_quota_held'
+						if _, err := tx.Exec(ctx, `UPDATE g4_hosted_seat SET state='stopped',state_detail='soft_quota_released',updated_at=now()
+WHERE agent_id=$1 AND node_id=$2 AND state IN ('stopped','error') AND state_detail='soft_quota_held'
 AND EXISTS (SELECT 1 FROM g4_audit WHERE target=$2 AND action='node.soft_quota.release_requested' AND detail->>'seat_id'=$1 AND detail->>'hold_id'=$3)`, seatID, id, v.LastReleaseID); err != nil {
 							return err
 						}
