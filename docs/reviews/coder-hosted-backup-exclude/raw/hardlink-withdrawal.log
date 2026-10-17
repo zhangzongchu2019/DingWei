@@ -1,0 +1,5 @@
+--- FAIL: TestExportSeatRefusesCredentialHardlinkBeforeUpload (0.00s)
+    backup_integrity_test.go:227: must refuse before secret access
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.007s
+FAIL

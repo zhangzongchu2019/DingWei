@@ -15,7 +15,9 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -26,10 +28,18 @@ import (
 // Hub 落盘自算、两值相等才认。trailer 该发还发（到达即多一道旁证），但不再是唯一依据。
 const BackupSHA256Trailer = "X-Backup-Sha256"
 
-// backupExcluded 席位根目录下不得进备份的凭据文件（复验 REVIEW-G4-T53 缺陷一；台账 lead-g4-t53-review 🔴1）：
-// account-credential 是账号凭据、enroll-token.json 含一次性 poll_token（T-G4-32 写在同一目录）。
-// 备份在 Hub /data 留 14 天，带着它们等于把凭据明文存 14 天（违背 B7）。
-var backupExcluded = []string{"account-credential", "enroll-token.json"}
+// backupExcluded is rooted at the hosted /work bind, never a recursive basename filter.
+// CLI private trees are omitted as a whole: auth copies, refresh caches, config secrets,
+// and helper journals/credentials must not be restored as a new live identity.
+// Work files remain; restoring a backup requires fresh enrollment and LLM login.
+var backupExcluded = []string{
+	"account-credential", "enroll-token.json",
+	".dingwei", "inbox.sqlite3", "inbox.sqlite3-wal", "inbox.sqlite3-shm",
+	".codex", ".claude", ".claude.json", ".claude.json.*",
+	".gemini", ".cline", ".opencode", ".config",
+	".local/share/opencode", ".local/share/cline",
+	".aider.conf.yml", ".aider.model.settings.yml", ".env", ".env.*",
+}
 
 // tarArgs 导出命令参数：--anchored 让排除只认「席位根/文件名」这一处，数据目录里同名的用户文件不受影响。
 func tarArgs(seatRoot, seatID string) []string {
@@ -38,6 +48,40 @@ func tarArgs(seatRoot, seatID string) []string {
 		args = append(args, "--exclude="+seatID+"/"+f)
 	}
 	return append(args, "-czf", "-", seatID)
+}
+
+// A second hard-link name outside an excluded tree could otherwise export the same
+// credential inode. Refuse before opening the HTTP body; never read credential contents.
+// Lifecycle destruction stops writers first; this is not a sandbox against a hostile host.
+func rejectBackupCredentialLinks(dir string) error {
+	for _, pattern := range backupExcluded {
+		matches, err := filepath.Glob(filepath.Join(dir, pattern))
+		if err != nil {
+			return fmt.Errorf("backup exclusion validation failed")
+		}
+		for _, root := range matches {
+			err = filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+				if walkErr != nil {
+					return fmt.Errorf("backup private metadata unavailable")
+				}
+				info, err := entry.Info()
+				if err != nil {
+					return fmt.Errorf("backup private metadata unavailable")
+				}
+				if info.Mode().IsRegular() {
+					st, ok := info.Sys().(*syscall.Stat_t)
+					if !ok || st.Nlink > 1 {
+						return fmt.Errorf("backup private hardlink refused")
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 type exportSeatDeps struct {
@@ -89,6 +133,9 @@ func (d *exportSeatDeps) handle(ctx context.Context, params json.RawMessage) (js
 	dir := seatDir(d.seatRoot, p.SeatID)
 	if _, err := os.Stat(dir); err != nil {
 		return nil, fmt.Errorf("席位目录不在: %v", err)
+	}
+	if err := rejectBackupCredentialLinks(dir); err != nil {
+		return nil, err
 	}
 	secret, err := d.secretFn()
 	if err != nil {

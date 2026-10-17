@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -140,5 +141,94 @@ func TestExportSeatFailsWhenTarFails(t *testing.T) {
 	h, base, _ := mkExportDeps(t, map[string]string{"work.log": "data"}, 200, failingTar)
 	if out, err := h(context.Background(), exportParams(base)); err == nil {
 		t.Fatalf("tar exited 2 but export reported success %s", out)
+	}
+}
+
+// Inspect decompressed tar entries, not compressed bytes where a plaintext search is meaningless.
+func TestExportSeatExcludesCLIAndHelperPrivateState(t *testing.T) {
+	private := []string{
+		".codex/auth.json", ".codex/auth.json.bak", ".codex/config.toml",
+		".codex/sessions/old.jsonl", ".claude/.credentials.json", ".claude.json",
+		".claude.json.backup", ".gemini/oauth_creds.json", ".cline/token.json",
+		".opencode/auth.json", ".config/opencode/opencode.json",
+		".local/share/opencode/auth.json", ".local/share/cline/state.json",
+		".aider.conf.yml", ".aider.model.settings.yml", ".env", ".env.production",
+		".dingwei/credential.json", ".dingwei/update/journal.json",
+		".dingwei/update/slots/hash/factory.py", ".dingwei/ipc/state",
+		"inbox.sqlite3", "inbox.sqlite3-wal", "inbox.sqlite3-shm",
+	}
+	files := map[string]string{"project/main.py": "print('work')", "README.md": "work",
+		"project/.codex/auth.json": "user fixture with same basename",
+		"data/inbox.sqlite3":       "user database", "data/.env.example": "user example"}
+	for _, name := range private {
+		files[name] = "SYNTHETIC-PRIVATE-STATE-DO-NOT-EXPORT"
+	}
+	h, base, seen := mkExportDeps(t, files, 200, nil)
+	if _, err := h(context.Background(), exportParams(base)); err != nil {
+		t.Fatal(err)
+	}
+	got := tarEntries(t, seen.body)
+	for name, content := range got {
+		if strings.Contains(content, "SYNTHETIC-PRIVATE-STATE-DO-NOT-EXPORT") {
+			t.Fatalf("private contents present in decompressed backup entry %s", name)
+		}
+	}
+	for _, name := range private {
+		if _, exists := got["ag_x1/"+name]; exists {
+			t.Errorf("private archive member %s", name)
+		}
+	}
+	for _, name := range []string{"project/main.py", "README.md", "project/.codex/auth.json", "data/inbox.sqlite3", "data/.env.example"} {
+		if got["ag_x1/"+name] != files[name] {
+			t.Errorf("work file lost: %s", name)
+		}
+	}
+	// Verify the restored business tree, with no login/helper state to silently resurrect.
+	restored := t.TempDir()
+	for name, content := range got {
+		if strings.HasSuffix(name, "/") {
+			continue
+		}
+		dest := filepath.Join(restored, name)
+		if err := os.MkdirAll(filepath.Dir(dest), 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(dest, []byte(content), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(restored, "ag_x1", ".codex", "auth.json")); !os.IsNotExist(err) {
+		t.Fatal("restored seat must not inherit CLI login")
+	}
+	if _, err := os.Stat(filepath.Join(restored, "ag_x1", ".dingwei")); !os.IsNotExist(err) {
+		t.Fatal("restored seat must not inherit helper identity or update journal")
+	}
+}
+
+func TestExportSeatRefusesCredentialHardlinkBeforeUpload(t *testing.T) {
+	root := t.TempDir()
+	private := filepath.Join(root, "ag_x1", ".codex", "auth.json")
+	if err := os.MkdirAll(filepath.Dir(private), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(private, []byte("SYNTHETIC-CREDENTIAL"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Link(private, filepath.Join(root, "ag_x1", "work.txt")); err != nil {
+		t.Fatal(err)
+	}
+	uploads := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		uploads++
+		w.WriteHeader(200)
+	}))
+	defer srv.Close()
+	d := &exportSeatDeps{seatRoot: root, hubOrigin: srv.URL, hc: srv.Client(),
+		secretFn: func() (string, error) { t.Fatal("must refuse before secret access"); return "", nil }}
+	if _, err := d.handle(context.Background(), exportParams(srv.URL)); err == nil {
+		t.Fatal("private hardlink alias allowed into backup")
+	}
+	if uploads != 0 {
+		t.Fatal("private alias refusal must precede upload")
 	}
 }

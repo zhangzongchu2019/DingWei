@@ -1,0 +1,38 @@
+{
+  "internal/nodeagent/backup.go": {
+    "bytes": 7965,
+    "sha256": "cccad39d9e39889c909b690e205876bd4ae5cafd42324c674c18c176a1092c66"
+  },
+  "internal/nodeagent/backup_integrity_test.go": {
+    "bytes": 8427,
+    "sha256": "661ed03bde8ddcd7e1a65c790ae95b7a3201a86a99c761ed937a434735864f71"
+  },
+  "docs/runbooks/hosted-backup-restore-boundary.md": {
+    "bytes": 3044,
+    "sha256": "2526587f981a74c2d7bed2ed08a73a638c1da85247ef5c9f4fc640aad9217983"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/WITHDRAWAL.json": {
+    "bytes": 249,
+    "sha256": "1e32979eb361d76d933c6141b7a5e881b724d10d6e58e149a3d0258c464a9e38"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/REPORT.md": {
+    "bytes": 2100,
+    "sha256": "874b08b9b96f3fc6c3c72a8f91e459f3b42c974fa1c65671efe9ab8832db7b49"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/raw/hardlink-withdrawal.log": {
+    "bytes": 214,
+    "sha256": "07d1e4f4e6ecfdfd3b70e99b106c886aedc1426a2727a133da58c6e37b5aa84e"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/raw/exclusion-withdrawal.log": {
+    "bytes": 274,
+    "sha256": "6377f6c0ef73691b4342671044b9a586165e5426435cb8834c50bea30c6219a4"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/raw/test-inventory.log": {
+    "bytes": 3245,
+    "sha256": "0dd143c3550ef8493a53cc71187d53968ab23a0493d00ca3d63388fec9faf7e8"
+  },
+  "docs/reviews/coder-hosted-backup-exclude/raw/nodeagent.log": {
+    "bytes": 67,
+    "sha256": "ff2b38d0fef6db6746dcd545e58138d6222bd05add5eca81cddba07ab6a7cdf2"
+  }
+}
