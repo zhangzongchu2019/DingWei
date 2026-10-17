@@ -1,0 +1,21 @@
+{
+  "canonical_source": "c84184fcf6db2d43cdce5d8ec95fba16f85d87ec",
+  "argv": [
+    "./build.sh",
+    "--test-only"
+  ],
+  "external_bytecode_setting_absent": true,
+  "no_B": true,
+  "python_script_count": 49,
+  "shell_script_count": 2,
+  "success_marker": true,
+  "pg_parent_pass": true,
+  "pg_subcases": {
+    "new": true,
+    "reuse": true,
+    "lost_ack": true,
+    "takeover": true,
+    "cancel_then_new": true
+  },
+  "log_sha256": "dfe06b1e7dfaef1df18e9cb3cd7c2879ec9381e6a63dcb8052c97f43d02ecde3"
+}

@@ -1,0 +1,41 @@
+{
+  "utc": "2026-10-17T21:39:54.720660+00:00",
+  "before_bytes": {
+    "cache": 219523938,
+    "HOME": 148398185,
+    "TMPDIR": 569765,
+    "mutant": 32520214
+  },
+  "cache_after_go_clean_bytes": 232,
+  "remaining_owned_fixture_processes": [],
+  "remaining_postmaster_pid_files": [],
+  "mutant_restored_clean_before_disposal": true,
+  "removed_paths": [
+    "/data/ai-dev-data/claude-packager-bytecode-lab/gocache",
+    "/data/ai-dev-data/claude-packager-bytecode-lab/home",
+    "/tmp/cp-bc-vu_xlbl3",
+    "/data/ai-dev-data/claude-packager-bytecode-lab/mutant",
+    "/data/ai-dev-data/claude-packager-bytecode-lab/gopath"
+  ],
+  "removed_paths_all_absent": true,
+  "main_owned_generated_pycache_dirs_removed": [
+    "view-service/__pycache__",
+    "scripts/__pycache__",
+    "deploy/__pycache__",
+    "tools/sessionhelper/__pycache__",
+    "tools/sessionhelper/tests/__pycache__",
+    "tools/sessionhelper/update_launcher/__pycache__",
+    "tools/sessionhelper/sessionhelper/__pycache__",
+    "deploy/image/supervisord/__pycache__",
+    "deploy/ops/hosted-image/__pycache__",
+    "deploy/ops/hosted-claude-image/__pycache__"
+  ],
+  "shared_module_cache_not_removed": true,
+  "main_author_checkout_retained_clean": true,
+  "final_cmdline_and_cwd_scan_roots": [
+    "/data/ai-dev-data/claude-packager-bytecode-lab",
+    "/data/ai-dev-data/hosted-claude-packager",
+    "/tmp/cp-bc-vu_xlbl3"
+  ],
+  "final_owned_process_scan": []
+}

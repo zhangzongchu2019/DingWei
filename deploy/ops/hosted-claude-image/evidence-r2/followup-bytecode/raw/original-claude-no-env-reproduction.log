@@ -1,0 +1,236 @@
+test_actual_h3_shape_composes_git_claude_overlay_and_common_guard (test_claude_start.ClaudePackager.test_actual_h3_shape_composes_git_claude_overlay_and_common_guard) ... ERROR
+test_archive_links_traversal_and_duplicates_rejected_even_with_valid_hash (test_claude_start.ClaudePackager.test_archive_links_traversal_and_duplicates_rejected_even_with_valid_hash) ... ERROR
+test_archive_modes_are_readable_and_executable_for_runtime_user (test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user) ... ERROR
+test_clean_git_source_and_lock_are_required_before_external_inputs (test_claude_start.ClaudePackager.test_clean_git_source_and_lock_are_required_before_external_inputs) ... ERROR
+test_descriptor_budget_is_constant_and_output_alias_refused (test_claude_start.ClaudePackager.test_descriptor_budget_is_constant_and_output_alias_refused) ... ERROR
+test_directory_chmod_failure_closes_descriptors_and_removes_new_output (test_claude_start.ClaudePackager.test_directory_chmod_failure_closes_descriptors_and_removes_new_output) ... ERROR
+test_h3_git_or_locked_content_cannot_self_authorize_by_rehash (test_claude_start.ClaudePackager.test_h3_git_or_locked_content_cannot_self_authorize_by_rehash) ... ERROR
+test_missing_extra_or_receipt_pollution_rejected (test_claude_start.ClaudePackager.test_missing_extra_or_receipt_pollution_rejected) ... ERROR
+test_pre_docker_script_remains_closed_with_valid_composition (test_claude_start.ClaudePackager.test_pre_docker_script_remains_closed_with_valid_composition) ... ERROR
+test_regular_symlink_is_rejected_before_external_read (test_claude_start.ClaudePackager.test_regular_symlink_is_rejected_before_external_read) ... ERROR
+test_regular_type_does_not_allow_changed_h3_modes (test_claude_start.ClaudePackager.test_regular_type_does_not_allow_changed_h3_modes) ... ERROR
+test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask (test_claude_start.ClaudePackager.test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask) ... ERROR
+test_staged_copy_sources_survive_actual_ignore_rules (test_claude_start.ClaudePackager.test_staged_copy_sources_survive_actual_ignore_rules) ... ERROR
+test_symlinks_specials_hardlinks_and_redirected_roots_never_read (test_claude_start.ClaudePackager.test_symlinks_specials_hardlinks_and_redirected_roots_never_read) ... ERROR
+test_definition_keeps_combo_unverified_and_builder_fail_closed (test_claude_start.ClaudeStart.test_definition_keeps_combo_unverified_and_builder_fail_closed) ... ok
+test_offline_fixture_hashes_and_missing_node_lock_fail_closed (test_claude_start.ClaudeStart.test_offline_fixture_hashes_and_missing_node_lock_fail_closed) ... ok
+test_package_and_native_metadata_are_pinned (test_claude_start.ClaudeStart.test_package_and_native_metadata_are_pinned) ... ok
+test_rejects_non_object_or_wrong_cli (test_claude_start.ClaudeStart.test_rejects_non_object_or_wrong_cli) ... hosted-claude-start: invalid or missing SH_CRED_FILE
+hosted-claude-start: invalid or missing SH_CLI
+ok
+test_restricted_mcp_and_json_object_credential (test_claude_start.ClaudeStart.test_restricted_mcp_and_json_object_credential) ... ok
+
+======================================================================
+ERROR: test_actual_h3_shape_composes_git_claude_overlay_and_common_guard (test_claude_start.ClaudePackager.test_actual_h3_shape_composes_git_claude_overlay_and_common_guard)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-8ehh9lw4/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_archive_links_traversal_and_duplicates_rejected_even_with_valid_hash (test_claude_start.ClaudePackager.test_archive_links_traversal_and_duplicates_rejected_even_with_valid_hash)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-7vunnxld/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_archive_modes_are_readable_and_executable_for_runtime_user (test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-pqrt23ie/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_clean_git_source_and_lock_are_required_before_external_inputs (test_claude_start.ClaudePackager.test_clean_git_source_and_lock_are_required_before_external_inputs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-zkv4kd4o/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_descriptor_budget_is_constant_and_output_alias_refused (test_claude_start.ClaudePackager.test_descriptor_budget_is_constant_and_output_alias_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-xycwtgq2/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_directory_chmod_failure_closes_descriptors_and_removes_new_output (test_claude_start.ClaudePackager.test_directory_chmod_failure_closes_descriptors_and_removes_new_output)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-0j8j7ama/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_h3_git_or_locked_content_cannot_self_authorize_by_rehash (test_claude_start.ClaudePackager.test_h3_git_or_locked_content_cannot_self_authorize_by_rehash)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-belzzkqy/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_missing_extra_or_receipt_pollution_rejected (test_claude_start.ClaudePackager.test_missing_extra_or_receipt_pollution_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-_ism1t9o/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_pre_docker_script_remains_closed_with_valid_composition (test_claude_start.ClaudePackager.test_pre_docker_script_remains_closed_with_valid_composition)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-2hdz718q/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_regular_symlink_is_rejected_before_external_read (test_claude_start.ClaudePackager.test_regular_symlink_is_rejected_before_external_read)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-d5i9t8a2/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_regular_type_does_not_allow_changed_h3_modes (test_claude_start.ClaudePackager.test_regular_type_does_not_allow_changed_h3_modes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-2wruqdod/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask (test_claude_start.ClaudePackager.test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-hp5t0u0l/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_staged_copy_sources_survive_actual_ignore_rules (test_claude_start.ClaudePackager.test_staged_copy_sources_survive_actual_ignore_rules)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-k4pkdjmq/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+======================================================================
+ERROR: test_symlinks_specials_hardlinks_and_redirected_roots_never_read (test_claude_start.ClaudePackager.test_symlinks_specials_hardlinks_and_redirected_roots_never_read)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 146, in setUp
+    self.h3.prepare(self.repo,anchor,self.wheels,self.h3_tar,*self.deb_dirs,self.base)
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 146, in prepare
+    helper = source_kit(repo, commit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-bytecode-lab/mutant/deploy/ops/hosted-image/prepare_context.py", line 126, in source_kit
+    mod.build(repo, commit, artifact)
+  File "/tmp/cp-bc-vu_xlbl3/claude-packager-dj_51t1b/repo/tools/sessionhelper/package_release.py", line 43, in build
+    raise PackageError('source_not_clean')
+hosted_package_release.PackageError: source_not_clean
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.778s
+
+FAILED (errors=14)

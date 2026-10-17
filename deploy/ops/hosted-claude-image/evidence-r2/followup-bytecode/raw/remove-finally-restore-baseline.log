@@ -1,0 +1,7 @@
+test_source_kit_clean_checkout_without_bytecode_environment (test_build_definition.ContextFixtures.test_source_kit_clean_checkout_without_bytecode_environment) ... ok
+test_source_kit_loader_failure_restores_bytecode_setting (test_build_definition.ContextFixtures.test_source_kit_loader_failure_restores_bytecode_setting) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.187s
+
+OK
