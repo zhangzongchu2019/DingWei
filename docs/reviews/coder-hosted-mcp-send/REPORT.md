@@ -25,3 +25,15 @@ The real Hub fixture uses synthetic enrollment/state and scripted stdio calls, n
 Test adaptations: synthetic factory/slot fixtures copy the shim's new stdlib permissions dependency; no version-selection/body/budget assertion is relaxed. The shim retains the original one-environment-entry rule rather than increasing the whitelist. The new Hub child gets the existing evidence-backed synthetic-HOME allowlist treatment. No default full/upload-only assertion is weakened. All final tests use a private outer HOME; earlier failures and one PG-scope execution deviation are fully qualified in ATTEMPT-SCOPE.md. No unqualified full canonical/all-attempts-green claim.
 
 No deployed container/host/real key/Agent/productionPG activity, offer, job, source-install, release build, image build or publication. Existing test packaging creates only disposable fixture archives. All deployment/owner gates remain. Independent review is requested from opus50ts; this is implementation evidence, not self-review PASS.
+
+
+## UTF-8 request identity follow-up
+
+Restricted sender now validates request_id, destination and reply-origin strings for
+UTF-8 encodability before any send side effect. Lone surrogate IDs previously sent
+once then failed while encoding the response; they now return only invalid_request,
+without echo, send or retry. Same real listener handles the next valid Unicode ID
+and sends exactly once. Targeted restricted suite12 tests rc0; remove only this
+validation and the unchanged new regression turns red. Raw evidence utf8-id/.
+Prior729/full gate readings refer to the earlier source; no successor full-suite
+claim. Leader/reviewer complete canonical readings remain independently attributed.

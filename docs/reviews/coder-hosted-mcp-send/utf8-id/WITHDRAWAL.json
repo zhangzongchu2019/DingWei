@@ -1,0 +1,6 @@
+{
+  "rc": 1,
+  "original_sha256": "de4396729c0a55c8f2dc297f1d2ae28e19eabc22acc2273c23e54572cbb5a843",
+  "mutant_sha256": "18d1c2a1b62e7a2502200bea6ef3cf3bf1b8840f1cc90d0158b7b54b41bfec7b",
+  "removed": "        for value in (to, request_id, *(msg[k] for k in REPLY_ORIGIN_KEYS if k in msg)):\n            if isinstance(value, str):\n                value.encode(\"utf-8\")\n"
+}

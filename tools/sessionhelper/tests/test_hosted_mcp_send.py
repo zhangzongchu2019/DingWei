@@ -92,6 +92,19 @@ class HostedSendTest(unittest.TestCase):
             self.assertNotIn('private', json.dumps(result))
         self.assertEqual(self.sent, [])
 
+    def test_invalid_utf8_id_refused_before_send_and_same_listener_recovers(self):
+        for patch in ({'request_id': '\ud800'}, {'request_id': '\udfff'},
+                      {'to': '\ud800'}, {'reply_to': '\ud800'}):
+            payload = dict(type='mcp_send', to='peer', body='normal body')
+            payload.update(patch)
+            result = fx.raw_ipc(self.layout.sock, payload)
+            self.assertEqual(result, {'ok': False, 'error': 'invalid_request'})
+            self.assertEqual(self.sent, [], 'malformed text must not reach sender or retry')
+        result = self.send(request_id='valid-请求')
+        self.assertTrue(result['ok'])
+        self.assertEqual(result['request_id'], 'valid-请求')
+        self.assertEqual(len(self.sent), 1, 'same listener recovers with one explicit valid call')
+
     def test_restricted_body_byte_boundary_including_json_overhead(self):
         for body in ('x' * 65536, '中' * 21845):
             self.assertTrue(fx.raw_ipc(self.layout.sock, dict(type='mcp_send', to='peer', body=body))['ok'])

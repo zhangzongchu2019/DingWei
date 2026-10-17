@@ -36,8 +36,8 @@
     "sha256": "ef2b0f452b9f93e61314a76178fa347e21aba2e3c46166aaec85214d21337659"
   },
   "tools/sessionhelper/sessionhelper/ipc_listener.py": {
-    "bytes": 25973,
-    "sha256": "18d1c2a1b62e7a2502200bea6ef3cf3bf1b8840f1cc90d0158b7b54b41bfec7b"
+    "bytes": 26139,
+    "sha256": "de4396729c0a55c8f2dc297f1d2ae28e19eabc22acc2273c23e54572cbb5a843"
   },
   "tools/sessionhelper/sessionhelper/ipc_permissions.py": {
     "bytes": 369,
@@ -56,8 +56,8 @@
     "sha256": "a6f27e0021043ac81b54f594ad4cbed4d29d402eb9deefaf4104477e034d83dd"
   },
   "tools/sessionhelper/tests/test_hosted_mcp_send.py": {
-    "bytes": 9670,
-    "sha256": "2b79b27573c5968104edf440d4e4883016ce9ffb9978193822e45ad9edf618dc"
+    "bytes": 10488,
+    "sha256": "b759641c12831a2abc75c3eff3647eda1c08230d0287e5739645d53a8b365652"
   },
   "tools/sessionhelper/tests/test_mcp_forwarder.py": {
     "bytes": 7994,
@@ -84,8 +84,8 @@
     "sha256": "6629ce3b7dd6f07962a689740b61fa8fb6e0f153f35c97d3ed312d78a8444b11"
   },
   "docs/reviews/coder-hosted-mcp-send/REPORT.md": {
-    "bytes": 4418,
-    "sha256": "4cee96a04616dd490adc9751dd6fda8d59f37429100adc98dbc5210986403763"
+    "bytes": 5114,
+    "sha256": "4015df29fa3606ca40202827c961b3eb916b2dd269418ac976d854d2d0347465"
   },
   "docs/reviews/coder-hosted-mcp-send/terminal/RESULTS.json": {
     "bytes": 597,
@@ -230,5 +230,17 @@
   "docs/reviews/coder-hosted-mcp-send/stable/canonical.log": {
     "bytes": 15581,
     "sha256": "020e18b0710aa1523cedeeb872f1f2be4e975597719a442bf69ad7b021db1e7f"
+  },
+  "docs/reviews/coder-hosted-mcp-send/utf8-id/withdrawal.log": {
+    "bytes": 3338,
+    "sha256": "495f10dba6752465df8229596550f4b5c86926b6b2941486aa62a30571490e84"
+  },
+  "docs/reviews/coder-hosted-mcp-send/utf8-id/target.log": {
+    "bytes": 1837,
+    "sha256": "582b7758a7c455f3c582ad51d6fdcf7c9728491301f0c84f52adc04dea5864a8"
+  },
+  "docs/reviews/coder-hosted-mcp-send/utf8-id/WITHDRAWAL.json": {
+    "bytes": 378,
+    "sha256": "46a5833e60362e93eaca47859544214e60bc30977d79cfbf572da10be39e596d"
   }
 }
