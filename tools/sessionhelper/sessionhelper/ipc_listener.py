@@ -215,6 +215,9 @@ async def _handle_body_send(writer, msg, send_handler, passed_fds):
     to, body, request_id = msg.get("to"), msg.get("body"), msg.get("request_id", "")
     try:
         body_bytes = len(body.encode("utf-8")) if isinstance(body, str) else -1
+        for value in (to, request_id, *(msg[k] for k in REPLY_ORIGIN_KEYS if k in msg)):
+            if isinstance(value, str):
+                value.encode("utf-8")
     except UnicodeError:
         await _write_one(writer, {"ok": False, "error": "invalid_request"})
         return

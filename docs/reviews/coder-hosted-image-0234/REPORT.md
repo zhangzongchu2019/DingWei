@@ -61,3 +61,13 @@ substitute and a locally bound inert Unix socket (no listen/connect). Missing/re
 socket and absent/mismatched approved ID stop before context/build. Two further source
 withdrawals (socket metadata gate; identity preflight) turn red with unchanged tests.
 No actual Engine, image build, pip/helper execution or host operation is validated.
+
+
+## H1 UTF-8 identity synchronization
+
+Synchronizes exact ipc_listener.py and its regression test from H1 successor
+38750fe51b1d084eff4baff317c7672f192be096. Helper runtime subtree is now
+0bfc7b1f898971849922b865112f4ae0cc97df2c on both branches. H1 independently remains
+a prerequisite. Its12 targeted tests and one actual source withdrawal apply to this
+same listener source; H3 did not execute helper. Earlier35 H3 fixture results apply
+to unchanged image/start/Engine definitions, not a new full runtime acceptance.
