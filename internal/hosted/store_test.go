@@ -52,9 +52,9 @@ func TestSchemaApplyRollbackRepeatable(t *testing.T) {
 	}
 }
 
-// TestSchemaDropLeavesNoG4Tables：DropSchema 必须把 g4_ 十二表全拆净（0.2.1.101 账号登录加 g4_account_login）
+// TestSchemaDropLeavesNoG4Tables：DropSchema 必须把 g4_ 十三表全拆净（HOLD-RELEASE 新增 g4_quota_notice）
 // （R-V2-DEPLOY-ARTIFACTS 甲案：DropDDL 曾漏拆 g4_backup——反向：从 DropDDL 去掉
-// g4_backup ⇒ 本格红）。apply→drop→apply 全链后核两端：建后十二表齐、拆后零残留。
+// g4_backup ⇒ 本格红）。apply→drop→apply 全链后核两端：建后十三表齐、拆后零残留。
 func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
 	pool := testpool(t)
 	ctx := context.Background()
@@ -75,8 +75,8 @@ func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
 		}
 		return n
 	}
-	if n := countG4(); n != 12 {
-		t.Fatalf("建后应有十二张 g4_ 表，实得 %d", n)
+	if n := countG4(); n != 13 {
+		t.Fatalf("建后应有十三张 g4_ 表，实得 %d", n)
 	}
 	if err := s.DropSchema(ctx); err != nil {
 		t.Fatalf("drop: %v", err)
@@ -87,8 +87,8 @@ func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
 	if err := s.ApplySchema(ctx); err != nil { // 拆净后重建须绿
 		t.Fatalf("重建: %v", err)
 	}
-	if n := countG4(); n != 12 {
-		t.Fatalf("重建后应有十二张 g4_ 表，实得 %d", n)
+	if n := countG4(); n != 13 {
+		t.Fatalf("重建后应有十三张 g4_ 表，实得 %d", n)
 	}
 }
 

@@ -10,6 +10,22 @@ package hosted
 // 名称有效性与唯一性由 G3 IssueHostedAgent 判，G3 重审③）。
 
 const SchemaDDL = `
+-- Durable two-recipient notification outbox. Node event receipt and notices are
+-- committed in one transaction before the node is allowed to discard its event.
+CREATE TABLE IF NOT EXISTS g4_quota_notice (
+  node_id TEXT NOT NULL,
+  event_id TEXT NOT NULL,
+  recipient TEXT NOT NULL CHECK (recipient IN ('owner','ops')),
+  seat_id TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  writer_kind TEXT NOT NULL DEFAULT '',
+  measured_at timestamptz NOT NULL,
+  delivered_at timestamptz,
+  next_attempt_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (node_id,event_id,recipient));
+CREATE INDEX IF NOT EXISTS g4_quota_notice_pending_idx ON g4_quota_notice(next_attempt_at,measured_at) WHERE delivered_at IS NULL;
+CREATE INDEX IF NOT EXISTS g4_quota_notice_node_idx ON g4_quota_notice(node_id,delivered_at);
+
 -- 托管节点（G1 准备的宿主；节点代理登记）
 CREATE TABLE IF NOT EXISTS g4_node (
   id            TEXT PRIMARY KEY,             -- nd_<hex16>
@@ -212,6 +228,6 @@ ALTER TABLE g4_account_pool ADD COLUMN IF NOT EXISTS email TEXT NOT NULL DEFAULT
 // 🔴 表名集合必须与 SchemaDDL 一致（R-V2-DEPLOY-ARTIFACTS 甲案补拆 g4_backup；
 // 漏拆由 TestSchemaDropLeavesNoG4Tables 钉住——少一张即红）。
 const DropDDL = `
-DROP TABLE IF EXISTS g4_account_login, g4_audit, g4_team_key, g4_quota, g4_backup, g4_lifecycle_job, g4_account_grant, g4_account_pool,
+DROP TABLE IF EXISTS g4_quota_notice, g4_account_login, g4_audit, g4_team_key, g4_quota, g4_backup, g4_lifecycle_job, g4_account_grant, g4_account_pool,
   g4_seat_event, g4_hosted_seat, g4_node_credential, g4_node CASCADE;
 `
