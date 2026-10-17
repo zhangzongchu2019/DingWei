@@ -1,0 +1,21 @@
+test_actual_h3_shape_composes_git_claude_overlay_and_common_guard (test_claude_start.ClaudePackager.test_actual_h3_shape_composes_git_claude_overlay_and_common_guard) ... ok
+test_archive_links_traversal_and_duplicates_rejected_even_with_valid_hash (test_claude_start.ClaudePackager.test_archive_links_traversal_and_duplicates_rejected_even_with_valid_hash) ... ok
+test_clean_git_source_and_lock_are_required_before_external_inputs (test_claude_start.ClaudePackager.test_clean_git_source_and_lock_are_required_before_external_inputs) ... ok
+test_descriptor_budget_is_constant_and_output_alias_refused (test_claude_start.ClaudePackager.test_descriptor_budget_is_constant_and_output_alias_refused) ... ok
+test_h3_git_or_locked_content_cannot_self_authorize_by_rehash (test_claude_start.ClaudePackager.test_h3_git_or_locked_content_cannot_self_authorize_by_rehash) ... ok
+test_missing_extra_or_receipt_pollution_rejected (test_claude_start.ClaudePackager.test_missing_extra_or_receipt_pollution_rejected) ... ok
+test_pre_docker_script_remains_closed_with_valid_composition (test_claude_start.ClaudePackager.test_pre_docker_script_remains_closed_with_valid_composition) ... ok
+test_regular_type_does_not_allow_changed_h3_modes (test_claude_start.ClaudePackager.test_regular_type_does_not_allow_changed_h3_modes) ... ok
+test_symlinks_specials_hardlinks_and_redirected_roots_never_read (test_claude_start.ClaudePackager.test_symlinks_specials_hardlinks_and_redirected_roots_never_read) ... ok
+test_definition_keeps_combo_unverified_and_builder_fail_closed (test_claude_start.ClaudeStart.test_definition_keeps_combo_unverified_and_builder_fail_closed) ... ok
+test_offline_fixture_hashes_and_missing_node_lock_fail_closed (test_claude_start.ClaudeStart.test_offline_fixture_hashes_and_missing_node_lock_fail_closed) ... ok
+test_package_and_native_metadata_are_pinned (test_claude_start.ClaudeStart.test_package_and_native_metadata_are_pinned) ... ok
+test_rejects_non_object_or_wrong_cli (test_claude_start.ClaudeStart.test_rejects_non_object_or_wrong_cli) ... hosted-claude-start: invalid or missing SH_CRED_FILE
+hosted-claude-start: invalid or missing SH_CLI
+ok
+test_restricted_mcp_and_json_object_credential (test_claude_start.ClaudeStart.test_restricted_mcp_and_json_object_credential) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 5.763s
+
+OK

@@ -1,0 +1,17 @@
+{
+  "utc": "2026-10-17T21:22:03.102579+00:00",
+  "owned_processes": [],
+  "before_bytes": {
+    "/data/ai-dev-data/claude-packager-r2-lab/mutant": 32133818,
+    "/data/ai-dev-data/claude-packager-r2-lab/home": 0,
+    "/tmp/cp-r2-eygzlejm": 0
+  },
+  "after_bytes": {
+    "/data/ai-dev-data/claude-packager-r2-lab/mutant": 0,
+    "/data/ai-dev-data/claude-packager-r2-lab/home": 0,
+    "/tmp/cp-r2-eygzlejm": 0
+  },
+  "tmp_after_all_test_cleanups": [],
+  "Go_cache": "not used",
+  "scope": "no real Docker/pip/helper/CLI/PG/host execution; synthetic fixture archives removed by TemporaryDirectory cleanup; source/evidence only retained"
+}

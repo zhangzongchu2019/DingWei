@@ -1,0 +1,87 @@
+{
+  "repository": "git@git.code.tencent.com:wego-ai/dingwei.git",
+  "ref": "refs/heads/review/coder/hosted-claude-packager",
+  "source": "a46db36e668ef2c1c4dbfbc910fbcefdf22612f0",
+  "tree": "dd9083514f2251196f6796a0d984ca4c66b745df",
+  "baseline": "bab04755c8f452b955196114a8ebb42ac28a3c25",
+  "baseline_tree": "63b6f7a4f68cbc9cb7c5d017c0bc55d29dc84e6b",
+  "review_requirement": "039c6e12 R2 only",
+  "files": {
+    "deploy/ops/hosted-claude-image/BUILD-CLAUDE-0234.md": {
+      "blob": "f5bf99c626475582d0c2aff9cf9ba642faadd33e",
+      "sha256": "5b3b09a2aa131bf374ec3c9699aa7bd84b3ace40b9ff156bc24e6c9c45ebe179"
+    },
+    "deploy/ops/hosted-claude-image/DEVELOPMENT-DELIVERY.md": {
+      "blob": "a55f019b06b4821b2cb39b00b1eb6168081eb25a",
+      "sha256": "ffeca640b91186815d528628fbf985c3e89c4da727e136251c8a12236a635e70"
+    },
+    "deploy/ops/hosted-claude-image/Dockerfile": {
+      "blob": "f21f338165e5b4a9916d58de53eae3b92f47be71",
+      "sha256": "e4eef4f4e7be5f47147ac0e346dd5a21b63c271d3ca71e27c3e534b3a6a20207"
+    },
+    "deploy/ops/hosted-claude-image/IMPLEMENTATION-NOTE.md": {
+      "blob": "c1270d957449c454f66e7d44f0976b0bb47cd344",
+      "sha256": "e8d37316803c2ca4ba53dd42b56727eb33a5deeb9693a731fe90776512bc31d2"
+    },
+    "deploy/ops/hosted-claude-image/PACKAGER-CONTRACT.md": {
+      "blob": "b549bd5072df83d02a77442dbf45d3a637d40d58",
+      "sha256": "690aba50a97ac607a7df3b91df004f257e898488e871c1373ddcb120185be136"
+    },
+    "deploy/ops/hosted-claude-image/build-image.sh": {
+      "blob": "b4e06bdf3fe10f28fd88e46cf14c4773b8ddc674",
+      "sha256": "7a8f845e723059d9490dae73bc8072eea2ae9b620187b0b57aecf4d996361b7a"
+    },
+    "deploy/ops/hosted-claude-image/claude-package-lock.json": {
+      "blob": "3759350437f484423da95c56e484a679d1695872",
+      "sha256": "24ed2a68ea9d8c1687c6ced57c42eb25246e40a99844d89dde32367ec361eb1b"
+    },
+    "deploy/ops/hosted-claude-image/claude-start.py": {
+      "blob": "1f316f1bd08f6aa132c3eca86dfb8b76ecf837a6",
+      "sha256": "90ebb44c93bcc1970fee921660f5fe178b8fa5e9d3aefe0694e0207880a42b0d"
+    },
+    "deploy/ops/hosted-claude-image/claude.py": {
+      "blob": "4922fd0730b8339a8968bf3a29b5c4d8c4491c78",
+      "sha256": "6d2e989ca8daf6303c61da1bd09c3dd4428d8a1485f02bf00af5bff6f4723cc3"
+    },
+    "deploy/ops/hosted-claude-image/combos.json": {
+      "blob": "27eb678bb4dbcd304e7a388e88e6e8a434bd4af1",
+      "sha256": "98fca92756f314d5159535b777c4952ed3697872a76bb18a7804d16f1847a63c"
+    },
+    "deploy/ops/hosted-claude-image/context-map.json": {
+      "blob": "70f7d16ef919176fab2eb03574e1797aa414e20e",
+      "sha256": "cea79ed763c3e3c30d96bc57291a4e58b218af905fa5f525d2cbbcf6e649bc35"
+    },
+    "deploy/ops/hosted-claude-image/dockerignore": {
+      "blob": "5e8b35990902fede9472933cc58188dcf39b9920",
+      "sha256": "495507ce831ef8845ce6603ba9a44e998373d22ae7dcb6d67255f058f5ac1d33"
+    },
+    "deploy/ops/hosted-claude-image/prepare_context.py": {
+      "blob": "1e8048a75043dec56040efe5d2386553a2314629",
+      "sha256": "ba1c527311f823f52103387fc85a07190a6ee2e62a2e53e9b2f3d5d67c45634d"
+    },
+    "deploy/ops/hosted-claude-image/test_claude_start.py": {
+      "blob": "563819457fa5783aabd66dc643923fdcfdd3f00a",
+      "sha256": "a844d30a16bc590d9db3bd7c90f395bd6d73af72f6d4c159eb83f1b1e45d8a3b"
+    },
+    "deploy/ops/hosted-claude-image/verify_inputs.py": {
+      "blob": "dd99298c77a65db4d4f98869ed887b2b60b38582",
+      "sha256": "c17db59f89f6760a31fe47b31ae9d6beb7da45abd8bc4a91ec9c3efe019fd643"
+    }
+  },
+  "changed_files": [
+    "deploy/ops/hosted-claude-image/PACKAGER-CONTRACT.md",
+    "deploy/ops/hosted-claude-image/build-image.sh",
+    "deploy/ops/hosted-claude-image/context-map.json",
+    "deploy/ops/hosted-claude-image/prepare_context.py",
+    "deploy/ops/hosted-claude-image/test_claude_start.py"
+  ],
+  "unchanged_r3_files": [
+    "claude-start.py",
+    "claude.py",
+    "verify_inputs.py",
+    "Dockerfile",
+    "claude-package-lock.json",
+    "combos.json"
+  ],
+  "outside_claude_directory_unchanged": true
+}

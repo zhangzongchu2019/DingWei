@@ -1,0 +1,24 @@
+{
+  "source": "a46db36e668ef2c1c4dbfbc910fbcefdf22612f0",
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "deploy/ops/hosted-claude-image",
+    "-p",
+    "test_claude_start.py",
+    "-k",
+    "pre_docker_script_remains_closed",
+    "-v"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 0.68,
+  "started_utc": "2026-10-17T21:19:16.275073+00:00",
+  "finished_utc": "2026-10-17T21:19:16.954733+00:00",
+  "sha256": "01d3640d69dc9f738844175b780711e6bb65121fb01ed6873b00dbd3559d84cd",
+  "tests": 1,
+  "semantic_assertion_red": false,
+  "errors": false
+}

@@ -1,0 +1,16 @@
+{
+  "retained_original_launcher_methods": [
+    "test_definition_keeps_combo_unverified_and_builder_fail_closed",
+    "test_package_and_native_metadata_are_pinned",
+    "test_offline_fixture_hashes_and_missing_node_lock_fail_closed",
+    "test_restricted_mcp_and_json_object_credential",
+    "test_rejects_non_object_or_wrong_cli"
+  ],
+  "retained_method_AST_unchanged": true,
+  "removed_context_methods": [
+    "test_context_fixture_uses_only_verified_inputs",
+    "test_context_rejects_receipted_symlink_before_copy"
+  ],
+  "replacement": "ClaudePackager real-H3-shaped synthetic Git/source/locked input qualifications, 10 tests",
+  "non_test_changes_outside_Claude": false
+}

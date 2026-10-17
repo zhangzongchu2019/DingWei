@@ -1,0 +1,9 @@
+{
+  "PATH": "/data/ai-dev-data/helper-deps-lock-venv/bin:/usr/local/bin:/usr/bin:/bin",
+  "HOME": "/data/ai-dev-data/claude-packager-r2-lab/home",
+  "TMPDIR": "/tmp/cp-r2-eygzlejm",
+  "PYTHONDONTWRITEBYTECODE": "1",
+  "LANG": "C.UTF-8",
+  "TZ": "UTC",
+  "GIT_CONFIG_NOSYSTEM": "1"
+}

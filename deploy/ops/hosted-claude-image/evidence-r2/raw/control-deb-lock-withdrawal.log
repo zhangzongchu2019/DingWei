@@ -1,0 +1,30 @@
+test_h3_git_or_locked_content_cannot_self_authorize_by_rehash (test_claude_start.ClaudePackager.test_h3_git_or_locked_content_cannot_self_authorize_by_rehash) ... 
+  test_h3_git_or_locked_content_cannot_self_authorize_by_rehash (test_claude_start.ClaudePackager.test_h3_git_or_locked_content_cannot_self_authorize_by_rehash) (name='runtime-debs/fixture.deb') ... FAIL
+  test_h3_git_or_locked_content_cannot_self_authorize_by_rehash (test_claude_start.ClaudePackager.test_h3_git_or_locked_content_cannot_self_authorize_by_rehash) (name='security-debs/fixture.deb') ... FAIL
+
+======================================================================
+FAIL: test_h3_git_or_locked_content_cannot_self_authorize_by_rehash (test_claude_start.ClaudePackager.test_h3_git_or_locked_content_cannot_self_authorize_by_rehash) (name='runtime-debs/fixture.deb')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-r2-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 194, in test_h3_git_or_locked_content_cannot_self_authorize_by_rehash
+    try:self.rejected()
+        ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-r2-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 170, in rejected
+    with self.assertRaises((prepare.Rejected,OSError,ValueError)):
+AssertionError: (<class 'verify_inputs.Rejected'>, <class 'OSError'>, <class 'ValueError'>) not raised
+
+======================================================================
+FAIL: test_h3_git_or_locked_content_cannot_self_authorize_by_rehash (test_claude_start.ClaudePackager.test_h3_git_or_locked_content_cannot_self_authorize_by_rehash) (name='security-debs/fixture.deb')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-r2-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 194, in test_h3_git_or_locked_content_cannot_self_authorize_by_rehash
+    try:self.rejected()
+        ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-r2-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 170, in rejected
+    with self.assertRaises((prepare.Rejected,OSError,ValueError)):
+AssertionError: (<class 'verify_inputs.Rejected'>, <class 'OSError'>, <class 'ValueError'>) not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 1.045s
+
+FAILED (failures=2)

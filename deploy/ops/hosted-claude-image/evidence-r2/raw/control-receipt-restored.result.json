@@ -1,0 +1,24 @@
+{
+  "source": "a46db36e668ef2c1c4dbfbc910fbcefdf22612f0",
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "deploy/ops/hosted-claude-image",
+    "-p",
+    "test_claude_start.py",
+    "-k",
+    "missing_extra_or_receipt_pollution",
+    "-v"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 1.294,
+  "started_utc": "2026-10-17T21:19:04.640693+00:00",
+  "finished_utc": "2026-10-17T21:19:05.934726+00:00",
+  "sha256": "6340fa5aed539b5ee7f2c23e8b7640760f83809d89203929dda28f9c8bec8d5d",
+  "tests": 1,
+  "semantic_assertion_red": false,
+  "errors": false
+}

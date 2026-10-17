@@ -1,0 +1,6 @@
+test_missing_extra_or_receipt_pollution_rejected (test_claude_start.ClaudePackager.test_missing_extra_or_receipt_pollution_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 1.153s
+
+OK

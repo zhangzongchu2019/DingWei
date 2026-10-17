@@ -1,0 +1,14 @@
+test_actual_h3_shape_composes_git_claude_overlay_and_common_guard (test_claude_start.ClaudePackager.test_actual_h3_shape_composes_git_claude_overlay_and_common_guard) ... FAIL
+
+======================================================================
+FAIL: test_actual_h3_shape_composes_git_claude_overlay_and_common_guard (test_claude_start.ClaudePackager.test_actual_h3_shape_composes_git_claude_overlay_and_common_guard)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-r2-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 177, in test_actual_h3_shape_composes_git_claude_overlay_and_common_guard
+    self.assertEqual((self.out/dest).read_bytes(),(self.repo/src).read_bytes())
+AssertionError: b'# Only a validated, credential-free prepare[2536 chars]"]\n' != b'# Definition only: this is built later by t[2428 chars]"]\n'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.236s
+
+FAILED (failures=1)

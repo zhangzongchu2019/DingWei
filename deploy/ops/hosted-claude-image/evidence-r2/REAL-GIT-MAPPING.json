@@ -1,0 +1,28 @@
+{
+  "source": "a46db36e668ef2c1c4dbfbc910fbcefdf22612f0",
+  "tree": "dd9083514f2251196f6796a0d984ca4c66b745df",
+  "h3_anchor": {
+    "commit": "031c4284cab5c0401ae09d0180eeede1a32c7833",
+    "tree": "73b73d9c5d78f33116d2d6023450955734aa810e",
+    "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+  },
+  "fixed_common_and_helper_files": 53,
+  "helper_files": 47,
+  "wheel_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "locked_deb_files": 3,
+  "discarded_codex_native_file_count": 46,
+  "mapping_sha256": "cea79ed763c3e3c30d96bc57291a4e58b218af905fa5f525d2cbbcf6e649bc35",
+  "overlay_source_paths": {
+    "Dockerfile": "deploy/ops/hosted-claude-image/Dockerfile",
+    "claude-start.py": "deploy/ops/hosted-claude-image/claude-start.py",
+    "claude.py": "deploy/ops/hosted-claude-image/claude.py",
+    ".dockerignore": "deploy/ops/hosted-claude-image/dockerignore"
+  },
+  "overlay_sha256": {
+    "Dockerfile": "e4eef4f4e7be5f47147ac0e346dd5a21b63c271d3ca71e27c3e534b3a6a20207",
+    "claude-start.py": "90ebb44c93bcc1970fee921660f5fe178b8fa5e9d3aefe0694e0207880a42b0d",
+    "claude.py": "6d2e989ca8daf6303c61da1bd09c3dd4428d8a1485f02bf00af5bff6f4723cc3",
+    ".dockerignore": "495507ce831ef8845ce6603ba9a44e998373d22ae7dcb6d67255f058f5ac1d33"
+  },
+  "scope": "Git object mapping only; no actual packages/context/image/guard/helper executed"
+}

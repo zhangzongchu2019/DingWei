@@ -1,0 +1,17 @@
+test_missing_extra_or_receipt_pollution_rejected (test_claude_start.ClaudePackager.test_missing_extra_or_receipt_pollution_rejected) ... FAIL
+
+======================================================================
+FAIL: test_missing_extra_or_receipt_pollution_rejected (test_claude_start.ClaudePackager.test_missing_extra_or_receipt_pollution_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-r2-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 208, in test_missing_extra_or_receipt_pollution_rejected
+    corrupt=json.loads(original);corrupt['files']['start.py']='0'*64;receipt.write_text(json.dumps(corrupt));self.rejected();receipt.write_bytes(original)
+                                                                                                             ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-r2-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 170, in rejected
+    with self.assertRaises((prepare.Rejected,OSError,ValueError)):
+AssertionError: (<class 'verify_inputs.Rejected'>, <class 'OSError'>, <class 'ValueError'>) not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.227s
+
+FAILED (failures=1)
