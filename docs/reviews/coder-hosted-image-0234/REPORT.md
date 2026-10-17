@@ -91,3 +91,23 @@ all old selected-journal negatives retained. No helper/guard execution. Two cont
 turn red with unchanged tests: restore overstrict empty-only gate; remove lock metadata
 validation. Exact hashes/raw logs in lock-only/. Earlier d19 REWORK is retained as
 historical; this successor needs separate independent review.
+
+
+## Complete canonical wiring correction
+
+Leader's isolated integration found test_build_definition.py absent from the canonical
+runner although discovery found it. This H3 defect is repaired: wire it immediately
+after test_start.py, update deploy/view discovery23→24 with a reason comment, and
+canonical Python47→48 counts/assertions/final marker; shell remains2. build.sh and
+H4 nodeagent release changes are untouched. H4's same-file edits must preserve the
+24 discovery and48 Python assertions when integrated.
+
+Full `sh ./build.sh --test-only` rc0,179.775s,48Python+2shell. No exclusion/wrapper:
+temporary-PG parent and all5subcases PASS; real local Hub/desktop roundtrip PASS.
+Private HOME/shortTMPDIR; test fixture processes/roots absent afterward, owned Go
+cache removed. No release/image build or external/production PG/host operation.
+10 build-entrypoint contract tests also green. Remove only the newly wired path or
+restore discovery23: unchanged contract test becomes red. Source hashes, full raw
+log, withdrawals, result and cleanup in canonical-wiring/. This supplements earlier
+35/36 fixture evidence and is the authoritative complete canonical for this wiring
+successor, not an inference of independent review or deployment authorization.

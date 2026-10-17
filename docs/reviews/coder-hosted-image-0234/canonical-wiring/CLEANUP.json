@@ -1,0 +1,19 @@
+{
+  "temporary_pg_parent_pass": true,
+  "temporary_pg_subcases": [
+    "new",
+    "reuse",
+    "lost_ack",
+    "takeover",
+    "cancel_then_new"
+  ],
+  "python_entries": 48,
+  "shell_entries": 2,
+  "fixture_roots": [
+    "/tmp/h3gate-6ozzb04u"
+  ],
+  "remaining_fixture_processes": [],
+  "fixture_roots_removed": true,
+  "owned_go_cache_bytes_before": 219489373,
+  "owned_go_cache_exists_after": false
+}

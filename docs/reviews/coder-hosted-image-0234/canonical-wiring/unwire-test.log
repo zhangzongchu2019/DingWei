@@ -1,0 +1,15 @@
+test_every_deploy_and_view_service_test_is_wired_once (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_every_deploy_and_view_service_test_is_wired_once) ... 
+  test_every_deploy_and_view_service_test_is_wired_once (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_every_deploy_and_view_service_test_is_wired_once) (test_file='deploy/ops/hosted-image/test_build_definition.py') ... FAIL
+
+======================================================================
+FAIL: test_every_deploy_and_view_service_test_is_wired_once (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_every_deploy_and_view_service_test_is_wired_once) (test_file='deploy/ops/hosted-image/test_build_definition.py')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-wiring-e443eu2r/repo/deploy/test_build_entrypoints.py", line 52, in test_every_deploy_and_view_service_test_is_wired_once
+    self.assertEqual(runner.count(test_file), 1, f"测试未接线或重复接线: {test_file}")
+AssertionError: 0 != 1 : 测试未接线或重复接线: deploy/ops/hosted-image/test_build_definition.py
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=1)

@@ -1,0 +1,15 @@
+test_every_deploy_and_view_service_test_is_wired_once (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_every_deploy_and_view_service_test_is_wired_once) ... FAIL
+
+======================================================================
+FAIL: test_every_deploy_and_view_service_test_is_wired_once (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_every_deploy_and_view_service_test_is_wired_once)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-wiring-e443eu2r/repo/deploy/test_build_entrypoints.py", line 49, in test_every_deploy_and_view_service_test_is_wired_once
+    self.assertEqual(len(discovered), 23, f"测试文件集合变化，须同步审计清单: {sorted(discovered)}")  # 23→24: hosted image offline build-definition fixtures are now part of canonical
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 24 != 23 : 测试文件集合变化，须同步审计清单: ['deploy/image/supervisord/test_verify_supervisor_template.py', 'deploy/ops/hosted-image/test_build_definition.py', 'deploy/ops/hosted-image/test_start.py', 'deploy/test-view-service-release.sh', 'deploy/test_build_entrypoints.py', 'deploy/test_file_service_deploy.py', 'deploy/test_generate_console_seed.py', 'deploy/test_invariants_alert_route.py', 'deploy/test_invariants_expected_hashes.py', 'deploy/test_preview_console.py', 'deploy/test_validate_console_seed.py', 'view-service/test_agent_disk_resource.py', 'view-service/test_check_public_view_deploy.py', 'view-service/test_cost_paused.py', 'view-service/test_md_render_core.py', 'view-service/test_mux_cost_seed.py', 'view-service/test_mux_projection.py', 'view-service/test_mux_projection_failure.py', 'view-service/test_provenance_flag_injection.py', 'view-service/test_renderer_iter2.py', 'view-service/test_view_page_store.py', 'view-service/test_view_refresh.py', 'view-service/test_view_service.py', 'view-service/test_view_unlock_v2_integration.py']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=1)

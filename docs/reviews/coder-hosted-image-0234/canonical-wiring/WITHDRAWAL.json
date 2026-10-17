@@ -1,0 +1,16 @@
+[
+  {
+    "name": "unwire-test",
+    "rc": 1,
+    "file": "scripts/run-build-tests.sh",
+    "original_sha256": "ccae53ccfec78621cc5368390bbde30483c7b74701fae8032c4d76c07536ad8b",
+    "mutant_sha256": "47836616334c142d2be879186266de8ce0fbc591689818dcd3ef9e88d698cf91"
+  },
+  {
+    "name": "restore-stale-count",
+    "rc": 1,
+    "file": "deploy/test_build_entrypoints.py",
+    "original_sha256": "62286ab45746afb7816763037165abda9ef118109c0a52747444bd2dc9f7a157",
+    "mutant_sha256": "6db16ac3b92d519c7100dfdbd2200b2098e4031a2e8feafce5360e105fc0cfa6"
+  }
+]

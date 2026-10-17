@@ -44,8 +44,8 @@
     "sha256": "a6c2bb62553b765e5bbbe381c1c86ff35c8dec9e5b478a76bdebd0253933d29b"
   },
   "docs/reviews/coder-hosted-image-0234/REPORT.md": {
-    "bytes": 8506,
-    "sha256": "4f8762d1da19c343ef5f3f839107765377e61ab708e589d5c62333c4088b2200"
+    "bytes": 9767,
+    "sha256": "288cecd4bdd2fbccaf62151964d9d48748677e3f0525cb1222f2ef942ba6e62e"
   },
   "docs/reviews/coder-hosted-image-0234/raw/definition.log": {
     "bytes": 98,
@@ -122,5 +122,41 @@
   "docs/reviews/coder-hosted-image-0234/lock-only/remove-lock-metadata-guard.log": {
     "bytes": 6566,
     "sha256": "b190a715ab6ecc25c1558e46ddd5686eed405d0724a6c05ffea9b73ee82c2980"
+  },
+  "scripts/run-build-tests.sh": {
+    "bytes": 3123,
+    "sha256": "ccae53ccfec78621cc5368390bbde30483c7b74701fae8032c4d76c07536ad8b"
+  },
+  "deploy/test_build_entrypoints.py": {
+    "bytes": 5717,
+    "sha256": "62286ab45746afb7816763037165abda9ef118109c0a52747444bd2dc9f7a157"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/restore-stale-count.log": {
+    "bytes": 2183,
+    "sha256": "47ce68b0dfc0651e3b73bad79123d5175e70a1c15090e88555db98b60ab58a43"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/full-canonical.log": {
+    "bytes": 40205,
+    "sha256": "72ad217e557f27984cc02ab67a9ddbd2111bb2be7071294e56ebb56f6382c0dc"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/WITHDRAWAL.json": {
+    "bytes": 557,
+    "sha256": "c0b7aa17e99624fd7f6ee3ba7e9242573e84b8518a68ee2c6c686212a091ac36"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/unwire-test.log": {
+    "bytes": 1291,
+    "sha256": "eea81d4e48f195dfeaa2a71dc0c5be9de70093e22107c8d458c3f5e8d510d523"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/RESULT.json": {
+    "bytes": 291,
+    "sha256": "319ce73ffe883a4b5ef781cfc5ea21f456769a120b52cdc51e83d4e3cdb548c9"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/CLEANUP.json": {
+    "bytes": 404,
+    "sha256": "494174ee3f2159f6334fdec0162bd018bd211d951c36efd5e4660264adc9e6b7"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/SOURCE.json": {
+    "bytes": 209,
+    "sha256": "7e3fe546c0c942e25e93391017e38f327eaab20cb81326542c7deaa3fb6d5e1d"
   }
 }
