@@ -1,0 +1,8 @@
+=== RUN   TestNotifySocketChmodENOENTExplainsLateUnlink
+--- PASS: TestNotifySocketChmodENOENTExplainsLateUnlink (0.00s)
+=== RUN   TestNotifySocketStopCannotDeleteNewListenerAtSamePath
+--- PASS: TestNotifySocketStopCannotDeleteNewListenerAtSamePath (0.00s)
+=== RUN   TestNotifySocketFirstStopPreservesNewListenerAtReboundPath
+--- PASS: TestNotifySocketFirstStopPreservesNewListenerAtReboundPath (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	1.038s

@@ -1,0 +1,6 @@
+=== RUN   TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices
+    softquota_release_test.go:137: private fields escaped
+--- FAIL: TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices (1.91s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	1.937s
+FAIL

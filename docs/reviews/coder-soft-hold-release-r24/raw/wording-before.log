@@ -1,0 +1,6 @@
+=== RUN   TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold
+    zz_quota_wording_probe_test.go:3: reason usage_warning has wrong event semantics: 【DingWei 托管磁盘通知】节点 nd_fixture，席位 ag_fixture：用量接近告警线。无硬磁盘配额；请查看只读监控中的实时用量、阈值与停止状态。prodops 负责监控并通知业主，只有业主本人能解除 hold，不会自动解除或启动。事件 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa，采样时间 2026-10-17T17:00:00Z；无需回复。
+--- FAIL: TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	0.021s
+FAIL

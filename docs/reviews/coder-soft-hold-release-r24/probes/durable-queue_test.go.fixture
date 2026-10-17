@@ -1,0 +1,5 @@
+package m8
+import("context";"testing";"time";"github.com/zhangzongchu2019/dingwei/internal/identity";"github.com/zhangzongchu2019/dingwei/internal/model")
+type qqNonDurableQueue struct{calls int}
+func(q *qqNonDurableQueue)Enqueue(context.Context,model.Message)error{q.calls++;return nil}
+func TestQQQuotaMustPersistBeforeNoticeReceipt(t *testing.T){e:=newAgentEnv(t);ctx:=e.ctx;if err:=e.svc.Store.SetUserType(ctx,"zzc",identity.UserPlatformAdmin);err!=nil{t.Fatal(err)};if err:=e.svc.Store.CreateRegistrationCode(ctx,"zzc","bind-qq",time.Now().Add(time.Hour));err!=nil{t.Fatal(err)};if _,err:=e.svc.Store.RedeemRegistrationCode(ctx,"bind-qq",identity.Identity{Provider:"feishu",Issuer:"bot-fixture",Subject:"ou_owner"},time.Now());err!=nil{t.Fatal(err)};q:=&qqNonDurableQueue{};e.hub.Outbound=q;if err:=e.hub.QueueHostedQuotaNotice(ctx,"zzc","","owner","quota-notice-qq","fixed notice");err!=nil{t.Fatal(err)};if q.calls!=0{t.Fatal("in-memory enqueue was mistaken for durable notification completion")};m,err:=e.hub.Repo.ClaimNextMessage(ctx,model.DirectionOut);if err!=nil||m==nil||m.ID!="quota-notice-qq"{t.Fatal("notice not present in actual durable Hub queue")}}

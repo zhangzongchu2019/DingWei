@@ -1,0 +1,6 @@
+=== RUN   TestHostedQuotaRealIdentityOwnerOnlyAndOpsReadOnly
+    hosted_quota_routes_test.go:100: nonowner tok-admin=200
+--- FAIL: TestHostedQuotaRealIdentityOwnerOnlyAndOpsReadOnly (1.68s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	1.709s
+FAIL

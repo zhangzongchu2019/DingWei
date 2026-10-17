@@ -1,0 +1,6 @@
+=== RUN   TestQQQuotaExactOpsBinding
+    zz_quota_probe_test.go:3: valid but unconfigured Agent got cross-node monitoring: 200
+--- FAIL: TestQQQuotaExactOpsBinding (1.93s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	1.956s
+FAIL

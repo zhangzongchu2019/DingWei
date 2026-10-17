@@ -1,0 +1,12 @@
+{
+  "source": "35bf1ba3afdc52c67a3000a77eea388f12a80f69",
+  "argv": [
+    "./build.sh",
+    "--test-only"
+  ],
+  "rc": 1,
+  "elapsed_seconds": 206.138,
+  "started_utc": "2026-10-17T16:57:34.144890+00:00",
+  "finished_utc": "2026-10-17T17:01:00.283271+00:00",
+  "sha256": "8559a97b648692c079ac08201deb980633f088de30e589fe157704e203cc4a66"
+}

@@ -1,0 +1,6 @@
+=== RUN   TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices
+    softquota_release_test.go:129: dedup/two destinations 1 <nil>
+--- FAIL: TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices (1.70s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	1.721s
+FAIL

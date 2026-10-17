@@ -1,0 +1,28 @@
+{
+  "case": "owner-proof",
+  "source": "1a9110c2f54e2864c9567991df235ca6d1c9826b",
+  "file": "internal/hosted/node_quota.go",
+  "test": "TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart",
+  "original_sha256": "f794541852c57ee1975b2171e3ca3bd5867e88f633c51e9e620b03418be67030",
+  "baseline": {
+    "rc": 0,
+    "elapsed_seconds": 3.77,
+    "assertion_red": false,
+    "log_sha256": "6a3dbfbf0662f9da1ef4e012bd252673e12a0069a6be42bd69302553eb547336",
+    "source_file_sha256": "f794541852c57ee1975b2171e3ca3bd5867e88f633c51e9e620b03418be67030"
+  },
+  "withdrawal": {
+    "rc": 1,
+    "elapsed_seconds": 5.315,
+    "assertion_red": true,
+    "log_sha256": "f61b8356a1a11fe4a59e5c9154c58514f5959b30723098512823064a8c007672",
+    "source_file_sha256": "d923dda8553dbe8679b603b9156822e50d09b4ea01b128274d5bc5faefc6658f"
+  },
+  "restored": {
+    "rc": 0,
+    "elapsed_seconds": 3.844,
+    "assertion_red": false,
+    "log_sha256": "f4dd6bc8d4c7cfc4cb8ce19977c18462c128026449ccf779ad8b36511faaf28a",
+    "source_file_sha256": "f794541852c57ee1975b2171e3ca3bd5867e88f633c51e9e620b03418be67030"
+  }
+}

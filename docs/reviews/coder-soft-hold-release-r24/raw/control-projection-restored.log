@@ -1,0 +1,4 @@
+=== RUN   TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices
+--- PASS: TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices (1.83s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	2.856s

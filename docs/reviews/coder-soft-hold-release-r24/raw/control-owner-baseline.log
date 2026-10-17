@@ -1,0 +1,4 @@
+=== RUN   TestHostedQuotaRealIdentityOwnerOnlyAndOpsReadOnly
+--- PASS: TestHostedQuotaRealIdentityOwnerOnlyAndOpsReadOnly (1.67s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	2.703s

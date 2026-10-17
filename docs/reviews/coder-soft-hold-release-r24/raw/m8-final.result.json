@@ -1,0 +1,18 @@
+{
+  "source": "1a9110c2f54e2864c9567991df235ca6d1c9826b",
+  "argv": [
+    "go",
+    "test",
+    "-race",
+    "-count=1",
+    "-v",
+    "-run",
+    "^TestHostedQuotaNotice",
+    "./internal/m8"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 4.56,
+  "started_utc": "2026-10-17T17:21:08.679756+00:00",
+  "finished_utc": "2026-10-17T17:21:13.239560+00:00",
+  "sha256": "a2c4fa336b38ab2f794b314ee14c8f91b49f3ffb4ced7415dbd6a497791767c0"
+}

@@ -1,0 +1,28 @@
+{
+  "case": "two-destinations",
+  "source": "1a9110c2f54e2864c9567991df235ca6d1c9826b",
+  "file": "internal/hosted/node_quota.go",
+  "test": "TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices",
+  "original_sha256": "f794541852c57ee1975b2171e3ca3bd5867e88f633c51e9e620b03418be67030",
+  "baseline": {
+    "rc": 0,
+    "elapsed_seconds": 6.339,
+    "assertion_red": false,
+    "log_sha256": "4bd259c0fe3e891fcfa65dce69e9200b803f748f81a0e620d90df3e821ea61d5",
+    "source_file_sha256": "f794541852c57ee1975b2171e3ca3bd5867e88f633c51e9e620b03418be67030"
+  },
+  "withdrawal": {
+    "rc": 1,
+    "elapsed_seconds": 5.477,
+    "assertion_red": true,
+    "log_sha256": "9e15ec2595f797b7cdda1b0b3d9a5c83288e3355f2a865f70f1e08af3827a090",
+    "source_file_sha256": "063b9e52118a698da4cbecb656b7e655bde05845be8f15b59face8d6e5d2a62a"
+  },
+  "restored": {
+    "rc": 0,
+    "elapsed_seconds": 3.732,
+    "assertion_red": false,
+    "log_sha256": "33b002938238fd01a6317bd6ee9483a84f5f0003920d0ec6dda0ee1fa7d2f4fa",
+    "source_file_sha256": "f794541852c57ee1975b2171e3ca3bd5867e88f633c51e9e620b03418be67030"
+  }
+}

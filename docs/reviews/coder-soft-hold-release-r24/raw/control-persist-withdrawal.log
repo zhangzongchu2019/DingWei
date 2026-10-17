@@ -1,0 +1,6 @@
+=== RUN   TestSoftHoldReleaseGenerationPersistentStoppedOnly
+    softquota_release_test.go:48: release not persisted
+--- FAIL: TestSoftHoldReleaseGenerationPersistentStoppedOnly (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.031s
+FAIL

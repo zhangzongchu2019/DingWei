@@ -1,0 +1,3 @@
+package main
+import("testing";"net/http";"net/http/httptest")
+func TestQQQuotaExactOpsBinding(t *testing.T){d,_,credential,_:=quotaRouteRig(t);d.ops="other.own";mux:=http.NewServeMux();d.register(mux);r:=httptest.NewRequest("GET","/api/console/hosted/quota-monitor",nil);r.Header.Set("Authorization","Bearer "+credential);w:=httptest.NewRecorder();mux.ServeHTTP(w,r);if w.Code!=403{t.Fatalf("valid but unconfigured Agent got cross-node monitoring: %d",w.Code)}}
