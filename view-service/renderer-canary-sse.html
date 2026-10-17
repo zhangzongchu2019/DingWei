@@ -579,6 +579,16 @@
       box-shadow: var(--shadow);
       overflow-wrap: anywhere;
     }
+    .integrity-notice-region { top: auto; bottom: 14px; }
+    .integrity-notice {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--muted);
+      box-shadow: var(--shadow);
+      overflow-wrap: anywhere;
+    }
     .turn-group {
       flex: 0 0 auto;
       width: 100%;
@@ -1102,6 +1112,7 @@
       </div>
     </section>
     <div class="toast-region" id="toastRegion" aria-live="assertive" aria-atomic="true"></div>
+    <div class="toast-region integrity-notice-region" id="integrityNoticeRegion" aria-live="polite"></div>
 
     <footer class="composer">
       <div class="statusbar" aria-label="Session status">
@@ -3936,11 +3947,36 @@
     let streamAlertMode = 'conn';
     let integrityIssue = null, integrityApplyFailed = false, integrityRetryTimer = null, integrityDispatchDepth = 0;
     const INTEGRITY_RETRY_MS = 8000;
+    const INTEGRITY_NOTICE_MS = 10000;
+    const integrityNoticeSeen = new Set(), integrityNotices = new Map();
+    function resetIntegrityNotices() {
+      for (const {element, timer} of integrityNotices.values()) { clearTimeout(timer); element.remove(); }
+      integrityNotices.clear(); integrityNoticeSeen.clear();
+    }
+    function isIntegrityNotice(x) {
+      return !!x && !x.warningKind && !integrityApplyFailed &&
+        (x.kind === 'history' || (x.kind === 'tracking' && x.cause === 'tracking_limit'));
+    }
+    function showIntegrityNotice(kind) {
+      if (integrityNoticeSeen.has(kind)) return;
+      integrityNoticeSeen.add(kind);
+      const element = document.createElement('div');
+      element.className = 'integrity-notice';
+      element.setAttribute('role', 'status');
+      element.dataset.reason = kind;
+      element.textContent = kind === 'history'
+        ? 'View 只保留每个 Agent 最近约 1000 段输出（或 16MB），更早的内容不在这里显示，可在 Agent 自己的会话中查看；当前内容完整。'
+        : '部分中间输出未能补齐，已从最新内容继续显示。';
+      document.getElementById('integrityNoticeRegion').appendChild(element);
+      const timer = setTimeout(() => { element.remove(); integrityNotices.delete(kind); }, INTEGRITY_NOTICE_MS);
+      integrityNotices.set(kind, {element, timer});
+    }
     function paintIntegrityIssue() {
       if (!integrityIssue) return;
       const x = integrityIssue;
+      if (isIntegrityNotice(x)) { showIntegrityNotice(x.kind); return; }
       const descriptions = {
-        history: '更早的历史已超出服务端保留范围，无法加载；当前内容完整保留。',
+        history: 'View 显示范围仅限每个 Agent 最近约 1000 段输出（或 16MB）；更早内容请查看 Agent 自己的会话。',
         recoverable: '已发现临时序号缺口，尚未确认补齐；已显示正文保留，新事件继续接收。',
         tracking: '客户端已无法核实部分较早事件是否完整；已显示正文保留。不能据此声称刷新能恢复全部历史。',
         apply: '部分事件未能完整显示，完整性无法确认；已显示正文保留。这不是服务端历史已丢失的证明。',
@@ -3966,12 +4002,20 @@
       const epochNotice = kind === 'tracking' && cause === 'epoch_changed';
       if (epochNotice && integrityIssue) { paintIntegrityIssue(); return; }
       const previousEpochNotice = integrityIssue?.kind === 'tracking' && integrityIssue.cause === 'epoch_changed';
-      // An authoritative retention gap stays visible across other local failures.
+      // Retention state continues protecting the rendered suffix after its toast expires.
       // New transport/render details supplement it, never imply historical repair.
       // A repeated retention notification is not proof that a concurrent
       // integrity failure recovered. Keep its warning state and outcome.
       if (integrityIssue?.kind === 'history' && kind === 'history') {
         if (detail) integrityIssue.detail = detail;
+        paintIntegrityIssue(); return;
+      }
+      if (integrityIssue?.kind === 'history' && kind === 'tracking' && cause === 'tracking_limit') {
+        if (integrityIssue.warningKind === 'recoverable' && !integrityIssue.retainedFault && !integrityApplyFailed) {
+          delete integrityIssue.warningKind; delete integrityIssue.outcome;
+          if (streamAlertMode === 'gap') { streamAlertMode = 'conn'; streamAlert.hidden = true; }
+        }
+        if (!integrityIssue.warningKind && !integrityApplyFailed) showIntegrityNotice('tracking');
         paintIntegrityIssue(); return;
       }
       if (integrityIssue?.kind === 'history' && kind !== 'history') {
@@ -3980,14 +4024,29 @@
         else if (kind === 'apply') integrityIssue.outcome = '另有事件未完整显示；当前完整性仍未确认。';
         paintIntegrityIssue(); return;
       }
-      if (integrityIssue && !previousEpochNotice && integrityIssue.kind !== 'recoverable' && kind === 'recoverable') return;
+      if (integrityIssue && !previousEpochNotice && !isIntegrityNotice(integrityIssue) && integrityIssue.kind !== 'recoverable' && kind === 'recoverable') return;
       if (integrityIssue?.kind === 'recoverable' && kind === 'recoverable') {
         integrityIssue.through = Math.max(integrityIssue.through, lastContiguousSeq, ...seenAboveSeq);
         if (detail) integrityIssue.detail = detail;
         paintIntegrityIssue(); return;
       }
       clearTimeout(integrityRetryTimer); integrityRetryTimer = null;
+      const previous = integrityIssue;
+      // A capacity handoff retires its exhausted gap, not an apply/managed or
+      // unknown tracking failure. Retention must also preserve concurrent faults.
+      const previousFault = previous && !isIntegrityNotice(previous) && !previousEpochNotice;
+      if (kind === 'tracking' && cause === 'tracking_limit' && previousFault && previous.kind !== 'recoverable') {
+        showIntegrityNotice('tracking'); paintIntegrityIssue(); return;
+      }
       integrityIssue = {kind, detail, cause, epoch:lastEventEpoch, through:Math.max(lastContiguousSeq, ...seenAboveSeq), retrying:false};
+      if (kind === 'history' && previousFault) {
+        integrityIssue.retainedFault = true;
+        integrityIssue.warningKind = previous.kind;
+        integrityIssue.outcome = previous.outcome || previous.detail;
+      }
+      if (isIntegrityNotice(integrityIssue) && previous?.kind === 'recoverable' && streamAlertMode === 'gap') {
+        streamAlertMode = 'conn'; streamAlert.hidden = true;
+      }
       paintIntegrityIssue();
     }
     function markIntegrityApplyFailed() {
@@ -4014,7 +4073,9 @@
         streamAlertText.textContent = STREAM_ALERT_TEXT.replay + ' 当前只能确认已显示内容；没有逐事件完整性证据，不能宣告重建成功。';
         return;
       }
-      if (!integrityIssue) { hideStreamAlert(); connectEventStream(); return; }
+      if (!integrityIssue || (isIntegrityNotice(integrityIssue) && streamAlertMode === 'conn')) {
+        hideStreamAlert(); connectEventStream(); return;
+      }
       const x = integrityIssue;
       if (x.kind !== 'recoverable') { x.outcome = '没有可由刷新找回全部历史的证据；当前内容不会清空。'; paintIntegrityIssue(); return; }
       if (x.retrying) return;
@@ -4041,13 +4102,13 @@
       //    之后约 300ms 就会来一条迟到的重放事件 ⇒ 没有这一句,告警只显示 300ms,业主根本看不见,
       //    (c) 等于没做。端到端闸那条"可见性"断言(要求某次采样里 hidden=false · 文本非空 · 盒子非零)
       //    钉的就是这件事。清它只有一条正路:clearReplayTimeoutAlert()。
-      // 普通 hide 不提供完整性证据；临时缺口须连续序号及渲染完成，历史缺失则保留范围说明。
-      if (integrityIssue || ((streamAlertMode === 'replay' || streamAlertMode === 'gap' || streamAlertMode === 'result') && !streamAlert.hidden)) return;
+      // 普通 hide 不提供完整性证据；临时缺口须连续序号及渲染完成。提示气泡不占用真实故障告警。
+      if ((integrityIssue && !isIntegrityNotice(integrityIssue)) || ((streamAlertMode === 'replay' || streamAlertMode === 'gap' || streamAlertMode === 'result') && !streamAlert.hidden)) return;
       streamAlert.hidden = true;
     }
     function showStreamAlert(mode) {
       if (document.hidden) return;
-      if (integrityIssue) { paintIntegrityIssue(); return; }
+      if (integrityIssue && !isIntegrityNotice(integrityIssue)) { paintIntegrityIssue(); return; }
       streamRetryBtn.disabled = false;
       streamAlert.setAttribute?.('role', 'alert');
       streamAlert.setAttribute?.('data-tone', 'warning');
@@ -4220,7 +4281,7 @@
       if (seenAboveSeq.size > SEEN_ABOVE_MAX) {  // 缺口长期补不上：放弃补缺，向前对齐并提示
         lastContiguousSeq = Math.max(...seenAboveSeq);
         seenAboveSeq = new Set();
-        noteIntegrityIssue('tracking', '超出了客户端缺口跟踪范围。');
+        noteIntegrityIssue('tracking', '超出了客户端缺口跟踪范围。', 'tracking_limit');
         return true;
       }
       noteIntegrityIssue('recoverable');
@@ -4278,7 +4339,7 @@
         window.addEventListener('message', async ev => {
           const d=ev.data;
           if(ev.source!==parent||ev.origin!==location.origin||!d||d.protocol!=='dw-console-mux/v1'||d.iframe_instance!==managedInstance)return;
-          if(d.type==='bind'&&d.agent_id===managedAgent&&d.generation===managedGeneration&&/^[0-9a-f]{32}$/.test(d.next_generation)){managedGeneration=d.next_generation;return;}
+          if(d.type==='bind'&&d.agent_id===managedAgent&&d.generation===managedGeneration&&/^[0-9a-f]{32}$/.test(d.next_generation)){if(d.next_generation!==managedGeneration)resetIntegrityNotices();managedGeneration=d.next_generation;return;}
           if(d.type==='stopped'){managedStopped=true;finishTimelineReplay(true);noteIntegrityIssue('managed', typeof d.reason === 'string' ? d.reason : '聚合接收停止，原因未提供。');return;}
           if(d.type!=='event'||managedStopped)return;
           const p=d.event;
@@ -4343,6 +4404,7 @@
       });
       eventSource.onopen = () => {
         if (generation !== eventSourceGeneration) return;
+        if (!opened) resetIntegrityNotices();
         // 第二次及以后的 open = 断线重连:hub 会重放 ring,先 arm 延迟清空避免与已有内容叠加。
         // 🔴 arm 的时机必须在 **open**,不能提前到 scheduleReconnect:延迟清空窗口
         //    (REPLAY_HARD_LIMIT_MS)是从 arm 那一刻起算的,而 backoff 最长 30s ⇒

@@ -1,0 +1,10 @@
+[
+  {
+    "suite": "replay-seq",
+    "exit": 2
+  },
+  {
+    "suite": "sse-reconnect",
+    "exit": 2
+  }
+]

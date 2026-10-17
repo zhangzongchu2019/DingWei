@@ -1,0 +1,536 @@
+{
+  "baseline": "89314543226c7cba6b3b4d34d27ea2c69ded5b45",
+  "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c",
+  "members": [
+    {
+      "path": "docs/reviews/coder-view-history-toast/BASELINE-CONTROLS.json",
+      "bytes": 106,
+      "sha256": "9f928a7e7a16fa9302da511836cfdf1af928c461969999832ae7daaac79f2f88"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/INITIAL_RESULTS.json",
+      "bytes": 3074,
+      "sha256": "3949c2e2c99ca2b8a0ebf9189240ee7e99910163afb25e6b64adabf7569edcb5"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/INITIAL_WITHDRAWAL.json",
+      "bytes": 1419,
+      "sha256": "2e739c16cb3ad3b57e1cbdf5f7be22b8ee6f3e65308b3303fe353e583ba7dddc"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/PRE_REBIND_RESULTS.json",
+      "bytes": 4256,
+      "sha256": "505614fa7ae644b1d31af17c5f129e872c5b2418de14b4af2595898b52ee8b43"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/PRE_REBIND_WITHDRAWAL.json",
+      "bytes": 2697,
+      "sha256": "2211aa5038f6ebbaa4f8b5ecd5c07d52dce372e72ff20fc16e19ae0f47255d01"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/PROVENANCE.json",
+      "bytes": 518,
+      "sha256": "7638595cb9684447e381342f62c3dfbe0f36bdcc6919fe0aa5c18d448998de5f"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/REPORT.md",
+      "bytes": 7431,
+      "sha256": "97355ad56096d17f2e27eec749a4c15dc879cd45f193d4378155a0f94ea60ccb"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/RESULTS.json",
+      "bytes": 4839,
+      "sha256": "090659f50ab0391443b7711b18b7aa36853def89ac51b234720ff283f69d8fa2"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/SUMMARY.json",
+      "bytes": 603,
+      "sha256": "f6af66cac51f5f298b9048cab1ebdb616ff69fde7901f9157bbea76a6c56d01e"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/WITHDRAWAL.json",
+      "bytes": 3135,
+      "sha256": "af3862e7e5107af0f5c280ab5da41995234a6d1b58309ad4d125e97f6ccf3d68"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/a4-epoch.log",
+      "bytes": 1363,
+      "sha256": "4c9014745aba2c7fac97432eca421ec585bd1be2b175215a1d36fb89c4521828"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/a4-overflow.log",
+      "bytes": 340,
+      "sha256": "9b7b955b7cbc5090ac329c80c49f14d0b73cc404134ed118994d56f472dad86a"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/a4-tone.log",
+      "bytes": 948,
+      "sha256": "667489db52b35497d77274b19fd6615cfe6db5067a3979227772d417334146fd"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/a5-gap.log",
+      "bytes": 742,
+      "sha256": "f966084d7dc5d1fd1042fe4309524ec665fc708957115fcf91dd2e97c6fb020e"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/a5-state.log",
+      "bytes": 461,
+      "sha256": "b7ee747d87f6d3466481f0741d71cca2050713ff4c7d1c7c0e09074fa0eeaefa"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/baseline-replay-seq.log",
+      "bytes": 1886,
+      "sha256": "d92baf4e7ac2e429f0df76901e85825d369dbb37d85b7d15b4fea6407c137c45"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/baseline-sse-reconnect.log",
+      "bytes": 4039,
+      "sha256": "9d0f57f3139ecef0524fc607b7d9bd10f249a2a52c0d6c1915d6ea7f041aef1c"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/empty-ring.log",
+      "bytes": 152,
+      "sha256": "1616248acc3b8fb5fadad5d880afb8bce53e9d4f5d324fb252fedd72524f4696"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/history-priority.log",
+      "bytes": 648,
+      "sha256": "1218e7d6ef30af60e8f118169124602911e5005b5115644be68ff8dfcb663944"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/a4-epoch.log",
+      "bytes": 1363,
+      "sha256": "4c9014745aba2c7fac97432eca421ec585bd1be2b175215a1d36fb89c4521828"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/a4-overflow.log",
+      "bytes": 340,
+      "sha256": "9b7b955b7cbc5090ac329c80c49f14d0b73cc404134ed118994d56f472dad86a"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/a4-tone.log",
+      "bytes": 948,
+      "sha256": "667489db52b35497d77274b19fd6615cfe6db5067a3979227772d417334146fd"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/a5-gap.log",
+      "bytes": 742,
+      "sha256": "f966084d7dc5d1fd1042fe4309524ec665fc708957115fcf91dd2e97c6fb020e"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/a5-state.log",
+      "bytes": 461,
+      "sha256": "b7ee747d87f6d3466481f0741d71cca2050713ff4c7d1c7c0e09074fa0eeaefa"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/empty-ring.log",
+      "bytes": 152,
+      "sha256": "1616248acc3b8fb5fadad5d880afb8bce53e9d4f5d324fb252fedd72524f4696"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/history-priority.log",
+      "bytes": 648,
+      "sha256": "1218e7d6ef30af60e8f118169124602911e5005b5115644be68ff8dfcb663944"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/integrity.log",
+      "bytes": 1638,
+      "sha256": "8997f6235c62cf0403e755487f654114363b346857abc88428e99f3c2a3fe0f0"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/legacy-deferred.log",
+      "bytes": 731,
+      "sha256": "680332467cd7b8fe818d1b79d86472e8cf7421e443201af603aa703f7bca77ae"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/renderer.log",
+      "bytes": 278,
+      "sha256": "7f59960154f2fd19e604338eda11332da4d9cf16dfd596c99dfb952aa5b5c5e3"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/replay-seq.log",
+      "bytes": 1886,
+      "sha256": "d92baf4e7ac2e429f0df76901e85825d369dbb37d85b7d15b4fea6407c137c45"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/sse-reconnect.log",
+      "bytes": 5388,
+      "sha256": "19fad2898ad0ac9964c363b2381f8d65bd20acd290607acc9348f9f72f258363"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/toast-browser-fixed.log",
+      "bytes": 1300,
+      "sha256": "aa770f625068e56fe459bb63e4c815d38fd24443fd93813f22fc990cb3913f1a"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/toast-browser-initial-fault-found.log",
+      "bytes": 886,
+      "sha256": "1989a3dfe2c92ab969184b36d5602abd7633ec24976eaacef6afa48060adc769"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/toast-browser.log",
+      "bytes": 886,
+      "sha256": "1989a3dfe2c92ab969184b36d5602abd7633ec24976eaacef6afa48060adc769"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/withdraw-dedupe.log",
+      "bytes": 340,
+      "sha256": "b1633df502fc079674395caee13ab5d2c6d0aa7210817a59eadbe08384ad9519"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/withdraw-expiry.log",
+      "bytes": 340,
+      "sha256": "b1633df502fc079674395caee13ab5d2c6d0aa7210817a59eadbe08384ad9519"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/withdraw-history.log",
+      "bytes": 347,
+      "sha256": "6c14103ac0690ccd0b1a9fe0957bed477566c7bd4fdf69e60ecfdbf46c0db835"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/initial/withdraw-tracking.log",
+      "bytes": 347,
+      "sha256": "6c14103ac0690ccd0b1a9fe0957bed477566c7bd4fdf69e60ecfdbf46c0db835"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/integrity.log",
+      "bytes": 1638,
+      "sha256": "8997f6235c62cf0403e755487f654114363b346857abc88428e99f3c2a3fe0f0"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/SCOPE.txt",
+      "bytes": 239,
+      "sha256": "7a5f657b64cac754fa990c94980da02bdb94571c25a4e4b9d3377a02c63b0cd8"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/a4-epoch.log",
+      "bytes": 1363,
+      "sha256": "4c9014745aba2c7fac97432eca421ec585bd1be2b175215a1d36fb89c4521828"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/a4-overflow.log",
+      "bytes": 340,
+      "sha256": "9b7b955b7cbc5090ac329c80c49f14d0b73cc404134ed118994d56f472dad86a"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/a4-tone.log",
+      "bytes": 948,
+      "sha256": "667489db52b35497d77274b19fd6615cfe6db5067a3979227772d417334146fd"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/a5-gap.log",
+      "bytes": 742,
+      "sha256": "f966084d7dc5d1fd1042fe4309524ec665fc708957115fcf91dd2e97c6fb020e"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/a5-state.log",
+      "bytes": 461,
+      "sha256": "b7ee747d87f6d3466481f0741d71cca2050713ff4c7d1c7c0e09074fa0eeaefa"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/empty-ring.log",
+      "bytes": 152,
+      "sha256": "1616248acc3b8fb5fadad5d880afb8bce53e9d4f5d324fb252fedd72524f4696"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/history-priority.log",
+      "bytes": 648,
+      "sha256": "1218e7d6ef30af60e8f118169124602911e5005b5115644be68ff8dfcb663944"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/integrity.log",
+      "bytes": 1638,
+      "sha256": "8997f6235c62cf0403e755487f654114363b346857abc88428e99f3c2a3fe0f0"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/legacy-deferred.log",
+      "bytes": 731,
+      "sha256": "680332467cd7b8fe818d1b79d86472e8cf7421e443201af603aa703f7bca77ae"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/renderer.log",
+      "bytes": 278,
+      "sha256": "a64009e1ca96b442b108f71e266b614b5095472c17a98e3e31750c478d1c7c46"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/replay-seq.log",
+      "bytes": 1188,
+      "sha256": "c578d56f921b62e47ece9fb76fc7d92a3ef3d5bd64b5ba3361273d1ac315ca1a"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/sse-reconnect.log",
+      "bytes": 3929,
+      "sha256": "59c1357610ad4b89fac6084a8eb99a0856e54b8687f0ea8c0bc73dd7ab50bfe7"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/toast-browser-fixed.log",
+      "bytes": 1300,
+      "sha256": "aa770f625068e56fe459bb63e4c815d38fd24443fd93813f22fc990cb3913f1a"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/toast-browser-initial-fault-found.log",
+      "bytes": 886,
+      "sha256": "1989a3dfe2c92ab969184b36d5602abd7633ec24976eaacef6afa48060adc769"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/toast-browser.log",
+      "bytes": 1300,
+      "sha256": "aa770f625068e56fe459bb63e4c815d38fd24443fd93813f22fc990cb3913f1a"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/withdraw-dedupe.log",
+      "bytes": 340,
+      "sha256": "b1633df502fc079674395caee13ab5d2c6d0aa7210817a59eadbe08384ad9519"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/withdraw-expiry.log",
+      "bytes": 340,
+      "sha256": "b1633df502fc079674395caee13ab5d2c6d0aa7210817a59eadbe08384ad9519"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/withdraw-history.log",
+      "bytes": 347,
+      "sha256": "6c14103ac0690ccd0b1a9fe0957bed477566c7bd4fdf69e60ecfdbf46c0db835"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/interim/withdraw-tracking.log",
+      "bytes": 347,
+      "sha256": "6c14103ac0690ccd0b1a9fe0957bed477566c7bd4fdf69e60ecfdbf46c0db835"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/legacy-deferred.log",
+      "bytes": 731,
+      "sha256": "680332467cd7b8fe818d1b79d86472e8cf7421e443201af603aa703f7bca77ae"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/managed-idempotent-bind-before.json",
+      "bytes": 117,
+      "sha256": "60f39a44a3fa95ad954da117111680f57bfedfc99404f06ad9f2165fc9d433ea"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/a4-epoch.log",
+      "bytes": 1363,
+      "sha256": "4c9014745aba2c7fac97432eca421ec585bd1be2b175215a1d36fb89c4521828"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/a4-overflow.log",
+      "bytes": 340,
+      "sha256": "9b7b955b7cbc5090ac329c80c49f14d0b73cc404134ed118994d56f472dad86a"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/a4-tone.log",
+      "bytes": 948,
+      "sha256": "667489db52b35497d77274b19fd6615cfe6db5067a3979227772d417334146fd"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/a5-gap.log",
+      "bytes": 742,
+      "sha256": "f966084d7dc5d1fd1042fe4309524ec665fc708957115fcf91dd2e97c6fb020e"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/a5-state.log",
+      "bytes": 461,
+      "sha256": "b7ee747d87f6d3466481f0741d71cca2050713ff4c7d1c7c0e09074fa0eeaefa"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/empty-ring.log",
+      "bytes": 152,
+      "sha256": "1616248acc3b8fb5fadad5d880afb8bce53e9d4f5d324fb252fedd72524f4696"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/history-priority.log",
+      "bytes": 648,
+      "sha256": "1218e7d6ef30af60e8f118169124602911e5005b5115644be68ff8dfcb663944"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/integrity.log",
+      "bytes": 1638,
+      "sha256": "8997f6235c62cf0403e755487f654114363b346857abc88428e99f3c2a3fe0f0"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/legacy-deferred.log",
+      "bytes": 731,
+      "sha256": "680332467cd7b8fe818d1b79d86472e8cf7421e443201af603aa703f7bca77ae"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/renderer.log",
+      "bytes": 278,
+      "sha256": "8b0ab4b614ae0370db46ca3b535a4165775a97348bfa1bb59933d71dc7b17310"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/replay-seq.log",
+      "bytes": 1188,
+      "sha256": "c578d56f921b62e47ece9fb76fc7d92a3ef3d5bd64b5ba3361273d1ac315ca1a"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/sse-reconnect.log",
+      "bytes": 3929,
+      "sha256": "13f1a7acb6b7d82bfc38a48b4e231b86cad896e88d0ee8fa8b94df4675650a03"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/toast-browser-fixed.log",
+      "bytes": 1300,
+      "sha256": "aa770f625068e56fe459bb63e4c815d38fd24443fd93813f22fc990cb3913f1a"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/toast-browser-initial-fault-found.log",
+      "bytes": 886,
+      "sha256": "1989a3dfe2c92ab969184b36d5602abd7633ec24976eaacef6afa48060adc769"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/toast-browser.log",
+      "bytes": 1421,
+      "sha256": "97ef8a2c81ab315206a6491fdbb2213e7fcfb37dc1feb7cc14bbd15be257db49"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/withdraw-dedupe.log",
+      "bytes": 340,
+      "sha256": "b1633df502fc079674395caee13ab5d2c6d0aa7210817a59eadbe08384ad9519"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/withdraw-expiry.log",
+      "bytes": 340,
+      "sha256": "b1633df502fc079674395caee13ab5d2c6d0aa7210817a59eadbe08384ad9519"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/withdraw-fault-isolation.log",
+      "bytes": 813,
+      "sha256": "1c6211db516987e05871dd8e0ae780d42d532f305102f116c10c29016bc87aba"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/withdraw-history.log",
+      "bytes": 347,
+      "sha256": "6c14103ac0690ccd0b1a9fe0957bed477566c7bd4fdf69e60ecfdbf46c0db835"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/withdraw-rearm.log",
+      "bytes": 348,
+      "sha256": "fd9e44ec3a98a952555ae9087f6bdd39d7388be1f76086ad4341c8eb086a035c"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/pre-rebind/withdraw-tracking.log",
+      "bytes": 347,
+      "sha256": "6c14103ac0690ccd0b1a9fe0957bed477566c7bd4fdf69e60ecfdbf46c0db835"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/renderer-concurrent-gesture-failure.log",
+      "bytes": 437,
+      "sha256": "8877f005780307ba54f068f922a401f2f9112bed68da659cad7500577540f4ce"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/renderer-isolated.log",
+      "bytes": 278,
+      "sha256": "69a3fc1e8f25078b0e7af2098a81313ab74018a19588e640f0f1d9211f4408f2"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/renderer.log",
+      "bytes": 437,
+      "sha256": "8877f005780307ba54f068f922a401f2f9112bed68da659cad7500577540f4ce"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/replay-seq.log",
+      "bytes": 1188,
+      "sha256": "c578d56f921b62e47ece9fb76fc7d92a3ef3d5bd64b5ba3361273d1ac315ca1a"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/sse-reconnect.log",
+      "bytes": 3929,
+      "sha256": "88b512d44f14ec21a38f540c3b1a7b3cd2d952138bbfe40ed514c7655aec51ec"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/toast-browser-fixed.log",
+      "bytes": 1300,
+      "sha256": "aa770f625068e56fe459bb63e4c815d38fd24443fd93813f22fc990cb3913f1a"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/toast-browser-initial-fault-found.log",
+      "bytes": 886,
+      "sha256": "1989a3dfe2c92ab969184b36d5602abd7633ec24976eaacef6afa48060adc769"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/toast-browser.log",
+      "bytes": 1421,
+      "sha256": "97ef8a2c81ab315206a6491fdbb2213e7fcfb37dc1feb7cc14bbd15be257db49"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/withdraw-dedupe.log",
+      "bytes": 340,
+      "sha256": "b1633df502fc079674395caee13ab5d2c6d0aa7210817a59eadbe08384ad9519"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/withdraw-expiry.log",
+      "bytes": 340,
+      "sha256": "b1633df502fc079674395caee13ab5d2c6d0aa7210817a59eadbe08384ad9519"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/withdraw-fault-isolation.log",
+      "bytes": 813,
+      "sha256": "1c6211db516987e05871dd8e0ae780d42d532f305102f116c10c29016bc87aba"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/withdraw-history.log",
+      "bytes": 347,
+      "sha256": "6c14103ac0690ccd0b1a9fe0957bed477566c7bd4fdf69e60ecfdbf46c0db835"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/withdraw-idempotent-bind.log",
+      "bytes": 1423,
+      "sha256": "e8d70df0f2ee32bce195a042c4582e342e71828c3584a81f71047a097870e7bc"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/withdraw-rearm.log",
+      "bytes": 348,
+      "sha256": "fd9e44ec3a98a952555ae9087f6bdd39d7388be1f76086ad4341c8eb086a035c"
+    },
+    {
+      "path": "docs/reviews/coder-view-history-toast/raw/withdraw-tracking.log",
+      "bytes": 347,
+      "sha256": "6c14103ac0690ccd0b1a9fe0957bed477566c7bd4fdf69e60ecfdbf46c0db835"
+    },
+    {
+      "path": "internal/m8/testdata/renderer_history_priority.cjs",
+      "bytes": 1844,
+      "sha256": "bc14eeaf3b1e58cf3bab795d7b14b2975747ae4cc3de7223c2861279a6cf0690"
+    },
+    {
+      "path": "internal/m8/testdata/renderer_integrity_recovery.cjs",
+      "bytes": 13370,
+      "sha256": "9f9f7bae5d8fc1a346471b0384e497e7370aa18c3b9d271fa5ed657a1b635c76"
+    },
+    {
+      "path": "tests/a4-notice-tone.cjs",
+      "bytes": 6052,
+      "sha256": "335b4ba09607cce9becc7cdcde3b75186d389768293e4309b1d7b6fcfa21fc57"
+    },
+    {
+      "path": "tests/a4-overflow-preserve.cjs",
+      "bytes": 2874,
+      "sha256": "782053e80352a6613e26823a92ccb6cf1e1cae1689798bf8be60235442d2d55d"
+    },
+    {
+      "path": "tests/a5-replay-state.cjs",
+      "bytes": 4651,
+      "sha256": "5332e961369ec0f9c32026bd44bdc7cd9511251b881b37af890cd4fab12b633a"
+    },
+    {
+      "path": "tests/view-history-toast.cjs",
+      "bytes": 9835,
+      "sha256": "3940de8a5da53a1df17971321e909867328b8cc2a6af50122dc90905ce2007ef"
+    },
+    {
+      "path": "view-service/renderer-canary-sse.html",
+      "bytes": 320506,
+      "sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+    },
+    {
+      "path": "view-service/renderer-replay-seq-regression.js",
+      "bytes": 14235,
+      "sha256": "1ea786356a02e6153ac0df0439c8c9e88940695fe95b2ed261a48f2c9c482f37"
+    },
+    {
+      "path": "view-service/renderer-sse-reconnect.js",
+      "bytes": 34879,
+      "sha256": "6bcb0cbc3b2262f2f7a0acddea1157fabb42689a518581f8240a3fdcd102a0ea"
+    }
+  ]
+}

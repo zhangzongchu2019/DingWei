@@ -1,0 +1,5 @@
+{
+  "case": "same-generation managed bind is not a new connection",
+  "expected_notices": 0,
+  "actual_notices": 1
+}

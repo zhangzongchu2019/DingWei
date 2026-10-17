@@ -1,0 +1,65 @@
+[
+  {
+    "case": "withdraw-history",
+    "fixed_renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c",
+    "changed_product_fragment": "if (isIntegrityNotice(x)) { showIntegrityNotice(x.kind); return; }",
+    "replacement": "if (isIntegrityNotice(x) && x.kind !== 'history') { showIntegrityNotice(x.kind); return; }",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "ccf520c5a7fbdf45c51ba2b3640b3fe98567a5e58a15abac80ee2218f6772ed4"
+  },
+  {
+    "case": "withdraw-tracking",
+    "fixed_renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c",
+    "changed_product_fragment": "if (isIntegrityNotice(x)) { showIntegrityNotice(x.kind); return; }",
+    "replacement": "if (isIntegrityNotice(x) && x.kind !== 'tracking') { showIntegrityNotice(x.kind); return; }",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "b26ded0510baa09160518758476333bd5f01a6ceba691eb2640468ddb74ecff5"
+  },
+  {
+    "case": "withdraw-expiry",
+    "fixed_renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c",
+    "changed_product_fragment": "const INTEGRITY_NOTICE_MS = 10000;",
+    "replacement": "const INTEGRITY_NOTICE_MS = 20000;",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "3b19033f5d7badb2f10ab893ffb5606fa60fe1aff676048ecf8d790b9545b46b"
+  },
+  {
+    "case": "withdraw-dedupe",
+    "fixed_renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c",
+    "changed_product_fragment": "if (integrityNoticeSeen.has(kind)) return;",
+    "replacement": "if (false) return;",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "c4a32bd0ac3266783b5ba59368c73326a5604a59427ca826d712dec128cedac5"
+  },
+  {
+    "case": "withdraw-fault-isolation",
+    "fixed_renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c",
+    "changed_product_fragment": "element.remove(); integrityNotices.delete(kind);",
+    "replacement": "element.remove(); integrityNotices.delete(kind); streamAlert.hidden = true;",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "aae161a6ac0c6b1089e5c3f2c68341dec490783c06216aa656ee314c9fdcb911"
+  },
+  {
+    "case": "withdraw-rearm",
+    "fixed_renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c",
+    "changed_product_fragment": "integrityNotices.clear(); integrityNoticeSeen.clear();",
+    "replacement": "integrityNotices.clear();",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "98176deaa1cbdb57d04a299bfae67634ae0877f92d4110deb37c2a3026ade564"
+  },
+  {
+    "case": "withdraw-idempotent-bind",
+    "fixed_renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c",
+    "changed_product_fragment": "if(d.next_generation!==managedGeneration)resetIntegrityNotices();",
+    "replacement": "resetIntegrityNotices();",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  }
+]

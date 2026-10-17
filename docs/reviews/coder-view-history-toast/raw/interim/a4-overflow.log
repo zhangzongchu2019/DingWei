@@ -1,0 +1,5 @@
+PASS pending legacy clear then overflow then retained event preserves displayed body
+PASS history before another reconnect cannot arm a destructive clear
+PASS later reconnect still preserves content after first overflow refill
+PASS normal unsequenced replay still clears once without history loss
+TOTAL 4 overflow/legacy composition checks

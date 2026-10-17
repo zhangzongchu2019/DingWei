@@ -1,0 +1,119 @@
+[
+  {
+    "suite": "integrity",
+    "source": "internal/m8/testdata/renderer_integrity_recovery.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:05:09.045043+00:00",
+    "seconds": 0.678,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  },
+  {
+    "suite": "history-priority",
+    "source": "internal/m8/testdata/renderer_history_priority.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:05:09.045601+00:00",
+    "seconds": 0.073,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  },
+  {
+    "suite": "a4-overflow",
+    "source": "tests/a4-overflow-preserve.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:05:09.118461+00:00",
+    "seconds": 0.069,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  },
+  {
+    "suite": "a4-tone",
+    "source": "tests/a4-notice-tone.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:05:09.187622+00:00",
+    "seconds": 1.593,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  },
+  {
+    "suite": "a4-epoch",
+    "source": "tests/a4-epoch-notice.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:05:09.723458+00:00",
+    "seconds": 1.733,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  },
+  {
+    "suite": "a5-state",
+    "source": "tests/a5-replay-state.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:05:10.780421+00:00",
+    "seconds": 0.126,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  },
+  {
+    "suite": "a5-gap",
+    "source": "tests/a5-real-gap-timer.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:05:10.906813+00:00",
+    "seconds": 0.184,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  },
+  {
+    "suite": "toast-browser",
+    "source": "tests/view-history-toast.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:05:11.090787+00:00",
+    "seconds": 8.714,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  },
+  {
+    "suite": "legacy-deferred",
+    "source": "renderer-t086-deferred-clear-regression.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18/view-service",
+    "start_utc": "2026-10-17T00:05:11.456479+00:00",
+    "seconds": 0.719,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  },
+  {
+    "suite": "renderer",
+    "source": "view-service/renderer-regression.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:05:12.178693+00:00",
+    "seconds": 13.093,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  },
+  {
+    "suite": "replay-seq",
+    "source": "view-service/renderer-replay-seq-regression.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:05:19.804701+00:00",
+    "seconds": 70.399,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  },
+  {
+    "suite": "empty-ring",
+    "source": "view-service/renderer-t086-empty-ring-e2e-regression.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:05:25.274301+00:00",
+    "seconds": 5.52,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  },
+  {
+    "suite": "sse-reconnect",
+    "source": "view-service/renderer-sse-reconnect.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:05:30.794634+00:00",
+    "seconds": 72.701,
+    "exit": 0,
+    "renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b"
+  }
+]

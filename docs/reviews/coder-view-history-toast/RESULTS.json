@@ -1,0 +1,131 @@
+[
+  {
+    "suite": "integrity",
+    "source": "internal/m8/testdata/renderer_integrity_recovery.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:07:00.886332+00:00",
+    "seconds": 0.671,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+  },
+  {
+    "suite": "history-priority",
+    "source": "internal/m8/testdata/renderer_history_priority.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:07:00.886610+00:00",
+    "seconds": 0.068,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+  },
+  {
+    "suite": "a4-overflow",
+    "source": "tests/a4-overflow-preserve.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:07:00.954815+00:00",
+    "seconds": 0.068,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+  },
+  {
+    "suite": "a4-tone",
+    "source": "tests/a4-notice-tone.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:07:01.022819+00:00",
+    "seconds": 1.331,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+  },
+  {
+    "suite": "a4-epoch",
+    "source": "tests/a4-epoch-notice.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:07:01.557900+00:00",
+    "seconds": 1.439,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+  },
+  {
+    "suite": "a5-state",
+    "source": "tests/a5-replay-state.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:07:02.353456+00:00",
+    "seconds": 0.119,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+  },
+  {
+    "suite": "a5-gap",
+    "source": "tests/a5-real-gap-timer.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:07:02.473168+00:00",
+    "seconds": 0.168,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+  },
+  {
+    "suite": "toast-browser",
+    "source": "tests/view-history-toast.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:07:02.642734+00:00",
+    "seconds": 7.416,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+  },
+  {
+    "suite": "legacy-deferred",
+    "source": "renderer-t086-deferred-clear-regression.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18/view-service",
+    "start_utc": "2026-10-17T00:07:02.997451+00:00",
+    "seconds": 0.673,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+  },
+  {
+    "suite": "renderer",
+    "source": "view-service/renderer-regression.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": null,
+    "seconds": null,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c",
+    "initial_attempt": {
+      "suite": "renderer",
+      "source": "view-service/renderer-regression.js",
+      "cwd": "/data/ai-dev-data/view-history-toast-r18",
+      "start_utc": "2026-10-17T00:07:03.670070+00:00",
+      "seconds": 12.547,
+      "exit": 2,
+      "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+    },
+    "log": "raw/renderer-isolated.log",
+    "recheck_completed_utc": "2026-10-17T00:08:34.132372+00:00",
+    "note": "Exact same renderer bytes; isolated retry passed. Concurrent gesture failure retained in raw/renderer-concurrent-gesture-failure.log."
+  },
+  {
+    "suite": "replay-seq",
+    "source": "view-service/renderer-replay-seq-regression.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:07:10.058535+00:00",
+    "seconds": 70.615,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+  },
+  {
+    "suite": "empty-ring",
+    "source": "view-service/renderer-t086-empty-ring-e2e-regression.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:07:16.217384+00:00",
+    "seconds": 4.587,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+  },
+  {
+    "suite": "sse-reconnect",
+    "source": "view-service/renderer-sse-reconnect.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-17T00:07:20.804833+00:00",
+    "seconds": 72.663,
+    "exit": 0,
+    "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c"
+  }
+]

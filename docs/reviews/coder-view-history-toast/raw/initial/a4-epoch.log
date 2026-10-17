@@ -1,0 +1,20 @@
+PASS explicit epoch-only refusal is an exact neutral notice and preserves rendered content
+PASS repeated epoch-only notices remain neutral without replacing the issue
+PASS epoch then recoverable then repeated epoch keeps real warning
+PASS recoverable already active cannot be replaced by an epoch notice
+PASS epoch then apply then repeated epoch keeps real warning
+PASS apply already active cannot be replaced by an epoch notice
+PASS epoch then managed then repeated epoch keeps real warning
+PASS managed already active cannot be replaced by an epoch notice
+PASS epoch then tracking then repeated epoch keeps real warning
+PASS tracking already active cannot be replaced by an epoch notice
+PASS tracking with epoch-like detail but no explicit epoch cause remains a warning
+PASS old unresolved gap crossing an actual event epoch remains a real tracking warning
+PASS actual apply failure followed by epoch notice stays a warning
+PASS history plus a real failure cannot be downgraded by epoch notification
+PASS real gap refill exhaustion after epoch notice remains a warning
+PASS actual managed stop after epoch notice remains a warning
+PASS actual light CSS uses neutral single-line epoch notice
+PASS actual dark CSS uses neutral single-line epoch notice
+PASS actual CSS real apply failure stays danger after repeated epoch notice
+TOTAL 19 epoch notice observations

@@ -1,6 +1,6 @@
 // R-V2-0105 件一 端到端：真 EventSource＋真断线重连＋按 Hub 序号语义的工装（renderer-replay-seq-fixture.py）。
 // 钉：慢重连（首条重放 >1 s）不叠加；连续重连正文不变；重连带 after；中间层丢 after 仍不叠加；
-// 换纪元保留内容、不提示；溢出提示；实时跳号补缺且不重复；跳号风暴补缺次数受限并提示；回合组合并不改正文。
+// 换纪元保留内容并保持A4中性提示；溢出提示；实时跳号补缺且不重复；跳号风暴补缺次数受限并提示；回合组合并不改正文。
 const assert = require('assert');
 const net = require('net');
 const path = require('path');
@@ -65,7 +65,7 @@ async function waitTextAppears(page, text, timeout) {
     return false;
   }
 }
-const alertState = page => page.evaluate(() => ({ hidden: streamAlert.hidden, mode: streamAlertMode, text: streamAlertText.textContent }));
+const alertState = page => page.evaluate(() => ({ hidden: streamAlert.hidden, mode: streamAlertMode, text: streamAlertText.textContent,role:streamAlert.getAttribute('role'),tone:streamAlert.getAttribute('data-tone'),cause:integrityIssue?.cause }));
 
 async function withPage(browser, mode, extra, fn, init) {
   const fixture = await startFixture(mode, extra);
@@ -129,19 +129,21 @@ async function waitConnections(page, count, timeout = 30000) {
       await sleep(800);
       return { text: await turnText(page), alert: await alertState(page) };
     });
-    await checks.check('S5 换纪元（Hub 重启／helper 重连重建）保留原内容、新事件只一份、不提示', async () => {
+    await checks.check('S5 换纪元保留原内容、新事件只一份，保持A4中性重启提示', async () => {
       assert.strictEqual(r3.text, base + '[NEW]', r3.text);
-      assert.ok(r3.alert.hidden, `unexpected alert: ${JSON.stringify(r3.alert)}`);
+      assert.equal(r3.alert.hidden,false);assert.equal(r3.alert.role,'status');assert.equal(r3.alert.tone,'notice');assert.equal(r3.alert.cause,'epoch_changed');
+      assert.equal(r3.alert.text,'服务端已重启，更早的事件无法再逐条核对；当前内容完整保留。');
     });
 
     const r4 = await withPage(browser, 'overflow', {}, async page => {
       await waitConnections(page, 2);
       await waitTextAppears(page, tag(N + 5), 15000);
       await sleep(800);
-      return { text: await turnText(page), alert: await alertState(page) };
+      return { text: await turnText(page), alert: await alertState(page),notice:await page.locator('.integrity-notice[data-reason=history]').textContent() };
     });
     await checks.check('S6 溢出：先提示「显示可能不全」，ring 内新事件照收、不重复', async () => {
       assert.strictEqual(r4.text, base + expected(range(N + 3, N + 5)), r4.text);
+      assert.match(r4.notice,/最近约 1000 段输出（或 16MB）/);
       assert.ok(!r4.alert.hidden && r4.alert.mode === 'gap', `gap alert missing: ${JSON.stringify(r4.alert)}`);
     });
 

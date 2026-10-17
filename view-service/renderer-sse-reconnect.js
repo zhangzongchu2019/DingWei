@@ -187,10 +187,18 @@ const INIT = () => {
     es.addEventListener('open', () => { mine += 1; window.__es.opens += 1;
       if (!openAt) openAt = performance.now();
       if (mine > window.__es.maxOpensOneObj) window.__es.maxOpensOneObj = mine; });
-    es.addEventListener('message', () => {
-      if (!firstMsg) return;
-      firstMsg = false;
-      if (openAt) window.__es.gaps.push(Math.round(performance.now() - openAt));
+    es.addEventListener('message', ev => {
+      if (firstMsg) {
+        firstMsg = false;
+        if (openAt) window.__es.gaps.push(Math.round(performance.now() - openAt));
+      }
+      // Finish sampling at a real fixture replay boundary, never at an arbitrary
+      // partial chunk. No expected body length is used to select that boundary.
+      try {
+        if (window.__finishReplay && JSON.parse(ev.data).data?.change === '__done__') {
+          queueMicrotask(() => { es.close(); window.__replayFinished = true; });
+        }
+      } catch (_) {}
     });
     es.addEventListener('error', () => { window.__es.errors += 1; });
     return es;
@@ -304,6 +312,13 @@ async function measureLeg(browser, leg) {
     const rounds = Math.max(6, Math.floor((leg.secs * 1000) / SAMPLE_MS));
     for (let i = 0; i < rounds; i += 1) {
       await sleep(SAMPLE_MS);
+      samples.push(await probe());
+    }
+    if (!leg.outOfWindow) {
+      // All earlier max/visibility/reconnect observations remain. The last sample
+      // must describe a completed replay, not a 39/48-chunk transient refill.
+      await page.evaluate(() => { window.__finishReplay = true; });
+      await page.waitForFunction(() => window.__replayFinished === true, null, {timeout:10000});
       samples.push(await probe());
     }
     return { samples, pageErrors };

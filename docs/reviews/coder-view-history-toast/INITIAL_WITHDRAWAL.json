@@ -1,0 +1,34 @@
+[
+  {
+    "case": "withdraw-history",
+    "changed_product_fragment": "if (isIntegrityNotice(x)) { showIntegrityNotice(x.kind); return; }",
+    "replacement": "if (isIntegrityNotice(x) && x.kind !== 'history') { showIntegrityNotice(x.kind); return; }",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "2eeb80c2a0e420edfde1822e868e2cdc39c98565b8da3fa2660bda69ce14fe72"
+  },
+  {
+    "case": "withdraw-tracking",
+    "changed_product_fragment": "if (isIntegrityNotice(x)) { showIntegrityNotice(x.kind); return; }",
+    "replacement": "if (isIntegrityNotice(x) && x.kind !== 'tracking') { showIntegrityNotice(x.kind); return; }",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "996d4f8e818fed80802bf4b0aad4b4e7d6f9a2ecfe7298fbfe289818daf22576"
+  },
+  {
+    "case": "withdraw-expiry",
+    "changed_product_fragment": "const INTEGRITY_NOTICE_MS = 10000;",
+    "replacement": "const INTEGRITY_NOTICE_MS = 20000;",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "5b6a7bd6b0b87d39c59ffda527ed9064ebc373a95513059160b57869d6cd7037"
+  },
+  {
+    "case": "withdraw-dedupe",
+    "changed_product_fragment": "if (integrityNoticeSeen.has(kind)) return;",
+    "replacement": "if (false) return;",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "905fbf69b09fdc94958f3be41c843064626475df74c89e5c45f172366417ff77"
+  }
+]

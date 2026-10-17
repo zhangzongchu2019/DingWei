@@ -1,0 +1,3 @@
+  PASS E1 empty ring reconnect preserves existing body
+  PASS E2 non-empty ring still rebuilds one copy
+T-086 empty-ring E2E regression: ALL PASS (2/2)

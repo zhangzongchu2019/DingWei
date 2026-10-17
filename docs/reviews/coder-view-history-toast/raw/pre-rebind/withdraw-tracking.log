@@ -1,0 +1,7 @@
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+0 !== 1
+
+    at /data/ai-dev-data/view-history-toast-r18/tests/view-history-toast.cjs:38:56
+    at async test (/data/ai-dev-data/view-history-toast-r18/tests/view-history-toast.cjs:32:58)
+    at async /data/ai-dev-data/view-history-toast-r18/tests/view-history-toast.cjs:36:4

@@ -1,0 +1,12 @@
+{
+  "renderer_sha256": "e99753c7625da9f75038325f2cd09fc1453ce4a5ba9b43c6aad74a3883af351c",
+  "final_suites_passed": 13,
+  "final_suites_failed": 0,
+  "new_browser_fake_clock_checks": 18,
+  "new_managed_VM_lifecycle_checks": 1,
+  "withdrawal_and_mutant_red_controls": 7,
+  "all_fixed_byte_pin_checks_match": true,
+  "renderer_isolated_retry": "One concurrent real-wheel test failed; same-byte isolated rerun passed; both retained",
+  "nonfinal_evidence": "raw/initial, raw/interim, raw/pre-rebind and INITIAL/PRE_REBIND JSON are intermediate/diagnostic, not final gate claims",
+  "no_deployment": true
+}

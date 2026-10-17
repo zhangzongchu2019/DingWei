@@ -1,0 +1,8 @@
+PASS history state retained without hiding real fault: noteIntegrityIssue('recoverable')
+PASS history state retained without hiding real fault: noteIntegrityIssue('tracking','纪元改变')
+PASS history state retained without hiding real fault: markIntegrityApplyFailed()
+PASS history state retained without hiding real fault: noteIntegrityIssue('managed','父链已停止')
+PASS history state retained without hiding real fault: showStreamAlert('conn')
+PASS history state retained without hiding real fault: hideStreamAlert();maybeClearRecoveredGap()
+PASS history never declares an unresolved real gap healed
+TOTAL 7 history priority observations
