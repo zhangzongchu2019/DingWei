@@ -1,0 +1,26 @@
+test_guard_is_included_by_ignore_contract (__main__.Contracts.test_guard_is_included_by_ignore_contract) ... FAIL
+test_runtime_directories_traversable_for_seat_uid (__main__.Contracts.test_runtime_directories_traversable_for_seat_uid) ... FAIL
+
+======================================================================
+FAIL: test_guard_is_included_by_ignore_contract (__main__.Contracts.test_guard_is_included_by_ignore_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-composition-lab/reviewer-probes.py", line 12, in test_guard_is_included_by_ignore_contract
+    self.assertIn('!start.py',patterns,'COPY start.py is excluded by leading wildcard and absent inclusion')
+AssertionError: '!start.py' not found in ['*', '!Dockerfile', '!helper/**', '!wheels/**', '!runtime-debs/**', '!security-debs/**', '!native/package/**', '!claude/package/**', '!node/node-v22.23.3-linux-x64.tar.xz', '!codex_start.py', '!claude-start.py', '!claude.py'] : COPY start.py is excluded by leading wildcard and absent inclusion
+
+======================================================================
+FAIL: test_runtime_directories_traversable_for_seat_uid (__main__.Contracts.test_runtime_directories_traversable_for_seat_uid)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-composition-lab/reviewer-probes.py", line 18, in test_runtime_directories_traversable_for_seat_uid
+    for n in names:self.assertTrue((out/n).stat().st_mode & stat.S_IXOTH, n+' copied as root must be traversable by UID10001')
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 is not true : helper/factory copied as root must be traversable by UID10001
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.475s
+
+FAILED (failures=2)
+guard_mapping {"copy_source": "start.py", "source_exists": true, "ignore_lines": ["*", "!Dockerfile", "!helper/**", "!wheels/**", "!runtime-debs/**", "!security-debs/**", "!native/package/**", "!claude/package/**", "!node/node-v22.23.3-linux-x64.tar.xz", "!codex_start.py", "!claude-start.py", "!claude.py"]}
+copied_runtime_directory_modes {"helper/factory": "0o700", "helper/factory/sessionhelper": "0o700", "helper/sessionhelper": "0o700", "claude/package": "0o700", "claude/package/bin": "0o700", "native/package": "0o700", "native/package/bin": "0o700"}

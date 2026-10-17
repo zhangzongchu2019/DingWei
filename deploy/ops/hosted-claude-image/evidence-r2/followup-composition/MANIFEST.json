@@ -1,0 +1,194 @@
+{
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/CLEANUP.json": {
+    "sha256": "2deaa138a62a499735393b083ecc7e724ce564cf3607086a56972bf193758c10",
+    "bytes": 500
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/CONTROLS.json": {
+    "sha256": "d13d8bcd0547bb4960f7b4e7a6594c2e5c7d71ac8da7791ed320a96fdc0523fd",
+    "bytes": 12673
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/ENVIRONMENT.json": {
+    "sha256": "f0832e67ecc51838ad12c913402dcc06373c14cde9111d535fa725419c0ed30c",
+    "bytes": 293
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/PROBE-PROVENANCE.json": {
+    "sha256": "0d75f1eb52f3672de74db1c8fba5fa4a7d8e8be3346b3d1572cb842de05ff6fa",
+    "bytes": 496
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/REPORT.md": {
+    "sha256": "818a39b538225a234a497280952542cf2ba16a90c74e80940dda2724de06946f",
+    "bytes": 5507
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/RESULTS.json": {
+    "sha256": "7ebf7a5e6cec014ce27c72fa1163c9eaf923b8c80c18224b3150810c25b581f4",
+    "bytes": 12906
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/SOURCE.json": {
+    "sha256": "ee52f0dc898154401fe7d109a4e6542ca9aacec75d0d7d134b80de6c989f0e2a",
+    "bytes": 4680
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/claude-final.log": {
+    "sha256": "965eb6f35c6b33f9c3b062b61a961a88ab5718d4bf2306e0a9a961399185c27e",
+    "bytes": 3228
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/claude-final.result.json": {
+    "sha256": "82ea7e9cca10e00573bcb1c22c7e5e157b26829deddb6aaead3a6b455da5b535",
+    "bytes": 523
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-ignore-baseline.log": {
+    "sha256": "0478901bab1ed5087894b0203214c23604f0e6df413f6f7271f4ddf23fedc829",
+    "bytes": 245
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-ignore-baseline.result.json": {
+    "sha256": "bbcbf6f6a4fbe3a06aa3fd2169e11802da422c2214e9990ee911e1273a24cc89",
+    "bytes": 586
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-ignore-restored.log": {
+    "sha256": "376e4c0a20b9e0448447af96447df42624b0b5b4706265d4b633aaf34bd59d90",
+    "bytes": 245
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-ignore-restored.result.json": {
+    "sha256": "cb2580bc23149456e3311dd316da9483037b4c8789924fb2024cff47cdb992e5",
+    "bytes": 587
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-ignore-withdrawal.log": {
+    "sha256": "59fb84d0f910eb996bebde847152278157d4de46f893c06d86e34fc207b78d63",
+    "bytes": 1237
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-ignore-withdrawal.result.json": {
+    "sha256": "8d51f27e701ccccad7ad482c91b8ac54a1fd1be12b49a0c1b020478fff5882bd",
+    "bytes": 586
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-original-baseline.log": {
+    "sha256": "db66df005610eb6021a108eed0067dbfa90bd19c1261336afa9c4e80c45cb7b3",
+    "bytes": 1025
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-original-baseline.result.json": {
+    "sha256": "89de00baf597444ace2e8848c43fea6b82550611701c2220a5febf785c7d84e9",
+    "bytes": 470
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-original-restored.log": {
+    "sha256": "c79e58de7c622156521b420478caedce1fb743ad42a97d65dc1e9f3eaa920124",
+    "bytes": 1025
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-original-restored.result.json": {
+    "sha256": "966d476d2cd7a4ba2044dc89ca1894e864e7e807d5be2d8973777ead919643eb",
+    "bytes": 470
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-original-withdrawal.log": {
+    "sha256": "be7dff71cffe2feb9e52a6a173af893c99281ef92843759e524b814ef6b9b5d7",
+    "bytes": 2579
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-original-withdrawal.result.json": {
+    "sha256": "5ff617f9872f60b75a844f409e64211423c21038e9bfe3eced445bd2926f043f",
+    "bytes": 469
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-package-modes-baseline.log": {
+    "sha256": "67ee8321a05450b0edac824e794fada5613a6a8c2219ee2bf438079c1212ba14",
+    "bytes": 267
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-package-modes-baseline.result.json": {
+    "sha256": "e868810e8d529b8ab954102b1254b7dd10b292fff7513cd4bcf1bbd173fe49c8",
+    "bytes": 566
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-package-modes-restored.log": {
+    "sha256": "6636b45f96516cbd56d5aa637a095ac581d2fe89e88aa5a88e7c449a29ebe566",
+    "bytes": 267
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-package-modes-restored.result.json": {
+    "sha256": "2e58bab108f52b856b4970d551b7469eed478751d8171212e1447b61a490c8c3",
+    "bytes": 566
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-package-modes-withdrawal.log": {
+    "sha256": "9fac5b34d10166332589d2b275d5132490f1d87d49cb39693307879204810edd",
+    "bytes": 3666
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-package-modes-withdrawal.result.json": {
+    "sha256": "029f8b0cbf1c0e968ba6849dd0800a99a507189be1af4c59213df3eee9ed08ef",
+    "bytes": 565
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-runtime-directories-baseline.log": {
+    "sha256": "0d597a5307f15017ef3e3c26d81a4cdafd7036cbf80a1511885d96c7c2ce59ad",
+    "bytes": 287
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-runtime-directories-baseline.result.json": {
+    "sha256": "d06da11a7fda4e343958a3d826e93a4e7a538127ad9f4d4c0a9480f18090a122",
+    "bytes": 566
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-runtime-directories-restored.log": {
+    "sha256": "d50d5dcdd84766e02921e9a0552dd11bb0cd3170c3f4dc37fb9db1bbdedacbe4",
+    "bytes": 287
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-runtime-directories-restored.result.json": {
+    "sha256": "7aaec40264db0d81c9da7c73dc4202f3791bd6c0e8d75a6b00583e792b5bd748",
+    "bytes": 566
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-runtime-directories-withdrawal.log": {
+    "sha256": "3b28e08f9476557b857b5b82bc63870e16f83502085c1aa6b35dc1e2dcb72fe2",
+    "bytes": 1200
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-runtime-directories-withdrawal.result.json": {
+    "sha256": "bcafe7bbd8668d99d982149ebf6f1286b07f19bc141422b751a2bcbb5ae6c5a0",
+    "bytes": 565
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-umask-baseline.log": {
+    "sha256": "79d05d897a1c7d0b5fa2820e0d010761f70d97894847cc0aa5ef9191285c4b73",
+    "bytes": 287
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-umask-baseline.result.json": {
+    "sha256": "ba7dd1c47cd193fb4ae5cabebece7341fcf518b325d2fb276c3360726c9594e4",
+    "bytes": 566
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-umask-restored.log": {
+    "sha256": "82f606af09e2c2468b23ae553a36999560e1597c08e3b39ba14264d05a5454f3",
+    "bytes": 287
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-umask-restored.result.json": {
+    "sha256": "1f2e182020367b9d37d531f020cd29d8b7ba06090685054ad8b63e832ba7848a",
+    "bytes": 566
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-umask-withdrawal.log": {
+    "sha256": "4645b32f49f71fa1c03e55cb75d80cc3b68793ff9e94331a423051562cac6010",
+    "bytes": 1200
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/control-umask-withdrawal.result.json": {
+    "sha256": "a21b583b9440bb81996b5a1386c2e312c8f4bcd3fb870f326cfb5b143978616c",
+    "bytes": 565
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/entrypoint-contract.log": {
+    "sha256": "aefd6f68a6b41e0c6c53012e107d56519969d89fb739d1d9ee70440c57cf710d",
+    "bytes": 1775
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/entrypoint-contract.result.json": {
+    "sha256": "5b3b43ee363e1e02b0ff7c9de642abb3010c18c2e547c9ef3599031164452581",
+    "bytes": 435
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/h3-regression.log": {
+    "sha256": "6f0141453db3f9cc9bf7b2e11516eefb9759b5f69ac16cc0e56381381c8629de",
+    "bytes": 5345
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/h3-regression.result.json": {
+    "sha256": "be9a28d0230f453c6d750ef4628686008cd1f0e3539b1172d194b5492d22673d",
+    "bytes": 504
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/reviewer-original-contracts.log": {
+    "sha256": "a415cd5b0d0fc83b2c126d993fb1a57237e54bec4e8319ce2e74e4ea78b3bb8e",
+    "bytes": 1025
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/raw/reviewer-original-contracts.result.json": {
+    "sha256": "81ef930e108c37b71c31487b99dd2c314927b1f454e274121d55dee2b1912f31",
+    "bytes": 470
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/reviewer-probes.original.py": {
+    "sha256": "0c595612fc3a66013bf9d11cbfe29b4b0acd665a3ded37a60179cb9bd3aaf304",
+    "bytes": 1358
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/reviewer-probes.py": {
+    "sha256": "59f9c55114c07adbe7204ab53ea5aa4ba4293163e73b59f400d439a9ef7b565f",
+    "bytes": 1399
+  },
+  "deploy/ops/hosted-claude-image/evidence-r2/followup-composition/run.py": {
+    "sha256": "63c644767669ac09fc8150dd05b5bb92b1b0386ec26cab78ba9cd1b41621d889",
+    "bytes": 5133
+  }
+}

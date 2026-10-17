@@ -1,0 +1,17 @@
+test_staged_copy_sources_survive_actual_ignore_rules (test_claude_start.ClaudePackager.test_staged_copy_sources_survive_actual_ignore_rules) ... FAIL
+
+======================================================================
+FAIL: test_staged_copy_sources_survive_actual_ignore_rules (test_claude_start.ClaudePackager.test_staged_copy_sources_survive_actual_ignore_rules)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-composition-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 237, in test_staged_copy_sources_survive_actual_ignore_rules
+    self.run_prepare();self.assert_staged_copy_ignore_contract()
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-packager-composition-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 230, in assert_staged_copy_ignore_contract
+    self.assertTrue(included(relative),'staged COPY source excluded: '+relative.as_posix())
+AssertionError: False is not true : staged COPY source excluded: start.py
+
+----------------------------------------------------------------------
+Ran 1 test in 0.247s
+
+FAILED (failures=1)

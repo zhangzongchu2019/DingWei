@@ -1,0 +1,42 @@
+test_archive_modes_are_readable_and_executable_for_runtime_user (test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user) ... 
+  test_archive_modes_are_readable_and_executable_for_runtime_user (test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user) (original='0o600') ... FAIL
+  test_archive_modes_are_readable_and_executable_for_runtime_user (test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user) (original='0o400') ... FAIL
+  test_archive_modes_are_readable_and_executable_for_runtime_user (test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user) (original='0o700') ... FAIL
+  test_archive_modes_are_readable_and_executable_for_runtime_user (test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user) (original='0o750') ... FAIL
+
+======================================================================
+FAIL: test_archive_modes_are_readable_and_executable_for_runtime_user (test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user) (original='0o600')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-composition-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 280, in test_archive_modes_are_readable_and_executable_for_runtime_user
+    self.assertEqual(result['native/package/tool'][1],expected)
+AssertionError: 384 != 420
+
+======================================================================
+FAIL: test_archive_modes_are_readable_and_executable_for_runtime_user (test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user) (original='0o400')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-composition-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 280, in test_archive_modes_are_readable_and_executable_for_runtime_user
+    self.assertEqual(result['native/package/tool'][1],expected)
+AssertionError: 256 != 420
+
+======================================================================
+FAIL: test_archive_modes_are_readable_and_executable_for_runtime_user (test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user) (original='0o700')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-composition-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 280, in test_archive_modes_are_readable_and_executable_for_runtime_user
+    self.assertEqual(result['native/package/tool'][1],expected)
+AssertionError: 448 != 493
+
+======================================================================
+FAIL: test_archive_modes_are_readable_and_executable_for_runtime_user (test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user) (original='0o750')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-composition-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 280, in test_archive_modes_are_readable_and_executable_for_runtime_user
+    self.assertEqual(result['native/package/tool'][1],expected)
+AssertionError: 488 != 493
+
+----------------------------------------------------------------------
+Ran 1 test in 0.136s
+
+FAILED (failures=4)

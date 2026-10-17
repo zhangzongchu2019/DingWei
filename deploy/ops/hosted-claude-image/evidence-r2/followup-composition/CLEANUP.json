@@ -1,0 +1,15 @@
+{
+  "utc": "2026-10-17T21:33:39.117757+00:00",
+  "owned_mutant_removed": true,
+  "private_HOME_removed": true,
+  "private_TMPDIR_removed": true,
+  "private_TMPDIR_empty_before_removal": true,
+  "mutant_restored_clean_before_removal": true,
+  "owned_fixture_processes": [],
+  "no_go_cache_used": true,
+  "retained": [
+    "main author checkout",
+    "local raw evidence/scripts mirrored into Git evidence"
+  ],
+  "no_actual_Docker_helper_guard_pip_packages_hosts_credentials_PG_Agents_images": true
+}

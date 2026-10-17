@@ -1,0 +1,6 @@
+test_archive_modes_are_readable_and_executable_for_runtime_user (test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.130s
+
+OK

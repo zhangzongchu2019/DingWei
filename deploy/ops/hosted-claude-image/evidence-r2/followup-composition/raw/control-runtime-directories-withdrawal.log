@@ -1,0 +1,16 @@
+test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask (test_claude_start.ClaudePackager.test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask) ... FAIL
+
+======================================================================
+FAIL: test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask (test_claude_start.ClaudePackager.test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-packager-composition-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 268, in test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask
+    self.assert_runtime_uid_contract()
+  File "/data/ai-dev-data/claude-packager-composition-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 252, in assert_runtime_uid_contract
+    self.assertEqual(mode,0o755,'runtime directory mode '+rel)
+AssertionError: 448 != 493 : runtime directory mode wheels
+
+----------------------------------------------------------------------
+Ran 1 test in 0.253s
+
+FAILED (failures=1)
