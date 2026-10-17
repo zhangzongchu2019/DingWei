@@ -1,0 +1,32 @@
+{
+  "baseline": "8944a7c12198129af74fbe9c7ad6d646ad5c5d24",
+  "reviewed_predecessor": "17115394397412d92be660df9c2cc2f1865c23a6",
+  "code_pin": "4d2f408441bd867dc6cdb64ad21928c0ed2c468c",
+  "code_tree": "387fc71ec9089cf750a62df5e56870be58f34823",
+  "ruling_ref": "review/opus50tc2k/rulings",
+  "ruling_commit": "11d649934352c0cbcbc5efa7b2d1b38bbb2cefd8",
+  "ruling_tree": "eca070105f5874a811b3f5ab2b5fe4823e82c913",
+  "ruling_path": "docs/rulings/S-NODE-SOFT-QUOTA-20261017.md",
+  "ruling_section": "E final, supersedes C/D",
+  "increment_files": {
+    "cmd/workpulse/hosted_admin.go": {
+      "blob": "6a31e4936757564d96348920ef25b4e288592121",
+      "bytes": 4389,
+      "sha256": "3dd2bb53d3674fd489b1b406fb1b9d3ea438858fdb6ef93e312070d3fc98f729"
+    },
+    "cmd/workpulse/hosted_admin_quota_test.go": {
+      "blob": "714dca5722852f19463b87e56cc8adea36aba6bb",
+      "bytes": 3630,
+      "sha256": "4177ca2e9f64787b12ba37b05e179673f6f34dbd1f290dd813a40369d729c9c1"
+    }
+  },
+  "unchanged_predecessor_trees": {
+    "internal/nodeagent": "e4e41f287c036de4cbe9c9f540f877776749c97b",
+    "internal/hosted": "1c06c83ffbf2524ef3700fbdd82fec29d770dd62",
+    "internal/nodegate": "734269e6eb8b88147eb57d747878c2e0c7026350",
+    "internal/m8": "91f2e6db4a61fc1bc2ac64a46aeab5f0be780481",
+    "tools/sessionhelper": "eb9210d4300f8c8e2f0f3ddf5261816260ad4eed",
+    "deploy/nodeagent.env.example": "c0c7c749056374dc0872589b79ac951ffbd2b849"
+  },
+  "existing_admin_test_file_unchanged": true
+}

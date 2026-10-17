@@ -1,0 +1,102 @@
+{
+  "docs/reviews/coder-node-soft-quota-impl/CURRENT.md": {
+    "bytes": 538,
+    "sha256": "39a66bdc30dad8df6e2a28a0ae02381e08f00ec8356502ca6bce0fc9c97127f7"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-inode-ruling/MANIFEST.json": {
+    "bytes": 20373,
+    "sha256": "dc6574a8ab4e4a1b3563ae22c968d27878a3e2f5468959b5414917899e913d00"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-io-grace/MANIFEST.json": {
+    "bytes": 17283,
+    "sha256": "a5b0138f74d5ffd9db040603e79e503f64c777afd77138ff4d6cb487611d1851"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/CLEANUP.json": {
+    "bytes": 667,
+    "sha256": "928c7af7f2476e1d113c6141eaad1b14b7e1fafc05c89112af242b3dcf34e602"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/REPORT.md": {
+    "bytes": 6130,
+    "sha256": "3bd742836e2f93722e824d77d75b18cf368c7612f14504d0aa9b73b3f731f395"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/RESULTS.json": {
+    "bytes": 1859,
+    "sha256": "4e845875e8a59d6cd434195407310ea88f54e06abcd1372d65b05299f5630e14"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/SOURCE-PINS.json": {
+    "bytes": 1486,
+    "sha256": "7fd44e29d4aeeff2daccdc4890528c3954551088c0172ba30e151982546787cd"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/n1-withdraw.py.fixture": {
+    "bytes": 1742,
+    "sha256": "ead3809d8045b0e2ae1d0a161fba0e59e8b35182d5165d5c8c74efa7b14c85ff"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/N1-WITHDRAWALS.json": {
+    "bytes": 1037,
+    "sha256": "da1cd8dcef0280706068926d7edaa043fd0966a75bb1c69bf1b8bcf690671d81"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/canonical-n1-final.log": {
+    "bytes": 39953,
+    "sha256": "8f338c4aa0c4425eadcc2ba023053ee1bd091d21e7e9708c103a06e21fb0c3d4"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/canonical-n1-final.log.result.json": {
+    "bytes": 153,
+    "sha256": "792a3281dacf76da257655fcaa4afc1a610e6118593164e6095ace3da006403a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/cli-n1-final.log": {
+    "bytes": 1967,
+    "sha256": "9e888e1ee84067f314387e66a0fc7cd440a15c019c3f3d31e2746d4d81043ed3"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/cli-n1-final.log.result.json": {
+    "bytes": 244,
+    "sha256": "a2d2385eb173a3cbe75382a50ed40656e8425cb65be9dc2f0af8d6421bf55e58"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/nodeagent-n1-final.log": {
+    "bytes": 24274,
+    "sha256": "b2caec3d30d73f0250747418151aefe18a5461986610bedaa96b8b98c932778f"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/nodeagent-n1-final.log.result.json": {
+    "bytes": 212,
+    "sha256": "3f19069c128ebb00d55c377db35b831090ef8c5cb7863977c8e4420ef666fded"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/restored-n1-cli.log": {
+    "bytes": 1337,
+    "sha256": "2fde9b7293801d4d3ade2f461e36d3db5ab9f500e3c47745e9cc4fd66c0d7d2a"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/restored-n1-cli.log.result.json": {
+    "bytes": 275,
+    "sha256": "57c66bfeeabd2c3f1af43354a90f39c6847cb66d42aff1b4ad79993857d240ad"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/withdraw-n1-legacy-cli.log": {
+    "bytes": 901,
+    "sha256": "08c751e2196ce321a5ec32f3868d1ef1aae76f0a01d7829ffdd280ed46080203"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/withdraw-n1-legacy-cli.log.result.json": {
+    "bytes": 276,
+    "sha256": "47833ab581682a5b72c31c0f7c1f80a366ceaf8a8e407e8ea5db8cea7b26f691"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/withdraw-n1-mode-forwarding.log": {
+    "bytes": 522,
+    "sha256": "de5f60c53837f9399883664d789a31271c6fd9514e26872448cd461b335dd87d"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/withdraw-n1-mode-forwarding.log.result.json": {
+    "bytes": 274,
+    "sha256": "e5436e3dfeab208dbd886952b15f7602abebd8c6d8e86930b3b9e87c608fe4d8"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/withdraw-n1-revision-forwarding.log": {
+    "bytes": 540,
+    "sha256": "1cb5a9df0d0b89201e90fd1226c4f62ea1b327387ea4fbbf1d16437db966cc02"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/raw/withdraw-n1-revision-forwarding.log.result.json": {
+    "bytes": 275,
+    "sha256": "903ede8c8af7f203a66fc4c7e739ff9459ad688dcd42375893394b2db9760614"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-n1-final-e/run-local.py.fixture": {
+    "bytes": 1233,
+    "sha256": "7a479dfdd257fda23706c030aecd3951fcf42d4b95f8f4d445613fec23698da7"
+  },
+  "docs/reviews/coder-node-soft-quota-impl/followup-reserve-emergency/MANIFEST.json": {
+    "bytes": 13270,
+    "sha256": "3796c81d23e63d612902eac3c321f8086de94536e1f323b2d80e75f76a5b96c3"
+  }
+}

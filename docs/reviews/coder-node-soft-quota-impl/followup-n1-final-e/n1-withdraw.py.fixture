@@ -1,0 +1,13 @@
+import pathlib,subprocess,json,hashlib
+lab=pathlib.Path('/data/ai-dev-data/coder-soft-quota-lab');root=lab/'n1-withdrawal';pin='4d2f408441bd867dc6cdb64ad21928c0ed2c468c';file='cmd/workpulse/hosted_admin.go';old=subprocess.check_output(['git','show',pin+':'+file],cwd=root).decode();legacy=subprocess.check_output(['git','show','17115394397412d92be660df9c2cc2f1865c23a6:'+file],cwd=root).decode()
+mode=old.replace('QuotaMode: *quotaMode,','QuotaMode: "",',1).replace('secret, err := st.RegisterNode','_ = quotaMode\n\t\tsecret, err := st.RegisterNode',1)
+revision=old.replace('QuotaPolicyRevision: *quotaRevision','QuotaPolicyRevision: ""',1).replace('secret, err := st.RegisterNode','_ = quotaRevision\n\t\tsecret, err := st.RegisterNode',1)
+results=[]
+for name,mut in [('legacy-cli',legacy),('mode-forwarding',mode),('revision-forwarding',revision)]:
+ assert mut!=old
+ try:
+  (root/file).write_text(mut);log='withdraw-n1-'+name+'.log';rc=subprocess.call(['python3',str(lab/'run-local.py'),log,'go','test','./cmd/workpulse','-run','^TestHostedAdminQuotaRegistrationCLIToNormalize$','-v','-count=1','-timeout=120s'],cwd=root);raw=(lab/'evidence'/log).read_text();good=rc==1 and '--- FAIL: TestHostedAdminQuotaRegistrationCLIToNormalize' in raw and '[build failed]' not in raw and 'test timed out' not in raw and 'panic:' not in raw
+  results.append({'name':name,'file':file,'rc':rc,'assertion_red':good,'original_sha256':hashlib.sha256(old.encode()).hexdigest(),'mutant_sha256':hashlib.sha256(mut.encode()).hexdigest()});print(name,good,flush=True)
+ finally:(root/file).write_text(old)
+ (lab/'evidence/N1-WITHDRAWALS.json').write_text(json.dumps({'code_pin':pin,'cases':results},indent=2)+'\n')
+assert all(r['assertion_red'] for r in results)

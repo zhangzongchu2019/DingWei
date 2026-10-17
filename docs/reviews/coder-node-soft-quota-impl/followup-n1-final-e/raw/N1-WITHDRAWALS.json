@@ -1,0 +1,29 @@
+{
+  "code_pin": "4d2f408441bd867dc6cdb64ad21928c0ed2c468c",
+  "cases": [
+    {
+      "name": "legacy-cli",
+      "file": "cmd/workpulse/hosted_admin.go",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "3dd2bb53d3674fd489b1b406fb1b9d3ea438858fdb6ef93e312070d3fc98f729",
+      "mutant_sha256": "9f01f8de5d8f45450837174d4f50390ee2ef05bb3824c6ff3f0728a63d612d1e"
+    },
+    {
+      "name": "mode-forwarding",
+      "file": "cmd/workpulse/hosted_admin.go",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "3dd2bb53d3674fd489b1b406fb1b9d3ea438858fdb6ef93e312070d3fc98f729",
+      "mutant_sha256": "7957671b383532ad7fcf09d7bb79eb8cb351d19254f720ecf87b97440f4c25da"
+    },
+    {
+      "name": "revision-forwarding",
+      "file": "cmd/workpulse/hosted_admin.go",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "3dd2bb53d3674fd489b1b406fb1b9d3ea438858fdb6ef93e312070d3fc98f729",
+      "mutant_sha256": "73e480dea2966efe2f90903e5e8aaaf954b12136edcc60a354c9848b75b54517"
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "utc": "2026-10-17T09:34:21.295130+00:00",
+  "code_pin": "4d2f408441bd867dc6cdb64ad21928c0ed2c468c",
+  "gates": {
+    "canonical-n1-final.log": {
+      "command": [
+        "./build.sh",
+        "--test-only"
+      ],
+      "rc": 0,
+      "seconds": 106.36283223005012,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-n1-final.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 8.033003024989739,
+      "external_DSN_environment_not_inherited": true
+    },
+    "cli-n1-final.log": {
+      "command": [
+        "go",
+        "test",
+        "./cmd/workpulse",
+        "-run",
+        "^TestHostedAdmin",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 11.794249586993828,
+      "external_DSN_environment_not_inherited": true
+    },
+    "restored-n1-cli.log": {
+      "command": [
+        "go",
+        "test",
+        "./cmd/workpulse",
+        "-run",
+        "^TestHostedAdminQuotaRegistrationCLIToNormalize$",
+        "-v",
+        "-count=1",
+        "-timeout=120s"
+      ],
+      "rc": 0,
+      "seconds": 5.797937909839675,
+      "external_DSN_environment_not_inherited": true
+    }
+  },
+  "counts": {
+    "canonical-n1-final.log": {
+      "top_level_passes": 4,
+      "skips": 0
+    },
+    "nodeagent-n1-final.log": {
+      "top_level_passes": 140,
+      "skips": 0
+    },
+    "cli-n1-final.log": {
+      "top_level_passes": 4,
+      "skips": 0
+    },
+    "restored-n1-cli.log": {
+      "top_level_passes": 1,
+      "skips": 0
+    }
+  },
+  "N1_current_assertion_red": 3,
+  "A2_A3_I_source_identical_to_171": true,
+  "A1_N2_deferred_per_final_E": true,
+  "B_not_started": true,
+  "host_realDocker_externalPG_realkeys_deploy": false
+}
