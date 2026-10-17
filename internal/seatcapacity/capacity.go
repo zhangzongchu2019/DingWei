@@ -47,6 +47,7 @@ type Dimension struct {
 }
 type View struct {
 	Version        int       `json:"version"`
+	MaxSeats       int       `json:"max_seats"`
 	Known          bool      `json:"known"`
 	At             time.Time `json:"at"`
 	Minimum        Resources `json:"minimum"`
@@ -68,7 +69,7 @@ func Charge(r Resources, p Policy) Resources {
 }
 
 func Evaluate(p Policy, s Snapshot, managed []Resources, now time.Time, maxAge time.Duration) View {
-	v := View{Version: 1, Minimum: p.Minimum, At: s.At, Occupied: len(managed), Reasons: []string{}}
+	v := View{Version: 1, MaxSeats: p.MaxSeats, Minimum: p.Minimum, At: s.At, Occupied: len(managed), Reasons: []string{}}
 	if p.Validate() != nil {
 		v.Reasons = []string{"policy_invalid"}
 		return v
@@ -137,7 +138,7 @@ func (v View) CanAdd(p Policy, r Resources) []string {
 		}
 		return append([]string(nil), v.Reasons...)
 	}
-	if !valid(r) || p.Validate() != nil {
+	if !valid(r) || p.Validate() != nil || p.Minimum != v.Minimum || p.MaxSeats != v.MaxSeats {
 		return []string{"policy_invalid"}
 	}
 	reasons := []string{}
@@ -150,4 +151,74 @@ func (v View) CanAdd(p Policy, r Resources) []string {
 		reasons = append(reasons, "seat_limit")
 	}
 	return reasons
+}
+
+func (v View) Policy() Policy { return Policy{Minimum: v.Minimum, MaxSeats: v.MaxSeats} }
+
+// ValidateAt is used on the authenticated node's wire frame, not only on locally
+// constructed values. Known=true with omitted or inconsistent fields is unknown.
+func (v View) ValidateAt(now time.Time, maxAge time.Duration) bool {
+	p := v.Policy()
+	if v.Version != 1 || !v.Known || p.Validate() != nil || v.At.IsZero() || maxAge <= 0 || now.Before(v.At) || now.Sub(v.At) > maxAge || v.Occupied < 0 || v.Occupied > 100 {
+		return false
+	}
+	total, remaining := int64(p.MaxSeats), int64(max(0, p.MaxSeats-v.Occupied))
+	for i, d := range []Dimension{v.CPU, v.Memory, v.Disk} {
+		if d.Total < 0 || d.Total > 1<<60 || d.NodeReserve < 0 || d.NodeReserve > 1<<60 || d.ExternalUsed < 0 || d.ExternalUsed > 1<<60 || d.ManagedReserved < 0 || d.ManagedReserved > 1<<60 {
+			return false
+		}
+		net := max(int64(0), d.Total-d.NodeReserve-d.ExternalUsed)
+		free := max(int64(0), net-d.ManagedReserved)
+		minimum := values(p.Minimum)[i]
+		if d.Allocatable != net || d.Available != free || d.Slots != net/minimum || d.RemainingSlots != free/minimum || d.ManagedReserved < int64(v.Occupied)*minimum {
+			return false
+		}
+		total = min(total, d.Slots)
+		remaining = min(remaining, d.RemainingSlots)
+	}
+	return v.TotalSlots == total && v.AvailableSlots == remaining
+}
+
+// Pending rows not yet in the node's durable seat list consume capacity too.
+// Operates only on a copy for scheduling/options; node reservations stay final.
+func (v View) WithPending(pending []Resources) View {
+	p := v.Policy()
+	if !v.Known || p.Validate() != nil {
+		v.Known = false
+		v.Reasons = []string{"load_unknown"}
+		return v
+	}
+	for _, r := range pending {
+		if !valid(r) {
+			v.Known = false
+			v.Reasons = []string{"load_unknown"}
+			return v
+		}
+		for i, d := range []*Dimension{&v.CPU, &v.Memory, &v.Disk} {
+			x := values(Charge(r, p))[i]
+			if d.ManagedReserved > 1<<60-x {
+				v.Known = false
+				v.Reasons = []string{"load_unknown"}
+				return v
+			}
+			d.ManagedReserved += x
+		}
+		v.Occupied++
+	}
+	v.TotalSlots = int64(p.MaxSeats)
+	v.AvailableSlots = int64(max(0, p.MaxSeats-v.Occupied))
+	v.Reasons = []string{}
+	for i, d := range []*Dimension{&v.CPU, &v.Memory, &v.Disk} {
+		d.Available = max(int64(0), d.Allocatable-d.ManagedReserved)
+		d.RemainingSlots = d.Available / values(p.Minimum)[i]
+		v.TotalSlots = min(v.TotalSlots, d.Slots)
+		v.AvailableSlots = min(v.AvailableSlots, d.RemainingSlots)
+		if d.RemainingSlots == 0 {
+			v.Reasons = append(v.Reasons, []string{"cpu", "memory", "disk"}[i])
+		}
+	}
+	if v.Occupied >= p.MaxSeats {
+		v.Reasons = append(v.Reasons, "seat_limit")
+	}
+	return v
 }

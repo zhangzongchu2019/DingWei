@@ -1143,10 +1143,21 @@ function hostedModelList(opts){
     if(typeof m==='string'&&m&&out.indexOf(m)<0)out.push(m);});   // B2 契约：options.models＝字符串数组（在线节点并集、已去重；无则 []）；只认字符串
   return out;
 }
+function hostedNodeCapacityText(n){
+  var c=n.seat_capacity;
+  if(!c||c.version!==1)return n.quota_mode==='soft'?'【未发布席位容量规则】':'';
+  if(!c.known)return '【容量规则 v1：读数未知，暂停新建与启动】';
+  function amount(d,unit){return d&&Number.isFinite(d.available)?String(Number((d.available/unit).toFixed(2))):'未知';}
+  var names={cpu:'CPU',memory:'内存',disk:'磁盘',seat_limit:'节点席位上限',load_unknown:'容量读数未知',policy_invalid:'容量配置无效'};
+  var reason=(Array.isArray(c.reasons)?c.reasons:[]).map(function(r){return names[r]||'容量读数未知';});
+  return '【容量规则 v1：容量 '+c.total_slots+' 席，已占 '+c.occupied+'，可新增 '+c.available_slots+
+    '；CPU 可用 '+amount(c.cpu,1000)+' 核／内存 '+amount(c.memory,1073741824)+'GiB／盘 '+amount(c.disk,1073741824)+'GiB'+
+    (reason.length?'；拒绝原因：'+reason.join('、'):'')+'】';
+}
 function renderHostedForm(){
   var opts=hostedOptions;if(!opts)return;
   var combos=opts.combos||[],clis=[];combos.forEach(function(c){if(clis.indexOf(c.cli)<0)clis.push(c.cli);});
-  hostedFill('hostedNode',(opts.nodes||[]).map(function(n){return {value:n.id,text:n.name+'（剩余 '+n.free_mem_gb+'G / '+n.free_vcpu+'C'+(n.free_disk_gb!==undefined?' / 盘 '+n.free_disk_gb+'G':'')+'）'+(n.quota_mode==='soft'?'【无硬磁盘配额】':'')+(n.online?'':'（离线）'),disabled:!n.online||n.quota_eligible===false};}),'自动');
+  hostedFill('hostedNode',(opts.nodes||[]).map(function(n){return {value:n.id,text:n.name+'（剩余 '+n.free_mem_gb+'G / '+n.free_vcpu+'C'+(n.free_disk_gb!==undefined?' / 盘 '+n.free_disk_gb+'G':'')+'）'+(n.quota_mode==='soft'?'【无硬磁盘配额】':'')+hostedNodeCapacityText(n)+(n.online?'':'（离线）'),disabled:!n.online||n.quota_eligible===false};}),'自动');
   hostedFill('hostedCli',clis.map(function(c){var ok=combos.some(function(x){return x.cli===c&&x.verified;});return {value:c,text:c+(ok?'':'（未验通）'),disabled:!ok};}),'请选择 CLI');
   renderHostedLlm();
   hostedFill('hostedPlan',(opts.plans||[]).map(function(p){return {value:p.id,text:p.name+(p.fits?'':'（超出剩余额度）'),disabled:!p.fits};}),'请选择资源套餐');

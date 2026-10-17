@@ -61,7 +61,7 @@ func TestSoftNodeSchedulingConsentPriorityCapacityAndAudit(t *testing.T) {
 		t.Fatal(err)
 	}
 	frame := json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"` + rev + `","soft_ready":true,"mem_free_mb":65536,"cpu_total":16,"disk_free_mb":102400}`)
-	if err := s.SetNodeOnline(ctx, "nd_soft", frame); err != nil {
+	if err := s.SetNodeOnline(ctx, "nd_soft", withTestSeatCapacity(t, frame)); err != nil {
 		t.Fatal(err)
 	}
 	plan := Plan{MemMB: 4096}
@@ -153,7 +153,7 @@ func TestSoftCreateFailureDoesNotAbortOrReleaseIdentity(t *testing.T) {
 	if err := s.UpsertNode(ctx, Node{ID: "nd_soft", Name: "soft", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: json.RawMessage(`{"allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(ctx, "nd_soft", json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"`+rev+`","soft_ready":true,"mem_free_mb":65536}`)); err != nil {
+	if err := s.SetNodeOnline(ctx, "nd_soft", withTestSeatCapacity(t, json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"`+rev+`","soft_ready":true,"mem_free_mb":65536}`))); err != nil {
 		t.Fatal(err)
 	}
 	out, err := o.Create(ctx, CreateRequest{AllowSoft: true, OwnerLC: "zzc", By: "zzc", Name: "held", NodeID: "nd_soft", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctOf(t, o.pool), Plan: "2c4g"})
@@ -244,7 +244,7 @@ func TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath(t *testing.T) {
 				t.Fatal(err)
 			}
 			frame := json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"` + revision + `","soft_ready":true,"mem_free_mb":65536}`)
-			if err := s.SetNodeOnline(ctx, "nd_emergency", frame); err != nil {
+			if err := s.SetNodeOnline(ctx, "nd_emergency", withTestSeatCapacity(t, frame)); err != nil {
 				t.Fatal(err)
 			}
 			created, err := o.Create(ctx, CreateRequest{AllowSoft: true, OwnerLC: "zzc", By: "zzc", Name: "emergencyseat", NodeID: "nd_emergency", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctOf(t, o.pool), Plan: "2c4g"})
@@ -285,7 +285,7 @@ func TestQuotaUsageWarningNotifiesWithoutPrematureHold(t *testing.T) {
 			if err := s.UpsertNode(ctx, Node{ID: "nd_warning", Name: "warning", QuotaMode: "soft", QuotaPolicyRevision: revision, Labels: json.RawMessage(`{"allow_soft":"true"}`)}); err != nil {
 				t.Fatal(err)
 			}
-			if err := s.SetNodeOnline(ctx, "nd_warning", json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"`+revision+`","soft_ready":true,"mem_free_mb":65536}`)); err != nil {
+			if err := s.SetNodeOnline(ctx, "nd_warning", withTestSeatCapacity(t, json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"`+revision+`","soft_ready":true,"mem_free_mb":65536}`))); err != nil {
 				t.Fatal(err)
 			}
 			account := acctOf(t, o.pool)

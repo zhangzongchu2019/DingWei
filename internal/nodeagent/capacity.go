@@ -9,13 +9,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 	"runtime"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/seatcapacity"
 )
 
 type Capacity struct {
+	SeatCapacity          *seatcapacity.View  `json:"seat_capacity,omitempty"`
 	DiskSnapshotValid     *bool               `json:"disk_snapshot_valid,omitempty"`
 	DiskSnapshotAt        *time.Time          `json:"disk_snapshot_at,omitempty"`
 	ResourceLimitsVersion int                 `json:"resource_limits_version,omitempty"`
@@ -52,6 +56,7 @@ func (d *dockerOps) collectCapacity(ctx context.Context) (Capacity, error) {
 	c.QuotaPolicyRevision = d.policyValue().Revision()
 	if d.soft != nil {
 		c.SoftSeats, c.QuotaEvents, c.SoftReady = d.soft.report()
+		c.SeatCapacity = d.soft.capacityReport()
 	}
 	if d.soft != nil {
 		d.soft.mu.Lock()
@@ -152,6 +157,9 @@ func (d *dockerOps) reportCapacity(ctx context.Context, _ json.RawMessage) (json
 
 // changedBeyond 变更触发阈值：内存或磁盘余量变化超过 1 GiB，或席位清单变化。
 func changedBeyond(a, b Capacity) bool {
+	if !reflect.DeepEqual(a.SeatCapacity, b.SeatCapacity) {
+		return true
+	}
 	if a.QuotaMode != b.QuotaMode || a.SoftReady != b.SoftReady || len(a.QuotaEvents) != len(b.QuotaEvents) {
 		return true
 	}

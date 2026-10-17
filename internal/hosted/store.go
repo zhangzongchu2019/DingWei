@@ -344,6 +344,11 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9,$10)`
 		if s.afterSeatAccountLock != nil {
 			s.afterSeatAccountLock()
 		}
+		if len(st.QuotaConsent) > 0 {
+			if err := checkSeatCapacityTx(ctx, tx, st); err != nil {
+				return err
+			}
+		}
 		_, err = tx.Exec(ctx, ins,
 			st.AgentID, st.NodeID, st.CLI, st.LLM, st.CredKind, st.AccountRef, st.Plan, st.ImageRef, st.Model, st.CreatedBy)
 		if err != nil {

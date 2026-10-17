@@ -272,6 +272,7 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 		Model: req.Model, CreatedBy: req.By, // 生效值即请求值（建席时定死；空＝未指定）
 	})
 	if err != nil {
+		o.dropToken(ag.ID)
 		_, _ = o.idp.AbortHostedAgent(ctx, ag.ID, req.By)
 		return CreateOutcome{}, err
 	}
@@ -308,6 +309,12 @@ func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan P
 		mode, _ := registeredQuota(n)
 		if mode == "soft" && (!consent || labels["allow_soft"] != "true") {
 			continue
+		}
+		if mode == "soft" {
+			v, err := o.st.nodeSeatCapacity(ctx, n)
+			if err != nil || v == nil || len(v.CanAdd(v.Policy(), capacityPlan(plan))) != 0 {
+				continue
+			}
 		}
 		if model != "" {
 			if !nodeHasModel(n, model) || n.LastSeenAt == nil || time.Since(*n.LastSeenAt) > 180*time.Second {

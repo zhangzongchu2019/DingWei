@@ -10,21 +10,24 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/zhangzongchu2019/dingwei/internal/seatcapacity"
 )
 
 // ---------- options 读模型（GET /api/console/hosted/options） ----------
 
 type NodeOption struct {
-	QuotaMode     string `json:"quota_mode,omitempty"`
-	QuotaNotice   string `json:"quota_notice,omitempty"`
-	QuotaEligible *bool  `json:"quota_eligible,omitempty"`
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Pool          string `json:"pool"`
-	Online        bool   `json:"online"`
-	FreeMemGB     int64  `json:"free_mem_gb"`
-	FreeVCPU      int    `json:"free_vcpu"`
-	FreeDiskGB    int64  `json:"free_disk_gb"`
+	SeatCapacity  *seatcapacity.View `json:"seat_capacity,omitempty"`
+	QuotaMode     string             `json:"quota_mode,omitempty"`
+	QuotaNotice   string             `json:"quota_notice,omitempty"`
+	QuotaEligible *bool              `json:"quota_eligible,omitempty"`
+	ID            string             `json:"id"`
+	Name          string             `json:"name"`
+	Pool          string             `json:"pool"`
+	Online        bool               `json:"online"`
+	FreeMemGB     int64              `json:"free_mem_gb"`
+	FreeVCPU      int                `json:"free_vcpu"`
+	FreeDiskGB    int64              `json:"free_disk_gb"`
 }
 
 type ComboOption struct {
@@ -115,6 +118,14 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 			notice = "无硬磁盘配额"
 		}
 		eligible := nodeQuotaEligible(n)
+		var capacity *seatcapacity.View
+		if mode == "soft" {
+			capacity, err = o.st.nodeSeatCapacity(ctx, n)
+			if err != nil {
+				return v, err
+			}
+			eligible = eligible && capacity != nil && capacity.Known && capacity.AvailableSlots > 0
+		}
 		var publicEligible *bool
 		publicMode := ""
 		if mode != "hard" || !eligible {
@@ -122,7 +133,8 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 			publicMode = mode
 		}
 		v.Nodes = append(v.Nodes, NodeOption{
-			QuotaMode: publicMode, QuotaNotice: notice, QuotaEligible: publicEligible,
+			SeatCapacity: capacity,
+			QuotaMode:    publicMode, QuotaNotice: notice, QuotaEligible: publicEligible,
 			ID: n.ID, Name: n.Name, Pool: pool, Online: n.State == "online",
 			FreeMemGB: c.MemFreeMB / 1024, FreeVCPU: max(0, c.CPUTotal-usedVCPU), FreeDiskGB: c.DiskFreeMB / 1024,
 		})

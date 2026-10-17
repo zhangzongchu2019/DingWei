@@ -53,7 +53,7 @@ func DefaultNodePolicy() NodePolicy {
 	return NodePolicy{MinimumSeatCPUMillicores: 1000, MinimumSeatMemoryBytes: 1536 << 20, MinimumSeatDiskBytes: 40 << 30,
 		StateWriteBudget: 5 * time.Second, Mode: "hard", ScanInterval: 30 * time.Second, ScanBudget: 5 * time.Second, MaxAge: 60 * time.Second,
 		StopTimeout: 10 * time.Second, ReserveInterval: 5 * time.Second, WarnPercent: 80, RecoveryPercent: 75,
-		EmergencyReservePercent: 50, ReserveBytes: 32 << 30, ReservePercent: 10, ReserveInodes: 65536, ReserveInodePercent: 1, MaxSeats: 4,
+		EmergencyReservePercent: 50, ReserveBytes: 32 << 30, ReservePercent: 10, ReserveInodes: 65536, ReserveInodePercent: 1, MaxSeats: 100,
 		ImageReserveBytes: 8 << 30, ShmBytes: 64 << 20, ReserveCPUMillicores: 2000, ReserveMemoryBytes: 4 << 30, PidsLimit: 512, LoginPidsLimit: 128, LogMaxSizeMB: 10, LogMaxFiles: 3}
 }
 func (p NodePolicy) Validate() error {

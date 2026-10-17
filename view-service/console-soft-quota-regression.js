@@ -14,13 +14,15 @@ if(mutation){
     consent:["if(softConsent&&softConsent.checked)body.allow_soft=true;","if(softConsent&&softConsent.checked)body.allow_soft=false;"],
     eligibility:["disabled:!n.online||n.quota_eligible===false","disabled:!n.online"],
     roster:["a.hosted.quota_mode==='soft'","false"],
+    capacity:["+hostedNodeCapacityText(n)","+''"],
   };
   assert(anchors[mutation],'unknown mutation');const [from,to]=anchors[mutation];assert.strictEqual(html.split(from).length-1,1,'mutation anchor');html=html.replace(from,to);
 }
 const options={
  nodes:[{id:'hard',name:'Hard',online:true,quota_mode:'hard',quota_eligible:true,free_mem_gb:16,free_vcpu:8,free_disk_gb:100},
- {id:'soft',name:'Soft',online:true,quota_mode:'soft',quota_eligible:true,free_mem_gb:16,free_vcpu:8,free_disk_gb:100},
- {id:'unknown',name:'Unready',online:true,quota_mode:'soft',quota_eligible:false,free_mem_gb:16,free_vcpu:8,free_disk_gb:100}],
+ {id:'soft',name:'Soft',online:true,quota_mode:'soft',quota_eligible:true,free_mem_gb:16,free_vcpu:8,free_disk_gb:100,seat_capacity:{version:1,known:true,total_slots:8,occupied:7,available_slots:1,cpu:{available:1000},memory:{available:1536*1048576},disk:{available:40*1073741824},reasons:[]}},
+ {id:'full',name:'Full',online:true,quota_mode:'soft',quota_eligible:false,free_mem_gb:16,free_vcpu:8,free_disk_gb:100,seat_capacity:{version:1,known:true,total_slots:8,occupied:8,available_slots:0,cpu:{available:0},memory:{available:4*1073741824},disk:{available:0},reasons:['cpu','disk']}},
+ {id:'unknown',name:'Unready',online:true,quota_mode:'soft',quota_eligible:false,free_mem_gb:16,free_vcpu:8,free_disk_gb:100,seat_capacity:{version:1,known:false}}],
  combos:[{cli:'codex',llm:'openai',cred_kind:'api_key',verified:true}],accounts:[{id:'fixture',name:'Fixture',llm:'openai',kind:'api_key',last4:'0000'}],
  plans:[{id:'1c1.5g40',name:'1C/1.5G/40G',vcpu:1,mem_gb:1.5,fits:true},{id:'2c4g',name:'2C/4G',fits:true},{id:'4c8g',name:'4C/8G',fits:false}],models:[],quota:{remaining:{agents:4,vcpu:8,mem_gb:16,disk_gb:100}},
 };
@@ -47,6 +49,11 @@ const server=http.createServer(async(req,res)=>{
   assert.match(await page.locator('#hostedNode option[value=soft]').textContent(),/无硬磁盘配额/);
   assert.doesNotMatch(await page.locator('#hostedNode option[value=hard]').textContent(),/无硬磁盘配额/);
   assert.strictEqual(await page.locator('#hostedNode option[value=unknown]').evaluate(el=>el.disabled),true);
+  assert.match(await page.locator('#hostedNode option[value=soft]').textContent(),/容量规则 v1：容量 8 席，已占 7，可新增 1/);
+  assert.match(await page.locator('#hostedNode option[value=soft]').textContent(),/CPU 可用 1 核／内存 1.5GiB／盘 40GiB/);
+  assert.match(await page.locator('#hostedNode option[value=full]').textContent(),/拒绝原因：CPU、磁盘/);
+  assert.match(await page.locator('#hostedNode option[value=unknown]').textContent(),/读数未知，暂停新建与启动/);
+  assert.doesNotMatch(await page.locator('#hostedNode option[value=hard]').textContent(),/容量规则/);
   assert.strictEqual(await page.locator('#hostedAllowSoft').isChecked(),false);
   await page.locator('#hostedCli').selectOption('codex');await page.locator('#hostedLlm').selectOption('openai');await page.locator('#hostedAccount').selectOption('fixture');await page.locator('#hostedPlan').selectOption('2c4g');
   assert.strictEqual(await page.locator('#hostedPlan option[value="1c1.5g40"]').textContent(),'1C/1.5G/40G');
@@ -62,6 +69,6 @@ const server=http.createServer(async(req,res)=>{
   assert.match(await page.locator('#rosterItems').textContent(),/磁盘测量暂不可用，暂停新建与启动/);
   assert.doesNotMatch(await page.locator('#rosterItems').textContent(),/接近限额/);
   assert.doesNotMatch(await page.locator('#hostedFeedback').textContent(),/UNTRUSTED_DETAIL/);
-  assert.deepStrictEqual(errors,[]);console.log('SOFT_QUOTA_BROWSER_OK assertions=16');
+  assert.deepStrictEqual(errors,[]);console.log('SOFT_QUOTA_BROWSER_OK assertions=21');
  }finally{await context.close();await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});

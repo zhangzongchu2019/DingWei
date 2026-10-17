@@ -33,6 +33,9 @@ type quotaEvent struct {
 	At     time.Time `json:"at"`
 }
 type softSeat struct {
+	WriterKind   string        `json:"writer_kind,omitempty"`
+	WriterRoot   string        `json:"writer_root,omitempty"` // Private local path, never reported.
+	Retiring     bool          `json:"retiring,omitempty"`    // Engine removal confirmed; no remaining writer.
 	UsageWarning bool          `json:"usage_warning"`
 	SpaceWarning bool          `json:"space_warning"`
 	writerGate   chan struct{} // Per-seat only; never serialized or reported.
@@ -58,6 +61,7 @@ type softState struct {
 	Events           []quotaEvent         `json:"events"`
 }
 type softQuota struct {
+	capacity                                   *seatCapacityState
 	retiredLock                                *os.File
 	readInventory                              func(string) ([]os.DirEntry, error)
 	persistMu                                  sync.Mutex
@@ -334,7 +338,16 @@ func (q *softQuota) reserve(id string, r seatResources) error {
 	if _, exists := q.state.Seats[id]; exists {
 		return fmt.Errorf("%w: seat_already_registered", ErrSoftQuota)
 	}
-	if len(q.state.Seats) >= q.policy.MaxSeats {
+	if err := q.capacityAdmissionLocked(&r); err != nil {
+		return err
+	}
+	seatCount := 0
+	for _, seat := range q.state.Seats {
+		if seat.WriterKind != "login" {
+			seatCount++
+		}
+	}
+	if seatCount >= q.policy.MaxSeats {
 		return fmt.Errorf("%w: seat_count", ErrSoftQuota)
 	}
 	limit := r.DiskMB * 1024 * 1024
@@ -379,6 +392,9 @@ func (q *softQuota) commandGate(cmd Command) error {
 	if err := q.admitLocked(0); err != nil {
 		return err
 	}
+	if err := q.capacityAdmissionLocked(nil); err != nil {
+		return err
+	}
 	var p struct {
 		SeatID string `json:"seat_id"`
 	}
@@ -418,6 +434,10 @@ func (q *softQuota) acquireWriter(ctx context.Context, id string) (func(), error
 }
 func (q *softQuota) start(ctx context.Context, id string, fn func(context.Context) error) error {
 	q.mu.Lock()
+	if err := q.capacityAdmissionLocked(nil); err != nil {
+		q.mu.Unlock()
+		return err
+	}
 	if err := q.admitLocked(0); err != nil {
 		q.mu.Unlock()
 		return err
@@ -470,6 +490,9 @@ func (q *softQuota) start(ctx context.Context, id string, fn func(context.Contex
 	defer release()
 	q.mu.Lock()
 	gateErr = q.admitLocked(0)
+	if gateErr == nil {
+		gateErr = q.capacityAdmissionLocked(nil)
+	}
 	if q.state.Seats[id] != seat || seat.Hold != "" {
 		gateErr = ErrSoftQuota
 	}
@@ -619,7 +642,11 @@ func (d *dockerOps) runSoft(ctx context.Context) {
 		}
 	}
 	var wg sync.WaitGroup
-	wg.Add(3)
+	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		d.runSeatCapacity(ctx)
+	}()
 	go func() {
 		defer wg.Done()
 		ticker := time.NewTicker(d.policy.ScanInterval)
@@ -784,6 +811,7 @@ func (q *softQuota) report() (map[string]softSeat, []quotaEvent, bool) {
 	for id, s := range q.state.Seats {
 		v := *s
 		v.CIDs = nil
+		v.WriterRoot = ""
 		seats[id] = v
 	}
 	events := append([]quotaEvent{}, q.state.Events...)
