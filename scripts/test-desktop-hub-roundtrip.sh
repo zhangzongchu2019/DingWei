@@ -7,4 +7,4 @@ task_python="${DW_DESKTOP_INTEGRATION_PYTHON:-$(command -v python3)}"
 task_python="$("$task_python" -c 'import sys;print(sys.executable)')"
 "$task_python" -c 'import websockets, pexpect; import sys; assert sys.version_info >= (3,11)'
 DW_DESKTOP_INTEGRATION_PYTHON="$task_python" go test -p 1 ./internal/m8 \
-  -run '^(TestDesktopMCPRoundTripAcrossRealHub|TestDeviceClaimAcrossActualClientAndHub|TestDeviceClaimAcrossActualClientAndPostgres)$' -count=1 -timeout=180s -v
+  -run '^(TestHostedBodySendAcrossRealHub|TestDesktopMCPRoundTripAcrossRealHub|TestDeviceClaimAcrossActualClientAndHub|TestDeviceClaimAcrossActualClientAndPostgres)$' -count=1 -timeout=180s -v
