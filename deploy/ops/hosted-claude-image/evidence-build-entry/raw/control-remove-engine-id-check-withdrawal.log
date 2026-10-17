@@ -1,0 +1,33 @@
+test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry (test_claude_start.ClaudePackager.test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry) ... 
+  test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry (test_claude_start.ClaudePackager.test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry) (changes={'FIXTURE_ENGINE_ID': 'different-fixture'}) ... FAIL
+  test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry (test_claude_start.ClaudePackager.test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry) (changes={'FIXTURE_ENGINE_ID': ''}) ... FAIL
+  test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry (test_claude_start.ClaudePackager.test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry) (changes={'FIXTURE_ENGINE_ID': 'approved-fixture\nextra'}) ... FAIL
+
+======================================================================
+FAIL: test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry (test_claude_start.ClaudePackager.test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry) (changes={'FIXTURE_ENGINE_ID': 'different-fixture'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 625, in test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry
+    self.assertEqual(result.returncode,rc,result.stderr)
+AssertionError: 0 != 2 : 
+
+======================================================================
+FAIL: test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry (test_claude_start.ClaudePackager.test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry) (changes={'FIXTURE_ENGINE_ID': ''})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 625, in test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry
+    self.assertEqual(result.returncode,rc,result.stderr)
+AssertionError: 0 != 2 : 
+
+======================================================================
+FAIL: test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry (test_claude_start.ClaudePackager.test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry) (changes={'FIXTURE_ENGINE_ID': 'approved-fixture\nextra'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 625, in test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry
+    self.assertEqual(result.returncode,rc,result.stderr)
+AssertionError: 0 != 2 : 
+
+----------------------------------------------------------------------
+Ran 1 test in 1.614s
+
+FAILED (failures=3)

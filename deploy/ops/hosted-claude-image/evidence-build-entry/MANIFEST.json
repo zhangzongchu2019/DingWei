@@ -1,0 +1,166 @@
+{
+  "deploy/ops/hosted-claude-image/evidence-build-entry/CLEANUP.json": {
+    "sha256": "178ecb07ca6329f9dae512dc79280c01e6883abb748c2c59c5b519e9d1d755c1",
+    "bytes": 1572
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/CONTROLS.json": {
+    "sha256": "1221fee34e8671d2505140230e812ab6d5175e688044a8de4ae4a2fcb9504555",
+    "bytes": 17438
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/ENVIRONMENT.json": {
+    "sha256": "b023aa002dd400fdf2bd79a46bcdb56d7e006d70f2949bd1987f7636a7c85aae",
+    "bytes": 447
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/GATE-CHECK.json": {
+    "sha256": "a3c4bd2571d87e55b49f754df0937c0fb7607ab496effb6bca2d4836277d283a",
+    "bytes": 434
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/REPORT.md": {
+    "sha256": "44de0779b148bfe6dcc28236124c35d30411ea8155005a2f8a81a9e5859f0f09",
+    "bytes": 7464
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/RESULTS.json": {
+    "sha256": "2089b0efc6bde759ae18c75fc38c9a4b3b494a1c89e47a2f0a2714000dff4fe9",
+    "bytes": 1975
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/SOURCE.json": {
+    "sha256": "22733ab89c50dff7940ae1128e4743f56f0311a9eb47fb90dc343912bead1542",
+    "bytes": 6963
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/canonical-unmodified.log": {
+    "sha256": "a422a3a6e39cac1a2d0ee458e4be29860d6ff990cacfbfd18625e59c6f3e0817",
+    "bytes": 39704
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/claude28.log": {
+    "sha256": "a04a9b1da12c14a97497efa9f9fff11f9b55c9e1fb9a7e92bbcde9af361fa8a6",
+    "bytes": 4749
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-child-bytecode-protection-baseline.log": {
+    "sha256": "9def183d13c8e367be8f6a7f29db1c6ba876d0de1d15e8499a909d38d6afe8b4",
+    "bytes": 289
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-child-bytecode-protection-restored.log": {
+    "sha256": "39b4e1cd51305af3bb3dbfce94093561944e2730b4d4ddc755ff4e66951fd408",
+    "bytes": 289
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-child-bytecode-protection-withdrawal.log": {
+    "sha256": "68060f75a3ed1de3f670530f5c194ae424b24111c854174b7359fdcff0a476b8",
+    "bytes": 1012
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-default-alias-check-baseline.log": {
+    "sha256": "26ea3579f3f0f3e43fc71cb9c6a4b55082f608d18c9188824f186aafa58b014d",
+    "bytes": 283
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-default-alias-check-restored.log": {
+    "sha256": "8a4ab9ed5da6b3576408250bc80b02a1210ec9322a445501e5070b824175cf2e",
+    "bytes": 283
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-default-alias-check-withdrawal.log": {
+    "sha256": "d9b834ed1aa84073a3d9cedc756de54626610dce9d5f3f5a902a7fb730230c6b",
+    "bytes": 3928
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-engine-id-check-baseline.log": {
+    "sha256": "20bd97b660324416fd5a8b9264c76e7d643a4317b6ba3e53331a9f0e991ed5cd",
+    "bytes": 285
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-engine-id-check-restored.log": {
+    "sha256": "6afebd0cc7434de72680b732334e5c82a33e1a6f8bdf61626c00ace632bde672",
+    "bytes": 285
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-engine-id-check-withdrawal.log": {
+    "sha256": "0b95cfe768670d0da5f309c7a8aaf0e086914ad88a33aa1f3f37c3d169a522c9",
+    "bytes": 3104
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-inspected-id-validation-baseline.log": {
+    "sha256": "59d374433dabbb75bc8031c0bf785b1c4819a1c06d12e91debecfc5f82bde4b2",
+    "bytes": 283
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-inspected-id-validation-restored.log": {
+    "sha256": "3351eaada4d1e8699d6ab009fbf3d4b3bae504596037e5f5b1a9ad59f7fa2017",
+    "bytes": 283
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-inspected-id-validation-withdrawal.log": {
+    "sha256": "13cad8246f98794a35363d9de1150c7e95523e4735f5db019984e98370d9832f",
+    "bytes": 4928
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-offline-network-flag-baseline.log": {
+    "sha256": "ee3811006989f5c0b57e03916fae6d1d885332939b7684a71f8d3289b9b14f31",
+    "bytes": 289
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-offline-network-flag-restored.log": {
+    "sha256": "610476b859175094ee2c38b5a4d521a76d02d4f75c7e7be9a8e0b4d9bcc3b6ce",
+    "bytes": 289
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-offline-network-flag-withdrawal.log": {
+    "sha256": "a0c21096197c781168a7ba23c28af6c30a428e8e19b7556354c1a9d9b362ffd6",
+    "bytes": 1392
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-socket-type-check-baseline.log": {
+    "sha256": "17053d2be427f35ca7343a73bc6bb30236eec3203951ab14b9a3ab76ba364a4d",
+    "bytes": 277
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-socket-type-check-restored.log": {
+    "sha256": "88b42bcb89b825aed8f180b11378ad2a5bee76cfa92943dc404ce43ad6c23779",
+    "bytes": 277
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-socket-type-check-withdrawal.log": {
+    "sha256": "fd1dd77804768c795b0fd485dc3bbb30d1a9ab7d4cea0df70fd590f8577bfa6f",
+    "bytes": 1259
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-uri-ambiguity-check-baseline.log": {
+    "sha256": "74da0e90812e3b628c26d109892450ce99cbde6e6e4607f200ec6c7f53d6a771",
+    "bytes": 269
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-uri-ambiguity-check-restored.log": {
+    "sha256": "65bef01fc9a8c62bd7c2a38e616c2425e12bdd8b03cf8f0cf1f3fba0e652af8b",
+    "bytes": 269
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-remove-uri-ambiguity-check-withdrawal.log": {
+    "sha256": "54144ed85aa6bc16033d5ce94689988b2bee3e6218c21862524dbcb273d66086",
+    "bytes": 4491
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-restore-unconditional-refusal-baseline.log": {
+    "sha256": "963b703267ffc4c2369517d6c5aa512b52ddab98ebda3382322180e4c783be88",
+    "bytes": 289
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-restore-unconditional-refusal-restored.log": {
+    "sha256": "cab70aea95f79f8bdcf840a902ca7bf14e87f55d0d98b2dc77e76910e5db1607",
+    "bytes": 289
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-restore-unconditional-refusal-withdrawal.log": {
+    "sha256": "38be13488b6aae8c63bc70b42e564e8bb1266da63cfc15a0e60d2cabe1a3ca84",
+    "bytes": 982
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-skip-image-inspect-baseline.log": {
+    "sha256": "c9bb4f312715e40b386dddc256d30c40bfca2cab8c05d838322947cf972714ad",
+    "bytes": 289
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-skip-image-inspect-restored.log": {
+    "sha256": "5651cf2f6f587ee39cebb2e876e38a442484965d580ae1ec97a5ccba85084cd4",
+    "bytes": 289
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/control-skip-image-inspect-withdrawal.log": {
+    "sha256": "8b6192c570532483a4fe22c20645b0c959946710e1dcc3444d4596d512d361c9",
+    "bytes": 1363
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/entrypoint-contract.log": {
+    "sha256": "aefd6f68a6b41e0c6c53012e107d56519969d89fb739d1d9ee70440c57cf710d",
+    "bytes": 1775
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/h3-regression.log": {
+    "sha256": "b17b5fc244bc6a329e6feaf6125d76e5382e4a766e00f43054307a2d85f66c64",
+    "bytes": 5673
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/raw/shell-syntax.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/run-controls.py": {
+    "sha256": "594b3a5a2f0e72cb9dd4344be32fd612aa071f12148d15cfc26adb23f81ecb97",
+    "bytes": 3236
+  },
+  "deploy/ops/hosted-claude-image/evidence-build-entry/run-gates.py": {
+    "sha256": "69c57b9fcf23a5d6173747922287103cb36475ad9488b5b8ad7eaa19512a560c",
+    "bytes": 1870
+  }
+}

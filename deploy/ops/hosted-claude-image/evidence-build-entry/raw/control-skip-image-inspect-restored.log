@@ -1,0 +1,6 @@
+test_build_entry_uses_verified_context_offline_parameters_and_inspected_id (test_claude_start.ClaudePackager.test_build_entry_uses_verified_context_offline_parameters_and_inspected_id) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.565s
+
+OK

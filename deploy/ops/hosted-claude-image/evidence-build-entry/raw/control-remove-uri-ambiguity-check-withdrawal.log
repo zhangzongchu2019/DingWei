@@ -1,0 +1,51 @@
+test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) ... 
+  test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) (name='newline.sock\n') ... FAIL
+  test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) (name='space.sock ') ... FAIL
+  test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) (name='escape%2f.sock') ... FAIL
+  test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) (name='query.sock?x') ... FAIL
+  test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) (name='fragment.sock#x') ... FAIL
+
+======================================================================
+FAIL: test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) (name='newline.sock\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 568, in test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths
+    self.assertEqual(result.returncode,2,result.stderr)
+AssertionError: 0 != 2 : 
+
+======================================================================
+FAIL: test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) (name='space.sock ')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 568, in test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths
+    self.assertEqual(result.returncode,2,result.stderr)
+AssertionError: 0 != 2 : 
+
+======================================================================
+FAIL: test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) (name='escape%2f.sock')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 568, in test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths
+    self.assertEqual(result.returncode,2,result.stderr)
+AssertionError: 0 != 2 : 
+
+======================================================================
+FAIL: test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) (name='query.sock?x')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 568, in test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths
+    self.assertEqual(result.returncode,2,result.stderr)
+AssertionError: 0 != 2 : 
+
+======================================================================
+FAIL: test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) (name='fragment.sock#x')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 568, in test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths
+    self.assertEqual(result.returncode,2,result.stderr)
+AssertionError: 0 != 2 : 
+
+----------------------------------------------------------------------
+Ran 1 test in 1.936s
+
+FAILED (failures=5)

@@ -1,0 +1,6 @@
+test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.480s
+
+OK

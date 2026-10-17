@@ -1,0 +1,51 @@
+test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) ... 
+  test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) (image_id='') ... FAIL
+  test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) (image_id='sha256:bad') ... FAIL
+  test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) (image_id='sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA') ... FAIL
+  test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) (image_id='sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nextra') ... FAIL
+  test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) (image_id='tag:mutable') ... FAIL
+
+======================================================================
+FAIL: test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) (image_id='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 640, in test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id
+    self.assertEqual(result.returncode,2,result.stderr)
+AssertionError: 0 != 2 : 
+
+======================================================================
+FAIL: test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) (image_id='sha256:bad')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 640, in test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id
+    self.assertEqual(result.returncode,2,result.stderr)
+AssertionError: 0 != 2 : 
+
+======================================================================
+FAIL: test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) (image_id='sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 640, in test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id
+    self.assertEqual(result.returncode,2,result.stderr)
+AssertionError: 0 != 2 : 
+
+======================================================================
+FAIL: test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) (image_id='sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nextra')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 640, in test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id
+    self.assertEqual(result.returncode,2,result.stderr)
+AssertionError: 0 != 2 : 
+
+======================================================================
+FAIL: test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) (image_id='tag:mutable')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 640, in test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id
+    self.assertEqual(result.returncode,2,result.stderr)
+AssertionError: 0 != 2 : 
+
+----------------------------------------------------------------------
+Ran 1 test in 2.795s
+
+FAILED (failures=5)

@@ -1,0 +1,20 @@
+{
+  "canonical_source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+  "argv": [
+    "./build.sh",
+    "--test-only"
+  ],
+  "python_script_count": 49,
+  "shell_script_count": 2,
+  "success_marker": true,
+  "no_outer_bytecode_flags_or_env": true,
+  "no_external_PG_DSN": true,
+  "pg_parent_pass": true,
+  "pg_subcases": {
+    "new": true,
+    "reuse": true,
+    "lost_ack": true,
+    "takeover": true,
+    "cancel_then_new": true
+  }
+}

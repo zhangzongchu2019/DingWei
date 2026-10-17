@@ -1,0 +1,20 @@
+test_build_entry_uses_verified_context_offline_parameters_and_inspected_id (test_claude_start.ClaudePackager.test_build_entry_uses_verified_context_offline_parameters_and_inspected_id) ... FAIL
+
+======================================================================
+FAIL: test_build_entry_uses_verified_context_offline_parameters_and_inspected_id (test_claude_start.ClaudePackager.test_build_entry_uses_verified_context_offline_parameters_and_inspected_id)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 517, in test_build_entry_uses_verified_context_offline_parameters_and_inspected_id
+    self.assertEqual(rows,[['--host',engine,'info','--format','{{.ID}}'],
+AssertionError: Lists differ: [['--[406 chars]put']] != [['--[406 chars]put'], ['--host', 'unix:///tmp/cbe-c427k3xt/cl[101 chars]re']]
+
+Second list contains 1 additional elements.
+First extra element 2:
+['--host', 'unix:///tmp/cbe-c427k3xt/claude-packager-o2hyya94/isolated.sock', 'image', 'inspect', '--format', '{{.Id}}', 'local/claude:fixture']
+
+Diff is 828 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.487s
+
+FAILED (failures=1)

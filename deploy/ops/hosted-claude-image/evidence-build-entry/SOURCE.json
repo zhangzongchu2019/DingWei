@@ -1,0 +1,144 @@
+{
+  "repository": "git@git.code.tencent.com:wego-ai/dingwei.git",
+  "ref": "review/coder/claude-build-entry",
+  "baseline": "f8ac0a50ddce41197850b445a37dbc006c7aaa08",
+  "baseline_tree": "489e1793abb03042f758590c2fd43d89aa81fa5f",
+  "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+  "tree": "aeaa978d8b583d04701b2ab5aad2209caf212dbf",
+  "files": {
+    "deploy/ops/hosted-claude-image/BUILD-CLAUDE-0234.md": {
+      "blob": "f5bf99c626475582d0c2aff9cf9ba642faadd33e",
+      "sha256": "5b3b09a2aa131bf374ec3c9699aa7bd84b3ace40b9ff156bc24e6c9c45ebe179"
+    },
+    "deploy/ops/hosted-claude-image/DEVELOPMENT-DELIVERY.md": {
+      "blob": "a55f019b06b4821b2cb39b00b1eb6168081eb25a",
+      "sha256": "ffeca640b91186815d528628fbf985c3e89c4da727e136251c8a12236a635e70"
+    },
+    "deploy/ops/hosted-claude-image/Dockerfile": {
+      "blob": "f21f338165e5b4a9916d58de53eae3b92f47be71",
+      "sha256": "e4eef4f4e7be5f47147ac0e346dd5a21b63c271d3ca71e27c3e534b3a6a20207"
+    },
+    "deploy/ops/hosted-claude-image/IMPLEMENTATION-NOTE.md": {
+      "blob": "c1270d957449c454f66e7d44f0976b0bb47cd344",
+      "sha256": "e8d37316803c2ca4ba53dd42b56727eb33a5deeb9693a731fe90776512bc31d2"
+    },
+    "deploy/ops/hosted-claude-image/PACKAGER-CONTRACT.md": {
+      "blob": "b21594b4177d1fec8f656c50e62cb8b5e32b7083",
+      "sha256": "7c23cc53d7a33955a76cc31aa7e1506a2783a73cb97e49414afec05946e55c35"
+    },
+    "deploy/ops/hosted-claude-image/build-image.sh": {
+      "blob": "03e8e8dfdeabc9836f1fc97e5c770c035b7faea8",
+      "sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069"
+    },
+    "deploy/ops/hosted-claude-image/claude-package-lock.json": {
+      "blob": "3759350437f484423da95c56e484a679d1695872",
+      "sha256": "24ed2a68ea9d8c1687c6ced57c42eb25246e40a99844d89dde32367ec361eb1b"
+    },
+    "deploy/ops/hosted-claude-image/claude-start.py": {
+      "blob": "7ff6691a0c87ec4ff144683522acbe7d12f3c34e",
+      "sha256": "ee45ef63e7b39681d7d18b6c70031c11782d52a2e7c37055fcaa46543cae574f"
+    },
+    "deploy/ops/hosted-claude-image/claude.py": {
+      "blob": "4922fd0730b8339a8968bf3a29b5c4d8c4491c78",
+      "sha256": "6d2e989ca8daf6303c61da1bd09c3dd4428d8a1485f02bf00af5bff6f4723cc3"
+    },
+    "deploy/ops/hosted-claude-image/combos.json": {
+      "blob": "27eb678bb4dbcd304e7a388e88e6e8a434bd4af1",
+      "sha256": "98fca92756f314d5159535b777c4952ed3697872a76bb18a7804d16f1847a63c"
+    },
+    "deploy/ops/hosted-claude-image/context-map.json": {
+      "blob": "70f7d16ef919176fab2eb03574e1797aa414e20e",
+      "sha256": "cea79ed763c3e3c30d96bc57291a4e58b218af905fa5f525d2cbbcf6e649bc35"
+    },
+    "deploy/ops/hosted-claude-image/dockerignore": {
+      "blob": "184304216d7cf071bee1dc7f4ab61e5c7854f4cd",
+      "sha256": "8ec771a8b5364673db4c10fa2fba4630fafa45a6f6314c4b137436152b443c9d"
+    },
+    "deploy/ops/hosted-claude-image/prepare_context.py": {
+      "blob": "ec1053ce0a2aa28246209b85425661439bde93f0",
+      "sha256": "5cd4fd935c300d8d55d6d2d04530f351e3b493cce22af23497d87d980ecbd91a"
+    },
+    "deploy/ops/hosted-claude-image/test_claude_start.py": {
+      "blob": "82d199802b8ad2fd59284d71c1a75579cc253e01",
+      "sha256": "9ac200937a6e502a406748909379e04c8d7a867c5f8481c8ac517ab73b29a97d"
+    },
+    "deploy/ops/hosted-claude-image/verify_inputs.py": {
+      "blob": "dd99298c77a65db4d4f98869ed887b2b60b38582",
+      "sha256": "c17db59f89f6760a31fe47b31ae9d6beb7da45abd8bc4a91ec9c3efe019fd643"
+    },
+    "deploy/ops/hosted-image/build-image.sh": {
+      "blob": "143187dcf90f4b8630a6bea3fc5eb1c3ceee835c",
+      "sha256": "1db6b7170965810be35a1b25f7784a7fa4c537a70642b7aaa769eec3d176d64c"
+    },
+    "deploy/ops/hosted-image/prepare_context.py": {
+      "blob": "df752d1f05cb55e08e37dd535edfbe0a18286b42",
+      "sha256": "f637db1e67dae8ec40855c976102584620e54723ce25aaa179edd4095589f97c"
+    },
+    "scripts/run-build-tests.sh": {
+      "blob": "023d78142d29b4fbc0c92ceee46c75ea87cafff4",
+      "sha256": "f4c145ffd85f90c3ebddda49b55ac77cfb795e7141a88bafd380606edd0fc4df"
+    },
+    "deploy/test_build_entrypoints.py": {
+      "blob": "964459b9cff2064db805fbe5a1d2c025d673c091",
+      "sha256": "12398aa93994e6842459ac8bd99dd09d6c30d0d48bfef6875e323e528fa1ed10"
+    },
+    "tools/sessionhelper/requirements-runtime.lock": {
+      "blob": "27c77f43077e18019dd42575b6beb2f5815e27d8",
+      "sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+    }
+  },
+  "changed_files": [
+    "deploy/ops/hosted-claude-image/PACKAGER-CONTRACT.md",
+    "deploy/ops/hosted-claude-image/build-image.sh",
+    "deploy/ops/hosted-claude-image/test_claude_start.py"
+  ],
+  "ClaudeStart_all7_methods_AST_unchanged": true,
+  "existing_ClaudePackager_methods_AST_unchanged": [
+    "setUp",
+    "git",
+    "commit",
+    "run_prepare",
+    "rehash",
+    "rejected",
+    "test_actual_h3_shape_composes_git_claude_overlay_and_common_guard",
+    "test_h3_git_or_locked_content_cannot_self_authorize_by_rehash",
+    "assert_staged_copy_ignore_contract",
+    "test_staged_copy_sources_survive_actual_ignore_rules",
+    "assert_runtime_uid_contract",
+    "test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask",
+    "test_archive_modes_are_readable_and_executable_for_runtime_user",
+    "test_directory_chmod_failure_closes_descriptors_and_removes_new_output",
+    "test_regular_type_does_not_allow_changed_h3_modes",
+    "test_missing_extra_or_receipt_pollution_rejected",
+    "test_symlinks_specials_hardlinks_and_redirected_roots_never_read",
+    "test_regular_symlink_is_rejected_before_external_read",
+    "test_clean_git_source_and_lock_are_required_before_external_inputs",
+    "test_archive_links_traversal_and_duplicates_rejected_even_with_valid_hash",
+    "test_descriptor_budget_is_constant_and_output_alias_refused"
+  ],
+  "replaced_old_test": [
+    "test_pre_docker_script_remains_closed_with_valid_composition"
+  ],
+  "new_test_methods": [
+    "test_build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+    "test_build_entry_missing_inputs_stop_before_context_or_docker",
+    "test_build_entry_socket_alias_and_metadata_refusals_precede_packager",
+    "test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths",
+    "test_default_alias_guard_even_when_default_socket_exists_metadata_model",
+    "test_build_entry_invalid_materials_are_rejected_before_any_docker",
+    "test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry",
+    "test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id"
+  ],
+  "new_fixture_helpers": [
+    "builder_fixture",
+    "run_builder"
+  ],
+  "unchanged_subtrees": {
+    "tools/sessionhelper": "eb9210d4300f8c8e2f0f3ddf5261816260ad4eed",
+    "internal": "8841414372822aae64d273ccda265407f51cb9d9",
+    "cmd": "7b82057e7bd5069d37249f5b714cee5aea90aef7",
+    "view-service": "3a536bd59ca19503d8887c3a147adb06a82d0856",
+    "scripts": "78145c0c9c7ed3d2ed83dfb8b2a0a68ccf024233"
+  },
+  "combo_verified_false": true
+}

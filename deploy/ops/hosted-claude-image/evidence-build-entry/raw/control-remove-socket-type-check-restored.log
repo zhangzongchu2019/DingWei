@@ -1,0 +1,6 @@
+test_build_entry_socket_alias_and_metadata_refusals_precede_packager (test_claude_start.ClaudePackager.test_build_entry_socket_alias_and_metadata_refusals_precede_packager) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.784s
+
+OK

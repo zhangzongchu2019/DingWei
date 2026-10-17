@@ -1,0 +1,40 @@
+{
+  "utc": "2026-10-17T22:15:42.158996+00:00",
+  "owned_process_scan_cmdline_and_cwd_roots": [
+    "/data/ai-dev-data/claude-build-entry-r26",
+    "/data/ai-dev-data/claude-build-entry-lab",
+    "/tmp/cbe-hbp09iaf",
+    "/tmp/cbe-c427k3xt"
+  ],
+  "owned_processes": [],
+  "before_bytes": {
+    "/data/ai-dev-data/claude-build-entry-lab/final/gopath": 0,
+    "/data/ai-dev-data/claude-build-entry-lab/final/home": 148398185,
+    "/data/ai-dev-data/claude-build-entry-lab/gocache": 219523938,
+    "/data/ai-dev-data/claude-build-entry-lab/gopath": 0,
+    "/data/ai-dev-data/claude-build-entry-lab/home": 148398185,
+    "/data/ai-dev-data/claude-build-entry-lab/mutant": 32610829,
+    "/tmp/cbe-c427k3xt": 569765,
+    "/tmp/cbe-hbp09iaf": 569765
+  },
+  "cache_after_go_clean_bytes": 232,
+  "paths_all_removed": true,
+  "postmaster_pid_residue": [],
+  "mutant_restored_clean_before_disposal": true,
+  "source_generated_pycache_removed": [
+    "view-service/__pycache__",
+    "scripts/__pycache__",
+    "deploy/__pycache__",
+    "tools/sessionhelper/__pycache__",
+    "tools/sessionhelper/tests/__pycache__",
+    "tools/sessionhelper/update_launcher/__pycache__",
+    "tools/sessionhelper/sessionhelper/__pycache__",
+    "deploy/image/supervisord/__pycache__",
+    "deploy/ops/hosted-image/__pycache__",
+    "deploy/ops/hosted-claude-image/__pycache__"
+  ],
+  "shared_module_and_PG_binary_caches_not_removed": true,
+  "author_source_checkout_clean": true,
+  "no_actual_Docker_client_daemon_Engine_or_image_build": true,
+  "local_canonical_PG_and_synthetic_helper_only": true
+}

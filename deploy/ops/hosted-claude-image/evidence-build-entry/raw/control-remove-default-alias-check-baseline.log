@@ -1,0 +1,6 @@
+test_default_alias_guard_even_when_default_socket_exists_metadata_model (test_claude_start.ClaudePackager.test_default_alias_guard_even_when_default_socket_exists_metadata_model) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.294s
+
+OK

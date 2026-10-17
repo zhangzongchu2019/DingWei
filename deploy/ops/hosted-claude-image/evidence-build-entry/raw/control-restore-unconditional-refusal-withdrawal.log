@@ -1,0 +1,15 @@
+test_build_entry_uses_verified_context_offline_parameters_and_inspected_id (test_claude_start.ClaudePackager.test_build_entry_uses_verified_context_offline_parameters_and_inspected_id) ... FAIL
+
+======================================================================
+FAIL: test_build_entry_uses_verified_context_offline_parameters_and_inspected_id (test_claude_start.ClaudePackager.test_build_entry_uses_verified_context_offline_parameters_and_inspected_id)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 515, in test_build_entry_uses_verified_context_offline_parameters_and_inspected_id
+    self.assertEqual(result.returncode,0,result.stderr)
+AssertionError: 2 != 0 : packager is not approved
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.436s
+
+FAILED (failures=1)

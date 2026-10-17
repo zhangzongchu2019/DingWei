@@ -1,0 +1,72 @@
+[
+  {
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "argv": [
+      "python3",
+      "deploy/ops/hosted-claude-image/test_claude_start.py",
+      "-v"
+    ],
+    "rc": 0,
+    "elapsed_seconds": 14.129,
+    "start": "2026-10-17T22:12:47.951128+00:00",
+    "end": "2026-10-17T22:13:02.079917+00:00",
+    "sha256": "a04a9b1da12c14a97497efa9f9fff11f9b55c9e1fb9a7e92bbcde9af361fa8a6"
+  },
+  {
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "deploy/ops/hosted-image",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "rc": 0,
+    "elapsed_seconds": 2.324,
+    "start": "2026-10-17T22:13:02.080320+00:00",
+    "end": "2026-10-17T22:13:04.404294+00:00",
+    "sha256": "b17b5fc244bc6a329e6feaf6125d76e5382e4a766e00f43054307a2d85f66c64"
+  },
+  {
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "argv": [
+      "python3",
+      "deploy/test_build_entrypoints.py",
+      "-v"
+    ],
+    "rc": 0,
+    "elapsed_seconds": 0.073,
+    "start": "2026-10-17T22:13:04.404716+00:00",
+    "end": "2026-10-17T22:13:04.477255+00:00",
+    "sha256": "aefd6f68a6b41e0c6c53012e107d56519969d89fb739d1d9ee70440c57cf710d"
+  },
+  {
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "argv": [
+      "sh",
+      "-n",
+      "deploy/ops/hosted-claude-image/build-image.sh"
+    ],
+    "rc": 0,
+    "elapsed_seconds": 0.001,
+    "start": "2026-10-17T22:13:04.477771+00:00",
+    "end": "2026-10-17T22:13:04.478919+00:00",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "argv": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "rc": 0,
+    "elapsed_seconds": 102.749,
+    "start": "2026-10-17T22:13:04.479237+00:00",
+    "end": "2026-10-17T22:14:47.228760+00:00",
+    "sha256": "a422a3a6e39cac1a2d0ee458e4be29860d6ff990cacfbfd18625e59c6f3e0817"
+  }
+]

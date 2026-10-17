@@ -1,0 +1,6 @@
+test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.831s
+
+OK

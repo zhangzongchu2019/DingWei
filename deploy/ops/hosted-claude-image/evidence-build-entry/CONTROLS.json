@@ -1,0 +1,614 @@
+[
+  {
+    "name": "restore-unconditional-refusal",
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "product_path": "deploy/ops/hosted-claude-image/build-image.sh",
+    "baseline": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.741,
+      "sha256": "963b703267ffc4c2369517d6c5aa512b52ddab98ebda3382322180e4c783be88",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    },
+    "withdrawal": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+        "-v"
+      ],
+      "rc": 1,
+      "elapsed_seconds": 0.6,
+      "sha256": "38be13488b6aae8c63bc70b42e564e8bb1266da63cfc15a0e60d2cabe1a3ca84",
+      "product_sha256": "34d110e61c143f682da07044a7dd28babefb4e27730726c4225b090c27888cb5",
+      "tests": 1,
+      "assertion_red": true
+    },
+    "restored": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.709,
+      "sha256": "cab70aea95f79f8bdcf840a902ca7bf14e87f55d0d98b2dc77e76910e5db1607",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    }
+  },
+  {
+    "name": "remove-engine-id-check",
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "product_path": "deploy/ops/hosted-claude-image/build-image.sh",
+    "baseline": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_identity_mismatch",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 1.47,
+      "sha256": "20bd97b660324416fd5a8b9264c76e7d643a4317b6ba3e53331a9f0e991ed5cd",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    },
+    "withdrawal": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_identity_mismatch",
+        "-v"
+      ],
+      "rc": 1,
+      "elapsed_seconds": 1.753,
+      "sha256": "0b95cfe768670d0da5f309c7a8aaf0e086914ad88a33aa1f3f37c3d169a522c9",
+      "product_sha256": "af2bbdc2321246e0f368b8fed3cae576292c52c0d0b40575f65f731686dcf9df",
+      "tests": 1,
+      "assertion_red": true
+    },
+    "restored": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_identity_mismatch",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 1.496,
+      "sha256": "6afebd0cc7434de72680b732334e5c82a33e1a6f8bdf61626c00ace632bde672",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    }
+  },
+  {
+    "name": "remove-default-alias-check",
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "product_path": "deploy/ops/hosted-claude-image/build-image.sh",
+    "baseline": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "default_alias_guard_even_when_default_socket_exists",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.428,
+      "sha256": "26ea3579f3f0f3e43fc71cb9c6a4b55082f608d18c9188824f186aafa58b014d",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    },
+    "withdrawal": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "default_alias_guard_even_when_default_socket_exists",
+        "-v"
+      ],
+      "rc": 1,
+      "elapsed_seconds": 0.444,
+      "sha256": "d9b834ed1aa84073a3d9cedc756de54626610dce9d5f3f5a902a7fb730230c6b",
+      "product_sha256": "3f7ebafa6bf71fe93596869d214330bbec6199802916168735328a9ca2f0e2fa",
+      "tests": 1,
+      "assertion_red": true
+    },
+    "restored": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "default_alias_guard_even_when_default_socket_exists",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.433,
+      "sha256": "8a4ab9ed5da6b3576408250bc80b02a1210ec9322a445501e5070b824175cf2e",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    }
+  },
+  {
+    "name": "remove-socket-type-check",
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "product_path": "deploy/ops/hosted-claude-image/build-image.sh",
+    "baseline": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_socket_alias_and_metadata_refusals",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.931,
+      "sha256": "17053d2be427f35ca7343a73bc6bb30236eec3203951ab14b9a3ab76ba364a4d",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    },
+    "withdrawal": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_socket_alias_and_metadata_refusals",
+        "-v"
+      ],
+      "rc": 1,
+      "elapsed_seconds": 1.204,
+      "sha256": "fd1dd77804768c795b0fd485dc3bbb30d1a9ab7d4cea0df70fd590f8577bfa6f",
+      "product_sha256": "15d28cc0116a9b195a79d19a1df3c0041fe70ba9d538241dbf9969dba5b18fe0",
+      "tests": 1,
+      "assertion_red": true
+    },
+    "restored": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_socket_alias_and_metadata_refusals",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.924,
+      "sha256": "88b42bcb89b825aed8f180b11378ad2a5bee76cfa92943dc404ce43ad6c23779",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    }
+  },
+  {
+    "name": "remove-offline-network-flag",
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "product_path": "deploy/ops/hosted-claude-image/build-image.sh",
+    "baseline": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.661,
+      "sha256": "ee3811006989f5c0b57e03916fae6d1d885332939b7684a71f8d3289b9b14f31",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    },
+    "withdrawal": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+        "-v"
+      ],
+      "rc": 1,
+      "elapsed_seconds": 0.683,
+      "sha256": "a0c21096197c781168a7ba23c28af6c30a428e8e19b7556354c1a9d9b362ffd6",
+      "product_sha256": "a34d6608a712a7b356e7eac4adc522f3e2c539906600207c5ed8794722b097a7",
+      "tests": 1,
+      "assertion_red": true
+    },
+    "restored": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.654,
+      "sha256": "610476b859175094ee2c38b5a4d521a76d02d4f75c7e7be9a8e0b4d9bcc3b6ce",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    }
+  },
+  {
+    "name": "skip-image-inspect",
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "product_path": "deploy/ops/hosted-claude-image/build-image.sh",
+    "baseline": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.662,
+      "sha256": "c9bb4f312715e40b386dddc256d30c40bfca2cab8c05d838322947cf972714ad",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    },
+    "withdrawal": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+        "-v"
+      ],
+      "rc": 1,
+      "elapsed_seconds": 0.631,
+      "sha256": "8b6192c570532483a4fe22c20645b0c959946710e1dcc3444d4596d512d361c9",
+      "product_sha256": "29b177499ec12ab6a02eb5094483af6c76e59181f917e12f68820282cc829203",
+      "tests": 1,
+      "assertion_red": true
+    },
+    "restored": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.701,
+      "sha256": "5651cf2f6f587ee39cebb2e876e38a442484965d580ae1ec97a5ccba85084cd4",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    }
+  },
+  {
+    "name": "remove-child-bytecode-protection",
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "product_path": "deploy/ops/hosted-claude-image/build-image.sh",
+    "baseline": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.679,
+      "sha256": "9def183d13c8e367be8f6a7f29db1c6ba876d0de1d15e8499a909d38d6afe8b4",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    },
+    "withdrawal": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+        "-v"
+      ],
+      "rc": 1,
+      "elapsed_seconds": 0.411,
+      "sha256": "68060f75a3ed1de3f670530f5c194ae424b24111c854174b7359fdcff0a476b8",
+      "product_sha256": "51d02c8ac0d5bc1cfadff20f7234beb63921a570161fa27e25d5fbf5aed81d73",
+      "tests": 1,
+      "assertion_red": true
+    },
+    "restored": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_uses_verified_context_offline_parameters_and_inspected_id",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.697,
+      "sha256": "39b4e1cd51305af3bb3dbfce94093561944e2730b4d4ddc755ff4e66951fd408",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    }
+  },
+  {
+    "name": "remove-inspected-id-validation",
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "product_path": "deploy/ops/hosted-claude-image/build-image.sh",
+    "baseline": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_build_and_inspect_failures",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 2.98,
+      "sha256": "59d374433dabbb75bc8031c0bf785b1c4819a1c06d12e91debecfc5f82bde4b2",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    },
+    "withdrawal": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_build_and_inspect_failures",
+        "-v"
+      ],
+      "rc": 1,
+      "elapsed_seconds": 2.938,
+      "sha256": "13cad8246f98794a35363d9de1150c7e95523e4735f5db019984e98370d9832f",
+      "product_sha256": "4ca9d08c2177ccf16c06b83ea9d814ad327fd57721a460a2108243879bfcece6",
+      "tests": 1,
+      "assertion_red": true
+    },
+    "restored": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_build_and_inspect_failures",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 3.022,
+      "sha256": "3351eaada4d1e8699d6ab009fbf3d4b3bae504596037e5f5b1a9ad59f7fa2017",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    }
+  },
+  {
+    "name": "remove-uri-ambiguity-check",
+    "source": "cb5d9d3a0e5eb81e94abd0e996fe5f0fd520f7b1",
+    "product_path": "deploy/ops/hosted-claude-image/build-image.sh",
+    "baseline": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_rejects_ambiguous_uri",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.615,
+      "sha256": "74da0e90812e3b628c26d109892450ce99cbde6e6e4607f200ec6c7f53d6a771",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    },
+    "withdrawal": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_rejects_ambiguous_uri",
+        "-v"
+      ],
+      "rc": 1,
+      "elapsed_seconds": 2.065,
+      "sha256": "54144ed85aa6bc16033d5ce94689988b2bee3e6218c21862524dbcb273d66086",
+      "product_sha256": "929355596c1a745e8511aa92c7466f8d7be044face4d87ac7b5baaba8865e3c4",
+      "tests": 1,
+      "assertion_red": true
+    },
+    "restored": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "deploy/ops/hosted-claude-image",
+        "-p",
+        "test_claude_start.py",
+        "-k",
+        "build_entry_rejects_ambiguous_uri",
+        "-v"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 0.633,
+      "sha256": "65bef01fc9a8c62bd7c2a38e616c2425e12bdd8b03cf8f0cf1f3fba0e652af8b",
+      "product_sha256": "f2aa1becf63b4af5dc4a23001a406f3261b1005210abc3f6d8e4385f8a41e069",
+      "tests": 1,
+      "assertion_red": false
+    }
+  }
+]

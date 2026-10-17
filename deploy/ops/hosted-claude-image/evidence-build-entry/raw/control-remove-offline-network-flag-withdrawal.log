@@ -1,0 +1,20 @@
+test_build_entry_uses_verified_context_offline_parameters_and_inspected_id (test_claude_start.ClaudePackager.test_build_entry_uses_verified_context_offline_parameters_and_inspected_id) ... FAIL
+
+======================================================================
+FAIL: test_build_entry_uses_verified_context_offline_parameters_and_inspected_id (test_claude_start.ClaudePackager.test_build_entry_uses_verified_context_offline_parameters_and_inspected_id)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 517, in test_build_entry_uses_verified_context_offline_parameters_and_inspected_id
+    self.assertEqual(rows,[['--host',engine,'info','--format','{{.ID}}'],
+AssertionError: Lists differ: [['--[217 chars], '--pull=false', '--build-arg', 'SOURCE_COMMI[272 chars]re']] != [['--[217 chars], '--network=none', '--pull=false', '--build-a[290 chars]re']]
+
+First differing element 1:
+['--h[106 chars], '--pull=false', '--build-arg', 'SOURCE_COMMI[125 chars]put']
+['--h[106 chars], '--network=none', '--pull=false', '--build-a[143 chars]put']
+
+Diff is 652 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.539s
+
+FAILED (failures=1)

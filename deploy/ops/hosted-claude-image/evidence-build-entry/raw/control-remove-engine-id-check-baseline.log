@@ -1,0 +1,6 @@
+test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry (test_claude_start.ClaudePackager.test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 1.323s
+
+OK

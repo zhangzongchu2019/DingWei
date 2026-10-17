@@ -1,0 +1,42 @@
+test_default_alias_guard_even_when_default_socket_exists_metadata_model (test_claude_start.ClaudePackager.test_default_alias_guard_even_when_default_socket_exists_metadata_model) ... 
+  test_default_alias_guard_even_when_default_socket_exists_metadata_model (test_claude_start.ClaudePackager.test_default_alias_guard_even_when_default_socket_exists_metadata_model) (uri='unix:///var/run/docker.sock') ... FAIL
+  test_default_alias_guard_even_when_default_socket_exists_metadata_model (test_claude_start.ClaudePackager.test_default_alias_guard_even_when_default_socket_exists_metadata_model) (uri='unix:///run/docker.sock') ... FAIL
+  test_default_alias_guard_even_when_default_socket_exists_metadata_model (test_claude_start.ClaudePackager.test_default_alias_guard_even_when_default_socket_exists_metadata_model) (uri='unix:///run/../run/docker.sock') ... FAIL
+  test_default_alias_guard_even_when_default_socket_exists_metadata_model (test_claude_start.ClaudePackager.test_default_alias_guard_even_when_default_socket_exists_metadata_model) (uri='unix:///tmp/cbe-c427k3xt/claude-packager-mm5j8jud/default-link.sock') ... FAIL
+
+======================================================================
+FAIL: test_default_alias_guard_even_when_default_socket_exists_metadata_model (test_claude_start.ClaudePackager.test_default_alias_guard_even_when_default_socket_exists_metadata_model) (uri='unix:///var/run/docker.sock')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 590, in test_default_alias_guard_even_when_default_socket_exists_metadata_model
+    self.assertNotEqual(result.returncode,0)
+AssertionError: 0 == 0
+
+======================================================================
+FAIL: test_default_alias_guard_even_when_default_socket_exists_metadata_model (test_claude_start.ClaudePackager.test_default_alias_guard_even_when_default_socket_exists_metadata_model) (uri='unix:///run/docker.sock')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 590, in test_default_alias_guard_even_when_default_socket_exists_metadata_model
+    self.assertNotEqual(result.returncode,0)
+AssertionError: 0 == 0
+
+======================================================================
+FAIL: test_default_alias_guard_even_when_default_socket_exists_metadata_model (test_claude_start.ClaudePackager.test_default_alias_guard_even_when_default_socket_exists_metadata_model) (uri='unix:///run/../run/docker.sock')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 590, in test_default_alias_guard_even_when_default_socket_exists_metadata_model
+    self.assertNotEqual(result.returncode,0)
+AssertionError: 0 == 0
+
+======================================================================
+FAIL: test_default_alias_guard_even_when_default_socket_exists_metadata_model (test_claude_start.ClaudePackager.test_default_alias_guard_even_when_default_socket_exists_metadata_model) (uri='unix:///tmp/cbe-c427k3xt/claude-packager-mm5j8jud/default-link.sock')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-build-entry-lab/mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 590, in test_default_alias_guard_even_when_default_socket_exists_metadata_model
+    self.assertNotEqual(result.returncode,0)
+AssertionError: 0 == 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.310s
+
+FAILED (failures=4)

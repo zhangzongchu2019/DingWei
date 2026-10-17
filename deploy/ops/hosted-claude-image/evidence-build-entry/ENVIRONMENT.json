@@ -1,0 +1,12 @@
+{
+  "PATH": "/data/ai-dev-data/helper-deps-lock-venv/bin:/usr/local/bin:/usr/bin:/bin",
+  "HOME": "/data/ai-dev-data/claude-build-entry-lab/final/home",
+  "TMPDIR": "/tmp/cbe-c427k3xt",
+  "GOCACHE": "/data/ai-dev-data/claude-build-entry-lab/gocache",
+  "GOMODCACHE": "/home/dev/go/pkg/mod",
+  "GOPATH": "/data/ai-dev-data/claude-build-entry-lab/final/gopath",
+  "GOPROXY": "off",
+  "LANG": "C.UTF-8",
+  "TZ": "UTC",
+  "GIT_CONFIG_NOSYSTEM": "1"
+}
