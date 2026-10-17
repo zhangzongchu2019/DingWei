@@ -1,0 +1,867 @@
+{
+  "capacity-admission.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "TestSoftCapacity|TestCapacityCPU|TestSeatCapacityMinimum"
+    ],
+    "rc": 0,
+    "seconds": 4.195132882101461,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-browser.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 0,
+    "seconds": 4.850651695858687,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-cache-clean.log.result.json": {
+    "command": [
+      "go",
+      "clean",
+      "-cache",
+      "-testcache"
+    ],
+    "rc": 0,
+    "seconds": 0.25305531709454954,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-canonical-final.log.result.json": {
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "rc": 0,
+    "seconds": 97.27257032808848,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-canonical.log.result.json": {
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "rc": 0,
+    "seconds": 108.22488476196304,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-compile.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-run",
+      "^$",
+      "./internal/hosted",
+      "./internal/nodeagent",
+      "./internal/seatcapacity"
+    ],
+    "rc": 0,
+    "seconds": 2.7397697120904922,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-config-and-node-final.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent"
+    ],
+    "rc": 0,
+    "seconds": 13.136343657039106,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-core-final.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/seatcapacity"
+    ],
+    "rc": 0,
+    "seconds": 1.4272480988875031,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-core-floors.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/seatcapacity"
+    ],
+    "rc": 0,
+    "seconds": 1.4465268249623477,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-core.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/seatcapacity"
+    ],
+    "rc": 0,
+    "seconds": 10.646531180012971,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-current-node-race.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "./internal/seatcapacity",
+      "./internal/version"
+    ],
+    "rc": 0,
+    "seconds": 11.47188836405985,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-exact-canonical.log.result.json": {
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "rc": 0,
+    "seconds": 92.07108083297499,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-exact-node-race.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "./internal/seatcapacity",
+      "./internal/version"
+    ],
+    "rc": 0,
+    "seconds": 13.376320847077295,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-failed-targets-restored.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "./internal/hosted",
+      "-run",
+      "TestCapacitySamplerForeignLoadOwnershipAndUnknown|TestCheckCreateCodeSplit|TestCapacityMemoryMissing"
+    ],
+    "rc": 0,
+    "seconds": 12.910862094955519,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-final-pinned-canonical.log.result.json": {
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "rc": 0,
+    "seconds": 102.43998806504533,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-fresh-atomic.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted",
+      "./internal/nodeagent",
+      "-run",
+      "TestCapacity|TestSoftCapacity|TestSoftRegistration|TestSoftNodeScheduling|TestSeatCapacityMinimum"
+    ],
+    "rc": 1,
+    "seconds": 12.436365203931928,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-go-packages.log.result.json": {
+    "command": [
+      "go",
+      "list",
+      "./..."
+    ],
+    "rc": 0,
+    "seconds": 0.3224505989346653,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-hosted-final-race.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted"
+    ],
+    "rc": 0,
+    "seconds": 401.4640471758321,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-hosted-full-race.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted"
+    ],
+    "rc": 1,
+    "seconds": 392.47165510314517,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-hub-targeted.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "TestCapacity|TestSoftNodeScheduling|TestSoftCreateFailure|TestQuotaEmergency|TestSoftWarning"
+    ],
+    "rc": 0,
+    "seconds": 18.856391740962863,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-login-label.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacityLoginStatsUsesN2LabelAndPrivateMount$"
+    ],
+    "rc": 0,
+    "seconds": 3.7761265570297837,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-node-after-writer.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "TestSoftCapacity|TestCapacityCPU|TestSoftRegistration"
+    ],
+    "rc": 0,
+    "seconds": 4.074667830951512,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-node-final-race.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "./internal/seatcapacity"
+    ],
+    "rc": 0,
+    "seconds": 11.95046088192612,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-node-full-race.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent"
+    ],
+    "rc": 0,
+    "seconds": 14.232924030162394,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-node-registration.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "TestSoftRegistration|TestSoftCapacity|TestCapacityCPU|TestSeatCapacityMinimum"
+    ],
+    "rc": 0,
+    "seconds": 3.9458067810628563,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-node-seal.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "./internal/seatcapacity"
+    ],
+    "rc": 1,
+    "seconds": 12.08456291211769,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-policy.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/seatcapacity",
+      "./internal/nodeagent",
+      "-run",
+      "TestSeatCapacityMinimumConfiguration|TestOwnerEight|TestDimensions|TestUnknownIsNever|TestExistingStart"
+    ],
+    "rc": 0,
+    "seconds": 13.82625098596327,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-r23-compat.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "TestCapacityR23|TestSoftLogin|TestInodeEmergency|TestCapacityLogin"
+    ],
+    "rc": 0,
+    "seconds": 5.577759400010109,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-r23-full-node-race.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent"
+    ],
+    "rc": 0,
+    "seconds": 11.93328181700781,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-restored-browser.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 0,
+    "seconds": 2.751811516005546,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-restored-targeted.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "./internal/seatcapacity",
+      "./internal/hosted",
+      "-run",
+      "TestSoftRegistrationUsesDirectoryBackendAndReplayGate|TestSoftCapacityRealReserveEightNinthAndRestart|TestCapacityUnknownReservesForeignLoadAndLegacyHard|TestCapacityStoreSerializesConcurrentReservations|TestMinimumPlan|TestConfiguredMinimumFloorsEachReservation|TestCapacityLoginStatsUsesN2LabelAndPrivateMount"
+    ],
+    "rc": 0,
+    "seconds": 12.894319531042129,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-sampler-recovery.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "TestCapacitySampler|TestCapacityBlocked|TestCapacityLogin"
+    ],
+    "rc": 1,
+    "seconds": 2.9821562659926713,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-sampler.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacity"
+    ],
+    "rc": 0,
+    "seconds": 4.169562708819285,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-stale-wire.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityUnknownReservesForeignLoadAndLegacyHard$"
+    ],
+    "rc": 0,
+    "seconds": 7.04657400585711,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-console.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 1,
+    "seconds": 4.072331751929596,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-cpu-recovery.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacitySamplerForeignLoadOwnershipAndUnknown$"
+    ],
+    "rc": 1,
+    "seconds": 2.916990333935246,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-foreign-cpu.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacitySamplerForeignLoadOwnershipAndUnknown$"
+    ],
+    "rc": 1,
+    "seconds": 2.869949006009847,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-foreign-disk.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacitySamplerForeignLoadOwnershipAndUnknown$"
+    ],
+    "rc": 1,
+    "seconds": 3.1654861338902265,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-foreign-memory.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacitySamplerForeignLoadOwnershipAndUnknown$"
+    ],
+    "rc": 1,
+    "seconds": 2.069942349102348,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-hub-freshness.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityUnknownReservesForeignLoadAndLegacyHard$/stale_wire$"
+    ],
+    "rc": 1,
+    "seconds": 4.790498082060367,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-minimum-cpu.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/seatcapacity",
+      "-run",
+      "^TestConfiguredMinimumFloorsEachReservation$/cpu$"
+    ],
+    "rc": 1,
+    "seconds": 0.4056331280153245,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-minimum-disk.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/seatcapacity",
+      "-run",
+      "^TestConfiguredMinimumFloorsEachReservation$/disk$"
+    ],
+    "rc": 1,
+    "seconds": 0.36454510292969644,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-minimum-memory.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/seatcapacity",
+      "-run",
+      "^TestConfiguredMinimumFloorsEachReservation$/memory$"
+    ],
+    "rc": 1,
+    "seconds": 0.3314909569453448,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-n2-label.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacityLoginStatsUsesN2LabelAndPrivateMount$"
+    ],
+    "rc": 1,
+    "seconds": 2.389597450848669,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-node-reserve.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestSoftCapacityRealReserveEightNinthAndRestart$"
+    ],
+    "rc": 1,
+    "seconds": 3.5422264579683542,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-node-start.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestSoftCapacityRealReserveEightNinthAndRestart$"
+    ],
+    "rc": 1,
+    "seconds": 3.346090529114008,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-registration.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestSoftRegistrationUsesDirectoryBackendAndReplayGate$"
+    ],
+    "rc": 1,
+    "seconds": 2.534780374960974,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-sample-budget.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "^TestCapacityBlockedSamplerIsSingleAndNeverLocksReserveOrReport$"
+    ],
+    "rc": 1,
+    "seconds": 3.5081883028615266,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-sku-definition.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestMinimumPlanDefinitionAndNetCapacity$"
+    ],
+    "rc": 1,
+    "seconds": 4.711862972006202,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-sku-fraction.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestMinimumPlanOptionsAndRealCreateResources$"
+    ],
+    "rc": 1,
+    "seconds": 7.339957244927064,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-sku-schema.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestMinimumPlanSchemaUpgradesOldConstraint$"
+    ],
+    "rc": 1,
+    "seconds": 6.2026755809783936,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-withdraw-store-pending.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityStoreSerializesConcurrentReservations$"
+    ],
+    "rc": 1,
+    "seconds": 4.936672565061599,
+    "external_DSN_environment_not_inherited": true
+  },
+  "capacity-workpulse-regression.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./cmd/workpulse",
+      "-run",
+      "TestHostedMinimumPlanHTTPOptionsCreateAndQuota|TestHostedAdminQuotasShape|TestHostedAdmin.*|TestHosted.*Soft|TestNode.*Quota"
+    ],
+    "rc": 0,
+    "seconds": 22.988880943972617,
+    "external_DSN_environment_not_inherited": true
+  },
+  "initial-capacity-r23-compat.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "TestCapacityR23|TestSoftLogin|TestInodeEmergency|TestCapacityLogin"
+    ],
+    "rc": 1,
+    "seconds": 0.21187960798852146,
+    "external_DSN_environment_not_inherited": true
+  },
+  "initial-capacity-withdraw-hub-freshness.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityUnknownReservesForeignLoadAndLegacyHard$/stale$"
+    ],
+    "rc": 0,
+    "seconds": 6.49112373101525,
+    "external_DSN_environment_not_inherited": true
+  },
+  "minimum-plan-browser.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 0,
+    "seconds": 7.6854773801751435,
+    "external_DSN_environment_not_inherited": true
+  },
+  "minimum-plan-hosted-race.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted"
+    ],
+    "rc": 0,
+    "seconds": 471.66004671598785,
+    "external_DSN_environment_not_inherited": true
+  },
+  "minimum-plan-http.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./cmd/workpulse",
+      "-run",
+      "TestHostedMinimumPlanHTTPOptionsCreateAndQuota|TestHostedAdminQuotasShape"
+    ],
+    "rc": 0,
+    "seconds": 50.021115601062775,
+    "external_DSN_environment_not_inherited": true
+  },
+  "minimum-plan-restored.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestMinimumPlan"
+    ],
+    "rc": 0,
+    "seconds": 11.296465625055134,
+    "external_DSN_environment_not_inherited": true
+  },
+  "minimum-plan-targeted.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "TestMinimumPlan|TestPlanTable|TestPlanDiskTiersPinned|TestOptionsViewAndJobProgress|TestOptionsContract|TestSchemaApplyRollbackRepeatable"
+    ],
+    "rc": 0,
+    "seconds": 49.31374427815899,
+    "external_DSN_environment_not_inherited": true
+  },
+  "minimum-withdraw-memory.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestMinimumPlanOptionsAndRealCreateResources$"
+    ],
+    "rc": 1,
+    "seconds": 6.975187953095883,
+    "external_DSN_environment_not_inherited": true
+  },
+  "minimum-withdraw-plan.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestMinimumPlanDefinitionAndNetCapacity$"
+    ],
+    "rc": 1,
+    "seconds": 4.725389220984653,
+    "external_DSN_environment_not_inherited": true
+  },
+  "minimum-withdraw-schema.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestMinimumPlanSchemaUpgradesOldConstraint$"
+    ],
+    "rc": 1,
+    "seconds": 6.426898293895647,
+    "external_DSN_environment_not_inherited": true
+  },
+  "pre-login-label-capacity-r23-compat.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/nodeagent",
+      "-run",
+      "TestCapacityR23|TestSoftLogin|TestInodeEmergency|TestCapacityLogin"
+    ],
+    "rc": 1,
+    "seconds": 3.3102335860021412,
+    "external_DSN_environment_not_inherited": true
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./cmd/workpulse",
+    "-run",
+    "TestHostedMinimumPlanHTTPOptionsCreateAndQuota|TestHostedAdminQuotasShape|TestHostedAdmin.*|TestHosted.*Soft|TestNode.*Quota"
+  ],
+  "rc": 0,
+  "seconds": 22.988880943972617,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/nodeagent",
+    "-run",
+    "TestCapacityR23|TestSoftLogin|TestInodeEmergency|TestCapacityLogin"
+  ],
+  "rc": 1,
+  "seconds": 0.21187960798852146,
+  "external_DSN_environment_not_inherited": true
+}

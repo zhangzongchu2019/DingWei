@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/nodeagent",
+    "-run",
+    "TestSoftCapacity|TestCapacityCPU|TestSeatCapacityMinimum"
+  ],
+  "rc": 0,
+  "seconds": 4.195132882101461,
+  "external_DSN_environment_not_inherited": true
+}

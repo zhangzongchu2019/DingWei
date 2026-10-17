@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./internal/hosted",
+    "-run",
+    "^TestCapacityStoreSerializesConcurrentReservations$"
+  ],
+  "rc": 1,
+  "seconds": 4.936672565061599,
+  "external_DSN_environment_not_inherited": true
+}

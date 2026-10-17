@@ -1,0 +1,10 @@
+=== RUN   TestMinimumPlanDefinitionAndNetCapacity
+--- PASS: TestMinimumPlanDefinitionAndNetCapacity (0.00s)
+=== RUN   TestMinimumPlanSchemaUpgradesOldConstraint
+--- PASS: TestMinimumPlanSchemaUpgradesOldConstraint (2.05s)
+=== RUN   TestMinimumPlanQuotaDebitsAndEveryDimension
+--- PASS: TestMinimumPlanQuotaDebitsAndEveryDimension (2.09s)
+=== RUN   TestMinimumPlanOptionsAndRealCreateResources
+--- PASS: TestMinimumPlanOptionsAndRealCreateResources (2.16s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	7.328s

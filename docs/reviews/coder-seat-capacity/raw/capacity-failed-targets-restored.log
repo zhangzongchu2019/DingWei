@@ -1,0 +1,10 @@
+=== RUN   TestCapacitySamplerForeignLoadOwnershipAndUnknown
+--- PASS: TestCapacitySamplerForeignLoadOwnershipAndUnknown (0.06s)
+=== RUN   TestCapacityMemoryMissingIsUnknownNotZero
+--- PASS: TestCapacityMemoryMissingIsUnknownNotZero (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.108s
+=== RUN   TestCheckCreateCodeSplit
+--- PASS: TestCheckCreateCodeSplit (8.10s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	9.156s

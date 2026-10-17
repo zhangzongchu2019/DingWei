@@ -1,0 +1,7 @@
+# github.com/zhangzongchu2019/dingwei/internal/nodeagent [github.com/zhangzongchu2019/dingwei/internal/nodeagent.test]
+internal/nodeagent/policy.go:19:1: syntax error: unexpected <<, expected field name or embedded type
+internal/nodeagent/policy.go:52:1: syntax error: unexpected ==, expected field name or embedded type
+internal/nodeagent/policy.go:82:1: syntax error: unexpected >>, expected field name or embedded type
+internal/nodeagent/policy.go:169:1: syntax error: unexpected <<, expected }
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent [build failed]
+FAIL

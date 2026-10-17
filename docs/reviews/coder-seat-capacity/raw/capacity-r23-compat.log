@@ -1,0 +1,44 @@
+=== RUN   TestCapacityR23RealLoginBudgetAndSampler
+--- PASS: TestCapacityR23RealLoginBudgetAndSampler (0.07s)
+=== RUN   TestCapacityR23UnknownBlocksActualLoginStartWithoutHold
+--- PASS: TestCapacityR23UnknownBlocksActualLoginStartWithoutHold (0.02s)
+=== RUN   TestCapacityLoginBudgetIsNotBusinessSeatOrFortyGiBFloor
+--- PASS: TestCapacityLoginBudgetIsNotBusinessSeatOrFortyGiBFloor (0.01s)
+=== RUN   TestCapacityLoginStatsUsesN2LabelAndPrivateMount
+--- PASS: TestCapacityLoginStatsUsesN2LabelAndPrivateMount (0.01s)
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget/bytes
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget/inodes
+=== RUN   TestSoftLoginRealStartEmergencyRetainsDataAndBudget/unknown
+--- PASS: TestSoftLoginRealStartEmergencyRetainsDataAndBudget (0.11s)
+    --- PASS: TestSoftLoginRealStartEmergencyRetainsDataAndBudget/bytes (0.04s)
+    --- PASS: TestSoftLoginRealStartEmergencyRetainsDataAndBudget/inodes (0.03s)
+    --- PASS: TestSoftLoginRealStartEmergencyRetainsDataAndBudget/unknown (0.03s)
+=== RUN   TestSoftLoginNormalFinishReleasesBudget
+--- PASS: TestSoftLoginNormalFinishReleasesBudget (0.09s)
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/cpu
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/memory
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/disk
+=== RUN   TestSoftLoginBudgetAdmissionBeforeDocker/inode
+--- PASS: TestSoftLoginBudgetAdmissionBeforeDocker (0.05s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/cpu (0.01s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/memory (0.01s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/disk (0.02s)
+    --- PASS: TestSoftLoginBudgetAdmissionBeforeDocker/inode (0.01s)
+=== RUN   TestSoftLoginConsumesSharedCPUAndMemory
+--- PASS: TestSoftLoginConsumesSharedCPUAndMemory (0.04s)
+=== RUN   TestSoftLoginMeasurementOwnershipAndRestart
+--- PASS: TestSoftLoginMeasurementOwnershipAndRestart (0.08s)
+=== RUN   TestSoftLoginUnknownLeftoverFailsClosedAndPreserves
+--- PASS: TestSoftLoginUnknownLeftoverFailsClosedAndPreserves (0.01s)
+=== RUN   TestSoftLoginStartAndEmergencyAreSerialized
+--- PASS: TestSoftLoginStartAndEmergencyAreSerialized (0.09s)
+=== RUN   TestSoftLoginEmergencyMustStopActualLoginCID
+--- PASS: TestSoftLoginEmergencyMustStopActualLoginCID (0.03s)
+=== RUN   TestSoftLoginPersistentPoolAndStateValidation
+--- PASS: TestSoftLoginPersistentPoolAndStateValidation (0.01s)
+=== RUN   TestSoftLoginBudgetCannotBeForgottenBySeatTeardown
+--- PASS: TestSoftLoginBudgetCannotBeForgottenBySeatTeardown (0.02s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.708s

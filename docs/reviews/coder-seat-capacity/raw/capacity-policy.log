@@ -1,0 +1,14 @@
+=== RUN   TestOwnerEightPassNineRefusedNetResources
+--- PASS: TestOwnerEightPassNineRefusedNetResources (0.00s)
+=== RUN   TestDimensionsReservesAndActualLargerRequests
+--- PASS: TestDimensionsReservesAndActualLargerRequests (0.00s)
+=== RUN   TestUnknownIsNeverZeroAndAgeBoundaries
+--- PASS: TestUnknownIsNeverZeroAndAgeBoundaries (0.00s)
+=== RUN   TestExistingStartRefusedAfterCapacityLossWithoutChangingReservations
+--- PASS: TestExistingStartRefusedAfterCapacityLossWithoutChangingReservations (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/seatcapacity	1.023s
+=== RUN   TestSeatCapacityMinimumConfiguration
+--- PASS: TestSeatCapacityMinimumConfiguration (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.056s

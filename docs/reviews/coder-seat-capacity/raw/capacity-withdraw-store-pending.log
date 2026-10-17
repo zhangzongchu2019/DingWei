@@ -1,0 +1,6 @@
+=== RUN   TestCapacityStoreSerializesConcurrentReservations
+    seat_capacity_test.go:177: parallel capacity: accepted=9 refused=0
+--- FAIL: TestCapacityStoreSerializesConcurrentReservations (3.14s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.162s
+FAIL

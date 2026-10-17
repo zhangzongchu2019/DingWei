@@ -1,0 +1,24 @@
+=== RUN   TestSeatCapacityMinimumConfiguration
+--- PASS: TestSeatCapacityMinimumConfiguration (0.00s)
+=== RUN   TestSoftCapacityRealReserveEightNinthAndRestart
+--- PASS: TestSoftCapacityRealReserveEightNinthAndRestart (0.02s)
+=== RUN   TestSoftCapacityUnknownStaleSlowAndEachDimension
+=== RUN   TestSoftCapacityUnknownStaleSlowAndEachDimension/unknown
+=== RUN   TestSoftCapacityUnknownStaleSlowAndEachDimension/stale
+=== RUN   TestSoftCapacityUnknownStaleSlowAndEachDimension/slow
+=== RUN   TestSoftCapacityUnknownStaleSlowAndEachDimension/cpu
+=== RUN   TestSoftCapacityUnknownStaleSlowAndEachDimension/memory
+=== RUN   TestSoftCapacityUnknownStaleSlowAndEachDimension/disk
+--- PASS: TestSoftCapacityUnknownStaleSlowAndEachDimension (0.01s)
+    --- PASS: TestSoftCapacityUnknownStaleSlowAndEachDimension/unknown (0.00s)
+    --- PASS: TestSoftCapacityUnknownStaleSlowAndEachDimension/stale (0.00s)
+    --- PASS: TestSoftCapacityUnknownStaleSlowAndEachDimension/slow (0.00s)
+    --- PASS: TestSoftCapacityUnknownStaleSlowAndEachDimension/cpu (0.00s)
+    --- PASS: TestSoftCapacityUnknownStaleSlowAndEachDimension/memory (0.00s)
+    --- PASS: TestSoftCapacityUnknownStaleSlowAndEachDimension/disk (0.00s)
+=== RUN   TestCapacityCPUParsingAndPhysicalHardlinkUnion
+--- PASS: TestCapacityCPUParsingAndPhysicalHardlinkUnion (0.01s)
+=== RUN   TestSoftRegistrationUsesDirectoryBackendAndReplayGate
+--- PASS: TestSoftRegistrationUsesDirectoryBackendAndReplayGate (0.02s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.108s

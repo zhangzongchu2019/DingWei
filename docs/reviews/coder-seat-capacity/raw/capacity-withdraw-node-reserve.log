@@ -1,0 +1,6 @@
+=== RUN   TestSoftCapacityRealReserveEightNinthAndRestart
+    seatcapacity_test.go:79: ninth: <nil>
+--- FAIL: TestSoftCapacityRealReserveEightNinthAndRestart (0.03s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.045s
+FAIL

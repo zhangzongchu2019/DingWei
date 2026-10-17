@@ -1,0 +1,6 @@
+=== RUN   TestCapacityBlockedSamplerIsSingleAndNeverLocksReserveOrReport
+    seatcapacity_sample_test.go:178: blocked sample admission: overbudget sampler still known
+--- FAIL: TestCapacityBlockedSamplerIsSingleAndNeverLocksReserveOrReport (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.025s
+FAIL

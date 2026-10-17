@@ -1,0 +1,6 @@
+=== RUN   TestSoftCapacityRealReserveEightNinthAndRestart
+    seatcapacity_test.go:95: lost capacity allowed start: <nil>/2
+--- FAIL: TestSoftCapacityRealReserveEightNinthAndRestart (0.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.033s
+FAIL

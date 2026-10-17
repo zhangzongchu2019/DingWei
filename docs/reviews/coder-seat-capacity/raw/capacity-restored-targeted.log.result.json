@@ -1,0 +1,17 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/nodeagent",
+    "./internal/seatcapacity",
+    "./internal/hosted",
+    "-run",
+    "TestSoftRegistrationUsesDirectoryBackendAndReplayGate|TestSoftCapacityRealReserveEightNinthAndRestart|TestCapacityUnknownReservesForeignLoadAndLegacyHard|TestCapacityStoreSerializesConcurrentReservations|TestMinimumPlan|TestConfiguredMinimumFloorsEachReservation|TestCapacityLoginStatsUsesN2LabelAndPrivateMount"
+  ],
+  "rc": 0,
+  "seconds": 12.894319531042129,
+  "external_DSN_environment_not_inherited": true
+}

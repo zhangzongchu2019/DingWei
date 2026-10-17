@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/nodeagent",
+    "-run",
+    "^TestCapacityLoginStatsUsesN2LabelAndPrivateMount$"
+  ],
+  "rc": 0,
+  "seconds": 3.7761265570297837,
+  "external_DSN_environment_not_inherited": true
+}

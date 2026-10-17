@@ -1,0 +1,16 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/hosted",
+    "./internal/nodeagent",
+    "-run",
+    "TestCapacity|TestSoftCapacity|TestSoftRegistration|TestSoftNodeScheduling|TestSeatCapacityMinimum"
+  ],
+  "rc": 1,
+  "seconds": 12.436365203931928,
+  "external_DSN_environment_not_inherited": true
+}

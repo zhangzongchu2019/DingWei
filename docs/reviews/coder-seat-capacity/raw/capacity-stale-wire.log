@@ -1,0 +1,16 @@
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/unknown
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/cpu_external
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/memory_reserve
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/disk_external
+=== RUN   TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale_wire
+--- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard (2.11s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/unknown (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/cpu_external (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/memory_reserve (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/disk_external (0.00s)
+    --- PASS: TestCapacityUnknownReservesForeignLoadAndLegacyHard/stale_wire (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	3.140s

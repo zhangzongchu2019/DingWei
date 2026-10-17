@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./internal/nodeagent",
+    "-run",
+    "^TestCapacityBlockedSamplerIsSingleAndNeverLocksReserveOrReport$"
+  ],
+  "rc": 1,
+  "seconds": 3.5081883028615266,
+  "external_DSN_environment_not_inherited": true
+}

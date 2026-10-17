@@ -1,0 +1,13 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/hosted"
+  ],
+  "rc": 0,
+  "seconds": 401.4640471758321,
+  "external_DSN_environment_not_inherited": true
+}

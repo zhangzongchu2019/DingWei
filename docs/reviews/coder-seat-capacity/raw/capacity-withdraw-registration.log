@@ -1,0 +1,6 @@
+=== RUN   TestSoftRegistrationUsesDirectoryBackendAndReplayGate
+    softquota_test.go:915: production soft registration omitted B
+--- FAIL: TestSoftRegistrationUsesDirectoryBackendAndReplayGate (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.019s
+FAIL
