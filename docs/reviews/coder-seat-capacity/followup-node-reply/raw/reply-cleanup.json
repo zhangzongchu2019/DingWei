@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-17T16:09:18.685452+00:00",
+  "before_bytes": {
+    "/data/ai-dev-data/coder-seat-capacity-lab/reply-mutant-binding": 29706086,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reply-mutant-create": 29706058,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reply-mutant-create-console": 29706045,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reply-mutant-create-read": 29706040,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reply-mutant-pull": 29706063,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reply-mutant-recognition": 29706083,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reply-mutant-restart": 29705768,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reply-mutant-strict-prefix": 29706106,
+    "/data/ai-dev-data/coder-seat-capacity-lab/reply-reviewer-probe": 29708805,
+    "/data/ai-dev-data/coder-seat-capacity-lab/gocache": 887835747,
+    "/data/ai-dev-data/coder-seat-capacity-lab/home": 83357070,
+    "/tmp/sq-reply-ug805mga": 569765
+  },
+  "gocache_bytes_after_go_clean": 232,
+  "remaining_paths": [],
+  "owned_processes_before": 0,
+  "PG_pid_markers_before": 0,
+  "source_worktree_retained": true,
+  "shared_module_cache_and_locked_venv_untouched": true
+}

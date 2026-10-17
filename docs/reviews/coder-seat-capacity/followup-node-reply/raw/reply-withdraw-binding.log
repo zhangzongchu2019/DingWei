@@ -1,0 +1,6 @@
+=== RUN   TestCapacityReplyStrictProtocolAndRegistration
+    seat_capacity_reply_test.go:58: legacy hard changed
+--- FAIL: TestCapacityReplyStrictProtocolAndRegistration (3.30s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.307s
+FAIL

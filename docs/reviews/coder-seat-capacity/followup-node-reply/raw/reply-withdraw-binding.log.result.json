@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./internal/hosted",
+    "-run",
+    "^TestCapacityReplyStrictProtocolAndRegistration$"
+  ],
+  "rc": 1,
+  "seconds": 7.464418393094093,
+  "external_DSN_environment_not_inherited": true
+}

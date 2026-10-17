@@ -1,0 +1,261 @@
+{
+  "initial-reply-withdraw-strict-prefix.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityReplyStrictProtocolAndRegistration$"
+    ],
+    "rc": 1,
+    "seconds": 16.710150631843135,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-browser-first.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 0,
+    "seconds": 54.156648612814024,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-cache-clean.log.result.json": {
+    "command": [
+      "go",
+      "clean",
+      "-cache",
+      "-testcache"
+    ],
+    "rc": 0,
+    "seconds": 0.23597656399942935,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-final-browser.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 0,
+    "seconds": 3.7260661209002137,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-final-canonical.log.result.json": {
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "rc": 0,
+    "seconds": 125.77328948304057,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-final-race.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted",
+      "./cmd/workpulse",
+      "-run",
+      "TestCapacityReply|TestCapacityFinalGate|TestLifecycleOrderOnOneLog|TestLifecycleJob|TestSoftCreateFailure|TestRefresh|TestEnable|TestRestart|TestUpgrade|TestHostedFinalNodeGateJobHTTP|TestHostedCapacityReasonsActualHTTP"
+    ],
+    "rc": 0,
+    "seconds": 123.34786192793399,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-first.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "TestCapacityReply|TestCapacityFinalGate"
+    ],
+    "rc": 0,
+    "seconds": 112.52880340488628,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-http-first.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./cmd/workpulse",
+      "-run",
+      "^TestHostedFinalNodeGateJobHTTP$"
+    ],
+    "rc": 0,
+    "seconds": 69.48128100507893,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-restored-browser.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 0,
+    "seconds": 3.8659146109130234,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-restored.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted",
+      "./cmd/workpulse",
+      "-run",
+      "TestCapacityReplyStrictProtocolAndRegistration|TestCapacityFinalGate|TestHostedFinalNodeGateJobHTTP"
+    ],
+    "rc": 0,
+    "seconds": 10.853491818998009,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-reviewer-probe.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-race",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestOpusReview.*"
+    ],
+    "rc": 0,
+    "seconds": 11.064932166133076,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-withdraw-binding.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityReplyStrictProtocolAndRegistration$"
+    ],
+    "rc": 1,
+    "seconds": 7.464418393094093,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-withdraw-create-console.log.result.json": {
+    "command": [
+      "node",
+      "view-service/console-soft-quota-regression.js"
+    ],
+    "rc": 1,
+    "seconds": 9.72008998109959,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-withdraw-create-read.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityFinalGateCreateJobsAndCleanup$"
+    ],
+    "rc": 1,
+    "seconds": 6.658349941018969,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-withdraw-create.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityFinalGateCreateJobsAndCleanup$"
+    ],
+    "rc": 1,
+    "seconds": 5.835541045991704,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-withdraw-pull.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityFinalGateCreateJobsAndCleanup$"
+    ],
+    "rc": 1,
+    "seconds": 5.610392088070512,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-withdraw-recognition.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityFinalGateLifecycleJobs$"
+    ],
+    "rc": 1,
+    "seconds": 20.124454075936228,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-withdraw-restart.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityFinalGateLifecycleJobs$"
+    ],
+    "rc": 1,
+    "seconds": 5.858787008095533,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-withdraw-strict-prefix-corrected.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityReplyStrictProtocolAndRegistration$"
+    ],
+    "rc": 1,
+    "seconds": 6.193328831112012,
+    "external_DSN_environment_not_inherited": true
+  },
+  "reply-withdraw-strict-prefix.log.result.json": {
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "./internal/hosted",
+      "-run",
+      "^TestCapacityReplyStrictProtocolAndRegistration$"
+    ],
+    "rc": 1,
+    "seconds": 16.710150631843135,
+    "external_DSN_environment_not_inherited": true
+  }
+}

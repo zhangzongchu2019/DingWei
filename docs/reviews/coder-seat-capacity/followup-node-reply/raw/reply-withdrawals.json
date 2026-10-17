@@ -1,0 +1,46 @@
+{
+  "source": "7d5cba6039a7cd739fa13c7c16d52a6d8c88caaa",
+  "results": [
+    {
+      "name": "recognition",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "strict-prefix",
+      "rc": 1,
+      "assertion_red": true,
+      "log": "reply-withdraw-strict-prefix-corrected.log"
+    },
+    {
+      "name": "pull",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "create",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "create-read",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "create-console",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "binding",
+      "rc": 1,
+      "assertion_red": true
+    },
+    {
+      "name": "restart",
+      "rc": 1,
+      "assertion_red": true
+    }
+  ]
+}

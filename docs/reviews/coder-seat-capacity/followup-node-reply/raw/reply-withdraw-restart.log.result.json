@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./internal/hosted",
+    "-run",
+    "^TestCapacityFinalGateLifecycleJobs$"
+  ],
+  "rc": 1,
+  "seconds": 5.858787008095533,
+  "external_DSN_environment_not_inherited": true
+}

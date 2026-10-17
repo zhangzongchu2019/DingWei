@@ -1,0 +1,63 @@
+=== RUN   TestCapacityFinalGateLifecycleJobs
+=== RUN   TestCapacityFinalGateLifecycleJobs/restart/cpu
+    seat_capacity_reply_test.go:123: final node gate restart_seat: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/restart/memory
+    seat_capacity_reply_test.go:123: final node gate restart_seat: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/restart/disk
+    seat_capacity_reply_test.go:123: final node gate restart_seat: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/restart/load_unknown
+    seat_capacity_reply_test.go:123: final node gate restart_seat: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/enable/cpu
+    seat_capacity_reply_test.go:123: final node gate start_seat: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/enable/memory
+    seat_capacity_reply_test.go:123: final node gate start_seat: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/enable/disk
+    seat_capacity_reply_test.go:123: final node gate start_seat: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/enable/load_unknown
+    seat_capacity_reply_test.go:123: final node gate start_seat: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/refresh_cred/cpu
+    seat_capacity_reply_test.go:123: final node gate refresh_cred_seat: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/refresh_cred/memory
+    seat_capacity_reply_test.go:123: final node gate refresh_cred_seat: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/refresh_cred/disk
+    seat_capacity_reply_test.go:123: final node gate refresh_cred_seat: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/refresh_cred/load_unknown
+    seat_capacity_reply_test.go:123: final node gate refresh_cred_seat: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/upgrade/cpu
+    seat_capacity_reply_test.go:123: final node gate upgrade_seat: {CapacityReasons:[] Stage:failed Reason:upgrade_failed_rolled_back AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/upgrade/memory
+    seat_capacity_reply_test.go:123: final node gate upgrade_seat: {CapacityReasons:[] Stage:failed Reason:upgrade_failed_rolled_back AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/upgrade/disk
+    seat_capacity_reply_test.go:123: final node gate upgrade_seat: {CapacityReasons:[] Stage:failed Reason:upgrade_failed_rolled_back AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/upgrade/load_unknown
+    seat_capacity_reply_test.go:123: final node gate upgrade_seat: {CapacityReasons:[] Stage:failed Reason:upgrade_failed_rolled_back AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateLifecycleJobs/engine
+=== RUN   TestCapacityFinalGateLifecycleJobs/near-match
+=== RUN   TestCapacityFinalGateLifecycleJobs/transport
+=== RUN   TestCapacityFinalGateLifecycleJobs/hold
+=== RUN   TestCapacityFinalGateLifecycleJobs/hard
+--- FAIL: TestCapacityFinalGateLifecycleJobs (3.02s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/restart/cpu (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/restart/memory (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/restart/disk (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/restart/load_unknown (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/enable/cpu (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/enable/memory (0.02s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/enable/disk (0.02s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/enable/load_unknown (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/refresh_cred/cpu (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/refresh_cred/memory (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/refresh_cred/disk (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/refresh_cred/load_unknown (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/upgrade/cpu (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/upgrade/memory (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/upgrade/disk (0.01s)
+    --- FAIL: TestCapacityFinalGateLifecycleJobs/upgrade/load_unknown (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/engine (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/near-match (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/transport (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/hold (0.01s)
+    --- PASS: TestCapacityFinalGateLifecycleJobs/hard (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.042s
+FAIL

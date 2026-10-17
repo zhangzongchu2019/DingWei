@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/hosted",
+    "-run",
+    "TestCapacityReply|TestCapacityFinalGate"
+  ],
+  "rc": 0,
+  "seconds": 112.52880340488628,
+  "external_DSN_environment_not_inherited": true
+}

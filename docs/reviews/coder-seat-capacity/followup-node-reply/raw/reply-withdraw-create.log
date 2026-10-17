@@ -1,0 +1,25 @@
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/pull_image/cpu
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/pull_image/memory
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/pull_image/disk
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/pull_image/load_unknown
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/create_seat/cpu
+    seat_capacity_reply_test.go:210: create final gate: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/create_seat/memory
+    seat_capacity_reply_test.go:210: create final gate: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/create_seat/disk
+    seat_capacity_reply_test.go:210: create final gate: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+=== RUN   TestCapacityFinalGateCreateJobsAndCleanup/create_seat/load_unknown
+    seat_capacity_reply_test.go:210: create final gate: {CapacityReasons:[] Stage:failed Reason:start_failed AgentID: Model:} <nil>
+--- FAIL: TestCapacityFinalGateCreateJobsAndCleanup (2.85s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/pull_image/cpu (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/pull_image/memory (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/pull_image/disk (0.01s)
+    --- PASS: TestCapacityFinalGateCreateJobsAndCleanup/pull_image/load_unknown (0.01s)
+    --- FAIL: TestCapacityFinalGateCreateJobsAndCleanup/create_seat/cpu (0.01s)
+    --- FAIL: TestCapacityFinalGateCreateJobsAndCleanup/create_seat/memory (0.01s)
+    --- FAIL: TestCapacityFinalGateCreateJobsAndCleanup/create_seat/disk (0.01s)
+    --- FAIL: TestCapacityFinalGateCreateJobsAndCleanup/create_seat/load_unknown (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	2.862s
+FAIL

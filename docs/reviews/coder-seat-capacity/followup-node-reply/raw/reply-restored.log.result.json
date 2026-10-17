@@ -1,0 +1,16 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-race",
+    "-v",
+    "./internal/hosted",
+    "./cmd/workpulse",
+    "-run",
+    "TestCapacityReplyStrictProtocolAndRegistration|TestCapacityFinalGate|TestHostedFinalNodeGateJobHTTP"
+  ],
+  "rc": 0,
+  "seconds": 10.853491818998009,
+  "external_DSN_environment_not_inherited": true
+}

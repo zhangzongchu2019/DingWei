@@ -1,0 +1,29 @@
+import concurrent.futures,hashlib,io,json,pathlib,subprocess,tarfile
+repo=pathlib.Path('/data/ai-dev-data/seat-capacity-r22');lab=pathlib.Path('/data/ai-dev-data/coder-seat-capacity-lab');pin=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip();archive=subprocess.check_output(['git','archive',pin],cwd=repo)
+def gotest(name):return ['go','test','-count=1','-v','./internal/hosted','-run','^'+name+'$']
+cases=[
+ ('recognition','internal/hosted/seat_capacity.go','if result.OK || len(result.Error) > 160 {','if true || result.OK || len(result.Error) > 160 {',gotest('TestCapacityFinalGateLifecycleJobs')),
+ ('strict-prefix','internal/hosted/seat_capacity.go','strings.CutPrefix(result.Error, "seat_capacity_blocked: seat_capacity_")','strings.Cut(result.Error, "seat_capacity_blocked: seat_capacity_")',gotest('TestCapacityReplyStrictProtocolAndRegistration')),
+ ('pull','internal/hosted/orchestrator.go','fail("pulling", lifecycleJobReason(capacityErr))','fail("pulling", "image_pull_failed")',gotest('TestCapacityFinalGateCreateJobsAndCleanup')),
+ ('create','internal/hosted/orchestrator.go','fail("starting", lifecycleJobReason(capacityErr))','fail("starting", "start_failed")',gotest('TestCapacityFinalGateCreateJobsAndCleanup')),
+ ('create-read','internal/hosted/readapi.go','return withModel(capacityJobView(JobView{Stage: "failed", Reason: jobFailReason(seat.StateDetail)}, seat.StateDetail))','return withModel(JobView{Stage: "failed", Reason: jobFailReason(seat.StateDetail)})',gotest('TestCapacityFinalGateCreateJobsAndCleanup')),
+ ('create-console','internal/m8/console_auth.go',"if(reason==='node_no_capacity')return consoleErrorText(409,{error:reason,capacity_reasons:reasons});","if(reason==='node_no_capacity')return CONSOLE_ERRORS.node_no_capacity;",['node','view-service/console-soft-quota-regression.js']),
+]
+s=(repo/'internal/hosted/seat_capacity.go').read_text();old=next(x for x in s.splitlines() if x.startswith('\tif mode != "soft" || !policyRevisionPattern.MatchString(revision)'))
+cases.append(('binding','internal/hosted/seat_capacity.go',old,old.replace('if ','if false && (',1).replace(' {',') {'),gotest('TestCapacityReplyStrictProtocolAndRegistration')))
+s=(repo/'internal/hosted/lifecycle.go').read_text();start=s.index('\tif capacityErr := l.st.capacityResult',s.index('func (l *Lifecycle) Restart('));end=s.index('\tif l.quotaResult',start);old=s[start:end]+'\tif l.quotaResult';cases.append(('restart','internal/hosted/lifecycle.go',old,'\tif l.quotaResult',gotest('TestCapacityFinalGateLifecycleJobs')))
+metadata=[]
+for name,file,old,new,command in cases:
+ dst=lab/('reply-mutant-'+name);assert not dst.exists();dst.mkdir()
+ with tarfile.open(fileobj=io.BytesIO(archive)) as t:t.extractall(dst)
+ p=dst/file;s=p.read_text();assert s.count(old)==1,(name,s.count(old));p.write_text(s.replace(old,new))
+ metadata.append(dict(name=name,source=pin,file=file,old=old,new=new,mutated_sha256=hashlib.sha256(p.read_bytes()).hexdigest(),command=command))
+(lab/'evidence/reply-mutations.json').write_text(json.dumps(metadata,indent=2)+'\n')
+def run(case):
+ name,file,old,new,command=case;log='reply-withdraw-'+name+'.log'
+ rc=subprocess.call(['python3',str(lab/'run-local.py'),log,*command],cwd=lab/('reply-mutant-'+name),stdout=subprocess.DEVNULL)
+ raw=(lab/'evidence'/log).read_text();valid=rc==1 and ('--- FAIL:' in raw or 'AssertionError' in raw) and '[build failed]' not in raw and 'SyntaxError' not in raw
+ result=dict(name=name,rc=rc,assertion_red=valid);print(json.dumps(result),flush=True);return result
+with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(run,cases))
+(lab/'evidence/reply-withdrawals.json').write_text(json.dumps(dict(source=pin,results=results),indent=2)+'\n')
+raise SystemExit(0 if all(x['assertion_red'] for x in results) else 1)

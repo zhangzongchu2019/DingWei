@@ -1,0 +1,25 @@
+{
+  "code": "7d5cba6039a7cd739fa13c7c16d52a6d8c88caaa",
+  "tree": "3ad51486db473000f1ec3df86e4b44852ae9f664",
+  "predecessor": "695bec8bd2a46d2e01913d83f6d1ed687d1e6697",
+  "formal_REWORK": "283d3da7323dfd8f6ccd5c951b2a0920b4cdec0d",
+  "changed_paths_sha256": {
+    "cmd/workpulse/hosted_capacity_reason_test.go": "bc2e8db32bb6f93e4067ee25554cba2b90e8754766f8c3a8afaa85151fb03a08",
+    "internal/hosted/lifecycle.go": "bfd57fc30a616ff2f651036c8a09208e6fbc65b108d055cb31af062fc601326f",
+    "internal/hosted/lifecycle_job.go": "2417bc8605c6ea06ff5df0b0ac9e680da13ad1e786572011ab92b69cc1fd0ff1",
+    "internal/hosted/orchestrator.go": "b2e9a8c20708c8b124da27524cb15c1262b6acb1dc8fe0019598d892508baf0b",
+    "internal/hosted/readapi.go": "b2153def4867f89bb68476fc54e2e87eff850ae80edc415e89ff6f1b510506d4",
+    "internal/hosted/seat_capacity.go": "5b423ae9e98c093e7208bf26b031dc1d159d2358ee6ec7e19bd2ba38f9d37c29",
+    "internal/hosted/seat_capacity_reply_test.go": "0e57a913fdb834cca2b91e84484c1e956e24e5103f185d30f41a2d56ecd392c3",
+    "internal/m8/console_auth.go": "a88b9ba0f92e5d61cfb3f91a6aa23729bf29edb5df715f128f8764e67180dc9f",
+    "view-service/console-soft-quota-regression.js": "5c2399dc754f8dd163823a7a71d659bf14911c714ea40ba85139685859ff6cd7"
+  },
+  "unchanged_nodeagent_and_calculator": true,
+  "no_rebase_r22": true,
+  "reviewer_probe_fixture": {
+    "commit": "283d3da7323dfd8f6ccd5c951b2a0920b4cdec0d",
+    "path": "docs/reviews/opus50ts-seat-capacity-7a600e52/followup-695bec8b/final-node-gate_test.go.fixture",
+    "sha256": "8a90aca9b5c065fd503b9c2633121f48dccb38965f958a5e81c89cd39dbcbd56",
+    "author_rerun_not_independent_reviewer_result": true
+  }
+}

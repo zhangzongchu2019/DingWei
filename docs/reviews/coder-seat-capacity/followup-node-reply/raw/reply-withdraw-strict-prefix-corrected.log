@@ -1,0 +1,6 @@
+=== RUN   TestCapacityReplyStrictProtocolAndRegistration
+    seat_capacity_reply_test.go:63: near-match accepted: node_no_capacity
+--- FAIL: TestCapacityReplyStrictProtocolAndRegistration (2.97s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	2.985s
+FAIL

@@ -1,0 +1,4 @@
+=== RUN   TestHostedFinalNodeGateJobHTTP
+--- PASS: TestHostedFinalNodeGateJobHTTP (1.98s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	3.007s

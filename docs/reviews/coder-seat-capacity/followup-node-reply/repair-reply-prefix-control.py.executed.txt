@@ -1,0 +1,10 @@
+import hashlib,json,pathlib,shutil,subprocess
+repo=pathlib.Path('/data/ai-dev-data/seat-capacity-r22');lab=pathlib.Path('/data/ai-dev-data/coder-seat-capacity-lab');pin=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()
+for name in ['reply-withdrawals.json','reply-mutations.json','reply-withdraw-strict-prefix.log','reply-withdraw-strict-prefix.log.result.json']:
+ shutil.copyfile(lab/'evidence'/name,lab/'evidence'/('initial-'+name))
+path=lab/'reply-mutant-strict-prefix/internal/hosted/seat_capacity.go';data=subprocess.check_output(['git','show',pin+':internal/hosted/seat_capacity.go'],cwd=repo,text=True)
+old='strings.CutPrefix(result.Error, "seat_capacity_blocked: seat_capacity_")';new='strings.CutPrefix(strings.TrimPrefix(result.Error, "prefix "), "seat_capacity_blocked: seat_capacity_")';assert data.count(old)==1;path.write_text(data.replace(old,new))
+command=['go','test','-count=1','-v','./internal/hosted','-run','^TestCapacityReplyStrictProtocolAndRegistration$']
+rc=subprocess.call(['python3',str(lab/'run-local.py'),'reply-withdraw-strict-prefix-corrected.log',*command],cwd=path.parents[2]);raw=(lab/'evidence/reply-withdraw-strict-prefix-corrected.log').read_text();assert rc==1 and '--- FAIL:' in raw and 'near-match accepted' in raw and '[build failed]' not in raw
+j=lab/'evidence/reply-withdrawals.json';d=json.loads(j.read_text());case=next(x for x in d['results'] if x['name']=='strict-prefix');case.update(assertion_red=True,log='reply-withdraw-strict-prefix-corrected.log',rc=rc);j.write_text(json.dumps(d,indent=2)+'\n')
+j=lab/'evidence/reply-mutations.json';d=json.loads(j.read_text());case=next(x for x in d if x['name']=='strict-prefix');case.update(new=new,mutated_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),command=command);j.write_text(json.dumps(d,indent=2)+'\n');print('corrected prefix source withdrawal assertion red')
