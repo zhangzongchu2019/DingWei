@@ -35,35 +35,35 @@
     "sha256": "177fd0c429effb5e7ed878dc1d72336cb63452700e6ba68b2343d4bcb145042d",
     "bytes": 4433
   },
-  "/data/ai-dev-data/hosted-image-0234/docs/reviews/coder-hosted-image-0234/WITHDRAWAL.json": {
+  "docs/reviews/coder-hosted-image-0234/WITHDRAWAL.json": {
     "sha256": "92c7c538b5bc155101a6a99f4f83a4385f6b13996a124e98b720c4ca62ab5399",
     "bytes": 520
   },
-  "/data/ai-dev-data/hosted-image-0234/docs/reviews/coder-hosted-image-0234/PROVENANCE.json": {
+  "docs/reviews/coder-hosted-image-0234/PROVENANCE.json": {
     "sha256": "e2951222723a86a25fd906b494d8ae9d99ee74a1ee446c563b6be4ad9485fa22",
     "bytes": 228
   },
-  "/data/ai-dev-data/hosted-image-0234/docs/reviews/coder-hosted-image-0234/REPORT.md": {
+  "docs/reviews/coder-hosted-image-0234/REPORT.md": {
     "sha256": "da2193fc91d142870f9775d49abbc0679e89635df634956a4f2505a062f6ba19",
     "bytes": 3300
   },
-  "/data/ai-dev-data/hosted-image-0234/docs/reviews/coder-hosted-image-0234/raw/definition.log": {
+  "docs/reviews/coder-hosted-image-0234/raw/definition.log": {
     "sha256": "b7827a9520889cba9efe3f04c36a48ffd2080c1e1b4af2209eb64cbfde26eeda",
     "bytes": 98
   },
-  "/data/ai-dev-data/hosted-image-0234/docs/reviews/coder-hosted-image-0234/raw/start.log": {
+  "docs/reviews/coder-hosted-image-0234/raw/start.log": {
     "sha256": "d71b94a793ba5688fc0c301833e0cb3b95bea32e48edc244ee0f2d363016e77c",
     "bytes": 98
   },
-  "/data/ai-dev-data/hosted-image-0234/docs/reviews/coder-hosted-image-0234/raw/combined.log": {
+  "docs/reviews/coder-hosted-image-0234/raw/combined.log": {
     "sha256": "800d11b352c5976048940cdf0c3ce1209fb1ad37777700de98b5fb3352494fa2",
     "bytes": 98
   },
-  "/data/ai-dev-data/hosted-image-0234/docs/reviews/coder-hosted-image-0234/raw/mcp-mode-withdrawal.log": {
+  "docs/reviews/coder-hosted-image-0234/raw/mcp-mode-withdrawal.log": {
     "sha256": "39b32a69c863354f606be9ca49080ac9c1c97200a3672c5a1cbf1cf616831984",
     "bytes": 692
   },
-  "/data/ai-dev-data/hosted-image-0234/docs/reviews/coder-hosted-image-0234/raw/hash-requirement-withdrawal.log": {
+  "docs/reviews/coder-hosted-image-0234/raw/hash-requirement-withdrawal.log": {
     "sha256": "b16b303b3ce1ebd906037045e9d15e93e52778261e9cea688b0ed5817efc0079",
     "bytes": 3251
   }
