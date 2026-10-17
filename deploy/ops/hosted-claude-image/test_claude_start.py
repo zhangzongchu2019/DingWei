@@ -17,6 +17,9 @@ class ClaudeStart(unittest.TestCase):
     def test_definition_keeps_combo_unverified_and_builder_fail_closed(self):
         combo = json.loads((HERE / 'combos.json').read_text())
         self.assertEqual(combo, [{'cli': 'claude', 'llm': 'claude', 'cred_kind': 'token_file', 'verified': False}])
+        dockerfile = (HERE / 'Dockerfile').read_text()
+        for required in ('USER 10001:10001', 'COPY wheels /wheels', 'COPY native/package/ /opt/claude/', 'dingwei.claude.version="2.1.285"'):
+            self.assertIn(required, dockerfile)
         out = __import__('subprocess').run(['sh', str(HERE / 'build-image.sh')], text=True, capture_output=True)
         self.assertEqual(out.returncode, 2)
         self.assertNotIn('docker', out.stdout.lower())
