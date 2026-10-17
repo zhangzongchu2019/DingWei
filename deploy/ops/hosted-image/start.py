@@ -17,6 +17,8 @@ REQUIRED = ('SH_WS_BASE', 'SH_ENROLL_TOKEN_FILE', 'SH_CRED_FILE', 'SH_CRED_KIND'
 # 三个常量只为离线测试可替换，生产值不变、不新增 env 面。
 SEAT_UID = 10001
 CODEX_BIN = '/opt/codex/codex'
+HELPER_ROOT = '/opt/dingwei/sessionhelper-src'
+VENV_PYTHON = '/opt/dingwei/sessionhelper-venv/bin/python'
 # 与节点 internal/nodeagent/seat.go appliedMarkerName 同名同值（Go 用例钉住）；节点刷新凭据时先删它再写凭据件。
 MARKER_NAME = '.dw-applied-credential.sha256'
 _HEX64 = re.compile(r'[0-9a-f]{64}')
@@ -149,6 +151,11 @@ def prepare(env):
         if model:
             config += 'model = "' + model + '"\n'
         config += '\n[projects."/work"]\ntrust_level = "trusted"\n'
+        config += ('\n[mcp_servers."dingwei-send"]\ncommand = ' + json.dumps(VENV_PYTHON) +
+                   '\nargs = ["-B", "-m", "sessionhelper.mcp_shim"]\n'
+                   '[mcp_servers."dingwei-send".env]\nPYTHONPATH = ' + json.dumps(HELPER_ROOT) +
+                   '\nSH_STATE_DIR = "/work/.dingwei"\nSH_IPC_SEND_BODY_ONLY = "1"\n'
+                   'DINGWEI_MCP_IPC_SOCK = ' + json.dumps(str(ipc_dir / IPC_SOCK_NAME)) + '\n')
         (home / 'config.toml').write_text(config)
         (home / 'config.toml').chmod(0o600)
     except (OSError, ValueError, UnicodeError, subprocess.TimeoutExpired):
@@ -158,11 +165,13 @@ def prepare(env):
                SH_MODE=env.get('SH_MODE', 'cli'), SH_CLI='codex', SH_CLI_CMD='/usr/local/bin/codex',
                SH_CLI_CWD='/work', SH_COLLECT='0', SH_INBOX_DB='/work/inbox.sqlite3',
                SH_MCP_IPC_SOCK=str(ipc_dir / IPC_SOCK_NAME), DINGWEI_MCP_IPC_SOCK=str(ipc_dir / IPC_SOCK_NAME),
-               SH_IPC_UPLOAD_ONLY='1')  # 组长 R-V2-IMAGE-R5-UPLOAD-ONLY：托管席 socket 只接上传，发信另立件
+               SH_IPC_UPLOAD_ONLY='0', SH_IPC_SEND_BODY_ONLY='1',
+               PYTHONPATH=HELPER_ROOT, PYTHONDONTWRITEBYTECODE='1',
+               PATH=str(Path(VENV_PYTHON).parent) + ':' + env.get('PATH', os.defpath))
     return env
 
 
 if __name__ == '__main__':
     os.umask(0o077)
     env = prepare(dict(os.environ))
-    os.execvpe('python', ['python', '-m', 'sessionhelper'], env)
+    os.execve(VENV_PYTHON, [VENV_PYTHON, '-B', '-m', 'sessionhelper'], env)

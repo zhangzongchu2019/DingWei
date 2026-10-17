@@ -1,0 +1,66 @@
+{
+  "deploy/ops/hosted-image/Dockerfile": {
+    "sha256": "b6f79358f38b5a53dcf3d5aaff7c20e0badfb579b01c1940738d7046be7dfcd4",
+    "bytes": 2531
+  },
+  "deploy/ops/hosted-image/dockerignore": {
+    "sha256": "9e22c7c10e03555495f1a8a6644ddec2feb1c85f3988a2b2f4a3af00b7a15794",
+    "bytes": 227
+  },
+  "deploy/ops/hosted-image/start.py": {
+    "sha256": "9fe9e0995f00547998a728c988df67189227086fa43199e6fcf34d49a08ba915",
+    "bytes": 8158
+  },
+  "deploy/ops/hosted-image/test_start.py": {
+    "sha256": "c75f606efedc57776fc5403e3ad92683ddf4221234a6c50ddb0a48fd1fa18705",
+    "bytes": 16974
+  },
+  "deploy/ops/hosted-image/prepare_context.py": {
+    "sha256": "70c47fea42f00e7476caa486594ce12008a2324409e108568ac4a1a8c8a59387",
+    "bytes": 8277
+  },
+  "deploy/ops/hosted-image/build-image.sh": {
+    "sha256": "acea13d5aa3c38785a68bd399e421a4fc45fae083f22cf2e6d6c44004663e129",
+    "bytes": 1095
+  },
+  "deploy/ops/hosted-image/verify_runtime.py": {
+    "sha256": "eba5b2c638ef0d752e6b34af1ee921f288352a85359c85831c7e3ac84dce03bf",
+    "bytes": 518
+  },
+  "deploy/ops/hosted-image/test_build_definition.py": {
+    "sha256": "9af0882ecd04d62fe45e7423705d639322c97f594e553a88b94309024ee10cda",
+    "bytes": 11384
+  },
+  "deploy/ops/hosted-image/BUILD-0234.md": {
+    "sha256": "baf0ae4daa280013a526ab87a47f46ff5c81bb03c27845a28bf4bad3d40cb276",
+    "bytes": 4372
+  },
+  "docs/reviews/coder-hosted-image-0234/WITHDRAWAL.json": {
+    "sha256": "92c7c538b5bc155101a6a99f4f83a4385f6b13996a124e98b720c4ca62ab5399",
+    "bytes": 520
+  },
+  "docs/reviews/coder-hosted-image-0234/REPORT.md": {
+    "sha256": "951e7cb4b8504d86f37f70bcf5fdfd3022840f139c7915b164556dd494063c76",
+    "bytes": 2827
+  },
+  "docs/reviews/coder-hosted-image-0234/raw/definition.log": {
+    "sha256": "b7827a9520889cba9efe3f04c36a48ffd2080c1e1b4af2209eb64cbfde26eeda",
+    "bytes": 98
+  },
+  "docs/reviews/coder-hosted-image-0234/raw/start.log": {
+    "sha256": "d71b94a793ba5688fc0c301833e0cb3b95bea32e48edc244ee0f2d363016e77c",
+    "bytes": 98
+  },
+  "docs/reviews/coder-hosted-image-0234/raw/combined.log": {
+    "sha256": "d358792325269f3edd8d114cfbf712ddd3725096fdb2b8c0b7f5c750ca30364a",
+    "bytes": 98
+  },
+  "docs/reviews/coder-hosted-image-0234/raw/mcp-mode-withdrawal.log": {
+    "sha256": "9d8e9526fc51dda8bc123ae5bed2ed74d46e445435ae8418fc0a5e55bbdfc66a",
+    "bytes": 692
+  },
+  "docs/reviews/coder-hosted-image-0234/raw/hash-requirement-withdrawal.log": {
+    "sha256": "f73be469e868e7aeba6b89b897d12b04b90568456f178c57d80b209bd44976fa",
+    "bytes": 3251
+  }
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "name": "mcp-mode-withdrawal",
+    "rc": 1,
+    "file": "start.py",
+    "sha256": "6fed3aca56432561c1c55a845e7bd56ab79555004869e02375fcaf18caeaffeb",
+    "before": "SH_IPC_SEND_BODY_ONLY = \"1\"",
+    "after": "SH_IPC_SEND_BODY_ONLY = \"0\""
+  },
+  {
+    "name": "hash-requirement-withdrawal",
+    "rc": 1,
+    "file": "Dockerfile",
+    "sha256": "d39fdcb716e890a476b5967cdaa087969ba98e8471b0e1e5049790a372c12114",
+    "before": "--require-hashes --only-binary=:all:",
+    "after": "--only-binary=:all:"
+  }
+]

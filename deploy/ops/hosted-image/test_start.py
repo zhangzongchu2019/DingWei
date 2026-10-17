@@ -34,7 +34,7 @@ if sys.argv[3] == 'fail-auth-write':
     start._write_atomic = failing
 out = start.prepare(json.loads(sys.stdin.read()))
 if sys.argv[3] == 'print-env':
-    print('R5ENV=' + json.dumps({k: out.get(k) for k in ('SH_MCP_IPC_SOCK', 'DINGWEI_MCP_IPC_SOCK', 'SH_IPC_UPLOAD_ONLY')}))
+    print('R5ENV=' + json.dumps({k: out.get(k) for k in ('SH_MCP_IPC_SOCK', 'DINGWEI_MCP_IPC_SOCK', 'SH_IPC_UPLOAD_ONLY', 'SH_IPC_SEND_BODY_ONLY', 'PYTHONPATH')}))
 '''
 
 # 登录桩：把收到的 stdin 原样回显到 stdout／stderr（若 start.py 不屏蔽就会漏出），计数，再写 auth.json。
@@ -309,7 +309,7 @@ class StartR5Test(_StartCase):
         self.assertIsNotNone(line, res.stdout + res.stderr)
         return json.loads(line[len('R5ENV='):])
 
-    def test_r5_ipc_dir_created_private_and_env_set_upload_only(self):
+    def test_h3_ipc_dir_private_and_env_set_restricted_send(self):
         self.put_cred(TOKEN)
         res = self.run_prepare(hook='print-env')
         self.assert_ok(res)
@@ -317,7 +317,8 @@ class StartR5Test(_StartCase):
         self.assertEqual(self.ipc.stat().st_mode & 0o777, 0o700)
         sock = str(self.ipc / 'helper.sock')
         self.assertEqual(self.r5_env(res), {'SH_MCP_IPC_SOCK': sock, 'DINGWEI_MCP_IPC_SOCK': sock,
-                                            'SH_IPC_UPLOAD_ONLY': '1'})
+                                            'SH_IPC_UPLOAD_ONLY': '0', 'SH_IPC_SEND_BODY_ONLY': '1',
+                                            'PYTHONPATH': '/opt/dingwei/sessionhelper-src'})
 
     def test_r5_ipc_dir_mode_tightened_when_preexisting_loose(self):
         self.put_cred(TOKEN)
