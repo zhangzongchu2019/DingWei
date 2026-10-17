@@ -27,7 +27,7 @@ func TestPlanTable(t *testing.T) {
 	if _, ok := PlanByID("3c16g"); ok {
 		t.Fatal("未知套餐不应存在")
 	}
-	if got := PlanIDs(); len(got) != 2 || got[0] != "2c4g" || got[1] != "4c8g" {
+	if got := PlanIDs(); len(got) != 3 || got[0] != "1c1.5g40" || got[1] != "2c4g" || got[2] != "4c8g" {
 		t.Fatalf("PlanIDs 顺序错: %v", got)
 	}
 }

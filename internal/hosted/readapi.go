@@ -44,18 +44,18 @@ type AccountOption struct {
 }
 
 type PlanOption struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"` // 如 2C/4G
-	VCPU  int    `json:"vcpu"`
-	MemGB int64  `json:"mem_gb"`
-	Fits  bool   `json:"fits"` // false＝超剩余额度置灰（S3/B5；按全局剩余算，手选节点容量由创建时 node_no_capacity 兜底）
+	ID    string  `json:"id"`
+	Name  string  `json:"name"` // 如 2C/4G
+	VCPU  int     `json:"vcpu"`
+	MemGB float64 `json:"mem_gb"`
+	Fits  bool    `json:"fits"` // false＝超剩余额度置灰（S3/B5；按全局剩余算，手选节点容量由创建时 node_no_capacity 兜底）
 }
 
 type QuotaRemaining struct {
-	Agents int64 `json:"agents"`
-	VCPU   int64 `json:"vcpu"`
-	MemGB  int64 `json:"mem_gb"`
-	DiskGB int64 `json:"disk_gb"`
+	Agents int64   `json:"agents"`
+	VCPU   int64   `json:"vcpu"`
+	MemGB  float64 `json:"mem_gb"`
+	DiskGB int64   `json:"disk_gb"`
 }
 
 // QuotaView 契约第一节：quota: {remaining:{agents, vcpu, mem_gb, disk_gb}}——多包一层 remaining（页面读 opts.quota.remaining）。
@@ -150,7 +150,7 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 	v.Quota.Remaining = QuotaRemaining{
 		Agents: max0(int64(quota.AgentsLimit) - int64(usage.Agents)),
 		VCPU:   max0(int64(quota.VCPULimit) - int64(usage.VCPU)),
-		MemGB:  max0(quota.MemMBLimit-usage.MemMB) / 1024,
+		MemGB:  float64(max0(quota.MemMBLimit-usage.MemMB)) / 1024,
 		DiskGB: max0(quota.DiskMBLimit-usage.DiskMB) / 1024,
 	}
 	for _, pid := range PlanIDs() {
@@ -160,11 +160,19 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 			quota.MemMBLimit-usage.MemMB >= p.MemMB &&
 			quota.DiskMBLimit-usage.DiskMB >= p.DiskMB
 		v.Plans = append(v.Plans, PlanOption{
-			ID: p.ID, Name: fmt.Sprintf("%dC/%dG", p.VCPU, p.MemMB/1024),
-			VCPU: p.VCPU, MemGB: p.MemMB / 1024, Fits: fits,
+			ID: p.ID, Name: planOptionName(p),
+			VCPU: p.VCPU, MemGB: float64(p.MemMB) / 1024, Fits: fits,
 		})
 	}
 	return v, nil
+}
+
+func planOptionName(p Plan) string {
+	name := fmt.Sprintf("%dC/%gG", p.VCPU, float64(p.MemMB)/1024)
+	if p.ID == "1c1.5g40" {
+		name += "/40G"
+	}
+	return name
 }
 
 // ---------- jobs 进度（GET /api/console/hosted/jobs/{job_id}） ----------

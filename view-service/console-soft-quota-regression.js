@@ -22,7 +22,7 @@ const options={
  {id:'soft',name:'Soft',online:true,quota_mode:'soft',quota_eligible:true,free_mem_gb:16,free_vcpu:8,free_disk_gb:100},
  {id:'unknown',name:'Unready',online:true,quota_mode:'soft',quota_eligible:false,free_mem_gb:16,free_vcpu:8,free_disk_gb:100}],
  combos:[{cli:'codex',llm:'openai',cred_kind:'api_key',verified:true}],accounts:[{id:'fixture',name:'Fixture',llm:'openai',kind:'api_key',last4:'0000'}],
- plans:[{id:'2c4g',name:'2C/4G',fits:true}],models:[],quota:{remaining:{agents:4,vcpu:8,mem_gb:16,disk_gb:100}},
+ plans:[{id:'1c1.5g40',name:'1C/1.5G/40G',vcpu:1,mem_gb:1.5,fits:true},{id:'2c4g',name:'2C/4G',fits:true},{id:'4c8g',name:'4C/8G',fits:false}],models:[],quota:{remaining:{agents:4,vcpu:8,mem_gb:16,disk_gb:100}},
 };
 const json=(res,status,body)=>{res.writeHead(status,{'content-type':'application/json'});res.end(JSON.stringify(body));};
 const server=http.createServer(async(req,res)=>{
@@ -49,15 +49,19 @@ const server=http.createServer(async(req,res)=>{
   assert.strictEqual(await page.locator('#hostedNode option[value=unknown]').evaluate(el=>el.disabled),true);
   assert.strictEqual(await page.locator('#hostedAllowSoft').isChecked(),false);
   await page.locator('#hostedCli').selectOption('codex');await page.locator('#hostedLlm').selectOption('openai');await page.locator('#hostedAccount').selectOption('fixture');await page.locator('#hostedPlan').selectOption('2c4g');
+  assert.strictEqual(await page.locator('#hostedPlan option[value="1c1.5g40"]').textContent(),'1C/1.5G/40G');
+  assert.strictEqual(await page.locator('#hostedPlan option[value="1c1.5g40"]').evaluate(el=>el.disabled),false);
+  await page.locator('#hostedPlan').selectOption('1c1.5g40');
   for(const consent of [false,true]){
    await page.locator('#hostedName').fill(consent?'WithConsent':'NoConsent');await page.locator('#hostedNode').selectOption('soft');await page.locator('#hostedAllowSoft').setChecked(consent);
    const response=page.waitForResponse(r=>r.url().endsWith('/api/console/hosted/agents')&&r.request().method()==='POST');await page.locator('#hostedCreateBtn').click();const r=await response;
    if(consent)assert.strictEqual(r.request().postDataJSON().allow_soft,true);else assert(!('allow_soft' in r.request().postDataJSON()),'legacy default body shape');assert.strictEqual(r.request().postDataJSON().node_id,'soft');
+   assert.strictEqual(r.request().postDataJSON().plan_id,'1c1.5g40');
   }
   assert.match(await page.locator('#rosterItems').textContent(),/无硬磁盘配额（磁盘保护，数据保留）/);
   assert.match(await page.locator('#rosterItems').textContent(),/磁盘测量暂不可用，暂停新建与启动/);
   assert.doesNotMatch(await page.locator('#rosterItems').textContent(),/接近限额/);
   assert.doesNotMatch(await page.locator('#hostedFeedback').textContent(),/UNTRUSTED_DETAIL/);
-  assert.deepStrictEqual(errors,[]);console.log('SOFT_QUOTA_BROWSER_OK assertions=12');
+  assert.deepStrictEqual(errors,[]);console.log('SOFT_QUOTA_BROWSER_OK assertions=16');
  }finally{await context.close();await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
