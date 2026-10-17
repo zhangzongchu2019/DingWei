@@ -107,3 +107,34 @@ func TestWireValidationAndPendingReservations(t *testing.T) {
 		t.Fatal("zero wire value became known")
 	}
 }
+
+func TestConfiguredMinimumFloorsEachReservation(t *testing.T) {
+	now := time.Unix(100, 0)
+	for _, tc := range []struct {
+		name                   string
+		minimum, total, actual Resources
+		fits                   int
+	}{
+		{"cpu", Resources{2000, 1536 << 20, 40 << 30}, Resources{8000, 128 << 30, 1 << 40}, Resources{1000, 1536 << 20, 40 << 30}, 4},
+		{"memory", Resources{1000, 4 << 30, 40 << 30}, Resources{32000, 16 << 30, 1 << 40}, Resources{1000, 1536 << 20, 40 << 30}, 4},
+		// The legacy 2c4g plan stays 8 GiB actual, but books at least 40 GiB.
+		{"disk", Resources{1000, 1536 << 20, 40 << 30}, Resources{32000, 128 << 30, 320 << 30}, Resources{2000, 4 << 30, 8 << 30}, 8},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p := Policy{Minimum: tc.minimum, MaxSeats: 100}
+			s := Snapshot{Known: true, At: now, Total: tc.total}
+			var managed []Resources
+			for i := 0; i < tc.fits; i++ {
+				v := Evaluate(p, s, managed, now, time.Minute)
+				if len(v.CanAdd(p, tc.actual)) != 0 {
+					t.Fatalf("reservation%d refused: %+v", i+1, v)
+				}
+				managed = append(managed, tc.actual)
+			}
+			v := Evaluate(p, s, managed, now, time.Minute)
+			if got := v.CanAdd(p, tc.actual); !reflect.DeepEqual(got, []string{tc.name}) {
+				t.Fatalf("minimum not applied to actual reservation: %+v %v", v, got)
+			}
+		})
+	}
+}
