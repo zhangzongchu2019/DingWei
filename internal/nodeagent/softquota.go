@@ -387,6 +387,9 @@ func (q *softQuota) track(id, cid string) error {
 func (q *softQuota) forget(id string) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
+	if s := q.state.Seats[id]; s != nil && s.WriterKind == "login" {
+		return fmt.Errorf("%w: login_requires_confirmed_retirement", ErrSoftQuota)
+	}
 	delete(q.state.Seats, id)
 	return q.persistLocked()
 }

@@ -160,7 +160,7 @@ func (l *loginOps) cleanupSoft(ctx context.Context, id string) {
 	if os.RemoveAll(l.dir(id)) != nil {
 		return
 	}
-	_ = q.forget(key)
+	_ = q.finishLogin(key, s)
 }
 
 func (d *dockerOps) inspectLoginOwner(ctx context.Context, key, cid string) error {
@@ -194,4 +194,15 @@ func (d *dockerOps) inspectLoginOwner(ctx context.Context, key, cid string) erro
 		}
 	}
 	return ErrSoftQuota
+}
+
+// Ordinary seat teardown must not erase a login writer's budget or stop target.
+func (q *softQuota) finishLogin(key string, writer *softSeat) error {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if q.broken || q.lock == nil || q.state.Seats[key] != writer || writer.WriterKind != "login" || !writer.Retiring || writer.Hold != "" {
+		return ErrSoftQuota
+	}
+	delete(q.state.Seats, key)
+	return q.persistLocked()
 }

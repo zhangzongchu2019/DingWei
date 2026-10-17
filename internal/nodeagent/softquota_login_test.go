@@ -448,3 +448,29 @@ func TestSoftLoginPersistentPoolAndStateValidation(t *testing.T) {
 		t.Fatal("seat stole login namespace")
 	}
 }
+
+func TestSoftLoginBudgetCannotBeForgottenBySeatTeardown(t *testing.T) {
+	l, q, _, _ := softLoginFixture(t)
+	if _, err := l.start(context.Background(), lfParams(l, lfID)); err != nil {
+		t.Fatal(err)
+	}
+	key := "login-" + lfID
+	if err := q.forget(key); err == nil {
+		t.Fatal("seat teardown erased a running login writer")
+	}
+	q.mu.Lock()
+	writer := q.state.Seats[key]
+	q.mu.Unlock()
+	if writer == nil {
+		t.Fatal("login budget lost")
+	}
+	if err := q.finishLogin(key, writer); err == nil {
+		t.Fatal("running login retired before Engine removal")
+	}
+	q.mu.Lock()
+	q.holdLocked(key, "usage_unknown")
+	q.mu.Unlock()
+	if err := q.forget(key); err == nil {
+		t.Fatal("seat teardown erased a held login")
+	}
+}
