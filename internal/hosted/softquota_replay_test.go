@@ -78,7 +78,7 @@ func assertReleasedSeat(t *testing.T, s *Store) {
 }
 
 func TestSoftHoldReleaseReplayPreservesCurrentHazards(t *testing.T) {
-	for _, boundary := range []string{"new_hold", "new_hold_without_event", "ordinary_error", "destroyed", "disabled", "no_owner_intent", "wrong_generation"} {
+	for _, boundary := range []string{"new_hold", "new_hold_without_event", "ordinary_error", "ordinary_error_first_event", "destroyed", "disabled", "no_owner_intent", "wrong_generation"} {
 		t.Run(boundary, func(t *testing.T) {
 			ctx := context.Background()
 			s := NewStore(testpool(t))
@@ -91,7 +91,9 @@ func TestSoftHoldReleaseReplayPreservesCurrentHazards(t *testing.T) {
 			}
 			event := map[string]any{"id": strings.Repeat("b", 32), "seat_id": "ag_release", "reason": "disk_limit", "at": "2026-10-17T17:00:00Z"}
 			f["quota_events"] = []any{event}
-			setReleaseFrame(t, s, f)
+			if boundary != "ordinary_error_first_event" {
+				setReleaseFrame(t, s, f)
+			}
 			g := &releaseGateway{}
 			if boundary != "no_owner_intent" {
 				if err := s.ReleaseSoftHold(ctx, g, "owner", "nd_release", "ag_release", strings.Repeat("b", 32)); err != nil {
@@ -113,14 +115,14 @@ func TestSoftHoldReleaseReplayPreservesCurrentHazards(t *testing.T) {
 				if boundary == "new_hold" {
 					f["quota_events"] = []any{event, map[string]any{"id": strings.Repeat("c", 32), "seat_id": "ag_release", "reason": "disk_limit", "at": "2026-10-17T17:10:00Z"}}
 				}
-			case "ordinary_error":
+			case "ordinary_error", "ordinary_error_first_event":
 				wantState, wantDetail = "error", "engine_failed"
 			case "destroyed", "disabled":
 				wantState, wantDetail = boundary, "retired"
 			case "wrong_generation":
 				seat["last_release_id"] = strings.Repeat("d", 32)
 			}
-			if boundary == "ordinary_error" || boundary == "destroyed" || boundary == "disabled" {
+			if strings.HasPrefix(boundary, "ordinary_error") || boundary == "destroyed" || boundary == "disabled" {
 				if _, err := s.exec(ctx, `UPDATE g4_hosted_seat SET state=$1,state_detail=$2 WHERE agent_id='ag_release'`, wantState, wantDetail); err != nil {
 					t.Fatal(err)
 				}
