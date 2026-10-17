@@ -1,0 +1,14 @@
+test_shell_missing_variables_and_default_engine_refuse_without_docker (test_build_definition.StartupAndDefinition.test_shell_missing_variables_and_default_engine_refuse_without_docker) ... FAIL
+
+======================================================================
+FAIL: test_shell_missing_variables_and_default_engine_refuse_without_docker (test_build_definition.StartupAndDefinition.test_shell_missing_variables_and_default_engine_refuse_without_docker)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-rework-u78acji4/definition/test_build_definition.py", line 226, in test_shell_missing_variables_and_default_engine_refuse_without_docker
+    self.assertIn(b'default host Engine alias forbidden', direct.stderr)
+AssertionError: b'default host Engine alias forbidden' not found in b'usage: prepare_context.py [-h] --repo REPO --wheelhouse WHEELHOUSE\n                          --native-tar NATIVE_TAR --runtime-debs RUNTIME_DEBS\n                          --security-debs SECURITY_DEBS --output OUTPUT\n                          --commit COMMIT\nprepare_context.py: error: the following arguments are required: --repo, --wheelhouse, --native-tar, --runtime-debs, --security-debs\n'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.084s
+
+FAILED (failures=1)

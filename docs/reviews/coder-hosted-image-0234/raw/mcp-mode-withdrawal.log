@@ -1,0 +1,15 @@
+======================================================================
+FAIL: test_mcp_and_helper_share_restricted_root_and_state (test_build_definition.StartupAndDefinition.test_mcp_and_helper_share_restricted_root_and_state)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-withdraw-lz2or1wl/hosted-image/test_build_definition.py", line 147, in test_mcp_and_helper_share_restricted_root_and_state
+    self.assertEqual(mcp['env']['SH_IPC_SEND_BODY_ONLY'], '1')
+AssertionError: '0' != '1'
+- 0
++ 1
+
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.072s
+
+FAILED (failures=1)

@@ -1,0 +1,162 @@
+{
+  "deploy/ops/hosted-image/Dockerfile": {
+    "bytes": 2531,
+    "sha256": "b6f79358f38b5a53dcf3d5aaff7c20e0badfb579b01c1940738d7046be7dfcd4"
+  },
+  "deploy/ops/hosted-image/dockerignore": {
+    "bytes": 227,
+    "sha256": "9e22c7c10e03555495f1a8a6644ddec2feb1c85f3988a2b2f4a3af00b7a15794"
+  },
+  "deploy/ops/hosted-image/start.py": {
+    "bytes": 9530,
+    "sha256": "859a76d1e486a6301d0406f471bbb85f8407f19eba00af3b3f0d160ff771162a"
+  },
+  "deploy/ops/hosted-image/test_start.py": {
+    "bytes": 17062,
+    "sha256": "576344bc50c42efef235bdd457ec08d2b787931b35d7891d6d738821406f698a"
+  },
+  "deploy/ops/hosted-image/prepare_context.py": {
+    "bytes": 8277,
+    "sha256": "70c47fea42f00e7476caa486594ce12008a2324409e108568ac4a1a8c8a59387"
+  },
+  "deploy/ops/hosted-image/build-image.sh": {
+    "bytes": 2121,
+    "sha256": "1db6b7170965810be35a1b25f7784a7fa4c537a70642b7aaa769eec3d176d64c"
+  },
+  "deploy/ops/hosted-image/verify_runtime.py": {
+    "bytes": 518,
+    "sha256": "eba5b2c638ef0d752e6b34af1ee921f288352a85359c85831c7e3ac84dce03bf"
+  },
+  "deploy/ops/hosted-image/test_build_definition.py": {
+    "bytes": 19151,
+    "sha256": "a6be469cef8bc71d1a1a22d3acf78b04b827b6948cb22dee63025af352c4b730"
+  },
+  "deploy/ops/hosted-image/BUILD-0234.md": {
+    "bytes": 8439,
+    "sha256": "093500f36100e2f9fb1c3c940d4cbbab629de7129118a0a05fd65d6932cb4109"
+  },
+  "docs/reviews/coder-hosted-image-0234/WITHDRAWAL.json": {
+    "bytes": 520,
+    "sha256": "92c7c538b5bc155101a6a99f4f83a4385f6b13996a124e98b720c4ca62ab5399"
+  },
+  "docs/reviews/coder-hosted-image-0234/PROVENANCE.json": {
+    "bytes": 228,
+    "sha256": "a6c2bb62553b765e5bbbe381c1c86ff35c8dec9e5b478a76bdebd0253933d29b"
+  },
+  "docs/reviews/coder-hosted-image-0234/REPORT.md": {
+    "bytes": 9767,
+    "sha256": "288cecd4bdd2fbccaf62151964d9d48748677e3f0525cb1222f2ef942ba6e62e"
+  },
+  "docs/reviews/coder-hosted-image-0234/raw/definition.log": {
+    "bytes": 98,
+    "sha256": "b7827a9520889cba9efe3f04c36a48ffd2080c1e1b4af2209eb64cbfde26eeda"
+  },
+  "docs/reviews/coder-hosted-image-0234/raw/start.log": {
+    "bytes": 98,
+    "sha256": "d71b94a793ba5688fc0c301833e0cb3b95bea32e48edc244ee0f2d363016e77c"
+  },
+  "docs/reviews/coder-hosted-image-0234/raw/combined.log": {
+    "bytes": 98,
+    "sha256": "800d11b352c5976048940cdf0c3ce1209fb1ad37777700de98b5fb3352494fa2"
+  },
+  "docs/reviews/coder-hosted-image-0234/raw/mcp-mode-withdrawal.log": {
+    "bytes": 692,
+    "sha256": "39b32a69c863354f606be9ca49080ac9c1c97200a3672c5a1cbf1cf616831984"
+  },
+  "docs/reviews/coder-hosted-image-0234/raw/hash-requirement-withdrawal.log": {
+    "bytes": 3251,
+    "sha256": "b16b303b3ce1ebd906037045e9d15e93e52778261e9cea688b0ed5817efc0079"
+  },
+  "docs/reviews/coder-hosted-image-0234/rework/state-gate-withdrawal.log": {
+    "bytes": 9946,
+    "sha256": "ba2192e4d1c503d971478937716559eca55ce8b8ef398863c420d0360f8db8b2"
+  },
+  "docs/reviews/coder-hosted-image-0234/rework/socket-alias-withdrawal.log": {
+    "bytes": 1378,
+    "sha256": "5a11426972af5a36c67cc7f5e37459d4d8bcdc92d0b19cdf4eb127012e40df70"
+  },
+  "docs/reviews/coder-hosted-image-0234/rework/combined.log": {
+    "bytes": 4615,
+    "sha256": "5bf0a78adf060f0af026504194e750c819f652fda22c89a3035a3b597173cfb1"
+  },
+  "docs/reviews/coder-hosted-image-0234/rework/WITHDRAWAL.json": {
+    "bytes": 535,
+    "sha256": "4ea4a4c52e61de4441d7cd988f3c400ca16c1a36c3b75d7efa3485621118a4fb"
+  },
+  "docs/reviews/coder-hosted-image-0234/engine-preflight/identity-preflight-withdrawal.log": {
+    "bytes": 1289,
+    "sha256": "4038ede09e78b118bd251e5ac920d21747b7b43af2acfdd53bbc686def643c2d"
+  },
+  "docs/reviews/coder-hosted-image-0234/engine-preflight/combined.log": {
+    "bytes": 4787,
+    "sha256": "b592673b455ce310e7e08437bded8b7586ae2cde75b65226bcfe518f069d025e"
+  },
+  "docs/reviews/coder-hosted-image-0234/engine-preflight/WITHDRAWAL.json": {
+    "bytes": 492,
+    "sha256": "58d1d8c2f41ea5324a18bdc3a832b6781f9fadc0f8116cf90b0fc562ac2f4078"
+  },
+  "docs/reviews/coder-hosted-image-0234/engine-preflight/existing-socket-withdrawal.log": {
+    "bytes": 921,
+    "sha256": "d84217057cf2e83357a115e2a1847d248a5a5aef5ab39e40d547f5d8d939355f"
+  },
+  "tools/sessionhelper/sessionhelper/ipc_listener.py": {
+    "bytes": 26139,
+    "sha256": "de4396729c0a55c8f2dc297f1d2ae28e19eabc22acc2273c23e54572cbb5a843"
+  },
+  "tools/sessionhelper/tests/test_hosted_mcp_send.py": {
+    "bytes": 10488,
+    "sha256": "b759641c12831a2abc75c3eff3647eda1c08230d0287e5739645d53a8b365652"
+  },
+  "docs/reviews/coder-hosted-image-0234/lock-only/restore-overstrict-gate.log": {
+    "bytes": 1011,
+    "sha256": "302b19ffb7f46acc3af65677d055cf028b541f46e7cd0df4636deb6fc9f14c81"
+  },
+  "docs/reviews/coder-hosted-image-0234/lock-only/combined.log": {
+    "bytes": 5345,
+    "sha256": "df6a97152059b2aa47a4354306c0489d7cc42b0021db9010363e6cc5e4270d14"
+  },
+  "docs/reviews/coder-hosted-image-0234/lock-only/WITHDRAWAL.json": {
+    "bytes": 486,
+    "sha256": "5d085a2f1198032bbef3b9dc6baa20fb9a89660c61dcc47987a0bab5d921ec40"
+  },
+  "docs/reviews/coder-hosted-image-0234/lock-only/remove-lock-metadata-guard.log": {
+    "bytes": 6566,
+    "sha256": "b190a715ab6ecc25c1558e46ddd5686eed405d0724a6c05ffea9b73ee82c2980"
+  },
+  "scripts/run-build-tests.sh": {
+    "bytes": 3123,
+    "sha256": "ccae53ccfec78621cc5368390bbde30483c7b74701fae8032c4d76c07536ad8b"
+  },
+  "deploy/test_build_entrypoints.py": {
+    "bytes": 5717,
+    "sha256": "62286ab45746afb7816763037165abda9ef118109c0a52747444bd2dc9f7a157"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/restore-stale-count.log": {
+    "bytes": 2183,
+    "sha256": "47ce68b0dfc0651e3b73bad79123d5175e70a1c15090e88555db98b60ab58a43"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/full-canonical.log": {
+    "bytes": 40205,
+    "sha256": "72ad217e557f27984cc02ab67a9ddbd2111bb2be7071294e56ebb56f6382c0dc"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/WITHDRAWAL.json": {
+    "bytes": 557,
+    "sha256": "c0b7aa17e99624fd7f6ee3ba7e9242573e84b8518a68ee2c6c686212a091ac36"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/unwire-test.log": {
+    "bytes": 1291,
+    "sha256": "eea81d4e48f195dfeaa2a71dc0c5be9de70093e22107c8d458c3f5e8d510d523"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/RESULT.json": {
+    "bytes": 291,
+    "sha256": "319ce73ffe883a4b5ef781cfc5ea21f456769a120b52cdc51e83d4e3cdb548c9"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/CLEANUP.json": {
+    "bytes": 404,
+    "sha256": "494174ee3f2159f6334fdec0162bd018bd211d951c36efd5e4660264adc9e6b7"
+  },
+  "docs/reviews/coder-hosted-image-0234/canonical-wiring/SOURCE.json": {
+    "bytes": 209,
+    "sha256": "7e3fe546c0c942e25e93391017e38f327eaab20cb81326542c7deaa3fb6d5e1d"
+  }
+}

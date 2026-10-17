@@ -1,0 +1,118 @@
+test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) ... 
+  test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='current032') ... FAIL
+  test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='pending') ... FAIL
+  test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='previous') ... FAIL
+  test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='null') ... FAIL
+  test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='malformed') ... FAIL
+  test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='slot') ... FAIL
+  test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='symlink') ... FAIL
+  test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='fifo') ... FAIL
+
+======================================================================
+FAIL: test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='current032')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-rework-vxil_7o1/definition/test_build_definition.py", line 183, in test_existing_update_state_stops_before_credentials_without_read_or_reset
+    self.assertEqual(diagnostic.getvalue(), 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n')
+AssertionError: 'hosted-start: invalid or missing SH_WS_BASE\n' != 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n'
+- hosted-start: invalid or missing SH_WS_BASE
+?                                   ^^^^^^ ^
++ hosted-start: invalid or missing HELPER_UPDATE_STATE
+?                                  ++++++++++++++ ^ ^
+
+
+======================================================================
+FAIL: test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='pending')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-rework-vxil_7o1/definition/test_build_definition.py", line 183, in test_existing_update_state_stops_before_credentials_without_read_or_reset
+    self.assertEqual(diagnostic.getvalue(), 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n')
+AssertionError: 'hosted-start: invalid or missing SH_WS_BASE\n' != 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n'
+- hosted-start: invalid or missing SH_WS_BASE
+?                                   ^^^^^^ ^
++ hosted-start: invalid or missing HELPER_UPDATE_STATE
+?                                  ++++++++++++++ ^ ^
+
+
+======================================================================
+FAIL: test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='previous')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-rework-vxil_7o1/definition/test_build_definition.py", line 183, in test_existing_update_state_stops_before_credentials_without_read_or_reset
+    self.assertEqual(diagnostic.getvalue(), 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n')
+AssertionError: 'hosted-start: invalid or missing SH_WS_BASE\n' != 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n'
+- hosted-start: invalid or missing SH_WS_BASE
+?                                   ^^^^^^ ^
++ hosted-start: invalid or missing HELPER_UPDATE_STATE
+?                                  ++++++++++++++ ^ ^
+
+
+======================================================================
+FAIL: test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='null')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-rework-vxil_7o1/definition/test_build_definition.py", line 183, in test_existing_update_state_stops_before_credentials_without_read_or_reset
+    self.assertEqual(diagnostic.getvalue(), 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n')
+AssertionError: 'hosted-start: invalid or missing SH_WS_BASE\n' != 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n'
+- hosted-start: invalid or missing SH_WS_BASE
+?                                   ^^^^^^ ^
++ hosted-start: invalid or missing HELPER_UPDATE_STATE
+?                                  ++++++++++++++ ^ ^
+
+
+======================================================================
+FAIL: test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='malformed')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-rework-vxil_7o1/definition/test_build_definition.py", line 183, in test_existing_update_state_stops_before_credentials_without_read_or_reset
+    self.assertEqual(diagnostic.getvalue(), 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n')
+AssertionError: 'hosted-start: invalid or missing SH_WS_BASE\n' != 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n'
+- hosted-start: invalid or missing SH_WS_BASE
+?                                   ^^^^^^ ^
++ hosted-start: invalid or missing HELPER_UPDATE_STATE
+?                                  ++++++++++++++ ^ ^
+
+
+======================================================================
+FAIL: test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='slot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-rework-vxil_7o1/definition/test_build_definition.py", line 183, in test_existing_update_state_stops_before_credentials_without_read_or_reset
+    self.assertEqual(diagnostic.getvalue(), 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n')
+AssertionError: 'hosted-start: invalid or missing SH_WS_BASE\n' != 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n'
+- hosted-start: invalid or missing SH_WS_BASE
+?                                   ^^^^^^ ^
++ hosted-start: invalid or missing HELPER_UPDATE_STATE
+?                                  ++++++++++++++ ^ ^
+
+
+======================================================================
+FAIL: test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='symlink')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-rework-vxil_7o1/definition/test_build_definition.py", line 183, in test_existing_update_state_stops_before_credentials_without_read_or_reset
+    self.assertEqual(diagnostic.getvalue(), 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n')
+AssertionError: 'hosted-start: invalid or missing SH_WS_BASE\n' != 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n'
+- hosted-start: invalid or missing SH_WS_BASE
+?                                   ^^^^^^ ^
++ hosted-start: invalid or missing HELPER_UPDATE_STATE
+?                                  ++++++++++++++ ^ ^
+
+
+======================================================================
+FAIL: test_existing_update_state_stops_before_credentials_without_read_or_reset (test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) (case='fifo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-rework-vxil_7o1/definition/test_build_definition.py", line 183, in test_existing_update_state_stops_before_credentials_without_read_or_reset
+    self.assertEqual(diagnostic.getvalue(), 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n')
+AssertionError: 'hosted-start: invalid or missing SH_WS_BASE\n' != 'hosted-start: invalid or missing HELPER_UPDATE_STATE\n'
+- hosted-start: invalid or missing SH_WS_BASE
+?                                   ^^^^^^ ^
++ hosted-start: invalid or missing HELPER_UPDATE_STATE
+?                                  ++++++++++++++ ^ ^
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+FAILED (failures=8)

@@ -54,7 +54,7 @@ class BuildEntrypointContractTest(unittest.TestCase):
         for directory in (ROOT / "deploy", ROOT / "view-service"):
             for pattern in ("test*.py", "test*.sh"):
                 discovered.update(path.relative_to(ROOT).as_posix() for path in directory.rglob(pattern))
-        self.assertEqual(len(discovered), 23, f"测试文件集合变化，须同步审计清单: {sorted(discovered)}")  # 22→23: bounded Agent disk resource recorder contract
+        self.assertEqual(len(discovered), 24, f"测试文件集合变化，须同步审计清单: {sorted(discovered)}")  # 23→24: hosted image offline build-definition fixtures are now part of canonical
         for test_file in sorted(discovered):
             with self.subTest(test_file=test_file):
                 self.assertEqual(runner.count(test_file), 1, f"测试未接线或重复接线: {test_file}")
@@ -80,9 +80,9 @@ class BuildEntrypointContractTest(unittest.TestCase):
             self.assertEqual(runner.count("tools/sessionhelper/tests/" + name), 1)
         python_files = runner.split("PYTHON_TESTS='", 1)[1].split("'", 1)[0].split()
         shell_files = runner.split("SHELL_TESTS='", 1)[1].split("'", 1)[0].split()
-        self.assertEqual(len(python_files), 47)
+        self.assertEqual(len(python_files), 48)
         self.assertEqual(len(shell_files), 2)
-        self.assertIn("BUILD_TESTS_OK python=47 shell=2", runner)
+        self.assertIn("BUILD_TESTS_OK python=48 shell=2", runner)
 
     def test_build_make_and_ci_share_the_canonical_test_entrypoint(self):
         self.assertIn("./scripts/run-build-tests.sh", self.read("build.sh"))

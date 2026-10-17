@@ -1,0 +1,95 @@
+test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) ... 
+  test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='content') ... FAIL
+  test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='permissions') ... FAIL
+  test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='symlink') ... FAIL
+  test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='fifo') ... FAIL
+  test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='directory') ... FAIL
+  test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='hardlink') ... ERROR
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+  test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='journal') ... ERROR
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) ... FAIL
+
+======================================================================
+ERROR: test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='hardlink')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-lock-lugpq4u5/fixture/test_build_definition.py", line 218, in test_lock_only_restart_metadata_boundary
+    elif kind == 'hardlink': os.link(lock, state/'alias')
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 1] Operation not permitted: '/tmp/tmpjwk75d6u/state/update/state.lock' -> '/tmp/tmpjwk75d6u/state/alias'
+
+======================================================================
+ERROR: test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='journal')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-lock-lugpq4u5/fixture/test_build_definition.py", line 222, in test_lock_only_restart_metadata_boundary
+    else: lock.unlink()
+          ^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1344, in unlink
+    os.unlink(self)
+IsADirectoryError: [Errno 21] Is a directory: '/tmp/tmpjwk75d6u/state/update/state.lock'
+
+======================================================================
+FAIL: test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='content')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-lock-lugpq4u5/fixture/test_build_definition.py", line 220, in test_lock_only_restart_metadata_boundary
+    with self.assertRaises(SystemExit): start.check_factory_only_state()
+AssertionError: SystemExit not raised
+
+======================================================================
+FAIL: test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='permissions')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-lock-lugpq4u5/fixture/test_build_definition.py", line 220, in test_lock_only_restart_metadata_boundary
+    with self.assertRaises(SystemExit): start.check_factory_only_state()
+AssertionError: SystemExit not raised
+
+======================================================================
+FAIL: test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='symlink')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-lock-lugpq4u5/fixture/test_build_definition.py", line 220, in test_lock_only_restart_metadata_boundary
+    with self.assertRaises(SystemExit): start.check_factory_only_state()
+AssertionError: SystemExit not raised
+
+======================================================================
+FAIL: test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='fifo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-lock-lugpq4u5/fixture/test_build_definition.py", line 220, in test_lock_only_restart_metadata_boundary
+    with self.assertRaises(SystemExit): start.check_factory_only_state()
+AssertionError: SystemExit not raised
+
+======================================================================
+FAIL: test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) (kind='directory')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-lock-lugpq4u5/fixture/test_build_definition.py", line 220, in test_lock_only_restart_metadata_boundary
+    with self.assertRaises(SystemExit): start.check_factory_only_state()
+AssertionError: SystemExit not raised
+
+======================================================================
+FAIL: test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-lock-lugpq4u5/fixture/test_build_definition.py", line 228, in test_lock_only_restart_metadata_boundary
+    self.assertEqual(sorted(p.name for p in update.iterdir()), ['state.lock'])
+AssertionError: Lists differ: ['journal.json', 'state.lock'] != ['state.lock']
+
+First differing element 0:
+'journal.json'
+'state.lock'
+
+First list contains 1 additional elements.
+First extra element 1:
+'state.lock'
+
+- ['journal.json', 'state.lock']
++ ['state.lock']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=6, errors=2)

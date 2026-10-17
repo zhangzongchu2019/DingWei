@@ -1,0 +1,10 @@
+{
+  "rc": 0,
+  "elapsed_seconds": 179.775,
+  "scope": "FULL canonical including disposable local pgtest; no exclusion/wrapper",
+  "source_parent": "36adae0e1a900fbec7d2135a9998882a458a19ad",
+  "changed_paths": [
+    "scripts/run-build-tests.sh",
+    "deploy/test_build_entrypoints.py"
+  ]
+}

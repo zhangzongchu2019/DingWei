@@ -1,0 +1,14 @@
+[
+  {
+    "name": "restore-overstrict-gate",
+    "rc": 1,
+    "original_sha256": "859a76d1e486a6301d0406f471bbb85f8407f19eba00af3b3f0d160ff771162a",
+    "mutant_sha256": "837c3e8220df80b96b463b0b9beed3e0b43e2a973964f0ce3fde2178450e58ea"
+  },
+  {
+    "name": "remove-lock-metadata-guard",
+    "rc": 1,
+    "original_sha256": "859a76d1e486a6301d0406f471bbb85f8407f19eba00af3b3f0d160ff771162a",
+    "mutant_sha256": "93318df7fb142bcc599ab3e13aa96b0a745873c24a5561cfadee972ac6907516"
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "name": "state-gate-withdrawal",
+    "rc": 1,
+    "file": "start.py",
+    "original_sha256": "606afe2d67c032564574ae2f812f1ddd6d088ef09bfb335bb479f9b096d91629",
+    "mutant_sha256": "4bbe05d749a1ae9664395ee93d6bafe35fc01d30946fc055a9b9c85d3c1bb4b3"
+  },
+  {
+    "name": "socket-alias-withdrawal",
+    "rc": 1,
+    "file": "build-image.sh",
+    "original_sha256": "a7ab02079ec2c8cc49822d64fb05a25f1b0d201d43dad0ee9025712ce08a302a",
+    "mutant_sha256": "c3caf4be2097804cab945838bb0a79e3186c0c61b7e6cd14f3504f7663269372"
+  }
+]

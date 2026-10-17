@@ -1,0 +1,14 @@
+test_engine_existing_socket_and_approved_identity_preflight (test_build_definition.StartupAndDefinition.test_engine_existing_socket_and_approved_identity_preflight) ... FAIL
+
+======================================================================
+FAIL: test_engine_existing_socket_and_approved_identity_preflight (test_build_definition.StartupAndDefinition.test_engine_existing_socket_and_approved_identity_preflight)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-engine-vi3l96e0/fixture/test_build_definition.py", line 259, in test_engine_existing_socket_and_approved_identity_preflight
+    self.assertIn(b'identity mismatch', result.stderr)
+AssertionError: b'identity mismatch' not found in b'usage: prepare_context.py [-h] --repo REPO --wheelhouse WHEELHOUSE\n                          --native-tar NATIVE_TAR --runtime-debs RUNTIME_DEBS\n                          --security-debs SECURITY_DEBS --output OUTPUT\n                          --commit COMMIT\nprepare_context.py: error: the following arguments are required: --repo, --wheelhouse, --native-tar, --runtime-debs, --security-debs\n'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.229s
+
+FAILED (failures=1)

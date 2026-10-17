@@ -1,0 +1,14 @@
+[
+  {
+    "name": "existing-socket-withdrawal",
+    "rc": 1,
+    "original_sha256": "1db6b7170965810be35a1b25f7784a7fa4c537a70642b7aaa769eec3d176d64c",
+    "mutant_sha256": "f1adb09ae440cb7cd21a96ae51a3d9c2a139ea71fa3e2689de75ba6c05e12cd9"
+  },
+  {
+    "name": "identity-preflight-withdrawal",
+    "rc": 1,
+    "original_sha256": "1db6b7170965810be35a1b25f7784a7fa4c537a70642b7aaa769eec3d176d64c",
+    "mutant_sha256": "d8a03cc4900e06632afe8c5d8a2f77dfce7f5a63cd2b7b72857a02f35238f4f3"
+  }
+]

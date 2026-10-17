@@ -38,6 +38,7 @@ tools/sessionhelper/tests/test_source_kit.py
 tools/sessionhelper/tests/test_macos_build.py
 deploy/image/supervisord/test_verify_supervisor_template.py
 deploy/ops/hosted-image/test_start.py
+deploy/ops/hosted-image/test_build_definition.py
 deploy/test_build_entrypoints.py
 deploy/test_file_service_deploy.py
 deploy/test_generate_console_seed.py
@@ -75,4 +76,4 @@ printf '%s\n' "$SHELL_TESTS" | while IFS= read -r test_file; do
   echo "TEST shell $test_file"
   bash "$test_file"
 done
-echo 'BUILD_TESTS_OK python=47 shell=2'
+echo 'BUILD_TESTS_OK python=48 shell=2'
