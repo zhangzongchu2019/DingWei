@@ -14,10 +14,13 @@ the existing body-only `dingwei-send` IPC settings (`SH_IPC_SEND_BODY_ONLY=1`,
 `SH_IPC_UPLOAD_ONLY=0`); actual MCP configuration/CLI compatibility remains a
 required isolated validation before a combo may become verified.
 
-`claude-package-lock.json` intentionally has no invented artifact hash.  The
-context builder must remain fail-closed until a reviewed offline Claude package
-lock and native artifact are supplied.  Per owner ruling, any future build is
-only on 43.172.73.6's independent dockerd; this change does not build it.
+`claude-package-lock.json` records the public package and Linux x64 native
+tarball SHA-512 integrity values (and registry SHA-1 metadata) without placing
+either package in Git.  The CLI also requires Node 22 or later; therefore the
+context builder remains fail-closed until a separately reviewed, hash-pinned
+offline Node 22 runtime is supplied alongside both locked packages.  Per owner
+ruling, any future fetch/build is only on 43.172.73.6's independent dockerd;
+this change does not fetch or build it.
 
 Kimi is not included: its Claude-Kimi driver and credential format require a
 separate verified combo and image ABI.
