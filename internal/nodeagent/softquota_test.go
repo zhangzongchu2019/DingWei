@@ -866,3 +866,48 @@ func TestUsageFDStability(t *testing.T) {
 	}
 	t.Logf("FD_PROBE_OK before=%d after=%d iterations=1000 GC=off RLIMIT=128", len(before), len(after))
 }
+
+type rejectedHardQuota struct{}
+
+func (rejectedHardQuota) Setup(string, string, int64) error {
+	return errors.New("hard-backend-sentinel")
+}
+func (rejectedHardQuota) Clear(string, string) error { return errors.New("hard-cleanup-sentinel") }
+
+func TestSoftRegistrationUsesDirectoryBackendAndReplayGate(t *testing.T) {
+	q, p := softFixture(t)
+	f := newFakeDocker(t)
+	private := t.TempDir()
+	if err := os.Chmod(private, 0700); err != nil {
+		t.Fatal(err)
+	}
+	a, err := New(Config{HubURL: "wss://fixture.invalid/api/node/connect", NodeID: "nd_fixture", SecretPath: filepath.Join(t.TempDir(), "never-read"), LedgerPath: filepath.Join(private, "ledger")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.RegisterDockerHandlers(newFakeEngine(f.srv.Client(), f.srv.URL), rejectedHardQuota{}, q.root, "hub.local/dingwei", "fixture.slice", "http://fixture.invalid:11080", "wss://fixture.invalid", "", false, "", "", nil, p); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(a.policyClose)
+	a.docker.soft.disk = q.disk
+	a.docker.soft.resources = q.resources
+	a.docker.soft.usage = q.usage
+	create := Command{CommandID: "create", Type: CmdCreateSeat, Params: json.RawMessage(`{"seat_id":"ag_registered","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8},"cred_kind":"token_file","cli":"codex"}`)}
+	if r := a.execute(context.Background(), create); !r.OK {
+		t.Fatalf("soft still used hard backend: %+v", r)
+	}
+	start := Command{CommandID: "start", Type: CmdStartSeat, Params: json.RawMessage(`{"seat_id":"ag_registered"}`)}
+	if r := a.execute(context.Background(), start); !r.OK {
+		t.Fatalf("fresh start %+v", r)
+	}
+	a.docker.soft.mu.Lock()
+	a.docker.soft.holdLocked("ag_registered", "disk_limit")
+	a.docker.soft.persistLocked()
+	a.docker.soft.mu.Unlock()
+	if r := a.execute(context.Background(), start); r.OK || !strings.Contains(r.Error, "soft_quota_blocked") {
+		t.Fatalf("registered replay bypass: %+v", r)
+	}
+	if a.background == nil {
+		t.Fatal("soft monitor not attached independently of Hub")
+	}
+}
