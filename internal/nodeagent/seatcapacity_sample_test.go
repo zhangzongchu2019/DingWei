@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -93,14 +94,35 @@ func TestCapacitySamplerForeignLoadOwnershipAndUnknown(t *testing.T) {
 	}
 	for _, bad := range []string{"wrong_owner", "wrong_mount", "missing_memory", "http_error"} {
 		mu.Lock()
+		mode = ""
+		mu.Unlock()
+		for attempts := 0; ; attempts++ {
+			_, err := r.sample(context.Background())
+			if err == nil {
+				break
+			}
+			if !errors.Is(err, errCapacityWarming) || attempts >= 2 {
+				t.Fatalf("could not warm fixture: %v", err)
+			}
+		}
+		mu.Lock()
 		mode = bad
 		mu.Unlock()
-		if s, err := r.sample(context.Background()); err == nil || s.Known {
+		if s, err := r.sample(context.Background()); err == nil || errors.Is(err, errCapacityWarming) || s.Known {
 			t.Fatalf("%s became known zero: %+v %v", bad, s, err)
 		}
 	}
 	if q.state.Seats["ag_sample"].Hold != "" {
 		t.Fatal("B sample failure held running seat")
+	}
+	mu.Lock()
+	mode = ""
+	mu.Unlock()
+	if _, err := r.sample(context.Background()); !errors.Is(err, errCapacityWarming) {
+		t.Fatalf("failed sample reused old CPU window: %v", err)
+	}
+	if recovered, err := r.sample(context.Background()); err != nil || !recovered.Known || recovered.External.CPU != 4000 {
+		t.Fatalf("fresh baseline recovery: %+v %v", recovered, err)
 	}
 }
 
@@ -185,5 +207,19 @@ func TestCapacityLoginBudgetIsNotBusinessSeatOrFortyGiBFloor(t *testing.T) {
 	reported, _, _ := q.report()
 	if reported["login-"+strings.Repeat("a", 32)].WriterRoot != "" {
 		t.Fatal("private writer path leaked in capacity")
+	}
+}
+
+func TestCapacityMemoryMissingIsUnknownNotZero(t *testing.T) {
+	for _, raw := range []string{"MemTotal: 1024 kB\n", "MemTotal: 1024 kB\nMemAvailable: nope kB\n", "MemTotal: 1024 kB\nMemAvailable: 1025 kB\n", "MemTotal: 1024 kB\nMemAvailable: 1 kB\nMemAvailable: 2 kB\n"} {
+		if _, _, err := parseCapacityMemory([]byte(raw)); err == nil {
+			t.Fatalf("invalid memory accepted: %q", raw)
+		}
+	}
+	for _, available := range []int64{0, 512} {
+		total, free, err := parseCapacityMemory([]byte(fmt.Sprintf("MemTotal: 1024 kB\nMemAvailable: %d kB\n", available)))
+		if err != nil || total != 1<<20 || free != available<<10 {
+			t.Fatalf("valid zero/positive availability: %d %d %v", total, free, err)
+		}
 	}
 }

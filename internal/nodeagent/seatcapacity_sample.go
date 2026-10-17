@@ -16,6 +16,34 @@ import (
 
 type cpuCounters struct{ total, busy uint64 }
 
+func parseCapacityMemory(raw []byte) (int64, int64, error) {
+	var total, available int64
+	seen := map[string]bool{}
+	for _, line := range strings.Split(string(raw), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) == 0 || (fields[0] != "MemTotal:" && fields[0] != "MemAvailable:") {
+			continue
+		}
+		if seen[fields[0]] || len(fields) != 3 || fields[2] != "kB" {
+			return 0, 0, fmt.Errorf("memory counters invalid")
+		}
+		seen[fields[0]] = true
+		n, err := strconv.ParseInt(fields[1], 10, 64)
+		if err != nil || n < 0 || n > 1<<50 {
+			return 0, 0, fmt.Errorf("memory counters invalid")
+		}
+		if fields[0] == "MemTotal:" {
+			total = n << 10
+		} else {
+			available = n << 10
+		}
+	}
+	if !seen["MemTotal:"] || !seen["MemAvailable:"] || total <= 0 || available > total {
+		return 0, 0, fmt.Errorf("memory counters unknown")
+	}
+	return total, available, nil
+}
+
 // Linux aggregate CPU fields exclude guest/guest_nice, already included in
 // user/nice. IO wait is not running CPU. Missing/overflowing counters are unknown.
 func parseCapacityCPU(raw []byte) (cpuCounters, error) {
@@ -54,6 +82,9 @@ type capacityWriter struct {
 	root, destination string
 	login             bool
 }
+
+var errCapacityWarming = errors.New("capacity CPU warming or reset")
+
 type seatCapacityReader struct {
 	d        *dockerOps
 	previous cpuCounters
@@ -73,7 +104,19 @@ func newSeatCapacityReader(d *dockerOps) *seatCapacityReader {
 	}}
 }
 
-func (r *seatCapacityReader) sample(ctx context.Context) (seatcapacity.Snapshot, error) {
+func (r *seatCapacityReader) sample(ctx context.Context) (snapshot seatcapacity.Snapshot, err error) {
+	defer func() {
+		// Never compare a fresh host window with a managed counter retained
+		// across failed/partial samples: that could subtract stale workload.
+		if err != nil && !errors.Is(err, errCapacityWarming) {
+			r.warmed = false
+			r.owned = map[string]managedCPUCounter{}
+		}
+	}()
+	return r.sampleOnce(ctx)
+}
+
+func (r *seatCapacityReader) sampleOnce(ctx context.Context) (seatcapacity.Snapshot, error) {
 	q := r.d.soft
 	s := seatcapacity.Snapshot{At: q.now()}
 	cpu, total, available, err := q.resources()
@@ -92,7 +135,8 @@ func (r *seatCapacityReader) sample(ctx context.Context) (seatcapacity.Snapshot,
 	previous, warmed := r.previous, r.warmed
 	r.previous, r.warmed = counters, true
 	if !warmed || counters.total <= previous.total || counters.busy < previous.busy {
-		return s, fmt.Errorf("capacity CPU warming or reset")
+		r.owned = map[string]managedCPUCounter{}
+		return s, errCapacityWarming
 	}
 	busy := int64(math.Ceil(float64(cpu) * float64(counters.busy-previous.busy) / float64(counters.total-previous.total)))
 	if busy < 0 || busy > cpu {

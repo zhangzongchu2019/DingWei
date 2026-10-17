@@ -39,7 +39,27 @@ func effectiveSeatCapacity(ctx context.Context, n Node, query capacityRows) (*se
 	if !v.ValidateAt(time.Now(), 60*time.Second) {
 		return unknownSeatCapacity(v.Version), nil
 	}
-	rows, err := query(ctx, `SELECT agent_id,plan FROM g4_hosted_seat WHERE node_id=$1 AND state IN ('queued','pulling','starting','busy')`, n.ID)
+	if len(frame.Seats) > 256 {
+		return unknownSeatCapacity(v.Version), nil
+	}
+	ordinary := 0
+	for _, raw := range frame.Seats {
+		var writer struct {
+			Kind string `json:"writer_kind"`
+		}
+		if json.Unmarshal(raw, &writer) != nil {
+			return unknownSeatCapacity(v.Version), nil
+		}
+		if writer.Kind == "" {
+			ordinary++
+		} else if writer.Kind != "login" {
+			return unknownSeatCapacity(v.Version), nil
+		}
+	}
+	if ordinary != v.Occupied {
+		return unknownSeatCapacity(v.Version), nil
+	}
+	rows, err := query(ctx, `SELECT agent_id,plan FROM g4_hosted_seat WHERE node_id=$1 AND state IN ('queued','pulling','starting','busy') LIMIT 357`, n.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +78,9 @@ func effectiveSeatCapacity(ctx context.Context, n Node, query capacityRows) (*se
 			return unknownSeatCapacity(v.Version), nil
 		}
 		pending = append(pending, capacityPlan(plan))
+		if len(pending) > 100 {
+			return unknownSeatCapacity(v.Version), nil
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

@@ -17,6 +17,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/seatcapacity"
 )
 
 var ErrSoftQuota = errors.New("soft_quota_blocked")
@@ -805,6 +807,11 @@ func (p NodePolicy) logConfig() map[string]any {
 
 // Capacity snapshots copy only metadata, never private state paths/credentials.
 func (q *softQuota) report() (map[string]softSeat, []quotaEvent, bool) {
+	seats, events, ready, _ := q.reportWithCapacity()
+	return seats, events, ready
+}
+
+func (q *softQuota) reportWithCapacity() (map[string]softSeat, []quotaEvent, bool, *seatcapacity.View) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	seats := map[string]softSeat{}
@@ -816,7 +823,12 @@ func (q *softQuota) report() (map[string]softSeat, []quotaEvent, bool) {
 	}
 	events := append([]quotaEvent{}, q.state.Events...)
 	ready := q.admitLocked(0) == nil
-	return seats, events, ready
+	var capacity *seatcapacity.View
+	if q.capacity != nil {
+		v := q.capacityViewLocked()
+		capacity = &v
+	}
+	return seats, events, ready, capacity
 }
 func (q *softQuota) acknowledge(ids []string) error {
 	q.mu.Lock()
@@ -844,8 +856,12 @@ func (d *dockerOps) preflightSeat(id string) error {
 }
 
 func hostResourceBudget() (cpu, total, available int64, err error) {
-	mt, mf, e := memInfoMB("/proc/meminfo")
-	return int64(runtime.NumCPU()) * 1000, mt << 20, mf << 20, e
+	raw, err := os.ReadFile("/proc/meminfo")
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	total, available, err = parseCapacityMemory(raw)
+	return int64(runtime.NumCPU()) * 1000, total, available, err
 }
 func (q *softQuota) resourceBudgetLocked(add seatResources) error {
 	if q.resourcesErr != nil || q.resourcesAt.IsZero() || q.now().Sub(q.resourcesAt) > q.policy.MaxAge || q.now().Before(q.resourcesAt) || q.samplingExpiredLocked() {

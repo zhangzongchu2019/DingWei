@@ -43,7 +43,13 @@ func withTestSeatCapacity(t *testing.T, raw json.RawMessage) json.RawMessage {
 	if err := json.Unmarshal(raw, &m); err != nil {
 		t.Fatal(err)
 	}
-	v := seatcapacity.Evaluate(seatcapacity.DefaultPolicy(), seatcapacity.Snapshot{Known: true, At: time.Now(), Total: seatcapacity.Resources{CPU: 64000, Memory: 64 << 30, Disk: 1 << 40}}, nil, time.Now(), time.Minute)
+	var managed []seatcapacity.Resources
+	if seats, ok := m["soft_seats"].(map[string]any); ok {
+		for range seats {
+			managed = append(managed, seatcapacity.Resources{CPU: 2000, Memory: 4 << 30, Disk: 8 << 30})
+		}
+	}
+	v := seatcapacity.Evaluate(seatcapacity.DefaultPolicy(), seatcapacity.Snapshot{Known: true, At: time.Now(), Total: seatcapacity.Resources{CPU: 64000, Memory: 64 << 30, Disk: 1 << 40}}, managed, time.Now(), time.Minute)
 	m["seat_capacity"] = v
 	out, err := json.Marshal(m)
 	if err != nil {

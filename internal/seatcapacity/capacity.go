@@ -123,6 +123,9 @@ func (v View) CanStart() []string {
 		}
 		return append([]string(nil), v.Reasons...)
 	}
+	if v.Version != 1 || v.Policy().Validate() != nil || v.Occupied < 0 || v.Occupied > 100 {
+		return []string{"policy_invalid"}
+	}
 	reasons := []string{}
 	for i, d := range []Dimension{v.CPU, v.Memory, v.Disk} {
 		if d.ManagedReserved > d.Allocatable {
@@ -204,6 +207,11 @@ func (v View) WithPending(pending []Resources) View {
 			d.ManagedReserved += x
 		}
 		v.Occupied++
+	}
+	if v.Occupied > 100 {
+		v.Known = false
+		v.Reasons = []string{"load_unknown"}
+		return v
 	}
 	v.TotalSlots = int64(p.MaxSeats)
 	v.AvailableSlots = int64(max(0, p.MaxSeats-v.Occupied))

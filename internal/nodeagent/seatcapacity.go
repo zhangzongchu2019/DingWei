@@ -23,6 +23,9 @@ type seatCapacityState struct {
 var ErrSeatCapacity = errors.New("seat_capacity_blocked")
 
 func capacityResources(r seatResources) seatcapacity.Resources {
+	if r.validate() != nil || r.DiskMB <= 0 || r.DiskMB > 1<<40 {
+		return seatcapacity.Resources{CPU: -1, Memory: -1, Disk: -1}
+	}
 	return seatcapacity.Resources{CPU: r.cpuMillicores(), Memory: r.MemoryMB << 20, Disk: r.DiskMB << 20}
 }
 
@@ -54,7 +57,7 @@ func (q *softQuota) capacityViewLocked() seatcapacity.View {
 		}
 		managed = append(managed, r)
 	}
-	return seatcapacity.Evaluate(q.policy.capacityPolicy(), snapshot, managed, q.now(), q.policy.MaxAge)
+	return seatcapacity.Evaluate(q.policy.capacityPolicy(), snapshot, managed, q.now(), min(q.policy.MaxAge, time.Minute))
 }
 
 func (q *softQuota) capacityAdmissionLocked(add *seatResources) error {

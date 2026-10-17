@@ -55,8 +55,7 @@ func (d *dockerOps) collectCapacity(ctx context.Context) (Capacity, error) {
 	c.QuotaMode = d.policyValue().Mode
 	c.QuotaPolicyRevision = d.policyValue().Revision()
 	if d.soft != nil {
-		c.SoftSeats, c.QuotaEvents, c.SoftReady = d.soft.report()
-		c.SeatCapacity = d.soft.capacityReport()
+		c.SoftSeats, c.QuotaEvents, c.SoftReady, c.SeatCapacity = d.soft.reportWithCapacity()
 	}
 	if d.soft != nil {
 		d.soft.mu.Lock()

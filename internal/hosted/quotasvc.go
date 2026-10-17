@@ -69,9 +69,11 @@ func (e *QuotaExceededError) RemainingJSON() json.RawMessage { return remainingJ
 
 func remainingJSON(quota Quota, usage Usage) json.RawMessage {
 	raw, _ := json.Marshal(map[string]any{
-		"agents":  max0(int64(quota.AgentsLimit) - int64(usage.Agents)),
-		"vcpu":    max0(int64(quota.VCPULimit) - int64(usage.VCPU)),
-		"mem_gb":  float64(max0(quota.MemMBLimit-usage.MemMB)) / 1024,
+		"agents": max0(int64(quota.AgentsLimit) - int64(usage.Agents)),
+		"vcpu":   max0(int64(quota.VCPULimit) - int64(usage.VCPU)),
+		// Preserve the existing error-payload whole-GiB contract. Enforcement is
+		// always in MiB; options/admin show the new plan's fractional GiB exactly.
+		"mem_gb":  max0(quota.MemMBLimit-usage.MemMB) / 1024,
 		"disk_gb": max0(quota.DiskMBLimit-usage.DiskMB) / 1024,
 	})
 	return raw
