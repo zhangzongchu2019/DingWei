@@ -76,3 +76,34 @@ func TestExistingStartRefusedAfterCapacityLossWithoutChangingReservations(t *tes
 		t.Fatal("start loss or mutation", v)
 	}
 }
+
+func TestWireValidationAndPendingReservations(t *testing.T) {
+	now := time.Unix(100, 0)
+	p := DefaultPolicy()
+	s := Snapshot{Known: true, At: now, Total: Resources{8000, 16 << 30, 320 << 30}}
+	v := Evaluate(p, s, nil, now, time.Minute)
+	if !v.ValidateAt(now, time.Minute) {
+		t.Fatal("valid wire frame refused")
+	}
+	for _, change := range []func(*View){
+		func(v *View) { v.Version = 0 }, func(v *View) { v.Known = false }, func(v *View) { v.Occupied = -1 },
+		func(v *View) { v.At = now.Add(time.Second) }, func(v *View) { v.Minimum.CPU = 0 },
+		func(v *View) { v.CPU.Available++ }, func(v *View) { v.Memory.Slots++ }, func(v *View) { v.Disk.ExternalUsed = -1 },
+		func(v *View) { v.TotalSlots++ }, func(v *View) { v.AvailableSlots++ },
+	} {
+		x := v
+		change(&x)
+		if x.ValidateAt(now, time.Minute) {
+			t.Fatalf("malformed frame accepted: %+v", x)
+		}
+	}
+	for i := 0; i < 8; i++ {
+		v = v.WithPending([]Resources{p.Minimum})
+	}
+	if !v.ValidateAt(now, time.Minute) || v.Occupied != 8 || v.TotalSlots != 8 || v.AvailableSlots != 0 || len(v.CanAdd(p, p.Minimum)) == 0 || len(v.CanStart()) != 0 {
+		t.Fatalf("pending accounting: %+v", v)
+	}
+	if len((View{}).CanAdd(p, p.Minimum)) == 0 || len((View{}).CanStart()) == 0 {
+		t.Fatal("zero wire value became known")
+	}
+}

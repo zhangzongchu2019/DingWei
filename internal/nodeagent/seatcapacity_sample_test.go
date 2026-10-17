@@ -120,6 +120,9 @@ func TestCapacityBlockedSamplerIsSingleAndNeverLocksReserveOrReport(t *testing.T
 	var calls atomic.Int64
 	entered := make(chan struct{})
 	release := make(chan struct{})
+	var releaseOnce sync.Once
+	unblock := func() { releaseOnce.Do(func() { close(release) }) }
+	defer unblock()
 	q.capacity.read = func(context.Context) (seatcapacity.Snapshot, error) {
 		calls.Add(1)
 		close(entered)
@@ -153,14 +156,14 @@ func TestCapacityBlockedSamplerIsSingleAndNeverLocksReserveOrReport(t *testing.T
 			t.Fatalf("blocked sample admission: %v", err)
 		}
 	case <-time.After(time.Second):
-		close(release)
+		unblock()
 		t.Fatal("sampler held state lock")
 	}
 	if calls.Load() != 1 || q.state.Seats["ag_live"].Hold != "" {
 		t.Fatal("extra worker or unsolicited hold")
 	}
 	cancel()
-	close(release)
+	unblock()
 	select {
 	case <-done:
 	case <-time.After(time.Second):

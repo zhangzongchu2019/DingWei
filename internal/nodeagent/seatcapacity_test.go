@@ -17,6 +17,21 @@ func TestSeatCapacityMinimumConfiguration(t *testing.T) {
 	if err != nil || p.Mode != "hard" || p.MinimumSeatCPUMillicores != 1000 || p.MinimumSeatMemoryBytes != 1536<<20 || p.MinimumSeatDiskBytes != 40<<30 {
 		t.Fatalf("defaults %+v: %v", p, err)
 	}
+	if p.MaxSeats != 4 {
+		t.Fatal("legacy hard default changed")
+	}
+	soft := map[string]string{"NODEAGENT_QUOTA_MODE": "soft", "NODEAGENT_SOFT_APPROVAL_REF": "fixture", "NODEAGENT_HOST_ROOT_TRUST_REF": "fixture", "NODEAGENT_NETWORK_APPROVAL_REF": "fixture", "NODEAGENT_ENGINE_ID": "fixture", "NODEAGENT_ENGINE_ROOT": "/isolated-fixture"}
+	for _, limit := range []string{"", "5"} {
+		soft["NODEAGENT_MAX_SEATS"] = limit
+		configured, err := ParseNodePolicy(func(k string) string { return soft[k] })
+		want := 100
+		if limit != "" {
+			want = 5
+		}
+		if err != nil || configured.MaxSeats != want {
+			t.Fatalf("soft default/operator cap: %+v %v", configured, err)
+		}
+	}
 	for key, value := range map[string]string{"CPU_MILLICORES": "2000", "MEMORY_BYTES": "2147483648", "DISK_BYTES": "85899345920"} {
 		name := "NODEAGENT_MINIMUM_SEAT_" + key
 		changed, err := ParseNodePolicy(func(k string) string {

@@ -338,17 +338,17 @@ func (q *softQuota) reserve(id string, r seatResources) error {
 	if _, exists := q.state.Seats[id]; exists {
 		return fmt.Errorf("%w: seat_already_registered", ErrSoftQuota)
 	}
-	if err := q.capacityAdmissionLocked(&r); err != nil {
-		return err
-	}
-	seatCount := 0
-	for _, seat := range q.state.Seats {
-		if seat.WriterKind != "login" {
-			seatCount++
+	count := 0
+	for _, s := range q.state.Seats {
+		if s.WriterKind == "" {
+			count++
 		}
 	}
-	if seatCount >= q.policy.MaxSeats {
+	if count >= q.policy.MaxSeats {
 		return fmt.Errorf("%w: seat_count", ErrSoftQuota)
+	}
+	if err := q.capacityAdmissionLocked(&r); err != nil {
+		return err
 	}
 	limit := r.DiskMB * 1024 * 1024
 	if err := q.resourceBudgetLocked(r); err != nil {
