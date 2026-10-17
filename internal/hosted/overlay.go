@@ -81,6 +81,9 @@ func (o *Orchestrator) hostedItem(ctx context.Context, agentID string) (map[stri
 		if mode != "hard" {
 			m["quota_mode"] = mode
 			m["quota_notice"] = quotaModeNotice(mode)
+			if softSeatUnknown(node, agentID) {
+				m["quota_usage_unknown"] = true
+			}
 			if softSeatWarning(node, agentID) {
 				m["quota_warning"] = true
 			}

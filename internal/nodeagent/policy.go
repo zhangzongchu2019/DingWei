@@ -14,6 +14,7 @@ import (
 // NodePolicy is operator configuration, never supplied in a seat command. Hard
 // remains the default; a failed hard quota never selects soft automatically.
 type NodePolicy struct {
+	StateWriteBudget        time.Duration `json:"state_write_budget"`
 	ShmBytes                int64         `json:"shm_bytes"`
 	SoftApprovalRef         string        `json:"soft_approval_ref,omitempty"`
 	HostRootTrustRef        string        `json:"host_root_trust_ref,omitempty"`
@@ -44,7 +45,7 @@ type NodePolicy struct {
 }
 
 func DefaultNodePolicy() NodePolicy {
-	return NodePolicy{Mode: "hard", ScanInterval: 30 * time.Second, ScanBudget: 5 * time.Second, MaxAge: 60 * time.Second,
+	return NodePolicy{StateWriteBudget: 5 * time.Second, Mode: "hard", ScanInterval: 30 * time.Second, ScanBudget: 5 * time.Second, MaxAge: 60 * time.Second,
 		StopTimeout: 10 * time.Second, ReserveInterval: 5 * time.Second, WarnPercent: 80, RecoveryPercent: 75,
 		EmergencyReservePercent: 50, ReserveBytes: 32 << 30, ReservePercent: 10, ReserveInodes: 65536, ReserveInodePercent: 1, MaxSeats: 4,
 		ImageReserveBytes: 8 << 30, ShmBytes: 64 << 20, ReserveCPUMillicores: 2000, ReserveMemoryBytes: 4 << 30, PidsLimit: 512, LoginPidsLimit: 128, LogMaxSizeMB: 10, LogMaxFiles: 3}
@@ -58,6 +59,9 @@ func (p NodePolicy) Validate() error {
 	}
 	if p.Mode == "soft" && (p.EngineID == "" || !filepath.IsAbs(p.EngineRoot) || filepath.Clean(p.EngineRoot) != p.EngineRoot || p.EngineRoot == "/" || p.EngineRoot == "/var/lib/docker") {
 		return fmt.Errorf("soft mode requires approved NODEAGENT_ENGINE_ID and isolated NODEAGENT_ENGINE_ROOT")
+	}
+	if p.StateWriteBudget <= 0 || p.StateWriteBudget > 30*time.Second {
+		return fmt.Errorf("node policy: invalid state write budget")
 	}
 	if p.ScanBudget <= 0 || p.ScanBudget > 30*time.Second || p.ScanInterval > 5*time.Minute || p.MaxAge > 10*time.Minute || p.StopTimeout > time.Minute || p.ScanInterval <= p.ScanBudget || p.MaxAge < p.ScanInterval+p.ScanBudget || p.ReserveInterval <= 0 || p.ReserveInterval > p.ScanInterval || p.StopTimeout <= 0 {
 		return fmt.Errorf("node policy: invalid timing")
@@ -92,7 +96,7 @@ func ParseNodePolicy(getenv func(string) string) (NodePolicy, error) {
 	if v := getenv("NODEAGENT_QUOTA_MODE"); v != "" {
 		p.Mode = v
 	}
-	durations := map[string]*time.Duration{"SCAN_INTERVAL": &p.ScanInterval, "SCAN_BUDGET": &p.ScanBudget, "MAX_AGE": &p.MaxAge, "STOP_TIMEOUT": &p.StopTimeout, "RESERVE_INTERVAL": &p.ReserveInterval}
+	durations := map[string]*time.Duration{"STATE_WRITE_BUDGET": &p.StateWriteBudget, "SCAN_INTERVAL": &p.ScanInterval, "SCAN_BUDGET": &p.ScanBudget, "MAX_AGE": &p.MaxAge, "STOP_TIMEOUT": &p.StopTimeout, "RESERVE_INTERVAL": &p.ReserveInterval}
 	for key, dst := range durations {
 		if v := getenv("NODEAGENT_" + key); v != "" {
 			d, e := time.ParseDuration(v)

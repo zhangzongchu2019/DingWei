@@ -96,7 +96,7 @@ func quotaEvents(raw json.RawMessage) ([]quotaEvent, error) {
 			return nil, ErrParams
 		}
 		switch e.Reason {
-		case "disk_warning", "disk_limit", "usage_unknown", "private_state_unavailable", "unclean_restart", "node_space_emergency", "node_inode_emergency", "node_space_unknown":
+		case "usage_warning", "disk_warning", "disk_limit", "usage_unknown", "private_state_unavailable", "unclean_restart", "node_space_emergency", "node_inode_emergency", "node_space_unknown":
 		default:
 			return nil, ErrParams
 		}
@@ -138,7 +138,7 @@ SELECT $1,'node.soft_quota',$2,$3 WHERE NOT EXISTS
 (SELECT 1 FROM g4_audit WHERE action='node.soft_quota' AND target=$2 AND detail->>'event_id'=$4)`, "node:"+id, id, detail, e.ID); err != nil {
 				return err
 			}
-			if e.Reason != "disk_warning" {
+			if e.Reason != "disk_warning" && e.Reason != "usage_warning" {
 				if _, err := tx.Exec(ctx, `UPDATE g4_hosted_seat SET state='error',state_detail='soft_quota_held',updated_at=now()
 WHERE agent_id=$1 AND node_id=$2 AND state NOT IN ('destroyed','disabled')`, e.SeatID, id); err != nil {
 					return err
@@ -195,13 +195,27 @@ func softSeatHeld(n Node, id string) bool {
 func softSeatWarning(n Node, id string) bool {
 	var c struct {
 		Seats map[string]struct {
-			Warn bool `json:"warn"`
+			Warn         bool `json:"warn"`
+			UsageWarning bool `json:"usage_warning"`
+			SpaceWarning bool `json:"space_warning"`
 		} `json:"soft_seats"`
 	}
 	if json.Unmarshal(n.Capacity, &c) != nil {
 		return false
 	}
-	return c.Seats[id].Warn
+	return c.Seats[id].Warn || c.Seats[id].UsageWarning || c.Seats[id].SpaceWarning
+}
+func softSeatUnknown(n Node, id string) bool {
+	var c struct {
+		Seats map[string]struct {
+			Usage bool `json:"usage_warning"`
+			Space bool `json:"space_warning"`
+		} `json:"soft_seats"`
+	}
+	if json.Unmarshal(n.Capacity, &c) != nil {
+		return false
+	}
+	return c.Seats[id].Usage || c.Seats[id].Space
 }
 func (l *Lifecycle) quotaStartGuard(ctx context.Context, seat Seat) error {
 	n, err := l.st.GetNode(ctx, seat.NodeID)

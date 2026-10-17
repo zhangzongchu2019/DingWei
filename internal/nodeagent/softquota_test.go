@@ -40,6 +40,7 @@ func softFixture(t *testing.T) (*softQuota, NodePolicy) {
 	t.Cleanup(q.close)
 	q.resources = func() (int64, int64, int64, error) { return 64000, 1 << 40, 1 << 40, nil }
 	q.disk = func(string) (fsSpace, error) { return fsSpace{1 << 40, 1 << 40, 10000000, 10000000}, nil }
+	q.sampleNode()
 	q.usage = func(context.Context, string, string) (diskUsage, error) { return diskUsage{1024, 1024}, nil }
 	return q, p
 }
@@ -51,6 +52,7 @@ func reserveFixture(t *testing.T, q *softQuota, id string) {
 	if err := os.Mkdir(seatDir(q.root, id), 0700); err != nil {
 		t.Fatal(err)
 	}
+	q.sampleNode()
 }
 
 func TestNodePolicyExplicitDefaultsAndInvalidValues(t *testing.T) {
@@ -189,6 +191,7 @@ func TestSoftHoldStopsWithoutDeletionPersistsAndGatesEveryEntry(t *testing.T) {
 	defer restored.close()
 	restored.disk = q.disk
 	restored.resources = q.resources
+	restored.sampleNode()
 	restored.usage = func(context.Context, string, string) (diskUsage, error) { return diskUsage{1024, 1024}, nil }
 	if restored.state.Seats["ag_one"].Hold != "disk_limit" {
 		t.Fatal("restart lost hold")
@@ -244,19 +247,24 @@ func TestSoftReservationBytesInodesInventoryConcurrencyAndReplay(t *testing.T) {
 	q, _ := softFixture(t)
 	base := fsSpace{1 << 40, 1 << 40, 10000000, 10000000}
 	q.disk = func(string) (fsSpace, error) { v := base; v.FreeFiles = 1; return v, nil }
+	q.sampleNode()
 	if err := q.reserve("ag_low_inode", seatResources{4096, 2048, 8, 0}); err == nil {
 		t.Fatal("inode reserve bypass")
 	}
 	q.disk = func(string) (fsSpace, error) { v := base; v.Free = 1; return v, nil }
+	q.sampleNode()
 	if err := q.reserve("ag_low_bytes", seatResources{4096, 2048, 8, 0}); err == nil {
 		t.Fatal("byte reserve bypass")
 	}
 	q.disk = func(string) (fsSpace, error) { return base, nil }
+	q.sampleNode()
 	os.Mkdir(filepath.Join(q.root, "unmanaged"), 0700)
+	q.sampleNode()
 	if err := q.reserve("ag_unknown", seatResources{4096, 2048, 8, 0}); err == nil {
 		t.Fatal("unmanaged inventory adopted")
 	}
 	os.Remove(filepath.Join(q.root, "unmanaged"))
+	q.sampleNode()
 	q.policy.MaxSeats = 1
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -568,10 +576,10 @@ func TestSoftScanBudgetUnknownAndOutboxAcknowledgement(t *testing.T) {
 		t.Fatal("scan budget ignored")
 	}
 	seats, events, ready := q.report()
-	if ready || seats["ag_one"].CIDs != nil || len(events) != 1 {
+	if ready || seats["ag_one"].CIDs != nil || len(events) != 2 || events[0].Reason != "usage_warning" || events[1].Reason != "usage_unknown" {
 		t.Fatal("unsafe capacity metadata")
 	}
-	if err := q.acknowledge([]string{events[0].ID}); err != nil {
+	if err := q.acknowledge([]string{events[0].ID, events[1].ID}); err != nil {
 		t.Fatal(err)
 	}
 	q.close()
@@ -588,20 +596,24 @@ func TestSoftScanBudgetUnknownAndOutboxAcknowledgement(t *testing.T) {
 func TestSoftResourceAndCommittedDiskReserve(t *testing.T) {
 	q, _ := softFixture(t)
 	q.resources = func() (int64, int64, int64, error) { return 2000, 1 << 40, 1 << 40, nil }
+	q.sampleNode()
 	if q.reserve("ag_cpu", seatResources{4096, 2048, 8, 0}) == nil {
 		t.Fatal("host CPU reserve bypass")
 	}
 	q.resources = func() (int64, int64, int64, error) { return 64000, 4 << 30, 4 << 30, nil }
+	q.sampleNode()
 	if q.reserve("ag_memory", seatResources{4096, 2048, 8, 0}) == nil {
 		t.Fatal("host memory reserve bypass")
 	}
 	q.resources = func() (int64, int64, int64, error) { return 64000, 1 << 40, 1 << 40, nil }
+	q.sampleNode()
 	reserveFixture(t, q, "ag_one")
 	q.state.Seats["ag_one"].Usage = diskUsage{Allocated: 4 << 20, Apparent: 4 << 20}
 	// Reserve uses unallocated commitment (8-4), not the entire limit twice.
 	q.disk = func(string) (fsSpace, error) {
 		return fsSpace{100 << 30, q.policy.ReserveBytes + q.policy.ImageReserveBytes + (12 << 20), 10000000, 10000000}, nil
 	}
+	q.sampleNode()
 	if err := q.reserve("ag_two", seatResources{4096, 2048, 8, 0}); err != nil {
 		t.Fatalf("allocated usage double counted %v", err)
 	}
@@ -695,10 +707,12 @@ func TestSoftUnknownAndAgeGateRecovery(t *testing.T) {
 func TestSoftMemoryCommitAndAvailableReserveSeparate(t *testing.T) {
 	q, _ := softFixture(t)
 	q.resources = func() (int64, int64, int64, error) { return 64000, 1 << 40, 4 << 30, nil }
+	q.sampleNode()
 	if q.reserve("ag_avail", seatResources{4096, 2048, 8, 0}) == nil {
 		t.Fatal("available memory reserve ignored")
 	}
 	q.resources = func() (int64, int64, int64, error) { return 64000, 12 << 30, 12 << 30, nil }
+	q.sampleNode()
 	reserveFixture(t, q, "ag_one")
 	reserveFixture(t, q, "ag_two")
 	if q.reserve("ag_total", seatResources{4096, 2048, 8, 0}) == nil {
@@ -895,6 +909,7 @@ func TestSoftRegistrationUsesDirectoryBackendAndReplayGate(t *testing.T) {
 	t.Cleanup(a.policyClose)
 	a.docker.soft.disk = q.disk
 	a.docker.soft.resources = q.resources
+	a.docker.soft.sampleNode()
 	a.docker.soft.usage = q.usage
 	create := Command{CommandID: "create", Type: CmdCreateSeat, Params: json.RawMessage(`{"seat_id":"ag_registered","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8},"cred_kind":"token_file","cli":"codex"}`)}
 	if r := a.execute(context.Background(), create); !r.OK {

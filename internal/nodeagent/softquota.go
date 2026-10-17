@@ -33,6 +33,8 @@ type quotaEvent struct {
 	At     time.Time `json:"at"`
 }
 type softSeat struct {
+	UsageWarning bool          `json:"usage_warning"`
+	SpaceWarning bool          `json:"space_warning"`
 	writerGate   chan struct{} // Per-seat only; never serialized or reported.
 	UsageUnknown bool          `json:"usage_unknown"`
 	Limit        int64         `json:"limit_bytes"`
@@ -46,14 +48,37 @@ type softSeat struct {
 	Warn         bool          `json:"warn"`
 }
 type softState struct {
-	Root    string               `json:"seat_root"`
-	Active  bool                 `json:"active"`
-	Version int                  `json:"version"`
-	NodeID  string               `json:"node_id"`
-	Seats   map[string]*softSeat `json:"seats"`
-	Events  []quotaEvent         `json:"events"`
+	LastSpaceAt      time.Time            `json:"last_space_at"`
+	UnknownStartedAt time.Time            `json:"unknown_started_at"`
+	Root             string               `json:"seat_root"`
+	Active           bool                 `json:"active"`
+	Version          int                  `json:"version"`
+	NodeID           string               `json:"node_id"`
+	Seats            map[string]*softSeat `json:"seats"`
+	Events           []quotaEvent         `json:"events"`
 }
 type softQuota struct {
+	retiredLock                                *os.File
+	readInventory                              func(string) ([]os.DirEntry, error)
+	persistMu                                  sync.Mutex
+	persistOnce                                sync.Once
+	persistQuitOnce                            sync.Once
+	persistRequests                            chan stateWrite
+	persistQuit                                chan struct{}
+	persistDone                                chan struct{}
+	persisting                                 int
+	writeState                                 func(string, []byte) error
+	sampling                                   bool
+	samplingAt                                 time.Time
+	spaceKnown                                 bool
+	spaceErr                                   error
+	inventory                                  []string
+	inventoryAt                                time.Time
+	inventoryErr                               error
+	sampledCPU, sampledTotal, sampledAvailable int64
+	resourcesAt                                time.Time
+	resourcesErr                               error
+
 	resources          func() (int64, int64, int64, error)
 	mu                 sync.Mutex
 	enforceMu          sync.Mutex
@@ -110,11 +135,22 @@ func newSoftQuota(p NodePolicy, root, path, nodeID string) (*softQuota, error) {
 		lock.Close()
 		return nil, fmt.Errorf("soft quota controller already running")
 	}
-	q := &softQuota{resources: hostResourceBudget, policy: p, root: root, path: path, nodeID: nodeID, now: time.Now, usage: measureUsage, disk: readSpace, lock: lock, state: softState{Version: 1, NodeID: nodeID, Root: root, Active: true, Seats: map[string]*softSeat{}}}
-	fail := func(err error) (*softQuota, error) { lock.Close(); return nil, err }
+	q := &softQuota{readInventory: os.ReadDir, writeState: writeSoftState, resources: hostResourceBudget, policy: p, root: root, path: path, nodeID: nodeID, now: time.Now, usage: measureUsage, disk: readSpace, lock: lock, state: softState{Version: 1, NodeID: nodeID, Root: root, Active: true, UnknownStartedAt: time.Now(), Seats: map[string]*softSeat{}}}
+	fail := func(err error) (*softQuota, error) {
+		q.mu.Lock()
+		q.retiredLock = lock
+		q.lock = nil
+		q.mu.Unlock()
+		if q.persistDone == nil {
+			lock.Close()
+		} else {
+			q.stopPersister()
+		}
+		return nil, err
+	}
 	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
 	if err == syscall.ENOENT {
-		if err = q.persistLocked(); err != nil {
+		if err = q.persist(); err != nil {
 			return fail(err)
 		}
 		return q, nil
@@ -136,8 +172,13 @@ func newSoftQuota(p NodePolicy, root, path, nodeID string) (*softQuota, error) {
 	if err != nil {
 		return fail(err)
 	}
-	if err = json.Unmarshal(raw, &q.state); err != nil {
+	var stored softState
+	if err = json.Unmarshal(raw, &stored); err != nil {
 		return fail(fmt.Errorf("soft quota state corrupt"))
+	}
+	q.state = stored
+	if q.state.LastSpaceAt.IsZero() && q.state.UnknownStartedAt.IsZero() {
+		return fail(fmt.Errorf("soft quota missing snapshot-age anchor"))
 	}
 	if q.state.Version != 1 || q.state.NodeID != nodeID || q.state.Root != root || q.state.Seats == nil || len(q.state.Events) > 256 {
 		return fail(fmt.Errorf("soft quota state identity/version invalid"))
@@ -160,31 +201,37 @@ func newSoftQuota(p NodePolicy, root, path, nodeID string) (*softQuota, error) {
 		}
 	}
 	q.state.Active = true
-	if err = q.persistLocked(); err != nil {
+	if err = q.persist(); err != nil {
 		return fail(err)
 	}
 	return q, nil
 }
 func (q *softQuota) close() {
-	if q != nil && q.lock != nil {
-		q.mu.Lock()
-		if !q.broken {
-			q.state.Active = false
-			_ = q.persistLocked()
-		}
-		q.lock.Close()
-		q.lock = nil
+	q.mu.Lock()
+	lock := q.lock
+	if lock == nil {
 		q.mu.Unlock()
+		q.stopPersister()
+		return
+	}
+	if !q.broken {
+		q.state.Active = false
+		_ = q.persistLocked()
+	}
+	q.lock = nil
+	q.retiredLock = lock
+	q.mu.Unlock()
+	if q.persistDone == nil {
+		lock.Close()
+	} else {
+		q.stopPersister()
 	}
 }
-func (q *softQuota) persistLocked() error {
-	raw, err := json.Marshal(q.state)
+func (q *softQuota) persist() error { q.mu.Lock(); defer q.mu.Unlock(); return q.persistLocked() }
+func writeSoftState(path string, raw []byte) error {
+	var err error
+	f, err := os.CreateTemp(filepath.Dir(path), ".soft-quota-")
 	if err != nil {
-		return err
-	}
-	f, err := os.CreateTemp(filepath.Dir(q.path), ".soft-quota-")
-	if err != nil {
-		q.broken = true
 		return err
 	}
 	name := f.Name()
@@ -200,19 +247,16 @@ func (q *softQuota) persistLocked() error {
 		err = ce
 	}
 	if err == nil {
-		err = os.Rename(name, q.path)
+		err = os.Rename(name, path)
 	}
 	if err == nil {
-		dir, e := os.Open(filepath.Dir(q.path))
+		dir, e := os.Open(filepath.Dir(path))
 		if e != nil {
 			err = e
 		} else {
 			err = dir.Sync()
 			dir.Close()
 		}
-	}
-	if err != nil {
-		q.broken = true
 	}
 	return err
 }
@@ -236,39 +280,25 @@ func (q *softQuota) holdLocked(id, reason string) {
 		q.eventLocked(id, reason)
 	}
 }
-func (q *softQuota) sampleSpaceLocked() error {
-	space, err := q.disk(q.root)
-	if err != nil {
-		return fmt.Errorf("%w: space_unknown", ErrSoftQuota)
-	}
-	if space.Total <= 0 || space.Total > 1<<60 || space.Free < 0 || space.Free > space.Total || space.Files == 0 || space.FreeFiles > space.Files {
-		return fmt.Errorf("%w: space_invalid", ErrSoftQuota)
-	}
-	q.space, q.spaceAt = space, q.now()
-	return nil
-}
 func (q *softQuota) admitLocked(add int64) error {
-	if q.broken {
+	if q.broken || q.persisting > 0 {
 		return fmt.Errorf("%w: private_state_unavailable", ErrSoftQuota)
 	}
 	if err := q.resourceBudgetLocked(seatResources{}); err != nil {
 		return err
 	}
-	if err := q.sampleSpaceLocked(); err != nil {
-		return err
+	if q.rootUnknownLocked() {
+		return fmt.Errorf("%w: space_unknown", ErrSoftQuota)
 	}
-	// Non-managed data must never be silently adopted as a fresh empty seat.
-	dirs, err := os.ReadDir(q.root)
-	if err != nil {
+	if q.inventoryErr != nil || q.inventoryAt.IsZero() || q.now().Sub(q.inventoryAt) > q.policy.MaxAge || q.now().Before(q.inventoryAt) {
 		return fmt.Errorf("%w: inventory_unknown", ErrSoftQuota)
 	}
-	for _, e := range dirs {
-		if _, known := q.state.Seats[e.Name()]; !known {
+	for _, name := range q.inventory {
+		if _, known := q.state.Seats[name]; !known {
 			return fmt.Errorf("%w: unmanaged_seat_directory", ErrSoftQuota)
 		}
 	}
-	reserve := max(q.policy.ReserveBytes, q.space.Total/100*q.policy.ReservePercent)
-	inodes := max(q.policy.ReserveInodes, q.space.Files/100*q.policy.ReserveInodePercent)
+	reserve, inodes := q.admissionReserves(q.space)
 	if q.space.FreeFiles < inodes {
 		return fmt.Errorf("%w: inode_reserve", ErrSoftQuota)
 	}
@@ -482,6 +512,7 @@ func (q *softQuota) measure(ctx context.Context) {
 			continue
 		}
 		if err == nil {
+			seat.UsageWarning = false
 			seat.UsageUnknown = false
 			seat.Usage, seat.MeasuredAt = u, q.now()
 			if u.charged() >= seat.Limit {
@@ -495,12 +526,16 @@ func (q *softQuota) measure(ctx context.Context) {
 				seat.Warn = false
 			}
 		} else {
+			if !seat.UsageWarning {
+				seat.UsageWarning = true
+				q.eventLocked(id, "usage_warning")
+			}
 			seat.UsageUnknown = true
 			since := seat.MeasuredAt
 			if since.IsZero() {
 				since = seat.CreatedAt
 			}
-			if q.now().Sub(since) >= q.policy.MaxAge || q.now().Sub(since) < 0 {
+			if q.now().Sub(since) > q.policy.MaxAge || q.now().Sub(since) < 0 {
 				q.holdLocked(id, "usage_unknown")
 			}
 		}
@@ -584,7 +619,7 @@ func (d *dockerOps) runSoft(ctx context.Context) {
 		}
 	}
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	go func() {
 		defer wg.Done()
 		ticker := time.NewTicker(d.policy.ScanInterval)
@@ -610,6 +645,20 @@ func (d *dockerOps) runSoft(ctx context.Context) {
 			}
 		}
 	}()
+	go func() {
+		defer wg.Done()
+		ticker := time.NewTicker(d.policy.ReserveInterval)
+		defer ticker.Stop()
+		for {
+			d.soft.sampleNode()
+			notify()
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
 	defer wg.Wait()
 	ticker := time.NewTicker(d.policy.ReserveInterval)
 	defer ticker.Stop()
@@ -624,34 +673,41 @@ func (d *dockerOps) runSoft(ctx context.Context) {
 	}
 }
 
-// Both emergency thresholds are an explicit fraction of the respective
-// admission reserve R (default 50%=R/2). Round upwards; never truncate to zero.
-func (q *softQuota) emergencyThresholds(space fsSpace) (int64, uint64) {
-	bytes := max(q.policy.ReserveBytes, space.Total/100*q.policy.ReservePercent)
-	inodes := max(q.policy.ReserveInodes, space.Files/100*q.policy.ReserveInodePercent)
+// Overflow-safe rounded-up percentages of the actual filesystem totals.
+func (q *softQuota) admissionReserves(space fsSpace) (int64, uint64) {
+	bytes := space.Total/100*q.policy.ReservePercent + (space.Total%100*q.policy.ReservePercent+99)/100
+	inodes := space.Files/100*q.policy.ReserveInodePercent + (space.Files%100*q.policy.ReserveInodePercent+99)/100
+	return max(q.policy.ReserveBytes, bytes), max(q.policy.ReserveInodes, inodes)
+}
+
+// The original emergency contract applies to available bytes only. Inode I
+// remains the unchanged admission reserve, not an additional emergency stop line.
+func (q *softQuota) emergencyThreshold(space fsSpace) int64 {
+	reserve, _ := q.admissionReserves(space)
 	percent := q.policy.EmergencyReservePercent
-	return bytes/100*percent + (bytes%100*percent+99)/100,
-		inodes/100*uint64(percent) + (inodes%100*uint64(percent)+99)/100
+	return reserve/100*percent + (reserve%100*percent+99)/100
 }
 func (q *softQuota) checkReserve() {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	spaceErr := q.sampleSpaceLocked()
-	emergency := ""
-	if spaceErr != nil {
-		emergency = "node_space_unknown"
-	} else {
-		bytes, inodes := q.emergencyThresholds(q.space)
-		if q.space.Free < bytes {
-			emergency = "node_space_emergency"
-		}
-		if q.space.FreeFiles < inodes {
-			emergency = "node_inode_emergency"
-		}
+	unknown := q.rootUnknownLocked()
+	anchor := q.state.LastSpaceAt
+	if anchor.IsZero() {
+		anchor = q.state.UnknownStartedAt
 	}
 	for id, seat := range q.state.Seats {
-		if emergency != "" {
-			q.holdLocked(id, emergency)
+		if unknown && !seat.SpaceWarning {
+			seat.SpaceWarning = true
+			q.eventLocked(id, "usage_warning")
+		}
+		if !unknown {
+			seat.SpaceWarning = false
+		}
+		if unknown && (q.now().Sub(anchor) > q.policy.MaxAge || q.now().Before(anchor)) {
+			q.holdLocked(id, "usage_unknown")
+		}
+		if !unknown && q.space.Free < q.emergencyThreshold(q.space) {
+			q.holdLocked(id, "node_space_emergency")
 		}
 		if q.broken {
 			q.holdLocked(id, "private_state_unavailable")
@@ -660,11 +716,12 @@ func (q *softQuota) checkReserve() {
 		if since.IsZero() {
 			since = seat.CreatedAt
 		}
-		if q.now().Sub(since) >= q.policy.MaxAge || q.now().Sub(since) < 0 {
+		if q.now().Sub(since) > q.policy.MaxAge || q.now().Before(since) {
 			q.holdLocked(id, "usage_unknown")
 		}
 	}
-	_ = q.persistLocked()
+	// The enforcer persists intent before Engine IO; reserve itself never waits
+	// for a filesystem write. Persistence failure still causes fail-closed stops.
 }
 func (q *softQuota) enforce(ctx context.Context, stop func(context.Context, string, string) error) {
 	q.enforceMu.Lock()
@@ -763,10 +820,10 @@ func hostResourceBudget() (cpu, total, available int64, err error) {
 	return int64(runtime.NumCPU()) * 1000, mt << 20, mf << 20, e
 }
 func (q *softQuota) resourceBudgetLocked(add seatResources) error {
-	cpu, total, available, err := q.resources()
-	if err != nil {
+	if q.resourcesErr != nil || q.resourcesAt.IsZero() || q.now().Sub(q.resourcesAt) > q.policy.MaxAge || q.now().Before(q.resourcesAt) || q.samplingExpiredLocked() {
 		return fmt.Errorf("%w: resource_unknown", ErrSoftQuota)
 	}
+	cpu, total, available := q.sampledCPU, q.sampledTotal, q.sampledAvailable
 	cpu -= q.policy.ReserveCPUMillicores
 	total -= q.policy.ReserveMemoryBytes
 	for _, s := range q.state.Seats {

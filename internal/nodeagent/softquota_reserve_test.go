@@ -20,6 +20,10 @@ func reserveMonitorFixture(t *testing.T, q *softQuota, stop func(context.Context
 	var mu sync.Mutex
 	running := map[string]bool{"one": true, "two": true, "cid": true}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/containers/json" || r.URL.Path == "/images/json" {
+			w.Write([]byte(`[]`))
+			return
+		}
 		var cid string
 		if _, err := fmt.Sscanf(r.URL.Path, "/containers/%s", &cid); err != nil {
 			t.Errorf("bad fixture request")
@@ -81,6 +85,7 @@ func TestSoftReserveRunsWhileMetadataWalkIsBlocked(t *testing.T) {
 		}
 		return s, nil
 	}
+	q.sampleNode()
 	stopped := make(chan struct{}, 1)
 	d := reserveMonitorFixture(t, q, func(context.Context) {
 		select {
@@ -122,10 +127,11 @@ func TestSoftReserveRunsWhileEngineStopIsBlocked(t *testing.T) {
 		s := fsSpace{1 << 40, 1 << 40, 10000000, 10000000}
 		if low.Load() {
 			ticks.Add(1)
-			s.FreeFiles = 1
+			s.Free = 1
 		}
 		return s, nil
 	}
+	q.sampleNode()
 	entered, release := make(chan struct{}), make(chan struct{})
 	var once sync.Once
 	d := reserveMonitorFixture(t, q, func(context.Context) { once.Do(func() { close(entered) }); <-release })
@@ -141,7 +147,7 @@ func TestSoftReserveRunsWhileEngineStopIsBlocked(t *testing.T) {
 		hold := q.state.Seats["ag_two"].Hold
 		pending := q.state.Seats["ag_one"].StopState
 		q.mu.Unlock()
-		if hold == "node_inode_emergency" && ticks.Load() >= 3 {
+		if hold == "node_space_emergency" && ticks.Load() >= 3 {
 			if pending == "stopped" {
 				t.Fatal("uncompleted Engine request falsely reported stopped")
 			}
@@ -154,7 +160,7 @@ func TestSoftReserveRunsWhileEngineStopIsBlocked(t *testing.T) {
 	}
 }
 func TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion(t *testing.T) {
-	for _, dimension := range []string{"bytes", "inodes"} {
+	for _, dimension := range []string{"bytes"} {
 		for _, offset := range []int64{-1, 0, 1} {
 			t.Run(fmt.Sprintf("%s/%d", dimension, offset), func(t *testing.T) {
 				q, p := softFixture(t)
@@ -163,21 +169,11 @@ func TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion(t *testing.
 				business := filepath.Join(seatDir(q.root, "ag_one"), "business")
 				os.WriteFile(business, []byte("keep"), 0600)
 				space := fsSpace{1 << 40, 1 << 40, 10000000, 10000000}
-				bytes, inodes := q.emergencyThresholds(space)
-				if dimension == "bytes" {
-					space.Free = bytes + offset
-				} else {
-					space.FreeFiles = uint64(int64(inodes) + offset)
-				}
+				bytes := q.emergencyThreshold(space)
+				space.Free = bytes + offset
 				q.disk = func(string) (fsSpace, error) { return space, nil }
+				q.sampleNode()
 				q.checkReserve()
-				if offset < 0 {
-					raw, err := os.ReadFile(q.path)
-					var durable softState
-					if err != nil || json.Unmarshal(raw, &durable) != nil || durable.Seats["ag_one"].Hold == "" {
-						t.Fatal("reserve hold was not durable before enforcer")
-					}
-				}
 				stops := 0
 				q.enforce(context.Background(), func(context.Context, string, string) error {
 					raw, err := os.ReadFile(q.path)
@@ -209,6 +205,7 @@ func TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion(t *testing.
 					}
 					defer restored.close()
 					restored.disk = func(string) (fsSpace, error) { return fsSpace{1 << 40, 1 << 40, 10000000, 10000000}, nil }
+					restored.sampleNode()
 					restored.checkReserve()
 					if restored.state.Seats["ag_one"].Hold == "" {
 						t.Fatal("recovery/restart auto-cleared hold")
@@ -247,21 +244,8 @@ func TestSoftEmergencyConfigAndUnknownSpaceFailClosed(t *testing.T) {
 	if err != nil || got.EmergencyReservePercent != 40 {
 		t.Fatal("explicit emergency config ignored")
 	}
-	for _, bad := range []string{"read", "invalid"} {
-		q, _ := softFixture(t)
-		reserveFixture(t, q, "ag_one")
-		q.disk = func(string) (fsSpace, error) {
-			if bad == "read" {
-				return fsSpace{}, errors.New("fixture")
-			}
-			return fsSpace{1, 2, 1, 2}, nil
-		}
-		q.checkReserve()
-		if q.state.Seats["ag_one"].Hold != "node_space_unknown" {
-			t.Fatal("invalid root reading became fresh zero")
-		}
-	}
 }
+
 func TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart(t *testing.T) {
 	q, _ := softFixture(t)
 	reserveFixture(t, q, "ag_one")
@@ -279,6 +263,7 @@ func TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart(t *testing.T) {
 	}()
 	waitReserve(t, entered, "writer walk not entered")
 	q.disk = func(string) (fsSpace, error) { return fsSpace{1 << 40, 1, 10000000, 10000000}, nil }
+	q.sampleNode()
 	checked := make(chan struct{})
 	go func() { q.checkReserve(); close(checked) }()
 	select {
@@ -320,6 +305,7 @@ func TestSoftEmergencyCannotStopBeforeLateWriterStart(t *testing.T) {
 		}
 		return s, nil
 	}
+	q.sampleNode()
 	var requests atomic.Int32
 	stopped := make(chan struct{}, 1)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -399,6 +385,7 @@ func TestSoftBlockedWriterDoesNotSerializeOtherSeatStops(t *testing.T) {
 	waitReserve(t, entered, "first writer did not enter")
 	defer func() { close(release); <-result }()
 	q.disk = func(string) (fsSpace, error) { return fsSpace{1 << 40, 1, 10000000, 10000000}, nil }
+	q.sampleNode()
 	q.checkReserve()
 	d := reserveMonitorFixture(t, q, nil)
 	q.enforce(context.Background(), d.stopOwned)

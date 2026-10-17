@@ -931,7 +931,7 @@ function renderRoster(){
     var row=document.createElement('tr');row.className='roster-row';row.dataset.agentId=a.agent_id;
     var name=document.createElement('td');name.textContent=a.name||'';name.title=a.full_name||'';
     if(a.origin==='hosted'&&a.hosted&&typeof a.hosted.model==='string'){var ms=document.createElement('span');ms.className='roster-model';ms.textContent=' 模型：'+(a.hosted.model||'默认');name.append(ms);}   // B2：席位实际生效的模型（空串＝节点默认）
-    if(a.origin==='hosted'&&a.hosted&&a.hosted.quota_mode==='soft'){var qs=document.createElement('span');qs.className='roster-quota';qs.textContent=' 无硬磁盘配额'+(a.hosted.quota_hold?'（磁盘保护，数据保留）':(a.hosted.quota_warning?'（磁盘用量接近限额）':''));name.append(qs);}
+    if(a.origin==='hosted'&&a.hosted&&a.hosted.quota_mode==='soft'){var qs=document.createElement('span');qs.className='roster-quota';qs.textContent=' 无硬磁盘配额'+(a.hosted.quota_hold?'（磁盘保护，数据保留）':(a.hosted.quota_usage_unknown?'（磁盘测量暂不可用，暂停新建与启动）':(a.hosted.quota_warning?'（磁盘用量接近限额）':'')));name.append(qs);}
  var hs=a.origin==='hosted'?Object.assign({online:a.online},a.hosted||{},a.state==='suspended'?{state:'disabled'}:{}):null,st=document.createElement('td');   // 「是否停用」以顶层 state 为准(G3 口径):suspended ⇒ 已停用,不论有没有 hosted 子对象,也不论它说 running;hosted.state 只补运行细节
        // 托管生命周期在行里的 hosted 子对象(契约 v2:过渡形态)
     st.textContent=hostedOpInflight[a.agent_id]?hostedOpInflightText(hostedOpInflight[a.agent_id]):(hs?hostedStateText(hs):(a.state==='suspended'?'已停用':(a.online?'在线':'离线')));

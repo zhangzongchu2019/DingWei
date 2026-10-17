@@ -16,6 +16,8 @@ import (
 )
 
 type Capacity struct {
+	DiskSnapshotValid     *bool               `json:"disk_snapshot_valid,omitempty"`
+	DiskSnapshotAt        *time.Time          `json:"disk_snapshot_at,omitempty"`
 	ResourceLimitsVersion int                 `json:"resource_limits_version,omitempty"`
 	QuotaMode             string              `json:"quota_mode"`
 	QuotaPolicyRevision   string              `json:"quota_policy_revision"`
@@ -51,16 +53,28 @@ func (d *dockerOps) collectCapacity(ctx context.Context) (Capacity, error) {
 	if d.soft != nil {
 		c.SoftSeats, c.QuotaEvents, c.SoftReady = d.soft.report()
 	}
-	total, free, err := memInfoMB("/proc/meminfo")
-	if err != nil {
-		return c, err
+	if d.soft != nil {
+		d.soft.mu.Lock()
+		c.MemTotalMB, c.MemFreeMB = d.soft.sampledTotal>>20, d.soft.sampledAvailable>>20
+		c.DiskTotalMB, c.DiskFreeMB = d.soft.space.Total>>20, d.soft.space.Free>>20
+		at := d.soft.state.LastSpaceAt
+		c.DiskSnapshotAt = &at
+		valid := !d.soft.rootUnknownLocked()
+		c.DiskSnapshotValid = &valid
+		d.soft.mu.Unlock()
+	} else {
+		total, free, err := memInfoMB("/proc/meminfo")
+		if err != nil {
+			return c, err
+		}
+		c.MemTotalMB, c.MemFreeMB = total, free
+		dt, df, err := diskMB(d.seatRoot)
+		if err != nil {
+			return c, err
+		}
+		c.DiskTotalMB, c.DiskFreeMB = dt, df
+
 	}
-	c.MemTotalMB, c.MemFreeMB = total, free
-	dt, df, err := diskMB(d.seatRoot)
-	if err != nil {
-		return c, err
-	}
-	c.DiskTotalMB, c.DiskFreeMB = dt, df
 	c.Models = d.seatModels
 
 	// 容器清单（seat- 前缀）

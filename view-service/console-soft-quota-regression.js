@@ -29,7 +29,7 @@ const server=http.createServer(async(req,res)=>{
  const p=req.url.split('?')[0];
  if(p==='/console'){res.writeHead(200,{'content-type':'text/html'});return res.end(html);}
  if(p==='/api/console/platform')return json(res,200,{role:'owner',actions:[],items:[{id:'agent-groups',kind:'agent-groups',title:'Agent 编组',href:'#agent-groups',status:'ready'}]});
- if(p==='/api/console/agents')return json(res,200,{agents:[{agent_id:'ag_fixture',name:'FixtureSeat',full_name:'FixtureSeat.zzc',origin:'hosted',online:false,state:'active',hosted:{state:'abnormal',quota_mode:'soft',quota_hold:true}}]});
+ if(p==='/api/console/agents')return json(res,200,{agents:[{agent_id:'ag_fixture',name:'FixtureSeat',full_name:'FixtureSeat.zzc',origin:'hosted',online:false,state:'active',hosted:{state:'abnormal',quota_mode:'soft',quota_hold:true}},{agent_id:'ag_unknown',name:'UnknownSeat',full_name:'UnknownSeat.zzc',origin:'hosted',online:true,state:'active',hosted:{state:'online',quota_mode:'soft',quota_warning:true,quota_usage_unknown:true}}]});
  if(p==='/api/console/agent-groups')return json(res,200,{principal:'owner',owned_agents:[],groups:[]});
  if(p==='/api/console/hosted/options')return json(res,200,options);
  if(p==='/api/console/hosted/agents'&&req.method==='POST')return json(res,409,{error:'node_no_capacity',message:'UNTRUSTED_DETAIL'});
@@ -55,7 +55,9 @@ const server=http.createServer(async(req,res)=>{
    if(consent)assert.strictEqual(r.request().postDataJSON().allow_soft,true);else assert(!('allow_soft' in r.request().postDataJSON()),'legacy default body shape');assert.strictEqual(r.request().postDataJSON().node_id,'soft');
   }
   assert.match(await page.locator('#rosterItems').textContent(),/无硬磁盘配额（磁盘保护，数据保留）/);
+  assert.match(await page.locator('#rosterItems').textContent(),/磁盘测量暂不可用，暂停新建与启动/);
+  assert.doesNotMatch(await page.locator('#rosterItems').textContent(),/接近限额/);
   assert.doesNotMatch(await page.locator('#hostedFeedback').textContent(),/UNTRUSTED_DETAIL/);
-  assert.deepStrictEqual(errors,[]);console.log('SOFT_QUOTA_BROWSER_OK assertions=10');
+  assert.deepStrictEqual(errors,[]);console.log('SOFT_QUOTA_BROWSER_OK assertions=12');
  }finally{await context.close();await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});

@@ -275,3 +275,55 @@ func TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath(t *testing.T) {
 		})
 	}
 }
+
+func TestQuotaUsageWarningNotifiesWithoutPrematureHold(t *testing.T) {
+	for _, flag := range []string{"space_warning", "usage_warning"} {
+		t.Run(flag, func(t *testing.T) {
+			o, _, _, s := mkOrch(t)
+			ctx := context.Background()
+			revision := strings.Repeat("f", 64)
+			if err := s.UpsertNode(ctx, Node{ID: "nd_warning", Name: "warning", QuotaMode: "soft", QuotaPolicyRevision: revision, Labels: json.RawMessage(`{"allow_soft":"true"}`)}); err != nil {
+				t.Fatal(err)
+			}
+			if err := s.SetNodeOnline(ctx, "nd_warning", json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"`+revision+`","soft_ready":true,"mem_free_mb":65536}`)); err != nil {
+				t.Fatal(err)
+			}
+			account := acctOf(t, o.pool)
+			made, err := o.Create(ctx, CreateRequest{AllowSoft: true, OwnerLC: "zzc", By: "zzc", Name: "warningseat", NodeID: "nd_warning", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: account, Plan: "2c4g"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := s.SetSeatState(ctx, made.AgentID, "online", "running", "fixture", nil); err != nil {
+				t.Fatal(err)
+			}
+			raw := json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"` + revision + `","soft_ready":false,"disk_snapshot_valid":false,"disk_free_mb":100000,"soft_seats":{"` + made.AgentID + `":{"` + flag + `":true}},"quota_events":[{"id":"` + strings.Repeat("1", 32) + `","seat_id":"` + made.AgentID + `","reason":"usage_warning","at":"2026-10-17T09:00:00Z"}]}`)
+			for i := 0; i < 2; i++ {
+				if err := s.SetNodeOnline(ctx, "nd_warning", raw); err != nil {
+					t.Fatal(err)
+				}
+			}
+			seat, err := s.GetSeat(ctx, made.AgentID)
+			if err != nil || seat.State != "online" || seat.StateDetail != "running" {
+				t.Fatalf("first warning stopped running seat %+v %v", seat, err)
+			}
+			m, ok := o.HostedItem(ctx, made.AgentID)
+			if !ok || m["quota_warning"] != true || m["quota_usage_unknown"] != true || m["quota_hold"] == true {
+				t.Fatalf("warning UI/hold mismatch %+v", m)
+			}
+			if _, err := o.pickNode(ctx, "nd_warning", "", Plan{MemMB: 4096}, "", true); !errors.Is(err, ErrNoNodeCapacity) {
+				t.Fatal("stale good free metric admitted new seat")
+			}
+			var count int
+			row, err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action='node.soft_quota' AND target='nd_warning'`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = row.Scan(&count); err != nil || count != 1 {
+				t.Fatal("warning not durably deduplicated", count, err)
+			}
+			if len(NodeQuotaEventIDs(raw)) != 1 {
+				t.Fatal("warning receipt not acknowledged")
+			}
+		})
+	}
+}
