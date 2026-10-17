@@ -207,6 +207,25 @@ func TestCapacityUnknownReservesForeignLoadAndLegacyHard(t *testing.T) {
 			}
 		})
 	}
+	t.Run("stale_wire", func(t *testing.T) {
+		// Preserve the node's originally known=true bit while its cached sample
+		// ages. A fresh heartbeat must not make old CPU/memory/disk data fresh.
+		var frame map[string]any
+		if err := json.Unmarshal(capacityTestFrame(t, rev, netCapacitySnapshot(), nil), &frame); err != nil {
+			t.Fatal(err)
+		}
+		frame["seat_capacity"].(map[string]any)["at"] = time.Now().Add(-time.Minute - time.Second).Format(time.RFC3339Nano)
+		raw, err := json.Marshal(frame)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := s.SetNodeOnline(ctx, "nd_capacity", raw); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := o.pickNode(ctx, "nd_capacity", "", p, "", true); !errors.Is(err, ErrNoNodeCapacity) {
+			t.Fatalf("fresh heartbeat laundered old capacity: %v", err)
+		}
+	})
 	for _, raw := range []string{`{"quota_mode":"soft","quota_policy_revision":"` + rev + `","soft_ready":true,"mem_free_mb":65536}`, `{"quota_mode":"soft","quota_policy_revision":"` + rev + `","soft_ready":true,"mem_free_mb":65536,"seat_capacity":{"version":1,"known":true}}`} {
 		if err := s.SetNodeOnline(ctx, "nd_capacity", []byte(raw)); err != nil {
 			t.Fatal(err)
