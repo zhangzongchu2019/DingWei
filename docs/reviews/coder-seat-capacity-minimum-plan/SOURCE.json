@@ -1,0 +1,15 @@
+{
+  "commit": "1ed944134e11dae3c51e7727799e3882ca47983b",
+  "tree": "c8e42ba7395052dc5d4afb3def818f81ae330ccb",
+  "sha256": {
+    "cmd/workpulse/hosted_minimum_plan_test.go": "4dec16420f31ef5dd46041904c639c6622cb0bcc2fb25dd1929668e87b97b759",
+    "cmd/workpulse/hosted_routes.go": "391997a78c4d19b1179870535179c2072494b46a2b9a777cc1a281e74f5416aa",
+    "internal/hosted/minimum_plan_test.go": "6a495ba196f254c2e58574ce8951b7037702c97ffe7a957407cdc7d9bd5861d3",
+    "internal/hosted/plans.go": "84c3e4016523bc70a282d94745432eb114305110d5b58fe8a767c485f234d9b9",
+    "internal/hosted/quotasvc.go": "962f21266a7495d3f5844c6fad63da63dc2f31834ccb70cd928035af9b4823f5",
+    "internal/hosted/readapi.go": "3e593ccd27236689e343323ad905b0475c5c6491fe730b187aacdbccb6c1d0de",
+    "internal/hosted/schema.go": "e8c21d6a6e9e99e35bbac5981f8e88bd8f9e8a60a1d6e3ab3946c1edb267b2de",
+    "internal/hosted/store_test.go": "5df16cf69930129ab447c55ebb2de88ce4d1ee5f29d61d1e48cba449b52ad5e1",
+    "view-service/console-soft-quota-regression.js": "0d08e7d103732b1d48f2cf95afb510d8ac375ad3ec6005b8e292da706c917441"
+  }
+}

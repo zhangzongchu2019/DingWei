@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./internal/hosted",
+    "-run",
+    "^TestMinimumPlanOptionsAndRealCreateResources$"
+  ],
+  "rc": 1,
+  "seconds": 6.975187953095883,
+  "external_DSN_environment_not_inherited": true
+}

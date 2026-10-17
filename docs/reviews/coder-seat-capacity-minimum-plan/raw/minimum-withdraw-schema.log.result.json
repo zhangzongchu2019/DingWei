@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./internal/hosted",
+    "-run",
+    "^TestMinimumPlanSchemaUpgradesOldConstraint$"
+  ],
+  "rc": 1,
+  "seconds": 6.426898293895647,
+  "external_DSN_environment_not_inherited": true
+}

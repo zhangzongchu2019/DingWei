@@ -1,0 +1,6 @@
+=== RUN   TestMinimumPlanDefinitionAndNetCapacity
+    minimum_plan_test.go:19: minimum plan: {ID: VCPU:0 MemMB:0 DiskMB:0} false
+--- FAIL: TestMinimumPlanDefinitionAndNetCapacity (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	0.014s
+FAIL
