@@ -71,3 +71,23 @@ Synchronizes exact ipc_listener.py and its regression test from H1 successor
 a prerequisite. Its12 targeted tests and one actual source withdrawal apply to this
 same listener source; H3 did not execute helper. Earlier35 H3 fixture results apply
 to unchanged image/start/Engine definitions, not a new full runtime acceptance.
+
+
+## Lock-only normal-restart correction (supersedes the initial empty-only rule)
+
+Normal pristine factory startup calls State.select/locked and leaves update/state.lock.
+The hosted startup gate now accepts absent/empty update state OR exactly one state.lock
+with regular-file type, seat UID10001 owner, mode0600, size0 and linkcount1. It opens
+state/update directories with O_DIRECTORY|O_NOFOLLOW, lists names via that fd, and
+stats the sole lock relative to that fd without following links. No lock/journal
+contents are read. A foreign owner, symlink, FIFO, directory, nonempty or nonprivate
+lock, hardlink, extra journal/slot/entry all STOP with HELPER_UPDATE_STATE. No clearing,
+migration or version-string compatibility inference. Concurrent writers remain fenced;
+this is not a malicious same-UID mutation sandbox or authorization for self-update.
+
+36 inert fixtures rc0, including prepare/auth-preservation/config success on simulated
+second boot with a normal lock left behind; lock-only check repeated without mutation;
+all old selected-journal negatives retained. No helper/guard execution. Two controls
+turn red with unchanged tests: restore overstrict empty-only gate; remove lock metadata
+validation. Exact hashes/raw logs in lock-only/. Earlier d19 REWORK is retained as
+historical; this successor needs separate independent review.

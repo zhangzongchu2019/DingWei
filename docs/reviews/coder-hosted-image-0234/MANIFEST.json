@@ -8,8 +8,8 @@
     "sha256": "9e22c7c10e03555495f1a8a6644ddec2feb1c85f3988a2b2f4a3af00b7a15794"
   },
   "deploy/ops/hosted-image/start.py": {
-    "bytes": 9045,
-    "sha256": "606afe2d67c032564574ae2f812f1ddd6d088ef09bfb335bb479f9b096d91629"
+    "bytes": 9530,
+    "sha256": "859a76d1e486a6301d0406f471bbb85f8407f19eba00af3b3f0d160ff771162a"
   },
   "deploy/ops/hosted-image/test_start.py": {
     "bytes": 17062,
@@ -28,12 +28,12 @@
     "sha256": "eba5b2c638ef0d752e6b34af1ee921f288352a85359c85831c7e3ac84dce03bf"
   },
   "deploy/ops/hosted-image/test_build_definition.py": {
-    "bytes": 17035,
-    "sha256": "3aa05f3d17fd0a8a3a82ea2b97d5eb1ed4d87d46acf48c5fa0dd793efa4f8d2a"
+    "bytes": 19151,
+    "sha256": "a6be469cef8bc71d1a1a22d3acf78b04b827b6948cb22dee63025af352c4b730"
   },
   "deploy/ops/hosted-image/BUILD-0234.md": {
-    "bytes": 7092,
-    "sha256": "a75427eb0dac638cc4352daa93f6e7a23ad54d34645e25a8afc698cd46aa78f0"
+    "bytes": 8439,
+    "sha256": "093500f36100e2f9fb1c3c940d4cbbab629de7129118a0a05fd65d6932cb4109"
   },
   "docs/reviews/coder-hosted-image-0234/WITHDRAWAL.json": {
     "bytes": 520,
@@ -44,8 +44,8 @@
     "sha256": "a6c2bb62553b765e5bbbe381c1c86ff35c8dec9e5b478a76bdebd0253933d29b"
   },
   "docs/reviews/coder-hosted-image-0234/REPORT.md": {
-    "bytes": 7159,
-    "sha256": "efbe0eeb0b62d5a6aa676c7287be937c742ab1ee54191e19d055f28e492346f2"
+    "bytes": 8506,
+    "sha256": "4f8762d1da19c343ef5f3f839107765377e61ab708e589d5c62333c4088b2200"
   },
   "docs/reviews/coder-hosted-image-0234/raw/definition.log": {
     "bytes": 98,
@@ -106,5 +106,21 @@
   "tools/sessionhelper/tests/test_hosted_mcp_send.py": {
     "bytes": 10488,
     "sha256": "b759641c12831a2abc75c3eff3647eda1c08230d0287e5739645d53a8b365652"
+  },
+  "docs/reviews/coder-hosted-image-0234/lock-only/restore-overstrict-gate.log": {
+    "bytes": 1011,
+    "sha256": "302b19ffb7f46acc3af65677d055cf028b541f46e7cd0df4636deb6fc9f14c81"
+  },
+  "docs/reviews/coder-hosted-image-0234/lock-only/combined.log": {
+    "bytes": 5345,
+    "sha256": "df6a97152059b2aa47a4354306c0489d7cc42b0021db9010363e6cc5e4270d14"
+  },
+  "docs/reviews/coder-hosted-image-0234/lock-only/WITHDRAWAL.json": {
+    "bytes": 486,
+    "sha256": "5d085a2f1198032bbef3b9dc6baa20fb9a89660c61dcc47987a0bab5d921ec40"
+  },
+  "docs/reviews/coder-hosted-image-0234/lock-only/remove-lock-metadata-guard.log": {
+    "bytes": 6566,
+    "sha256": "b190a715ab6ecc25c1558e46ddd5686eed405d0724a6c05ffea9b73ee82c2980"
   }
 }

@@ -99,26 +99,38 @@ def need_rewrite(home, source_info, digest):
 
 
 def check_factory_only_state():
-    """Hosted image has no approved slot updater: only pristine update state is supported.
+    """Hosted image has no approved slot updater: only pristine/regular empty lock-only state is supported.
 
     Inspect metadata/names only, never import slot code or read a journal/credential.
     Existing state needs a separately reviewed stopped migration; do not reset it here.
     """
+    state_fd = update_fd = None
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
     try:
-        state = Path(STATE_DIR)
-        if state.is_symlink():
-            fail('HELPER_UPDATE_STATE')
-        if state.exists() and not state.is_dir():
-            fail('HELPER_UPDATE_STATE')
-        update = state / 'update'
         try:
-            mode = update.lstat().st_mode
+            state_fd = os.open(STATE_DIR, flags)
         except FileNotFoundError:
             return
-        if not stat.S_ISDIR(mode) or next(update.iterdir(), None) is not None:
+        try:
+            update_fd = os.open('update', flags, dir_fd=state_fd)
+        except FileNotFoundError:
+            return
+        names = os.listdir(update_fd)
+        if not names:
+            return
+        if names != ['state.lock']:
+            fail('HELPER_UPDATE_STATE')
+        info = os.stat('state.lock', dir_fd=update_fd, follow_symlinks=False)
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid != SEAT_UID or
+                stat.S_IMODE(info.st_mode) != 0o600 or info.st_size != 0 or info.st_nlink != 1):
             fail('HELPER_UPDATE_STATE')
     except OSError:
         fail('HELPER_UPDATE_STATE')
+    finally:
+        if update_fd is not None:
+            os.close(update_fd)
+        if state_fd is not None:
+            os.close(state_fd)
 
 
 def prepare(env):

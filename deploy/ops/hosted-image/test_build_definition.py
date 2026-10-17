@@ -152,6 +152,8 @@ class StartupAndDefinition(unittest.TestCase):
                 self.assertEqual(result['SH_MODE'], 'driver')
                 self.assertEqual(result['PYTHONPATH'], mcp['env']['PYTHONPATH'])
                 auth = (home/'auth.json').read_bytes()
+                update = root/'state'/'update'; update.mkdir(parents=True)
+                lock = update/'state.lock'; lock.touch(mode=0o600)  # inert normal guard residue
                 start.prepare(env)
                 self.assertEqual((home/'auth.json').read_bytes(), auth)
                 self.assertEqual(tomllib.loads((home/'config.toml').read_text())['mcp_servers'], cfg['mcp_servers'])
@@ -197,6 +199,33 @@ class StartupAndDefinition(unittest.TestCase):
             linked = Path(tmp)/'linked'; linked.symlink_to(state)
             with mock.patch.object(start, 'STATE_DIR', str(linked)), self.assertRaises(SystemExit):
                 start.check_factory_only_state()
+
+    def test_lock_only_restart_metadata_boundary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp)/'state'; update = state/'update'; update.mkdir(parents=True)
+            lock = update/'state.lock'; lock.touch(mode=0o600)
+            with mock.patch.object(start, 'STATE_DIR', str(state)), mock.patch.object(start, 'SEAT_UID', os.getuid()):
+                start.check_factory_only_state()
+                start.check_factory_only_state()  # restart check is repeatable and nonmutating
+                self.assertEqual(lock.stat().st_size, 0)
+                for kind in ('content', 'permissions', 'symlink', 'fifo', 'directory', 'hardlink', 'journal'):
+                    with self.subTest(kind=kind):
+                        if kind == 'content': lock.write_text('not a normal lock')
+                        elif kind == 'permissions': lock.chmod(0o644)
+                        elif kind == 'symlink': lock.unlink(); lock.symlink_to(state/'outside')
+                        elif kind == 'fifo': lock.unlink(); os.mkfifo(lock)
+                        elif kind == 'directory': lock.unlink(); lock.mkdir()
+                        elif kind == 'hardlink': os.link(lock, state/'alias')
+                        elif kind == 'journal': (update/'journal.json').write_text('{}')
+                        with self.assertRaises(SystemExit): start.check_factory_only_state()
+                        if kind == 'directory': lock.rmdir()
+                        else: lock.unlink()
+                        (update/'journal.json').unlink(missing_ok=True)
+                        (state/'alias').unlink(missing_ok=True)
+                        lock.touch(mode=0o600)
+                with mock.patch.object(start, 'SEAT_UID', os.getuid()+1), self.assertRaises(SystemExit):
+                    start.check_factory_only_state()
+                self.assertEqual(sorted(p.name for p in update.iterdir()), ['state.lock'])
 
     def test_runtime_metadata_exact_lock_no_build_distributions(self):
         from types import SimpleNamespace

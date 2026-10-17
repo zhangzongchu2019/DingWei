@@ -1,0 +1,19 @@
+test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) ... hosted-start: invalid or missing HELPER_UPDATE_STATE
+ERROR
+
+======================================================================
+ERROR: test_lock_only_restart_metadata_boundary (test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-lock-y9105hjm/fixture/test_build_definition.py", line 208, in test_lock_only_restart_metadata_boundary
+    start.check_factory_only_state()
+  File "/tmp/coder-h3-lock-y9105hjm/fixture/start.py", line 122, in check_factory_only_state
+    fail('HELPER_UPDATE_STATE')
+  File "/tmp/coder-h3-lock-y9105hjm/fixture/start.py", line 34, in fail
+    raise SystemExit(2)
+SystemExit: 2
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (errors=1)
