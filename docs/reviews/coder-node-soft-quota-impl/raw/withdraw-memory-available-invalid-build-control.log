@@ -1,0 +1,4 @@
+# github.com/zhangzongchu2019/dingwei/internal/nodeagent [github.com/zhangzongchu2019/dingwei/internal/nodeagent.test]
+internal/nodeagent/softquota.go:632:14: available declared and not used
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent [build failed]
+FAIL

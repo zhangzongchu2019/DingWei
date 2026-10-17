@@ -1,0 +1,6 @@
+=== RUN   TestSoftUnrecordedContainerIsNeverAdopted
+    softquota_test.go:716: final writer accepted unrecorded object
+--- FAIL: TestSoftUnrecordedContainerIsNeverAdopted (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.014s
+FAIL

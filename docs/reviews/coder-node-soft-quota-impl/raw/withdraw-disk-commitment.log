@@ -1,0 +1,6 @@
+=== RUN   TestSoftResourceAndCommittedDiskReserve
+    softquota_test.go:607: commitment over-admission
+--- FAIL: TestSoftResourceAndCommittedDiskReserve (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.019s
+FAIL

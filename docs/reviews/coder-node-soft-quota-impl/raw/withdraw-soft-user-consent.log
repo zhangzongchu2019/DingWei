@@ -1,0 +1,6 @@
+=== RUN   TestSoftNodeSchedulingConsentPriorityCapacityAndAudit
+    node_quota_test.go:73: manual soft bypassed consent
+--- FAIL: TestSoftNodeSchedulingConsentPriorityCapacityAndAudit (1.87s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	1.880s
+FAIL

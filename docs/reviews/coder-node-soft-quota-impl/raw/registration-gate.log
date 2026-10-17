@@ -1,0 +1,6 @@
+=== RUN   TestSoftRegistrationUsesDirectoryBackendAndReplayGate
+    softquota_test.go:885: soft quota state directory must be private
+--- FAIL: TestSoftRegistrationUsesDirectoryBackendAndReplayGate (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.011s
+FAIL

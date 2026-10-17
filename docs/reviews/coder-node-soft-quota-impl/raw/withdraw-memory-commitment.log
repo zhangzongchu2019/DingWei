@@ -1,0 +1,6 @@
+=== RUN   TestSoftMemoryCommitAndAvailableReserveSeparate
+    softquota_test.go:701: memory commitments exceeded total
+--- FAIL: TestSoftMemoryCommitAndAvailableReserveSeparate (0.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.019s
+FAIL

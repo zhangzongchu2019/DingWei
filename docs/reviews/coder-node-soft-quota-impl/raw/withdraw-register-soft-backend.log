@@ -1,0 +1,6 @@
+=== RUN   TestSoftRegistrationUsesDirectoryBackendAndReplayGate
+    softquota_test.go:897: soft still used hard backend: {CommandID:create OK:false Payload:[] Error:hard-backend-sentinel}
+--- FAIL: TestSoftRegistrationUsesDirectoryBackendAndReplayGate (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.014s
+FAIL

@@ -1,0 +1,6 @@
+=== RUN   TestSoftWarningHysteresisUnknownBudgetAndStopFailure
+    softquota_test.go:220: warning not emitted
+--- FAIL: TestSoftWarningHysteresisUnknownBudgetAndStopFailure (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.017s
+FAIL

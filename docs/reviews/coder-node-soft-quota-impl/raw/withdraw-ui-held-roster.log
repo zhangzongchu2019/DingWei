@@ -1,0 +1,12 @@
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /无硬磁盘配额（磁盘保护，数据保留）/. Input:
+
+'FixtureSeat异常升级重启停用销毁吊销'
+
+    at /data/ai-dev-data/coder-soft-quota-lab/withdrawal/view-service/console-soft-quota-regression.js:57:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'FixtureSeat异常升级重启停用销毁吊销',
+  expected: /无硬磁盘配额（磁盘保护，数据保留）/,
+  operator: 'match',
+  diff: 'simple'
+}

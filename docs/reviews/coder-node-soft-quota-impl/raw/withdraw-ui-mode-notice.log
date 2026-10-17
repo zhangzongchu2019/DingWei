@@ -1,0 +1,12 @@
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /无硬磁盘配额/. Input:
+
+'Soft（剩余 16G / 8C / 盘 100G）'
+
+    at /data/ai-dev-data/coder-soft-quota-lab/withdrawal/view-service/console-soft-quota-regression.js:47:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'Soft（剩余 16G / 8C / 盘 100G）',
+  expected: /无硬磁盘配额/,
+  operator: 'match',
+  diff: 'simple'
+}

@@ -1,0 +1,6 @@
+=== RUN   TestSoftResourceAndCommittedDiskReserve
+    softquota_test.go:590: host CPU reserve bypass
+--- FAIL: TestSoftResourceAndCommittedDiskReserve (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.009s
+FAIL

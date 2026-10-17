@@ -1,0 +1,8 @@
+=== RUN   TestSoftScanBudgetUnknownAndOutboxAcknowledgement
+--- PASS: TestSoftScanBudgetUnknownAndOutboxAcknowledgement (0.02s)
+=== RUN   TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount
+--- PASS: TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount (0.03s)
+=== RUN   TestSoftMonitorMeasuresAgainOnPeriodicTick
+--- PASS: TestSoftMonitorMeasuresAgainOnPeriodicTick (0.04s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.100s

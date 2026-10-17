@@ -1,0 +1,14 @@
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/#00
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/label
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/mount
+    softquota_test.go:546: ownership mount stops1
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/id
+--- FAIL: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers (0.04s)
+    --- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/#00 (0.01s)
+    --- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/label (0.01s)
+    --- FAIL: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/mount (0.01s)
+    --- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/id (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.048s
+FAIL

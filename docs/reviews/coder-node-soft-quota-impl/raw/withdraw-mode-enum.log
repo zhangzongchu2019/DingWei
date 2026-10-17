@@ -1,0 +1,33 @@
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/QUOTA_MODESoft
+    softquota_test.go:70: invalid config accepted
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/QUOTA_MODEauto
+    softquota_test.go:70: invalid config accepted
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/QUOTA_MODEsoft
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/PIDS_LIMIT0
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/WARN_PERCENT100
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/RECOVERY_PERCENT81
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/MAX_AGE1s
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/SCAN_BUDGET31s
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/RESERVE_INODES0
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/RESERVE_PERCENT-1
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/MAX_SEATS0
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/LOG_MAX_FILES0
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/SCAN_INTERVALinvalid
+--- FAIL: TestNodePolicyExplicitDefaultsAndInvalidValues (0.00s)
+    --- FAIL: TestNodePolicyExplicitDefaultsAndInvalidValues/QUOTA_MODESoft (0.00s)
+    --- FAIL: TestNodePolicyExplicitDefaultsAndInvalidValues/QUOTA_MODEauto (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/QUOTA_MODEsoft (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/PIDS_LIMIT0 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/WARN_PERCENT100 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/RECOVERY_PERCENT81 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/MAX_AGE1s (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/SCAN_BUDGET31s (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/RESERVE_INODES0 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/RESERVE_PERCENT-1 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/MAX_SEATS0 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/LOG_MAX_FILES0 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/SCAN_INTERVALinvalid (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.006s
+FAIL

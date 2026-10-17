@@ -1,0 +1,6 @@
+=== RUN   TestSoftRegistrationUsesDirectoryBackendAndReplayGate
+    softquota_test.go:911: soft monitor not attached independently of Hub
+--- FAIL: TestSoftRegistrationUsesDirectoryBackendAndReplayGate (0.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.022s
+FAIL

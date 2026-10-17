@@ -1,0 +1,4 @@
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	0.006s [no tests to run]
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodegate	0.005s [no tests to run]
+ok  	github.com/zhangzongchu2019/dingwei/cmd/nodeagent	0.006s [no tests to run]
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.007s [no tests to run]

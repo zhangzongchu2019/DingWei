@@ -1,0 +1,6 @@
+=== RUN   TestSoftReservationBytesInodesInventoryConcurrencyAndReplay
+    softquota_test.go:252: byte reserve bypass
+--- FAIL: TestSoftReservationBytesInodesInventoryConcurrencyAndReplay (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.009s
+FAIL

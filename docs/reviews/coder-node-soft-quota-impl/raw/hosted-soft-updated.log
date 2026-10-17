@@ -1,0 +1,12 @@
+=== RUN   TestQuotaRegistrationAndCapacityCannotSelfDowngrade
+--- PASS: TestQuotaRegistrationAndCapacityCannotSelfDowngrade (0.00s)
+=== RUN   TestSoftNodeSchedulingConsentPriorityCapacityAndAudit
+--- PASS: TestSoftNodeSchedulingConsentPriorityCapacityAndAudit (1.91s)
+=== RUN   TestQuotaEventValidation
+--- PASS: TestQuotaEventValidation (0.00s)
+=== RUN   TestSoftCreateFailureDoesNotAbortOrReleaseIdentity
+--- PASS: TestSoftCreateFailureDoesNotAbortOrReleaseIdentity (2.27s)
+=== RUN   TestSoftHeldLifecycleRefusesBeforeSideEffects
+--- PASS: TestSoftHeldLifecycleRefusesBeforeSideEffects (2.09s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	6.285s

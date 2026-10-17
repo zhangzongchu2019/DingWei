@@ -1,0 +1,6 @@
+=== RUN   TestSoftMemoryCommitAndAvailableReserveSeparate
+    softquota_test.go:695: available memory reserve ignored
+--- FAIL: TestSoftMemoryCommitAndAvailableReserveSeparate (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.011s
+FAIL

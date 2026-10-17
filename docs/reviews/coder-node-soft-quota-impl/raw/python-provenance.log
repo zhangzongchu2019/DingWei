@@ -1,0 +1,1 @@
+{"executable": "/data/ai-dev-data/helper-deps-lock-venv/bin/python3", "version": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]", "packages": {"websockets": "15.0.1", "pexpect": "4.9.0", "ptyprocess": "0.7.0", "certifi": "2026.7.22"}}
