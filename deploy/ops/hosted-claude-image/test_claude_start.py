@@ -3,6 +3,8 @@ import importlib.util
 import json
 import os
 import hashlib
+import io
+import tarfile
 from pathlib import Path
 import tempfile
 import unittest
@@ -15,6 +17,9 @@ spec.loader.exec_module(start)
 verify_spec = importlib.util.spec_from_file_location('claude_verify_fixture', HERE / 'verify_inputs.py')
 verify = importlib.util.module_from_spec(verify_spec)
 verify_spec.loader.exec_module(verify)
+prepare_spec = importlib.util.spec_from_file_location('claude_prepare_fixture', HERE / 'prepare_context.py')
+prepare = importlib.util.module_from_spec(prepare_spec)
+prepare_spec.loader.exec_module(prepare)
 
 
 class ClaudeStart(unittest.TestCase):
@@ -62,6 +67,30 @@ class ClaudeStart(unittest.TestCase):
             del lock['runtime']['sha256']
             with self.assertRaises(verify.Rejected):
                 verify.verify(lock, *files)
+
+    def test_context_fixture_uses_only_verified_inputs(self):
+        def package(blob):
+            out = io.BytesIO()
+            with tarfile.open(fileobj=out, mode='w:gz') as tar:
+                info = tarfile.TarInfo('package/file'); info.size = len(blob); tar.addfile(info, io.BytesIO(blob))
+            return out.getvalue()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); cli, native, node = (root/'cli.tgz', root/'native.tgz', root/'node-v22.23.3-linux-x64.tar.xz')
+            cli.write_bytes(package(b'cli')); native.write_bytes(package(b'native')); node.write_bytes(b'node')
+            def npmrow(p):
+                b=p.read_bytes(); import base64
+                return {'integrity':'sha512-'+base64.b64encode(hashlib.sha512(b).digest()).decode(),'shasum':hashlib.sha1(b).hexdigest(),'fileCount':1}
+            lock={'name':'@anthropic-ai/claude-code','version':'2.1.285','dist':npmrow(cli),
+                  'native':dict(name='@anthropic-ai/claude-code-linux-x64',version='2.1.285',**npmrow(native)),
+                  'runtime':{'name':'node','version':'22.23.3','platform':'linux-x64','file':node.name,'sha256':hashlib.sha256(node.read_bytes()).hexdigest()}}
+            lock_path=root/'lock.json'; lock_path.write_text(json.dumps(lock))
+            base=root/'base'; base.mkdir()
+            for name in ('Dockerfile','codex_start.py','claude-start.py','claude.py'):(base/name).write_text('fixture')
+            for name in ('helper','wheels','runtime-debs','security-debs'):(base/name).mkdir()
+            out=root/'out'; prepare.prepare(lock_path,cli,native,node,base,out)
+            self.assertTrue((out/'claude'/'package'/'file').is_file())
+            self.assertTrue((out/'native'/'package'/'file').is_file())
+            self.assertEqual((out/'node'/node.name).read_bytes(),b'node')
 
     def test_restricted_mcp_and_json_object_credential(self):
         with tempfile.TemporaryDirectory() as tmp:
