@@ -22,6 +22,10 @@ CONSTRUCTED = {"SessionHelper", "Provisioner"}
 # 不接助手但允许构造的模块：文件名 → (理由, 必须仍然存在于该文件里的证据串)。
 # 证据串用来防止"理由写了、实际卫生格已被删"：它不在了，本检查就红。
 ALLOWED = {
+    "hosted_body_hub_client.py": (
+        "Go hosted body-send child: parent uses only PATH/PYTHONPATH plus HOME=t.TempDir; child asserts before helper construction",
+        'assert Path.home().resolve() == home.resolve(), "integration child requires its synthetic HOME"',
+    ),
     "claim_hub_integration_client.py": (
         "Go claim integration child: parent strips ambient seat variables and sets HOME=t.TempDir=state; child asserts before any enrollment/helper construction",
         'assert Path.home().resolve() == state.resolve(), "integration child requires its synthetic HOME"',

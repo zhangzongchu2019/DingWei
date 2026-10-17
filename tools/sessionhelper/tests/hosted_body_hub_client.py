@@ -11,7 +11,9 @@ from sessionhelper.enroll import Credential
 
 async def main():
     seed = json.loads(sys.stdin.readline())
-    home = Path(seed['home']); assert Path.home() == home
+    home = Path(seed['home'])
+    assert Path.home().resolve() == home.resolve(), "integration child requires its synthetic HOME"
+    home.chmod(0o700)
     cfg = Config('desktop', 'u_zzc', seed['secret'], mode='echo', ws_base=seed['base'], collect=False,
                  cli_cwd=str(home), state_dir=str(home/'.dingwei'), inbox_db=str(home/'inbox.sqlite3'),
                  mcp_ipc_sock=str(home/'s'), ipc_send_body_only=True,
