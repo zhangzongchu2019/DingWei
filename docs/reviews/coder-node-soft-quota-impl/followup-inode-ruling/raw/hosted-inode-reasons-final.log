@@ -1,0 +1,16 @@
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_emergency
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_inode_emergency
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_unknown
+--- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath (9.18s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_emergency (3.69s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_inode_emergency (2.92s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_unknown (2.57s)
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold/space_warning
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold/usage_warning
+--- PASS: TestQuotaUsageWarningNotifiesWithoutPrematureHold (5.68s)
+    --- PASS: TestQuotaUsageWarningNotifiesWithoutPrematureHold/space_warning (2.72s)
+    --- PASS: TestQuotaUsageWarningNotifiesWithoutPrematureHold/usage_warning (2.96s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	14.873s

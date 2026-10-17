@@ -93,6 +93,10 @@ func (a *Agent) RegisterLoginHandlers(eng *engine, registry, localImagesCSV, cgr
 		d:    &dockerOps{eng: eng, registry: registry, localImages: allow, cgroupParent: cgroupParent, seatProxy: seatProxy},
 		root: loginRoot, hubOrigin: origin, secretFn: secretFn, hc: hc, sessions: map[string]*loginSession{},
 	}
+	if a.docker != nil {
+		l.d.policy = a.docker.policy
+		l.d.soft = a.docker.soft
+	}
 	l.cleanupLeftovers(context.Background())
 	a.Register(CmdLoginStart, l.start)
 	a.Register(CmdLoginCancel, l.cancel)
@@ -207,6 +211,11 @@ func (l *loginOps) launch(ctx context.Context, id, image, uploadURL string, sess
 		cancel()
 		return "", "", fmt.Errorf("login_start_failed: attach: %v", err)
 	}
+	if l.d.soft != nil {
+		if err := l.d.soft.commandGate(Command{Type: CmdLoginStart, Params: json.RawMessage(`{}`)}); err != nil {
+			return "", "", err
+		}
+	}
 	if err := l.d.eng.containerStart(ctx, cid); err != nil {
 		stream.Close()
 		cancel()
@@ -286,6 +295,10 @@ func (l *loginOps) spec(id, image, dir, netName string) map[string]any {
 			"Memory":         loginMemBytes,
 			"MemorySwap":     loginMemBytes,
 			"CpuShares":      256,
+			"CpuPeriod":      int64(100000),
+			"CpuQuota":       int64(25000),
+			"PidsLimit":      l.d.policyValue().LoginPidsLimit,
+			"ShmSize":        l.d.policyValue().ShmBytes,
 			"CgroupParent":   l.d.cgroupParent,
 			"CapDrop":        []string{"ALL"},
 			"SecurityOpt":    []string{"no-new-privileges"},

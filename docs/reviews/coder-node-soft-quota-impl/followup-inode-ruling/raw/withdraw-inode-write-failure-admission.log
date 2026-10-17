@@ -1,0 +1,6 @@
+=== RUN   TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers
+    softquota_io_test.go:287: private-write failure did not block admission/report
+--- FAIL: TestSoftBlockedStateWriteDoesNotHoldMutexOrAccumulateWorkers (0.06s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.061s
+FAIL

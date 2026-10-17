@@ -1,0 +1,905 @@
+=== RUN   TestCreateFailurePathsAbortTheIssue
+=== RUN   TestCreateFailurePathsAbortTheIssue/new_group_name_goes_through_IssueHostedAgentWithNewGroup
+=== RUN   TestCreateFailurePathsAbortTheIssue/run_job_failure_aborts
+=== RUN   TestCreateFailurePathsAbortTheIssue/create_timeout_aborts
+--- PASS: TestCreateFailurePathsAbortTheIssue (11.25s)
+    --- PASS: TestCreateFailurePathsAbortTheIssue/new_group_name_goes_through_IssueHostedAgentWithNewGroup (3.87s)
+    --- PASS: TestCreateFailurePathsAbortTheIssue/run_job_failure_aborts (3.87s)
+    --- PASS: TestCreateFailurePathsAbortTheIssue/create_timeout_aborts (3.51s)
+=== RUN   TestAccountNameUniquePerOwner
+--- PASS: TestAccountNameUniquePerOwner (3.68s)
+=== RUN   TestAccountLimitPerOwner
+--- PASS: TestAccountLimitPerOwner (4.12s)
+=== RUN   TestAccountSecretValidation
+--- PASS: TestAccountSecretValidation (3.71s)
+=== RUN   TestConcurrentCreateSameAccount
+--- PASS: TestConcurrentCreateSameAccount (4.20s)
+=== RUN   TestReleaseAndDestroyedNotCounted
+--- PASS: TestReleaseAndDestroyedNotCounted (3.16s)
+=== RUN   TestCreateVsDisableSerialized
+=== RUN   TestCreateVsDisableSerialized/create_first
+=== RUN   TestCreateVsDisableSerialized/disable_first
+--- PASS: TestCreateVsDisableSerialized (5.49s)
+    --- PASS: TestCreateVsDisableSerialized/create_first (3.30s)
+    --- PASS: TestCreateVsDisableSerialized/disable_first (2.20s)
+=== RUN   TestCreateSeatPKConflictIsNotAccountError
+--- PASS: TestCreateSeatPKConflictIsNotAccountError (1.83s)
+=== RUN   TestSchemaBackfillAndJobOp
+--- PASS: TestSchemaBackfillAndJobOp (1.97s)
+=== RUN   TestRollbackResetSQL
+--- PASS: TestRollbackResetSQL (1.90s)
+=== RUN   TestRefreshStartingTimeoutIsExistingSeat
+--- PASS: TestRefreshStartingTimeoutIsExistingSeat (1.97s)
+=== RUN   TestLegacyBoundAccountSharable
+--- PASS: TestLegacyBoundAccountSharable (1.80s)
+=== RUN   TestDefenseInDepthAccountBoundaries
+--- PASS: TestDefenseInDepthAccountBoundaries (2.19s)
+=== RUN   TestBackupPipelineEndToEnd
+--- PASS: TestBackupPipelineEndToEnd (2.14s)
+=== RUN   TestBackupHandlerAuthAndStates
+--- PASS: TestBackupHandlerAuthAndStates (2.23s)
+=== RUN   TestSweepExpiredBackupsReclaimsOnlyStalePending
+--- PASS: TestSweepExpiredBackupsReclaimsOnlyStalePending (2.16s)
+=== RUN   TestClientCancellationOrphanPendingIsEventuallySwept
+--- PASS: TestClientCancellationOrphanPendingIsEventuallySwept (2.09s)
+=== RUN   TestBackupIntegrityRejected
+=== RUN   TestBackupIntegrityRejected/not_a_gzip
+=== RUN   TestBackupIntegrityRejected/truncated_gzip
+=== RUN   TestBackupIntegrityRejected/checksum_mismatch
+=== RUN   TestBackupIntegrityRejected/empty_archive
+=== RUN   TestBackupIntegrityRejected/destroy_does_not_continue
+--- PASS: TestBackupIntegrityRejected (10.49s)
+    --- PASS: TestBackupIntegrityRejected/not_a_gzip (2.22s)
+    --- PASS: TestBackupIntegrityRejected/truncated_gzip (2.01s)
+    --- PASS: TestBackupIntegrityRejected/checksum_mismatch (2.20s)
+    --- PASS: TestBackupIntegrityRejected/empty_archive (2.03s)
+    --- PASS: TestBackupIntegrityRejected/destroy_does_not_continue (2.02s)
+=== RUN   TestBackupChecksumControlPlane
+=== RUN   TestBackupChecksumControlPlane/no_trailer_full_chain_ok
+=== RUN   TestBackupChecksumControlPlane/report_missing_blocks
+=== RUN   TestBackupChecksumControlPlane/report_mismatch_blocks
+=== RUN   TestBackupChecksumControlPlane/destroy_chain_via_trailer-dropping_proxy
+=== RUN   TestBackupChecksumControlPlane/missing_report_stops_destroy
+=== RUN   TestBackupChecksumControlPlane/hub_restart_loses_landed,_report_blocked
+--- PASS: TestBackupChecksumControlPlane (11.85s)
+    --- PASS: TestBackupChecksumControlPlane/no_trailer_full_chain_ok (1.94s)
+    --- PASS: TestBackupChecksumControlPlane/report_missing_blocks (1.97s)
+    --- PASS: TestBackupChecksumControlPlane/report_mismatch_blocks (1.99s)
+    --- PASS: TestBackupChecksumControlPlane/destroy_chain_via_trailer-dropping_proxy (2.01s)
+    --- PASS: TestBackupChecksumControlPlane/missing_report_stops_destroy (2.06s)
+    --- PASS: TestBackupChecksumControlPlane/hub_restart_loses_landed,_report_blocked (1.87s)
+=== RUN   TestBackupFailureClearsPending
+=== RUN   TestBackupFailureClearsPending/gateway_error
+=== RUN   TestBackupFailureClearsPending/node_failure
+=== RUN   TestBackupFailureClearsPending/node_claims_ok_without_uploading
+--- PASS: TestBackupFailureClearsPending (6.20s)
+    --- PASS: TestBackupFailureClearsPending/gateway_error (2.02s)
+    --- PASS: TestBackupFailureClearsPending/node_failure (2.10s)
+    --- PASS: TestBackupFailureClearsPending/node_claims_ok_without_uploading (2.08s)
+=== RUN   TestBackupUsesLongTimeout
+--- PASS: TestBackupUsesLongTimeout (2.17s)
+=== RUN   TestBackupDuplicateUploadWhilePending
+--- PASS: TestBackupDuplicateUploadWhilePending (2.04s)
+=== RUN   TestBackupNodeOfflineStopsDestroy
+--- PASS: TestBackupNodeOfflineStopsDestroy (2.20s)
+=== RUN   TestWrapUnwrapRoundtrip
+--- PASS: TestWrapUnwrapRoundtrip (0.00s)
+=== RUN   TestUnwrapWrongMasterFails
+--- PASS: TestUnwrapWrongMasterFails (0.00s)
+=== RUN   TestSealPerRecordNonceAndWrongKey
+--- PASS: TestSealPerRecordNonceAndWrongKey (0.00s)
+=== RUN   TestLoadMasterKeyPermAndForms
+--- PASS: TestLoadMasterKeyPermAndForms (0.00s)
+=== RUN   TestTeamKeyServiceFlow
+--- PASS: TestTeamKeyServiceFlow (4.45s)
+=== RUN   TestEnableRestartWaitForAgentConnect
+=== RUN   TestEnableRestartWaitForAgentConnect/restart
+=== RUN   TestEnableRestartWaitForAgentConnect/enable
+--- PASS: TestEnableRestartWaitForAgentConnect (4.38s)
+    --- PASS: TestEnableRestartWaitForAgentConnect/restart (2.19s)
+    --- PASS: TestEnableRestartWaitForAgentConnect/enable (2.20s)
+=== RUN   TestRestartTimeoutKeepsExistingSeat
+--- PASS: TestRestartTimeoutKeepsExistingSeat (2.04s)
+=== RUN   TestCreateTimeoutStillRetires
+--- PASS: TestCreateTimeoutStillRetires (2.13s)
+=== RUN   TestZZ_AgentConnectingBeforeStartingIsNotLost
+=== RUN   TestZZ_AgentConnectingBeforeStartingIsNotLost/restart
+    lifecycle_race_test.go:59: ZZ restart: Agent connected during the node command; seat is now online/
+=== RUN   TestZZ_AgentConnectingBeforeStartingIsNotLost/enable
+    lifecycle_race_test.go:59: ZZ enable: Agent connected during the node command; seat is now online/
+--- PASS: TestZZ_AgentConnectingBeforeStartingIsNotLost (4.28s)
+    --- PASS: TestZZ_AgentConnectingBeforeStartingIsNotLost/restart (2.16s)
+    --- PASS: TestZZ_AgentConnectingBeforeStartingIsNotLost/enable (2.12s)
+=== RUN   TestEnableRestartFailureAfterStarting
+=== RUN   TestEnableRestartFailureAfterStarting/restart_node_reports_failure
+=== RUN   TestEnableRestartFailureAfterStarting/restart_node_unreachable
+=== RUN   TestEnableRestartFailureAfterStarting/enable_node_reports_failure
+=== RUN   TestEnableRestartFailureAfterStarting/enable_node_unreachable
+--- PASS: TestEnableRestartFailureAfterStarting (8.24s)
+    --- PASS: TestEnableRestartFailureAfterStarting/restart_node_reports_failure (2.07s)
+    --- PASS: TestEnableRestartFailureAfterStarting/restart_node_unreachable (2.03s)
+    --- PASS: TestEnableRestartFailureAfterStarting/enable_node_reports_failure (2.06s)
+    --- PASS: TestEnableRestartFailureAfterStarting/enable_node_unreachable (2.07s)
+=== RUN   TestFailureAfterAgentConnectedKeepsOnline
+--- PASS: TestFailureAfterAgentConnectedKeepsOnline (1.91s)
+=== RUN   TestLateConnectAfterExistingTimeoutGoesOnline
+=== RUN   TestLateConnectAfterExistingTimeoutGoesOnline/restart
+=== RUN   TestLateConnectAfterExistingTimeoutGoesOnline/enable
+--- PASS: TestLateConnectAfterExistingTimeoutGoesOnline (3.98s)
+    --- PASS: TestLateConnectAfterExistingTimeoutGoesOnline/restart (1.99s)
+    --- PASS: TestLateConnectAfterExistingTimeoutGoesOnline/enable (1.99s)
+=== RUN   TestLateConnectOnlyForExistingTimeout
+=== RUN   TestLateConnectOnlyForExistingTimeout/start_failed_stays_error
+=== RUN   TestLateConnectOnlyForExistingTimeout/create_timeout_stays_error
+--- PASS: TestLateConnectOnlyForExistingTimeout (3.97s)
+    --- PASS: TestLateConnectOnlyForExistingTimeout/start_failed_stays_error (2.00s)
+    --- PASS: TestLateConnectOnlyForExistingTimeout/create_timeout_stays_error (1.97s)
+=== RUN   TestRestartFailureAfterAgentConnectedKeepsOnline
+=== RUN   TestRestartFailureAfterAgentConnectedKeepsOnline/node_reports_failure_from_online
+=== RUN   TestRestartFailureAfterAgentConnectedKeepsOnline/node_unreachable_from_error
+--- PASS: TestRestartFailureAfterAgentConnectedKeepsOnline (3.97s)
+    --- PASS: TestRestartFailureAfterAgentConnectedKeepsOnline/node_reports_failure_from_online (2.02s)
+    --- PASS: TestRestartFailureAfterAgentConnectedKeepsOnline/node_unreachable_from_error (1.94s)
+=== RUN   TestStartingWriteFailureUndoesResume
+=== RUN   TestStartingWriteFailureUndoesResume/restart
+=== RUN   TestStartingWriteFailureUndoesResume/enable
+--- PASS: TestStartingWriteFailureUndoesResume (3.69s)
+    --- PASS: TestStartingWriteFailureUndoesResume/restart (1.90s)
+    --- PASS: TestStartingWriteFailureUndoesResume/enable (1.79s)
+=== RUN   TestOnlineAfterExistingTimeoutKeepsDetailCondition
+--- PASS: TestOnlineAfterExistingTimeoutKeepsDetailCondition (0.00s)
+=== RUN   TestStartingWriteFailureDoesNotSuspendALiveCredential
+=== RUN   TestStartingWriteFailureDoesNotSuspendALiveCredential/restart
+=== RUN   TestStartingWriteFailureDoesNotSuspendALiveCredential/enable
+--- PASS: TestStartingWriteFailureDoesNotSuspendALiveCredential (3.91s)
+    --- PASS: TestStartingWriteFailureDoesNotSuspendALiveCredential/restart (1.90s)
+    --- PASS: TestStartingWriteFailureDoesNotSuspendALiveCredential/enable (2.01s)
+=== RUN   TestDestroyCleanupSurvivesClientCancellation
+--- PASS: TestDestroyCleanupSurvivesClientCancellation (2.02s)
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason/completed
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason/failed
+=== RUN   TestLifecycleJobPersistsProgressAndMachineReason/restart_waits_for_reconnect
+--- PASS: TestLifecycleJobPersistsProgressAndMachineReason (5.36s)
+    --- PASS: TestLifecycleJobPersistsProgressAndMachineReason/completed (1.79s)
+    --- PASS: TestLifecycleJobPersistsProgressAndMachineReason/failed (1.79s)
+    --- PASS: TestLifecycleJobPersistsProgressAndMachineReason/restart_waits_for_reconnect (1.77s)
+=== RUN   TestLifecycleJobDuplicatePolicy
+--- PASS: TestLifecycleJobDuplicatePolicy (1.93s)
+=== RUN   TestConcurrentDestroyRequestsShareOneJobAndOneBackup
+--- PASS: TestConcurrentDestroyRequestsShareOneJobAndOneBackup (2.12s)
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows/queued_restart_already_online
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows/running_enable_already_online
+=== RUN   TestLifecycleJobRecoveryLeavesNoActiveRows/ambiguous_queued_disable
+--- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows (5.41s)
+    --- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows/queued_restart_already_online (1.71s)
+    --- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows/running_enable_already_online (1.81s)
+    --- PASS: TestLifecycleJobRecoveryLeavesNoActiveRows/ambiguous_queued_disable (1.89s)
+=== RUN   TestDestroyCanBeRetriedAfterHubDiesMidJob
+--- PASS: TestDestroyCanBeRetriedAfterHubDiesMidJob (1.76s)
+=== RUN   TestLifecycleOrderOnOneLog
+=== RUN   TestLifecycleOrderOnOneLog/upgrade
+=== RUN   TestLifecycleOrderOnOneLog/disable_then_enable
+=== RUN   TestLifecycleOrderOnOneLog/restart_resumes_first
+=== RUN   TestLifecycleOrderOnOneLog/destroy
+--- PASS: TestLifecycleOrderOnOneLog (7.17s)
+    --- PASS: TestLifecycleOrderOnOneLog/upgrade (1.83s)
+    --- PASS: TestLifecycleOrderOnOneLog/disable_then_enable (1.95s)
+    --- PASS: TestLifecycleOrderOnOneLog/restart_resumes_first (1.69s)
+    --- PASS: TestLifecycleOrderOnOneLog/destroy (1.69s)
+=== RUN   TestFailedGateStopsTheChain
+=== RUN   TestFailedGateStopsTheChain/backup_fail_no_retire
+=== RUN   TestFailedGateStopsTheChain/suspend_fail_no_stop
+=== RUN   TestFailedGateStopsTheChain/resume_fail_no_start
+=== RUN   TestFailedGateStopsTheChain/reissue_fail_no_upgrade_seat_back_online
+=== RUN   TestFailedGateStopsTheChain/enable_non_disabled_refused_no_side_effect
+--- PASS: TestFailedGateStopsTheChain (8.75s)
+    --- PASS: TestFailedGateStopsTheChain/backup_fail_no_retire (1.71s)
+    --- PASS: TestFailedGateStopsTheChain/suspend_fail_no_stop (1.71s)
+    --- PASS: TestFailedGateStopsTheChain/resume_fail_no_start (1.76s)
+    --- PASS: TestFailedGateStopsTheChain/reissue_fail_no_upgrade_seat_back_online (1.76s)
+    --- PASS: TestFailedGateStopsTheChain/enable_non_disabled_refused_no_side_effect (1.81s)
+=== RUN   TestRestartAfterFailedStopResumesCredential
+--- PASS: TestRestartAfterFailedStopResumesCredential (1.68s)
+=== RUN   TestOwnershipEnforced
+=== RUN   TestOwnershipEnforced/upgrade
+=== RUN   TestOwnershipEnforced/disable
+=== RUN   TestOwnershipEnforced/destroy
+=== RUN   TestOwnershipEnforced/destroy_admin
+--- PASS: TestOwnershipEnforced (7.29s)
+    --- PASS: TestOwnershipEnforced/upgrade (1.80s)
+    --- PASS: TestOwnershipEnforced/disable (1.79s)
+    --- PASS: TestOwnershipEnforced/destroy (1.76s)
+    --- PASS: TestOwnershipEnforced/destroy_admin (1.94s)
+=== RUN   TestHubParamsSatisfyNodeContract
+--- PASS: TestHubParamsSatisfyNodeContract (1.76s)
+=== RUN   TestDestroyOfflineNodeLeavesReconcileRecord
+--- PASS: TestDestroyOfflineNodeLeavesReconcileRecord (1.75s)
+=== RUN   TestUpgradeRollbackOnNodeFailure
+--- PASS: TestUpgradeRollbackOnNodeFailure (1.79s)
+=== RUN   TestConfirmRequiredGates
+--- PASS: TestConfirmRequiredGates (1.72s)
+=== RUN   TestDestroyReturnsAccountToPool
+--- PASS: TestDestroyReturnsAccountToPool (1.76s)
+=== RUN   TestUpgradeWhileDisabledRejected
+--- PASS: TestUpgradeWhileDisabledRejected (1.82s)
+=== RUN   TestReconcileOnNodeReconnect
+--- PASS: TestReconcileOnNodeReconnect (1.93s)
+=== RUN   TestReconcileDoesNotBackupTwice
+--- PASS: TestReconcileDoesNotBackupTwice (1.85s)
+=== RUN   TestNodeDownLeavesStateAndCredential
+=== RUN   TestNodeDownLeavesStateAndCredential/node_recorded_offline:_nothing_happens
+=== RUN   TestNodeDownLeavesStateAndCredential/disable:_stop_unreachable_⇒_suspend_undone
+=== RUN   TestNodeDownLeavesStateAndCredential/disable_on_already-suspended_credential:_no_resume_on_failure
+=== RUN   TestNodeDownLeavesStateAndCredential/enable:_start_unreachable_⇒_resume_undone,_still_disabled
+=== RUN   TestNodeDownLeavesStateAndCredential/restart:_unreachable_⇒_state_back_to_online,_no_credential_change
+=== RUN   TestNodeDownLeavesStateAndCredential/upgrade:_unreachable_⇒_node_offline,_not_rolled_back;_image_unchanged
+=== RUN   TestNodeDownLeavesStateAndCredential/node_reports_failure_(reachable):_start_failed_sentinel,_not_Go_text
+--- PASS: TestNodeDownLeavesStateAndCredential (16.37s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/node_recorded_offline:_nothing_happens (5.49s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/disable:_stop_unreachable_⇒_suspend_undone (1.76s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/disable_on_already-suspended_credential:_no_resume_on_failure (1.75s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/enable:_start_unreachable_⇒_resume_undone,_still_disabled (1.88s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/restart:_unreachable_⇒_state_back_to_online,_no_credential_change (1.93s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/upgrade:_unreachable_⇒_node_offline,_not_rolled_back;_image_unchanged (1.76s)
+    --- PASS: TestNodeDownLeavesStateAndCredential/node_reports_failure_(reachable):_start_failed_sentinel,_not_Go_text (1.81s)
+=== RUN   TestDestroyBackupFailedTyped
+--- PASS: TestDestroyBackupFailedTyped (1.77s)
+=== RUN   TestReconcileGuards
+--- PASS: TestReconcileGuards (3.74s)
+=== RUN   TestDestroyStopsBeforeBackup
+=== RUN   TestDestroyStopsBeforeBackup/stop_unreachable
+=== RUN   TestDestroyStopsBeforeBackup/stop_reported_fail
+=== RUN   TestDestroyStopsBeforeBackup/backup_fails_after_stop
+--- PASS: TestDestroyStopsBeforeBackup (5.31s)
+    --- PASS: TestDestroyStopsBeforeBackup/stop_unreachable (1.76s)
+    --- PASS: TestDestroyStopsBeforeBackup/stop_reported_fail (1.75s)
+    --- PASS: TestDestroyStopsBeforeBackup/backup_fails_after_stop (1.79s)
+=== RUN   TestUpgradeUsesRecordedModel
+--- PASS: TestUpgradeUsesRecordedModel (1.74s)
+=== RUN   TestLoginStartHappy
+--- PASS: TestLoginStartHappy (1.72s)
+=== RUN   TestLoginStartExpiresOwnStaleSession
+--- PASS: TestLoginStartExpiresOwnStaleSession (1.73s)
+=== RUN   TestLoginOnePerUserAndCooldown
+--- PASS: TestLoginOnePerUserAndCooldown (1.80s)
+=== RUN   TestLoginConcurrencyCaps
+--- PASS: TestLoginConcurrencyCaps (1.73s)
+=== RUN   TestLoginEmailValidation
+--- PASS: TestLoginEmailValidation (1.72s)
+=== RUN   TestLoginCompleteRegisters
+--- PASS: TestLoginCompleteRegisters (1.74s)
+=== RUN   TestLoginCompleteOneShotExpiryAndFailures
+--- PASS: TestLoginCompleteOneShotExpiryAndFailures (1.75s)
+=== RUN   TestLoginRelogin
+--- PASS: TestLoginRelogin (1.83s)
+=== RUN   TestLoginStartNodeOutcomes
+=== RUN   TestLoginStartNodeOutcomes/old_node
+=== RUN   TestLoginStartNodeOutcomes/offline
+=== RUN   TestLoginStartNodeOutcomes/busy
+=== RUN   TestLoginStartNodeOutcomes/bad_payload
+--- PASS: TestLoginStartNodeOutcomes (7.16s)
+    --- PASS: TestLoginStartNodeOutcomes/old_node (1.87s)
+    --- PASS: TestLoginStartNodeOutcomes/offline (1.74s)
+    --- PASS: TestLoginStartNodeOutcomes/busy (1.76s)
+    --- PASS: TestLoginStartNodeOutcomes/bad_payload (1.78s)
+=== RUN   TestLoginSweepAndRecover
+--- PASS: TestLoginSweepAndRecover (1.89s)
+=== RUN   TestLoginUploadBoundToSessionNode
+--- PASS: TestLoginUploadBoundToSessionNode (1.78s)
+=== RUN   TestLoginAccountLimitPrecheck
+--- PASS: TestLoginAccountLimitPrecheck (1.81s)
+=== RUN   TestIDTokenEmail
+--- PASS: TestIDTokenEmail (0.00s)
+=== RUN   TestLoginTotalCapBindsWithThreeNodes
+--- PASS: TestLoginTotalCapBindsWithThreeNodes (1.79s)
+=== RUN   TestLoginPerNodeCapBindsWithOneNode
+--- PASS: TestLoginPerNodeCapBindsWithOneNode (1.73s)
+=== RUN   TestLoginPrechecksAndEmailInSameInsert
+--- PASS: TestLoginPrechecksAndEmailInSameInsert (1.93s)
+=== RUN   TestLoginDoneNotOverwrittenBySweepOrCancel
+--- PASS: TestLoginDoneNotOverwrittenBySweepOrCancel (1.93s)
+=== RUN   TestLoginClaimCompletingIsAtomic
+--- PASS: TestLoginClaimCompletingIsAtomic (1.78s)
+=== RUN   TestLoginTerminalStatesClearLinkAndCode
+=== RUN   TestLoginTerminalStatesClearLinkAndCode/cancelled
+=== RUN   TestLoginTerminalStatesClearLinkAndCode/done
+=== RUN   TestLoginTerminalStatesClearLinkAndCode/failed
+=== RUN   TestLoginTerminalStatesClearLinkAndCode/expired
+--- PASS: TestLoginTerminalStatesClearLinkAndCode (7.27s)
+    --- PASS: TestLoginTerminalStatesClearLinkAndCode/cancelled (1.77s)
+    --- PASS: TestLoginTerminalStatesClearLinkAndCode/done (1.93s)
+    --- PASS: TestLoginTerminalStatesClearLinkAndCode/failed (1.82s)
+    --- PASS: TestLoginTerminalStatesClearLinkAndCode/expired (1.75s)
+=== RUN   TestLoginStaleCompletingIsSwept
+--- PASS: TestLoginStaleCompletingIsSwept (1.72s)
+=== RUN   TestLoginSchemaUpgradesOldDefinition
+--- PASS: TestLoginSchemaUpgradesOldDefinition (1.88s)
+=== RUN   TestLoginStaleCompletingWithoutClaimedAt
+--- PASS: TestLoginStaleCompletingWithoutClaimedAt (1.95s)
+=== RUN   TestQuotaRegistrationAndCapacityCannotSelfDowngrade
+--- PASS: TestQuotaRegistrationAndCapacityCannotSelfDowngrade (0.00s)
+=== RUN   TestSoftNodeSchedulingConsentPriorityCapacityAndAudit
+--- PASS: TestSoftNodeSchedulingConsentPriorityCapacityAndAudit (2.44s)
+=== RUN   TestQuotaEventValidation
+--- PASS: TestQuotaEventValidation (0.00s)
+=== RUN   TestSoftCreateFailureDoesNotAbortOrReleaseIdentity
+--- PASS: TestSoftCreateFailureDoesNotAbortOrReleaseIdentity (2.11s)
+=== RUN   TestSoftHeldLifecycleRefusesBeforeSideEffects
+--- PASS: TestSoftHeldLifecycleRefusesBeforeSideEffects (2.12s)
+=== RUN   TestHardNodeResourceExtensionNegotiated
+--- PASS: TestHardNodeResourceExtensionNegotiated (2.09s)
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_emergency
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_inode_emergency
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_unknown
+--- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath (5.10s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_emergency (1.74s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_inode_emergency (1.67s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_unknown (1.69s)
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold/space_warning
+=== RUN   TestQuotaUsageWarningNotifiesWithoutPrematureHold/usage_warning
+--- PASS: TestQuotaUsageWarningNotifiesWithoutPrematureHold (3.61s)
+    --- PASS: TestQuotaUsageWarningNotifiesWithoutPrematureHold/space_warning (1.80s)
+    --- PASS: TestQuotaUsageWarningNotifiesWithoutPrematureHold/usage_warning (1.81s)
+=== RUN   TestNodeCredentialLifecycle
+--- PASS: TestNodeCredentialLifecycle (1.70s)
+=== RUN   TestStartingUntilAgentConnectsElseTimeout
+--- PASS: TestStartingUntilAgentConnectsElseTimeout (1.79s)
+=== RUN   TestMarkOnlineOnlyFromStarting
+--- PASS: TestMarkOnlineOnlyFromStarting (1.70s)
+=== RUN   TestCreateHappyPathCodexFirst
+--- PASS: TestCreateHappyPathCodexFirst (1.75s)
+=== RUN   TestCreateRejections
+--- PASS: TestCreateRejections (1.72s)
+=== RUN   TestRunJobFailureCleanup
+--- PASS: TestRunJobFailureCleanup (1.77s)
+=== RUN   TestSweepTimeouts
+--- PASS: TestSweepTimeouts (1.86s)
+=== RUN   TestPoolScheduling
+--- PASS: TestPoolScheduling (1.92s)
+=== RUN   TestCreateWithoutGroupSucceeds
+--- PASS: TestCreateWithoutGroupSucceeds (2.15s)
+=== RUN   TestCreateGroupErrorsPropagate
+--- PASS: TestCreateGroupErrorsPropagate (3.92s)
+=== RUN   TestHostedOverlay
+--- PASS: TestHostedOverlay (2.26s)
+=== RUN   TestRunJobMissingTokenFailsClosed
+--- PASS: TestRunJobMissingTokenFailsClosed (2.47s)
+=== RUN   TestOptionsViewAndJobProgress
+--- PASS: TestOptionsViewAndJobProgress (2.57s)
+=== RUN   TestHostedItemErrorCounted
+2026/10/17 09:11:57 hosted item agent=ag_x 查询失败，该行降级不出 hosted 子对象: ERROR: relation "g4_hosted_seat" does not exist (SQLSTATE 42P01)
+--- PASS: TestHostedItemErrorCounted (2.17s)
+=== RUN   TestOnlineOnlyViaMarkOnline
+--- PASS: TestOnlineOnlyViaMarkOnline (2.46s)
+=== RUN   TestNeverConnectsSweepedStartTimeout
+--- PASS: TestNeverConnectsSweepedStartTimeout (2.16s)
+=== RUN   TestCreateWithModelSelectsSupportingNode
+--- PASS: TestCreateWithModelSelectsSupportingNode (2.23s)
+=== RUN   TestCreateModelRejections
+--- PASS: TestCreateModelRejections (2.59s)
+=== RUN   TestPickNodeStaleFrameTreatedOffline
+--- PASS: TestPickNodeStaleFrameTreatedOffline (2.23s)
+=== RUN   TestNodeHasModelToleratesMissingKey
+--- PASS: TestNodeHasModelToleratesMissingKey (0.00s)
+=== RUN   TestPlanDiskTiersPinned
+--- PASS: TestPlanDiskTiersPinned (0.00s)
+=== RUN   TestCheckCreateDiskGate
+--- PASS: TestCheckCreateDiskGate (2.92s)
+=== RUN   TestOwnedAccountLifecycle
+--- PASS: TestOwnedAccountLifecycle (2.13s)
+=== RUN   TestTokenFileDisplayNoContentTail
+--- PASS: TestTokenFileDisplayNoContentTail (2.25s)
+=== RUN   TestQuotaCheckBoundaries
+--- PASS: TestQuotaCheckBoundaries (2.22s)
+=== RUN   TestQuotaListWithUsage
+--- PASS: TestQuotaListWithUsage (2.02s)
+=== RUN   TestCheckCreateCodeSplit
+--- PASS: TestCheckCreateCodeSplit (7.59s)
+=== RUN   TestOptionsJSONMatchesContract
+--- PASS: TestOptionsJSONMatchesContract (1.89s)
+=== RUN   TestOptionsEmptyListsAreArrays
+--- PASS: TestOptionsEmptyListsAreArrays (1.84s)
+=== RUN   TestOptionsPlanFitsEachGate
+=== RUN   TestOptionsPlanFitsEachGate/agents_left_0_greys_both_plans
+=== RUN   TestOptionsPlanFitsEachGate/memory_short_but_vcpu_ample
+=== RUN   TestOptionsPlanFitsEachGate/disk_short_but_vcpu_and_memory_ample
+=== RUN   TestOptionsPlanFitsEachGate/vcpu_short_but_memory_ample
+--- PASS: TestOptionsPlanFitsEachGate (7.93s)
+    --- PASS: TestOptionsPlanFitsEachGate/agents_left_0_greys_both_plans (2.01s)
+    --- PASS: TestOptionsPlanFitsEachGate/memory_short_but_vcpu_ample (1.90s)
+    --- PASS: TestOptionsPlanFitsEachGate/disk_short_but_vcpu_and_memory_ample (1.91s)
+    --- PASS: TestOptionsPlanFitsEachGate/vcpu_short_but_memory_ample (2.11s)
+=== RUN   TestJobReasonOnlyContractCodes
+--- PASS: TestJobReasonOnlyContractCodes (2.59s)
+=== RUN   TestJobProgressForOwnerBySeat
+--- PASS: TestJobProgressForOwnerBySeat (2.10s)
+=== RUN   TestOptionsModelsUnionOnlineOnly
+--- PASS: TestOptionsModelsUnionOnlineOnly (2.13s)
+=== RUN   TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess
+--- PASS: TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess (2.20s)
+=== RUN   TestReconcileSeatTimeoutDoesNotStallBatch
+--- PASS: TestReconcileSeatTimeoutDoesNotStallBatch (2.33s)
+=== RUN   TestEmptyCreatedByRefused
+--- PASS: TestEmptyCreatedByRefused (1.74s)
+=== RUN   TestUpgradeUnknownPlanNotSwallowed
+--- PASS: TestUpgradeUnknownPlanNotSwallowed (1.86s)
+=== RUN   TestRefreshCredHappyPath
+--- PASS: TestRefreshCredHappyPath (1.88s)
+=== RUN   TestRefreshCredOwnerOnly
+--- PASS: TestRefreshCredOwnerOnly (1.98s)
+=== RUN   TestRefreshCredStateGate
+--- PASS: TestRefreshCredStateGate (1.83s)
+=== RUN   TestRefreshCredAccountGate
+--- PASS: TestRefreshCredAccountGate (1.74s)
+=== RUN   TestRefreshCredNodeOutcomes
+=== RUN   TestRefreshCredNodeOutcomes/node_down
+=== RUN   TestRefreshCredNodeOutcomes/old_node
+=== RUN   TestRefreshCredNodeOutcomes/write_failed
+=== RUN   TestRefreshCredNodeOutcomes/restart_failed
+--- PASS: TestRefreshCredNodeOutcomes (7.44s)
+    --- PASS: TestRefreshCredNodeOutcomes/node_down (1.66s)
+    --- PASS: TestRefreshCredNodeOutcomes/old_node (1.83s)
+    --- PASS: TestRefreshCredNodeOutcomes/write_failed (2.05s)
+    --- PASS: TestRefreshCredNodeOutcomes/restart_failed (1.90s)
+=== RUN   TestRefreshCredAsJob
+--- PASS: TestRefreshCredAsJob (2.04s)
+=== RUN   TestRefreshCredRecoverJobs
+--- PASS: TestRefreshCredRecoverJobs (2.16s)
+=== RUN   TestRefreshCredResumesSuspendedCredential
+=== RUN   TestRefreshCredResumesSuspendedCredential/success_resumes
+=== RUN   TestRefreshCredResumesSuspendedCredential/old_node_undoes_resume
+=== RUN   TestRefreshCredResumesSuspendedCredential/write_failed_undoes_resume
+=== RUN   TestRefreshCredResumesSuspendedCredential/node_offline_undoes_resume
+=== RUN   TestRefreshCredResumesSuspendedCredential/starting_write_failed_undoes_resume
+=== RUN   TestRefreshCredResumesSuspendedCredential/already_active_not_suspended_on_failure
+=== RUN   TestRefreshCredResumesSuspendedCredential/resume_failure_refuses
+--- PASS: TestRefreshCredResumesSuspendedCredential (14.18s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/success_resumes (1.97s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/old_node_undoes_resume (1.94s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/write_failed_undoes_resume (1.71s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/node_offline_undoes_resume (1.76s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/starting_write_failed_undoes_resume (2.82s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/already_active_not_suspended_on_failure (2.04s)
+    --- PASS: TestRefreshCredResumesSuspendedCredential/resume_failure_refuses (1.94s)
+=== RUN   TestStaticRegistriesFailClosed
+--- PASS: TestStaticRegistriesFailClosed (0.00s)
+=== RUN   TestPlanTable
+--- PASS: TestPlanTable (0.00s)
+=== RUN   TestSchemaApplyRollbackRepeatable
+--- PASS: TestSchemaApplyRollbackRepeatable (1.81s)
+=== RUN   TestSchemaDropLeavesNoG4Tables
+--- PASS: TestSchemaDropLeavesNoG4Tables (1.82s)
+=== RUN   TestApplySchemaUpgradesOldHostedShapeWithoutLosingSeats
+--- PASS: TestApplySchemaUpgradesOldHostedShapeWithoutLosingSeats (1.79s)
+=== RUN   TestSchemaModelColumnMigration
+--- PASS: TestSchemaModelColumnMigration (1.91s)
+=== RUN   TestNodeSeatPoolQuotaFlow
+--- PASS: TestNodeSeatPoolQuotaFlow (1.73s)
+=== RUN   TestAccessCtxValid
+--- PASS: TestAccessCtxValid (1.79s)
+=== RUN   TestApplySchemaUpgradesPreA1PreB2Shape
+--- PASS: TestApplySchemaUpgradesPreA1PreB2Shape (2.30s)
+=== RUN   TestTokenWriteBackAndUnbindPrep
+--- PASS: TestTokenWriteBackAndUnbindPrep (3.73s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	428.005s
+=== RUN   TestGateAuthCommandCapacityLifecycle
+--- PASS: TestGateAuthCommandCapacityLifecycle (4.07s)
+=== RUN   TestGateOnConnectFires
+--- PASS: TestGateOnConnectFires (3.74s)
+=== RUN   TestOnConnectCallbackCanSendAndReceive
+--- PASS: TestOnConnectCallbackCanSendAndReceive (3.55s)
+=== RUN   TestSendWithTimeoutHonorsCallerDeadline
+--- PASS: TestSendWithTimeoutHonorsCallerDeadline (4.85s)
+=== RUN   TestZZ_ReconcileOnRealGateReachesDone
+    reconcile_gate_test.go:52: ZZ node received destroy_seat
+    reconcile_gate_test.go:66: ZZ reconcile finished after 101.848297ms
+--- PASS: TestZZ_ReconcileOnRealGateReachesDone (4.37s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodegate	20.607s
+=== RUN   TestEnvTruthy
+--- PASS: TestEnvTruthy (0.00s)
+=== RUN   TestCsvList
+--- PASS: TestCsvList (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/nodeagent	0.010s
+=== RUN   TestBackupRealNodeAgentToRealHub
+--- PASS: TestBackupRealNodeAgentToRealHub (1.77s)
+=== RUN   TestBootstrapAdminEndToEnd
+2026/10/17 09:07:15 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+2026/10/17 09:07:15 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:15 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestBootstrapAdminEndToEnd (2.33s)
+=== RUN   TestBootstrapAdminRefusesBadInvocation
+2026/10/17 09:07:17 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+2026/10/17 09:07:19 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+--- PASS: TestBootstrapAdminRefusesBadInvocation (3.91s)
+=== RUN   TestResetPasswordEndToEnd
+2026/10/17 09:07:21 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+--- PASS: TestResetPasswordEndToEnd (2.37s)
+=== RUN   TestConsoleHostedFeatureHasSingleProductionWiringSource
+--- PASS: TestConsoleHostedFeatureHasSingleProductionWiringSource (0.01s)
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly/registered_routes_render_true
+2026/10/17 09:07:22 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:22 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:07:24 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly/configured_but_not_assembled_renders_false
+2026/10/17 09:07:24 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:24 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:07:24 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly/old_platform_renders_false
+2026/10/17 09:07:25 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:25 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly/failed_assembly_never_renders_true
+2026/10/17 09:07:25 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:25 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:07:26 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestConsoleHostedFeatureFollowsRealAssembly (4.92s)
+    --- PASS: TestConsoleHostedFeatureFollowsRealAssembly/registered_routes_render_true (2.19s)
+    --- PASS: TestConsoleHostedFeatureFollowsRealAssembly/configured_but_not_assembled_renders_false (0.11s)
+    --- PASS: TestConsoleHostedFeatureFollowsRealAssembly/old_platform_renders_false (0.12s)
+    --- PASS: TestConsoleHostedFeatureFollowsRealAssembly/failed_assembly_never_renders_true (2.50s)
+=== RUN   TestMonitorSnapshotOnlyActivePlatformAdmin
+2026/10/17 09:07:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:07:27 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorSnapshotOnlyActivePlatformAdmin (0.13s)
+=== RUN   TestMonitorGuardFailsClosedOnItsOwnLookup
+2026/10/17 09:07:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:07:27 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/17 09:07:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:07:27 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorGuardFailsClosedOnItsOwnLookup (0.26s)
+=== RUN   TestMonitorSnapshotIsGetOnly
+2026/10/17 09:07:28 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:07:28 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorSnapshotIsGetOnly (0.11s)
+=== RUN   TestMonitorRouteLabelsAreRegisteredPatternsOnly
+2026/10/17 09:07:28 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:07:28 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorRouteLabelsAreRegisteredPatternsOnly (0.14s)
+=== RUN   TestMonitorPageSameGuardAsSnapshot
+2026/10/17 09:07:28 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:07:28 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorPageSameGuardAsSnapshot (0.13s)
+=== RUN   TestConsolePlatformRoutesAreAssembledWithServerGuards
+--- PASS: TestConsolePlatformRoutesAreAssembledWithServerGuards (0.01s)
+=== RUN   TestEveryAgentCapabilityRoutePageIsAcceptedBySigningRegistry
+--- PASS: TestEveryAgentCapabilityRoutePageIsAcceptedBySigningRegistry (0.00s)
+=== RUN   TestAgentTaskDriverRouteRequiresAgentCapability
+--- PASS: TestAgentTaskDriverRouteRequiresAgentCapability (0.00s)
+=== RUN   TestSpecDirectRoutesAndRetiredApprovals
+--- PASS: TestSpecDirectRoutesAndRetiredApprovals (0.00s)
+=== RUN   TestNewPlatformRouteSweep
+2026/10/17 09:07:28 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:07:28 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/17 09:07:28 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    console_routes_test.go:231: routes recorded=89 exempt=12 requests checked=272
+--- PASS: TestNewPlatformRouteSweep (0.36s)
+=== RUN   TestConsoleTasksCompatibilityRoute
+2026/10/17 09:07:28 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:07:28 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestConsoleTasksCompatibilityRoute (0.12s)
+=== RUN   TestValidateConsoleSeedCommandNeverStartsServer
+--- PASS: TestValidateConsoleSeedCommandNeverStartsServer (0.00s)
+=== RUN   TestValidateConsoleSeedCommandRejectsProductionTypeErrorWithoutStartingServer
+--- PASS: TestValidateConsoleSeedCommandRejectsProductionTypeErrorWithoutStartingServer (0.00s)
+=== RUN   TestConsoleSeedIsExplicitAndSeparatesSharedKey
+--- PASS: TestConsoleSeedIsExplicitAndSeparatesSharedKey (0.14s)
+=== RUN   TestConsoleSeedRejectsDuplicateShortNamesBeforeAnyWrite
+--- PASS: TestConsoleSeedRejectsDuplicateShortNamesBeforeAnyWrite (0.00s)
+=== RUN   TestConsoleSeedRequiresExplicitActive
+--- PASS: TestConsoleSeedRequiresExplicitActive (0.12s)
+=== RUN   TestConsoleSeedFailsClosedWithoutGrant
+--- PASS: TestConsoleSeedFailsClosedWithoutGrant (0.12s)
+=== RUN   TestTwoOwnerIdentitiesEachSeeTheCompleteGrantSet
+--- PASS: TestTwoOwnerIdentitiesEachSeeTheCompleteGrantSet (0.12s)
+=== RUN   TestE2E_MainPath_AddConfirmQuery
+--- PASS: TestE2E_MainPath_AddConfirmQuery (0.13s)
+=== RUN   TestE2E_Permission_CollaboratorCannotModify
+--- PASS: TestE2E_Permission_CollaboratorCannotModify (0.12s)
+=== RUN   TestE2E_PendingConcurrency_SinglePendingPerOwner
+--- PASS: TestE2E_PendingConcurrency_SinglePendingPerOwner (0.12s)
+=== RUN   TestE2E_Cleanup_DryRunAndConfirmStore
+--- PASS: TestE2E_Cleanup_DryRunAndConfirmStore (0.11s)
+=== RUN   TestE2E_AdminCleanup_RejectsRecentCutoff
+--- PASS: TestE2E_AdminCleanup_RejectsRecentCutoff (0.00s)
+=== RUN   TestE2E_Redaction_BeforeStorage
+--- PASS: TestE2E_Redaction_BeforeStorage (0.10s)
+=== RUN   TestE2E_PrefixWildcardOverlap
+--- PASS: TestE2E_PrefixWildcardOverlap (0.11s)
+=== RUN   TestE2E_DualLLM_Failover
+--- PASS: TestE2E_DualLLM_Failover (0.00s)
+=== RUN   TestE2E_Evidence_OptOut
+--- PASS: TestE2E_Evidence_OptOut (0.11s)
+=== RUN   TestWorkpulseEffectiveConfigVersionEnforceSources
+=== RUN   TestWorkpulseEffectiveConfigVersionEnforceSources/default_warn_is_visibly_risky
+=== RUN   TestWorkpulseEffectiveConfigVersionEnforceSources/explicit_enforce
+=== RUN   TestWorkpulseEffectiveConfigVersionEnforceSources/explicit_warn_differs_from_default
+--- PASS: TestWorkpulseEffectiveConfigVersionEnforceSources (0.00s)
+    --- PASS: TestWorkpulseEffectiveConfigVersionEnforceSources/default_warn_is_visibly_risky (0.00s)
+    --- PASS: TestWorkpulseEffectiveConfigVersionEnforceSources/explicit_enforce (0.00s)
+    --- PASS: TestWorkpulseEffectiveConfigVersionEnforceSources/explicit_warn_differs_from_default (0.00s)
+=== RUN   TestLivezChecksLockDBAndAcceptHeartbeats
+2026/10/17 09:07:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestLivezChecksLockDBAndAcceptHeartbeats (0.02s)
+=== RUN   TestSDNotifyWritesUnixDatagram
+--- PASS: TestSDNotifyWritesUnixDatagram (0.00s)
+=== RUN   TestWatchdogInterval
+--- PASS: TestWatchdogInterval (0.00s)
+=== RUN   TestWatchdogFastConfirmRecoversOnAnySuccessfulProbe
+--- PASS: TestWatchdogFastConfirmRecoversOnAnySuccessfulProbe (0.00s)
+=== RUN   TestWatchdogFastConfirmRequiresAllConfiguredFailures
+--- PASS: TestWatchdogFastConfirmRequiresAllConfiguredFailures (0.00s)
+=== RUN   TestHelperUpdateRegisterIsOperatorOnlyCLI
+2026/10/17 09:07:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:07:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:07:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestHelperUpdateRegisterIsOperatorOnlyCLI (0.13s)
+=== RUN   TestAccountRegisterNoEchoAndEncrypted
+--- PASS: TestAccountRegisterNoEchoAndEncrypted (2.16s)
+=== RUN   TestAccountCrossUserMatrix
+--- PASS: TestAccountCrossUserMatrix (2.07s)
+=== RUN   TestAccountNameAndLimitOverHTTP
+--- PASS: TestAccountNameAndLimitOverHTTP (2.25s)
+=== RUN   TestHostedWriteRoutesRequireOrigin
+--- PASS: TestHostedWriteRoutesRequireOrigin (2.09s)
+=== RUN   TestAccountRegisterValidationOverHTTP
+--- PASS: TestAccountRegisterValidationOverHTTP (2.04s)
+=== RUN   TestAdminAccountRoutes
+--- PASS: TestAdminAccountRoutes (2.21s)
+=== RUN   TestRefreshCredRoute
+--- PASS: TestRefreshCredRoute (2.07s)
+=== RUN   TestHostedAdminScenarios
+2026/10/17 09:07:46 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+--- PASS: TestHostedAdminScenarios (2.39s)
+=== RUN   TestHostedAdminVersionFlagsAndDefaults
+2026/10/17 09:07:49 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+--- PASS: TestHostedAdminVersionFlagsAndDefaults (2.06s)
+=== RUN   TestB1StagesRealAndAgentListed
+--- PASS: TestB1StagesRealAndAgentListed (1.90s)
+=== RUN   TestB2AllNodeActionsFromHub
+--- PASS: TestB2AllNodeActionsFromHub (1.99s)
+=== RUN   TestB3PullFailureCleanup
+--- PASS: TestB3PullFailureCleanup (2.08s)
+=== RUN   TestB4B5ComboAndPlanGuards
+--- PASS: TestB4B5ComboAndPlanGuards (2.00s)
+=== RUN   TestB9AutoNodeCapacity
+--- PASS: TestB9AutoNodeCapacity (1.97s)
+=== RUN   TestB7CredentialExposureSurface
+--- PASS: TestB7CredentialExposureSurface (2.07s)
+=== RUN   TestB8DecryptAuditExactlyOnce
+--- PASS: TestB8DecryptAuditExactlyOnce (2.09s)
+=== RUN   TestB11NoLoginCommandInChain
+--- PASS: TestB11NoLoginCommandInChain (2.19s)
+=== RUN   TestB6NameInvalidRejected
+--- PASS: TestB6NameInvalidRejected (2.30s)
+=== RUN   TestB7PlaintextExactlyOnceInCreateSeat
+--- PASS: TestB7PlaintextExactlyOnceInCreateSeat (4.11s)
+=== RUN   TestHostedAuthCodes
+--- PASS: TestHostedAuthCodes (2.11s)
+=== RUN   TestHostedJobOwnerBySeat
+2026/10/17 09:08:15 delivery expiry sweep failed: sql: database is closed
+2026/10/17 09:08:15 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+--- PASS: TestHostedJobOwnerBySeat (2.25s)
+=== RUN   TestHostedErrorsAreMachineCodes
+2026/10/17 09:08:16 hosted: internal error: pq: connection refused at 10.0.0.1
+--- PASS: TestHostedErrorsAreMachineCodes (0.00s)
+=== RUN   TestHostedCreateNameInvalidCode
+--- PASS: TestHostedCreateNameInvalidCode (2.10s)
+=== RUN   TestHostedDestroyBackupFailed
+--- PASS: TestHostedDestroyBackupFailed (2.26s)
+=== RUN   TestHostedAdminQuotasShape
+2026/10/17 09:08:22 delivery expiry sweep failed: sql: database is closed
+2026/10/17 09:08:22 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+--- PASS: TestHostedAdminQuotasShape (2.21s)
+=== RUN   TestHostedQuotaCodesOverHTTP
+2026/10/17 09:08:24 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/17 09:08:24 delivery expiry sweep failed: sql: database is closed
+2026/10/17 09:08:25 delivery expiry sweep failed: sql: database is closed
+2026/10/17 09:08:25 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/17 09:08:25 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/17 09:08:25 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHostedQuotaCodesOverHTTP (4.14s)
+=== RUN   TestHostedLifecycleNodeDown
+2026/10/17 09:08:27 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/17 09:08:27 delivery expiry sweep failed: sql: database is closed
+2026/10/17 09:08:27 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/17 09:08:27 delivery expiry sweep failed: sql: database is closed
+2026/10/17 09:08:27 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/17 09:08:27 delivery expiry sweep failed: sql: database is closed
+2026/10/17 09:08:28 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/17 09:08:28 delivery expiry sweep failed: sql: database is closed
+2026/10/17 09:08:28 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/17 09:08:28 delivery expiry sweep failed: sql: database is closed
+2026/10/17 09:08:28 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/17 09:08:28 delivery expiry sweep failed: sql: database is closed
+2026/10/17 09:08:28 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/17 09:08:28 delivery expiry sweep failed: sql: database is closed
+2026/10/17 09:08:28 delivery expiry sweep failed: sql: database is closed
+2026/10/17 09:08:28 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/17 09:08:28 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/17 09:08:28 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHostedLifecycleNodeDown (2.07s)
+=== RUN   TestLoginHTTPFlow
+2026/10/17 09:08:30 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+--- PASS: TestLoginHTTPFlow (2.11s)
+=== RUN   TestLoginHTTPGuards
+--- PASS: TestLoginHTTPGuards (1.98s)
+=== RUN   TestAdminListCarriesNoKeyTail
+--- PASS: TestAdminListCarriesNoKeyTail (2.00s)
+=== RUN   TestHostedCreateWithNewGroup
+=== RUN   TestHostedCreateWithNewGroup/new_group_is_created_with_the_new_seat_as_leader
+=== RUN   TestHostedCreateWithNewGroup/both_group_id_and_new_group_name_is_ambiguous
+=== RUN   TestHostedCreateWithNewGroup/invalid_new_group_names_are_refused_with_group_name_invalid
+=== RUN   TestHostedCreateWithNewGroup/taken_group_name_is_409_and_leaves_the_agent_name_free
+=== RUN   TestHostedCreateWithNewGroup/hosted_new_group_name_is_normalized_before_validation_and_storage
+=== RUN   TestHostedCreateWithNewGroup/seat_insert_failure_leaves_no_new_group
+2026/10/17 09:08:37 hosted: internal error: ERROR: injected seat insert failure (SQLSTATE P0001)
+=== RUN   TestHostedCreateWithNewGroup/seat_insert_failure_with_an_existing_group_keeps_that_group
+2026/10/17 09:08:37 hosted: internal error: ERROR: injected seat insert failure (SQLSTATE P0001)
+=== RUN   TestHostedCreateWithNewGroup/async_create_failure_also_reclaims_the_new_group
+--- PASS: TestHostedCreateWithNewGroup (2.23s)
+    --- PASS: TestHostedCreateWithNewGroup/new_group_is_created_with_the_new_seat_as_leader (0.05s)
+    --- PASS: TestHostedCreateWithNewGroup/both_group_id_and_new_group_name_is_ambiguous (0.00s)
+    --- PASS: TestHostedCreateWithNewGroup/invalid_new_group_names_are_refused_with_group_name_invalid (0.00s)
+    --- PASS: TestHostedCreateWithNewGroup/taken_group_name_is_409_and_leaves_the_agent_name_free (0.03s)
+    --- PASS: TestHostedCreateWithNewGroup/hosted_new_group_name_is_normalized_before_validation_and_storage (0.03s)
+    --- PASS: TestHostedCreateWithNewGroup/seat_insert_failure_leaves_no_new_group (0.03s)
+    --- PASS: TestHostedCreateWithNewGroup/seat_insert_failure_with_an_existing_group_keeps_that_group (0.01s)
+    --- PASS: TestHostedCreateWithNewGroup/async_create_failure_also_reclaims_the_new_group (0.03s)
+=== RUN   TestHostedRoutesContractCodes
+--- PASS: TestHostedRoutesContractCodes (1.99s)
+=== RUN   TestInternalNotify
+=== RUN   TestInternalNotify/入队成功返回_202_且正文落到队列
+=== RUN   TestInternalNotify/未配置目标_⇒_404_而非静默成功
+=== RUN   TestInternalNotify/队列为_nil_⇒_404_而非_panic_或静默成功
+=== RUN   TestInternalNotify/入队失败_⇒_503,不得回_202
+=== RUN   TestInternalNotify/空正文与未知字段一律拒
+--- PASS: TestInternalNotify (0.00s)
+    --- PASS: TestInternalNotify/入队成功返回_202_且正文落到队列 (0.00s)
+    --- PASS: TestInternalNotify/未配置目标_⇒_404_而非静默成功 (0.00s)
+    --- PASS: TestInternalNotify/队列为_nil_⇒_404_而非_panic_或静默成功 (0.00s)
+    --- PASS: TestInternalNotify/入队失败_⇒_503,不得回_202 (0.00s)
+    --- PASS: TestInternalNotify/空正文与未知字段一律拒 (0.00s)
+=== RUN   TestNotifyMustNotBeOnTCPMux
+--- PASS: TestNotifyMustNotBeOnTCPMux (0.00s)
+=== RUN   TestNotifySocketPermissions
+--- PASS: TestNotifySocketPermissions (0.00s)
+=== RUN   TestNotifySocketChmodENOENTExplainsLateUnlink
+--- PASS: TestNotifySocketChmodENOENTExplainsLateUnlink (0.00s)
+=== RUN   TestNotifySocketStopCannotDeleteNewListenerAtSamePath
+--- PASS: TestNotifySocketStopCannotDeleteNewListenerAtSamePath (0.00s)
+=== RUN   TestNotifySocketFirstStopPreservesNewListenerAtReboundPath
+--- PASS: TestNotifySocketFirstStopPreservesNewListenerAtReboundPath (0.00s)
+=== RUN   TestVersionCommandReportsBuildProvenance
+--- PASS: TestVersionCommandReportsBuildProvenance (0.00s)
+=== RUN   TestRunWiresAdminFileBrowserConfiguration
+--- PASS: TestRunWiresAdminFileBrowserConfiguration (0.00s)
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_ISSUER_URL
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_PUBLIC_URL
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_ISSUER_TOKEN
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_AUDIT_TOKEN
+--- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting (0.00s)
+    --- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_ISSUER_URL (0.00s)
+    --- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_PUBLIC_URL (0.00s)
+    --- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_ISSUER_TOKEN (0.00s)
+    --- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_AUDIT_TOKEN (0.00s)
+=== RUN   TestHandleFeishuWebhookURLVerification
+--- PASS: TestHandleFeishuWebhookURLVerification (0.12s)
+=== RUN   TestProvisionDownloadRetiredEvenWhenArtifactExists
+--- PASS: TestProvisionDownloadRetiredEvenWhenArtifactExists (0.00s)
+=== RUN   TestHandleFeishuWebhookEnqueuesInboundMessage
+--- PASS: TestHandleFeishuWebhookEnqueuesInboundMessage (0.11s)
+=== RUN   TestHandleFeishuWebhookEnqueuesCCConnectorInboundMessage
+--- PASS: TestHandleFeishuWebhookEnqueuesCCConnectorInboundMessage (0.10s)
+=== RUN   TestHandleFeishuWebhookVerifiesTokenWhenConfigured
+--- PASS: TestHandleFeishuWebhookVerifiesTokenWhenConfigured (0.10s)
+=== RUN   TestHandleFeishuWebhookPlaintextWithoutTokenWarnsOnce
+--- PASS: TestHandleFeishuWebhookPlaintextWithoutTokenWarnsOnce (0.10s)
+=== RUN   TestHandleFeishuWebhookRejectsMissingEntity
+--- PASS: TestHandleFeishuWebhookRejectsMissingEntity (0.10s)
+=== RUN   TestRunOutboundLoopSendsAndAcks
+--- PASS: TestRunOutboundLoopSendsAndAcks (0.13s)
+=== RUN   TestBuildFeishuGatewaySeedsEncryptedBootstrapBot
+2026/10/17 09:08:40 [Info] [client ready]
+--- PASS: TestBuildFeishuGatewaySeedsEncryptedBootstrapBot (0.10s)
+=== RUN   TestBuildFeishuGatewayConfiguresMultipleBotChannels
+2026/10/17 09:08:40 [Info] [client ready]
+2026/10/17 09:08:40 [Info] [client ready]
+--- PASS: TestBuildFeishuGatewayConfiguresMultipleBotChannels (0.12s)
+=== RUN   TestSeedBootstrapBotChannelBackfillsMissingSecretOnly
+--- PASS: TestSeedBootstrapBotChannelBackfillsMissingSecretOnly (0.13s)
+=== RUN   TestSeedBootstrapBotChannelWithoutSecretKeyLeavesSecretUnset
+--- PASS: TestSeedBootstrapBotChannelWithoutSecretKeyLeavesSecretUnset (0.10s)
+=== RUN   TestSchedulerCronPlanR16NotificationTiers
+--- PASS: TestSchedulerCronPlanR16NotificationTiers (0.10s)
+=== RUN   TestRunWiresConsoleAdminDoor
+--- PASS: TestRunWiresConsoleAdminDoor (0.00s)
+=== RUN   TestRunSetsAdminNewPlatformBeforeMount
+--- PASS: TestRunSetsAdminNewPlatformBeforeMount (0.00s)
+=== RUN   TestEmptyDBHubEntryMigratesAndCreatesNoAccount
+2026/10/17 09:08:42 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+--- PASS: TestEmptyDBHubEntryMigratesAndCreatesNoAccount (1.89s)
+=== RUN   TestMigrateFailureRefusesHubEntryAndBootstrap
+2026/10/17 09:08:44 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+--- PASS: TestMigrateFailureRefusesHubEntryAndBootstrap (1.99s)
+=== RUN   TestBrokenLedgerTableRefuses
+--- PASS: TestBrokenLedgerTableRefuses (1.78s)
+=== RUN   TestHostedIdentityIssue
+--- PASS: TestHostedIdentityIssue (0.00s)
+=== RUN   TestHostedIdentityListByOwner
+--- PASS: TestHostedIdentityListByOwner (0.00s)
+=== RUN   TestHostedIdentityLifecycle
+--- PASS: TestHostedIdentityLifecycle (0.00s)
+=== RUN   TestWireHostedOnlineHookAndSweeper
+2026/10/17 09:08:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:08:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestWireHostedOnlineHookAndSweeper (2.09s)
+=== RUN   TestWireNewPlatformHostedOverlay
+2026/10/17 09:08:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:08:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:08:48 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestWireNewPlatformHostedOverlay (0.10s)
+=== RUN   TestNewPlatformRegistrationCodeKeyWired
+2026/10/17 09:08:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:08:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:08:49 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestNewPlatformRegistrationCodeKeyWired (0.11s)
+=== RUN   TestNewPlatformConfigFromEnv
+--- PASS: TestNewPlatformConfigFromEnv (0.00s)
+=== RUN   TestWireNewPlatformCreatesNoUser
+2026/10/17 09:08:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:08:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:08:49 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestWireNewPlatformCreatesNoUser (0.11s)
+=== RUN   TestWireNewPlatformRoutes
+2026/10/17 09:08:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:08:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:08:49 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestWireNewPlatformRoutes (0.12s)
+=== RUN   TestRegisterNewPlatformLoginPage
+2026/10/17 09:08:49 newplat login page not built into this binary: GET /console/login not registered
+--- PASS: TestRegisterNewPlatformLoginPage (0.00s)
+=== RUN   TestUpgradeRotationKeepsNewCredentialOnSharedWork
+2026/10/17 09:08:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:08:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/17 09:08:49 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/17 09:08:49 session handshake timing key_id=u_zzc session=seat1 total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/17 09:08:49 session capability file_upload_v1=true key_id=u_zzc session=seat1 conn_seq=1
+2026/10/17 09:08:49 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=1 reason=session_reconnected released=0
+2026/10/17 09:08:50 session handshake timing key_id=u_zzc session=seat1 total=13ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=12ms
+2026/10/17 09:08:50 session capability file_upload_v1=true key_id=u_zzc session=seat1 conn_seq=2
+2026/10/17 09:08:50 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=2 reason=session_reconnected released=0
+2026/10/17 09:08:50 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=2 reason=session_disconnected released=0
+2026/10/17 09:08:50 session handshake timing key_id=u_zzc session=seat1 total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/17 09:08:50 session capability file_upload_v1=true key_id=u_zzc session=seat1 conn_seq=3
+2026/10/17 09:08:50 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=3 reason=session_reconnected released=0
+2026/10/17 09:08:50 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=3 reason=session_disconnected released=0
+--- PASS: TestUpgradeRotationKeepsNewCredentialOnSharedWork (1.61s)
+=== RUN   TestLifecycleRecoveryIsWiredAtHostedStartup
+--- PASS: TestLifecycleRecoveryIsWiredAtHostedStartup (0.00s)
+=== RUN   TestRootTasksRouteIsRegistered
+2026/10/17 09:08:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/17 09:08:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestRootTasksRouteIsRegistered (0.11s)
+=== RUN   TestVerifyVersionedDelivery
+--- PASS: TestVerifyVersionedDelivery (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	98.772s

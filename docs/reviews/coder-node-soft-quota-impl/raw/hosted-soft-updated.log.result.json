@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/hosted",
+    "-run",
+    "Test(QuotaRegistration|QuotaEvent|SoftNode|SoftCreate|SoftHeld)",
+    "-v",
+    "-count=1",
+    "-timeout=180s"
+  ],
+  "rc": 0,
+  "seconds": 8.306335116038099,
+  "external_DSN_environment_not_inherited": true
+}

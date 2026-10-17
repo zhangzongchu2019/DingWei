@@ -1,0 +1,44 @@
+=== RUN   TestSoftReserveRunsWhileMetadataWalkIsBlocked
+--- PASS: TestSoftReserveRunsWhileMetadataWalkIsBlocked (0.03s)
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+--- PASS: TestSoftReserveRunsWhileEngineStopIsBlocked (0.05s)
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+--- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.09s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/bytes/1 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.02s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.01s)
+    --- PASS: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+=== RUN   TestSoftEmergencyConfigAndUnknownSpaceFailClosed
+--- PASS: TestSoftEmergencyConfigAndUnknownSpaceFailClosed (0.02s)
+=== RUN   TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart
+--- PASS: TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart (0.02s)
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+--- PASS: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.05s)
+=== RUN   TestSoftBlockedWriterDoesNotSerializeOtherSeatStops
+--- PASS: TestSoftBlockedWriterDoesNotSerializeOtherSeatStops (0.12s)
+=== RUN   TestSoftScanBudgetUnknownAndOutboxAcknowledgement
+--- PASS: TestSoftScanBudgetUnknownAndOutboxAcknowledgement (0.03s)
+=== RUN   TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount
+--- PASS: TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount (0.04s)
+=== RUN   TestSoftMonitorMeasuresAgainOnPeriodicTick
+--- PASS: TestSoftMonitorMeasuresAgainOnPeriodicTick (0.06s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.523s
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_emergency
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_inode_emergency
+=== RUN   TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_unknown
+--- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath (6.32s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_emergency (2.20s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_inode_emergency (2.17s)
+    --- PASS: TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath/node_space_unknown (1.95s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	6.322s

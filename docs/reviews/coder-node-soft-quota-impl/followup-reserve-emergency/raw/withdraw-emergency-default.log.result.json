@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftEmergencyConfigAndUnknownSpaceFailClosed",
+    "-v",
+    "-count=1",
+    "-timeout=30s"
+  ],
+  "rc": 1,
+  "seconds": 1.8199917990714312,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftReservationBytesInodesInventoryConcurrencyAndReplay$",
+    "-v",
+    "-count=1",
+    "-timeout=60s"
+  ],
+  "rc": 1,
+  "seconds": 1.4955401660408825,
+  "external_DSN_environment_not_inherited": true
+}

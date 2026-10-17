@@ -1,0 +1,6 @@
+=== RUN   TestSeatHardLimitsAndLoginNoLogPreserved
+    softquota_test.go:432: hard limits map[Binds:[ag_limits:/work] CapDrop:[ALL] CgroupParent: CpuPeriod:100000 CpuQuota:300000 CpuShares:2048 Init:true LogConfig:map[Config:map[max-file:3 max-size:10m] Type:local] Memory:4294967296 MemorySwap:4294967296 NetworkMode:net PidsLimit:0 Privileged:false ReadonlyRootfs:true SecurityOpt:[no-new-privileges] ShmSize:67108864 Tmpfs:map[/tmp:size=8m]]
+--- FAIL: TestSeatHardLimitsAndLoginNoLogPreserved (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.006s
+FAIL

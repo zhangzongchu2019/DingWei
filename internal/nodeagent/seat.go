@@ -99,6 +99,8 @@ func strictDecode(raw json.RawMessage, v any) error {
 
 type dockerOps struct {
 	eng          *engine
+	policy       NodePolicy
+	soft         *softQuota
 	quota        quotaOps
 	seatRoot     string          // /data/dingwei-newplat/agents 或 /data/dingwei-node
 	registry     string          // 固定镜像仓库（如 hub.local/dingwei）
@@ -159,13 +161,17 @@ func (d *dockerOps) seatContainerID(ctx context.Context, seatID string) (string,
 		}
 		return "", err
 	}
+	if d.soft != nil && !d.soft.recorded(seatID, info.ID) {
+		return "", fmt.Errorf("%w: unregistered_container", ErrSoftQuota)
+	}
 	return info.ID, nil
 }
 
 type seatResources struct {
-	MemoryMB  int64 `json:"memory_mb"`
-	CPUShares int   `json:"cpu_shares"`
-	DiskMB    int64 `json:"disk_mb"`
+	MemoryMB           int64 `json:"memory_mb"`
+	CPUShares          int   `json:"cpu_shares"`
+	DiskMB             int64 `json:"disk_mb"`
+	CPULimitMillicores int64 `json:"cpu_limit_millicores,omitempty"`
 }
 
 func (r seatResources) validate() error {
@@ -174,6 +180,8 @@ func (r seatResources) validate() error {
 		return fmt.Errorf("%w: memory_mb 越界 %d", ErrParams, r.MemoryMB)
 	case r.CPUShares < 2 || r.CPUShares > 262144:
 		return fmt.Errorf("%w: cpu_shares 越界 %d", ErrParams, r.CPUShares)
+	case r.CPULimitMillicores < 0 || r.CPULimitMillicores > 256000 || (r.CPULimitMillicores > 0 && r.CPULimitMillicores < 10):
+		return fmt.Errorf("%w: cpu_limit_millicores out of range", ErrParams)
 	case r.DiskMB < 0:
 		return fmt.Errorf("%w: disk_mb 越界 %d", ErrParams, r.DiskMB)
 	}
@@ -207,16 +215,32 @@ func engineImage(ref string) string {
 // 漏设＝席位逃逸出平台切片，故 create 在空值时直接拒）。
 func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources, credKind, cli, model string) map[string]any {
 	memBytes := res.MemoryMB * 1024 * 1024
+	policy := d.policyValue()
+	cpuQuota := int64(res.CPUShares) * 100000 / 1024
+	if res.CPULimitMillicores > 0 {
+		cpuQuota = res.CPULimitMillicores * 100
+	}
+	labels := map[string]string{}
+	if d.soft != nil {
+		labels[managedSeatLabel] = d.soft.nodeID
+		labels[managedSeatIDLabel] = seatID
+	}
 	return map[string]any{
-		"Image": engineImage(image),
-		"User":  "10001:10001",                   // 非 root（隔离底线；与 seatRunUID 一致）
-		"Env":   d.seatEnv(credKind, cli, model), // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
+		"Image":  engineImage(image),
+		"Labels": labels,
+		"User":   "10001:10001",                   // 非 root（隔离底线；与 seatRunUID 一致）
+		"Env":    d.seatEnv(credKind, cli, model), // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
 		"HostConfig": map[string]any{
 			"ReadonlyRootfs": true,
 			"Tmpfs":          map[string]string{"/tmp": "size=8m"},
 			"Memory":         memBytes,
 			"MemorySwap":     memBytes, // memory＝memory-swap（禁 swap 绕过）
 			"CpuShares":      res.CPUShares,
+			"CpuPeriod":      int64(100000),
+			"CpuQuota":       max(int64(1000), cpuQuota),
+			"PidsLimit":      policy.PidsLimit,
+			"ShmSize":        policy.ShmBytes,
+			"LogConfig":      policy.logConfig(),
 			"CgroupParent":   d.cgroupParent, // --cgroup-parent＝可配置父切片（eccc54bc）
 			"CapDrop":        []string{"ALL"},
 			"SecurityOpt":    []string{"no-new-privileges"},
@@ -439,11 +463,19 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 		return nil, fmt.Errorf("%w: cli %q 不在白名单（漏设即拒）", ErrParams, p.CLI)
 	}
 
+	if d.soft != nil {
+		if err := d.soft.reserve(p.SeatID, p.Resources); err != nil {
+			return nil, err
+		}
+	}
 	name := containerName(p.SeatID)
 	netName := networkName(p.SeatID)
 	// 失败清理（V6-B3：不留半成品）——逆序：容器→网络→配额与目录。
 	// 🔴 M1 复验阻断 5：清理自身失败必须上抛（清理都失败而报"已清理"是比残留更糟的假象）。
 	cleanup := func(containerID string) error {
+		if d.soft != nil {
+			return nil
+		} // soft failures retain data; monitor/owner reconcile, never Clear
 		var errs []string
 		if containerID != "" {
 			if err := d.eng.containerRemove(context.Background(), containerID); err != nil {
@@ -453,8 +485,10 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 		if err := d.eng.networkRemove(context.Background(), netName); err != nil {
 			errs = append(errs, "network_remove: "+err.Error())
 		}
-		if err := d.quota.Clear(d.seatRoot, p.SeatID); err != nil {
-			errs = append(errs, "quota_clear: "+err.Error())
+		if d.soft == nil {
+			if err := d.quota.Clear(d.seatRoot, p.SeatID); err != nil {
+				errs = append(errs, "quota_clear: "+err.Error())
+			}
 		}
 		if len(errs) > 0 {
 			return fmt.Errorf("清理失败（半成品可能残留）: %s", strings.Join(errs, "; "))
@@ -491,7 +525,12 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 	if err != nil {
 		return fail(err, "")
 	}
-	if err := d.eng.containerStart(ctx, id); err != nil {
+	if d.soft != nil {
+		if err := d.soft.track(p.SeatID, id); err != nil {
+			return fail(err, id)
+		}
+	}
+	if err := d.startWriter(ctx, p.SeatID, id, false); err != nil {
 		return fail(err, id)
 	}
 	if err := d.waitRunning(ctx, id); err != nil {
@@ -520,11 +559,14 @@ func (d *dockerOps) start(ctx context.Context, params json.RawMessage) (json.Raw
 	if err != nil {
 		return nil, err
 	}
+	if err := d.preflightSeat(id); err != nil {
+		return nil, err
+	}
 	cid, err := d.seatContainerID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	if err := d.eng.containerStart(ctx, cid); err != nil {
+	if err := d.startWriter(ctx, id, cid, false); err != nil {
 		return nil, err
 	}
 	return json.Marshal(map[string]string{"seat_id": id, "state": "running"})
@@ -535,11 +577,14 @@ func (d *dockerOps) restart(ctx context.Context, params json.RawMessage) (json.R
 	if err != nil {
 		return nil, err
 	}
+	if err := d.preflightSeat(id); err != nil {
+		return nil, err
+	}
 	cid, err := d.seatContainerID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	if err := d.eng.containerRestart(ctx, cid); err != nil {
+	if err := d.startWriter(ctx, id, cid, true); err != nil {
 		return nil, err
 	}
 	return json.Marshal(map[string]string{"seat_id": id, "state": "running"})
@@ -560,6 +605,9 @@ func (d *dockerOps) refreshCred(ctx context.Context, params json.RawMessage) (js
 	if !validSeatID(p.SeatID) {
 		return nil, fmt.Errorf("%w: seat_id %q", ErrParams, p.SeatID)
 	}
+	if err := d.preflightSeat(p.SeatID); err != nil {
+		return nil, err
+	}
 	if p.Cred == nil || p.Cred.Content == "" {
 		return nil, fmt.Errorf("%w: credential_file 必填", ErrParams)
 	}
@@ -575,7 +623,7 @@ func (d *dockerOps) refreshCred(ctx context.Context, params json.RawMessage) (js
 	if err := d.writeCredentialFileAtomic(p.SeatID, p.Cred); err != nil {
 		return nil, fmt.Errorf("credential_write_failed: %v", err)
 	}
-	if err := d.eng.containerRestart(ctx, cid); err != nil {
+	if err := d.startWriter(ctx, p.SeatID, cid, true); err != nil {
 		return nil, fmt.Errorf("restart_failed: %v", err)
 	}
 	return json.Marshal(map[string]string{"seat_id": p.SeatID, "state": "running"})
@@ -684,6 +732,9 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	if !validSeatID(p.SeatID) {
 		return nil, fmt.Errorf("%w: seat_id %q", ErrParams, p.SeatID)
 	}
+	if err := d.preflightSeat(p.SeatID); err != nil {
+		return nil, err
+	}
 	// 复验缺口（tosonnet55tc2k）：upgrade 的 model 至少过格式校验（成员关系不查——
 	// 记录值可能早于清单变更；Hub 下发是记录值，格式纵深仍在）。
 	if p.Model != "" && !validModelName(p.Model) {
@@ -713,6 +764,11 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	if !seatCLIs[p.CLI] {
 		return nil, fmt.Errorf("%w: cli %q 不在白名单（与 create 同口径）", ErrParams, p.CLI)
 	}
+	if d.soft != nil {
+		if err := d.soft.checkResources(p.SeatID, p.Resources); err != nil {
+			return nil, err
+		}
+	}
 	oldID, err := d.seatContainerID(ctx, p.SeatID)
 	if err != nil {
 		return nil, err
@@ -733,7 +789,12 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	if err != nil {
 		return nil, err
 	}
-	if err := d.eng.containerStart(ctx, newID); err != nil {
+	if d.soft != nil {
+		if err := d.soft.track(p.SeatID, newID); err != nil {
+			return nil, err
+		}
+	}
+	if err := d.startWriter(ctx, p.SeatID, newID, false); err != nil {
 		_ = d.eng.containerRemove(context.Background(), newID)
 		return nil, err
 	}
@@ -747,6 +808,11 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	}
 	if err := d.eng.containerRemove(ctx, oldID); err != nil {
 		return nil, err
+	}
+	if d.soft != nil {
+		if err := d.soft.untrack(p.SeatID, oldID); err != nil {
+			return nil, err
+		}
 	}
 	if err := d.eng.call(ctx, "POST", "/containers/"+newID+"/rename?name="+containerName(p.SeatID), nil, nil); err != nil {
 		return nil, err
@@ -777,6 +843,11 @@ func (d *dockerOps) destroy(ctx context.Context, params json.RawMessage) (json.R
 	}
 	if err := d.quota.Clear(d.seatRoot, id); err != nil {
 		return nil, err
+	}
+	if d.soft != nil {
+		if err := d.soft.forget(id); err != nil {
+			return nil, err
+		}
 	}
 	return json.Marshal(map[string]string{"seat_id": id, "state": "destroyed", "quota": "cleared"})
 }
@@ -830,7 +901,7 @@ func isBareImageID(s string) bool {
 // 同时接上 T-G4-13 容量上报（真采集替换骨架桩，并注册心跳）。
 // cgroupParent 必填（eccc54bc）——create 的 --cgroup-parent 指向可配置父切片。
 // localImagesCSV 格式不对即报错（报键名），调用方拒启。
-func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string, seatHubViaProxy bool, seatCodexModel, seatMode string, seatModels []string) error {
+func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string, seatHubViaProxy bool, seatCodexModel, seatMode string, seatModels []string, policies ...NodePolicy) error {
 	if seatCodexModel != "" && !validModelName(seatCodexModel) {
 		return fmt.Errorf("NODEAGENT_SEAT_CODEX_MODEL %q 格式不对（须 1–64 位 [A-Za-z0-9._-]）", seatCodexModel)
 	}
@@ -861,7 +932,27 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 	if err != nil {
 		return err
 	}
-	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, localImages: allow, waitMax: 60 * time.Second, seatHubViaProxy: seatHubViaProxy, seatCodexModel: seatCodexModel, seatMode: seatMode, seatModels: seatModels}
+	policy := DefaultNodePolicy()
+	if len(policies) > 0 {
+		policy = policies[0]
+	}
+	if err := policy.Validate(); err != nil {
+		return err
+	}
+	d := &dockerOps{eng: eng, policy: policy, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, localImages: allow, waitMax: 60 * time.Second, seatHubViaProxy: seatHubViaProxy, seatCodexModel: seatCodexModel, seatMode: seatMode, seatModels: seatModels}
+	if policy.Mode == "soft" {
+		q, err := newSoftQuota(policy, seatRoot, a.cfg.LedgerPath+".soft-quota", a.cfg.NodeID)
+		if err != nil {
+			return err
+		}
+		d.soft = q
+		d.quota = softDirectory{}
+		a.commandGate = q.commandGate
+		a.heartbeatInterval = 15 * time.Second
+		a.background = d.runSoft
+		a.policyClose = q.close
+	}
+	a.docker = d
 	a.Register(CmdPullImage, d.pull)
 	a.Register(CmdCreateSeat, d.create)
 	a.Register(CmdStopSeat, d.stop)

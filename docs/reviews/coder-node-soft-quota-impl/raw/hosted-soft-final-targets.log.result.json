@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/hosted",
+    "-run",
+    "Test(QuotaRegistration|QuotaEvent|SoftNode|SoftCreate|SoftHeld|HardNodeResource|OptionsJSONMatchesContract)",
+    "-v",
+    "-count=1",
+    "-timeout=180s"
+  ],
+  "rc": 0,
+  "seconds": 10.74987602001056,
+  "external_DSN_environment_not_inherited": true
+}

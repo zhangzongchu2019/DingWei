@@ -1,0 +1,62 @@
+import pathlib,subprocess,hashlib,json,time,os,sys
+lab=pathlib.Path('/data/ai-dev-data/coder-soft-quota-lab');root=lab/'withdrawal';pin='726216b4cddec5dd39590241123cbb91a1f0186c'
+runner=lab/'run-local.py'
+N='internal/nodeagent/'
+H='internal/hosted/'
+cases=[]
+def add(name,file,scope,old,new,test,pkg='./internal/nodeagent'):
+ cases.append(dict(name=name,file=file,scope=scope,old=old,new=new,test=test,pkg=pkg))
+add('mode-enum',N+'policy.go','func (p NodePolicy) Validate()', 'if p.Mode != "hard" && p.Mode != "soft" {','if false {','TestNodePolicyExplicitDefaultsAndInvalidValues')
+add('approval-refs',N+'policy.go','func (p NodePolicy) Validate()', 'if p.Mode == "soft" && (p.SoftApprovalRef == "" || p.HostRootTrustRef == "" || p.NetworkApprovalRef == "") {','if false {','TestSoftApprovalReferencesAndDefaultSocketAliases')
+add('hold-entry',N+'softquota.go','func (q *softQuota) commandGate(', 'if s := q.state.Seats[p.SeatID]; s != nil && s.Hold != "" {','if s := q.state.Seats[p.SeatID]; s != nil && false {','TestSoftReservationBytesInodesInventoryConcurrencyAndReplay')
+add('hold-final-start',N+'softquota.go','func (q *softQuota) start(', 'if s.Hold != "" {','if false {','TestSoftHoldStopsWithoutDeletionPersistsAndGatesEveryEntry')
+add('inode-reserve',N+'softquota.go','func (q *softQuota) admitLocked(', 'if q.space.FreeFiles < inodes {','if q.space.FreeFiles < 0*inodes {','TestSoftReservationBytesInodesInventoryConcurrencyAndReplay')
+add('byte-reserve',N+'softquota.go','func (q *softQuota) admitLocked(', 'if add < 0 || add > available {','if add < 0 && add > available {','TestSoftReservationBytesInodesInventoryConcurrencyAndReplay')
+add('disk-commitment',N+'softquota.go','func (q *softQuota) admitLocked(', 'available -= committed','available -= 0*committed','TestSoftResourceAndCommittedDiskReserve')
+add('seat-count',N+'softquota.go','func (q *softQuota) reserve(', 'if len(q.state.Seats) >= q.policy.MaxSeats {','if len(q.state.Seats) >= 1000*q.policy.MaxSeats {','TestSoftReservationBytesInodesInventoryConcurrencyAndReplay')
+add('cpu-reserve',N+'softquota.go','func (q *softQuota) resourceBudgetLocked(', 'cpu < add.cpuMillicores()', 'false', 'TestSoftResourceAndCommittedDiskReserve')
+add('memory-commitment',N+'softquota.go','func (q *softQuota) resourceBudgetLocked(', 'total < add.MemoryMB<<20', 'false', 'TestSoftMemoryCommitAndAvailableReserveSeparate')
+add('memory-available',N+'softquota.go','func (q *softQuota) resourceBudgetLocked(', 'available-q.policy.ReserveMemoryBytes < add.MemoryMB<<20', 'available<0 && available-q.policy.ReserveMemoryBytes < add.MemoryMB<<20', 'TestSoftMemoryCommitAndAvailableReserveSeparate')
+add('apparent-charge',N+'usage.go','func (u diskUsage) charged()', 'max(u.Allocated, u.Apparent)', 'u.Allocated', 'TestSoftHoldStopsWithoutDeletionPersistsAndGatesEveryEntry')
+add('unknown-gate',N+'softquota.go','func (q *softQuota) admitLocked(', 'if s.UsageUnknown {','if false {','TestSoftUnknownAndAgeGateRecovery')
+add('stale-gate',N+'softquota.go','func (q *softQuota) admitLocked(', 'if q.now().Sub(since) > q.policy.MaxAge || q.now().Sub(since) < 0 {','if false {','TestSoftUnknownAndAgeGateRecovery')
+add('warning',N+'softquota.go','func (q *softQuota) scan(', 'if u.charged() >= s.Limit/100*q.policy.WarnPercent && !s.Warn {','if false {','TestSoftWarningHysteresisUnknownBudgetAndStopFailure')
+add('warning-hysteresis',N+'softquota.go','func (q *softQuota) scan(', 'if u.charged() < s.Limit/100*q.policy.RecoveryPercent {','if false {','TestSoftWarningHysteresisUnknownBudgetAndStopFailure')
+add('durable-hold-before-stop',N+'softquota.go','func (q *softQuota) scan(', '_ = q.persistLocked()', '// withdrawn pre-stop durable write', 'TestSoftHoldDurableBeforeStop')
+add('atomic-state-replace',N+'softquota.go','func (q *softQuota) persistLocked()', 'err = os.Rename(name, q.path)', 'err = nil // withdrawn state replacement', 'TestSoftHoldDurableBeforeStop')
+add('owner-label-and-id',N+'softquota.go','func (d *dockerOps) stopOwned(', 'if v.ID != cid || v.Config.Labels[managedSeatLabel] != d.soft.nodeID || v.Config.Labels[managedSeatIDLabel] != id {','if false {','TestSoftMonitorWithoutHubStopsOnlyOwnedContainers')
+add('owner-bind',N+'softquota.go','func (d *dockerOps) stopOwned(', 'if !bound {','if !bound && false {','TestSoftMonitorWithoutHubStopsOnlyOwnedContainers')
+add('unrecorded-target',N+'seat.go','func (d *dockerOps) seatContainerID(', 'if d.soft != nil && !d.soft.recorded(seatID, info.ID) {','if d.soft != nil && false {','TestSoftUnrecordedContainerIsNeverAdopted')
+add('unrecorded-final-writer',N+'softquota.go','func (d *dockerOps) startWriter(', 'if !found {','if !found && false {','TestSoftUnrecordedContainerIsNeverAdopted')
+add('cpu-hard-limit',N+'seat.go','func (d *dockerOps) buildSpec(', '"CpuQuota":       max(int64(1000), cpuQuota),','"CpuQuota":       int64(0)*cpuQuota,','TestSeatHardLimitsAndLoginNoLogPreserved')
+add('pid-hard-limit',N+'seat.go','func (d *dockerOps) buildSpec(', '"PidsLimit":      policy.PidsLimit,','"PidsLimit":      int64(0)*policy.PidsLimit,','TestSeatHardLimitsAndLoginNoLogPreserved')
+add('bounded-log',N+'softquota.go','func (p NodePolicy) logConfig()', '"Type": "local"','"Type": "json-file"','TestSeatHardLimitsAndLoginNoLogPreserved')
+add('mode-policy-binding',H+'node_quota.go','func nodeQuotaEligible(', 'c.Revision == rev', 'true', 'TestQuotaRegistrationAndCapacityCannotSelfDowngrade','./internal/hosted')
+add('hard-priority',H+'orchestrator.go','func (o *Orchestrator) pickNode(', 'return a == "hard"','return a == "soft"','TestSoftNodeSchedulingConsentPriorityCapacityAndAudit','./internal/hosted')
+add('soft-user-consent',H+'orchestrator.go','func (o *Orchestrator) pickNode(', '!consent || labels["allow_soft"] != "true"', 'consent && !consent || labels["allow_soft"] != "true"','TestSoftNodeSchedulingConsentPriorityCapacityAndAudit','./internal/hosted')
+add('socket-alias',N+'engine_policy.go','func validateIsolatedSocket(', 'if p == "/run/docker.sock" || p == "/var/run/docker.sock" || (defaultPath != "" && p == defaultPath) {','if false && defaultPath != "" {','TestSoftApprovalReferencesAndDefaultSocketAliases')
+# No source from the author branch is changed; each mutation lives only here.
+selected=set(sys.argv[1:])
+if selected:cases=[c for c in cases if c['name'] in selected]
+previous=json.loads((lab/'evidence'/'WITHDRAWALS.json').read_text()) if (lab/'evidence'/'WITHDRAWALS.json').exists() else {'cases':[]}
+results=[c for c in previous['cases'] if c['name'] not in {x['name'] for x in cases}]
+for case in cases:
+ path=root/case['file'];original=subprocess.check_output(['git','show',pin+':'+case['file']],cwd=root).decode()
+ try:
+  start=original.index(case['scope']);end=original.find('\nfunc ',start+1);end=len(original) if end<0 else end
+  scoped=original[start:end]
+  # Pre-stop persistence occurs twice; withdraw the first only.
+  count=scoped.count(case['old'])
+  if count!=1 and not(case['name']=='durable-hold-before-stop' and count==2):raise RuntimeError(f'anchor count {count}')
+  scoped=scoped.replace(case['old'],case['new'],1);mutated=original[:start]+scoped+original[end:];path.write_text(mutated)
+  name='withdraw-'+case['name']+'.log'
+  code=subprocess.call(['python3',str(runner),name,'go','test',case['pkg'],'-run','^'+case['test']+'$','-v','-count=1','-timeout=60s'],cwd=root)
+  raw=(lab/'evidence'/name).read_text()
+  good=code==1 and ('--- FAIL: '+case['test']) in raw and '[build failed]' not in raw and 'panic:' not in raw
+  result={**{k:v for k,v in case.items() if k not in ['old','new']},'rc':code,'assertion_red':good,'original_sha256':hashlib.sha256(original.encode()).hexdigest(),'mutant_sha256':hashlib.sha256(mutated.encode()).hexdigest()}
+  results.append(result);print(case['name'],good,flush=True)
+ except Exception as e:
+  results.append({'name':case['name'],'driver_error':str(e),'assertion_red':False});print('DRIVER',case['name'],str(e),flush=True)
+ finally:path.write_text(original)
+ (lab/'evidence'/'WITHDRAWALS.json').write_text(json.dumps({'code_pin':pin,'cases':results},indent=2)+'\n')
+print('completed',len(results),'assertion_red',sum(x['assertion_red'] for x in results),flush=True)

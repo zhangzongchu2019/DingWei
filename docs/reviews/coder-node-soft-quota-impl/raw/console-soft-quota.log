@@ -1,0 +1,12 @@
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert(await page.locator('#hostedNode option[value=unknown]').isDisabled())
+
+    at /data/ai-dev-data/node-soft-quota-impl-r21/view-service/console-soft-quota-regression.js:49:3 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

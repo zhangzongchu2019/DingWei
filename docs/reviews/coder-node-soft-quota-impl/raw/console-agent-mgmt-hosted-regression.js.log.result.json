@@ -1,0 +1,9 @@
+{
+  "command": [
+    "node",
+    "view-service/console-agent-mgmt-hosted-regression.js"
+  ],
+  "rc": 1,
+  "seconds": 9.490089402068406,
+  "external_DSN_environment_not_inherited": true
+}

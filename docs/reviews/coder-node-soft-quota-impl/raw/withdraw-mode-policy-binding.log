@@ -1,0 +1,6 @@
+=== RUN   TestQuotaRegistrationAndCapacityCannotSelfDowngrade
+    node_quota_test.go:47: unready/mismatched soft eligible
+--- FAIL: TestQuotaRegistrationAndCapacityCannotSelfDowngrade (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	0.005s
+FAIL

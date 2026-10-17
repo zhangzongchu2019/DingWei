@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftWarningHysteresisUnknownBudgetAndStopFailure$",
+    "-v",
+    "-count=1",
+    "-timeout=60s"
+  ],
+  "rc": 1,
+  "seconds": 1.3990600609686226,
+  "external_DSN_environment_not_inherited": true
+}

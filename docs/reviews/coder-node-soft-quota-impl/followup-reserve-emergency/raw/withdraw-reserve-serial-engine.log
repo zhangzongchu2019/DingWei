@@ -1,0 +1,6 @@
+=== RUN   TestSoftReserveRunsWhileEngineStopIsBlocked
+    softquota_reserve_test.go:151: blocked Engine serialized reserve or state lock
+--- FAIL: TestSoftReserveRunsWhileEngineStopIsBlocked (1.03s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.039s
+FAIL

@@ -1,0 +1,6 @@
+=== RUN   TestSoftEmergencyCannotStopBeforeLateWriterStart
+    softquota_reserve_test.go:360: stop inspected before late start could finish
+--- FAIL: TestSoftEmergencyCannotStopBeforeLateWriterStart (0.05s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.054s
+FAIL

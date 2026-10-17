@@ -68,16 +68,21 @@ func (s *Store) query(ctx context.Context, q string, args ...any) (*sql.Rows, er
 // ---------- 节点 ----------
 
 type Node struct {
-	ID, Name        string
-	Labels          json.RawMessage
-	State           string
-	Capacity        json.RawMessage
-	DockerVersion   string
-	ProtocolVersion int
-	LastSeenAt      *time.Time
+	ID, Name            string
+	QuotaMode           string
+	QuotaPolicyRevision string
+	Labels              json.RawMessage
+	State               string
+	Capacity            json.RawMessage
+	DockerVersion       string
+	ProtocolVersion     int
+	LastSeenAt          *time.Time
 }
 
 func (s *Store) UpsertNode(ctx context.Context, n Node) error {
+	if err := normalizeQuotaRegistration(&n); err != nil {
+		return err
+	}
 	_, err := s.exec(ctx, `
 INSERT INTO g4_node (id, name, labels, state, docker_version, node_protocol_version)
 VALUES ($1,$2,$3,'offline',$4,$5)
@@ -114,9 +119,7 @@ FROM g4_node WHERE id=$1`, id)
 
 // SetNodeOnline 节点心跳：上线＋容量＋last_seen；离线由 Hub 探测断连后调 SetNodeState。
 func (s *Store) SetNodeOnline(ctx context.Context, id string, capacity json.RawMessage) error {
-	_, err := s.exec(ctx, `
-UPDATE g4_node SET state='online', capacity=$2, last_seen_at=now(), updated_at=now() WHERE id=$1`, id, capacity)
-	return err
+	return s.SetNodeQuotaCapacity(ctx, id, capacity)
 }
 
 func (s *Store) SetNodeState(ctx context.Context, id, state string) error {
@@ -262,6 +265,7 @@ var seatStates = map[string]bool{
 }
 
 type Seat struct {
+	QuotaConsent                        json.RawMessage // server-produced audit data, committed atomically with creation
 	AgentID, NodeID, CLI, LLM, CredKind string
 	AccountRef                          sql.NullString
 	Plan, State, StateDetail, ImageRef  string
@@ -314,6 +318,9 @@ func (s *Store) CreateSeat(ctx context.Context, st Seat) error {
 	const ins = `
 INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, account_ref, plan, state, image_ref, model, created_by)
 VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9,$10)`
+	if !st.AccountRef.Valid && len(st.QuotaConsent) > 0 {
+		return ErrParams
+	}
 	if !st.AccountRef.Valid {
 		_, err := s.pool.Exec(ctx, htx(), ins,
 			st.AgentID, st.NodeID, st.CLI, st.LLM, st.CredKind, st.AccountRef, st.Plan, st.ImageRef, st.Model, st.CreatedBy)
@@ -339,6 +346,12 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9,$10)`
 		}
 		_, err = tx.Exec(ctx, ins,
 			st.AgentID, st.NodeID, st.CLI, st.LLM, st.CredKind, st.AccountRef, st.Plan, st.ImageRef, st.Model, st.CreatedBy)
+		if err != nil {
+			return err
+		}
+		if len(st.QuotaConsent) > 0 {
+			_, err = tx.Exec(ctx, `INSERT INTO g4_audit(actor,action,target,detail) VALUES ($1,'seat.soft_quota_consent',$2,$3)`, st.CreatedBy, st.AgentID, st.QuotaConsent)
+		}
 		return err
 	})
 }

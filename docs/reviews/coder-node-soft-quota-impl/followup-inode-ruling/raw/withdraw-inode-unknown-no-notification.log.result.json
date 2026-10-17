@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood",
+    "-v",
+    "-count=1",
+    "-timeout=30s"
+  ],
+  "rc": 1,
+  "seconds": 1.856466469122097,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,0 +1,153 @@
+{
+  "utc": "2026-10-17T09:16:11.757090+00:00",
+  "code_pin": "b8074831205c25376cf777c347ebdc985f3e4816",
+  "gates": {
+    "canonical-b807.log": {
+      "command": [
+        "./build.sh",
+        "--test-only"
+      ],
+      "rc": 0,
+      "seconds": 99.78510647383519,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-b807.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 7.587249777046964,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-race-b807.log": {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 12.018344497075304,
+      "external_DSN_environment_not_inherited": true
+    },
+    "related-packages-io-final.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/hosted",
+        "./internal/nodegate",
+        "./cmd/nodeagent",
+        "./cmd/workpulse",
+        "-v",
+        "-count=1",
+        "-timeout=600s"
+      ],
+      "rc": 0,
+      "seconds": 432.19826229684986,
+      "external_DSN_environment_not_inherited": true
+    },
+    "restored-io-targets.log": {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "./internal/nodeagent",
+        "-run",
+        "^TestSoft",
+        "-v",
+        "-count=1",
+        "-timeout=120s"
+      ],
+      "rc": 0,
+      "seconds": 4.520803926046938,
+      "external_DSN_environment_not_inherited": true
+    },
+    "console-soft-quota-b807.log": {
+      "command": [
+        "node",
+        "view-service/console-soft-quota-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 3.118912223028019,
+      "external_DSN_environment_not_inherited": true
+    },
+    "console-quota-b807.log": {
+      "command": [
+        "node",
+        "view-service/console-quota-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 6.307806444121525,
+      "external_DSN_environment_not_inherited": true
+    },
+    "console-lifecycle-b807.log": {
+      "command": [
+        "node",
+        "view-service/console-hosted-lifecycle-jobs-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 14.348254851996899,
+      "external_DSN_environment_not_inherited": true
+    },
+    "console-model-b807.log": {
+      "command": [
+        "node",
+        "view-service/console-hosted-model-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 4.010169132845476,
+      "external_DSN_environment_not_inherited": true
+    }
+  },
+  "counts": {
+    "canonical-b807.log": {
+      "top_level_passes": 4,
+      "skips": 0
+    },
+    "nodeagent-b807.log": {
+      "top_level_passes": 140,
+      "skips": 0
+    },
+    "nodeagent-race-b807.log": {
+      "top_level_passes": 140,
+      "skips": 0
+    },
+    "related-packages-io-final.log": {
+      "top_level_passes": 268,
+      "skips": 0
+    },
+    "restored-io-targets.log": {
+      "top_level_passes": 34,
+      "skips": 0
+    },
+    "console-soft-quota-b807.log": {
+      "top_level_passes": 0,
+      "skips": 0
+    },
+    "console-quota-b807.log": {
+      "top_level_passes": 0,
+      "skips": 0
+    },
+    "console-lifecycle-b807.log": {
+      "top_level_passes": 0,
+      "skips": 0
+    },
+    "console-model-b807.log": {
+      "top_level_passes": 0,
+      "skips": 0
+    }
+  },
+  "related_gate_actual_pin": "b92a07b96cb75380d1bd9a636ccc3fbffa578d44",
+  "current_Go_assertion_red": 25,
+  "current_UI_assertion_red": 1,
+  "prior_controls_not_relabelled": true,
+  "host_realDocker_externalPG_realkeys_deploy": false
+}

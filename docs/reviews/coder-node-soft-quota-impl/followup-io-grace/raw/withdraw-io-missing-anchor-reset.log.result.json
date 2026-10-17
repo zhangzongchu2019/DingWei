@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftMissingAgeAnchorIsRejectedWithoutReset",
+    "-v",
+    "-count=1",
+    "-timeout=30s"
+  ],
+  "rc": 1,
+  "seconds": 1.9313666739035398,
+  "external_DSN_environment_not_inherited": true
+}

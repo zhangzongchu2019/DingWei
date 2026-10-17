@@ -1,0 +1,6 @@
+=== RUN   TestSoftHoldStopsWithoutDeletionPersistsAndGatesEveryEntry
+    softquota_test.go:171: missing hold/stop &{UsageUnknown:false Limit:8388608 Resources:{MemoryMB:4096 CPUShares:2048 DiskMB:8 CPULimitMillicores:0} CIDs:[fixture-cid] Usage:{Allocated:1 Apparent:9437184} MeasuredAt:2026-10-17 07:54:44.204706935 +0000 UTC m=+0.007540235 CreatedAt:2026-10-17 07:54:44.202296847 +0000 UTC m=+0.005130161 Hold: StopState: Warn:false} calls0
+--- FAIL: TestSoftHoldStopsWithoutDeletionPersistsAndGatesEveryEntry (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.014s
+FAIL

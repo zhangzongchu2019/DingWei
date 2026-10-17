@@ -1,0 +1,346 @@
+=== RUN   TestLedgerIdempotentAcrossRestart
+--- PASS: TestLedgerIdempotentAcrossRestart (0.00s)
+=== RUN   TestAgentIdempotentAndReplay
+--- PASS: TestAgentIdempotentAndReplay (1.00s)
+=== RUN   TestAgentAuthBindsIdentity
+--- PASS: TestAgentAuthBindsIdentity (0.00s)
+=== RUN   TestLedgerCorruptFailsClosed
+--- PASS: TestLedgerCorruptFailsClosed (0.00s)
+=== RUN   TestBadCommandFrameReplied
+--- PASS: TestBadCommandFrameReplied (0.30s)
+=== RUN   TestTLSPinnedTransportRejectsMismatch
+--- PASS: TestTLSPinnedTransportRejectsMismatch (0.00s)
+=== RUN   TestSecretFileFailsClosed
+--- PASS: TestSecretFileFailsClosed (0.00s)
+=== RUN   TestAppliedMarkerNameMatchesHostedImageStart
+--- PASS: TestAppliedMarkerNameMatchesHostedImageStart (0.00s)
+=== RUN   TestExportSeatExcludesCredentialFiles
+--- PASS: TestExportSeatExcludesCredentialFiles (0.01s)
+=== RUN   TestExportSeatSendsSHA256Trailer
+--- PASS: TestExportSeatSendsSHA256Trailer (0.00s)
+=== RUN   TestExportSeatFailsWhenHubRejects
+--- PASS: TestExportSeatFailsWhenHubRejects (0.01s)
+=== RUN   TestExportSeatFailsWhenTarFails
+--- PASS: TestExportSeatFailsWhenTarFails (0.00s)
+=== RUN   TestExportSeatExcludesCLIAndHelperPrivateState
+--- PASS: TestExportSeatExcludesCLIAndHelperPrivateState (0.01s)
+=== RUN   TestExportSeatRefusesCredentialHardlinkBeforeUpload
+--- PASS: TestExportSeatRefusesCredentialHardlinkBeforeUpload (0.00s)
+=== RUN   TestExportSeatExcludesCredentialRefreshCrashResidue
+--- PASS: TestExportSeatExcludesCredentialRefreshCrashResidue (0.01s)
+=== RUN   TestExportSeatRefusesCredentialTempHardlinkBeforeUpload
+--- PASS: TestExportSeatRefusesCredentialTempHardlinkBeforeUpload (0.00s)
+=== RUN   TestExportSeatStreamsTarWithAuth
+--- PASS: TestExportSeatStreamsTarWithAuth (0.01s)
+=== RUN   TestExportSeatTarContent
+--- PASS: TestExportSeatTarContent (0.00s)
+=== RUN   TestExportSeatRejectsForeignUploadURL
+--- PASS: TestExportSeatRejectsForeignUploadURL (0.00s)
+=== RUN   TestMemInfoMB
+--- PASS: TestMemInfoMB (0.00s)
+=== RUN   TestDiskMB
+--- PASS: TestDiskMB (0.00s)
+=== RUN   TestCollectCapacitySeatsAndImages
+--- PASS: TestCollectCapacitySeatsAndImages (0.00s)
+=== RUN   TestChangedBeyond
+--- PASS: TestChangedBeyond (0.00s)
+=== RUN   TestHeartbeatSendsOnConnectAndInterval
+--- PASS: TestHeartbeatSendsOnConnectAndInterval (0.00s)
+=== RUN   TestReportCapacityHandler
+--- PASS: TestReportCapacityHandler (0.00s)
+=== RUN   TestCapacityCarriesModels
+--- PASS: TestCapacityCarriesModels (0.00s)
+=== RUN   TestDedicatedSocketIsolation
+--- PASS: TestDedicatedSocketIsolation (0.00s)
+=== RUN   TestEngineMalformedResponseFailsClosed
+--- PASS: TestEngineMalformedResponseFailsClosed (0.00s)
+=== RUN   TestImagePullStreamErrorSurfaced
+--- PASS: TestImagePullStreamErrorSurfaced (0.00s)
+=== RUN   TestEngineMissingIDFailsClosed
+--- PASS: TestEngineMissingIDFailsClosed (0.00s)
+=== RUN   TestLoginStartUploadsCredentialAndCleansUp
+--- PASS: TestLoginStartUploadsCredentialAndCleansUp (0.01s)
+=== RUN   TestLoginStartReplayAndCancel
+--- PASS: TestLoginStartReplayAndCancel (0.05s)
+=== RUN   TestLoginStartNoCodeFailsCleanly
+--- PASS: TestLoginStartNoCodeFailsCleanly (0.00s)
+=== RUN   TestLoginExitNonZeroUploadsFailure
+--- PASS: TestLoginExitNonZeroUploadsFailure (0.01s)
+=== RUN   TestLoginBusyAndParamGuards
+--- PASS: TestLoginBusyAndParamGuards (0.00s)
+=== RUN   TestLoginCommandsSkipLedger
+--- PASS: TestLoginCommandsSkipLedger (0.00s)
+=== RUN   TestLoginCleanupLeftovers
+--- PASS: TestLoginCleanupLeftovers (0.00s)
+=== RUN   TestReadLoginCredentialGuards
+--- PASS: TestReadLoginCredentialGuards (0.00s)
+=== RUN   TestLoginReplayDuringStartupBusy
+--- PASS: TestLoginReplayDuringStartupBusy (0.20s)
+=== RUN   TestDemuxReader
+--- PASS: TestDemuxReader (0.00s)
+=== RUN   TestLoginContainerSpecSecurityFields
+--- PASS: TestLoginContainerSpecSecurityFields (0.00s)
+=== RUN   TestLoginParses0159ShapeWithANSI
+=== RUN   TestLoginParses0159ShapeWithANSI/decoy_before_hints
+=== RUN   TestLoginParses0159ShapeWithANSI/real_0159_fullcapture
+=== RUN   TestLoginParses0159ShapeWithANSI/same_line_as_hints
+=== RUN   TestLoginParses0159ShapeWithANSI/plain_0145
+--- PASS: TestLoginParses0159ShapeWithANSI (0.01s)
+    --- PASS: TestLoginParses0159ShapeWithANSI/decoy_before_hints (0.00s)
+    --- PASS: TestLoginParses0159ShapeWithANSI/real_0159_fullcapture (0.00s)
+    --- PASS: TestLoginParses0159ShapeWithANSI/same_line_as_hints (0.00s)
+    --- PASS: TestLoginParses0159ShapeWithANSI/plain_0145 (0.00s)
+=== RUN   TestResolveMountPointNode68
+--- PASS: TestResolveMountPointNode68 (0.00s)
+=== RUN   TestSetupChownsSeatDirTo10001
+--- PASS: TestSetupChownsSeatDirTo10001 (0.00s)
+=== RUN   TestAllocProjectIDParsesReportAndRejectsCollisions
+--- PASS: TestAllocProjectIDParsesReportAndRejectsCollisions (0.01s)
+=== RUN   TestClearPropagatesAndVerifies
+--- PASS: TestClearPropagatesAndVerifies (0.00s)
+=== RUN   TestProjectUsageReportParsing
+--- PASS: TestProjectUsageReportParsing (0.00s)
+=== RUN   TestSetupFailureLeavesNoResidue
+--- PASS: TestSetupFailureLeavesNoResidue (0.00s)
+=== RUN   TestClearRedWhenProjectStillPresent
+--- PASS: TestClearRedWhenProjectStillPresent (0.00s)
+=== RUN   TestSetupRollbackClearsProjectMapping
+--- PASS: TestSetupRollbackClearsProjectMapping (0.00s)
+=== RUN   TestClearUsesProjectCWithPath
+--- PASS: TestClearUsesProjectCWithPath (0.00s)
+=== RUN   TestSetupMalformedLsattrNoPanicFullRollback
+--- PASS: TestSetupMalformedLsattrNoPanicFullRollback (0.00s)
+=== RUN   TestClearMalformedLsattrFailClosed
+--- PASS: TestClearMalformedLsattrFailClosed (0.00s)
+=== RUN   TestRefreshCredWhitelisted
+--- PASS: TestRefreshCredWhitelisted (0.00s)
+=== RUN   TestRefreshCredWritesAndRestarts
+--- PASS: TestRefreshCredWritesAndRestarts (0.00s)
+=== RUN   TestRefreshCredStrictParams
+--- PASS: TestRefreshCredStrictParams (0.00s)
+=== RUN   TestRefreshCredWriteFailureKeepsOld
+--- PASS: TestRefreshCredWriteFailureKeepsOld (0.00s)
+=== RUN   TestRefreshCredRestartFailure
+--- PASS: TestRefreshCredRestartFailure (0.00s)
+=== RUN   TestRefreshCredSameContentStillRestarts
+--- PASS: TestRefreshCredSameContentStillRestarts (0.00s)
+=== RUN   TestRefreshCredClearsAppliedMarker
+--- PASS: TestRefreshCredClearsAppliedMarker (0.00s)
+=== RUN   TestRefreshCredNoCodexHomeOK
+--- PASS: TestRefreshCredNoCodexHomeOK (0.00s)
+=== RUN   TestRefreshCredMarkerNoFollow
+--- PASS: TestRefreshCredMarkerNoFollow (0.00s)
+=== RUN   TestValidateImageRef
+--- PASS: TestValidateImageRef (0.00s)
+=== RUN   TestStrictDecodeRejectsArbitraryFields
+--- PASS: TestStrictDecodeRejectsArbitraryFields (0.00s)
+=== RUN   TestCreateSeatSecuritySpecAndTokenFile
+--- PASS: TestCreateSeatSecuritySpecAndTokenFile (0.00s)
+=== RUN   TestCreateFailureLeavesNoPartial
+--- PASS: TestCreateFailureLeavesNoPartial (0.00s)
+=== RUN   TestUpgradeNewHealthyBeforeOldRemoved
+--- PASS: TestUpgradeNewHealthyBeforeOldRemoved (0.00s)
+=== RUN   TestDestroyClearsQuota
+--- PASS: TestDestroyClearsQuota (0.00s)
+=== RUN   TestCgroupParentRequiredAndSet
+--- PASS: TestCgroupParentRequiredAndSet (0.00s)
+=== RUN   TestCreateCleanupFailureIsSurfaced
+--- PASS: TestCreateCleanupFailureIsSurfaced (0.00s)
+=== RUN   TestUpgradeFullOrderAndRollbackPreservesOld
+--- PASS: TestUpgradeFullOrderAndRollbackPreservesOld (2.02s)
+=== RUN   TestSeatProxyInjection
+--- PASS: TestSeatProxyInjection (0.00s)
+=== RUN   TestCreateWritesCredentialFile
+--- PASS: TestCreateWritesCredentialFile (0.00s)
+=== RUN   TestCreateRejectsMissingCredKind
+--- PASS: TestCreateRejectsMissingCredKind (0.00s)
+=== RUN   TestLocalImageForm
+--- PASS: TestLocalImageForm (0.00s)
+=== RUN   TestCreateRejectsUnregisteredLocalImage
+--- PASS: TestCreateRejectsUnregisteredLocalImage (0.00s)
+=== RUN   TestLocalFormEngineTranslationAndUpgradeGuards
+--- PASS: TestLocalFormEngineTranslationAndUpgradeGuards (0.00s)
+=== RUN   TestLocalFormInspectPerPath
+--- PASS: TestLocalFormInspectPerPath (0.00s)
+=== RUN   TestLocalFormIDMismatchPerPath
+--- PASS: TestLocalFormIDMismatchPerPath (0.00s)
+=== RUN   TestSeatEnvNoProxyIncludesHubHost
+=== RUN   TestSeatEnvNoProxyIncludesHubHost/wss://172.31.250.1:8443
+=== RUN   TestSeatEnvNoProxyIncludesHubHost/wss://hub.test
+=== RUN   TestSeatEnvNoProxyIncludesHubHost/wss://[fd00::1]:8443
+--- PASS: TestSeatEnvNoProxyIncludesHubHost (0.00s)
+    --- PASS: TestSeatEnvNoProxyIncludesHubHost/wss://172.31.250.1:8443 (0.00s)
+    --- PASS: TestSeatEnvNoProxyIncludesHubHost/wss://hub.test (0.00s)
+    --- PASS: TestSeatEnvNoProxyIncludesHubHost/wss://[fd00::1]:8443 (0.00s)
+=== RUN   TestParseLocalImagesNormalizeAndReject
+--- PASS: TestParseLocalImagesNormalizeAndReject (0.00s)
+=== RUN   TestParseLocalImagesRejectsWrongLength
+--- PASS: TestParseLocalImagesRejectsWrongLength (0.00s)
+=== RUN   TestRegisterDockerHandlersRejectsBadAllowlist
+--- PASS: TestRegisterDockerHandlersRejectsBadAllowlist (0.00s)
+=== RUN   TestSeatEnvHubViaProxyOn
+=== RUN   TestSeatEnvHubViaProxyOn/wss://dw.cmjrt.com:55055
+=== RUN   TestSeatEnvHubViaProxyOn/wss://58.251.94.69:55055
+=== RUN   TestSeatEnvHubViaProxyOn/wss://[2001:db8::1]:55055
+--- PASS: TestSeatEnvHubViaProxyOn (0.00s)
+    --- PASS: TestSeatEnvHubViaProxyOn/wss://dw.cmjrt.com:55055 (0.00s)
+    --- PASS: TestSeatEnvHubViaProxyOn/wss://58.251.94.69:55055 (0.00s)
+    --- PASS: TestSeatEnvHubViaProxyOn/wss://[2001:db8::1]:55055 (0.00s)
+=== RUN   TestSeatEnvHubViaProxyInCreateSpec
+--- PASS: TestSeatEnvHubViaProxyInCreateSpec (0.00s)
+=== RUN   TestSeatEnvHubViaProxyOffUnchanged
+--- PASS: TestSeatEnvHubViaProxyOffUnchanged (0.00s)
+=== RUN   TestLocalImageGateWithPrefixedAllowlist
+--- PASS: TestLocalImageGateWithPrefixedAllowlist (0.00s)
+=== RUN   TestSeatEnvInjectsCLIMode
+=== RUN   TestSeatEnvInjectsCLIMode/create_codex
+=== RUN   TestSeatEnvInjectsCLIMode/create_claude
+=== RUN   TestSeatEnvInjectsCLIMode/create_rejects_missing
+=== RUN   TestSeatEnvInjectsCLIMode/create_rejects_unknown
+=== RUN   TestSeatEnvInjectsCLIMode/create_rejects_empty
+=== RUN   TestSeatEnvInjectsCLIMode/upgrade_rejects_missing_cli
+--- PASS: TestSeatEnvInjectsCLIMode (0.00s)
+    --- PASS: TestSeatEnvInjectsCLIMode/create_codex (0.00s)
+    --- PASS: TestSeatEnvInjectsCLIMode/create_claude (0.00s)
+    --- PASS: TestSeatEnvInjectsCLIMode/create_rejects_missing (0.00s)
+    --- PASS: TestSeatEnvInjectsCLIMode/create_rejects_unknown (0.00s)
+    --- PASS: TestSeatEnvInjectsCLIMode/create_rejects_empty (0.00s)
+    --- PASS: TestSeatEnvInjectsCLIMode/upgrade_rejects_missing_cli (0.00s)
+=== RUN   TestSeatCLIMustMatchAllowlistExactly
+=== RUN   TestSeatCLIMustMatchAllowlistExactly/create_rejects_upper
+=== RUN   TestSeatCLIMustMatchAllowlistExactly/upgrade_rejects_upper
+=== RUN   TestSeatCLIMustMatchAllowlistExactly/create_rejects_trailing_space
+=== RUN   TestSeatCLIMustMatchAllowlistExactly/upgrade_rejects_trailing_space
+=== RUN   TestSeatCLIMustMatchAllowlistExactly/create_rejects_leading_space
+=== RUN   TestSeatCLIMustMatchAllowlistExactly/upgrade_rejects_leading_space
+=== RUN   TestSeatCLIMustMatchAllowlistExactly/create_rejects_all_caps
+=== RUN   TestSeatCLIMustMatchAllowlistExactly/upgrade_rejects_all_caps
+--- PASS: TestSeatCLIMustMatchAllowlistExactly (0.00s)
+    --- PASS: TestSeatCLIMustMatchAllowlistExactly/create_rejects_upper (0.00s)
+    --- PASS: TestSeatCLIMustMatchAllowlistExactly/upgrade_rejects_upper (0.00s)
+    --- PASS: TestSeatCLIMustMatchAllowlistExactly/create_rejects_trailing_space (0.00s)
+    --- PASS: TestSeatCLIMustMatchAllowlistExactly/upgrade_rejects_trailing_space (0.00s)
+    --- PASS: TestSeatCLIMustMatchAllowlistExactly/create_rejects_leading_space (0.00s)
+    --- PASS: TestSeatCLIMustMatchAllowlistExactly/upgrade_rejects_leading_space (0.00s)
+    --- PASS: TestSeatCLIMustMatchAllowlistExactly/create_rejects_all_caps (0.00s)
+    --- PASS: TestSeatCLIMustMatchAllowlistExactly/upgrade_rejects_all_caps (0.00s)
+=== RUN   TestHubViaProxyThroughRegisterDockerHandlers
+--- PASS: TestHubViaProxyThroughRegisterDockerHandlers (0.00s)
+=== RUN   TestSeatCodexModelInject
+--- PASS: TestSeatCodexModelInject (0.00s)
+=== RUN   TestSeatCodexModelValidation
+--- PASS: TestSeatCodexModelValidation (0.00s)
+=== RUN   TestSeatCodexModelThroughCreateSpec
+=== RUN   TestSeatCodexModelThroughCreateSpec/prod_value
+=== RUN   TestSeatCodexModelThroughCreateSpec/1_char_boundary
+=== RUN   TestSeatCodexModelThroughCreateSpec/64_char_boundary
+--- PASS: TestSeatCodexModelThroughCreateSpec (0.01s)
+    --- PASS: TestSeatCodexModelThroughCreateSpec/prod_value (0.00s)
+    --- PASS: TestSeatCodexModelThroughCreateSpec/1_char_boundary (0.00s)
+    --- PASS: TestSeatCodexModelThroughCreateSpec/64_char_boundary (0.00s)
+=== RUN   TestSeatModeSwitch
+--- PASS: TestSeatModeSwitch (0.00s)
+=== RUN   TestSeatModeDriverThroughCreateSpec
+--- PASS: TestSeatModeDriverThroughCreateSpec (0.00s)
+=== RUN   TestSeatModelParamValidation
+--- PASS: TestSeatModelParamValidation (0.00s)
+=== RUN   TestSeatModelPriority
+--- PASS: TestSeatModelPriority (0.00s)
+=== RUN   TestNodeDefaultMustBeInModelsList
+--- PASS: TestNodeDefaultMustBeInModelsList (0.00s)
+=== RUN   TestCreateSeatInitEnabled
+--- PASS: TestCreateSeatInitEnabled (0.00s)
+=== RUN   TestUpgradeModelInjectAndValidate
+--- PASS: TestUpgradeModelInjectAndValidate (0.00s)
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/QUOTA_MODESoft
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/QUOTA_MODEauto
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/QUOTA_MODEsoft
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/PIDS_LIMIT0
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/WARN_PERCENT100
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/RECOVERY_PERCENT81
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/MAX_AGE1s
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/SCAN_BUDGET31s
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/RESERVE_INODES0
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/RESERVE_PERCENT-1
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/MAX_SEATS0
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/LOG_MAX_FILES0
+=== RUN   TestNodePolicyExplicitDefaultsAndInvalidValues/SCAN_INTERVALinvalid
+--- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/QUOTA_MODESoft (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/QUOTA_MODEauto (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/QUOTA_MODEsoft (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/PIDS_LIMIT0 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/WARN_PERCENT100 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/RECOVERY_PERCENT81 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/MAX_AGE1s (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/SCAN_BUDGET31s (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/RESERVE_INODES0 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/RESERVE_PERCENT-1 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/MAX_SEATS0 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/LOG_MAX_FILES0 (0.00s)
+    --- PASS: TestNodePolicyExplicitDefaultsAndInvalidValues/SCAN_INTERVALinvalid (0.00s)
+=== RUN   TestDualUsageSparseHardlinksSymlinksAndCancellation
+--- PASS: TestDualUsageSparseHardlinksSymlinksAndCancellation (0.12s)
+=== RUN   TestSoftHoldStopsWithoutDeletionPersistsAndGatesEveryEntry
+--- PASS: TestSoftHoldStopsWithoutDeletionPersistsAndGatesEveryEntry (0.01s)
+=== RUN   TestSoftWarningHysteresisUnknownBudgetAndStopFailure
+--- PASS: TestSoftWarningHysteresisUnknownBudgetAndStopFailure (0.02s)
+=== RUN   TestSoftReservationBytesInodesInventoryConcurrencyAndReplay
+--- PASS: TestSoftReservationBytesInodesInventoryConcurrencyAndReplay (0.01s)
+=== RUN   TestSoftStartFreshUsageReserveAndNoCredentialSideEffects
+--- PASS: TestSoftStartFreshUsageReserveAndNoCredentialSideEffects (0.01s)
+=== RUN   TestSoftQuotaStateMetadataCorruptionAndUncleanRecovery
+--- PASS: TestSoftQuotaStateMetadataCorruptionAndUncleanRecovery (0.01s)
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/#00
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/ID
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/DockerRootDir
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/MemoryLimit
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/SwapLimit
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/CpuCfsPeriod
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/CpuCfsQuota
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/PidsLimit
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/CgroupDriver
+=== RUN   TestSoftEngineCapabilityAndIdentityPreflight/CgroupVersion
+--- PASS: TestSoftEngineCapabilityAndIdentityPreflight (0.01s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/#00 (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/ID (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/DockerRootDir (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/MemoryLimit (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/SwapLimit (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/CpuCfsPeriod (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/CpuCfsQuota (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/PidsLimit (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/CgroupDriver (0.00s)
+    --- PASS: TestSoftEngineCapabilityAndIdentityPreflight/CgroupVersion (0.00s)
+=== RUN   TestSeatHardLimitsAndLoginNoLogPreserved
+--- PASS: TestSeatHardLimitsAndLoginNoLogPreserved (0.00s)
+=== RUN   TestSoftCreatePositiveAndFailureRetainsData
+=== RUN   TestSoftCreatePositiveAndFailureRetainsData/false
+=== RUN   TestSoftCreatePositiveAndFailureRetainsData/true
+--- PASS: TestSoftCreatePositiveAndFailureRetainsData (0.02s)
+    --- PASS: TestSoftCreatePositiveAndFailureRetainsData/false (0.01s)
+    --- PASS: TestSoftCreatePositiveAndFailureRetainsData/true (0.01s)
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/#00
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/label
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/mount
+=== RUN   TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/id
+--- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers (0.03s)
+    --- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/#00 (0.01s)
+    --- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/label (0.01s)
+    --- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/mount (0.01s)
+    --- PASS: TestSoftMonitorWithoutHubStopsOnlyOwnedContainers/id (0.01s)
+=== RUN   TestSoftScanBudgetUnknownAndOutboxAcknowledgement
+--- PASS: TestSoftScanBudgetUnknownAndOutboxAcknowledgement (0.02s)
+=== RUN   TestSoftResourceAndCommittedDiskReserve
+--- PASS: TestSoftResourceAndCommittedDiskReserve (0.01s)
+=== RUN   TestUsageRejectsSameDeviceMountTable
+--- PASS: TestUsageRejectsSameDeviceMountTable (0.00s)
+=== RUN   TestSoftPrivateWriteFailureStillStopsAndCannotResumeAfterCrash
+--- PASS: TestSoftPrivateWriteFailureStillStopsAndCannotResumeAfterCrash (0.01s)
+=== RUN   TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount
+--- PASS: TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount (0.03s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	4.080s

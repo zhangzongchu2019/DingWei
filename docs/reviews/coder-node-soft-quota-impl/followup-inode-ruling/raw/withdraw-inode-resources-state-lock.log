@@ -1,0 +1,9 @@
+=== RUN   TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity
+=== RUN   TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/resources
+    softquota_io_test.go:204: blocked probe did not mark report snapshot unknown
+    softquota_io_test.go:215: blocked statfs held reserve/admit/report
+--- FAIL: TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity (1.03s)
+    --- FAIL: TestSoftBlockedNodeProbesCannotBlockReserveAdmissionOrCapacity/resources (1.03s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	1.038s
+FAIL

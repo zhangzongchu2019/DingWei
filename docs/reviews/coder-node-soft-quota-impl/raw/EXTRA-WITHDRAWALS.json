@@ -1,0 +1,68 @@
+{
+  "code_pin": "fc3db12592983dbff408b653c71702d876994774",
+  "cases": [
+    {
+      "name": "register-replay-hook",
+      "file": "internal/nodeagent/seat.go",
+      "kind": "go",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "b4b3215c0eeca3270ee64a05f9fe96d1f1840fe1a42736d45fe1ae363d2db341",
+      "mutant_sha256": "eb75b70404baf91c5b8f11d0286a71b734c1c764e936af7cf9dbaca6d1a763ae"
+    },
+    {
+      "name": "register-soft-backend",
+      "file": "internal/nodeagent/seat.go",
+      "kind": "go",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "b4b3215c0eeca3270ee64a05f9fe96d1f1840fe1a42736d45fe1ae363d2db341",
+      "mutant_sha256": "6c28dc306faabd667b2b14edf4e506c34b83ef35a2b6d55544ae2a42f03f8ae1"
+    },
+    {
+      "name": "register-monitor-hook",
+      "file": "internal/nodeagent/seat.go",
+      "kind": "go",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "b4b3215c0eeca3270ee64a05f9fe96d1f1840fe1a42736d45fe1ae363d2db341",
+      "mutant_sha256": "7be680ce7e6248d34bdbc8bcea22672f3a4adb31b30df10b9ed2a272a515a326"
+    },
+    {
+      "name": "ui-mode-notice",
+      "file": "internal/m8/console_auth.go",
+      "kind": "browser",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "2a1f90b1df7245bac47aaaedd61a4a97b22152fbae59472c0bb148f70beeea19",
+      "mutant_sha256": "e4879a67cc1842748a7b18a66510d898d8979e277064587ee71d5e6cc6acc911"
+    },
+    {
+      "name": "ui-eligibility",
+      "file": "internal/m8/console_auth.go",
+      "kind": "browser",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "2a1f90b1df7245bac47aaaedd61a4a97b22152fbae59472c0bb148f70beeea19",
+      "mutant_sha256": "810ceee58e6914f0506c529b4905462f5807f78c0c9ed8f68a865895f142339c"
+    },
+    {
+      "name": "ui-consent",
+      "file": "internal/m8/console_auth.go",
+      "kind": "browser",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "2a1f90b1df7245bac47aaaedd61a4a97b22152fbae59472c0bb148f70beeea19",
+      "mutant_sha256": "1519da062d7b48ae4a9f15d5579a694480e00a170e54101e30d3468bed319e5d"
+    },
+    {
+      "name": "ui-held-roster",
+      "file": "internal/m8/console_auth.go",
+      "kind": "browser",
+      "rc": 1,
+      "assertion_red": true,
+      "original_sha256": "2a1f90b1df7245bac47aaaedd61a4a97b22152fbae59472c0bb148f70beeea19",
+      "mutant_sha256": "7e0aeb0f2e637283ecea9eb2bdc30d29e90c9d6294f32b65d736a2f6f371f1df"
+    }
+  ]
+}

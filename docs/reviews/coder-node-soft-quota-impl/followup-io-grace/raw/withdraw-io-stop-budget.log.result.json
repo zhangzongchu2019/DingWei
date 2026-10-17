@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount",
+    "-v",
+    "-count=1",
+    "-timeout=30s"
+  ],
+  "rc": 1,
+  "seconds": 4.439821615116671,
+  "external_DSN_environment_not_inherited": true
+}

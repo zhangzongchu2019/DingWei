@@ -1,0 +1,11 @@
+=== RUN   TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood
+=== RUN   TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood/error
+    softquota_io_test.go:51: first statfs error became F=0 hold or lost warning
+=== RUN   TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood/invalid
+    softquota_io_test.go:51: first statfs error became F=0 hold or lost warning
+--- FAIL: TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood (0.01s)
+    --- FAIL: TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood/error (0.01s)
+    --- FAIL: TestSoftStatfsErrorWarnsBlocksAndExpiresFromLastGood/invalid (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.019s
+FAIL

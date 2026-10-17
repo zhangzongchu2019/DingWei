@@ -1,0 +1,4 @@
+=== RUN   TestSoftRegistrationUsesDirectoryBackendAndReplayGate
+--- PASS: TestSoftRegistrationUsesDirectoryBackendAndReplayGate (0.02s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.022s

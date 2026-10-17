@@ -1,0 +1,6 @@
+=== RUN   TestSoftHoldDurableBeforeStop
+    softquota_test.go:825: hold was not durable before stopping writer
+--- FAIL: TestSoftHoldDurableBeforeStop (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.013s
+FAIL

@@ -1,0 +1,12 @@
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /磁盘测量暂不可用，暂停新建与启动/. Input:
+
+'FixtureSeat 无硬磁盘配额（磁盘保护，数据保留）异常升级重启停用销毁吊销UnknownSeat 无硬磁盘配额（磁盘用量接近限额）online升级重启停用销毁吊销'
+
+    at /data/ai-dev-data/coder-soft-quota-lab/io-withdrawal/view-service/console-soft-quota-regression.js:58:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'FixtureSeat 无硬磁盘配额（磁盘保护，数据保留）异常升级重启停用销毁吊销UnknownSeat 无硬磁盘配额（磁盘用量接近限额）online升级重启停用销毁吊销',
+  expected: /磁盘测量暂不可用，暂停新建与启动/,
+  operator: 'match',
+  diff: 'simple'
+}

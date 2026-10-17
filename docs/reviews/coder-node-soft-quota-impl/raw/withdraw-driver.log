@@ -1,0 +1,64 @@
+withdraw-mode-enum.log rc 1 seconds 1.478
+mode-enum True
+withdraw-approval-refs.log rc 1 seconds 1.583
+approval-refs True
+withdraw-hold-entry.log rc 1 seconds 1.442
+hold-entry True
+withdraw-hold-final-start.log rc 1 seconds 1.651
+hold-final-start True
+withdraw-inode-reserve.log rc 1 seconds 1.496
+inode-reserve True
+withdraw-byte-reserve.log rc 1 seconds 1.522
+byte-reserve True
+withdraw-disk-commitment.log rc 1 seconds 1.557
+disk-commitment True
+withdraw-seat-count.log rc 1 seconds 1.572
+seat-count True
+withdraw-cpu-reserve.log rc 1 seconds 1.599
+cpu-reserve True
+withdraw-memory-commitment.log rc 1 seconds 1.446
+memory-commitment True
+withdraw-memory-available.log rc 1 seconds 0.247
+memory-available False
+withdraw-apparent-charge.log rc 1 seconds 1.468
+apparent-charge True
+withdraw-unknown-gate.log rc 1 seconds 1.353
+unknown-gate True
+withdraw-stale-gate.log rc 1 seconds 1.498
+stale-gate True
+withdraw-warning.log rc 1 seconds 1.399
+warning True
+withdraw-warning-hysteresis.log rc 1 seconds 1.319
+warning-hysteresis True
+withdraw-durable-hold-before-stop.log rc 1 seconds 1.506
+durable-hold-before-stop True
+withdraw-atomic-state-replace.log rc 1 seconds 1.323
+atomic-state-replace True
+withdraw-owner-label-and-id.log rc 1 seconds 1.344
+owner-label-and-id True
+withdraw-owner-bind.log rc 1 seconds 1.487
+owner-bind True
+withdraw-unrecorded-target.log rc 1 seconds 1.292
+unrecorded-target True
+withdraw-unrecorded-final-writer.log rc 1 seconds 1.338
+unrecorded-final-writer True
+withdraw-cpu-hard-limit.log rc 1 seconds 1.447
+cpu-hard-limit True
+withdraw-pid-hard-limit.log rc 1 seconds 1.408
+pid-hard-limit True
+withdraw-bounded-log.log rc 1 seconds 1.331
+bounded-log True
+withdraw-mode-policy-binding.log rc 1 seconds 2.093
+mode-policy-binding True
+withdraw-hard-priority.log rc 1 seconds 3.716
+hard-priority True
+withdraw-soft-user-consent.log rc 1 seconds 3.921
+soft-user-consent True
+withdraw-socket-alias.log rc 1 seconds 0.263
+socket-alias False
+completed 29 assertion_red 27
+withdraw-memory-available.log rc 1 seconds 1.503
+memory-available True
+withdraw-socket-alias.log rc 1 seconds 1.464
+socket-alias True
+completed 29 assertion_red 29

@@ -1,0 +1,9 @@
+{
+  "command": [
+    "node",
+    "view-service/console-hosted-lifecycle-jobs-regression.js"
+  ],
+  "rc": 0,
+  "seconds": 13.439271301031113,
+  "external_DSN_environment_not_inherited": true
+}

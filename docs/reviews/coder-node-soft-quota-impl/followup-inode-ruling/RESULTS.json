@@ -1,0 +1,129 @@
+{
+  "utc": "2026-10-17T09:27:16.691686+00:00",
+  "code_pin": "f713418da0166620da1859897410c0054393bcc8",
+  "gates": {
+    "canonical-inode-final.log": {
+      "command": [
+        "./build.sh",
+        "--test-only"
+      ],
+      "rc": 0,
+      "seconds": 107.8973983488977,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-inode-final.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 8.003176070051268,
+      "external_DSN_environment_not_inherited": true
+    },
+    "nodeagent-race-inode-final.log": {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 14.824625356122851,
+      "external_DSN_environment_not_inherited": true
+    },
+    "hosted-inode-reasons-final.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/hosted",
+        "-run",
+        "TestQuota(EmergencyReasonsUseExistingAuditAndHoldPath|UsageWarningNotifiesWithoutPrematureHold)",
+        "-v",
+        "-count=1",
+        "-timeout=120s"
+      ],
+      "rc": 0,
+      "seconds": 16.649416436906904,
+      "external_DSN_environment_not_inherited": true
+    },
+    "restored-inode-nodeagent.log": {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "./internal/nodeagent",
+        "-v",
+        "-count=1",
+        "-timeout=300s"
+      ],
+      "rc": 0,
+      "seconds": 14.405809301882982,
+      "external_DSN_environment_not_inherited": true
+    },
+    "restored-inode-hosted.log": {
+      "command": [
+        "go",
+        "test",
+        "./internal/hosted",
+        "-run",
+        "TestQuota(EmergencyReasonsUseExistingAuditAndHoldPath|UsageWarningNotifiesWithoutPrematureHold)",
+        "-v",
+        "-count=1",
+        "-timeout=120s"
+      ],
+      "rc": 0,
+      "seconds": 13.866441034013405,
+      "external_DSN_environment_not_inherited": true
+    },
+    "restored-inode-browser.log": {
+      "command": [
+        "node",
+        "view-service/console-soft-quota-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 5.984865599079058,
+      "external_DSN_environment_not_inherited": true
+    }
+  },
+  "counts": {
+    "canonical-inode-final.log": {
+      "top_level_passes": 4,
+      "skips": 0
+    },
+    "nodeagent-inode-final.log": {
+      "top_level_passes": 142,
+      "skips": 0
+    },
+    "nodeagent-race-inode-final.log": {
+      "top_level_passes": 142,
+      "skips": 0
+    },
+    "hosted-inode-reasons-final.log": {
+      "top_level_passes": 2,
+      "skips": 0
+    },
+    "restored-inode-nodeagent.log": {
+      "top_level_passes": 142,
+      "skips": 0
+    },
+    "restored-inode-hosted.log": {
+      "top_level_passes": 2,
+      "skips": 0
+    },
+    "restored-inode-browser.log": {
+      "top_level_passes": 0,
+      "skips": 0
+    }
+  },
+  "current_Go_assertion_red": 33,
+  "current_UI_assertion_red": 1,
+  "old_gate_readings_not_relabelled": true,
+  "host_realDocker_externalPG_realkeys_deploy": false
+}

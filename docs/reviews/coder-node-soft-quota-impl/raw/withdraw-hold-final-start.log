@@ -1,0 +1,6 @@
+=== RUN   TestSoftHoldStopsWithoutDeletionPersistsAndGatesEveryEntry
+    softquota_test.go:198: final held start boundary bypass
+--- FAIL: TestSoftHoldStopsWithoutDeletionPersistsAndGatesEveryEntry (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.017s
+FAIL

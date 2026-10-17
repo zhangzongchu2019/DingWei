@@ -1,0 +1,14 @@
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1
+    softquota_reserve_test.go:178: reserve hold was not durable before enforcer
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0
+    softquota_reserve_test.go:199: below ordinary R admitted writer
+=== RUN   TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1
+    softquota_reserve_test.go:199: below ordinary R admitted writer
+--- FAIL: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion (0.04s)
+    --- FAIL: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/-1 (0.01s)
+    --- FAIL: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/0 (0.01s)
+    --- FAIL: TestSoftEmergencyThresholdBoundariesPersistentHoldAndNoDeletion/inodes/1 (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.045s
+FAIL

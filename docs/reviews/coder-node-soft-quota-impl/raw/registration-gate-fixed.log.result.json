@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftRegistrationUsesDirectoryBackendAndReplayGate$",
+    "-v",
+    "-count=1",
+    "-timeout=60s"
+  ],
+  "rc": 0,
+  "seconds": 1.5186298321932554,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,0 +1,6 @@
+=== RUN   TestSoftReservesUseActualFilesystemTotalWithoutEarlyTruncation
+    softquota_io_test.go:395: percentage calculated after truncating filesystem total 10 20
+--- FAIL: TestSoftReservesUseActualFilesystemTotalWithoutEarlyTruncation (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.009s
+FAIL

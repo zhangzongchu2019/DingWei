@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftHoldDurableBeforeStop$",
+    "-v",
+    "-count=1",
+    "-timeout=60s"
+  ],
+  "rc": 1,
+  "seconds": 1.5056075321044773,
+  "external_DSN_environment_not_inherited": true
+}

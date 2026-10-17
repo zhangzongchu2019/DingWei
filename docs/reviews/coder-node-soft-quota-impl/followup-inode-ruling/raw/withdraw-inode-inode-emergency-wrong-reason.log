@@ -1,0 +1,13 @@
+=== RUN   TestSoftInodeEmergencyBoundariesPersistStopAndRetainData
+=== RUN   TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/-1
+    softquota_inode_test.go:89: inode stop before correct durable intent
+    softquota_inode_test.go:97: inode boundary hold=node_space_emergency stops=0
+=== RUN   TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/0
+=== RUN   TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/1
+--- FAIL: TestSoftInodeEmergencyBoundariesPersistStopAndRetainData (0.03s)
+    --- FAIL: TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/-1 (0.01s)
+    --- PASS: TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/0 (0.01s)
+    --- PASS: TestSoftInodeEmergencyBoundariesPersistStopAndRetainData/1 (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.032s
+FAIL

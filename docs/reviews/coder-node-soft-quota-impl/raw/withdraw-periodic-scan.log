@@ -1,0 +1,6 @@
+=== RUN   TestSoftMonitorMeasuresAgainOnPeriodicTick
+    softquota_test.go:968: periodic measurement missing, hold=usage_unknown
+--- FAIL: TestSoftMonitorMeasuresAgainOnPeriodicTick (0.22s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.226s
+FAIL

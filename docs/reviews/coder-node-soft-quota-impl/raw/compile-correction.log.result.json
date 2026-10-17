@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/hosted",
+    "./internal/nodegate",
+    "./cmd/nodeagent",
+    "./cmd/workpulse",
+    "-run",
+    "^TestNoSuchTest$"
+  ],
+  "rc": 0,
+  "seconds": 7.480378506006673,
+  "external_DSN_environment_not_inherited": true
+}

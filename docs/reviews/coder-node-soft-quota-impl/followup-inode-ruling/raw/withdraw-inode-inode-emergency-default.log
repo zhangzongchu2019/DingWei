@@ -1,0 +1,6 @@
+=== RUN   TestSoftInodeEmergencyIndependentConfiguration
+    softquota_inode_test.go:16: inode emergency default must be50
+--- FAIL: TestSoftInodeEmergencyIndependentConfiguration (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.007s
+FAIL

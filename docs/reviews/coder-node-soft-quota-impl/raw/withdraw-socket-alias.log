@@ -1,0 +1,6 @@
+=== RUN   TestSoftApprovalReferencesAndDefaultSocketAliases
+    softquota_test.go:764: default socket alias accepted /tmp/sq-sock-3705858379/default.sock
+--- FAIL: TestSoftApprovalReferencesAndDefaultSocketAliases (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.007s
+FAIL

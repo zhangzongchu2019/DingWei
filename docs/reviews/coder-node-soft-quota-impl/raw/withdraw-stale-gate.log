@@ -1,0 +1,6 @@
+=== RUN   TestSoftUnknownAndAgeGateRecovery
+    softquota_test.go:687: stale metadata admitted writer
+--- FAIL: TestSoftUnknownAndAgeGateRecovery (0.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.021s
+FAIL

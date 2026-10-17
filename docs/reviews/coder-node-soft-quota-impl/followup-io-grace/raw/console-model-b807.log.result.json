@@ -1,0 +1,9 @@
+{
+  "command": [
+    "node",
+    "view-service/console-hosted-model-regression.js"
+  ],
+  "rc": 0,
+  "seconds": 4.010169132845476,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "Test(SoftHoldDurableBeforeStop|UsageFDStability)",
+    "-v",
+    "-count=1",
+    "-timeout=120s"
+  ],
+  "rc": 0,
+  "seconds": 1.9551841248758137,
+  "external_DSN_environment_not_inherited": true
+}

@@ -1,0 +1,14 @@
+withdraw-register-replay-hook.log rc 1 seconds 1.481
+register-replay-hook True
+withdraw-register-soft-backend.log rc 1 seconds 1.407
+register-soft-backend True
+withdraw-register-monitor-hook.log rc 1 seconds 1.333
+register-monitor-hook True
+withdraw-ui-mode-notice.log rc 1 seconds 5.532
+ui-mode-notice True
+withdraw-ui-eligibility.log rc 1 seconds 4.127
+ui-eligibility True
+withdraw-ui-consent.log rc 1 seconds 4.361
+ui-consent True
+withdraw-ui-held-roster.log rc 1 seconds 4.236
+ui-held-roster True

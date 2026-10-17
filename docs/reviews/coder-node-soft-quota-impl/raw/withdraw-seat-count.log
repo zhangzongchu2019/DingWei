@@ -1,0 +1,6 @@
+=== RUN   TestSoftReservationBytesInodesInventoryConcurrencyAndReplay
+    softquota_test.go:277: concurrent over-admission
+--- FAIL: TestSoftReservationBytesInodesInventoryConcurrencyAndReplay (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.012s
+FAIL

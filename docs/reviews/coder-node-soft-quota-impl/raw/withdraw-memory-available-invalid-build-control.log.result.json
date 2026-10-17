@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/nodeagent",
+    "-run",
+    "^TestSoftMemoryCommitAndAvailableReserveSeparate$",
+    "-v",
+    "-count=1",
+    "-timeout=60s"
+  ],
+  "rc": 1,
+  "seconds": 0.24699895596131682,
+  "external_DSN_environment_not_inherited": true
+}

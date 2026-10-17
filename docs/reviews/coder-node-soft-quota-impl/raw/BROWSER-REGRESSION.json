@@ -1,0 +1,18 @@
+[
+  {
+    "suite": "console-agent-mgmt-hosted-regression.js",
+    "rc": 1
+  },
+  {
+    "suite": "console-hosted-model-regression.js",
+    "rc": 0
+  },
+  {
+    "suite": "console-hosted-lifecycle-jobs-regression.js",
+    "rc": 0
+  },
+  {
+    "suite": "console-quota-regression.js",
+    "rc": 0
+  }
+]

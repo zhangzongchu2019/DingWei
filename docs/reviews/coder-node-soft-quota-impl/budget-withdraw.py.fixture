@@ -1,0 +1,12 @@
+import pathlib,subprocess,hashlib,json
+lab=pathlib.Path('/data/ai-dev-data/coder-soft-quota-lab');root=lab/'withdrawal';pin='0d43a75ea7d3dc025edeb5e7a414ab00e12a1bf8';runner=lab/'run-local.py';file='internal/nodeagent/softquota.go'
+original=subprocess.check_output(['git','show',pin+':'+file],cwd=root).decode();results=[]
+cases=[('scan-budget','func (q *softQuota) scan(', 'context.WithTimeout(ctx, q.policy.ScanBudget)','context.WithCancel(ctx)','TestSoftScanBudgetUnknownAndOutboxAcknowledgement'),('stop-batch-budget','func (q *softQuota) stopHeldLocked(', 'context.WithTimeout(ctx, q.policy.StopTimeout)','context.WithCancel(ctx)','TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount'),('periodic-scan','func (d *dockerOps) runSoft(', 'case <-scan.C:\n\t\t\td.soft.scan(ctx, d.stopOwned)','case <-scan.C:\n\t\t\tcontinue','TestSoftMonitorMeasuresAgainOnPeriodicTick')]
+for name,scope,old,new,test in cases:
+ try:
+  index=original.index(scope);at=original.index(old,index);mutant=original[:at]+original[at:].replace(old,new,1);(root/file).write_text(mutant)
+  log='withdraw-'+name+'.log';rc=subprocess.call(['python3',str(runner),log,'go','test','./internal/nodeagent','-run','^'+test+'$','-v','-count=1','-timeout=30s'],cwd=root);raw=(lab/'evidence'/log).read_text();good=rc==1 and ('--- FAIL: '+test) in raw and '[build failed]' not in raw and 'test timed out' not in raw
+  results.append({'name':name,'file':file,'test':test,'rc':rc,'assertion_red':good,'original_sha256':hashlib.sha256(original.encode()).hexdigest(),'mutant_sha256':hashlib.sha256(mutant.encode()).hexdigest()});print(name,good,flush=True)
+ finally:(root/file).write_text(original)
+ (lab/'evidence'/'BUDGET-WITHDRAWALS.json').write_text(json.dumps({'code_pin':pin,'cases':results},indent=2)+'\n')
+assert all(r['assertion_red'] for r in results)

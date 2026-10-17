@@ -16,18 +16,26 @@ import (
 )
 
 type Capacity struct {
-	NodeID      string            `json:"node_id"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	At          time.Time         `json:"at"`
-	CPUTotal    int               `json:"cpu_total"`
-	MemTotalMB  int64             `json:"mem_total_mb"`
-	MemFreeMB   int64             `json:"mem_free_mb"`
-	DiskTotalMB int64             `json:"disk_total_mb"`
-	DiskFreeMB  int64             `json:"disk_free_mb"`
-	Seats       []seatInfo        `json:"seats"`
-	Models      []string          `json:"models,omitempty"` // 包 B2：本节点可选模型清单（NODEAGENT_SEAT_CODEX_MODELS 上报；空＝不支持自选）
-	ImageCount  int               `json:"image_count"`
-	ImageSizeMB int64             `json:"image_size_mb"`
+	DiskSnapshotValid     *bool               `json:"disk_snapshot_valid,omitempty"`
+	DiskSnapshotAt        *time.Time          `json:"disk_snapshot_at,omitempty"`
+	ResourceLimitsVersion int                 `json:"resource_limits_version,omitempty"`
+	QuotaMode             string              `json:"quota_mode"`
+	QuotaPolicyRevision   string              `json:"quota_policy_revision"`
+	SoftReady             bool                `json:"soft_ready"`
+	SoftSeats             map[string]softSeat `json:"soft_seats,omitempty"`
+	QuotaEvents           []quotaEvent        `json:"quota_events,omitempty"`
+	NodeID                string              `json:"node_id"`
+	Labels                map[string]string   `json:"labels,omitempty"`
+	At                    time.Time           `json:"at"`
+	CPUTotal              int                 `json:"cpu_total"`
+	MemTotalMB            int64               `json:"mem_total_mb"`
+	MemFreeMB             int64               `json:"mem_free_mb"`
+	DiskTotalMB           int64               `json:"disk_total_mb"`
+	DiskFreeMB            int64               `json:"disk_free_mb"`
+	Seats                 []seatInfo          `json:"seats"`
+	Models                []string            `json:"models,omitempty"` // 包 B2：本节点可选模型清单（NODEAGENT_SEAT_CODEX_MODELS 上报；空＝不支持自选）
+	ImageCount            int                 `json:"image_count"`
+	ImageSizeMB           int64               `json:"image_size_mb"`
 }
 
 type seatInfo struct {
@@ -39,16 +47,34 @@ type seatInfo struct {
 func (d *dockerOps) collectCapacity(ctx context.Context) (Capacity, error) {
 	c := Capacity{NodeID: "", Labels: nil, At: time.Now().UTC()}
 	c.CPUTotal = runtime.NumCPU()
-	total, free, err := memInfoMB("/proc/meminfo")
-	if err != nil {
-		return c, err
+	c.ResourceLimitsVersion = 1
+	c.QuotaMode = d.policyValue().Mode
+	c.QuotaPolicyRevision = d.policyValue().Revision()
+	if d.soft != nil {
+		c.SoftSeats, c.QuotaEvents, c.SoftReady = d.soft.report()
 	}
-	c.MemTotalMB, c.MemFreeMB = total, free
-	dt, df, err := diskMB(d.seatRoot)
-	if err != nil {
-		return c, err
+	if d.soft != nil {
+		d.soft.mu.Lock()
+		c.MemTotalMB, c.MemFreeMB = d.soft.sampledTotal>>20, d.soft.sampledAvailable>>20
+		c.DiskTotalMB, c.DiskFreeMB = d.soft.space.Total>>20, d.soft.space.Free>>20
+		at := d.soft.state.LastSpaceAt
+		c.DiskSnapshotAt = &at
+		valid := !d.soft.rootUnknownLocked()
+		c.DiskSnapshotValid = &valid
+		d.soft.mu.Unlock()
+	} else {
+		total, free, err := memInfoMB("/proc/meminfo")
+		if err != nil {
+			return c, err
+		}
+		c.MemTotalMB, c.MemFreeMB = total, free
+		dt, df, err := diskMB(d.seatRoot)
+		if err != nil {
+			return c, err
+		}
+		c.DiskTotalMB, c.DiskFreeMB = dt, df
+
 	}
-	c.DiskTotalMB, c.DiskFreeMB = dt, df
 	c.Models = d.seatModels
 
 	// 容器清单（seat- 前缀）
@@ -126,6 +152,9 @@ func (d *dockerOps) reportCapacity(ctx context.Context, _ json.RawMessage) (json
 
 // changedBeyond 变更触发阈值：内存或磁盘余量变化超过 1 GiB，或席位清单变化。
 func changedBeyond(a, b Capacity) bool {
+	if a.QuotaMode != b.QuotaMode || a.SoftReady != b.SoftReady || len(a.QuotaEvents) != len(b.QuotaEvents) {
+		return true
+	}
 	if abs64(a.MemFreeMB-b.MemFreeMB) > 1024 || abs64(a.DiskFreeMB-b.DiskFreeMB) > 1024 {
 		return true
 	}

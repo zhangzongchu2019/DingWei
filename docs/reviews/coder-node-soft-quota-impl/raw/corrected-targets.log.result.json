@@ -1,0 +1,16 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/hosted",
+    "./internal/nodeagent",
+    "-run",
+    "Test(QuotaRegistration|QuotaEvent|Soft|HardNodeResource|NodePolicy|NodeResource|DualUsage|SeatHardLimits|UsageRejects)",
+    "-v",
+    "-count=1",
+    "-timeout=180s"
+  ],
+  "rc": 0,
+  "seconds": 9.661873576929793,
+  "external_DSN_environment_not_inherited": true
+}

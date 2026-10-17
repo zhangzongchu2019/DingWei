@@ -1,0 +1,19 @@
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize
+2026/10/17 09:32:33 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0300_console_transport_slot.sql
+flag provided but not defined: -quota-mode
+Usage of register-node:
+  -docker-version string
+    	节点 Docker 主版本（默认 29 仅联调） (default "29")
+  -id string
+    	节点 ID（nd_ 前缀）
+  -labels string
+    	标签 JSON（如 pool） (default "{}")
+  -name string
+    	节点名
+  -protocol-version int
+    	节点协议版本（默认 1 仅联调） (default 1)
+    hosted_admin_quota_test.go:20: soft CLI registration failed or credential output count invalid: flag provided but not defined: -quota-mode
+--- FAIL: TestHostedAdminQuotaRegistrationCLIToNormalize (2.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	2.007s
+FAIL

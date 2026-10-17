@@ -125,6 +125,7 @@ var hostedErrorCodes = []struct {
 	{hosted.ErrComboNotVerified, "combo_not_verified", http.StatusBadRequest},
 	{hosted.ErrAccountNotAllowed, "account_not_allowed", http.StatusBadRequest},
 	{hosted.ErrAccountBound, "account_not_allowed", http.StatusConflict},
+	{hosted.ErrSoftQuotaHeld, "soft_quota_held", http.StatusConflict},
 	{hosted.ErrNoNodeCapacity, "node_no_capacity", http.StatusConflict},
 	{hosted.ErrQuotaExceeded, "quota_exceeded", http.StatusConflict},
 	{hosted.ErrPlanExceedsQuota, "plan_exceeds_quota", http.StatusConflict},
@@ -198,6 +199,7 @@ func (d hostedDeps) handleCreate(w http.ResponseWriter, r *http.Request) {
 		Name    string `json:"name"`
 		GroupID string `json:"group_id"` // 编组的 32 位 code（与 identity 批准接口 group_code 同值同义；可缺省）
 		// NewGroupName 就地新建编组（页面「新建编组…」；R-V2-0102-GROUP-FIXES A）。与 group_id 二选一。
+		AllowSoft    bool   `json:"allow_soft"`
 		NewGroupName string `json:"new_group_name"`
 		NodeID       string `json:"node_id"`
 		CLI          string `json:"cli"`
@@ -223,7 +225,7 @@ func (d hostedDeps) handleCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	out, err := d.orch.Create(r.Context(), hosted.CreateRequest{
-		OwnerLC: actor, By: actor, Name: req.Name, GroupCode: req.GroupID, NewGroupName: req.NewGroupName,
+		AllowSoft: req.AllowSoft, OwnerLC: actor, By: actor, Name: req.Name, GroupCode: req.GroupID, NewGroupName: req.NewGroupName,
 		NodeID: req.NodeID, CLI: req.CLI, LLM: req.LLM, AccountID: req.AccountID, Plan: req.PlanID, Model: req.Model,
 	})
 	if err != nil {

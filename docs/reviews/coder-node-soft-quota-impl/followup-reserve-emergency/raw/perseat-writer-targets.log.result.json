@@ -1,0 +1,16 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./internal/nodeagent",
+    "-run",
+    "TestSoft(Reserve|Emergency|BlockedWriter)",
+    "-v",
+    "-count=10",
+    "-timeout=180s"
+  ],
+  "rc": 0,
+  "seconds": 7.194497005082667,
+  "external_DSN_environment_not_inherited": true
+}

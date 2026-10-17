@@ -1,0 +1,11 @@
+=== RUN   TestSoftHoldDurableBeforeStop
+--- PASS: TestSoftHoldDurableBeforeStop (0.01s)
+=== RUN   TestUsageFDStability
+    softquota_test.go:841: === RUN   TestUsageFDStability
+            softquota_test.go:867: FD_PROBE_OK before=7 after=7 iterations=1000 GC=off RLIMIT=128
+        --- PASS: TestUsageFDStability (0.59s)
+        PASS
+        
+--- PASS: TestUsageFDStability (0.60s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.618s

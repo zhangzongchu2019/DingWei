@@ -1,0 +1,22 @@
+{
+  "utc": "2026-10-17T08:13:40.779845+00:00",
+  "scope": "owned private caches/HOME/disposable test TMPDIR only; shared module cache and all other seats untouched",
+  "fixture_processes_before_cleanup": 0,
+  "paths": [
+    {
+      "path": "/data/ai-dev-data/coder-soft-quota-lab/gocache",
+      "bytes_before": 1082093383,
+      "exists_after": false
+    },
+    {
+      "path": "/data/ai-dev-data/coder-soft-quota-lab/home",
+      "bytes_before": 83357075,
+      "exists_after": false
+    },
+    {
+      "path": "/tmp/sq-rezyx7ut",
+      "bytes_before": 2279060,
+      "exists_after": false
+    }
+  ]
+}

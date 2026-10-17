@@ -5,6 +5,7 @@ package main
 //
 // 用法：
 //   workpulse hosted-admin register-node --id nd_106 --name 106 [--labels '{"pool":"x"}']
+//     [--quota-mode soft --quota-policy-revision <approved-node-policy-sha256>]
 //     ⇒ 打印一次性节点凭据（只此一次；落库只存哈希）
 //   workpulse hosted-admin assign-owner --account <acct_id> --owner <user_lc>
 //     ⇒ 只给无主存量账号指派属主（已有主不可改）
@@ -53,6 +54,8 @@ func runHostedAdmin(args []string) error {
 		// R-G4-HOSTED-ADMIN-TESTS：默认 29/1 仅联调用；接真节点时按节点实际版本显式传。
 		dockerVer := fs.String("docker-version", "29", "节点 Docker 主版本（默认 29 仅联调）")
 		protoVer := fs.Int("protocol-version", 1, "节点协议版本（默认 1 仅联调）")
+		quotaMode := fs.String("quota-mode", "hard", "磁盘配额模式 hard 或 soft（soft 无硬磁盘配额，须另获批准）")
+		quotaRevision := fs.String("quota-policy-revision", "", "soft 模式必填：批准的节点策略 SHA256（64 位小写十六进制）")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
 		}
@@ -60,7 +63,8 @@ func runHostedAdmin(args []string) error {
 			return fmt.Errorf("--id 与 --name 必填")
 		}
 		secret, err := st.RegisterNode(ctx, hosted.Node{ID: *id, Name: *name, Labels: []byte(*labels),
-			DockerVersion: *dockerVer, ProtocolVersion: *protoVer}, "hosted-admin")
+			DockerVersion: *dockerVer, ProtocolVersion: *protoVer,
+			QuotaMode: *quotaMode, QuotaPolicyRevision: *quotaRevision}, "hosted-admin")
 		if err != nil {
 			return err
 		}

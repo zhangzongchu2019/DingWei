@@ -15,13 +15,16 @@ import (
 // ---------- options 读模型（GET /api/console/hosted/options） ----------
 
 type NodeOption struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	Pool       string `json:"pool"`
-	Online     bool   `json:"online"`
-	FreeMemGB  int64  `json:"free_mem_gb"`
-	FreeVCPU   int    `json:"free_vcpu"`
-	FreeDiskGB int64  `json:"free_disk_gb"`
+	QuotaMode     string `json:"quota_mode,omitempty"`
+	QuotaNotice   string `json:"quota_notice,omitempty"`
+	QuotaEligible *bool  `json:"quota_eligible,omitempty"`
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Pool          string `json:"pool"`
+	Online        bool   `json:"online"`
+	FreeMemGB     int64  `json:"free_mem_gb"`
+	FreeVCPU      int    `json:"free_vcpu"`
+	FreeDiskGB    int64  `json:"free_disk_gb"`
 }
 
 type ComboOption struct {
@@ -106,7 +109,20 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 		if json.Unmarshal(n.Labels, &labels) == nil {
 			pool = labels["pool"]
 		}
+		mode, _ := registeredQuota(n)
+		notice := ""
+		if mode == "soft" {
+			notice = "无硬磁盘配额"
+		}
+		eligible := nodeQuotaEligible(n)
+		var publicEligible *bool
+		publicMode := ""
+		if mode != "hard" || !eligible {
+			publicEligible = &eligible
+			publicMode = mode
+		}
 		v.Nodes = append(v.Nodes, NodeOption{
+			QuotaMode: publicMode, QuotaNotice: notice, QuotaEligible: publicEligible,
 			ID: n.ID, Name: n.Name, Pool: pool, Online: n.State == "online",
 			FreeMemGB: c.MemFreeMB / 1024, FreeVCPU: max(0, c.CPUTotal-usedVCPU), FreeDiskGB: c.DiskFreeMB / 1024,
 		})

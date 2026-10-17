@@ -1,0 +1,24 @@
+import pathlib,subprocess,hashlib,json
+lab=pathlib.Path('/data/ai-dev-data/coder-soft-quota-lab');root=lab/'withdrawal';pin='fc3db12592983dbff408b653c71702d876994774';runner=lab/'run-local.py'
+cases=[
+ ('register-replay-hook','internal/nodeagent/seat.go','a.commandGate = q.commandGate','a.commandGate = nil','go'),
+ ('register-soft-backend','internal/nodeagent/seat.go','d.quota = softDirectory{}','d.quota = quota','go'),
+ ('register-monitor-hook','internal/nodeagent/seat.go','a.background = d.runSoft','a.background = nil','go'),
+ ('ui-mode-notice','internal/m8/console_auth.go',"(n.quota_mode==='soft'?'【无硬磁盘配额】':'')","''",'browser'),
+ ('ui-eligibility','internal/m8/console_auth.go','disabled:!n.online||n.quota_eligible===false','disabled:!n.online','browser'),
+ ('ui-consent','internal/m8/console_auth.go','if(softConsent&&softConsent.checked)body.allow_soft=true;','/* withdrawn consent */','browser'),
+ ('ui-held-roster','internal/m8/console_auth.go',"a.hosted.quota_mode==='soft'",'false','browser'),
+]
+results=[]
+for name,file,old,new,kind in cases:
+ original=subprocess.check_output(['git','show',pin+':'+file],cwd=root).decode();p=root/file
+ try:
+  assert original.count(old)==1,(name,original.count(old));mutated=original.replace(old,new);p.write_text(mutated)
+  log='withdraw-'+name+'.log'
+  command=['go','test','./internal/nodeagent','-run','^TestSoftRegistrationUsesDirectoryBackendAndReplayGate$','-v','-count=1','-timeout=60s'] if kind=='go' else ['node','view-service/console-soft-quota-regression.js']
+  rc=subprocess.call(['python3',str(runner),log,*command],cwd=root);raw=(lab/'evidence'/log).read_text()
+  good=rc==1 and ('--- FAIL: TestSoftRegistrationUsesDirectoryBackendAndReplayGate' in raw if kind=='go' else 'AssertionError' in raw) and '[build failed]' not in raw
+  results.append({'name':name,'file':file,'kind':kind,'rc':rc,'assertion_red':good,'original_sha256':hashlib.sha256(original.encode()).hexdigest(),'mutant_sha256':hashlib.sha256(mutated.encode()).hexdigest()});print(name,good,flush=True)
+ finally:p.write_text(original)
+ (lab/'evidence'/'EXTRA-WITHDRAWALS.json').write_text(json.dumps({'code_pin':pin,'cases':results},indent=2)+'\n')
+assert all(x['assertion_red'] for x in results)
