@@ -33,6 +33,7 @@ type quotaEvent struct {
 	At     time.Time `json:"at"`
 }
 type softSeat struct {
+	writerGate   chan struct{} // Per-seat only; never serialized or reported.
 	UsageUnknown bool          `json:"usage_unknown"`
 	Limit        int64         `json:"limit_bytes"`
 	Resources    seatResources `json:"resources"`
@@ -56,7 +57,6 @@ type softQuota struct {
 	resources          func() (int64, int64, int64, error)
 	mu                 sync.Mutex
 	enforceMu          sync.Mutex
-	writerGate         chan struct{}
 	policy             NodePolicy
 	root, path, nodeID string
 	state              softState
@@ -110,7 +110,7 @@ func newSoftQuota(p NodePolicy, root, path, nodeID string) (*softQuota, error) {
 		lock.Close()
 		return nil, fmt.Errorf("soft quota controller already running")
 	}
-	q := &softQuota{writerGate: make(chan struct{}, 1), resources: hostResourceBudget, policy: p, root: root, path: path, nodeID: nodeID, now: time.Now, usage: measureUsage, disk: readSpace, lock: lock, state: softState{Version: 1, NodeID: nodeID, Root: root, Active: true, Seats: map[string]*softSeat{}}}
+	q := &softQuota{resources: hostResourceBudget, policy: p, root: root, path: path, nodeID: nodeID, now: time.Now, usage: measureUsage, disk: readSpace, lock: lock, state: softState{Version: 1, NodeID: nodeID, Root: root, Active: true, Seats: map[string]*softSeat{}}}
 	fail := func(err error) (*softQuota, error) { lock.Close(); return nil, err }
 	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
 	if err == syscall.ENOENT {
@@ -367,21 +367,26 @@ func (q *softQuota) commandGate(cmd Command) error {
 // Writer operations and automatic stop share a gate, but never hold the state
 // mutex during a walk or Engine request. Reserve can durably hold while either
 // is blocked; a stop runs after any in-flight start, never before a late start.
-func (q *softQuota) acquireWriter(ctx context.Context) error {
+func (q *softQuota) acquireWriter(ctx context.Context, id string) (func(), error) {
+	q.mu.Lock()
+	seat := q.state.Seats[id]
+	if seat == nil {
+		q.mu.Unlock()
+		return nil, ErrSoftQuota
+	}
+	if seat.writerGate == nil {
+		seat.writerGate = make(chan struct{}, 1)
+	}
+	gate := seat.writerGate
+	q.mu.Unlock()
 	select {
-	case q.writerGate <- struct{}{}:
-		return nil
+	case gate <- struct{}{}:
+		return func() { <-gate }, nil
 	case <-ctx.Done():
-		return ctx.Err()
+		return nil, ctx.Err()
 	}
 }
 func (q *softQuota) start(ctx context.Context, id string, fn func(context.Context) error) error {
-	gateCtx, gateCancel := context.WithTimeout(ctx, q.policy.StopTimeout)
-	defer gateCancel()
-	if err := q.acquireWriter(gateCtx); err != nil {
-		return err
-	}
-	defer func() { <-q.writerGate }()
 	q.mu.Lock()
 	if err := q.admitLocked(0); err != nil {
 		q.mu.Unlock()
@@ -425,6 +430,22 @@ func (q *softQuota) start(ctx context.Context, id string, fn func(context.Contex
 	}
 	if pe != nil {
 		return fmt.Errorf("%w: private_state_unavailable", ErrSoftQuota)
+	}
+	gateCtx, gateCancel := context.WithTimeout(ctx, q.policy.StopTimeout)
+	defer gateCancel()
+	release, gateErr := q.acquireWriter(gateCtx, id)
+	if gateErr != nil {
+		return gateErr
+	}
+	defer release()
+	q.mu.Lock()
+	gateErr = q.admitLocked(0)
+	if q.state.Seats[id] != seat || seat.Hold != "" {
+		gateErr = ErrSoftQuota
+	}
+	q.mu.Unlock()
+	if gateErr != nil {
+		return gateErr
 	}
 	c2, cancel2 := context.WithTimeout(ctx, q.policy.StopTimeout)
 	defer cancel2()
@@ -499,10 +520,15 @@ func (q *softQuota) scan(ctx context.Context, stop func(context.Context, string,
 	q.enforce(ctx, stop)
 }
 func (d *dockerOps) stopOwned(ctx context.Context, id, cid string) error {
-	if err := d.soft.acquireWriter(ctx); err != nil {
+	release, err := d.soft.acquireWriter(ctx, id)
+	if err != nil {
 		return err
 	}
-	defer func() { <-d.soft.writerGate }()
+	defer release()
+	if !d.soft.recorded(id, cid) {
+		return fmt.Errorf("unrecorded stop target")
+	}
+
 	var v struct {
 		ID     string `json:"Id"`
 		Config struct {

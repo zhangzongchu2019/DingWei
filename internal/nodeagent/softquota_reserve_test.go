@@ -265,6 +265,7 @@ func TestSoftEmergencyConfigAndUnknownSpaceFailClosed(t *testing.T) {
 func TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart(t *testing.T) {
 	q, _ := softFixture(t)
 	reserveFixture(t, q, "ag_one")
+	q.track("ag_one", "cid")
 	entered, release := make(chan struct{}), make(chan struct{})
 	q.usage = func(context.Context, string, string) (diskUsage, error) {
 		close(entered)
@@ -287,6 +288,19 @@ func TestSoftReserveCanHoldDuringWriterWalkBeforeAnyStart(t *testing.T) {
 		<-result
 		t.Fatal("writer walk retained state lock")
 	}
+	stopped := make(chan struct{}, 1)
+	d := reserveMonitorFixture(t, q, func(context.Context) { stopped <- struct{}{} })
+	enforced := make(chan struct{})
+	go func() { q.enforce(context.Background(), d.stopOwned); close(enforced) }()
+	select {
+	case <-stopped:
+	case <-time.After(time.Second):
+		close(release)
+		<-result
+		<-enforced
+		t.Fatal("writer walk gate prevented stopping existing writer")
+	}
+	<-enforced
 	close(release)
 	if err := <-result; err == nil || called {
 		t.Fatal("emergency hold bypassed before start")
@@ -367,5 +381,31 @@ func TestSoftEmergencyCannotStopBeforeLateWriterStart(t *testing.T) {
 	waitReserve(t, stopped, "held late start was not subsequently stopped")
 	if running.Load() {
 		t.Fatal("held writer left running")
+	}
+}
+
+func TestSoftBlockedWriterDoesNotSerializeOtherSeatStops(t *testing.T) {
+	q, _ := softFixture(t)
+	reserveFixture(t, q, "ag_one")
+	reserveFixture(t, q, "ag_two")
+	q.track("ag_one", "one")
+	q.track("ag_two", "two")
+	q.policy.StopTimeout = 100 * time.Millisecond
+	entered, release := make(chan struct{}), make(chan struct{})
+	result := make(chan error, 1)
+	go func() {
+		result <- q.start(context.Background(), "ag_one", func(context.Context) error { close(entered); <-release; return nil })
+	}()
+	waitReserve(t, entered, "first writer did not enter")
+	defer func() { close(release); <-result }()
+	q.disk = func(string) (fsSpace, error) { return fsSpace{1 << 40, 1, 10000000, 10000000}, nil }
+	q.checkReserve()
+	d := reserveMonitorFixture(t, q, nil)
+	q.enforce(context.Background(), d.stopOwned)
+	q.mu.Lock()
+	first, second := q.state.Seats["ag_one"].StopState, q.state.Seats["ag_two"].StopState
+	q.mu.Unlock()
+	if first != "unknown" || second != "stopped" {
+		t.Fatalf("one blocked writer serialized unrelated stop: first=%s second=%s", first, second)
 	}
 }
