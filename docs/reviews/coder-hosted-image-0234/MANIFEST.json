@@ -20,20 +20,20 @@
     "sha256": "70c47fea42f00e7476caa486594ce12008a2324409e108568ac4a1a8c8a59387"
   },
   "deploy/ops/hosted-image/build-image.sh": {
-    "bytes": 1479,
-    "sha256": "a7ab02079ec2c8cc49822d64fb05a25f1b0d201d43dad0ee9025712ce08a302a"
+    "bytes": 2121,
+    "sha256": "1db6b7170965810be35a1b25f7784a7fa4c537a70642b7aaa769eec3d176d64c"
   },
   "deploy/ops/hosted-image/verify_runtime.py": {
     "bytes": 518,
     "sha256": "eba5b2c638ef0d752e6b34af1ee921f288352a85359c85831c7e3ac84dce03bf"
   },
   "deploy/ops/hosted-image/test_build_definition.py": {
-    "bytes": 14990,
-    "sha256": "9bd45205925cbb5bba0b9c2119877dca38364970ca8d8bcb76d1d20a7e0b4a9f"
+    "bytes": 17035,
+    "sha256": "3aa05f3d17fd0a8a3a82ea2b97d5eb1ed4d87d46acf48c5fa0dd793efa4f8d2a"
   },
   "deploy/ops/hosted-image/BUILD-0234.md": {
-    "bytes": 5684,
-    "sha256": "c1d5addd61a36026e010767b66406a7bed72d8254319511127e307db69164236"
+    "bytes": 7092,
+    "sha256": "a75427eb0dac638cc4352daa93f6e7a23ad54d34645e25a8afc698cd46aa78f0"
   },
   "docs/reviews/coder-hosted-image-0234/WITHDRAWAL.json": {
     "bytes": 520,
@@ -44,8 +44,8 @@
     "sha256": "e2951222723a86a25fd906b494d8ae9d99ee74a1ee446c563b6be4ad9485fa22"
   },
   "docs/reviews/coder-hosted-image-0234/REPORT.md": {
-    "bytes": 5230,
-    "sha256": "6938efa89cea32df7fb05a2b0512234b0b63bee5e1cf6117bbe3b85b9322d0f9"
+    "bytes": 6638,
+    "sha256": "61c42b4b0cc0f1be369984764d7162e44a4b9e0a6056031284ff8a4bae2f28f4"
   },
   "docs/reviews/coder-hosted-image-0234/raw/definition.log": {
     "bytes": 98,
@@ -82,5 +82,21 @@
   "docs/reviews/coder-hosted-image-0234/rework/WITHDRAWAL.json": {
     "bytes": 535,
     "sha256": "4ea4a4c52e61de4441d7cd988f3c400ca16c1a36c3b75d7efa3485621118a4fb"
+  },
+  "docs/reviews/coder-hosted-image-0234/engine-preflight/identity-preflight-withdrawal.log": {
+    "bytes": 1289,
+    "sha256": "4038ede09e78b118bd251e5ac920d21747b7b43af2acfdd53bbc686def643c2d"
+  },
+  "docs/reviews/coder-hosted-image-0234/engine-preflight/combined.log": {
+    "bytes": 4787,
+    "sha256": "b592673b455ce310e7e08437bded8b7586ae2cde75b65226bcfe518f069d025e"
+  },
+  "docs/reviews/coder-hosted-image-0234/engine-preflight/WITHDRAWAL.json": {
+    "bytes": 492,
+    "sha256": "58d1d8c2f41ea5324a18bdc3a832b6781f9fadc0f8116cf90b0fc562ac2f4078"
+  },
+  "docs/reviews/coder-hosted-image-0234/engine-preflight/existing-socket-withdrawal.log": {
+    "bytes": 921,
+    "sha256": "d84217057cf2e83357a115e2a1847d248a5a5aef5ab39e40d547f5d8d939355f"
   }
 }

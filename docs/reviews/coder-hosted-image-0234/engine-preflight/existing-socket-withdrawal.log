@@ -1,0 +1,14 @@
+test_engine_existing_socket_and_approved_identity_preflight (test_build_definition.StartupAndDefinition.test_engine_existing_socket_and_approved_identity_preflight) ... FAIL
+
+======================================================================
+FAIL: test_engine_existing_socket_and_approved_identity_preflight (test_build_definition.StartupAndDefinition.test_engine_existing_socket_and_approved_identity_preflight)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-h3-engine-stc3asd1/fixture/test_build_definition.py", line 248, in test_engine_existing_socket_and_approved_identity_preflight
+    self.assertIn(b'socket missing', result.stderr)
+AssertionError: b'socket missing' not found in b'isolated Engine identity mismatch\n'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.039s
+
+FAILED (failures=1)

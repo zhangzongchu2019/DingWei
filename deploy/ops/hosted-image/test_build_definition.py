@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import socket
 import tarfile
 import tempfile
 import tomllib
@@ -230,6 +231,39 @@ class StartupAndDefinition(unittest.TestCase):
             self.assertNotEqual(third.returncode, 0)
             self.assertIn(b'default host Engine alias forbidden', third.stderr)
 
+
+    def test_engine_existing_socket_and_approved_identity_preflight(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); endpoint = root/'engine.sock'; calls = root/'calls'
+            fake = root/'docker'
+            fake.write_text('#!/bin/sh\necho "$*" >> "$FIXTURE_CALLS"\nprintf "%s\\n" "$FIXTURE_ENGINE_ID"\n')
+            fake.chmod(0o755)
+            env = dict(PATH=str(root)+':'+os.defpath, SOURCE_COMMIT='a'*40,
+                       HOSTED_BUILD_CONTEXT=str(root/'never-context'), HOSTED_IMAGE_TAG='fixture',
+                       HOSTED_BUILD_ENGINE='unix://'+str(endpoint), HOSTED_BUILD_ENGINE_ID='approved-isolated-fixture',
+                       FIXTURE_CALLS=str(calls), FIXTURE_ENGINE_ID='different-fixture')
+            def run(): return subprocess.run(['sh', str(HERE/'build-image.sh')], env=env, capture_output=True)
+            result = run()
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(b'socket missing', result.stderr)
+            self.assertFalse(calls.exists())
+            endpoint.write_text('not socket')
+            result = run()
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(b'not a socket', result.stderr)
+            self.assertFalse(calls.exists()); endpoint.unlink()
+            with socket.socket(socket.AF_UNIX) as inert:
+                inert.bind(str(endpoint))  # No listen/connect; Docker is a text-only substitute.
+                result = run()
+                self.assertEqual(result.returncode, 2)
+                self.assertIn(b'identity mismatch', result.stderr)
+                self.assertEqual(calls.read_text().count('info --format'), 1)
+                self.assertNotIn(' build ', calls.read_text())
+                self.assertFalse((root/'never-context').exists())
+                calls.unlink(); env.pop('HOSTED_BUILD_ENGINE_ID')
+                result = run()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(calls.exists())
 
     def test_offline_build_security_contract(self):
         docker = (HERE/'Dockerfile').read_text(); shell = (HERE/'build-image.sh').read_text()

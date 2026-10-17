@@ -31,3 +31,24 @@ Default Engine rejection resolves paths and refuses /var/run/docker.sock,
 /run/docker.sock and symlink aliases before preparing context. This accidental-default
 fence cannot establish that any other socket belongs to an approved isolated builder;
 the operator must independently verify that identity.
+
+
+### R2 approved isolated Engine preflight supplement
+
+Before context preparation, the resolved socket must exist and be a Unix socket;
+missing or regular-file endpoints STOP. HOSTED_BUILD_ENGINE_ID is mandatory, obtained
+from independently approved isolated-builder inventory (never approve the default host
+Engine or learn-and-accept an arbitrary endpoint in the same command). A read-only
+`docker --host "$HOSTED_BUILD_ENGINE" info --format '{{.ID}}'` must exactly match that ID
+before preparation/build/inspect. Missing ID, daemon failure or mismatch STOP.
+These variables encode an external owner/leader approval prerequisite, not automatic
+permission or proof of isolation. Operator must verify isolation/ownership/access and
+fence concurrent endpoint/daemon replacement; socket metadata and ID checks are not
+an adversarial TOCTOU/authentication boundary. No automatic fallback or resend.
+This read-only Engine call occurs only in a separately authorized future build run.
+
+35 local fixture tests pass; no real Docker invocation: preflight uses a text-only
+substitute and a locally bound inert Unix socket (no listen/connect). Missing/regular
+socket and absent/mismatched approved ID stop before context/build. Two further source
+withdrawals (socket metadata gate; identity preflight) turn red with unchanged tests.
+No actual Engine, image build, pip/helper execution or host operation is validated.
