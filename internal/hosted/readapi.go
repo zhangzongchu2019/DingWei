@@ -193,10 +193,11 @@ func planOptionName(p Plan) string {
 // 生命周期完成为 completed；agent_id 仅完成时给。
 // 无 cancelled——排队不可取消、无取消端点。
 type JobView struct {
-	Stage   string `json:"stage"` // queued|pulling|starting|running|online|completed|failed
-	Reason  string `json:"reason,omitempty"`
-	AgentID string `json:"agent_id,omitempty"`
-	Model   string `json:"model,omitempty"` // 包 B2 修订 3：席位生效模型（空＝节点默认，键缺席——旧客户端与既有精确体测试不受影响）
+	CapacityReasons []string `json:"capacity_reasons,omitempty"`
+	Stage           string   `json:"stage"` // queued|pulling|starting|running|online|completed|failed
+	Reason          string   `json:"reason,omitempty"`
+	AgentID         string   `json:"agent_id,omitempty"`
+	Model           string   `json:"model,omitempty"` // 包 B2 修订 3：席位生效模型（空＝节点默认，键缺席——旧客户端与既有精确体测试不受影响）
 }
 
 // JobProgressFor jobs 端点的读面，归属按席位 created_by 判（组长裁定 lead-g4-joint-run-1 第 2 条）：

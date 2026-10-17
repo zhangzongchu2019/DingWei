@@ -294,6 +294,7 @@ func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan P
 	consent := len(allowSoft) > 0 && allowSoft[0]
 	var candidates []Node
 	modelSeen := false
+	var blockedReasons []string
 	for _, n := range nodes {
 		if nodeID != "" && nodeID != "auto" && n.ID != nodeID {
 			continue
@@ -310,17 +311,22 @@ func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan P
 		if mode == "soft" && (!consent || labels["allow_soft"] != "true") {
 			continue
 		}
-		if mode == "soft" {
-			v, err := o.st.nodeSeatCapacity(ctx, n)
-			if err != nil || v == nil || len(v.CanAdd(v.Policy(), capacityPlan(plan))) != 0 {
-				continue
-			}
-		}
 		if model != "" {
 			if !nodeHasModel(n, model) || n.LastSeenAt == nil || time.Since(*n.LastSeenAt) > 180*time.Second {
 				continue
 			}
 			modelSeen = true
+		}
+		if mode == "soft" {
+			v, err := o.st.nodeSeatCapacity(ctx, n)
+			if err != nil || v == nil {
+				blockedReasons = append(blockedReasons, "load_unknown")
+				continue
+			}
+			if reasons := v.CanAdd(v.Policy(), capacityPlan(plan)); len(reasons) != 0 {
+				blockedReasons = append(blockedReasons, reasons...)
+				continue
+			}
 		}
 		if freeMB(n) < plan.MemMB {
 			continue
@@ -330,6 +336,12 @@ func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan P
 	if len(candidates) == 0 {
 		if model != "" && !modelSeen {
 			return Node{}, ErrModelNotAvailable
+		}
+		// Union only over visible, consented, model-compatible soft candidates.
+		// Each reason means at least one such candidate failed that resource; it
+		// does not claim all nodes failed the same dimension or reveal node IDs.
+		if len(blockedReasons) != 0 {
+			return Node{}, capacityFailure(blockedReasons)
 		}
 		return Node{}, ErrNoNodeCapacity
 	}

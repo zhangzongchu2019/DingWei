@@ -808,6 +808,11 @@ function consoleErrorText(status,data){
     return '配对码不符'+(left===null?'':'（还可再试 '+left+' 次）');
   }
   if(code==='rate_limited'){var wait=data&&Number.isFinite(data.retry_after_s)?data.retry_after_s:null;return '操作过于频繁'+(wait===null?'，请稍后再试':'，请 '+wait+' 秒后再试');}
+  if(code==='node_no_capacity'&&data&&Array.isArray(data.capacity_reasons)){
+    var labels={cpu:'CPU',memory:'内存',disk:'磁盘',seat_limit:'席位数上限',load_unknown:'资源读数未知，暂停新建与启动'},parts=[];
+    Object.keys(labels).forEach(function(k){if(data.capacity_reasons.indexOf(k)!==-1)parts.push(labels[k]);});
+    if(parts.length)return '没有节点能容纳本次请求：'+parts.join('、');
+  }
   if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){   // 被触发的维度剩余为 0:按维度给具体文案
     var DIMS=[['agents','Agent 数量'],['vcpu','CPU'],['mem_gb','内存'],['disk_gb','磁盘']],used=[];
     DIMS.forEach(function(d){if(Number.isFinite(data.remaining[d[0]])&&data.remaining[d[0]]<=0)used.push(d[1]);});   // 契约把负数归 0;<=0 是组长采纳的防御写法;没有用完的维度时落到中性回退文案
@@ -1259,7 +1264,8 @@ var hostedOpInflight={},HOSTED_OP_MAX_MS=15*60*1000;
 function hostedOpInflightText(inf){
   return HOSTED_OPS[inf.op]+'中…'+(inf.stage==='queued'?'（排队）':'');
 }
-function hostedOpFail(inf,reason){
+function hostedOpFail(inf,reason,reasons){
+  if(reason==='node_no_capacity')return HOSTED_OPS[inf.op]+' '+inf.name+' 失败：'+consoleErrorText(409,{error:reason,capacity_reasons:reasons});
   return HOSTED_OPS[inf.op]+' '+inf.name+' 失败：'+(Object.prototype.hasOwnProperty.call(HOSTED_FAIL_REASONS,reason)?HOSTED_FAIL_REASONS[reason]:'操作未成功')+'（原因码 '+(reason||'未知')+'）';
 }
 function hostedOpTrack(a,op,jobId){
@@ -1277,7 +1283,7 @@ function hostedOpTrack(a,op,jobId){
       var d=await r.json();stage=String(d.stage||'');reason=String(d.reason||'');
     }catch(err){inf.timer=setTimeout(tick,hostedPollMs);return;}   // 网络抖动：继续轮询，不当成失败
     if(hostedOpInflight[a.agent_id]!==inf)return;
-    if(stage==='failed'){end();enrollFeedback('rosterFeedback',hostedOpFail(inf,reason));renderRoster();refreshRoster();return;}
+    if(stage==='failed'){end();enrollFeedback('rosterFeedback',hostedOpFail(inf,reason,d.capacity_reasons));renderRoster();refreshRoster();return;}
     if(stage==='completed'){   // 成功终态只按 A1 契约判定：前端不猜、不替后端兜 busy／销毁的错
       end();enrollFeedback('rosterFeedback',HOSTED_OPS[op]+' '+inf.name+' 已完成');renderRoster();refreshRoster();refreshGroups('hosted-op');refreshAgents();return;
     }

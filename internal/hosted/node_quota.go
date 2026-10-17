@@ -232,11 +232,14 @@ func (l *Lifecycle) quotaStartGuard(ctx context.Context, seat Seat) error {
 			return err
 		}
 		var frame seatCapacityFrame
-		if json.Unmarshal(n.Capacity, &frame) != nil || v == nil || !v.Known || len(v.CanStart()) != 0 {
-			return ErrNoNodeCapacity
+		if json.Unmarshal(n.Capacity, &frame) != nil || v == nil {
+			return capacityFailure(nil)
+		}
+		if reasons := v.CanStart(); len(reasons) != 0 {
+			return capacityFailure(reasons)
 		}
 		if _, known := frame.Seats[seat.AgentID]; !known {
-			return ErrNoNodeCapacity
+			return capacityFailure(nil)
 		}
 	}
 	if mode != "hard" && mode != "soft" {

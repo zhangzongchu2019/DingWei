@@ -4,11 +4,59 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"github.com/zhangzongchu2019/dingwei/internal/seatcapacity"
 )
+
+// NodeCapacityError preserves the legacy machine code while projecting only
+// fixed reasons. Neither Error nor Reasons exposes node data or upstream text.
+type NodeCapacityError struct{ reasons []string }
+
+func (*NodeCapacityError) Error() string { return ErrNoNodeCapacity.Error() }
+func (*NodeCapacityError) Unwrap() error { return ErrNoNodeCapacity }
+func (e *NodeCapacityError) Reasons() []string {
+	if e == nil {
+		return capacityReasons(nil)
+	}
+	return capacityReasons(e.reasons)
+}
+
+func capacityReasons(input []string) []string {
+	present := map[string]bool{}
+	for _, reason := range input {
+		switch reason {
+		case "cpu", "memory", "disk", "seat_limit", "load_unknown":
+			present[reason] = true
+		default:
+			present["load_unknown"] = true
+		}
+	}
+	if len(present) == 0 {
+		present["load_unknown"] = true
+	}
+	out := []string{}
+	for _, reason := range []string{"cpu", "memory", "disk", "seat_limit", "load_unknown"} {
+		if present[reason] {
+			out = append(out, reason)
+		}
+	}
+	return out
+}
+func capacityFailure(reasons []string) error {
+	return &NodeCapacityError{reasons: capacityReasons(reasons)}
+}
+
+// CapacityErrorReasons returns a fresh allowlisted copy, including through wraps.
+func CapacityErrorReasons(err error) []string {
+	var failure *NodeCapacityError
+	if !errors.As(err, &failure) {
+		return nil
+	}
+	return failure.Reasons()
+}
 
 type capacityRows func(context.Context, string, ...any) (*sql.Rows, error)
 type seatCapacityFrame struct {
@@ -106,15 +154,18 @@ func checkSeatCapacityTx(ctx context.Context, tx repo.Tx, seat Seat) error {
 		return nil
 	}
 	if mode != "soft" || n.State != "online" || !nodeQuotaEligible(n) {
-		return ErrNoNodeCapacity
+		return capacityFailure(nil)
 	}
 	v, err := effectiveSeatCapacity(ctx, n, tx.Query)
 	if err != nil {
 		return err
 	}
 	plan, ok := PlanByID(seat.Plan)
-	if !ok || v == nil || len(v.CanAdd(v.Policy(), capacityPlan(plan))) != 0 {
-		return ErrNoNodeCapacity
+	if !ok || v == nil {
+		return capacityFailure(nil)
+	}
+	if reasons := v.CanAdd(v.Policy(), capacityPlan(plan)); len(reasons) != 0 {
+		return capacityFailure(reasons)
 	}
 	return nil
 }

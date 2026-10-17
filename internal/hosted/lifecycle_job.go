@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strings"
 )
 
 // LifecycleJobRequest is persisted before the HTTP request returns.  The
@@ -189,6 +190,11 @@ func (l *Lifecycle) RunJob(ctx context.Context, jobID string) {
 func waitsForOnline(op string) bool { return op == "restart" || op == "enable" || op == "refresh_cred" }
 
 func lifecycleJobReason(err error) string {
+	if reasons := CapacityErrorReasons(err); len(reasons) != 0 {
+		// Persist only canonical fixed tokens in the existing durable reason field.
+		return "node_no_capacity:" + strings.Join(reasons, ",")
+	}
+
 	for _, item := range []struct {
 		err  error
 		code string
@@ -241,6 +247,11 @@ func (l *Lifecycle) JobProgressFor(ctx context.Context, id, actor string) (JobVi
 		}
 	}
 	v := JobView{Stage: j.Stage, Reason: j.Reason}
+	if encoded, ok := strings.CutPrefix(j.Reason, "node_no_capacity:"); ok {
+		v.Reason = "node_no_capacity"
+		v.CapacityReasons = capacityReasons(strings.Split(encoded, ","))
+	}
+
 	if j.Stage == "completed" {
 		v.AgentID = j.AgentID
 	}

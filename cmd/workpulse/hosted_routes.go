@@ -79,6 +79,9 @@ func writeHostedError(w http.ResponseWriter, err error) {
 	var pe *hosted.PlanExceedsQuotaError
 	var be *hosted.BackupFailedError
 	switch {
+	case len(hosted.CapacityErrorReasons(err)) != 0:
+		writeJSON(w, http.StatusConflict, map[string]any{"error": "node_no_capacity", "capacity_reasons": hosted.CapacityErrorReasons(err)})
+		return
 	case errors.As(err, &qe):
 		writeRemaining(w, "quota_exceeded", qe.RemainingJSON())
 		return

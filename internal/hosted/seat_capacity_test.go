@@ -168,6 +168,7 @@ func TestCapacityStoreSerializesConcurrentReservations(t *testing.T) {
 		if err == nil {
 			accepted++
 		} else if errors.Is(err, ErrNoNodeCapacity) {
+			requireCapacityReasons(t, err, "cpu", "disk")
 			refused++
 		} else {
 			t.Fatal(err)
