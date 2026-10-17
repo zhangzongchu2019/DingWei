@@ -560,8 +560,10 @@ func TestSoftScanBudgetUnknownAndOutboxAcknowledgement(t *testing.T) {
 	q.state.Seats["ag_one"].CreatedAt = time.Now().Add(-2 * q.policy.MaxAge)
 	q.usage = func(ctx context.Context, _, _ string) (diskUsage, error) { <-ctx.Done(); return diskUsage{}, ctx.Err() }
 	calls := 0
+	parent, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
 	start := time.Now()
-	q.scan(context.Background(), func(context.Context, string, string) error { calls++; return nil })
+	q.scan(parent, func(context.Context, string, string) error { calls++; return nil })
 	if time.Since(start) > time.Second || calls != 1 || q.state.Seats["ag_one"].Hold != "usage_unknown" {
 		t.Fatal("scan budget ignored")
 	}
@@ -656,8 +658,10 @@ func TestSoftEnforcementBatchDeadlineNotMultipliedBySeatCount(t *testing.T) {
 	q.holdLocked("ag_one", "disk_limit")
 	q.holdLocked("ag_two", "disk_limit")
 	q.mu.Unlock()
+	parent, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
 	start := time.Now()
-	q.enforce(context.Background(), func(ctx context.Context, _, _ string) error { <-ctx.Done(); return ctx.Err() })
+	q.enforce(parent, func(ctx context.Context, _, _ string) error { <-ctx.Done(); return ctx.Err() })
 	if time.Since(start) > time.Second || q.state.Seats["ag_one"].StopState != "unknown" || q.state.Seats["ag_two"].StopState != "unknown" {
 		t.Fatal("stop batch unbounded or false success")
 	}
@@ -909,5 +913,58 @@ func TestSoftRegistrationUsesDirectoryBackendAndReplayGate(t *testing.T) {
 	}
 	if a.background == nil {
 		t.Fatal("soft monitor not attached independently of Hub")
+	}
+}
+
+func TestSoftMonitorMeasuresAgainOnPeriodicTick(t *testing.T) {
+	q, p := softFixture(t)
+	reserveFixture(t, q, "ag_one")
+	q.track("ag_one", "cid")
+	p.ScanInterval = 30 * time.Millisecond
+	p.ScanBudget = 10 * time.Millisecond
+	p.MaxAge = 200 * time.Millisecond
+	p.ReserveInterval = 5 * time.Millisecond
+	q.policy = p
+	samples := 0
+	q.usage = func(context.Context, string, string) (diskUsage, error) {
+		samples++
+		if samples == 1 {
+			return diskUsage{1024, 1024}, nil
+		}
+		return diskUsage{9 << 20, 9 << 20}, nil
+	}
+	var mu sync.Mutex
+	running := true
+	stopped := make(chan struct{}, 1)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+		if r.Method == "POST" {
+			running = false
+			select {
+			case stopped <- struct{}{}:
+			default:
+			}
+			w.Write([]byte(`{}`))
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]any{"Id": "cid", "State": map[string]bool{"Running": running}, "Config": map[string]any{"Labels": map[string]string{managedSeatLabel: q.nodeID, managedSeatIDLabel: "ag_one"}}, "Mounts": []map[string]string{{"Source": seatDir(q.root, "ag_one"), "Destination": "/work"}}})
+	}))
+	defer srv.Close()
+	d := &dockerOps{eng: newFakeEngine(srv.Client(), srv.URL), soft: q, policy: p, seatRoot: q.root}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { defer close(done); d.runSoft(ctx) }()
+	defer func() { cancel(); <-done }()
+	select {
+	case <-stopped:
+	case <-time.After(2 * time.Second):
+		t.Fatal("later usage never sampled/stopped")
+	}
+	q.mu.Lock()
+	hold := q.state.Seats["ag_one"].Hold
+	q.mu.Unlock()
+	if hold != "disk_limit" {
+		t.Fatalf("periodic measurement missing, hold=%s", hold)
 	}
 }
