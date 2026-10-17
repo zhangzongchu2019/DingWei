@@ -84,9 +84,9 @@ _stdout_lock = threading.Lock()
 import socket as _socket
 import uuid as _uuid
 
-_SEND_BODY_ONLY = send_body_only(os.environ)
-
-_IPC_SOCK = os.environ.get("DINGWEI_MCP_IPC_SOCK", "")
+_IPC_ENV = os.environ  # one stdlib-only environment entry point for this standalone shim
+_SEND_BODY_ONLY = send_body_only(_IPC_ENV)
+_IPC_SOCK = _IPC_ENV.get("DINGWEI_MCP_IPC_SOCK", "")
 _IPC_TIMEOUT = 5.0
 # Agent HTTP15 within helper aggregate30; shim35 receives explicit deadline result.
 # Leave a further5 seconds for the helper's explicit result to reach the shim.
