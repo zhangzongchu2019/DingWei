@@ -9,6 +9,7 @@ package hosted
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 
 	"crypto/rand"
 	"crypto/sha256"
@@ -47,6 +48,9 @@ func (s *Store) RegisterNode(ctx context.Context, n Node, by string) (string, er
 	if n.ID == "" || n.Name == "" {
 		return "", fmt.Errorf("%w: node id/name 必填", ErrInvalidState)
 	}
+	if err := normalizeQuotaRegistration(&n); err != nil {
+		return "", err
+	}
 	secret, _, err := issueNodeSecret()
 	if err != nil {
 		return "", err
@@ -68,7 +72,7 @@ ON CONFLICT (node_id) DO UPDATE SET secret_hash=EXCLUDED.secret_hash,
 			return err
 		}
 		_, err := tx.Exec(ctx, `
-INSERT INTO g4_audit (actor, action, target, detail) VALUES ($1,'node.register',$2,NULL)`, by, n.ID)
+INSERT INTO g4_audit (actor, action, target, detail) VALUES ($1,'node.register',$2,$3)`, by, n.ID, quotaRegistrationDetail(n))
 		return err
 	})
 	if err != nil {
@@ -143,4 +147,17 @@ SELECT secret_hash, revoked_at FROM g4_node_credential WHERE node_id=$1`, nodeID
 		return ErrNodeAuth
 	}
 	return nil
+}
+
+func quotaRegistrationDetail(n Node) json.RawMessage {
+	mode, rev := registeredQuota(n)
+	b, _ := json.Marshal(map[string]any{"quota_mode": mode, "quota_policy_revision": rev, "no_hard_disk_quota": mode == "soft", "notice": quotaModeNotice(mode)})
+	return b
+}
+
+func quotaModeNotice(mode string) string {
+	if mode == "soft" {
+		return "无硬磁盘配额"
+	}
+	return ""
 }

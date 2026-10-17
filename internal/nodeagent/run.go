@@ -18,9 +18,13 @@ import (
 
 // Agent 节点代理骨架。
 type Agent struct {
-	cfg      Config
-	handlers map[string]Handler
-	ledger   *ledger
+	cfg         Config
+	handlers    map[string]Handler
+	ledger      *ledger
+	docker      *dockerOps
+	commandGate func(Command) error
+	background  func(context.Context)
+	policyClose func()
 	// T-G4-13：容量采集器（dockerOps 注册；未注册则心跳静默跳过）
 	capacity          func(ctx context.Context) (Capacity, error)
 	heartbeatInterval time.Duration
@@ -52,6 +56,15 @@ func (a *Agent) Register(cmdType string, h Handler) { a.handlers[cmdType] = h }
 
 // Run 长连主循环：连接→握手→读指令→执行/幂等重报→回送；断线退避重连。
 func (a *Agent) Run(ctx context.Context) error {
+	if a.policyClose != nil {
+		defer a.policyClose()
+	}
+	if a.background != nil {
+		bgctx, cancel := context.WithCancel(ctx)
+		done := make(chan struct{})
+		go func() { defer close(done); a.background(bgctx) }()
+		defer func() { cancel(); <-done }()
+	}
 	backoff := reconnectBase
 	for {
 		if err := a.serve(ctx); err != nil {
@@ -109,6 +122,16 @@ func (a *Agent) serve(ctx context.Context) error {
 		_, raw, err := conn.Read(ctx)
 		if err != nil {
 			return err
+		}
+		var ack struct {
+			Type string   `json:"type"`
+			IDs  []string `json:"ids"`
+		}
+		if json.Unmarshal(raw, &ack) == nil && ack.Type == "quota_event_ack" {
+			if a.docker != nil && a.docker.soft != nil {
+				_ = a.docker.soft.acknowledge(ack.IDs)
+			}
+			continue
 		}
 		var cmd Command
 		if err := json.Unmarshal(raw, &cmd); err != nil {
@@ -187,6 +210,11 @@ func (a *Agent) heartbeat(ctx context.Context, w *wsWriter) {
 func (a *Agent) execute(ctx context.Context, cmd Command) Result {
 	if !commandWhitelist[cmd.Type] {
 		return Result{CommandID: cmd.CommandID, OK: false, Error: "unknown_command_type"}
+	}
+	if a.commandGate != nil {
+		if err := a.commandGate(cmd); err != nil {
+			return Result{CommandID: cmd.CommandID, OK: false, Error: err.Error()}
+		}
 	}
 	skipLedger := noLedgerCommands[cmd.Type]
 	if !skipLedger {

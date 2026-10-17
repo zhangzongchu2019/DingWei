@@ -1,0 +1,730 @@
+package nodeagent
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"strconv"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
+)
+
+var ErrSoftQuota = errors.New("soft_quota_blocked")
+
+const managedSeatLabel = "dingwei.node_id"
+const managedSeatIDLabel = "dingwei.seat_id"
+
+var safeContainerID = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,128}$`)
+
+type quotaEvent struct {
+	ID     string    `json:"id"`
+	SeatID string    `json:"seat_id"`
+	Reason string    `json:"reason"`
+	At     time.Time `json:"at"`
+}
+type softSeat struct {
+	UsageUnknown bool          `json:"usage_unknown"`
+	Limit        int64         `json:"limit_bytes"`
+	Resources    seatResources `json:"resources"`
+	CIDs         []string      `json:"container_ids"`
+	Usage        diskUsage     `json:"usage"`
+	MeasuredAt   time.Time     `json:"measured_at"`
+	CreatedAt    time.Time     `json:"created_at"`
+	Hold         string        `json:"hold,omitempty"`
+	StopState    string        `json:"stop_state,omitempty"`
+	Warn         bool          `json:"warn"`
+}
+type softState struct {
+	Root    string               `json:"seat_root"`
+	Active  bool                 `json:"active"`
+	Version int                  `json:"version"`
+	NodeID  string               `json:"node_id"`
+	Seats   map[string]*softSeat `json:"seats"`
+	Events  []quotaEvent         `json:"events"`
+}
+type softQuota struct {
+	resources          func() (int64, int64, int64, error)
+	mu                 sync.Mutex
+	policy             NodePolicy
+	root, path, nodeID string
+	state              softState
+	broken             bool
+	space              fsSpace
+	spaceAt            time.Time
+	now                func() time.Time
+	usage              func(context.Context, string, string) (diskUsage, error)
+	disk               func(string) (fsSpace, error)
+	// Held for this agent's lifetime. Prevents two controllers from racing state.
+	lock *os.File
+}
+
+func newSoftQuota(p NodePolicy, root, path, nodeID string) (*softQuota, error) {
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+	if p.Mode != "soft" || nodeID == "" {
+		return nil, fmt.Errorf("soft quota requires explicit mode/node")
+	}
+	if !filepath.IsAbs(root) || filepath.Clean(root) != root {
+		return nil, fmt.Errorf("soft seat root must be absolute and canonical")
+	}
+	rootInfo, err := os.Lstat(root)
+	if err != nil || !rootInfo.IsDir() || rootInfo.Mode().Perm()&0022 != 0 {
+		return nil, fmt.Errorf("soft seat root must be a protected directory")
+	}
+	rel, e := filepath.Rel(root, path)
+	if e != nil || !strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return nil, fmt.Errorf("soft state must be outside seat root")
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return nil, err
+	}
+	// Private state is outside /work. Refuse permissive or aliased directories.
+	info, err := os.Lstat(filepath.Dir(path))
+	if err != nil || !info.IsDir() || info.Mode().Perm()&0077 != 0 {
+		return nil, fmt.Errorf("soft quota state directory must be private")
+	}
+	lockfd, err := syscall.Open(path+".lock", syscall.O_CREAT|syscall.O_RDWR|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0600)
+	if err != nil {
+		return nil, err
+	}
+	lock := os.NewFile(uintptr(lockfd), "soft-quota-lock")
+	var lockStat syscall.Stat_t
+	if syscall.Fstat(lockfd, &lockStat) != nil || lockStat.Mode&syscall.S_IFMT != syscall.S_IFREG || lockStat.Mode&0777 != 0600 || lockStat.Nlink != 1 || lockStat.Uid != uint32(os.Geteuid()) {
+		lock.Close()
+		return nil, fmt.Errorf("soft quota lock metadata invalid")
+	}
+	if err = syscall.Flock(lockfd, syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+		lock.Close()
+		return nil, fmt.Errorf("soft quota controller already running")
+	}
+	q := &softQuota{resources: hostResourceBudget, policy: p, root: root, path: path, nodeID: nodeID, now: time.Now, usage: measureUsage, disk: readSpace, lock: lock, state: softState{Version: 1, NodeID: nodeID, Root: root, Active: true, Seats: map[string]*softSeat{}}}
+	fail := func(err error) (*softQuota, error) { lock.Close(); return nil, err }
+	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
+	if err == syscall.ENOENT {
+		if err = q.persistLocked(); err != nil {
+			return fail(err)
+		}
+		return q, nil
+	}
+	if err != nil {
+		return fail(err)
+	}
+	f := os.NewFile(uintptr(fd), "soft-quota-state")
+	defer f.Close()
+	info, err = f.Stat()
+	var fileStat syscall.Stat_t
+	if syscall.Fstat(fd, &fileStat) != nil || fileStat.Nlink != 1 || fileStat.Uid != uint32(os.Geteuid()) {
+		return fail(fmt.Errorf("soft quota state owner/link invalid"))
+	}
+	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm() != 0600 || info.Size() > 4<<20 {
+		return fail(fmt.Errorf("soft quota state metadata invalid"))
+	}
+	raw, err := io.ReadAll(io.LimitReader(f, 4<<20))
+	if err != nil {
+		return fail(err)
+	}
+	if err = json.Unmarshal(raw, &q.state); err != nil {
+		return fail(fmt.Errorf("soft quota state corrupt"))
+	}
+	if q.state.Version != 1 || q.state.NodeID != nodeID || q.state.Root != root || q.state.Seats == nil || len(q.state.Events) > 256 {
+		return fail(fmt.Errorf("soft quota state identity/version invalid"))
+	}
+	for id, s := range q.state.Seats {
+		if !validSeatID(id) || s == nil || s.Limit <= 0 || s.CreatedAt.IsZero() || s.Resources.validate() != nil || s.Resources.DiskMB > 1<<40 || s.Limit != s.Resources.DiskMB*1024*1024 || len(s.CIDs) > 4 || s.Usage.Allocated < 0 || s.Usage.Apparent < 0 {
+			return fail(fmt.Errorf("soft quota seat state invalid"))
+		}
+	}
+	for _, s := range q.state.Seats {
+		for _, cid := range s.CIDs {
+			if !safeContainerID.MatchString(cid) {
+				return fail(fmt.Errorf("soft quota container identity invalid"))
+			}
+		}
+	}
+	if q.state.Active {
+		for id := range q.state.Seats {
+			q.holdLocked(id, "unclean_restart")
+		}
+	}
+	q.state.Active = true
+	if err = q.persistLocked(); err != nil {
+		return fail(err)
+	}
+	return q, nil
+}
+func (q *softQuota) close() {
+	if q != nil && q.lock != nil {
+		q.mu.Lock()
+		if !q.broken {
+			q.state.Active = false
+			_ = q.persistLocked()
+		}
+		q.lock.Close()
+		q.lock = nil
+		q.mu.Unlock()
+	}
+}
+func (q *softQuota) persistLocked() error {
+	raw, err := json.Marshal(q.state)
+	if err != nil {
+		return err
+	}
+	f, err := os.CreateTemp(filepath.Dir(q.path), ".soft-quota-")
+	if err != nil {
+		q.broken = true
+		return err
+	}
+	name := f.Name()
+	defer os.Remove(name)
+	if err = f.Chmod(0600); err == nil {
+		_, err = f.Write(raw)
+	}
+	if err == nil {
+		err = f.Sync()
+	}
+	ce := f.Close()
+	if err == nil {
+		err = ce
+	}
+	if err == nil {
+		err = os.Rename(name, q.path)
+	}
+	if err == nil {
+		dir, e := os.Open(filepath.Dir(q.path))
+		if e != nil {
+			err = e
+		} else {
+			err = dir.Sync()
+			dir.Close()
+		}
+	}
+	if err != nil {
+		q.broken = true
+	}
+	return err
+}
+func (q *softQuota) eventLocked(id, reason string) {
+	if len(q.state.Events) >= 256 {
+		q.broken = true
+		return
+	}
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		q.broken = true
+		return
+	}
+	q.state.Events = append(q.state.Events, quotaEvent{hex.EncodeToString(b[:]), id, reason, q.now().UTC()})
+}
+func (q *softQuota) holdLocked(id, reason string) {
+	s := q.state.Seats[id]
+	if s.Hold == "" {
+		s.Hold = reason
+		s.StopState = "pending"
+		q.eventLocked(id, reason)
+	}
+}
+func (q *softQuota) sampleSpaceLocked() error {
+	space, err := q.disk(q.root)
+	if err != nil {
+		return fmt.Errorf("%w: space_unknown", ErrSoftQuota)
+	}
+	if space.Total <= 0 || space.Total > 1<<60 || space.Free < 0 || space.Free > space.Total || space.Files == 0 || space.FreeFiles > space.Files {
+		return fmt.Errorf("%w: space_invalid", ErrSoftQuota)
+	}
+	q.space, q.spaceAt = space, q.now()
+	return nil
+}
+func (q *softQuota) admitLocked(add int64) error {
+	if q.broken {
+		return fmt.Errorf("%w: private_state_unavailable", ErrSoftQuota)
+	}
+	if err := q.resourceBudgetLocked(seatResources{}); err != nil {
+		return err
+	}
+	if err := q.sampleSpaceLocked(); err != nil {
+		return err
+	}
+	// Non-managed data must never be silently adopted as a fresh empty seat.
+	dirs, err := os.ReadDir(q.root)
+	if err != nil {
+		return fmt.Errorf("%w: inventory_unknown", ErrSoftQuota)
+	}
+	for _, e := range dirs {
+		if _, known := q.state.Seats[e.Name()]; !known {
+			return fmt.Errorf("%w: unmanaged_seat_directory", ErrSoftQuota)
+		}
+	}
+	reserve := max(q.policy.ReserveBytes, q.space.Total/100*q.policy.ReservePercent)
+	inodes := max(q.policy.ReserveInodes, q.space.Files/100*q.policy.ReserveInodePercent)
+	if q.space.FreeFiles < inodes {
+		return fmt.Errorf("%w: inode_reserve", ErrSoftQuota)
+	}
+	available := q.space.Free - reserve - q.policy.ImageReserveBytes
+	for _, s := range q.state.Seats {
+		if s.UsageUnknown {
+			return fmt.Errorf("%w: usage_unknown", ErrSoftQuota)
+		}
+		since := s.MeasuredAt
+		if since.IsZero() {
+			since = s.CreatedAt
+		}
+		if q.now().Sub(since) > q.policy.MaxAge || q.now().Sub(since) < 0 {
+			return fmt.Errorf("%w: stale_usage", ErrSoftQuota)
+		}
+		committed := max(int64(0), s.Limit-s.Usage.Allocated)
+		if committed > available {
+			return fmt.Errorf("%w: disk_reserve", ErrSoftQuota)
+		}
+		available -= committed
+	}
+	if add < 0 || add > available {
+		return fmt.Errorf("%w: disk_reserve", ErrSoftQuota)
+	}
+	return nil
+}
+func (q *softQuota) reserve(id string, r seatResources) error {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if r.DiskMB <= 0 || r.DiskMB > 1<<40 {
+		return fmt.Errorf("%w: positive bounded disk limit required", ErrSoftQuota)
+	}
+	if _, exists := q.state.Seats[id]; exists {
+		return fmt.Errorf("%w: seat_already_registered", ErrSoftQuota)
+	}
+	if len(q.state.Seats) >= q.policy.MaxSeats {
+		return fmt.Errorf("%w: seat_count", ErrSoftQuota)
+	}
+	limit := r.DiskMB * 1024 * 1024
+	if err := q.resourceBudgetLocked(r); err != nil {
+		return err
+	}
+	if err := q.admitLocked(limit); err != nil {
+		return err
+	}
+	q.state.Seats[id] = &softSeat{Limit: limit, Resources: r, CreatedAt: q.now(), CIDs: []string{}}
+	return q.persistLocked()
+}
+func (q *softQuota) track(id, cid string) error {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	s := q.state.Seats[id]
+	if s == nil || !safeContainerID.MatchString(cid) || len(s.CIDs) >= 4 {
+		return fmt.Errorf("%w: unregistered_container", ErrSoftQuota)
+	}
+	for _, c := range s.CIDs {
+		if c == cid {
+			return nil
+		}
+	}
+	s.CIDs = append(s.CIDs, cid)
+	return q.persistLocked()
+}
+func (q *softQuota) forget(id string) error {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	delete(q.state.Seats, id)
+	return q.persistLocked()
+}
+func (q *softQuota) commandGate(cmd Command) error {
+	switch cmd.Type {
+	case CmdCreateSeat, CmdStartSeat, CmdRestartSeat, CmdUpgradeSeat, CmdRefreshCredSeat, CmdLoginStart, CmdPullImage:
+	default:
+		return nil
+	}
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if err := q.admitLocked(0); err != nil {
+		return err
+	}
+	var p struct {
+		SeatID string `json:"seat_id"`
+	}
+	if json.Unmarshal(cmd.Params, &p) != nil {
+		return ErrParams
+	}
+	if p.SeatID != "" && cmd.Type != CmdCreateSeat && q.state.Seats[p.SeatID] == nil {
+		return fmt.Errorf("%w: seat_not_registered", ErrSoftQuota)
+	}
+	if s := q.state.Seats[p.SeatID]; s != nil && s.Hold != "" {
+		return fmt.Errorf("%w: held", ErrSoftQuota)
+	}
+	return nil
+}
+
+// start serializes the last safety check with starting a writer. Monitor holds
+// are never cleared by restart/replay/upgrade. Timeout limits a blocking Engine.
+func (q *softQuota) start(ctx context.Context, id string, fn func(context.Context) error) error {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if err := q.admitLocked(0); err != nil {
+		return err
+	}
+	s := q.state.Seats[id]
+	if s == nil {
+		return fmt.Errorf("%w: seat_not_registered", ErrSoftQuota)
+	}
+	if s.Hold != "" {
+		return fmt.Errorf("%w: held", ErrSoftQuota)
+	}
+	c, cancel := context.WithTimeout(ctx, q.policy.ScanBudget)
+	defer cancel()
+	usage, err := q.usage(c, q.root, id)
+	if c.Err() != nil {
+		err = c.Err()
+	}
+	if err != nil {
+		s.UsageUnknown = true
+		_ = q.persistLocked()
+		return fmt.Errorf("%w: usage_unknown", ErrSoftQuota)
+	}
+	s.UsageUnknown = false
+	s.Usage, s.MeasuredAt = usage, q.now()
+	if usage.charged() >= s.Limit {
+		q.holdLocked(id, "disk_limit")
+		_ = q.persistLocked()
+		return fmt.Errorf("%w: held", ErrSoftQuota)
+	}
+	if err = q.persistLocked(); err != nil {
+		return fmt.Errorf("%w: private_state_unavailable", ErrSoftQuota)
+	}
+	c2, cancel2 := context.WithTimeout(ctx, q.policy.StopTimeout)
+	defer cancel2()
+	return fn(c2)
+}
+func (q *softQuota) scan(ctx context.Context, stop func(context.Context, string, string) error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	c, cancel := context.WithTimeout(ctx, q.policy.ScanBudget)
+	defer cancel()
+	for id, s := range q.state.Seats {
+		u, err := q.usage(c, q.root, id)
+		if c.Err() != nil {
+			err = c.Err()
+		}
+		if err == nil {
+			s.UsageUnknown = false
+			s.Usage, s.MeasuredAt = u, q.now()
+			if u.charged() >= s.Limit {
+				q.holdLocked(id, "disk_limit")
+			}
+			if u.charged() >= s.Limit/100*q.policy.WarnPercent && !s.Warn {
+				s.Warn = true
+				q.eventLocked(id, "disk_warning")
+			}
+			if u.charged() < s.Limit/100*q.policy.RecoveryPercent {
+				s.Warn = false
+			}
+		} else {
+			s.UsageUnknown = true
+			since := s.MeasuredAt
+			if since.IsZero() {
+				since = s.CreatedAt
+			}
+			if q.now().Sub(since) >= q.policy.MaxAge || q.now().Sub(since) < 0 {
+				q.holdLocked(id, "usage_unknown")
+			}
+		}
+	}
+	// Durably record intent before stop; a failed write is still a fail-closed stop.
+	_ = q.persistLocked()
+	for id := range q.state.Seats {
+		if q.broken {
+			q.holdLocked(id, "private_state_unavailable")
+		}
+	}
+	q.stopHeldLocked(ctx, stop)
+
+	_ = q.persistLocked()
+}
+func (d *dockerOps) stopOwned(ctx context.Context, id, cid string) error {
+	var v struct {
+		ID     string `json:"Id"`
+		Config struct {
+			Labels map[string]string `json:"Labels"`
+		} `json:"Config"`
+		Mounts []struct{ Source, Destination string } `json:"Mounts"`
+		State  struct{ Running bool }                 `json:"State"`
+	}
+	if err := d.eng.call(ctx, "GET", "/containers/"+cid+"/json", nil, &v); err != nil {
+		var ee *engineError
+		if errors.As(err, &ee) && ee.Status == 404 {
+			return nil
+		}
+		return err
+	}
+	if v.ID != cid || v.Config.Labels[managedSeatLabel] != d.soft.nodeID || v.Config.Labels[managedSeatIDLabel] != id {
+		return fmt.Errorf("container ownership mismatch")
+	}
+	bound := false
+	for _, m := range v.Mounts {
+		if m.Destination == "/work" && m.Source == seatDir(d.seatRoot, id) {
+			bound = true
+		}
+	}
+	if !bound {
+		return fmt.Errorf("container mount mismatch")
+	}
+	if !v.State.Running {
+		return nil
+	}
+	if err := d.eng.containerStop(ctx, cid); err != nil {
+		return err
+	}
+	info, err := d.eng.containerInspect(ctx, cid)
+	if err != nil {
+		return err
+	}
+	if info.State.Running {
+		return fmt.Errorf("container still running")
+	}
+	return nil
+}
+func (d *dockerOps) runSoft(ctx context.Context) {
+	scan := time.NewTicker(d.policy.ScanInterval)
+	defer scan.Stop()
+	reserve := time.NewTicker(d.policy.ReserveInterval)
+	defer reserve.Stop()
+	d.soft.scan(ctx, d.stopOwned)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-scan.C:
+			d.soft.scan(ctx, d.stopOwned)
+		case <-reserve.C:
+			d.soft.mu.Lock()
+			_ = d.soft.sampleSpaceLocked()
+			for id, s := range d.soft.state.Seats {
+				if d.soft.broken {
+					d.soft.holdLocked(id, "private_state_unavailable")
+				}
+				since := s.MeasuredAt
+				if since.IsZero() {
+					since = s.CreatedAt
+				}
+				if time.Since(since) >= d.policy.MaxAge || time.Since(since) < 0 {
+					d.soft.holdLocked(id, "usage_unknown")
+				}
+			}
+			d.soft.mu.Unlock()
+			// The next scan is bounded; stale holds must be enforced immediately.
+			d.soft.enforce(ctx, d.stopOwned)
+		}
+	}
+}
+func (q *softQuota) enforce(ctx context.Context, stop func(context.Context, string, string) error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	_ = q.persistLocked()
+	q.stopHeldLocked(ctx, stop)
+	_ = q.persistLocked()
+}
+
+// softDirectory creates no XFS project and never changes a limit to zero. Clear
+// is reachable only through an explicit destroy, never from the monitor/failure.
+type softDirectory struct{}
+
+func (softDirectory) Setup(root, id string, limit int64) error {
+	if !validSeatID(id) || limit <= 0 {
+		return ErrParams
+	}
+	if err := os.Mkdir(seatDir(root, id), 0700); err != nil {
+		return err
+	}
+	return chownForSeat(seatDir(root, id))
+}
+func (softDirectory) Clear(root, id string) error {
+	if !validSeatID(id) {
+		return ErrParams
+	}
+	return os.RemoveAll(seatDir(root, id))
+}
+
+func (d *dockerOps) startWriter(ctx context.Context, id, cid string, restart bool) error {
+	fn := func(c context.Context) error {
+		if restart {
+			return d.eng.containerRestart(c, cid)
+		}
+		return d.eng.containerStart(c, cid)
+	}
+	if d.soft != nil {
+		return d.soft.start(ctx, id, func(c context.Context) error {
+			s := d.soft.state.Seats[id]
+			found := false
+			for _, v := range s.CIDs {
+				if v == cid {
+					found = true
+				}
+			}
+			if !found {
+				return fmt.Errorf("%w: unregistered_container", ErrSoftQuota)
+			}
+			return fn(c)
+		})
+	}
+	return fn(ctx)
+}
+func (d *dockerOps) policyValue() NodePolicy {
+	if d.policy.Mode == "" {
+		return DefaultNodePolicy()
+	}
+	return d.policy
+}
+func (p NodePolicy) logConfig() map[string]any {
+	return map[string]any{"Type": "local", "Config": map[string]string{"max-size": strconv.FormatInt(p.LogMaxSizeMB, 10) + "m", "max-file": strconv.FormatInt(p.LogMaxFiles, 10)}}
+}
+
+// Capacity snapshots copy only metadata, never private state paths/credentials.
+func (q *softQuota) report() (map[string]softSeat, []quotaEvent, bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	seats := map[string]softSeat{}
+	for id, s := range q.state.Seats {
+		v := *s
+		v.CIDs = nil
+		seats[id] = v
+	}
+	events := append([]quotaEvent{}, q.state.Events...)
+	ready := q.admitLocked(0) == nil
+	return seats, events, ready
+}
+func (q *softQuota) acknowledge(ids []string) error {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	set := map[string]bool{}
+	for _, id := range ids {
+		set[id] = true
+	}
+	remaining := q.state.Events[:0]
+	for _, e := range q.state.Events {
+		if !set[e.ID] {
+			remaining = append(remaining, e)
+		}
+	}
+	q.state.Events = remaining
+	return q.persistLocked()
+}
+
+func (d *dockerOps) preflightSeat(id string) error {
+	if d.soft == nil {
+		return nil
+	}
+	b, _ := json.Marshal(map[string]string{"seat_id": id})
+	return d.soft.commandGate(Command{Type: CmdStartSeat, Params: b})
+}
+
+func hostResourceBudget() (cpu, total, available int64, err error) {
+	mt, mf, e := memInfoMB("/proc/meminfo")
+	return int64(runtime.NumCPU()) * 1000, mt << 20, mf << 20, e
+}
+func (q *softQuota) resourceBudgetLocked(add seatResources) error {
+	cpu, total, available, err := q.resources()
+	if err != nil {
+		return fmt.Errorf("%w: resource_unknown", ErrSoftQuota)
+	}
+	cpu -= q.policy.ReserveCPUMillicores
+	total -= q.policy.ReserveMemoryBytes
+	for _, s := range q.state.Seats {
+		cpu -= s.Resources.cpuMillicores()
+		total -= s.Resources.MemoryMB << 20
+	}
+	if cpu < add.cpuMillicores() || total < add.MemoryMB<<20 || available-q.policy.ReserveMemoryBytes < add.MemoryMB<<20 {
+		return fmt.Errorf("%w: host_resource_reserve", ErrSoftQuota)
+	}
+	return nil
+}
+func (r seatResources) cpuMillicores() int64 {
+	if r.CPUShares == 0 && r.CPULimitMillicores == 0 {
+		return 0
+	}
+	if r.CPULimitMillicores > 0 {
+		return r.CPULimitMillicores
+	}
+	return max(int64(10), int64(r.CPUShares)*1000/1024)
+}
+func (q *softQuota) checkResources(id string, r seatResources) error {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	s := q.state.Seats[id]
+	if s == nil || s.Resources != r {
+		return fmt.Errorf("%w: unapproved_resource_change", ErrSoftQuota)
+	}
+	return nil
+}
+
+func (q *softQuota) recorded(id, cid string) bool {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	s := q.state.Seats[id]
+	if s == nil {
+		return false
+	}
+	for _, c := range s.CIDs {
+		if c == cid {
+			return true
+		}
+	}
+	return false
+}
+func (q *softQuota) untrack(id, cid string) error {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	s := q.state.Seats[id]
+	if s == nil {
+		return ErrSoftQuota
+	}
+	out := s.CIDs[:0]
+	for _, v := range s.CIDs {
+		if v != cid {
+			out = append(out, v)
+		}
+	}
+	s.CIDs = out
+	return q.persistLocked()
+}
+
+// One batch deadline bounds all stops together, rather than multiplying a
+// per-container deadline by seat count. Requests are only to recorded objects.
+func (q *softQuota) stopHeldLocked(ctx context.Context, stop func(context.Context, string, string) error) {
+	type result struct {
+		id  string
+		err error
+	}
+	count := 0
+	for _, s := range q.state.Seats {
+		if s.Hold != "" {
+			s.StopState = "stopped"
+			count += len(s.CIDs)
+		}
+	}
+	if count == 0 {
+		return
+	}
+	c, cancel := context.WithTimeout(ctx, q.policy.StopTimeout)
+	defer cancel()
+	results := make(chan result, count)
+	for id, s := range q.state.Seats {
+		if s.Hold != "" {
+			for _, cid := range s.CIDs {
+				go func(id, cid string) { results <- result{id, stop(c, id, cid)} }(id, cid)
+			}
+		}
+	}
+	for i := 0; i < count; i++ {
+		r := <-results
+		if r.err != nil {
+			q.state.Seats[r.id].StopState = "unknown"
+		}
+	}
+}

@@ -77,6 +77,17 @@ func (o *Orchestrator) hostedItem(ctx context.Context, agentID string) (map[stri
 	node, nerr := o.st.GetNode(ctx, seat.NodeID)
 	if nerr == nil {
 		m["node_name"] = node.Name
+		mode, _ := registeredQuota(node)
+		if mode != "hard" {
+			m["quota_mode"] = mode
+			m["quota_notice"] = quotaModeNotice(mode)
+			if softSeatWarning(node, agentID) {
+				m["quota_warning"] = true
+			}
+		}
+		if softSeatHeld(node, agentID) || seat.StateDetail == "soft_quota_held" {
+			m["quota_hold"] = true
+		}
 	}
 	// 状态映射（契约第二节）：busy＝操作中（busy/queued/pulling/starting，行操作全置灰）；
 	// disabled＝已停用（节点离线不改写——停用是用户意图态）；节点离线/error/failed＝abnormal；
@@ -92,6 +103,9 @@ func (o *Orchestrator) hostedItem(ctx context.Context, agentID string) (map[stri
 	case seat.State == "online":
 		state = "running"
 	default:
+		state = "abnormal"
+	}
+	if seat.State != "disabled" && (softSeatHeld(node, agentID) || seat.StateDetail == "soft_quota_held") {
 		state = "abnormal"
 	}
 	m["state"] = state

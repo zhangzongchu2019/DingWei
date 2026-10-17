@@ -102,6 +102,9 @@ func (l *Lifecycle) Upgrade(ctx context.Context, agentID, actorLC, version strin
 	if err != nil {
 		return err
 	}
+	if err := l.quotaStartGuard(ctx, seat); err != nil {
+		return err
+	}
 	if seat.State != "online" { // 暂停中不可升级（ab3b4c5b：先启用）；busy 同理
 		return ErrInvalidState
 	}
@@ -137,13 +140,9 @@ func (l *Lifecycle) Upgrade(ctx context.Context, agentID, actorLC, version strin
 	// ② 节点升级（先起新容器、健康后再删旧）。参数满足节点契约：image＋resources＋token_file
 	//    一个都不能少（复验阻断 1——节点 validate 缺 resources 一律 ErrParams）。
 	params, _ := json.Marshal(map[string]any{
-		"seat_id": agentID,
-		"image":   imageRef,
-		"resources": map[string]any{
-			"memory_mb":  plan.MemMB,
-			"cpu_shares": cpuShares(plan.VCPU),
-			"disk_mb":    plan.DiskMB,
-		},
+		"seat_id":   agentID,
+		"image":     imageRef,
+		"resources": l.st.resourceParams(ctx, seat.NodeID, plan),
 		"token_file": map[string]string{
 			"application_id": tok.ApplicationID,
 			"poll_token":     tok.PollToken,
@@ -158,6 +157,9 @@ func (l *Lifecycle) Upgrade(ctx context.Context, agentID, actorLC, version strin
 		// 节点不通（第 7 条）：席位回 online、旧凭据未动（新令牌未被取走，两小时自然过期），答 node_offline。
 		_ = l.st.SetSeatState(ctx, agentID, "online", "", "node_offline", nil)
 		return ErrNodeOffline
+	}
+	if l.quotaResult(ctx, seat, res) {
+		return ErrSoftQuotaHeld
 	}
 	if !res.OK {
 		// 自动回滚：席位回到 online（旧容器与旧凭据未受影响——回滚本身即"旧态仍在"）
@@ -180,6 +182,9 @@ UPDATE g4_hosted_seat SET image_ref=$2, updated_at=now() WHERE agent_id=$1`, age
 func (l *Lifecycle) Restart(ctx context.Context, agentID, actorLC string, isAdmin bool) error {
 	seat, err := l.guard(ctx, agentID, actorLC, isAdmin)
 	if err != nil {
+		return err
+	}
+	if err := l.quotaStartGuard(ctx, seat); err != nil {
 		return err
 	}
 	if seat.State != "online" && seat.State != "error" {
@@ -210,6 +215,12 @@ func (l *Lifecycle) Restart(ctx context.Context, agentID, actorLC string, isAdmi
 		}
 		return ErrNodeOffline
 	}
+	if l.quotaResult(ctx, seat, res) {
+		if !alreadyActive {
+			l.undo(ctx, agentID, actorLC, "suspend")
+		}
+		return ErrSoftQuotaHeld
+	}
 	if !res.OK {
 		_, _ = l.st.TransitionSeatState(ctx, agentID, "starting", "error", "start_failed", "fail", nil)
 		return ErrStartFailed
@@ -228,6 +239,9 @@ func (l *Lifecycle) Restart(ctx context.Context, agentID, actorLC string, isAdmi
 func (l *Lifecycle) RefreshCred(ctx context.Context, agentID, actorLC string) error {
 	seat, err := l.guard(ctx, agentID, actorLC, false)
 	if err != nil {
+		return err
+	}
+	if err := l.quotaStartGuard(ctx, seat); err != nil {
 		return err
 	}
 	if seat.State != "online" && seat.State != "error" {
@@ -271,6 +285,9 @@ func (l *Lifecycle) RefreshCred(ctx context.Context, agentID, actorLC string) er
 	if err != nil {
 		back("node_offline")
 		return ErrNodeOffline
+	}
+	if l.quotaResult(ctx, seat, res) {
+		return ErrSoftQuotaHeld
 	}
 	if !res.OK {
 		switch {
@@ -325,6 +342,9 @@ func (l *Lifecycle) Enable(ctx context.Context, agentID, actorLC string, isAdmin
 	if err != nil {
 		return err
 	}
+	if err := l.quotaStartGuard(ctx, seat); err != nil {
+		return err
+	}
 	if seat.State != "disabled" {
 		return ErrInvalidState
 	}
@@ -340,6 +360,12 @@ func (l *Lifecycle) Enable(ctx context.Context, agentID, actorLC string, isAdmin
 		return err
 	}
 	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "start_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
+	if err == nil && l.quotaResult(ctx, seat, res) {
+		if !alreadyActive {
+			l.undo(ctx, agentID, actorLC, "suspend")
+		}
+		return ErrSoftQuotaHeld
+	}
 	if err != nil || !res.OK {
 		// 节点不通（第 7 条）或节点报起不来（lead-enable-restart-race ①）：席位回 disabled、撤回恢复。
 		// 条件迁移：命令途中 Agent 已连入置 online 的不回写，也不再暂停它的凭据。

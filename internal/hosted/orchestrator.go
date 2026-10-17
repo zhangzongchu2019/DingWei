@@ -17,6 +17,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -160,6 +162,7 @@ func cpuShares(vcpu int) int {
 }
 
 type CreateRequest struct {
+	AllowSoft bool   // explicit user consent; node admin must also allow its soft pool
 	OwnerLC   string // 归属用户（console 当前用户，N3.Actor）
 	By        string // 操作者（审计）
 	Name      string
@@ -232,7 +235,7 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	}
 	// ⑤ 节点：指定或自动（余量最大）；容量须容得下套餐；带 model ⇒ 只在上报清单含它的在线节点里选
 	// （修订 1：有节点支持但被选中节点不支持 ⇒ 自动选别的，不报错；全部不支持才拒）
-	node, err := o.pickNode(ctx, req.NodeID, req.Pool, plan, req.Model)
+	node, err := o.pickNode(ctx, req.NodeID, req.Pool, plan, req.Model, req.AllowSoft)
 	if err != nil {
 		return CreateOutcome{}, err
 	}
@@ -257,8 +260,14 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	// ⑦⑧ 席位落库（queued）＝引用账号：0.2.1.101 起不再独占绑定（本人多席共用，不拦）。
 	// CreateSeat 在同一事务内 FOR SHARE 锁账号行并复核「未停用、属主＝建席人」，与停用串行化；
 	// 失败 ⇒ 一律 Retire 释放名字（席位行未落，无引用要释放）。账号错误与存储错误分开返回。
+	mode, revision := registeredQuota(node)
+	var consent json.RawMessage
+	if mode == "soft" {
+		consent, _ = json.Marshal(map[string]any{"node_id": node.ID, "quota_mode": mode, "quota_policy_revision": revision, "allow_soft": req.AllowSoft, "notice": "无硬磁盘配额"})
+	}
 	err = o.st.CreateSeat(ctx, Seat{
-		AgentID: ag.ID, NodeID: node.ID, CLI: req.CLI, LLM: req.LLM, CredKind: req.CredKind,
+		QuotaConsent: consent,
+		AgentID:      ag.ID, NodeID: node.ID, CLI: req.CLI, LLM: req.LLM, CredKind: req.CredKind,
 		AccountRef: sql.NullString{String: req.AccountID, Valid: true}, Plan: req.Plan, ImageRef: imageRef,
 		Model: req.Model, CreatedBy: req.By, // 生效值即请求值（建席时定死；空＝未指定）
 	})
@@ -276,34 +285,59 @@ func (o *Orchestrator) AccountComboKnown(cli, llm, kind string) bool {
 	return ok
 }
 
-func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan Plan, model string) (Node, error) {
-	var n Node
-	var err error
-	if nodeID != "" && nodeID != "auto" {
-		n, err = o.st.GetNode(ctx, nodeID)
-		if err == nil && n.State != "online" {
-			err = ErrNoNodeCapacity
-		}
-	} else if model != "" {
-		// 包 B2：只在上报清单含该 model 的在线节点里选（清单以最近一次容量帧为准；
-		// 修订 4：帧龄超 3×心跳即视同下线——节点心跳 60s，宽限 180s）
-		n, err = o.st.PickNodeByPoolModel(ctx, pool, model, 180*time.Second)
-	} else {
-		n, err = o.st.PickNodeByPool(ctx, pool)
-	}
-	if errors.Is(err, ErrNotFound) && model != "" {
-		return n, ErrModelNotAvailable // 自动选：无在线节点清单含该 model
-	}
+func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan Plan, model string, allowSoft ...bool) (Node, error) {
+	nodes, err := o.st.ListNodes(ctx)
 	if err != nil {
-		return n, ErrNoNodeCapacity
+		return Node{}, ErrNoNodeCapacity
 	}
-	if model != "" && !nodeHasModel(n, model) { // 指定节点不支持 ⇒ 用户选错，明拒
-		return n, ErrModelNotAvailable
+	consent := len(allowSoft) > 0 && allowSoft[0]
+	var candidates []Node
+	modelSeen := false
+	for _, n := range nodes {
+		if nodeID != "" && nodeID != "auto" && n.ID != nodeID {
+			continue
+		}
+		if n.State != "online" || !nodeQuotaEligible(n) {
+			continue
+		}
+		var labels map[string]string
+		_ = json.Unmarshal(n.Labels, &labels)
+		if pool != "" && labels["pool"] != pool {
+			continue
+		}
+		mode, _ := registeredQuota(n)
+		if mode == "soft" && (!consent || labels["allow_soft"] != "true") {
+			continue
+		}
+		if model != "" {
+			if !nodeHasModel(n, model) || n.LastSeenAt == nil || time.Since(*n.LastSeenAt) > 180*time.Second {
+				continue
+			}
+			modelSeen = true
+		}
+		if freeMB(n) < plan.MemMB {
+			continue
+		}
+		candidates = append(candidates, n)
 	}
-	if freeMB(n) < plan.MemMB {
-		return n, ErrNoNodeCapacity
+	if len(candidates) == 0 {
+		if model != "" && !modelSeen {
+			return Node{}, ErrModelNotAvailable
+		}
+		return Node{}, ErrNoNodeCapacity
 	}
-	return n, nil
+	sort.Slice(candidates, func(i, j int) bool {
+		a, _ := registeredQuota(candidates[i])
+		b, _ := registeredQuota(candidates[j])
+		if a != b {
+			return a == "hard"
+		}
+		if freeMB(candidates[i]) != freeMB(candidates[j]) {
+			return freeMB(candidates[i]) > freeMB(candidates[j])
+		}
+		return candidates[i].ID < candidates[j].ID
+	})
+	return candidates[0], nil
 }
 
 // nodeHasModel 节点上报清单含该 model（capacity JSONB 的 models 数组）。
@@ -377,13 +411,9 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 	}
 	plan, _ := PlanByID(seat.Plan)
 	params, _ := json.Marshal(map[string]any{
-		"seat_id": agentID,
-		"image":   seat.ImageRef,
-		"resources": map[string]any{
-			"memory_mb":  plan.MemMB,
-			"cpu_shares": cpuShares(plan.VCPU),
-			"disk_mb":    plan.DiskMB,
-		},
+		"seat_id":   agentID,
+		"image":     seat.ImageRef,
+		"resources": o.st.resourceParams(ctx, seat.NodeID, plan),
 		"token_file": map[string]string{
 			"application_id": tok.ApplicationID,
 			"poll_token":     tok.PollToken,
@@ -395,6 +425,12 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 		"model":           seat.Model,    // 包 B2 修订 3：落库记录值（不随节点默认漂移）
 	})
 	if res, err := o.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "create_seat", Params: params}); err != nil || !res.OK {
+		n, ne := o.st.GetNode(ctx, seat.NodeID)
+		mode, _ := registeredQuota(n)
+		if (ne == nil && mode == "soft") || (!res.OK && strings.Contains(res.Error, "soft_quota_blocked")) {
+			_ = o.st.SetSeatState(ctx, agentID, "error", "soft_quota_held", "soft_quota", nil)
+			return
+		}
 		fail("starting", "start_failed")
 		return
 	}
@@ -407,6 +443,14 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 // MarkOnline 席位以专属凭据连入时由 Hub 连接层回调（Hub.OnHostedAgentOnline，wireHosted 接线）。
 // 只认 starting → online：已 online 的重连、升级中（busy）新容器连入、已超时清掉的席位等一律不改（返回 nil）。
 func (o *Orchestrator) MarkOnline(ctx context.Context, agentID string) error {
+	if seat, err := o.st.GetSeat(ctx, agentID); err == nil {
+		if seat.StateDetail == "soft_quota_held" {
+			return nil
+		}
+		if n, e := o.st.GetNode(ctx, seat.NodeID); e == nil && softSeatHeld(n, agentID) {
+			return nil
+		}
+	}
 	moved, err := o.st.TransitionSeatState(ctx, agentID, "starting", "online", "", "online", nil)
 	if err != nil || moved {
 		return err

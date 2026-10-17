@@ -97,6 +97,11 @@ func (l *Lifecycle) validateJob(ctx context.Context, req LifecycleJobRequest) er
 	if err != nil {
 		return err
 	}
+	if req.Op == "upgrade" || req.Op == "restart" || req.Op == "refresh_cred" || req.Op == "enable" {
+		if err := l.quotaStartGuard(ctx, seat); err != nil {
+			return err
+		}
+	}
 	switch req.Op {
 	case "upgrade":
 		if seat.State != "online" {
@@ -189,7 +194,7 @@ func lifecycleJobReason(err error) string {
 		code string
 	}{
 		{ErrInvalidState, "invalid_state"}, {ErrNodeOffline, "node_offline"},
-		{ErrStartFailed, "start_failed"}, {ErrRolledBack, "upgrade_failed_rolled_back"},
+		{ErrSoftQuotaHeld, "soft_quota_held"}, {ErrStartFailed, "start_failed"}, {ErrRolledBack, "upgrade_failed_rolled_back"},
 		{ErrBackupFailed, "backup_failed"}, {ErrParams, "params_invalid"},
 		{ErrNotOwner, "not_owner"}, {ErrConfirmRequired, "confirm_required"},
 		{ErrNodeUnsupported, "node_unsupported"}, {ErrCredInjectFailed, "credential_inject_failed"},
@@ -244,7 +249,7 @@ func (l *Lifecycle) JobProgressFor(ctx context.Context, id, actor string) (JobVi
 
 func lifecycleSeatFailureReason(detail string) string {
 	switch detail {
-	case "start_timeout", "start_failed", "node_offline":
+	case "start_timeout", "start_failed", "node_offline", "soft_quota_held":
 		return detail
 	default:
 		return "start_failed"

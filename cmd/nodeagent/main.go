@@ -1,5 +1,5 @@
 // nodeagent 节点代理（T-G4-10；部署边界：受 systemd 管理的宿主进程，见设计件第七节）。
-// 配置仅五项（环境变量注入，机密只给路径不给值）：
+// 连接配置（环境变量注入，机密只给路径不给值）；完整节点策略见 deploy/nodeagent.env.example：
 //
 //	NODEAGENT_HUB_URL          wss://hub/api/node/connect（必须 wss）
 //	NODEAGENT_NODE_ID          nd_<hex16>
@@ -11,6 +11,8 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -21,6 +23,16 @@ import (
 )
 
 func main() {
+	printRevision := flag.Bool("print-policy-revision", false, "print non-secret node policy revision without connecting or reading credentials")
+	flag.Parse()
+	policy, err := nodeagent.LoadNodePolicy()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if *printRevision {
+		fmt.Println(policy.Revision())
+		return
+	}
 	cfg := nodeagent.Config{
 		HubURL:        os.Getenv("NODEAGENT_HUB_URL"),
 		NodeID:        os.Getenv("NODEAGENT_NODE_ID"),
@@ -62,6 +74,13 @@ func main() {
 		log.Fatal("nodeagent: NODEAGENT_SEAT_PROXY 必填（席位代理，如 http://172.30.68.1:11080）")
 	}
 	seatRoot := envOr("NODEAGENT_SEAT_ROOT", "/data/dingwei-newplat/agents")
+	preflightCtx, preflightCancel := context.WithTimeout(context.Background(), policy.StopTimeout)
+	if err := nodeagent.CheckSoftEngine(preflightCtx, sockPath, seatRoot, policy); err != nil {
+		preflightCancel()
+		log.Fatal(err)
+	}
+	preflightCancel()
+	log.Printf("nodeagent: quota mode=%s policy_revision=%s", policy.Mode, policy.Revision())
 	eng := nodeagent.NewEngine(sockPath)
 	registry := envOr("NODEAGENT_IMAGE_REGISTRY", "hub.local/dingwei")
 	if err := ag.RegisterDockerHandlers(
@@ -84,6 +103,7 @@ func main() {
 		os.Getenv("NODEAGENT_SEAT_MODE"),
 		// 包 B2：本节点可选模型清单（运维配置；逐项格式校验在 RegisterDockerHandlers）。
 		csvList("NODEAGENT_SEAT_CODEX_MODELS"),
+		policy,
 	); err != nil {
 		log.Fatalf("nodeagent: %v", err)
 	}

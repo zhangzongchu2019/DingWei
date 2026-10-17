@@ -92,6 +92,7 @@ func (g *Gate) Handler() http.Handler {
 
 func (g *Gate) serve(ctx context.Context, nodeID string, conn *websocket.Conn) {
 	defer conn.CloseNow()
+	conn.SetReadLimit(1 << 20)
 	nc := &nodeConn{conn: conn}
 	g.mu.Lock()
 	if old := g.conns[nodeID]; old != nil {
@@ -135,7 +136,17 @@ func (g *Gate) serve(ctx context.Context, nodeID string, conn *websocket.Conn) {
 		if probe.Type == "capacity_report" {
 			var cf capacityFrame
 			if json.Unmarshal(raw, &cf) == nil {
-				_ = g.st.SetNodeOnline(context.Background(), nodeID, cf.Payload)
+				if g.st.SetNodeOnline(context.Background(), nodeID, cf.Payload) == nil {
+					ids := hosted.NodeQuotaEventIDs(cf.Payload)
+					if len(ids) > 0 {
+						ack, _ := json.Marshal(map[string]any{"type": "quota_event_ack", "ids": ids})
+						nc.mu.Lock()
+						wctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+						_ = conn.Write(wctx, websocket.MessageText, ack)
+						cancel()
+						nc.mu.Unlock()
+					}
+				}
 			}
 			continue
 		}
