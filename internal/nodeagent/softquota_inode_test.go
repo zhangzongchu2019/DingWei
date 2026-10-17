@@ -81,11 +81,13 @@ func TestSoftInodeEmergencyBoundariesPersistStopAndRetainData(t *testing.T) {
 			q.enforce(context.Background(), func(context.Context, string, string) error {
 				raw, err := os.ReadFile(q.path)
 				if err != nil {
-					t.Fatal(err)
+					t.Error(err)
+					return err
 				}
 				var state softState
 				if json.Unmarshal(raw, &state) != nil || state.Seats["ag_one"].Hold != "node_inode_emergency" {
-					t.Fatal("inode stop before correct durable intent")
+					t.Error("inode stop before correct durable intent")
+					return fmt.Errorf("fixture rejected incorrect durable intent")
 				}
 				stops++
 				return nil
