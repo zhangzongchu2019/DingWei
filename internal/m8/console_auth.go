@@ -1280,7 +1280,8 @@ function hostedOpTrack(a,op,jobId){
 }
 async function hostedCreate(){
   var v=function(id){return document.getElementById(id).value.trim();};
-  var body={allow_soft:!!(document.getElementById('hostedAllowSoft')&&document.getElementById('hostedAllowSoft').checked),name:v('hostedName'),node_id:v('hostedNode')||'auto',cli:v('hostedCli'),llm:v('hostedLlm'),account_id:v('hostedAccount'),plan_id:v('hostedPlan')};
+  var body={name:v('hostedName'),node_id:v('hostedNode')||'auto',cli:v('hostedCli'),llm:v('hostedLlm'),account_id:v('hostedAccount'),plan_id:v('hostedPlan')};
+  var softConsent=document.getElementById('hostedAllowSoft');if(softConsent&&softConsent.checked)body.allow_soft=true;
   var model=v('hostedModel');if(model)body.model=model;   // 不选＝不带键（老形态）
   var fillMsg='请填写名称并选择 CLI、LLM、账号和资源套餐';
   if(!body.name||!body.cli||!body.llm||!body.account_id||!body.plan_id){enrollFeedback('hostedFeedback',fillMsg);return;}

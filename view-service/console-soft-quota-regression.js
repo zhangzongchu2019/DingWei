@@ -11,7 +11,7 @@ const mutation=process.env.MUTATION||'';
 if(mutation){
   const anchors={
     notice:["(n.quota_mode==='soft'?'【无硬磁盘配额】':'')","''"],
-    consent:["allow_soft:!!(document.getElementById('hostedAllowSoft')&&document.getElementById('hostedAllowSoft').checked)","allow_soft:false"],
+    consent:["if(softConsent&&softConsent.checked)body.allow_soft=true;","if(softConsent&&softConsent.checked)body.allow_soft=false;"],
     eligibility:["disabled:!n.online||n.quota_eligible===false","disabled:!n.online"],
     roster:["a.hosted.quota_mode==='soft'","false"],
   };
@@ -52,7 +52,7 @@ const server=http.createServer(async(req,res)=>{
   for(const consent of [false,true]){
    await page.locator('#hostedName').fill(consent?'WithConsent':'NoConsent');await page.locator('#hostedNode').selectOption('soft');await page.locator('#hostedAllowSoft').setChecked(consent);
    const response=page.waitForResponse(r=>r.url().endsWith('/api/console/hosted/agents')&&r.request().method()==='POST');await page.locator('#hostedCreateBtn').click();const r=await response;
-   assert.strictEqual(r.request().postDataJSON().allow_soft,consent);assert.strictEqual(r.request().postDataJSON().node_id,'soft');
+   if(consent)assert.strictEqual(r.request().postDataJSON().allow_soft,true);else assert(!('allow_soft' in r.request().postDataJSON()),'legacy default body shape');assert.strictEqual(r.request().postDataJSON().node_id,'soft');
   }
   assert.match(await page.locator('#rosterItems').textContent(),/无硬磁盘配额（磁盘保护，数据保留）/);
   assert.doesNotMatch(await page.locator('#hostedFeedback').textContent(),/UNTRUSTED_DETAIL/);
