@@ -1,0 +1,12 @@
+{
+  "owned_temp_prefixes": {
+    "coder-busy-baseline-*": [],
+    "coder-busy-fixed-*": [],
+    "coder-busy-full-*": [],
+    "coder-busy-root-*": [],
+    "coder-busy-withdraw-*": [],
+    "coder-busy-trace-*": []
+  },
+  "owned_go_cache_created": false,
+  "product_state_touched": false
+}

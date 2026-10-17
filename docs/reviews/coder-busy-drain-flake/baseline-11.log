@@ -1,0 +1,21 @@
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+test_busy_buffer_queues_busy_messages_and_drains_fifo (test_sessionhelper.SessionHelperTest.test_busy_buffer_queues_busy_messages_and_drains_fifo) ... FAIL
+
+======================================================================
+FAIL: test_busy_buffer_queues_busy_messages_and_drains_fifo (test_sessionhelper.SessionHelperTest.test_busy_buffer_queues_busy_messages_and_drains_fifo)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/busy-drain-flake-r20/tools/sessionhelper/tests/test_sessionhelper.py", line 1016, in test_busy_buffer_queues_busy_messages_and_drains_fifo
+    self.assertEqual(helper.busy_acked_from, set())
+AssertionError: Items in the first set but not the second:
+'peer#FB-2642'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.525s
+
+FAILED (failures=1)

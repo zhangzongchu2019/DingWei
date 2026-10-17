@@ -1001,14 +1001,23 @@ class SessionHelperTest(unittest.TestCase):
         async def drain_once():
             fake.idle = True
             task = asyncio.create_task(helper.pending_drain_loop(ws))
-            deadline = asyncio.get_running_loop().time() + 1.5
-            while asyncio.get_running_loop().time() < deadline and helper.pending_inbound:
-                await asyncio.sleep(0.05)
-            task.cancel()
+            async def drained():
+                # Dequeue precedes awaited handling and final busy-ack cleanup. Empty
+                # pending alone is not completion: cancelling there races the last item.
+                while helper.pending_inbound or len(fake.handled) < 2 or helper.busy_acked_from:
+                    if task.done():
+                        await task  # Surface unexpected drain failure instead of timing out.
+                        self.fail("pending drain stopped before completion")
+                    await asyncio.sleep(0.01)
+
             try:
-                await task
-            except asyncio.CancelledError:
-                pass
+                await asyncio.wait_for(drained(), timeout=10.0)
+            finally:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
 
         asyncio.run(drain_once())
         self.assertEqual(fake.handled, ["one", "two"])
