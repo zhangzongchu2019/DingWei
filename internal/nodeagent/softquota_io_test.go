@@ -11,15 +11,17 @@ import (
 	"time"
 )
 
-func TestSoftInodeReserveRemainsAdmissionOnly(t *testing.T) {
+func TestSoftInodeAdmissionRemainsAboveEmergencyLine(t *testing.T) {
 	q, _ := softFixture(t)
 	reserveFixture(t, q, "ag_one")
 	q.track("ag_one", "cid")
-	q.disk = func(string) (fsSpace, error) { return fsSpace{1 << 40, 1 << 40, 10000000, 1}, nil }
+	space := fsSpace{1 << 40, 1 << 40, 10000000, 10000000}
+	space.FreeFiles = q.inodeEmergencyThreshold(space)
+	q.disk = func(string) (fsSpace, error) { return space, nil }
 	q.sampleNode()
 	q.checkReserve()
 	if q.state.Seats["ag_one"].Hold != "" {
-		t.Fatal("extra inode emergency behavior not authorized")
+		t.Fatal("equality at inode emergency line incorrectly held seat")
 	}
 	if err := q.commandGate(Command{Type: CmdStartSeat, Params: json.RawMessage(`{"seat_id":"ag_one"}`)}); err == nil {
 		t.Fatal("original I admission gate weakened")
