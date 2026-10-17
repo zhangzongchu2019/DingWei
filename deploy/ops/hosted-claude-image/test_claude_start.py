@@ -5,6 +5,7 @@ import os
 import hashlib
 import io
 import tarfile
+import stat
 from pathlib import Path
 import tempfile
 import unittest
@@ -125,6 +126,36 @@ class ClaudeStart(unittest.TestCase):
             self.assertEqual(mcp['env']['SH_IPC_SEND_BODY_ONLY'], '1')
             self.assertEqual(mcp['env']['DINGWEI_MCP_IPC_SOCK'], out['SH_MCP_IPC_SOCK'])
             self.assertNotIn('file', json.dumps(mcp))
+            mcp_info = (root/'work'/'.claude'/'mcp.json').lstat()
+            self.assertTrue(stat.S_ISREG(mcp_info.st_mode))
+            self.assertEqual((stat.S_IMODE(mcp_info.st_mode), mcp_info.st_nlink), (0o600, 1))
+
+    def test_mcp_config_rejects_final_or_temporary_symlink_without_touching_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = root / 'config'; config.mkdir(mode=0o700)
+            target = root / 'synthetic-external'
+            target.write_bytes(b'external must remain private')
+            target.chmod(0o640)
+            original = target.read_bytes(), stat.S_IMODE(target.stat().st_mode)
+            final = config / 'mcp.json'
+            final.symlink_to(target)
+            with mock.patch.object(start, 'SEAT_UID', os.getuid()):
+                with self.assertRaises(ValueError):
+                    start._write_mcp_config(config, {'mcpServers': {}})
+            self.assertTrue(final.is_symlink())
+            self.assertEqual((target.read_bytes(), stat.S_IMODE(target.stat().st_mode)), original)
+
+            final.unlink()
+            poisoned = config / '.mcp.poison.tmp'
+            poisoned.symlink_to(target)
+            fd = os.open(target, os.O_RDONLY)
+            with mock.patch.object(start.tempfile, 'mkstemp', return_value=(fd, str(poisoned))):
+                with mock.patch.object(start, 'SEAT_UID', os.getuid()):
+                    with self.assertRaises(ValueError):
+                        start._write_mcp_config(config, {'mcpServers': {}})
+            self.assertFalse(poisoned.exists())
+            self.assertEqual((target.read_bytes(), stat.S_IMODE(target.stat().st_mode)), original)
 
     def test_staged_public_guard_rejects_old_update_before_credential_read(self):
         """Exercise the actual staged H3 public guard, not a launcher-local substitute.

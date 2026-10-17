@@ -44,6 +44,53 @@ def _credential(path):
         fail('SH_CRED_FILE')
 
 
+def _regular_mcp_path_or_missing(path):
+    """Only a private regular config file may be replaced; never follow a link."""
+    try:
+        info = path.lstat()
+    except FileNotFoundError:
+        return
+    if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or
+            stat.S_IMODE(info.st_mode) != 0o600 or info.st_uid != SEAT_UID):
+        raise ValueError()
+
+
+def _write_mcp_config(config_dir, config):
+    """Install mcp.json from an exclusive private regular temporary file.
+
+    The Claude configuration directory is writable state.  Fixed temporary names
+    would let a pre-existing symlink redirect the configuration write, so both the
+    temporary and destination paths are lstat-checked and the final file is checked
+    again after the atomic replacement.
+    """
+    final = config_dir / 'mcp.json'
+    _regular_mcp_path_or_missing(final)
+    fd = None
+    tmp = None
+    try:
+        fd, name = tempfile.mkstemp(prefix='.mcp.', suffix='.tmp', dir=config_dir)
+        tmp = Path(name)
+        info = tmp.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != SEAT_UID:
+            raise ValueError()
+        with os.fdopen(fd, 'w', encoding='utf-8') as out:
+            fd = None
+            out.write(json.dumps(config, separators=(',', ':')))
+        tmp.chmod(0o600)
+        _regular_mcp_path_or_missing(final)
+        os.replace(tmp, final)
+        tmp = None
+        info = final.lstat()
+        if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or
+                stat.S_IMODE(info.st_mode) != 0o600 or info.st_uid != SEAT_UID):
+            raise ValueError()
+    finally:
+        if fd is not None:
+            os.close(fd)
+        if tmp is not None:
+            tmp.unlink(missing_ok=True)
+
+
 def prepare(env):
     _shared_guard()
     if (any(not env.get(key) for key in REQUIRED) or env['SH_ENROLL'] != '1' or
@@ -86,10 +133,7 @@ def prepare(env):
                 },
             },
         }
-        mcp_tmp = mcp_dir / '.mcp.json.tmp'
-        mcp_tmp.write_text(json.dumps(mcp, separators=(',', ':')))
-        mcp_tmp.chmod(0o600)
-        os.replace(mcp_tmp, mcp_dir / 'mcp.json')
+        _write_mcp_config(mcp_dir, mcp)
     except (OSError, ValueError):
         fail('CLAUDE_HOME')
     env.update(HOME=str(home), SH_MODE=env.get('SH_MODE', 'cli'), SH_CLI='claude',
