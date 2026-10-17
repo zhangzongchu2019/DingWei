@@ -127,3 +127,7 @@ Private cache801,986,811 bytes, private HOME83,050,377 bytes and disposable
 TMPDIR1,139,530 bytes were removed. Shared caches/other seats were untouched.
 The repository-relative manifest covers this follow-up directory and CURRENT.md;
 original delivery manifests retain their original historical scope.
+
+Extra raw `*-reserve-fix.log` and `reserve-withdraw-restored.log` files are
+preceding e5958bf runs, retained as history only. They are not the repaired final
+pin executions in the table above, whose log names use `reserve-final`/`final-restored`.
