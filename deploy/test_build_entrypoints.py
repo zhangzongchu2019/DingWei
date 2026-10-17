@@ -17,6 +17,14 @@ class BuildEntrypointContractTest(unittest.TestCase):
         self.assertIn('SOURCE_COMMIT', text)
         self.assertIn('部署制品拒绝脏工作树', text)
 
+    def test_nodeagent_is_a_peer_release_artifact(self):
+        text = self.read("build.sh")
+        # Keep nodeagent in the same loop as Hub-facing binaries: this gives it
+        # the identical GOOS/GOARCH, reproducibility flags and Commit injection.
+        self.assertIn("for c in workpulse fcs file-service nodeagent; do", text)
+        self.assertIn('sha256sum "$OUT/workpulse" "$OUT/fcs" "$OUT/file-service" "$OUT/nodeagent"', text)
+        self.assertEqual(text.count('internal/version.Commit=${COMMIT}'), 1)
+
     def test_make_build_and_docker_do_not_copy_build_flags(self):
         text = self.read("Makefile")
         build = text.split("build:\n", 1)[1].split("\nrun:", 1)[0]

@@ -58,7 +58,7 @@ else
 fi
 OUT="${1:-./bin}"
 mkdir -p "$OUT"
-for c in workpulse fcs file-service; do
+for c in workpulse fcs file-service nodeagent; do
   CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
   go build -trimpath -buildvcs=false \
     -ldflags "-s -w -X github.com/zhangzongchu2019/dingwei/internal/version.Commit=${COMMIT}" \
@@ -66,4 +66,4 @@ for c in workpulse fcs file-service; do
 done
 echo "commit=${COMMIT}"
 go version
-sha256sum "$OUT/workpulse" "$OUT/fcs" "$OUT/file-service"
+sha256sum "$OUT/workpulse" "$OUT/fcs" "$OUT/file-service" "$OUT/nodeagent"
