@@ -88,3 +88,30 @@ Engine test. Narrow source withdrawals must turn these assertions red.
 Future package acquisition, target-specific verification, independent Engine
 approval, image/venv/UID/CA/runtime/CLI/MCP tests and digest publication remain
 separate owner-authorized work. None is authorized by this packager change.
+
+## R2 composition follow-up: COPY and runtime permissions
+
+The actual staged Dockerfile/ignore pair is tested together: the common source
+is `start.py`, so `.dockerignore` includes `!start.py`, with explicit included
+parent directories for copied trees. The pure-code model checks each actual
+context COPY (excluding builder-stage COPY), wildcard source expansion, all
+copied descendants and their ancestors under this definition's literal/*/**/
+negation rules. Removing the guard inclusion must fail that same assertion.
+
+The outer staging root stays 0700 and is not copied into the image. Every nested
+context directory is explicitly fchmod'ed to 0755 through its checked dirfd,
+independent of a private 0077 umask. Output `directories` records actual modes
+and ordinary Docker COPY's root:root ownership contract; `staging_root` records
+its private mode and non-runtime scope. New package files canonicalize to 0644,
+or 0755 when the pinned archive marks any executable bit, so publisher-private
+0600/0700 modes cannot strand data/code behind root-only access. Other source
+files retain the already-checked 0644 mode. UID/GID10001 can traverse/read these
+root-owned trees but does not gain write permission to their code.
+
+Tests model ordinary COPY assigning root:root then final USER10001:10001,
+using actual staged modes, the directory receipt and OTHER read/execute bits.
+They deliberately corrupt a directory back to 0700 and require rejection. The
+model excludes the private outer host staging root and does not claim a real
+Docker COPY/image test. A directory fchmod error must close all descriptors and
+remove only the newly created output. Pre-Docker fixed exit2 remains unchanged;
+R3 and final combined image/runtime acceptance remain separate.

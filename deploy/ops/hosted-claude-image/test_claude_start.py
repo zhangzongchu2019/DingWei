@@ -196,6 +196,97 @@ class ClaudePackager(unittest.TestCase):
                     path.write_bytes(original);self.rehash()
                     if self.out.exists():__import__('shutil').rmtree(self.out)
 
+    def assert_staged_copy_ignore_contract(self):
+        import re
+        import shlex
+        patterns=(self.out/'.dockerignore').read_text().splitlines()
+        def included(path):
+            # Dockerignore subset used by this definition: root literals,
+            # segment *, recursive **, parent-directory matching and last rule.
+            paths=[path.as_posix()]+[x.as_posix() for x in path.parents if x.as_posix()!='.']
+            result=True
+            for raw in patterns:
+                raw=raw.strip()
+                if not raw or raw.startswith('#'):continue
+                negate=raw.startswith('!');pattern=raw[1:] if negate else raw
+                pattern=pattern.strip('/')
+                self.assertNotRegex(pattern,r'[?\[\]\\]','unsupported ignore syntax in this definition model')
+                regex=re.escape(pattern).replace(r'\*\*','.*').replace(r'\*','[^/]*')
+                if any(re.fullmatch(regex,name) for name in paths):result=negate
+            return result
+        count=0
+        for line in (self.out/'Dockerfile').read_text().splitlines():
+            if not line.lstrip().startswith('COPY '):continue
+            parts=shlex.split(line)
+            if any(x.startswith('--from=') for x in parts):continue
+            for source in parts[1:-1]:
+                self.assertFalse(source.startswith('--'),'unexpected COPY flag in this definition')
+                matches=list(self.out.glob(source.rstrip('/')))
+                self.assertTrue(matches,'missing staged COPY source '+source)
+                for path in matches:
+                    entries=[path]+(list(path.rglob('*')) if path.is_dir() else [])
+                    for entry in entries:
+                        relative=entry.relative_to(self.out)
+                        self.assertTrue(included(relative),'staged COPY source excluded: '+relative.as_posix())
+                        for parent in relative.parents:
+                            if parent.as_posix()!='.':self.assertTrue(included(parent),'COPY ancestor excluded: '+parent.as_posix())
+                count+=1
+        self.assertGreater(count,8,'COPY parser did not exercise the actual multi-stage definition')
+
+    def test_staged_copy_sources_survive_actual_ignore_rules(self):
+        self.run_prepare();self.assert_staged_copy_ignore_contract()
+        path=self.out/'.dockerignore';original=path.read_text()
+        path.write_text('\n'.join(line for line in original.splitlines() if line!='!start.py')+'\n')
+        with self.assertRaisesRegex(AssertionError,'start.py'):self.assert_staged_copy_ignore_contract()
+        path.write_text(original);self.assert_staged_copy_ignore_contract()
+
+    def assert_runtime_uid_contract(self):
+        import stat
+        receipt=json.loads((self.out/'BUILD-INPUTS.json').read_text())
+        self.assertEqual(receipt['staging_root'],{'mode':0o700,'copied_into_image':False})
+        self.assertEqual(stat.S_IMODE(self.out.stat().st_mode),0o700)
+        # Faithful ordinary-COPY model: copied ownership is root:root regardless
+        # of the host fixture UID. UID/GID10001 therefore uses OTHER permissions.
+        for directory in [p for p in self.out.rglob('*') if p.is_dir()]:
+            rel=directory.relative_to(self.out).as_posix();mode=stat.S_IMODE(directory.stat().st_mode)
+            self.assertEqual(mode,0o755,'runtime directory mode '+rel)
+            self.assertEqual(receipt['directories'][rel],{'type':'directory','mode':mode,'copy_uid':0,'copy_gid':0})
+            self.assertTrue(mode & stat.S_IXOTH,'UID10001 cannot traverse root-owned '+rel)
+        for root in ['helper','claude/package','native/package']:
+            for path in (self.out/root).rglob('*'):
+                if path.is_file():self.assertTrue(path.stat().st_mode & stat.S_IROTH,'UID10001 cannot read root-owned '+str(path))
+        for name in ['claude/package/bin/tool','native/package/bin/tool']:
+            self.assertTrue((self.out/name).stat().st_mode & stat.S_IXOTH,'UID10001 cannot execute native/package fixture')
+        dockerfile=(self.out/'Dockerfile').read_text()
+        self.assertIn('USER 10001:10001',dockerfile)
+        self.assertNotIn('--chown',dockerfile,'root-owned COPY model requires adjustment for new ownership flags')
+
+    def test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask(self):
+        previous=os.umask(0o077)
+        try:self.run_prepare()
+        finally:os.umask(previous)
+        self.assert_runtime_uid_contract()
+        directory=self.out/'helper/factory/sessionhelper';directory.chmod(0o700)
+        with self.assertRaises(AssertionError):self.assert_runtime_uid_contract()
+        directory.chmod(0o755);self.assert_runtime_uid_contract()
+
+    def test_archive_modes_are_readable_and_executable_for_runtime_user(self):
+        for original,expected in [(0o600,0o644),(0o400,0o644),(0o700,0o755),(0o750,0o755)]:
+            with self.subTest(original=oct(original)):
+                blob=io.BytesIO()
+                with tarfile.open(fileobj=blob,mode='w:gz') as archive:
+                    item=tarfile.TarInfo('package/tool');item.mode=original;item.size=1;archive.addfile(item,io.BytesIO(b'x'))
+                result=prepare.unpack_package(blob.getvalue(),'native',1)
+                self.assertEqual(result['native/package/tool'][1],expected)
+
+    def test_directory_chmod_failure_closes_descriptors_and_removes_new_output(self):
+        original=prepare.os.fchmod;before=len(os.listdir('/proc/self/fd'))
+        def denied(fd,mode):
+            if mode==0o755:raise PermissionError('synthetic directory chmod failure')
+            return original(fd,mode)
+        with mock.patch.object(prepare.os,'fchmod',side_effect=denied), self.assertRaises(PermissionError):self.run_prepare()
+        self.assertFalse(self.out.exists());self.assertEqual(len(os.listdir('/proc/self/fd')),before)
+
     def test_regular_type_does_not_allow_changed_h3_modes(self):
         for name in ['start.py','helper/factory/sessionhelper/__init__.py','wheels/websockets-15.0.1-py3-none-any.whl','runtime-debs/fixture.deb']:
             with self.subTest(name=name):

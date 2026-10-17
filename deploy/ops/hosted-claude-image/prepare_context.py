@@ -256,7 +256,7 @@ def unpack_package(blob, prefix, want_count):
             total += member.size
             if total > LIMIT or len(files) >= 2048:
                 raise Rejected('package budget exceeded')
-            files[dest] = (archive.extractfile(member).read(), member.mode & 0o755)
+            files[dest] = (archive.extractfile(member).read(), 0o755 if member.mode & 0o111 else 0o644)
     if len(files) != want_count:
         raise Rejected('package file count mismatch')
     return files
@@ -298,25 +298,30 @@ def prepare(lock_path, cli_tar, native_tar, node_tar, base, output, *, repo, com
         created = True
         root = os.open(output.name, DIR_FLAGS, dir_fd=parent)
         try:
+            directories = {}
             for name, (data, mode) in selected.items():
                 directory = os.dup(root)
                 try:
                     parts = safe_rel(name).parts
-                    for part in parts[:-1]:
+                    for index, part in enumerate(parts[:-1]):
                         try:
-                            os.mkdir(part, mode=0o700, dir_fd=directory)
+                            os.mkdir(part, mode=0o755, dir_fd=directory)
                         except FileExistsError:
                             pass
                         child = os.open(part, DIR_FLAGS, dir_fd=directory)
+                        # Root staging stays private; COPY runtime subtrees must
+                        # be traversable after Docker's ordinary root ownership.
                         os.close(directory)
                         directory = child
+                        os.fchmod(directory, 0o755)
+                        directories['/'.join(parts[:index + 1])] = {'type': 'directory', 'mode': stat.S_IMODE(os.fstat(directory).st_mode), 'copy_uid': 0, 'copy_gid': 0}
                     dest = os.open(parts[-1], os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, mode, dir_fd=directory)
                     with os.fdopen(dest, 'wb') as stream:
                         stream.write(data)
                         os.fchmod(stream.fileno(), mode)
                 finally:
                     os.close(directory)
-            evidence = {'format': 1, 'source': {'commit': commit, 'tree': git(repo, 'rev-parse', commit + '^{tree}').decode().strip()}, 'h3': dict(mapping['h3'], receipt_sha256=sha(receipt_raw)), 'mapping_sha256': sha(mapping_raw), 'claude_lock_sha256': sha(approved_lock), 'files': {n: {'sha256': sha(v[0]), 'mode': v[1], 'type': 'regular'} for n, v in selected.items()}}
+            evidence = {'format': 1, 'source': {'commit': commit, 'tree': git(repo, 'rev-parse', commit + '^{tree}').decode().strip()}, 'h3': dict(mapping['h3'], receipt_sha256=sha(receipt_raw)), 'directories': directories, 'staging_root': {'mode': stat.S_IMODE(os.fstat(root).st_mode), 'copied_into_image': False}, 'mapping_sha256': sha(mapping_raw), 'claude_lock_sha256': sha(approved_lock), 'files': {n: {'sha256': sha(v[0]), 'mode': v[1], 'type': 'regular'} for n, v in selected.items()}}
             dest = os.open('BUILD-INPUTS.json', os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644, dir_fd=root)
             with os.fdopen(dest, 'w') as stream:
                 json.dump(evidence, stream, sort_keys=True, indent=2)
