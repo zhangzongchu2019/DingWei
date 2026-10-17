@@ -55,6 +55,8 @@ type softState struct {
 type softQuota struct {
 	resources          func() (int64, int64, int64, error)
 	mu                 sync.Mutex
+	enforceMu          sync.Mutex
+	writerGate         chan struct{}
 	policy             NodePolicy
 	root, path, nodeID string
 	state              softState
@@ -108,7 +110,7 @@ func newSoftQuota(p NodePolicy, root, path, nodeID string) (*softQuota, error) {
 		lock.Close()
 		return nil, fmt.Errorf("soft quota controller already running")
 	}
-	q := &softQuota{resources: hostResourceBudget, policy: p, root: root, path: path, nodeID: nodeID, now: time.Now, usage: measureUsage, disk: readSpace, lock: lock, state: softState{Version: 1, NodeID: nodeID, Root: root, Active: true, Seats: map[string]*softSeat{}}}
+	q := &softQuota{writerGate: make(chan struct{}, 1), resources: hostResourceBudget, policy: p, root: root, path: path, nodeID: nodeID, now: time.Now, usage: measureUsage, disk: readSpace, lock: lock, state: softState{Version: 1, NodeID: nodeID, Root: root, Active: true, Seats: map[string]*softSeat{}}}
 	fail := func(err error) (*softQuota, error) { lock.Close(); return nil, err }
 	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
 	if err == syscall.ENOENT {
@@ -362,92 +364,145 @@ func (q *softQuota) commandGate(cmd Command) error {
 	return nil
 }
 
-// start serializes the last safety check with starting a writer. Monitor holds
-// are never cleared by restart/replay/upgrade. Timeout limits a blocking Engine.
+// Writer operations and automatic stop share a gate, but never hold the state
+// mutex during a walk or Engine request. Reserve can durably hold while either
+// is blocked; a stop runs after any in-flight start, never before a late start.
+func (q *softQuota) acquireWriter(ctx context.Context) error {
+	select {
+	case q.writerGate <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
 func (q *softQuota) start(ctx context.Context, id string, fn func(context.Context) error) error {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-	if err := q.admitLocked(0); err != nil {
+	gateCtx, gateCancel := context.WithTimeout(ctx, q.policy.StopTimeout)
+	defer gateCancel()
+	if err := q.acquireWriter(gateCtx); err != nil {
 		return err
 	}
-	s := q.state.Seats[id]
-	if s == nil {
-		return fmt.Errorf("%w: seat_not_registered", ErrSoftQuota)
+	defer func() { <-q.writerGate }()
+	q.mu.Lock()
+	if err := q.admitLocked(0); err != nil {
+		q.mu.Unlock()
+		return err
 	}
-	if s.Hold != "" {
-		return fmt.Errorf("%w: held", ErrSoftQuota)
+	seat := q.state.Seats[id]
+	if seat == nil || seat.Hold != "" {
+		q.mu.Unlock()
+		return fmt.Errorf("%w: held or unregistered", ErrSoftQuota)
 	}
+	q.mu.Unlock()
 	c, cancel := context.WithTimeout(ctx, q.policy.ScanBudget)
-	defer cancel()
 	usage, err := q.usage(c, q.root, id)
 	if c.Err() != nil {
 		err = c.Err()
 	}
+	cancel()
+	q.mu.Lock()
+	if q.state.Seats[id] != seat {
+		q.mu.Unlock()
+		return ErrSoftQuota
+	}
 	if err != nil {
-		s.UsageUnknown = true
+		seat.UsageUnknown = true
 		_ = q.persistLocked()
+		q.mu.Unlock()
 		return fmt.Errorf("%w: usage_unknown", ErrSoftQuota)
 	}
-	s.UsageUnknown = false
-	s.Usage, s.MeasuredAt = usage, q.now()
-	if usage.charged() >= s.Limit {
+	seat.UsageUnknown = false
+	seat.Usage, seat.MeasuredAt = usage, q.now()
+	if usage.charged() >= seat.Limit {
 		q.holdLocked(id, "disk_limit")
-		_ = q.persistLocked()
-		return fmt.Errorf("%w: held", ErrSoftQuota)
 	}
-	if err = q.persistLocked(); err != nil {
+	if err = q.admitLocked(0); err == nil && seat.Hold != "" {
+		err = ErrSoftQuota
+	}
+	pe := q.persistLocked()
+	q.mu.Unlock()
+	if err != nil {
+		return err
+	}
+	if pe != nil {
 		return fmt.Errorf("%w: private_state_unavailable", ErrSoftQuota)
 	}
 	c2, cancel2 := context.WithTimeout(ctx, q.policy.StopTimeout)
 	defer cancel2()
-	return fn(c2)
-}
-func (q *softQuota) scan(ctx context.Context, stop func(context.Context, string, string) error) {
+	err = fn(c2)
 	q.mu.Lock()
-	defer q.mu.Unlock()
+	held := q.state.Seats[id] != seat || seat.Hold != "" || q.broken
+	q.mu.Unlock()
+	if held {
+		return fmt.Errorf("%w: held during start", ErrSoftQuota)
+	}
+	return err
+}
+
+// Measurements run on a snapshot without the state mutex. A forgotten/replaced
+// seat or newer writer measurement cannot receive a stale result.
+func (q *softQuota) measure(ctx context.Context) {
+	q.mu.Lock()
+	snapshot := make(map[string]*softSeat, len(q.state.Seats))
+	for id, seat := range q.state.Seats {
+		snapshot[id] = seat
+	}
+	began := q.now()
+	q.mu.Unlock()
 	c, cancel := context.WithTimeout(ctx, q.policy.ScanBudget)
 	defer cancel()
-	for id, s := range q.state.Seats {
+	for id, seat := range snapshot {
 		u, err := q.usage(c, q.root, id)
 		if c.Err() != nil {
 			err = c.Err()
 		}
+		q.mu.Lock()
+		if q.state.Seats[id] != seat || seat.MeasuredAt.After(began) {
+			q.mu.Unlock()
+			continue
+		}
 		if err == nil {
-			s.UsageUnknown = false
-			s.Usage, s.MeasuredAt = u, q.now()
-			if u.charged() >= s.Limit {
+			seat.UsageUnknown = false
+			seat.Usage, seat.MeasuredAt = u, q.now()
+			if u.charged() >= seat.Limit {
 				q.holdLocked(id, "disk_limit")
 			}
-			if u.charged() >= s.Limit/100*q.policy.WarnPercent && !s.Warn {
-				s.Warn = true
+			if u.charged() >= seat.Limit/100*q.policy.WarnPercent && !seat.Warn {
+				seat.Warn = true
 				q.eventLocked(id, "disk_warning")
 			}
-			if u.charged() < s.Limit/100*q.policy.RecoveryPercent {
-				s.Warn = false
+			if u.charged() < seat.Limit/100*q.policy.RecoveryPercent {
+				seat.Warn = false
 			}
 		} else {
-			s.UsageUnknown = true
-			since := s.MeasuredAt
+			seat.UsageUnknown = true
+			since := seat.MeasuredAt
 			if since.IsZero() {
-				since = s.CreatedAt
+				since = seat.CreatedAt
 			}
 			if q.now().Sub(since) >= q.policy.MaxAge || q.now().Sub(since) < 0 {
 				q.holdLocked(id, "usage_unknown")
 			}
 		}
+		q.mu.Unlock()
 	}
-	// Durably record intent before stop; a failed write is still a fail-closed stop.
+	q.mu.Lock()
 	_ = q.persistLocked()
 	for id := range q.state.Seats {
 		if q.broken {
 			q.holdLocked(id, "private_state_unavailable")
 		}
 	}
-	q.stopHeldLocked(ctx, stop)
-
-	_ = q.persistLocked()
+	q.mu.Unlock()
+}
+func (q *softQuota) scan(ctx context.Context, stop func(context.Context, string, string) error) {
+	q.measure(ctx)
+	q.enforce(ctx, stop)
 }
 func (d *dockerOps) stopOwned(ctx context.Context, id, cid string) error {
+	if err := d.soft.acquireWriter(ctx); err != nil {
+		return err
+	}
+	defer func() { <-d.soft.writerGate }()
 	var v struct {
 		ID     string `json:"Id"`
 		Config struct {
@@ -490,45 +545,105 @@ func (d *dockerOps) stopOwned(ctx context.Context, id, cid string) error {
 	}
 	return nil
 }
+
+// Three bounded workers: one scan, one reserve sampler and one enforcer. Neither
+// a slow scan nor Engine stop serializes the reserve ticker. Signals coalesce;
+// no goroutine is spawned per tick, and cancellation joins all workers.
 func (d *dockerOps) runSoft(ctx context.Context) {
-	scan := time.NewTicker(d.policy.ScanInterval)
-	defer scan.Stop()
-	reserve := time.NewTicker(d.policy.ReserveInterval)
-	defer reserve.Stop()
-	d.soft.scan(ctx, d.stopOwned)
+	enforce := make(chan struct{}, 1)
+	notify := func() {
+		select {
+		case enforce <- struct{}{}:
+		default:
+		}
+	}
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		ticker := time.NewTicker(d.policy.ScanInterval)
+		defer ticker.Stop()
+		for {
+			d.soft.measure(ctx)
+			notify()
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-enforce:
+				d.soft.enforce(ctx, d.stopOwned)
+			}
+		}
+	}()
+	defer wg.Wait()
+	ticker := time.NewTicker(d.policy.ReserveInterval)
+	defer ticker.Stop()
 	for {
+		d.soft.checkReserve()
+		notify()
 		select {
 		case <-ctx.Done():
 			return
-		case <-scan.C:
-			d.soft.scan(ctx, d.stopOwned)
-		case <-reserve.C:
-			d.soft.mu.Lock()
-			_ = d.soft.sampleSpaceLocked()
-			for id, s := range d.soft.state.Seats {
-				if d.soft.broken {
-					d.soft.holdLocked(id, "private_state_unavailable")
-				}
-				since := s.MeasuredAt
-				if since.IsZero() {
-					since = s.CreatedAt
-				}
-				if time.Since(since) >= d.policy.MaxAge || time.Since(since) < 0 {
-					d.soft.holdLocked(id, "usage_unknown")
-				}
-			}
-			d.soft.mu.Unlock()
-			// The next scan is bounded; stale holds must be enforced immediately.
-			d.soft.enforce(ctx, d.stopOwned)
+		case <-ticker.C:
 		}
 	}
 }
-func (q *softQuota) enforce(ctx context.Context, stop func(context.Context, string, string) error) {
+
+// Both emergency thresholds are an explicit fraction of the respective
+// admission reserve R (default 50%=R/2). Round upwards; never truncate to zero.
+func (q *softQuota) emergencyThresholds(space fsSpace) (int64, uint64) {
+	bytes := max(q.policy.ReserveBytes, space.Total/100*q.policy.ReservePercent)
+	inodes := max(q.policy.ReserveInodes, space.Files/100*q.policy.ReserveInodePercent)
+	percent := q.policy.EmergencyReservePercent
+	return bytes/100*percent + (bytes%100*percent+99)/100,
+		inodes/100*uint64(percent) + (inodes%100*uint64(percent)+99)/100
+}
+func (q *softQuota) checkReserve() {
 	q.mu.Lock()
 	defer q.mu.Unlock()
+	spaceErr := q.sampleSpaceLocked()
+	emergency := ""
+	if spaceErr != nil {
+		emergency = "node_space_unknown"
+	} else {
+		bytes, inodes := q.emergencyThresholds(q.space)
+		if q.space.Free < bytes {
+			emergency = "node_space_emergency"
+		}
+		if q.space.FreeFiles < inodes {
+			emergency = "node_inode_emergency"
+		}
+	}
+	for id, seat := range q.state.Seats {
+		if emergency != "" {
+			q.holdLocked(id, emergency)
+		}
+		if q.broken {
+			q.holdLocked(id, "private_state_unavailable")
+		}
+		since := seat.MeasuredAt
+		if since.IsZero() {
+			since = seat.CreatedAt
+		}
+		if q.now().Sub(since) >= q.policy.MaxAge || q.now().Sub(since) < 0 {
+			q.holdLocked(id, "usage_unknown")
+		}
+	}
 	_ = q.persistLocked()
-	q.stopHeldLocked(ctx, stop)
-	_ = q.persistLocked()
+}
+func (q *softQuota) enforce(ctx context.Context, stop func(context.Context, string, string) error) {
+	q.enforceMu.Lock()
+	defer q.enforceMu.Unlock()
+	q.stopHeld(ctx, stop)
 }
 
 // softDirectory creates no XFS project and never changes a limit to zero. Clear
@@ -560,14 +675,7 @@ func (d *dockerOps) startWriter(ctx context.Context, id, cid string, restart boo
 	}
 	if d.soft != nil {
 		return d.soft.start(ctx, id, func(c context.Context) error {
-			s := d.soft.state.Seats[id]
-			found := false
-			for _, v := range s.CIDs {
-				if v == cid {
-					found = true
-				}
-			}
-			if !found {
+			if !d.soft.recorded(id, cid) {
 				return fmt.Errorf("%w: unregistered_container", ErrSoftQuota)
 			}
 			return fn(c)
@@ -694,37 +802,53 @@ func (q *softQuota) untrack(id, cid string) error {
 	return q.persistLocked()
 }
 
-// One batch deadline bounds all stops together, rather than multiplying a
-// per-container deadline by seat count. Requests are only to recorded objects.
-func (q *softQuota) stopHeldLocked(ctx context.Context, stop func(context.Context, string, string) error) {
+// Snapshot and durable intent are protected; Engine IO is outside the state
+// mutex. Failed/pending calls never claim stopped. Forgotten seats are ignored.
+func (q *softQuota) stopHeld(ctx context.Context, stop func(context.Context, string, string) error) {
+	type target struct {
+		id, cid string
+		seat    *softSeat
+	}
 	type result struct {
-		id  string
+		target
 		err error
 	}
-	count := 0
-	for _, s := range q.state.Seats {
-		if s.Hold != "" {
-			s.StopState = "stopped"
-			count += len(s.CIDs)
-		}
-	}
-	if count == 0 {
-		return
-	}
-	c, cancel := context.WithTimeout(ctx, q.policy.StopTimeout)
-	defer cancel()
-	results := make(chan result, count)
-	for id, s := range q.state.Seats {
-		if s.Hold != "" {
-			for _, cid := range s.CIDs {
-				go func(id, cid string) { results <- result{id, stop(c, id, cid)} }(id, cid)
+	q.mu.Lock()
+	targets := []target{}
+	seats := map[string]*softSeat{}
+	for id, seat := range q.state.Seats {
+		if seat.Hold != "" {
+			seats[id] = seat
+			seat.StopState = "pending"
+			for _, cid := range seat.CIDs {
+				targets = append(targets, target{id, cid, seat})
 			}
 		}
 	}
-	for i := 0; i < count; i++ {
+	_ = q.persistLocked()
+	q.mu.Unlock()
+	c, cancel := context.WithTimeout(ctx, q.policy.StopTimeout)
+	defer cancel()
+	results := make(chan result, len(targets))
+	for _, item := range targets {
+		go func(item target) { results <- result{item, stop(c, item.id, item.cid)} }(item)
+	}
+	failed := map[string]bool{}
+	for range targets {
 		r := <-results
 		if r.err != nil {
-			q.state.Seats[r.id].StopState = "unknown"
+			failed[r.id] = true
 		}
 	}
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	for id, seat := range seats {
+		if q.state.Seats[id] == seat {
+			seat.StopState = "stopped"
+			if failed[id] {
+				seat.StopState = "unknown"
+			}
+		}
+	}
+	_ = q.persistLocked()
 }

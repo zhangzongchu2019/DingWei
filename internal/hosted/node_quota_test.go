@@ -233,3 +233,45 @@ func TestHardNodeResourceExtensionNegotiated(t *testing.T) {
 		t.Fatalf("explicit CPU limit missing %+v", r)
 	}
 }
+
+func TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath(t *testing.T) {
+	for _, reason := range []string{"node_space_emergency", "node_inode_emergency", "node_space_unknown"} {
+		t.Run(reason, func(t *testing.T) {
+			o, _, _, s := mkOrch(t)
+			ctx := context.Background()
+			revision := strings.Repeat("d", 64)
+			if err := s.UpsertNode(ctx, Node{ID: "nd_emergency", Name: "emergency", QuotaMode: "soft", QuotaPolicyRevision: revision, Labels: json.RawMessage(`{"allow_soft":"true"}`)}); err != nil {
+				t.Fatal(err)
+			}
+			frame := json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"` + revision + `","soft_ready":true,"mem_free_mb":65536}`)
+			if err := s.SetNodeOnline(ctx, "nd_emergency", frame); err != nil {
+				t.Fatal(err)
+			}
+			created, err := o.Create(ctx, CreateRequest{AllowSoft: true, OwnerLC: "zzc", By: "zzc", Name: "emergencyseat", NodeID: "nd_emergency", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctOf(t, o.pool), Plan: "2c4g"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			event := json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"` + revision + `","soft_ready":false,"quota_events":[{"id":"` + strings.Repeat("e", 32) + `","seat_id":"` + created.AgentID + `","reason":"` + reason + `","at":"2026-10-17T08:30:00Z"}]}`)
+			for i := 0; i < 2; i++ {
+				if err := s.SetNodeOnline(ctx, "nd_emergency", event); err != nil {
+					t.Fatal(err)
+				}
+			}
+			seat, err := s.GetSeat(ctx, created.AgentID)
+			if err != nil || seat.StateDetail != "soft_quota_held" {
+				t.Fatalf("emergency not held %+v %v", seat, err)
+			}
+			var count int
+			row, err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action='node.soft_quota' AND target='nd_emergency'`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = row.Scan(&count); err != nil || count != 1 {
+				t.Fatal("emergency audit not idempotent", count, err)
+			}
+			if len(NodeQuotaEventIDs(event)) != 1 {
+				t.Fatal("durable event not acknowledged")
+			}
+		})
+	}
+}

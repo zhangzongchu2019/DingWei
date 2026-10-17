@@ -96,7 +96,7 @@ func quotaEvents(raw json.RawMessage) ([]quotaEvent, error) {
 			return nil, ErrParams
 		}
 		switch e.Reason {
-		case "disk_warning", "disk_limit", "usage_unknown", "private_state_unavailable", "unclean_restart":
+		case "disk_warning", "disk_limit", "usage_unknown", "private_state_unavailable", "unclean_restart", "node_space_emergency", "node_inode_emergency", "node_space_unknown":
 		default:
 			return nil, ErrParams
 		}
