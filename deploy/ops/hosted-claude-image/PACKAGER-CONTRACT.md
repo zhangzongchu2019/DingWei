@@ -1,11 +1,12 @@
 # Claude packager R2 contract
 
-This is a definition and offline fixture change, not permission to fetch packages,
-access Docker, build an image, read a seat's private state or enable the combo.
-`build-image.sh` still exits 2 **after** successful context preparation and before
-any Docker command. `verified=false` stays unchanged. R3 owns the Claude launcher,
-credential/enrollment/IPC/CLI ABI and actual staged-guard fixtures; this R2 does not
-claim to accept or test those runtime contracts.
+This defines an executable, explicitly gated offline build entry. Developing or
+testing it does not authorize package acquisition, actual Engine access, an image
+build, reading a seat's private state, registry publication or combo activation.
+The reviewed packager no longer has an unconditional post-prepare refusal.
+`verified=false` stays unchanged. R3 owns the Claude launcher, credential,
+enrollment/IPC/CLI ABI and staged-guard fixtures; entrypoint fixtures do not claim
+real image/runtime acceptance.
 
 ## Git trust and composition
 
@@ -81,9 +82,11 @@ helper export, wheel/deb/tar and receipt validators are real. This proves the
 actual H3 shape and composition contract without real package bodies. Negative
 cases rehash receipts after altering guard/Dockerfile/helper/wheel/deb bytes,
 and exercise missing/extra/type/link/mode/ancestor/JSON/tar/source/lock pollution.
-A subprocess drives the real wrapper against inert Docker traps: a valid context
-still stops, and a polluted context stops before output/Docker. It is not a real
-Engine test. Narrow source withdrawals must turn these assertions red.
+Subprocess fixtures drive the real wrapper and real packager against a text-only
+fake Docker executable. Valid, independently approved fixture Engine identity
+permits the build/inspect sequence; polluted inputs stop before any fake Docker
+call. This is not a real Engine test. Narrow source withdrawals must turn these
+same assertions red.
 
 Future package acquisition, target-specific verification, independent Engine
 approval, image/venv/UID/CA/runtime/CLI/MCP tests and digest publication remain
@@ -113,5 +116,48 @@ using actual staged modes, the directory receipt and OTHER read/execute bits.
 They deliberately corrupt a directory back to 0700 and require rejection. The
 model excludes the private outer host staging root and does not claim a real
 Docker COPY/image test. A directory fchmod error must close all descriptors and
-remove only the newly created output. Pre-Docker fixed exit2 remains unchanged;
+remove only the newly created output. Invalid inputs still exit 2 before Docker;
 R3 and final combined image/runtime acceptance remain separate.
+
+## S-CLAUDE-BUILD-ENTRY (r26 follow-up)
+
+The entry requires `HOSTED_BUILD_ENGINE`, independently inventoried
+`HOSTED_BUILD_ENGINE_ID`, local `HOSTED_IMAGE_TAG`, exact clean
+`CLAUDE_SOURCE_COMMIT`, the existing five offline input paths and a new absolute
+`HOSTED_BUILD_CONTEXT`. It adds no fetch/download step. Operator approval of the
+actual isolated Engine/build remains external to these variables and this code.
+
+1. Required variables and unix URI shape are checked before work. Python resolves
+   lexical/symlink aliases, refuses both default host socket spellings and their
+   aliases, and requires an existing Unix socket using metadata only. All Docker
+   commands use that same canonical endpoint. No socket is connected by this
+   metadata check.
+2. The already-reviewed packager produces the context. It alone selects source
+   inputs; no recursive source-tree copy or alternative context path is added.
+   The wrapper invokes its child Python with `-B` so imports do not dirty a clean
+   source tree even without ignore rules. The calling test/canonical environment
+   requires no bytecode flag or environment workaround.
+3. Only after material validation succeeds does `docker --host ... info --format
+   '{{.ID}}'` read the daemon ID; it must be nonempty and exactly equal the approved
+   ID. Mismatch is fixed exit2, and failed info propagates nonzero with no retry.
+   Unlike H3's identity-before-generation ordering, the offline Claude context
+   is prepared first to preserve its stricter invalid-input-before-ANY-Docker
+   contract. An identity mismatch can leave that verified context for inspection;
+   it cannot run build/inspect or delete existing inputs.
+4. Build uses exactly `--platform=linux/amd64 --network=none --pull=false`, the
+   source commit build argument, explicit local tag and verified context. Failure
+   stops the sequence; no retry, push or implicit publication is performed.
+5. `image inspect --format '{{.Id}}'` obtains the local immutable image ID. Only a
+   `sha256:` plus 64 lowercase hex digits is emitted on success for later pinning.
+   Inspect failure or malformed/empty ID is nonzero. Registry digest generation,
+   push and registration require their own authorization.
+
+Tests use an unlistening bound Unix socket for metadata and a fake Docker program
+which only logs argv and reads the actual generated receipt. Positive assertions
+bind exact info→build→inspect order/arguments, receipt bytes and clean source;
+negative cases cover missing variables, default/lexical/symlink aliases, absent
+or regular socket paths, invalid locks/hashes/dirty source, wrong/empty Engine
+IDs, info/build/inspect failure, malformed inspected IDs, no retries and no false
+success. A separate pure metadata model makes the default socket appear to exist
+without binding or connecting it, so removing the alias guard is detectable even
+on a machine where no default Docker socket exists. `verified=false` is tested.

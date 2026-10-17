@@ -458,25 +458,168 @@ class ClaudePackager(unittest.TestCase):
                     if kind=='duplicate':archive.addfile(info,io.BytesIO(b'x'))
                 with self.assertRaises(prepare.Rejected):prepare.unpack_package(buf.getvalue(),'claude',2 if kind=='duplicate' else 1)
 
-    def test_pre_docker_script_remains_closed_with_valid_composition(self):
-        import subprocess
-        # Stubs are traps, not clients; this subprocess never contacts an Engine.
-        traps=self.root/'traps';traps.mkdir();marker=self.root/'DOCKER-WAS-CALLED'
-        for name in ['docker','podman']:
-            p=traps/name;p.write_text('#!/bin/sh\ntouch "'+str(marker)+'"\nexit 91\n');p.chmod(0o755)
-        # Test shell control flow using the real packager and a synthetic clean
-        # Git source; place only the shell and packager scripts at this layout.
+    def builder_fixture(self):
+        import socket
         scripts=self.repo/prepare.PREFIX
-        for name in ['build-image.sh','prepare_context.py','verify_inputs.py']:(scripts/name).write_bytes((HERE/name).read_bytes())
+        for name in ['build-image.sh','prepare_context.py','verify_inputs.py']:
+            (scripts/name).write_bytes((HERE/name).read_bytes())
         self.commit();self.source=self.git('rev-parse','HEAD')
-        env={'PATH':str(traps)+':/usr/bin:/bin','HOME':str(self.root),'PYTHONDONTWRITEBYTECODE':'1','HOSTED_BUILD_ENGINE':'unix:///isolated-fixture.sock','CLAUDE_SOURCE_COMMIT':self.source,'CLAUDE_OFFLINE_LOCK':str(self.lock),'CLAUDE_OFFLINE_TAR':str(self.cli),'CLAUDE_NATIVE_TAR':str(self.native),'CLAUDE_NODE_RUNTIME':str(self.node),'CLAUDE_BASE_CONTEXT':str(self.base),'HOSTED_BUILD_CONTEXT':str(self.out)}
-        result=subprocess.run(['sh',str(scripts/'build-image.sh')],env=env,text=True,capture_output=True)
-        self.assertEqual(result.returncode,2,result.stderr);self.assertIn('refusing before Docker access',result.stderr)
-        self.assertTrue((self.out/'BUILD-INPUTS.json').is_file());self.assertFalse(marker.exists())
-        shutil=__import__('shutil');shutil.rmtree(self.out)
-        (self.base/'start.py').write_bytes(b'polluted guard');self.rehash()
-        result=subprocess.run(['sh',str(scripts/'build-image.sh')],env=env,text=True,capture_output=True)
-        self.assertEqual(result.returncode,2,result.stderr);self.assertIn('Claude context rejected',result.stderr);self.assertFalse(self.out.exists());self.assertFalse(marker.exists())
+        tools=self.root/'fake-bin';tools.mkdir()
+        self.calls=self.root/'docker-calls.jsonl'
+        fake=tools/'docker'
+        fake.write_text('''#!/usr/bin/python3
+import json,os,pathlib,sys
+args=sys.argv[1:]
+context=pathlib.Path(os.environ['HOSTED_BUILD_CONTEXT'])
+receipt=json.loads((context/'BUILD-INPUTS.json').read_text())
+assert receipt['source']['commit']==os.environ['CLAUDE_SOURCE_COMMIT']
+with open(os.environ['FIXTURE_CALLS'],'a') as stream:
+    stream.write(json.dumps(args)+'\\n')
+if args[2:]==['info','--format','{{.ID}}']:
+    if os.environ.get('FAIL_AT')=='info':sys.exit(23)
+    print(os.environ.get('FIXTURE_ENGINE_ID','approved-fixture'))
+elif args[2:3]==['build']:
+    if os.environ.get('FAIL_AT')=='build':sys.exit(24)
+elif args[2:]==['image','inspect','--format','{{.Id}}',os.environ['HOSTED_IMAGE_TAG']]:
+    if os.environ.get('FAIL_AT')=='inspect':sys.exit(25)
+    print(os.environ.get('FIXTURE_IMAGE_ID','sha256:'+'a'*64))
+else:sys.exit(93)
+''');fake.chmod(0o755)
+        endpoint=self.root/'isolated.sock'
+        inert=socket.socket(socket.AF_UNIX);inert.bind(str(endpoint))
+        self.addCleanup(inert.close)  # No listen/connect: this is metadata only.
+        self.endpoint=endpoint
+        self.build_env={'PATH':str(tools)+':/usr/bin:/bin','HOME':str(self.root),
+            'HOSTED_BUILD_ENGINE':'unix://'+str(endpoint),'HOSTED_BUILD_ENGINE_ID':'approved-fixture',
+            'HOSTED_IMAGE_TAG':'local/claude:fixture','CLAUDE_SOURCE_COMMIT':self.source,
+            'CLAUDE_OFFLINE_LOCK':str(self.lock),'CLAUDE_OFFLINE_TAR':str(self.cli),
+            'CLAUDE_NATIVE_TAR':str(self.native),'CLAUDE_NODE_RUNTIME':str(self.node),
+            'CLAUDE_BASE_CONTEXT':str(self.base),'HOSTED_BUILD_CONTEXT':str(self.out),
+            'FIXTURE_CALLS':str(self.calls)}
+        self.build_script=scripts/'build-image.sh'
+
+    def run_builder(self, changes=None, missing=None):
+        import shutil
+        import subprocess
+        if self.out.exists():shutil.rmtree(self.out)
+        self.calls.unlink(missing_ok=True)
+        env=dict(self.build_env);env.update(changes or {})
+        if missing:env.pop(missing)
+        result=subprocess.run(['sh',str(self.build_script)],env=env,text=True,capture_output=True)
+        rows=[json.loads(line) for line in self.calls.read_text().splitlines()] if self.calls.exists() else []
+        return result,rows
+
+    def test_build_entry_uses_verified_context_offline_parameters_and_inspected_id(self):
+        self.builder_fixture()
+        result,rows=self.run_builder()
+        self.assertEqual(result.returncode,0,result.stderr)
+        engine='unix://'+str(self.endpoint.resolve())
+        self.assertEqual(rows,[['--host',engine,'info','--format','{{.ID}}'],
+            ['--host',engine,'build','--platform=linux/amd64','--network=none','--pull=false',
+             '--build-arg','SOURCE_COMMIT='+self.source,'--tag','local/claude:fixture',str(self.out)],
+            ['--host',engine,'image','inspect','--format','{{.Id}}','local/claude:fixture']])
+        self.assertEqual(result.stdout,'sha256:'+'a'*64+'\n')
+        self.assertEqual(self.git('status','--porcelain','--untracked-files=all'),'')
+        self.assertFalse(list(self.repo.rglob('__pycache__')))
+        receipt=json.loads((self.out/'BUILD-INPUTS.json').read_text())
+        self.assertEqual(receipt['source']['commit'],self.source)
+        self.assertEqual((self.out/'start.py').read_bytes(),(self.base/'start.py').read_bytes())
+        for name,row in receipt['files'].items():
+            self.assertEqual(hashlib.sha256((self.out/name).read_bytes()).hexdigest(),row['sha256'])
+        self.assertFalse(json.loads((HERE/'combos.json').read_text())[0]['verified'])
+
+    def test_build_entry_missing_inputs_stop_before_context_or_docker(self):
+        self.builder_fixture()
+        for name in ['HOSTED_BUILD_ENGINE','HOSTED_BUILD_ENGINE_ID','HOSTED_IMAGE_TAG',
+                     'CLAUDE_SOURCE_COMMIT','CLAUDE_OFFLINE_LOCK','CLAUDE_OFFLINE_TAR',
+                     'CLAUDE_NATIVE_TAR','CLAUDE_NODE_RUNTIME','CLAUDE_BASE_CONTEXT','HOSTED_BUILD_CONTEXT']:
+            with self.subTest(missing=name):
+                result,rows=self.run_builder(missing=name)
+                self.assertEqual(result.returncode,2,result.stderr)
+                self.assertFalse(rows);self.assertFalse(self.out.exists())
+
+    def test_build_entry_socket_alias_and_metadata_refusals_precede_packager(self):
+        self.builder_fixture()
+        alias=self.root/'default-alias.sock';alias.symlink_to('/var/run/docker.sock')
+        loop=self.root/'loop.sock';loop.symlink_to(loop.name)
+        regular=self.root/'not-a-socket';regular.write_bytes(b'fixture')
+        for uri in ['unix:///var/run/docker.sock','unix:///run/docker.sock',
+                    'unix:///run/../run/docker.sock','unix://'+str(alias),'unix://'+str(loop),
+                    'unix://'+str(regular),'unix://'+str(self.root/'absent.sock'),
+                    'tcp://127.0.0.1:2375','unix://relative.sock']:
+            with self.subTest(endpoint=uri):
+                result,rows=self.run_builder({'HOSTED_BUILD_ENGINE':uri})
+                self.assertEqual(result.returncode,2,result.stderr)
+                self.assertFalse(rows);self.assertFalse(self.out.exists())
+        approved_alias=self.root/'approved-alias.sock';approved_alias.symlink_to(self.endpoint.name)
+        result,rows=self.run_builder({'HOSTED_BUILD_ENGINE':'unix://'+str(approved_alias)})
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertTrue(all(row[:2]==['--host','unix://'+str(self.endpoint.resolve())] for row in rows))
+
+    def test_default_alias_guard_even_when_default_socket_exists_metadata_model(self):
+        import subprocess
+        shell=(HERE/'build-image.sh').read_text()
+        program=shell.split("<<'PY_ENGINE'\n",1)[1].split('\nPY_ENGINE',1)[0]
+        # Faithful OS-metadata model only; never bind/connect the host socket.
+        setup="import pathlib,stat,types,sys\npathlib.Path.stat=lambda self:types.SimpleNamespace(st_mode=stat.S_IFSOCK|0o600)\n"
+        alias=self.root/'default-link.sock';alias.symlink_to('/var/run/docker.sock')
+        for uri in ['unix:///var/run/docker.sock','unix:///run/docker.sock',
+                    'unix:///run/../run/docker.sock','unix://'+str(alias)]:
+            with self.subTest(uri=uri):
+                result=subprocess.run(['/usr/bin/python3','-c',setup+program,uri],text=True,capture_output=True)
+                self.assertNotEqual(result.returncode,0)
+                self.assertIn('default host Engine alias forbidden',result.stderr)
+        result=subprocess.run(['/usr/bin/python3','-c',setup+program,'unix://'+str(self.root/'isolated.sock')],text=True,capture_output=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+
+    def test_build_entry_invalid_materials_are_rejected_before_any_docker(self):
+        self.builder_fixture()
+        for path,content,rehash in [(self.lock,self.lock.read_bytes()+b' ',False),
+                (self.cli,b'wrong Claude hash',False),(self.native,b'wrong native hash',False),
+                (self.node,b'wrong Node hash',False),(self.base/'start.py',b'polluted guard',True)]:
+            with self.subTest(material=path.name):
+                original=path.read_bytes();path.write_bytes(content)
+                if rehash:self.rehash()
+                try:
+                    result,rows=self.run_builder()
+                    self.assertEqual(result.returncode,2,result.stderr)
+                    self.assertIn('Claude context rejected',result.stderr)
+                    self.assertFalse(rows);self.assertFalse(self.out.exists())
+                finally:
+                    path.write_bytes(original)
+                    if rehash:self.rehash()
+        dirt=self.repo/'unreviewed.py';dirt.write_text('# synthetic dirt\n')
+        try:
+            result,rows=self.run_builder()
+            self.assertEqual(result.returncode,2,result.stderr);self.assertFalse(rows);self.assertFalse(self.out.exists())
+        finally:dirt.unlink()
+
+    def test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry(self):
+        self.builder_fixture()
+        for changes,rc in [({'FIXTURE_ENGINE_ID':'different-fixture'},2),
+                           ({'FIXTURE_ENGINE_ID':''},2),
+                           ({'FIXTURE_ENGINE_ID':'approved-fixture\nextra'},2),
+                           ({'FAIL_AT':'info'},23)]:
+            with self.subTest(changes=changes):
+                result,rows=self.run_builder(changes)
+                self.assertEqual(result.returncode,rc,result.stderr)
+                self.assertEqual(len(rows),1);self.assertEqual(rows[0][2],'info')
+                self.assertEqual(result.stdout,'')
+                self.assertTrue((self.out/'BUILD-INPUTS.json').is_file())
+
+    def test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id(self):
+        self.builder_fixture()
+        for where,rc,n in [('build',24,2),('inspect',25,3)]:
+            with self.subTest(where=where):
+                result,rows=self.run_builder({'FAIL_AT':where})
+                self.assertEqual(result.returncode,rc,result.stderr)
+                self.assertEqual(len(rows),n);self.assertEqual(result.stdout,'')
+        for image_id in ['', 'sha256:bad','sha256:'+'A'*64,'sha256:'+'a'*64+'\nextra','tag:mutable']:
+            with self.subTest(image_id=image_id):
+                result,rows=self.run_builder({'FIXTURE_IMAGE_ID':image_id})
+                self.assertEqual(result.returncode,2,result.stderr)
+                self.assertEqual(len(rows),3);self.assertEqual(result.stdout,'')
+                self.assertIn('invalid inspected image ID',result.stderr)
 
     def test_descriptor_budget_is_constant_and_output_alias_refused(self):
         before=len(os.listdir('/proc/self/fd'))
