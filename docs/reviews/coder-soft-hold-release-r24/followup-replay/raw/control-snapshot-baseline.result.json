@@ -1,0 +1,25 @@
+{
+  "source": "aca4d9ddec1ea4bbf13e4447b3b1283a872573a1",
+  "argv": [
+    "go",
+    "test",
+    "-p",
+    "1",
+    "-race",
+    "-json",
+    "-count=1",
+    "-timeout=15m",
+    "-run",
+    "^TestSoftHoldReleaseReplayPreservesCurrentHazards/ordinary_error_first_event$",
+    "./internal/hosted"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 4.265,
+  "started_utc": "2026-10-17T17:42:01.516954+00:00",
+  "finished_utc": "2026-10-17T17:42:05.782100+00:00",
+  "sha256": "900add55cb5454588d9754f10c260e9fe8e9b9fb30a0c5868263e1d5a065a9e6",
+  "top_level_pass": 1,
+  "subcase_pass": 1,
+  "failures": [],
+  "skips": []
+}

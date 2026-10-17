@@ -1,0 +1,25 @@
+{
+  "source": "aca4d9ddec1ea4bbf13e4447b3b1283a872573a1",
+  "argv": [
+    "go",
+    "test",
+    "-p",
+    "1",
+    "-race",
+    "-json",
+    "-count=1",
+    "-timeout=15m",
+    "-run",
+    "^TestOpusReleaseWithUnackedHoldEventConverges$",
+    "./internal/hosted"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 4.297,
+  "started_utc": "2026-10-17T17:41:42.796292+00:00",
+  "finished_utc": "2026-10-17T17:41:47.092909+00:00",
+  "sha256": "46b665ddb5213715732def08ae37b464836eb1cf5ce66b7528aca415e5962455",
+  "top_level_pass": 1,
+  "subcase_pass": 0,
+  "failures": [],
+  "skips": []
+}

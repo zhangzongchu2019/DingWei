@@ -1,0 +1,30 @@
+{
+  "source": "aca4d9ddec1ea4bbf13e4447b3b1283a872573a1",
+  "argv": [
+    "go",
+    "test",
+    "-p",
+    "1",
+    "-race",
+    "-json",
+    "-count=1",
+    "-timeout=15m",
+    "-run",
+    "^TestSoftHoldReleasePendingEventConverges/(success|timeout)/legacy_held_error$",
+    "./internal/hosted"
+  ],
+  "rc": 1,
+  "elapsed_seconds": 7.811,
+  "started_utc": "2026-10-17T17:42:21.856335+00:00",
+  "finished_utc": "2026-10-17T17:42:29.667496+00:00",
+  "sha256": "29942bdf26e995a91285b8e70cd775fd7f04658e384f84d5af809b649c7d6c7d",
+  "top_level_pass": 0,
+  "subcase_pass": 0,
+  "failures": [
+    "TestSoftHoldReleasePendingEventConverges/success/legacy_held_error",
+    "TestSoftHoldReleasePendingEventConverges/timeout/legacy_held_error",
+    "TestSoftHoldReleasePendingEventConverges",
+    "PACKAGE"
+  ],
+  "skips": []
+}

@@ -1,0 +1,41 @@
+package hosted
+
+import (
+ "context"
+ "encoding/json"
+ "strings"
+ "testing"
+)
+
+func TestOpusQuotaOutboxAuditFailureAtomic(t *testing.T) {
+ ctx:=context.Background()
+ s:=NewStore(testpool(t))
+ if err:=s.ApplySchema(ctx);err!=nil{t.Fatal(err)}
+ f:=releaseNodeFixture(t,s)
+ if _,err:=s.exec(ctx,`ALTER TABLE g4_audit ADD CONSTRAINT opus_reject_quota CHECK (action <> 'node.soft_quota')`);err!=nil{t.Fatal(err)}
+ f["quota_events"]=[]any{map[string]any{"id":strings.Repeat("c",32),"seat_id":"ag_release","reason":"disk_limit","at":"2026-10-17T17:00:00Z"}}
+ b,_:=json.Marshal(f)
+ if err:=s.SetNodeOnline(ctx,"nd_release",b);err==nil{t.Fatal("audit failure did not reject frame")}
+ var n int
+ row,err:=s.qrow(ctx,`SELECT count(*) FROM g4_quota_notice`);if err!=nil{t.Fatal(err)}
+ if err=row.Scan(&n);err!=nil||n!=0{t.Fatalf("notice escaped failed transaction %d %v",n,err)}
+ node,err:=s.GetNode(ctx,"nd_release");if err!=nil{t.Fatal(err)}
+ if strings.Contains(string(node.Capacity),"quota_events"){t.Fatal("capacity updated despite failed audit")}
+}
+
+func TestOpusReleaseWithUnackedHoldEventConverges(t *testing.T) {
+ ctx:=context.Background();s:=NewStore(testpool(t));if err:=s.ApplySchema(ctx);err!=nil{t.Fatal(err)}
+ f:=releaseNodeFixture(t,s)
+ if _,err:=s.exec(ctx,`INSERT INTO g4_hosted_seat(agent_id,node_id,cli,llm,cred_kind,plan,state,state_detail,created_by) VALUES('ag_release','nd_release','codex','gpt','token_file','1c1.5g40','stopped','soft_quota_held','owner')`);err!=nil{t.Fatal(err)}
+ f["quota_events"]=[]any{map[string]any{"id":strings.Repeat("b",32),"seat_id":"ag_release","reason":"disk_limit","at":"2026-10-17T17:00:00Z"}}
+ setReleaseFrame(t,s,f)
+ if err:=s.ReleaseSoftHold(ctx,&releaseGateway{},"owner","nd_release","ag_release",strings.Repeat("b",32));err!=nil{t.Fatal(err)}
+ seat:=f["soft_seats"].(map[string]any)["ag_release"].(map[string]any)
+ seat["hold"]="";seat["hold_id"]="";seat["stop_state"]="";seat["last_release_id"]=strings.Repeat("b",32)
+ // The same durable event may remain on the node until the ACK reaches it.
+ setReleaseFrame(t,s,f)
+ delete(f,"quota_events")
+ setReleaseFrame(t,s,f)
+ v,err:=s.GetSeat(ctx,"ag_release");if err!=nil{t.Fatal(err)}
+ if v.State!="stopped" || v.StateDetail!="soft_quota_released"{t.Fatalf("confirmed release stuck after duplicate pre-release event: state=%s detail=%s",v.State,v.StateDetail)}
+}

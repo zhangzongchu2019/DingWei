@@ -1,0 +1,8 @@
+{"Time":"2026-10-17T17:41:44.192902234Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted"}
+{"Time":"2026-10-17T17:41:44.210016051Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestOpusReleaseWithUnackedHoldEventConverges"}
+{"Time":"2026-10-17T17:41:44.210092051Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestOpusReleaseWithUnackedHoldEventConverges","Output":"=== RUN   TestOpusReleaseWithUnackedHoldEventConverges\n"}
+{"Time":"2026-10-17T17:41:46.073799043Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestOpusReleaseWithUnackedHoldEventConverges","Output":"--- PASS: TestOpusReleaseWithUnackedHoldEventConverges (1.86s)\n"}
+{"Time":"2026-10-17T17:41:46.073856235Z","Action":"pass","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestOpusReleaseWithUnackedHoldEventConverges","Elapsed":1.86}
+{"Time":"2026-10-17T17:41:46.073880681Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Output":"PASS\n"}
+{"Time":"2026-10-17T17:41:47.076436647Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Output":"ok  \tgithub.com/zhangzongchu2019/dingwei/internal/hosted\t2.883s\n"}
+{"Time":"2026-10-17T17:41:47.076533182Z","Action":"pass","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Elapsed":2.884}

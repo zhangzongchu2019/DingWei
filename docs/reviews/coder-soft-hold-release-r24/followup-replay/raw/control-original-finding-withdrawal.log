@@ -1,0 +1,9 @@
+{"Time":"2026-10-17T17:41:40.87476097Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted"}
+{"Time":"2026-10-17T17:41:40.899784926Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestOpusReleaseWithUnackedHoldEventConverges"}
+{"Time":"2026-10-17T17:41:40.899859399Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestOpusReleaseWithUnackedHoldEventConverges","Output":"=== RUN   TestOpusReleaseWithUnackedHoldEventConverges\n"}
+{"Time":"2026-10-17T17:41:42.43525979Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestOpusReleaseWithUnackedHoldEventConverges","Output":"    zz_review_replay_test.go:40: confirmed release stuck after duplicate pre-release event: state=error detail=soft_quota_held\n"}
+{"Time":"2026-10-17T17:41:42.774067545Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestOpusReleaseWithUnackedHoldEventConverges","Output":"--- FAIL: TestOpusReleaseWithUnackedHoldEventConverges (1.87s)\n"}
+{"Time":"2026-10-17T17:41:42.774119612Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestOpusReleaseWithUnackedHoldEventConverges","Elapsed":1.87}
+{"Time":"2026-10-17T17:41:42.774157063Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Output":"FAIL\n"}
+{"Time":"2026-10-17T17:41:42.776610182Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/hosted\t1.902s\n"}
+{"Time":"2026-10-17T17:41:42.776635426Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Elapsed":1.9020000000000001}

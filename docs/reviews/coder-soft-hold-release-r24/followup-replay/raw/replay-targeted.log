@@ -1,0 +1,62 @@
+=== RUN   TestSoftHoldHubReleaseAuditAndUncertainNoResend
+=== RUN   TestSoftHoldHubReleaseAuditAndUncertainNoResend/success
+=== RUN   TestSoftHoldHubReleaseAuditAndUncertainNoResend/timeout
+=== RUN   TestSoftHoldHubReleaseAuditAndUncertainNoResend/refuse
+=== RUN   TestSoftHoldHubReleaseAuditAndUncertainNoResend/wrong_receipt
+=== RUN   TestSoftHoldHubReleaseAuditAndUncertainNoResend/hard
+=== RUN   TestSoftHoldHubReleaseAuditAndUncertainNoResend/revision
+=== RUN   TestSoftHoldHubReleaseAuditAndUncertainNoResend/version
+=== RUN   TestSoftHoldHubReleaseAuditAndUncertainNoResend/generation
+=== RUN   TestSoftHoldHubReleaseAuditAndUncertainNoResend/pending
+=== RUN   TestSoftHoldHubReleaseAuditAndUncertainNoResend/offline
+=== RUN   TestSoftHoldHubReleaseAuditAndUncertainNoResend/stale
+--- PASS: TestSoftHoldHubReleaseAuditAndUncertainNoResend (18.49s)
+    --- PASS: TestSoftHoldHubReleaseAuditAndUncertainNoResend/success (0.01s)
+    --- PASS: TestSoftHoldHubReleaseAuditAndUncertainNoResend/timeout (0.00s)
+    --- PASS: TestSoftHoldHubReleaseAuditAndUncertainNoResend/refuse (0.00s)
+    --- PASS: TestSoftHoldHubReleaseAuditAndUncertainNoResend/wrong_receipt (0.00s)
+    --- PASS: TestSoftHoldHubReleaseAuditAndUncertainNoResend/hard (0.00s)
+    --- PASS: TestSoftHoldHubReleaseAuditAndUncertainNoResend/revision (0.01s)
+    --- PASS: TestSoftHoldHubReleaseAuditAndUncertainNoResend/version (0.00s)
+    --- PASS: TestSoftHoldHubReleaseAuditAndUncertainNoResend/generation (0.00s)
+    --- PASS: TestSoftHoldHubReleaseAuditAndUncertainNoResend/pending (0.00s)
+    --- PASS: TestSoftHoldHubReleaseAuditAndUncertainNoResend/offline (0.01s)
+    --- PASS: TestSoftHoldHubReleaseAuditAndUncertainNoResend/stale (0.00s)
+=== RUN   TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices
+--- PASS: TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices (1.89s)
+=== RUN   TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart
+--- PASS: TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart (2.00s)
+=== RUN   TestSoftHoldReleasePendingEventConverges
+=== RUN   TestSoftHoldReleasePendingEventConverges/success/already_received
+=== RUN   TestSoftHoldReleasePendingEventConverges/success/first_after_release
+=== RUN   TestSoftHoldReleasePendingEventConverges/success/legacy_held_error
+=== RUN   TestSoftHoldReleasePendingEventConverges/timeout/already_received
+=== RUN   TestSoftHoldReleasePendingEventConverges/timeout/first_after_release
+=== RUN   TestSoftHoldReleasePendingEventConverges/timeout/legacy_held_error
+--- PASS: TestSoftHoldReleasePendingEventConverges (11.84s)
+    --- PASS: TestSoftHoldReleasePendingEventConverges/success/already_received (1.95s)
+    --- PASS: TestSoftHoldReleasePendingEventConverges/success/first_after_release (1.87s)
+    --- PASS: TestSoftHoldReleasePendingEventConverges/success/legacy_held_error (2.05s)
+    --- PASS: TestSoftHoldReleasePendingEventConverges/timeout/already_received (1.93s)
+    --- PASS: TestSoftHoldReleasePendingEventConverges/timeout/first_after_release (1.99s)
+    --- PASS: TestSoftHoldReleasePendingEventConverges/timeout/legacy_held_error (2.05s)
+=== RUN   TestSoftHoldReleaseReplayPreservesCurrentHazards
+=== RUN   TestSoftHoldReleaseReplayPreservesCurrentHazards/new_hold
+=== RUN   TestSoftHoldReleaseReplayPreservesCurrentHazards/new_hold_without_event
+=== RUN   TestSoftHoldReleaseReplayPreservesCurrentHazards/ordinary_error
+=== RUN   TestSoftHoldReleaseReplayPreservesCurrentHazards/destroyed
+=== RUN   TestSoftHoldReleaseReplayPreservesCurrentHazards/disabled
+=== RUN   TestSoftHoldReleaseReplayPreservesCurrentHazards/no_owner_intent
+=== RUN   TestSoftHoldReleaseReplayPreservesCurrentHazards/wrong_generation
+--- PASS: TestSoftHoldReleaseReplayPreservesCurrentHazards (13.41s)
+    --- PASS: TestSoftHoldReleaseReplayPreservesCurrentHazards/new_hold (1.75s)
+    --- PASS: TestSoftHoldReleaseReplayPreservesCurrentHazards/new_hold_without_event (1.97s)
+    --- PASS: TestSoftHoldReleaseReplayPreservesCurrentHazards/ordinary_error (1.83s)
+    --- PASS: TestSoftHoldReleaseReplayPreservesCurrentHazards/destroyed (1.93s)
+    --- PASS: TestSoftHoldReleaseReplayPreservesCurrentHazards/disabled (1.93s)
+    --- PASS: TestSoftHoldReleaseReplayPreservesCurrentHazards/no_owner_intent (1.90s)
+    --- PASS: TestSoftHoldReleaseReplayPreservesCurrentHazards/wrong_generation (2.10s)
+=== RUN   TestSoftHoldLegacyEventStateAppliedOnce
+--- PASS: TestSoftHoldLegacyEventStateAppliedOnce (2.06s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	50.709s

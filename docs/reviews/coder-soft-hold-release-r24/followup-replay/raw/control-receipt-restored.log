@@ -1,0 +1,8 @@
+{"Time":"2026-10-17T17:41:58.732750094Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted"}
+{"Time":"2026-10-17T17:41:58.752359579Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestSoftHoldLegacyEventStateAppliedOnce"}
+{"Time":"2026-10-17T17:41:58.752390139Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestSoftHoldLegacyEventStateAppliedOnce","Output":"=== RUN   TestSoftHoldLegacyEventStateAppliedOnce\n"}
+{"Time":"2026-10-17T17:42:00.49629452Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestSoftHoldLegacyEventStateAppliedOnce","Output":"--- PASS: TestSoftHoldLegacyEventStateAppliedOnce (1.74s)\n"}
+{"Time":"2026-10-17T17:42:00.49634795Z","Action":"pass","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestSoftHoldLegacyEventStateAppliedOnce","Elapsed":1.74}
+{"Time":"2026-10-17T17:42:00.496395995Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Output":"PASS\n"}
+{"Time":"2026-10-17T17:42:01.499159608Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Output":"ok  \tgithub.com/zhangzongchu2019/dingwei/internal/hosted\t2.766s\n"}
+{"Time":"2026-10-17T17:42:01.499254935Z","Action":"pass","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Elapsed":2.767}

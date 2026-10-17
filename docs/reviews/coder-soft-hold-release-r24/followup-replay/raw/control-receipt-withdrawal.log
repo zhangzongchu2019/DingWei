@@ -1,0 +1,9 @@
+{"Time":"2026-10-17T17:41:55.504530535Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted"}
+{"Time":"2026-10-17T17:41:55.524228313Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestSoftHoldLegacyEventStateAppliedOnce"}
+{"Time":"2026-10-17T17:41:55.524271543Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestSoftHoldLegacyEventStateAppliedOnce","Output":"=== RUN   TestSoftHoldLegacyEventStateAppliedOnce\n"}
+{"Time":"2026-10-17T17:41:57.020673827Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestSoftHoldLegacyEventStateAppliedOnce","Output":"    softquota_replay_test.go:188: legacy receipt side effect repeated {QuotaConsent:[] AgentID:ag_release NodeID:nd_release CLI:codex LLM:gpt CredKind:token_file AccountRef:{String: Valid:false} Plan:1c1.5g40 State:error StateDetail:soft_quota_held ImageRef: Model: CreatedBy:owner}\n"}
+{"Time":"2026-10-17T17:41:57.262442435Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestSoftHoldLegacyEventStateAppliedOnce","Output":"--- FAIL: TestSoftHoldLegacyEventStateAppliedOnce (1.74s)\n"}
+{"Time":"2026-10-17T17:41:57.262492717Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Test":"TestSoftHoldLegacyEventStateAppliedOnce","Elapsed":1.74}
+{"Time":"2026-10-17T17:41:57.262534816Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Output":"FAIL\n"}
+{"Time":"2026-10-17T17:41:57.265060144Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/hosted\t1.760s\n"}
+{"Time":"2026-10-17T17:41:57.265087297Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/hosted","Elapsed":1.7610000000000001}

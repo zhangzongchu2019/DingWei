@@ -1,0 +1,12 @@
+{
+  "go_list_rc": 0,
+  "packages": 64,
+  "docs_package": false,
+  "product_test_diff_from_82743cb6": [
+    "internal/hosted/node_quota.go",
+    "internal/hosted/softquota_replay_test.go"
+  ],
+  "mutant_product_test_restored": true,
+  "reviewer_probe_fixture_sha256": "9bba003695ba9380fd0cc3ac2e24229446f5f7cc34a44cc016f17fe008e4890c",
+  "reviewer_probe_provenance": "7aa8a555efcd1ee69d2bdd15e7c65c1ecf838b1a:docs/reviews/opus50ts-hold-release-82743cb6/outbox-rollback-and-replay_test.go.fixture"
+}
