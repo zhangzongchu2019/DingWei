@@ -1,0 +1,16 @@
+PASS overflow is a transient status notice with the exact text and no warning icon
+PASS recoverable retains its warning presentation
+PASS tracking retains its warning presentation
+PASS apply retains its warning presentation
+PASS managed retains its warning presentation
+PASS history priority cannot hide concurrent recoverable warning
+PASS history priority cannot hide concurrent apply warning
+PASS history priority cannot hide concurrent managed warning
+PASS repeated history preserves concurrent recoverable warning
+PASS repeated history preserves concurrent apply warning
+PASS repeated history preserves concurrent managed warning
+PASS repeated retention alone remains a neutral notice
+PASS actual CSS light uses neutral muted color and wrapped transient notice
+PASS actual CSS dark uses neutral muted color and wrapped transient notice
+PASS actual CSS restores danger color for a real apply failure
+TOTAL 15 retention notice and warning checks

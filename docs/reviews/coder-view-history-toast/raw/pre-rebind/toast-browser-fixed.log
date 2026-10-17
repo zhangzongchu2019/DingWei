@@ -1,0 +1,18 @@
+PASS history is nonblocking, expires at exactly 10000ms, dedupes until successful reconnect
+PASS tracking is nonblocking, expires at exactly 10000ms, dedupes until successful reconnect
+PASS both reasons independently notify once, stale and duplicate opens cannot rearm them
+PASS apply remains persistent before both informational notices
+PASS apply remains persistent after both informational notices
+PASS managed remains persistent before both informational notices
+PASS managed remains persistent after both informational notices
+PASS recoverable remains persistent before both informational notices
+PASS recoverable remains persistent after both informational notices
+PASS tracking remains persistent before both informational notices
+PASS tracking remains persistent after both informational notices
+PASS conn remains persistent before both informational notices
+PASS conn remains persistent after both informational notices
+PASS replay remains persistent before both informational notices
+PASS replay remains persistent after both informational notices
+PASS apply failure cannot be dismissed by notice timeout or duplicate history
+PASS separate VM managed rebind rearms only after trusted parent/source/origin/generation binding
+TOTAL 16 Chromium/fake-clock notice and persistent-failure checks

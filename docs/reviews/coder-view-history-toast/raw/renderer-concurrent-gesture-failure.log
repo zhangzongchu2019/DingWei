@@ -1,0 +1,7 @@
+  · 自起静态服务 http://127.0.0.1:46455/renderer-canary-sse.html(自挑端口 · 退出必收 · 不再依赖 :19312)
+    renderer sha256=e99753c7625da9f7…
+AssertionError [ERR_ASSERTION]: 用户上翻后被拽回底部:scrollTop 0 → 909(离底 0px · timelineAtBottom=true)⇒ 连续流期间产品夺回了滚动控制权
+
+909 !== 0
+
+    at /data/ai-dev-data/view-history-toast-r18/view-service/renderer-regression.js:319:14

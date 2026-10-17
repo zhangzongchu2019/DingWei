@@ -1,0 +1,9 @@
+PASS fresh silent reopen does not assert replay loss
+PASS open-error cycles advance retry count and backoff
+PASS parsed event dispatch resets consecutive failures
+PASS bad payload does not confirm success
+PASS existing legacy content retains replay uncertainty alert
+PASS sequenced reconnect does not arm legacy clearing
+PASS closed generation cannot change current state
+PASS error cancels outstanding replay observation timer
+OBSERVATIONS 8 INLINE_SYNTAX rc0

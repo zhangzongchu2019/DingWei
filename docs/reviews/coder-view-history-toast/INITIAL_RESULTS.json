@@ -1,0 +1,106 @@
+[
+  {
+    "suite": "integrity",
+    "source": "internal/m8/testdata/renderer_integrity_recovery.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-16T23:58:52.139731+00:00",
+    "seconds": 0.669,
+    "exit": 0
+  },
+  {
+    "suite": "history-priority",
+    "source": "internal/m8/testdata/renderer_history_priority.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-16T23:58:52.140243+00:00",
+    "seconds": 0.116,
+    "exit": 0
+  },
+  {
+    "suite": "a4-overflow",
+    "source": "tests/a4-overflow-preserve.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-16T23:58:52.256470+00:00",
+    "seconds": 0.065,
+    "exit": 0
+  },
+  {
+    "suite": "a4-tone",
+    "source": "tests/a4-notice-tone.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-16T23:58:52.321509+00:00",
+    "seconds": 2.088,
+    "exit": 0
+  },
+  {
+    "suite": "a4-epoch",
+    "source": "tests/a4-epoch-notice.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-16T23:58:52.808385+00:00",
+    "seconds": 1.849,
+    "exit": 0
+  },
+  {
+    "suite": "a5-state",
+    "source": "tests/a5-replay-state.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-16T23:58:54.409695+00:00",
+    "seconds": 0.116,
+    "exit": 0
+  },
+  {
+    "suite": "a5-gap",
+    "source": "tests/a5-real-gap-timer.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-16T23:58:54.526124+00:00",
+    "seconds": 0.115,
+    "exit": 0
+  },
+  {
+    "suite": "toast-browser",
+    "source": "tests/view-history-toast.cjs",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-16T23:58:54.641515+00:00",
+    "seconds": 5.498,
+    "exit": 1
+  },
+  {
+    "suite": "legacy-deferred",
+    "source": "renderer-t086-deferred-clear-regression.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18/view-service",
+    "start_utc": "2026-10-16T23:58:54.657387+00:00",
+    "seconds": 0.718,
+    "exit": 0
+  },
+  {
+    "suite": "renderer",
+    "source": "view-service/renderer-regression.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-16T23:58:55.375596+00:00",
+    "seconds": 13.368,
+    "exit": 0
+  },
+  {
+    "suite": "replay-seq",
+    "source": "view-service/renderer-replay-seq-regression.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-16T23:59:00.139198+00:00",
+    "seconds": 70.614,
+    "exit": 2
+  },
+  {
+    "suite": "empty-ring",
+    "source": "view-service/renderer-t086-empty-ring-e2e-regression.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-16T23:59:08.744505+00:00",
+    "seconds": 4.961,
+    "exit": 0
+  },
+  {
+    "suite": "sse-reconnect",
+    "source": "view-service/renderer-sse-reconnect.js",
+    "cwd": "/data/ai-dev-data/view-history-toast-r18",
+    "start_utc": "2026-10-16T23:59:13.705587+00:00",
+    "seconds": 69.241,
+    "exit": 2
+  }
+]

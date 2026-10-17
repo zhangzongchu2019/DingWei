@@ -1,0 +1,23 @@
+PASS server overflow persists without reload or body reset; new events still applied
+PASS temporary missing seq closes only after actual contiguous render evidence
+PASS queued renders or merge records prevent premature completeness
+PASS render failure never clears issue by empty seenAbove alone
+PASS invalid JSON does not advance event cursor
+PASS tracking capacity loss cannot masquerade as repaired contiguous history
+PASS epoch change does not count a different baseline as healed old gap
+PASS naturally healed gap before actual reconnect consumes no refill
+PASS real automatic reconnect charged once at execution
+PASS manual recovery retains text/cursor and reports verified success
+PASS manual timeout reports lack of proof without discarding current body
+PASS new out-of-order event cannot erase in-flight result/timeout state
+PASS three attempts stay bounded and show an honest exhausted result
+PASS managed stopped reason do not promise historical recovery
+PASS legacy replay uncertainty shows scope instead of infinite reload
+PASS success is explicitly dismissible and does not mark global history complete
+PASS actual deferred merge completion closes only after its final record renders
+PASS actual pending render flush closes gap; failed render keeps warning and other entries
+PASS nested flush cannot announce success before the enclosing event returns
+PASS invalid managed instance exposes context problem and does not open child stream
+PASS managed render failure retains negative applied and cursor guard
+PASS late apply failure cannot erase the trusted stopped reason
+ALL 22 integrity recovery checks PASS (offline only)

@@ -1,0 +1,56 @@
+[
+  {
+    "case": "withdraw-history",
+    "fixed_renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b",
+    "changed_product_fragment": "if (isIntegrityNotice(x)) { showIntegrityNotice(x.kind); return; }",
+    "replacement": "if (isIntegrityNotice(x) && x.kind !== 'history') { showIntegrityNotice(x.kind); return; }",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "115d339ce597f6369d45d56eaa6cc58cf46540f4c8e6a302bd8fb256ccd66636"
+  },
+  {
+    "case": "withdraw-tracking",
+    "fixed_renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b",
+    "changed_product_fragment": "if (isIntegrityNotice(x)) { showIntegrityNotice(x.kind); return; }",
+    "replacement": "if (isIntegrityNotice(x) && x.kind !== 'tracking') { showIntegrityNotice(x.kind); return; }",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "437e5b7f04a02e73fde01bcb030d8faf9e9ed778bd221a00c317df3c787d2e06"
+  },
+  {
+    "case": "withdraw-expiry",
+    "fixed_renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b",
+    "changed_product_fragment": "const INTEGRITY_NOTICE_MS = 10000;",
+    "replacement": "const INTEGRITY_NOTICE_MS = 20000;",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "2c0247eddb09cb28738191566d89fb93ac23b38c89cfdd6f339a25da508b7fc1"
+  },
+  {
+    "case": "withdraw-dedupe",
+    "fixed_renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b",
+    "changed_product_fragment": "if (integrityNoticeSeen.has(kind)) return;",
+    "replacement": "if (false) return;",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "a961f9de3c8716e4c5564f6716cd7ecb1d99d84096d53f90732f47e4e83c18f0"
+  },
+  {
+    "case": "withdraw-fault-isolation",
+    "fixed_renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b",
+    "changed_product_fragment": "element.remove(); integrityNotices.delete(kind);",
+    "replacement": "element.remove(); integrityNotices.delete(kind); streamAlert.hidden = true;",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "29f67d8f29d90fae1b05afbe9faa078e58b32d64a27627b947c91eb6737d66a4"
+  },
+  {
+    "case": "withdraw-rearm",
+    "fixed_renderer_sha256": "b57acaf2252dd63c2e78315dbb67a0848f249228d62e6ca31d6c94be6ecb971b",
+    "changed_product_fragment": "integrityNotices.clear(); integrityNoticeSeen.clear();",
+    "replacement": "integrityNotices.clear();",
+    "test_assertions_changed": false,
+    "exit": 1,
+    "candidate_sha256": "0f74933f8eca8687de0e3928ac23f1cd0cabd94e0831d18286e6444057db9e1e"
+  }
+]

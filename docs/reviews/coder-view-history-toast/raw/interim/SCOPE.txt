@@ -1,0 +1,1 @@
+Intermediate verification only. All individual suites exited0, but renderer SHA guard detected the later Retry-action correction during the run. This set is not final exact-artifact gate evidence. Final RESULTS.json/raw root supersede it.

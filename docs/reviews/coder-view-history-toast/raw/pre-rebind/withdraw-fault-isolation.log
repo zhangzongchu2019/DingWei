@@ -1,0 +1,13 @@
+PASS history is nonblocking, expires at exactly 10000ms, dedupes until successful reconnect
+PASS tracking is nonblocking, expires at exactly 10000ms, dedupes until successful reconnect
+PASS both reasons independently notify once, stale and duplicate opens cannot rearm them
+PASS history cannot hijack the real connection Retry action
+PASS tracking cannot hijack the real connection Retry action
+PASS apply remains persistent before both informational notices
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+false !== true
+
+    at /data/ai-dev-data/view-history-toast-r18/tests/view-history-toast.cjs:73:13
+    at async test (/data/ai-dev-data/view-history-toast-r18/tests/view-history-toast.cjs:32:58)
+    at async /data/ai-dev-data/view-history-toast-r18/tests/view-history-toast.cjs:67:5

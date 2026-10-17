@@ -12,7 +12,9 @@ function fixture({managed=false,fail=false,instance="a".repeat(32),holdManaged=f
  let now=100000,tid=0,connections=0,resets=0,rendered=0;
  const timers=new Map(),handlers={},alert={hidden:true,setAttribute(k,v){this[k]=v;}},text={textContent:'connection'},button={};
  const parent={postMessage:d=>replies.push(d)},replies=[];
- const doc={hidden:false,getElementById:()=>text};
+ const notices=[];
+ const noticeRegion={appendChild:n=>notices.push(n)};
+ const doc={hidden:false,getElementById:id=>id==='integrityNoticeRegion'?noticeRegion:text,createElement:()=>({dataset:{},setAttribute(k,v){this[k]=v;},remove(){const i=notices.indexOf(this);if(i>=0)notices.splice(i,1);}})};
  const es=[];class EventSource{static OPEN=1;constructor(url){this.url=url;this.readyState=1;this.listeners={};es.push(this);connections++;}addEventListener(n,f){this.listeners[n]=f;}close(){this.closed=true;}}
  const window={addEventListener:(k,f)=>handlers[k]=f};
  const c={console,Math,Set,Map,Promise,BigInt,Error,URLSearchParams,Date:class extends Date{static now(){return now;}},
@@ -34,7 +36,7 @@ function fixture({managed=false,fail=false,instance="a".repeat(32),holdManaged=f
    renderPendingEntry:entry=>{if(entry.fail)throw Error('SYNTHETIC_RENDER');entry.done=true;rendered++;}});
   vm.runInContext(slice('    function bufferMergeCopy(', '    function c1Footnote(')+slice('    function flushPendingRenders()', '    function scheduleRenderFlush()'),c);
  };
- return {c,run,event,installRendering,es,alert,text,button,timer,timers,replies,parent,handlers,advance:ms=>now+=ms,
+ return {c,run,event,installRendering,es,alert,text,button,timer,timers,notices,replies,parent,handlers,advance:ms=>now+=ms,
   state:()=>run('({issue:integrityIssue&&{...integrityIssue},mode:streamAlertMode,after:lastContiguousSeq,above:seenAboveSeq.size,charged:gapRefillTimes.length,stopped:gapRefillStopped,applied:managedApplied.toString()})'),
   counts:()=>({connections,resets,rendered})};
 }
@@ -44,7 +46,7 @@ let checks=0;function test(name,fn){fn();console.log('PASS '+name);checks++;}
   const h=fixture();h.event(10);h.run(`handleReplayGap({data:'{"reason":"overflow"}'})`);
   assert.equal(h.state().issue.kind,'history');h.run('requestStreamRecovery()');h.event(11);
   assert.equal(h.state().issue.kind,'history');assert.equal(h.counts().resets,0);assert.equal(h.counts().rendered,2);
-  assert.match(h.text.textContent,/更早的历史已超出服务端保留范围，无法加载/);assert.match(h.text.textContent,/当前内容完整保留/);
+  assert.equal(h.alert.hidden,true);assert.match(h.notices[0].textContent,/最近约 1000 段输出（或 16MB）/);assert.match(h.notices[0].textContent,/当前内容完整/);
  });
  test('temporary missing seq closes only after actual contiguous render evidence',()=>{
   const h=fixture();h.event(1);h.event(3);assert.equal(h.state().issue.kind,'recoverable');h.run('hideStreamAlert()');assert.equal(h.alert.hidden,false);
