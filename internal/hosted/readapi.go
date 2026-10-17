@@ -238,7 +238,7 @@ func jobViewOf(seat Seat) JobView {
 	case "busy":
 		return withModel(JobView{Stage: "online", AgentID: seat.AgentID}) // 升级/重启中：席位仍在线（蒙版用于创建链）
 	default: // error/failed/destroyed 等 ⇒ failed，reason＝状态机记录的机器码
-		return withModel(JobView{Stage: "failed", Reason: jobFailReason(seat.StateDetail)})
+		return withModel(capacityJobView(JobView{Stage: "failed", Reason: jobFailReason(seat.StateDetail)}, seat.StateDetail))
 	}
 }
 

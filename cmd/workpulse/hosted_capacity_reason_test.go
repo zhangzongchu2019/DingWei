@@ -143,3 +143,65 @@ func TestHostedCapacityReasonsActualHTTP(t *testing.T) {
 		t.Fatal("start refusal changed credentials/commands")
 	}
 }
+
+// Only a protocol-shaped fake Gateway reply is injected. No node WebSocket,
+// Engine or real resource exhaustion is represented by this HTTP fixture.
+type finalGateHTTPGateway struct{ failType string }
+
+func (g finalGateHTTPGateway) Send(_ context.Context, _ string, cmd hosted.NodeCommand) (hosted.NodeResult, error) {
+	if cmd.Type == g.failType {
+		return hosted.NodeResult{Error: "seat_capacity_blocked: seat_capacity_cpu+memory"}, nil
+	}
+	return hosted.NodeResult{OK: true}, nil
+}
+func TestHostedFinalNodeGateJobHTTP(t *testing.T) {
+	h, deps, st, idp, _ := mkHostedHTTP(t)
+	ctx := context.Background()
+	rev := strings.Repeat("d", 64)
+	if err := st.UpsertNode(ctx, hosted.Node{ID: "nd_rt", Name: "soft", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.SetNodeOnline(ctx, "nd_rt", httpCapacityFrame(t, rev, "", false)); err != nil {
+		t.Fatal(err)
+	}
+	accounts, err := st.ListUsableAccounts(ctx, "zzc", "codex", "gpt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	idp.abortDone = make(chan string, 1)
+	for _, command := range []string{"pull_image", "create_seat"} {
+		gateway := finalGateHTTPGateway{failType: command}
+		deps.orch = hosted.NewOrchestrator(st, deps.pool, idp, gateway, fakeCombosRT{}, fakeImagesRT{})
+		mux := http.NewServeMux()
+		registerHostedRoutes(mux, deps)
+		h.mux = mux
+		request, _ := json.Marshal(map[string]any{"name": "Reply", "node_id": "nd_rt", "allow_soft": true, "cli": "codex", "llm": "gpt", "account_id": accounts[0].ID, "plan_id": "1c1.5g40"})
+		code, body, m := h.do("zzc", "POST", "/api/console/hosted/agents", string(request))
+		if code != http.StatusAccepted {
+			t.Fatalf("create %d %s", code, body)
+		}
+		job := m["job_id"].(string)
+		// Job publication precedes abort; join cleanup before inspecting fake identity
+		// or reusing it in the next request (no test-side data race).
+		select {
+		case aborted := <-idp.abortDone:
+			if aborted != job {
+				t.Fatalf("abort %s != %s", aborted, job)
+			}
+		case <-time.After(10 * time.Second):
+			t.Fatal("job cleanup did not complete")
+		}
+		code, body, m = h.do("zzc", "GET", "/api/console/hosted/jobs/"+job, "")
+		if code != 200 || m["stage"] != "failed" || m["reason"] != "node_no_capacity" || !reflect.DeepEqual(m["capacity_reasons"], []any{"cpu", "memory"}) {
+			t.Fatalf("node final gate job HTTP %d %s", code, body)
+		}
+		code, _, _ = h.do("eve", "GET", "/api/console/hosted/jobs/"+job, "")
+		if code != 403 {
+			t.Fatalf("job owner: %d", code)
+		}
+		seat, err := st.GetSeat(ctx, job)
+		if err != nil || seat.AccountRef.Valid || !idp.retired[job] {
+			t.Fatalf("new seat cleanup: %+v %v", seat, err)
+		}
+	}
+}

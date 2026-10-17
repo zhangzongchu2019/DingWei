@@ -406,6 +406,12 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 		return
 	}
 	if res, err := o.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "pull_image", Params: json.RawMessage(`{"image":` + jsonStr(seat.ImageRef) + `}`)}); err != nil || !res.OK {
+		if err == nil {
+			if capacityErr := o.st.capacityResult(ctx, seat.NodeID, res); capacityErr != nil {
+				fail("pulling", lifecycleJobReason(capacityErr))
+				return
+			}
+		}
 		fail("pulling", "image_pull_failed")
 		return
 	}
@@ -444,6 +450,12 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 		"model":           seat.Model,    // 包 B2 修订 3：落库记录值（不随节点默认漂移）
 	})
 	if res, err := o.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "create_seat", Params: params}); err != nil || !res.OK {
+		if err == nil {
+			if capacityErr := o.st.capacityResult(ctx, seat.NodeID, res); capacityErr != nil {
+				fail("starting", lifecycleJobReason(capacityErr))
+				return
+			}
+		}
 		n, ne := o.st.GetNode(ctx, seat.NodeID)
 		mode, _ := registeredQuota(n)
 		if (ne == nil && mode == "soft") || (!res.OK && strings.Contains(res.Error, "soft_quota_blocked")) {

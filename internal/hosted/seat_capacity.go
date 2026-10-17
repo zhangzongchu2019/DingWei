@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
@@ -56,6 +57,58 @@ func CapacityErrorReasons(err error) []string {
 		return nil
 	}
 	return failure.Reasons()
+}
+
+// capacityResult handles only the fixed B protocol from a registered soft/B
+// node's authenticated gateway response. It never searches arbitrary error text.
+func (s *Store) capacityResult(ctx context.Context, nodeID string, result NodeResult) error {
+	if result.OK || len(result.Error) > 160 {
+		return nil
+	}
+	encoded, ok := strings.CutPrefix(result.Error, "seat_capacity_blocked: seat_capacity_")
+	if !ok {
+		return nil
+	}
+	tokens := strings.Split(encoded, "+")
+	if len(tokens) == 0 || len(tokens) > 6 {
+		return nil
+	}
+	seen := map[string]bool{}
+	for _, token := range tokens {
+		if seen[token] {
+			return nil
+		}
+		seen[token] = true
+		switch token {
+		case "cpu", "memory", "disk", "seat_limit", "load_unknown", "policy_invalid":
+		default:
+			return nil
+		}
+	}
+	node, err := s.GetNode(ctx, nodeID)
+	if err != nil {
+		return nil
+	}
+	mode, revision := registeredQuota(node)
+	var frame struct {
+		Mode     string `json:"quota_mode"`
+		Revision string `json:"quota_policy_revision"`
+		Capacity *struct {
+			Version int `json:"version"`
+		} `json:"seat_capacity"`
+	}
+	if mode != "soft" || !policyRevisionPattern.MatchString(revision) || json.Unmarshal(node.Capacity, &frame) != nil || frame.Mode != "soft" || frame.Revision != revision || frame.Capacity == nil || frame.Capacity.Version != 1 {
+		return nil
+	}
+	return capacityFailure(tokens)
+}
+
+func capacityJobView(view JobView, detail string) JobView {
+	if encoded, ok := strings.CutPrefix(detail, "node_no_capacity:"); ok {
+		view.Reason = "node_no_capacity"
+		view.CapacityReasons = capacityReasons(strings.Split(encoded, ","))
+	}
+	return view
 }
 
 type capacityRows func(context.Context, string, ...any) (*sql.Rows, error)

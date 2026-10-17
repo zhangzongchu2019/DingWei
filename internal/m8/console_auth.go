@@ -1218,7 +1218,11 @@ async function refreshHostedOptions(){
     return null;
   }finally{clearTimeout(timer);}
 }
-function hostedMaskRender(name,stage,failReason,lastStage){
+function hostedCreateFailText(reason,reasons){
+  if(reason==='node_no_capacity')return consoleErrorText(409,{error:reason,capacity_reasons:reasons});
+  return HOSTED_FAIL_REASONS[reason]||('原因码 '+(reason||'未知'));
+}
+function hostedMaskRender(name,stage,failReason,lastStage,reasons){
   var box=document.getElementById('hostedMaskBox');if(!box)return;box.replaceChildren();
   var title=document.createElement('h3');title.textContent='创建 Agent：'+name;box.append(title);
   var at=HOSTED_STAGES.findIndex(function(x){return x[0]===(stage==='failed'?lastStage:stage);});
@@ -1228,7 +1232,7 @@ function hostedMaskRender(name,stage,failReason,lastStage){
     row.dataset.state=state;row.textContent=(state==='done'?'✓ ':state==='failed'?'✗ ':state==='current'?'… ':'○ ')+x[1];box.append(row);
   });
   var line=document.createElement('div');line.id='hostedMaskResult';
-  if(stage==='failed')line.textContent='创建失败：'+(HOSTED_FAIL_REASONS[failReason]||('创建失败（原因码 '+(failReason||'未知')+'）'));
+  if(stage==='failed')line.textContent='创建失败：'+(failReason==='node_no_capacity'?hostedCreateFailText(failReason,reasons):(HOSTED_FAIL_REASONS[failReason]||('创建失败（原因码 '+(failReason||'未知')+'）')));
   else if(stage==='online')line.textContent='已上线';
   var hint=document.createElement('div');hint.className='group-feedback';hint.textContent='点击任意处关闭（不影响后台创建）';
   box.append(line,hint);
@@ -1246,7 +1250,7 @@ async function hostedTrackJob(jobId,name){
       if(!r.ok)throw new Error('HTTP '+r.status);
       var d=await r.json();stage=String(d.stage||'');reason=String(d.reason||'');
     }catch(err){hostedJobTimer=setTimeout(tick,hostedPollMs);return;}   // 网络抖动:继续轮询,不当成失败
-    if(stage==='failed'){hostedMaskRender(name,'failed',reason,lastStage);enrollFeedback('hostedFeedback','创建 '+name+' 失败：'+(HOSTED_FAIL_REASONS[reason]||('原因码 '+(reason||'未知'))));return;}
+    if(stage==='failed'){hostedMaskRender(name,'failed',reason,lastStage,d.capacity_reasons);enrollFeedback('hostedFeedback','创建 '+name+' 失败：'+hostedCreateFailText(reason,d.capacity_reasons));return;}
     if(HOSTED_STAGES.some(function(x){return x[0]===stage;}))lastStage=stage;
     hostedMaskRender(name,stage,'',lastStage);
     if(stage==='online'){enrollFeedback('hostedFeedback',name+' 已上线');refreshGroups('hosted');refreshAgents();refreshRoster();refreshHostedOptions();return;}

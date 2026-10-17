@@ -246,11 +246,7 @@ func (l *Lifecycle) JobProgressFor(ctx context.Context, id, actor string) (JobVi
 			}
 		}
 	}
-	v := JobView{Stage: j.Stage, Reason: j.Reason}
-	if encoded, ok := strings.CutPrefix(j.Reason, "node_no_capacity:"); ok {
-		v.Reason = "node_no_capacity"
-		v.CapacityReasons = capacityReasons(strings.Split(encoded, ","))
-	}
+	v := capacityJobView(JobView{Stage: j.Stage, Reason: j.Reason}, j.Reason)
 
 	if j.Stage == "completed" {
 		v.AgentID = j.AgentID

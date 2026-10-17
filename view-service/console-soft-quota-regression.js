@@ -36,6 +36,7 @@ const server=http.createServer(async(req,res)=>{
  if(p==='/api/console/agent-groups')return json(res,200,{principal:'owner',owned_agents:[],groups:[]});
  if(p==='/api/console/hosted/options')return json(res,200,options);
  if(p==='/api/console/hosted/agents'&&req.method==='POST')return json(res,409,refusal);
+ if(p==='/api/console/hosted/jobs/final-gate')return json(res,200,{stage:'failed',reason:'node_no_capacity',capacity_reasons:['cpu','memory','/private/credential']});
  if(p==='/api/console/enroll/applications')return json(res,200,{applications:[]});
  if(p==='/api/console/llm-accounts')return json(res,200,[]);
  res.writeHead(404);res.end();
@@ -89,6 +90,10 @@ const server=http.createServer(async(req,res)=>{
   assert.doesNotMatch(await page.locator('#hostedFeedback').textContent(),/UNTRUSTED_DETAIL/);
   const jobText=await page.evaluate(()=>hostedOpFail({op:'restart',name:'FixtureSeat'},'node_no_capacity',['cpu','/private/credential']));
   assert(jobText.includes('CPU')&&!jobText.includes('/private/credential'),'safe durable job projection');
-  assert.deepStrictEqual(errors,[]);console.log('SOFT_QUOTA_BROWSER_OK baseline_assertions=21 reason_scenarios=7 job_projection=1');
+  await page.evaluate(()=>hostedTrackJob('final-gate','FixtureSeat'));
+  await page.waitForSelector('#hostedMaskBox [data-state="failed"]');
+  const createJobText=(await page.locator('#hostedMaskResult').textContent())+' '+(await page.locator('#hostedFeedback').textContent());
+  assert(createJobText.includes('CPU、内存')&&!createJobText.includes('/private/credential'),'safe new-seat job polling: '+createJobText);
+  assert.deepStrictEqual(errors,[]);console.log('SOFT_QUOTA_BROWSER_OK baseline_assertions=21 reason_scenarios=7 job_projection=1 create_job_poll=1');
  }finally{await context.close();await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
