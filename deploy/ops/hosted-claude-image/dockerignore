@@ -5,6 +5,8 @@
 !runtime-debs/**
 !security-debs/**
 !native/package/**
+!claude/package/**
+!node/node-v22.23.3-linux-x64.tar.xz
 !codex_start.py
 !claude-start.py
 !claude.py

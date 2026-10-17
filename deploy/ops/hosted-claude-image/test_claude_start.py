@@ -2,6 +2,7 @@
 import importlib.util
 import json
 import os
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
@@ -21,7 +22,10 @@ class ClaudeStart(unittest.TestCase):
         combo = json.loads((HERE / 'combos.json').read_text())
         self.assertEqual(combo, [{'cli': 'claude', 'llm': 'claude', 'cred_kind': 'token_file', 'verified': False}])
         dockerfile = (HERE / 'Dockerfile').read_text()
-        for required in ('USER 10001:10001', 'COPY wheels /wheels', 'COPY native/package/ /opt/claude/', 'dingwei.claude.version="2.1.285"'):
+        for required in ('USER 10001:10001', 'COPY wheels /wheels',
+                         'COPY native/package/ /opt/claude/node_modules/@anthropic-ai/claude-code-linux-x64/',
+                         'COPY node/node-v22.23.3-linux-x64.tar.xz /tmp/node.tar.xz',
+                         'dingwei.claude.version="2.1.285"'):
             self.assertIn(required, dockerfile)
         out = __import__('subprocess').run(['sh', str(HERE / 'build-image.sh')], text=True, capture_output=True)
         self.assertEqual(out.returncode, 2)
@@ -35,7 +39,9 @@ class ClaudeStart(unittest.TestCase):
         for part in (lock['dist'], lock['native']):
             self.assertTrue(part['integrity'].startswith('sha512-'))
             self.assertEqual(len(part['shasum']), 40)
-        self.assertEqual(lock['runtime']['node'], '>=22.0.0')
+        self.assertEqual((lock['runtime']['name'], lock['runtime']['version'], lock['runtime']['file']),
+                         ('node', '22.23.3', 'node-v22.23.3-linux-x64.tar.xz'))
+        self.assertEqual(len(lock['runtime']['sha256']), 64)
 
     def test_offline_fixture_hashes_and_missing_node_lock_fail_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -43,16 +49,17 @@ class ClaudeStart(unittest.TestCase):
             blobs = [b'claude fixture', b'native fixture', b'node fixture']
             files = []
             for i, blob in enumerate(blobs):
-                p = root / ('input' + str(i)); p.write_bytes(blob); files.append(p)
+                p = root / ('node-v22.23.3-linux-x64.tar.xz' if i == 2 else 'input' + str(i)); p.write_bytes(blob); files.append(p)
             def row(blob):
                 import base64, hashlib
                 return {'integrity': 'sha512-' + base64.b64encode(hashlib.sha512(blob).digest()).decode(),
                         'shasum': hashlib.sha1(blob).hexdigest()}
             lock = {'name': '@anthropic-ai/claude-code', 'version': '2.1.285', 'dist': row(blobs[0]),
                     'native': dict(name='@anthropic-ai/claude-code-linux-x64', version='2.1.285', **row(blobs[1])),
-                    'runtime': row(blobs[2])}
+                    'runtime': dict(name='node', version='22.23.3', platform='linux-x64',
+                                    file=files[2].name, sha256=hashlib.sha256(blobs[2]).hexdigest())}
             verify.verify(lock, *files)
-            del lock['runtime']['integrity']
+            del lock['runtime']['sha256']
             with self.assertRaises(verify.Rejected):
                 verify.verify(lock, *files)
 

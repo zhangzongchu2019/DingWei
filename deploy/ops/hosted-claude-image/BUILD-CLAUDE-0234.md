@@ -16,11 +16,11 @@ required isolated validation before a combo may become verified.
 
 `claude-package-lock.json` records the public package and Linux x64 native
 tarball SHA-512 integrity values (and registry SHA-1 metadata) without placing
-either package in Git.  The CLI also requires Node 22 or later; therefore the
-context builder remains fail-closed until a separately reviewed, hash-pinned
-offline Node 22 runtime is supplied alongside both locked packages.  Per owner
-ruling, any future fetch/build is only on 43.172.73.6's independent dockerd;
-this change does not fetch or build it.
+either package in Git.  It pins Node **22.23.3** Linux x64 and the official
+`SHASUMS256.txt` SHA-256 for its named tarball.  This is the current Node 22 LTS
+patch and satisfies Claude 2.1.285's `>=22.0.0` engine requirement while keeping
+an immutable artifact name.  Per owner ruling, any future fetch/build is only
+on 43.172.73.6's independent dockerd; this change does not fetch or build it.
 
 Kimi is not included: its Claude-Kimi driver and credential format require a
 separate verified combo and image ABI.

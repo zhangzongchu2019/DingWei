@@ -20,6 +20,13 @@ def check_blob(path, row):
         raise Rejected('offline input hash mismatch')
 
 
+def check_node(path, row):
+    if path.name != row.get('file') or path.is_symlink() or not path.is_file():
+        raise Rejected('Node runtime filename/type mismatch')
+    if hashlib.sha256(path.read_bytes()).hexdigest() != row.get('sha256'):
+        raise Rejected('Node runtime hash mismatch')
+
+
 def verify(lock, cli_tar, native_tar, node_runtime):
     if lock.get('name') != '@anthropic-ai/claude-code' or lock.get('version') != '2.1.285':
         raise Rejected('unexpected Claude package identity')
@@ -27,13 +34,11 @@ def verify(lock, cli_tar, native_tar, node_runtime):
     if native.get('name') != '@anthropic-ai/claude-code-linux-x64' or native.get('version') != lock['version']:
         raise Rejected('unexpected native package identity')
     runtime = lock.get('runtime', {})
-    # A version range is not an immutable input.  Do not permit a build until
-    # the Node runtime has its own reviewed digest/integrity entry.
-    if not isinstance(runtime.get('integrity'), str) or not isinstance(runtime.get('shasum'), str):
-        raise Rejected('Node runtime lock missing')
+    if runtime.get('name') != 'node' or runtime.get('version') != '22.23.3' or runtime.get('platform') != 'linux-x64':
+        raise Rejected('Node runtime identity mismatch')
     check_blob(cli_tar, lock.get('dist', {}))
     check_blob(native_tar, native)
-    check_blob(node_runtime, runtime)
+    check_node(node_runtime, runtime)
 
 
 def main():
