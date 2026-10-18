@@ -1,6 +1,6 @@
 # Hosted Claude per-seat model
 
-S-HOSTED-CLAUDE-MODEL extends the existing Seat.Model / Create / job / node command path to Claude. It does not authorize a combo, change `verified=false`, modify a package lock or run a real CLI/Engine. Configure/enable/build/trial operations remain separately approved.
+S-HOSTED-CLAUDE-MODEL extends the existing Seat.Model / Create / job / node command path to Claude. It does not authorize a combo, change `verified=false`, modify a package lock or run a real CLI/Engine. Configure/enable/build/trial operations remain separately approved. The matching Hub, nodeagent and launcher image must be qualified together before advertising/using the approved Claude model list; older nodes or launcher images do not implement this selection path. No mixed-version compatibility is claimed.
 
 ## Approval and transport
 
