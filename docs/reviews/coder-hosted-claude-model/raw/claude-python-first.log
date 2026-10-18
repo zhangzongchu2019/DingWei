@@ -1,0 +1,8 @@
+..........................hosted-claude-start: invalid or missing SH_CRED_FILE
+hosted-claude-start: invalid or missing SH_CLI
+...hosted-start: invalid or missing HELPER_UPDATE_STATE
+.
+----------------------------------------------------------------------
+Ran 30 tests in 14.782s
+
+OK

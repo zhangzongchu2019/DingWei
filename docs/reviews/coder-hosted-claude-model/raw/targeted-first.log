@@ -1,0 +1,7 @@
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	26.223s
+--- FAIL: TestClaudeModelThroughActualCreateSpec (0.01s)
+    --- FAIL: TestClaudeModelThroughActualCreateSpec/#00 (0.00s)
+        claude_model_test.go:20: 参数不合白名单: 席位代理未配置（第 12 条②：漏设即拒）
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.189s
+FAIL

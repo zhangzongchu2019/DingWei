@@ -1,0 +1,27 @@
+F
+======================================================================
+FAIL: test_selected_model_uses_verified_cli_abi_with_fake_cli_argv (__main__.ClaudeStart.test_selected_model_uses_verified_cli_abi_with_fake_cli_argv) (model='claude-opus-5-5')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-model-withdrawal/deploy/ops/hosted-claude-image/test_claude_start.py", line 204, in test_selected_model_uses_verified_cli_abi_with_fake_cli_argv
+    self.assertEqual(json.loads(trace.read_text()), want)
+AssertionError: Lists differ: ['--m[37 chars]rk with spaces/.claude/mcp.json'] != ['--m[37 chars]rk with spaces/.claude/mcp.json', '--model', 'claude-opus-5-5']
+
+Second list contains 2 additional elements.
+First extra element 2:
+'--model'
+
++ ['--mcp-config',
+- ['--mcp-config', '/tmp/cm18/tmpujt8jv7t/work with spaces/.claude/mcp.json']
+? ----------------                                                          ^
+
++  '/tmp/cm18/tmpujt8jv7t/work with spaces/.claude/mcp.json',
+?                                                           ^
+
++  '--model',
++  'claude-opus-5-5']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.080s
+
+FAILED (failures=1)

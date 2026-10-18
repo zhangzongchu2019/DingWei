@@ -1,0 +1,62 @@
+{
+  "full-hosted": {
+    "top_pass": 175,
+    "sub_pass": 161,
+    "fail": [],
+    "skip": [],
+    "result": {
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-race",
+        "-count=1",
+        "-timeout=45m",
+        "./internal/hosted"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 477.834,
+      "completed_utc": "2026-10-18T09:33:18.412211+00:00"
+    }
+  },
+  "full-workpulse": {
+    "top_pass": 119,
+    "sub_pass": 35,
+    "fail": [],
+    "skip": [],
+    "result": {
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-race",
+        "-count=1",
+        "-timeout=45m",
+        "./cmd/workpulse"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 240.143,
+      "completed_utc": "2026-10-18T09:29:21.839480+00:00"
+    }
+  },
+  "full-nodeagent": {
+    "top_pass": 170,
+    "sub_pass": 95,
+    "fail": [],
+    "skip": [],
+    "result": {
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-race",
+        "-count=1",
+        "-timeout=45m",
+        "./internal/nodeagent"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 12.202,
+      "completed_utc": "2026-10-18T09:25:36.247352+00:00"
+    }
+  }
+}

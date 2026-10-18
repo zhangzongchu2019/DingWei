@@ -1,0 +1,15 @@
+{
+  "owned_children": [],
+  "postmaster_markers": [],
+  "cache_before_bytes": 1002818265,
+  "home_before_bytes": 83357303,
+  "tmp_before_bytes": 2462959,
+  "historical_reported_pid_742479_exists_now": false,
+  "static_package_bytes_deleted": 107564830,
+  "temporary_worktrees_removed": [
+    "/data/ai-dev-data/claude-model-withdrawal",
+    "/data/ai-dev-data/hosted-claude-model-r27"
+  ],
+  "cache_after_go_clean_bytes": 232,
+  "remaining_owned_cache_home_tmp_bytes": 0
+}

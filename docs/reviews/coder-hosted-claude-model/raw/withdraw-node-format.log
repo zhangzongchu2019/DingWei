@@ -1,0 +1,6 @@
+--- FAIL: TestClaudeNodeRejectsOutsideListAndOptionBeforeEngine (0.00s)
+    --- FAIL: TestClaudeNodeRejectsOutsideListAndOptionBeforeEngine/--help (0.00s)
+        claude_model_test.go:48: invalid/unapproved accepted
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.009s
+FAIL

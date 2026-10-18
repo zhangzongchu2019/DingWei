@@ -1,0 +1,62 @@
+{
+  "r28-full-hosted": {
+    "top_pass": 175,
+    "sub_pass": 161,
+    "fail": [],
+    "skip": [],
+    "result": {
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-race",
+        "-count=1",
+        "-timeout=45m",
+        "./internal/hosted"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 448.925,
+      "completed_utc": "2026-10-18T09:43:28.669597+00:00"
+    }
+  },
+  "r28-full-workpulse": {
+    "top_pass": 127,
+    "sub_pass": 38,
+    "fail": [],
+    "skip": [],
+    "result": {
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-race",
+        "-count=1",
+        "-timeout=45m",
+        "./cmd/workpulse"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 242.353,
+      "completed_utc": "2026-10-18T09:40:16.077811+00:00"
+    }
+  },
+  "r28-full-nodeagent": {
+    "top_pass": 170,
+    "sub_pass": 95,
+    "fail": [],
+    "skip": [],
+    "result": {
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-race",
+        "-count=1",
+        "-timeout=45m",
+        "./internal/nodeagent"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 18.582,
+      "completed_utc": "2026-10-18T09:36:33.488908+00:00"
+    }
+  }
+}

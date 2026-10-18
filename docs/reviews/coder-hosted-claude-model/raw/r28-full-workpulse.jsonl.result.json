@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "-race",
+    "-count=1",
+    "-timeout=45m",
+    "./cmd/workpulse"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 242.353,
+  "completed_utc": "2026-10-18T09:40:16.077811+00:00"
+}

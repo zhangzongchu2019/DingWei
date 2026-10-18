@@ -1,0 +1,87 @@
+{
+  "baseline": "349dceda1092ac187e04e2ec15d536ae99d99461",
+  "baseline_tree": "c8765cbb60dfb95c896f73921eb7a6b291136fe6",
+  "source": "dbc789c318da3a7bf41d01c5eaf154b1fdc99648",
+  "source_tree": "a2f7c3e2cf1d744cd7506b6acd189f367ec39715",
+  "files": {
+    "cmd/workpulse/hosted_claude_model_test.go": {
+      "blob": "2292badcfd86b1846208e4406f7e6a4528ffd3fb",
+      "sha256": "d93dad18c891b5c442161024c0f2c69c45f7201259c240b9531adedbb6029776"
+    },
+    "deploy/ops/hosted-claude-image/claude-start.py": {
+      "blob": "5d376d45ea94b5de69e32e6b5c94489ebac95b52",
+      "sha256": "f7f4b02ced04cadad7e79b57d927b147e1f4cfa430fe33c1020411362f150f70"
+    },
+    "deploy/ops/hosted-claude-image/test_claude_start.py": {
+      "blob": "8f7d618023688a12133d1555159a0efc337768da",
+      "sha256": "297a69da4b4a4ec073d7aa457fb655ffa72b2892c56dee0c58e3a72fa1216e76"
+    },
+    "internal/hosted/claude_model_test.go": {
+      "blob": "e072ff213dffef736fc9132397713260807130b8",
+      "sha256": "87ec28e47f352b49f039c91abe45f823907ebd2416baa3cb40da43bf935a9b00"
+    },
+    "internal/hosted/orchestrator.go": {
+      "blob": "1071da0c5a46342b550ea99ca6b1012d5b4a64d9",
+      "sha256": "bf3f8bfbea9e00e6c703741b326a5ade9d68a6ac6301b142dd079bb34a18fac0"
+    },
+    "internal/hosted/orchestrator_test.go": {
+      "blob": "3010face743ae6963e7a5d72f921a5a207cf732a",
+      "sha256": "c15db1e61d695bdf3696223b139f1aa9777ab1175b5336d927a623877a9b7db0"
+    },
+    "internal/nodeagent/claude_model_test.go": {
+      "blob": "dd8c2c3f8f7cd9337fee13a2946467d16a003a56",
+      "sha256": "d04013abea34a43e1424c117868b63bd9d2e150a99dfcd86cdfe959319dd52ae"
+    },
+    "internal/nodeagent/seat.go": {
+      "blob": "595ac9d6867e8a3fdcbdbd20ba3eeae6c262c36e",
+      "sha256": "2f61dc340bbaf279db304bc0d8b28a4512ea92df98c611a1b6a27ec2e39b4861"
+    }
+  },
+  "unchanged_objects": {
+    "tools/sessionhelper": {
+      "baseline": "eb9210d4300f8c8e2f0f3ddf5261816260ad4eed",
+      "source": "eb9210d4300f8c8e2f0f3ddf5261816260ad4eed"
+    },
+    "VERSION": {
+      "baseline": "08f8a82b868956a580f3f4eb51d515658e333c50",
+      "source": "08f8a82b868956a580f3f4eb51d515658e333c50"
+    },
+    "go.mod": {
+      "baseline": "0896be6fba935292731d1d375250af3445689bc9",
+      "source": "0896be6fba935292731d1d375250af3445689bc9"
+    },
+    "go.sum": {
+      "baseline": "c0f593fbabbd673b22d93b1108eae84c307a5137",
+      "source": "c0f593fbabbd673b22d93b1108eae84c307a5137"
+    },
+    "scripts/run-build-tests.sh": {
+      "baseline": "023d78142d29b4fbc0c92ceee46c75ea87cafff4",
+      "source": "023d78142d29b4fbc0c92ceee46c75ea87cafff4"
+    },
+    "deploy/ops/hosted-claude-image/combos.json": {
+      "baseline": "27eb678bb4dbcd304e7a388e88e6e8a434bd4af1",
+      "source": "27eb678bb4dbcd304e7a388e88e6e8a434bd4af1"
+    },
+    "deploy/ops/hosted-claude-image/claude-package-lock.json": {
+      "baseline": "3759350437f484423da95c56e484a679d1695872",
+      "source": "3759350437f484423da95c56e484a679d1695872"
+    },
+    "deploy/ops/hosted-claude-image/context-map.json": {
+      "baseline": "70f7d16ef919176fab2eb03574e1797aa414e20e",
+      "source": "70f7d16ef919176fab2eb03574e1797aa414e20e"
+    },
+    "deploy/ops/hosted-claude-image/Dockerfile": {
+      "baseline": "f21f338165e5b4a9916d58de53eae3b92f47be71",
+      "source": "f21f338165e5b4a9916d58de53eae3b92f47be71"
+    },
+    "deploy/ops/hosted-claude-image/claude.py": {
+      "baseline": "4922fd0730b8339a8968bf3a29b5c4d8c4491c78",
+      "source": "4922fd0730b8339a8968bf3a29b5c4d8c4491c78"
+    },
+    "internal/m8/console_auth.go": {
+      "baseline": "8747c4f2cf820e681014e566de330853333b7f4b",
+      "source": "8747c4f2cf820e681014e566de330853333b7f4b"
+    }
+  },
+  "advertised_history_ref": "evidence/coder/claude-model-r27-dbc789c3"
+}

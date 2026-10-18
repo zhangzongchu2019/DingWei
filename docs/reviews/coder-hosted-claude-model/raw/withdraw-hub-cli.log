@@ -1,0 +1,5 @@
+--- FAIL: TestClaudeModelCreatePersistsAndDispatchesApprovedValue (2.37s)
+    claude_model_test.go:36: model_not_supported
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	2.379s
+FAIL

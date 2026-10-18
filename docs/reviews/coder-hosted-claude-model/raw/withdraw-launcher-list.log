@@ -1,0 +1,18 @@
+F
+======================================================================
+FAIL: test_invalid_model_stops_before_credentials_guard_or_cli (__main__.ClaudeStart.test_invalid_model_stops_before_credentials_guard_or_cli) (env={'CLAUDE_MODEL': 'claude-not-approved', 'CLAUDE_MODELS': '["claude-opus-5-5"]'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-model-withdrawal/deploy/ops/hosted-claude-image/test_claude_start.py", line 228, in test_invalid_model_stops_before_credentials_guard_or_cli
+    self.assertEqual(stderr.getvalue(), 'hosted-claude-start: invalid or missing CLAUDE_MODEL\n')
+AssertionError: 'hosted-claude-start: invalid or missing SH_CLI\n' != 'hosted-claude-start: invalid or missing CLAUDE_MODEL\n'
+- hosted-claude-start: invalid or missing SH_CLI
+?                                         ---  ^
++ hosted-claude-start: invalid or missing CLAUDE_MODEL
+?                                           ^^^^^^^^^^
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+FAILED (failures=1)

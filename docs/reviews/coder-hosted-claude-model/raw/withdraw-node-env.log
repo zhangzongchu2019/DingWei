@@ -1,0 +1,6 @@
+--- FAIL: TestClaudeModelThroughActualCreateSpec (0.00s)
+    --- FAIL: TestClaudeModelThroughActualCreateSpec/http://172.30.68.1:11080 (0.00s)
+        claude_model_test.go:31: missing approved model/list: [SH_WS_BASE=wss://hub.test SH_ENROLL_TOKEN_FILE=/work/enroll-token.json SH_ENROLL=1 SH_CRED_FILE=/work/account-credential SH_CRED_KIND=token_file SH_MODE=cli SH_CLI=claude HTTP_PROXY=http://172.30.68.1:11080 HTTPS_PROXY=http://172.30.68.1:11080 NO_PROXY=localhost,127.0.0.1,hub.test]
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.011s
+FAIL

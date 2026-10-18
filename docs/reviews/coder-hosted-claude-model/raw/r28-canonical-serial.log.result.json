@@ -1,0 +1,9 @@
+{
+  "command": [
+    "./build.sh",
+    "--test-only"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 109.737,
+  "completed_utc": "2026-10-18T09:45:29.783505+00:00"
+}

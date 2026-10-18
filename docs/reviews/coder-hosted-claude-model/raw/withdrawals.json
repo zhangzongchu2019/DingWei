@@ -1,0 +1,120 @@
+[
+  {
+    "name": "hub-cli",
+    "path": "internal/hosted/orchestrator.go",
+    "test_command": [
+      "go",
+      "test",
+      "-count=1",
+      "-timeout=10m",
+      "./internal/hosted",
+      "-run",
+      "^TestClaudeModelCreatePersistsAndDispatchesApprovedValue$"
+    ],
+    "original_sha256": "bf3f8bfbea9e00e6c703741b326a5ade9d68a6ac6301b142dd079bb34a18fac0",
+    "mutated_sha256": "4419231e0e8a4fa50cb392a70ad6e4a13407d55ba417524385ac339c28e7e876",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 39.742
+  },
+  {
+    "name": "hub-list",
+    "path": "internal/hosted/orchestrator.go",
+    "test_command": [
+      "go",
+      "test",
+      "-count=1",
+      "-timeout=10m",
+      "./internal/hosted",
+      "-run",
+      "^TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue$"
+    ],
+    "original_sha256": "bf3f8bfbea9e00e6c703741b326a5ade9d68a6ac6301b142dd079bb34a18fac0",
+    "mutated_sha256": "f5fb3298d21527a150677ce6896c1e6b22c5d0554173c9cf5a05d1624f23e706",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 10.206
+  },
+  {
+    "name": "node-list",
+    "path": "internal/nodeagent/seat.go",
+    "test_command": [
+      "go",
+      "test",
+      "-count=1",
+      "-timeout=10m",
+      "./internal/nodeagent",
+      "-run",
+      "^TestClaudeNodeRejectsOutsideListAndOptionBeforeEngine$"
+    ],
+    "original_sha256": "2f61dc340bbaf279db304bc0d8b28a4512ea92df98c611a1b6a27ec2e39b4861",
+    "mutated_sha256": "af0129d504a127a2ff1a33f8169ba8e2f1f5e03a7952896e1e165808a5f852f2",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 6.036
+  },
+  {
+    "name": "node-env",
+    "path": "internal/nodeagent/seat.go",
+    "test_command": [
+      "go",
+      "test",
+      "-count=1",
+      "-timeout=10m",
+      "./internal/nodeagent",
+      "-run",
+      "^TestClaudeModelThroughActualCreateSpec$"
+    ],
+    "original_sha256": "2f61dc340bbaf279db304bc0d8b28a4512ea92df98c611a1b6a27ec2e39b4861",
+    "mutated_sha256": "dc711321bf8bf091e905c49ba660067b128f32b4819da16bc557b11d690f7399",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 3.101
+  },
+  {
+    "name": "node-format",
+    "path": "internal/nodeagent/seat.go",
+    "test_command": [
+      "go",
+      "test",
+      "-count=1",
+      "-timeout=10m",
+      "./internal/nodeagent",
+      "-run",
+      "^TestClaudeNodeRejectsOutsideListAndOptionBeforeEngine$"
+    ],
+    "original_sha256": "2f61dc340bbaf279db304bc0d8b28a4512ea92df98c611a1b6a27ec2e39b4861",
+    "mutated_sha256": "74fa3e19c46b99a54f3029486900526f5357dcd95fe4eb0dae3cd4b7ec7c2c6f",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 2.981
+  },
+  {
+    "name": "launcher-flag",
+    "path": "deploy/ops/hosted-claude-image/claude-start.py",
+    "test_command": [
+      "python3",
+      "deploy/ops/hosted-claude-image/test_claude_start.py",
+      "ClaudeStart.test_selected_model_uses_verified_cli_abi_with_fake_cli_argv"
+    ],
+    "original_sha256": "f7f4b02ced04cadad7e79b57d927b147e1f4cfa430fe33c1020411362f150f70",
+    "mutated_sha256": "913b3f04a45a8fe03ce3f824d63fe0e64843f86c8a862fc4c9f7e20b2aa7e2ac",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 0.501
+  },
+  {
+    "name": "launcher-list",
+    "path": "deploy/ops/hosted-claude-image/claude-start.py",
+    "test_command": [
+      "python3",
+      "deploy/ops/hosted-claude-image/test_claude_start.py",
+      "ClaudeStart.test_invalid_model_stops_before_credentials_guard_or_cli"
+    ],
+    "original_sha256": "f7f4b02ced04cadad7e79b57d927b147e1f4cfa430fe33c1020411362f150f70",
+    "mutated_sha256": "c8585b34e449e0ca0067f66f599273eb485e9b9daa29274aaaea5d8b44eb7430",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 0.348
+  }
+]

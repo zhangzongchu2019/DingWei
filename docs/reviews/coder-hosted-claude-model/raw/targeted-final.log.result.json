@@ -1,0 +1,17 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "-count=1",
+    "-timeout=15m",
+    "./internal/hosted",
+    "./internal/nodeagent",
+    "./cmd/workpulse",
+    "-run",
+    "TestClaude|TestHostedClaudeModel|TestCreateWithModel|TestCreateModelRejections|TestSeatCodexModel|TestSeatModel|TestUpgradeModel|TestNodeDefault"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 16.786,
+  "completed_utc": "2026-10-18T09:24:37.532903+00:00"
+}

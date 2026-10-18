@@ -1,0 +1,12 @@
+{
+  "bytes": 28026,
+  "sha256": "6560abb7c2d71de8cdd164676a2386930e96f12c8c9c7e33b7548d2fbd734a92",
+  "sha512": "7ebaf40cb9951d20cd8f0fa10ba6665cc550f321f89cd995708e25545cd6b746dd3cd64fedc94e2acb8b72a49dc1069b2297ba0373447374c97e20550fc07606",
+  "sha1": "2c81d81bc9c682564b1a90eb8a66073762fabe8a",
+  "url": "https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-2.1.285.tgz",
+  "verified_against_git_lock": true,
+  "process.argv.slice(2)_offset": 4354,
+  "spawnSync_offset": 405,
+  "execFileSync_offset": -1,
+  "wrapper_sha256": "61ad63033d9c8155d5e60a29f45dc4665afa07631c0b108e62cc83bf45ba490e"
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "-race",
+    "-count=1",
+    "-timeout=45m",
+    "./internal/nodeagent"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 18.582,
+  "completed_utc": "2026-10-18T09:36:33.488908+00:00"
+}

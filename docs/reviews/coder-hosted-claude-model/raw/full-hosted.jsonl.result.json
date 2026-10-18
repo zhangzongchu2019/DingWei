@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "-race",
+    "-count=1",
+    "-timeout=45m",
+    "./internal/hosted"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 477.834,
+  "completed_utc": "2026-10-18T09:33:18.412211+00:00"
+}

@@ -1,0 +1,5 @@
+--- FAIL: TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue (2.19s)
+    claude_model_test.go:77: unapproved/malformed model="claude-not-approved" err=<nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	2.197s
+FAIL

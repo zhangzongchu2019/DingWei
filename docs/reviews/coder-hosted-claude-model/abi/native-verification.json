@@ -1,0 +1,45 @@
+{
+  "bytes": 107536804,
+  "url": "https://registry.npmjs.org/@anthropic-ai/claude-code-linux-x64/-/claude-code-linux-x64-2.1.285.tgz",
+  "sha256": "3fea1abf2d5f42236ebf7e59126698e347ac80437a145dd6e85b87c8c3341ffe",
+  "sha512": "eaa3524fca8a7a6afeac3f73bd413012ad14b56b7413926cf1b91b8e1d77fcb33ad8588659c37a22a8893f1c9b27614d77e2379625eae8960dbffbeb1a7980a3",
+  "sha1": "d3c902d322eacc8c629a0773077e6d0c83cf17bb",
+  "verified_against_git_lock": true,
+  "executed": false,
+  "members": [
+    {
+      "path": "package/claude",
+      "bytes": 240327864,
+      "regular": true
+    },
+    {
+      "path": "package/package.json",
+      "bytes": 289,
+      "regular": true
+    },
+    {
+      "path": "package/LICENSE.md",
+      "bytes": 147,
+      "regular": true
+    },
+    {
+      "path": "package/README.md",
+      "bytes": 150,
+      "regular": true
+    }
+  ],
+  "binary_sha256": "33dad1ec615a2e08cc78b494f05c110e49916de2c79d78ec8799ebf46b233d29",
+  "model_option_offsets": [
+    102264232,
+    212441422,
+    212464397,
+    212467166,
+    222274333
+  ],
+  "main_option_declaration": ".option(\"--model <model>\",",
+  "main_option_declaration_offset": 212441413,
+  "package_name": "@anthropic-ai/claude-code-linux-x64",
+  "package_version": "2.1.285",
+  "native_magic_hex": "7f454c46",
+  "requested_full_model_id_present": true
+}

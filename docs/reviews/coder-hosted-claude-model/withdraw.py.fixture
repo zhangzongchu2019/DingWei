@@ -1,0 +1,23 @@
+import pathlib,subprocess,json,hashlib,time
+root=pathlib.Path('/data/ai-dev-data/claude-model-withdrawal');lab=pathlib.Path('/data/ai-dev-data/claude-model-lab');logs=lab/'logs'
+cases=[
+ ('hub-cli','internal/hosted/orchestrator.go',' && req.CLI != "claude"','',['go','test','-count=1','-timeout=10m','./internal/hosted','-run','^TestClaudeModelCreatePersistsAndDispatchesApprovedValue$']),
+ ('hub-list','internal/hosted/orchestrator.go','!nodeHasModel(n, model) || ','',['go','test','-count=1','-timeout=10m','./internal/hosted','-run','^TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue$']),
+ ('node-list','internal/nodeagent/seat.go','''\t\tif !slices.Contains(d.seatModels, p.Model) {\n\t\t\treturn nil, fmt.Errorf("%w: model %q 不在本节点可选清单", ErrParams, p.Model)\n\t\t}\n''','',['go','test','-count=1','-timeout=10m','./internal/nodeagent','-run','^TestClaudeNodeRejectsOutsideListAndOptionBeforeEngine$']),
+ ('node-env','internal/nodeagent/seat.go','''\tif cli == "claude" && model != "" {\n\t\tapproved, _ := json.Marshal(d.seatModels)\n\t\tenv = append(env, "CLAUDE_MODEL="+model, "CLAUDE_MODELS="+string(approved))\n\t}\n''','',['go','test','-count=1','-timeout=10m','./internal/nodeagent','-run','^TestClaudeModelThroughActualCreateSpec$']),
+ ('node-format','internal/nodeagent/seat.go','''\tif p.CLI == "claude" && p.Model != "" && !claudeModelID.MatchString(p.Model) {\n\t\treturn nil, fmt.Errorf("%w: invalid Claude model", ErrParams)\n\t}\n''','',['go','test','-count=1','-timeout=10m','./internal/nodeagent','-run','^TestClaudeNodeRejectsOutsideListAndOptionBeforeEngine$']),
+ ('launcher-flag','deploy/ops/hosted-claude-image/claude-start.py',"    if model:\n        argv += ['--model', model]\n",'', ['python3','deploy/ops/hosted-claude-image/test_claude_start.py','ClaudeStart.test_selected_model_uses_verified_cli_abi_with_fake_cli_argv']),
+ ('launcher-list','deploy/ops/hosted-claude-image/claude-start.py','                or model not in approved','', ['python3','deploy/ops/hosted-claude-image/test_claude_start.py','ClaudeStart.test_invalid_model_stops_before_credentials_guard_or_cli']),
+]
+results=[]
+for name,path,old,new,cmd in cases:
+ p=root/path;original=p.read_bytes();s=original.decode();assert s.count(old)==1,(name,s.count(old));mut=s.replace(old,new);p.write_text(mut);start=time.monotonic()
+ try:
+  with(logs/('withdraw-'+name+'.log')).open('wb')as out:red=subprocess.run([str(lab/'run.sh'),*cmd],cwd=root,stdout=out,stderr=subprocess.STDOUT)
+  raw=(logs/('withdraw-'+name+'.log')).read_text();assert red.returncode==1 and ('--- FAIL:' in raw or 'FAIL:' in raw) and '[build failed]'not in raw and 'SyntaxError'not in raw,(name,raw)
+ finally:p.write_bytes(original)
+ with(logs/('restored-'+name+'.log')).open('wb')as out:green=subprocess.run([str(lab/'run.sh'),*cmd],cwd=root,stdout=out,stderr=subprocess.STDOUT)
+ assert green.returncode==0,(name,(logs/('restored-'+name+'.log')).read_text())
+ result={'name':name,'path':path,'test_command':cmd,'original_sha256':hashlib.sha256(original).hexdigest(),'mutated_sha256':hashlib.sha256(mut.encode()).hexdigest(),'red_rc':red.returncode,'restored_rc':green.returncode,'elapsed_seconds':round(time.monotonic()-start,3)}
+ results.append(result);(logs/'withdrawals.json').write_text(json.dumps(results,indent=2)+'\n');print(json.dumps(result),flush=True)
+assert not subprocess.check_output(['git','status','--porcelain'],cwd=root)
