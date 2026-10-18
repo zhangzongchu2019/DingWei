@@ -37,9 +37,9 @@ func TestHostedMinimumPlanHTTPOptionsCreateAndQuota(t *testing.T) {
 	if code != http.StatusOK || !strings.Contains(body, `"agents":{"used":1,"limit":2},"vcpu":{"used":1,"limit":4},"mem_gb":{"used":1.5,"limit":8},"disk_gb":{"used":40,"limit":1024}`) {
 		t.Fatalf("admin fractional usage: %d %s", code, body)
 	}
-	// Existing API permissions remain in force; the new plan is no bypass.
+	// The owner fence denies anonymous access before evaluating the new plan.
 	code, _, _ = h.do("", "POST", "/api/console/hosted/agents", string(request))
-	if code != http.StatusUnauthorized {
+	if code != http.StatusForbidden {
 		t.Fatalf("anonymous create: %d", code)
 	}
 }
