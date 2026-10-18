@@ -1,0 +1,80 @@
+[
+  {
+    "name": "route-wrapper",
+    "path": "cmd/workpulse/hosted_access.go",
+    "source_sha256": "1864d1d8c4b87cad095574418d91e450a11f7e3e7e24e2a86c890e419343bfbb",
+    "mutated_sha256": "ea286f28f194f139a893b5e34606fcd55e742fe947763b354df8c112167392bf",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 28.851,
+    "test": [
+      "./cmd/workpulse",
+      "TestHostedAccessRealAssemblyUnsetEmptyAndNamed"
+    ]
+  },
+  {
+    "name": "membership",
+    "path": "cmd/workpulse/hosted_access.go",
+    "source_sha256": "1864d1d8c4b87cad095574418d91e450a11f7e3e7e24e2a86c890e419343bfbb",
+    "mutated_sha256": "bf3a595731ee3144d3e41de6c874e59435fd32be4a16d84a05ec869476f9ea0a",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 6.992,
+    "test": [
+      "./cmd/workpulse",
+      "TestHostedAccessFreshIdentityAndStartupSnapshot"
+    ]
+  },
+  {
+    "name": "bearer",
+    "path": "cmd/workpulse/hosted_access.go",
+    "source_sha256": "1864d1d8c4b87cad095574418d91e450a11f7e3e7e24e2a86c890e419343bfbb",
+    "mutated_sha256": "5bcbc0dc8effc89a0be764f650dc4ae14b12f916b29a55fc5cdb6a7556ae1d2e",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 10.408,
+    "test": [
+      "./cmd/workpulse",
+      "TestHostedAccessEveryHumanRouteRejectsBeforeBusiness"
+    ]
+  },
+  {
+    "name": "monitor",
+    "path": "cmd/workpulse/hosted_quota_routes.go",
+    "source_sha256": "7d60a18865015306469f7a8114717aba48f9a4c720242fe992ff053973ad43dd",
+    "mutated_sha256": "ae6f71f0a130684d9ff84b3ffc9bc0ec55a0e75a43cfc28f77331d3c045ba535",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 13.228,
+    "test": [
+      "./cmd/workpulse",
+      "TestHostedAccessEmptyListPreservesOnlyRegisteredOpsBearer"
+    ]
+  },
+  {
+    "name": "page",
+    "path": "internal/m8/console_auth.go",
+    "source_sha256": "5d5c9ed4b1c321d927cfffca6ebc2166e0d5863739b302e7d376091202d09505",
+    "mutated_sha256": "b1a071cd19d02ef7f6fc4dabf856c649dad4fc0f0e5e8390162ce233e731e950",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 26.022,
+    "test": [
+      "./internal/m8",
+      "TestConsoleHostedAccessPageFailsClosedPerRequest"
+    ]
+  },
+  {
+    "name": "projection",
+    "path": "internal/identity/httpapi/httpapi.go",
+    "source_sha256": "fbc4ea7f5b74468c1735710ad716963204a9c53415bcafc78c18071365f169dc",
+    "mutated_sha256": "6b672d1ccbea989dd14cc6837ef1d8c1a9c21c4d94f08645ebf8dc70a74ca53d",
+    "red_rc": 1,
+    "restored_rc": 0,
+    "elapsed_seconds": 3.282,
+    "test": [
+      "./internal/identity/httpapi",
+      "TestAgentsListHostedInjection"
+    ]
+  }
+]

@@ -1,0 +1,12 @@
+package main
+import (
+ "testing"
+)
+func TestOwnerFenceBearerDiagnostic(t *testing.T) {
+ _,actor:=fenceIdentity(t)
+ p:=testHostedAccess(t,"owner")
+ req:=fenceRequest(fenceRoute{"GET","/api/console/hosted/options"},"fixture-owner","Bearer synthetic-agent",nil)
+ if _,ok:=p.human(req,actor);ok {t.Fatal("Agent authorization inherited owner cookie permission")}
+ req.Header.Del("Authorization")
+ if _,ok:=p.human(req,actor);!ok {t.Fatal("control owner cookie denied")}
+}

@@ -1,0 +1,13 @@
+{
+  "command": [
+    "env",
+    "NODE_PATH=/data/ai-dev-data/a1-enroll-browser-private/node_modules",
+    "PW_CHANNEL=chrome",
+    "MUTATION=buttons",
+    "/usr/local/bin/node",
+    "view-service/console-hosted-owner-fence-regression.js"
+  ],
+  "rc": 1,
+  "elapsed_seconds": 2.727,
+  "completed_utc": "2026-10-18T08:57:51.694354+00:00"
+}

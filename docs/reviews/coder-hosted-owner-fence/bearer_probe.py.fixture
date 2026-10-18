@@ -1,0 +1,14 @@
+import pathlib,subprocess,json
+lab=pathlib.Path('/data/ai-dev-data/owner-fence-lab');wt=pathlib.Path('/data/ai-dev-data/owner-fence-withdrawal');probe=wt/'cmd/workpulse/owner_fence_independent_probe_test.go';src=wt/'cmd/workpulse/hosted_access.go';orig=src.read_bytes();old='actor == nil || len(r.Header.Values("Authorization")) != 0';assert orig.decode().count(old)==1
+probe.write_bytes((lab/'bearer-probe_test.go.fixture').read_bytes())
+rc={}
+try:
+ for name in ['fixed','withdrawn','restored']:
+  src.write_bytes(orig.decode().replace(old,'actor == nil').encode() if name=='withdrawn' else orig)
+  with (lab/'logs'/('bearer-direct-'+name+'.log')).open('wb')as out:
+   p=subprocess.run([str(lab/'run.sh'),'go','test','-count=1','./cmd/workpulse','-run','^TestOwnerFenceBearerDiagnostic$'],cwd=wt,stdout=out,stderr=subprocess.STDOUT)
+  rc[name]=p.returncode
+  assert p.returncode==(1 if name=='withdrawn' else 0)
+finally:src.write_bytes(orig);probe.unlink()
+assert b'Agent authorization inherited owner cookie permission' in (lab/'logs/bearer-direct-withdrawn.log').read_bytes()
+(lab/'logs/bearer-direct-results.json').write_text(json.dumps(rc,indent=2)+'\n');print(rc)

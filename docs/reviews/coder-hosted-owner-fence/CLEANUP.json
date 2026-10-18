@@ -1,0 +1,14 @@
+{
+  "cache_before_bytes": 1384181014,
+  "home_before_bytes": 83357310,
+  "tmp_long_before_bytes": 1323429,
+  "tmp_short_before_bytes": 1323429,
+  "owned_children": [],
+  "postmaster_markers": [],
+  "test_worktrees_removed": [
+    "/data/ai-dev-data/owner-fence-baseline",
+    "/data/ai-dev-data/owner-fence-withdrawal"
+  ],
+  "cache_after_go_clean_bytes": 232,
+  "remaining_owned_cache_home_tmp_bytes": 0
+}

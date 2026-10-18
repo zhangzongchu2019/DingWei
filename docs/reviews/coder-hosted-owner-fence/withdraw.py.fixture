@@ -1,0 +1,26 @@
+import pathlib,subprocess,json,time,hashlib
+root=pathlib.Path('/data/ai-dev-data/owner-fence-withdrawal');lab=pathlib.Path('/data/ai-dev-data/owner-fence-lab');out=lab/'logs'
+cases=[
+ ('route-wrapper','cmd/workpulse/hosted_access.go','''\t\tif _, ok := m.access.human(r, m.actor); !ok {\n\t\t\thostedForbidden(w)\n\t\t\treturn\n\t\t}\n''','', ['./cmd/workpulse','TestHostedAccessRealAssemblyUnsetEmptyAndNamed']),
+ ('membership','cmd/workpulse/hosted_access.go','\t_, ok := p.users[id]\n\treturn id, ok','\treturn id, true',['./cmd/workpulse','TestHostedAccessFreshIdentityAndStartupSnapshot']),
+ ('bearer','cmd/workpulse/hosted_access.go','actor == nil || len(r.Header.Values("Authorization")) != 0','actor == nil',['./cmd/workpulse','TestHostedAccessEveryHumanRouteRejectsBeforeBusiness']),
+ ('monitor','cmd/workpulse/hosted_quota_routes.go','\tif _, ok := d.access.human(r, d.actor); !ok {\n\t\treturn "", false\n\t}\n','',['./cmd/workpulse','TestHostedAccessEmptyListPreservesOnlyRegisteredOpsBearer']),
+ ('page','internal/m8/console_auth.go','return h.consoleHostedEnabled && h.consoleHostedAccess != nil && h.consoleHostedAccess(r)','return h.consoleHostedEnabled',['./internal/m8','TestConsoleHostedAccessPageFailsClosedPerRequest']),
+ ('projection','internal/identity/httpapi/httpapi.go',' && a.HostedAccess != nil && a.HostedAccess(r)','',['./internal/identity/httpapi','TestAgentsListHostedInjection']),
+]
+results=[]
+for name,path,old,new,target in cases:
+ p=root/path;orig=p.read_bytes();s=orig.decode();assert s.count(old)==1,(name,s.count(old));changed=s.replace(old,new);p.write_text(changed)
+ try:
+  started=time.monotonic()
+  with (out/f'withdraw-{name}.log').open('wb') as log:
+   red=subprocess.run([str(lab/'run.sh'),'go','test','-count=1','-timeout=10m',target[0],'-run','^'+target[1]+'$'],cwd=root,stdout=log,stderr=subprocess.STDOUT)
+  raw=(out/f'withdraw-{name}.log').read_text()
+  assert red.returncode==1 and '--- FAIL:' in raw and '[build failed]' not in raw,(name,raw)
+ finally:p.write_bytes(orig)
+ with (out/f'restored-{name}.log').open('wb') as log:
+  green=subprocess.run([str(lab/'run.sh'),'go','test','-count=1','-timeout=10m',target[0],'-run','^'+target[1]+'$'],cwd=root,stdout=log,stderr=subprocess.STDOUT)
+ assert green.returncode==0,(name,(out/f'restored-{name}.log').read_text())
+ r={'name':name,'path':path,'source_sha256':hashlib.sha256(orig).hexdigest(),'mutated_sha256':hashlib.sha256(changed.encode()).hexdigest(),'red_rc':red.returncode,'restored_rc':green.returncode,'elapsed_seconds':round(time.monotonic()-started,3),'test':target}
+ results.append(r);(out/'withdrawals.json').write_text(json.dumps(results,indent=2)+'\n');print(json.dumps(r),flush=True)
+assert not subprocess.check_output(['git','status','--porcelain'],cwd=root)

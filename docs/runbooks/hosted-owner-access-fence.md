@@ -18,7 +18,7 @@ Any Authorization header is ineligible for human access, including an Agent bear
 
 Covered: hosted options/create/job progress/all lifecycle operations; quota list/edit; personal and administrator LLM account routes; login start/status/cancel; human quota-monitor; hold release and quota page. Generic Agent listing remains available but does not call the hosted provider or inject hosted metadata for fenced identities. The ordinary Console is still available; its per-request hosted feature flag hides creation, account, quota and lifecycle controls. API enforcement is authoritative even for a previously loaded page or a hand-crafted request.
 
-The existing **exact registered prodops Agent credential GET `/api/console/hosted/quota-monitor`** remains read-only under its original authentication rules (including owner+ops configuration and agent credential validity). It works independently of the human list, cannot release, cannot open the human quota page, and cannot read private material. Node connect, backup upload and login upload keep their separate node authenticators; this human policy does not intercept those machine routes.
+The existing **exact registered prodops Agent credential GET `/api/console/hosted/quota-monitor`** remains read-only under its original authentication rules (including the explicitly configured ops Agent full name and live credential validity). It works independently of the human list, cannot release, cannot open the human quota page, and cannot read private material. Node connect, backup upload and login upload keep their separate node authenticators; this human policy does not intercept those machine routes.
 
 ## Local verification and operational acceptance (execution separately approved)
 

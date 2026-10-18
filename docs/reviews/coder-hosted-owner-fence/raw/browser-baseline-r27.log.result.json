@@ -1,0 +1,12 @@
+{
+  "command": [
+    "env",
+    "NODE_PATH=/data/ai-dev-data/a1-enroll-browser-private/node_modules",
+    "PW_CHANNEL=chrome",
+    "/usr/local/bin/node",
+    "view-service/console-agent-mgmt-hosted-regression.js"
+  ],
+  "rc": 1,
+  "elapsed_seconds": 16.822,
+  "completed_utc": "2026-10-18T08:57:34.010859+00:00"
+}

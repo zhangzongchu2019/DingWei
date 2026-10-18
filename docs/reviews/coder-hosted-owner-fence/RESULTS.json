@@ -1,0 +1,42 @@
+{
+  "full-workpulse-short": {
+    "top_pass": 126,
+    "sub_pass": 38,
+    "fail": [],
+    "skip": [],
+    "result": {
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-race",
+        "-count=1",
+        "-timeout=45m",
+        "./cmd/workpulse"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 235.097,
+      "completed_utc": "2026-10-18T09:03:22.189369+00:00"
+    }
+  },
+  "full-hosted": {
+    "top_pass": 172,
+    "sub_pass": 161,
+    "fail": [],
+    "skip": [],
+    "result": {
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-race",
+        "-count=1",
+        "-timeout=45m",
+        "./internal/hosted"
+      ],
+      "rc": 0,
+      "elapsed_seconds": 356.549,
+      "completed_utc": "2026-10-18T09:00:52.558703+00:00"
+    }
+  }
+}

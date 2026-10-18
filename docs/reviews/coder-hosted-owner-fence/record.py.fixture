@@ -1,0 +1,9 @@
+import subprocess,sys,time,json,pathlib,datetime
+root=pathlib.Path('/data/ai-dev-data/owner-fence-lab')
+name=sys.argv[1]
+start=time.monotonic()
+with (root/'logs'/name).open('wb') as out:
+ p=subprocess.run([str(root/'run.sh'),*sys.argv[2:]],stdout=out,stderr=subprocess.STDOUT)
+r={'command':sys.argv[2:],'rc':p.returncode,'elapsed_seconds':round(time.monotonic()-start,3),'completed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+(root/'logs'/(name+'.result.json')).write_text(json.dumps(r,indent=2)+'\n')
+print(json.dumps(r));sys.exit(p.returncode)

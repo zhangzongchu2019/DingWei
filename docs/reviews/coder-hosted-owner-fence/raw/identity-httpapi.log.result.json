@@ -1,0 +1,13 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "-count=1",
+    "-timeout=15m",
+    "./internal/identity/httpapi"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 65.102,
+  "completed_utc": "2026-10-18T08:56:56.376881+00:00"
+}

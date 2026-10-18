@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "-count=1",
+    "-timeout=15m",
+    "./internal/m8",
+    "-run",
+    "TestConsole|TestUnifiedConsoleAuth"
+  ],
+  "rc": 0,
+  "elapsed_seconds": 196.822,
+  "completed_utc": "2026-10-18T08:59:42.087946+00:00"
+}

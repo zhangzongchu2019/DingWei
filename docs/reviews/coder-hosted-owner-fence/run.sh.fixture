@@ -1,0 +1,3 @@
+#!/bin/bash
+set -eu
+exec env -i HOME=/data/ai-dev-data/owner-fence-lab/home TMPDIR=/tmp/owf18 GOCACHE=/data/ai-dev-data/owner-fence-lab/cache GOMODCACHE=/home/dev/go/pkg/mod GOPROXY=off PATH=/data/ai-dev-data/helper-deps-lock-venv/bin:/usr/local/go/bin:/usr/bin:/bin "$@"
