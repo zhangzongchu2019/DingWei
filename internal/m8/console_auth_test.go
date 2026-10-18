@@ -219,3 +219,37 @@ func TestParseConsoleAuthEnabled(t *testing.T) {
 		t.Fatal("unknown non-empty flag accepted")
 	}
 }
+
+func TestConsoleHostedAccessPageFailsClosedPerRequest(t *testing.T) {
+	h, _, _ := newTestHub(t)
+	h.SetConsoleHostedPageEnabled(true)
+	render := func(allowed bool) string {
+		r := httptest.NewRequest("GET", "/console", nil)
+		if allowed {
+			r.AddCookie(&http.Cookie{Name: "fixture", Value: "allowed"})
+		}
+		w := httptest.NewRecorder()
+		h.HandleConsolePage(w, r)
+		if w.Code != 200 {
+			t.Fatalf("ordinary console unavailable: %d", w.Code)
+		}
+		return w.Body.String()
+	}
+	if !strings.Contains(render(true), "var FEATURE_HOSTED='false'==='true';") {
+		t.Fatal("nil access callback opened hosted UI")
+	}
+	h.SetConsoleHostedAccessCheck(func(r *http.Request) bool { c, err := r.Cookie("fixture"); return err == nil && c.Value == "allowed" })
+	if !strings.Contains(render(true), "var FEATURE_HOSTED='true'==='true';") {
+		t.Fatal("allowed page missing hosted feature")
+	}
+	if !strings.Contains(render(false), "var FEATURE_HOSTED='false'==='true';") {
+		t.Fatal("outsider page has hosted feature")
+	}
+	h.SetConsoleHostedPageEnabled(false)
+	if !strings.Contains(render(true), "var FEATURE_HOSTED='false'==='true';") {
+		t.Fatal("callback overrides absent assembly")
+	}
+	if !strings.Contains(render(true), "function hostedOpButtons(a,hs){\n  if(!FEATURE_HOSTED)return [];") {
+		t.Fatal("lifecycle buttons bypass UI feature fence")
+	}
+}

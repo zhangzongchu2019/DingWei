@@ -183,7 +183,8 @@ func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP, *fakeGW, *
 		t.Fatal(err)
 	}
 	deps := hostedDeps{
-		orch: orch, life: life, qs: hosted.NewQuotaService(st, idp),
+		access: testHostedAccess(t, "zzc,admin,eve,bob"),
+		orch:   orch, life: life, qs: hosted.NewQuotaService(st, idp),
 		pool: poolSvc, publicOrigin: testRouteOrigin,
 		actor: func(r *http.Request) (string, error) {
 			a := r.Header.Get("X-Test-Actor")
@@ -246,9 +247,9 @@ func TestHostedRoutesContractCodes(t *testing.T) {
 		return s
 	}
 
-	// options：未登录 401；正常 200 带五段
-	if rec := as("", "GET", "/api/console/hosted/options", ""); rec.Code != 401 {
-		t.Fatalf("未登录应 401: %d", rec.Code)
+	// Owner fence: unresolved session is uniformly 403; allowed user retains options.
+	if rec := as("", "GET", "/api/console/hosted/options", ""); rec.Code != 403 {
+		t.Fatalf("未登录应 403: %d", rec.Code)
 	}
 	rec := as("zzc", "GET", "/api/console/hosted/options", "")
 	if rec.Code != 200 {

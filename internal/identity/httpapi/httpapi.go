@@ -35,6 +35,8 @@ type API struct {
 	// （例如 token_file 类账号不出 account_last4、改出账号类别与登记时间 —— 组长认可 kimi30kqtuxerh 的提议，字段名由 G4 定）。
 	// 返回 false 表示暂无数据，此时不出 hosted 子对象。顶层 state（身份：active／suspended）仍由 G3 给、是「是否停用」的权威来源。
 	Hosted func(ctx context.Context, agentID string) (map[string]any, bool)
+	// HostedAccess gates hosted-only projections; the ordinary Agent list remains available.
+	HostedAccess func(*http.Request) bool
 }
 
 const maxBody = 4 << 10
@@ -321,7 +323,7 @@ func (a *API) listAgents(w http.ResponseWriter, r *http.Request, actor string) {
 			"agent_id": ag.ID, "name": ag.Name, "full_name": ag.Name + "." + short,
 			"origin": string(ag.Origin), "group_code": ag.GroupID, "state": string(ag.State), "online": online,
 		}
-		if ag.Origin == identity.OriginHosted && a.Hosted != nil {
+		if ag.Origin == identity.OriginHosted && a.Hosted != nil && a.HostedAccess != nil && a.HostedAccess(r) {
 			if h, ok := a.Hosted(r.Context(), ag.ID); ok {
 				item["hosted"] = h
 			}

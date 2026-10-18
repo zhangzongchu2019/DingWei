@@ -62,14 +62,14 @@ func onlineSeat(t *testing.T, deps hostedDeps, st *hosted.Store) string {
 	return out.AgentID
 }
 
-// 认人失败按新平台 N3 统一口径：无会话 401 unauthenticated；必须改密 403 must_change_password。
+// The hosted owner fence uniformly refuses unresolved sessions before business handlers.
 func TestHostedAuthCodes(t *testing.T) {
 	h, _, _, _, _ := mkHostedHTTP(t)
 	for _, path := range []string{"/api/console/hosted/options", "/api/console/hosted/jobs/x", "/api/console/admin/quotas"} {
-		if st, _, m := h.do("", "GET", path, ""); st != 401 || m["error"] != "unauthenticated" {
+		if st, _, m := h.do("", "GET", path, ""); st != 403 || m["error"] != "forbidden" {
 			t.Errorf("GET %s no session: %d %v", path, st, m)
 		}
-		if st, _, m := h.do("must-change", "GET", path, ""); st != 403 || m["error"] != "must_change_password" {
+		if st, _, m := h.do("must-change", "GET", path, ""); st != 403 || m["error"] != "forbidden" {
 			t.Errorf("GET %s must-change: %d %v", path, st, m)
 		}
 	}

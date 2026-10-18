@@ -38,7 +38,8 @@ type newPlatformConfig struct {
 	codeKey string
 	// hosted 列表托管子对象的提供函数，签名即 httpapi.API.Hosted。G4 装配编排器处一行：cfg.hosted = orch.HostedItem
 	// （kimi30kqtuxerh/g4-m0-m1 5a811f0d 起签名逐字相同）。为空时列表不出 hosted 子对象，页面按契约降级为只显示在线／离线。
-	hosted func(ctx context.Context, agentID string) (map[string]any, bool)
+	hosted       func(ctx context.Context, agentID string) (map[string]any, bool)
+	hostedAccess func(*http.Request) bool
 }
 
 var (
@@ -174,7 +175,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	}
 	// 页面只认真实装配结果；不能按 env、pool 非空或浏览器 404 猜测。
 	hub.SetConsoleHostedPageEnabled(hostedOn)
-	api := &httpapi.API{Svc: svc, Claims: ob, ClaimBots: hub.ClaimGuidance, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline, Hosted: cfg.hosted}
+	api := &httpapi.API{Svc: svc, Claims: ob, ClaimBots: hub.ClaimGuidance, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline, Hosted: cfg.hosted, HostedAccess: cfg.hostedAccess}
 	n3.Register(mux)
 	api.Register(mux)
 	mux.HandleFunc("GET /ws/agent", hub.HandleAgentWS)

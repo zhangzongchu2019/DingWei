@@ -263,7 +263,7 @@ func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http
 func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	page := renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedEnabled)
+	page := renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedPageAllowed(r))
 	if h.consoleMux != nil {
 		page = strings.Replace(page, "const CONSOLE_MUX_ENABLED = false;", "const CONSOLE_MUX_ENABLED = true;", 1)
 		page += "<script>" + consoleMuxBrokerJS + "</script>"
@@ -277,6 +277,16 @@ func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 // SetConsoleHostedPageEnabled receives the result of the server-side hosted assembly step.
 // The browser never probes an endpoint to guess whether the feature exists.
 func (h *Hub) SetConsoleHostedPageEnabled(enabled bool) { h.consoleHostedEnabled = enabled }
+
+// SetConsoleHostedAccessCheck is installed from the same startup policy/session
+// resolver as the hosted HTTP fence. A missing check is always closed.
+func (h *Hub) SetConsoleHostedAccessCheck(check func(*http.Request) bool) {
+	h.consoleHostedAccess = check
+}
+
+func (h *Hub) consoleHostedPageAllowed(r *http.Request) bool {
+	return h.consoleHostedEnabled && h.consoleHostedAccess != nil && h.consoleHostedAccess(r)
+}
 
 // renderConsolePage 把版本号在【服务端】填进页面。
 //
@@ -1316,6 +1326,7 @@ async function hostedCreate(){
   hostedTrackJob(String(res.data.job_id||''),body.name);
 }
 function hostedOpButtons(a,hs){
+  if(!FEATURE_HOSTED)return [];
   var name=a.name,busy=hs.state==='busy'||!!hostedOpInflight[a.agent_id],list=[];
   var ops=hs.state==='disabled'
     ?[['enable','启用',true],['destroy','销毁',true]]   // 停用中:容器已停,重启无意义;暂停中不能升级,须先启用(f0fe9794)——给了也只会被 Hub 拒绝

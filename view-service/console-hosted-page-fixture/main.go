@@ -14,6 +14,8 @@ import (
 
 func main() {
 	hub := &m8.Hub{}
+	// Synthetic browser-only grant; production injects the real N3 session fence.
+	hub.SetConsoleHostedAccessCheck(func(*http.Request) bool { return os.Getenv("DW_CONSOLE_HOSTED_ACCESS_FIXTURE") != "0" })
 	hub.SetConsoleHostedPageEnabled(os.Getenv("DW_CONSOLE_HOSTED_FIXTURE") != "0")
 	rr := httptest.NewRecorder()
 	hub.HandleConsolePage(rr, httptest.NewRequest(http.MethodGet, "/console", nil))

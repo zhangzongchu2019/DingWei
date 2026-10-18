@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -11,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
@@ -76,11 +78,18 @@ func TestConsoleHostedFeatureFollowsRealAssembly(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Setenv("DW_G4_MASTER_KEY_FILE", masterKey)
+		t.Setenv("DW_G4_ACCESS_ALLOW_USER_IDS", "zzc")
 
 		mux := http.NewServeMux()
 		hub := newplatHub(t)
 		if err := wireNewPlatform(ctx, mux, hub, newPlatformConfig{publicOrigin: "https://x"}, identity.NewMemStore(), pgtest.Pool(t)); err != nil {
 			t.Fatalf("wire new platform: %v", err)
+		}
+		if err := hub.Identity.Store.CreateUser(ctx, identity.User{UserID: "zzc", ShortName: "zz", Type: identity.UserPlatformAdmin, State: identity.UserActive}); err != nil {
+			t.Fatal(err)
+		}
+		if err := hub.Identity.Store.CreateSession(ctx, identity.Session{UserIDLC: "zzc", TokenHash: identity.HashSecret("feature-owner"), ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
+			t.Fatal(err)
 		}
 		assertHostedRouteState(t, mux, true)
 		assertConsoleHostedFeature(t, hub, true)
@@ -131,7 +140,9 @@ func assertHostedRouteState(t *testing.T, mux *http.ServeMux, want bool) {
 func assertConsoleHostedFeature(t *testing.T, hub *m8.Hub, want bool) {
 	t.Helper()
 	rr := httptest.NewRecorder()
-	hub.HandleConsolePage(rr, httptest.NewRequest(http.MethodGet, "/console", nil))
+	r := httptest.NewRequest(http.MethodGet, "/console", nil)
+	r.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: "feature-owner"})
+	hub.HandleConsolePage(rr, r)
 	needle := "var FEATURE_HOSTED='false'==='true';"
 	if want {
 		needle = "var FEATURE_HOSTED='true'==='true';"

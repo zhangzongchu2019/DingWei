@@ -15,6 +15,7 @@ import (
 )
 
 type hostedQuotaRoutes struct {
+	access             hostedAccess
 	store              *hosted.Store
 	gw                 hosted.NodeGateway
 	identity           *identity.Service
@@ -25,6 +26,9 @@ type hostedQuotaRoutes struct {
 // No role aliases: Console's ordinary "owner" role, managers, and Agents owned
 // by the platform owner must not acquire the human owner's release permission.
 func (d hostedQuotaRoutes) humanOwner(r *http.Request) (string, bool) {
+	if _, ok := d.access.human(r, d.actor); !ok {
+		return "", false
+	}
 	if d.identity == nil || d.owner == "" || r.Header.Get("Authorization") != "" || d.actor == nil {
 		return "", false
 	}
@@ -50,9 +54,10 @@ func (d hostedQuotaRoutes) canMonitor(r *http.Request) bool {
 	return err == nil && ag != nil && full == d.ops
 }
 func (d hostedQuotaRoutes) register(mux httpapi.Mux) {
+	human := hostedHumanMux{mux: mux, access: d.access, actor: d.actor}
 	mux.HandleFunc("GET /api/console/hosted/quota-monitor", d.monitor)
-	mux.HandleFunc("POST /api/console/hosted/nodes/{nodeID}/holds/{seatID}/release", d.release)
-	mux.HandleFunc("GET /console/hosted-quota", d.page)
+	human.HandleFunc("POST /api/console/hosted/nodes/{nodeID}/holds/{seatID}/release", d.release)
+	human.HandleFunc("GET /console/hosted-quota", d.page)
 }
 func (d hostedQuotaRoutes) monitor(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")

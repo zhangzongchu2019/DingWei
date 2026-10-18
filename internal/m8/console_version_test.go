@@ -99,7 +99,7 @@ func TestConsolePageHandlerFeedsTheProductConstant(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const want = "renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedEnabled)"
+	const want = "renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedPageAllowed(r))"
 	if !strings.Contains(string(src), want) {
 		t.Fatalf("HandleConsolePage 没有把产品常量本身喂给渲染(应出现 %q)——"+
 			"喂字面量时今天一切正常,抬版本号那天页面才会落后", want)

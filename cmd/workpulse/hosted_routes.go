@@ -20,6 +20,7 @@ import (
 
 // hostedDeps 路由依赖（装配处注入；测试用桩）。
 type hostedDeps struct {
+	access    hostedAccess
 	orch      *hosted.Orchestrator
 	life      *hosted.Lifecycle
 	qs        *hosted.QuotaService
@@ -42,26 +43,27 @@ type hostedUser struct {
 func registerHostedRoutes(mux interface {
 	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
 }, d hostedDeps) {
-	mux.HandleFunc("GET /api/console/hosted/options", d.handleOptions)
-	mux.HandleFunc("POST /api/console/hosted/agents", d.handleCreate)
-	mux.HandleFunc("GET /api/console/hosted/jobs/{jobID}", d.handleJob)
-	mux.HandleFunc("POST /api/console/hosted/agents/{agentID}/{op}", d.handleLifecycle)
-	mux.HandleFunc("GET /api/console/admin/quotas", d.handleQuotaList)
-	mux.HandleFunc("PUT /api/console/admin/quotas/{userID}", d.handleQuotaPut)
+	human := hostedHumanMux{mux: mux, access: d.access, actor: d.actor}
+	human.HandleFunc("GET /api/console/hosted/options", d.handleOptions)
+	human.HandleFunc("POST /api/console/hosted/agents", d.handleCreate)
+	human.HandleFunc("GET /api/console/hosted/jobs/{jobID}", d.handleJob)
+	human.HandleFunc("POST /api/console/hosted/agents/{agentID}/{op}", d.handleLifecycle)
+	human.HandleFunc("GET /api/console/admin/quotas", d.handleQuotaList)
+	human.HandleFunc("PUT /api/console/admin/quotas/{userID}", d.handleQuotaPut)
 	// 我的 LLM 账号（属主本人；他人一律 404）
-	mux.HandleFunc("GET /api/console/llm-accounts", d.handleAccountList)
-	mux.HandleFunc("POST /api/console/llm-accounts", d.handleAccountRegister)
-	mux.HandleFunc("PUT /api/console/llm-accounts/{id}/secret", d.handleAccountSecret)
-	mux.HandleFunc("POST /api/console/llm-accounts/{id}/disable", d.handleAccountState(true))
-	mux.HandleFunc("POST /api/console/llm-accounts/{id}/enable", d.handleAccountState(false))
+	human.HandleFunc("GET /api/console/llm-accounts", d.handleAccountList)
+	human.HandleFunc("POST /api/console/llm-accounts", d.handleAccountRegister)
+	human.HandleFunc("PUT /api/console/llm-accounts/{id}/secret", d.handleAccountSecret)
+	human.HandleFunc("POST /api/console/llm-accounts/{id}/disable", d.handleAccountState(true))
+	human.HandleFunc("POST /api/console/llm-accounts/{id}/enable", d.handleAccountState(false))
 	// 管理用户：只看元数据、停用、启用（不见密钥、不能换密——组长 59bf5349）
-	mux.HandleFunc("GET /api/console/admin/llm-accounts", d.handleAdminAccountList)
-	mux.HandleFunc("POST /api/console/admin/llm-accounts/{id}/disable", d.handleAdminAccountState(true))
-	mux.HandleFunc("POST /api/console/admin/llm-accounts/{id}/enable", d.handleAdminAccountState(false))
+	human.HandleFunc("GET /api/console/admin/llm-accounts", d.handleAdminAccountList)
+	human.HandleFunc("POST /api/console/admin/llm-accounts/{id}/disable", d.handleAdminAccountState(true))
+	human.HandleFunc("POST /api/console/admin/llm-accounts/{id}/enable", d.handleAdminAccountState(false))
 	if d.login != nil { // 账号登录：会话路由单独前缀（与 /llm-accounts/{id}/… 不冲突）；节点上传端点另走节点密钥
-		mux.HandleFunc("POST /api/console/llm-account-logins", d.handleLoginStart)
-		mux.HandleFunc("GET /api/console/llm-account-logins/{loginID}", d.handleLoginGet)
-		mux.HandleFunc("POST /api/console/llm-account-logins/{loginID}/cancel", d.handleLoginCancel)
+		human.HandleFunc("POST /api/console/llm-account-logins", d.handleLoginStart)
+		human.HandleFunc("GET /api/console/llm-account-logins/{loginID}", d.handleLoginGet)
+		human.HandleFunc("POST /api/console/llm-account-logins/{loginID}/cancel", d.handleLoginCancel)
 		mux.HandleFunc("POST /api/node/login/{loginID}", d.handleLoginUpload)
 	}
 }

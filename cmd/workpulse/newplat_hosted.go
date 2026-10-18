@@ -30,6 +30,15 @@ import (
 // 须在 httpapi.API 构造之前调用（cfg.hosted 注入点在其上）。
 func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatformConfig, pool *repo.Pool,
 	idStore identity.Store, svc *identity.Service, actor func(r *http.Request) (string, error)) (bool, error) {
+	access, err := parseHostedAccess(os.Getenv("DW_G4_ACCESS_ALLOW_USER_IDS"))
+	if err != nil {
+		return false, err
+	}
+	cfg.hostedAccess = func(r *http.Request) bool {
+		_, ok := access.human(r, actor)
+		return ok
+	}
+	hub.SetConsoleHostedAccessCheck(cfg.hostedAccess)
 	mkPath := os.Getenv("DW_G4_MASTER_KEY_FILE")
 	if mkPath == "" {
 		log.Printf("newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）")
@@ -81,7 +90,7 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 	if quotaOwner == "" || quotaOps == "" {
 		log.Printf("hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration")
 	}
-	(hostedQuotaRoutes{store: hst, gw: gate, identity: svc, actor: actor, owner: quotaOwner, ops: quotaOps, origin: cfg.publicOrigin}).register(mux)
+	(hostedQuotaRoutes{access: access, store: hst, gw: gate, identity: svc, actor: actor, owner: quotaOwner, ops: quotaOps, origin: cfg.publicOrigin}).register(mux)
 	if quotaOwner != "" {
 		go runQuotaNotices(ctx, hst, hub, quotaOwner, quotaOps)
 	}
@@ -107,7 +116,8 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 
 	mux.HandleFunc("GET /api/node/connect", gate.Handler().ServeHTTP) // 节点代理拨入（Bearer 节点凭据）
 	registerHostedRoutes(mux, hostedDeps{
-		orch: orch, life: life, qs: hosted.NewQuotaService(hst, idp),
+		access: access,
+		orch:   orch, life: life, qs: hosted.NewQuotaService(hst, idp),
 		actor: actor, pool: poolSvc, publicOrigin: cfg.publicOrigin, login: loginSvc,
 		ownsAgent: func(r *http.Request, userLC, agentID string) bool {
 			ags, err := svc.ListAgents(r.Context(), userLC)

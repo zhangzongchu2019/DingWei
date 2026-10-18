@@ -29,7 +29,7 @@ func TestWireNewPlatformHostedOverlay(t *testing.T) {
 		return nil, false
 	}
 	mux := http.NewServeMux()
-	if err := wireNewPlatform(ctx, mux, hub, newPlatformConfig{publicOrigin: "https://x", hosted: hostedItem}, st, nil); err != nil {
+	if err := wireNewPlatform(ctx, mux, hub, newPlatformConfig{publicOrigin: "https://x", hosted: hostedItem, hostedAccess: func(*http.Request) bool { return true }}, st, nil); err != nil {
 		t.Fatal(err)
 	}
 	t0 := hub.Identity.Now()

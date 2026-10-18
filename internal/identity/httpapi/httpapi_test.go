@@ -436,6 +436,19 @@ func TestAgentsListHostedInjection(t *testing.T) {
 		}
 		return map[string]any{"node_name": "node-a", "state": "running", "account_last4": "9z8y"}, true
 	}
+	for _, check := range []func(*http.Request) bool{nil, func(*http.Request) bool { return false }} {
+		e.api.HostedAccess = check
+		r := e.do("GET", "/api/console/agents", nil, map[string]string{"X-Test-Actor": "zzc"})
+		if r.status != 200 || len(calls) != 0 {
+			t.Fatalf("fenced list read hosted provider: %d %v", r.status, calls)
+		}
+		for _, item := range r.body["agents"].([]any) {
+			if _, has := item.(map[string]any)["hosted"]; has {
+				t.Fatal("fenced hosted metadata disclosed")
+			}
+		}
+	}
+	e.api.HostedAccess = func(*http.Request) bool { return true } // Explicitly allow this legacy projection contract fixture.
 	list := e.do("GET", "/api/console/agents", nil, map[string]string{"X-Test-Actor": "zzc"}).body["agents"].([]any)
 	if len(list) != 2 {
 		t.Fatalf("agents: %v", list)

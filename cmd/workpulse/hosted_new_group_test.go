@@ -76,7 +76,8 @@ func newNGEnv(t *testing.T) *ngEnv {
 		t.Fatal(err)
 	}
 	deps := hostedDeps{
-		orch: orch, life: life, qs: hosted.NewQuotaService(st, idp), pool: poolSvc, publicOrigin: testRouteOrigin,
+		access: testHostedAccess(t, "zzc"),
+		orch:   orch, life: life, qs: hosted.NewQuotaService(st, idp), pool: poolSvc, publicOrigin: testRouteOrigin,
 		actor:     func(r *http.Request) (string, error) { return r.Header.Get("X-Test-Actor"), nil },
 		ownsAgent: func(r *http.Request, userLC, agentID string) bool { return userLC == "zzc" },
 		isManager: func(r *http.Request, userLC string) bool { return false },

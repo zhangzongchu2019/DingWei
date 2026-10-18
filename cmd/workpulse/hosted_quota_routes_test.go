@@ -71,7 +71,7 @@ func quotaRouteRig(t *testing.T) (hostedQuotaRoutes, *identity.MemStore, string,
 		t.Fatal(err)
 	}
 	g := &quotaRouteGateway{}
-	return hostedQuotaRoutes{store: st, gw: g, identity: svc, actor: n3.Actor, owner: "owner", ops: "prodops.own", origin: "https://fixture.invalid"}, mem, p.Credential, g
+	return hostedQuotaRoutes{access: testHostedAccess(t, "owner"), store: st, gw: g, identity: svc, actor: n3.Actor, owner: "owner", ops: "prodops.own", origin: "https://fixture.invalid"}, mem, p.Credential, g
 }
 
 func TestHostedQuotaRealIdentityOwnerOnlyAndOpsReadOnly(t *testing.T) {
