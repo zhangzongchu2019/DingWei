@@ -174,6 +174,63 @@ class ClaudeStart(unittest.TestCase):
                 with mock.patch.object(start, '_shared_guard'), mock.patch.object(start, 'SEAT_UID', os.getuid()), self.assertRaises(SystemExit):
                     start.prepare(env)
 
+
+    def test_selected_model_uses_verified_cli_abi_with_fake_cli_argv(self):
+        import shlex
+        import subprocess
+        import sys
+        for model in ('claude-opus-5-5', ''):
+            with self.subTest(model=model), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                trace = root / 'argv.json'
+                fake_cli = root / 'fake claude'
+                fake_cli.write_text('#!' + sys.executable + '\nimport json,sys\nfrom pathlib import Path\nPath(' + repr(str(trace)) + ').write_text(json.dumps(sys.argv[1:]))\n')
+                fake_cli.chmod(0o700)
+                cred = root / 'credential'
+                cred.write_text('{"fixture":"not-a-real-credential"}')
+                cred.chmod(0o600)
+                env = {'SH_WS_BASE': 'wss://hub.invalid', 'SH_ENROLL_TOKEN_FILE': str(root/'enroll'), 'SH_ENROLL': '1',
+                       'SH_CRED_FILE': str(cred), 'SH_CRED_KIND': 'token_file', 'SH_CLI': 'claude',
+                       'HOME': str(root/'work with spaces'), 'CODEX_MODEL': 'gpt-codex-default',
+                       'CLAUDE_MODEL': model, 'CLAUDE_MODELS': '["claude-opus-5-5"]'}
+                with mock.patch.object(start, '_shared_guard'), mock.patch.object(start, 'SEAT_UID', os.getuid()), \
+                     mock.patch.object(start, 'IPC_DIR', str(root/'ipc')), mock.patch.object(start, 'CLAUDE_BIN', str(fake_cli)):
+                    out = start.prepare(env)
+                run = subprocess.run(shlex.split(out['SH_CLI_CMD']), env=out, capture_output=True, timeout=5)
+                self.assertEqual((run.returncode, run.stdout, run.stderr), (0, b'', b''))
+                want = ['--mcp-config', str(root/'work with spaces'/'.claude'/'mcp.json')]
+                if model:
+                    want += ['--model', model]
+                self.assertEqual(json.loads(trace.read_text()), want)
+                self.assertNotIn('gpt-codex-default', json.loads(trace.read_text()))
+                for name in ('.credentials.json', 'mcp.json'):
+                    self.assertNotIn('claude-opus-5-5', (root/'work with spaces'/'.claude'/name).read_text())
+
+    def test_invalid_model_stops_before_credentials_guard_or_cli(self):
+        cases = [
+            {'CLAUDE_MODEL': 'claude-not-approved', 'CLAUDE_MODELS': '["claude-opus-5-5"]'},
+            {'CLAUDE_MODEL': 'claude-opus-5-5'},
+            {'CLAUDE_MODEL': '--help', 'CLAUDE_MODELS': '["--help"]'},
+            {'CLAUDE_MODEL': 'claude/opus', 'CLAUDE_MODELS': '["claude/opus"]'},
+            {'CLAUDE_MODEL': 'claude-opus-5-5\n', 'CLAUDE_MODELS': '["claude-opus-5-5"]'},
+            {'CLAUDE_MODEL': 'claude-opus-5-5', 'CLAUDE_MODELS': '{}'},
+            {'CLAUDE_MODEL': 'claude-opus-5-5', 'CLAUDE_MODELS': '[]'},
+            {'CLAUDE_MODEL': 'claude-opus-5-5', 'CLAUDE_MODELS': '["claude-opus-5-5", 1]'},
+            {'CLAUDE_MODEL': 'x'*65, 'CLAUDE_MODELS': '["' + 'x'*65 + '"]'},
+        ]
+        for env in cases:
+            with self.subTest(env=env), mock.patch.object(start, '_credential') as credential, \
+                 mock.patch.object(start, '_shared_guard') as guard, mock.patch.object(start.os, 'execve') as execute, \
+                 mock.patch('sys.stderr', new_callable=io.StringIO) as stderr:
+                with self.assertRaises(SystemExit) as raised:
+                    start.prepare(dict(env))
+                self.assertEqual(raised.exception.code, 2)
+                self.assertEqual(stderr.getvalue(), 'hosted-claude-start: invalid or missing CLAUDE_MODEL\n')
+                credential.assert_not_called()
+                guard.assert_not_called()
+                execute.assert_not_called()
+
+
 class ClaudePackager(unittest.TestCase):
     """Real H3 producer, synthetic Git source/deps; no mocked content validators."""
     def setUp(self):

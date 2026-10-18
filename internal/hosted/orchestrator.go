@@ -17,11 +17,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 )
+
+var claudeSeatModelID = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
 
 // ---------- 外部接口（注入） ----------
 
@@ -104,7 +107,7 @@ var (
 	ErrGroupClosed   = errors.New("group_closed")
 	// 包 B2（建席可选模型；HTTP 422 同族，契约写明）
 	ErrModelNotAvailable = errors.New("model_not_available") // 清单外／无在线节点支持
-	ErrModelNotSupported = errors.New("model_not_supported") // 非 codex 席位带 model
+	ErrModelNotSupported = errors.New("model_not_supported") // 不支持自选模型的 CLI 带 model
 )
 
 // ---------- 编排器 ----------
@@ -175,7 +178,7 @@ type CreateRequest struct {
 	CredKind     string // api_key | token_file
 	AccountID    string
 	Plan         string
-	Model        string // 包 B2：按席模型（可空＝节点默认；清单外/非 codex ⇒ 422）
+	Model        string // 按席模型：Codex/Claude 可选，必须在节点批准清单；空保留各 CLI 旧行为。
 }
 
 type CreateOutcome struct {
@@ -196,10 +199,14 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 		}
 		req.CredKind = a.Kind
 	}
-	// ⓪b 模型形态闸（包 B2 修订 2）：非 codex 带 model ⇒ model_not_supported——
+	// ⓪b 模型形态闸：只有 Codex/Claude 支持显式模型；其他 CLI 保持拒绝。
+	// Claude 只接受完整安全 ID，不能将选项形字符串作为 CLI 参数。
 	// 先于联动过滤（形态错比组合错更根本，机器码据此分流页面文案）。
-	if req.Model != "" && req.CLI != "codex" {
+	if req.Model != "" && req.CLI != "codex" && req.CLI != "claude" {
 		return CreateOutcome{}, ErrModelNotSupported
+	}
+	if req.CLI == "claude" && req.Model != "" && !claudeSeatModelID.MatchString(req.Model) {
+		return CreateOutcome{}, ErrModelNotAvailable
 	}
 	// ① 联动过滤＋逐家验通（B12：验通一家放开一家）
 	verified, ok := o.combos.Lookup(req.CLI, req.LLM, req.CredKind)

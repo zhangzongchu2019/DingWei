@@ -3,6 +3,8 @@
 import importlib.util
 import json
 import os
+import re
+import shlex
 from pathlib import Path
 import stat
 import sys
@@ -91,7 +93,29 @@ def _write_mcp_config(config_dir, config):
             tmp.unlink(missing_ok=True)
 
 
+def _selected_model(env):
+    # No model preserves the existing Claude CLI default. Never use CODEX_MODEL
+    # or an unapproved settings/argv shortcut as a hosted model-selection path.
+    model = env.get('CLAUDE_MODEL', '')
+    if model == '':
+        return ''
+    try:
+        raw = env.get('CLAUDE_MODELS', '')
+        if (not isinstance(model, str) or re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,63}', model) is None
+                or not isinstance(raw, str) or len(raw) > 65536):
+            raise ValueError()
+        approved = json.loads(raw)
+        if (not isinstance(approved, list) or not approved or
+                any(not isinstance(value, str) or re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,63}', value) is None for value in approved)
+                or model not in approved):
+            raise ValueError()
+    except (ValueError, TypeError):
+        fail('CLAUDE_MODEL')
+    return model
+
+
 def prepare(env):
+    model = _selected_model(env)
     _shared_guard()
     if (any(not env.get(key) for key in REQUIRED) or env['SH_ENROLL'] != '1' or
             env['SH_CLI'] != 'claude' or env['SH_CRED_KIND'] != 'token_file'):
@@ -136,8 +160,11 @@ def prepare(env):
         _write_mcp_config(mcp_dir, mcp)
     except (OSError, ValueError):
         fail('CLAUDE_HOME')
+    argv = [CLAUDE_BIN, '--mcp-config', str(mcp_dir / 'mcp.json')]
+    if model:
+        argv += ['--model', model]
     env.update(HOME=str(home), SH_MODE=env.get('SH_MODE', 'cli'), SH_CLI='claude',
-               SH_CLI_CMD=CLAUDE_BIN + ' --mcp-config ' + str(mcp_dir / 'mcp.json'), SH_CLI_CWD='/work', SH_COLLECT='0',
+               SH_CLI_CMD=shlex.join(argv), SH_CLI_CWD='/work', SH_COLLECT='0',
                SH_INBOX_DB='/work/inbox.sqlite3', SH_STATE_DIR='/work/.dingwei',
                CLAUDE_CONFIG_DIR=str(home / '.claude'),
                SH_ENROLL='1', SH_MCP_IPC_SOCK=sock, DINGWEI_MCP_IPC_SOCK=sock,

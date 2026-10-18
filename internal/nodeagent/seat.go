@@ -290,6 +290,13 @@ func (d *dockerOps) seatEnv(credKind, cli, model string) []string {
 		"SH_MODE=" + map[bool]string{true: "driver", false: "cli"}[d.seatMode == "driver" && cli == "codex"],
 		"SH_CLI=" + cli,
 	}
+	// Claude's model is the persisted per-seat value, never the Codex default.
+	// Carry the same approved list used by capacity/Hub/create into the launcher
+	// for a final membership check before it reads credentials or executes CLI.
+	if cli == "claude" && model != "" {
+		approved, _ := json.Marshal(d.seatModels)
+		env = append(env, "CLAUDE_MODEL="+model, "CLAUDE_MODELS="+string(approved))
+	}
 	if d.seatMode == "driver" && cli == "codex" {
 		// driver 两件套：SH_DRIVER 显式选 codex driver（driver_adapter 默认也是 codex，写明防漂移）、
 		// 事件键让 helper 产结构事件（view 才看得到 Agent 回复）。异议 1：仅 codex 席位。
@@ -325,7 +332,7 @@ func (d *dockerOps) seatEnv(credKind, cli, model string) []string {
 	if effective == "" {
 		effective = d.seatCodexModel
 	}
-	if effective != "" {
+	if cli != "claude" && effective != "" {
 		env = append(env, "CODEX_MODEL="+effective)
 	}
 	return env
@@ -424,6 +431,9 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 	}
 	if !validSeatID(p.SeatID) {
 		return nil, fmt.Errorf("%w: seat_id %q", ErrParams, p.SeatID)
+	}
+	if p.CLI == "claude" && p.Model != "" && !claudeModelID.MatchString(p.Model) {
+		return nil, fmt.Errorf("%w: invalid Claude model", ErrParams)
 	}
 	// 包 B2：按席模型校验——格式同 validModelName；本节点有清单时必须在清单内（Hub 已按清单选点，这里纵深）。
 	if p.Model != "" {
@@ -737,6 +747,9 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	if err := d.preflightSeat(p.SeatID); err != nil {
 		return nil, err
 	}
+	if p.CLI == "claude" && p.Model != "" && (!claudeModelID.MatchString(p.Model) || !slices.Contains(d.seatModels, p.Model)) {
+		return nil, fmt.Errorf("%w: Claude model not approved", ErrParams)
+	}
 	// 复验缺口（tosonnet55tc2k）：upgrade 的 model 至少过格式校验（成员关系不查——
 	// 记录值可能早于清单变更；Hub 下发是记录值，格式纵深仍在）。
 	if p.Model != "" && !validModelName(p.Model) {
@@ -872,6 +885,8 @@ func ParseLocalImages(csv string) (map[string]bool, error) {
 	}
 	return allow, nil
 }
+
+var claudeModelID = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
 
 // validModelName 模型名合法形：1–64 位、[A-Za-z0-9._-]（R-SEAT-MODEL-NODEAGENT；非法即启动失败，防注入串进席位 env）。
 func validModelName(s string) bool {

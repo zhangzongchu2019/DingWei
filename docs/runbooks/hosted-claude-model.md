@@ -1,0 +1,25 @@
+# Hosted Claude per-seat model
+
+S-HOSTED-CLAUDE-MODEL extends the existing Seat.Model / Create / job / node command path to Claude. It does not authorize a combo, change `verified=false`, modify a package lock or run a real CLI/Engine. Configure/enable/build/trial operations remain separately approved.
+
+## Approval and transport
+
+For a nonempty Create.model, Claude (like Codex) must select a fresh, online node whose authenticated capacity `models` includes the exact requested value. No free-form alias resolution, spelling normalization, remote discovery or automatic fallback is added. The existing approved node configuration is `NODEAGENT_SEAT_CODEX_MODELS`; that historical name now supplies the same explicit list for both supported CLIs. For example the owner may separately approve `claude-opus-5-5` in that list. The list is not a claim that any particular provider/account can actually serve it. Configure only values approved for that node and intended CLI; this increment does not introduce a per-provider/model discovery registry.
+
+The Hub persists the exact nonempty model on the seat and existing jobs use that recorded value for `create_seat` / upgrade. Node create checks the same list again before any Engine operation. Claude additionally requires a 1–64 character model ID beginning with an ASCII letter/digit, followed by letters/digits/dot/underscore/hyphen. This prevents option-shaped model values even if accidentally entered in the list. Other CLIs remain rejected for nonempty model; Codex's syntax/default/approved-list behavior is unchanged.
+
+Node passes **CLAUDE_MODEL** (selected seat value) and **CLAUDE_MODELS** (JSON array of the node's approved list) into the seat container. They contain model IDs only, no credentials. The launcher checks syntax and exact membership before the shared update guard, credential read, filesystem writes, helper or CLI startup. Missing/malformed list, unknown or malformed selected value fails with a fixed `CLAUDE_MODEL` diagnostic; invalid input text is not echoed. This is the only added transport: no new request env/file/argv override field or settings-file bypass. An operator with control of container environment or daemon/host is already trusted; this is not a boundary against host root.
+
+The launcher builds the command as separately quoted arguments using the locked official ABI `--model <model>` alongside the existing `--mcp-config`. The model is not written into MCP configuration or CLI credential JSON. It is a non-secret normal seat field/CLI argument, not a credential, and may be visible to authorized local process inspection. No fallback model or retry is introduced.
+
+## Empty value, upgrades and revocation
+
+Empty or omitted Create.model preserves the previous Claude behavior: seat.Model stays empty; no CLAUDE_MODEL/CLAUDE_MODELS or `--model` is added; Claude uses its existing CLI default/settings. A configured Codex default is never used for Claude. Existing Codex environment/default behavior remains unchanged, including its original proxy prerequisite.
+
+A Claude upgrade uses the saved model, never silently swaps to a node default; a nonempty saved model must still be valid and currently approved before a replacement runtime is built. Removing it from the list therefore blocks that upgrade instead of falling back. Existing running/stopped containers keep their creation-time environment snapshot: changing the node list is not a live revocation or an automatic container restart. Such operational changes and any recreation require separate approval. Codex's prior recorded-model upgrade semantics remain intact.
+
+## ABI evidence and validation scope
+
+Official CLI documentation describes `--model` as the session model override: [Claude Code CLI reference](https://code.claude.com/docs/en/cli-reference). The development report also binds static inspection to the **actual 2.1.285** wrapper and linux-x64 native package hashes already pinned by `claude-package-lock.json`, including the main command's option declaration offset. Package bytes were inspected without executing Claude, running its installer, invoking Node on the package or building an image. Current documentation alone is not asserted as proof of the historical version.
+
+Tests cover allowed/missing/malformed/node-list values, empty behavior, persisted seat/job command and actual HTTP path, node pre-Engine refusal and selected env, saved-model upgrade, and fake CLI exact argv including paths with spaces. Existing Codex tests are retained. Source withdrawal must turn the relevant tests red. Required original canonical remains 49 Python + 2 shell entries; hosted/workpulse long tests run with 45-minute timeout. No real provider/model availability, credentials/login compatibility, deployed Console/Engine or Claude execution acceptance is claimed.

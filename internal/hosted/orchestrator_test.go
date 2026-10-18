@@ -733,7 +733,7 @@ func TestNeverConnectsSweepedStartTimeout(t *testing.T) {
 
 // 包 B2（建席可选模型，批准稿＋五修订）：
 // ① pickNode 只在上报清单含该 model 的在线节点里选（有节点支持但被选中节点不支持 ⇒ 自动选别的不报错）
-// ② 全部不支持 ⇒ model_not_available；非 codex 带 model ⇒ model_not_supported（均 422 族）
+// ② 全部不支持 ⇒ model_not_available；非 Codex/Claude 带 model ⇒ model_not_supported（均 422 族）
 // ③ 生效值落库（seat.Model），upgrade 用记录值
 // 反向：pickNode 去清单过滤 ⇒ ①红；去校验 ⇒ ②红。
 func TestCreateWithModelSelectsSupportingNode(t *testing.T) {
@@ -792,10 +792,10 @@ func TestCreateModelRejections(t *testing.T) {
 		CredKind: "token_file", AccountID: acct, Plan: "2c4g", Model: "gpt-9"}); !errors.Is(err, ErrModelNotAvailable) {
 		t.Fatalf("清单外 ⇒ model_not_available: %v", err)
 	}
-	// 非 codex 带 model ⇒ model_not_supported
-	if _, err := o.Create(ctx, CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "m3", CLI: "claude", LLM: "claude",
+	// 不支持选模的 CLI 带 model ⇒ model_not_supported
+	if _, err := o.Create(ctx, CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "m3", CLI: "opencode", LLM: "deepseek",
 		CredKind: "token_file", AccountID: acct, Plan: "2c4g", Model: "gpt-6.1-sol"}); !errors.Is(err, ErrModelNotSupported) {
-		t.Fatalf("非 codex ⇒ model_not_supported: %v", err)
+		t.Fatalf("不支持的 CLI ⇒ model_not_supported: %v", err)
 	}
 }
 
