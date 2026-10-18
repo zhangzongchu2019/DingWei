@@ -1,0 +1,5 @@
+--- FAIL: TestHostedAccessEmptyListPreservesOnlyRegisteredOpsBearer (2.02s)
+    hosted_access_test.go:234: ops boundary /api/console/hosted/quota-monitor: 200 {"can_release":true,"nodes":[{"notices_pending":0,"notices_queued":0,"node_id":"nd_release","quota_mode":"soft","fresh":true,"last_seen_at":"2026-10-18T08:56:43.576144Z","hold_release_version":1,"seats":{"ag_release":{"limit_bytes":0,"usage":{"allocated_bytes":0,"apparent_bytes":0},"measured_at":"0001-01-01T00:00:00Z","usage_unknown":false,"warn":false,"usage_warning":false,"space_warning":false,"hold":"disk_limit","hold_id":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","stop_state":"stopped"}}}]}
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	2.028s
+FAIL

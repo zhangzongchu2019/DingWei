@@ -1,0 +1,5 @@
+--- FAIL: TestHostedAccessFreshIdentityAndStartupSnapshot (0.00s)
+    hosted_access_test.go:183: role promotion bypass
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.011s
+FAIL

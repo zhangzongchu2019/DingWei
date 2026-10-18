@@ -1,0 +1,19 @@
+2026/10/18 08:56:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/18 08:56:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/18 08:56:05 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+2026/10/18 08:56:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/18 08:56:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/18 08:56:07 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+2026/10/18 08:56:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/18 08:56:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/18 08:56:08 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+--- FAIL: TestHostedAccessRealAssemblyUnsetEmptyAndNamed (5.10s)
+    --- FAIL: TestHostedAccessRealAssemblyUnsetEmptyAndNamed/<unset> (1.69s)
+        hosted_access_test.go:333: assembly "<unset>" fixture-owner /api/console/hosted/options: 200 {"nodes":[],"combos":[],"accounts":[],"plans":[{"id":"1c1.5g40","name":"1C/1.5G/40G","vcpu":1,"mem_gb":1.5,"fits":true},{"id":"2c4g","name":"2C/4G","vcpu":2,"mem_gb":4,"fits":true},{"id":"4c8g","name":"4C/8G","vcpu":4,"mem_gb":8,"fits":true}],"quota":{"remaining":{"agents":4,"vcpu":4,"mem_gb":16,"disk_gb":64}},"models":[]}
+    --- FAIL: TestHostedAccessRealAssemblyUnsetEmptyAndNamed/#00 (1.57s)
+        hosted_access_test.go:333: assembly "" fixture-owner /api/console/hosted/options: 200 {"nodes":[],"combos":[],"accounts":[],"plans":[{"id":"1c1.5g40","name":"1C/1.5G/40G","vcpu":1,"mem_gb":1.5,"fits":true},{"id":"2c4g","name":"2C/4G","vcpu":2,"mem_gb":4,"fits":true},{"id":"4c8g","name":"4C/8G","vcpu":4,"mem_gb":8,"fits":true}],"quota":{"remaining":{"agents":4,"vcpu":4,"mem_gb":16,"disk_gb":64}},"models":[]}
+    --- FAIL: TestHostedAccessRealAssemblyUnsetEmptyAndNamed/owner (1.84s)
+        hosted_access_test.go:333: assembly "owner" fixture-admin /api/console/hosted/options: 200 {"nodes":[],"combos":[],"accounts":[],"plans":[{"id":"1c1.5g40","name":"1C/1.5G/40G","vcpu":1,"mem_gb":1.5,"fits":true},{"id":"2c4g","name":"2C/4G","vcpu":2,"mem_gb":4,"fits":true},{"id":"4c8g","name":"4C/8G","vcpu":4,"mem_gb":8,"fits":true}],"quota":{"remaining":{"agents":4,"vcpu":4,"mem_gb":16,"disk_gb":64}},"models":[]}
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	5.107s
+FAIL

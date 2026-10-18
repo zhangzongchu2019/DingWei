@@ -1,0 +1,5 @@
+--- FAIL: TestAgentsListHostedInjection (0.00s)
+    httpapi_test.go:443: fenced list read hosted provider: 200 map[ag_835e011a3a6ae9c325f96a80741680f3:1]
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/identity/httpapi	0.008s
+FAIL

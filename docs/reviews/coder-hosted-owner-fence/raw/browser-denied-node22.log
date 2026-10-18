@@ -1,0 +1,11 @@
+PASS absent assembly or denied access removes hosted panels and lifecycle controls without hosted reads
+FAIL a create with a new group shows that group in the group list once online, led by the new agent: locator.selectOption: Timeout 2500ms exceeded.
+Call log:
+  - waiting for locator('#hostedCli')
+
+FAIL a token_file account already in use shows the shared-login warning; others do not; nothing is blocked: page.evaluate: TypeError: Cannot read properties of null (reading 'accounts')
+    at eval (eval at evaluate (:370:30), <anonymous>:1:23)
+    at UtilityScript.evaluate (<anonymous>:372:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+PASS no pageerror and no unexpected console error across the whole run
+hosted console browser: passed=2 failed=2 mutation=none

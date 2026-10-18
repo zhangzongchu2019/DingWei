@@ -1,0 +1,5 @@
+--- FAIL: TestOwnerFenceBearerDiagnostic (0.00s)
+    owner_fence_independent_probe_test.go:9: Agent authorization inherited owner cookie permission
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.009s
+FAIL
