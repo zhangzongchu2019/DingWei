@@ -23,6 +23,100 @@ prepare = importlib.util.module_from_spec(prepare_spec)
 prepare_spec.loader.exec_module(prepare)
 
 
+class NodeXZExtraction(unittest.TestCase):
+    """Execute the Dockerfile RUN with a tiny archive and no external xz."""
+    @staticmethod
+    def extraction_run():
+        lines = (HERE / 'Dockerfile').read_text().splitlines()
+        first = next(i for i, line in enumerate(lines) if line.startswith('RUN mkdir /opt/node-unpack'))
+        selected = []
+        for line in lines[first:]:
+            selected.append(line.rstrip().removesuffix('\\').strip())
+            if not line.rstrip().endswith('\\'):
+                break
+        return ' '.join(selected).removeprefix('RUN ')
+
+    def run_archive(self, root, malicious=None, wrong_hash=False):
+        import subprocess
+        import sys
+        archive = root / 'node.tar.xz'
+        prefix = 'node-v22.23.3-linux-x64'
+        with tarfile.open(archive, 'w:xz') as stream:
+            for name in ['bin/node', 'lib/node_modules/npm/bin/npm-cli.js']:
+                member = tarfile.TarInfo(prefix + '/' + name)
+                member.mode = 0o755
+                data = b'synthetic offline executable\n'
+                member.size = len(data)
+                stream.addfile(member, io.BytesIO(data))
+            link = tarfile.TarInfo(prefix + '/bin/npm')
+            link.type = tarfile.SYMTYPE
+            link.linkname = '../lib/node_modules/npm/bin/npm-cli.js'
+            stream.addfile(link)
+            if malicious == 'traversal':
+                member = tarfile.TarInfo('../escaped')
+                member.size = 6
+                stream.addfile(member, io.BytesIO(b'secret'))
+            elif malicious == 'link':
+                member = tarfile.TarInfo(prefix + '/bin/escape')
+                member.type = tarfile.SYMTYPE
+                member.linkname = '../../../escaped'
+                stream.addfile(member)
+        tools = root / 'tools'
+        tools.mkdir()
+        # Real tar is present to reproduce the old xz subprocess failure; xz is not.
+        for name, source in [('python', sys.executable), ('tar', '/usr/bin/tar'),
+                             ('mkdir', '/usr/bin/mkdir'), ('mv', '/usr/bin/mv'), ('rm', '/usr/bin/rm')]:
+            (tools / name).symlink_to(source)
+        lock = json.loads((HERE / 'claude-package-lock.json').read_text())
+        expected = lock['runtime']['sha256']
+        run = self.extraction_run()
+        self.assertIn(expected, run, 'Dockerfile must repeat the unchanged Node lock SHA')
+        run = run.replace('/tmp/node.tar.xz', str(archive))
+        run = run.replace('/opt/node-unpack', str(root / 'unpack')).replace('/opt/node', str(root / 'node'))
+        run = run.replace(expected, '0' * 64 if wrong_hash else hashlib.sha256(archive.read_bytes()).hexdigest())
+        return subprocess.run(['/bin/sh', '-c', run], env={'PATH': str(tools)},
+                              text=True, capture_output=True)
+
+    def test_exact_run_works_without_xz_and_preserves_relative_symlink(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = self.run_archive(root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            link = root / 'node/bin/npm'
+            self.assertTrue(link.is_symlink())
+            self.assertEqual(os.readlink(link), '../lib/node_modules/npm/bin/npm-cli.js')
+            self.assertEqual(link.read_bytes(), b'synthetic offline executable\n')
+            self.assertTrue(os.access(root / 'node/bin/node', os.X_OK))
+            self.assertFalse((root / 'node.tar.xz').exists())
+            self.assertFalse((root / 'unpack').exists())
+
+    def test_exact_run_rejects_parent_traversal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = self.run_archive(root, malicious='traversal')
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('OutsideDestinationError', result.stderr)
+            self.assertFalse((root / 'escaped').exists())
+            self.assertFalse((root / 'node').exists())
+
+    def test_exact_run_rejects_link_outside_destination(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = self.run_archive(root, malicious='link')
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('LinkOutsideDestinationError', result.stderr)
+            self.assertFalse((root / 'node').exists())
+
+    def test_exact_run_checks_hash_before_extraction(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = self.run_archive(root, wrong_hash=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('NODE_SHA256', result.stderr)
+            self.assertEqual(list((root / 'unpack').iterdir()), [])
+            self.assertFalse((root / 'node').exists())
+
+
 class ClaudeStart(unittest.TestCase):
     def test_definition_keeps_combo_unverified_and_builder_fail_closed(self):
         combo = json.loads((HERE / 'combos.json').read_text())
