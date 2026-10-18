@@ -1,0 +1,10 @@
+{
+  "HOME": "/data/ai-dev-data/claude-xz-lab/home",
+  "PATH": "/data/ai-dev-data/helper-deps-lock-venv/bin:/usr/bin:/bin",
+  "TMPDIR": "/tmp/cxz18",
+  "GOCACHE": "/data/ai-dev-data/claude-xz-lab/cache",
+  "GOMODCACHE": "/home/dev/go/pkg/mod",
+  "GOPROXY": "off",
+  "GOSUMDB": "off",
+  "LANG": "C.UTF-8"
+}

@@ -1,0 +1,20 @@
+{
+  "owned_processes": [],
+  "pg_pass_lines": [
+    "--- PASS: TestDeviceClaimAcrossActualClientAndPostgres (14.99s)",
+    "    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/new (5.73s)",
+    "    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/reuse (2.28s)",
+    "    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/lost_ack (2.46s)",
+    "    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/takeover (2.24s)",
+    "    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/cancel_then_new (2.28s)"
+  ],
+  "before_bytes": {
+    "/data/ai-dev-data/claude-xz-lab/cache": 219547073,
+    "/data/ai-dev-data/claude-xz-lab/home": 83050593,
+    "/tmp/cxz18": 569765
+  },
+  "private_cache_after_go_clean_bytes": 232,
+  "after_paths_present": [],
+  "mutant_worktree_removed": true,
+  "source_worktree_retained": "/data/ai-dev-data/claude-image-xz-r29"
+}

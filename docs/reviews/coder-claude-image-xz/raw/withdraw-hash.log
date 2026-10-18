@@ -1,0 +1,14 @@
+test_exact_run_checks_hash_before_extraction (deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_checks_hash_before_extraction) ... FAIL
+
+======================================================================
+FAIL: test_exact_run_checks_hash_before_extraction (deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_checks_hash_before_extraction)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-xz-mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 114, in test_exact_run_checks_hash_before_extraction
+    self.assertNotEqual(result.returncode, 0)
+AssertionError: 0 == 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.068s
+
+FAILED (failures=1)

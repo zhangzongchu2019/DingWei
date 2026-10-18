@@ -1,0 +1,17 @@
+test_exact_run_works_without_xz_and_preserves_relative_symlink (deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_works_without_xz_and_preserves_relative_symlink) ... FAIL
+
+======================================================================
+FAIL: test_exact_run_works_without_xz_and_preserves_relative_symlink (deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_works_without_xz_and_preserves_relative_symlink)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-xz-mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 83, in test_exact_run_works_without_xz_and_preserves_relative_symlink
+    result = self.run_archive(root)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/claude-xz-mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 73, in run_archive
+    self.assertIn(expected, run, 'Dockerfile must repeat the unchanged Node lock SHA')
+AssertionError: 'df450af89261115ef9f9e3830c3eeb2cc9213b63c720b1af623cb5dcbe2e02de' not found in 'mkdir /opt/node-unpack && tar -xJf /tmp/node.tar.xz -C /opt/node-unpack && mv /opt/node-unpack/node-v22.23.3-linux-x64 /opt/node && rm -rf /tmp/node.tar.xz /opt/node-unpack' : Dockerfile must repeat the unchanged Node lock SHA
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=1)

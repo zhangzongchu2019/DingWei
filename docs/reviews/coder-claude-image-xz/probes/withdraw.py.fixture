@@ -1,0 +1,28 @@
+import subprocess,hashlib,json,os
+from pathlib import Path
+repo=Path('/data/ai-dev-data/claude-xz-mutant')
+lab=Path('/data/ai-dev-data/claude-xz-lab')
+p=repo/'deploy/ops/hosted-claude-image/Dockerfile'
+fixed=p.read_text()
+original=subprocess.check_output(['git','show','b82dfbcd:deploy/ops/hosted-claude-image/Dockerfile'],cwd=repo).decode()
+python='/data/ai-dev-data/helper-deps-lock-venv/bin/python'
+base='deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.'
+def run(label,test,source):
+ p.write_text(source)
+ cmd=[python,'-m','unittest','-v',base+test]
+ r=subprocess.run(cmd,cwd=repo,env={'PATH':'/usr/bin:/bin','HOME':str(lab/'home'),'TMPDIR':'/tmp/cxz18'},stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+ (lab/('raw/'+label+'.log')).write_bytes(r.stdout)
+ return {'label':label,'command':cmd,'rc':r.returncode,'dockerfile_sha256':hashlib.sha256(source.encode()).hexdigest()}
+rows=[]
+try:
+ for label,test,source in [
+ ('fixed','test_exact_run_works_without_xz_and_preserves_relative_symlink',fixed),
+ ('withdraw-original-xz','test_exact_run_works_without_xz_and_preserves_relative_symlink',original),
+ ('withdraw-data-filter','test_exact_run_rejects_parent_traversal',fixed.replace('filter="data"','filter="fully_trusted"')),
+ ('withdraw-hash','test_exact_run_checks_hash_before_extraction',fixed.replace('hashlib.sha256(data).hexdigest()==sys.argv[3] or sys.exit("NODE_SHA256");','')),
+ ('restored','test_exact_run_works_without_xz_and_preserves_relative_symlink',fixed),
+ ]:
+  row=run(label,test,source);rows.append(row);print(label,row['rc'],flush=True)
+finally: p.write_text(fixed)
+assert [r['rc'] for r in rows]==[0,1,1,1,0],rows
+(lab/'raw/withdrawals.json').write_text(json.dumps(rows,indent=2)+'\n')

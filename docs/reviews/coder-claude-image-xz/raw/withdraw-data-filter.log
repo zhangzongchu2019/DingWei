@@ -1,0 +1,14 @@
+test_exact_run_rejects_parent_traversal (deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_rejects_parent_traversal) ... FAIL
+
+======================================================================
+FAIL: test_exact_run_rejects_parent_traversal (deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_rejects_parent_traversal)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/claude-xz-mutant/deploy/ops/hosted-claude-image/test_claude_start.py", line 97, in test_exact_run_rejects_parent_traversal
+    self.assertNotEqual(result.returncode, 0)
+AssertionError: 0 == 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.056s
+
+FAILED (failures=1)

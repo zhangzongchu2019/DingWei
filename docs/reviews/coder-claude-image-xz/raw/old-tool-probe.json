@@ -1,0 +1,16 @@
+[
+  {
+    "label": "old",
+    "source": "b82dfbcd",
+    "rc": 2,
+    "stderr": "tar (child): xz: Cannot exec: No such file or directory\ntar (child): Error is not recoverable: exiting now\ntar: Child returned status 2\ntar: Error is not recoverable: exiting now\n",
+    "installed": false
+  },
+  {
+    "label": "fixed",
+    "source": "30f22a3",
+    "rc": 0,
+    "stderr": "",
+    "installed": true
+  }
+]

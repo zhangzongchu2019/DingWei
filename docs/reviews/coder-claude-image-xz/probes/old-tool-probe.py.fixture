@@ -1,0 +1,24 @@
+import subprocess,tempfile,tarfile,io,hashlib,json,os
+from pathlib import Path
+repo=Path('/data/ai-dev-data/claude-image-xz-r29');lab=Path('/data/ai-dev-data/claude-xz-lab')
+rows=[]
+for label,revision in [('old','b82dfbcd'),('fixed','30f22a3')]:
+ text=subprocess.check_output(['git','show',revision+':deploy/ops/hosted-claude-image/Dockerfile'],cwd=repo).decode()
+ lines=text.splitlines();i=next(i for i,s in enumerate(lines) if s.startswith('RUN mkdir /opt/node-unpack'))
+ selected=[]
+ for line in lines[i:]:
+  selected.append(line.rstrip().removesuffix('\\').strip())
+  if not line.rstrip().endswith('\\'):break
+ command=' '.join(selected).removeprefix('RUN ')
+ with tempfile.TemporaryDirectory(prefix='oldtool-',dir='/tmp/cxz18') as tmp:
+  root=Path(tmp);a=root/'node.tar.xz'
+  with tarfile.open(a,'w:xz') as t:
+   m=tarfile.TarInfo('node-v22.23.3-linux-x64/bin/node');m.mode=0o755;m.size=1;t.addfile(m,io.BytesIO(b'x'))
+  tools=root/'tools';tools.mkdir()
+  for name,source in [('python','/data/ai-dev-data/helper-deps-lock-venv/bin/python'),('tar','/usr/bin/tar'),('mkdir','/usr/bin/mkdir'),('mv','/usr/bin/mv'),('rm','/usr/bin/rm')]: (tools/name).symlink_to(source)
+  command=command.replace('/tmp/node.tar.xz',str(a)).replace('/opt/node-unpack',str(root/'unpack')).replace('/opt/node',str(root/'node')).replace('df450af89261115ef9f9e3830c3eeb2cc9213b63c720b1af623cb5dcbe2e02de',hashlib.sha256(a.read_bytes()).hexdigest())
+  result=subprocess.run(['/bin/sh','-c',command],env={'PATH':str(tools)},capture_output=True,text=True)
+  rows.append({'label':label,'source':revision,'rc':result.returncode,'stderr':result.stderr,'installed':(root/'node/bin/node').exists()})
+print(json.dumps(rows,indent=2))
+assert rows[0]['rc']!=0 and 'xz' in rows[0]['stderr'] and not rows[0]['installed']
+assert rows[1]['rc']==0 and rows[1]['installed']

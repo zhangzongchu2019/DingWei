@@ -1,0 +1,17 @@
+{
+  "base": "b82dfbcd8da9dd7eebd67328f65a3cd03140f411",
+  "source": "30f22a3cb0ffdf15829415cf6ed96b8d2cf6c1ad",
+  "source_tree": "bcdd0476e045ec046b1fc489c3d70fd8ce908c7f",
+  "files_sha256": {
+    "deploy/ops/hosted-claude-image/Dockerfile": "53e55f3e96bc19b74192a0971fa13563d5b133ad627ab97e3584323aec6695f2",
+    "deploy/ops/hosted-claude-image/NODE-XZ-CONTRACT.md": "011f13587d69f599627347312facab279e385f5065ec8852da8ea4640a8e2168",
+    "deploy/ops/hosted-claude-image/test_claude_start.py": "fbd1bd33dda1ddc2e6b95b70e625feb5c6aa82c98aca565beb1a7feba4f8dd03"
+  },
+  "unchanged_blobs": {
+    "deploy/ops/hosted-claude-image/claude-package-lock.json": "3759350437f484423da95c56e484a679d1695872",
+    "deploy/ops/hosted-claude-image/combos.json": "27eb678bb4dbcd304e7a388e88e6e8a434bd4af1",
+    "deploy/ops/hosted-claude-image/build-image.sh": "03e8e8dfdeabc9836f1fc97e5c770c035b7faea8",
+    "deploy/ops/hosted-claude-image/prepare_context.py": "ec1053ce0a2aa28246209b85425661439bde93f0",
+    "tools/sessionhelper/requirements-runtime.lock": "27c77f43077e18019dd42575b6beb2f5815e27d8"
+  }
+}

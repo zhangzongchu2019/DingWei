@@ -1,0 +1,62 @@
+[
+  {
+    "label": "fixed",
+    "command": [
+      "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+      "-m",
+      "unittest",
+      "-v",
+      "deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_works_without_xz_and_preserves_relative_symlink"
+    ],
+    "rc": 0,
+    "dockerfile_sha256": "53e55f3e96bc19b74192a0971fa13563d5b133ad627ab97e3584323aec6695f2"
+  },
+  {
+    "label": "withdraw-original-xz",
+    "command": [
+      "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+      "-m",
+      "unittest",
+      "-v",
+      "deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_works_without_xz_and_preserves_relative_symlink"
+    ],
+    "rc": 1,
+    "dockerfile_sha256": "e4eef4f4e7be5f47147ac0e346dd5a21b63c271d3ca71e27c3e534b3a6a20207"
+  },
+  {
+    "label": "withdraw-data-filter",
+    "command": [
+      "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+      "-m",
+      "unittest",
+      "-v",
+      "deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_rejects_parent_traversal"
+    ],
+    "rc": 1,
+    "dockerfile_sha256": "790f8caa9fad1b24c49af9a6fe64708e2f740382cbcf8c5d1683c94ea815e0c5"
+  },
+  {
+    "label": "withdraw-hash",
+    "command": [
+      "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+      "-m",
+      "unittest",
+      "-v",
+      "deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_checks_hash_before_extraction"
+    ],
+    "rc": 1,
+    "dockerfile_sha256": "69ac905c0617bc90026ed90690aac0f954243c24b5fe97be38a72fe23b27854f"
+  },
+  {
+    "label": "restored",
+    "command": [
+      "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+      "-m",
+      "unittest",
+      "-v",
+      "deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_works_without_xz_and_preserves_relative_symlink"
+    ],
+    "rc": 0,
+    "dockerfile_sha256": "53e55f3e96bc19b74192a0971fa13563d5b133ad627ab97e3584323aec6695f2"
+  }
+]

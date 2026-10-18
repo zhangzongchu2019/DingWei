@@ -1,0 +1,17 @@
+{
+  "docs/reviews/coder-claude-image-xz/CLEANUP.json": "71a9020cd678519c050697b5bff91b82fa0d6ca70427118e1984d216f4e4bcb6",
+  "docs/reviews/coder-claude-image-xz/REPORT.md": "427fc4896fb5fde65b8742b551e04155c5785a67d9102ad0de8d60b0f1bc08bf",
+  "docs/reviews/coder-claude-image-xz/SOURCE.json": "751ba82c5b699a98dc22688e7b735b1a6e14d4697be8da03fc4ab1be35dc18c1",
+  "docs/reviews/coder-claude-image-xz/environment.json": "93a5db8f1a20a1d622999a52af98c52f8be506150569ab3b8374e2dc8f716b28",
+  "docs/reviews/coder-claude-image-xz/probes/old-tool-probe.py.fixture": "5c59adc378806fa0e8c124f8a1dc9edbce6505e9421e35d52303807ae2895b04",
+  "docs/reviews/coder-claude-image-xz/probes/withdraw.py.fixture": "d20e6c6bca1584f9831688f001470a615615bc6140b4cee448367b751c469f1b",
+  "docs/reviews/coder-claude-image-xz/raw/canonical.log": "f22d335f0b9d1cfd285214f5db9e9cd0f8b0616ddc76ca94d02f863b763d3dad",
+  "docs/reviews/coder-claude-image-xz/raw/canonical.result.json": "a05a8f7ed12183d03464738667baaa8a09884b805d4d95fa6b4516369f57e195",
+  "docs/reviews/coder-claude-image-xz/raw/fixed.log": "3a53a2aff5ecc2036572ae9c520543606410c6483341b495055617af1b6fc58a",
+  "docs/reviews/coder-claude-image-xz/raw/old-tool-probe.json": "0ac34eea495e7750fc644204edba564ce1dad356909e4e225959908523799267",
+  "docs/reviews/coder-claude-image-xz/raw/restored.log": "9bf29f1736fe27d2b9b62ecaa74e4c36f9a1b863fa05a9818d340ae1f9a8faac",
+  "docs/reviews/coder-claude-image-xz/raw/withdraw-data-filter.log": "608c9c448ddac74811d7220210e06c20eb64fe5834fc1bfcb8509935af0b0d7b",
+  "docs/reviews/coder-claude-image-xz/raw/withdraw-hash.log": "cf40ad910fc962940fcfc506ef5c1479f5b49745c7b2abee5ea415f09ce9d455",
+  "docs/reviews/coder-claude-image-xz/raw/withdraw-original-xz.log": "e4a1b8f73a942936064924199b55e5c6c4d5fc163c59d9a6d10e4f6c4293f7d8",
+  "docs/reviews/coder-claude-image-xz/raw/withdrawals.json": "cbdb5289a2674be8c7079514b77c66bbc2cd3202f0b303f667de86f3db87456e"
+}

@@ -1,0 +1,6 @@
+test_exact_run_works_without_xz_and_preserves_relative_symlink (deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_works_without_xz_and_preserves_relative_symlink) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.083s
+
+OK
