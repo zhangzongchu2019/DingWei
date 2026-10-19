@@ -14,6 +14,18 @@
 
 并发计划：pending期间cancel-and-transfer vs回信、awaiting_confirmation期间cancel-and-transfer vs确认，用事务屏障覆盖两种顺序。取消先提交则回信/确认409、无gate/无新revision；回信先提交时，review已完成则取消CAS409、原gate保留，刷新后走普通transfer；criteria回信仅进入awaiting_confirmation，取消可随后原子作废该候选并转交（仍无新revision）；确认先提交则交接锚过期409、新修订只建一次，刷新后普通transfer。不得静默取消一个已经完成的请求或转错revision。补editing/review两起点→待确认→n+1 editing→fresh预审→人确认→final完整正例；final/archived/锁定负例，旧gate仍可查但对n+1无效，stale-confirmation/旧编辑人/跨owner Agent/late reply负例。撤状态门、旧gate隔离、原子取消交接、锚CAS各须命中指定红（不能被别门抢红）。
 
+**组长裁定定稿。** 本轮明确采纳166320df两点：仅非final spec可请求/确认criteria；新修订须重新预审，旧gate只绑定旧revision。transfer采用第二方案：在同一事务取消活动请求、释放快照锁并转交，接收人重新发起，取消后回信一律按cancelled拒收、不写gate/候选/新修订。上文显式cancel-and-transfer即原transfer的在途分支，非新增独立转交机制；精确请求id和revision/SHA用于并发防护，页面自动带现场锚并提示取消后果，缺锚/漂移409。
+
+| 操作/前态 | 同事务结果 | 禁止或竞争结果 |
+|---|---|---|
+| criteria请求：spec editing/review，无活动请求 | 保留spec状态；请求pending、冻结n/SHA | final/archived/closed/下游锁拒；跨owner Agent拒 |
+| criteria回信：pending，认证/锚有效 | 候选awaiting_confirmation；spec仍n，内容不变 | cancelled/超时/旧身份回信拒，不落业务结果 |
+| 人确认：awaiting_confirmation，仍当前编辑人，spec editing/review | 新不可变n+1，state editing，旧gate留n；新gate空、fresh预审必需 | final及过期锚/旧编辑人409；不得复用旧gate定稿 |
+| Agent预审：editing/review→pending→回信成功 | state review；gate绑定当前n且issues pending；人逐项确认后才final | Agent不能finalize；未完成fresh预审不得final |
+| transfer：pending/awaiting_confirmation | 校目标/锚→请求cancelled+候选作废+锁释放+转交，全部提交或回滚 | 取消先提交则迟到回信拒；回信先提交按上文两类结果处理；旧人不能确认 |
+
+测试计划以此表逐行正反覆盖，保留transfer/回信两序、transfer/确认两序、取消后迟到WS及HTTP、跨owner Agent拒绝，指定撤修与限域不变。
+
 **身份、范围和重放。** 选择范围沿用现有 presplit 的 owned-Agent 列表与 active owner 身份投影，本批不扩大为任意在线跨用户 Agent；transfer 后由新编辑人选其可用 Agent。请求行绑定不可变 `request_id`（随机128位以上）、kind、spec_id、revision/SHA、发起人 principal、Agent ID、认证 endpoint、generation、created_at/deadline、Hub boot generation。WS 回包从实际 sessionClient 解析 Agent；MCP HTTP 从 dedicated Agent bearer 解析，拒 cookie/混合认证；都调用同一接收器，禁止信任 Body/From/Meta 自报身份，拒不存在/停用/换身份端点。请求快照最多1MiB，回包最多128KiB、issues最多100条、criteria最多100条且每条cases最多100项，拒超限不截断；关联字段全部匹配且 pending 才能消费；同 Agent 同 payload 摘要的重发返回原结果，不再写 gate/revision，异 payload 或已取消/超时/旧代次返回409，其他 Agent 403。人类接口不因 request_id 获得额外权力。列表/获取请求只向该请求当前认证 Agent 返回，状态读取失败关闭，先选后读及 PG 锁内再次检查 Agent、状态、编辑人、revision，补改派/transfer 竞态格；另保留跨owner Agent拒绝格（组长已采纳owned范围）。
 
 **超时和投递。** 等回包180秒（含投递），criteria 回包后的人工确认15分钟；使用服务端 UTC，测试注入时钟。发送前要求在线且已协商 `spec_review_v1`，离线409 `agent_offline`，旧 helper409 `helper_upgrade_required`，发送失败502并终止；请求发出后掉线不无限排队，180秒到期明确 `timed_out`。GET/所有写入均先在事务内惰性到期，另周期扫尾；Hub 重启把旧 boot 的 pending/awaiting_confirmation 明确置 failed，释放锁，迟到回包拒。请求创建与待发 outbox 同事务，发送器仅在deadline内重取已绑定且仍协商能力的在线会话；绝不向未协商的新连接补送；gate/候选写入与请求终态、审计同 SQLite 事务；掉回复可按同 client_request_id 查原结果，不自动新建。终态原因在页面可见；可靠投递 ACK 只代表收到，不代表业务完成，不延长期限。重复投递只处理一次。
