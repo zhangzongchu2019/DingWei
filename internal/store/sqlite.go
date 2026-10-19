@@ -3640,6 +3640,9 @@ func (s *SQLite) RecordNotification(ctx context.Context, kind, ownerKey, targetK
 }
 
 func (s *SQLite) UpsertSessionEndpoint(ctx context.Context, ep model.SessionEndpoint) error {
+	if ep.PrivateClientIP {
+		ep.ClientIP = ""
+	}
 	if ep.LastSeenAt.IsZero() {
 		ep.LastSeenAt = time.Now().UTC()
 	}
@@ -3651,7 +3654,7 @@ func (s *SQLite) UpsertSessionEndpoint(ctx context.Context, ep model.SessionEndp
 		   active=excluded.active,
 		   full_session_name=COALESCE(NULLIF(excluded.full_session_name,''), session_endpoint.full_session_name),
 		   owner_key=COALESCE(NULLIF(excluded.owner_key,''), session_endpoint.owner_key),
-		   client_ip=COALESCE(NULLIF(excluded.client_ip,''), session_endpoint.client_ip),
+		   client_ip=CASE WHEN ?=1 THEN '' ELSE COALESCE(NULLIF(excluded.client_ip,''), session_endpoint.client_ip) END,
 		   tool=COALESCE(NULLIF(excluded.tool,''), session_endpoint.tool),
 		   model=COALESCE(NULLIF(excluded.model,''), session_endpoint.model),
 		   version=CASE WHEN excluded.active=0 THEN session_endpoint.version ELSE excluded.version END,
@@ -3665,7 +3668,7 @@ func (s *SQLite) UpsertSessionEndpoint(ctx context.Context, ep model.SessionEndp
 		   END,
 		   mirror_enabled=CASE WHEN excluded.mirror_to<>'' THEN excluded.mirror_enabled ELSE session_endpoint.mirror_enabled END,
 		   mirror_to=COALESCE(NULLIF(excluded.mirror_to,''), session_endpoint.mirror_to)`,
-		ep.KeyID, ep.SessionName, ep.FullSessionName, ep.OwnerKey, ep.LastSeenAt.UTC().Format(time.RFC3339), boolInt(ep.Active), boolInt(ep.MirrorEnabled), ep.MirrorTo, ep.ClientIP, ep.Tool, ep.Model, ep.Version, boolInt(ep.Producer), ep.TargetGroup, boolInt(ep.NoDirectory), boolInt(ep.NoDirectoryAdmin), boolInt(ep.NoDirectory))
+		ep.KeyID, ep.SessionName, ep.FullSessionName, ep.OwnerKey, ep.LastSeenAt.UTC().Format(time.RFC3339), boolInt(ep.Active), boolInt(ep.MirrorEnabled), ep.MirrorTo, ep.ClientIP, ep.Tool, ep.Model, ep.Version, boolInt(ep.Producer), ep.TargetGroup, boolInt(ep.NoDirectory), boolInt(ep.NoDirectoryAdmin), boolInt(ep.NoDirectory), boolInt(ep.PrivateClientIP))
 	return err
 }
 
@@ -3716,6 +3719,12 @@ func (s *SQLite) ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpo
 		ep.NoDirectory = noDirectory == 1
 		ep.NoDirectoryAdmin = noDirectoryAdmin == 1
 		ep.DeliveryACKV1 = deliveryACKV1 == 1
+		// u_ is the server-derived credential-owner namespace (AgentKeyID),
+		// not an authorization decision. Hide historical IPs before reconnect,
+		// including offline endpoints written by older binaries.
+		if strings.HasPrefix(ep.KeyID, "u_") {
+			ep.ClientIP = ""
+		}
 		out = append(out, ep)
 	}
 	return out, rows.Err()

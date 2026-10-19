@@ -1055,6 +1055,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		LastSeenAt:      time.Now().UTC(),
 		Active:          true,
 		ClientIP:        clientIP,
+		PrivateClientIP: a.credentialIdentity,
 		Tool:            tool,
 		Model:           modelName,
 		Version:         clientVersion,

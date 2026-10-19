@@ -257,6 +257,7 @@ type SessionEndpoint struct {
 	MirrorEnabled    bool
 	MirrorTo         string
 	ClientIP         string
+	PrivateClientIP  bool `json:"-"` // Write-only admission intent; never a directory field.
 	Tool             string
 	Model            string
 	Version          string

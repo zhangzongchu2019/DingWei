@@ -1,8 +1,11 @@
 package m8
 
 import (
+	"context"
 	"github.com/coder/websocket"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
+	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/store"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -45,11 +48,41 @@ func TestR31AgentSourceIPTrustBoundary(t *testing.T) {
 	}
 }
 
+type r31EndpointRecorder struct {
+	store.Repository
+	writes chan model.SessionEndpoint
+}
+
+func (r *r31EndpointRecorder) UpsertSessionEndpoint(ctx context.Context, ep model.SessionEndpoint) error {
+	err := r.Repository.UpsertSessionEndpoint(ctx, ep)
+	if err == nil && ep.KeyID == "u_zzc" && ep.Active {
+		select {
+		case r.writes <- ep:
+		default:
+		}
+	}
+	return err
+}
+
 // Real localhost WS admission: failed credentials and duplicate live sessions
 // must not change private source metadata; disconnect retains the last value.
 func TestR31SourceRecordedOnlyAfterAdmissionAndRetained(t *testing.T) {
 	e := newAgentEnv(t)
 	e.hub.TrustProxy = true
+	if err := e.hub.Repo.UpsertSessionEndpoint(e.ctx, model.SessionEndpoint{KeyID: "u_zzc", OwnerKey: "u_zzc", SessionName: "opus50ts", FullSessionName: "Opus50TS.zzc", ClientIP: "203.0.113.77"}); err != nil {
+		t.Fatal(err)
+	}
+	endpointsBefore, err := e.hub.Repo.ListSessionEndpoints(e.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, endpoint := range endpointsBefore {
+		if endpoint.ClientIP != "" {
+			t.Fatal("historical offline source leaked into directory")
+		}
+	}
+	recorder := &r31EndpointRecorder{Repository: e.hub.Repo, writes: make(chan model.SessionEndpoint, 4)}
+	e.hub.Repo = recorder
 	dial := func(cred, ip string) (*websocket.Conn, int) {
 		h := http.Header{"Authorization": []string{"Bearer " + cred}, "X-Real-IP": []string{ip}}
 		c, r, err := websocket.Dial(e.ctx, e.wsURL("version=0.3.0"), &websocket.DialOptions{HTTPHeader: h})
@@ -97,6 +130,14 @@ func TestR31SourceRecordedOnlyAfterAdmissionAndRetained(t *testing.T) {
 		if endpoint.ClientIP != "" {
 			t.Fatal("private source leaked into general session directory")
 		}
+	}
+	select {
+	case admitted := <-recorder.writes:
+		if !admitted.PrivateClientIP || admitted.ClientIP != "" {
+			t.Fatal("credential admission omitted private IP clear intent")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("credential admission was not observed")
 	}
 	before := read()
 	if duplicate, code := dial(e.cred, "203.0.113.99"); duplicate != nil || code != 409 {
