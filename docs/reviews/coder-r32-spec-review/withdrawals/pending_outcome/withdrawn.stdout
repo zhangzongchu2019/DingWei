@@ -1,0 +1,5 @@
+--- FAIL: TestR8ActualReviewerPendingHumanGateAndReplay (0.17s)
+    console_spec_agent_review_test.go:106: R8_PENDING_PROVENANCE_LOST &{50b4bcec951c58361fc95022248ecadc s 1 reviewer owner-a [{"id":"I1","text":"check owner quote","response":"","outcome":"false_positive"}] 2026-10-19 11:33:32.652376933 +0000 UTC 2026-10-19 11:33:32.652376933 +0000 UTC} <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.172s
+FAIL

@@ -1,0 +1,16 @@
+=== RUN   TestR8DeterministicTransferReplyCommitOrders
+=== RUN   TestR8DeterministicTransferReplyCommitOrders/review/cancel_first
+    console_spec_agent_race_test.go:123: kind=review order=cancel_first sqlite_wait_count=0->1 transfer=<nil> reply=spec agent request conflict status=cancelled gate_present=false
+=== RUN   TestR8DeterministicTransferReplyCommitOrders/review/reply_first
+    console_spec_agent_race_test.go:123: kind=review order=reply_first sqlite_wait_count=0->1 transfer=spec agent request conflict reply=<nil> status=completed gate_present=true
+=== RUN   TestR8DeterministicTransferReplyCommitOrders/criteria/cancel_first
+    console_spec_agent_race_test.go:123: kind=criteria order=cancel_first sqlite_wait_count=0->1 transfer=<nil> reply=spec agent request conflict status=cancelled gate_present=false
+=== RUN   TestR8DeterministicTransferReplyCommitOrders/criteria/reply_first
+    console_spec_agent_race_test.go:123: kind=criteria order=reply_first sqlite_wait_count=0->1 transfer=<nil> reply=<nil> status=cancelled gate_present=false
+--- PASS: TestR8DeterministicTransferReplyCommitOrders (0.42s)
+    --- PASS: TestR8DeterministicTransferReplyCommitOrders/review/cancel_first (0.11s)
+    --- PASS: TestR8DeterministicTransferReplyCommitOrders/review/reply_first (0.10s)
+    --- PASS: TestR8DeterministicTransferReplyCommitOrders/criteria/cancel_first (0.10s)
+    --- PASS: TestR8DeterministicTransferReplyCommitOrders/criteria/reply_first (0.11s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.427s

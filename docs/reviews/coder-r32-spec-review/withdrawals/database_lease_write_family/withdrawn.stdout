@@ -1,0 +1,5 @@
+--- FAIL: TestR8PendingLockCoversAllStoreWrites (0.14s)
+    console_spec_agent_review_test.go:74: R8_LOCK_BYPASSED path=append
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.148s
+FAIL

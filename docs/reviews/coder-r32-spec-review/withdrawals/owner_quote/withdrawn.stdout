@@ -1,0 +1,6 @@
+--- FAIL: TestR8CriteriaRejectsQuotesAndSpoofedConfirmation (0.63s)
+    --- FAIL: TestR8CriteriaRejectsQuotesAndSpoofedConfirmation/quote (0.13s)
+        console_spec_agent_review_test.go:232: R8_INVALID_CRITERIA_ACCEPTED quote
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.629s
+FAIL

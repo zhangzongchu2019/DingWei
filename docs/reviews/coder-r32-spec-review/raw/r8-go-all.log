@@ -1,0 +1,103 @@
+?   	github.com/zhangzongchu2019/dingwei/cmd/dingwei-datad	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/cmd/fcs	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/cmd/mcs-demo	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/cmd/mcsd	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/internal/identity/identitytest	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/internal/model	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/specs/tools/handle-escape	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/specs/tools/legacy-name	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/specs/tools/pending-debt	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/tests/r32-task-flow/compat-probe	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/view-service	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/view-service/console-hosted-page-fixture	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/view-service/p1seed	[no test files]
+ok  	github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout	43.867s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/file-service	0.118s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/nodeagent	0.003s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	257.117s
+ok  	github.com/zhangzongchu2019/dingwei/internal/admin	12.161s
+ok  	github.com/zhangzongchu2019/dingwei/internal/agentmetrics	0.004s
+ok  	github.com/zhangzongchu2019/dingwei/internal/bridge	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/bus	1.290s
+ok  	github.com/zhangzongchu2019/dingwei/internal/clock	0.003s
+ok  	github.com/zhangzongchu2019/dingwei/internal/config	0.009s
+--- FAIL: TestBudgetRealPGDeadlineAndCapacity (7.29s)
+    budget_evidence_test.go:70: id=24 query_end=271.826µs execution_release=273.596µs admission_release=274.896µs call_return=275.666µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000215s query_end_relative=271.826µs return_release_relative=275.666µs
+    budget_evidence_test.go:70: id=34 query_end=322.472µs execution_release=323.352µs admission_release=324.032µs call_return=324.342µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000335s query_end_relative=322.472µs return_release_relative=324.342µs
+    budget_evidence_test.go:70: id=40 query_end=509.534µs execution_release=510.143µs admission_release=513.363µs call_return=513.783µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000013248s query_end_relative=509.534µs return_release_relative=513.783µs
+    budget_evidence_test.go:70: id=13 query_end=314.942µs execution_release=315.892µs admission_release=316.262µs call_return=316.502µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000301s query_end_relative=314.942µs return_release_relative=316.502µs
+    budget_evidence_test.go:70: id=30 query_end=527.802µs execution_release=528.311µs admission_release=528.742µs call_return=529.071µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000010409s query_end_relative=527.802µs return_release_relative=529.071µs
+    budget_evidence_test.go:70: id=11 query_end=515.853µs execution_release=516.283µs admission_release=516.733µs call_return=516.933µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000004929s query_end_relative=515.853µs return_release_relative=516.933µs
+    budget_evidence_test.go:70: id=69 query_end=467.837µs execution_release=468.807µs admission_release=469.657µs call_return=470.237µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000050635s query_end_relative=467.837µs return_release_relative=470.237µs
+    budget_evidence_test.go:70: id=4 query_end=573.697µs execution_release=574.517µs admission_release=575.257µs call_return=575.507µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000064s query_end_relative=573.697µs return_release_relative=575.507µs
+    budget_evidence_test.go:70: id=6 query_end=419.262µs execution_release=420.062µs admission_release=421.072µs call_return=421.462µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000301s query_end_relative=419.262µs return_release_relative=421.462µs
+    budget_evidence_test.go:70: id=12 query_end=503.704µs execution_release=504.494µs admission_release=505.534µs call_return=505.944µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000003539s query_end_relative=503.704µs return_release_relative=505.944µs
+    budget_evidence_test.go:70: id=23 query_end=518.412µs execution_release=519.092µs admission_release=519.642µs call_return=519.892µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000044s query_end_relative=518.412µs return_release_relative=519.892µs
+    budget_evidence_test.go:70: id=29 query_end=475.836µs execution_release=479.376µs admission_release=480.046µs call_return=480.346µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000016379s query_end_relative=475.836µs return_release_relative=480.346µs
+    budget_evidence_test.go:70: id=70 query_end=596.295µs execution_release=597.135µs admission_release=597.825µs call_return=598.225µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000003619s query_end_relative=596.295µs return_release_relative=598.225µs
+    budget_evidence_test.go:70: id=8 query_end=728.772µs execution_release=729.552µs admission_release=730.392µs call_return=730.742µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000398s query_end_relative=728.772µs return_release_relative=730.742µs
+    budget_evidence_test.go:70: id=28 query_end=698.285µs execution_release=699.025µs admission_release=699.614µs call_return=700.134µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000028988s query_end_relative=698.285µs return_release_relative=700.134µs
+    budget_evidence_test.go:70: id=31 query_end=235.22µs execution_release=236.31µs admission_release=237.21µs call_return=237.65µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000998223s query_end_relative=235.22µs return_release_relative=237.65µs
+    budget_evidence_test.go:70: id=26 query_end=298.664µs execution_release=299.344µs admission_release=302.583µs call_return=303.023µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000913591s query_end_relative=298.664µs return_release_relative=303.023µs
+    budget_evidence_test.go:125: background SQL remains: active=16 err=<nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/consolemux	13.737s
+ok  	github.com/zhangzongchu2019/dingwei/internal/coordination	0.433s
+ok  	github.com/zhangzongchu2019/dingwei/internal/datad	1.160s
+ok  	github.com/zhangzongchu2019/dingwei/internal/evidence	1.213s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fanout	118.850s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fcs	1.131s
+ok  	github.com/zhangzongchu2019/dingwei/internal/feishu	0.006s
+ok  	github.com/zhangzongchu2019/dingwei/internal/filepolicy	0.005s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fileservice	3.165s
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	901.646s
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity	132.406s
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity/httpapi	3.205s
+ok  	github.com/zhangzongchu2019/dingwei/internal/jcs	0.003s
+ok  	github.com/zhangzongchu2019/dingwei/internal/llm	0.004s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m5	5.410s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	145.173s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/board	0.375s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/dea	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/demo	0.287s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/dispatch	0.027s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver	0.042s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd	13.474s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/pool	0.152s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/rotation	0.048s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/route	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	9.420s
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodegate	29.680s
+ok  	github.com/zhangzongchu2019/dingwei/internal/obs	0.559s
+ok  	github.com/zhangzongchu2019/dingwei/internal/portal	0.325s
+ok  	github.com/zhangzongchu2019/dingwei/internal/redact	0.001s
+ok  	github.com/zhangzongchu2019/dingwei/internal/reminder	0.382s
+ok  	github.com/zhangzongchu2019/dingwei/internal/repo	7.636s
+ok  	github.com/zhangzongchu2019/dingwei/internal/router	0.003s
+ok  	github.com/zhangzongchu2019/dingwei/internal/schedule	2.204s
+ok  	github.com/zhangzongchu2019/dingwei/internal/scheduler	3.589s
+ok  	github.com/zhangzongchu2019/dingwei/internal/seatcapacity	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/secretbox	0.001s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	19.556s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/migrate	90.427s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/pgtest	19.963s
+ok  	github.com/zhangzongchu2019/dingwei/internal/version	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/worker	2.729s
+FAIL

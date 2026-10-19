@@ -1,0 +1,5 @@
+--- FAIL: TestR8CriteriaCandidateRequiresConfirmationStatus (0.12s)
+    console_spec_agent_review_test.go:380: R8_CANDIDATE_NOT_PENDING_CONFIRMATION
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.126s
+FAIL

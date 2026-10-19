@@ -1,0 +1,14 @@
+....F...
+======================================================================
+FAIL: test_real_http_header_body_and_no_redirect (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_real_http_header_body_and_no_redirect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r8-withdraw-fp22i2km/tools/sessionhelper/tests/test_spec_review_r32.py", line 70, in test_real_http_header_body_and_no_redirect
+    self.assertEqual(result['http_status'],302);self.assertEqual(len(received),1,'R8_CREDENTIAL_REDIRECTED')
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 5 != 1 : R8_CREDENTIAL_REDIRECTED
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.562s
+
+FAILED (failures=1)

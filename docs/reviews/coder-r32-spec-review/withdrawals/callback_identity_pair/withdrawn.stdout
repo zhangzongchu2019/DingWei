@@ -1,0 +1,5 @@
+--- FAIL: TestR8ActualReviewerPendingHumanGateAndReplay (0.15s)
+    console_spec_agent_review_test.go:99: R8_FORGED_CALLBACK_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.150s
+FAIL

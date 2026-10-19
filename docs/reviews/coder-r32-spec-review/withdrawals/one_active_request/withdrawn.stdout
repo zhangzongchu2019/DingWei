@@ -1,0 +1,5 @@
+--- FAIL: TestR8PendingLockCoversAllStoreWrites (0.14s)
+    console_spec_agent_review_test.go:83: R8_PARALLEL_REQUEST_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.140s
+FAIL

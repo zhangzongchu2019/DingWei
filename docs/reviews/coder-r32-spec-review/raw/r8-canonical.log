@@ -1,0 +1,60 @@
+TEST python tools/sessionhelper/test_supervise_connection_loops.py
+----------------------------------------------------------------------
+Ran 9 tests in 0.330s
+
+OK
+TEST python tools/sessionhelper/tests/test_update_release_core.py
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp68d7ly42/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+----------------------------------------------------------------------
+Ran 19 tests in 2.457s
+
+OK
+TEST python tools/sessionhelper/tests/test_sqlite_connection_lifetime.py
+SQLITE_FD_READINGS {"baseline_db_fd": 0, "final_db_fd": 0, "gc_enabled": false, "long_run_db_fds": {"1": 0, "100": 0, "1000": 0, "10000": 0}, "long_run_iterations": 10000, "nofile": 128, "total_fd_baseline": 4, "total_fd_final": 4, "workloads": {"audit": {"calls": 200, "peak_db_fd": 0}, "claude": {"calls": 200, "peak_db_fd": 0}, "cli_parts": {"calls": 200, "peak_db_fd": 0}, "cli_recent": {"calls": 200, "peak_db_fd": 0}, "codex": {"calls": 200, "peak_db_fd": 0}, "desktop": {"calls": 200, "peak_db_fd": 0}, "inbox": {"calls": 200, "peak_db_fd": 0}, "legacy": {"calls": 200, "peak_db_fd": 0}, "opencode": {"calls": 200, "peak_db_fd": 0}, "stop_hook": {"calls": 200, "peak_db_fd": 0}}}
+----------------------------------------------------------------------
+Ran 3 tests in 48.410s
+
+OK
+TEST python tools/sessionhelper/tests/test_mcp_shim_transport_errors.py
+MCP_TRANSPORT_READINGS errors=18 survived=18 recovery_same_process=18
+======================================================================
+ERROR: test_all_registered_tools_return_sanitized_execution_errors (tools.sessionhelper.tests.test_mcp_shim_transport_errors.ShimTransportTests.test_all_registered_tools_return_sanitized_execution_errors) (tool='dw_spec_review_requests')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r32-spec-review/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 227, in test_all_registered_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/r32-spec-review/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 165, in exercise
+    child.send(request(1, tool, upload))
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/r32-spec-review/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 23, in request
+    args = {
+           ^
+KeyError: 'dw_spec_review_requests'
+
+======================================================================
+ERROR: test_all_registered_tools_return_sanitized_execution_errors (tools.sessionhelper.tests.test_mcp_shim_transport_errors.ShimTransportTests.test_all_registered_tools_return_sanitized_execution_errors) (tool='dw_spec_review_reply')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r32-spec-review/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 227, in test_all_registered_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/r32-spec-review/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 165, in exercise
+    child.send(request(1, tool, upload))
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/r32-spec-review/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 23, in request
+    args = {
+           ^
+KeyError: 'dw_spec_review_reply'
+
+----------------------------------------------------------------------
+Ran 4 tests in 2.994s
+
+FAILED (errors=2)

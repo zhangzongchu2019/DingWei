@@ -1,0 +1,17 @@
+.F......
+======================================================================
+FAIL: test_http_uncertainty_never_retries (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_http_uncertainty_never_retries)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r8-withdraw-fp22i2km/tools/sessionhelper/tests/test_spec_review_r32.py", line 80, in test_http_uncertainty_never_retries
+    self.assertEqual(result['outcome'],'unknown','R8_UNCERTAIN_REPLY_FALSE_REJECTION');self.assertFalse(result['retryable']);self.assertEqual(call.call_count,1)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'rejected' != 'unknown'
+- rejected
++ unknown
+ : R8_UNCERTAIN_REPLY_FALSE_REJECTION
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.579s
+
+FAILED (failures=1)

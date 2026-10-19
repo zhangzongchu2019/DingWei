@@ -1,0 +1,5 @@
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	1.657s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.444s
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity	2.687s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.258s
+ok  	github.com/zhangzongchu2019/dingwei/internal/version	0.001s

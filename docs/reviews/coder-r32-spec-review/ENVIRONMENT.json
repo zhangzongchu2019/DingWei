@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-19T11:47:11Z",
+  "cwd": "/data/ai-dev-data/r32-spec-review",
+  "hostname": "VM-4-12-ubuntu",
+  "uid": 1001,
+  "gid": 1001,
+  "cpu_count": 16,
+  "go_version": "go version go1.22.2 linux/amd64",
+  "locked_python": "Python 3.12.3",
+  "umask": "0022",
+  "test_pg_dsn_is_set": false,
+  "test_pg_skip_override_is_set": false,
+  "credential_or_env_values": "not collected"
+}

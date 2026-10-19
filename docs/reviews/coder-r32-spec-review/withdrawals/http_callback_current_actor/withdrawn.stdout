@@ -1,0 +1,11 @@
+2026/10/19 04:34:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/19 04:34:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/19 04:34:51 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/19 04:34:51 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+2026/10/19 04:34:51 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_3de727439705bf97f3574e302c86d03d source_message_id=specreview_49aa94bda373cda48c964ba15d0769e0
+2026/10/19 04:34:51 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=1
+--- FAIL: TestR8HTTPRealReliableReviewAndHumanOnlyFinalize (0.12s)
+    console_spec_agent_review_test.go:127: R8_FORGED_HTTP_CALLBACK_ACCEPTED 200
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.125s
+FAIL

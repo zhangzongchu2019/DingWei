@@ -1,0 +1,2490 @@
+............................./usr/lib/python3.12/pty.py:95: DeprecationWarning: This process (pid=907749) is multi-threaded, use of forkpty() may lead to deadlocks in the child.
+  pid, fd = os.forkpty()
+...........................................................[ipc_listener] listening on /tmp/tmptspqlgvy/ipc.sock
+.....[ipc_send] to=fixture-sender#fixture-owner bytes=16
+...........................[ipc_listener] listening on /tmp/dwp-fmmktmve/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-086164631ae0b414
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-fmmktmve/desktop-pilot-086164631ae0b414-report.json
+..[ipc_listener] listening on /tmp/dwp-2i3_e1pd/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-2047c6c31aa474d7
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-2i3_e1pd/desktop-pilot-2047c6c31aa474d7-report.json
+Fixture stays absent until dw_wait_message is pending; no Hub confirmation is simulated.
+.[ipc_listener] listening on /tmp/dwp-3pngczz3/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-793533d8c2a1e654
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-3pngczz3/desktop-pilot-793533d8c2a1e654-report.json
+.[ipc_listener] listening on /tmp/dwp-q9xatvmj/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-4c93cd7401ea36c0
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-q9xatvmj/desktop-pilot-4c93cd7401ea36c0-report.json
+Fixture stays absent until dw_wait_message is pending; no Hub confirmation is simulated.
+..........[ipc_listener] listening on /tmp/dww-w2uht2v8/mcp.sock
+.[ipc_listener] listening on /tmp/dww-edkjbo1r/mcp.sock
+.[ipc_listener] listening on /tmp/dww-3tmezxuo/mcp.sock
+.[ipc_listener] listening on /tmp/dww-gtj084nh/mcp.sock
+.[ipc_listener] listening on /tmp/dww-73phiyye/mcp.sock
+.[ipc_listener] listening on /tmp/dww-caq6yb02/mcp.sock
+.[ipc_listener] listening on /tmp/dww-onquld7n/mcp.sock
+.[ipc_listener] listening on /tmp/dww-wfgyovd3/mcp.sock
+.[ipc_listener] listening on /tmp/dww-qp2v94fh/mcp.sock
+[ipc_listener] listening on /tmp/dww-qp2v94fh/mcp.sock
+.[ipc_listener] listening on /tmp/dww-4f0n6vbr/mcp.sock
+.[ipc_listener] listening on /tmp/dww-w1z50m7h/mcp.sock
+.[ipc_listener] listening on /tmp/dww-d_m82vuc/mcp.sock
+.[ipc_listener] listening on /tmp/dww-gwpa89ya/mcp.sock
+.......[driver-adapter][FAILED] driver start: initialize failed: {'code': -32001, 'message': 'app-server cannot start: config corrupt (FAKE_START_BAD)'}
+..[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-37b81a5fc6f94eb4a053a1cf0c468353 -> failed (turn/start failed: {'code': -32000, 'message': '401 Unauthor)
+[delivery] failed id=dw-view-37b81a5fc6f94eb4a053a1cf0c468353 source=protocol (turn/start failed: {'code': -32000, 'message': '401 Unauthor)
+.[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-c02b2f7ecaf648e9b475bebc97de019d -> processing (turn=turn_fake status=inProgress)
+[delivery] failed id=dw-view-c02b2f7ecaf648e9b475bebc97de019d source=protocol (turn failed: turn failed: FAKE_TURN_BOOM)
+......../data/ai-dev-data/r32-spec-review/tools/sessionhelper/tests/test_durable_agent_delivery_injects_cli.py:131: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/sh-durable-cli-asoti0ay/cli.log' mode='r' encoding='UTF-8'>
+  self._wait(lambda: os.path.exists(self.cli_log) and body in open(self.cli_log).read(), 20,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/r32-spec-review/tools/sessionhelper/tests/test_durable_agent_delivery_injects_cli.py", line 63, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+.............................................................[sessionHelper] ws closed: received 4401 (private use) credential_revoked; no close frame sent; reconnect in 1.0s
+.[sessionHelper] ws closed: received 4401 (private use) credential_suspended; no close frame sent; reconnect in 1.0s
+.[sessionHelper] error: server rejected WebSocket connection: HTTP 401; reconnect in 1.0s
+.[sessionHelper] ws closed: received 1006 (abnormal closure [internal]); no close frame sent; reconnect in 1.0s
+[sessionHelper] ws closed: received 4401 (private use) something_else; no close frame sent; reconnect in 1.0s
+[sessionHelper] ws closed: received 4400 (private use) credential_revoked; no close frame sent; reconnect in 1.0s
+.[sessionHelper] error: server rejected WebSocket connection: HTTP 502; reconnect in 1.0s
+...[sessionHelper] stopped: x
+[sessionHelper] stopped: x
+[sessionHelper] stopped: x
+[sessionHelper] stopped: x
+.../usr/lib/python3.12/asyncio/base_events.py:726: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+...[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001000
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002001
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002964
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003485
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003840
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004128
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004173
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004174
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004175
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004176
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004177
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004178
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004179
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004180
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004181
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004182
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004183
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004184
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004185
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004186
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004187
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004188
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004189
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004190
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004191
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004192
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004193
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004194
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004195
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004196
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004197
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004198
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004199
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004200
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004201
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004202
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004204
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004205
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004206
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004207
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004208
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004209
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004210
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004211
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004212
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004213
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004214
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004215
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004216
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004217
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004218
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004219
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004220
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004221
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004222
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004223
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004224
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004225
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004226
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004227
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004228
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004229
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004230
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004231
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004232
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004233
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004234
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004235
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004236
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004237
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004238
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004239
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004240
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004241
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004242
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004254
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004255
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004256
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004257
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004258
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004259
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004260
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004261
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004262
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004263
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004264
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004265
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004266
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004267
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004269
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004270
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004271
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004272
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004273
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004274
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004275
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004276
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004277
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004278
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004279
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004280
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004281
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004282
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004283
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004284
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004285
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004286
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004287
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004288
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004289
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004290
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004291
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004463
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004492
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004493
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004494
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004495
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004496
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004497
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004498
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004499
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004500
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004501
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004502
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004503
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004504
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004505
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004506
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004507
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004508
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004509
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004510
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004511
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004512
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004513
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004514
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004515
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004516
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004517
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004518
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004519
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004520
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004521
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004522
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004523
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004524
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004525
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004526
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004528
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004529
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004530
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004531
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004532
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004533
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004534
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004535
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004536
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004537
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004538
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004539
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004540
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004541
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004542
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004543
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004544
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004545
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004546
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004547
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004548
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004549
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004550
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004551
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004552
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004553
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004554
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004555
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004556
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004557
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004558
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004559
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004560
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004561
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004562
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004563
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004564
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004565
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004566
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004567
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004568
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004569
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004570
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004577
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004578
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004579
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004580
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004581
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004582
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004583
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004584
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004585
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004586
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004587
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004588
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004589
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004591
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004592
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004593
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004594
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004595
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004596
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004597
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004598
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004599
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004600
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004601
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004602
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004603
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004604
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004605
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004606
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004607
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004608
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004609
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004610
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004611
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004612
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004613
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004614
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004615
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004616
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004617
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004618
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004619
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004620
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004621
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004622
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004623
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004624
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004642
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004643
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004644
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004645
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004646
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004647
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004648
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004649
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004650
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004651
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004652
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004653
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004654
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004655
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004656
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004657
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004658
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004659
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004660
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004661
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004662
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004663
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004700
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004734
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004736
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004737
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004738
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004739
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004740
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004741
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004742
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004743
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004744
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004745
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004746
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004747
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004748
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004749
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004750
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004751
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004752
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004753
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004754
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004755
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004756
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004757
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004758
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004759
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004760
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004761
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004762
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004763
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004764
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004765
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004766
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004767
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004768
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004769
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004770
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004771
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004772
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004773
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004774
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004775
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004776
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004777
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004778
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004779
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004780
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004781
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004782
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004783
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004784
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004785
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004786
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004787
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004788
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004789
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004790
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004791
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004792
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004793
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004794
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004795
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004796
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004797
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004798
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004799
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004800
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004801
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004802
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004803
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004804
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004805
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004806
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004807
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004808
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004809
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004810
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004811
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004812
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004813
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004814
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004815
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004816
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004817
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004818
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004819
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004820
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004821
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004822
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004823
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004824
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004825
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004826
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004827
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004828
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004829
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004830
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004831
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004832
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004833
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004834
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004835
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004836
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004837
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004838
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004839
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004840
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004841
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004842
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004843
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004844
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004845
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004847
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004848
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004849
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004850
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004851
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004852
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004853
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004854
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004855
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004856
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004857
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004858
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004859
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004860
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004861
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004862
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004863
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004864
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004865
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004866
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004867
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004868
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004869
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004870
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004871
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004872
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004873
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004874
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004875
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004876
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004877
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004878
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004879
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004880
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004881
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004882
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004883
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004884
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004885
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004886
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004887
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004888
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004889
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004890
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004891
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004892
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004893
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004894
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004895
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004896
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004897
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004898
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004899
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004900
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004901
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004902
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004903
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004907
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004908
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004909
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004910
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004911
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004912
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004913
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004914
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004915
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004916
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004917
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004918
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004919
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004920
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004921
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004922
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004923
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004924
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004925
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004926
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004927
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004928
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004929
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004930
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004931
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004932
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004933
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004934
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004936
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004937
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004938
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004939
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004940
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004941
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004942
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004943
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004944
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004945
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004946
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004947
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004955
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004956
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004957
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004958
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004959
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004960
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004961
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004962
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004963
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004964
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004965
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004966
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004967
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004968
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004969
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004970
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004972
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004973
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004974
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004975
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004976
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004977
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004978
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004979
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004980
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004981
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004982
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004983
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004984
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004985
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004986
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004987
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004988
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004989
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004990
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004991
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004999
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005001
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005002
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005003
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005004
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005005
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005006
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005007
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005008
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005009
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005010
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005011
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005012
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005013
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005014
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005015
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005017
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005018
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005019
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005020
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005021
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005022
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005023
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005024
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005025
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005026
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005027
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005028
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005029
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005037
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005039
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005040
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005042
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005044
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005045
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005047
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005048
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005050
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005051
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005053
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005054
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005075
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005077
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005078
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005079
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005080
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005081
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005082
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005083
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005084
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005085
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005086
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005088
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005089
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005090
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005091
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005092
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005093
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005094
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005095
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005096
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005097
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005098
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005099
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005100
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005101
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005102
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005103
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005104
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005105
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005106
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005107
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005108
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005110
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005111
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005113
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005114
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005115
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005116
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005117
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005118
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005119
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005120
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005121
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005122
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005123
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005124
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005126
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005127
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005128
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005130
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005131
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005133
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005134
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005136
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005137
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005138
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005139
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005140
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005142
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005143
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005144
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005145
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005146
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005147
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005149
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005150
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005151
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005152
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005153
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005154
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005155
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005157
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005164
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005165
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005167
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005168
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005170
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005171
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005172
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005173
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005174
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005175
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005176
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005177
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005178
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005179
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005180
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005181
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005183
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005184
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005186
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005200
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005202
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005203
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005205
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005206
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005208
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005209
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005211
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005212
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005214
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005215
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005217
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005218
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005237
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005238
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005239
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005241
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005243
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005244
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005246
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005247
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005249
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005291
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005293
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005294
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005295
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005296
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005297
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005298
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005299
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005300
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005301
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005302
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005303
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005304
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005305
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005306
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005307
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005308
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005309
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005310
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005311
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005312
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005313
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005314
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005315
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005316
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005317
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005318
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005319
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005320
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005321
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005322
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005323
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005324
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005325
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005326
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005356
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005357
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005358
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005359
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005360
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005361
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005362
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005363
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005364
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005365
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005366
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005367
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005368
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005370
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005371
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005372
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005373
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005374
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005375
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005376
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005377
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005378
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005379
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005380
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005381
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005382
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005383
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005384
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005385
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005386
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005387
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005388
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005389
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005390
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005391
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005392
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005393
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005394
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005395
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005396
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005397
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005398
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005399
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005400
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005401
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005402
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005403
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005404
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005405
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005406
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005407
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005408
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005409
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005417
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005419
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005420
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005421
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005422
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005423
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005424
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005425
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005426
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005427
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005428
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005429
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005430
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005431
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005432
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005433
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005434
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005435
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005437
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005438
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005439
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005440
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005441
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005442
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005443
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005444
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005445
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005446
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005447
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005448
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005449
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005450
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005451
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005452
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005482
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005483
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005484
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005485
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005486
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005487
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005488
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005489
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005490
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005491
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005504
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005505
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005506
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005507
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005508
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005509
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005510
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005511
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005512
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005513
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005514
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005515
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005516
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005517
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005518
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005519
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005520
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005521
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005522
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005523
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005524
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005525
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005526
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005527
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005528
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005529
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005530
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005549
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005551
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005552
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005554
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005556
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005557
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005559
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005598
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005599
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005601
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005602
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005604
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005605
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005607
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005608
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005609
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005610
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005611
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005612
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005613
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005614
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005616
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005617
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005618
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005619
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005620
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005622
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005623
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005625
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005626
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005628
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005629
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005631
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005632
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005633
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005634
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005635
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005636
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005638
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005639
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005641
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005642
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005643
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005644
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005645
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005646
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005648
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005649
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005651
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005652
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005653
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005654
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005655
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005656
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005684
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005685
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005687
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005688
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005689
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005690
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005691
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005692
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005693
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005694
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005695
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005696
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005697
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005698
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005699
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005700
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005701
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005744
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005745
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005746
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005747
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005748
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005749
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005750
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005751
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005752
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005753
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005754
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005755
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005756
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005757
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005758
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005759
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005760
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005761
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005762
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005763
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005764
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005765
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005766
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005767
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005768
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005769
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005770
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005771
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005772
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005773
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005774
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005775
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005776
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005777
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005778
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005779
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005780
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005781
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005782
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005783
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005784
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005785
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005786
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005787
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005789
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005790
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005791
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005792
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005793
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005794
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005795
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005796
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005797
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005798
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005799
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005800
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005801
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005802
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005803
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005804
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005805
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005806
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005807
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005808
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005809
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005810
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005811
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005812
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005813
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005814
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005815
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005816
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005817
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005818
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005820
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005821
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005822
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005823
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005824
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005825
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005826
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005827
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005828
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005829
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005830
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005831
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005832
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005833
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005838
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005840
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005841
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005842
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005843
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005844
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005845
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005846
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005847
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005848
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005849
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005850
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005851
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005852
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005853
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005854
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005855
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005856
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005857
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005858
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005859
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005860
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005861
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005862
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005863
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005864
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005865
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005866
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005868
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005869
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005890
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005891
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005893
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005894
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005896
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005898
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005900
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005901
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005902
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005903
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005904
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005905
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005906
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005907
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005908
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005909
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005910
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005911
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005912
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005913
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005914
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005915
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005916
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005917
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005918
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005919
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005920
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005921
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005922
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005923
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005924
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005925
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005926
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005927
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005928
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005929
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005930
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005931
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005932
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005934
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005935
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005936
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005937
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005938
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005939
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005940
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005941
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005942
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005943
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005944
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005945
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005946
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005947
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005948
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005949
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005950
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005951
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005952
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005953
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005954
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005956
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005957
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005958
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005959
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005960
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005961
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005962
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005963
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005964
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005965
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005966
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005967
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005968
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005969
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005970
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005971
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005972
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005973
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005974
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005975
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005976
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005977
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005978
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005979
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005980
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005981
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005982
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005983
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005984
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005985
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005986
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005987
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005988
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005989
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005990
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005992
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005993
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005994
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005995
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005996
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005997
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005998
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005999
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:001000
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:001381
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002115
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002515
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002517
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002518
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002519
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002520
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002521
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002522
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002523
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002524
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002525
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002526
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002527
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002528
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002529
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002530
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002531
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002532
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002533
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002534
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002535
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002536
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002537
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002538
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002539
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002540
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002541
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002542
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002543
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002544
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002545
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002546
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002547
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002548
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002549
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002550
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002551
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002552
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002553
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002554
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002555
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002556
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002557
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002558
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002559
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002560
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002561
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002562
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002563
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002564
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002565
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002566
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002567
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002568
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002569
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002570
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002571
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002572
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002573
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002574
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002575
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002576
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002577
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002578
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002579
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002580
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002581
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002582
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002583
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002584
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002585
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002586
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002587
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002588
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002589
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002590
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002591
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002614
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002615
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002617
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002619
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002621
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002623
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002624
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002625
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002626
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002627
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002628
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002629
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002630
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002631
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002632
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002633
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002634
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002635
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002636
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002637
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002638
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002639
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002640
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002641
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002643
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002644
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002645
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002646
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002647
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002648
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002649
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002651
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002652
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002653
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002655
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002656
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002658
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002659
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002660
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002661
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002662
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002663
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002664
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002665
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002666
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002667
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002668
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002669
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002670
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002671
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002672
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002673
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002674
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002675
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002676
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002677
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002678
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002679
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002680
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002681
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002682
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002683
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002685
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002686
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002687
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002688
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002689
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002690
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002691
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002692
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002693
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002694
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002695
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002696
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002697
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002698
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002699
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002700
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002701
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002702
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002703
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002704
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002705
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002706
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002707
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002708
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002709
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002710
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002711
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002712
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002713
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002714
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002715
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002716
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002717
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002718
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002719
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002720
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002721
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002722
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002723
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002724
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002725
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002726
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002727
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002728
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002729
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002730
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002731
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002732
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002733
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002734
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002735
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002736
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002737
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002738
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002739
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002740
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002741
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002742
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002743
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002744
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002745
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002746
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002747
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002748
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002749
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002750
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002751
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002752
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002753
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002754
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002755
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002756
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002757
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002758
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002760
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002776
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002777
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002779
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002780
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002781
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002782
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002783
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002784
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002785
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002805
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002807
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002808
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002809
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002810
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002811
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002812
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002813
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002814
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002815
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002816
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002817
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002818
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002819
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002820
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002821
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002822
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002823
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002824
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002825
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002826
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002827
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002828
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002829
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002830
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002831
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002832
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002833
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002834
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002835
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002836
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002837
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002838
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002839
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002840
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002841
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002842
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002843
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002844
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002845
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002847
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002848
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002849
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002851
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002852
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002853
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002855
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002856
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002857
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002858
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002859
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002860
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002861
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002862
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002863
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002864
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002865
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002866
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002867
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002868
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002869
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003061
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003062
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003064
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003065
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003066
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003067
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003068
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003100
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003101
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003102
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003103
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003104
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003105
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003106
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003108
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003110
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003111
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003112
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003113
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003114
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003115
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003116
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003117
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003118
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003119
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003120
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003121
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003122
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003123
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003124
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003125
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003126
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003127
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003128
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003129
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003131
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003132
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003133
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003134
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003135
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003136
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003137
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003138
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003139
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003140
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003141
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003142
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003143
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003144
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003145
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003146
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003147
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003148
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003149
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003150
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003151
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003152
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003153
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003154
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003155
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003156
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003157
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003158
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003159
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003161
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003162
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003163
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003164
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003165
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003166
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003167
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003168
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003169
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003170
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003171
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003172
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003173
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003174
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003175
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003176
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003177
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003178
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003179
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003180
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003181
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003182
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003183
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003193
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003195
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003196
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003197
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003198
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003199
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003200
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003201
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003202
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003203
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003204
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003205
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003206
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003207
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003208
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003209
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003210
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003211
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003212
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003213
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003214
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003215
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003216
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003217
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003218
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003219
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003220
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003221
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003222
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003223
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003224
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003225
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003226
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003227
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003228
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003229
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003230
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003231
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003232
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003233
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003234
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003235
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003236
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003237
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003238
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003239
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003240
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003241
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003242
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003243
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003244
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003245
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003246
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003247
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003248
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003249
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003250
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003251
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003252
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003253
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003254
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003255
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003256
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003257
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003258
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003259
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003260
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003261
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003262
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003263
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003264
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003265
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003279
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003280
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003282
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003283
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003284
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003285
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003286
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003287
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003288
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003289
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003290
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003292
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003293
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003294
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003295
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003296
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003297
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003298
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003299
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003300
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003301
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003302
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003303
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003304
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003305
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003306
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003307
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003308
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003309
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003310
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003311
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003312
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003313
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003314
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003315
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003316
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003317
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003318
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003319
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003320
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003321
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003322
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003323
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003324
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003325
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003326
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003327
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003328
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003329
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003330
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003331
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003332
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003333
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003334
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003335
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003336
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003337
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003338
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003339
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003340
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003341
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003342
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003350
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003352
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003353
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003354
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003355
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003357
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003358
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003359
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003360
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003361
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003362
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003363
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003364
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003365
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003366
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003401
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003403
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003404
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003405
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003406
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003407
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003408
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003409
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003410
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003411
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003412
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003413
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003414
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003415
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003416
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003417
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003418
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003419
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003420
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003421
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003422
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003423
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003424
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003425
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003426
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003427
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003428
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003429
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003430
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003431
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003432
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003433
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003434
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003435
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003436
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003437
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003438
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003439
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003440
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003441
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003442
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003443
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003444
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003446
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003447
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003448
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003449
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003450
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003451
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003452
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003453
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003454
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003455
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003456
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003457
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003458
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003459
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003460
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003461
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003462
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003463
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003464
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003471
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003472
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003473
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003474
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003475
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003476
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003477
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003478
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003479
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003480
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003481
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003482
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003484
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003485
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003486
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003487
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003488
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003489
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003490
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003491
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003492
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003493
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003494
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003495
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003496
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003497
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003498
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003499
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003500
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003501
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003502
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003503
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003504
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003505
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003506
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003507
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003508
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003509
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003510
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003511
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003512
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003530
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003531
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003533
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003534
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003535
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003536
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003537
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003538
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003539
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003540
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003541
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003542
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003543
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003544
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003545
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003546
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003547
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003548
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003549
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003550
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003551
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003552
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003553
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003554
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003555
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003556
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003557
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003558
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003559
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003560
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003561
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003562
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003563
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003564
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003565
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003566
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003567
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003568
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003569
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003570
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003571
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003572
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003573
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003574
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003575
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003576
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003577
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003578
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003579
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003580
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003581
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003582
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003583
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003584
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003585
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003586
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003587
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003588
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003589
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003590
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003591
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003592
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003593
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003594
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003595
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003596
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003597
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003598
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003599
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003621
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003623
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003624
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003625
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003626
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003627
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003628
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003629
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003630
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003631
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003632
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003633
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003634
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003635
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003636
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003637
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003638
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003639
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003640
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003641
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003642
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003643
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003644
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003645
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003646
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003647
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003648
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003649
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003650
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003651
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003652
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003653
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003654
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003655
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003656
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003657
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003658
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003659
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003660
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003661
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003662
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003663
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003664
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003665
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003666
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003667
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003668
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003669
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003670
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003671
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003672
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003673
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003674
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003675
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003676
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003677
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003678
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003679
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003680
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003681
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003682
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003683
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003684
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003685
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003686
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003687
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003688
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003689
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003690
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003692
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003693
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003694
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003696
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003697
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003698
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003699
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003700
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003701
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003702
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003703
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003704
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003705
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003706
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003707
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003708
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003709
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003710
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003711
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003712
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003713
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003714
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003715
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003716
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003717
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003718
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003719
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003720
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003721
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003722
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003723
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003724
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003725
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003726
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003727
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003728
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003729
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003730
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003731
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003732
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003733
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003734
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003735
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003736
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003737
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003738
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003739
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003740
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003742
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003743
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003744
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003745
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003746
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003747
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003748
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003749
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003750
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003751
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003752
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003753
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003754
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003755
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003756
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003757
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003758
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003759
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003760
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003761
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003762
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003763
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003764
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003765
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003766
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003767
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003768
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003769
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003770
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003771
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003772
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003773
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003774
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003775
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003776
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003777
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003778
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003779
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003780
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003781
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003782
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003783
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003784
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003785
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003786
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003787
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003788
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003789
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003790
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003791
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003792
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003793
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003800
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003801
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003802
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003803
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003804
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003805
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003806
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003807
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003808
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003809
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003810
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003811
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003812
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003813
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003814
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003815
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003816
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003818
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003819
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003820
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003821
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003822
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003823
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003824
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003825
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003826
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003827
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003828
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003829
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003830
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003831
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003832
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003833
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003834
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003835
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003836
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003837
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003838
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003839
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003840
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003841
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003842
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003843
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003844
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003845
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003846
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003847
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003848
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003849
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003850
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003851
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003852
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003853
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003854
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003855
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003856
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003857
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003858
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003859
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003860
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003861
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003862
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003863
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003864
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003866
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003867
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003868
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003869
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003870
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003871
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003872
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003873
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003874
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003875
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003876
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003877
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003878
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003879
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003880
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003881
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003890
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003924
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003962
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003964
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003965
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003966
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003967
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003968
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003969
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003970
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003971
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003972
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003983
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003984
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003986
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003987
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003988
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003989
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003990
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003991
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003992
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003993
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003994
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003995
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003996
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003997
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003998
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003999
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:004000
+[driver-adapter] bridge resubscribe skipped=4890 subscription=2
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4028 subscription=3
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=5000 subscription=4
+[driver-adapter] bridge resubscribe skipped=5000 subscription=5
+[driver-adapter] bridge resubscribe skipped=5000 subscription=6
+[driver-adapter] bridge resubscribe skipped=5000 subscription=7
+[driver-adapter] bridge resubscribe skipped=5000 subscription=8
+[driver-adapter] bridge resubscribe skipped=5000 subscription=9
+...[driver-adapter] bridge resubscribe skipped=5000 subscription=10
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4000 subscription=2
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4003 subscription=3
+[driver-adapter] bridge resubscribe skipped=4003 subscription=4
+[driver-adapter] bridge resubscribe skipped=4003 subscription=5
+[driver-adapter] bridge resubscribe skipped=4003 subscription=6
+[driver-adapter] bridge resubscribe skipped=4003 subscription=7
+[driver-adapter] bridge resubscribe skipped=4003 subscription=8
+.[driver-adapter] bridge resubscribe skipped=4003 subscription=9
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=3 subscription=2
+[driver-adapter] bridge resubscribe skipped=3 subscription=3
+[driver-adapter] bridge resubscribe skipped=3 subscription=4
+[driver-adapter] bridge resubscribe skipped=3 subscription=5
+[driver-adapter] bridge resubscribe skipped=3 subscription=6
+..[driver-adapter] bridge resubscribe skipped=3 subscription=7
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=3 subscription=2
+[driver-adapter] bridge resubscribe skipped=3 subscription=3
+[driver-adapter] bridge resubscribe skipped=3 subscription=4
+[driver-adapter] bridge resubscribe skipped=3 subscription=5
+[driver-adapter] bridge resubscribe skipped=3 subscription=6
+[driver-adapter] bridge resubscribe skipped=3 subscription=7
+.[driver-adapter] bridge resubscribe skipped=3 subscription=8
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4000 subscription=2
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4005 subscription=3
+[driver-adapter] bridge resubscribe skipped=4005 subscription=4
+[driver-adapter] bridge resubscribe skipped=4005 subscription=5
+[driver-adapter] bridge resubscribe skipped=4005 subscription=6
+[driver-adapter] bridge resubscribe skipped=4005 subscription=7
+[driver-adapter] bridge resubscribe skipped=4005 subscription=8
+.[driver-adapter] bridge resubscribe skipped=4005 subscription=9
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=2 subscription=2
+[driver-adapter] driver reconnected attempt=2
+...[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4 subscription=2
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=8 subscription=3
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=12 subscription=4
+[driver-adapter] bridge resubscribe skipped=12 subscription=5
+[driver-adapter] bridge resubscribe skipped=12 subscription=6
+[driver-adapter] bridge resubscribe skipped=12 subscription=7
+[driver-adapter] bridge resubscribe skipped=12 subscription=8
+[driver-adapter] bridge resubscribe skipped=12 subscription=9
+[driver-adapter] bridge resubscribe skipped=12 subscription=10
+[driver-adapter] bridge resubscribe skipped=12 subscription=11
+...........[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=5 subscription=2
+[driver-adapter] bridge resubscribe skipped=5 subscription=3
+[driver-adapter] bridge resubscribe skipped=5 subscription=4
+[driver-adapter] bridge resubscribe skipped=5 subscription=5
+[driver-adapter] bridge resubscribe skipped=5 subscription=6
+[driver-adapter] bridge resubscribe skipped=5 subscription=7
+[driver-adapter] bridge resubscribe skipped=5 subscription=8
+[driver-adapter] bridge resubscribe skipped=5 subscription=9
+[driver-adapter] bridge resubscribe skipped=5 subscription=10
+..[driver-adapter] bridge resubscribe skipped=5 subscription=11
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] driver reconnected attempt=1
+.[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] driver reconnected attempt=1
+................[agent_skill] staged; no model turn
+[agent_skill] staged; no model turn
+.[agent_skill] staged; no model turn
+...[agent_skill] staged; no model turn
+[agent_skill] staged; no model turn
+..[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[agent_skill] staged; no model turn
+.[agent_skill] staged; no model turn
+.........................................[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1)
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1)
+.[driver-adapter] started, driver=codex
+.[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-business-1 -> failed (rejected before turn)
+[delivery] failed id=dw-business-1 source=fixture (rejected before turn)
+.[driver-adapter] started, driver=codex
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1)
+.[driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-business-1 -> accepted (isReplay ack, turn=d5a644b8e6ed46309ebbd519b029e589)
+[delivery] done id=dw-business-1 source=fixture (turn=d5a644b8e6ed46309ebbd519b029e589)
+[driver-adapter] deliver id=dw-business-2 -> accepted (isReplay ack, turn=101774641d53459cbe2753e5367a98fd)
+[delivery] done id=dw-business-2 source=fixture (turn=101774641d53459cbe2753e5367a98fd)
+.[driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1 status=inProgress)
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-business-2 -> processing (turn=turn-2 status=inProgress)
+[delivery] done id=dw-business-2 source=fixture (turn=turn-2)
+.[driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter][FAILED] id=dw-business-1 deliver raised: fixture deliver boom
+[driver-adapter] deliver id=dw-business-2 -> processing (turn=turn-2)
+[delivery] done id=dw-business-2 source=fixture (turn=turn-2)
+.[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-business-1 -> failed (rejected before turn)
+[delivery] failed id=dw-business-1 source=fixture (rejected before turn)
+[driver-adapter] deliver id=dw-business-2 -> processing (turn=turn-2)
+[delivery] done id=dw-business-2 source=fixture (turn=turn-2)
+.[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[agent_skill] staged; no model turn
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+.[driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[driver-adapter] deliver id=dw-block -> processing (turn=turn-1)
+[delivery] done id=dw-block source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-after -> processing (turn=turn-2)
+[delivery] done id=dw-after source=fixture (turn=turn-2)
+.[agent_skill] staged; no model turn
+.[driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1)
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-business-2 -> processing (turn=turn-2)
+[delivery] done id=dw-business-2 source=fixture (turn=turn-2)
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[recv] from=workpulse#FB-2642 to=guide#FB-2642 body_len=5
+[agent_skill] staged; no model turn
+[agent_skill] staged + auto-acked
+[recv] from=workpulse#FB-2642 to=guide#FB-2642 body_len=5
+[agent_skill] staged; no model turn
+[agent_skill] staged + auto-acked
+[recv] from=workpulse#FB-2642 to=guide#FB-2642 body_len=5
+[agent_skill] staged; no model turn
+[agent_skill] staged + auto-acked
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[recv] from=workpulse#FB-2642 to=guide#FB-2642 body_len=5
+[agent_skill] stage failed: disk full
+.[agent_skill] staged; no model turn
+........................................[ipc_listener] listening on /tmp/ipc-len-ge6_zlam/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+.........................................MCP_TRANSPORT_READINGS errors=18 survived=18 recovery_same_process=18
+...connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/r32-spec-review/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/r32-spec-review/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+./usr/lib/python3.12/asyncio/base_events.py:726: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.................connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/r32-spec-review/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+..........................................[helper-update] source_denied
+................[helper-update] confirmation_rejected
+[helper-update] confirmation_rejected
+......[roster] delivery list written; skipped cli injection delivery_id=dlv_roster
+[onboarding] skipped delivery cli injection delivery_id=dlv_onboarding
+....[agent_skill] staged; no model turn
+..[busy_buffer] queued size=1 from=alice#FB-2642#UnifiedRobot idle=True
+[busy_buffer] queued size=2 from=alice#FB-2642#UnifiedRobot idle=True
+[busy_buffer] queued size=3 from=alice#FB-2642#UnifiedRobot idle=False
+[busy_buffer] queued size=4 from=alice#FB-2642#UnifiedRobot idle=False
+[busy_buffer] queued size=5 from=alice#FB-2642#UnifiedRobot idle=False
+.[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] drop oldest from=peer#FB-2642
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+.[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+...../usr/lib/python3.12/pty.py:95: DeprecationWarning: This process (pid=907749) is multi-threaded, use of forkpty() may lead to deadlocks in the child.
+  pid, fd = os.forkpty()
+[cli] exited code=1 tail=''
+[cli] start failed (attempt 1): CLI exited during startup: code=1 tail=''
+[cli] delivery failed reason=cli_unavailable retryable=true detail=（CLI未就绪：CLI exited during startup: code=1 tail=''；sessionHelper仍在线，稍后可重试）
+..........[delivery_cancel] delivery_id=dlv_1 result=cancelled
+[delivery_cancel] delivery_id=dlv_2 result=not_cancelable
+.........[delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions session=home targets=['home', 'zzc-home-2642'] to=['tester#FB-2642']
+[delivery][legacy_inbox] imported 2/2 pending deliveries from /tmp/tmpbw7jbcqm/sessionhelper_inbox.db into /tmp/tmpbw7jbcqm/sessionhelper_inbox-home.db session=home
+....................[mirror_control] enabled=True to=oc_group#FB-2642#UnifiedRobot
+.[mirror_control] enabled=True to=ou_u1#FB-2642#is3-Connector
+[mirror_control] enabled=False to=
+.[mirror] to=ou_alice#FB-2642#UnifiedRobot role=user
+[mirror] to=ou_alice#FB-2642#UnifiedRobot role=claude
+[mirror] to=ou_alice#FB-2642#UnifiedRobot role=claude
+.[agent_skill] ack sent
+........[producer] stdin -> group oc_group
+[producer] sent target_group=oc_group
+[producer] stdin EOF; exiting
+.[producer] stdin -> group oc_group
+[producer] sent target_group=oc_group
+[producer] sent target_group=oc_group
+[producer] stdin EOF; exiting
+..[provision] action=install_skill target=x ok=False message=url host denied: evil.example
+..............[recv] from=workpulse#FB-2642 to=home#FB-2642 body_len=2
+[agent_skill] already installed; ack sent
+...........................模型授权在所选工具自己的界面中完成；DW 不接收模型账号或密钥。
+...............两种接入方式都需要 sessionHelper。请选择：
+1. Codex 桌面应用 + DW-MCP
+2. CLI 托管（通过 DingWei Web 页面交互）
+请先在 Codex 桌面应用完成登录。自动提醒需真机验收；MCP 配置成功不代表自动唤醒已就绪。
+本次桌面应用： Codex.app 版本： fixture1 build： 1
+桌面持续监听：在原聊天要求 AI 调用 dw_wait_message；收到消息后用 dw_reply_message 回复再等待。取消或退出后需重新发起，不能自动唤醒空闲会话。
+配置已保存。启动时复制 #pair 指令并私发给当前 Hub 的官方飞书机器人，完成开户与设备配对。
+启动： /tmp/coder-0232-locked-venv/bin/python -m sessionhelper --run-profile /tmp/tmpu4n3sitd/setup-profile.json
+请按原生授权提示操作；CLI 模型授权码与 DW 配对码不同。
+过期/冲突后：先退出配对等待，再显式取消未认领申请： /tmp/coder-0232-locked-venv/bin/python -m sessionhelper --cancel-pairing /tmp/tmpu4n3sitd/setup-profile.json
+sessionHelper 后台进程已启动，PID： 1234 ；当前为 STARTING，连接状态请在 Web 或 DW-MCP 核实。
+.................../usr/lib/python3.12/asyncio/base_events.py:726: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+...[ipc_listener] listening on /tmp/spec-o3-05or3b2z/ipc.sock
+.[ipc_listener] listening on /tmp/spec-o3-d9sdhpgx/ipc.sock
+.[ipc_listener] listening on /tmp/spec-o3-plrq0prn/ipc.sock
+........[ipc_listener] listening on /tmp/r8ipc-ftgap5in/ipc.sock
+.....SQLITE_FD_READINGS {"baseline_db_fd": 0, "final_db_fd": 0, "gc_enabled": false, "long_run_db_fds": {"1": 0, "100": 0, "1000": 0, "10000": 0}, "long_run_iterations": 10000, "nofile": 128, "total_fd_baseline": 4, "total_fd_final": 4, "workloads": {"audit": {"calls": 200, "peak_db_fd": 0}, "claude": {"calls": 200, "peak_db_fd": 0}, "cli_parts": {"calls": 200, "peak_db_fd": 0}, "cli_recent": {"calls": 200, "peak_db_fd": 0}, "codex": {"calls": 200, "peak_db_fd": 0}, "desktop": {"calls": 200, "peak_db_fd": 0}, "inbox": {"calls": 200, "peak_db_fd": 0}, "legacy": {"calls": 200, "peak_db_fd": 0}, "opencode": {"calls": 200, "peak_db_fd": 0}, "stop_hook": {"calls": 200, "peak_db_fd": 0}}}
+..[delivery][STALLED] id=env-c-idle idle_elapsed=91s no progress event; turn appears hung
+.[delivery][STALLED] id=env-c-tool idle_elapsed=91s no progress event; turn appears hung
+.[delivery][ABSOLUTE_TIMEOUT] id=env-c total_elapsed=901s; turn exceeded hard limit
+....[delivery][STALLED] envelope=env-x idle stalled: no progress event for 91s
+[delivery][ABSOLUTE_TIMEOUT] envelope=env-x absolute turn timeout: total runtime 901s exceeded 900s limit
+.[delivery][STALLED] envelope=env-x idle stalled: no progress event for 91s
+...[delivery][STALLED] envelope=env-o no progress event for 91s — model may be misconfigured or session stalled. Protocol receipt guarantees admission, not processing.
+[delivery][ABSOLUTE_TIMEOUT] envelope=env-o absolute turn timeout: total runtime 901s exceeded 900s limit
+.[delivery][STALLED] envelope=env-o no progress event for 91s — model may be misconfigured or session stalled. Protocol receipt guarantees admission, not processing.
+.............[driver-adapter] started, driver=codex
+.[driver-adapter] deliver id=dw-view-034050f605f14cee8105100b9b04dcc4 -> processing (turn=turn-1)
+[driver-adapter] started, driver=codex
+.[driver-adapter] deliver id=dw-dlv_X -> processing (turn=turn-1)
+.[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-81dceb2aa36d40a28aabd8dd60c7f56f -> processing (turn=turn-1)
+[delivery] done id=dw-view-034050f605f14cee8105100b9b04dcc4 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-two -> processing (turn=turn-2)
+[delivery] done id=dw-dlv_X source=fixture (turn=turn-1)
+[delivery] done id=dw-two source=fixture (turn=turn-2)
+[delivery][TIMEOUT] id=dw-view-81dceb2aa36d40a28aabd8dd60c7f56f turn=turn-1
+[driver-adapter] deliver id=dw-two -> processing (turn=turn-2)
+.[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-0f8770edd77845f0a44cda75df30ff5c -> processing (turn=turn-1)
+[delivery] done id=dw-view-0f8770edd77845f0a44cda75df30ff5c source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-agent -> processing (turn=turn-2)
+[delivery][TIMEOUT] id=dw-two turn=turn-2
+[delivery] done id=dw-agent source=fixture (turn=turn-2)
+[driver-adapter] deliver id=dw-feishu -> processing (turn=turn-3)
+.[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-0fe808f77ded4c5ea6213ae2f8822f98 -> processing (turn=turn-1)
+...........[delivery] done id=dw-feishu source=fixture (turn=turn-3)
+[delivery] done id=dw-view-0fe808f77ded4c5ea6213ae2f8822f98 source=fixture (turn=turn-1)
+......SYNTHETIC_SLOT_EXECUTED
+...........Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmpt9wtj79e/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+..........
+----------------------------------------------------------------------
+Ran 743 tests in 399.633s
+
+OK

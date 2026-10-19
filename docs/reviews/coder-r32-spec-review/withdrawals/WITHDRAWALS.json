@@ -1,0 +1,985 @@
+{
+  "anchor": "62d3bdb98b6391519dc011663061ff5dd069cec7",
+  "count": 30,
+  "expected": 30,
+  "records": [
+    {
+      "name": "callback_identity_pair",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "e51c2aed50d43d1cca9dad5003ead72ac0d564250d8a87bfdbdb56adc1501b2d",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8ActualReviewerPendingHumanGateAndReplay$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_FORGED_CALLBACK_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "pending_outcome",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "d332abad0b5a7a25e8b89e8f6e3c2119f636a9d46e80ef257530dcdf46e3ff0e",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8ActualReviewerPendingHumanGateAndReplay$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_PENDING_PROVENANCE_LOST",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "human_issue_text_immutable",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "5d6fd346e998d526bda9a8451d1fcd68706636f7d54903af3c79916934d609c0",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8ActualReviewerPendingHumanGateAndReplay$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_HUMAN_REPLACED_ISSUE",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "database_lease_write_family",
+      "source_file": "internal/store/migrations/0056_console_spec_agent_review_r32.sql",
+      "source_sha256": "e8688c715a40cd408dee022462654547c0bf5614ca3d3cc7b9f65ae102879c45",
+      "mutation_sha256": "557b8d7c607f89c99ff2af9fe0ef4ca5af0d0f44da2e5cdaf6828a98eaba20a5",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8PendingLockCoversAllStoreWrites$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_LOCK_BYPASSED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "one_active_request",
+      "source_file": "internal/store/migrations/0056_console_spec_agent_review_r32.sql",
+      "source_sha256": "e8688c715a40cd408dee022462654547c0bf5614ca3d3cc7b9f65ae102879c45",
+      "mutation_sha256": "de6ce0361a296cf14621b7c86aae8815ce47684f9a1513300e5d57a3d04721e1",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8PendingLockCoversAllStoreWrites$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_PARALLEL_REQUEST_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "deadline",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "c56efd612836f740bd87798e409bd558b84fd5cb7bbf932c1b6b7f65370540f0",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8DeadlineRestartAndIdentityPrecommitFailClosed$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_TIMEOUT_REPLY_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "restart",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "a6302e539fbec6a8a3804d8908cdb1c3e9ee9dc04d361272e15df21d2d8a8659",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8DeadlineRestartAndIdentityPrecommitFailClosed$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_RESTART_REPLY_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "pg_precommit_recheck",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "4b27c6b629ff3b17b316d155b7b8432bc4ac2c4a5747729b2dbe3c9948e5ecec",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8DeadlineRestartAndIdentityPrecommitFailClosed$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_PRECOMMIT_ERROR_IGNORED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "cancelled_reply",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "4190b7cd82c0959b569acabaa011bcf41ba8cd606b41a23121790aa2dd9676fc",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8CancelledSameEditorLateReply$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_CANCELLED_LATE_RESULT_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "criteria_awaits_confirmation",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "276274b909977f6b26928efa83c8f0a3bcf65dc7541bfeea67f1ec1a28c9ce7c",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8CriteriaCandidateRequiresConfirmationStatus$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_CANDIDATE_NOT_PENDING_CONFIRMATION",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "owner_quote",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "6c02f293710651baf97d85072a94907378e719afb4038ffde0cf14ad73f5e1c3",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8CriteriaRejectsQuotesAndSpoofedConfirmation$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_INVALID_CRITERIA_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "checked_by_not_agent_supplied",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "83b4c5bcb45181e47d55bf09aacd1009d4c76aa7e585905a1d99b77c69a2ef40",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8CriteriaRejectsQuotesAndSpoofedConfirmation$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_INVALID_CRITERIA_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "result_revision_binding",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "03d5c4d542d94d54006ba7d86bfe79d7ebced8df1780b8f3ec93ce17ae4e2011",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8CriteriaRejectsQuotesAndSpoofedConfirmation$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_INVALID_CRITERIA_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "result_hash_binding",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "c63f491425cfb8da9f9f5693b867dc3f089a5967726d84a8741850011d8f22e2",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8CriteriaRejectsQuotesAndSpoofedConfirmation$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_INVALID_CRITERIA_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "criteria_result_kind",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "77a222085a96a24100abf85dbfdcfa0729b23da7570853abc02276307b65b22f",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8CriteriaRejectsQuotesAndSpoofedConfirmation$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_INVALID_CRITERIA_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "fresh_gate_required",
+      "source_file": "internal/store/migrations/0056_console_spec_agent_review_r32.sql",
+      "source_sha256": "e8688c715a40cd408dee022462654547c0bf5614ca3d3cc7b9f65ae102879c45",
+      "mutation_sha256": "389ed08484126700cbe91db126f0adf7d32b60e7093bd037c026668270dd5794",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8CriteriaConfirmationFreshRevisionAndOldGateHistory$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_FRESH_REVIEW_BYPASSED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "fresh_gate_descendant",
+      "source_file": "internal/store/migrations/0056_console_spec_agent_review_r32.sql",
+      "source_sha256": "e8688c715a40cd408dee022462654547c0bf5614ca3d3cc7b9f65ae102879c45",
+      "mutation_sha256": "29ddc97382da7f1d7933d129b0e088aba2e17b79ab25f4d722cabfa6d1ef5e6a",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8FreshReviewRequirementFollowsHumanRevision$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_FRESH_REVIEW_LOST_ON_EDIT",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "human_confirmation_even_legacy_acceptance",
+      "source_file": "internal/store/migrations/0056_console_spec_agent_review_r32.sql",
+      "source_sha256": "e8688c715a40cd408dee022462654547c0bf5614ca3d3cc7b9f65ae102879c45",
+      "mutation_sha256": "c024e29548892a8476ce80311f3b037ebe55ea493493ef26e49b0cf9bf8f61c0",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8ActualReviewerPendingHumanGateAndReplay$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_PENDING_FINALIZED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "owned_agent_pg",
+      "source_file": "internal/identity/spec_review_authorization.go",
+      "source_sha256": "b3360452d0fb4e46bf2388123891d489c32695a72cbdbf8b0efba0dec6368919",
+      "mutation_sha256": "e267118f1c73576b30414307d9449971ca4976f36454e853d2338dcc6db31852",
+      "command": [
+        "go",
+        "test",
+        "./internal/identity",
+        "-run",
+        "^TestR8OwnedAgentPGAuthorizationAndRevocationLock$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_CROSS_OWNER_PG_AUTHORIZED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "http_callback_current_actor",
+      "source_file": "internal/m8/console_spec_agent_review.go",
+      "source_sha256": "068e2b74fdb1989a8bdad31bd3be6f635c2aa9dc664ee8f9d795d6eb6773bc7a",
+      "mutation_sha256": "d42a770eb545c70877aa869adaf1f6233e6c3bb707b2a918830e7d737375c83d",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestR8HTTPRealReliableReviewAndHumanOnlyFinalize$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_FORGED_HTTP_CALLBACK_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "ws_callback_endpoint",
+      "source_file": "internal/m8/console_spec_agent_review.go",
+      "source_sha256": "068e2b74fdb1989a8bdad31bd3be6f635c2aa9dc664ee8f9d795d6eb6773bc7a",
+      "mutation_sha256": "c2ecc4315213a2dee3a65b554b09ed1844fe9adccea57880e5271af017974fb2",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestR8WSCallbackUsesActualAuthenticatedEndpoint$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_FORGED_WS_CALLBACK_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "read_cancel_current_state",
+      "source_file": "internal/m8/console_spec_agent_review.go",
+      "source_sha256": "068e2b74fdb1989a8bdad31bd3be6f635c2aa9dc664ee8f9d795d6eb6773bc7a",
+      "mutation_sha256": "c51261c89323eccb16b6950e7e71c7aaff42684e65da72dc7749fe999b5b7696",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestR8HTTPReadErrorsAndCancellationBetweenSelectionAndProjection$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_READ_RACE_LEAKED_REQUEST",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "read_state_error_fail_closed",
+      "source_file": "internal/m8/console_spec_agent_review.go",
+      "source_sha256": "068e2b74fdb1989a8bdad31bd3be6f635c2aa9dc664ee8f9d795d6eb6773bc7a",
+      "mutation_sha256": "404de19f72e3025952fbc8d3cb443048d16cbee9e33b2e3ca503929ca07b111d",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestR8HTTPReadErrorsAndCancellationBetweenSelectionAndProjection$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_READ_RACE_LEAKED_REQUEST",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "ws_restart_generation",
+      "source_file": "internal/m8/console_spec_agent_review.go",
+      "source_sha256": "068e2b74fdb1989a8bdad31bd3be6f635c2aa9dc664ee8f9d795d6eb6773bc7a",
+      "mutation_sha256": "5cb5ce5bbdbd2377fb02b7e872bedf351d11956d99556f66542bd4690388194f",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestR8RestartBeforeReconcilerRejectsWSAndCriteriaConfirmation$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_RESTARTED_WS_RESULT_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "criteria_restart_reconcile",
+      "source_file": "internal/m8/console_spec_agent_review.go",
+      "source_sha256": "068e2b74fdb1989a8bdad31bd3be6f635c2aa9dc664ee8f9d795d6eb6773bc7a",
+      "mutation_sha256": "387ed91c0338591eba7c5b259292da90d42307c74520bc58a51fbee5405f17dc",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestR8RestartBeforeReconcilerRejectsWSAndCriteriaConfirmation$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_RESTARTED_CANDIDATE_CONFIRMED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "owner_active_request_first",
+      "source_file": "internal/store/console_spec_agent_review.go",
+      "source_sha256": "ac4a9cb7fb153d0bf9bcab9f5a4f1cd98f5b8097db361e2a384574a3704606a1",
+      "mutation_sha256": "1eaff7a6079cd719bcf74b4bce159c51bc3016186bff129d2b587a99ec26b039",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR8HumanHistoryCannotHideActiveRequestBehindOldPage$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "marker": "R8_ACTIVE_REQUEST_HIDDEN_BY_HISTORY",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "helper_system_origin",
+      "source_file": "tools/sessionhelper/sessionhelper/spec_review.py",
+      "source_sha256": "b9f7d2088c0f99eee5d83b5b06c6da173e956e7818ffde757e0b3f9b3c10c640",
+      "mutation_sha256": "628f84c4f0877debf5c7ee80a0633d206ba67cdd0ff5b4213a033571a24cf68a",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "tools/sessionhelper/tests/test_spec_review_r32.py"
+      ],
+      "marker": "R8_FORGED_HELPER_REQUEST_ACCEPTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "helper_no_raw_spec_prompt",
+      "source_file": "tools/sessionhelper/sessionhelper/spec_review.py",
+      "source_sha256": "b9f7d2088c0f99eee5d83b5b06c6da173e956e7818ffde757e0b3f9b3c10c640",
+      "mutation_sha256": "3a49bf5dae61921480894029850cd5693382003bd6cdd72e0e2331462ca24c49",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "tools/sessionhelper/tests/test_spec_review_r32.py"
+      ],
+      "marker": "R8_RAW_SPEC_INJECTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "helper_no_redirect",
+      "source_file": "tools/sessionhelper/sessionhelper/spec_review.py",
+      "source_sha256": "b9f7d2088c0f99eee5d83b5b06c6da173e956e7818ffde757e0b3f9b3c10c640",
+      "mutation_sha256": "bb6652c36a317d2e974e6a1c4fc0d6e0f46b742bfa6828de1436ad66a7e50191",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "tools/sessionhelper/tests/test_spec_review_r32.py"
+      ],
+      "marker": "R8_CREDENTIAL_REDIRECTED",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    },
+    {
+      "name": "helper_uncertain_reply",
+      "source_file": "tools/sessionhelper/sessionhelper/spec_review.py",
+      "source_sha256": "b9f7d2088c0f99eee5d83b5b06c6da173e956e7818ffde757e0b3f9b3c10c640",
+      "mutation_sha256": "c64b32ab1e076f01cf1706e37fb2f1a0f06960bb0981ba3b47b3d1eb9a89d5aa",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "tools/sessionhelper/tests/test_spec_review_r32.py"
+      ],
+      "marker": "R8_UNCERTAIN_REPLY_FALSE_REJECTION",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "valid": true,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "valid": true,
+          "marker_present": false
+        }
+      }
+    }
+  ]
+}

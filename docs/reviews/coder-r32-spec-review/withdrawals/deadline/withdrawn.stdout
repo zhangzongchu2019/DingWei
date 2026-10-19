@@ -1,0 +1,6 @@
+--- FAIL: TestR8DeadlineRestartAndIdentityPrecommitFailClosed (0.38s)
+    --- FAIL: TestR8DeadlineRestartAndIdentityPrecommitFailClosed/timeout (0.12s)
+        console_spec_agent_review_test.go:285: R8_TIMEOUT_REPLY_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.386s
+FAIL

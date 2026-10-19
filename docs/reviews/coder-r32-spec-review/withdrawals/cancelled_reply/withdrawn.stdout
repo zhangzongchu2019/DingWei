@@ -1,0 +1,5 @@
+--- FAIL: TestR8CancelledSameEditorLateReply (0.13s)
+    console_spec_agent_review_test.go:365: R8_CANCELLED_LATE_RESULT_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.138s
+FAIL

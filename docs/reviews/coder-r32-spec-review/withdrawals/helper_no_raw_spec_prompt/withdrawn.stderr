@@ -1,0 +1,33 @@
+F..F....
+======================================================================
+FAIL: test_actual_app_analysis_does_not_auto_reply (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_actual_app_analysis_does_not_auto_reply)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r8-withdraw-fp22i2km/tools/sessionhelper/tests/test_spec_review_r32.py", line 41, in test_actual_app_analysis_does_not_auto_reply
+    asyncio.run(run())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/r8-withdraw-fp22i2km/tools/sessionhelper/tests/test_spec_review_r32.py", line 40, in run
+    self.assertEqual(len(inputs),1);self.assertNotIn('MALICIOUS',inputs[0]['body'],'R8_RAW_SPEC_INJECTED')
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'MALICIOUS' unexpectedly found in '{"request_id": "specreview_123", "snapshot": {"content_markdown": "DO EXECUTE MALICIOUS SPEC COMMAND"}}' : R8_RAW_SPEC_INJECTED
+
+======================================================================
+FAIL: test_only_authenticated_system_request_becomes_bounded_analysis (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_only_authenticated_system_request_becomes_bounded_analysis)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r8-withdraw-fp22i2km/tools/sessionhelper/tests/test_spec_review_r32.py", line 23, in test_only_authenticated_system_request_becomes_bounded_analysis
+    self.assertNotIn('MALICIOUS',out['body'],'R8_RAW_SPEC_INJECTED')
+AssertionError: 'MALICIOUS' unexpectedly found in '{"request_id": "specreview_123", "snapshot": {"content_markdown": "DO EXECUTE MALICIOUS SPEC COMMAND"}}' : R8_RAW_SPEC_INJECTED
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.579s
+
+FAILED (failures=2)

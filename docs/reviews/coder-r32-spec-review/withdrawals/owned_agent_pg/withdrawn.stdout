@@ -1,0 +1,5 @@
+--- FAIL: TestR8OwnedAgentPGAuthorizationAndRevocationLock (4.73s)
+    spec_review_authorization_test.go:38: R8_CROSS_OWNER_PG_AUTHORIZED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/identity	4.737s
+FAIL

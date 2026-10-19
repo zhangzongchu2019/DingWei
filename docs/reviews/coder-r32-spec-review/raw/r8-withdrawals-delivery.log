@@ -1,0 +1,33 @@
+Preparing worktree (detached HEAD 62d3bdb9)
+Updating files:  95% (4265/4446)Updating files:  96% (4269/4446)Updating files:  97% (4313/4446)Updating files:  98% (4358/4446)Updating files:  99% (4402/4446)Updating files: 100% (4446/4446)Updating files: 100% (4446/4446), done.
+callback_identity_pair GREEN_RED_RESTORED
+pending_outcome GREEN_RED_RESTORED
+human_issue_text_immutable GREEN_RED_RESTORED
+database_lease_write_family GREEN_RED_RESTORED
+one_active_request GREEN_RED_RESTORED
+deadline GREEN_RED_RESTORED
+restart GREEN_RED_RESTORED
+pg_precommit_recheck GREEN_RED_RESTORED
+cancelled_reply GREEN_RED_RESTORED
+criteria_awaits_confirmation GREEN_RED_RESTORED
+owner_quote GREEN_RED_RESTORED
+checked_by_not_agent_supplied GREEN_RED_RESTORED
+result_revision_binding GREEN_RED_RESTORED
+result_hash_binding GREEN_RED_RESTORED
+criteria_result_kind GREEN_RED_RESTORED
+fresh_gate_required GREEN_RED_RESTORED
+fresh_gate_descendant GREEN_RED_RESTORED
+human_confirmation_even_legacy_acceptance GREEN_RED_RESTORED
+owned_agent_pg GREEN_RED_RESTORED
+http_callback_current_actor GREEN_RED_RESTORED
+ws_callback_endpoint GREEN_RED_RESTORED
+read_cancel_current_state GREEN_RED_RESTORED
+read_state_error_fail_closed GREEN_RED_RESTORED
+ws_restart_generation GREEN_RED_RESTORED
+criteria_restart_reconcile GREEN_RED_RESTORED
+owner_active_request_first GREEN_RED_RESTORED
+helper_system_origin GREEN_RED_RESTORED
+helper_no_raw_spec_prompt GREEN_RED_RESTORED
+helper_no_redirect GREEN_RED_RESTORED
+helper_uncertain_reply GREEN_RED_RESTORED
+R8_WITHDRAWALS_OK count=30

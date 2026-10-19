@@ -1,0 +1,6 @@
+--- FAIL: TestR8DeadlineRestartAndIdentityPrecommitFailClosed (0.42s)
+    --- FAIL: TestR8DeadlineRestartAndIdentityPrecommitFailClosed/restart (0.14s)
+        console_spec_agent_review_test.go:292: R8_RESTART_REPLY_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.422s
+FAIL

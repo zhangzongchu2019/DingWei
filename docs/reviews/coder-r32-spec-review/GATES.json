@@ -1,0 +1,63 @@
+{
+  "source_commit": "62d3bdb98b6391519dc011663061ff5dd069cec7",
+  "recorded_utc": "2026-10-19T11:47:07Z",
+  "gates": [
+    {
+      "name": "go_all",
+      "command": "go test ./... -count=1 -timeout=30m",
+      "rc": 0,
+      "log": "raw/r8-go-delivery.log",
+      "rc_file": "raw/r8-go-delivery.rc"
+    },
+    {
+      "name": "vet",
+      "command": "go vet ./...",
+      "rc": 0,
+      "log": "raw/r8-vet-delivery.log",
+      "rc_file": "raw/r8-vet-delivery.rc"
+    },
+    {
+      "name": "canonical",
+      "command": "PATH=locked-venv/bin:PATH bash scripts/run-build-tests.sh",
+      "rc": 0,
+      "log": "raw/r8-canonical-delivery.log",
+      "rc_file": "raw/r8-canonical-delivery.rc"
+    },
+    {
+      "name": "race",
+      "command": "go test -race ./internal/store ./internal/m8 ./internal/identity -run '^TestR8' -count=1 -timeout=5m",
+      "rc": 0,
+      "log": "raw/r8-race-delivery.log",
+      "rc_file": "raw/r8-race-delivery.rc"
+    },
+    {
+      "name": "withdrawals",
+      "command": "python3 tests/r32-spec-review/withdrawals.py --anchor 62d3bdb98b6391519dc011663061ff5dd069cec7",
+      "rc": 0,
+      "log": "raw/r8-withdrawals-delivery.log",
+      "rc_file": "raw/r8-withdrawals-delivery.rc"
+    },
+    {
+      "name": "compat_r9",
+      "command": "python3 tests/r32-task-flow/compatibility.py",
+      "rc": 0,
+      "log": "raw/r8-compatibility-delivery.log",
+      "rc_file": "raw/r8-compatibility-delivery.rc"
+    },
+    {
+      "name": "compat_r8",
+      "command": "python3 tests/r32-spec-review/compatibility.py",
+      "rc": 0,
+      "log": "raw/r8-spec-compatibility-delivery.log",
+      "rc_file": "raw/r8-spec-compatibility-delivery.rc"
+    },
+    {
+      "name": "helper",
+      "command": "locked venv python -m unittest discover -s tools/sessionhelper/tests",
+      "rc": 0,
+      "log": "raw/r8-helper-delivery.log",
+      "rc_file": "raw/r8-helper-delivery.rc"
+    }
+  ],
+  "browsers": "browsers/GATES.json"
+}

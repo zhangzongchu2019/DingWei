@@ -1,0 +1,11 @@
+2026/10/19 04:35:16 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/19 04:35:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/19 04:35:16 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/19 04:35:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- FAIL: TestR8HTTPReadErrorsAndCancellationBetweenSelectionAndProjection (0.22s)
+    --- FAIL: TestR8HTTPReadErrorsAndCancellationBetweenSelectionAndProjection/error (0.10s)
+        console_spec_agent_review_test.go:226: R8_READ_RACE_LEAKED_REQUEST error {"next_cursor":"","requests":[{"request_id":"specreview_race","spec_id":"spec-5ebebef778e4aeb98a38e91f","revision":1,"kind":"criteria","actor":"zzc","agent_id":"ag_e4d2c4a1fab6a2037303a86014ab30ae","content_sha256":"29df96fcefd5347d3b9d1cb33b2cca60ea17f3825b65c712fa893eb3bbf41892","status":"pending","deadline":1792409896,"snapshot":null}]}
+            
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.222s
+FAIL

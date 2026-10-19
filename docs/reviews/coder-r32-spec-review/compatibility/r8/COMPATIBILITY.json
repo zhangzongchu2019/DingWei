@@ -1,0 +1,36 @@
+{
+  "ledger_0056_failure_rc": 1,
+  "rollback_no_partial_objects": true,
+  "old_task_preserved": true,
+  "new_read": {
+    "dod_preserved": true,
+    "principal_rows": 1,
+    "r32_ledger_rows": 1,
+    "task_content_preserved": true,
+    "tasks": 1
+  },
+  "r31_1_old_read_after_0056": {
+    "dod_preserved": true,
+    "principal_rows": 1,
+    "r32_ledger_rows": 1,
+    "task_content_preserved": true,
+    "tasks": 1
+  },
+  "old_helper_anchor": "9c79f269b2ff8f4c3fef1e38bc2c59b14b07f04b",
+  "old_helper": {
+    "version": "0.2.3.5",
+    "delivery_ack_v1": true,
+    "spec_review_v1": false,
+    "new_tools": []
+  },
+  "new_helper": {
+    "version": "0.2.3.6",
+    "delivery_ack_v1": true,
+    "spec_review_v1": true,
+    "new_tools": [
+      "dw_spec_review_reply",
+      "dw_spec_review_requests"
+    ]
+  },
+  "scope": "local isolated old/new libraries, actual r31.1 Hub read in base producer, no live helper upgrade or deployment"
+}

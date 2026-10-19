@@ -1,0 +1,42 @@
+[
+  {
+    "suite": "console-agent-mgmt-hosted-regression.js",
+    "rc": 0
+  },
+  {
+    "suite": "console-browser-regression.js",
+    "rc": 0
+  },
+  {
+    "suite": "console-agent-mgmt-enroll-regression.js",
+    "rc": 0
+  },
+  {
+    "suite": "console-agent-groups-vega-regression.js",
+    "rc": 0
+  },
+  {
+    "suite": "console-specs-browser-regression.js",
+    "rc": 0
+  },
+  {
+    "suite": "console-spec-workflow-regression.js",
+    "rc": 0
+  },
+  {
+    "suite": "console-spec-direct-regression.js",
+    "rc": 0
+  },
+  {
+    "suite": "console-specs-theme-regression.js",
+    "rc": 0
+  },
+  {
+    "suite": "r32-task-flow-browser-regression.js",
+    "rc": 0
+  },
+  {
+    "suite": "r32-spec-review-browser-regression.js",
+    "rc": 0
+  }
+]
