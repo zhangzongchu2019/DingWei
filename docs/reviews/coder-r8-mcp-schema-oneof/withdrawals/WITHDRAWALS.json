@@ -1,0 +1,145 @@
+{
+  "anchor": "0aca17b2a478ca2ccfce97f5a4c286053f9230e1",
+  "source_file": "tools/sessionhelper/sessionhelper/mcp_shim.py",
+  "source_sha256": "7105a6b6760781220654985891cfb29c5969b3ee7ec3536e2d8659851ff6dfe9",
+  "command": [
+    "/tmp/r8-oneof-schema-offline-venv/bin/python",
+    "-B",
+    "tests/r8-mcp-schema-oneof/check_schema.py"
+  ],
+  "retained_worktree": "/data/ai-dev-data/r8-oneof-withdrawal-0aca17b2",
+  "records": [
+    {
+      "name": "remove_oneof",
+      "replace_once": {
+        "old": " \"oneOf\":[\n     {\"properties\":{\"kind\":{\"const\":\"review\"}},\"required\":[\"issues\"],\"not\":{\"required\":[\"criteria\"]}},\n     {\"properties\":{\"kind\":{\"const\":\"criteria\"}},\"required\":[\"criteria\"],\"not\":{\"required\":[\"issues\"]}},\n ],\n",
+        "new": ""
+      },
+      "required_red_marker": "R8_SCHEMA_REVIEW_MISSING_ISSUES_ACCEPTANCE_MISMATCH",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "sha256": "7e7557e427580e7a658c2d917a7e67185303a235be557a1edc9881056b257aa9"
+        },
+        "withdrawn": {
+          "rc": 1,
+          "sha256": "4b0a0bf33ec43e8420457c82b6f47dcc446c309ea1a5f0e43af4167523875b2b"
+        },
+        "restored": {
+          "rc": 0,
+          "sha256": "7e7557e427580e7a658c2d917a7e67185303a235be557a1edc9881056b257aa9"
+        }
+      }
+    },
+    {
+      "name": "remove_review_required",
+      "replace_once": {
+        "old": "{\"properties\":{\"kind\":{\"const\":\"review\"}},\"required\":[\"issues\"],\"not\":{\"required\":[\"criteria\"]}}",
+        "new": "{\"properties\":{\"kind\":{\"const\":\"review\"}},\"not\":{\"required\":[\"criteria\"]}}"
+      },
+      "required_red_marker": "R8_SCHEMA_REVIEW_MISSING_ISSUES_ACCEPTANCE_MISMATCH",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "sha256": "7e7557e427580e7a658c2d917a7e67185303a235be557a1edc9881056b257aa9"
+        },
+        "withdrawn": {
+          "rc": 1,
+          "sha256": "4b0a0bf33ec43e8420457c82b6f47dcc446c309ea1a5f0e43af4167523875b2b"
+        },
+        "restored": {
+          "rc": 0,
+          "sha256": "7e7557e427580e7a658c2d917a7e67185303a235be557a1edc9881056b257aa9"
+        }
+      }
+    },
+    {
+      "name": "remove_criteria_required",
+      "replace_once": {
+        "old": "{\"properties\":{\"kind\":{\"const\":\"criteria\"}},\"required\":[\"criteria\"],\"not\":{\"required\":[\"issues\"]}}",
+        "new": "{\"properties\":{\"kind\":{\"const\":\"criteria\"}},\"not\":{\"required\":[\"issues\"]}}"
+      },
+      "required_red_marker": "R8_SCHEMA_CRITERIA_MISSING_CRITERIA_ACCEPTANCE_MISMATCH",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "sha256": "7e7557e427580e7a658c2d917a7e67185303a235be557a1edc9881056b257aa9"
+        },
+        "withdrawn": {
+          "rc": 1,
+          "sha256": "0586cdd7ec5efba9fd495d020e998b17ed598e38e55e34908d22a4f70ec5cb64"
+        },
+        "restored": {
+          "rc": 0,
+          "sha256": "7e7557e427580e7a658c2d917a7e67185303a235be557a1edc9881056b257aa9"
+        }
+      }
+    },
+    {
+      "name": "remove_review_mixed_guard",
+      "replace_once": {
+        "old": "{\"properties\":{\"kind\":{\"const\":\"review\"}},\"required\":[\"issues\"],\"not\":{\"required\":[\"criteria\"]}}",
+        "new": "{\"properties\":{\"kind\":{\"const\":\"review\"}},\"required\":[\"issues\"]}"
+      },
+      "required_red_marker": "R8_SCHEMA_REVIEW_MIXED_PAYLOAD_ACCEPTANCE_MISMATCH",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "sha256": "7e7557e427580e7a658c2d917a7e67185303a235be557a1edc9881056b257aa9"
+        },
+        "withdrawn": {
+          "rc": 1,
+          "sha256": "21baa6644f20842364e7db00b09dd919a51a15e78cb1315c620f7d79f511ed4b"
+        },
+        "restored": {
+          "rc": 0,
+          "sha256": "7e7557e427580e7a658c2d917a7e67185303a235be557a1edc9881056b257aa9"
+        }
+      }
+    },
+    {
+      "name": "remove_criteria_mixed_guard",
+      "replace_once": {
+        "old": "{\"properties\":{\"kind\":{\"const\":\"criteria\"}},\"required\":[\"criteria\"],\"not\":{\"required\":[\"issues\"]}}",
+        "new": "{\"properties\":{\"kind\":{\"const\":\"criteria\"}},\"required\":[\"criteria\"]}"
+      },
+      "required_red_marker": "R8_SCHEMA_CRITERIA_MIXED_PAYLOAD_ACCEPTANCE_MISMATCH",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "sha256": "7e7557e427580e7a658c2d917a7e67185303a235be557a1edc9881056b257aa9"
+        },
+        "withdrawn": {
+          "rc": 1,
+          "sha256": "4c4504af99d8af7c435bcc53fcd6e8924f2b1e64cc8203069243c84d2fe82c16"
+        },
+        "restored": {
+          "rc": 0,
+          "sha256": "7e7557e427580e7a658c2d917a7e67185303a235be557a1edc9881056b257aa9"
+        }
+      }
+    },
+    {
+      "name": "remove_kind_binding",
+      "replace_once": {
+        "old": " \"oneOf\":[\n     {\"properties\":{\"kind\":{\"const\":\"review\"}},\"required\":[\"issues\"],\"not\":{\"required\":[\"criteria\"]}},\n     {\"properties\":{\"kind\":{\"const\":\"criteria\"}},\"required\":[\"criteria\"],\"not\":{\"required\":[\"issues\"]}},\n ],\n",
+        "new": " \"oneOf\":[\n     {\"required\":[\"issues\"],\"not\":{\"required\":[\"criteria\"]}},\n     {\"required\":[\"criteria\"],\"not\":{\"required\":[\"issues\"]}},\n ],\n"
+      },
+      "required_red_marker": "R8_SCHEMA_REVIEW_WRONG_PAYLOAD_ACCEPTANCE_MISMATCH",
+      "phases": {
+        "positive": {
+          "rc": 0,
+          "sha256": "7e7557e427580e7a658c2d917a7e67185303a235be557a1edc9881056b257aa9"
+        },
+        "withdrawn": {
+          "rc": 1,
+          "sha256": "e773d59fc26249a8001e094ebe141ccd11a8ae613dd15aef604a51ffdd580fb7"
+        },
+        "restored": {
+          "rc": 0,
+          "sha256": "7e7557e427580e7a658c2d917a7e67185303a235be557a1edc9881056b257aa9"
+        }
+      }
+    }
+  ]
+}

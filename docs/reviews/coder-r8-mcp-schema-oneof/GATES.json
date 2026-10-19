@@ -1,0 +1,17 @@
+{
+  "source_commit": "0aca17b2a478ca2ccfce97f5a4c286053f9230e1",
+  "rc_by_stem": {
+    "r8-oneof-go": 0,
+    "r8-oneof-helper-isolated": 0,
+    "r8-oneof-canonical": 0,
+    "r8-oneof-vet": 0,
+    "r8-oneof-targeted": 0,
+    "r8-oneof-schema": 0,
+    "r8-oneof-offline-install": 0,
+    "r8-oneof-offline-pip-check": 0,
+    "r8-oneof-offline-schema": 0,
+    "r8-oneof-withdrawals-final": 0
+  },
+  "input_reuse_proof": "GATE-INPUT-PROOF.json",
+  "scope": "author evidence; no independent PASS inferred"
+}

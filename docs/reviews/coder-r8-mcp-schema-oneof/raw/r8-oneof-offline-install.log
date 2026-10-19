@@ -1,0 +1,9 @@
+Looking in links: /tmp/r8-oneof-validator-wheels
+Processing /tmp/r8-oneof-validator-wheels/attrs-26.1.0-py3-none-any.whl (from -r tests/r8-mcp-schema-oneof/requirements-schema.lock (line 3))
+Processing /tmp/r8-oneof-validator-wheels/jsonschema-4.26.0-py3-none-any.whl (from -r tests/r8-mcp-schema-oneof/requirements-schema.lock (line 4))
+Processing /tmp/r8-oneof-validator-wheels/jsonschema_specifications-2025.9.1-py3-none-any.whl (from -r tests/r8-mcp-schema-oneof/requirements-schema.lock (line 5))
+Processing /tmp/r8-oneof-validator-wheels/referencing-0.37.0-py3-none-any.whl (from -r tests/r8-mcp-schema-oneof/requirements-schema.lock (line 6))
+Processing /tmp/r8-oneof-validator-wheels/rpds_py-2026.9.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r tests/r8-mcp-schema-oneof/requirements-schema.lock (line 7))
+Processing /tmp/r8-oneof-validator-wheels/typing_extensions-4.16.0-py3-none-any.whl (from -r tests/r8-mcp-schema-oneof/requirements-schema.lock (line 8))
+Installing collected packages: typing_extensions, rpds-py, attrs, referencing, jsonschema-specifications, jsonschema
+Successfully installed attrs-26.1.0 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 referencing-0.37.0 rpds-py-2026.9.1 typing_extensions-4.16.0

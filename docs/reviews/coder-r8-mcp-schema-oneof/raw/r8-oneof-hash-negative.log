@@ -1,0 +1,7 @@
+Looking in links: /tmp/r8-oneof-validator-wheels
+Processing /tmp/r8-oneof-validator-wheels/attrs-26.1.0-py3-none-any.whl (from -r /tmp/r8-oneof-tampered.lock (line 3))
+ERROR: THESE PACKAGES DO NOT MATCH THE HASHES FROM THE REQUIREMENTS FILE. If you have updated the package versions, please update the hashes. Otherwise, examine the package contents carefully; someone may have tampered with them.
+    attrs==26.1.0 from file:///tmp/r8-oneof-validator-wheels/attrs-26.1.0-py3-none-any.whl (from -r /tmp/r8-oneof-tampered.lock (line 3)):
+        Expected sha256 0647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309
+             Got        c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309
+

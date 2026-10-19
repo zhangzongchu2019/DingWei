@@ -1,0 +1,49 @@
+{
+  "utc": "2026-10-19T12:14:11Z",
+  "host": "VM-4-12-ubuntu",
+  "uid": 1001,
+  "gid": 1001,
+  "go": "go version go1.22.2 linux/amd64",
+  "python": "Python 3.12.3",
+  "tool_bootstrap_venv": "/tmp/r8-oneof-schema-validation-venv",
+  "bootstrap": "python3 -m venv; pip install jsonschema==4.26.0; separate online test-tool preparation only",
+  "wheelhouse": "/tmp/r8-oneof-validator-wheels",
+  "wheelhouse_preparation": "pip download --only-binary=:all: --dest local-wheelhouse jsonschema==4.26.0; complete closure hashed in source lock",
+  "offline_venv": "/tmp/r8-oneof-schema-offline-venv",
+  "offline_install": "python3 -m venv; pip install --no-index --find-links local-wheelhouse --require-hashes -r tests/r8-mcp-schema-oneof/requirements.txt",
+  "canonical_venv": "/tmp/coder-0232-locked-venv",
+  "canonical_source": "existing R8 runtime-lock venv reused; no packages installed or modified for this follow-up",
+  "wheels": [
+    {
+      "file": "attrs-26.1.0-py3-none-any.whl",
+      "size": 67548,
+      "sha256": "c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309"
+    },
+    {
+      "file": "jsonschema-4.26.0-py3-none-any.whl",
+      "size": 90630,
+      "sha256": "d489f15263b8d200f8387e64b4c3a75f06629559fb73deb8fdfb525f2dab50ce"
+    },
+    {
+      "file": "jsonschema_specifications-2025.9.1-py3-none-any.whl",
+      "size": 18437,
+      "sha256": "98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe"
+    },
+    {
+      "file": "referencing-0.37.0-py3-none-any.whl",
+      "size": 26766,
+      "sha256": "381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231"
+    },
+    {
+      "file": "rpds_py-2026.9.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "size": 371261,
+      "sha256": "addeda51556dac7c1a2f14cda62db8b621cd12afba3091d03a96c72932387eab"
+    },
+    {
+      "file": "typing_extensions-4.16.0-py3-none-any.whl",
+      "size": 45571,
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+    }
+  ],
+  "distribution": "local tools only; no wheel/venv/binary uploaded or committed"
+}

@@ -1,0 +1,269 @@
+{
+  "executed_source": "19653759c50325b2143b0210c2d20348a990c3a8",
+  "final_source": "0aca17b2a478ca2ccfce97f5a4c286053f9230e1",
+  "rc": 0,
+  "tested": 52,
+  "no_tests": 13,
+  "packages": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/dingwei-datad",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/fcs",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/mcs-demo",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/mcsd",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/identity/identitytest",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/model",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/specs/tools/handle-escape",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/specs/tools/legacy-name",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/specs/tools/pending-debt",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/tests/r32-task-flow/compat-probe",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/view-service",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/view-service/console-hosted-page-fixture",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/view-service/p1seed",
+      "status": "no_test_files"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/file-service",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/nodeagent",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/agentmetrics",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/bridge",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/bus",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/clock",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/config",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/consolemux",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/coordination",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/evidence",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/fanout",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/fcs",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/feishu",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/filepolicy",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/fileservice",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/identity",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/identity/httpapi",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/jcs",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/llm",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m5",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/dea",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/demo",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/dispatch",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/pool",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/rotation",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/route",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/nodeagent",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/nodegate",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/portal",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/redact",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/reminder",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/repo",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/router",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/schedule",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/scheduler",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/seatcapacity",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/secretbox",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store/migrate",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store/pgtest",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/version",
+      "status": "passed"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/worker",
+      "status": "passed"
+    }
+  ]
+}

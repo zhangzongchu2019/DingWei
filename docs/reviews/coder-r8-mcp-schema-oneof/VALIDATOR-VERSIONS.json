@@ -1,0 +1,13 @@
+{
+  "test_only_packages": [
+    "attrs==26.1.0",
+    "jsonschema==4.26.0",
+    "jsonschema-specifications==2025.9.1",
+    "referencing==0.37.0",
+    "rpds-py==2026.9.1",
+    "typing_extensions==4.16.0"
+  ],
+  "python": "Python 3.12.3",
+  "runtime_dependency_change": false,
+  "offline_install_log": "raw/r8-oneof-offline-install.log"
+}

@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r8-oneof-withdrawal-0aca17b2/tests/r8-mcp-schema-oneof/check_schema.py", line 46, in <module>
+    assert actual == expected, 'R8_SCHEMA_' + name.upper() + '_ACCEPTANCE_MISMATCH'
+           ^^^^^^^^^^^^^^^^^^
+AssertionError: R8_SCHEMA_REVIEW_WRONG_PAYLOAD_ACCEPTANCE_MISMATCH

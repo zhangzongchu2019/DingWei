@@ -1,0 +1,462 @@
+............................./usr/lib/python3.12/pty.py:95: DeprecationWarning: This process (pid=1082568) is multi-threaded, use of forkpty() may lead to deadlocks in the child.
+  pid, fd = os.forkpty()
+...........................................................[ipc_listener] listening on /tmp/tmpaonqyrh4/ipc.sock
+.....[ipc_send] to=fixture-sender#fixture-owner bytes=16
+...........................[ipc_listener] listening on /tmp/dwp-ge2g0ept/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-f982da24e8f2e8f5
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-ge2g0ept/desktop-pilot-f982da24e8f2e8f5-report.json
+..[ipc_listener] listening on /tmp/dwp-7no6v0w_/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-fd0806aaa86c28ad
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-7no6v0w_/desktop-pilot-fd0806aaa86c28ad-report.json
+Fixture stays absent until dw_wait_message is pending; no Hub confirmation is simulated.
+.[ipc_listener] listening on /tmp/dwp-zsxq9ml3/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-005289d175cf7e45
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-zsxq9ml3/desktop-pilot-005289d175cf7e45-report.json
+.[ipc_listener] listening on /tmp/dwp-g9o5xx63/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-324874caa9394ded
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-g9o5xx63/desktop-pilot-324874caa9394ded-report.json
+Fixture stays absent until dw_wait_message is pending; no Hub confirmation is simulated.
+..........[ipc_listener] listening on /tmp/dww-woq5lnrd/mcp.sock
+.[ipc_listener] listening on /tmp/dww-4ppf8n3f/mcp.sock
+.[ipc_listener] listening on /tmp/dww-0izybera/mcp.sock
+.[ipc_listener] listening on /tmp/dww-8kh2yb8c/mcp.sock
+.[ipc_listener] listening on /tmp/dww-192eakxh/mcp.sock
+.[ipc_listener] listening on /tmp/dww-ybpmgcr0/mcp.sock
+.[ipc_listener] listening on /tmp/dww-_sgqzcj0/mcp.sock
+.[ipc_listener] listening on /tmp/dww-dzwi2cfg/mcp.sock
+.[ipc_listener] listening on /tmp/dww-gf03m9xm/mcp.sock
+[ipc_listener] listening on /tmp/dww-gf03m9xm/mcp.sock
+.[ipc_listener] listening on /tmp/dww-b3on65if/mcp.sock
+.[ipc_listener] listening on /tmp/dww-mlbszvd_/mcp.sock
+.[ipc_listener] listening on /tmp/dww-n06oynsp/mcp.sock
+.[ipc_listener] listening on /tmp/dww-21b3_b13/mcp.sock
+.......[driver-adapter][FAILED] driver start: initialize failed: {'code': -32001, 'message': 'app-server cannot start: config corrupt (FAKE_START_BAD)'}
+..[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-b57363012b154c75b7c64758c5caf3e2 -> failed (turn/start failed: {'code': -32000, 'message': '401 Unauthor)
+[delivery] failed id=dw-view-b57363012b154c75b7c64758c5caf3e2 source=protocol (turn/start failed: {'code': -32000, 'message': '401 Unauthor)
+.[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-d5629b809d82408e87f701c4ec0d061a -> processing (turn=turn_fake status=inProgress)
+[delivery] failed id=dw-view-d5629b809d82408e87f701c4ec0d061a source=protocol (turn failed: turn failed: FAKE_TURN_BOOM)
+......../data/ai-dev-data/r8-mcp-schema-oneof/tools/sessionhelper/tests/test_durable_agent_delivery_injects_cli.py:131: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/sh-durable-cli-c_mamj8w/cli.log' mode='r' encoding='UTF-8'>
+  self._wait(lambda: os.path.exists(self.cli_log) and body in open(self.cli_log).read(), 20,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/r8-mcp-schema-oneof/tools/sessionhelper/tests/test_durable_agent_delivery_injects_cli.py", line 63, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+.............................................................[sessionHelper] ws closed: received 4401 (private use) credential_revoked; no close frame sent; reconnect in 1.0s
+.[sessionHelper] ws closed: received 4401 (private use) credential_suspended; no close frame sent; reconnect in 1.0s
+.[sessionHelper] error: server rejected WebSocket connection: HTTP 401; reconnect in 1.0s
+.[sessionHelper] ws closed: received 1006 (abnormal closure [internal]); no close frame sent; reconnect in 1.0s
+[sessionHelper] ws closed: received 4401 (private use) something_else; no close frame sent; reconnect in 1.0s
+[sessionHelper] ws closed: received 4400 (private use) credential_revoked; no close frame sent; reconnect in 1.0s
+.[sessionHelper] error: server rejected WebSocket connection: HTTP 502; reconnect in 1.0s
+...[sessionHelper] stopped: x
+[sessionHelper] stopped: x
+[sessionHelper] stopped: x
+[sessionHelper] stopped: x
+.../usr/lib/python3.12/asyncio/base_events.py:726: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+...[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001000
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001536
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002076
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002644
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003645
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004187
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005188
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005740
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005741
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005742
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005743
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005744
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005745
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005746
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005747
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005748
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005749
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005750
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005751
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005752
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005753
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005754
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005755
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005756
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005757
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005758
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005759
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005760
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005761
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:001000
+[driver-adapter] bridge resubscribe skipped=5971 subscription=2
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4999 subscription=3
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=5000 subscription=4
+[driver-adapter] bridge resubscribe skipped=5000 subscription=5
+[driver-adapter] bridge resubscribe skipped=5000 subscription=6
+[driver-adapter] bridge resubscribe skipped=5000 subscription=7
+[driver-adapter] bridge resubscribe skipped=5000 subscription=8
+[driver-adapter] bridge resubscribe skipped=5000 subscription=9
+...[driver-adapter] bridge resubscribe skipped=5000 subscription=10
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4000 subscription=2
+[driver-adapter] bridge resubscribe skipped=4000 subscription=3
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4003 subscription=4
+[driver-adapter] bridge resubscribe skipped=4003 subscription=5
+[driver-adapter] bridge resubscribe skipped=4003 subscription=6
+[driver-adapter] bridge resubscribe skipped=4003 subscription=7
+[driver-adapter] bridge resubscribe skipped=4003 subscription=8
+[driver-adapter] bridge resubscribe skipped=4003 subscription=9
+.[driver-adapter] bridge resubscribe skipped=4003 subscription=10
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=3 subscription=2
+[driver-adapter] bridge resubscribe skipped=3 subscription=3
+[driver-adapter] bridge resubscribe skipped=3 subscription=4
+[driver-adapter] bridge resubscribe skipped=3 subscription=5
+[driver-adapter] bridge resubscribe skipped=3 subscription=6
+..[driver-adapter] bridge resubscribe skipped=3 subscription=7
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=3 subscription=2
+[driver-adapter] bridge resubscribe skipped=3 subscription=3
+[driver-adapter] bridge resubscribe skipped=3 subscription=4
+[driver-adapter] bridge resubscribe skipped=3 subscription=5
+[driver-adapter] bridge resubscribe skipped=3 subscription=6
+[driver-adapter] bridge resubscribe skipped=3 subscription=7
+.[driver-adapter] bridge resubscribe skipped=3 subscription=8
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4000 subscription=2
+[driver-adapter] bridge resubscribe skipped=4000 subscription=3
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4005 subscription=4
+[driver-adapter] bridge resubscribe skipped=4005 subscription=5
+[driver-adapter] bridge resubscribe skipped=4005 subscription=6
+[driver-adapter] bridge resubscribe skipped=4005 subscription=7
+[driver-adapter] bridge resubscribe skipped=4005 subscription=8
+[driver-adapter] bridge resubscribe skipped=4005 subscription=9
+.[driver-adapter] bridge resubscribe skipped=4005 subscription=10
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=2 subscription=2
+[driver-adapter] driver reconnected attempt=2
+...[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=4 subscription=2
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=8 subscription=3
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=12 subscription=4
+[driver-adapter] bridge resubscribe skipped=12 subscription=5
+[driver-adapter] bridge resubscribe skipped=12 subscription=6
+[driver-adapter] bridge resubscribe skipped=12 subscription=7
+[driver-adapter] bridge resubscribe skipped=12 subscription=8
+[driver-adapter] bridge resubscribe skipped=12 subscription=9
+[driver-adapter] bridge resubscribe skipped=12 subscription=10
+[driver-adapter] bridge resubscribe skipped=12 subscription=11
+...........[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] bridge resubscribe skipped=5 subscription=2
+[driver-adapter] bridge resubscribe skipped=5 subscription=3
+[driver-adapter] bridge resubscribe skipped=5 subscription=4
+[driver-adapter] bridge resubscribe skipped=5 subscription=5
+[driver-adapter] bridge resubscribe skipped=5 subscription=6
+[driver-adapter] bridge resubscribe skipped=5 subscription=7
+[driver-adapter] bridge resubscribe skipped=5 subscription=8
+[driver-adapter] bridge resubscribe skipped=5 subscription=9
+[driver-adapter] bridge resubscribe skipped=5 subscription=10
+..[driver-adapter] bridge resubscribe skipped=5 subscription=11
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] driver reconnected attempt=1
+.[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] driver reconnected attempt=1
+...E.............[agent_skill] staged; no model turn
+[agent_skill] staged; no model turn
+.[agent_skill] staged; no model turn
+...[agent_skill] staged; no model turn
+[agent_skill] staged; no model turn
+..[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[agent_skill] staged; no model turn
+.[agent_skill] staged; no model turn
+.........................................E[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1)
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1)
+.[driver-adapter] started, driver=codex
+.[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-business-1 -> failed (rejected before turn)
+[delivery] failed id=dw-business-1 source=fixture (rejected before turn).
+[driver-adapter] started, driver=codex
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1)
+.[driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-business-1 -> accepted (isReplay ack, turn=7fa1148370774070a634b17835cfc4b5)
+[delivery] done id=dw-business-1 source=fixture (turn=7fa1148370774070a634b17835cfc4b5)
+[driver-adapter] deliver id=dw-business-2 -> accepted (isReplay ack, turn=633af7d8709b4b1ebc6495182ccaa8e9)
+[delivery] done id=dw-business-2 source=fixture (turn=633af7d8709b4b1ebc6495182ccaa8e9)
+.[driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1 status=inProgress)
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-business-2 -> processing (turn=turn-2 status=inProgress)
+[delivery] done id=dw-business-2 source=fixture (turn=turn-2)
+.[driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter][FAILED] id=dw-business-1 deliver raised: fixture deliver boom
+[driver-adapter] deliver id=dw-business-2 -> processing (turn=turn-2)
+[delivery] done id=dw-business-2 source=fixture (turn=turn-2)
+.[driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-business-1 -> failed (rejected before turn)
+[delivery] failed id=dw-business-1 source=fixture (rejected before turn)
+[driver-adapter] deliver id=dw-business-2 -> processing (turn=turn-2)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[delivery] done id=dw-business-2 source=fixture (turn=turn-2)
+.[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[agent_skill] staged; no model turn
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+.[driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[driver-adapter] deliver id=dw-block -> processing (turn=turn-1)
+[delivery] done id=dw-block source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-after -> processing (turn=turn-2)
+[delivery] done id=dw-after source=fixture (turn=turn-2)
+.[agent_skill] staged; no model turn
+.[driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1)
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-business-2 -> processing (turn=turn-2)
+[delivery] done id=dw-business-2 source=fixture (turn=turn-2)
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[recv] from=workpulse#FB-2642 to=guide#FB-2642 body_len=5
+[agent_skill] staged; no model turn
+[agent_skill] staged + auto-acked
+[recv] from=workpulse#FB-2642 to=guide#FB-2642 body_len=5
+[agent_skill] staged; no model turn
+[agent_skill] staged + auto-acked
+[recv] from=workpulse#FB-2642 to=guide#FB-2642 body_len=5
+[agent_skill] staged; no model turn
+[agent_skill] staged + auto-acked
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+.[recv] from=workpulse#FB-2642 to=guide#FB-2642 body_len=5
+[agent_skill] stage failed: disk full
+.[agent_skill] staged; no model turn
+........................................[ipc_listener] listening on /tmp/ipc-len-1cya5duw/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+.........................................MCP_TRANSPORT_READINGS errors=18 survived=18 recovery_same_process=18
+...connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/r8-mcp-schema-oneof/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/r8-mcp-schema-oneof/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+./usr/lib/python3.12/asyncio/base_events.py:726: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.................connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/r8-mcp-schema-oneof/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+..........................................[helper-update] source_denied
+................[helper-update] confirmation_rejected
+[helper-update] confirmation_rejected
+......[roster] delivery list written; skipped cli injection delivery_id=dlv_roster
+[onboarding] skipped delivery cli injection delivery_id=dlv_onboarding
+....[agent_skill] staged; no model turn
+..[busy_buffer] queued size=1 from=alice#FB-2642#UnifiedRobot idle=True
+[busy_buffer] queued size=2 from=alice#FB-2642#UnifiedRobot idle=True
+[busy_buffer] queued size=3 from=alice#FB-2642#UnifiedRobot idle=False
+[busy_buffer] queued size=4 from=alice#FB-2642#UnifiedRobot idle=False
+[busy_buffer] queued size=5 from=alice#FB-2642#UnifiedRobot idle=False
+.[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] drop oldest from=peer#FB-2642
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+.[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=1 from=peer#FB-2642 idle=False
+[recv] from=peer#FB-2642 to=home#FB-2642 body_len=3
+[busy_buffer] queued size=2 from=peer#FB-2642 idle=False
+[busy_buffer] draining size=1 from=peer#FB-2642
+[busy_buffer] draining size=0 from=peer#FB-2642
+...../usr/lib/python3.12/pty.py:95: DeprecationWarning: This process (pid=1082568) is multi-threaded, use of forkpty() may lead to deadlocks in the child.
+  pid, fd = os.forkpty()
+[cli] exited code=1 tail=''
+[cli] start failed (attempt 1): CLI exited during startup: code=1 tail=''
+[cli] delivery failed reason=cli_unavailable retryable=true detail=（CLI未就绪：CLI exited during startup: code=1 tail=''；sessionHelper仍在线，稍后可重试）
+..........[delivery_cancel] delivery_id=dlv_1 result=cancelled
+[delivery_cancel] delivery_id=dlv_2 result=not_cancelable
+.........[delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions session=home targets=['home', 'zzc-home-2642'] to=['tester#FB-2642']
+[delivery][legacy_inbox] imported 2/2 pending deliveries from /tmp/tmp6um64y64/sessionhelper_inbox.db into /tmp/tmp6um64y64/sessionhelper_inbox-home.db session=home
+....................[mirror_control] enabled=True to=oc_group#FB-2642#UnifiedRobot
+.[mirror_control] enabled=True to=ou_u1#FB-2642#is3-Connector
+[mirror_control] enabled=False to=
+.[mirror] to=ou_alice#FB-2642#UnifiedRobot role=user
+[mirror] to=ou_alice#FB-2642#UnifiedRobot role=claude
+[mirror] to=ou_alice#FB-2642#UnifiedRobot role=claude
+.[agent_skill] ack sent
+........[producer] stdin -> group oc_group
+[producer] sent target_group=oc_group
+[producer] stdin EOF; exiting
+.[producer] stdin -> group oc_group
+[producer] sent target_group=oc_group
+[producer] sent target_group=oc_group
+[producer] stdin EOF; exiting
+..[provision] action=install_skill target=x ok=False message=url host denied: evil.example
+..............[recv] from=workpulse#FB-2642 to=home#FB-2642 body_len=2
+[agent_skill] already installed; ack sent
+...........................模型授权在所选工具自己的界面中完成；DW 不接收模型账号或密钥。
+...............两种接入方式都需要 sessionHelper。请选择：
+1. Codex 桌面应用 + DW-MCP
+2. CLI 托管（通过 DingWei Web 页面交互）
+请先在 Codex 桌面应用完成登录。自动提醒需真机验收；MCP 配置成功不代表自动唤醒已就绪。
+本次桌面应用： Codex.app 版本： fixture1 build： 1
+桌面持续监听：在原聊天要求 AI 调用 dw_wait_message；收到消息后用 dw_reply_message 回复再等待。取消或退出后需重新发起，不能自动唤醒空闲会话。
+配置已保存。启动时复制 #pair 指令并私发给当前 Hub 的官方飞书机器人，完成开户与设备配对。
+启动： /tmp/coder-0232-locked-venv/bin/python -m sessionhelper --run-profile /tmp/tmpdz2g745a/setup-profile.json
+请按原生授权提示操作；CLI 模型授权码与 DW 配对码不同。
+过期/冲突后：先退出配对等待，再显式取消未认领申请： /tmp/coder-0232-locked-venv/bin/python -m sessionhelper --cancel-pairing /tmp/tmpdz2g745a/setup-profile.json
+sessionHelper 后台进程已启动，PID： 1234 ；当前为 STARTING，连接状态请在 Web 或 DW-MCP 核实。
+.................../usr/lib/python3.12/asyncio/base_events.py:726: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+...[ipc_listener] listening on /tmp/spec-o3-g9w5f_qv/ipc.sock
+.[ipc_listener] listening on /tmp/spec-o3-tqm1mbun/ipc.sock
+.[ipc_listener] listening on /tmp/spec-o3-dfdugipq/ipc.sock
+.........[ipc_listener] listening on /tmp/r8ipc-jolsbpqk/ipc.sock
+......SQLITE_FD_READINGS {"baseline_db_fd": 0, "final_db_fd": 0, "gc_enabled": false, "long_run_db_fds": {"1": 0, "100": 0, "1000": 0, "10000": 0}, "long_run_iterations": 10000, "nofile": 128, "total_fd_baseline": 4, "total_fd_final": 4, "workloads": {"audit": {"calls": 200, "peak_db_fd": 0}, "claude": {"calls": 200, "peak_db_fd": 0}, "cli_parts": {"calls": 200, "peak_db_fd": 0}, "cli_recent": {"calls": 200, "peak_db_fd": 0}, "codex": {"calls": 200, "peak_db_fd": 0}, "desktop": {"calls": 200, "peak_db_fd": 0}, "inbox": {"calls": 200, "peak_db_fd": 0}, "legacy": {"calls": 200, "peak_db_fd": 0}, "opencode": {"calls": 200, "peak_db_fd": 0}, "stop_hook": {"calls": 200, "peak_db_fd": 0}}}
+..[delivery][STALLED] id=env-c-idle idle_elapsed=91s no progress event; turn appears hung
+.[delivery][STALLED] id=env-c-tool idle_elapsed=91s no progress event; turn appears hung
+.[delivery][ABSOLUTE_TIMEOUT] id=env-c total_elapsed=901s; turn exceeded hard limit
+....[delivery][STALLED] envelope=env-x idle stalled: no progress event for 91s
+[delivery][ABSOLUTE_TIMEOUT] envelope=env-x absolute turn timeout: total runtime 901s exceeded 900s limit
+.[delivery][STALLED] envelope=env-x idle stalled: no progress event for 91s
+...[delivery][STALLED] envelope=env-o no progress event for 91s — model may be misconfigured or session stalled. Protocol receipt guarantees admission, not processing.
+[delivery][ABSOLUTE_TIMEOUT] envelope=env-o absolute turn timeout: total runtime 901s exceeded 900s limit
+.[delivery][STALLED] envelope=env-o no progress event for 91s — model may be misconfigured or session stalled. Protocol receipt guarantees admission, not processing.
+.............[driver-adapter] started, driver=codex
+.[driver-adapter] deliver id=dw-view-d1c9f647e9e149ff982d17fbf402d6c4 -> processing (turn=turn-1)
+[driver-adapter] started, driver=codex
+.[driver-adapter] deliver id=dw-dlv_X -> processing (turn=turn-1)
+.[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-e3e1474cb77245e2a681db0c2ab3503e -> processing (turn=turn-1)
+[delivery] done id=dw-view-d1c9f647e9e149ff982d17fbf402d6c4 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-two -> processing (turn=turn-2)
+[delivery] done id=dw-dlv_X source=fixture (turn=turn-1)
+[delivery] done id=dw-two source=fixture (turn=turn-2)
+[delivery][TIMEOUT] id=dw-view-e3e1474cb77245e2a681db0c2ab3503e turn=turn-1
+[driver-adapter] deliver id=dw-two -> processing (turn=turn-2)
+.[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-824bc0177b9440f6ac4f2f1b501b6847 -> processing (turn=turn-1)
+[delivery] done id=dw-view-824bc0177b9440f6ac4f2f1b501b6847 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-agent -> processing (turn=turn-2)
+[delivery][TIMEOUT] id=dw-two turn=turn-2
+[delivery] done id=dw-agent source=fixture (turn=turn-2)
+[driver-adapter] deliver id=dw-feishu -> processing (turn=turn-3)
+.[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-87e30c4623154c4db934c242b7e385f3 -> processing (turn=turn-1)
+...........[delivery] done id=dw-feishu source=fixture (turn=turn-3)
+[delivery] done id=dw-view-87e30c4623154c4db934c242b7e385f3 source=fixture (turn=turn-1)
+......SYNTHETIC_SLOT_EXECUTED
+...........Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp5eq3ydr7/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+..........
+======================================================================
+ERROR: tearDownModule (test_event_bridge_replay)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r8-mcp-schema-oneof/tools/sessionhelper/tests/test_event_bridge_replay.py", line 35, in tearDownModule
+    _HOME.finish()
+  File "/data/ai-dev-data/r8-mcp-schema-oneof/tools/sessionhelper/tests/_home_isolation.py", line 58, in finish
+    assert not changed, f"测试泄漏到真实 ~/.dingwei: {changed}"
+           ^^^^^^^^^^^
+AssertionError: 测试泄漏到真实 ~/.dingwei: ['sessionhelper_inbox-coder56solzzc.db']
+
+======================================================================
+ERROR: tearDownModule (test_file_upload)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r8-mcp-schema-oneof/tools/sessionhelper/tests/test_file_upload.py", line 45, in tearDownModule
+    _HOME.finish()
+  File "/data/ai-dev-data/r8-mcp-schema-oneof/tools/sessionhelper/tests/_home_isolation.py", line 58, in finish
+    assert not changed, f"测试泄漏到真实 ~/.dingwei: {changed}"
+           ^^^^^^^^^^^
+AssertionError: 测试泄漏到真实 ~/.dingwei: ['sessionhelper_inbox-coder56solzzc.db']
+
+----------------------------------------------------------------------
+Ran 745 tests in 390.342s
+
+FAILED (errors=2)

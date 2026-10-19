@@ -1,0 +1,15 @@
+test_actual_app_analysis_does_not_auto_reply (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_actual_app_analysis_does_not_auto_reply) ... ok
+test_http_uncertainty_never_retries (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_http_uncertainty_never_retries) ... ok
+test_mcp_schemas_describe_exact_result_fields (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_mcp_schemas_describe_exact_result_fields) ... ok
+test_only_authenticated_system_request_becomes_bounded_analysis (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_only_authenticated_system_request_becomes_bounded_analysis) ... ok
+test_real_http_header_body_and_no_redirect (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_real_http_header_body_and_no_redirect) ... ok
+test_real_unix_ipc_routes_spec_review_type (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_real_unix_ipc_routes_spec_review_type) ... [ipc_listener] listening on /tmp/r8ipc-z_shqs8g/ipc.sock
+ok
+test_reply_tools_list_schema_requires_kind_specific_payload (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_reply_tools_list_schema_requires_kind_specific_payload) ... ok
+test_result_kind_bounds_and_no_target_url (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_result_kind_bounds_and_no_target_url) ... ok
+test_tools_bound_ipc_and_no_credential_arguments (tools.sessionhelper.tests.test_spec_review_r32.R8SpecReviewTest.test_tools_bound_ipc_and_no_credential_arguments) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.597s
+
+OK

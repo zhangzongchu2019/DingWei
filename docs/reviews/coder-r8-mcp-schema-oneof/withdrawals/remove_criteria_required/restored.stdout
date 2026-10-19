@@ -1,0 +1,96 @@
+{
+  "draft": "2020-12",
+  "tool": "dw_spec_review_reply",
+  "cases": [
+    {
+      "case": "review_empty_valid",
+      "expected_valid": true,
+      "actual_valid": true
+    },
+    {
+      "case": "review_issue_valid",
+      "expected_valid": true,
+      "actual_valid": true
+    },
+    {
+      "case": "criteria_valid",
+      "expected_valid": true,
+      "actual_valid": true
+    },
+    {
+      "case": "review_missing_issues",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "criteria_missing_criteria",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "review_mixed_payload",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "criteria_mixed_payload",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "review_wrong_payload",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "criteria_wrong_payload",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "unknown_kind",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "criteria_empty",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "issue_missing_text",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "criterion_missing_cases",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "credential_argument",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "spoofed_checked_by",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "missing_request_id",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "missing_revision",
+      "expected_valid": false,
+      "actual_valid": false
+    },
+    {
+      "case": "missing_content_sha256",
+      "expected_valid": false,
+      "actual_valid": false
+    }
+  ]
+}
