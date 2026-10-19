@@ -130,6 +130,16 @@ func (xfsQuota) Setup(root, seatID string, diskMB int64) error {
 	if !validSeatID(seatID) {
 		return fmt.Errorf("seat_id 非法: %q", seatID)
 	}
+	// Acquire before creating/chowning the directory. A lock-open/flock failure
+	// must have no seat-directory side effects, including for an existing seat.
+	if diskMB > 0 {
+		return withQuotaLock(func() error { return setupSeatQuota(root, seatID, diskMB) })
+	}
+	return setupSeatQuota(root, seatID, diskMB)
+}
+
+// setupSeatQuota requires the quota lock when diskMB > 0.
+func setupSeatQuota(root, seatID string, diskMB int64) error {
 	dir := seatDir(root, seatID)
 	// 🔴 复验 r2 阻断①：Setup 中途失败必须自拆——任何一步失败，目录与已设项目都不留
 	//（否则 create 看到 Setup 错误时目录已在，半成品残留）。
@@ -151,7 +161,7 @@ func (xfsQuota) Setup(root, seatID string, diskMB int64) error {
 		cleanupSelf()
 		return err
 	}
-	return withQuotaLock(func() error {
+	{
 		pid, err := allocProjectID(mnt)
 		if err != nil {
 			cleanupSelf()
@@ -210,7 +220,7 @@ func (xfsQuota) Setup(root, seatID string, diskMB int64) error {
 		}
 		limitSet = true
 		return nil
-	})
+	}
 }
 
 // projectUsage 复查某项目号在 report 里的用量（blocks）；不存在 ⇒ present=false。
