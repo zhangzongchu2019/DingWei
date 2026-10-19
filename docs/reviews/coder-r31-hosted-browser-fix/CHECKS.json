@@ -1,0 +1,76 @@
+{
+  "utc": "2026-10-19T03:44:56.346491+00:00",
+  "parent": "4a6521b3455e4fb71f0dd06cd5f0706737ff8564",
+  "environment": {
+    "host": "VM-4-12-ubuntu",
+    "uid": 1001,
+    "node": "v22.23.1",
+    "playwright": "1.56.1",
+    "chrome": "151.0.7922.108",
+    "scope": "local HTTP fixture, real rendered Console page, headless Chrome; no live Hub/43"
+  },
+  "command": "NODE_PATH=<local playwright node_modules> PW_CHANNEL=chrome [MUTATION=<case>] node view-service/console-agent-mgmt-hosted-regression.js",
+  "checks": [
+    {
+      "case": "parent-4a6521b3",
+      "observed_rc": 1,
+      "passed": 30,
+      "failed": 2,
+      "failures": [
+        "left list uses full_name: button shows the short name, title/tab/iframe use full_name: Expected values to be strictly equal:",
+        "a create with a new group shows that group in the group list once online, led by the new agent: locator.selectOption: Timeout 2500ms exceeded."
+      ],
+      "log": "parent-4a6521b3.log"
+    },
+    {
+      "case": "positive",
+      "observed_rc": 0,
+      "passed": 32,
+      "failed": 0,
+      "failures": [],
+      "log": "positive.log"
+    },
+    {
+      "case": "restored",
+      "observed_rc": 0,
+      "passed": 32,
+      "failed": 0,
+      "failures": [],
+      "log": "restored.log"
+    },
+    {
+      "case": "nav-opens-by-name",
+      "observed_rc": 1,
+      "passed": 31,
+      "failed": 1,
+      "failures": [
+        "left list uses full_name: button shows the short name, title/tab/iframe use full_name: locator.waitFor: Timeout 2500ms exceeded."
+      ],
+      "log": "nav-opens-by-name.log"
+    },
+    {
+      "case": "view-refresh-instance-missing",
+      "observed_rc": 1,
+      "passed": 31,
+      "failed": 1,
+      "failures": [
+        "left list uses full_name: button shows the short name, title/tab/iframe use full_name: Expected values to be strictly deep-equal:"
+      ],
+      "log": "view-refresh-instance-missing.log"
+    },
+    {
+      "case": "hosted-online-no-group-refresh",
+      "observed_rc": 1,
+      "passed": 31,
+      "failed": 1,
+      "failures": [
+        "a create with a new group shows that group in the group list once online, led by the new agent: page.waitForFunction: Timeout 2500ms exceeded."
+      ],
+      "log": "hosted-online-no-group-refresh.log"
+    }
+  ],
+  "source_sha256": {
+    "view-service/console-agent-mgmt-hosted-regression.js": "e48e9f49fffb0fc0e98ae060f14800ce425ef0d49ddc69a89cd87e21a64bec8b"
+  },
+  "result": "LOCAL_BROWSER_PASS_WITH_THREE_EXACT_WITHDRAWALS_NOT_INDEPENDENT_REVIEW"
+}

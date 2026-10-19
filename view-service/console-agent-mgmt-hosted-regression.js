@@ -38,7 +38,7 @@ function mutate(from, to) {
   }
   html = html.replace(from, to);
 }
-const MUTATIONS = ['mutation-anchor-selftest', 'shared-warn-always', 'shared-warn-never', 'shared-warn-ignores-kind', 'hosted-online-no-group-refresh', 'ignore-hosted-disabled', 'always-hide-hosted', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped', 'drop-in-use'];
+const MUTATIONS = ['view-refresh-instance-missing', 'mutation-anchor-selftest', 'shared-warn-always', 'shared-warn-never', 'shared-warn-ignores-kind', 'hosted-online-no-group-refresh', 'ignore-hosted-disabled', 'always-hide-hosted', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped', 'drop-in-use'];
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'ignore-hosted-disabled') mutate('if(!FEATURE_HOSTED){var hc=', 'if(false){var hc=');
@@ -53,6 +53,7 @@ if (mutation === 'backup-failed-unmapped') mutate("backup_failed:'销毁前备�
 if (mutation === 'quota-only-zero') mutate('&&data.remaining[d[0]]<=0)used.push', '&&data.remaining[d[0]]===0)used.push');
 if (mutation === 'quota-old-fallback') mutate("quota_exceeded:'配额不足，请联系管理员调整配额',", "quota_exceeded:'Agent 数量已达上限',");
 if (mutation === 'quota-generic') mutate("if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){", "if(false){");
+if (mutation === 'view-refresh-instance-missing') mutate("pane.src='/view/'+encodeURIComponent(session)+'?view_refresh_instance='+refreshInstance+(muxInstance?'&console_mux=1&iframe_instance='+muxInstance:'');", "pane.src='/view/'+encodeURIComponent(session);");
 if (mutation === 'nav-opens-by-name') mutate('b.onclick=function(){ openTab(a.full_name) };', 'b.onclick=function(){ openTab(a.name) };');
 if (mutation === 'ignore-cred-kind') mutate('&&(!a.kind||c.cred_kind===a.kind);});', '&&true;});');
 if (mutation === 'suspended-loses-to-hosted') mutate("Object.assign({online:a.online},a.hosted||{},a.state==='suspended'?{state:'disabled'}:{})", "Object.assign({online:a.online},a.state==='suspended'?{state:'disabled'}:{},a.hosted||{})");
@@ -547,15 +548,30 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     });
 
     await test('left list uses full_name: button shows the short name, title/tab/iframe use full_name', async () => {
-      await page.locator('#agentNavMode').click();            // 树 -> 纯 Agent 列表
-      const btn = page.locator('#a button').filter({ hasText: /^leader$/ });
-      await btn.waitFor({ state: 'visible' });
-      assert.strictEqual(await btn.getAttribute('title'), 'leader.zzc');
-      await btn.click();
-      await page.locator('#tabs .tab[title="leader.zzc"]').waitFor({ state: 'visible' });
-      assert.strictEqual(await page.locator('#panes iframe').first().getAttribute('src'), '/view/leader.zzc');
-      await page.locator('#tabs .tab[title="leader.zzc"] .x').click();
-      await page.locator('#agentNavMode').click();
+      const originalMode = await page.evaluate(() => agentNavMode);
+      try {
+        if (originalMode !== 'flat') await page.locator('#agentNavMode').click();
+        const btn = page.locator('#a button').filter({ hasText: /^leader$/ });
+        await btn.waitFor({ state: 'visible' });
+        assert.strictEqual(await btn.getAttribute('title'), 'leader.zzc');
+        await btn.click();
+        await page.locator('#tabs .tab[title="leader.zzc"]').waitFor({ state: 'visible' });
+        // The view-refresh protocol deliberately appends a per-iframe nonce.
+        // Keep exact routing checks and validate the protocol rather than
+        // demanding the obsolete query-free URL.
+        const state = await page.locator('#panes iframe[title="Agent view: leader.zzc"]').evaluate((el) => ({ src: el.getAttribute('src'), instance: el.dataset.viewRefreshInstance }));
+        const url = new URL(state.src, page.url());
+        assert.strictEqual(url.origin, new URL(page.url()).origin);
+        assert.strictEqual(url.pathname, '/view/leader.zzc');
+        assert.deepStrictEqual([...url.searchParams.keys()], ['view_refresh_instance']);
+        assert.match(state.instance, /^[0-9a-f]{32}$/);
+        assert.strictEqual(url.searchParams.get('view_refresh_instance'), state.instance);
+      } finally {
+        // This suite shares one page. A failed navigation assertion must not
+        // leave an Agent view active and hide the later hosted-create fixture.
+        await page.evaluate(() => { closeTab('leader.zzc'); closeTab('leader'); });
+        if (await page.evaluate(() => agentNavMode) !== originalMode) await page.locator('#agentNavMode').click();
+      }
     });
 
     await test('the group panel is still there: list, create toggle; join-by-code stays removed', async () => {
@@ -568,6 +584,8 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     // 断言面＝页面：建席上线后编组列表按 Hub 回的数据刷新，新组出现、组长是新席；实现承诺（Hub 真建组、新席为组长）
     // 在 cmd/workpulse/hosted_new_group_test.go 用真 identity＋真存储钉，本格只钉页面这一侧不丢。
     await test('a create with a new group shows that group in the group list once online, led by the new agent', async () => {
+      await page.locator('#platform-items a[data-item-id="agent-groups"]').click();
+      await page.locator('#hostedForm').waitFor({ state: 'visible' });
       await fillValid('Kilo');
       await page.locator('#hostedGroup').selectOption('__new__');
       await page.locator('#hostedNewGroupBox').waitFor({ state: 'visible' });
