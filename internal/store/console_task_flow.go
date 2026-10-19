@@ -547,13 +547,20 @@ func (s *SQLite) ListConsoleTaskFlow(ctx context.Context, agent string) ([]TaskF
 	if err != nil {
 		return nil, err
 	}
+	return s.consoleTaskFlowItems(ctx, agent, tasks)
+}
+
+// Selection and projection are separate SQLite reads. Revalidate the current
+// actor instead of treating the initial selection as continuing authorization.
+func (s *SQLite) consoleTaskFlowItems(ctx context.Context, agent string, tasks []model.ConsoleTaskProposal) ([]TaskFlowItem, error) {
+	var err error
 	out := make([]TaskFlowItem, 0, len(tasks))
 	for _, task := range tasks {
 		state, e := s.ConsoleTaskFlowState(ctx, task.ID)
 		if e != nil {
 			return nil, e
 		}
-		if state.Archived || state.GroupCode == "" {
+		if state.Archived || state.GroupCode == "" || (agent != state.Developer && agent != state.Reviewer) {
 			continue
 		}
 		var title string

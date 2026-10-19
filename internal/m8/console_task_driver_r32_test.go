@@ -242,3 +242,17 @@ func TestR32MainTaskListRechecksCurrentActorAfterReassignment(t *testing.T) {
 		t.Fatal("list stuck after reassignment")
 	}
 }
+
+type r32ListStateFailureRepository struct{ *store.SQLite }
+
+func (r r32ListStateFailureRepository) ListConsoleTaskFlow(context.Context, string) ([]store.TaskFlowItem, error) {
+	return nil, errors.New("fixture projection state read unavailable")
+}
+func TestR32MainTaskListStateReadFailureCloses(t *testing.T) {
+	e, _, _ := r32FlowEnv(t)
+	e.hub.Repo = r32ListStateFailureRepository{e.db}
+	rr := r32HTTP(e, "GET", "", e.zKimiCred, "")
+	if rr.Code != 503 || strings.Contains(rr.Body.String(), `"tasks"`) || strings.Contains(rr.Body.String(), "implement") {
+		t.Fatalf("MAIN_LIST_STATE_READ_FAILED_OPEN: %d %s", rr.Code, rr.Body.String())
+	}
+}

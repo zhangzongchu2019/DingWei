@@ -74,6 +74,12 @@ def main():
     add('legacy_driver_current_actor',driver,legacy_roles,go('./internal/m8','TestR32LegacyTaskDriverReassignmentBetweenReads'),'LEGACY_DRIVER_REASSIGNMENT_LEAKED')
     add('legacy_driver_locked_snapshot',driver,lambda s:change(s,'current, err := flow.ConsoleTaskFlowState(r.Context(), task.ID)','current, err := state, error(nil)'),go('./internal/m8','TestR32LegacyTaskDriverReassignmentBetweenReads'),'LEGACY_DRIVER_REASSIGNMENT_LEAKED')
     add('main_list_current_actor',hub,lambda s:change(s,' || (actor != current.Developer && actor != current.Reviewer)',''),go('./internal/m8','TestR32MainTaskListRechecksCurrentActorAfterReassignment'),'MAIN_LIST_CURRENT_ACTOR_NOT_RECHECKED')
+    add('store_list_current_actor',flow,lambda s:change(s,' || (agent != state.Developer && agent != state.Reviewer)',''),go('./internal/store','TestR32TaskListReassignmentBetweenSelectionAndProjection'),'STORE_TASK_LIST_REASSIGNED_ACTOR_LEAKED')
+    def store_list_state_error(s):
+        begin=s.index('func (s *SQLite) consoleTaskFlowItems');end=s.index('func (s *SQLite) ConsoleTaskFlowStates',begin)
+        return s[:begin]+change(s[begin:end],'if e != nil {','if e != nil && false {')+s[end:]
+    add('store_list_state_fail_closed',flow,store_list_state_error,go('./internal/store','TestR32TaskListStateReadFailurePropagates'),'STORE_TASK_LIST_STATE_ERROR_NOT_PROPAGATED')
+    add('main_list_state_fail_closed',hub,lambda s:change(s,'list, err := repo.ListConsoleTaskFlow(r.Context(), actor)\n\t\tif err != nil {','list, err := repo.ListConsoleTaskFlow(r.Context(), actor)\n\t\tif err != nil && false {'),go('./internal/m8','TestR32MainTaskListStateReadFailureCloses'),'MAIN_LIST_STATE_READ_FAILED_OPEN')
     results=[]
     def execute(name,phase,command):
         p=subprocess.run(command,cwd=work,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=180)

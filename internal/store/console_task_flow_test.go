@@ -306,3 +306,63 @@ func TestR32TaskOutboxStablePagesPreserveWaitingRows(t *testing.T) {
 		t.Fatal("WAITING_ROWS_WERE_CONSUMED", err, len(rows))
 	}
 }
+
+func TestR32TaskListReassignmentBetweenSelectionAndProjection(t *testing.T) {
+	db, now, state := taskFlowFixture(t)
+	ctx := context.Background()
+	ready, resume := make(chan struct{}), make(chan struct{})
+	type result struct {
+		items []TaskFlowItem
+		err   error
+	}
+	resultCh := make(chan result, 1)
+	go func() {
+		tasks, err := db.ListConsoleTasksForAgent(ctx, "dev")
+		if err != nil {
+			resultCh <- result{err: err}
+			return
+		}
+		close(ready)
+		<-resume
+		items, err := db.consoleTaskFlowItems(ctx, "dev", tasks)
+		resultCh <- result{items, err}
+	}()
+	select {
+	case <-ready:
+	case <-time.After(5 * time.Second):
+		t.Fatal("selection barrier not reached")
+	}
+	if _, err := db.AssignConsoleTaskFlow(ctx, state.ID, "owner-a", state.GroupCode, "other", "review", state.Version, func() error { return nil }, now); err != nil {
+		close(resume)
+		t.Fatal(err)
+	}
+	close(resume)
+	select {
+	case got := <-resultCh:
+		if got.err != nil || len(got.items) != 0 {
+			t.Fatalf("STORE_TASK_LIST_REASSIGNED_ACTOR_LEAKED: count=%d err=%v", len(got.items), got.err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("projection stuck")
+	}
+	current, err := db.ListConsoleTaskFlow(ctx, "other")
+	if err != nil || len(current) != 1 || current[0].Role != "developer" {
+		t.Fatalf("new assignee list=%v err=%v", current, err)
+	}
+}
+func TestR32TaskListStateReadFailurePropagates(t *testing.T) {
+	db, _, _ := taskFlowFixture(t)
+	ctx := context.Background()
+	tasks, err := db.ListConsoleTasksForAgent(ctx, "dev")
+	if err != nil || len(tasks) != 1 {
+		t.Fatalf("selection=%v err=%v", tasks, err)
+	}
+	if err = db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	// The actual DB closes between the same two production read stages.
+	items, err := db.consoleTaskFlowItems(ctx, "dev", tasks)
+	if err == nil || len(items) != 0 {
+		t.Fatalf("STORE_TASK_LIST_STATE_ERROR_NOT_PROPAGATED: count=%d err=%v", len(items), err)
+	}
+}
