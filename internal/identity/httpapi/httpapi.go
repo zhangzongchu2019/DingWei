@@ -37,6 +37,9 @@ type API struct {
 	Hosted func(ctx context.Context, agentID string) (map[string]any, bool)
 	// HostedAccess gates hosted-only projections; the ordinary Agent list remains available.
 	HostedAccess func(*http.Request) bool
+	// AdminHostedNodeName is independent of hosted creation/key assembly.
+	// It returns only the node name; absent tables/seat return an empty name.
+	AdminHostedNodeName func(context.Context, string) (string, error)
 }
 
 const maxBody = 4 << 10

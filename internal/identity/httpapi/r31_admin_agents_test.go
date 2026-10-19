@@ -63,6 +63,12 @@ func newAdminViewEnv(t *testing.T) *adminViewEnv {
 	api := &httpapi.API{Svc: svc, Actor: n3.Actor, Online: func(id string) bool { return id == "ag-a" }, HostedAccess: func(*http.Request) bool { return false }, Hosted: func(_ context.Context, id string) (map[string]any, bool) {
 		return map[string]any{"node_name": "node-private", "credential": "fixture-must-never-leak", "account_last4": "9999"}, id == "ag-b"
 	}}
+	api.AdminHostedNodeName = func(_ context.Context, id string) (string, error) {
+		if id == "ag-b" {
+			return "node-private", nil
+		}
+		return "", nil
+	}
 	mux := http.NewServeMux()
 	api.Register(mux)
 	return &adminViewEnv{st: st, api: api, mux: mux, at: now}

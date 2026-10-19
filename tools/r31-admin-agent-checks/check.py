@@ -22,8 +22,9 @@ def main():
  args.out.mkdir(parents=True,exist_ok=False)
  env=dict(os.environ,HUB_TEST_PG_STRICT='1',HUB_TEST_PG_EMBEDDED='1',HUB_TEST_PG_SKIP_OK='0');env.pop('HUB_TEST_PG_DSN',None);env.pop('MUTATION',None)
  store='internal/identity/admin_agents.go';api='internal/identity/httpapi/admin_agents.go';ordinary='internal/identity/memstore.go';projection='internal/identity/httpapi/httpapi.go'
- sources={p:(ROOT/p).read_text()for p in (store,api,ordinary,projection)}
- watched=[*sources,'internal/m8/console_auth.go','internal/m8/newplat_console.go','internal/identity/identitytest/admin_agents.go','internal/identity/admin_agents_test.go','internal/identity/admin_agents_pg_test.go','internal/identity/httpapi/r31_admin_agents_test.go','internal/m8/r31_admin_agent_capability_test.go','view-service/r31-admin-agents-browser-regression.js','tools/r31-admin-agent-checks/check.py']
+ node_read='internal/hosted/admin_agent_node.go';wiring='cmd/workpulse/newplat.go'
+ sources={p:(ROOT/p).read_text()for p in (store,api,ordinary,projection,node_read,wiring)}
+ watched=[*sources,'cmd/workpulse/r31_admin_agent_keyless_test.go','internal/m8/console_auth.go','internal/m8/newplat_console.go','internal/identity/identitytest/admin_agents.go','internal/identity/admin_agents_test.go','internal/identity/admin_agents_pg_test.go','internal/identity/httpapi/r31_admin_agents_test.go','internal/m8/r31_admin_agent_capability_test.go','view-service/r31-admin-agents-browser-regression.js','tools/r31-admin-agent-checks/check.py']
  source_hashes={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest()for p in watched}
  cases=[
  ('store-upper-bound',store,'limit > AdminAgentPageMax','limit > AdminAgentPageMax+1','./internal/identity','^TestR31AdminAgentMemoryContract/all_owners_private_source_and_stable_pages$','ADMIN_BOUND_MISSING'),
@@ -40,8 +41,12 @@ def main():
  ('audit-fail-open',store,'if err != nil {\n\t\treturn AdminAgentPage{}, err\n\t}\n\treturn page, nil','if err != nil {\n\t\treturn page, nil\n\t}\n\treturn page, nil','./internal/identity','^TestR31AdminAgentPGAuditAtomicAndFailClosed$','ADMIN_PG_AUDIT_FAIL_OPEN'),
  ('ordinary-owner-fence',ordinary,'ag.OwnerLC == owner && ag.Current()','(ag.OwnerLC == owner || true) && ag.Current()','./internal/identity/httpapi','^TestR31AdminAgentOrdinaryListRemainsPrivate$','ORDINARY_LIST_OWNER_FENCE_MISSING'),
  ('ordinary-bearer-source',projection,'ag.Origin == identity.OriginSelfhost && len(r.Header.Values("Authorization")) == 0','ag.Origin == identity.OriginSelfhost','./internal/identity/httpapi','^TestR31AdminAgentOrdinaryListRemainsPrivate$','ORDINARY_BEARER_SOURCE_GATE_MISSING'),
+ ('keyless-production-wiring',wiring,'api.AdminHostedNodeName = hosted.NewStore(pool).AgentNodeName','_ = hosted.NewStore(pool)','./cmd/workpulse','^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing$','ADMIN_NODE_KEYLESS_WIRING_MISSING'),
+ ('keyless-read-query',node_read,'return name, nil','return name[:0], nil','./cmd/workpulse','^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing$','ADMIN_NODE_KEYLESS_WIRING_MISSING'),
+ ('missing-hosted-tables',node_read,'state.SQLState() == "42P01"','state.SQLState() == "42P99"','./cmd/workpulse','^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-hosted-tables$','ADMIN_NODE_TABLE_ABSENCE_BROKE_LIST'),
+ ('hide-unrelated-node-error',node_read,'state.SQLState() == "42P01"','state.SQLState() != ""','./cmd/workpulse','^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/unrelated-query-error$','ADMIN_NODE_UNRELATED_ERROR_HIDDEN'),
  ]
- positive=run(['go','test','./internal/identity','./internal/identity/httpapi','./internal/m8','-run','TestR31AdminAgent','-count=1'],env)
+ positive=run(['go','test','./internal/identity','./internal/identity/httpapi','./internal/m8','./cmd/workpulse','-run','TestR31AdminAgent','-count=1'],env)
  assert positive['rc']==0,positive
  (args.out/'positive.json').write_text(json.dumps(positive,indent=2)+'\n')
  def mutation(case):
@@ -67,7 +72,7 @@ def main():
    assert result['rc']==(1 if name else 0) and marker in result['stdout']+result['stderr'],result
    assert 'MUTATION_ANCHOR_STALE' not in result['stdout']+result['stderr'],result
    result['name']=name or ('restored' if browser else 'positive');browser.append(result)
- restored=run(['go','test','./internal/identity','./internal/identity/httpapi','./internal/m8','-run','TestR31AdminAgent','-count=1'],env);assert restored['rc']==0,restored
+ restored=run(['go','test','./internal/identity','./internal/identity/httpapi','./internal/m8','./cmd/workpulse','-run','TestR31AdminAgent','-count=1'],env);assert restored['rc']==0,restored
  for p,sha in source_hashes.items():assert hashlib.sha256((ROOT/p).read_bytes()).hexdigest()==sha,('source changed during run',p)
  report=dict(utc=datetime.now(timezone.utc).isoformat(),environment={'host':os.uname().nodename,'python':sys.version,'scope':'local HTTP fixtures and isolated embedded PG; no production access'},source_sha256=source_hashes,positive=positive,withdrawals=results,browser=browser,restored=restored,result='LOCAL_PASS_PENDING_INDEPENDENT_REVIEW')
  (args.out/'CHECKS.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
