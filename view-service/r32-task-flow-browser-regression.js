@@ -24,7 +24,7 @@ const server=http.createServer(async(req,res)=>{
   boardReads++;return json(res,200,{viewer_key:'owner',specs:[spec],tasks:[task],active_tasks:task.status==='planned'?[]:[task],task_total:1,agents:[],task_agents:agents,task_groups:[{code:'group',name:'Team'}],spec_page:1,spec_total_pages:1,task_page:1,task_total_pages:1,updated_at:new Date().toISOString()})
  }
  if(u.pathname==='/api/console/task-board/tasks/task-one'&&req.method==='PATCH'){
-  let raw='';for await(const c of req)raw+=c;assigned.push(JSON.parse(raw));return json(res,200,{version:3})
+  let raw='';for await(const c of req)raw+=c;const value=JSON.parse(raw);assigned.push(value);task.version++;if(value.reopen){task.status='planned';task.passed_cases=0}return json(res,200,{version:task.version})
  }
  if(u.pathname==='/api/console/specs')return json(res,200,{role:'owner',specs:[spec],page:1,total_pages:1,total:1,page_size:20});
  if(u.pathname==='/api/console/spec-editors')return json(res,200,{editors:[{short_name:'Owner',display_name:'Owner',value:'Owner'}]});
@@ -50,6 +50,12 @@ const server=http.createServer(async(req,res)=>{
   await page.selectOption('select.developer-agent','dev');await page.dispatchEvent('select.developer-agent','change');
   await page.click('#finish-tasks');await page.waitForFunction(()=>document.querySelector('#task-status').textContent==='已保存'||document.querySelector('#finish-tasks').hidden);
   assert.equal(assigned.length,1);assert.equal(assigned[0].expected_version,2);assert.equal(assigned[0].group_code,'group');checks++;
+  task.status='done';await page.click('#refresh-tasks');await page.waitForFunction(()=>document.querySelector('#task-list').textContent.includes('done'));
+  await page.click('#edit-tasks');await page.selectOption('select.developer-agent','review');await page.selectOption('select.reviewer-agent','dev');
+  const reopenDialog=new Promise(resolve=>page.once('dialog',async d=>{await d.dismiss();resolve(true)}));const bypassWrite=page.waitForResponse(r=>r.url().endsWith('/api/console/task-board/tasks/task-one')&&r.request().method()==='PATCH').then(()=>false).catch(()=>false);await page.click('#finish-tasks');
+  const sawReopen=await Promise.race([reopenDialog,bypassWrite,new Promise(resolve=>setTimeout(()=>resolve(false),6000))]);assert(sawReopen,'DONE_ASSIGNMENT_CONFIRMATION_BYPASSED');assert.equal(assigned.length,1);checks++;
+  page.once('dialog',d=>d.accept());await page.click('#finish-tasks');await page.waitForFunction(()=>document.querySelector('#finish-tasks').hidden);
+  assert.equal(assigned.length,2);assert.equal(assigned[1].reopen,true);assert.equal(task.status,'planned');checks++;
   await page.goto(origin+'/console/specs');await page.click('.spec-title');await page.waitForSelector('#presplit-candidates:not([hidden])');
   assert.equal(formalTasks.length,0);assert.equal(confirmed,0);checks++;
   const textareas=page.locator('#candidate-list textarea');await textareas.nth(0).fill('Edited by owner');
