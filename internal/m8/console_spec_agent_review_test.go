@@ -263,3 +263,34 @@ func TestR8WSCallbackUsesActualAuthenticatedEndpoint(t *testing.T) {
 		t.Fatal("R8_AUTHENTIC_WS_CALLBACK_REJECTED", err)
 	}
 }
+
+func TestR8RestartBeforeReconcilerRejectsWSAndCriteriaConfirmation(t *testing.T) {
+	for _, kind := range []string{"review", "criteria"} {
+		t.Run(kind, func(t *testing.T) {
+			e, spec, rev, agent := r8HTTPFixture(t)
+			q, err := e.db.StartSpecAgentRequest(e.ctx, store.SpecAgentRequest{ID: "specreview_oldboot", SpecID: spec.ID, Actor: "zzc", AgentID: agent, Kind: kind, Revision: 1, SHA: rev.ContentSHA256, ClientID: "oldboot", Boot: "previous-Hub-boot"}, nil, e.hub.now())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if kind == "review" {
+				env := model.Envelope{Body: fmt.Sprintf(`{"revision":1,"content_sha256":%q,"issues":[]}`, rev.ContentSHA256), Meta: map[string]any{"type": "console_spec_review_result", "request_id": q.ID}}
+				e.hub.handleSpecAgentReviewResult(e.ctx, &sessionClient{keyID: AgentKeyID("zzc"), sessionName: "kimi"}, env)
+				row, _ := e.db.SpecAgentRequest(e.ctx, q.ID)
+				if row.Status == "completed" {
+					t.Fatal("R8_RESTARTED_WS_RESULT_ACCEPTED")
+				}
+			} else {
+				a := model.ConsoleAgent{ID: agent, KeyID: AgentKeyID("zzc"), SessionName: "kimi", OwnerPrincipal: "zzc", Active: true}
+				result := store.SpecAgentResult{Revision: 1, SHA: rev.ContentSHA256, Criteria: []store.SpecAgentCriterion{{ID: "A1", Text: "works", OwnerRef: "msg:1", Cases: []string{"case1"}}}}
+				if _, err = e.db.CompleteSpecAgentRequest(e.ctx, q.ID, a, result, nil, e.hub.now()); err != nil {
+					t.Fatal(err)
+				}
+				body := fmt.Sprintf(`{"expected_revision":1,"content_sha256":%q}`, rev.ContentSHA256)
+				got := r8HTTP(e, "POST", spec.ID, "agent-criteria", q.ID, "confirm", "", e.tokZZC, body)
+				if got.Code != 409 {
+					t.Fatal("R8_RESTARTED_CANDIDATE_CONFIRMED", got.Code, got.Body.String())
+				}
+			}
+		})
+	}
+}

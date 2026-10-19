@@ -235,6 +235,10 @@ func (h *Hub) HandleConsoleSpecAgentConfirm(w http.ResponseWriter, r *http.Reque
 		specAgentError(w, errors.New("store unavailable"))
 		return
 	}
+	if e := repo.ReconcileSpecAgentRequests(r.Context(), h.specAgentBoot(), h.now()); e != nil {
+		specAgentError(w, e)
+		return
+	}
 	q, e := repo.SpecAgentRequest(r.Context(), r.PathValue("requestID"))
 	if e != nil {
 		specAgentError(w, e)
@@ -404,7 +408,7 @@ func (h *Hub) handleSpecAgentReviewResult(ctx context.Context, c *sessionClient,
 		return true
 	}
 	q, e := repo.SpecAgentRequest(ctx, metaString(env.Meta, "request_id"))
-	if e != nil || q.KeyID != c.keyID || q.SessionName != c.sessionName || typ != "console_spec_"+q.Kind+"_result" || len(env.Body) > 128<<10 {
+	if e != nil || q.KeyID != c.keyID || q.SessionName != c.sessionName || q.Boot != h.specAgentBoot() || typ != "console_spec_"+q.Kind+"_result" || len(env.Body) > 128<<10 {
 		return true
 	}
 	var result store.SpecAgentResult
