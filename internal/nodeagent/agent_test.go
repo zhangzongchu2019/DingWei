@@ -298,6 +298,10 @@ func TestSecretFileFailsClosed(t *testing.T) {
 	if err := os.WriteFile(wide, []byte("s"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	// Creation mode is filtered by umask; the negative fixture must really be 0644.
+	if err := os.Chmod(wide, 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := (Config{SecretPath: wide}).secret(); err == nil {
 		t.Fatal("权限宽于 600 必须拒")
 	}
