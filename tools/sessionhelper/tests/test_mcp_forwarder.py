@@ -54,9 +54,9 @@ def assert_tools(test, proc, version):
     replies = {item['id']: item for item in map(json.loads, proc.stdout.splitlines())}
     test.assertEqual(replies[1]['result']['serverInfo']['version'], version)
     tools = replies[2]['result']['tools']
-    test.assertEqual(len(tools), 11)
-    test.assertEqual(len({tool['name'] for tool in tools}), 11)
-    test.assertTrue({'send_message','dw_task_list','dw_task_update'}.issubset({tool['name'] for tool in tools}))
+    test.assertEqual(len(tools), 13)
+    test.assertEqual(len({tool['name'] for tool in tools}), 13)
+    test.assertTrue({'send_message','dw_task_list','dw_task_update','dw_spec_review_requests','dw_spec_review_reply'}.issubset({tool['name'] for tool in tools}))
 
 
 class ForwarderTests(unittest.TestCase):

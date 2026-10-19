@@ -82,7 +82,7 @@ class BuildEntrypointContractTest(unittest.TestCase):
         shell_files = runner.split("SHELL_TESTS='", 1)[1].split("'", 1)[0].split()
         self.assertEqual(len(python_files), 50)
         self.assertEqual(len(shell_files), 2)
-        self.assertIn("BUILD_TESTS_OK python=50 shell=2", runner)
+        self.assertIn("BUILD_TESTS_OK python=51 shell=2", runner)
 
     def test_build_make_and_ci_share_the_canonical_test_entrypoint(self):
         self.assertIn("./scripts/run-build-tests.sh", self.read("build.sh"))
