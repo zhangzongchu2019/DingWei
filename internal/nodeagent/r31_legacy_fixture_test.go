@@ -14,6 +14,10 @@ import (
 // exercised separately by r31_hard_capacity_test.go.
 func (a *Agent) registerR31LegacyFixture(t *testing.T, eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string, seatHubViaProxy bool, seatCodexModel, seatMode string, seatModels []string, policies ...NodePolicy) error {
 	t.Helper()
+	// All callers provide positive seat roots; invalid policy/model inputs remain untouched.
+	if err := os.Chmod(seatRoot, 0700); err != nil {
+		return err
+	}
 	if a.cfg.NodeID == "" {
 		a.cfg.NodeID = "nd_legacy_fixture"
 	}

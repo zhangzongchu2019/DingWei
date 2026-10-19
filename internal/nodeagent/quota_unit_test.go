@@ -126,22 +126,37 @@ func TestProjectUsageReportParsing(t *testing.T) {
 
 // 复验 r2 阻断①：Setup 中途失败必须自拆（目录不留、项目不残留）。
 func TestSetupFailureLeavesNoResidue(t *testing.T) {
+	privateQuotaLock(t)
 	origFind, origRun, origLs, origCh := findmntTarget, xfsRun, lsattrOut, chownForSeatFn
 	defer func() { findmntTarget, xfsRun, lsattrOut, chownForSeatFn = origFind, origRun, origLs, origCh }()
-	root := t.TempDir()
+	root := protectedTestDir(t)
 	dir := seatDir(root, "ag_s1")
 	findmntTarget = func(path string) (string, error) { return "/data", nil }
-	lsattrOut = func(d string) (string, error) { return "61001 --------------e-- " + d, nil }
+	// Empty report allocates 60000. A mismatched lsattr ID fails before the injected limit step.
+	lsattrOut = func(d string) (string, error) { return "60000 --------------e-- " + d, nil }
 	chownForSeatFn = func(string) error { return nil }
+	const sentinel = "TEST_LIMIT_SET_INJECTED_FAILURE"
+	var calls []string
 	xfsRun = func(args ...string) ([]byte, error) {
 		j := strings.Join(args, " ")
-		if strings.Contains(j, "limit -p") {
-			return nil, errors.New("limit failed")
+		calls = append(calls, j)
+		if j == "limit -p bhard=16384m 60000 /data" {
+			return nil, errors.New(sentinel)
 		}
-		return []byte(""), nil
+		if strings.HasPrefix(j, "project -C") {
+			if _, err := os.Stat(dir); err != nil {
+				t.Fatalf("mapping must be cleared before directory removal: %v", err)
+			}
+		}
+		return []byte(""), nil // report empty, project setup and rollback (including bhard=0) succeed
 	}
-	if err := (xfsQuota{}).Setup(root, "ag_s1", 16384); err == nil {
-		t.Fatal("limit 失败 Setup 必须报错")
+	err := (xfsQuota{}).Setup(root, "ag_s1", 16384)
+	if err == nil || !strings.Contains(err.Error(), sentinel) {
+		t.Fatalf("LIMIT_FAILURE_NOT_REACHED: want injected limit failure, got %v; calls=%v", err, calls)
+	}
+	want := []string{"report -p -n /data", "project -s -p " + dir + " 60000 /data", "limit -p bhard=16384m 60000 /data", "limit -p bhard=0 60000 /data", "project -C -p " + dir + " 60000 /data"}
+	if fmt.Sprint(calls) != fmt.Sprint(want) {
+		t.Fatalf("LIMIT_ROLLBACK_SEQUENCE: got %v, want %v", calls, want)
 	}
 	if _, err := os.Stat(dir); !os.IsNotExist(err) {
 		t.Fatalf("Setup 失败目录必须自拆（无残留）: %v", err)
@@ -187,6 +202,7 @@ func TestClearRedWhenProjectStillPresent(t *testing.T) {
 // r3：Setup 回滚必须摘映射（project -C -p <dir> <pid>，目录尚在时）再删目录；
 // 命令参数完整断言＋阶段覆盖。
 func TestSetupRollbackClearsProjectMapping(t *testing.T) {
+	privateQuotaLock(t)
 	origFind, origRun, origLs, origCh := findmntTarget, xfsRun, lsattrOut, chownForSeatFn
 	defer func() { findmntTarget, xfsRun, lsattrOut, chownForSeatFn = origFind, origRun, origLs, origCh }()
 	root := t.TempDir()
@@ -289,6 +305,7 @@ func TestClearUsesProjectCWithPath(t *testing.T) {
 // r4 复验：lsattr 返回 err=nil 但输出空/畸形 ⇒ 不得 panic、走同一 rollback
 // （摘映射 project -C -p 完整调用、目录消失）。
 func TestSetupMalformedLsattrNoPanicFullRollback(t *testing.T) {
+	privateQuotaLock(t)
 	origFind, origRun, origLs, origCh := findmntTarget, xfsRun, lsattrOut, chownForSeatFn
 	defer func() { findmntTarget, xfsRun, lsattrOut, chownForSeatFn = origFind, origRun, origLs, origCh }()
 	root := t.TempDir()

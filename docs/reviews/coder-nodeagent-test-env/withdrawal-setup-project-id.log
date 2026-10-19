@@ -1,0 +1,5 @@
+--- FAIL: TestSetupFailureLeavesNoResidue (0.00s)
+    quota_unit_test.go:155: LIMIT_FAILURE_NOT_REACHED: want injected limit failure, got 项目号断言失败: 期望 60000, 实得 "61001 --------------e-- /tmp/TestSetupFailureLeavesNoResidue1267123497/002/ag_s1"; calls=[report -p -n /data project -s -p /tmp/TestSetupFailureLeavesNoResidue1267123497/002/ag_s1 60000 /data project -C -p /tmp/TestSetupFailureLeavesNoResidue1267123497/002/ag_s1 60000 /data]
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.005s
+FAIL

@@ -1,0 +1,5 @@
+--- FAIL: TestProtectedSeatRootStillRejectsWritableOrAliasedRoots (0.02s)
+    test_env_test.go:41: soft writable root 770 accepted
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.024s
+FAIL

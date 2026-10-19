@@ -1,0 +1,8 @@
+{
+  "test_source": "8bd4d05db25d4fff36e91fe99a86d15d12e5c496",
+  "quota_source": "a92f48cd2e24463609d2a97c7b08090792fdf873",
+  "method": "Go overlay only; not an integration merge",
+  "uid": 1001,
+  "umask": "0002",
+  "rc": 0
+}

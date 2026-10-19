@@ -1,0 +1,5 @@
+--- FAIL: TestRefreshCredWhitelisted (0.00s)
+    refresh_cred_test.go:73: register: soft seat root must be a protected directory
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.003s
+FAIL

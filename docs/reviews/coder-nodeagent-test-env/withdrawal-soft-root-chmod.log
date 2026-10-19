@@ -1,0 +1,5 @@
+--- FAIL: TestCapacitySamplerForeignLoadOwnershipAndUnknown (0.00s)
+    seatcapacity_sample_test.go:27: soft seat root must be a protected directory
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.003s
+FAIL

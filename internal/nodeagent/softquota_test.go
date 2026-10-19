@@ -21,7 +21,7 @@ import (
 
 func softFixture(t *testing.T) (*softQuota, NodePolicy) {
 	t.Helper()
-	root := t.TempDir()
+	root := protectedTestDir(t)
 	private := t.TempDir()
 	if err := os.Chmod(private, 0700); err != nil {
 		t.Fatal(err)

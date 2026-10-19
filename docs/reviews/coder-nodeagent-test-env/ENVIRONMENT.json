@@ -1,0 +1,8 @@
+{
+  "utc": "2026-10-19T06:51:14.368566+00:00",
+  "uid": 1001,
+  "gid": 1001,
+  "go_version": "go version go1.22.2 linux/amd64",
+  "source_commit": "8bd4d05db25d4fff36e91fe99a86d15d12e5c496",
+  "base": "4fbcf26ecd09dbf97d349e540c7c7a32a2d0c440"
+}

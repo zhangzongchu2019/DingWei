@@ -1,0 +1,15 @@
+{
+  "kind": "independent peer evidence reported by togpt60; Git fetch verification follows",
+  "branch": "review/togpt60lunazzc/hosted-enable-r31",
+  "commit": "496afab706bfb68cbe1bec157ee9b7623845d983",
+  "tree": "ce2de7370939bb2a5e431e5917c697f4f5f78fcf",
+  "report": "docs/reviews/togpt60lunazzc-nodeagent-test-env/DEV-ENV-NODEAGENT-8BD4D05D.md",
+  "source_commit": "8bd4d05db25d4fff36e91fe99a86d15d12e5c496",
+  "source_tree": "bbfcfb33f6b326585a6e7671ffd987e84f52d8ad",
+  "host": "developer1/dingwei-dev-env",
+  "uid": 1000,
+  "umask": "0002",
+  "rc": 0,
+  "seconds": 6.941,
+  "scope": "full nodeagent package only; not whole repository"
+}
