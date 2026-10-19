@@ -77,12 +77,12 @@ func mkLogin(t *testing.T) *ldRig {
 	ctx := context.Background()
 	r := &ldRig{gw: &ldGw{}, s: s, svc: svc, secrets: map[string]string{}, clock: time.Now()}
 	for _, id := range []string{"nd_a", "nd_b"} {
-		sec, err := s.RegisterNode(ctx, Node{ID: id, Name: id, Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+		sec, err := s.registerR31LegacyNode(ctx, Node{ID: id, Name: id, Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
 		if err != nil {
 			t.Fatal(err)
 		}
 		r.secrets[id] = sec
-		if err := s.SetNodeOnline(ctx, id, json.RawMessage(`{}`)); err != nil {
+		if err := s.setR31LegacyOnline(ctx, id, json.RawMessage(`{}`)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -500,10 +500,10 @@ func TestIDTokenEmail(t *testing.T) {
 func TestLoginTotalCapBindsWithThreeNodes(t *testing.T) {
 	r := mkLogin(t)
 	ctx := context.Background()
-	if _, err := r.s.RegisterNode(ctx, Node{ID: "nd_c", Name: "nd_c", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin"); err != nil {
+	if _, err := r.s.registerR31LegacyNode(ctx, Node{ID: "nd_c", Name: "nd_c", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin"); err != nil {
 		t.Fatal(err)
 	}
-	if err := r.s.SetNodeOnline(ctx, "nd_c", json.RawMessage(`{}`)); err != nil {
+	if err := r.s.setR31LegacyOnline(ctx, "nd_c", json.RawMessage(`{}`)); err != nil {
 		t.Fatal(err)
 	}
 	for _, u := range []string{"u1", "u2", "u3", "u4"} {

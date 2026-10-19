@@ -117,7 +117,7 @@ func (r *seatCapacityReader) sample(ctx context.Context) (snapshot seatcapacity.
 }
 
 func (r *seatCapacityReader) sampleOnce(ctx context.Context) (seatcapacity.Snapshot, error) {
-	q := r.d.soft
+	q := r.d.seatCapacityQuota()
 	s := seatcapacity.Snapshot{At: q.now()}
 	cpu, total, available, err := q.resources()
 	if err != nil || cpu <= 0 || total <= 0 || available < 0 || available > total {
@@ -243,7 +243,7 @@ func (r *seatCapacityReader) containerUsage(ctx context.Context, id, cid string,
 	if destination == "/h" {
 		owned = info.Config.Labels[loginLabel] == strings.TrimPrefix(id, "login-")
 	}
-	if info.ID != cid || info.Config.Labels[managedSeatLabel] != r.d.soft.nodeID || !owned {
+	if info.ID != cid || info.Config.Labels[managedSeatLabel] != r.d.seatCapacityQuota().nodeID || !owned {
 		return ownedCapacityUsage{}, fmt.Errorf("capacity ownership mismatch")
 	}
 	bound := false

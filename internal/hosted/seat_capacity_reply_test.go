@@ -28,10 +28,10 @@ func (g *capacityReplyGateway) Send(_ context.Context, _ string, cmd NodeCommand
 func registerCapacityReplyNode(t *testing.T, s *Store, id, rev string, managed map[string]Plan) {
 	t.Helper()
 	ctx := context.Background()
-	if err := s.UpsertNode(ctx, Node{ID: id, Name: id, QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: id, Name: id, QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(ctx, id, reasonFrame(t, rev, netCapacitySnapshot(), seatcapacity.DefaultPolicy(), managed, nil)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, id, reasonFrame(t, rev, netCapacitySnapshot(), seatcapacity.DefaultPolicy(), managed, nil)); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -79,7 +79,7 @@ func TestCapacityReplyStrictProtocolAndRegistration(t *testing.T) {
 			delete(frame, "seat_capacity")
 		}
 		raw, _ := json.Marshal(frame)
-		if err := s.SetNodeOnline(ctx, "nd_reply", raw); err != nil {
+		if err := s.setR31LegacyOnline(ctx, "nd_reply", raw); err != nil {
 			t.Fatal(err)
 		}
 		if s.capacityResult(ctx, "nd_reply", NodeResult{Error: "seat_capacity_blocked: seat_capacity_cpu"}) != nil {
@@ -150,10 +150,10 @@ func TestCapacityFinalGateLifecycleJobs(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.hard {
-				if err := s.UpsertNode(ctx, Node{ID: original.NodeID, Name: "hard", Labels: []byte(`{}`)}); err != nil {
+				if err := s.upsertR31LegacyNode(ctx, Node{ID: original.NodeID, Name: "hard", Labels: []byte(`{}`)}); err != nil {
 					t.Fatal(err)
 				}
-				if err := s.SetNodeOnline(ctx, original.NodeID, []byte(`{"mem_free_mb":16384}`)); err != nil {
+				if err := s.setR31LegacyOnline(ctx, original.NodeID, []byte(`{"mem_free_mb":16384}`)); err != nil {
 					t.Fatal(err)
 				}
 			}

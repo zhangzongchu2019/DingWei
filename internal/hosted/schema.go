@@ -9,7 +9,7 @@ package hosted
 // hosted_seat 以 identity 的 agent_id 为主键（逻辑外键，跨服务边界不建物理 FK——
 // 名称有效性与唯一性由 G3 IssueHostedAgent 判，G3 重审③）。
 
-const SchemaDDL = `
+const R30SchemaDDL = `
 -- Durable two-recipient notification outbox. Node event receipt and notices are
 -- committed in one transaction before the node is allowed to discard its event.
 CREATE TABLE IF NOT EXISTS g4_quota_notice (
@@ -231,3 +231,18 @@ const DropDDL = `
 DROP TABLE IF EXISTS g4_quota_notice, g4_account_login, g4_audit, g4_team_key, g4_quota, g4_backup, g4_lifecycle_job, g4_account_grant, g4_account_pool,
   g4_seat_event, g4_hosted_seat, g4_node_credential, g4_node CASCADE;
 `
+
+// SchemaDDL is the current declarative shape for isolated schema/provenance tests.
+// Production startup uses the immutable migration ledger, never this DDL.
+const R31NodeDDL = `ALTER TABLE g4_node ADD COLUMN IF NOT EXISTS address text NOT NULL DEFAULT '';
+ALTER TABLE g4_node ADD COLUMN IF NOT EXISTS address_source text NOT NULL DEFAULT '' CHECK(address_source IN ('','admin','node'));
+ALTER TABLE g4_node ADD COLUMN IF NOT EXISTS scheduling_state text NOT NULL DEFAULT 'enabled' CHECK(scheduling_state IN ('enabled','disabled','draining'));
+ALTER TABLE g4_node ADD COLUMN IF NOT EXISTS access_scope text NOT NULL DEFAULT 'admin_only' CHECK(access_scope IN ('admin_only','public','restricted'));
+CREATE TABLE IF NOT EXISTS g4_node_access_grant (
+ node_id text NOT NULL REFERENCES g4_node(id) ON DELETE CASCADE,
+ subject_kind text NOT NULL CHECK(subject_kind IN ('user','group')),
+ subject_id text NOT NULL CHECK(subject_id<>''),
+ PRIMARY KEY(node_id,subject_kind,subject_id)
+);
+`
+const SchemaDDL = R30SchemaDDL + R31NodeDDL

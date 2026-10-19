@@ -57,11 +57,11 @@ func TestSoftNodeSchedulingConsentPriorityCapacityAndAudit(t *testing.T) {
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	rev := strings.Repeat("a", 64)
-	if err := s.UpsertNode(ctx, Node{ID: "nd_soft", Name: "soft-node", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: json.RawMessage(`{"pool":"transition","allow_soft":"true"}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_soft", Name: "soft-node", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: json.RawMessage(`{"pool":"transition","allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
 	frame := json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"` + rev + `","soft_ready":true,"mem_free_mb":65536,"cpu_total":16,"disk_free_mb":102400}`)
-	if err := s.SetNodeOnline(ctx, "nd_soft", withTestSeatCapacity(t, frame)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_soft", withTestSeatCapacity(t, frame)); err != nil {
 		t.Fatal(err)
 	}
 	plan := Plan{MemMB: 4096}
@@ -84,7 +84,7 @@ func TestSoftNodeSchedulingConsentPriorityCapacityAndAudit(t *testing.T) {
 		t.Fatal("automatic soft fallback without consent")
 	}
 	// More memory in an ineligible/undersized hard node must not hide another fit.
-	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":1024}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":1024}`)); err != nil {
 		t.Fatal(err)
 	}
 	n, err = o.pickNode(ctx, "auto", "", plan, "", true)
@@ -115,7 +115,7 @@ func TestSoftNodeSchedulingConsentPriorityCapacityAndAudit(t *testing.T) {
 	// Event receipt is durable and idempotent; it cannot retire/delete the seat.
 	event := `{"quota_mode":"soft","quota_policy_revision":"` + rev + `","soft_ready":false,"quota_events":[{"id":"` + strings.Repeat("b", 32) + `","seat_id":"ag_fixture","reason":"disk_limit","at":"2026-10-17T07:00:00Z"}]}`
 	for i := 0; i < 2; i++ {
-		if err := s.SetNodeOnline(ctx, "nd_soft", json.RawMessage(event)); err != nil {
+		if err := s.setR31LegacyOnline(ctx, "nd_soft", json.RawMessage(event)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -133,7 +133,7 @@ func TestSoftNodeSchedulingConsentPriorityCapacityAndAudit(t *testing.T) {
 	if len(NodeQuotaEventIDs(json.RawMessage(event))) != 1 {
 		t.Fatal("receipt ack missing")
 	}
-	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(event)); err == nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(event)); err == nil {
 		t.Fatal("hard node accepted soft events")
 	}
 }
@@ -150,10 +150,10 @@ func TestSoftCreateFailureDoesNotAbortOrReleaseIdentity(t *testing.T) {
 	o, idp, gw, s := mkOrch(t)
 	ctx := context.Background()
 	rev := strings.Repeat("c", 64)
-	if err := s.UpsertNode(ctx, Node{ID: "nd_soft", Name: "soft", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: json.RawMessage(`{"allow_soft":"true"}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_soft", Name: "soft", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: json.RawMessage(`{"allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(ctx, "nd_soft", withTestSeatCapacity(t, json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"`+rev+`","soft_ready":true,"mem_free_mb":65536}`))); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_soft", withTestSeatCapacity(t, json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"`+rev+`","soft_ready":true,"mem_free_mb":65536}`))); err != nil {
 		t.Fatal(err)
 	}
 	out, err := o.Create(ctx, CreateRequest{AllowSoft: true, OwnerLC: "zzc", By: "zzc", Name: "held", NodeID: "nd_soft", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctOf(t, o.pool), Plan: "2c4g"})
@@ -181,11 +181,11 @@ func TestSoftHeldLifecycleRefusesBeforeSideEffects(t *testing.T) {
 	ctx := context.Background()
 	seat, _ := s.GetSeat(ctx, id)
 	rev := strings.Repeat("d", 64)
-	if err := s.UpsertNode(ctx, Node{ID: seat.NodeID, Name: "transition", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: json.RawMessage(`{"allow_soft":"true"}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: seat.NodeID, Name: "transition", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: json.RawMessage(`{"allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
 	payload := json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"` + rev + `","soft_ready":true,"mem_free_mb":16384,"soft_seats":{"` + id + `":{"hold":"disk_limit","stop_state":"stopped"}}}`)
-	if err := s.SetNodeOnline(ctx, seat.NodeID, payload); err != nil {
+	if err := s.setR31LegacyOnline(ctx, seat.NodeID, payload); err != nil {
 		t.Fatal(err)
 	}
 	for _, op := range []string{"upgrade", "restart", "refresh_cred", "enable"} {
@@ -225,7 +225,7 @@ func TestHardNodeResourceExtensionNegotiated(t *testing.T) {
 	if _, ok := r["cpu_limit_millicores"]; ok {
 		t.Fatal("legacy hard command shape changed")
 	}
-	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"resource_limits_version":1,"quota_mode":"hard","mem_free_mb":16384}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"resource_limits_version":1,"quota_mode":"hard","mem_free_mb":16384}`)); err != nil {
 		t.Fatal(err)
 	}
 	r = s.resourceParams(ctx, "nd_free", plan)
@@ -240,11 +240,11 @@ func TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath(t *testing.T) {
 			o, _, _, s := mkOrch(t)
 			ctx := context.Background()
 			revision := strings.Repeat("d", 64)
-			if err := s.UpsertNode(ctx, Node{ID: "nd_emergency", Name: "emergency", QuotaMode: "soft", QuotaPolicyRevision: revision, Labels: json.RawMessage(`{"allow_soft":"true"}`)}); err != nil {
+			if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_emergency", Name: "emergency", QuotaMode: "soft", QuotaPolicyRevision: revision, Labels: json.RawMessage(`{"allow_soft":"true"}`)}); err != nil {
 				t.Fatal(err)
 			}
 			frame := json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"` + revision + `","soft_ready":true,"mem_free_mb":65536}`)
-			if err := s.SetNodeOnline(ctx, "nd_emergency", withTestSeatCapacity(t, frame)); err != nil {
+			if err := s.setR31LegacyOnline(ctx, "nd_emergency", withTestSeatCapacity(t, frame)); err != nil {
 				t.Fatal(err)
 			}
 			created, err := o.Create(ctx, CreateRequest{AllowSoft: true, OwnerLC: "zzc", By: "zzc", Name: "emergencyseat", NodeID: "nd_emergency", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctOf(t, o.pool), Plan: "2c4g"})
@@ -253,7 +253,7 @@ func TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath(t *testing.T) {
 			}
 			event := json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"` + revision + `","soft_ready":false,"quota_events":[{"id":"` + strings.Repeat("e", 32) + `","seat_id":"` + created.AgentID + `","reason":"` + reason + `","at":"2026-10-17T08:30:00Z"}]}`)
 			for i := 0; i < 2; i++ {
-				if err := s.SetNodeOnline(ctx, "nd_emergency", event); err != nil {
+				if err := s.setR31LegacyOnline(ctx, "nd_emergency", event); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -282,10 +282,10 @@ func TestQuotaUsageWarningNotifiesWithoutPrematureHold(t *testing.T) {
 			o, _, _, s := mkOrch(t)
 			ctx := context.Background()
 			revision := strings.Repeat("f", 64)
-			if err := s.UpsertNode(ctx, Node{ID: "nd_warning", Name: "warning", QuotaMode: "soft", QuotaPolicyRevision: revision, Labels: json.RawMessage(`{"allow_soft":"true"}`)}); err != nil {
+			if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_warning", Name: "warning", QuotaMode: "soft", QuotaPolicyRevision: revision, Labels: json.RawMessage(`{"allow_soft":"true"}`)}); err != nil {
 				t.Fatal(err)
 			}
-			if err := s.SetNodeOnline(ctx, "nd_warning", withTestSeatCapacity(t, json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"`+revision+`","soft_ready":true,"mem_free_mb":65536}`))); err != nil {
+			if err := s.setR31LegacyOnline(ctx, "nd_warning", withTestSeatCapacity(t, json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"`+revision+`","soft_ready":true,"mem_free_mb":65536}`))); err != nil {
 				t.Fatal(err)
 			}
 			account := acctOf(t, o.pool)
@@ -298,7 +298,7 @@ func TestQuotaUsageWarningNotifiesWithoutPrematureHold(t *testing.T) {
 			}
 			raw := json.RawMessage(`{"quota_mode":"soft","quota_policy_revision":"` + revision + `","soft_ready":false,"disk_snapshot_valid":false,"disk_free_mb":100000,"soft_seats":{"` + made.AgentID + `":{"` + flag + `":true}},"quota_events":[{"id":"` + strings.Repeat("1", 32) + `","seat_id":"` + made.AgentID + `","reason":"usage_warning","at":"2026-10-17T09:00:00Z"}]}`)
 			for i := 0; i < 2; i++ {
-				if err := s.SetNodeOnline(ctx, "nd_warning", raw); err != nil {
+				if err := s.setR31LegacyOnline(ctx, "nd_warning", raw); err != nil {
 					t.Fatal(err)
 				}
 			}

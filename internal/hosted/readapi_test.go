@@ -49,7 +49,7 @@ func TestOptionsJSONMatchesContract(t *testing.T) {
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	o.combos = fakeCombos{m: map[string]bool{"codex|gpt|token_file": true, "claude|glm|api_key": false}}
-	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"cpu_total":16,"mem_free_mb":15360,"disk_free_mb":102400}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"cpu_total":16,"mem_free_mb":15360,"disk_free_mb":102400}`)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := o.Create(ctx, CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "w1", NodeID: "auto",
@@ -245,10 +245,10 @@ func TestJobProgressForOwnerBySeat(t *testing.T) {
 func TestOptionsModelsUnionOnlineOnly(t *testing.T) {
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
-	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol","gpt-5.5"]}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol","gpt-5.5"]}`)); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(ctx, "nd_full", json.RawMessage(`{"mem_free_mb":1024,"models":["gpt-4o"]}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_full", json.RawMessage(`{"mem_free_mb":1024,"models":["gpt-4o"]}`)); err != nil {
 		t.Fatal(err)
 	}
 	_, m := optionsJSON(t, o, "zzc")

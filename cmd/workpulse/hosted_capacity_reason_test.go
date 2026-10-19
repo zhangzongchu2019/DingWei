@@ -23,8 +23,7 @@ func httpCapacityFrame(t *testing.T, rev string, dimension string, managed bool)
 	case "memory":
 		snapshot.Total.Memory = 6 << 30
 	case "disk":
-		snapshot.Total.Disk = 12 << 30
-		policy.Minimum.Disk = 8 << 30
+		snapshot.Total.Disk = (40 << 30) - 1
 	case "load_unknown":
 		snapshot.Known = false
 	case "stale":
@@ -47,7 +46,7 @@ func TestHostedCapacityReasonsActualHTTP(t *testing.T) {
 	h, deps, st, idp, gw := mkHostedHTTP(t)
 	ctx := context.Background()
 	rev := strings.Repeat("a", 64)
-	if err := st.UpsertNode(ctx, hosted.Node{ID: "nd_rt", Name: "soft", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
+	if err := r31LegacyUpsertNode(st, ctx, hosted.Node{ID: "nd_rt", Name: "soft", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
 	accounts, err := st.ListUsableAccounts(ctx, "zzc", "codex", "gpt")
@@ -56,10 +55,10 @@ func TestHostedCapacityReasonsActualHTTP(t *testing.T) {
 	}
 	for _, dimension := range []string{"cpu", "memory", "disk", "load_unknown", "stale"} {
 		t.Run(dimension, func(t *testing.T) {
-			if err := st.SetNodeOnline(ctx, "nd_rt", httpCapacityFrame(t, rev, dimension, false)); err != nil {
+			if err := r31LegacySetOnline(st, ctx, "nd_rt", httpCapacityFrame(t, rev, dimension, false)); err != nil {
 				t.Fatal(err)
 			}
-			if dimension != "load_unknown" && dimension != "stale" {
+			if dimension != "load_unknown" && dimension != "stale" && dimension != "disk" {
 				code, body, opts := h.do("zzc", "GET", "/api/console/hosted/options", "")
 				if code != 200 {
 					t.Fatalf("options %d %s", code, body)
@@ -91,7 +90,7 @@ func TestHostedCapacityReasonsActualHTTP(t *testing.T) {
 	}
 	// Actual lifecycle HTTP preflight projects the start error before enqueue,
 	// credentials, state transition or a node command can be touched.
-	if err := st.SetNodeOnline(ctx, "nd_rt", httpCapacityFrame(t, rev, "", false)); err != nil {
+	if err := r31LegacySetOnline(st, ctx, "nd_rt", httpCapacityFrame(t, rev, "", false)); err != nil {
 		t.Fatal(err)
 	}
 	seat := hosted.Seat{AgentID: "ag_reason", NodeID: "nd_rt", CLI: "codex", LLM: "gpt", CredKind: "token_file", Plan: "4c8g", CreatedBy: "zzc", QuotaConsent: []byte(`{}`)}
@@ -104,7 +103,7 @@ func TestHostedCapacityReasonsActualHTTP(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, dimension := range []string{"cpu", "memory", "disk", "load_unknown"} {
-		if err := st.SetNodeOnline(ctx, "nd_rt", httpCapacityFrame(t, rev, dimension, true)); err != nil {
+		if err := r31LegacySetOnline(st, ctx, "nd_rt", httpCapacityFrame(t, rev, dimension, true)); err != nil {
 			t.Fatal(err)
 		}
 		code, body, m := h.do("zzc", "POST", "/api/console/hosted/agents/ag_reason/restart", `{}`)
@@ -119,14 +118,14 @@ func TestHostedCapacityReasonsActualHTTP(t *testing.T) {
 	// A capacity change after successful enqueue also survives the durable job
 	// boundary. Run synchronously here, before any credential/node side effect.
 	for _, dimension := range []string{"cpu", "load_unknown"} {
-		if err := st.SetNodeOnline(ctx, "nd_rt", httpCapacityFrame(t, rev, "", true)); err != nil {
+		if err := r31LegacySetOnline(st, ctx, "nd_rt", httpCapacityFrame(t, rev, "", true)); err != nil {
 			t.Fatal(err)
 		}
 		job, err := deps.life.EnqueueJob(ctx, hosted.LifecycleJobRequest{AgentID: seat.AgentID, Actor: "zzc", Op: "restart"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := st.SetNodeOnline(ctx, "nd_rt", httpCapacityFrame(t, rev, dimension, true)); err != nil {
+		if err := r31LegacySetOnline(st, ctx, "nd_rt", httpCapacityFrame(t, rev, dimension, true)); err != nil {
 			t.Fatal(err)
 		}
 		deps.life.RunJob(ctx, job)
@@ -158,10 +157,10 @@ func TestHostedFinalNodeGateJobHTTP(t *testing.T) {
 	h, deps, st, idp, _ := mkHostedHTTP(t)
 	ctx := context.Background()
 	rev := strings.Repeat("d", 64)
-	if err := st.UpsertNode(ctx, hosted.Node{ID: "nd_rt", Name: "soft", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
+	if err := r31LegacyUpsertNode(st, ctx, hosted.Node{ID: "nd_rt", Name: "soft", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.SetNodeOnline(ctx, "nd_rt", httpCapacityFrame(t, rev, "", false)); err != nil {
+	if err := r31LegacySetOnline(st, ctx, "nd_rt", httpCapacityFrame(t, rev, "", false)); err != nil {
 		t.Fatal(err)
 	}
 	accounts, err := st.ListUsableAccounts(ctx, "zzc", "codex", "gpt")

@@ -40,7 +40,7 @@ func releaseNodeFixture(t *testing.T, s *Store) map[string]any {
 	t.Helper()
 	ctx := context.Background()
 	rev := strings.Repeat("a", 64)
-	if err := s.UpsertNode(ctx, Node{ID: "nd_release", Name: "release", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_release", Name: "release", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{}`)}); err != nil {
 		t.Fatal(err)
 	}
 	frame := map[string]any{"quota_mode": "soft", "quota_policy_revision": rev, "hold_release_version": 1, "soft_quota_policy": map[string]any{"warn_percent": 80}, "soft_seats": map[string]any{"ag_release": map[string]any{"limit_bytes": 1000, "usage": map[string]int{"allocated_bytes": 10, "apparent_bytes": 10}, "hold": "disk_limit", "hold_id": strings.Repeat("b", 32), "stop_state": "stopped", "writer_root": "/private/secret", "container_ids": []string{"secret-cid"}}}}
@@ -50,7 +50,7 @@ func releaseNodeFixture(t *testing.T, s *Store) map[string]any {
 func setReleaseFrame(t *testing.T, s *Store, f map[string]any) {
 	t.Helper()
 	b, _ := json.Marshal(f)
-	if err := s.SetNodeOnline(context.Background(), "nd_release", b); err != nil {
+	if err := s.setR31LegacyOnline(context.Background(), "nd_release", b); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -172,7 +172,7 @@ func TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices(t *testing.T) {
 	event["id"] = strings.Repeat("d", 32)
 	event["reason"] = "/private/secret"
 	b, _ = json.Marshal(f)
-	if s.SetNodeOnline(ctx, "nd_release", b) == nil {
+	if s.setR31LegacyOnline(ctx, "nd_release", b) == nil {
 		t.Fatal("polluted event accepted")
 	}
 	row, _ = s.qrow(ctx, `SELECT count(*) FROM g4_quota_notice`)

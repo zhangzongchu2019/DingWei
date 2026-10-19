@@ -34,10 +34,10 @@
 #       与「新代码请走仓储包」反向，且允许清单对判据二不豁免。
 open 5
 escape 1
-pending 91
+pending 90
 pending:datad 25
 pending:fanout 29
-pending:hosted 37  # 调用点单位（htx() 与 dtx/ftx 同型）
+pending:hosted 36  # 调用点单位（htx() 与 dtx/ftx 同型）
 # 🔴 pending 94 → 93（【合并算术】，qwen38maxkhovvob4 落盘；不是新裁定，两侧各自的说理都在下面）：
 #    键／旧值／新值／依据／谁批：pending／94／93／main（G4）侧记 94＝datad 25＋fanout 30＋hosted 39，
 #    本分支侧【真还债 1 处】使 fanout 30→29 ⇒ 合并后 25＋29＋39＝93／两侧既有登记相加
@@ -114,4 +114,9 @@ pending:hosted 37  # 调用点单位（htx() 与 dtx/ftx 同型）
 #    同批按组长 2026-10-02T12:44:05Z「boundary-baseline 注释指针更新准（数值不动）」把上面
 #    「12 → 16 → 15」那段里四处过期行号改成合并树实数：spool.go 68→103、49→55，
 #    migrate.go 303→332、258→277（migrate_test.go:54 与 datad／identity 各指针未位移）。
-system 17
+system 16
+
+# R31 coder56solzzc: hosted registration now uses explicit platform/actor AccessCtx;
+# retired legacy RegisterNode PendingCtx transaction: hosted37->36, total91->90.
+# ApplySchema delegates to the unified migration runner: SystemCtx17->16.
+# New test fixture SQL uses explicit test actor contexts; no broader tenant isolation claim.

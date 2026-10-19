@@ -31,7 +31,7 @@ func TestHostedClaudeModelActualHTTP(t *testing.T) {
 	created := make(chan struct{})
 	gw.onCreated = func(id string) { _ = deps.orch.MarkOnline(ctx, id); close(created) }
 
-	if err := st.SetNodeOnline(ctx, "nd_rt", json.RawMessage(`{"cpu_total":16,"mem_free_mb":16384,"disk_free_mb":102400,"models":["claude-opus-5-5"]}`)); err != nil {
+	if err := r31LegacySetOnline(st, ctx, "nd_rt", json.RawMessage(`{"cpu_total":16,"mem_free_mb":16384,"disk_free_mb":102400,"models":["claude-opus-5-5"]}`)); err != nil {
 		t.Fatal(err)
 	}
 	acct, err := deps.pool.RegisterOwned(ctx, "zzc", "ClaudeFixture", "token_file", "claude", "claude", `{"fixture":"no-real-credential"}`)

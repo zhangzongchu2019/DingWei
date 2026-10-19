@@ -42,7 +42,10 @@ func normalizeQuotaRegistration(n *Node) error {
 			return fmt.Errorf("%w: soft requires explicit registration", ErrParams)
 		}
 		labels["quota_mode"] = "hard"
-		delete(labels, "quota_policy_revision")
+		if n.QuotaPolicyRevision != "" && !policyRevisionPattern.MatchString(n.QuotaPolicyRevision) {
+			return fmt.Errorf("%w: quota policy revision", ErrParams)
+		}
+		labels["quota_policy_revision"] = n.QuotaPolicyRevision
 	}
 	b, err := json.Marshal(labels)
 	n.Labels = b
@@ -70,7 +73,7 @@ func nodeQuotaEligible(n Node) bool {
 		return false
 	}
 	if mode == "hard" {
-		return c.Mode == "" || c.Mode == "hard"
+		return c.Mode == "hard" && policyRevisionPattern.MatchString(rev) && c.Revision == rev && n.LastSeenAt != nil && time.Since(*n.LastSeenAt) >= 0 && time.Since(*n.LastSeenAt) <= 60*time.Second
 	}
 	return mode == "soft" && c.Mode == "soft" && policyRevisionPattern.MatchString(rev) && c.Revision == rev && c.Ready && n.LastSeenAt != nil && time.Since(*n.LastSeenAt) >= 0 && time.Since(*n.LastSeenAt) <= 60*time.Second
 }
@@ -119,6 +122,14 @@ func (s *Store) SetNodeQuotaCapacity(ctx context.Context, id string, capacity js
 			return err
 		}
 		mode, revision := registeredQuota(Node{Labels: registered})
+		var reported struct {
+			Address string `json:"address"`
+		}
+		if json.Unmarshal(capacity, &reported) == nil && reported.Address != "" && validateNodeText(reported.Address, 255, true) {
+			if _, err := tx.Exec(ctx, `UPDATE g4_node SET address=$2,address_source='node' WHERE id=$1 AND address_source<>'admin'`, id, reported.Address); err != nil {
+				return err
+			}
+		}
 		var cap struct {
 			Mode     string `json:"quota_mode"`
 			Revision string `json:"quota_policy_revision"`

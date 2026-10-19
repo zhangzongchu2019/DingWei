@@ -30,9 +30,13 @@ import (
 // 须在 httpapi.API 构造之前调用（cfg.hosted 注入点在其上）。
 func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatformConfig, pool *repo.Pool,
 	idStore identity.Store, svc *identity.Service, actor func(r *http.Request) (string, error)) (bool, error) {
-	access, err := parseHostedAccess(os.Getenv("DW_G4_ACCESS_ALLOW_USER_IDS"))
+	access, err := parseHostedAccessMode(os.Getenv("DW_G4_ACCESS_MODE"), os.Getenv("DW_G4_ACCESS_ALLOW_USER_IDS"))
 	if err != nil {
 		return false, err
+	}
+	access.active = func(r *http.Request, id string) bool {
+		u, e := idStore.GetUser(r.Context(), id)
+		return e == nil && u.State == identity.UserActive
 	}
 	cfg.hostedAccess = func(r *http.Request) bool {
 		_, ok := access.human(r, actor)
@@ -45,6 +49,7 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 		return false, nil
 	}
 	hst := hosted.NewStore(pool)
+	hst.SetNodeAuthorizer(identity.AuthorizeHostedNodeTx)
 	if err := hst.ApplySchema(ctx); err != nil { // 幂等 SchemaDDL（建表 CREATE IF NOT EXISTS；加列用幂等 ALTER ADD COLUMN IF NOT EXISTS——g4_ 首次加列起）
 		return false, err
 	}
@@ -117,7 +122,12 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 	mux.HandleFunc("GET /api/node/connect", gate.Handler().ServeHTTP) // 节点代理拨入（Bearer 节点凭据）
 	registerHostedRoutes(mux, hostedDeps{
 		access: access,
-		orch:   orch, life: life, qs: hosted.NewQuotaService(hst, idp),
+		store:  hst,
+		isAdmin: func(r *http.Request, id string) bool {
+			u, e := idStore.GetUser(r.Context(), id)
+			return e == nil && u.State == identity.UserActive && u.Type == identity.UserPlatformAdmin
+		},
+		orch: orch, life: life, qs: hosted.NewQuotaService(hst, idp),
 		actor: actor, pool: poolSvc, publicOrigin: cfg.publicOrigin, login: loginSvc,
 		ownsAgent: func(r *http.Request, userLC, agentID string) bool {
 			ags, err := svc.ListAgents(r.Context(), userLC)

@@ -777,7 +777,7 @@ func TestParseLocalImagesRejectsWrongLength(t *testing.T) {
 func TestRegisterDockerHandlersRejectsBadAllowlist(t *testing.T) {
 	f := newFakeDocker(t)
 	register := func(csv string) error {
-		return (&Agent{handlers: map[string]Handler{}}).RegisterDockerHandlers(
+		return (&Agent{handlers: map[string]Handler{}}).registerR31LegacyFixture(t,
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
 			"http://172.30.68.1:11080", "wss://hub.test", csv, false, "", "", nil,
@@ -978,7 +978,7 @@ func TestSeatCLIMustMatchAllowlistExactly(t *testing.T) {
 func TestHubViaProxyThroughRegisterDockerHandlers(t *testing.T) {
 	f := newFakeDocker(t)
 	ag := &Agent{handlers: map[string]Handler{}}
-	if err := ag.RegisterDockerHandlers(
+	if err := ag.registerR31LegacyFixture(t,
 		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
 		"http://172.30.68.1:11080", "wss://dw.cmjrt.com:55055", "", true, "", "", nil,
@@ -1052,7 +1052,7 @@ func TestSeatCodexModelInject(t *testing.T) {
 func TestSeatCodexModelValidation(t *testing.T) {
 	f := newFakeDocker(t)
 	register := func(model string) error {
-		return (&Agent{handlers: map[string]Handler{}}).RegisterDockerHandlers(
+		return (&Agent{handlers: map[string]Handler{}}).registerR31LegacyFixture(t,
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
 			"http://172.30.68.1:11080", "wss://hub.test", "", false, model, "", nil,
@@ -1075,7 +1075,7 @@ func TestSeatCodexModelValidation(t *testing.T) {
 		"gpt-6.1-sol\nMAL=1",    // 换行（env 注入面）
 	} {
 		ag := &Agent{handlers: map[string]Handler{}}
-		err := ag.RegisterDockerHandlers(
+		err := ag.registerR31LegacyFixture(t,
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
 			"http://172.30.68.1:11080", "wss://hub.test", "", false, bad, "", nil,
@@ -1109,7 +1109,7 @@ func TestSeatCodexModelThroughCreateSpec(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			f := newFakeDocker(t)
 			ag := &Agent{handlers: map[string]Handler{}}
-			if err := ag.RegisterDockerHandlers(
+			if err := ag.registerR31LegacyFixture(t,
 				newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 				t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
 				"http://172.30.68.1:11080", "wss://hub.test", "", false, tc.model, "", nil,
@@ -1141,7 +1141,7 @@ func TestSeatCodexModelThroughCreateSpec(t *testing.T) {
 	// 空态（预审②）：spec Env 不出现 CODEX_MODEL
 	f := newFakeDocker(t)
 	ag := &Agent{handlers: map[string]Handler{}}
-	if err := ag.RegisterDockerHandlers(
+	if err := ag.registerR31LegacyFixture(t,
 		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
 		"http://172.30.68.1:11080", "wss://hub.test", "", false, "", "", nil,
@@ -1238,7 +1238,7 @@ func TestSeatModeSwitch(t *testing.T) {
 	// 非法值拒启报键名（注册前，不部分注册）
 	for _, bad := range []string{"echo", "DRIVER", " driver", "cli2"} {
 		ag := &Agent{handlers: map[string]Handler{}}
-		err := ag.RegisterDockerHandlers(
+		err := ag.registerR31LegacyFixture(t,
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
 			"http://172.30.68.1:11080", "wss://hub.test", "", false, "", bad, nil,
@@ -1256,7 +1256,7 @@ func TestSeatModeSwitch(t *testing.T) {
 func TestSeatModeDriverThroughCreateSpec(t *testing.T) {
 	f := newFakeDocker(t)
 	ag := &Agent{handlers: map[string]Handler{}}
-	if err := ag.RegisterDockerHandlers(
+	if err := ag.registerR31LegacyFixture(t,
 		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
 		"http://172.30.68.1:11080", "wss://hub.test", "", false, "", "driver", nil,
@@ -1333,7 +1333,7 @@ func TestSeatModelPriority(t *testing.T) {
 // 口径 3 启动期：清单非空时节点默认（NODEAGENT_SEAT_CODEX_MODEL）必须是清单成员，否则拒启报键名。
 func TestNodeDefaultMustBeInModelsList(t *testing.T) {
 	f := newFakeDocker(t)
-	err := (&Agent{handlers: map[string]Handler{}}).RegisterDockerHandlers(
+	err := (&Agent{handlers: map[string]Handler{}}).registerR31LegacyFixture(t,
 		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
 		"http://172.30.68.1:11080", "wss://hub.test", "", false, "gpt-6.1-sol", "", []string{"gpt-5.5"},
@@ -1342,7 +1342,7 @@ func TestNodeDefaultMustBeInModelsList(t *testing.T) {
 		t.Fatalf("默认不在清单必须拒启报键名: %v", err)
 	}
 	// 在清单 ⇒ 过
-	if err := (&Agent{handlers: map[string]Handler{}}).RegisterDockerHandlers(
+	if err := (&Agent{handlers: map[string]Handler{}}).registerR31LegacyFixture(t,
 		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
 		"http://172.30.68.1:11080", "wss://hub.test", "", false, "gpt-6.1-sol", "", []string{"gpt-6.1-sol"},

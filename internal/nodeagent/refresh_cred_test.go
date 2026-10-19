@@ -67,7 +67,7 @@ func TestRefreshCredWhitelisted(t *testing.T) {
 	}
 	f := newFakeDocker(t)
 	ag := &Agent{handlers: map[string]Handler{}}
-	if err := ag.RegisterDockerHandlers(newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
+	if err := ag.registerR31LegacyFixture(t, newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
 		"http://172.30.68.1:11080", "wss://hub.test", "", false, "", "", nil); err != nil {
 		t.Fatalf("register: %v", err)

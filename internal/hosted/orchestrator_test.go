@@ -100,16 +100,16 @@ func mkOrch(t *testing.T) (*Orchestrator, *fakeIdentity, *fakeGateway, *Store) {
 	combos := fakeCombos{m: map[string]bool{"codex|gpt|token_file": true}}
 	o := NewOrchestrator(s, svc, idp, gw, combos, fakeCatalog{})
 	// 节点两枚：一满一空
-	if err := s.UpsertNode(context.Background(), Node{ID: "nd_full", Name: "full", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
+	if err := s.upsertR31LegacyNode(context.Background(), Node{ID: "nd_full", Name: "full", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.UpsertNode(context.Background(), Node{ID: "nd_free", Name: "free", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
+	if err := s.upsertR31LegacyNode(context.Background(), Node{ID: "nd_free", Name: "free", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(context.Background(), "nd_full", json.RawMessage(`{"mem_free_mb":1024}`)); err != nil {
+	if err := s.setR31LegacyOnline(context.Background(), "nd_full", json.RawMessage(`{"mem_free_mb":1024}`)); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(context.Background(), "nd_free", json.RawMessage(`{"mem_free_mb":16384}`)); err != nil {
+	if err := s.setR31LegacyOnline(context.Background(), "nd_free", json.RawMessage(`{"mem_free_mb":16384}`)); err != nil {
 		t.Fatal(err)
 	}
 	// 配额与账号
@@ -377,16 +377,16 @@ func TestPoolScheduling(t *testing.T) {
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	// 三个节点：pool-a 大余量、pool-b 小余量（标签落位不得被全池最闲抢走——D1 反向）
-	if err := s.UpsertNode(ctx, Node{ID: "nd_pa", Name: "pa", Labels: json.RawMessage(`{"pool":"a"}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_pa", Name: "pa", Labels: json.RawMessage(`{"pool":"a"}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(ctx, "nd_pa", json.RawMessage(`{"mem_free_mb":32768}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_pa", json.RawMessage(`{"mem_free_mb":32768}`)); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.UpsertNode(ctx, Node{ID: "nd_pb", Name: "pb", Labels: json.RawMessage(`{"pool":"b"}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_pb", Name: "pb", Labels: json.RawMessage(`{"pool":"b"}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(ctx, "nd_pb", json.RawMessage(`{"mem_free_mb":8192}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_pb", json.RawMessage(`{"mem_free_mb":8192}`)); err != nil {
 		t.Fatal(err)
 	}
 	// 指定 pool=b ⇒ 必须落在 b（尽管 a 更闲）
@@ -572,7 +572,7 @@ func TestOptionsViewAndJobProgress(t *testing.T) {
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	// 容量读数（模拟心跳上报）：nd_free 16C 总、15G 余、100G 盘余
-	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"cpu_total":16,"mem_free_mb":15360,"disk_free_mb":102400}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"cpu_total":16,"mem_free_mb":15360,"disk_free_mb":102400}`)); err != nil {
 		t.Fatal(err)
 	}
 	// 先建一席占资源：2c4g 落 nd_free
@@ -589,14 +589,14 @@ func TestOptionsViewAndJobProgress(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// 节点两枚：free_vcpu＝16−2＝14（一席占 2C）、online 两态
+	// R31节点余量与准入一致：pending一席扣2C/4GiB/max(套餐,40GiB)，余14C/11GiB/60GiB。
 	var free *NodeOption
 	for i := range v.Nodes {
 		if v.Nodes[i].ID == "nd_free" {
 			free = &v.Nodes[i]
 		}
 	}
-	if free == nil || !free.Online || free.FreeVCPU != 14 || free.FreeMemGB != 15 || free.FreeDiskGB != 100 {
+	if free == nil || !free.Online || free.FreeVCPU != 14 || free.FreeMemGB != 11 || free.FreeDiskGB != 60 {
 		t.Fatalf("节点格: %+v", free)
 	}
 	// 账号：0.2.1.101 共用——已被一席引用的账号仍可选，in_use=1（页面提示「已被 1 个 Agent 使用」，不拦）
@@ -741,10 +741,10 @@ func TestCreateWithModelSelectsSupportingNode(t *testing.T) {
 	ctx := context.Background()
 	// nd_free 上报清单含 gpt-6.1-sol；nd_full 不含。🔴 错位须钉在容量上：nd_full 余量
 	// 更大（32768＞16384）——不按清单过滤时自动选点会选 nd_full（反向刀才能红）。
-	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol"]}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol"]}`)); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(ctx, "nd_full", json.RawMessage(`{"mem_free_mb":32768,"models":["gpt-4o"]}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_full", json.RawMessage(`{"mem_free_mb":32768,"models":["gpt-4o"]}`)); err != nil {
 		t.Fatal(err)
 	}
 	acct := acctOf(t, o.pool)
@@ -783,7 +783,7 @@ func TestCreateWithModelSelectsSupportingNode(t *testing.T) {
 func TestCreateModelRejections(t *testing.T) {
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
-	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol"]}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol"]}`)); err != nil {
 		t.Fatal(err)
 	}
 	acct := acctOf(t, o.pool)
@@ -803,7 +803,7 @@ func TestCreateModelRejections(t *testing.T) {
 func TestPickNodeStaleFrameTreatedOffline(t *testing.T) {
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
-	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol"]}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol"]}`)); err != nil {
 		t.Fatal(err)
 	}
 	// 把帧龄回拨到 1 小时前（走 exec 包装，不直调 htx——边界闸纪律）

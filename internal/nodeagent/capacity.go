@@ -19,6 +19,7 @@ import (
 )
 
 type Capacity struct {
+	Address               string              `json:"address,omitempty"`
 	HoldReleaseVersion    int                 `json:"hold_release_version,omitempty"`
 	SoftQuotaPolicy       *softQuotaSummary   `json:"soft_quota_policy,omitempty"`
 	SeatCapacity          *seatcapacity.View  `json:"seat_capacity,omitempty"`
@@ -51,7 +52,7 @@ type seatInfo struct {
 
 // collectCapacity 采集（meminfo 与 statfs 可注入——单测用 fixture）。
 func (d *dockerOps) collectCapacity(ctx context.Context) (Capacity, error) {
-	c := Capacity{NodeID: "", Labels: nil, At: time.Now().UTC()}
+	c := Capacity{NodeID: "", Labels: nil, At: time.Now().UTC(), Address: strings.TrimSpace(os.Getenv("NODEAGENT_ADDRESS"))}
 	c.CPUTotal = runtime.NumCPU()
 	c.ResourceLimitsVersion = 1
 	c.QuotaMode = d.policyValue().Mode
@@ -60,6 +61,9 @@ func (d *dockerOps) collectCapacity(ctx context.Context) (Capacity, error) {
 		c.SoftSeats, c.QuotaEvents, c.SoftReady, c.SeatCapacity = d.soft.reportWithCapacity()
 		c.HoldReleaseVersion = 1
 		c.SoftQuotaPolicy = d.soft.summary()
+	}
+	if d.soft == nil && d.capacityQuota != nil {
+		c.SoftSeats, _, _, c.SeatCapacity = d.capacityQuota.reportWithCapacity()
 	}
 	if d.soft != nil {
 		d.soft.mu.Lock()

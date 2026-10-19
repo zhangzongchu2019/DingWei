@@ -53,7 +53,7 @@ func TestCapacityRequestReasonAndModelSelection(t *testing.T) {
 	ctx := context.Background()
 	o, _, _, s := mkOrch(t)
 	rev := strings.Repeat("d", 64)
-	if err := s.UpsertNode(ctx, Node{ID: "nd_reason", Name: "reason", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_reason", Name: "reason", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
 	p, _ := PlanByID("4c8g")
@@ -70,7 +70,7 @@ func TestCapacityRequestReasonAndModelSelection(t *testing.T) {
 				snapshot.Total.Disk = 12 << 30
 				policy.Minimum.Disk = 8 << 30
 			}
-			if err := s.SetNodeOnline(ctx, "nd_reason", reasonFrame(t, rev, snapshot, policy, nil, []string{"gpt-review"})); err != nil {
+			if err := s.setR31LegacyOnline(ctx, "nd_reason", reasonFrame(t, rev, snapshot, policy, nil, []string{"gpt-review"})); err != nil {
 				t.Fatal(err)
 			}
 			n, _ := s.GetNode(ctx, "nd_reason")
@@ -90,7 +90,7 @@ func TestCapacityRequestReasonAndModelSelection(t *testing.T) {
 				t.Fatalf("consent boundary: %v", err)
 			}
 			snapshot.Total = seatcapacity.Resources{CPU: 8000, Memory: 16 << 30, Disk: 320 << 30}
-			if err := s.SetNodeOnline(ctx, n.ID, reasonFrame(t, rev, snapshot, policy, nil, []string{"gpt-review"})); err != nil {
+			if err := s.setR31LegacyOnline(ctx, n.ID, reasonFrame(t, rev, snapshot, policy, nil, []string{"gpt-review"})); err != nil {
 				t.Fatal(err)
 			}
 			if _, err = o.pickNode(ctx, n.ID, "", p, "gpt-review", true); err != nil {
@@ -101,7 +101,7 @@ func TestCapacityRequestReasonAndModelSelection(t *testing.T) {
 	// Auto selection unions dimensions only across matching-model candidates.
 	for i, dim := range []string{"cpu", "memory"} {
 		id := fmt.Sprintf("nd_union%d", i)
-		if err := s.UpsertNode(ctx, Node{ID: id, Name: id, QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true","pool":"reason-pool"}`)}); err != nil {
+		if err := s.upsertR31LegacyNode(ctx, Node{ID: id, Name: id, QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true","pool":"reason-pool"}`)}); err != nil {
 			t.Fatal(err)
 		}
 		snapshot := netCapacitySnapshot()
@@ -110,7 +110,7 @@ func TestCapacityRequestReasonAndModelSelection(t *testing.T) {
 		} else {
 			snapshot.Total.Memory = 6 << 30
 		}
-		if err := s.SetNodeOnline(ctx, id, reasonFrame(t, rev, snapshot, seatcapacity.DefaultPolicy(), nil, []string{"gpt-review"})); err != nil {
+		if err := s.setR31LegacyOnline(ctx, id, reasonFrame(t, rev, snapshot, seatcapacity.DefaultPolicy(), nil, []string{"gpt-review"})); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -122,13 +122,13 @@ func TestCapacityStartReasonAndUnknown(t *testing.T) {
 	o, _, _, s := mkOrch(t)
 	rev := strings.Repeat("e", 64)
 	p, _ := PlanByID("4c8g")
-	if err := s.UpsertNode(ctx, Node{ID: "nd_reason", Name: "reason", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_reason", Name: "reason", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
 	account := acctOf(t, o.pool)
 	seat := Seat{AgentID: "ag_reason", NodeID: "nd_reason", CLI: "codex", LLM: "gpt", CredKind: "token_file", Plan: p.ID, CreatedBy: "zzc"}
 	// Use the actual transactional write before introducing a resource shrink.
-	if err := s.SetNodeOnline(ctx, seat.NodeID, reasonFrame(t, rev, netCapacitySnapshot(), seatcapacity.DefaultPolicy(), nil, nil)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, seat.NodeID, reasonFrame(t, rev, netCapacitySnapshot(), seatcapacity.DefaultPolicy(), nil, nil)); err != nil {
 		t.Fatal(err)
 	}
 	seat.AccountRef.String = account
@@ -157,7 +157,7 @@ func TestCapacityStartReasonAndUnknown(t *testing.T) {
 			case "load_unknown":
 				snapshot.Known = false
 			}
-			if err := s.SetNodeOnline(ctx, seat.NodeID, reasonFrame(t, rev, snapshot, policy, map[string]Plan{seat.AgentID: p}, nil)); err != nil {
+			if err := s.setR31LegacyOnline(ctx, seat.NodeID, reasonFrame(t, rev, snapshot, policy, map[string]Plan{seat.AgentID: p}, nil)); err != nil {
 				t.Fatal(err)
 			}
 			requireCapacityReasons(t, life.quotaStartGuard(ctx, before), dim)
@@ -167,7 +167,7 @@ func TestCapacityStartReasonAndUnknown(t *testing.T) {
 			}
 		})
 	}
-	if err := s.SetNodeOnline(ctx, seat.NodeID, reasonFrame(t, rev, netCapacitySnapshot(), seatcapacity.DefaultPolicy(), map[string]Plan{seat.AgentID: p}, nil)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, seat.NodeID, reasonFrame(t, rev, netCapacitySnapshot(), seatcapacity.DefaultPolicy(), map[string]Plan{seat.AgentID: p}, nil)); err != nil {
 		t.Fatal(err)
 	}
 	if err := life.quotaStartGuard(ctx, before); err != nil {

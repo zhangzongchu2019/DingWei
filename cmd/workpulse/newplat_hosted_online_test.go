@@ -47,7 +47,7 @@ func TestWireHostedOnlineHookAndSweeper(t *testing.T) {
 	}
 
 	st := hosted.NewStore(pool)
-	if err := st.UpsertNode(ctx, hosted.Node{ID: "nd_w", Name: "w", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
+	if err := r31LegacyUpsertNode(st, ctx, hosted.Node{ID: "nd_w", Name: "w", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
 		t.Fatal(err)
 	}
 	starting := func(id string) {

@@ -75,8 +75,8 @@ func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
 		}
 		return n
 	}
-	if n := countG4(); n != 13 {
-		t.Fatalf("建后应有十三张 g4_ 表，实得 %d", n)
+	if n := countG4(); n != 14 {
+		t.Fatalf("建后应有十四张 g4_ 表，实得 %d", n)
 	}
 	if err := s.DropSchema(ctx); err != nil {
 		t.Fatalf("drop: %v", err)
@@ -87,12 +87,12 @@ func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
 	if err := s.ApplySchema(ctx); err != nil { // 拆净后重建须绿
 		t.Fatalf("重建: %v", err)
 	}
-	if n := countG4(); n != 13 {
-		t.Fatalf("重建后应有十三张 g4_ 表，实得 %d", n)
+	if n := countG4(); n != 14 {
+		t.Fatalf("重建后应有十四张 g4_ 表，实得 %d", n)
 	}
 }
 
-func TestApplySchemaUpgradesOldHostedShapeWithoutLosingSeats(t *testing.T) {
+func TestAppliedLedgerRejectsMissingHostedTableWithoutRepair(t *testing.T) {
 	pool := testpool(t)
 	ctx := context.Background()
 	s := NewStore(pool)
@@ -111,23 +111,23 @@ VALUES('ag_old','nd_old','codex','gpt','token_file','2c4g','zzc') ON CONFLICT DO
 	if _, err := s.exec(ctx, `DROP TABLE g4_lifecycle_job`); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.ApplySchema(ctx); err != nil {
-		t.Fatalf("upgrade old hosted shape: %v", err)
+	if err := s.ApplySchema(ctx); err == nil {
+		t.Fatal("applied ledger accepted missing table")
 	}
 	if seat, err := s.GetSeat(ctx, "ag_old"); err != nil || seat.CreatedBy != "zzc" {
 		t.Fatalf("old seat was not preserved: %+v err=%v", seat, err)
 	}
 	var exists bool
 	row, err := s.qrow(ctx, `SELECT to_regclass('g4_lifecycle_job') IS NOT NULL`)
-	if err != nil || row.Scan(&exists) != nil || !exists {
-		t.Fatalf("lifecycle job table missing after upgrade: exists=%t err=%v", exists, err)
+	if err != nil || row.Scan(&exists) != nil || exists {
+		t.Fatalf("startup must not recreate an applied table: exists=%t err=%v", exists, err)
 	}
 }
 
 // 包 B2（R-V2-SEAT-B2-SCHEMA 裁定）：旧形状表（无 model 列、有存量行）上 ApplySchema ⇒
 // 幂等 ALTER 加列、存量行可读（model=”＝节点默认）、新建写入新列。
 // 反向：去掉 SchemaDDL 里那行 ALTER ⇒ 本格红。
-func TestSchemaModelColumnMigration(t *testing.T) {
+func TestFrozenR30SchemaModelColumnMigration(t *testing.T) {
 	pool := testpool(t)
 	ctx := context.Background()
 	s := NewStore(pool)
@@ -154,7 +154,7 @@ func TestSchemaModelColumnMigration(t *testing.T) {
 		t.Fatalf("存量行: %v", err)
 	}
 	// 其余九表＋ALTER（新 Hub 启动路径）
-	if err := s.ApplySchema(ctx); err != nil {
+	if _, err := s.exec(ctx, R30SchemaDDL); err != nil {
 		t.Fatalf("apply: %v", err)
 	}
 	old2, err := s.GetSeat(ctx, "ag_old")
@@ -188,7 +188,7 @@ func TestSchemaModelColumnMigration(t *testing.T) {
 		t.Fatalf("旧形状 INSERT 须仍成功: %v", err)
 	}
 	// 幂等：再 apply 不出错
-	if err := s.ApplySchema(ctx); err != nil {
+	if _, err := s.exec(ctx, R30SchemaDDL); err != nil {
 		t.Fatalf("重复 apply: %v", err)
 	}
 }
@@ -205,19 +205,19 @@ func TestNodeSeatPoolQuotaFlow(t *testing.T) {
 	}
 
 	// 节点：登记→离线；心跳→在线＋容量；自动落位取余量最大者
-	if err := s.UpsertNode(ctx, Node{ID: "nd_a", Name: "node-a", Labels: json.RawMessage(`{"pool":"p1"}`), DockerVersion: "29.1.3", ProtocolVersion: 1}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_a", Name: "node-a", Labels: json.RawMessage(`{"pool":"p1"}`), DockerVersion: "29.1.3", ProtocolVersion: 1}); err != nil {
 		t.Fatalf("upsert a: %v", err)
 	}
-	if err := s.UpsertNode(ctx, Node{ID: "nd_b", Name: "node-b", Labels: json.RawMessage(`{"pool":"p1"}`), DockerVersion: "29.1.3", ProtocolVersion: 1}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_b", Name: "node-b", Labels: json.RawMessage(`{"pool":"p1"}`), DockerVersion: "29.1.3", ProtocolVersion: 1}); err != nil {
 		t.Fatalf("upsert b: %v", err)
 	}
 	if _, err := s.PickNodeAuto(ctx); err != ErrNotFound {
 		t.Fatalf("无 online 节点应 ErrNotFound, 得 %v", err)
 	}
-	if err := s.SetNodeOnline(ctx, "nd_a", json.RawMessage(`{"mem_free_mb":4096}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_a", json.RawMessage(`{"mem_free_mb":4096}`)); err != nil {
 		t.Fatalf("online a: %v", err)
 	}
-	if err := s.SetNodeOnline(ctx, "nd_b", json.RawMessage(`{"mem_free_mb":8192}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_b", json.RawMessage(`{"mem_free_mb":8192}`)); err != nil {
 		t.Fatalf("online b: %v", err)
 	}
 	picked, err := s.PickNodeAuto(ctx)
@@ -319,10 +319,11 @@ func TestAccessCtxValid(t *testing.T) {
 // 合并形态（复验建议入库，tosonnet55tc2k）：生产真实形态＝既无 model 列又无 g4_lifecycle_job 表
 // （包 A 与 B2 两处缺同存）。ApplySchema 两次（升级＋幂等重放）⇒ 席位可读且 model=”、
 // job 表与 model 列都在。反向：去 ALTER 或去 job 表 CREATE 各红。
-func TestApplySchemaUpgradesPreA1PreB2Shape(t *testing.T) {
+func TestFrozenR30ApplySchemaUpgradesPreA1PreB2Shape(t *testing.T) {
 	pool := testpool(t)
 	ctx := context.Background()
 	s := NewStore(pool)
+	// Frozen pre-R30 fixture oracle only; R31 refuses partial shapes.
 	// 生产真实旧形状：g4_hosted_seat 无 model 列、无 g4_lifecycle_job 表
 	if _, err := s.exec(ctx, `CREATE TABLE g4_hosted_seat (
   agent_id    TEXT PRIMARY KEY,
@@ -345,7 +346,7 @@ func TestApplySchemaUpgradesPreA1PreB2Shape(t *testing.T) {
 		t.Fatalf("存量行: %v", err)
 	}
 	for i := 0; i < 2; i++ { // 升级＋幂等重放
-		if err := s.ApplySchema(ctx); err != nil {
+		if _, err := s.exec(ctx, R30SchemaDDL); err != nil {
 			t.Fatalf("apply #%d: %v", i, err)
 		}
 	}

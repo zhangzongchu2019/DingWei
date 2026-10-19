@@ -18,7 +18,7 @@ func TestNodeCredentialLifecycle(t *testing.T) {
 	}
 
 	// 登记 → 认证通
-	secret, err := s.RegisterNode(ctx, Node{ID: "nd_c1", Name: "node-c1",
+	secret, err := s.registerR31LegacyNode(ctx, Node{ID: "nd_c1", Name: "node-c1",
 		Labels:        json.RawMessage(`{"site":"tc","spec":"8c16g","pool":"p1"}`),
 		DockerVersion: "29.1.3", ProtocolVersion: 1}, "tester")
 	if err != nil {

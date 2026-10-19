@@ -44,7 +44,7 @@ func TestHostedAdminQuotaRegistrationCLIToNormalize(t *testing.T) {
 		if err := json.Unmarshal([]byte(strings.TrimSpace(hostedAdminDump(t, dsn, `SELECT labels::text FROM g4_node WHERE id='nd_hard_cli'`))), &labels); err != nil {
 			t.Fatal(err)
 		}
-		if labels["quota_mode"] != "hard" || labels["quota_policy_revision"] != "" {
+		if labels["quota_mode"] != "hard" || labels["quota_policy_revision"] != revision {
 			t.Fatal("legacy hard default changed", labels)
 		}
 	})

@@ -63,6 +63,7 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
+	TrustProxy         bool // R31: only configured loopback nginx can supply X-Real-IP.
 	consoleMux         *consoleMuxRegistry
 	Repo               store.Repository
 	Outbound           MessageQueue

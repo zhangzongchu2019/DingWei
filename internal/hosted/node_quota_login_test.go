@@ -11,7 +11,7 @@ func TestLoginQuotaAuditDoesNotMutateHostedSeat(t *testing.T) {
 	_, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	revision := strings.Repeat("a", 64)
-	if err := s.UpsertNode(ctx, Node{ID: "nd_loginquota", Name: "loginquota", QuotaMode: "soft", QuotaPolicyRevision: revision, Labels: json.RawMessage(`{}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_loginquota", Name: "loginquota", QuotaMode: "soft", QuotaPolicyRevision: revision, Labels: json.RawMessage(`{}`)}); err != nil {
 		t.Fatal(err)
 	}
 	key := "login-0123456789abcdef0123456789abcdef"

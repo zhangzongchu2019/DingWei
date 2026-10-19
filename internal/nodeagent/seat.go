@@ -98,16 +98,17 @@ func strictDecode(raw json.RawMessage, v any) error {
 }
 
 type dockerOps struct {
-	eng          *engine
-	policy       NodePolicy
-	soft         *softQuota
-	quota        quotaOps
-	seatRoot     string          // /data/dingwei-newplat/agents 或 /data/dingwei-node
-	registry     string          // 固定镜像仓库（如 hub.local/dingwei）
-	cgroupParent string          // 🔴 必填：cgroup 父切片（如 dingwei-hosted.slice——组长 eccc54bc）
-	seatProxy    string          // 🔴 必填：席位代理（第 12 条②：注入容器 env，如 http://172.30.68.1:11080）
-	hubWSBase    string          // 🔴 必填（容器启动契约 R-G1-HOSTED-IMAGE-CONTRACT）：SH_WS_BASE＝代理配置 HubURL 的 ws 源
-	localImages  map[string]bool // local 形态白名单（NODEAGENT_LOCAL_IMAGES；与板上登记同源）
+	eng           *engine
+	policy        NodePolicy
+	soft          *softQuota
+	capacityQuota *softQuota
+	quota         quotaOps
+	seatRoot      string          // /data/dingwei-newplat/agents 或 /data/dingwei-node
+	registry      string          // 固定镜像仓库（如 hub.local/dingwei）
+	cgroupParent  string          // 🔴 必填：cgroup 父切片（如 dingwei-hosted.slice——组长 eccc54bc）
+	seatProxy     string          // 🔴 必填：席位代理（第 12 条②：注入容器 env，如 http://172.30.68.1:11080）
+	hubWSBase     string          // 🔴 必填（容器启动契约 R-G1-HOSTED-IMAGE-CONTRACT）：SH_WS_BASE＝代理配置 HubURL 的 ws 源
+	localImages   map[string]bool // local 形态白名单（NODEAGENT_LOCAL_IMAGES；与板上登记同源）
 	// seatHubViaProxy 席位到 Hub 全走 relay（R-SEAT-HUB-VIA-PROXY-IMPL-20261002232257 取案②）：
 	// 开 ⇒ NO_PROXY 不含 Hub 主机（入网 HTTP 走 relay）＋注 SH_PROXY=seatProxy（WS 走 relay CONNECT）；
 	// 关 ⇒ 现行为逐字不变（B12／本机 Hub 场景：Hub 主机追加进 NO_PROXY、WS 直连）。
@@ -221,8 +222,8 @@ func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources, 
 		cpuQuota = res.CPULimitMillicores * 100
 	}
 	labels := map[string]string{}
-	if d.soft != nil {
-		labels[managedSeatLabel] = d.soft.nodeID
+	if q := d.seatCapacityQuota(); q != nil {
+		labels[managedSeatLabel] = q.nodeID
 		labels[managedSeatIDLabel] = seatID
 	}
 	return map[string]any{
@@ -475,8 +476,8 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 		return nil, fmt.Errorf("%w: cli %q 不在白名单（漏设即拒）", ErrParams, p.CLI)
 	}
 
-	if d.soft != nil {
-		if err := d.soft.reserve(p.SeatID, p.Resources); err != nil {
+	if q := d.seatCapacityQuota(); q != nil {
+		if err := q.reserve(p.SeatID, p.Resources); err != nil {
 			return nil, err
 		}
 	}
@@ -537,8 +538,8 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 	if err != nil {
 		return fail(err, "")
 	}
-	if d.soft != nil {
-		if err := d.soft.track(p.SeatID, id); err != nil {
+	if q := d.seatCapacityQuota(); q != nil {
+		if err := q.track(p.SeatID, id); err != nil {
 			return fail(err, id)
 		}
 	}
@@ -804,8 +805,8 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	if err != nil {
 		return nil, err
 	}
-	if d.soft != nil {
-		if err := d.soft.track(p.SeatID, newID); err != nil {
+	if q := d.seatCapacityQuota(); q != nil {
+		if err := q.track(p.SeatID, newID); err != nil {
 			return nil, err
 		}
 	}
@@ -824,8 +825,8 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	if err := d.eng.containerRemove(ctx, oldID); err != nil {
 		return nil, err
 	}
-	if d.soft != nil {
-		if err := d.soft.untrack(p.SeatID, oldID); err != nil {
+	if q := d.seatCapacityQuota(); q != nil {
+		if err := q.untrack(p.SeatID, oldID); err != nil {
 			return nil, err
 		}
 	}
@@ -859,8 +860,8 @@ func (d *dockerOps) destroy(ctx context.Context, params json.RawMessage) (json.R
 	if err := d.quota.Clear(d.seatRoot, id); err != nil {
 		return nil, err
 	}
-	if d.soft != nil {
-		if err := d.soft.forget(id); err != nil {
+	if q := d.seatCapacityQuota(); q != nil {
+		if err := q.forget(id); err != nil {
 			return nil, err
 		}
 	}
@@ -969,6 +970,18 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 		a.heartbeatInterval = 15 * time.Second
 		a.background = d.runSoft
 		a.policyClose = q.close
+	}
+	if policy.Mode == "hard" {
+		q, err := newSoftQuota(policy, seatRoot, a.cfg.LedgerPath+".hard-capacity", a.cfg.NodeID)
+		if err != nil {
+			return err
+		}
+		q.capacity = &seatCapacityState{}
+		d.capacityQuota = q
+		a.background = d.runSeatCapacity
+		a.policyClose = q.close
+		a.heartbeatInterval = 15 * time.Second
+		a.commandGate = q.commandGate
 	}
 	a.docker = d
 	a.Register(CmdPullImage, d.pull)

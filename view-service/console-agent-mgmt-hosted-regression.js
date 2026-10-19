@@ -407,20 +407,24 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
 
     await test('hosted rows show state and lifecycle buttons, never revoke; self-hosted/legacy rows are unchanged', async () => {
       const gamma = page.locator('#rosterItems .roster-row[data-agent-id="ag-gamma"]');
-      assert.strictEqual(await gamma.locator('td').nth(1).textContent(), '运行中（可升级）');
+      assert.strictEqual(await gamma.locator('td').nth(3).textContent(), '运行中（可升级）');
+      assert.strictEqual(await gamma.locator('td').nth(1).textContent(),'托管');
+      assert.strictEqual(await gamma.locator('td').nth(2).textContent(),'node-a');
       assert.deepStrictEqual(await gamma.locator('.hosted-op').allTextContents(), ['升级', '重启', '停用', '销毁']);
       assert.strictEqual(await gamma.locator('.roster-revoke').isHidden(), true, 'a hosted agent is not revoked here');
       const leader = page.locator('#rosterItems .roster-row[data-agent-id="ag-leader"]');
       assert.strictEqual(await leader.locator('.hosted-op').count(), 0);
+      assert.strictEqual(await leader.locator('td').nth(1).textContent(),'自有');
+      assert.strictEqual(await leader.locator('td').nth(2).textContent(),'—');
       assert.strictEqual(await leader.locator('.roster-revoke').isVisible(), true);
-      assert.strictEqual(await page.locator('#rosterItems .roster-row[data-agent-id="ag-offline"] td').nth(1).textContent(), '异常');
+      assert.strictEqual(await page.locator('#rosterItems .roster-row[data-agent-id="ag-offline"] td').nth(3).textContent(), '异常');
     });
 
     await test('upgrade and restart send no confirmation; upgrade clears the "可升级" badge', async () => {
       const gamma = page.locator('#rosterItems .roster-row[data-agent-id="ag-gamma"]');
       dialogs.length = 0;
       await gamma.locator('[data-op="upgrade"]').click();
-      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(2)')?.textContent === '运行中');
+      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(4)')?.textContent === '运行中');
       assert.deepStrictEqual(writes.at(-1), { path: '/api/console/hosted/agents/ag-gamma/upgrade', body: {} });
       await gamma.locator('[data-op="restart"]').click();
       await page.waitForTimeout(250);
@@ -435,11 +439,11 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(writes.length, before); assert.match(dialogs[0], /数据卷保留/); assert.match(dialogs[0], /凭据暂停、无法再接入/, 'the confirmation says what suspension means for the credential');
       dialogAccept = true;
       await gamma.locator('[data-op="disable"]').click();
-      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(2)')?.textContent === '已停用');
+      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(4)')?.textContent === '已停用');
       assert.deepStrictEqual(writes.at(-1), { path: '/api/console/hosted/agents/ag-gamma/disable', body: { confirm: true } });
       assert.deepStrictEqual(await gamma.locator('.hosted-op').allTextContents(), ['启用', '销毁']);
       await gamma.locator('[data-op="enable"]').click();
-      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(2)')?.textContent === '运行中');
+      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(4)')?.textContent === '运行中');
       assert.deepStrictEqual(writes.at(-1), { path: '/api/console/hosted/agents/ag-gamma/enable', body: {} });
     });
 
@@ -455,7 +459,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.evaluate(() => refreshRoster());
       const row = page.locator('#rosterItems .roster-row[data-agent-id="ag-susp"]');
       await row.waitFor({ state: 'visible' });
-      assert.strictEqual(await row.locator('td').nth(1).textContent(), '已停用');
+      assert.strictEqual(await row.locator('td').nth(3).textContent(), '已停用');
       assert.deepStrictEqual(await row.locator('.hosted-op').allTextContents(), ['启用', '销毁']);
       agents = agents.filter((a) => a.id !== 'ag-susp'); await page.evaluate(() => refreshRoster());
     });
@@ -467,9 +471,9 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.evaluate(() => refreshRoster());
       const hosted = page.locator('#rosterItems .roster-row[data-agent-id="ag-sw"]');
       await hosted.waitFor({ state: 'visible' });
-      assert.strictEqual(await hosted.locator('td').nth(1).textContent(), '已停用', 'suspended on top must beat hosted.state=running');
+      assert.strictEqual(await hosted.locator('td').nth(3).textContent(), '已停用', 'suspended on top must beat hosted.state=running');
       assert.deepStrictEqual(await hosted.locator('.hosted-op').allTextContents(), ['启用', '销毁']);
-      assert.strictEqual(await page.locator('#rosterItems .roster-row[data-agent-id="ag-sh"] td').nth(1).textContent(), '已停用');
+      assert.strictEqual(await page.locator('#rosterItems .roster-row[data-agent-id="ag-sh"] td').nth(3).textContent(), '已停用');
       agents = agents.filter((a) => a.id !== 'ag-sw' && a.id !== 'ag-sh'); hostedAgents = hostedAgents.filter((h) => h.agent_id !== 'ag-sw'); await page.evaluate(() => refreshRoster());
     });
 
@@ -517,7 +521,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       hostedAgents.push({ agent_id: 'ag-offline', state: 'busy', upgradable: true, node_name: 'node-b' });
       hostedAgents = hostedAgents.filter((x, i, arr) => arr.findLastIndex((y) => y.agent_id === x.agent_id) === i);
       await page.evaluate(() => refreshRoster());
-      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-offline"] td:nth-child(2)')?.textContent === '处理中…');
+      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-offline"] td:nth-child(4)')?.textContent === '处理中…');
       const states = await page.locator('#rosterItems .roster-row[data-agent-id="ag-offline"] .hosted-op').evaluateAll((els) => els.map((e) => e.disabled));
       assert.deepStrictEqual(states, [true, true, true, true]);
     });
@@ -536,7 +540,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.evaluate(() => refreshRoster());
       const row = page.locator('#rosterItems .roster-row[data-agent-id="ag-nostate"]');
       await row.waitFor({ state: 'visible' });
-      assert.strictEqual(await row.locator('td').nth(1).textContent(), '在线', 'no lifecycle state invented');
+      assert.strictEqual(await row.locator('td').nth(3).textContent(), '在线', 'no lifecycle state invented');
       assert.strictEqual(await row.locator('.roster-revoke').isHidden(), true);
       agents = agents.filter((a) => a.id !== 'ag-nostate');
       await page.evaluate(() => refreshRoster());

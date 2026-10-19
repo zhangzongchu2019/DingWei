@@ -120,3 +120,16 @@ func (h *hostedIdentity[Tok, Ag]) ReissueHostedToken(ctx context.Context, agentI
 	}
 	return Tok(*tok), nil
 }
+
+// Queue-time access belongs to the Agent owner, not an audit actor who might
+// have performed a previous administrative action on that owner's behalf.
+func (h *hostedIdentity[Tok, Ag]) HostedAgentOwner(ctx context.Context, id string) (string, error) {
+	ag, err := h.svc.Store.GetAgent(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	if ag == nil || ag.Origin != identity.OriginHosted {
+		return "", identity.ErrNotHosted
+	}
+	return ag.OwnerLC, nil
+}

@@ -62,10 +62,10 @@ func TestCapacityRealCreatePendingEightNinthAndExistingStart(t *testing.T) {
 	ctx := context.Background()
 	o, idp, _, s := mkOrch(t)
 	rev := strings.Repeat("a", 64)
-	if err := s.UpsertNode(ctx, Node{ID: "nd_capacity", Name: "capacity", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_capacity", Name: "capacity", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(ctx, "nd_capacity", capacityTestFrame(t, rev, netCapacitySnapshot(), nil)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_capacity", capacityTestFrame(t, rev, netCapacitySnapshot(), nil)); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.PutQuota(ctx, Quota{UserLC: "zzc", AgentsLimit: 32, VCPULimit: 32, MemMBLimit: 128 << 10, DiskMBLimit: 1 << 20}, "admin"); err != nil {
@@ -105,7 +105,7 @@ func TestCapacityRealCreatePendingEightNinthAndExistingStart(t *testing.T) {
 		}
 	}
 	// A fresh report now contains those same reservations: do not count twice.
-	if err := s.SetNodeOnline(ctx, "nd_capacity", capacityTestFrame(t, rev, netCapacitySnapshot(), managed)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_capacity", capacityTestFrame(t, rev, netCapacitySnapshot(), managed)); err != nil {
 		t.Fatal(err)
 	}
 	n, err := s.GetNode(ctx, "nd_capacity")
@@ -126,7 +126,7 @@ func TestCapacityRealCreatePendingEightNinthAndExistingStart(t *testing.T) {
 	}
 	bad := netCapacitySnapshot()
 	bad.Known = false
-	if err := s.SetNodeOnline(ctx, n.ID, capacityTestFrame(t, rev, bad, managed)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, n.ID, capacityTestFrame(t, rev, bad, managed)); err != nil {
 		t.Fatal(err)
 	}
 	if err := l.quotaStartGuard(ctx, seat); !errors.Is(err, ErrNoNodeCapacity) {
@@ -142,10 +142,10 @@ func TestCapacityStoreSerializesConcurrentReservations(t *testing.T) {
 	ctx := context.Background()
 	o, _, _, s := mkOrch(t)
 	rev := strings.Repeat("b", 64)
-	if err := s.UpsertNode(ctx, Node{ID: "nd_capacity", Name: "capacity", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_capacity", Name: "capacity", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(ctx, "nd_capacity", capacityTestFrame(t, rev, netCapacitySnapshot(), nil)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_capacity", capacityTestFrame(t, rev, netCapacitySnapshot(), nil)); err != nil {
 		t.Fatal(err)
 	}
 	account := acctOf(t, o.pool)
@@ -183,7 +183,7 @@ func TestCapacityUnknownReservesForeignLoadAndLegacyHard(t *testing.T) {
 	ctx := context.Background()
 	o, _, _, s := mkOrch(t)
 	rev := strings.Repeat("c", 64)
-	if err := s.UpsertNode(ctx, Node{ID: "nd_capacity", Name: "capacity", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_capacity", Name: "capacity", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
 	p, _ := PlanByID("1c1.5g40")
@@ -200,7 +200,7 @@ func TestCapacityUnknownReservesForeignLoadAndLegacyHard(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			snapshot := netCapacitySnapshot()
 			tc.change(&snapshot)
-			if err := s.SetNodeOnline(ctx, "nd_capacity", capacityTestFrame(t, rev, snapshot, nil)); err != nil {
+			if err := s.setR31LegacyOnline(ctx, "nd_capacity", capacityTestFrame(t, rev, snapshot, nil)); err != nil {
 				t.Fatal(err)
 			}
 			if _, err := o.pickNode(ctx, "nd_capacity", "", p, "", true); !errors.Is(err, ErrNoNodeCapacity) {
@@ -220,7 +220,7 @@ func TestCapacityUnknownReservesForeignLoadAndLegacyHard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := s.SetNodeOnline(ctx, "nd_capacity", raw); err != nil {
+		if err := s.setR31LegacyOnline(ctx, "nd_capacity", raw); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := o.pickNode(ctx, "nd_capacity", "", p, "", true); !errors.Is(err, ErrNoNodeCapacity) {
@@ -228,7 +228,7 @@ func TestCapacityUnknownReservesForeignLoadAndLegacyHard(t *testing.T) {
 		}
 	})
 	for _, raw := range []string{`{"quota_mode":"soft","quota_policy_revision":"` + rev + `","soft_ready":true,"mem_free_mb":65536}`, `{"quota_mode":"soft","quota_policy_revision":"` + rev + `","soft_ready":true,"mem_free_mb":65536,"seat_capacity":{"version":1,"known":true}}`} {
-		if err := s.SetNodeOnline(ctx, "nd_capacity", []byte(raw)); err != nil {
+		if err := s.setR31LegacyOnline(ctx, "nd_capacity", []byte(raw)); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := o.pickNode(ctx, "nd_capacity", "", p, "", true); !errors.Is(err, ErrNoNodeCapacity) {

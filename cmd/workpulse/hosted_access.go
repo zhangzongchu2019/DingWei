@@ -10,7 +10,11 @@ import (
 
 // Immutable startup policy. Its zero value denies every human request; roles,
 // quotas, request headers and future registrations never add allowlist members.
-type hostedAccess struct{ users map[string]struct{} }
+type hostedAccess struct {
+	users  map[string]struct{}
+	mode   string
+	active func(*http.Request, string) bool
+}
 
 func parseHostedAccess(raw string) (hostedAccess, error) {
 	var p hostedAccess
@@ -28,6 +32,22 @@ func parseHostedAccess(raw string) (hostedAccess, error) {
 	return p, nil
 }
 
+func parseHostedAccessMode(mode, raw string) (hostedAccess, error) {
+	p, err := parseHostedAccess(raw)
+	if err != nil {
+		return p, err
+	}
+	mode = strings.TrimSpace(mode)
+	if mode == "" {
+		mode = "allowlist"
+	}
+	if mode != "allowlist" && mode != "all_active_users" {
+		return hostedAccess{}, errors.New("DW_G4_ACCESS_MODE must be allowlist or all_active_users")
+	}
+	p.mode = mode
+	return p, nil
+}
+
 func (p hostedAccess) human(r *http.Request, actor func(*http.Request) (string, error)) (string, bool) {
 	// Human authority is cookie/session-only. An Agent bearer must not inherit
 	// its owner's permission, even when the request also carries an owner cookie.
@@ -37,6 +57,15 @@ func (p hostedAccess) human(r *http.Request, actor func(*http.Request) (string, 
 	id, err := actor(r)
 	if err != nil {
 		return "", false
+	}
+	if p.active != nil && !p.active(r, id) {
+		return "", false
+	}
+	if p.mode == "all_active_users" {
+		if p.active == nil {
+			return "", false
+		}
+		return id, true
 	}
 	_, ok := p.users[id]
 	return id, ok

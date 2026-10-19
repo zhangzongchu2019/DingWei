@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -89,7 +90,7 @@ func (q *softQuota) capacityReport() *seatcapacity.View {
 // holds q.mu and never updates old root-health/hold state. Its age/5s budget
 // independently closes new admission; running seats are unaffected by B.
 func (d *dockerOps) runSeatCapacity(ctx context.Context) {
-	q := d.soft
+	q := d.seatCapacityQuota()
 	if q == nil || q.capacity == nil {
 		<-ctx.Done()
 		return
@@ -110,7 +111,14 @@ func (d *dockerOps) runSeatCapacity(ctx context.Context) {
 		q.capacity.started = q.now()
 		q.mu.Unlock()
 		c, cancel := context.WithTimeout(ctx, q.policy.ScanBudget)
-		snapshot, err := read(c)
+		var snapshot seatcapacity.Snapshot
+		var err error
+		if q.policy.Mode == "hard" {
+			err = d.checkCapacityInventory(c, q)
+		}
+		if err == nil {
+			snapshot, err = read(c)
+		}
 		if c.Err() != nil {
 			err = c.Err()
 		}
@@ -128,4 +136,106 @@ func (d *dockerOps) runSeatCapacity(ctx context.Context) {
 		case <-ticker.C:
 		}
 	}
+}
+
+func (d *dockerOps) seatCapacityQuota() *softQuota {
+	if d.capacityQuota != nil {
+		return d.capacityQuota
+	}
+	return d.soft
+}
+
+// Hard capacity owns no enforcer. Unrecorded seat writers fail new admission;
+// they are never adopted, stopped or deleted by sampling.
+func (d *dockerOps) checkCapacityInventory(ctx context.Context, q *softQuota) error {
+	var containers []struct {
+		ID     string            `json:"Id"`
+		Names  []string          `json:"Names"`
+		Labels map[string]string `json:"Labels"`
+	}
+	if err := d.eng.call(ctx, "GET", "/containers/json?all=1", nil, &containers); err != nil {
+		return err
+	}
+	dirs, err := os.ReadDir(q.root)
+	if err != nil {
+		return err
+	}
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	for _, entry := range dirs {
+		if entry.IsDir() && validSeatID(entry.Name()) {
+			if _, ok := q.state.Seats[entry.Name()]; !ok {
+				return fmt.Errorf("capacity has unrecorded seat directory")
+			}
+		}
+	}
+	for _, c := range containers {
+		managed := c.Labels[managedSeatLabel] == q.nodeID
+		for _, name := range c.Names {
+			if strings.HasPrefix(strings.TrimPrefix(name, "/"), "seat-") {
+				managed = true
+			}
+		}
+		if !managed {
+			continue
+		}
+		s := q.state.Seats[c.Labels[managedSeatIDLabel]]
+		if s == nil {
+			return fmt.Errorf("capacity has unrecorded writer")
+		}
+		found := false
+		for _, id := range s.CIDs {
+			if id == c.ID {
+				found = true
+			}
+		}
+		if !found {
+			return fmt.Errorf("capacity has unrecorded container")
+		}
+	}
+	return nil
+}
+
+func (q *softQuota) hardStartGateLocked() error {
+	if q.broken || q.persisting > 0 || q.lock == nil {
+		return fmt.Errorf("%w: seat_capacity_load_unknown", ErrSeatCapacity)
+	}
+	v := q.capacityViewLocked()
+	if !v.Known {
+		return fmt.Errorf("%w: seat_capacity_load_unknown", ErrSeatCapacity)
+	}
+	for _, d := range []seatcapacity.Dimension{v.CPU, v.Memory, v.Disk} {
+		if d.Allocatable < d.ManagedReserved {
+			return fmt.Errorf("%w: seat_capacity_load_unknown", ErrSeatCapacity)
+		}
+	}
+	return nil
+}
+func (q *softQuota) hardLoginBudgetLocked() error {
+	if err := q.hardStartGateLocked(); err != nil {
+		return err
+	}
+	v := q.capacityViewLocked()
+	if v.CPU.Available < 250 || v.Memory.Available < loginMemBytes || v.Disk.Available < loginMemBytes {
+		return fmt.Errorf("%w: seat_capacity_load_unknown", ErrSeatCapacity)
+	}
+	return nil
+}
+func (q *softQuota) startHard(ctx context.Context, id string, fn func(context.Context) error) error {
+	release, err := q.acquireWriter(ctx, id)
+	if err != nil {
+		return err
+	}
+	defer release()
+	q.mu.Lock()
+	err = q.hardStartGateLocked()
+	seat := q.state.Seats[id]
+	if seat == nil || seat.Hold != "" {
+		err = ErrSeatCapacity
+	}
+	q.mu.Unlock()
+	if err != nil {
+		return err
+	}
+	return fn(ctx)
 }
