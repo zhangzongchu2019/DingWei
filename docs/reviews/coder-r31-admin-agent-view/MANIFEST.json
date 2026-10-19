@@ -1,0 +1,127 @@
+{
+  "parent": "f547f025407f4e1fea7943a19826a6093e750d52",
+  "utc": "2026-10-19T04:20:44.274601+00:00",
+  "scope": "incremental admin Agent inventory; local candidate evidence, independent review pending",
+  "members": [
+    {
+      "path": "docs/designs/S-R31-ADMIN-AGENT-READ-VIEW.md",
+      "bytes": 3403,
+      "sha256": "936fac993c90521b7923ae3cc2412a0a3761c48adc5ec736d61f4a1cd171e0bc"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-agent-view/ADMIN-CHECKS.json",
+      "bytes": 18696,
+      "sha256": "c49bcb00443998abd1c997da3ba059a1c1b87cb47d9cb6a17ef7cdb95913d450"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-agent-view/ENVIRONMENT.json",
+      "bytes": 495,
+      "sha256": "031d7bf100fcefaf11359b0eb9a058cd0f467d6a8929a3d458bd404574ac35df"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-agent-view/README.md",
+      "bytes": 3527,
+      "sha256": "19944c760d051ca64c85decea3ae42a9fc9cd79365d7e04bb60e5aa5c104f589"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-agent-view/STATIC-CHECKS.json",
+      "bytes": 578,
+      "sha256": "9ff2b20ba8432b479ff892281c1287da459d93cc7d5d404e04ab2896f77e2614"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-agent-view/boundary.log",
+      "bytes": 1478,
+      "sha256": "817718387629bd34147a3ec0776f8fc844ddd7502e660975c8eaf74f3a9a7ef6"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-agent-view/build-tests.log",
+      "bytes": 39396,
+      "sha256": "7dd0d111636751030fcedb4e0490ff17a5f424bbdb4c65cbcfdf8cd7e74c1c21"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-agent-view/console-browser.log",
+      "bytes": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-agent-view/dependency.log",
+      "bytes": 194,
+      "sha256": "d2c076911fbf5f8701468b7204baf339ddf778132416f602b915f5972b7c2b79"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-agent-view/full-go.log",
+      "bytes": 267,
+      "sha256": "64f4830eecd23ee8068071c702d205e6b4d441bd006488e871f7c863d24b9bf6"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-agent-view/hosted-browser.log",
+      "bytes": 3357,
+      "sha256": "fd419a7831826f77cba841c378582085bae0c7d1bce6cf55f622fcedf363680b"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-agent-view/node-browser.log",
+      "bytes": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "internal/identity/admin_agents.go",
+      "bytes": 4605,
+      "sha256": "8c67ebc43f0cb31018fc621da506cfd8047c29e1f9e5bccbeb22de1443a20176"
+    },
+    {
+      "path": "internal/identity/admin_agents_pg_test.go",
+      "bytes": 2057,
+      "sha256": "b7ce02ab589b39fd65c13835fa29dce7dc5257857a49aa60b783fdbda105c055"
+    },
+    {
+      "path": "internal/identity/admin_agents_test.go",
+      "bytes": 423,
+      "sha256": "e8493f699fabcb587b1660f97eb591959ca9f26712c690ff92016b5a8f89b5d7"
+    },
+    {
+      "path": "internal/identity/httpapi/admin_agents.go",
+      "bytes": 2784,
+      "sha256": "1cb56fd0be1ae6c5c44d155508b90b6d700126f1af4749e402805e6709d17eba"
+    },
+    {
+      "path": "internal/identity/httpapi/httpapi.go",
+      "bytes": 13866,
+      "sha256": "3d9207ffe94f7e74c6a714b9efbfaccbc852e34b85c6a9db579c9929920c6fdb"
+    },
+    {
+      "path": "internal/identity/httpapi/r31_admin_agents_test.go",
+      "bytes": 11364,
+      "sha256": "a6da14aa9e38cb9c56c0c77717ffac9be4b1db8831cc369522d5351142d06a24"
+    },
+    {
+      "path": "internal/identity/identitytest/admin_agents.go",
+      "bytes": 3839,
+      "sha256": "cbde0c6b38569185c16c4e803e63942f8fa36934477d79ff45cf2d7e6702ab17"
+    },
+    {
+      "path": "internal/m8/console_auth.go",
+      "bytes": 161801,
+      "sha256": "21d49dcf5a58e101dc2cbc87d69ed2004159f7cabb0aaf5a47bb8454847c954c"
+    },
+    {
+      "path": "internal/m8/newplat_console.go",
+      "bytes": 4070,
+      "sha256": "12bf9b2a674c0d18734fab16f6bd1c9dc770b46644a14b90c0eb2fbc7ca0cec5"
+    },
+    {
+      "path": "internal/m8/r31_admin_agent_capability_test.go",
+      "bytes": 1514,
+      "sha256": "a41aa1524da1587cd8f6e1dc163bcaa9cfc729f4e04318564db3f6e7ae8303b0"
+    },
+    {
+      "path": "tools/r31-admin-agent-checks/check.py",
+      "bytes": 8198,
+      "sha256": "def4c294dfd2c071209254db08b48abf5a80d8716f3ac5d16ac59e12682c3238"
+    },
+    {
+      "path": "view-service/r31-admin-agents-browser-regression.js",
+      "bytes": 6110,
+      "sha256": "9d7ead8baa1f17a5a6e6a907a54653061d6d74214095ee3a61d29407194ddf24"
+    }
+  ]
+}

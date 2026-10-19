@@ -58,6 +58,7 @@ func (a *API) Register(mux Mux) {
 	mux.HandleFunc("POST /api/console/enroll/applications/{id}/approve", a.console(a.approve))
 	mux.HandleFunc("POST /api/console/enroll/applications/{id}/reject", a.console(a.reject))
 	mux.HandleFunc("GET /api/console/agents", a.console(a.listAgents))
+	mux.HandleFunc("GET /api/console/platform/agents", a.adminAgents)
 	mux.HandleFunc("POST /api/console/agents/{id}/revoke", a.console(a.revoke))
 }
 

@@ -63,6 +63,7 @@ func (h *Hub) handleNewPlatformConsolePlatform(w http.ResponseWriter, r *http.Re
 	if h.Identity != nil {
 		userLC, _ := r.Context().Value(consolePrincipalContextKey{}).(string)
 		if u, e := h.Identity.Store.GetUser(r.Context(), userLC); e == nil {
+			resp["agent_list_admin"] = u.State == identity.UserActive && u.Type == identity.UserPlatformAdmin
 			resp["hosted_node_admin"] = h.consoleHostedEnabled && u.State == identity.UserActive && u.Type == identity.UserPlatformAdmin
 		}
 	}

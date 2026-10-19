@@ -511,6 +511,8 @@ function dwThemeInit(){
 }
 function renderPlatform(platform){
  hostedNodeAdmin=platform.hosted_node_admin===true;
+ agentListAdmin=platform.agent_list_admin===true;
+ if(!agentListAdmin){clearAllAgentView();var oldCap=document.querySelector('#adminMenu button[data-capability=all-agents]');if(oldCap)oldCap.hidden=true;var oldView=document.getElementById('adminAllAgents');if(oldView)oldView.hidden=true;}
   var items=document.getElementById('platform-items'); items.replaceChildren();
   (Array.isArray(platform.items)?platform.items:[]).forEach(function(item){
     var a=document.createElement('a'); a.textContent=item.title; a.href=item.href; a.dataset.itemId=item.id;
@@ -564,6 +566,7 @@ function activate(session){
   dwTaskBoardNotify();
 }
 function closeTab(session){
+  if(session==='__platform-admin')clearAllAgentView();
   var e=tabs.get(session); if(!e) return;
   if(e.pane.dataset.viewRefreshInstance){try{e.pane.contentWindow.postMessage({protocol:'dw-view-refresh/v1',instance:e.pane.dataset.viewRefreshInstance,generation:++dwViewRefreshGeneration,kind:'invalidate',active:false,resource:false},location.origin);}catch(_){}}
   if(CONSOLE_MUX_ENABLED&&window.DWConsoleMux)window.DWConsoleMux.remove(session,true);
@@ -1531,6 +1534,24 @@ async function adminQuotaSave(uid,tr){
   quotaSavedId=uid;clearTimeout(quotaSavedTimer);quotaSavedTimer=setTimeout(function(){quotaSavedId='';var f=document.querySelector('.quota-row[data-user-id="'+uid+'"] .quota-fb');if(f&&f.textContent==='已保存')f.textContent='';},5000);
   refreshAdminQuotas();
 }
+var agentListAdmin=false,allAgentNext='',allAgentGeneration=0,allAgentAbort=null;
+function allAgentsSection(){return '<section id=adminAllAgents class="group-block" hidden><h3>全部 Agent（只读）</h3><button id=allAgentRefresh type=button>刷新</button><table class=group-table><thead><tr><th>所有者</th><th>Agent 全名</th><th>类型</th><th>主机 / 来源 IP</th><th>在线</th><th>状态</th></tr></thead><tbody id=allAgentItems></tbody></table><div id=allAgentStatus role=status></div><button id=allAgentNext type=button disabled>下一页</button></section>';}
+function clearAllAgentView(){allAgentGeneration++;if(allAgentAbort)allAgentAbort.abort();allAgentAbort=null;allAgentNext='';var body=document.getElementById('allAgentItems');if(body)body.replaceChildren();var next=document.getElementById('allAgentNext');if(next)next.disabled=true;}
+async function refreshAllAgents(after){
+ if(!agentListAdmin)return;
+ clearAllAgentView();var generation=allAgentGeneration,body=document.getElementById('allAgentItems'),status=document.getElementById('allAgentStatus'),next=document.getElementById('allAgentNext');if(!body||!status||!next)return;
+ var controller=new AbortController();allAgentAbort=controller;var timer=setTimeout(function(){controller.abort();},10000);status.textContent='加载中…';
+ try{
+  var query=new URLSearchParams({limit:'100'});if(after)query.set('after',after);
+  var response=await fetch('/api/console/platform/agents?'+query.toString(),{cache:'no-store',credentials:'same-origin',signal:controller.signal});
+  if(!response.ok)throw new Error(response.status===403?'仅平台管理员可查看全部 Agent':response.status===401?'登录已失效，请重新登录':'加载失败，请重试');
+  var data=await response.json();if(!Array.isArray(data.agents)||typeof data.next_after!=='string')throw new Error('响应格式无效');
+  if(generation!==allAgentGeneration||!agentListAdmin)return;
+  data.agents.forEach(function(a){var row=document.createElement('tr'),owner=a.owner||{};[owner.user_id+(owner.short_name?'（'+owner.short_name+'）':''),a.full_name,a.agent_type==='hosted'?'托管':'自有',a.host||'未知',a.online?'在线':'离线',({active:'有效',suspended:'已停用',revoked:'已吊销'})[a.state]||'未知'].forEach(function(value){var cell=document.createElement('td');cell.textContent=value;row.append(cell);});body.append(row);});
+  allAgentNext=data.next_after;next.disabled=!allAgentNext;status.textContent=data.agents.length?'本页 '+data.agents.length+' 个 Agent':'暂无 Agent';
+ }catch(error){if(generation===allAgentGeneration){body.replaceChildren();allAgentNext='';next.disabled=true;status.textContent=error.name==='AbortError'?'请求超时，请重试':error.message;}}
+ finally{clearTimeout(timer);if(generation===allAgentGeneration)allAgentAbort=null;}
+}
 var hostedNodeAdmin=false,hostedNodeEditing='';
 function hostedNodesSection(){return '<section id=adminNodes class="group-block" hidden><h3>托管主机</h3><button id=nodeRefresh type=button>刷新</button><table class=group-table><thead><tr><th>名称 / 池</th><th>地址</th><th>访问范围</th><th>在线 / 调度</th><th>操作</th></tr></thead><tbody id=nodeItems></tbody></table><div id=nodeStatus role=status></div><h4 id=nodeFormTitle>登记主机</h4><form id=nodeForm><label>ID <input id=nodeId required maxlength=64></label><label>名称 <input id=nodeName required maxlength=80></label><label>池 <input id=nodePool maxlength=64></label><label>配额模式 <select id=nodeMode><option value=hard>硬配额</option><option value=soft>软配额</option></select></label><label>策略 revision <input id=nodeRevision required pattern="[0-9a-f]{64}" maxlength=64></label><label>地址（可选） <input id=nodeAddress maxlength=255></label><label>访问范围 <select id=nodeScope><option value=admin_only>仅管理员</option><option value=public>全部用户</option><option value=restricted>指定用户或编组</option></select></label><label>用户 ID（逗号分隔） <input id=nodeUsers></label><label>编组码（逗号分隔） <input id=nodeGroups></label><button type=submit id=nodeSave>登记并显示凭据</button><button type=button id=nodeReset>新登记</button></form><section id=nodeCredentialBox hidden><p>节点凭据只显示这一次，请妥善保存。</p><pre id=nodeCredential></pre><button id=nodeCredentialDone type=button>完成并清除</button></section></section>';}
 function clearNodeCredential(){var el=document.getElementById('nodeCredential');if(el)el.textContent='';var box=document.getElementById('nodeCredentialBox');if(box)box.hidden=true;}
@@ -1542,9 +1563,9 @@ function initHostedNodes(){if(!hostedNodeAdmin)return;document.getElementById('n
 
 function adminShowCapability(pane,id){
   var inv=pane.querySelector('#adminInvite'),q=pane.querySelector('#adminQuota');
-  if(inv)inv.hidden=id!=='invite';if(q)q.hidden=id!=='quota';var n=pane.querySelector('#adminNodes');if(n)n.hidden=id!=='nodes';if(id!=='nodes')clearNodeCredential();
+  if(inv)inv.hidden=id!=='invite';if(q)q.hidden=id!=='quota';var n=pane.querySelector('#adminNodes');if(n)n.hidden=id!=='nodes';if(id!=='nodes')clearNodeCredential();var all=pane.querySelector('#adminAllAgents');if(all)all.hidden=id!=='all-agents';if(id!=='all-agents')clearAllAgentView();
   pane.querySelectorAll('#adminMenu button').forEach(function(b){if(b.dataset.capability===id)b.setAttribute('aria-current','true');else b.removeAttribute('aria-current');});
-  if(id==='quota')refreshAdminQuotas();if(id==='nodes')refreshHostedNodes();
+  if(id==='quota')refreshAdminQuotas();if(id==='nodes')refreshHostedNodes();if(id==='all-agents')refreshAllAgents('');
 }
 function openPlatformAdminWorkspace(){
   if(tabs.has('__platform-admin')){activate('__platform-admin');return;}
@@ -1561,14 +1582,16 @@ function openPlatformAdminWorkspace(){
    +'<h4>用户</h4><table id=adminUsersTable class=group-table><thead><tr><th>用户 ID</th><th>用户名</th><th>简称</th><th>类型</th><th>状态</th><th>操作</th></tr></thead><tbody id=adminUsersItems></tbody></table><div id=adminUsersEmpty hidden>暂无用户。</div><div id=adminUsersStatus role=status></div><button id=adminUsersRetry type=button hidden>重试加载</button><div id=adminUsersFeedback class=group-feedback></div></section>'
    +(FEATURE_HOSTED?'<section id=adminQuota class="group-block" hidden><h3>托管配额</h3><p class=group-feedback>每个用户一行：「已用 / 上限」并排，改完点该行的「保存」。内存与磁盘单位为 GB。新上限低于已用量也可保存，只限制新建，已有 Agent 不受影响。</p><table id=quotaTable class=group-table><thead><tr><th>用户</th><th>Agent 数</th><th>vCPU</th><th>内存</th><th>磁盘</th><th>操作</th></tr></thead><tbody id=quotaItems></tbody></table><div id=quotaEmpty hidden>暂无用户。</div><div id=quotaStatus role=status></div><button id=quotaRetry type=button hidden>重试加载</button></section>':'');
   if(hostedNodeAdmin)pane.insertAdjacentHTML('beforeend',hostedNodesSection());
+  if(agentListAdmin)pane.insertAdjacentHTML('beforeend',allAgentsSection());
   tab.onclick=function(e){if(e.target===x){clearNodeCredential();e.stopPropagation();closeTab('__platform-admin');}else activate('__platform-admin');};
   document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__platform-admin',{tab:tab,pane:pane});
   var menu=pane.querySelector('#adminMenu');
-  ADMIN_CAPABILITIES.concat(hostedNodeAdmin?[{id:'nodes',title:'托管主机'}]:[]).forEach(function(c,i){var b=document.createElement('button');b.type='button';b.dataset.capability=c.id;b.textContent=c.title;if(i===0)b.setAttribute('aria-current','true');b.onclick=function(){adminShowCapability(pane,c.id);};menu.append(b);});
+  ADMIN_CAPABILITIES.concat(hostedNodeAdmin?[{id:'nodes',title:'托管主机'}]:[]).concat(agentListAdmin?[{id:'all-agents',title:'全部 Agent'}]:[]).forEach(function(c,i){var b=document.createElement('button');b.type='button';b.dataset.capability=c.id;b.textContent=c.title;if(i===0)b.setAttribute('aria-current','true');b.onclick=function(){adminShowCapability(pane,c.id);};menu.append(b);});
   document.getElementById('inviteToggle').onclick=adminToggleInvite;document.getElementById('inviteCreate').onclick=adminCreateUser;document.getElementById('inviteCopy').onclick=adminCopyCode;document.getElementById('inviteDone').onclick=adminClearCode;
   document.getElementById('adminUsersRetry').onclick=refreshAdminUsers;
   var quotaRetryBtn=document.getElementById('quotaRetry');if(quotaRetryBtn)quotaRetryBtn.onclick=refreshAdminQuotas;
   if(hostedNodeAdmin)initHostedNodes();
+  if(agentListAdmin){document.getElementById('allAgentRefresh').onclick=function(){refreshAllAgents('');};document.getElementById('allAgentNext').onclick=function(){if(allAgentNext)refreshAllAgents(allAgentNext);};}
   activate('__platform-admin');refreshAdminUsers();
 }
 function openSpecsWorkspace(){if(tabs.has('__specs')){activate('__specs');return;}var tab=document.createElement('span');tab.className='tab';tab.title='Specs';var label=document.createElement('span');label.textContent='Specs';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='Specs workspace';pane.src='/console/specs?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__specs');}else activate('__specs');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__specs',{tab:tab,pane:pane});activate('__specs');}

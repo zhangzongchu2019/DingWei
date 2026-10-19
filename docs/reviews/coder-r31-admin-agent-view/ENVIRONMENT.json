@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-19T04:19:29.761642+00:00",
+  "hostname": "VM-4-12-ubuntu",
+  "cpu_count": 16,
+  "go": "go version go1.22.2 linux/amd64",
+  "python": "3.12.3",
+  "node": "v22.23.1",
+  "browser_scope": "local actual-rendered Console fixture; no production access",
+  "postgres": "strict embedded, isolated temporary schemas; external DSN removed",
+  "candidate_base": "f547f025407f4e1fea7943a19826a6093e750d52",
+  "authorization": "leader aa0ffb5dee1a admin read-only Agent view; no deploy"
+}
