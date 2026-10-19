@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"github.com/zhangzongchu2019/dingwei/internal/seatcapacity"
 )
 
@@ -181,6 +182,11 @@ func TestR31HardCapacityAllDimensionsAndLegacyUnknown(t *testing.T) {
 	if _, err = o.pickNodeForOwner(ctx, "member", "nd_bad", "", plan, ""); !errors.Is(err, ErrNoNodeCapacity) {
 		t.Fatal("old hard frame bypassed capacity")
 	}
+	if err = s.SetNodeOnline(ctx, "nd_bad", json.RawMessage(`{"mem_free_mb":65536}`)); err != nil {
+		t.Fatal(err)
+	}
+	_, err = o.pickNodeForOwner(ctx, "member", "nd_bad", "", plan, "")
+	requireCapacityReasons(t, err, "load_unknown")
 }
 
 func TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission(t *testing.T) {
@@ -375,5 +381,71 @@ func TestR31HostedApplySchemaUsesUnifiedLedger(t *testing.T) {
 	}
 	if err != nil || count != 2 {
 		t.Fatalf("hosted startup bypassed unified migration ledger: rows=%d err=%v", count, err)
+	}
+}
+
+func TestR31StatePatchCannotRestoreConcurrentRevocation(t *testing.T) {
+	s := r31Store(t)
+	ctx := context.Background()
+	r31Register(t, s, "nd_patch", "public")
+	ac, err := repo.NewAccessCtx("test", "patch-order")
+	if err != nil {
+		t.Fatal(err)
+	}
+	locked, release := make(chan struct{}), make(chan struct{})
+	revokeDone := make(chan error, 1)
+	go func() {
+		revokeDone <- s.pool.InTx(ctx, ac, nil, func(tx repo.Tx) error {
+			if _, err := tx.Exec(ctx, `UPDATE g4_node SET access_scope='restricted',address='203.0.113.50',address_source='node' WHERE id='nd_patch'`); err != nil {
+				return err
+			}
+			if err := saveAccessTx(ctx, tx, "nd_patch", NodeAccess{Scope: "restricted", Users: []string{"creator"}}); err != nil {
+				return err
+			}
+			close(locked)
+			<-release
+			return nil
+		})
+	}()
+	select {
+	case <-locked:
+	case err := <-revokeDone:
+		t.Fatalf("revoke failed before lock: %v", err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("revoke lock timeout")
+	}
+	state := "disabled"
+	done := make(chan error, 1)
+	go func() { done <- s.PatchManagedNode(ctx, "nd_patch", "admin", NodePatch{SchedulingState: &state}) }()
+	select {
+	case err := <-done:
+		close(release)
+		t.Fatalf("state patch crossed uncommitted revoke: %v", err)
+	case <-time.After(80 * time.Millisecond):
+	}
+	close(release)
+	if err := <-revokeDone; err != nil {
+		t.Fatal(err)
+	}
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	r, err := s.GetNodeRegistration(ctx, "nd_patch", "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Access.Scope != "restricted" || len(r.Access.Users) != 1 || r.Access.Users[0] != "creator" || r.SchedulingState != "disabled" {
+		t.Fatal("state patch restored revoked access")
+	}
+	var source string
+	row, err := s.qrow(ctx, `SELECT address_source FROM g4_node WHERE id='nd_patch'`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = row.Scan(&source); err != nil {
+		t.Fatal(err)
+	}
+	if source != "node" {
+		t.Fatal("state patch promoted reported address to administrator ownership")
 	}
 }

@@ -1,6 +1,6 @@
 # R31 托管入口 R1–R5：设计交审
 
-作者：coder56solzzc；2026-10-19。状态：DESIGN REVIEW，未获 PASS 前不写实现。
+作者：coder56solzzc；2026-10-19。状态：设计锚80ecff8a已由审查席判PASS（报告cd2d79ff，仅设计）；R1–R5实现候选待独立审，证据见 docs/reviews/coder-r31-hosted/。
 依据：rulings `9687e577` 第 66 条及 `docs/specs/SPEC-R31-hosted-entrance-and-spec-tasks.md`；代码基线 `integration/spec5ff-r30`＝`3d99db2bf2dcff81f8060bf427f48a0790f0f775`。本分支只负责 R1–R5／A1–A15；R6／R7 由组长实现，R8／R9 属 r32。本件不授权部署、登记生产节点或操作 43。后继依据：组长裁定 `15bd39361761` 及 prodops 2026-10-19T02:02Z nginx 只读结果；对应独立审查 `c03efbc4` 的 D1–D4。
 
 ## 接口与行为
@@ -35,7 +35,7 @@
 
 交 A1–A15 路由／PG／容量／页面证据，覆盖两模式、凭据／审计失败回滚、撤权并发、三种单维不足、16C／30GiB／560GiB 扣预留的明确数例、hard／soft、代理开关与 IPv6。撤 active、节点过滤／最终准入、pending、hard 容量门、一次性凭据、IP 权限／可信头检查，分别必须红。请重点审编组授权语义、存量 admin_only 回填、0200 入账及 hard 采样范围。设计 PASS 后才实现，不部署。
 
-D1–D4 必测矩阵（本后继为 docs-only，以下为实现验收要求，并非已跑结果）：
+D1–D4 必测矩阵（设计阶段确定的验收要求；实际运行结果另见实现证据）：
 
 - **编组授权／A8**：restricted 组授权分别验证创建者与 active 成员 Agent 所有者可见且可选点；关闭添加仍可访问；无独立用户授权等其他允许来源时，移除成员、Agent 不再 active、删组或失效引用后均拒绝且列表／options 不泄露。覆盖撤权与落座并发的两种提交顺序：撤权先完成则落座拒绝；落座先完成可保留该既有席，撤权后不得再新增。
 - **迁移空库**：隔离空 Hub PG 经统一 runner 建 identity 基线及0103，并从0200建立 hosted 全表、施0201；核列／约束／索引形状与0103／0200／0201各一条正确digest，重复启动不重放。

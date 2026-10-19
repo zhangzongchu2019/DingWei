@@ -113,19 +113,11 @@ func (d hostedDeps) handleAdminNodeCreate(w http.ResponseWriter, r *http.Request
 }
 func (d hostedDeps) handleAdminNodeUpdate(w http.ResponseWriter, r *http.Request, actor string) {
 	id := r.PathValue("id")
-	body, err := d.store.GetNodeRegistration(r.Context(), id, actor)
-	if err != nil {
-		writeHostedError(w, err)
-		return
-	}
+	var body hosted.NodePatch
 	if !nodeBody(w, r, &body) {
 		return
 	}
-	if body.ID != id {
-		writeJSON(w, 400, map[string]string{"error": "params_invalid"})
-		return
-	}
-	if err = d.store.UpdateManagedNode(r.Context(), id, actor, body); err != nil {
+	if err := d.store.PatchManagedNode(r.Context(), id, actor, body); err != nil {
 		writeHostedError(w, err)
 		return
 	}

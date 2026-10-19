@@ -225,14 +225,29 @@ func addressSource(address string) string {
 	}
 	return ""
 }
+
+// NodePatch carries only administrator-editable fields. Omitted fields are
+// loaded under the same node lock as writes, so a state-only request cannot
+// restore access from an earlier read or promote a node-reported address.
+type NodePatch struct {
+	Address         *string     `json:"address,omitempty"`
+	Access          *NodeAccess `json:"access,omitempty"`
+	SchedulingState *string     `json:"scheduling_state,omitempty"`
+}
+
 func (s *Store) UpdateManagedNode(ctx context.Context, id, by string, r NodeRegistration) error {
-	if err := validateNodeAccess(&r.Access); err != nil {
-		return err
+	return s.PatchManagedNode(ctx, id, by, NodePatch{Address: &r.Address, Access: &r.Access, SchedulingState: &r.SchedulingState})
+}
+func (s *Store) PatchManagedNode(ctx context.Context, id, by string, patch NodePatch) error {
+	if patch.Access != nil {
+		if err := validateNodeAccess(patch.Access); err != nil {
+			return err
+		}
 	}
-	if r.SchedulingState != "enabled" && r.SchedulingState != "disabled" && r.SchedulingState != "draining" {
+	if patch.SchedulingState != nil && *patch.SchedulingState != "enabled" && *patch.SchedulingState != "disabled" && *patch.SchedulingState != "draining" {
 		return ErrParams
 	}
-	if !validateNodeText(r.Address, 255, true) {
+	if patch.Address != nil && !validateNodeText(*patch.Address, 255, true) {
 		return ErrParams
 	}
 	ac, err := repo.NewAccessCtx("dingwei-platform", by)
@@ -240,20 +255,32 @@ func (s *Store) UpdateManagedNode(ctx context.Context, id, by string, r NodeRegi
 		return err
 	}
 	return s.pool.InTx(ctx, ac, nil, func(tx repo.Tx) error {
-		var old string
-		if err := tx.QueryRow(ctx, `SELECT id FROM g4_node WHERE id=$1 FOR UPDATE`, id).Scan(&old); err != nil {
+		var address, source, state, scope string
+		if err := tx.QueryRow(ctx, `SELECT address,address_source,scheduling_state,access_scope FROM g4_node WHERE id=$1 FOR UPDATE`, id).Scan(&address, &source, &state, &scope); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return ErrNotFound
 			}
 			return err
 		}
-		if _, err := tx.Exec(ctx, `UPDATE g4_node SET address=$2,address_source=$3,scheduling_state=$4,access_scope=$5,updated_at=now() WHERE id=$1`, id, r.Address, addressSource(r.Address), r.SchedulingState, r.Access.Scope); err != nil {
+		if patch.Address != nil {
+			address = *patch.Address
+			source = addressSource(address)
+		}
+		if patch.SchedulingState != nil {
+			state = *patch.SchedulingState
+		}
+		if patch.Access != nil {
+			scope = patch.Access.Scope
+		}
+		if _, err := tx.Exec(ctx, `UPDATE g4_node SET address=$2,address_source=$3,scheduling_state=$4,access_scope=$5,updated_at=now() WHERE id=$1`, id, address, source, state, scope); err != nil {
 			return err
 		}
-		if err := saveAccessTx(ctx, tx, id, r.Access); err != nil {
-			return err
+		if patch.Access != nil {
+			if err := saveAccessTx(ctx, tx, id, *patch.Access); err != nil {
+				return err
+			}
 		}
-		detail, _ := json.Marshal(r)
+		detail, _ := json.Marshal(patch)
 		_, err := tx.Exec(ctx, `INSERT INTO g4_audit(actor,action,target,detail)VALUES($1,'node.update',$2,$3)`, by, id, detail)
 		return err
 	})

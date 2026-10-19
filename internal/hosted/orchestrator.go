@@ -318,7 +318,7 @@ func (o *Orchestrator) pickNodeForOwner(ctx context.Context, ownerLC, nodeID, po
 		if nodeID != "" && nodeID != "auto" && n.ID != nodeID {
 			continue
 		}
-		if n.State != "online" || nodeScheduling(n) != "enabled" || !nodeQuotaEligible(n) {
+		if n.State != "online" || nodeScheduling(n) != "enabled" {
 			continue
 		}
 		var labels map[string]string
@@ -335,6 +335,10 @@ func (o *Orchestrator) pickNodeForOwner(ctx context.Context, ownerLC, nodeID, po
 				continue
 			}
 			modelSeen = true
+		}
+		if !nodeQuotaEligible(n) {
+			blockedReasons = append(blockedReasons, "load_unknown")
+			continue
 		}
 		if mode == "soft" || mode == "hard" {
 			v, err := o.st.nodeSeatCapacity(ctx, n)
@@ -356,7 +360,7 @@ func (o *Orchestrator) pickNodeForOwner(ctx context.Context, ownerLC, nodeID, po
 		if model != "" && !modelSeen {
 			return Node{}, ErrModelNotAvailable
 		}
-		// Union only over visible, consented, model-compatible soft candidates.
+		// Union only over visible, consented, model-compatible candidates.
 		// Each reason means at least one such candidate failed that resource; it
 		// does not claim all nodes failed the same dimension or reveal node IDs.
 		if len(blockedReasons) != 0 {
