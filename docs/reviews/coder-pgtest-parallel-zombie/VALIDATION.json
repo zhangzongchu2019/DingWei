@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-19T07:10:42.975967+00:00",
+  "source_commit": "f1b60fbd8afd77cd1a23fae4abe3afdf5edb953c",
+  "source_tree": "a20d38692a0b79abd20fb1d6a88f426d044cd758",
+  "base": "4fbcf26ecd09dbf97d349e540c7c7a32a2d0c440",
+  "full_go_command": "env -u HUB_TEST_PG_DSN HUB_TEST_PG_STRICT=1 HUB_TEST_PG_EMBEDDED=1 HUB_TEST_PG_SKIP_OK=0 R31_R30_BINARY=/tmp/r31-compat-r30-workpulse go test ./... -count=1 -timeout=30m",
+  "full_go_rc": 0,
+  "packages": 64,
+  "tested_packages": 52,
+  "no_test_packages": 12,
+  "source_files_frozen": 730,
+  "no_deployment": true,
+  "no_host43_actions": true
+}

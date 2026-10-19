@@ -33,11 +33,12 @@ const zombieRecheckDelay = 250 * time.Millisecond
 
 // residueWatch 是一次「起库前后」的残留快照。零值不可用,请用 newResidueWatch。
 type residueWatch struct {
-	tempDir   string
-	logs      map[string]struct{}
-	logsOK    bool // 快照没拍成(读不了临时目录)⇒ 本项核对不适用,不判也不假装判过
-	zombies   map[int]struct{}
-	zombiesOK bool // /proc 读不到(非 Linux)⇒ 同上
+	tempDir     string
+	logs        map[string]struct{}
+	logsOK      bool // 快照没拍成(读不了临时目录)⇒ 本项核对不适用,不判也不假装判过
+	zombies     map[int]struct{}
+	zombiesOK   bool                    // /proc 读不到(非 Linux)⇒ 同上
+	readZombies func() map[int]struct{} // nil uses /proc; deterministic guard-path tests inject samples
 }
 
 // newResidueWatch 拍起库【前】的快照。必须在起库之前调用,否则没有基准可比。
@@ -135,11 +136,16 @@ func (w *residueWatch) check(t *testing.T) {
 	if !w.zombiesOK {
 		return
 	}
-	if added := addedPIDs(w.zombies, listZombiePostgresOrEmpty()); len(added) > 0 {
-		time.Sleep(zombieRecheckDelay) // 二次采样,避开正常收尾的瞬时窗口
-		if again := addedPIDs(w.zombies, listZombiePostgresOrEmpty()); len(again) > 0 {
-			t.Errorf("🔴 收尾后进程表里多出 %d 个 postgres 僵尸(pid: %s)。\n"+
-				"成因:pg_ctl start 起了 postmaster 就退出,postmaster 成为孤儿过继给 PID 1,"+
+	read := w.readZombies
+	if read == nil {
+		read = listZombiePostgresOrEmpty
+	}
+	first := read()
+	if added := addedPIDs(w.zombies, first); len(added) > 0 {
+		time.Sleep(zombieRecheckDelay) // 二次采样必须是同一 PID；并行包可能已换成另一批正常收尾进程。
+		if again := persistentAddedPIDs(w.zombies, first, read()); len(again) > 0 {
+			t.Errorf("🔴 收尾后两次采样均见同一批新增的 %d 个 postgres 僵尸(pid: %s)。\n"+
+				"可能成因:pg_ctl start 起了 postmaster 就退出,postmaster 成为孤儿过继给 PID 1,"+
 				"而容器 PID 1(`sleep infinity`)不收尸 ⇒ 留下就再也清不掉,pgrep postgres 会把它读成「库还活着」。\n"+
 				"工具本该用 PR_SET_CHILD_SUBREAPER 接管孤儿并在 Stop() 之后收尸(见 tools/pgtest/reap_linux.go)。\n"+
 				"注:本项按【增量】判,历史残留不算。", len(again), strings.Join(again, ", "))
@@ -177,4 +183,19 @@ func addedPIDs(before, now map[int]struct{}) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// persistentAddedPIDs reports only new zombies present in both samples. Checking
+// two independent non-empty deltas confuses rotating, normally reaped postmasters
+// from concurrent packages with a single process that was never reaped.
+// This remains a global guard: a persistent new orphan is still an error,
+// regardless of its package/parent. Nothing is excluded merely for being foreign.
+func persistentAddedPIDs(before, first, second map[int]struct{}) []string {
+	both := make(map[int]struct{})
+	for pid := range first {
+		if _, ok := second[pid]; ok {
+			both[pid] = struct{}{}
+		}
+	}
+	return addedPIDs(before, both)
 }

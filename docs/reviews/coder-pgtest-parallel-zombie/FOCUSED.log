@@ -1,0 +1,21 @@
+=== RUN   TestResidueSamplesRequireSameNewZombie
+=== RUN   TestResidueSamplesRequireSameNewZombie/two_concurrent_owners_finish_in_turn
+=== RUN   TestResidueSamplesRequireSameNewZombie/persistent_new_orphan_remains_red
+=== RUN   TestResidueSamplesRequireSameNewZombie/history_excluded_but_persistent_new_retained
+=== RUN   TestResidueSamplesRequireSameNewZombie/first_sample_clean
+=== RUN   TestResidueSamplesRequireSameNewZombie/reaped_before_second
+--- PASS: TestResidueSamplesRequireSameNewZombie (0.00s)
+    --- PASS: TestResidueSamplesRequireSameNewZombie/two_concurrent_owners_finish_in_turn (0.00s)
+    --- PASS: TestResidueSamplesRequireSameNewZombie/persistent_new_orphan_remains_red (0.00s)
+    --- PASS: TestResidueSamplesRequireSameNewZombie/history_excluded_but_persistent_new_retained (0.00s)
+    --- PASS: TestResidueSamplesRequireSameNewZombie/first_sample_clean (0.00s)
+    --- PASS: TestResidueSamplesRequireSameNewZombie/reaped_before_second (0.00s)
+=== RUN   TestResidueRotatingRealChildZombies
+    residue_parallel_test.go:95: real sampling counterexample: first PID=338995 reaped; second PID=338996 PPID=338989; both individual deltas nonempty
+--- PASS: TestResidueRotatingRealChildZombies (0.00s)
+=== RUN   TestResidueGuardRecheckEndToEnd
+--- PASS: TestResidueGuardRecheckEndToEnd (0.51s)
+=== RUN   TestResidueGuardSampleProbe
+--- PASS: TestResidueGuardSampleProbe (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/pgtest	0.514s

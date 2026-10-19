@@ -1,0 +1,11 @@
+--- FAIL: TestResidueGuardRecheckEndToEnd (0.25s)
+    residue_parallel_test.go:113: ROTATING_GUARD_FALSE_POSITIVE: exit status 1: === RUN   TestResidueGuardSampleProbe
+            residue_parallel_test.go:134: 🔴 收尾后进程表里多出 1 个 postgres 僵尸(pid: 202)。
+                成因:pg_ctl start 起了 postmaster 就退出,postmaster 成为孤儿过继给 PID 1,而容器 PID 1(`sleep infinity`)不收尸 ⇒ 留下就再也清不掉,pgrep postgres 会把它读成「库还活着」。
+                工具本该用 PR_SET_CHILD_SUBREAPER 接管孤儿并在 Stop() 之后收尸(见 tools/pgtest/reap_linux.go)。
+                注:本项按【增量】判,历史残留不算。
+        --- FAIL: TestResidueGuardSampleProbe (0.25s)
+        FAIL
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store/pgtest	0.256s
+FAIL

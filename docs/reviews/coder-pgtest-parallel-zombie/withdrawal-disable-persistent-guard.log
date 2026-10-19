@@ -1,0 +1,7 @@
+--- FAIL: TestResidueGuardRecheckEndToEnd (0.51s)
+    residue_parallel_test.go:116: PERSISTENT_GUARD_DISABLED: err=<nil> output==== RUN   TestResidueGuardSampleProbe
+        --- PASS: TestResidueGuardSampleProbe (0.25s)
+        PASS
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store/pgtest	0.525s
+FAIL
