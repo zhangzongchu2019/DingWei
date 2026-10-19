@@ -1,0 +1,5 @@
+--- FAIL: TestR32TaskDependencyAndIllegalTransitions (0.09s)
+    console_task_flow_test.go:102: UNFINISHED_DEPENDENCY_STARTED: <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.091s
+FAIL

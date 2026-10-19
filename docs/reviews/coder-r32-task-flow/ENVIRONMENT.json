@@ -1,0 +1,20 @@
+{
+  "recorded_utc": "2026-10-19T09:34:47Z",
+  "hostname": "VM-4-12-ubuntu",
+  "uid": 1001,
+  "gid": 1001,
+  "cpus": 16,
+  "go": "go version go1.22.2 linux/amd64",
+  "python": "3.12.3",
+  "node": "v22.23.1",
+  "umask": "0022",
+  "source_commit": "b08add989500f000f9066249661c0310ebb7794c",
+  "source_tree": "01f27bc620bc208f0c44f0ac1abf5913ca109b8d",
+  "pg_external_dsn_present": false,
+  "pg": "strict embedded PG; no external production DB",
+  "helper_python": "/tmp/coder-0232-locked-venv/bin/python",
+  "browser": "Playwright Chrome; loopback test services only",
+  "timestamp_note": "Embedded application logs may use local timezone; report UTC obtained from date -u.",
+  "pg_skip_ok_present": false,
+  "canonical_python": "PATH=/tmp/coder-0232-locked-venv/bin:$PATH"
+}

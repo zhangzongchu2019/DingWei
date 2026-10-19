@@ -1,0 +1,5 @@
+--- FAIL: TestR32TaskAuthorizationPGMembershipLocksAndOwners (5.20s)
+    task_authorization_test.go:135: LEFT_GROUP_TASK_ACCESS: called=true err=<nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/identity	5.207s
+FAIL

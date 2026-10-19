@@ -1,0 +1,14 @@
+F.....
+======================================================================
+FAIL: test_driver_read_ack_never_consumes_delivery_and_is_session_scoped (tools.sessionhelper.tests.test_task_flow_r32.R32TaskFlowTest.test_driver_read_ack_never_consumes_delivery_and_is_session_scoped)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r32-withdraw-d_4f3g3s/tools/sessionhelper/tests/test_task_flow_r32.py", line 25, in test_driver_read_ack_never_consumes_delivery_and_is_session_scoped
+    claimed=a.claim_next();self.assertIsNotNone(claimed,'DRIVER_READ_ACK_CONSUMED_DELIVERY');self.assertEqual(claimed[0],'delivery')
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: unexpectedly None : DRIVER_READ_ACK_CONSUMED_DELIVERY
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.655s
+
+FAILED (failures=1)

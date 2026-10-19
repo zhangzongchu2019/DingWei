@@ -1,0 +1,5 @@
+--- FAIL: TestR32OutboxFailureRollsBackAssignment (0.10s)
+    console_task_flow_test.go:203: OUTBOX_FAILURE_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.100s
+FAIL

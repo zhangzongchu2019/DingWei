@@ -1,0 +1,5 @@
+--- FAIL: TestR32TaskStateCasesAndIndependentAgentSameOwner (0.10s)
+    console_task_flow_test.go:47: OTHER_TASK_WRITER_ACCEPTED: <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.106s
+FAIL

@@ -1,0 +1,115 @@
+{
+  "updated_utc": "2026-10-19T09:55:12Z",
+  "runtime_source": "b08add989500f000f9066249661c0310ebb7794c",
+  "reuse_evidence": "REUSED-GATES.json",
+  "gates": [
+    {
+      "name": "go_all",
+      "command": "go test ./... -count=1 -timeout=30m",
+      "status": "passed",
+      "rc": 0,
+      "stdout_stderr": "raw/r32-go-final.log",
+      "receipt": "raw/r32-go-final.rc"
+    },
+    {
+      "name": "vet",
+      "command": "go vet ./...",
+      "status": "passed",
+      "rc": 0,
+      "stdout_stderr": "raw/r32-vet-final-source.log",
+      "receipt": "raw/r32-vet-final-source.rc"
+    },
+    {
+      "name": "canonical",
+      "command": "PATH=/tmp/coder-0232-locked-venv/bin:$PATH bash scripts/run-build-tests.sh",
+      "status": "passed",
+      "rc": 0,
+      "stdout_stderr": "raw/r32-canonical-final-locked.log",
+      "receipt": "raw/r32-canonical-final-locked.rc"
+    },
+    {
+      "name": "helper",
+      "command": "locked venv python -m unittest discover -s tools/sessionhelper/tests",
+      "status": "passed",
+      "rc": 0,
+      "stdout_stderr": "raw/r32-helper-candidate-repeat.log",
+      "receipt": "raw/r32-helper-candidate-repeat.rc"
+    },
+    {
+      "name": "withdrawals",
+      "command": "python3 tests/r32-task-flow/withdrawals.py --anchor b08add989500f000f9066249661c0310ebb7794c --output /tmp/r32-withdrawals-final-source",
+      "status": "passed",
+      "rc": 0,
+      "stdout_stderr": "raw/r32-withdrawals-final-source.log",
+      "receipt": "raw/r32-withdrawals-final-source.rc"
+    },
+    {
+      "name": "compatibility",
+      "command": "python3 tests/r32-task-flow/compatibility.py --output /tmp/r32-compatibility-final-source",
+      "status": "passed",
+      "rc": 0,
+      "stdout_stderr": "raw/r32-compatibility-final-source.log",
+      "receipt": "raw/r32-compatibility-final-source.rc"
+    },
+    {
+      "name": "browser_r32",
+      "command": "node view-service/r32-task-flow-browser-regression.js",
+      "status": "passed",
+      "rc": 0,
+      "stdout_stderr": "raw/r32-browser-candidate-fixed.log",
+      "receipt": "raw/r32-browser-candidate-fixed.rc"
+    },
+    {
+      "name": "browser_specs",
+      "command": "node view-service/console-specs-browser-regression.js",
+      "status": "passed",
+      "rc": 0,
+      "stdout_stderr": "raw/r32-browser-specs.log",
+      "receipt": "raw/r32-browser-specs.rc"
+    },
+    {
+      "name": "browser_workflow",
+      "command": "node view-service/console-spec-workflow-regression.js",
+      "status": "passed",
+      "rc": 0,
+      "stdout_stderr": "raw/r32-browser-workflow.log",
+      "receipt": "raw/r32-browser-workflow.rc"
+    },
+    {
+      "name": "browser_hosted",
+      "status": "passed",
+      "rc": 0,
+      "passed": 32,
+      "failed": 0,
+      "stdout": "raw/r32-browser-hosted.log",
+      "receipt_note": "original tool returned rc0; raw suite summary retained"
+    },
+    {
+      "name": "browser_console",
+      "status": "passed",
+      "rc": 0,
+      "passed": 20,
+      "failed": 0,
+      "stdout": "raw/r32-browser-console.log",
+      "receipt_note": "original tool returned rc0; raw suite summary retained"
+    },
+    {
+      "name": "browser_enroll",
+      "status": "passed",
+      "rc": 0,
+      "passed": 20,
+      "failed": 0,
+      "stdout": "raw/r32-browser-enroll.log",
+      "receipt_note": "original tool returned rc0; raw suite summary retained"
+    },
+    {
+      "name": "browser_vega",
+      "status": "passed",
+      "rc": 0,
+      "passed": 12,
+      "failed": 0,
+      "stdout": "raw/r32-browser-vega.log",
+      "receipt_note": "original tool returned rc0; raw suite summary retained"
+    }
+  ]
+}

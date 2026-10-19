@@ -1,0 +1,5 @@
+--- FAIL: TestR32TaskStateCasesAndIndependentAgentSameOwner (0.12s)
+    console_task_flow_test.go:69: DEVELOPER_SELF_CONFIRMED: <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.126s
+FAIL

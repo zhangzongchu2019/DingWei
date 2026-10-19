@@ -1,0 +1,410 @@
+{
+  "anchor": "b08add989500f000f9066249661c0310ebb7794c",
+  "worktree": "/tmp/r32-withdraw-d_4f3g3s",
+  "results": [
+    {
+      "name": "distinct_agents",
+      "file": "internal/store/console_task_flow.go",
+      "source_sha256": "3bef9e982e899a3b7bdcdfff996a548e97e691341d3bcd6385a8739334c2ceee",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR32TaskStateCasesAndIndependentAgentSameOwner$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "SAME_AGENT_PAIR_ACCEPTED",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "own_task_writer",
+      "file": "internal/store/console_task_flow.go",
+      "source_sha256": "3bef9e982e899a3b7bdcdfff996a548e97e691341d3bcd6385a8739334c2ceee",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR32TaskStateCasesAndIndependentAgentSameOwner$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "OTHER_TASK_WRITER_ACCEPTED",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "dependency_done",
+      "file": "internal/store/console_task_flow.go",
+      "source_sha256": "3bef9e982e899a3b7bdcdfff996a548e97e691341d3bcd6385a8739334c2ceee",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR32TaskDependencyAndIllegalTransitions$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "UNFINISHED_DEPENDENCY_STARTED",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "review_before_done",
+      "file": "internal/store/console_task_flow.go",
+      "source_sha256": "3bef9e982e899a3b7bdcdfff996a548e97e691341d3bcd6385a8739334c2ceee",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR32TaskStateCasesAndIndependentAgentSameOwner$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "UNCONFIRMED_TASK_DONE",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "developer_no_self_confirm",
+      "file": "internal/store/console_task_case_result.go",
+      "source_sha256": "c20b3a78cc8d594d204296509481fe59dc9b01dadf6310604f1e1ada1713e88e",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR32TaskStateCasesAndIndependentAgentSameOwner$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "DEVELOPER_SELF_CONFIRMED",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "remark_resets_confirmation",
+      "file": "internal/store/console_task_case_result.go",
+      "source_sha256": "c20b3a78cc8d594d204296509481fe59dc9b01dadf6310604f1e1ada1713e88e",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR32TaskStateCasesAndIndependentAgentSameOwner$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "REMARK_KEPT_CONFIRMATION",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "precommit_pg_recheck",
+      "file": "internal/store/console_task_flow.go",
+      "source_sha256": "3bef9e982e899a3b7bdcdfff996a548e97e691341d3bcd6385a8739334c2ceee",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR32TaskAtomicAuditRecheckAndIdempotency$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "PG_RECHECK_IGNORED",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "outbox_atomicity",
+      "file": "internal/store/console_task_flow.go",
+      "source_sha256": "3bef9e982e899a3b7bdcdfff996a548e97e691341d3bcd6385a8739334c2ceee",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR32OutboxFailureRollsBackAssignment$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "OUTBOX_FAILURE_ACCEPTED",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "current_group_membership",
+      "file": "internal/identity/task_authorization.go",
+      "source_sha256": "3f4795c6cff5aad90811d89ffa6014408fb9c620b2f5a1a6442ae84a708042ea",
+      "command": [
+        "go",
+        "test",
+        "./internal/identity",
+        "-run",
+        "^TestR32TaskAuthorizationPGMembershipLocksAndOwners$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "LEFT_GROUP_TASK_ACCESS",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "readonly_pg_no_fallback",
+      "file": "internal/identity/task_authorization.go",
+      "source_sha256": "3f4795c6cff5aad90811d89ffa6014408fb9c620b2f5a1a6442ae84a708042ea",
+      "command": [
+        "go",
+        "test",
+        "./internal/identity",
+        "-run",
+        "^TestR32TaskAuthorizationPGMembershipLocksAndOwners$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "READONLY_PG_AUTH_FELL_BACK",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "background_reconciliation",
+      "file": "internal/m8/console_task_flow.go",
+      "source_sha256": "9b3c97cc7800bd00d298a1e2b8132fde3fc574b8c9e5e07f3d355f288047be5f",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestR32TaskRecoveryAfterPGCommitBeforeSQLiteMark$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "RECOVERY_REQUIRED_USER_REQUEST",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "old_helper_capability_gate",
+      "file": "internal/m8/console_task_flow.go",
+      "source_sha256": "9b3c97cc7800bd00d298a1e2b8132fde3fc574b8c9e5e07f3d355f288047be5f",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestR32TaskNotificationOfflineQueueOldHelperAndReliableFrame$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "OLD_HELPER_TASK_PAYLOAD_SENT",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "shared_spec_task_privacy",
+      "file": "internal/m8/console_task_flow.go",
+      "source_sha256": "9b3c97cc7800bd00d298a1e2b8132fde3fc574b8c9e5e07f3d355f288047be5f",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestR32PublicSpecCannotBypassTaskReadRevocation$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "PUBLIC_SPEC_LEAKED_R32_TASK",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "notification_not_executable",
+      "file": "tools/sessionhelper/sessionhelper/inbox.py",
+      "source_sha256": "9bbeb84144dd5ddd9f343c5d928bd4632955afe499e6c6e01d7001b5de088a07",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "tools/sessionhelper/tests/test_task_flow_r32.py"
+      ],
+      "expected_marker": "TASK_NOTIFICATION_INJECTED",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "driver_ack_local_only",
+      "file": "tools/sessionhelper/sessionhelper/inbox.py",
+      "source_sha256": "9bbeb84144dd5ddd9f343c5d928bd4632955afe499e6c6e01d7001b5de088a07",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "tools/sessionhelper/tests/test_task_flow_r32.py"
+      ],
+      "expected_marker": "DRIVER_READ_ACK_CONSUMED_DELIVERY",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "board_five_second_refresh",
+      "file": "internal/m8/console_task_board_page.go",
+      "source_sha256": "b993a3b440fc363ec5fedf182c3104ab801ed64dd343cca3922e9448d74e9e56",
+      "command": [
+        "node",
+        "view-service/r32-task-flow-browser-regression.js"
+      ],
+      "expected_marker": "R32_BOARD_REFRESH_STALLED",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "owner_confirmation_before_tasks",
+      "file": "internal/store/console_spec_presplit.go",
+      "source_sha256": "96c5b2a69883884a354173ee45e0903f185a5658015fce405d1515c4e3799a27",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestConsoleSpecPresplitAgentIdentityTasksAndFirstResult$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "UNCONFIRMED_PRESPLIT_TASK_CREATED",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "candidate_precommit_pg_recheck",
+      "file": "internal/store/console_spec_presplit.go",
+      "source_sha256": "96c5b2a69883884a354173ee45e0903f185a5658015fce405d1515c4e3799a27",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR32CandidateStageRechecksPGBeforeCommit$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "CANDIDATE_PG_RECHECK_IGNORED",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "pg_release_outcome_unknown",
+      "file": "internal/m8/console_task_flow.go",
+      "source_sha256": "9b3c97cc7800bd00d298a1e2b8132fde3fc574b8c9e5e07f3d355f288047be5f",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestR32PGReleaseFailureDoesNotClaimSQLiteRolledBack$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "PG_RELEASE_FAILURE_CLAIMED_REJECTION",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "http_503_outcome_unknown",
+      "file": "tools/sessionhelper/sessionhelper/task_flow.py",
+      "source_sha256": "c919acc8f0ba9375f68b8fcb3d7285400d09cf9331dc5e9c5f3f10999648ab0f",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "tools/sessionhelper/tests/test_task_flow_r32.py"
+      ],
+      "expected_marker": "HTTP_503_CLAIMED_REJECTION",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "owner_explicit_done_reopen",
+      "file": "internal/store/console_task_flow.go",
+      "source_sha256": "3bef9e982e899a3b7bdcdfff996a548e97e691341d3bcd6385a8739334c2ceee",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestR32OwnerExplicitlyReopensCompletedInvalidAssignment$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "DONE_REASSIGNED_WITHOUT_CONFIRMATION",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    },
+    {
+      "name": "waiting_page_does_not_starve_delivery",
+      "file": "internal/m8/console_task_flow.go",
+      "source_sha256": "9b3c97cc7800bd00d298a1e2b8132fde3fc574b8c9e5e07f3d355f288047be5f",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestR32TaskNotificationWaitingPageDoesNotBlockDelivery$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "expected_marker": "WAITING_PAGE_BLOCKED_DELIVERABLE_NOTICE",
+      "positive_rc": 0,
+      "withdrawn_rc": 1,
+      "restored_rc": 0,
+      "designated_red": true
+    }
+  ]
+}

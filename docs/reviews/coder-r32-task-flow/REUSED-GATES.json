@@ -1,0 +1,39 @@
+[
+  {
+    "gate": "736 helper tests",
+    "executed_source": "35558e9e",
+    "final_source": "b08add989500f000f9066249661c0310ebb7794c",
+    "unchanged_files": 198,
+    "all_helper_subtree_blobs_equal": true,
+    "rc_file": "raw/r32-helper-candidate-repeat.rc"
+  },
+  {
+    "gate": "browser suites",
+    "executed_fixture_source": "fe9374b1 (new test bytes were run before commit)",
+    "final_source": "b08add989500f000f9066249661c0310ebb7794c",
+    "scope": "browser embedded pages and fixtures; mocked browser APIs, not full production HTTP authorization",
+    "files": [
+      {
+        "path": "internal/m8/console_auth.go",
+        "git_blob": "cfb5ddfb25dc837801a6932d06b6795c2000f1de",
+        "sha256": "475b70deea314c5a7c7a22fb8ae9475b5d1a0f1975012234eaedbd7cee6cec60"
+      },
+      {
+        "path": "internal/m8/console_specs_page.go",
+        "git_blob": "e81899a50d7e04ab45b0073786173ad7b0b32823",
+        "sha256": "abea472c508da6f228e2694ec940ecb2226c1e69d2aa5ae60a1d5d904f63ee20"
+      },
+      {
+        "path": "internal/m8/console_task_board_page.go",
+        "git_blob": "8d4e32fafcda5d4b1992c0691a8262b97d799399",
+        "sha256": "b993a3b440fc363ec5fedf182c3104ab801ed64dd343cca3922e9448d74e9e56"
+      },
+      {
+        "path": "view-service/r32-task-flow-browser-regression.js",
+        "git_blob": "f760b48848ea4dfd72248cfe188f9a35b32df5f0",
+        "sha256": "7aced28bf4a07979808164306c8c15904ac15688ea38ef69ea0b23380edd13ac"
+      }
+    ],
+    "all_listed_blobs_equal": true
+  }
+]
