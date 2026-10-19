@@ -42,6 +42,10 @@ var (
 	ErrWeakPassword    = errors.New("identity: password too weak")
 	ErrNotAllowed      = errors.New("identity: not allowed for this role")
 	ErrMustChange      = errors.New("identity: must change password first")
+	// ErrUserNotActive 用户不是 active（停用或待绑定）：promote-admin 拒绝。
+	ErrUserNotActive = errors.New("identity: user is not active")
+	// ErrAlreadyPlatformAdmin 用户已是平台管理者：promote-admin 拒绝（不重复写审计）。
+	ErrAlreadyPlatformAdmin = errors.New("identity: user is already platform_admin")
 )
 
 // Onboarding N3 的业务层。与入网的 Service 共用存储、时钟、随机源。
@@ -123,6 +127,39 @@ func (o *Onboarding) ResetPassword(ctx context.Context, userID string) (string, 
 	}
 	o.audit(ctx, "reset-password", "user.password_reset_by_ops", u.UserIDLC(), "")
 	return pw, nil
+}
+
+// PromoteToPlatformAdmin 运维把用户提升为平台管理者（workpulse promote-admin，主机上执行）。user 先按 user_id 找，
+// 找不到再按 short_name 找；两者分别命中不同用户 ⇒ ErrConflict（歧义，不猜）。改类型与审计在存储层同一事务里完成；
+// 口令、会话、状态一律不动。返回提升后的用户与原类型。
+func (o *Onboarding) PromoteToPlatformAdmin(ctx context.Context, user string) (*User, UserType, error) {
+	user = strings.TrimSpace(user)
+	if user == "" {
+		return nil, "", ErrBadRequest
+	}
+	byID, errID := o.Store.GetUser(ctx, user)
+	byShort, errShort := o.Store.GetUserByShortName(ctx, Lower(user))
+	var u *User
+	switch {
+	case errID == nil && errShort == nil && byID.UserIDLC() != byShort.UserIDLC():
+		return nil, "", ErrConflict
+	case errID == nil:
+		u = byID
+	case errShort == nil:
+		u = byShort
+	case errors.Is(errID, ErrNotFound) && errors.Is(errShort, ErrNotFound):
+		return nil, "", ErrNotFound
+	case !errors.Is(errID, ErrNotFound):
+		return nil, "", errID
+	default:
+		return nil, "", errShort
+	}
+	old, err := o.Store.PromoteToPlatformAdmin(ctx, u.UserIDLC(), "promote-admin", "user.promoted_platform_admin_by_ops", o.Now())
+	if err != nil {
+		return nil, "", err
+	}
+	u.Type = UserPlatformAdmin
+	return u, old, nil
 }
 
 // PasswordLogin 用户 ID＋密码登录（本版只有初始化脚本建的管理用户有密码）。成功返回会话令牌（只此一次）与用户。

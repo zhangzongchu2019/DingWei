@@ -162,6 +162,25 @@ func (m *MemStore) ResetPassword(_ context.Context, userIDLC, hash string, now t
 	return nil
 }
 
+func (m *MemStore) PromoteToPlatformAdmin(_ context.Context, userIDLC, actor, action string, now time.Time) (UserType, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	u, ok := m.users[Lower(userIDLC)]
+	if !ok {
+		return "", ErrNotFound
+	}
+	if u.State != UserActive {
+		return "", ErrUserNotActive
+	}
+	if u.Type == UserPlatformAdmin {
+		return "", ErrAlreadyPlatformAdmin
+	}
+	old := u.Type
+	u.Type = UserPlatformAdmin
+	m.audit = append(m.audit, AuditEvent{Actor: actor, Action: action, Target: Lower(userIDLC), Detail: promoteAuditDetail(old), At: now})
+	return old, nil
+}
+
 func (m *MemStore) ResolveIdentity(_ context.Context, ident Identity) (*User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

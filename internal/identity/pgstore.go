@@ -291,6 +291,37 @@ func (s *PGStore) ResetPassword(ctx context.Context, userIDLC, hash string, now 
 	})
 }
 
+func (s *PGStore) PromoteToPlatformAdmin(ctx context.Context, userIDLC, actor, action string, now time.Time) (UserType, error) {
+	var old UserType
+	err := s.inTx(ctx, func(tx repo.Tx) error {
+		var typ, st string
+		if err := tx.QueryRow(ctx, `SELECT type, state FROM np_user WHERE user_id_lc = $1 FOR UPDATE`, Lower(userIDLC)).Scan(&typ, &st); err != nil {
+			if noRows(err) {
+				return ErrNotFound
+			}
+			return err
+		}
+		if UserState(st) != UserActive {
+			return ErrUserNotActive
+		}
+		if UserType(typ) == UserPlatformAdmin {
+			return ErrAlreadyPlatformAdmin
+		}
+		old = UserType(typ)
+		if _, err := tx.Exec(ctx, `UPDATE np_user SET type = $2 WHERE user_id_lc = $1`, Lower(userIDLC), string(UserPlatformAdmin)); err != nil {
+			return err
+		}
+		detail, _ := json.Marshal(map[string]string{"detail": promoteAuditDetail(old)})
+		_, err := tx.Exec(ctx, `INSERT INTO audit_log (actor, action, target, after_json, ts) VALUES ($1,$2,$3,$4,$5)`,
+			actor, action, Lower(userIDLC), string(detail), now.UTC())
+		return err
+	})
+	if err != nil {
+		return "", err
+	}
+	return old, nil
+}
+
 func (s *PGStore) ResolveIdentity(ctx context.Context, ident Identity) (*User, error) {
 	row, err := s.queryRow(ctx, `SELECT u.user_id, u.short_name, u.display_name, u.type, u.state, u.password_hash, u.must_change_password, u.created_at
 		FROM np_identity i JOIN np_user u ON u.user_id_lc = i.user_id_lc

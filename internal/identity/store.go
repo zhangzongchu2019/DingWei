@@ -26,6 +26,11 @@ type IdentityStore interface {
 	// ResetPassword 运维重置口令（组长令，workpulse reset-password）：一个事务里写新口令哈希、置必须改密、
 	// 吊销该用户全部未吊销会话。用户不存在 ⇒ ErrNotFound。
 	ResetPassword(ctx context.Context, userIDLC, hash string, now time.Time) error
+	// PromoteToPlatformAdmin 运维把用户提升为平台管理者（workpulse promote-admin）：一个事务里锁定该用户、核状态与类型、
+	// 改类型为 platform_admin、写一笔审计（actor、action 由调用方给，detail 记原类型）。返回原类型。
+	// 不存在 ⇒ ErrNotFound；非 active ⇒ ErrUserNotActive；已是 platform_admin ⇒ ErrAlreadyPlatformAdmin。任一失败都不改任何状态。
+	// 不碰口令与会话。
+	PromoteToPlatformAdmin(ctx context.Context, userIDLC, actor, action string, now time.Time) (UserType, error)
 	ResolveIdentity(ctx context.Context, ident Identity) (*User, error)
 	// GetIdentity returns the user's binding for provider; missing ⇒ ErrNotFound.
 	GetIdentity(ctx context.Context, userIDLC, provider string) (*Identity, error)
