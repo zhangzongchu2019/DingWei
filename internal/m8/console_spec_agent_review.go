@@ -134,7 +134,7 @@ func (h *Hub) HandleConsoleSpecAgentRequest(w http.ResponseWriter, r *http.Reque
 				online = append(online, a)
 			}
 		}
-		items, e := repo.ListSpecAgentRequests(r.Context(), "", actor, spec, r.URL.Query().Get("cursor"))
+		items, e := repo.ListSpecAgentRequests(r.Context(), "", actor, spec, "")
 		if e != nil {
 			specAgentError(w, e)
 			return

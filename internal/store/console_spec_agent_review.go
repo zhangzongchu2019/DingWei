@@ -205,7 +205,11 @@ func (s *SQLite) SpecAgentRequest(ctx context.Context, id string) (*SpecAgentReq
 	return scanSpecAgent(s.db.QueryRowContext(ctx, `SELECT `+specAgentCols+` FROM console_spec_agent_request WHERE id=?`, id))
 }
 func (s *SQLite) ListSpecAgentRequests(ctx context.Context, agent, actor, spec, cursor string) ([]SpecAgentRequest, error) {
-	rows, e := s.db.QueryContext(ctx, `SELECT `+specAgentCols+` FROM console_spec_agent_request WHERE (?='' OR agent_id=?) AND (?='' OR actor=?) AND (?='' OR spec_id=?) AND id>? ORDER BY id LIMIT 100`, agent, agent, actor, actor, spec, spec, cursor)
+	order := "id"
+	if actor != "" && spec != "" {
+		order = "CASE WHEN status IN ('pending','awaiting_confirmation') THEN 0 ELSE 1 END,created_at DESC,id DESC"
+	}
+	rows, e := s.db.QueryContext(ctx, `SELECT `+specAgentCols+` FROM console_spec_agent_request WHERE (?='' OR agent_id=?) AND (?='' OR actor=?) AND (?='' OR spec_id=?) AND id>? ORDER BY `+order+` LIMIT 100`, agent, agent, actor, actor, spec, spec, cursor)
 	if e != nil {
 		return nil, e
 	}

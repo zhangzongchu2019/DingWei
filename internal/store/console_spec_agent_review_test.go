@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"strings"
 	"sync"
@@ -410,5 +411,23 @@ func TestR8FreshReviewRequirementFollowsHumanRevision(t *testing.T) {
 	}
 	if e = db.FinalizeConsoleSpec(ctx, "s", "owner-a", now); e == nil {
 		t.Fatal("R8_FRESH_REVIEW_LOST_ON_EDIT")
+	}
+}
+
+func TestR8HumanHistoryCannotHideActiveRequestBehindOldPage(t *testing.T) {
+	db, now, q, _ := r8Fixture(t, "criteria")
+	ctx := context.Background()
+	for i := 0; i < 130; i++ {
+		_, e := db.db.ExecContext(ctx, `INSERT INTO console_spec_agent_request(id,spec_id,revision,kind,actor,agent_id,key_id,session_name,snapshot_sha,client_id,status,deadline,boot,request_json,created_at,updated_at) SELECT ?,spec_id,revision,kind,actor,agent_id,key_id,session_name,snapshot_sha,?,'failed',deadline,boot,request_json,?,? FROM console_spec_agent_request WHERE id=?`, fmt.Sprintf("a_old_%03d", i), fmt.Sprintf("old_%d", i), now.Add(-time.Hour).Format(time.RFC3339Nano), now.Format(time.RFC3339Nano), q.ID)
+		if e != nil {
+			t.Fatal(e)
+		}
+	}
+	rows, e := db.ListSpecAgentRequests(ctx, "", "owner-a", "s", "")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if len(rows) != 100 || rows[0].ID != q.ID {
+		t.Fatal("R8_ACTIVE_REQUEST_HIDDEN_BY_HISTORY")
 	}
 }

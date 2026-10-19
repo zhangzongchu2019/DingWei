@@ -49,6 +49,7 @@ def main():
     add('read_state_error_fail_closed',hub,lambda s:read(s,lambda t:change(t,'if e != nil {','if e != nil && false {')),hg('TestR8HTTPReadErrorsAndCancellationBetweenSelectionAndProjection'),'R8_READ_RACE_LEAKED_REQUEST')
     add('ws_restart_generation',hub,lambda s:change(s,'q.Boot != h.specAgentBoot() || ',''),hg('TestR8RestartBeforeReconcilerRejectsWSAndCriteriaConfirmation'),'R8_RESTARTED_WS_RESULT_ACCEPTED')
     add('criteria_restart_reconcile',hub,lambda s:section(s,'func (h *Hub) HandleConsoleSpecAgentConfirm','func (h *Hub) readSpecAgentAuthorized',lambda t:change(t,'if e := repo.ReconcileSpecAgentRequests(r.Context(), h.specAgentBoot(), h.now()); e != nil {','if e := error(nil); e != nil {')),hg('TestR8RestartBeforeReconcilerRejectsWSAndCriteriaConfirmation'),'R8_RESTARTED_CANDIDATE_CONFIRMED')
+    add('owner_active_request_first',store,lambda s:change(s,'order = "CASE WHEN status IN (\'pending\',\'awaiting_confirmation\') THEN 0 ELSE 1 END,created_at DESC,id DESC"','order = "id"'),sg('TestR8HumanHistoryCannotHideActiveRequestBehindOldPage'),'R8_ACTIVE_REQUEST_HIDDEN_BY_HISTORY')
     add('helper_system_origin',helper,lambda s:change(s," or env.get('from') != 'workpulse#' + key_id",''),py,'R8_FORGED_HELPER_REQUEST_ACCEPTED')
     def raw_prompt(s):
         a=s.index("    out['body'] = (");b=s.index('    return out',a)
