@@ -1,0 +1,1606 @@
+{
+  "columns": [
+    [
+      "g4_account_grant",
+      "account_id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_grant",
+      "user_lc",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_grant",
+      "granted_by",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_grant",
+      "granted_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_account_login",
+      "id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_login",
+      "owner_lc",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_login",
+      "cli",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_login",
+      "llm",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_login",
+      "email",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_login",
+      "account_id",
+      "text",
+      false,
+      null
+    ],
+    [
+      "g4_account_login",
+      "node_id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_login",
+      "state",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_login",
+      "url",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_account_login",
+      "user_code",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_account_login",
+      "reason",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_account_login",
+      "result_account_id",
+      "text",
+      false,
+      null
+    ],
+    [
+      "g4_account_login",
+      "created_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_account_login",
+      "expires_at",
+      "timestamp with time zone",
+      true,
+      null
+    ],
+    [
+      "g4_account_login",
+      "finished_at",
+      "timestamp with time zone",
+      false,
+      null
+    ],
+    [
+      "g4_account_login",
+      "claimed_at",
+      "timestamp with time zone",
+      false,
+      null
+    ],
+    [
+      "g4_account_pool",
+      "id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_pool",
+      "name",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_pool",
+      "kind",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_pool",
+      "cli",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_pool",
+      "llm",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_pool",
+      "secret_enc",
+      "bytea",
+      true,
+      null
+    ],
+    [
+      "g4_account_pool",
+      "key_version",
+      "integer",
+      true,
+      null
+    ],
+    [
+      "g4_account_pool",
+      "last4",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_account_pool",
+      "state",
+      "text",
+      true,
+      "'available'::text"
+    ],
+    [
+      "g4_account_pool",
+      "bound_agent_id",
+      "text",
+      false,
+      null
+    ],
+    [
+      "g4_account_pool",
+      "created_by",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_account_pool",
+      "created_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_account_pool",
+      "updated_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_account_pool",
+      "owner_lc",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_account_pool",
+      "email",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_audit",
+      "id",
+      "bigint",
+      true,
+      "nextval('g4_audit_id_seq'::regclass)"
+    ],
+    [
+      "g4_audit",
+      "actor",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_audit",
+      "action",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_audit",
+      "target",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_audit",
+      "detail",
+      "jsonb",
+      false,
+      null
+    ],
+    [
+      "g4_audit",
+      "at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_backup",
+      "id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_backup",
+      "node_id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_backup",
+      "seat_id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_backup",
+      "state",
+      "text",
+      true,
+      "'pending'::text"
+    ],
+    [
+      "g4_backup",
+      "path",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_backup",
+      "size_bytes",
+      "bigint",
+      true,
+      "0"
+    ],
+    [
+      "g4_backup",
+      "expires_at",
+      "timestamp with time zone",
+      true,
+      null
+    ],
+    [
+      "g4_backup",
+      "created_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_hosted_seat",
+      "agent_id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_hosted_seat",
+      "node_id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_hosted_seat",
+      "cli",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_hosted_seat",
+      "llm",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_hosted_seat",
+      "cred_kind",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_hosted_seat",
+      "account_ref",
+      "text",
+      false,
+      null
+    ],
+    [
+      "g4_hosted_seat",
+      "plan",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_hosted_seat",
+      "model",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_hosted_seat",
+      "state",
+      "text",
+      true,
+      "'queued'::text"
+    ],
+    [
+      "g4_hosted_seat",
+      "state_detail",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_hosted_seat",
+      "image_ref",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_hosted_seat",
+      "created_by",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_hosted_seat",
+      "created_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_hosted_seat",
+      "updated_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_lifecycle_job",
+      "id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_lifecycle_job",
+      "agent_id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_lifecycle_job",
+      "created_by",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_lifecycle_job",
+      "op",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_lifecycle_job",
+      "args",
+      "jsonb",
+      true,
+      "'{}'::jsonb"
+    ],
+    [
+      "g4_lifecycle_job",
+      "stage",
+      "text",
+      true,
+      "'queued'::text"
+    ],
+    [
+      "g4_lifecycle_job",
+      "reason",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_lifecycle_job",
+      "created_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_lifecycle_job",
+      "updated_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_node",
+      "id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_node",
+      "name",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_node",
+      "labels",
+      "jsonb",
+      true,
+      "'{}'::jsonb"
+    ],
+    [
+      "g4_node",
+      "state",
+      "text",
+      true,
+      "'offline'::text"
+    ],
+    [
+      "g4_node",
+      "capacity",
+      "jsonb",
+      true,
+      "'{}'::jsonb"
+    ],
+    [
+      "g4_node",
+      "docker_version",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_node",
+      "node_protocol_version",
+      "integer",
+      true,
+      "1"
+    ],
+    [
+      "g4_node",
+      "last_seen_at",
+      "timestamp with time zone",
+      false,
+      null
+    ],
+    [
+      "g4_node",
+      "created_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_node",
+      "updated_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_node_credential",
+      "node_id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_node_credential",
+      "secret_hash",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_node_credential",
+      "issued_by",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_node_credential",
+      "issued_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_node_credential",
+      "rotated_at",
+      "timestamp with time zone",
+      false,
+      null
+    ],
+    [
+      "g4_node_credential",
+      "revoked_at",
+      "timestamp with time zone",
+      false,
+      null
+    ],
+    [
+      "g4_quota",
+      "user_lc",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_quota",
+      "agents_limit",
+      "integer",
+      true,
+      "4"
+    ],
+    [
+      "g4_quota",
+      "mem_mb_limit",
+      "bigint",
+      true,
+      "16384"
+    ],
+    [
+      "g4_quota",
+      "disk_mb_limit",
+      "bigint",
+      true,
+      "65536"
+    ],
+    [
+      "g4_quota",
+      "vcpu_limit",
+      "integer",
+      true,
+      "4"
+    ],
+    [
+      "g4_quota",
+      "updated_by",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_quota",
+      "updated_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_quota_notice",
+      "node_id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_quota_notice",
+      "event_id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_quota_notice",
+      "recipient",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_quota_notice",
+      "seat_id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_quota_notice",
+      "reason",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_quota_notice",
+      "writer_kind",
+      "text",
+      true,
+      "''::text"
+    ],
+    [
+      "g4_quota_notice",
+      "measured_at",
+      "timestamp with time zone",
+      true,
+      null
+    ],
+    [
+      "g4_quota_notice",
+      "delivered_at",
+      "timestamp with time zone",
+      false,
+      null
+    ],
+    [
+      "g4_quota_notice",
+      "next_attempt_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_seat_event",
+      "id",
+      "bigint",
+      true,
+      "nextval('g4_seat_event_id_seq'::regclass)"
+    ],
+    [
+      "g4_seat_event",
+      "agent_id",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_seat_event",
+      "kind",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_seat_event",
+      "detail",
+      "jsonb",
+      false,
+      null
+    ],
+    [
+      "g4_seat_event",
+      "at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    [
+      "g4_team_key",
+      "version",
+      "integer",
+      true,
+      null
+    ],
+    [
+      "g4_team_key",
+      "wrapped",
+      "bytea",
+      true,
+      null
+    ],
+    [
+      "g4_team_key",
+      "state",
+      "text",
+      true,
+      "'active'::text"
+    ],
+    [
+      "g4_team_key",
+      "created_by",
+      "text",
+      true,
+      null
+    ],
+    [
+      "g4_team_key",
+      "created_at",
+      "timestamp with time zone",
+      true,
+      "now()"
+    ]
+  ],
+  "indexes": [
+    [
+      "g4_account_grant",
+      "g4_account_grant_pkey",
+      "CREATE UNIQUE INDEX g4_account_grant_pkey ON g4_account_grant USING btree (account_id, user_lc)"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_active",
+      "CREATE INDEX g4_account_login_active ON g4_account_login USING btree (state) WHERE (state = ANY (ARRAY['starting'::text, 'waiting_user'::text, 'completing'::text]))"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_one_active",
+      "CREATE UNIQUE INDEX g4_account_login_one_active ON g4_account_login USING btree (owner_lc) WHERE (state = ANY (ARRAY['starting'::text, 'waiting_user'::text, 'completing'::text]))"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_owner",
+      "CREATE INDEX g4_account_login_owner ON g4_account_login USING btree (owner_lc, created_at)"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_pkey",
+      "CREATE UNIQUE INDEX g4_account_login_pkey ON g4_account_login USING btree (id)"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_owner",
+      "CREATE INDEX g4_account_pool_owner ON g4_account_pool USING btree (owner_lc)"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_owner_name",
+      "CREATE UNIQUE INDEX g4_account_pool_owner_name ON g4_account_pool USING btree (owner_lc, name)"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_pkey",
+      "CREATE UNIQUE INDEX g4_account_pool_pkey ON g4_account_pool USING btree (id)"
+    ],
+    [
+      "g4_audit",
+      "g4_audit_action_idx",
+      "CREATE INDEX g4_audit_action_idx ON g4_audit USING btree (action, id)"
+    ],
+    [
+      "g4_audit",
+      "g4_audit_pkey",
+      "CREATE UNIQUE INDEX g4_audit_pkey ON g4_audit USING btree (id)"
+    ],
+    [
+      "g4_backup",
+      "g4_backup_pkey",
+      "CREATE UNIQUE INDEX g4_backup_pkey ON g4_backup USING btree (id)"
+    ],
+    [
+      "g4_backup",
+      "g4_backup_state_idx",
+      "CREATE INDEX g4_backup_state_idx ON g4_backup USING btree (state, expires_at)"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_pkey",
+      "CREATE UNIQUE INDEX g4_hosted_seat_pkey ON g4_hosted_seat USING btree (agent_id)"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_agent_idx",
+      "CREATE INDEX g4_lifecycle_job_agent_idx ON g4_lifecycle_job USING btree (agent_id, created_at DESC)"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_one_active_idx",
+      "CREATE UNIQUE INDEX g4_lifecycle_job_one_active_idx ON g4_lifecycle_job USING btree (agent_id) WHERE (stage = ANY (ARRAY['queued'::text, 'running'::text]))"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_pkey",
+      "CREATE UNIQUE INDEX g4_lifecycle_job_pkey ON g4_lifecycle_job USING btree (id)"
+    ],
+    [
+      "g4_node",
+      "g4_node_name_key",
+      "CREATE UNIQUE INDEX g4_node_name_key ON g4_node USING btree (name)"
+    ],
+    [
+      "g4_node",
+      "g4_node_pkey",
+      "CREATE UNIQUE INDEX g4_node_pkey ON g4_node USING btree (id)"
+    ],
+    [
+      "g4_node_credential",
+      "g4_node_credential_pkey",
+      "CREATE UNIQUE INDEX g4_node_credential_pkey ON g4_node_credential USING btree (node_id)"
+    ],
+    [
+      "g4_quota",
+      "g4_quota_pkey",
+      "CREATE UNIQUE INDEX g4_quota_pkey ON g4_quota USING btree (user_lc)"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_node_idx",
+      "CREATE INDEX g4_quota_notice_node_idx ON g4_quota_notice USING btree (node_id, delivered_at)"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_pending_idx",
+      "CREATE INDEX g4_quota_notice_pending_idx ON g4_quota_notice USING btree (next_attempt_at, measured_at) WHERE (delivered_at IS NULL)"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_pkey",
+      "CREATE UNIQUE INDEX g4_quota_notice_pkey ON g4_quota_notice USING btree (node_id, event_id, recipient)"
+    ],
+    [
+      "g4_seat_event",
+      "g4_seat_event_agent_idx",
+      "CREATE INDEX g4_seat_event_agent_idx ON g4_seat_event USING btree (agent_id, id)"
+    ],
+    [
+      "g4_seat_event",
+      "g4_seat_event_pkey",
+      "CREATE UNIQUE INDEX g4_seat_event_pkey ON g4_seat_event USING btree (id)"
+    ],
+    [
+      "g4_team_key",
+      "g4_team_key_pkey",
+      "CREATE UNIQUE INDEX g4_team_key_pkey ON g4_team_key USING btree (version)"
+    ]
+  ],
+  "constraints": [
+    [
+      "g4_account_grant",
+      "g4_account_grant_account_id_fkey",
+      "FOREIGN KEY (account_id) REFERENCES g4_account_pool(id)"
+    ],
+    [
+      "g4_account_grant",
+      "g4_account_grant_account_id_not_null",
+      "NOT NULL account_id"
+    ],
+    [
+      "g4_account_grant",
+      "g4_account_grant_granted_at_not_null",
+      "NOT NULL granted_at"
+    ],
+    [
+      "g4_account_grant",
+      "g4_account_grant_granted_by_not_null",
+      "NOT NULL granted_by"
+    ],
+    [
+      "g4_account_grant",
+      "g4_account_grant_pkey",
+      "PRIMARY KEY (account_id, user_lc)"
+    ],
+    [
+      "g4_account_grant",
+      "g4_account_grant_user_lc_not_null",
+      "NOT NULL user_lc"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_cli_not_null",
+      "NOT NULL cli"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_created_at_not_null",
+      "NOT NULL created_at"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_email_not_null",
+      "NOT NULL email"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_expires_at_not_null",
+      "NOT NULL expires_at"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_id_not_null",
+      "NOT NULL id"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_llm_not_null",
+      "NOT NULL llm"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_node_id_not_null",
+      "NOT NULL node_id"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_owner_lc_not_null",
+      "NOT NULL owner_lc"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_pkey",
+      "PRIMARY KEY (id)"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_reason_not_null",
+      "NOT NULL reason"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_state_check",
+      "CHECK ((state = ANY (ARRAY['starting'::text, 'waiting_user'::text, 'completing'::text, 'done'::text, 'failed'::text, 'expired'::text, 'cancelled'::text])))"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_state_not_null",
+      "NOT NULL state"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_url_not_null",
+      "NOT NULL url"
+    ],
+    [
+      "g4_account_login",
+      "g4_account_login_user_code_not_null",
+      "NOT NULL user_code"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_cli_not_null",
+      "NOT NULL cli"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_created_at_not_null",
+      "NOT NULL created_at"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_created_by_not_null",
+      "NOT NULL created_by"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_email_not_null",
+      "NOT NULL email"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_id_not_null",
+      "NOT NULL id"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_key_version_not_null",
+      "NOT NULL key_version"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_kind_check",
+      "CHECK ((kind = ANY (ARRAY['api_key'::text, 'token_file'::text])))"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_kind_not_null",
+      "NOT NULL kind"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_last4_not_null",
+      "NOT NULL last4"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_llm_not_null",
+      "NOT NULL llm"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_name_not_null",
+      "NOT NULL name"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_owner_lc_not_null",
+      "NOT NULL owner_lc"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_pkey",
+      "PRIMARY KEY (id)"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_secret_enc_not_null",
+      "NOT NULL secret_enc"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_state_check",
+      "CHECK ((state = ANY (ARRAY['available'::text, 'bound'::text, 'disabled'::text])))"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_state_not_null",
+      "NOT NULL state"
+    ],
+    [
+      "g4_account_pool",
+      "g4_account_pool_updated_at_not_null",
+      "NOT NULL updated_at"
+    ],
+    [
+      "g4_audit",
+      "g4_audit_action_not_null",
+      "NOT NULL action"
+    ],
+    [
+      "g4_audit",
+      "g4_audit_actor_not_null",
+      "NOT NULL actor"
+    ],
+    [
+      "g4_audit",
+      "g4_audit_at_not_null",
+      "NOT NULL at"
+    ],
+    [
+      "g4_audit",
+      "g4_audit_id_not_null",
+      "NOT NULL id"
+    ],
+    [
+      "g4_audit",
+      "g4_audit_pkey",
+      "PRIMARY KEY (id)"
+    ],
+    [
+      "g4_audit",
+      "g4_audit_target_not_null",
+      "NOT NULL target"
+    ],
+    [
+      "g4_backup",
+      "g4_backup_created_at_not_null",
+      "NOT NULL created_at"
+    ],
+    [
+      "g4_backup",
+      "g4_backup_expires_at_not_null",
+      "NOT NULL expires_at"
+    ],
+    [
+      "g4_backup",
+      "g4_backup_id_not_null",
+      "NOT NULL id"
+    ],
+    [
+      "g4_backup",
+      "g4_backup_node_id_not_null",
+      "NOT NULL node_id"
+    ],
+    [
+      "g4_backup",
+      "g4_backup_path_not_null",
+      "NOT NULL path"
+    ],
+    [
+      "g4_backup",
+      "g4_backup_pkey",
+      "PRIMARY KEY (id)"
+    ],
+    [
+      "g4_backup",
+      "g4_backup_seat_id_not_null",
+      "NOT NULL seat_id"
+    ],
+    [
+      "g4_backup",
+      "g4_backup_size_bytes_not_null",
+      "NOT NULL size_bytes"
+    ],
+    [
+      "g4_backup",
+      "g4_backup_state_check",
+      "CHECK ((state = ANY (ARRAY['pending'::text, 'complete'::text, 'expired'::text])))"
+    ],
+    [
+      "g4_backup",
+      "g4_backup_state_not_null",
+      "NOT NULL state"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_account_ref_fkey",
+      "FOREIGN KEY (account_ref) REFERENCES g4_account_pool(id)"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_agent_id_not_null",
+      "NOT NULL agent_id"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_cli_not_null",
+      "NOT NULL cli"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_created_at_not_null",
+      "NOT NULL created_at"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_created_by_not_null",
+      "NOT NULL created_by"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_cred_kind_check",
+      "CHECK ((cred_kind = ANY (ARRAY['api_key'::text, 'token_file'::text])))"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_cred_kind_not_null",
+      "NOT NULL cred_kind"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_image_ref_not_null",
+      "NOT NULL image_ref"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_llm_not_null",
+      "NOT NULL llm"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_model_not_null",
+      "NOT NULL model"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_node_id_fkey",
+      "FOREIGN KEY (node_id) REFERENCES g4_node(id)"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_node_id_not_null",
+      "NOT NULL node_id"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_pkey",
+      "PRIMARY KEY (agent_id)"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_plan_check",
+      "CHECK ((plan = ANY (ARRAY['1c1.5g40'::text, '2c4g'::text, '4c8g'::text])))"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_plan_not_null",
+      "NOT NULL plan"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_state_check",
+      "CHECK ((state = ANY (ARRAY['queued'::text, 'pulling'::text, 'starting'::text, 'online'::text, 'busy'::text, 'disabled'::text, 'stopped'::text, 'error'::text, 'destroyed'::text])))"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_state_detail_not_null",
+      "NOT NULL state_detail"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_state_not_null",
+      "NOT NULL state"
+    ],
+    [
+      "g4_hosted_seat",
+      "g4_hosted_seat_updated_at_not_null",
+      "NOT NULL updated_at"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_agent_id_fkey",
+      "FOREIGN KEY (agent_id) REFERENCES g4_hosted_seat(agent_id)"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_agent_id_not_null",
+      "NOT NULL agent_id"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_args_not_null",
+      "NOT NULL args"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_created_at_not_null",
+      "NOT NULL created_at"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_created_by_not_null",
+      "NOT NULL created_by"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_id_not_null",
+      "NOT NULL id"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_op_check",
+      "CHECK ((op = ANY (ARRAY['upgrade'::text, 'restart'::text, 'disable'::text, 'enable'::text, 'destroy'::text, 'refresh_cred'::text])))"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_op_not_null",
+      "NOT NULL op"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_pkey",
+      "PRIMARY KEY (id)"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_reason_not_null",
+      "NOT NULL reason"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_stage_check",
+      "CHECK ((stage = ANY (ARRAY['queued'::text, 'running'::text, 'completed'::text, 'failed'::text])))"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_stage_not_null",
+      "NOT NULL stage"
+    ],
+    [
+      "g4_lifecycle_job",
+      "g4_lifecycle_job_updated_at_not_null",
+      "NOT NULL updated_at"
+    ],
+    [
+      "g4_node",
+      "g4_node_capacity_not_null",
+      "NOT NULL capacity"
+    ],
+    [
+      "g4_node",
+      "g4_node_created_at_not_null",
+      "NOT NULL created_at"
+    ],
+    [
+      "g4_node",
+      "g4_node_docker_version_not_null",
+      "NOT NULL docker_version"
+    ],
+    [
+      "g4_node",
+      "g4_node_id_not_null",
+      "NOT NULL id"
+    ],
+    [
+      "g4_node",
+      "g4_node_labels_not_null",
+      "NOT NULL labels"
+    ],
+    [
+      "g4_node",
+      "g4_node_name_key",
+      "UNIQUE (name)"
+    ],
+    [
+      "g4_node",
+      "g4_node_name_not_null",
+      "NOT NULL name"
+    ],
+    [
+      "g4_node",
+      "g4_node_node_protocol_version_not_null",
+      "NOT NULL node_protocol_version"
+    ],
+    [
+      "g4_node",
+      "g4_node_pkey",
+      "PRIMARY KEY (id)"
+    ],
+    [
+      "g4_node",
+      "g4_node_state_check",
+      "CHECK ((state = ANY (ARRAY['online'::text, 'offline'::text])))"
+    ],
+    [
+      "g4_node",
+      "g4_node_state_not_null",
+      "NOT NULL state"
+    ],
+    [
+      "g4_node",
+      "g4_node_updated_at_not_null",
+      "NOT NULL updated_at"
+    ],
+    [
+      "g4_node_credential",
+      "g4_node_credential_issued_at_not_null",
+      "NOT NULL issued_at"
+    ],
+    [
+      "g4_node_credential",
+      "g4_node_credential_issued_by_not_null",
+      "NOT NULL issued_by"
+    ],
+    [
+      "g4_node_credential",
+      "g4_node_credential_node_id_fkey",
+      "FOREIGN KEY (node_id) REFERENCES g4_node(id)"
+    ],
+    [
+      "g4_node_credential",
+      "g4_node_credential_node_id_not_null",
+      "NOT NULL node_id"
+    ],
+    [
+      "g4_node_credential",
+      "g4_node_credential_pkey",
+      "PRIMARY KEY (node_id)"
+    ],
+    [
+      "g4_node_credential",
+      "g4_node_credential_secret_hash_not_null",
+      "NOT NULL secret_hash"
+    ],
+    [
+      "g4_quota",
+      "g4_quota_agents_limit_not_null",
+      "NOT NULL agents_limit"
+    ],
+    [
+      "g4_quota",
+      "g4_quota_disk_mb_limit_not_null",
+      "NOT NULL disk_mb_limit"
+    ],
+    [
+      "g4_quota",
+      "g4_quota_mem_mb_limit_not_null",
+      "NOT NULL mem_mb_limit"
+    ],
+    [
+      "g4_quota",
+      "g4_quota_pkey",
+      "PRIMARY KEY (user_lc)"
+    ],
+    [
+      "g4_quota",
+      "g4_quota_updated_at_not_null",
+      "NOT NULL updated_at"
+    ],
+    [
+      "g4_quota",
+      "g4_quota_updated_by_not_null",
+      "NOT NULL updated_by"
+    ],
+    [
+      "g4_quota",
+      "g4_quota_user_lc_not_null",
+      "NOT NULL user_lc"
+    ],
+    [
+      "g4_quota",
+      "g4_quota_vcpu_limit_not_null",
+      "NOT NULL vcpu_limit"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_event_id_not_null",
+      "NOT NULL event_id"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_measured_at_not_null",
+      "NOT NULL measured_at"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_next_attempt_at_not_null",
+      "NOT NULL next_attempt_at"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_node_id_not_null",
+      "NOT NULL node_id"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_pkey",
+      "PRIMARY KEY (node_id, event_id, recipient)"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_reason_not_null",
+      "NOT NULL reason"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_recipient_check",
+      "CHECK ((recipient = ANY (ARRAY['owner'::text, 'ops'::text])))"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_recipient_not_null",
+      "NOT NULL recipient"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_seat_id_not_null",
+      "NOT NULL seat_id"
+    ],
+    [
+      "g4_quota_notice",
+      "g4_quota_notice_writer_kind_not_null",
+      "NOT NULL writer_kind"
+    ],
+    [
+      "g4_seat_event",
+      "g4_seat_event_agent_id_fkey",
+      "FOREIGN KEY (agent_id) REFERENCES g4_hosted_seat(agent_id)"
+    ],
+    [
+      "g4_seat_event",
+      "g4_seat_event_agent_id_not_null",
+      "NOT NULL agent_id"
+    ],
+    [
+      "g4_seat_event",
+      "g4_seat_event_at_not_null",
+      "NOT NULL at"
+    ],
+    [
+      "g4_seat_event",
+      "g4_seat_event_id_not_null",
+      "NOT NULL id"
+    ],
+    [
+      "g4_seat_event",
+      "g4_seat_event_kind_not_null",
+      "NOT NULL kind"
+    ],
+    [
+      "g4_seat_event",
+      "g4_seat_event_pkey",
+      "PRIMARY KEY (id)"
+    ],
+    [
+      "g4_team_key",
+      "g4_team_key_created_at_not_null",
+      "NOT NULL created_at"
+    ],
+    [
+      "g4_team_key",
+      "g4_team_key_created_by_not_null",
+      "NOT NULL created_by"
+    ],
+    [
+      "g4_team_key",
+      "g4_team_key_pkey",
+      "PRIMARY KEY (version)"
+    ],
+    [
+      "g4_team_key",
+      "g4_team_key_state_check",
+      "CHECK ((state = ANY (ARRAY['active'::text, 'retired'::text])))"
+    ],
+    [
+      "g4_team_key",
+      "g4_team_key_state_not_null",
+      "NOT NULL state"
+    ],
+    [
+      "g4_team_key",
+      "g4_team_key_version_not_null",
+      "NOT NULL version"
+    ],
+    [
+      "g4_team_key",
+      "g4_team_key_wrapped_not_null",
+      "NOT NULL wrapped"
+    ]
+  ]
+}

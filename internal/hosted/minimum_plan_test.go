@@ -46,10 +46,10 @@ func TestMinimumPlanDefinitionAndNetCapacity(t *testing.T) {
 	}
 }
 
-func TestMinimumPlanSchemaUpgradesOldConstraint(t *testing.T) {
+func TestFrozenR30MinimumPlanSchemaUpgradesOldConstraint(t *testing.T) {
 	ctx := context.Background()
 	_, s := mkPoolSvc(t)
-	if err := s.UpsertNode(ctx, Node{ID: "nd_min", Name: "min", Labels: []byte(`{}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_min", Name: "min", Labels: []byte(`{}`)}); err != nil {
 		t.Fatal(err)
 	}
 	// Reproduce the deployed constraint, retaining real old seats and quotas.
@@ -71,7 +71,7 @@ ALTER TABLE g4_hosted_seat ADD CONSTRAINT g4_hosted_seat_plan_check CHECK (plan 
 		t.Fatal("old CHECK unexpectedly accepts new plan")
 	}
 	for i := 0; i < 2; i++ {
-		if err := s.ApplySchema(ctx); err != nil {
+		if err := func() error { _, err := s.exec(ctx, R30SchemaDDL); return err }(); err != nil {
 			t.Fatalf("upgrade %d: %v", i, err)
 		}
 	}
@@ -101,7 +101,7 @@ func TestMinimumPlanQuotaDebitsAndEveryDimension(t *testing.T) {
 	if !ok {
 		t.Fatal("minimum plan missing")
 	}
-	if err := s.UpsertNode(ctx, Node{ID: "nd_min", Name: "min", Labels: []byte(`{}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_min", Name: "min", Labels: []byte(`{}`)}); err != nil {
 		t.Fatal(err)
 	}
 	for _, limit := range []Quota{
@@ -138,7 +138,7 @@ func TestMinimumPlanQuotaDebitsAndEveryDimension(t *testing.T) {
 func TestMinimumPlanOptionsAndRealCreateResources(t *testing.T) {
 	ctx := context.Background()
 	o, _, gw, s := mkOrch(t)
-	if err := s.SetNodeOnline(ctx, "nd_free", []byte(`{"resource_limits_version":1,"mem_free_mb":16384}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_free", []byte(`{"resource_limits_version":1,"mem_free_mb":16384}`)); err != nil {
 		t.Fatal(err)
 	}
 	v, err := o.Options(ctx, "zzc")

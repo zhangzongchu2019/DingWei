@@ -204,7 +204,7 @@ func TestB4B5ComboAndPlanGuards(t *testing.T) {
 func TestB9AutoNodeCapacity(t *testing.T) {
 	r := mkRig(t)
 	// 把唯一节点打成满（余量 0）
-	if err := r.st.SetNodeOnline(context.Background(), "nd_rt", json.RawMessage(`{"cpu_total":16,"mem_free_mb":0,"disk_free_mb":0}`)); err != nil {
+	if err := r31LegacySetOnline(r.st, context.Background(), "nd_rt", json.RawMessage(`{"cpu_total":16,"mem_free_mb":0,"disk_free_mb":0}`)); err != nil {
 		t.Fatal(err)
 	}
 	code, v := r.call("zzc", "POST", "/api/console/hosted/agents",

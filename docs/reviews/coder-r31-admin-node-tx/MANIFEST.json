@@ -1,0 +1,95 @@
+{
+  "parent": "02f1e1be070b9d32ba1efd12c4522e11878b5539",
+  "utc": "2026-10-19T04:59:02.358935+00:00",
+  "scope": "same-transaction hosted node projection, role lock and read audit; real PG concurrency regressions",
+  "deleted_paths": [
+    "internal/hosted/admin_agent_node.go"
+  ],
+  "members": [
+    {
+      "path": "cmd/workpulse/newplat.go",
+      "bytes": 9820,
+      "sha256": "a95616c3fbe918b69ec703e42f0d630d2d5745516d955847af38bdfedef56d43"
+    },
+    {
+      "path": "cmd/workpulse/r31_admin_agent_keyless_test.go",
+      "bytes": 5035,
+      "sha256": "2333fcfab2b3f8b83b11d0390c643918acc95fd4b06af3cf80a3f0ffc78888c5"
+    },
+    {
+      "path": "docs/designs/S-R31-ADMIN-AGENT-READ-VIEW.md",
+      "bytes": 4972,
+      "sha256": "65252ef02784713249324f76832eb7feb69abc087c89a956d8ce60d47fe316b4"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-node-tx/CHECKS.json",
+      "bytes": 23934,
+      "sha256": "be9751f135c98db99c6f43345687bfabb648df95aa55e793e5437bc3016788fb"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-node-tx/README.md",
+      "bytes": 3013,
+      "sha256": "f232f33e08a44ac32135cc28a090db2f0fea89ae281f174629c834dca19d4d08"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-node-tx/VALIDATION.json",
+      "bytes": 757,
+      "sha256": "166d7bc56c95948c24e1036e640eb2c63f557017dc7f19ec64650bd5de13d4cf"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-node-tx/boundary.log",
+      "bytes": 1478,
+      "sha256": "817718387629bd34147a3ec0776f8fc844ddd7502e660975c8eaf74f3a9a7ef6"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-node-tx/build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-node-tx/full-go.log",
+      "bytes": 205,
+      "sha256": "36d0b07111e9558216c41d46cf661a258392f305e83a90809b777004a421182c"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-node-tx/targeted.log",
+      "bytes": 204,
+      "sha256": "81ef806dcf9554d3ec45bfa9a78d816587cedc2979cb183579fd76b40e7d7a91"
+    },
+    {
+      "path": "docs/reviews/coder-r31-admin-node-tx/vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "internal/identity/admin_agents.go",
+      "bytes": 5358,
+      "sha256": "553eaf00cf8ec043b517d0f06535f95a0f287cd9bcc1183696a4ed586ff2161a"
+    },
+    {
+      "path": "internal/identity/admin_agents_tx_test.go",
+      "bytes": 6278,
+      "sha256": "c57e4da8038ce962b7beed75c764dd0c10a450bb6024a4eeb1a43ebd9f95c149"
+    },
+    {
+      "path": "internal/identity/httpapi/admin_agents.go",
+      "bytes": 2497,
+      "sha256": "2e221dc09c7774decd318eb8706129a56e5790ff3f75800531bc2ba9591d149d"
+    },
+    {
+      "path": "internal/identity/httpapi/httpapi.go",
+      "bytes": 13866,
+      "sha256": "3d9207ffe94f7e74c6a714b9efbfaccbc852e34b85c6a9db579c9929920c6fdb"
+    },
+    {
+      "path": "internal/identity/httpapi/r31_admin_agents_test.go",
+      "bytes": 12056,
+      "sha256": "267db6e645b336a27940acddf8a2f377974ddf0369d97fc4749a42db8162ba22"
+    },
+    {
+      "path": "tools/r31-admin-agent-checks/check.py",
+      "bytes": 9648,
+      "sha256": "2c5eb1c7d2bf5488baa63d7005e8ddacd3ab5c3408b70b9e627ccea66a860787"
+    }
+  ]
+}

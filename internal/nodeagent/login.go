@@ -95,7 +95,7 @@ func (a *Agent) RegisterLoginHandlers(eng *engine, registry, localImagesCSV, cgr
 	}
 	if a.docker != nil {
 		l.d.policy = a.docker.policy
-		l.d.soft = a.docker.soft
+		l.d.soft = a.docker.seatCapacityQuota()
 		l.d.seatRoot = a.docker.seatRoot
 	}
 	l.cleanupLeftovers(context.Background())

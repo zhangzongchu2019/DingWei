@@ -1,0 +1,43 @@
+{
+  "utc": "2026-10-19T05:24:47.622228+00:00",
+  "parent": "15c79dacd1d9c90eb64e5391f57ceb126eaf8b03",
+  "host": "VM-4-12-ubuntu",
+  "go": "go version go1.22.2 linux/amd64",
+  "scope": "local isolated embedded PG, local HTTP/WS; no target host access",
+  "commands": [
+    {
+      "command": "go test ./internal/nodegate -count=1",
+      "rc": 0,
+      "strict_embedded_pg": true
+    },
+    {
+      "command": "go test ./cmd/workpulse -run ^TestHostedAdminQuotaRegistrationCLIToNormalize$ -count=1",
+      "rc": 0,
+      "strict_embedded_pg": true
+    },
+    {
+      "command": "go test ./... -count=1 -timeout=30m",
+      "status": "PASS",
+      "env_keys": [
+        "HUB_TEST_PG_STRICT",
+        "HUB_TEST_PG_EMBEDDED",
+        "HUB_TEST_PG_SKIP_OK",
+        "R31_R30_BINARY"
+      ],
+      "external_dsn_removed": true,
+      "rc": 0
+    }
+  ],
+  "full_repository": "PASS_RC0",
+  "compatibility_binary": {
+    "source_commit": "3d99db2bf2dcff81f8060bf427f48a0790f0f775",
+    "local_path": "/tmp/r31-compat-r30-workpulse",
+    "sha256": "91729ef29684833e6950f00b0de9ace14d46c0c0dba329bdd2e193d33623efe7"
+  },
+  "utc_completed": "2026-10-19T05:33:34.406435+00:00",
+  "package_total": 64,
+  "packages_tested": 52,
+  "packages_without_tests": 12,
+  "all_expected_packages_accounted_for": true,
+  "source_snapshot_members_verified": 3738
+}

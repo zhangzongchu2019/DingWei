@@ -21,6 +21,8 @@ import (
 // hostedDeps 路由依赖（装配处注入；测试用桩）。
 type hostedDeps struct {
 	access    hostedAccess
+	store     *hosted.Store
+	isAdmin   func(*http.Request, string) bool
 	orch      *hosted.Orchestrator
 	life      *hosted.Lifecycle
 	qs        *hosted.QuotaService
@@ -45,6 +47,8 @@ func registerHostedRoutes(mux interface {
 }, d hostedDeps) {
 	human := hostedHumanMux{mux: mux, access: d.access, actor: d.actor}
 	human.HandleFunc("GET /api/console/hosted/options", d.handleOptions)
+	human.HandleFunc("GET /api/console/hosted/nodes", d.handleNodeList)
+	registerHostedNodeAdmin(mux, d)
 	human.HandleFunc("POST /api/console/hosted/agents", d.handleCreate)
 	human.HandleFunc("GET /api/console/hosted/jobs/{jobID}", d.handleJob)
 	human.HandleFunc("POST /api/console/hosted/agents/{agentID}/{op}", d.handleLifecycle)
@@ -188,6 +192,17 @@ func (d hostedDeps) handleOptions(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeHostedError(w, err)
 		return
+	}
+	if d.store != nil && d.isAdmin != nil && d.isAdmin(r, actor) {
+		for i := range v.Nodes {
+			n, e := d.store.GetNode(r.Context(), v.Nodes[i].ID)
+			if e != nil {
+				writeHostedError(w, e)
+				return
+			}
+			v.Nodes[i].Address = n.Address
+			v.Nodes[i].SchedulingState = n.SchedulingState
+		}
 	}
 	writeJSON(w, http.StatusOK, v)
 }

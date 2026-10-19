@@ -1,0 +1,6 @@
+=== RUN   TestR31AdminNodeAPIAndOneTimeCredential
+    r31_node_routes_test.go:37: nonadmin fixture-manager: 201
+--- FAIL: TestR31AdminNodeAPIAndOneTimeCredential (3.90s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	3.904s
+FAIL

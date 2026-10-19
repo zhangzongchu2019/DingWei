@@ -117,7 +117,7 @@ func (r *seatCapacityReader) sample(ctx context.Context) (snapshot seatcapacity.
 }
 
 func (r *seatCapacityReader) sampleOnce(ctx context.Context) (seatcapacity.Snapshot, error) {
-	q := r.d.soft
+	q := r.d.seatCapacityQuota()
 	s := seatcapacity.Snapshot{At: q.now()}
 	cpu, total, available, err := q.resources()
 	if err != nil || cpu <= 0 || total <= 0 || available < 0 || available > total {
@@ -243,7 +243,7 @@ func (r *seatCapacityReader) containerUsage(ctx context.Context, id, cid string,
 	if destination == "/h" {
 		owned = info.Config.Labels[loginLabel] == strings.TrimPrefix(id, "login-")
 	}
-	if info.ID != cid || info.Config.Labels[managedSeatLabel] != r.d.soft.nodeID || !owned {
+	if info.ID != cid || info.Config.Labels[managedSeatLabel] != r.d.seatCapacityQuota().nodeID || !owned {
 		return ownedCapacityUsage{}, fmt.Errorf("capacity ownership mismatch")
 	}
 	bound := false
@@ -274,7 +274,7 @@ func (r *seatCapacityReader) containerUsage(ctx context.Context, id, cid string,
 	if err := r.d.eng.call(ctx, "GET", "/containers/"+cid+"/stats?stream=false&one-shot=true", nil, &stats); err != nil {
 		return ownedCapacityUsage{}, fmt.Errorf("capacity stats unavailable")
 	}
-	if stats.CPU.Usage.Total == nil || stats.CPU.System == nil || *stats.CPU.System == 0 || stats.Read.IsZero() || r.d.soft.now().Before(stats.Read) || r.d.soft.now().Sub(stats.Read) > r.d.policyValue().ScanBudget {
+	if stats.CPU.Usage.Total == nil || stats.CPU.System == nil || *stats.CPU.System == 0 || stats.Read.IsZero() || r.d.seatCapacityQuota().now().Before(stats.Read) || r.d.seatCapacityQuota().now().Sub(stats.Read) > r.d.policyValue().ScanBudget {
 		return ownedCapacityUsage{}, fmt.Errorf("capacity stats invalid")
 	}
 	memory, ok := stats.Memory.Stats["anon"]

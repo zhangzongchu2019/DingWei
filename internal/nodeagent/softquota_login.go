@@ -29,6 +29,9 @@ func (q *softQuota) loginStartGate(id string) error {
 	if q.lock == nil {
 		return ErrSoftQuota
 	}
+	if q.policy.Mode == "hard" {
+		return q.hardLoginBudgetLocked()
+	}
 	if err := q.admitLocked(0); err != nil {
 		return err
 	}
@@ -75,11 +78,17 @@ func (q *softQuota) reserveLogin(id, root string) error {
 	if count >= loginPerNodeMax {
 		return ErrLoginBusy
 	}
-	if err := q.resourceBudgetLocked(r); err != nil {
-		return err
-	}
-	if err := q.admitLocked(r.DiskMB * 1024 * 1024); err != nil {
-		return err
+	if q.policy.Mode == "hard" {
+		if err := q.hardLoginBudgetLocked(); err != nil {
+			return err
+		}
+	} else {
+		if err := q.resourceBudgetLocked(r); err != nil {
+			return err
+		}
+		if err := q.admitLocked(r.DiskMB * 1024 * 1024); err != nil {
+			return err
+		}
 	}
 	q.state.Seats[key] = &softSeat{WriterKind: "login", WriterRoot: root, Resources: r, Limit: r.DiskMB * 1024 * 1024, CreatedAt: q.now(), MeasuredAt: q.now(), CIDs: []string{}}
 	return q.persistLocked()

@@ -1,0 +1,419 @@
+{
+  "utc": "2026-10-19T04:40:20.160182+00:00",
+  "environment": {
+    "host": "VM-4-12-ubuntu",
+    "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "scope": "local HTTP fixtures and isolated embedded PG; no production access"
+  },
+  "source_sha256": {
+    "internal/identity/admin_agents.go": "8c67ebc43f0cb31018fc621da506cfd8047c29e1f9e5bccbeb22de1443a20176",
+    "internal/identity/httpapi/admin_agents.go": "cd6d253cfd5e573b5258fd9ab5698ee54cc21988da21a89868a87cfa6d8a3482",
+    "internal/identity/memstore.go": "4766eb2d678e801495e905a79ea02645d977bf8996f9b6ad55bc41e4c06c1ed5",
+    "internal/identity/httpapi/httpapi.go": "33545aee37838278d9eadabea551a70d60b21ace786b225e13318018c5351636",
+    "internal/hosted/admin_agent_node.go": "f4c6f8c07544faf37c8e073c79c19f329b3d05096ee176f3896828cacca3cc2f",
+    "cmd/workpulse/newplat.go": "9ff06629bec2e5796b22506101e973c4b38a9eb9ca58feaccd6754585648da4c",
+    "cmd/workpulse/r31_admin_agent_keyless_test.go": "a86c598b7b617ee1e11946ca4f37b0bc0bb94eb7618c0aed9c1faa72aa56253c",
+    "internal/m8/console_auth.go": "21d49dcf5a58e101dc2cbc87d69ed2004159f7cabb0aaf5a47bb8454847c954c",
+    "internal/m8/newplat_console.go": "12bf9b2a674c0d18734fab16f6bd1c9dc770b46644a14b90c0eb2fbc7ca0cec5",
+    "internal/identity/identitytest/admin_agents.go": "cbde0c6b38569185c16c4e803e63942f8fa36934477d79ff45cf2d7e6702ab17",
+    "internal/identity/admin_agents_test.go": "e8493f699fabcb587b1660f97eb591959ca9f26712c690ff92016b5a8f89b5d7",
+    "internal/identity/admin_agents_pg_test.go": "b7ce02ab589b39fd65c13835fa29dce7dc5257857a49aa60b783fdbda105c055",
+    "internal/identity/httpapi/r31_admin_agents_test.go": "5c64e9b822d10b4c961e4da9e87b8347078dc7c6d5414c7ffc78f21c6f732791",
+    "internal/m8/r31_admin_agent_capability_test.go": "a41aa1524da1587cd8f6e1dc163bcaa9cfc729f4e04318564db3f6e7ae8303b0",
+    "view-service/r31-admin-agents-browser-regression.js": "9d7ead8baa1f17a5a6e6a907a54653061d6d74214095ee3a61d29407194ddf24",
+    "tools/r31-admin-agent-checks/check.py": "c9f02d0e982e756f39051921bc39318d488f53473f3bd42791a824ab7b24a608"
+  },
+  "positive": {
+    "argv": [
+      "go",
+      "test",
+      "./internal/identity",
+      "./internal/identity/httpapi",
+      "./internal/m8",
+      "./cmd/workpulse",
+      "-run",
+      "TestR31AdminAgent",
+      "-count=1"
+    ],
+    "rc": 0,
+    "stdout": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/identity\t5.622s\nok  \tgithub.com/zhangzongchu2019/dingwei/internal/identity/httpapi\t0.005s\nok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t0.088s\nok  \tgithub.com/zhangzongchu2019/dingwei/cmd/workpulse\t16.047s\n",
+    "stderr": ""
+  },
+  "withdrawals": [
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-nz6uneu9/overlay.json",
+        "./internal/identity",
+        "-run",
+        "^TestR31AdminAgentMemoryContract/all_owners_private_source_and_stable_pages$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentMemoryContract (0.00s)\n    --- FAIL: TestR31AdminAgentMemoryContract/all_owners_private_source_and_stable_pages (0.00s)\n        admin_agents.go:57: ADMIN_BOUND_MISSING: 201 <nil>\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity\t0.003s\nFAIL\n",
+      "stderr": "",
+      "name": "store-upper-bound",
+      "expected_marker": "ADMIN_BOUND_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-woa1rby1/overlay.json",
+        "./internal/identity",
+        "-run",
+        "^TestR31AdminAgentMemoryContract/nonadmin_and_inactive_rejected_on_every_read$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentMemoryContract (0.00s)\n    --- FAIL: TestR31AdminAgentMemoryContract/nonadmin_and_inactive_rejected_on_every_read (0.00s)\n        admin_agents.go:65: ADMIN_ROLE_GATE_MISSING: alice <nil>\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity\t0.003s\nFAIL\n",
+      "stderr": "",
+      "name": "mem-role",
+      "expected_marker": "ADMIN_ROLE_GATE_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-fad4v9vh/overlay.json",
+        "./internal/identity",
+        "-run",
+        "^TestR31AdminAgentMemoryContract/nonadmin_and_inactive_rejected_on_every_read$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentMemoryContract (0.00s)\n    --- FAIL: TestR31AdminAgentMemoryContract/nonadmin_and_inactive_rejected_on_every_read (0.00s)\n        admin_agents.go:65: ADMIN_ROLE_GATE_MISSING: disabled <nil>\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity\t0.003s\nFAIL\n",
+      "stderr": "",
+      "name": "mem-active",
+      "expected_marker": "ADMIN_ROLE_GATE_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-jekejomg/overlay.json",
+        "./internal/identity",
+        "-run",
+        "^TestR31AdminAgentPGContract/nonadmin_and_inactive_rejected_on_every_read$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentPGContract (3.90s)\n    --- FAIL: TestR31AdminAgentPGContract/nonadmin_and_inactive_rejected_on_every_read (0.06s)\n        admin_agents.go:65: ADMIN_ROLE_GATE_MISSING: alice <nil>\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity\t3.900s\nFAIL\n",
+      "stderr": "",
+      "name": "pg-role",
+      "expected_marker": "ADMIN_ROLE_GATE_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-dw2wwwwp/overlay.json",
+        "./internal/identity",
+        "-run",
+        "^TestR31AdminAgentPGContract/nonadmin_and_inactive_rejected_on_every_read$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentPGContract (3.87s)\n    --- FAIL: TestR31AdminAgentPGContract/nonadmin_and_inactive_rejected_on_every_read (0.06s)\n        admin_agents.go:65: ADMIN_ROLE_GATE_MISSING: disabled <nil>\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity\t3.877s\nFAIL\n",
+      "stderr": "",
+      "name": "pg-active",
+      "expected_marker": "ADMIN_ROLE_GATE_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-t0x0qkf7/overlay.json",
+        "./internal/identity/httpapi",
+        "-run",
+        "^TestR31AdminAgentHTTPRoleGateBeforeProjection$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentHTTPRoleGateBeforeProjection (0.00s)\n    r31_admin_agents_test.go:267: ADMIN_HTTP_ROLE_FENCE_MISSING\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity/httpapi\t0.003s\nFAIL\n",
+      "stderr": "",
+      "name": "http-role",
+      "expected_marker": "ADMIN_HTTP_ROLE_FENCE_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-ir8o6fxw/overlay.json",
+        "./internal/identity/httpapi",
+        "-run",
+        "^TestR31AdminAgentBearerCannotInheritHumanCookie$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentBearerCannotInheritHumanCookie (0.00s)\n    r31_admin_agents_test.go:284: ADMIN_BEARER_INHERITED_HUMAN_ROLE: 200 {\"agents\":[{\"agent_id\":\"ag-a\",\"agent_type\":\"selfhost\",\"full_name\":\"Alpha.al\",\"host\":\"203.0.113.44\",\"last_source_at\":\"2026-10-19T03:00:00Z\",\"online\":true,\"owner\":{\"display_name\":\"\",\"short_name\":\"al\",\"user_id\":\"alice\"},\"state\":\"active\"},{\"agent_id\":\"ag-b\",\"agent_type\":\"hosted\",\"full_name\":\"Beta.al\",\"host\":\"node-private\",\"online\":false,\"owner\":{\"display_name\":\"\",\"short_name\":\"al\",\"user_id\":\"alice\"},\"state\":\"active\"},{\"agent_id\":\"ag-c\",\"agent_type\":\"selfhost\",\"full_name\":\"Gamma.bo\",\"host\":\"203.0.113.55\",\"last_source_at\":\"2026-10-19T03:00:00Z\",\"online\":false,\"owner\":{\"display_name\":\"\",\"short_name\":\"bo\",\"user_id\":\"bob\"},\"state\":\"active\"},{\"agent_id\":\"ag-d\",\"agent_type\":\"selfhost\",\"full_name\":\"Delta.ad\",\"host\":\"203.0.113.66\",\"last_source_at\":\"2026-10-19T03:00:00Z\",\"online\":false,\"owner\":{\"display_name\":\"\",\"short_name\":\"ad\",\"user_id\":\"admin\"},\"state\":\"active\"}],\"limit\":100,\"next_after\":\"\"}\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity/httpapi\t0.003s\nFAIL\n",
+      "stderr": "",
+      "name": "bearer-cookie",
+      "expected_marker": "ADMIN_BEARER_INHERITED_HUMAN_ROLE"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-_fysv1kr/overlay.json",
+        "./internal/identity/httpapi",
+        "-run",
+        "^TestR31AdminAgentHTTPProjectionAndAudit$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentHTTPProjectionAndAudit (0.00s)\n    r31_admin_agents_test.go:122: ADMIN_RESPONSE_SOURCE_MISSING: {\"agents\":[{\"agent_id\":\"ag-a\",\"agent_type\":\"selfhost\",\"full_name\":\"Alpha.al\",\"host\":\"\",\"last_source_at\":\"2026-10-19T03:00:00Z\",\"online\":true,\"owner\":{\"display_name\":\"\",\"short_name\":\"al\",\"user_id\":\"alice\"},\"state\":\"active\"},{\"agent_id\":\"ag-b\",\"agent_type\":\"hosted\",\"full_name\":\"Beta.al\",\"host\":\"node-private\",\"online\":false,\"owner\":{\"display_name\":\"\",\"short_name\":\"al\",\"user_id\":\"alice\"},\"state\":\"active\"}],\"limit\":2,\"next_after\":\"ag-b\"}\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity/httpapi\t0.003s\nFAIL\n",
+      "stderr": "",
+      "name": "source-response",
+      "expected_marker": "ADMIN_RESPONSE_SOURCE_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-n54ljel3/overlay.json",
+        "./internal/identity/httpapi",
+        "-run",
+        "^TestR31AdminAgentHTTPProjectionAndAudit$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentHTTPProjectionAndAudit (0.00s)\n    r31_admin_agents_test.go:125: ADMIN_NODE_HOST_MISSING: {\"agents\":[{\"agent_id\":\"ag-a\",\"agent_type\":\"selfhost\",\"full_name\":\"Alpha.al\",\"host\":\"203.0.113.44\",\"last_source_at\":\"2026-10-19T03:00:00Z\",\"online\":true,\"owner\":{\"display_name\":\"\",\"short_name\":\"al\",\"user_id\":\"alice\"},\"state\":\"active\"},{\"agent_id\":\"ag-b\",\"agent_type\":\"hosted\",\"full_name\":\"Beta.al\",\"host\":\"\",\"online\":false,\"owner\":{\"display_name\":\"\",\"short_name\":\"al\",\"user_id\":\"alice\"},\"state\":\"active\"}],\"limit\":2,\"next_after\":\"ag-b\"}\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity/httpapi\t0.003s\nFAIL\n",
+      "stderr": "",
+      "name": "node-response",
+      "expected_marker": "ADMIN_NODE_HOST_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-4embamc6/overlay.json",
+        "./internal/identity/httpapi",
+        "-run",
+        "^TestR31AdminAgentHTTPProjectionAndAudit$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentHTTPProjectionAndAudit (0.00s)\n    r31_admin_agents_test.go:131: ADMIN_READ_AUDIT_OR_BOUND_MISSING\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity/httpapi\t0.003s\nFAIL\n",
+      "stderr": "",
+      "name": "mem-read-audit",
+      "expected_marker": "ADMIN_READ_AUDIT_OR_BOUND_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-rey6icki/overlay.json",
+        "./internal/identity",
+        "-run",
+        "^TestR31AdminAgentPGAuditAtomicAndFailClosed$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentPGAuditAtomicAndFailClosed (3.83s)\n    admin_agents_pg_test.go:42: ADMIN_PG_READ_AUDIT_MISSING: 0 \nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity\t3.835s\nFAIL\n",
+      "stderr": "",
+      "name": "pg-read-audit",
+      "expected_marker": "ADMIN_PG_READ_AUDIT_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-bkyry7h2/overlay.json",
+        "./internal/identity",
+        "-run",
+        "^TestR31AdminAgentPGAuditAtomicAndFailClosed$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentPGAuditAtomicAndFailClosed (3.83s)\n    admin_agents_pg_test.go:51: ADMIN_PG_AUDIT_FAIL_OPEN: {Agents:[{ID:ag-a OwnerID:orphan OwnerShortName: OwnerDisplayName: Name:Unknown Origin:selfhost State:active SourceIP:203.0.113.77 SourceAt:0001-01-01 07:52:58 +0000 UTC}] NextAfter:} <nil>\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity\t3.834s\nFAIL\n",
+      "stderr": "",
+      "name": "audit-fail-open",
+      "expected_marker": "ADMIN_PG_AUDIT_FAIL_OPEN"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-6ktjgkw2/overlay.json",
+        "./internal/identity/httpapi",
+        "-run",
+        "^TestR31AdminAgentOrdinaryListRemainsPrivate$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentOrdinaryListRemainsPrivate (0.00s)\n    r31_admin_agents_test.go:206: ORDINARY_LIST_OWNER_FENCE_MISSING: alice {\"agents\":[{\"agent_id\":\"ag-a\",\"agent_type\":\"selfhost\",\"full_name\":\"Alpha.al\",\"group_code\":\"\",\"host\":\"203.0.113.44\",\"last_source_at\":\"2026-10-19T03:00:00Z\",\"name\":\"Alpha\",\"online\":true,\"origin\":\"selfhost\",\"session\":\"alpha\",\"state\":\"active\"},{\"agent_id\":\"ag-b\",\"agent_type\":\"hosted\",\"full_name\":\"Beta.al\",\"group_code\":\"\",\"name\":\"Beta\",\"online\":false,\"origin\":\"hosted\",\"session\":\"beta\",\"state\":\"active\"},{\"agent_id\":\"ag-d\",\"agent_type\":\"selfhost\",\"full_name\":\"Delta.al\",\"group_code\":\"\",\"name\":\"Delta\",\"online\":false,\"origin\":\"selfhost\",\"session\":\"delta\",\"state\":\"active\"},{\"agent_id\":\"ag-c\",\"agent_type\":\"selfhost\",\"full_name\":\"Gamma.al\",\"group_code\":\"\",\"name\":\"Gamma\",\"online\":false,\"origin\":\"selfhost\",\"session\":\"gamma\",\"state\":\"active\"}]}\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity/httpapi\t0.003s\nFAIL\n",
+      "stderr": "",
+      "name": "ordinary-owner-fence",
+      "expected_marker": "ORDINARY_LIST_OWNER_FENCE_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-jvqwu6rm/overlay.json",
+        "./internal/identity/httpapi",
+        "-run",
+        "^TestR31AdminAgentOrdinaryListRemainsPrivate$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "--- FAIL: TestR31AdminAgentOrdinaryListRemainsPrivate (0.00s)\n    r31_admin_agents_test.go:219: ORDINARY_BEARER_SOURCE_GATE_MISSING\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/identity/httpapi\t0.003s\nFAIL\n",
+      "stderr": "",
+      "name": "ordinary-bearer-source",
+      "expected_marker": "ORDINARY_BEARER_SOURCE_GATE_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-2mk6pdmc/overlay.json",
+        "./cmd/workpulse",
+        "-run",
+        "^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "2026/10/18 21:39:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/10/18 21:39:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n2026/10/18 21:39:45 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）\n--- FAIL: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring (3.96s)\n    --- FAIL: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing (3.96s)\n        r31_admin_agent_keyless_test.go:102: ADMIN_NODE_KEYLESS_WIRING_MISSING: existing {\"agents\":[{\"agent_id\":\"ag-inventory\",\"agent_type\":\"hosted\",\"full_name\":\"Inventory.al\",\"host\":\"\",\"online\":false,\"owner\":{\"display_name\":\"\",\"short_name\":\"al\",\"user_id\":\"alice\"},\"state\":\"active\"}],\"limit\":100,\"next_after\":\"\"}\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/cmd/workpulse\t3.961s\nFAIL\n",
+      "stderr": "",
+      "name": "keyless-production-wiring",
+      "expected_marker": "ADMIN_NODE_KEYLESS_WIRING_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-ujvzjsyk/overlay.json",
+        "./cmd/workpulse",
+        "-run",
+        "^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "2026/10/18 21:39:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/10/18 21:39:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n2026/10/18 21:39:45 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）\n--- FAIL: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring (4.09s)\n    --- FAIL: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing (4.09s)\n        r31_admin_agent_keyless_test.go:102: ADMIN_NODE_KEYLESS_WIRING_MISSING: existing {\"agents\":[{\"agent_id\":\"ag-inventory\",\"agent_type\":\"hosted\",\"full_name\":\"Inventory.al\",\"host\":\"\",\"online\":false,\"owner\":{\"display_name\":\"\",\"short_name\":\"al\",\"user_id\":\"alice\"},\"state\":\"active\"}],\"limit\":100,\"next_after\":\"\"}\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/cmd/workpulse\t4.097s\nFAIL\n",
+      "stderr": "",
+      "name": "keyless-read-query",
+      "expected_marker": "ADMIN_NODE_KEYLESS_WIRING_MISSING"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-zu7lsc_g/overlay.json",
+        "./cmd/workpulse",
+        "-run",
+        "^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-hosted-tables$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "2026/10/18 21:39:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/10/18 21:39:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n2026/10/18 21:39:51 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）\n--- FAIL: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring (3.80s)\n    --- FAIL: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-hosted-tables (3.80s)\n        r31_admin_agent_keyless_test.go:95: ADMIN_NODE_TABLE_ABSENCE_BROKE_LIST: 500 {\"error\":\"internal\"}\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/cmd/workpulse\t3.804s\nFAIL\n",
+      "stderr": "",
+      "name": "missing-hosted-tables",
+      "expected_marker": "ADMIN_NODE_TABLE_ABSENCE_BROKE_LIST"
+    },
+    {
+      "argv": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r31-admin-inert-overlay-0xuoozk5/overlay.json",
+        "./cmd/workpulse",
+        "-run",
+        "^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/unrelated-query-error$",
+        "-count=1"
+      ],
+      "rc": 1,
+      "stdout": "2026/10/18 21:39:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/10/18 21:39:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n2026/10/18 21:39:52 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）\n--- FAIL: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring (4.00s)\n    --- FAIL: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/unrelated-query-error (4.00s)\n        r31_admin_agent_keyless_test.go:80: ADMIN_NODE_UNRELATED_ERROR_HIDDEN: 200 {\"agents\":[{\"agent_id\":\"ag-inventory\",\"agent_type\":\"hosted\",\"full_name\":\"Inventory.al\",\"host\":\"\",\"online\":false,\"owner\":{\"display_name\":\"\",\"short_name\":\"al\",\"user_id\":\"alice\"},\"state\":\"active\"}],\"limit\":100,\"next_after\":\"\"}\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/cmd/workpulse\t4.009s\nFAIL\n",
+      "stderr": "",
+      "name": "hide-unrelated-node-error",
+      "expected_marker": "ADMIN_NODE_UNRELATED_ERROR_HIDDEN"
+    }
+  ],
+  "browser": [
+    {
+      "argv": [
+        "node",
+        "view-service/r31-admin-agents-browser-regression.js"
+      ],
+      "rc": 0,
+      "stdout": "PASS active administrator sees a read-only inventory even without hosted enabled\nPASS pagination uses opaque cursor and replaces previous rows\nPASS explicit refresh resets cursor with one read\nPASS role refusal leaves no stale inventory or upstream private details\nPASS manager has no global-agent capability or table\nPASS no page errors\nR31 admin-agent browser: passed=6 failed=0 mutation=none\n",
+      "stderr": "",
+      "name": "positive"
+    },
+    {
+      "argv": [
+        "node",
+        "view-service/r31-admin-agents-browser-regression.js"
+      ],
+      "rc": 1,
+      "stdout": "PASS active administrator sees a read-only inventory even without hosted enabled\nPASS pagination uses opaque cursor and replaces previous rows\nPASS explicit refresh resets cursor with one read\nPASS role refusal leaves no stale inventory or upstream private details\n",
+      "stderr": "FAIL manager has no global-agent capability or table: ADMIN_LIST_MENU_ROLE_GATE_MISSING\n\n1 !== 0\n\nADMIN_LIST_MENU_ROLE_GATE_MISSING\n\n1 !== 0\n\n",
+      "name": "admin-menu-for-manager"
+    },
+    {
+      "argv": [
+        "node",
+        "view-service/r31-admin-agents-browser-regression.js"
+      ],
+      "rc": 1,
+      "stdout": "",
+      "stderr": "FAIL active administrator sees a read-only inventory even without hosted enabled: ADMIN_LIST_IP_OR_HOST_RENDER_MISSING\n+ actual - expected\n\n  [\n    [\n      'alice（al）',\n      'Alpha.al',\n      '自有',\n+     '未知',\n-     '203.0.113.44',\n      '在线',\n      '有效'\n    ],\n    [\n      'bob（bo）',\n      'Beta.bo',\n      '托管',\n+     '未知',\n-     'node-private',\n      '离线',\n      '已停用'\n    ]\n  ]\n\nADMIN_LIST_IP_OR_HOST_RENDER_MISSING\n+ actual - expected\n\n  [\n    [\n      'alice（al）',\n      'Alpha.al',\n      '自有',\n+     '未知',\n-     '203.0.113.44',\n      '在线',\n      '有效'\n    ],\n    [\n      'bob（bo）',\n      'Beta.bo',\n      '托管',\n+     '未知',\n-     'node-private',\n      '离线',\n      '已停用'\n    ]\n  ]\n\n",
+      "name": "drop-ip-render"
+    },
+    {
+      "argv": [
+        "node",
+        "view-service/r31-admin-agents-browser-regression.js"
+      ],
+      "rc": 1,
+      "stdout": "PASS active administrator sees a read-only inventory even without hosted enabled\n",
+      "stderr": "FAIL pagination uses opaque cursor and replaces previous rows: ADMIN_LIST_CURSOR_MISSING\n\n'' !== 'ag-b'\n\nADMIN_LIST_CURSOR_MISSING\n\n'' !== 'ag-b'\n\n",
+      "name": "drop-page-cursor"
+    },
+    {
+      "argv": [
+        "node",
+        "view-service/r31-admin-agents-browser-regression.js"
+      ],
+      "rc": 0,
+      "stdout": "PASS active administrator sees a read-only inventory even without hosted enabled\nPASS pagination uses opaque cursor and replaces previous rows\nPASS explicit refresh resets cursor with one read\nPASS role refusal leaves no stale inventory or upstream private details\nPASS manager has no global-agent capability or table\nPASS no page errors\nR31 admin-agent browser: passed=6 failed=0 mutation=none\n",
+      "stderr": "",
+      "name": "restored"
+    }
+  ],
+  "restored": {
+    "argv": [
+      "go",
+      "test",
+      "./internal/identity",
+      "./internal/identity/httpapi",
+      "./internal/m8",
+      "./cmd/workpulse",
+      "-run",
+      "TestR31AdminAgent",
+      "-count=1"
+    ],
+    "rc": 0,
+    "stdout": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/identity\t8.046s\nok  \tgithub.com/zhangzongchu2019/dingwei/internal/identity/httpapi\t0.006s\nok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t0.104s\nok  \tgithub.com/zhangzongchu2019/dingwei/cmd/workpulse\t19.307s\n",
+    "stderr": ""
+  },
+  "result": "LOCAL_PASS_PENDING_INDEPENDENT_REVIEW"
+}

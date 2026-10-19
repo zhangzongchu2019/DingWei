@@ -1,0 +1,6 @@
+=== RUN   TestR31NodeOptionsHideModelsAndQueuedRevocation
+    r31_hosted_test.go:263: hidden node/model disclosure: {Nodes:[{Address: SchedulingState: SeatCapacity:0xc000480780 QuotaMode: QuotaNotice: QuotaEligible:<nil> ID:nd_public Name:nd_public Pool: Online:true FreeMemGB:16 FreeVCPU:8 FreeDiskGB:320} {Address: SchedulingState: SeatCapacity:0xc0003e8140 QuotaMode: QuotaNotice: QuotaEligible:<nil> ID:nd_secret Name:nd_secret Pool: Online:true FreeMemGB:16 FreeVCPU:8 FreeDiskGB:320}] Combos:[] Accounts:[] Plans:[{ID:1c1.5g40 Name:1C/1.5G/40G VCPU:1 MemGB:1.5 Fits:true} {ID:2c4g Name:2C/4G VCPU:2 MemGB:4 Fits:true} {ID:4c8g Name:4C/8G VCPU:4 MemGB:8 Fits:true}] Quota:{Remaining:{Agents:4 VCPU:4 MemGB:16 DiskGB:64}} Models:[visible-model hidden-model]}
+--- FAIL: TestR31NodeOptionsHideModelsAndQueuedRevocation (3.86s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.863s
+FAIL

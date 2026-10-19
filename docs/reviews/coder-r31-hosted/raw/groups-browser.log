@@ -1,0 +1,13 @@
+PASS zero-group initial load failure has a reachable retry control
+PASS name feedback is near the name control and the obsolete pattern is absent
+PASS the owner-confirmed eight-character limit is enforced by the native control
+PASS create trims, lists leader first, and reports exact duplicate with suggestion
+PASS retry success is visible
+PASS renders the owner table and keeps cross-owner management controls absent
+PASS aligns table headers with row cells at runtime
+PASS keeps member action close to its Agent name on a wide screen
+PASS distinguishes all three functional blocks in light and dark themes
+PASS keeps the list resident and makes detail and add mutually exclusive
+PASS close rejects, open joins, offline error is visible, and removal confirms the real consequence
+PASS only own online short names are candidates
+vega group browser: passed=12 failed=0 mutation=none

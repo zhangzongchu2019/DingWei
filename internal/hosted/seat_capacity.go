@@ -59,8 +59,8 @@ func CapacityErrorReasons(err error) []string {
 	return failure.Reasons()
 }
 
-// capacityResult handles only the fixed B protocol from a registered soft/B
-// node's authenticated gateway response. It never searches arbitrary error text.
+// capacityResult handles only the fixed capacity protocol from a registered
+// hard or soft node's authenticated gateway response. It never searches arbitrary error text.
 func (s *Store) capacityResult(ctx context.Context, nodeID string, result NodeResult) error {
 	if result.OK || len(result.Error) > 160 {
 		return nil
@@ -97,7 +97,7 @@ func (s *Store) capacityResult(ctx context.Context, nodeID string, result NodeRe
 			Version int `json:"version"`
 		} `json:"seat_capacity"`
 	}
-	if mode != "soft" || !policyRevisionPattern.MatchString(revision) || json.Unmarshal(node.Capacity, &frame) != nil || frame.Mode != "soft" || frame.Revision != revision || frame.Capacity == nil || frame.Capacity.Version != 1 {
+	if (mode != "soft" && mode != "hard") || !policyRevisionPattern.MatchString(revision) || json.Unmarshal(node.Capacity, &frame) != nil || frame.Mode != mode || frame.Revision != revision || frame.Capacity == nil || frame.Capacity.Version != 1 {
 		return nil
 	}
 	return capacityFailure(tokens)
@@ -125,18 +125,22 @@ func unknownSeatCapacity(version int) *seatcapacity.View {
 	return &seatcapacity.View{Version: version, Known: false, Reasons: []string{"load_unknown"}}
 }
 
-// New B capability is mandatory for explicit soft admission. Legacy hard nodes
-// retain their old behavior and omit this extension. Unknown is never zero load.
+// R31 requires the measured capacity capability for hard and soft admission.
+// Older frames remain unknown; existing seats are not automatically stopped.
 func effectiveSeatCapacity(ctx context.Context, n Node, query capacityRows) (*seatcapacity.View, error) {
 	mode, _ := registeredQuota(n)
-	if mode == "hard" {
-		return nil, nil
+	if mode != "hard" && mode != "soft" {
+		return unknownSeatCapacity(0), nil
 	}
 	var frame seatCapacityFrame
 	if json.Unmarshal(n.Capacity, &frame) != nil || frame.Capacity == nil {
 		return unknownSeatCapacity(0), nil
 	}
 	v := *frame.Capacity
+	floor := seatcapacity.DefaultPolicy().Minimum
+	if v.Minimum.CPU < floor.CPU || v.Minimum.Memory < floor.Memory || v.Minimum.Disk < floor.Disk {
+		return unknownSeatCapacity(v.Version), nil
+	}
 	if !v.ValidateAt(time.Now(), 60*time.Second) {
 		return unknownSeatCapacity(v.Version), nil
 	}
@@ -196,17 +200,25 @@ func (s *Store) nodeSeatCapacity(ctx context.Context, n Node) (*seatcapacity.Vie
 
 // Serialized with other creates and node heartbeats by the node row lock.
 // Queued seats consume capacity before the node has reported their reservation.
-func checkSeatCapacityTx(ctx context.Context, tx repo.Tx, seat Seat) error {
+func (s *Store) checkSeatCapacityTx(ctx context.Context, tx repo.Tx, seat Seat) error {
 	var n Node
 	n.ID = seat.NodeID
-	if err := tx.QueryRow(ctx, `SELECT labels,capacity,state,last_seen_at FROM g4_node WHERE id=$1 FOR UPDATE`, n.ID).Scan(&n.Labels, &n.Capacity, &n.State, &n.LastSeenAt); err != nil {
+	if err := tx.QueryRow(ctx, `SELECT labels,capacity,state,last_seen_at,access_scope,scheduling_state FROM g4_node WHERE id=$1 FOR UPDATE`, n.ID).Scan(&n.Labels, &n.Capacity, &n.State, &n.LastSeenAt, &n.AccessScope, &n.SchedulingState); err != nil {
 		return err
 	}
 	mode, _ := registeredQuota(n)
-	if mode == "hard" {
-		return nil
+	owner := seat.OwnerLC
+	if owner == "" {
+		owner = seat.CreatedBy
 	}
-	if mode != "soft" || n.State != "online" || !nodeQuotaEligible(n) {
+	allowed, err := s.accessTx(ctx, tx, owner, n)
+	if err != nil {
+		return err
+	}
+	if !allowed {
+		return ErrForbiddenRole
+	}
+	if (mode != "soft" && mode != "hard") || nodeScheduling(n) != "enabled" || n.State != "online" || !nodeQuotaEligible(n) {
 		return capacityFailure(nil)
 	}
 	v, err := effectiveSeatCapacity(ctx, n, tx.Query)

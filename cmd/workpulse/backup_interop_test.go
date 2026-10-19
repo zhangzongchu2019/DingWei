@@ -52,7 +52,7 @@ func TestBackupRealNodeAgentToRealHub(t *testing.T) {
 	if err := st.ApplySchema(ctx); err != nil {
 		t.Fatal(err)
 	}
-	secret, err := st.RegisterNode(ctx, hosted.Node{ID: "nd_io", Name: "io", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	secret, err := r31LegacyRegisterNode(st, ctx, hosted.Node{ID: "nd_io", Name: "io", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net"
 	"net/http"
 	"strings"
@@ -93,11 +94,21 @@ func (h *Hub) HandleAgentWS(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query() // 只采信能力类参数；名字、key_id 一律不看
 	adm := sessionAdmission{
 		keyID: keyID, ownerKey: keyID, requestedSessionName: sessionName, sessionName: sessionName,
-		fullSessionName: fullName, clientIP: clientIPFromRequest(r), credentialIdentity: true,
+		fullSessionName: fullName, clientIP: "", credentialIdentity: true,
 		metricsAgentID: ag.ID,
 		tool:           strings.TrimSpace(q.Get("tool")), clientVersion: strings.TrimSpace(q.Get("version")),
 		osName:      strings.TrimSpace(q.Get("os")),
 		timingStart: timingStart, timingLast: time.Now(),
+	}
+	if ag.Origin == identity.OriginSelfhost {
+		if store, ok := h.Identity.Store.(identity.ConnectionStore); ok {
+			ip, at := h.agentSourceIP(r), time.Now().UTC()
+			adm.onRegistered = func() {
+				if err := store.RecordAgentConnection(context.Background(), ag.ID, ip, at); err != nil {
+					log.Printf("agent source persistence failed agent=%s: %v", ag.ID, err)
+				}
+			}
+		}
 	}
 	if ag.Origin == identity.OriginHosted && h.OnHostedAgentOnline != nil {
 		agentID, cb := ag.ID, h.OnHostedAgentOnline
@@ -206,4 +217,18 @@ func isInternalSource(r *http.Request) bool {
 		return false
 	}
 	return true
+}
+
+// R31 source IPs are private identity metadata, never session-directory fields.
+func (h *Hub) agentSourceIP(r *http.Request) string {
+	peer := net.ParseIP(hostOnly(r.RemoteAddr))
+	if peer == nil {
+		return ""
+	}
+	if h.TrustProxy && peer.IsLoopback() && len(r.Header.Values("X-Real-IP")) == 1 {
+		if ip := net.ParseIP(strings.TrimSpace(r.Header.Get("X-Real-IP"))); ip != nil {
+			return ip.String()
+		}
+	}
+	return peer.String()
 }

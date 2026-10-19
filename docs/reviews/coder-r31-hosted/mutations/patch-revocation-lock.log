@@ -1,0 +1,6 @@
+=== RUN   TestR31StatePatchCannotRestoreConcurrentRevocation
+    r31_hosted_test.go:467: state patch restored revoked access
+--- FAIL: TestR31StatePatchCannotRestoreConcurrentRevocation (3.69s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.697s
+FAIL

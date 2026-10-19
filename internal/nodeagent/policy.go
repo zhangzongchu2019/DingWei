@@ -59,6 +59,9 @@ func DefaultNodePolicy() NodePolicy {
 		ImageReserveBytes: 8 << 30, ShmBytes: 64 << 20, ReserveCPUMillicores: 2000, ReserveMemoryBytes: 4 << 30, PidsLimit: 512, LoginPidsLimit: 128, LogMaxSizeMB: 10, LogMaxFiles: 3}
 }
 func (p NodePolicy) Validate() error {
+	if p.MinimumSeatCPUMillicores < 1000 || p.MinimumSeatMemoryBytes < 1536<<20 || p.MinimumSeatDiskBytes < 40<<30 {
+		return fmt.Errorf("node policy: minimum seat resources below required floor")
+	}
 	if err := p.capacityPolicy().Validate(); err != nil {
 		return fmt.Errorf("node policy: invalid minimum seat resources")
 	}

@@ -858,7 +858,7 @@ func TestReconcileGuards(t *testing.T) {
 		t.Fatal(err)
 	}
 	// 另一个节点的待对账席位（不得被本节点对账清掉）
-	if err := s.UpsertNode(ctx, Node{ID: "nd_other", Name: "other", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_other", Name: "other", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.CreateSeat(ctx, Seat{AgentID: "ag_other", NodeID: "nd_other", CLI: "codex", LLM: "gpt",

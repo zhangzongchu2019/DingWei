@@ -25,10 +25,10 @@ func claudeModelOrch(t *testing.T) (*Orchestrator, *fakeIdentity, *fakeGateway, 
 func TestClaudeModelCreatePersistsAndDispatchesApprovedValue(t *testing.T) {
 	o, _, gw, st, account := claudeModelOrch(t)
 	ctx := context.Background()
-	if err := st.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["claude-opus-5-5"]}`)); err != nil {
+	if err := st.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["claude-opus-5-5"]}`)); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.SetNodeOnline(ctx, "nd_full", json.RawMessage(`{"mem_free_mb":32768,"models":["gpt-6.1-sol"]}`)); err != nil {
+	if err := st.setR31LegacyOnline(ctx, "nd_full", json.RawMessage(`{"mem_free_mb":32768,"models":["gpt-6.1-sol"]}`)); err != nil {
 		t.Fatal(err)
 	}
 	result, err := o.Create(ctx, CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "ClaudeModel", CLI: "claude", LLM: "claude", AccountID: account, Plan: "2c4g", Model: approvedClaudeModel})
@@ -68,7 +68,7 @@ func TestClaudeModelCreatePersistsAndDispatchesApprovedValue(t *testing.T) {
 func TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue(t *testing.T) {
 	o, idp, gw, st, account := claudeModelOrch(t)
 	ctx := context.Background()
-	if err := st.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["claude-opus-5-5","--help"]}`)); err != nil {
+	if err := st.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["claude-opus-5-5","--help"]}`)); err != nil {
 		t.Fatal(err)
 	}
 	for _, model := range []string{"claude-not-approved", "--help", "claude/op us", "claude-opus-5-5\n", strings.Repeat("x", 65)} {
@@ -81,7 +81,7 @@ func TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue(t *testing.T)
 		t.Fatal("model refusal performed issuance/node work")
 	}
 	// Empty node list is not approval, even for a syntactically valid name.
-	if err := st.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384}`)); err != nil {
+	if err := st.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384}`)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := o.Create(ctx, CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "NoListClaude", CLI: "claude", LLM: "claude", AccountID: account, Plan: "2c4g", Model: approvedClaudeModel}); !errors.Is(err, ErrModelNotAvailable) {

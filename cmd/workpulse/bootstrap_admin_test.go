@@ -15,8 +15,8 @@ import (
 	"testing"
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
-	"github.com/zhangzongchu2019/dingwei/internal/identity/identitytest"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
+	"github.com/zhangzongchu2019/dingwei/internal/store/migrate"
 	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
 
@@ -51,10 +51,8 @@ func pgSchemaDSN(t *testing.T, applyTables bool) string {
 			t.Fatal(err)
 		}
 		defer pool.Close()
-		for _, ddl := range identitytest.PGTestSchema() {
-			if _, err := pool.Exec(ctx, tc, ddl); err != nil {
-				t.Fatal(err)
-			}
+		if _, err := migrate.Migrate(ctx, pool, migrate.HubDomains()); err != nil {
+			t.Fatal(err)
 		}
 	}
 	return sdsn

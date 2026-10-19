@@ -1,0 +1,6 @@
+=== RUN   TestR31HostedAccessModes
+    r31_hosted_access_test.go:28: mode=all_active_users actor=disabled allowed=true want=false
+--- FAIL: TestR31HostedAccessModes (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.005s
+FAIL

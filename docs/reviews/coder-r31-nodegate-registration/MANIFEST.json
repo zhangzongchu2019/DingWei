@@ -1,0 +1,62 @@
+{
+  "parent": "15c79dacd1d9c90eb64e5391f57ceb126eaf8b03",
+  "utc": "2026-10-19T05:33:53.244619+00:00",
+  "scope": "nodegate fixture states approved R31 hard policy revision; product unchanged; full-repository Go test rc0",
+  "members": [
+    {
+      "path": "docs/reviews/coder-r31-nodegate-registration/FULL-REPO.log",
+      "bytes": 4347,
+      "sha256": "c7148e52a07e492aa2ec005f73d750688c81e15a03a64b5c39ea8967525925ff"
+    },
+    {
+      "path": "docs/reviews/coder-r31-nodegate-registration/NODEAGENT-POLICY.json",
+      "bytes": 401,
+      "sha256": "1f7c2028ba5226bcd32fd77d4de34e37d463485d30180cbd0ae836cddb0b91d4"
+    },
+    {
+      "path": "docs/reviews/coder-r31-nodegate-registration/PACKAGES.json",
+      "bytes": 4150,
+      "sha256": "11969508d54282ce581f32ee39aa7192643a09723b0bdae253c35bcfee535b76"
+    },
+    {
+      "path": "docs/reviews/coder-r31-nodegate-registration/README.md",
+      "bytes": 3292,
+      "sha256": "32d4dde6ef775b127cafb670292a0f04246306569416f0f3e3f6b1e7fc311b3d"
+    },
+    {
+      "path": "docs/reviews/coder-r31-nodegate-registration/SOURCE-SNAPSHOT.json",
+      "bytes": 646081,
+      "sha256": "4bb6b9a49eba3072fe5a94bad77ddde46ba67fb70fb7685ab389f02177405be6"
+    },
+    {
+      "path": "docs/reviews/coder-r31-nodegate-registration/VALIDATION.json",
+      "bytes": 1339,
+      "sha256": "d9413736ff902266b70123492692cfb2573b1c89dae7aee691ad1948febf78de"
+    },
+    {
+      "path": "docs/reviews/coder-r31-nodegate-registration/WITHDRAWAL.json",
+      "bytes": 826,
+      "sha256": "39392c73eb7c415474b4de7672ad65803b6b739d696fcf5852c3ab98489cb3b0"
+    },
+    {
+      "path": "docs/reviews/coder-r31-nodegate-registration/before.log",
+      "bytes": 647,
+      "sha256": "07d6fbd3a0d90f4d4e15d83a25e6cb3ac13319af4da3d6f23aca5bc1ea3a7c8d"
+    },
+    {
+      "path": "docs/reviews/coder-r31-nodegate-registration/cli-contract.log",
+      "bytes": 62,
+      "sha256": "9577939ddcb73894cb88ee54445a1a375c859ab38dfbb090db550831b3f7182d"
+    },
+    {
+      "path": "docs/reviews/coder-r31-nodegate-registration/nodegate.log",
+      "bytes": 67,
+      "sha256": "964a9a4fad2cdf4124f979648b50926c5cd6b2be98d9efb5abc5da8d48241854"
+    },
+    {
+      "path": "internal/nodegate/gate_test.go",
+      "bytes": 9132,
+      "sha256": "8dfcc7be23d68a0392b6cd59df4da83a5e7385af4bd22d5c4acf37fbd0a18b89"
+    }
+  ]
+}

@@ -77,12 +77,12 @@ func mkLogin(t *testing.T) *ldRig {
 	ctx := context.Background()
 	r := &ldRig{gw: &ldGw{}, s: s, svc: svc, secrets: map[string]string{}, clock: time.Now()}
 	for _, id := range []string{"nd_a", "nd_b"} {
-		sec, err := s.RegisterNode(ctx, Node{ID: id, Name: id, Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+		sec, err := s.registerR31LegacyNode(ctx, Node{ID: id, Name: id, Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
 		if err != nil {
 			t.Fatal(err)
 		}
 		r.secrets[id] = sec
-		if err := s.SetNodeOnline(ctx, id, json.RawMessage(`{}`)); err != nil {
+		if err := s.setR31LegacyOnline(ctx, id, json.RawMessage(`{}`)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -500,10 +500,10 @@ func TestIDTokenEmail(t *testing.T) {
 func TestLoginTotalCapBindsWithThreeNodes(t *testing.T) {
 	r := mkLogin(t)
 	ctx := context.Background()
-	if _, err := r.s.RegisterNode(ctx, Node{ID: "nd_c", Name: "nd_c", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin"); err != nil {
+	if _, err := r.s.registerR31LegacyNode(ctx, Node{ID: "nd_c", Name: "nd_c", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin"); err != nil {
 		t.Fatal(err)
 	}
-	if err := r.s.SetNodeOnline(ctx, "nd_c", json.RawMessage(`{}`)); err != nil {
+	if err := r.s.setR31LegacyOnline(ctx, "nd_c", json.RawMessage(`{}`)); err != nil {
 		t.Fatal(err)
 	}
 	for _, u := range []string{"u1", "u2", "u3", "u4"} {
@@ -696,7 +696,7 @@ func TestLoginStaleCompletingIsSwept(t *testing.T) {
 }
 
 // 复核第 4 批建议 2：某库若曾应用早期定义（CHECK 无 completing、唯一索引旧谓词），ApplySchema 幂等换新。
-func TestLoginSchemaUpgradesOldDefinition(t *testing.T) {
+func TestFrozenR30LoginSchemaUpgradesOldDefinition(t *testing.T) {
 	r := mkLogin(t)
 	ctx := context.Background()
 	for _, q := range []string{
@@ -709,10 +709,10 @@ func TestLoginSchemaUpgradesOldDefinition(t *testing.T) {
 			t.Fatalf("造旧定义: %v", err)
 		}
 	}
-	if err := r.s.ApplySchema(ctx); err != nil {
+	if err := func() error { _, err := r.s.exec(ctx, R30SchemaDDL); return err }(); err != nil {
 		t.Fatalf("apply: %v", err)
 	}
-	if err := r.s.ApplySchema(ctx); err != nil {
+	if err := func() error { _, err := r.s.exec(ctx, R30SchemaDDL); return err }(); err != nil {
 		t.Fatalf("二次 apply 须幂等: %v", err)
 	}
 	v, err := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")

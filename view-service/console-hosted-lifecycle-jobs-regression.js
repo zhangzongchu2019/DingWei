@@ -129,10 +129,10 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
   page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
   page.on('dialog', (d) => { dialogs.push(d.message()); d.accept().catch(() => {}); });
   const row = (n) => page.locator(`#rosterItems .roster-row[data-agent-id="ag-${n}"]`);
-  const stText = (n) => row(n).locator('td').nth(1);
+  const stText = (n) => row(n).locator('td').nth(3);
   const opsDisabled = (n) => row(n).locator('.hosted-op').evaluateAll((els) => els.map((e) => e.disabled));
   const feedback = () => page.locator('#rosterFeedback');
-  const waitStatus = (n, re) => page.waitForFunction(([id, src]) => new RegExp(src).test(document.querySelector(`#rosterItems .roster-row[data-agent-id="${id}"] td:nth-child(2)`)?.textContent || ''), [`ag-${n}`, re.source]);
+  const waitStatus = (n, re) => page.waitForFunction(([id, src]) => new RegExp(src).test(document.querySelector(`#rosterItems .roster-row[data-agent-id="${id}"] td:nth-child(4)`)?.textContent || ''), [`ag-${n}`, re.source]);
   const waitFeedback = (re) => page.waitForFunction((src) => new RegExp(src).test(document.getElementById('rosterFeedback')?.textContent || ''), re.source);
   try {
     await page.goto(`http://127.0.0.1:${server.address().port}/console`);

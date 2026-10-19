@@ -108,7 +108,7 @@ func newSoftQuota(p NodePolicy, root, path, nodeID string) (*softQuota, error) {
 	if err := p.Validate(); err != nil {
 		return nil, err
 	}
-	if p.Mode != "soft" || nodeID == "" {
+	if (p.Mode != "soft" && p.Mode != "hard") || nodeID == "" {
 		return nil, fmt.Errorf("soft quota requires explicit mode/node")
 	}
 	if !filepath.IsAbs(root) || filepath.Clean(root) != root {
@@ -315,6 +315,9 @@ func (q *softQuota) admitLocked(add int64) error {
 	if q.broken || q.persisting > 0 {
 		return fmt.Errorf("%w: private_state_unavailable", ErrSoftQuota)
 	}
+	if q.policy.Mode == "hard" {
+		return q.capacityAdmissionLocked(nil)
+	}
 	if err := q.resourceBudgetLocked(seatResources{}); err != nil {
 		return err
 	}
@@ -372,17 +375,22 @@ func (q *softQuota) reserve(id string, r seatResources) error {
 		}
 	}
 	if count >= q.policy.MaxSeats {
+		if q.policy.Mode == "hard" {
+			return fmt.Errorf("%w: seat_capacity_seat_limit", ErrSeatCapacity)
+		}
 		return fmt.Errorf("%w: seat_count", ErrSoftQuota)
 	}
 	if err := q.capacityAdmissionLocked(&r); err != nil {
 		return err
 	}
 	limit := r.DiskMB * 1024 * 1024
-	if err := q.resourceBudgetLocked(r); err != nil {
-		return err
-	}
-	if err := q.admitLocked(limit); err != nil {
-		return err
+	if q.policy.Mode != "hard" {
+		if err := q.resourceBudgetLocked(r); err != nil {
+			return err
+		}
+		if err := q.admitLocked(limit); err != nil {
+			return err
+		}
 	}
 	q.state.Seats[id] = &softSeat{Limit: limit, Resources: r, CreatedAt: q.now(), CIDs: []string{}}
 	return q.persistLocked()
@@ -419,10 +427,20 @@ func (q *softQuota) commandGate(cmd Command) error {
 	}
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	if err := q.admitLocked(0); err != nil {
-		return err
+	if q.policy.Mode != "hard" {
+		if err := q.admitLocked(0); err != nil {
+			return err
+		}
 	}
-	if err := q.capacityAdmissionLocked(nil); err != nil {
+	if q.policy.Mode == "hard" && cmd.Type != CmdCreateSeat {
+		if cmd.Type == CmdLoginStart {
+			if err := q.hardLoginBudgetLocked(); err != nil {
+				return err
+			}
+		} else if err := q.hardStartGateLocked(); err != nil {
+			return err
+		}
+	} else if err := q.capacityAdmissionLocked(nil); err != nil {
 		return err
 	}
 	var p struct {
@@ -463,6 +481,9 @@ func (q *softQuota) acquireWriter(ctx context.Context, id string) (func(), error
 	}
 }
 func (q *softQuota) start(ctx context.Context, id string, fn func(context.Context) error) error {
+	if q.policy.Mode == "hard" {
+		return q.startHard(ctx, id, fn)
+	}
 	q.mu.Lock()
 	if err := q.capacityAdmissionLocked(nil); err != nil {
 		q.mu.Unlock()
@@ -830,9 +851,9 @@ func (d *dockerOps) startWriter(ctx context.Context, id, cid string, restart boo
 		}
 		return d.eng.containerStart(c, cid)
 	}
-	if d.soft != nil {
-		return d.soft.start(ctx, id, func(c context.Context) error {
-			if !d.soft.recorded(id, cid) {
+	if q := d.seatCapacityQuota(); q != nil {
+		return q.start(ctx, id, func(c context.Context) error {
+			if !q.recorded(id, cid) {
 				return fmt.Errorf("%w: unregistered_container", ErrSoftQuota)
 			}
 			return fn(c)

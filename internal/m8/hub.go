@@ -63,6 +63,7 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
+	TrustProxy         bool // R31: only configured loopback nginx can supply X-Real-IP.
 	consoleMux         *consoleMuxRegistry
 	Repo               store.Repository
 	Outbound           MessageQueue
@@ -1054,6 +1055,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		LastSeenAt:      time.Now().UTC(),
 		Active:          true,
 		ClientIP:        clientIP,
+		PrivateClientIP: a.credentialIdentity,
 		Tool:            tool,
 		Model:           modelName,
 		Version:         clientVersion,

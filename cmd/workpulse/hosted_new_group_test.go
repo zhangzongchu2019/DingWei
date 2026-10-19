@@ -62,10 +62,10 @@ func newNGEnv(t *testing.T) *ngEnv {
 	orch := hosted.NewOrchestrator(st, poolSvc, idp, gw, fakeCombosRT{}, fakeImagesRT{})
 	life := hosted.NewLifecycle(st, poolSvc, idp, idp, gw, fakeImagesRT{}, notReadyBackups{})
 	gw.onCreated = func(seatID string) { _ = orch.MarkOnline(context.Background(), seatID) }
-	if err := st.UpsertNode(ctx, hosted.Node{ID: "nd_ng", Name: "ng", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
+	if err := r31LegacyUpsertNode(st, ctx, hosted.Node{ID: "nd_ng", Name: "ng", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.SetNodeOnline(ctx, "nd_ng", json.RawMessage(`{"cpu_total":64,"mem_free_mb":262144,"disk_free_mb":1048576}`)); err != nil {
+	if err := r31LegacySetOnline(st, ctx, "nd_ng", json.RawMessage(`{"cpu_total":64,"mem_free_mb":262144,"disk_free_mb":1048576}`)); err != nil {
 		t.Fatal(err)
 	}
 	if err := st.PutQuota(ctx, hosted.Quota{UserLC: "zzc", AgentsLimit: 20, VCPULimit: 64, MemMBLimit: 262144, DiskMBLimit: 1 << 30}, "admin"); err != nil {

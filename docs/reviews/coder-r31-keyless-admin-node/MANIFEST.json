@@ -1,0 +1,87 @@
+{
+  "parent": "7ffd62307caa97d441f083611ebde7d1322c04cd",
+  "utc": "2026-10-19T04:42:40.414098+00:00",
+  "scope": "key-independent read-only hosted node-name query and production wiring regression",
+  "members": [
+    {
+      "path": "cmd/workpulse/newplat.go",
+      "bytes": 10047,
+      "sha256": "9ff06629bec2e5796b22506101e973c4b38a9eb9ca58feaccd6754585648da4c"
+    },
+    {
+      "path": "cmd/workpulse/r31_admin_agent_keyless_test.go",
+      "bytes": 4719,
+      "sha256": "a86c598b7b617ee1e11946ca4f37b0bc0bb94eb7618c0aed9c1faa72aa56253c"
+    },
+    {
+      "path": "docs/designs/S-R31-ADMIN-AGENT-READ-VIEW.md",
+      "bytes": 4167,
+      "sha256": "2eda0966a7ebd42465d95c8b9ea98a9ca47f22903dd1be6abd6e7f07e8271641"
+    },
+    {
+      "path": "docs/reviews/coder-r31-keyless-admin-node/CHECKS.json",
+      "bytes": 24862,
+      "sha256": "4258428c23b6445f8c388f71ccb6109e148393f8ede465ff0b8a8037076d52e5"
+    },
+    {
+      "path": "docs/reviews/coder-r31-keyless-admin-node/README.md",
+      "bytes": 2817,
+      "sha256": "00b96b9385fd325249be20b2ebc3454a99ed2e9f1489258b71c8224c8f2e170c"
+    },
+    {
+      "path": "docs/reviews/coder-r31-keyless-admin-node/VALIDATION.json",
+      "bytes": 799,
+      "sha256": "c05592e0434929ee864c3bf9f1e980019eea97300758a64ab9790784c8b010fd"
+    },
+    {
+      "path": "docs/reviews/coder-r31-keyless-admin-node/boundary.log",
+      "bytes": 1478,
+      "sha256": "817718387629bd34147a3ec0776f8fc844ddd7502e660975c8eaf74f3a9a7ef6"
+    },
+    {
+      "path": "docs/reviews/coder-r31-keyless-admin-node/build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-r31-keyless-admin-node/full-go.log",
+      "bytes": 205,
+      "sha256": "efef4561d1412be78f7f54a7c5f5a8e4d8019906cb73f5fc189addb9cea39635"
+    },
+    {
+      "path": "docs/reviews/coder-r31-keyless-admin-node/production-wiring.log",
+      "bytes": 137,
+      "sha256": "410db3d9b0f37d94b64ef39fae414f1754829ffa1396037b29486a0c216ca410"
+    },
+    {
+      "path": "docs/reviews/coder-r31-keyless-admin-node/vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "internal/hosted/admin_agent_node.go",
+      "bytes": 810,
+      "sha256": "f4c6f8c07544faf37c8e073c79c19f329b3d05096ee176f3896828cacca3cc2f"
+    },
+    {
+      "path": "internal/identity/httpapi/admin_agents.go",
+      "bytes": 2628,
+      "sha256": "cd6d253cfd5e573b5258fd9ab5698ee54cc21988da21a89868a87cfa6d8a3482"
+    },
+    {
+      "path": "internal/identity/httpapi/httpapi.go",
+      "bytes": 14081,
+      "sha256": "33545aee37838278d9eadabea551a70d60b21ace786b225e13318018c5351636"
+    },
+    {
+      "path": "internal/identity/httpapi/r31_admin_agents_test.go",
+      "bytes": 11518,
+      "sha256": "5c64e9b822d10b4c961e4da9e87b8347078dc7c6d5414c7ffc78f21c6f732791"
+    },
+    {
+      "path": "tools/r31-admin-agent-checks/check.py",
+      "bytes": 9292,
+      "sha256": "c9f02d0e982e756f39051921bc39318d488f53473f3bd42791a824ab7b24a608"
+    }
+  ]
+}

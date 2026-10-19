@@ -1,7 +1,7 @@
 package main
 
-// hosted-admin：托管面的运维小工具（B12/联调播种用；本期无节点登记与账号登记的管理端点，
-// 平面由后续切片补——本件与 bootstrap-admin 同型：连同一 PG，经 hosted 服务层写，不手写 SQL）。
+// hosted-admin：托管面的运维小工具。R31 同时提供管理员节点管理页面；
+// CLI 与页面共用登记校验和安全默认值，连接同一 PG，经服务层写入。
 //
 // 用法：
 //   workpulse hosted-admin register-node --id nd_106 --name 106 [--labels '{"pool":"x"}']
@@ -55,7 +55,7 @@ func runHostedAdmin(args []string) error {
 		dockerVer := fs.String("docker-version", "29", "节点 Docker 主版本（默认 29 仅联调）")
 		protoVer := fs.Int("protocol-version", 1, "节点协议版本（默认 1 仅联调）")
 		quotaMode := fs.String("quota-mode", "hard", "磁盘配额模式 hard 或 soft（soft 无硬磁盘配额，须另获批准）")
-		quotaRevision := fs.String("quota-policy-revision", "", "soft 模式必填：批准的节点策略 SHA256（64 位小写十六进制）")
+		quotaRevision := fs.String("quota-policy-revision", "", "hard／soft 均必填：批准的节点策略 SHA256（64 位小写十六进制）")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
 		}

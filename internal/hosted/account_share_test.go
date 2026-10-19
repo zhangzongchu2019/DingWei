@@ -247,7 +247,7 @@ func TestCreateSeatPKConflictIsNotAccountError(t *testing.T) {
 
 // P8／P8'／P9：存量回填（恰一授权 ⇒ 归该用户；多授权／无授权保持无主；已有属主不被覆盖）、ApplySchema 幂等、
 // job op 的 CHECK 收 refresh_cred、仍拒未知 op。
-func TestSchemaBackfillAndJobOp(t *testing.T) {
+func TestFrozenR30SchemaBackfillAndJobOp(t *testing.T) {
 	_, s := mkPoolSvc(t)
 	ctx := context.Background()
 	ins := func(id, owner string) {
@@ -270,7 +270,7 @@ VALUES($1,$1,'api_key','codex','gpt','\x00',1,'x',$2)`, id, owner); err != nil {
 	ins("acct_owned", "carol")
 	grant("acct_owned", "zzc")
 	for i := 0; i < 2; i++ { // 幂等
-		if err := s.ApplySchema(ctx); err != nil {
+		if _, err := s.exec(ctx, R30SchemaDDL); err != nil {
 			t.Fatalf("apply #%d: %v", i, err)
 		}
 	}

@@ -1,0 +1,6 @@
+=== RUN   TestR31HardConcurrentReservationsDoNotOversell
+    r31_hosted_test.go:363: expected two seats, admitted 10
+--- FAIL: TestR31HardConcurrentReservationsDoNotOversell (3.90s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.907s
+FAIL

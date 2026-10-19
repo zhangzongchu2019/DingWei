@@ -1,0 +1,6 @@
+=== RUN   TestR31HardCapacityAllDimensionsAndLegacyUnknown
+    r31_hosted_test.go:179: did not skip cpu: nd_bad <nil>
+--- FAIL: TestR31HardCapacityAllDimensionsAndLegacyUnknown (3.92s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.925s
+FAIL

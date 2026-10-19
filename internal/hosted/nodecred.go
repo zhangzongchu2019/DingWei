@@ -17,8 +17,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
-	"fmt"
-	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"io"
 	"time"
 )
@@ -43,42 +41,13 @@ func hashNodeSecret(secret string) string {
 }
 
 // RegisterNode 登记节点（标签随 Node.Labels），签发凭据一次性返回。
-// 同名节点重复登记 ⇒ 轮换语义（UpsertNode 已覆盖）；新凭据顶替旧凭据。
+// 重复节点拒绝；轮换必须显式使用 RotateNodeCredential。
 func (s *Store) RegisterNode(ctx context.Context, n Node, by string) (string, error) {
-	if n.ID == "" || n.Name == "" {
-		return "", fmt.Errorf("%w: node id/name 必填", ErrInvalidState)
+	var labels map[string]string
+	if len(n.Labels) > 0 && json.Unmarshal(n.Labels, &labels) != nil {
+		return "", ErrParams
 	}
-	if err := normalizeQuotaRegistration(&n); err != nil {
-		return "", err
-	}
-	secret, _, err := issueNodeSecret()
-	if err != nil {
-		return "", err
-	}
-	err = s.pool.InTx(ctx, htx(), nil, func(tx repo.Tx) error {
-		if _, err := tx.Exec(ctx, `
-INSERT INTO g4_node (id, name, labels, state, docker_version, node_protocol_version)
-VALUES ($1,$2,$3,'offline',$4,$5)
-ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, labels=EXCLUDED.labels,
-  docker_version=EXCLUDED.docker_version, node_protocol_version=EXCLUDED.node_protocol_version,
-  updated_at=now()`, n.ID, n.Name, n.Labels, n.DockerVersion, n.ProtocolVersion); err != nil {
-			return err
-		}
-		if _, err := tx.Exec(ctx, `
-INSERT INTO g4_node_credential (node_id, secret_hash, issued_by) VALUES ($1,$2,$3)
-ON CONFLICT (node_id) DO UPDATE SET secret_hash=EXCLUDED.secret_hash,
-  issued_by=EXCLUDED.issued_by, issued_at=now(), rotated_at=now(), revoked_at=NULL`,
-			n.ID, hashNodeSecret(secret), by); err != nil {
-			return err
-		}
-		_, err := tx.Exec(ctx, `
-INSERT INTO g4_audit (actor, action, target, detail) VALUES ($1,'node.register',$2,$3)`, by, n.ID, quotaRegistrationDetail(n))
-		return err
-	})
-	if err != nil {
-		return "", err
-	}
-	return secret, nil
+	return s.RegisterManagedNode(ctx, NodeRegistration{ID: n.ID, Name: n.Name, Pool: labels["pool"], QuotaMode: n.QuotaMode, QuotaPolicyRevision: n.QuotaPolicyRevision, Address: n.Address, Access: NodeAccess{Scope: n.AccessScope}, SchedulingState: n.SchedulingState, labels: n.Labels, dockerVersion: n.DockerVersion, protocolVersion: n.ProtocolVersion}, by)
 }
 
 // RotateNodeCredential 轮换：新凭据一次性返回，旧凭据立即失效。

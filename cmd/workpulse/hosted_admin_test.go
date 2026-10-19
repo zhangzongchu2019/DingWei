@@ -20,6 +20,21 @@ import (
 
 func hostedAdminRun(t *testing.T, dsn, stdin string, args ...string) (string, error) {
 	t.Helper()
+	// Pre-R31 CLI feature fixtures now state an approved hard policy revision.
+	if len(args) > 0 && args[0] == "register-node" {
+		mode, revision := "hard", false
+		for i, a := range args {
+			if a == "--quota-mode" && i+1 < len(args) {
+				mode = args[i+1]
+			}
+			if strings.HasPrefix(a, "--quota-policy-revision") {
+				revision = true
+			}
+		}
+		if mode == "hard" && !revision {
+			args = append(args, "--quota-policy-revision", strings.Repeat("a", 64))
+		}
+	}
 	t.Setenv("DW_NEWPLAT_PG_DSN", dsn)
 	r, w, _ := os.Pipe()
 	go func() { _, _ = w.WriteString(stdin); _ = w.Close() }() // 异步写：超限格的大输入不堵管道缓冲

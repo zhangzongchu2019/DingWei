@@ -903,7 +903,7 @@ func TestSoftRegistrationUsesDirectoryBackendAndReplayGate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := a.RegisterDockerHandlers(newFakeEngine(f.srv.Client(), f.srv.URL), rejectedHardQuota{}, q.root, "hub.local/dingwei", "fixture.slice", "http://fixture.invalid:11080", "wss://fixture.invalid", "", false, "", "", nil, p); err != nil {
+	if err := a.registerR31LegacyFixture(t, newFakeEngine(f.srv.Client(), f.srv.URL), rejectedHardQuota{}, q.root, "hub.local/dingwei", "fixture.slice", "http://fixture.invalid:11080", "wss://fixture.invalid", "", false, "", "", nil, p); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(a.policyClose)

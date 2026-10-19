@@ -58,6 +58,7 @@ func (a *API) Register(mux Mux) {
 	mux.HandleFunc("POST /api/console/enroll/applications/{id}/approve", a.console(a.approve))
 	mux.HandleFunc("POST /api/console/enroll/applications/{id}/reject", a.console(a.reject))
 	mux.HandleFunc("GET /api/console/agents", a.console(a.listAgents))
+	mux.HandleFunc("GET /api/console/platform/agents", a.adminAgents)
 	mux.HandleFunc("POST /api/console/agents/{id}/revoke", a.console(a.revoke))
 }
 
@@ -323,9 +324,19 @@ func (a *API) listAgents(w http.ResponseWriter, r *http.Request, actor string) {
 			"agent_id": ag.ID, "name": ag.Name, "full_name": ag.Name + "." + short,
 			"origin": string(ag.Origin), "group_code": ag.GroupID, "state": string(ag.State), "online": online,
 		}
+		item["agent_type"] = string(ag.Origin)
+		if ag.Origin == identity.OriginSelfhost && len(r.Header.Values("Authorization")) == 0 {
+			if source, ok := a.Svc.Store.(identity.ConnectionStore); ok {
+				if conn, e := source.ReadAgentConnection(r.Context(), actor, ag.ID); e == nil && conn.IP != "" {
+					item["host"] = conn.IP
+					item["last_source_at"] = conn.At.UTC().Format(time.RFC3339Nano)
+				}
+			}
+		}
 		if ag.Origin == identity.OriginHosted && a.Hosted != nil && a.HostedAccess != nil && a.HostedAccess(r) {
 			if h, ok := a.Hosted(r.Context(), ag.ID); ok {
 				item["hosted"] = h
+				item["host"] = h["node_name"]
 			}
 		}
 		out = append(out, item)

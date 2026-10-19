@@ -131,6 +131,7 @@ type RegistrationCodeRow struct {
 
 // Store 三个接口的合集；内存实现与 PG 实现都实现它。
 type Store interface {
+	ConnectionStore
 	IdentityStore
 	EnrollStore
 	GroupStore

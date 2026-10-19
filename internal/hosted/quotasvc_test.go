@@ -47,7 +47,7 @@ func TestQuotaCheckBoundaries(t *testing.T) {
 
 	// 造一席已用（含 disabled 计入）：idp 名下塞两个 agent，席位落库一 disabled
 	idp.agentIDs = []string{"ag_u1"}
-	if err := s.UpsertNode(ctx, Node{ID: "nd_q", Name: "q", Labels: []byte(`{}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_q", Name: "q", Labels: []byte(`{}`)}); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.CreateSeat(ctx, Seat{AgentID: "ag_u1", NodeID: "nd_q", CLI: "codex", LLM: "gpt", CredKind: "token_file", Plan: "2c4g", CreatedBy: "t"}); err != nil {
@@ -96,7 +96,7 @@ func TestQuotaListWithUsage(t *testing.T) {
 		t.Fatal(err)
 	}
 	idp.agentIDs = []string{"ag_v1"}
-	if err := s.UpsertNode(ctx, Node{ID: "nd_v", Name: "v", Labels: []byte(`{}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_v", Name: "v", Labels: []byte(`{}`)}); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.CreateSeat(ctx, Seat{AgentID: "ag_v1", NodeID: "nd_v", CLI: "codex", LLM: "gpt", CredKind: "token_file", Plan: "4c8g", CreatedBy: "t"}); err != nil {

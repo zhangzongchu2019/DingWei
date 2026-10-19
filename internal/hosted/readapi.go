@@ -17,17 +17,19 @@ import (
 // ---------- options 读模型（GET /api/console/hosted/options） ----------
 
 type NodeOption struct {
-	SeatCapacity  *seatcapacity.View `json:"seat_capacity,omitempty"`
-	QuotaMode     string             `json:"quota_mode,omitempty"`
-	QuotaNotice   string             `json:"quota_notice,omitempty"`
-	QuotaEligible *bool              `json:"quota_eligible,omitempty"`
-	ID            string             `json:"id"`
-	Name          string             `json:"name"`
-	Pool          string             `json:"pool"`
-	Online        bool               `json:"online"`
-	FreeMemGB     int64              `json:"free_mem_gb"`
-	FreeVCPU      int                `json:"free_vcpu"`
-	FreeDiskGB    int64              `json:"free_disk_gb"`
+	Address         string             `json:"address,omitempty"`
+	SchedulingState string             `json:"scheduling_state,omitempty"`
+	SeatCapacity    *seatcapacity.View `json:"seat_capacity,omitempty"`
+	QuotaMode       string             `json:"quota_mode,omitempty"`
+	QuotaNotice     string             `json:"quota_notice,omitempty"`
+	QuotaEligible   *bool              `json:"quota_eligible,omitempty"`
+	ID              string             `json:"id"`
+	Name            string             `json:"name"`
+	Pool            string             `json:"pool"`
+	Online          bool               `json:"online"`
+	FreeMemGB       int64              `json:"free_mem_gb"`
+	FreeVCPU        int                `json:"free_vcpu"`
+	FreeDiskGB      int64              `json:"free_disk_gb"`
 }
 
 type ComboOption struct {
@@ -88,6 +90,13 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 	}
 	modelsSeen := map[string]bool{}
 	for _, n := range nodes {
+		allowed, e := o.st.CanAccessNode(ctx, ownerLC, n)
+		if e != nil {
+			return v, e
+		}
+		if !allowed {
+			continue
+		}
 		var c struct {
 			CPUTotal   int      `json:"cpu_total"`
 			MemFreeMB  int64    `json:"mem_free_mb"`
@@ -117,9 +126,9 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 		if mode == "soft" {
 			notice = "无硬磁盘配额"
 		}
-		eligible := nodeQuotaEligible(n)
+		eligible := nodeScheduling(n) == "enabled" && nodeQuotaEligible(n)
 		var capacity *seatcapacity.View
-		if mode == "soft" {
+		if mode == "soft" || mode == "hard" {
 			capacity, err = o.st.nodeSeatCapacity(ctx, n)
 			if err != nil {
 				return v, err
@@ -131,6 +140,11 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 		if mode != "hard" || !eligible {
 			publicEligible = &eligible
 			publicMode = mode
+		}
+		if capacity != nil && capacity.Known {
+			c.CPUTotal = int(capacity.CPU.Available/1000) + usedVCPU
+			c.MemFreeMB = capacity.Memory.Available >> 20
+			c.DiskFreeMB = capacity.Disk.Available >> 20
 		}
 		v.Nodes = append(v.Nodes, NodeOption{
 			SeatCapacity: capacity,

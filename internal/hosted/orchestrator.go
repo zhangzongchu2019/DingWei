@@ -242,7 +242,7 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	}
 	// ⑤ 节点：指定或自动（余量最大）；容量须容得下套餐；带 model ⇒ 只在上报清单含它的在线节点里选
 	// （修订 1：有节点支持但被选中节点不支持 ⇒ 自动选别的，不报错；全部不支持才拒）
-	node, err := o.pickNode(ctx, req.NodeID, req.Pool, plan, req.Model, req.AllowSoft)
+	node, err := o.pickNodeForOwner(ctx, req.OwnerLC, req.NodeID, req.Pool, plan, req.Model, req.AllowSoft)
 	if err != nil {
 		return CreateOutcome{}, err
 	}
@@ -272,7 +272,8 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	if mode == "soft" {
 		consent, _ = json.Marshal(map[string]any{"node_id": node.ID, "quota_mode": mode, "quota_policy_revision": revision, "allow_soft": req.AllowSoft, "notice": "无硬磁盘配额"})
 	}
-	err = o.st.CreateSeat(ctx, Seat{
+	err = o.st.CreateAdmittedSeat(ctx, Seat{
+		OwnerLC:      req.OwnerLC,
 		QuotaConsent: consent,
 		AgentID:      ag.ID, NodeID: node.ID, CLI: req.CLI, LLM: req.LLM, CredKind: req.CredKind,
 		AccountRef: sql.NullString{String: req.AccountID, Valid: true}, Plan: req.Plan, ImageRef: imageRef,
@@ -294,6 +295,10 @@ func (o *Orchestrator) AccountComboKnown(cli, llm, kind string) bool {
 }
 
 func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan Plan, model string, allowSoft ...bool) (Node, error) {
+	return o.pickNodeForOwner(ctx, "system", nodeID, pool, plan, model, allowSoft...)
+}
+
+func (o *Orchestrator) pickNodeForOwner(ctx context.Context, ownerLC, nodeID, pool string, plan Plan, model string, allowSoft ...bool) (Node, error) {
 	nodes, err := o.st.ListNodes(ctx)
 	if err != nil {
 		return Node{}, ErrNoNodeCapacity
@@ -303,10 +308,17 @@ func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan P
 	modelSeen := false
 	var blockedReasons []string
 	for _, n := range nodes {
+		allowed, e := o.st.CanAccessNode(ctx, ownerLC, n)
+		if e != nil {
+			return Node{}, e
+		}
+		if !allowed {
+			continue
+		}
 		if nodeID != "" && nodeID != "auto" && n.ID != nodeID {
 			continue
 		}
-		if n.State != "online" || !nodeQuotaEligible(n) {
+		if n.State != "online" || nodeScheduling(n) != "enabled" {
 			continue
 		}
 		var labels map[string]string
@@ -324,7 +336,11 @@ func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan P
 			}
 			modelSeen = true
 		}
-		if mode == "soft" {
+		if !nodeQuotaEligible(n) {
+			blockedReasons = append(blockedReasons, "load_unknown")
+			continue
+		}
+		if mode == "soft" || mode == "hard" {
 			v, err := o.st.nodeSeatCapacity(ctx, n)
 			if err != nil || v == nil {
 				blockedReasons = append(blockedReasons, "load_unknown")
@@ -344,7 +360,7 @@ func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan P
 		if model != "" && !modelSeen {
 			return Node{}, ErrModelNotAvailable
 		}
-		// Union only over visible, consented, model-compatible soft candidates.
+		// Union only over visible, consented, model-compatible candidates.
 		// Each reason means at least one such candidate failed that resource; it
 		// does not claim all nodes failed the same dimension or reveal node IDs.
 		if len(blockedReasons) != 0 {
@@ -410,6 +426,27 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 	}
 	seat, err := o.st.GetSeat(ctx, agentID)
 	if err != nil {
+		return
+	}
+	node, ne := o.st.GetNode(ctx, seat.NodeID)
+	if ne != nil {
+		fail("pulling", "node_access_denied")
+		return
+	}
+	owner := seat.CreatedBy
+	if resolver, ok := o.idp.(interface {
+		HostedAgentOwner(context.Context, string) (string, error)
+	}); ok {
+		var e error
+		owner, e = resolver.HostedAgentOwner(ctx, seat.AgentID)
+		if e != nil {
+			fail("pulling", "node_access_denied")
+			return
+		}
+	}
+	allowed, ae := o.st.CanAccessNode(ctx, owner, node)
+	if ae != nil || !allowed {
+		fail("pulling", "node_access_denied")
 		return
 	}
 	if res, err := o.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "pull_image", Params: json.RawMessage(`{"image":` + jsonStr(seat.ImageRef) + `}`)}); err != nil || !res.OK {

@@ -1,0 +1,6 @@
+=== RUN   TestR31NodeRegistrationCredentialAndAtomicAudit
+    r31_hosted_test.go:107: registration ignored audit failure
+--- FAIL: TestR31NodeRegistrationCredentialAndAtomicAudit (3.76s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.759s
+FAIL

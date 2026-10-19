@@ -18,7 +18,17 @@ import (
 )
 
 func TestCapacitySamplerForeignLoadOwnershipAndUnknown(t *testing.T) {
+	runCapacitySamplerForeignLoad(t, false)
+}
+func TestR31HardCapacitySamplerForeignLoadOwnershipAndUnknown(t *testing.T) {
+	runCapacitySamplerForeignLoad(t, true)
+}
+func runCapacitySamplerForeignLoad(t *testing.T, hard bool) {
 	q, p := softFixture(t)
+	if hard {
+		p.Mode = "hard"
+		q.policy = p
+	}
 	now := time.Now()
 	q.now = func() time.Time { return now }
 	if err := q.reserve("ag_sample", seatResources{MemoryMB: 1536, CPUShares: 1024, CPULimitMillicores: 1000, DiskMB: 40960}); err != nil {
@@ -72,6 +82,10 @@ func TestCapacitySamplerForeignLoadOwnershipAndUnknown(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 	d := &dockerOps{eng: newFakeEngine(srv.Client(), srv.URL), soft: q, policy: p, seatRoot: q.root}
+	if hard {
+		d.soft = nil
+		d.capacityQuota = q
+	}
 	r := newSeatCapacityReader(d)
 	tick := uint64(0)
 	r.readCPU = func() (cpuCounters, error) { tick++; return cpuCounters{total: tick * 100, busy: tick * 50}, nil }

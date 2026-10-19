@@ -1,0 +1,25 @@
+{
+  "utc": "2026-10-19T04:40:57.454753+00:00",
+  "host": "VM-4-12-ubuntu",
+  "go": "go version go1.22.2 linux/amd64",
+  "parent": "7ffd62307caa97d441f083611ebde7d1322c04cd",
+  "scope": "local isolated embedded PG and real production registrar; no deploy",
+  "commands": [
+    {
+      "command": "go build ./...",
+      "rc": 0
+    },
+    {
+      "command": "go vet ./internal/hosted ./internal/identity/httpapi ./cmd/workpulse",
+      "rc": 0
+    },
+    {
+      "command": "bash scripts/repo-boundary-gate.sh",
+      "rc": 0
+    },
+    {
+      "command": "env -u HUB_TEST_PG_DSN HUB_TEST_PG_STRICT=1 HUB_TEST_PG_EMBEDDED=1 HUB_TEST_PG_SKIP_OK=0 R31_R30_BINARY=/tmp/r31-compat-r30-workpulse go test ./internal/identity ./internal/identity/httpapi ./cmd/workpulse -count=1",
+      "rc": 0
+    }
+  ]
+}

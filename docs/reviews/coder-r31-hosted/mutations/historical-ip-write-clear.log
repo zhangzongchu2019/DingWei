@@ -1,0 +1,6 @@
+=== RUN   TestR31PrivateSessionSourceClearsHistoricalIPAndPreservesLegacy
+    r31_session_source_test.go:32: credential reconnect retained historical raw IP
+--- FAIL: TestR31PrivateSessionSourceClearsHistoricalIPAndPreservesLegacy (0.09s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.094s
+FAIL

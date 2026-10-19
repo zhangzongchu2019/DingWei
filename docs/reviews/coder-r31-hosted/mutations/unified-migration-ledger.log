@@ -1,0 +1,6 @@
+=== RUN   TestR31HostedApplySchemaUsesUnifiedLedger
+    r31_hosted_test.go:390: hosted startup bypassed unified migration ledger: rows=0 err=ERROR: relation "schema_migrations" does not exist (SQLSTATE 42P01)
+--- FAIL: TestR31HostedApplySchemaUsesUnifiedLedger (3.73s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.737s
+FAIL

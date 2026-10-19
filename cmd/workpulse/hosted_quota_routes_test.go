@@ -63,11 +63,11 @@ func quotaRouteRig(t *testing.T) (hostedQuotaRoutes, *identity.MemStore, string,
 		t.Fatal(err)
 	}
 	rev := strings.Repeat("a", 64)
-	if err = st.UpsertNode(ctx, hosted.Node{ID: "nd_release", Name: "release", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{}`)}); err != nil {
+	if err = r31LegacyUpsertNode(st, ctx, hosted.Node{ID: "nd_release", Name: "release", QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{}`)}); err != nil {
 		t.Fatal(err)
 	}
 	frame := `{"quota_mode":"soft","quota_policy_revision":"` + rev + `","hold_release_version":1,"soft_seats":{"ag_release":{"hold":"disk_limit","hold_id":"` + strings.Repeat("b", 32) + `","stop_state":"stopped","writer_root":"private-secret"}}}`
-	if err = st.SetNodeOnline(ctx, "nd_release", []byte(frame)); err != nil {
+	if err = r31LegacySetOnline(st, ctx, "nd_release", []byte(frame)); err != nil {
 		t.Fatal(err)
 	}
 	g := &quotaRouteGateway{}

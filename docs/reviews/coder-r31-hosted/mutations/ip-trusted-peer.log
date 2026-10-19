@@ -1,0 +1,8 @@
+=== RUN   TestR31AgentSourceIPTrustBoundary
+=== RUN   TestR31AgentSourceIPTrustBoundary/direct_forged
+    r31_source_ip_test.go:37: got "198.51.100.2" want "203.0.113.9"
+--- FAIL: TestR31AgentSourceIPTrustBoundary (0.00s)
+    --- FAIL: TestR31AgentSourceIPTrustBoundary/direct_forged (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.004s
+FAIL

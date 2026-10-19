@@ -38,7 +38,7 @@ function mutate(from, to) {
   }
   html = html.replace(from, to);
 }
-const MUTATIONS = ['mutation-anchor-selftest', 'shared-warn-always', 'shared-warn-never', 'shared-warn-ignores-kind', 'hosted-online-no-group-refresh', 'ignore-hosted-disabled', 'always-hide-hosted', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped', 'drop-in-use'];
+const MUTATIONS = ['view-refresh-instance-missing', 'mutation-anchor-selftest', 'shared-warn-always', 'shared-warn-never', 'shared-warn-ignores-kind', 'hosted-online-no-group-refresh', 'ignore-hosted-disabled', 'always-hide-hosted', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended', 'backup-failed-unmapped', 'drop-in-use'];
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'ignore-hosted-disabled') mutate('if(!FEATURE_HOSTED){var hc=', 'if(false){var hc=');
@@ -53,6 +53,7 @@ if (mutation === 'backup-failed-unmapped') mutate("backup_failed:'销毁前备�
 if (mutation === 'quota-only-zero') mutate('&&data.remaining[d[0]]<=0)used.push', '&&data.remaining[d[0]]===0)used.push');
 if (mutation === 'quota-old-fallback') mutate("quota_exceeded:'配额不足，请联系管理员调整配额',", "quota_exceeded:'Agent 数量已达上限',");
 if (mutation === 'quota-generic') mutate("if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){", "if(false){");
+if (mutation === 'view-refresh-instance-missing') mutate("pane.src='/view/'+encodeURIComponent(session)+'?view_refresh_instance='+refreshInstance+(muxInstance?'&console_mux=1&iframe_instance='+muxInstance:'');", "pane.src='/view/'+encodeURIComponent(session);");
 if (mutation === 'nav-opens-by-name') mutate('b.onclick=function(){ openTab(a.full_name) };', 'b.onclick=function(){ openTab(a.name) };');
 if (mutation === 'ignore-cred-kind') mutate('&&(!a.kind||c.cred_kind===a.kind);});', '&&true;});');
 if (mutation === 'suspended-loses-to-hosted') mutate("Object.assign({online:a.online},a.hosted||{},a.state==='suspended'?{state:'disabled'}:{})", "Object.assign({online:a.online},a.state==='suspended'?{state:'disabled'}:{},a.hosted||{})");
@@ -407,20 +408,24 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
 
     await test('hosted rows show state and lifecycle buttons, never revoke; self-hosted/legacy rows are unchanged', async () => {
       const gamma = page.locator('#rosterItems .roster-row[data-agent-id="ag-gamma"]');
-      assert.strictEqual(await gamma.locator('td').nth(1).textContent(), '运行中（可升级）');
+      assert.strictEqual(await gamma.locator('td').nth(3).textContent(), '运行中（可升级）');
+      assert.strictEqual(await gamma.locator('td').nth(1).textContent(),'托管');
+      assert.strictEqual(await gamma.locator('td').nth(2).textContent(),'node-a');
       assert.deepStrictEqual(await gamma.locator('.hosted-op').allTextContents(), ['升级', '重启', '停用', '销毁']);
       assert.strictEqual(await gamma.locator('.roster-revoke').isHidden(), true, 'a hosted agent is not revoked here');
       const leader = page.locator('#rosterItems .roster-row[data-agent-id="ag-leader"]');
       assert.strictEqual(await leader.locator('.hosted-op').count(), 0);
+      assert.strictEqual(await leader.locator('td').nth(1).textContent(),'自有');
+      assert.strictEqual(await leader.locator('td').nth(2).textContent(),'—');
       assert.strictEqual(await leader.locator('.roster-revoke').isVisible(), true);
-      assert.strictEqual(await page.locator('#rosterItems .roster-row[data-agent-id="ag-offline"] td').nth(1).textContent(), '异常');
+      assert.strictEqual(await page.locator('#rosterItems .roster-row[data-agent-id="ag-offline"] td').nth(3).textContent(), '异常');
     });
 
     await test('upgrade and restart send no confirmation; upgrade clears the "可升级" badge', async () => {
       const gamma = page.locator('#rosterItems .roster-row[data-agent-id="ag-gamma"]');
       dialogs.length = 0;
       await gamma.locator('[data-op="upgrade"]').click();
-      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(2)')?.textContent === '运行中');
+      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(4)')?.textContent === '运行中');
       assert.deepStrictEqual(writes.at(-1), { path: '/api/console/hosted/agents/ag-gamma/upgrade', body: {} });
       await gamma.locator('[data-op="restart"]').click();
       await page.waitForTimeout(250);
@@ -435,11 +440,11 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(writes.length, before); assert.match(dialogs[0], /数据卷保留/); assert.match(dialogs[0], /凭据暂停、无法再接入/, 'the confirmation says what suspension means for the credential');
       dialogAccept = true;
       await gamma.locator('[data-op="disable"]').click();
-      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(2)')?.textContent === '已停用');
+      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(4)')?.textContent === '已停用');
       assert.deepStrictEqual(writes.at(-1), { path: '/api/console/hosted/agents/ag-gamma/disable', body: { confirm: true } });
       assert.deepStrictEqual(await gamma.locator('.hosted-op').allTextContents(), ['启用', '销毁']);
       await gamma.locator('[data-op="enable"]').click();
-      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(2)')?.textContent === '运行中');
+      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(4)')?.textContent === '运行中');
       assert.deepStrictEqual(writes.at(-1), { path: '/api/console/hosted/agents/ag-gamma/enable', body: {} });
     });
 
@@ -455,7 +460,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.evaluate(() => refreshRoster());
       const row = page.locator('#rosterItems .roster-row[data-agent-id="ag-susp"]');
       await row.waitFor({ state: 'visible' });
-      assert.strictEqual(await row.locator('td').nth(1).textContent(), '已停用');
+      assert.strictEqual(await row.locator('td').nth(3).textContent(), '已停用');
       assert.deepStrictEqual(await row.locator('.hosted-op').allTextContents(), ['启用', '销毁']);
       agents = agents.filter((a) => a.id !== 'ag-susp'); await page.evaluate(() => refreshRoster());
     });
@@ -467,9 +472,9 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.evaluate(() => refreshRoster());
       const hosted = page.locator('#rosterItems .roster-row[data-agent-id="ag-sw"]');
       await hosted.waitFor({ state: 'visible' });
-      assert.strictEqual(await hosted.locator('td').nth(1).textContent(), '已停用', 'suspended on top must beat hosted.state=running');
+      assert.strictEqual(await hosted.locator('td').nth(3).textContent(), '已停用', 'suspended on top must beat hosted.state=running');
       assert.deepStrictEqual(await hosted.locator('.hosted-op').allTextContents(), ['启用', '销毁']);
-      assert.strictEqual(await page.locator('#rosterItems .roster-row[data-agent-id="ag-sh"] td').nth(1).textContent(), '已停用');
+      assert.strictEqual(await page.locator('#rosterItems .roster-row[data-agent-id="ag-sh"] td').nth(3).textContent(), '已停用');
       agents = agents.filter((a) => a.id !== 'ag-sw' && a.id !== 'ag-sh'); hostedAgents = hostedAgents.filter((h) => h.agent_id !== 'ag-sw'); await page.evaluate(() => refreshRoster());
     });
 
@@ -517,7 +522,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       hostedAgents.push({ agent_id: 'ag-offline', state: 'busy', upgradable: true, node_name: 'node-b' });
       hostedAgents = hostedAgents.filter((x, i, arr) => arr.findLastIndex((y) => y.agent_id === x.agent_id) === i);
       await page.evaluate(() => refreshRoster());
-      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-offline"] td:nth-child(2)')?.textContent === '处理中…');
+      await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-offline"] td:nth-child(4)')?.textContent === '处理中…');
       const states = await page.locator('#rosterItems .roster-row[data-agent-id="ag-offline"] .hosted-op').evaluateAll((els) => els.map((e) => e.disabled));
       assert.deepStrictEqual(states, [true, true, true, true]);
     });
@@ -536,22 +541,37 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.evaluate(() => refreshRoster());
       const row = page.locator('#rosterItems .roster-row[data-agent-id="ag-nostate"]');
       await row.waitFor({ state: 'visible' });
-      assert.strictEqual(await row.locator('td').nth(1).textContent(), '在线', 'no lifecycle state invented');
+      assert.strictEqual(await row.locator('td').nth(3).textContent(), '在线', 'no lifecycle state invented');
       assert.strictEqual(await row.locator('.roster-revoke').isHidden(), true);
       agents = agents.filter((a) => a.id !== 'ag-nostate');
       await page.evaluate(() => refreshRoster());
     });
 
     await test('left list uses full_name: button shows the short name, title/tab/iframe use full_name', async () => {
-      await page.locator('#agentNavMode').click();            // 树 -> 纯 Agent 列表
-      const btn = page.locator('#a button').filter({ hasText: /^leader$/ });
-      await btn.waitFor({ state: 'visible' });
-      assert.strictEqual(await btn.getAttribute('title'), 'leader.zzc');
-      await btn.click();
-      await page.locator('#tabs .tab[title="leader.zzc"]').waitFor({ state: 'visible' });
-      assert.strictEqual(await page.locator('#panes iframe').first().getAttribute('src'), '/view/leader.zzc');
-      await page.locator('#tabs .tab[title="leader.zzc"] .x').click();
-      await page.locator('#agentNavMode').click();
+      const originalMode = await page.evaluate(() => agentNavMode);
+      try {
+        if (originalMode !== 'flat') await page.locator('#agentNavMode').click();
+        const btn = page.locator('#a button').filter({ hasText: /^leader$/ });
+        await btn.waitFor({ state: 'visible' });
+        assert.strictEqual(await btn.getAttribute('title'), 'leader.zzc');
+        await btn.click();
+        await page.locator('#tabs .tab[title="leader.zzc"]').waitFor({ state: 'visible' });
+        // The view-refresh protocol deliberately appends a per-iframe nonce.
+        // Keep exact routing checks and validate the protocol rather than
+        // demanding the obsolete query-free URL.
+        const state = await page.locator('#panes iframe[title="Agent view: leader.zzc"]').evaluate((el) => ({ src: el.getAttribute('src'), instance: el.dataset.viewRefreshInstance }));
+        const url = new URL(state.src, page.url());
+        assert.strictEqual(url.origin, new URL(page.url()).origin);
+        assert.strictEqual(url.pathname, '/view/leader.zzc');
+        assert.deepStrictEqual([...url.searchParams.keys()], ['view_refresh_instance']);
+        assert.match(state.instance, /^[0-9a-f]{32}$/);
+        assert.strictEqual(url.searchParams.get('view_refresh_instance'), state.instance);
+      } finally {
+        // This suite shares one page. A failed navigation assertion must not
+        // leave an Agent view active and hide the later hosted-create fixture.
+        await page.evaluate(() => { closeTab('leader.zzc'); closeTab('leader'); });
+        if (await page.evaluate(() => agentNavMode) !== originalMode) await page.locator('#agentNavMode').click();
+      }
     });
 
     await test('the group panel is still there: list, create toggle; join-by-code stays removed', async () => {
@@ -564,6 +584,8 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     // 断言面＝页面：建席上线后编组列表按 Hub 回的数据刷新，新组出现、组长是新席；实现承诺（Hub 真建组、新席为组长）
     // 在 cmd/workpulse/hosted_new_group_test.go 用真 identity＋真存储钉，本格只钉页面这一侧不丢。
     await test('a create with a new group shows that group in the group list once online, led by the new agent', async () => {
+      await page.locator('#platform-items a[data-item-id="agent-groups"]').click();
+      await page.locator('#hostedForm').waitFor({ state: 'visible' });
       await fillValid('Kilo');
       await page.locator('#hostedGroup').selectOption('__new__');
       await page.locator('#hostedNewGroupBox').waitFor({ state: 'visible' });

@@ -1,0 +1,50 @@
+{
+  "parent": "4a6521b3455e4fb71f0dd06cd5f0706737ff8564",
+  "members": [
+    {
+      "path": "docs/reviews/coder-r31-hosted-browser-fix/CHECKS.json",
+      "bytes": 2542,
+      "sha256": "f8a9ea9b1758cba38bc9d904d42c5ccf1fa30b38492ed52579a2d929bec29ab5"
+    },
+    {
+      "path": "docs/reviews/coder-r31-hosted-browser-fix/README.md",
+      "bytes": 2030,
+      "sha256": "c0bb9e825302d0436b23f9383e9807dad3c9088a831bb3f9d0f2acc9e42bbf57"
+    },
+    {
+      "path": "docs/reviews/coder-r31-hosted-browser-fix/hosted-online-no-group-refresh.log",
+      "bytes": 3487,
+      "sha256": "369d62880b1d57447cb3c1a474b7003c8a3973d04bf91ff9c260a00aa42a4e2b"
+    },
+    {
+      "path": "docs/reviews/coder-r31-hosted-browser-fix/nav-opens-by-name.log",
+      "bytes": 3548,
+      "sha256": "c421e771cb19ed119ab4629cada02147a86f21c2fc13569e3de802c3d86a5e54"
+    },
+    {
+      "path": "docs/reviews/coder-r31-hosted-browser-fix/parent-4a6521b3.log",
+      "bytes": 4274,
+      "sha256": "ffcfd1c6ac92b36541dc174105c34da0b3c58109ff3c94c5b31ecb41baa7906d"
+    },
+    {
+      "path": "docs/reviews/coder-r31-hosted-browser-fix/positive.log",
+      "bytes": 3357,
+      "sha256": "fd419a7831826f77cba841c378582085bae0c7d1bce6cf55f622fcedf363680b"
+    },
+    {
+      "path": "docs/reviews/coder-r31-hosted-browser-fix/restored.log",
+      "bytes": 3357,
+      "sha256": "fd419a7831826f77cba841c378582085bae0c7d1bce6cf55f622fcedf363680b"
+    },
+    {
+      "path": "docs/reviews/coder-r31-hosted-browser-fix/view-refresh-instance-missing.log",
+      "bytes": 3544,
+      "sha256": "78a6f6d89fad66c276531e9363051a9eaf063d5609e5714ef2a6fb0d1e55b39f"
+    },
+    {
+      "path": "view-service/console-agent-mgmt-hosted-regression.js",
+      "bytes": 54300,
+      "sha256": "e48e9f49fffb0fc0e98ae060f14800ce425ef0d49ddc69a89cd87e21a64bec8b"
+    }
+  ]
+}

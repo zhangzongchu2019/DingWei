@@ -1,0 +1,34 @@
+PASS options load failure shows the reason and a reachable retry; the form stays hidden; retry shows the form with the remaining quota
+PASS CLI list greys out unverified CLIs; nodes show free resources and offline ones are disabled
+PASS CLI → LLM → account linkage: incompatible combos are absent, unverified are greyed, accounts follow the LLM, change resets downstream
+PASS plans over the remaining quota are greyed and cannot be chosen
+PASS no secret is ever rendered anywhere on the page
+PASS the group is optional on the create form: no-group is first and default, and a create without a group sends neither group_id nor new_group_name
+PASS new group on the create form: an empty or malformed name is blocked locally; a valid name sends new_group_name instead of group_id; an existing group still sends group_id
+PASS incomplete form is hinted locally and nothing is sent
+PASS Hub refusals are shown in our wording, never the Hub text, and the typed values are kept
+PASS quota_exceeded names the exhausted dimensions from remaining, in our wording
+PASS a non-positive remaining counts as exhausted (<=0), not just exactly 0
+PASS quota_exceeded without an exhausted dimension gets the neutral wording, never a misleading Agent-count one
+PASS successful create opens a mask that reports the REAL stage the Hub reports, step by step
+PASS clicking anywhere dismisses the mask; the job keeps going and finishes in the background (form line + roster)
+PASS failed job: failing stage is marked, earlier ones done, later ones untouched, reason in our wording; unknown code is shown generically
+PASS hosted rows show state and lifecycle buttons, never revoke; self-hosted/legacy rows are unchanged
+PASS upgrade and restart send no confirmation; upgrade clears the "可升级" badge
+PASS disable needs a second confirmation: dismiss sends nothing, accept sends confirm:true, then the row offers enable
+PASS node offline: the operation fails with our wording and the row is left as it was
+PASS a hosted row the Hub reports only as state=suspended (no hosted sub-object yet) is shown as stopped, with enable offered
+PASS top-level state=suspended wins over hosted.state=running; a suspended self-hosted row is also shown as stopped
+PASS backup_failed / internal_error / params_invalid are shown in our wording; the Hub detail never reaches the page
+PASS a role-refused operation says so in our wording
+PASS destroy needs a second confirmation naming the consequence; dismiss sends nothing, accept sends confirm:true and the row goes
+PASS busy hosted agent: every operation button is greyed
+PASS the self-hosted review area is offered by default alongside the hosted area (enabled by the real server injection path)
+PASS lifecycle state rides on /api/console/agents: no separate hosted-agents read; a hosted row without state shows only online/offline
+PASS left list uses full_name: button shows the short name, title/tab/iframe use full_name
+PASS the group panel is still there: list, create toggle; join-by-code stays removed
+FAIL a create with a new group shows that group in the group list once online, led by the new agent: page.waitForFunction: Timeout 2500ms exceeded.
+PASS a token_file account already in use shows the shared-login warning; others do not; nothing is blocked
+PASS no pageerror and no unexpected console error across the whole run
+hosted console browser: passed=31 failed=1 mutation=hosted-online-no-group-refresh
+MUTATION-VERDICT: hosted-online-no-group-refresh KILLED

@@ -156,7 +156,7 @@ func mkBackupRig(t *testing.T, gw *gwBackupNode) (*Store, *HubBackuper, string) 
 	t.Helper()
 	_, s := mkPoolSvc(t)
 	ctx := context.Background()
-	secret, err := s.RegisterNode(ctx, Node{ID: "nd_bk", Name: "bk", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	secret, err := s.registerR31LegacyNode(ctx, Node{ID: "nd_bk", Name: "bk", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,12 +228,12 @@ func TestBackupPipelineEndToEnd(t *testing.T) {
 func TestBackupHandlerAuthAndStates(t *testing.T) {
 	_, s := mkPoolSvc(t)
 	ctx := context.Background()
-	secret, err := s.RegisterNode(ctx, Node{ID: "nd_b1", Name: "b1", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	secret, err := s.registerR31LegacyNode(ctx, Node{ID: "nd_b1", Name: "b1", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
 	if err != nil {
 		t.Fatal(err)
 	}
 	// 第二个节点凭据（串用必拒）
-	secret2, err := s.RegisterNode(ctx, Node{ID: "nd_b2", Name: "b2", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	secret2, err := s.registerR31LegacyNode(ctx, Node{ID: "nd_b2", Name: "b2", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -545,11 +545,11 @@ func (f gwFunc) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeR
 func mkBackupRigOn(t *testing.T, s *Store, gw *gwBackupNode) (*Store, *HubBackuper, string) {
 	t.Helper()
 	ctx := context.Background()
-	secret, err := s.RegisterNode(ctx, Node{ID: "nd_free", Name: "free", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	secret, err := s.RotateNodeCredential(ctx, "nd_free", "admin")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384}`)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384}`)); err != nil {
 		t.Fatal(err)
 	}
 	gw.secret = secret
@@ -621,7 +621,7 @@ func TestBackupUsesLongTimeout(t *testing.T) {
 func TestBackupDuplicateUploadWhilePending(t *testing.T) {
 	_, s := mkPoolSvc(t)
 	ctx := context.Background()
-	secret, err := s.RegisterNode(ctx, Node{ID: "nd_dup", Name: "dup", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	secret, err := s.registerR31LegacyNode(ctx, Node{ID: "nd_dup", Name: "dup", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
 	if err != nil {
 		t.Fatal(err)
 	}

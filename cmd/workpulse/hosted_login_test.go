@@ -25,11 +25,11 @@ func mkLoginRig(t *testing.T) *loginRig {
 	t.Helper()
 	deps, st, _, gw, pool := mkHostedDeps(t)
 	ctx := context.Background()
-	sec, err := st.RegisterNode(ctx, hosted.Node{ID: "nd_rt", Name: "rt", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	sec, err := st.RotateNodeCredential(ctx, "nd_rt", "admin")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := st.SetNodeOnline(ctx, "nd_rt", json.RawMessage(`{"cpu_total":16,"mem_free_mb":16384,"disk_free_mb":102400}`)); err != nil {
+	if err := r31LegacySetOnline(st, ctx, "nd_rt", json.RawMessage(`{"cpu_total":16,"mem_free_mb":16384,"disk_free_mb":102400}`)); err != nil {
 		t.Fatal(err)
 	}
 	deps.login = hosted.NewLoginService(st, pool, gw, fakeImagesRT{}, deps.orch.AccountComboKnown, testRouteOrigin)
@@ -150,7 +150,7 @@ func TestLoginHTTPGuards(t *testing.T) {
 	}
 	_, v2 := r.start("bob", `{"llm":"gpt","email":"bob@example.com"}`)
 	id2, _ := v2["id"].(string)
-	other, err := r.st.RegisterNode(context.Background(), hosted.Node{ID: "nd_other", Name: "other", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	other, err := r31LegacyRegisterNode(r.st, context.Background(), hosted.Node{ID: "nd_other", Name: "other", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
+	"github.com/zhangzongchu2019/dingwei/internal/store/migrate"
 	"strings"
 	"time"
 )
@@ -24,13 +25,15 @@ var (
 
 // htx hosted 域占位（与 datad 的 dtx／fanout 的 ftx 同型：PendingCtx 调用点单位，
 // 供 pending-debt 按效果计数；SP7b 双轴化收口时本域归零）。
-// 迁移（ApplySchema/DropSchema）用系统上下文——建表本就无租户语义（评审面，两处已登记入基线）。
+// ApplySchema 交统一 runner；仅测试 DropSchema 用系统上下文拆隔离测试库。
 func htx() repo.AccessCtx {
 	return repo.PendingCtx("hosted", "SP7b", "hosted 域双轴化占位——user_lc 是否算租户列待 SP7b 定（已问 qwen38maxkhovvob4）")
 }
 
 type Store struct {
-	pool *repo.Pool
+	pool               *repo.Pool
+	nodeAuthorizer     NodeAuthorizer
+	afterNodeAdmission func()
 	// beforeDisableCount 只供测试：停用事务已持 FOR UPDATE、尚未数引用时调用（确定性造「建席／停用」交错）。
 	beforeDisableCount func()
 	// afterSeatAccountLock 只供测试：建席事务已持账号行 FOR SHARE、尚未插席位行时调用。
@@ -39,15 +42,18 @@ type Store struct {
 
 func NewStore(pool *repo.Pool) *Store { return &Store{pool: pool} }
 
-// ApplySchema 幂等建表（可重复 apply）。迁移＝建表无租户语义 ⇒ SystemCtx（评审面）。
+// ApplySchema uses the shared Hub ledger; applied entries are not replayed.
 func (s *Store) ApplySchema(ctx context.Context) error {
-	_, err := s.pool.Exec(ctx, repo.SystemCtx(), SchemaDDL)
-	return err
+	_, err := migrate.Migrate(ctx, s.pool, migrate.HubDomains())
+	if err != nil {
+		return err
+	}
+	return s.CheckSchema(ctx)
 }
 
 // DropSchema 仅测试用（rollback 可重复性验证）。
 func (s *Store) DropSchema(ctx context.Context) error {
-	_, err := s.pool.Exec(ctx, repo.SystemCtx(), DropDDL)
+	_, err := s.pool.Exec(ctx, repo.SystemCtx(), "DROP TABLE IF EXISTS g4_node_access_grant;"+DropDDL+"; DO $$ BEGIN IF to_regclass('schema_migrations') IS NOT NULL THEN DELETE FROM schema_migrations WHERE version IN ('0200_hosted_r30_baseline.sql','0201_hosted_node_access_r31.sql'); END IF; END $$;")
 	return err
 }
 
@@ -69,6 +75,10 @@ func (s *Store) query(ctx context.Context, q string, args ...any) (*sql.Rows, er
 
 type Node struct {
 	ID, Name            string
+	Address             string `json:"address,omitempty"`
+	AddressSource       string `json:"address_source,omitempty"`
+	SchedulingState     string `json:"scheduling_state"`
+	AccessScope         string `json:"access_scope"`
 	QuotaMode           string
 	QuotaPolicyRevision string
 	Labels              json.RawMessage
@@ -84,12 +94,12 @@ func (s *Store) UpsertNode(ctx context.Context, n Node) error {
 		return err
 	}
 	_, err := s.exec(ctx, `
-INSERT INTO g4_node (id, name, labels, state, docker_version, node_protocol_version)
-VALUES ($1,$2,$3,'offline',$4,$5)
+INSERT INTO g4_node (id, name, labels, state, docker_version, node_protocol_version,access_scope,scheduling_state)
+VALUES ($1,$2,$3,'offline',$4,$5,COALESCE(NULLIF($6,''),'admin_only'),COALESCE(NULLIF($7,''),'enabled'))
 ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, labels=EXCLUDED.labels,
   docker_version=EXCLUDED.docker_version, node_protocol_version=EXCLUDED.node_protocol_version,
   updated_at=now()`,
-		n.ID, n.Name, n.Labels, n.DockerVersion, n.ProtocolVersion)
+		n.ID, n.Name, n.Labels, n.DockerVersion, n.ProtocolVersion, n.AccessScope, n.SchedulingState)
 	return err
 }
 
@@ -98,7 +108,7 @@ func (s *Store) GetNode(ctx context.Context, id string) (Node, error) {
 	err := func() error {
 
 		row, err := s.qrow(ctx, `
-SELECT id, name, labels, state, capacity, docker_version, node_protocol_version, last_seen_at
+SELECT id, name, labels, state, capacity, docker_version, node_protocol_version, last_seen_at, address,address_source,scheduling_state,access_scope
 FROM g4_node WHERE id=$1`, id)
 
 		if err != nil {
@@ -108,7 +118,7 @@ FROM g4_node WHERE id=$1`, id)
 		}
 
 		return row.Scan(
-			&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
+			&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt, &n.Address, &n.AddressSource, &n.SchedulingState, &n.AccessScope)
 
 	}()
 	if errors.Is(err, sql.ErrNoRows) {
@@ -220,7 +230,7 @@ LIMIT 1`, pool)
 // ListNodes 节点清单（options 读模型用；本期节点个位数级）。
 func (s *Store) ListNodes(ctx context.Context) ([]Node, error) {
 	rows, err := s.query(ctx, `
-SELECT id, name, labels, state, capacity, docker_version, node_protocol_version, last_seen_at FROM g4_node ORDER BY id`)
+SELECT id, name, labels, state, capacity, docker_version, node_protocol_version, last_seen_at,address,address_source,scheduling_state,access_scope FROM g4_node ORDER BY id`)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +238,7 @@ SELECT id, name, labels, state, capacity, docker_version, node_protocol_version,
 	var out []Node
 	for rows.Next() {
 		var n Node
-		if err := rows.Scan(&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt); err != nil {
+		if err := rows.Scan(&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt, &n.Address, &n.AddressSource, &n.SchedulingState, &n.AccessScope); err != nil {
 			return nil, err
 		}
 		out = append(out, n)
@@ -265,6 +275,7 @@ var seatStates = map[string]bool{
 }
 
 type Seat struct {
+	OwnerLC                             string          // authenticated owner for admission; identity remains authoritative, not a new DB column.
 	QuotaConsent                        json.RawMessage // server-produced audit data, committed atomically with creation
 	AgentID, NodeID, CLI, LLM, CredKind string
 	AccountRef                          sql.NullString
@@ -311,7 +322,19 @@ SELECT EXISTS (SELECT 1 FROM g4_seat_event e WHERE e.agent_id=$1 AND e.kind='des
 	return pending, err
 }
 
+// CreateSeat is the existing trusted storage/import entry. Live orchestration
+// must use CreateAdmittedSeat, which performs universal locked admission.
 func (s *Store) CreateSeat(ctx context.Context, st Seat) error {
+	return s.createSeat(ctx, st, len(st.QuotaConsent) > 0)
+}
+func (s *Store) CreateAdmittedSeat(ctx context.Context, st Seat) error {
+	return s.createSeat(ctx, st, true)
+}
+func (s *Store) createSeat(ctx context.Context, st Seat, admit bool) error {
+	owner := st.OwnerLC
+	if owner == "" {
+		owner = st.CreatedBy
+	}
 	if _, ok := PlanByID(st.Plan); !ok {
 		return fmt.Errorf("%w: plan %q", ErrInvalidState, st.Plan)
 	}
@@ -321,35 +344,35 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9,$10)`
 	if !st.AccountRef.Valid && len(st.QuotaConsent) > 0 {
 		return ErrParams
 	}
-	if !st.AccountRef.Valid {
-		_, err := s.pool.Exec(ctx, htx(), ins,
-			st.AgentID, st.NodeID, st.CLI, st.LLM, st.CredKind, st.AccountRef, st.Plan, st.ImageRef, st.Model, st.CreatedBy)
-		return err
-	}
 	// 带账号：同一事务内先 FOR SHARE 锁账号行并校验「未停用、属主＝建席人」，再插席位行——
 	// 与停用（SetAccountState 的 FOR UPDATE＋另句数引用）串行化，不会出现「已停用账号被新席引用」。
 	// 0 行／不合 ⇒ ErrAccountNotAllowed；席位主键冲突等存储错误原样返回（不映射成账号错误）。
 	return s.pool.InTx(ctx, htx(), nil, func(tx repo.Tx) error {
-		var state, owner string
-		err := tx.QueryRow(ctx, `SELECT state, owner_lc FROM g4_account_pool WHERE id=$1 FOR SHARE`, st.AccountRef.String).Scan(&state, &owner)
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrAccountNotAllowed
+		if st.AccountRef.Valid {
+			var state, accountOwner string
+			err := tx.QueryRow(ctx, `SELECT state, owner_lc FROM g4_account_pool WHERE id=$1 FOR SHARE`, st.AccountRef.String).Scan(&state, &accountOwner)
+			if errors.Is(err, sql.ErrNoRows) {
+				return ErrAccountNotAllowed
+			}
+			if err != nil {
+				return err
+			}
+			if state == "disabled" || accountOwner == "" || accountOwner != owner {
+				return ErrAccountNotAllowed
+			}
+			if s.afterSeatAccountLock != nil {
+				s.afterSeatAccountLock()
+			}
 		}
-		if err != nil {
-			return err
-		}
-		if state == "disabled" || owner == "" || owner != st.CreatedBy {
-			return ErrAccountNotAllowed
-		}
-		if s.afterSeatAccountLock != nil {
-			s.afterSeatAccountLock()
-		}
-		if len(st.QuotaConsent) > 0 {
-			if err := checkSeatCapacityTx(ctx, tx, st); err != nil {
+		if admit {
+			if err := s.checkSeatCapacityTx(ctx, tx, st); err != nil {
 				return err
 			}
 		}
-		_, err = tx.Exec(ctx, ins,
+		if s.afterNodeAdmission != nil {
+			s.afterNodeAdmission()
+		}
+		_, err := tx.Exec(ctx, ins,
 			st.AgentID, st.NodeID, st.CLI, st.LLM, st.CredKind, st.AccountRef, st.Plan, st.ImageRef, st.Model, st.CreatedBy)
 		if err != nil {
 			return err
@@ -871,4 +894,29 @@ func (s *Store) OwnedAccountNameTaken(ctx context.Context, ownerLC, name string)
 		return false, err
 	}
 	return n > 0, nil
+}
+
+// The ledger must never silently repair objects removed after application.
+func (s *Store) CheckSchema(ctx context.Context) error {
+	for _, name := range []string{"g4_quota_notice", "g4_node", "g4_node_credential", "g4_account_pool", "g4_account_grant", "g4_hosted_seat", "g4_seat_event", "g4_lifecycle_job", "g4_quota", "g4_team_key", "g4_audit", "g4_backup", "g4_account_login", "g4_node_access_grant"} {
+		var ok bool
+		row, err := s.qrow(ctx, `SELECT to_regclass($1) IS NOT NULL`, name)
+		if err != nil {
+			return err
+		}
+		if err = row.Scan(&ok); err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("hosted schema missing table %s", name)
+		}
+	}
+	for _, q := range []string{`SELECT address,address_source,scheduling_state,access_scope FROM g4_node LIMIT 0`, `SELECT model FROM g4_hosted_seat LIMIT 0`, `SELECT owner_lc,email FROM g4_account_pool LIMIT 0`, `SELECT claimed_at FROM g4_account_login LIMIT 0`} {
+		rows, err := s.query(ctx, q)
+		if err != nil {
+			return err
+		}
+		rows.Close()
+	}
+	return nil
 }

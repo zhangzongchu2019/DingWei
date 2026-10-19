@@ -28,10 +28,10 @@ func (g *capacityReplyGateway) Send(_ context.Context, _ string, cmd NodeCommand
 func registerCapacityReplyNode(t *testing.T, s *Store, id, rev string, managed map[string]Plan) {
 	t.Helper()
 	ctx := context.Background()
-	if err := s.UpsertNode(ctx, Node{ID: id, Name: id, QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
+	if err := s.upsertR31LegacyNode(ctx, Node{ID: id, Name: id, QuotaMode: "soft", QuotaPolicyRevision: rev, Labels: []byte(`{"allow_soft":"true"}`)}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetNodeOnline(ctx, id, reasonFrame(t, rev, netCapacitySnapshot(), seatcapacity.DefaultPolicy(), managed, nil)); err != nil {
+	if err := s.setR31LegacyOnline(ctx, id, reasonFrame(t, rev, netCapacitySnapshot(), seatcapacity.DefaultPolicy(), managed, nil)); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -54,9 +54,7 @@ func TestCapacityReplyStrictProtocolAndRegistration(t *testing.T) {
 		if s.capacityResult(ctx, "nd_reply", NodeResult{OK: true, Error: tc.reply}) != nil {
 			t.Fatal("OK reply reinterpreted")
 		}
-		if s.capacityResult(ctx, "nd_free", NodeResult{Error: tc.reply}) != nil {
-			t.Fatal("legacy hard changed")
-		}
+		requireCapacityReasons(t, s.capacityResult(ctx, "nd_free", NodeResult{Error: tc.reply}), tc.want...)
 	}
 	for _, raw := range []string{"engine cpu failure", "prefix seat_capacity_blocked: seat_capacity_cpu", "seat_capacity_blocked: seat_capacity_cpu\n/private/credential", "seat_capacity_blocked: seat_capacity_cpu+cpu", "seat_capacity_blocked: seat_capacity_cpu+secret", "seat_capacity_blocked: seat_capacity_", "seat_capacity_blocked: seat_capacity_cpu ", "seat_capacity_blocked: seat_capacity_" + strings.Repeat("cpu+", 200)} {
 		if err := s.capacityResult(ctx, "nd_reply", NodeResult{Error: raw}); err != nil {
@@ -79,7 +77,7 @@ func TestCapacityReplyStrictProtocolAndRegistration(t *testing.T) {
 			delete(frame, "seat_capacity")
 		}
 		raw, _ := json.Marshal(frame)
-		if err := s.SetNodeOnline(ctx, "nd_reply", raw); err != nil {
+		if err := s.setR31LegacyOnline(ctx, "nd_reply", raw); err != nil {
 			t.Fatal(err)
 		}
 		if s.capacityResult(ctx, "nd_reply", NodeResult{Error: "seat_capacity_blocked: seat_capacity_cpu"}) != nil {
@@ -146,14 +144,14 @@ func TestCapacityFinalGateLifecycleJobs(t *testing.T) {
 		{name: "near-match", reply: "seat_capacity_blocked: seat_capacity_cpu\n/private/credential", want: "start_failed"},
 		{name: "transport", reply: "seat_capacity_blocked: seat_capacity_cpu", want: "node_offline", transport: errors.New("fixture transport")},
 		{name: "hold", reply: "soft_quota_blocked: disk_limit", want: "soft_quota_held"},
-		{name: "hard", reply: "seat_capacity_blocked: seat_capacity_cpu", want: "start_failed", hard: true},
+		{name: "hard", reply: "seat_capacity_blocked: seat_capacity_cpu", want: "node_no_capacity", hard: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.hard {
-				if err := s.UpsertNode(ctx, Node{ID: original.NodeID, Name: "hard", Labels: []byte(`{}`)}); err != nil {
+				if err := s.upsertR31LegacyNode(ctx, Node{ID: original.NodeID, Name: "hard", Labels: []byte(`{}`)}); err != nil {
 					t.Fatal(err)
 				}
-				if err := s.SetNodeOnline(ctx, original.NodeID, []byte(`{"mem_free_mb":16384}`)); err != nil {
+				if err := s.setR31LegacyOnline(ctx, original.NodeID, []byte(`{"mem_free_mb":16384}`)); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -169,7 +167,7 @@ func TestCapacityFinalGateLifecycleJobs(t *testing.T) {
 			}
 			life.RunJob(ctx, job)
 			view, err := life.JobProgressFor(ctx, job, "zzc")
-			if err != nil || view.Reason != tc.want || len(view.CapacityReasons) != 0 {
+			if err != nil || view.Reason != tc.want || (tc.hard && !reflect.DeepEqual(view.CapacityReasons, []string{"cpu"})) || (!tc.hard && len(view.CapacityReasons) != 0) {
 				t.Fatalf("legacy reply meaning: %+v %v", view, err)
 			}
 			raw, _ := json.Marshal(view)
