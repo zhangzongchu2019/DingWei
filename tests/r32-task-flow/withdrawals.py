@@ -80,6 +80,10 @@ def main():
         return s[:begin]+change(s[begin:end],'if e != nil {','if e != nil && false {')+s[end:]
     add('store_list_state_fail_closed',flow,store_list_state_error,go('./internal/store','TestR32TaskListStateReadFailurePropagates'),'STORE_TASK_LIST_STATE_ERROR_NOT_PROPAGATED')
     add('main_list_state_fail_closed',hub,lambda s:change(s,'list, err := repo.ListConsoleTaskFlow(r.Context(), actor)\n\t\tif err != nil {','list, err := repo.ListConsoleTaskFlow(r.Context(), actor)\n\t\tif err != nil && false {'),go('./internal/m8','TestR32MainTaskListStateReadFailureCloses'),'MAIN_LIST_STATE_READ_FAILED_OPEN')
+    def main_current_state_error(s):
+        begin=s.index('func (h *Hub) HandleAgentTaskFlow');end=s.index('func (h *Hub) resolveTaskPair',begin)
+        return s[:begin]+change(s[begin:end],'if e != nil {','if e != nil && false {')+s[end:]
+    add('main_list_current_state_fail_closed',hub,main_current_state_error,go('./internal/m8','TestR32MainTaskListCurrentStateReadFailureCloses'),'MAIN_LIST_CURRENT_STATE_READ_FAILED_OPEN')
     results=[]
     def execute(name,phase,command):
         p=subprocess.run(command,cwd=work,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=180)

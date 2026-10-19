@@ -256,3 +256,21 @@ func TestR32MainTaskListStateReadFailureCloses(t *testing.T) {
 		t.Fatalf("MAIN_LIST_STATE_READ_FAILED_OPEN: %d %s", rr.Code, rr.Body.String())
 	}
 }
+
+func TestR32MainTaskListCurrentStateReadFailureCloses(t *testing.T) {
+	e, _, _ := r32FlowEnv(t)
+	wrapper := &r32LegacyDriverRepository{SQLite: e.db}
+	wrapper.stateRead = func(_ int, s store.TaskFlowState, err error) (store.TaskFlowState, error) {
+		if err != nil {
+			return s, err
+		}
+		// A fallible read can populate its destination before reporting failure.
+		// Neither a matching version nor still-valid roles may override its error.
+		return s, errors.New("fixture post-selection current-state read failed")
+	}
+	e.hub.Repo = wrapper
+	rr := r32HTTP(e, "GET", "", e.zKimiCred, "")
+	if rr.Code != 503 || strings.Contains(rr.Body.String(), `"tasks"`) || strings.Contains(rr.Body.String(), "implement") {
+		t.Fatalf("MAIN_LIST_CURRENT_STATE_READ_FAILED_OPEN: %d %s", rr.Code, rr.Body.String())
+	}
+}
