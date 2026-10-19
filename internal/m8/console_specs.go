@@ -64,7 +64,7 @@ type consoleSpecRepository interface {
 	ConsoleSpecPresplit(context.Context, string, string, time.Time, time.Time) (*model.ConsoleSpecPresplitRequest, error)
 	FailConsoleSpecPresplitDispatch(context.Context, string, string, time.Time) error
 	RejectConsoleSpecPresplitResult(context.Context, string, model.ConsoleAgent, string, time.Time) error
-	CompleteConsoleSpecPresplit(context.Context, string, model.ConsoleAgent, []store.ConsoleSpecPresplitTask, time.Time) error
+	CompleteConsoleSpecPresplit(context.Context, string, model.ConsoleAgent, []store.ConsoleSpecPresplitTask, time.Time, ...func() error) error
 	ConsoleSpecAttribution(context.Context, string) (model.ConsoleSpecAttribution, error)
 	DeriveConsoleSpec(context.Context, string, string, model.ConsoleSpec, model.ConsoleSpecRevision, time.Time) error
 }

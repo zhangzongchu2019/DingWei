@@ -244,7 +244,7 @@ func taskDependenciesDone(ctx context.Context, q taskQuery, raw string) error {
 	return nil
 }
 
-func (s *SQLite) AssignConsoleTaskFlow(ctx context.Context, id, owner, group, dev, review string, expected int, recheck func() error, at time.Time) (TaskFlowState, error) {
+func (s *SQLite) AssignConsoleTaskFlow(ctx context.Context, id, owner, group, dev, review string, expected int, recheck func() error, at time.Time, reopen ...bool) (TaskFlowState, error) {
 	var empty TaskFlowState
 	if group == "" || dev == "" || review == "" || dev == review {
 		return empty, ErrConsoleTaskAssigneeSame
@@ -268,13 +268,14 @@ func (s *SQLite) AssignConsoleTaskFlow(ctx context.Context, id, owner, group, de
 	if err = tx.QueryRowContext(ctx, `SELECT status FROM console_spec_task WHERE id=?`, id).Scan(&status); err != nil {
 		return empty, err
 	}
-	if t.GroupCode == group && t.Developer == dev && t.Reviewer == review && !t.NeedsReassignment {
+	allowReopen := len(reopen) > 0 && reopen[0]
+	if t.GroupCode == group && t.Developer == dev && t.Reviewer == review && !t.NeedsReassignment && !(status == "done" && allowReopen) {
 		if recheck == nil {
 			return empty, ErrTaskFlowPermission
 		}
 		return t, recheck()
 	}
-	if status == "done" {
+	if status == "done" && !allowReopen {
 		return empty, ErrTaskFlowConflict
 	}
 	old := t
@@ -284,7 +285,7 @@ func (s *SQLite) AssignConsoleTaskFlow(ctx context.Context, id, owner, group, de
 	t.Version++
 	t.AssignmentVersion++
 	t.NeedsReassignment = false
-	if _, err = tx.ExecContext(ctx, `UPDATE console_spec_task SET group_code=?,developer_agent_id=?,reviewer_agent_id=?,version=?,assignment_version=?,needs_reassignment=0 WHERE id=?`, group, dev, review, t.Version, t.AssignmentVersion, id); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE console_spec_task SET group_code=?,developer_agent_id=?,reviewer_agent_id=?,version=?,assignment_version=?,needs_reassignment=0,status=CASE WHEN status='done' THEN 'planned' ELSE status END,started_at=CASE WHEN status='done' THEN NULL ELSE started_at END WHERE id=?`, group, dev, review, t.Version, t.AssignmentVersion, id); err != nil {
 		return empty, err
 	}
 	if _, err = tx.ExecContext(ctx, `DELETE FROM console_spec_task_case_result WHERE task_id=?`, id); err != nil {
@@ -298,7 +299,11 @@ func (s *SQLite) AssignConsoleTaskFlow(ctx context.Context, id, owner, group, de
 			return empty, err
 		}
 	}
-	if err = flowAudit(ctx, tx, id, owner, "assign", t.Version, at); err != nil {
+	operation := "assign"
+	if status == "done" {
+		operation = "reopen_assign"
+	}
+	if err = flowAudit(ctx, tx, id, owner, operation, t.Version, at); err != nil {
 		return empty, err
 	}
 	if recheck == nil {

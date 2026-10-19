@@ -207,3 +207,58 @@ func TestR32OutboxFailureRollsBackAssignment(t *testing.T) {
 		t.Fatalf("OUTBOX_LEFT_PARTIAL_ASSIGNMENT: %+v %v", after, err)
 	}
 }
+
+func TestR32CandidateStageRechecksPGBeforeCommit(t *testing.T) {
+	db, now := lineageFixture(t, "candidate-check")
+	ctx := context.Background()
+	agent := model.ConsoleAgent{ID: "split-agent", KeyID: "split-key", SessionName: "split", OwnerPrincipal: "owner-a", Active: true}
+	if err := db.UpsertConsoleAgent(ctx, agent); err != nil {
+		t.Fatal(err)
+	}
+	request := model.ConsoleSpecPresplitRequest{ID: "candidate-check", SpecID: "candidate-check", AgentID: agent.ID, CreatedAt: now, DeadlineAt: now.Add(time.Hour)}
+	if _, _, err := db.StartConsoleSpecPresplit(ctx, request, "owner-a"); err != nil {
+		t.Fatal(err)
+	}
+	denied := errors.New("fixture PG authorization connection lost")
+	err := db.CompleteConsoleSpecPresplit(ctx, request.ID, agent, []ConsoleSpecPresplitTask{{ID: "candidate", Title: "candidate", Content: "work", DependsOn: []string{}}}, now, func() error { return denied })
+	if !errors.Is(err, denied) {
+		t.Fatalf("CANDIDATE_PG_RECHECK_IGNORED: %v", err)
+	}
+	candidate, err := db.ConsoleTaskCandidates(ctx, request.SpecID, "owner-a")
+	if err != nil || candidate != nil {
+		t.Fatalf("CANDIDATE_PG_FAILURE_LEFT_WRITE: %+v %v", candidate, err)
+	}
+	state, err := db.ConsoleSpecPresplit(ctx, request.SpecID, "owner-a", now, now.Add(-time.Hour))
+	if err != nil || state == nil || state.Status != "pending" {
+		t.Fatalf("request partially completed: %+v %v", state, err)
+	}
+}
+
+func TestR32OwnerExplicitlyReopensCompletedInvalidAssignment(t *testing.T) {
+	db, now, s := taskFlowFixture(t)
+	ctx := context.Background()
+	if _, err := db.db.ExecContext(ctx, `UPDATE console_spec_task SET status='done' WHERE id='task'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.InvalidateConsoleTaskFlow(ctx, s.ID, s.Version, now); err != nil {
+		t.Fatal(err)
+	}
+	s, err := db.ConsoleTaskFlowState(ctx, s.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.AssignConsoleTaskFlow(ctx, s.ID, "owner-a", "group", "other", "review", s.Version, func() error { return nil }, now); !errors.Is(err, ErrTaskFlowConflict) {
+		t.Fatalf("DONE_REASSIGNED_WITHOUT_CONFIRMATION: %v", err)
+	}
+	s, err = db.AssignConsoleTaskFlow(ctx, s.ID, "owner-a", "group", "other", "review", s.Version, func() error { return nil }, now, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var status string
+	if err = db.db.QueryRowContext(ctx, `SELECT status FROM console_spec_task WHERE id='task'`).Scan(&status); err != nil {
+		t.Fatal(err)
+	}
+	if status != "planned" || s.NeedsReassignment {
+		t.Fatalf("OWNER_CANNOT_RESOLVE_INVALID_COMPLETED_TASK: %s %+v", status, s)
+	}
+}

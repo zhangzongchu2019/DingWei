@@ -57,6 +57,13 @@ class R32TaskFlowTest(unittest.TestCase):
             self.assertEqual(len(received),1,'TASK_CREDENTIAL_REDIRECTED')
             self.assertEqual(received[0][1],'Bearer fixture-only')
         finally:server.shutdown();server.server_close();thread.join()
+    def test_http_503_mutation_is_unknown_not_rejected(self):
+        import urllib.error
+        failure=urllib.error.HTTPError('https://hub.invalid',503,'unavailable',{},None)
+        with patch('urllib.request.OpenerDirector.open',side_effect=failure):
+            result=task_request('wss://hub.invalid/ws',{}, {'action':'update','task_id':'task','body':{'request_id':'r','expected_version':1,'operation':'start'}})
+            self.assertEqual(result.get('outcome'),'unknown','HTTP_503_CLAIMED_REJECTION')
+            self.assertFalse(result['retryable'])
     def test_http_mutation_uncertainty_does_not_retry(self):
         with patch('urllib.request.OpenerDirector.open',side_effect=OSError('offline')) as call:
             result=task_request('wss://hub.invalid/ws',{}, {'action':'update','task_id':'task','body':{'request_id':'r','expected_version':1,'operation':'start'}})

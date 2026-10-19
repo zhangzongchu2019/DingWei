@@ -3,6 +3,7 @@ package m8
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -413,5 +414,40 @@ func TestR32PublicSpecCannotBypassTaskReadRevocation(t *testing.T) {
 	filtered, err = e.hub.filterTaskFlowProjection(request.WithContext(assigned), all)
 	if err != nil || len(filtered) != 0 {
 		t.Fatalf("LEGACY_SPEC_CAPABILITY_LEAKED_REVOKED_TASK: %d %v", len(filtered), err)
+	}
+}
+
+type r32ReleaseFailureStore struct {
+	identity.Store
+	authorize identity.TaskAuthorizationStore
+}
+
+func (s r32ReleaseFailureStore) WithTaskAuthorization(ctx context.Context, owner, group string, ids []string, fn func([]identity.Agent, func() error) error) error {
+	if err := s.authorize.WithTaskAuthorization(ctx, owner, group, ids, fn); err != nil {
+		return err
+	}
+	return &repo.CommitFailed{Err: errors.New("fixture PG release receipt lost")}
+}
+func TestR32PGReleaseFailureDoesNotClaimSQLiteRolledBack(t *testing.T) {
+	e, _, state := r32FlowEnv(t)
+	original := e.svc.Store
+	e.svc.Store = r32ReleaseFailureStore{original, original.(identity.TaskAuthorizationStore)}
+	body := fmt.Sprintf(`{"request_id":"release-uncertain","expected_version":%d,"operation":"start"}`, state.Version)
+	result := r32HTTP(e, "PATCH", state.ID, e.zKimiCred, body)
+	if result.Code != 503 || !strings.Contains(result.Body.String(), `"outcome":"unknown"`) {
+		t.Fatalf("PG_RELEASE_FAILURE_CLAIMED_REJECTION: %d %s", result.Code, result.Body.String())
+	}
+	after, err := e.db.ConsoleTaskFlowState(e.ctx, state.ID)
+	if err != nil || after.Version != state.Version+1 {
+		t.Fatalf("committed task %+v %v", after, err)
+	}
+	e.svc.Store = original
+	result = r32HTTP(e, "PATCH", state.ID, e.zKimiCred, body)
+	if result.Code != 200 {
+		t.Fatalf("idempotent resolution: %d %s", result.Code, result.Body.String())
+	}
+	after, err = e.db.ConsoleTaskFlowState(e.ctx, state.ID)
+	if err != nil || after.Version != state.Version+1 {
+		t.Fatalf("UNCERTAIN_WRITE_REPLAYED: %+v %v", after, err)
 	}
 }

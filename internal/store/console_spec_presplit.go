@@ -158,7 +158,7 @@ func (s *SQLite) RejectConsoleSpecPresplitResult(ctx context.Context, requestID 
 	return nil
 }
 
-func (s *SQLite) CompleteConsoleSpecPresplit(ctx context.Context, requestID string, agent model.ConsoleAgent, tasks []ConsoleSpecPresplitTask, now time.Time) error {
+func (s *SQLite) CompleteConsoleSpecPresplit(ctx context.Context, requestID string, agent model.ConsoleAgent, tasks []ConsoleSpecPresplitTask, now time.Time, recheck ...func() error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -212,6 +212,17 @@ func (s *SQLite) CompleteConsoleSpecPresplit(ctx context.Context, requestID stri
 	n, _ := res.RowsAffected()
 	if n != 1 {
 		return ErrConsoleSpecPresplitRejected
+	}
+	if len(recheck) > 0 && recheck[0] != nil {
+		if err = recheck[0](); err != nil {
+			return err
+		}
+	} else {
+		for _, task := range tasks {
+			if task.DeveloperAgentID != "" {
+				return ErrTaskFlowPermission
+			}
+		}
 	}
 	return tx.Commit()
 }

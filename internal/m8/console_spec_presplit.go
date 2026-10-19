@@ -191,7 +191,7 @@ func (h *Hub) handleConsoleSpecPresplitResult(ctx context.Context, c *sessionCli
 		if e := check(); e != nil {
 			return e
 		}
-		return repo.CompleteConsoleSpecPresplit(ctx, requestID, *agent, resolved, h.now())
+		return repo.CompleteConsoleSpecPresplit(ctx, requestID, *agent, resolved, h.now(), check)
 	}); err != nil {
 		if errors.Is(err, store.ErrConsoleTaskAssigneeSame) || errors.Is(err, store.ErrConsoleTaskAssigneePair) {
 			h.rejectMalformedPresplit(ctx, repo, *agent, requestID, "invalid task assignees")

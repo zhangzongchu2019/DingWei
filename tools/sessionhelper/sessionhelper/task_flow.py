@@ -55,8 +55,11 @@ def task_request(ws_url, headers, args):
                 raise ValueError('invalid task response')
             return {'status':'ok', 'http_status':response.status, **payload}
     except urllib.error.HTTPError as exc:
+        if action == 'update' and exc.code >= 500:
+            return {'status':'error','http_status':exc.code,'error':'task_write_outcome_unknown',
+                    'outcome':'unknown','retryable':False}
         return {'status':'error', 'http_status':exc.code,
-                'error':'task_unsupported' if exc.code == 404 else 'task_request_rejected'}
+                'error':'task_unsupported' if exc.code == 404 else 'task_request_rejected', 'retryable':False}
     except (OSError, ValueError):
         return {'status':'error', 'error':'task_write_outcome_unknown' if action=='update' else 'task_read_failed',
                 'outcome':'unknown' if action=='update' else 'failed', 'retryable':False}

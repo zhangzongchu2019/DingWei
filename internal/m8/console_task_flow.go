@@ -19,7 +19,7 @@ type taskFlowRepository interface {
 	ConsoleTaskFlowState(context.Context, string) (store.TaskFlowState, error)
 	ListConsoleTaskFlow(context.Context, string) ([]store.TaskFlowItem, error)
 	UpdateConsoleTaskFlow(context.Context, string, string, store.TaskFlowUpdate, func() error, time.Time) (store.TaskFlowState, error)
-	AssignConsoleTaskFlow(context.Context, string, string, string, string, string, int, func() error, time.Time) (store.TaskFlowState, error)
+	AssignConsoleTaskFlow(context.Context, string, string, string, string, string, int, func() error, time.Time, ...bool) (store.TaskFlowState, error)
 	InvalidateConsoleTaskFlow(context.Context, string, int, time.Time) error
 	ConsoleTaskCandidates(context.Context, string, string) (*store.TaskCandidates, error)
 	ConfirmConsoleTaskCandidates(context.Context, string, string, int, int, []store.ConsoleSpecPresplitTask, func() error, time.Time) error
@@ -73,7 +73,12 @@ func taskError(w http.ResponseWriter, err error) {
 		status = 409
 		code = "task_conflict"
 	}
-	taskJSON(w, status, map[string]any{"error": code})
+	payload := map[string]any{"error": code}
+	if status >= 500 {
+		payload["outcome"] = "unknown"
+		payload["retryable"] = false
+	}
+	taskJSON(w, status, payload)
 }
 func (h *Hub) withTaskIdentity(ctx context.Context, t store.TaskFlowState, fn func([]identity.Agent, func() error) error) error {
 	if t.Archived {
@@ -308,7 +313,7 @@ func (h *Hub) HandleConsoleTaskCandidateConfirm(w http.ResponseWriter, r *http.R
 	h.dispatchTaskNotifications(r.Context())
 }
 
-func (h *Hub) assignTaskFlow(w http.ResponseWriter, r *http.Request, id, owner, group, dev, review string, version int) {
+func (h *Hub) assignTaskFlow(w http.ResponseWriter, r *http.Request, id, owner, group, dev, review string, version int, reopen bool) {
 	repo, ok := h.taskFlowRepo()
 	if !ok || h.Identity == nil {
 		taskError(w, errors.New("task store unavailable"))
@@ -333,7 +338,7 @@ func (h *Hub) assignTaskFlow(w http.ResponseWriter, r *http.Request, id, owner, 
 	var result store.TaskFlowState
 	err := auth.WithTaskAuthorization(r.Context(), owner, group, []string{dev, review}, func(_ []identity.Agent, check func() error) error {
 		var e error
-		result, e = repo.AssignConsoleTaskFlow(r.Context(), id, owner, group, dev, review, version, check, h.now())
+		result, e = repo.AssignConsoleTaskFlow(r.Context(), id, owner, group, dev, review, version, check, h.now(), reopen)
 		return e
 	})
 	if err != nil {
