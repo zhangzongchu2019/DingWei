@@ -235,14 +235,17 @@ func TestCapacityUnknownReservesForeignLoadAndLegacyHard(t *testing.T) {
 			t.Fatalf("missing/malformed B admitted: %v", err)
 		}
 	}
-	if _, err := o.pickNode(ctx, "nd_free", "", p, ""); err != nil {
-		t.Fatalf("legacy hard changed: %v", err)
+	if err := s.SetNodeOnline(ctx, "nd_free", []byte(`{"mem_free_mb":16384}`)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := o.pickNode(ctx, "nd_free", "", p, ""); !errors.Is(err, ErrNoNodeCapacity) {
+		t.Fatalf("legacy hard missing snapshot admitted: %v", err)
 	}
 	n, err := s.GetNode(ctx, "nd_free")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if v, err := s.nodeSeatCapacity(ctx, n); err != nil || v != nil {
-		t.Fatalf("legacy hard falsely advertises B: %+v %v", v, err)
+	if v, err := s.nodeSeatCapacity(ctx, n); err != nil || v == nil || v.Known {
+		t.Fatalf("legacy hard falsely advertises measured capacity: %+v %v", v, err)
 	}
 }

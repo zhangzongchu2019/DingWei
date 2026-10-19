@@ -54,9 +54,7 @@ func TestCapacityReplyStrictProtocolAndRegistration(t *testing.T) {
 		if s.capacityResult(ctx, "nd_reply", NodeResult{OK: true, Error: tc.reply}) != nil {
 			t.Fatal("OK reply reinterpreted")
 		}
-		if s.capacityResult(ctx, "nd_free", NodeResult{Error: tc.reply}) != nil {
-			t.Fatal("legacy hard changed")
-		}
+		requireCapacityReasons(t, s.capacityResult(ctx, "nd_free", NodeResult{Error: tc.reply}), tc.want...)
 	}
 	for _, raw := range []string{"engine cpu failure", "prefix seat_capacity_blocked: seat_capacity_cpu", "seat_capacity_blocked: seat_capacity_cpu\n/private/credential", "seat_capacity_blocked: seat_capacity_cpu+cpu", "seat_capacity_blocked: seat_capacity_cpu+secret", "seat_capacity_blocked: seat_capacity_", "seat_capacity_blocked: seat_capacity_cpu ", "seat_capacity_blocked: seat_capacity_" + strings.Repeat("cpu+", 200)} {
 		if err := s.capacityResult(ctx, "nd_reply", NodeResult{Error: raw}); err != nil {
@@ -146,7 +144,7 @@ func TestCapacityFinalGateLifecycleJobs(t *testing.T) {
 		{name: "near-match", reply: "seat_capacity_blocked: seat_capacity_cpu\n/private/credential", want: "start_failed"},
 		{name: "transport", reply: "seat_capacity_blocked: seat_capacity_cpu", want: "node_offline", transport: errors.New("fixture transport")},
 		{name: "hold", reply: "soft_quota_blocked: disk_limit", want: "soft_quota_held"},
-		{name: "hard", reply: "seat_capacity_blocked: seat_capacity_cpu", want: "start_failed", hard: true},
+		{name: "hard", reply: "seat_capacity_blocked: seat_capacity_cpu", want: "node_no_capacity", hard: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.hard {
@@ -169,7 +167,7 @@ func TestCapacityFinalGateLifecycleJobs(t *testing.T) {
 			}
 			life.RunJob(ctx, job)
 			view, err := life.JobProgressFor(ctx, job, "zzc")
-			if err != nil || view.Reason != tc.want || len(view.CapacityReasons) != 0 {
+			if err != nil || view.Reason != tc.want || (tc.hard && !reflect.DeepEqual(view.CapacityReasons, []string{"cpu"})) || (!tc.hard && len(view.CapacityReasons) != 0) {
 				t.Fatalf("legacy reply meaning: %+v %v", view, err)
 			}
 			raw, _ := json.Marshal(view)

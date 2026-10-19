@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/zhangzongchu2019/dingwei/internal/seatcapacity"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -58,4 +61,24 @@ func TestR31HardWiringUnknownCapacityAndNoSoftEnforcer(t *testing.T) {
 		t.Fatal("hard started soft events")
 	}
 	q.mu.Unlock()
+}
+
+func TestR31HardInventoryTracksLoginWriters(t *testing.T) {
+	root := t.TempDir()
+	loginID := strings.Repeat("a", 32)
+	q := &softQuota{root: root, nodeID: "nd_hard", state: softState{Seats: map[string]*softSeat{"login-" + loginID: {WriterKind: "login", CIDs: []string{"cid_login"}}}}}
+	labels := map[string]string{managedSeatLabel: "nd_hard", loginLabel: loginID}
+	cid := "cid_login"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode([]map[string]any{{"Id": cid, "Names": []string{"/device-login"}, "Labels": labels}})
+	}))
+	defer srv.Close()
+	d := &dockerOps{eng: newFakeEngine(srv.Client(), srv.URL)}
+	if err := d.checkCapacityInventory(context.Background(), q); err != nil {
+		t.Fatalf("tracked login rejected: %v", err)
+	}
+	cid = "cid_untracked"
+	if err := d.checkCapacityInventory(context.Background(), q); err == nil {
+		t.Fatal("untracked login writer accepted")
+	}
 }

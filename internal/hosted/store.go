@@ -25,7 +25,7 @@ var (
 
 // htx hosted 域占位（与 datad 的 dtx／fanout 的 ftx 同型：PendingCtx 调用点单位，
 // 供 pending-debt 按效果计数；SP7b 双轴化收口时本域归零）。
-// 迁移（ApplySchema/DropSchema）用系统上下文——建表本就无租户语义（评审面，两处已登记入基线）。
+// ApplySchema 交统一 runner；仅测试 DropSchema 用系统上下文拆隔离测试库。
 func htx() repo.AccessCtx {
 	return repo.PendingCtx("hosted", "SP7b", "hosted 域双轴化占位——user_lc 是否算租户列待 SP7b 定（已问 qwen38maxkhovvob4）")
 }
@@ -42,7 +42,7 @@ type Store struct {
 
 func NewStore(pool *repo.Pool) *Store { return &Store{pool: pool} }
 
-// ApplySchema 幂等建表（可重复 apply）。迁移＝建表无租户语义 ⇒ SystemCtx（评审面）。
+// ApplySchema uses the shared Hub ledger; applied entries are not replayed.
 func (s *Store) ApplySchema(ctx context.Context) error {
 	_, err := migrate.Migrate(ctx, s.pool, migrate.HubDomains())
 	if err != nil {

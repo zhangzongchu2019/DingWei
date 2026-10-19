@@ -72,8 +72,8 @@ func TestEmptyDBHubEntryMigratesAndCreatesNoAccount(t *testing.T) {
 	if n := ledgerProbeCount(t, dsn, `SELECT count(*) FROM np_user`); n != 0 {
 		t.Errorf("np_user 有 %d 行：Hub 入口不该建号（建号只归 bootstrap-admin）", n)
 	}
-	if n := ledgerProbeCount(t, dsn, `SELECT count(*) FROM schema_migrations`); n != 5 {
-		t.Fatalf("账上 %d 条，要 5 条（core、identity、group communication、device claim、console transport slot）", n)
+	if n := ledgerProbeCount(t, dsn, `SELECT count(*) FROM schema_migrations`); n != 8 {
+		t.Fatalf("账上 %d 条，要 8 条（core、identity、group communication、device claim、agent source、hosted baseline、hosted access、console transport slot）", n)
 	}
 	// 重启：仍成功，且账不增（digest 记账只跑一次那条语义在装配点上也要成立）。
 	_, _, c2, err := openNewPlatformStore(context.Background(), dsn)
@@ -81,8 +81,8 @@ func TestEmptyDBHubEntryMigratesAndCreatesNoAccount(t *testing.T) {
 		t.Fatalf("重启 openNewPlatformStore: %v", err)
 	}
 	c2()
-	if n := ledgerProbeCount(t, dsn, `SELECT count(*) FROM schema_migrations`); n != 5 {
-		t.Errorf("重启后账上 %d 条，要仍是 4 条", n)
+	if n := ledgerProbeCount(t, dsn, `SELECT count(*) FROM schema_migrations`); n != 8 {
+		t.Errorf("重启后账上 %d 条，要仍是 8 条", n)
 	}
 }
 

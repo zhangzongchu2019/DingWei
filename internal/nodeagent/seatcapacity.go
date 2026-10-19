@@ -179,7 +179,14 @@ func (d *dockerOps) checkCapacityInventory(ctx context.Context, q *softQuota) er
 		if !managed {
 			continue
 		}
-		s := q.state.Seats[c.Labels[managedSeatIDLabel]]
+		key := c.Labels[managedSeatIDLabel]
+		if loginID := c.Labels[loginLabel]; loginID != "" {
+			if !loginIDPattern.MatchString(loginID) || key != "" {
+				return fmt.Errorf("capacity writer identity mismatch")
+			}
+			key = "login-" + loginID
+		}
+		s := q.state.Seats[key]
 		if s == nil {
 			return fmt.Errorf("capacity has unrecorded writer")
 		}

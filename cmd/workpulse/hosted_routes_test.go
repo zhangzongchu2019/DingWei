@@ -170,7 +170,7 @@ func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP, *fakeGW, *
 	life := hosted.NewLifecycle(st, poolSvc, idp, idpSusp{}, gw, fakeImagesRT{}, notReadyBackups{})
 	gw.onCreated = func(seatID string) { _ = orch.MarkOnline(context.Background(), seatID) }
 	// 节点一枚（有余量）＋配额＋账号一枚授权给 zzc
-	if err := r31LegacyUpsertNode(st, ctx, hosted.Node{ID: "nd_rt", Name: "rt", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
+	if _, err := r31LegacyRegisterNode(st, ctx, hosted.Node{ID: "nd_rt", Name: "rt", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin"); err != nil {
 		t.Fatal(err)
 	}
 	if err := r31LegacySetOnline(st, ctx, "nd_rt", json.RawMessage(`{"cpu_total":16,"mem_free_mb":16384,"disk_free_mb":102400}`)); err != nil {

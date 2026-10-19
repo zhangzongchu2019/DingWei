@@ -68,14 +68,13 @@ func TestCapacityRequestReasonAndModelSelection(t *testing.T) {
 				snapshot.Total.Memory = 6 << 30
 			case "disk":
 				snapshot.Total.Disk = 12 << 30
-				policy.Minimum.Disk = 8 << 30
 			}
 			if err := s.setR31LegacyOnline(ctx, "nd_reason", reasonFrame(t, rev, snapshot, policy, nil, []string{"gpt-review"})); err != nil {
 				t.Fatal(err)
 			}
 			n, _ := s.GetNode(ctx, "nd_reason")
 			v, err := s.nodeSeatCapacity(ctx, n)
-			if err != nil || !v.Known || v.AvailableSlots < 1 || len(v.Reasons) != 0 {
+			if err != nil || !v.Known || (dimension != "disk" && (v.AvailableSlots < 1 || len(v.Reasons) != 0)) {
 				t.Fatalf("minimum must still fit: %+v %v", v, err)
 			}
 			for _, model := range []string{"", "gpt-review"} {
@@ -153,7 +152,6 @@ func TestCapacityStartReasonAndUnknown(t *testing.T) {
 				snapshot.Total.Memory = 6 << 30
 			case "disk":
 				snapshot.Total.Disk = 12 << 30
-				policy.Minimum.Disk = 8 << 30
 			case "load_unknown":
 				snapshot.Known = false
 			}

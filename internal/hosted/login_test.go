@@ -696,7 +696,7 @@ func TestLoginStaleCompletingIsSwept(t *testing.T) {
 }
 
 // 复核第 4 批建议 2：某库若曾应用早期定义（CHECK 无 completing、唯一索引旧谓词），ApplySchema 幂等换新。
-func TestLoginSchemaUpgradesOldDefinition(t *testing.T) {
+func TestFrozenR30LoginSchemaUpgradesOldDefinition(t *testing.T) {
 	r := mkLogin(t)
 	ctx := context.Background()
 	for _, q := range []string{
@@ -709,10 +709,10 @@ func TestLoginSchemaUpgradesOldDefinition(t *testing.T) {
 			t.Fatalf("造旧定义: %v", err)
 		}
 	}
-	if err := r.s.ApplySchema(ctx); err != nil {
+	if err := func() error { _, err := r.s.exec(ctx, R30SchemaDDL); return err }(); err != nil {
 		t.Fatalf("apply: %v", err)
 	}
-	if err := r.s.ApplySchema(ctx); err != nil {
+	if err := func() error { _, err := r.s.exec(ctx, R30SchemaDDL); return err }(); err != nil {
 		t.Fatalf("二次 apply 须幂等: %v", err)
 	}
 	v, err := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")

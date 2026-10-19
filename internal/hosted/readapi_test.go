@@ -83,6 +83,15 @@ func TestOptionsJSONMatchesContract(t *testing.T) {
 			t.Fatalf("%s empty in fixture; cannot check element shape: %s", list, raw)
 		}
 		for _, it := range items {
+			if list == "nodes" {
+				m := it.(map[string]any)
+				if _, ok := m["seat_capacity"]; !ok {
+					t.Fatal("R31 missing node capacity")
+				}
+				delete(m, "seat_capacity")
+				delete(m, "quota_mode")
+				delete(m, "quota_eligible")
+			}
 			if got := keysOf(t, it); !reflect.DeepEqual(got, want) {
 				t.Errorf("%s element keys %v, want %v", list, got, want)
 			}

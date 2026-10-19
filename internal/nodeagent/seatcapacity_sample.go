@@ -274,7 +274,7 @@ func (r *seatCapacityReader) containerUsage(ctx context.Context, id, cid string,
 	if err := r.d.eng.call(ctx, "GET", "/containers/"+cid+"/stats?stream=false&one-shot=true", nil, &stats); err != nil {
 		return ownedCapacityUsage{}, fmt.Errorf("capacity stats unavailable")
 	}
-	if stats.CPU.Usage.Total == nil || stats.CPU.System == nil || *stats.CPU.System == 0 || stats.Read.IsZero() || r.d.soft.now().Before(stats.Read) || r.d.soft.now().Sub(stats.Read) > r.d.policyValue().ScanBudget {
+	if stats.CPU.Usage.Total == nil || stats.CPU.System == nil || *stats.CPU.System == 0 || stats.Read.IsZero() || r.d.seatCapacityQuota().now().Before(stats.Read) || r.d.seatCapacityQuota().now().Sub(stats.Read) > r.d.policyValue().ScanBudget {
 		return ownedCapacityUsage{}, fmt.Errorf("capacity stats invalid")
 	}
 	memory, ok := stats.Memory.Stats["anon"]

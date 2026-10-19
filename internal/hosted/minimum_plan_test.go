@@ -46,7 +46,7 @@ func TestMinimumPlanDefinitionAndNetCapacity(t *testing.T) {
 	}
 }
 
-func TestMinimumPlanSchemaUpgradesOldConstraint(t *testing.T) {
+func TestFrozenR30MinimumPlanSchemaUpgradesOldConstraint(t *testing.T) {
 	ctx := context.Background()
 	_, s := mkPoolSvc(t)
 	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_min", Name: "min", Labels: []byte(`{}`)}); err != nil {
@@ -71,7 +71,7 @@ ALTER TABLE g4_hosted_seat ADD CONSTRAINT g4_hosted_seat_plan_check CHECK (plan 
 		t.Fatal("old CHECK unexpectedly accepts new plan")
 	}
 	for i := 0; i < 2; i++ {
-		if err := s.ApplySchema(ctx); err != nil {
+		if err := func() error { _, err := s.exec(ctx, R30SchemaDDL); return err }(); err != nil {
 			t.Fatalf("upgrade %d: %v", i, err)
 		}
 	}

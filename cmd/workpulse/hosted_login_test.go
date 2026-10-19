@@ -25,7 +25,7 @@ func mkLoginRig(t *testing.T) *loginRig {
 	t.Helper()
 	deps, st, _, gw, pool := mkHostedDeps(t)
 	ctx := context.Background()
-	sec, err := r31LegacyRegisterNode(st, ctx, hosted.Node{ID: "nd_rt", Name: "rt", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	sec, err := st.RotateNodeCredential(ctx, "nd_rt", "admin")
 	if err != nil {
 		t.Fatal(err)
 	}

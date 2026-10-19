@@ -50,7 +50,7 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 	}
 	hst := hosted.NewStore(pool)
 	hst.SetNodeAuthorizer(identity.AuthorizeHostedNodeTx)
-	if err := hst.ApplySchema(ctx); err != nil { // 幂等 SchemaDDL（建表 CREATE IF NOT EXISTS；加列用幂等 ALTER ADD COLUMN IF NOT EXISTS——g4_ 首次加列起）
+	if err := hst.ApplySchema(ctx); err != nil { // 与 Hub identity／CLI 共用 schema_migrations runner，再检查形状。
 		return false, err
 	}
 	poolSvc, err := hosted.NewPoolService(hst, mkPath)

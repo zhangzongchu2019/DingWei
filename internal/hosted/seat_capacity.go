@@ -59,8 +59,8 @@ func CapacityErrorReasons(err error) []string {
 	return failure.Reasons()
 }
 
-// capacityResult handles only the fixed B protocol from a registered soft/B
-// node's authenticated gateway response. It never searches arbitrary error text.
+// capacityResult handles only the fixed capacity protocol from a registered
+// hard or soft node's authenticated gateway response. It never searches arbitrary error text.
 func (s *Store) capacityResult(ctx context.Context, nodeID string, result NodeResult) error {
 	if result.OK || len(result.Error) > 160 {
 		return nil
@@ -125,8 +125,8 @@ func unknownSeatCapacity(version int) *seatcapacity.View {
 	return &seatcapacity.View{Version: version, Known: false, Reasons: []string{"load_unknown"}}
 }
 
-// New B capability is mandatory for explicit soft admission. Legacy hard nodes
-// retain their old behavior and omit this extension. Unknown is never zero load.
+// R31 requires the measured capacity capability for hard and soft admission.
+// Older frames remain unknown; existing seats are not automatically stopped.
 func effectiveSeatCapacity(ctx context.Context, n Node, query capacityRows) (*seatcapacity.View, error) {
 	mode, _ := registeredQuota(n)
 	if mode != "hard" && mode != "soft" {

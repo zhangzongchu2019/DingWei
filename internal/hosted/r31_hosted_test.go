@@ -73,9 +73,6 @@ func TestR31NodeRegistrationCredentialAndAtomicAudit(t *testing.T) {
 	s := r31Store(t)
 	ctx := context.Background()
 	secret := r31Register(t, s, "nd_admin", "admin_only")
-	if err := s.AuthenticateNode(ctx, "nd_admin", secret); err != nil {
-		t.Fatal(err)
-	}
 	var hash string
 	row, _ := s.qrow(ctx, `SELECT secret_hash FROM g4_node_credential WHERE node_id='nd_admin'`)
 	if err := row.Scan(&hash); err != nil {
@@ -83,6 +80,9 @@ func TestR31NodeRegistrationCredentialAndAtomicAudit(t *testing.T) {
 	}
 	if hash == secret || hash != hashNodeSecret(secret) {
 		t.Fatal("plaintext or invalid credential hash")
+	}
+	if err := s.AuthenticateNode(ctx, "nd_admin", secret); err != nil {
+		t.Fatal(err)
 	}
 	if _, err := s.RegisterManagedNode(ctx, NodeRegistration{ID: "nd_admin", Name: "duplicate", QuotaPolicyRevision: strings.Repeat("a", 64), Access: NodeAccess{Scope: "public"}}, "admin"); !errors.Is(err, ErrNodeExists) {
 		t.Fatalf("duplicate silently rotated: %v", err)

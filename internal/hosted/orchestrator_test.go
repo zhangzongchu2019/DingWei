@@ -103,7 +103,7 @@ func mkOrch(t *testing.T) (*Orchestrator, *fakeIdentity, *fakeGateway, *Store) {
 	if err := s.upsertR31LegacyNode(context.Background(), Node{ID: "nd_full", Name: "full", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.upsertR31LegacyNode(context.Background(), Node{ID: "nd_free", Name: "free", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
+	if _, err := s.registerR31LegacyNode(context.Background(), Node{ID: "nd_free", Name: "free", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin"); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.setR31LegacyOnline(context.Background(), "nd_full", json.RawMessage(`{"mem_free_mb":1024}`)); err != nil {

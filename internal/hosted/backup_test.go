@@ -545,7 +545,7 @@ func (f gwFunc) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeR
 func mkBackupRigOn(t *testing.T, s *Store, gw *gwBackupNode) (*Store, *HubBackuper, string) {
 	t.Helper()
 	ctx := context.Background()
-	secret, err := s.registerR31LegacyNode(ctx, Node{ID: "nd_free", Name: "free", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	secret, err := s.RotateNodeCredential(ctx, "nd_free", "admin")
 	if err != nil {
 		t.Fatal(err)
 	}
