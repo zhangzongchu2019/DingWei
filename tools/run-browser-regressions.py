@@ -40,6 +40,7 @@ SUITES = (
     ("renderer_c2", "node", ROOT / "view-service/renderer-c2-regression.js"),
     ("console_specs_browser", "node", ROOT / "view-service/console-specs-browser-regression.js"),
     ("console_spec_workflow", "node", ROOT / "view-service/console-spec-workflow-regression.js"),
+    ("console_task_flow_r32", "node", ROOT / "view-service/r32-task-flow-browser-regression.js"),
     ("md_render_core_sync", "python3", ROOT / "view-service/test_md_render_core.py"),
     ("md_render_core_parity", "node", ROOT / "view-service/md-render-core-parity.js"),
     ("renderer_markdown_image", "node", ROOT / "view-service/renderer-markdown-image-regression.js"),

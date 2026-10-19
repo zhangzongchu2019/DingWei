@@ -25,6 +25,8 @@ def request(request_id, tool='send_message', upload_path=''):
         'heartbeat_report': {'status': 'active'},
         'project_context': {'scope': 'config'},
         'dw_inbox': {'operation': 'status'},
+        'dw_task_list': {'limit': 10},
+        'dw_task_update': {'task_id':'fixture','request_id':'stable','expected_version':1,'operation':'start'},
         'dw_wait_message': {'wait_seconds': 1},
         'dw_reply_message': {'message_id': 'fixture', 'body': 'fixture'},
         'dw_spec_create': {'title': 'fixture', 'content_markdown': 'fixture',
@@ -220,7 +222,7 @@ class ShimTransportTests(unittest.TestCase):
             with self.subTest(mode=mode, tool=tool): self.exercise(mode, expected, tool)
         print('MCP_TRANSPORT_READINGS errors=18 survived=18 recovery_same_process=18', flush=True)
 
-    def test_all_nine_tools_return_sanitized_execution_errors(self):
+    def test_all_registered_tools_return_sanitized_execution_errors(self):
         for tool in mcp_shim._handlers:
             with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
 

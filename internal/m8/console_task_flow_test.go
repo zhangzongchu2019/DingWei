@@ -4,7 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -208,5 +212,59 @@ func TestR32TaskNotificationOfflineQueueOldHelperAndReliableFrame(t *testing.T) 
 	}
 	if err = e.hub.RouteEnvelope(e.ctx, model.Envelope{ID: "spoof", Meta: map[string]any{"kind": "task_assigned"}}); err == nil {
 		t.Fatal("FORGED_TASK_NOTIFICATION_ACCEPTED")
+	}
+}
+
+func TestR32MCPThroughRealIPCAndAgentHTTP(t *testing.T) {
+	e, _, state := r32FlowEnv(t)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/agent/console/tasks", e.hub.RequireAgentTaskFlow(e.hub.HandleAgentTaskFlow))
+	mux.HandleFunc("PATCH /api/agent/console/tasks/{taskID}", e.hub.RequireAgentTaskFlow(e.hub.HandleAgentTaskFlow))
+	server := httptest.NewServer(mux)
+	defer server.Close()
+	python := `import asyncio,json,os,tempfile
+from sessionhelper.ipc_listener import serve_ipc
+from sessionhelper.task_flow import task_request
+from sessionhelper import mcp_shim
+async def main():
+ with tempfile.TemporaryDirectory(prefix="r32-ipc-") as root:
+  socket=root+"/s";ready=asyncio.Event();mcp_shim._IPC_SOCK=socket
+  async def task(args):
+   return await asyncio.to_thread(task_request,os.environ['R32_TEST_WS'],{'Authorization':'Bearer '+os.environ['R32_TEST_AGENT']},args)
+  async def unused(*args):raise AssertionError('send path must not run')
+  server=asyncio.create_task(serve_ipc(socket,unused,bound=ready,task_handler=task))
+  await asyncio.wait_for(ready.wait(),3)
+  try:
+   found=await asyncio.to_thread(mcp_shim._dw_task_list,{'limit':10})
+   assert found['status']=='ok',found
+   item=found['tasks'][0];assert item['task_id']=='r32-task'
+   update={'task_id':item['task_id'],'expected_version':item['version'],'request_id':'mcp-stable','operation':'start'}
+   result=await asyncio.to_thread(mcp_shim._dw_task_update,update)
+   assert result['status']=='ok',result
+   again=await asyncio.to_thread(mcp_shim._dw_task_update,update)
+   assert again['version']==result['version'],again
+   current=await asyncio.to_thread(mcp_shim._dw_task_list,{})
+   assert current['tasks'][0]['status']=='in_progress',current
+   print('R32_MCP_IPC_HTTP_OK')
+  finally:
+   server.cancel()
+   try:await server
+   except asyncio.CancelledError:pass
+asyncio.run(main())`
+	ctx, cancel := context.WithTimeout(e.ctx, 30*time.Second)
+	defer cancel()
+	command := exec.CommandContext(ctx, "python3", "-c", python)
+	source, _ := filepath.Abs("../../tools/sessionhelper")
+	command.Env = append(os.Environ(), "PYTHONPATH="+source, "R32_TEST_WS="+strings.Replace(server.URL, "http", "ws", 1), "R32_TEST_AGENT="+e.zKimiCred)
+	output, err := command.CombinedOutput()
+	if err != nil {
+		t.Fatalf("MCP_IPC_HTTP_CHAIN_FAILED: %v %s", err, output)
+	}
+	if !strings.Contains(string(output), "R32_MCP_IPC_HTTP_OK") {
+		t.Fatalf("missing receipt: %s", output)
+	}
+	after, err := e.db.ConsoleTaskFlowState(e.ctx, state.ID)
+	if err != nil || after.Version != state.Version+1 {
+		t.Fatalf("MCP state %+v %v", after, err)
 	}
 }

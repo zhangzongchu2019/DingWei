@@ -608,7 +608,7 @@ class SessionHelper:
         return envelope(
             session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
             {"type": "session_capabilities", "delivery_ack_v1": True,
-             "persistent_inbox_v1": True, "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not self.cfg.ipc_upload_only and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,
+             "persistent_inbox_v1": True, "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,
              "unified_queue_v1": self.cfg.mode == "driver",
              "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),
              "desktop_inbox_v1": self.cfg.mode == "desktop",

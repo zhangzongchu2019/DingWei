@@ -125,7 +125,7 @@ func TestConsoleSpecPresplitAgentIdentityTasksAndFirstResult(t *testing.T) {
 	hub.handleConsoleSpecPresplitResult(context.Background(), &sessionClient{keyID: agent.KeyID, sessionName: agent.SessionName}, model.Envelope{Meta: map[string]any{"type": specPresplitResultType}, Body: result})
 	staged, e := hub.Repo.(*store.SQLite).ListConsoleTaskProposals(context.Background(), spec.ID)
 	if e != nil || len(staged) != 0 {
-		t.Fatalf("R32 unconfirmed tasks=%v err=%v", staged, e)
+		t.Fatalf("UNCONFIRMED_PRESPLIT_TASK_CREATED: tasks=%v err=%v", staged, e)
 	}
 	c, e := hub.Repo.(*store.SQLite).ConsoleTaskCandidates(context.Background(), spec.ID, "owner-a")
 	if e != nil || c == nil {

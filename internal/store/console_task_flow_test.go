@@ -192,3 +192,18 @@ func TestR32ReassignmentClearsCasesAndNotifiesBoth(t *testing.T) {
 		t.Fatalf("REVOKED_TASK_WRITES: %v", err)
 	}
 }
+
+func TestR32OutboxFailureRollsBackAssignment(t *testing.T) {
+	db, now, s := taskFlowFixture(t)
+	ctx := context.Background()
+	if _, err := db.db.ExecContext(ctx, `CREATE TRIGGER r32_fail_outbox BEFORE INSERT ON console_task_flow_outbox BEGIN SELECT RAISE(ABORT,'outbox unavailable'); END`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.AssignConsoleTaskFlow(ctx, "task", "owner-a", "group", "other", "review", s.Version, func() error { return nil }, now); err == nil {
+		t.Fatal("OUTBOX_FAILURE_ACCEPTED")
+	}
+	after, err := db.ConsoleTaskFlowState(ctx, "task")
+	if err != nil || after.Version != s.Version || after.Developer != s.Developer {
+		t.Fatalf("OUTBOX_LEFT_PARTIAL_ASSIGNMENT: %+v %v", after, err)
+	}
+}

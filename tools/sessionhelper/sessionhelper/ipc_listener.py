@@ -150,11 +150,15 @@ async def _handle_connection(
     if msg_type == "task_flow_v1":
         if task_handler is None:
             return await _write_one(writer, {"ok": False, "error": "task_flow_unavailable"})
+        if set(msg)-{"type","request_id","action","task_id","body"}:
+            return await _write_one(writer, {"ok":False,"error":"invalid_task_request"})
         try:
-            result = await task_handler(msg)
+            result = await asyncio.wait_for(task_handler(msg), timeout=18)
+        except asyncio.TimeoutError:
+            result = {"status":"error","error":"task_outcome_unknown","outcome":"unknown","retryable":False}
         except (ValueError, TypeError):
-            result = {"ok": False, "error": "invalid_task_request"}
-        return await _write_one(writer, result)
+            return await _write_one(writer, {"ok": False, "error": "invalid_task_request"})
+        return await _write_one(writer, {"ok":True,"outcome":result})
     if msg_type == "desktop_inbox_v1":
         if inbox_handler is None:
             await _write_one(writer, {"ok": False, "error": "desktop_inbox_unavailable"})

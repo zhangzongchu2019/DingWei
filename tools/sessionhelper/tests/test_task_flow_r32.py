@@ -22,7 +22,7 @@ class R32TaskFlowTest(unittest.TestCase):
             self.assertTrue(a.request({'operation':'ack','message_id':'delivery'})['local_only'])
             self.assertEqual(a.request({'operation':'status'})['unread'],0)
             self.assertEqual(b.request({'operation':'status'})['unread'],1)
-            self.assertEqual(a.claim_next()[0],'delivery')
+            claimed=a.claim_next();self.assertIsNotNone(claimed,'DRIVER_READ_ACK_CONSUMED_DELIVERY');self.assertEqual(claimed[0],'delivery')
             self.assertEqual(a.request({'operation':'pause'})['error'],'mode_operation_unsupported')
             reopened=DeliveryInbox(path,session_name='a')
             self.assertEqual(reopened.request({'operation':'status'})['unread'],0)
