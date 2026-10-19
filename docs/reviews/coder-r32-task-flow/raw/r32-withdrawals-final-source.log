@@ -1,0 +1,25 @@
+Preparing worktree (detached HEAD b08add98)
+Updating files:  86% (3339/3845)Updating files:  87% (3346/3845)Updating files:  88% (3384/3845)Updating files:  89% (3423/3845)Updating files:  90% (3461/3845)Updating files:  91% (3499/3845)Updating files:  92% (3538/3845)Updating files:  93% (3576/3845)Updating files:  94% (3615/3845)Updating files:  95% (3653/3845)Updating files:  96% (3692/3845)Updating files:  97% (3730/3845)Updating files:  98% (3769/3845)Updating files:  99% (3807/3845)Updating files: 100% (3845/3845)Updating files: 100% (3845/3845), done.
+distinct_agents: PASS
+own_task_writer: PASS
+dependency_done: PASS
+review_before_done: PASS
+developer_no_self_confirm: PASS
+remark_resets_confirmation: PASS
+precommit_pg_recheck: PASS
+outbox_atomicity: PASS
+current_group_membership: PASS
+readonly_pg_no_fallback: PASS
+background_reconciliation: PASS
+old_helper_capability_gate: PASS
+shared_spec_task_privacy: PASS
+notification_not_executable: PASS
+driver_ack_local_only: PASS
+board_five_second_refresh: PASS
+owner_confirmation_before_tasks: PASS
+candidate_precommit_pg_recheck: PASS
+pg_release_outcome_unknown: PASS
+http_503_outcome_unknown: PASS
+owner_explicit_done_reopen: PASS
+waiting_page_does_not_starve_delivery: PASS
+R32_WITHDRAWALS_OK count=22

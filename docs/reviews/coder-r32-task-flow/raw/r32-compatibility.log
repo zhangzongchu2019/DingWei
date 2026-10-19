@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r32-task-flow/tests/r32-task-flow/compatibility.py", line 61, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/data/ai-dev-data/r32-task-flow/tests/r32-task-flow/compatibility.py", line 32, in main
+    upgraded=output/'from-r31.sqlite';probe(old_probe,'seed',upgraded)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/r32-task-flow/tests/r32-task-flow/compatibility.py", line 31, in probe
+    value=json.loads(run([str(binary),mode,str(db)]));readings.append({'binary':binary.name,'operation':mode,'db':db.name,'result':value});return value
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/r32-task-flow/tests/r32-task-flow/compatibility.py", line 21, in run
+    if proc.returncode:raise RuntimeError('compat command failed: '+argv[0]+'\n'+proc.stderr[-3000:])
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: compat command failed: /tmp/r32-compatibility/old-probe
+invalid console spec
+

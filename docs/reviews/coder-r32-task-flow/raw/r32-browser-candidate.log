@@ -1,0 +1,2 @@
+AssertionError [ERR_ASSERTION]: DONE_ASSIGNMENT_CONFIRMATION_BYPASSED
+    at /data/ai-dev-data/r32-task-flow/view-service/r32-task-flow-browser-regression.js:56:3
