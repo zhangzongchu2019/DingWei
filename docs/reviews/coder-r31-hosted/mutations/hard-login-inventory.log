@@ -1,0 +1,6 @@
+=== RUN   TestR31HardInventoryTracksLoginWriters
+    r31_hard_capacity_test.go:78: tracked login rejected: capacity has unrecorded writer
+--- FAIL: TestR31HardInventoryTracksLoginWriters (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.005s
+FAIL

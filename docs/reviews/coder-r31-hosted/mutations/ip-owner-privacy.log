@@ -1,0 +1,10 @@
+=== RUN   TestR31ConnectionPrivacyPGAndMemory
+=== RUN   TestR31ConnectionPrivacyPGAndMemory/memory
+=== RUN   TestR31ConnectionPrivacyPGAndMemory/pg
+    r31_connection_test.go:71: IP disclosed to other: {IP:2001:db8::1 At:2026-10-19 03:13:04.759455 +0000 UTC} <nil>
+--- FAIL: TestR31ConnectionPrivacyPGAndMemory (3.74s)
+    --- PASS: TestR31ConnectionPrivacyPGAndMemory/memory (0.00s)
+    --- FAIL: TestR31ConnectionPrivacyPGAndMemory/pg (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/identity	3.748s
+FAIL

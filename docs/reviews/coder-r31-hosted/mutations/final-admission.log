@@ -1,0 +1,6 @@
+=== RUN   TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission
+    r31_hosted_test.go:224: disabled node admitted seat
+--- FAIL: TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission (3.80s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.802s
+FAIL

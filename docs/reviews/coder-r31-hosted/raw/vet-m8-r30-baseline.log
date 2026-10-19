@@ -1,0 +1,3 @@
+# github.com/zhangzongchu2019/dingwei/internal/m8
+# [github.com/zhangzongchu2019/dingwei/internal/m8]
+internal/m8/agent_disk_metrics_test.go:77:13: assignment copies lock value to copy: github.com/zhangzongchu2019/dingwei/internal/m8.sessionClient contains sync.Mutex
