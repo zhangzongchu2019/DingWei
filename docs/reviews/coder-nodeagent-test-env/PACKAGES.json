@@ -1,0 +1,322 @@
+[
+  {
+    "status": "?",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/dingwei-datad",
+    "detail": "[no test files]"
+  },
+  {
+    "status": "?",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/fcs",
+    "detail": "[no test files]"
+  },
+  {
+    "status": "?",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/mcs-demo",
+    "detail": "[no test files]"
+  },
+  {
+    "status": "?",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/mcsd",
+    "detail": "[no test files]"
+  },
+  {
+    "status": "?",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/identity/identitytest",
+    "detail": "[no test files]"
+  },
+  {
+    "status": "?",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/model",
+    "detail": "[no test files]"
+  },
+  {
+    "status": "?",
+    "package": "github.com/zhangzongchu2019/dingwei/specs/tools/handle-escape",
+    "detail": "[no test files]"
+  },
+  {
+    "status": "?",
+    "package": "github.com/zhangzongchu2019/dingwei/specs/tools/legacy-name",
+    "detail": "[no test files]"
+  },
+  {
+    "status": "?",
+    "package": "github.com/zhangzongchu2019/dingwei/specs/tools/pending-debt",
+    "detail": "[no test files]"
+  },
+  {
+    "status": "?",
+    "package": "github.com/zhangzongchu2019/dingwei/view-service",
+    "detail": "[no test files]"
+  },
+  {
+    "status": "?",
+    "package": "github.com/zhangzongchu2019/dingwei/view-service/console-hosted-page-fixture",
+    "detail": "[no test files]"
+  },
+  {
+    "status": "?",
+    "package": "github.com/zhangzongchu2019/dingwei/view-service/p1seed",
+    "detail": "[no test files]"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout",
+    "detail": "34.767s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/file-service",
+    "detail": "0.052s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/nodeagent",
+    "detail": "0.003s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "detail": "285.866s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+    "detail": "8.086s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/agentmetrics",
+    "detail": "0.005s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/bridge",
+    "detail": "0.002s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/bus",
+    "detail": "0.765s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/clock",
+    "detail": "0.002s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/config",
+    "detail": "0.005s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/consolemux",
+    "detail": "11.116s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/coordination",
+    "detail": "0.246s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+    "detail": "0.870s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/evidence",
+    "detail": "0.705s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/fanout",
+    "detail": "99.393s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/fcs",
+    "detail": "0.903s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/feishu",
+    "detail": "0.007s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/filepolicy",
+    "detail": "0.005s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/fileservice",
+    "detail": "2.550s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/hosted",
+    "detail": "1035.760s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/identity",
+    "detail": "103.823s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/identity/httpapi",
+    "detail": "3.135s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/jcs",
+    "detail": "0.003s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/llm",
+    "detail": "0.004s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m5",
+    "detail": "2.195s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "detail": "109.024s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+    "detail": "0.323s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/dea",
+    "detail": "0.002s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/demo",
+    "detail": "0.275s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/dispatch",
+    "detail": "0.031s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver",
+    "detail": "0.036s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd",
+    "detail": "12.956s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/pool",
+    "detail": "0.152s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/rotation",
+    "detail": "0.030s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/route",
+    "detail": "0.002s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/nodeagent",
+    "detail": "7.693s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/nodegate",
+    "detail": "25.635s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+    "detail": "0.558s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/portal",
+    "detail": "0.234s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/redact",
+    "detail": "0.002s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/reminder",
+    "detail": "0.322s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/repo",
+    "detail": "6.128s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/router",
+    "detail": "0.001s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/schedule",
+    "detail": "0.845s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/scheduler",
+    "detail": "2.038s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/seatcapacity",
+    "detail": "0.001s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/secretbox",
+    "detail": "0.001s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+    "detail": "11.726s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store/migrate",
+    "detail": "75.301s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store/pgtest",
+    "detail": "16.750s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/version",
+    "detail": "0.002s"
+  },
+  {
+    "status": "ok",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/worker",
+    "detail": "2.090s"
+  }
+]

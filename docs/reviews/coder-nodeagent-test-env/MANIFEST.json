@@ -1,0 +1,107 @@
+[
+  {
+    "file": "COMBINED-NODEAGENT.json",
+    "bytes": 227,
+    "sha256": "282420f9d356a1f18517c2763b51e34a03aa28db018b443f17950875109814c8"
+  },
+  {
+    "file": "COMBINED-NODEAGENT.log",
+    "bytes": 67,
+    "sha256": "92dd2d03f3edf8f23e83267057513a0604b6361d32055ba192a2271ccd17c88d"
+  },
+  {
+    "file": "ENVIRONMENT.json",
+    "bytes": 245,
+    "sha256": "a9e88fd4f0c2d6eb1fa9b370172601f754d6bf911d3da01511d8448d9b9fae7c"
+  },
+  {
+    "file": "FULL-REPO.log",
+    "bytes": 4348,
+    "sha256": "57311c711218001b1141699572e9facd2b7e5efd4af2be90149773baf4b0b653"
+  },
+  {
+    "file": "FULL-REPO.rc",
+    "bytes": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  {
+    "file": "PACKAGES.json",
+    "bytes": 8051,
+    "sha256": "6f62d291347ea94ab9532c0023ce35a538929e45d5a6c11b3d9df0957ac5066a"
+  },
+  {
+    "file": "PEER-RECEIPT.json",
+    "bytes": 643,
+    "sha256": "e1159cd3c394f8837fe2fe6ea2ddf82f8e4c6bbd9c0189011321362a2020d3f8"
+  },
+  {
+    "file": "README.md",
+    "bytes": 3378,
+    "sha256": "2308914f55d743e3c69db13f61f613e0c8c5cbd6ee2863f0fdb96427723009a7"
+  },
+  {
+    "file": "RESULTS.json",
+    "bytes": 494,
+    "sha256": "438aea2903db8edcc4c4f0fb6e6658bdcdd4a1f6de06f36b4a54073cfc1c0a1a"
+  },
+  {
+    "file": "SOURCE-FREEZE.json",
+    "bytes": 80080,
+    "sha256": "bb40e6c112619f77ff03b0ea5fd1a60d569e86e744085379fcd67ce9a761137b"
+  },
+  {
+    "file": "VALIDATION.json",
+    "bytes": 592,
+    "sha256": "ff330ec02ead8cf0bec33fa9f7a4db26038449a2ea5300ddb8c073e6077e1f48"
+  },
+  {
+    "file": "umask-0000.log",
+    "bytes": 67,
+    "sha256": "a35cfa144de4d8108b57880987c9d978687508b25ff8a07169dbe5f29329a078"
+  },
+  {
+    "file": "umask-0002.log",
+    "bytes": 67,
+    "sha256": "741599e492ef3cf37135c06a47e87660ba4896947de5369b12e023b016601437"
+  },
+  {
+    "file": "umask-0022.log",
+    "bytes": 67,
+    "sha256": "3bccbc896ace1efef8269b054fdb81f963241981fb6b9d255106852cc041570b"
+  },
+  {
+    "file": "umask-0077.log",
+    "bytes": 67,
+    "sha256": "6099e586f09653e202f0a63975f3b7413fbda1b8a2c2061f68dd0aa2bb459180"
+  },
+  {
+    "file": "withdrawal-RESULTS.json",
+    "bytes": 404,
+    "sha256": "9e13178b2e010b966d022e2f58db2b1719b063b128bfd8c44c3b068e385dc8bc"
+  },
+  {
+    "file": "withdrawal-hard-root-chmod.log",
+    "bytes": 206,
+    "sha256": "03f56297127469ebca4aa10b449ff658e9edb50022f59692d81dc5ac39b8c7a9"
+  },
+  {
+    "file": "withdrawal-production-guard.json",
+    "bytes": 28,
+    "sha256": "bc962175502a0187fdf7d1672130f7d6114c31dd86ba92a258059ca4bc67efa1"
+  },
+  {
+    "file": "withdrawal-production-guard.log",
+    "bytes": 208,
+    "sha256": "531157407327d4eff9f832f099d2f8f329686cc5e1a98ebc072ddf4bc03dbdd2"
+  },
+  {
+    "file": "withdrawal-setup-project-id.log",
+    "bytes": 536,
+    "sha256": "07d16d953826cf5e77aef3010ff32c34555a50514443c0c3a4bbe8e49f0b4847"
+  },
+  {
+    "file": "withdrawal-soft-root-chmod.log",
+    "bytes": 226,
+    "sha256": "bc6f2d1d104e44bad1718d33f7915572f2c0a6b5c848277607b9d345ee0bf671"
+  }
+]

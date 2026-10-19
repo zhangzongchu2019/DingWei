@@ -1,0 +1,20 @@
+[
+  {
+    "case": "soft-root-chmod",
+    "rc": 1,
+    "marker": "soft seat root must be a protected directory",
+    "expected_red": true
+  },
+  {
+    "case": "hard-root-chmod",
+    "rc": 1,
+    "marker": "soft seat root must be a protected directory",
+    "expected_red": true
+  },
+  {
+    "case": "setup-project-id",
+    "rc": 1,
+    "marker": "LIMIT_FAILURE_NOT_REACHED",
+    "expected_red": true
+  }
+]
