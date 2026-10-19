@@ -42,7 +42,12 @@ type User struct {
 	CreatedAt          time.Time
 }
 
-func (u User) UserIDLC() string    { return Lower(u.UserID) }
+func (u User) UserIDLC() string { return Lower(u.UserID) }
+
+// promoteAuditDetail promote-admin 审计的 detail：原类型与新类型（不含任何口令或令牌）。
+func promoteAuditDetail(old UserType) string {
+	return "old_type=" + string(old) + " new_type=" + string(UserPlatformAdmin)
+}
 func (u User) ShortNameLC() string { return Lower(u.ShortName) }
 
 // Identity 一个外部渠道身份。本版 Provider 只有 "feishu"，Subject 为发信人 open_id。

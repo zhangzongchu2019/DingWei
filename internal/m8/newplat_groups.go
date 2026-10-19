@@ -82,7 +82,7 @@ func (h *Hub) npGroupView(info identity.GroupInfo) npGroupView {
 }
 
 // groupNameInvalidText 编组名不合规的提示；与页面 GROUP_NAME_RULE_TEXT 逐字相同（console_group_name_text_test.go 钉住）。
-const groupNameInvalidText = "编组名只能用 1～8 位字母或数字（不含空格、连字符、符号）"
+const groupNameInvalidText = "编组名只能用 1～24 个字母、数字或下划线（可用中文、日文、韩文；不含空格、连字符、点号及其他符号）"
 
 func writeGroupError(w http.ResponseWriter, status int, code, message string) {
 	w.Header().Set("Content-Type", "application/json")

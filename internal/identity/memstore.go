@@ -50,6 +50,19 @@ func NewMemStore() *MemStore {
 
 var _ Store = (*MemStore)(nil)
 
+// CountAudit 数某动作对某目标的审计行（测试用，满足 identitytest.AuditCounter）。
+func (m *MemStore) CountAudit(_ context.Context, action, target string) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	n := 0
+	for _, e := range m.audit {
+		if e.Action == action && e.Target == Lower(target) {
+			n++
+		}
+	}
+	return n, nil
+}
+
 // AuditLog 返回审计副本（测试用）。
 func (m *MemStore) AuditLog() []AuditEvent {
 	m.mu.Lock()
@@ -161,6 +174,25 @@ func (m *MemStore) ResetPassword(_ context.Context, userIDLC, hash string, now t
 		}
 	}
 	return nil
+}
+
+func (m *MemStore) PromoteToPlatformAdmin(_ context.Context, userIDLC, actor, action string, now time.Time) (UserType, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	u, ok := m.users[Lower(userIDLC)]
+	if !ok {
+		return "", ErrNotFound
+	}
+	if u.State != UserActive {
+		return "", ErrUserNotActive
+	}
+	if u.Type == UserPlatformAdmin {
+		return "", ErrAlreadyPlatformAdmin
+	}
+	old := u.Type
+	u.Type = UserPlatformAdmin
+	m.audit = append(m.audit, AuditEvent{Actor: actor, Action: action, Target: Lower(userIDLC), Detail: promoteAuditDetail(old), At: now})
+	return old, nil
 }
 
 func (m *MemStore) ResolveIdentity(_ context.Context, ident Identity) (*User, error) {

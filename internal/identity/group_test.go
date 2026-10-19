@@ -24,7 +24,12 @@ func (f *fixture) hosted(t *testing.T, owner, name string) *identity.Agent {
 func TestValidGroupName(t *testing.T) {
 	for name, want := range map[string]bool{
 		"开发组": true, "a": true, "Dev1": true, "八个字八个字八个": true, "Ⅳ组": true,
-		"": false, "九个字九个字九个字": false, " dev": false, "dev ": false, "de-v": false, "de v": false, "组.一": false,
+		"": false, "二十五个字二十五个字二十五个字二十五个字二十五个字": false, " dev": false, "dev ": false, "de-v": false, "de v": false, "组.一": false,
+		// R7：1～24 个码点，字母／数字／下划线，至少一个字母或数字
+		"かな": true, "カタカナ": true, "한국어팀": true, "dev_team": true, "_a": true, "a_": true, "九个字九个字九个字": true,
+		"二十四个字二十四个字二十四个字二十四个字二十四个": true, "abcdefghijklmnopqrstuvwx": true, "abcdefghijklmnopqrstuvwxy": false,
+		"\U00020000": true, strings.Repeat("\U00020000", 24): true, strings.Repeat("\U00020000", 25): false,
+		"_": false, "___": false, "a b": false, "a-b": false, "a.b": false, "a@b": false, "a/b": false, "a\u3000b": false,
 	} {
 		if got := identity.ValidGroupName(name); got != want {
 			t.Errorf("ValidGroupName(%q) = %v, want %v", name, got, want)
@@ -36,7 +41,7 @@ func TestValidGroupName(t *testing.T) {
 func TestCreateGroupCodeAndValidation(t *testing.T) {
 	f := newFixture(t)
 	z1, z2 := f.hosted(t, "zzc", "Zed"), f.hosted(t, "zzc", "Zed2")
-	if _, err := f.svc.CreateGroup(bg, "zzc", z1.ID, "九个字九个字九个字"); !errors.Is(err, identity.ErrBadRequest) {
+	if _, err := f.svc.CreateGroup(bg, "zzc", z1.ID, "二十五个字二十五个字二十五个字二十五个字二十五个字"); !errors.Is(err, identity.ErrBadRequest) {
 		t.Fatalf("bad name: %v", err)
 	}
 	// 限时：取组码卡死（拒绝采样上限溢出）时给出断言失败，而不是等 go test 总时限 panic。
@@ -78,11 +83,11 @@ func TestCreateGroupCodeAndValidation(t *testing.T) {
 	if got, _ := f.svc.SuggestGroupNames(bg, "开发组", 2); strings.Join(got, ",") != "开发组1,开发组2" {
 		t.Fatalf("suggestions %v", got)
 	}
-	if _, err := f.svc.CreateGroup(bg, "zzc", z2.ID, "八个字八个字八1"); err != nil {
+	if _, err := f.svc.CreateGroup(bg, "zzc", z2.ID, "二十四个字二十四个字二十四个字二十四个字二十四1"); err != nil {
 		t.Fatal(err)
 	}
 	// 截断后接数字，避开已有的
-	if got, _ := f.svc.SuggestGroupNames(bg, "八个字八个字八个", 2); strings.Join(got, ",") != "八个字八个字八2,八个字八个字八3" {
+	if got, _ := f.svc.SuggestGroupNames(bg, "二十四个字二十四个字二十四个字二十四个字二十四个", 2); strings.Join(got, ",") != "二十四个字二十四个字二十四个字二十四个字二十四2,二十四个字二十四个字二十四个字二十四个字二十四3" {
 		t.Fatalf("truncated suggestions %v", got)
 	}
 }
@@ -157,7 +162,7 @@ func TestListVisibleGroups(t *testing.T) {
 
 var tgSeq atomic.Int64
 
-// tg 测试用的新组名：每次不同（组名全局唯一、1～8 个字母或数字）。批准与托管新建都必须带编组（GroupAllowed）。
+// tg 测试用的新组名：每次不同（组名全局唯一、1～24 个字母、数字或下划线）。批准与托管新建都必须带编组（GroupAllowed）。
 func tg() string { return fmt.Sprintf("t%d", tgSeq.Add(1)) }
 
 var fixtureGroup = regexp.MustCompile(`^t[0-9]+$`)

@@ -36,16 +36,17 @@ function mutate(from, to) {
   html = html.replace(from, to);
 }
 // 第一版:自备审核区默认开(业主实测关着则入网批准走不通),托管区默认关(第二版)——本件按页面的默认值测,不打开任何开关。
-const MUTATIONS = ['mutation-anchor-selftest', 'seal-review', 'hosted-on-by-default', 'new-group-limit-9', 'group-closed-unmapped', 'new-group-ascii-only', 'group-still-required', 'new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor', 'restore-spec-grant-entry'];
+const MUTATIONS = ['mutation-anchor-selftest', 'seal-review', 'hosted-on-by-default', 'new-group-limit-25', 'group-closed-unmapped', 'new-group-ascii-only', 'group-still-required', 'new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor', 'restore-spec-grant-entry', 'new-group-underscore-only'];
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'seal-review') mutate('var FEATURE_SELFHOST_REVIEW=true;', 'var FEATURE_SELFHOST_REVIEW=false;');
 if (mutation === 'hosted-on-by-default') mutate("var FEATURE_HOSTED='{{FEATURE_HOSTED}}'==='true';", 'var FEATURE_HOSTED=true;');
 if (mutation === 'group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
-if (mutation === 'new-group-limit-9') mutate('NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,8}$/u,', 'NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,9}$/u,');
-if (mutation === 'new-group-ascii-only') mutate('NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,8}$/u,', 'NEW_GROUP_RE=/^[A-Za-z0-9]{1,8}$/,');
+if (mutation === 'new-group-limit-25') mutate('NEW_GROUP_RE=/^(?=.*[\\p{L}\\p{N}])[\\p{L}\\p{N}_]{1,24}$/u,', 'NEW_GROUP_RE=/^(?=.*[\\p{L}\\p{N}])[\\p{L}\\p{N}_]{1,25}$/u,');
+if (mutation === 'new-group-underscore-only') mutate('NEW_GROUP_RE=/^(?=.*[\\p{L}\\p{N}])[\\p{L}\\p{N}_]{1,24}$/u,', 'NEW_GROUP_RE=/^[\\p{L}\\p{N}_]{1,24}$/u,');
+if (mutation === 'new-group-ascii-only') mutate('NEW_GROUP_RE=/^(?=.*[\\p{L}\\p{N}])[\\p{L}\\p{N}_]{1,24}$/u,', 'NEW_GROUP_RE=/^(?=.*[A-Za-z0-9])[A-Za-z0-9_]{1,24}$/,');
 if (mutation === 'group-closed-unmapped') mutate("group_closed:'该编组已关闭添加,请换一个编组或新建',", '');
-if (mutation === 'new-group-no-check') mutate("if(!n)return {error:'请填写新编组的名字(1～8 位字母或数字)'};", '');
+if (mutation === 'new-group-no-check') mutate("if(!n)return {error:'请填写新编组的名字(1～24 个字母、数字或下划线)'};", '');
 if (mutation === 'new-group-no-regex') mutate("if(!NEW_GROUP_RE.test(n))return {error:GROUP_NAME_RULE_TEXT};", '');
 if (mutation === 'no-stale-guard') mutate('if(generation!==enrollGeneration)return null;', '');
 if (mutation === 'keep-inputs') mutate("if(!gone){enrollFeedback('enrollFeedback',res.text);return;}", "if(!gone){enrollFeedback('enrollFeedback',res.text);enrollCloseEditor();return;}");
@@ -370,12 +371,14 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#enrollApprove').click();
       assert.match(await feedbackText(), /请填写新编组的名字/);
       assert.strictEqual(writes.length, before, 'selecting "new group" without a name must send nothing');
-      for (const bad of ['a b', 'toolong99', 'a-b', '组 名', '九个字九个字九个字']) {   // 末项:9 个汉字,按字符数计超过 8 位
-        await page.locator('#enrollNewGroup').fill(bad);   // fill 不受 maxlength 约束:键入会被截成 8 位,这里要测的是脚本化/粘贴写入的越界值
+      for (const bad of ['a b', 'toolongtoolongtoolong9999', 'a-b', 'a.b', '___', '组 名', '二十五个字二十五个字二十五个字二十五个字二十五个字']) {   // 25 个字符/25 个汉字超过 24;只有下划线不合法
+        await page.locator('#enrollNewGroup').fill(bad);   // fill 直接写值:这里要测的是脚本化/粘贴写入的越界值
         await page.locator('#enrollApprove').click();
-        assert.match(await feedbackText(), /1～8 位字母或数字/, `bad name ${JSON.stringify(bad)}`);
+        assert.match(await feedbackText(), /1～24 个字母、数字或下划线/, `bad name ${JSON.stringify(bad)}`);
         assert.strictEqual(writes.length, before, `bad name ${JSON.stringify(bad)} must send nothing`);
       }
+      // R7 新规则下合法:下划线、日文、韩文、24 个汉字、24 个 ASCII(页面预检与 Hub 同一规则,不得更严)
+      assert.deepStrictEqual(await page.evaluate(() => ['dev_team', 'かなカナ', '한국어팀', '二十四个字二十四个字二十四个字二十四个字二十四个', 'abcdefghijklmnopqrstuvwx', '\u{20000}'.repeat(24)].map((v) => NEW_GROUP_RE.test(v))), [true, true, true, true, true, true]);
       await page.locator('#enrollNewGroup').fill(''); await page.locator('#enrollNewGroup').click(); await page.keyboard.type('Newteam');
       await page.locator('#enrollApprove').click();
       await page.locator('#enrollEditor').waitFor({ state: 'hidden' });

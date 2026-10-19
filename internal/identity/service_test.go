@@ -307,7 +307,7 @@ func TestApproveGroupOptional(t *testing.T) {
 	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", "team-b"); !errors.Is(err, identity.ErrGroupNotFound) {
 		t.Fatalf("missing group: %v, want ErrGroupNotFound", err)
 	}
-	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Worker", "九个字九个字九个字"); !errors.Is(err, identity.ErrGroupNameInvalid) {
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Worker", "二十五个字二十五个字二十五个字二十五个字二十五个字"); !errors.Is(err, identity.ErrGroupNameInvalid) {
 		t.Fatalf("bad new group name: %v, want ErrGroupNameInvalid", err)
 	}
 	if list, _ := f.svc.ListPending(bg, "zzc"); len(list) != 1 {

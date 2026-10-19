@@ -28,8 +28,24 @@ func pgFactory(t *testing.T) identitytest.Factory {
 				st.Fatalf("apply schema: %v\n%s", err, ddl)
 			}
 		}
-		return identity.NewPGStore(pool)
+		return pgAuditStore{PGStore: identity.NewPGStore(pool), pool: pool, tc: tc}
 	}
+}
+
+// pgAuditStore 契约用包装：给 PG 实现补 identitytest.AuditCounter（直接查 audit_log），不进生产代码。
+type pgAuditStore struct {
+	*identity.PGStore
+	pool *repo.Pool
+	tc   repo.AccessCtx
+}
+
+func (p pgAuditStore) CountAudit(ctx context.Context, action, target string) (int, error) {
+	row, err := p.pool.QueryRow(ctx, p.tc, `SELECT count(*) FROM audit_log WHERE action = $1 AND target = $2`, action, identity.Lower(target))
+	if err != nil {
+		return 0, err
+	}
+	var n int
+	return n, row.Scan(&n)
 }
 
 // pgSchemaFactory 每次调用给一个空的独立 schema 上的连接池（未建表）；opts 原样交给该池的 repo.OpenPG。

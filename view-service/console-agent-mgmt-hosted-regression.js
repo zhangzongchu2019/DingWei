@@ -294,7 +294,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.match(await page.locator('#hostedFeedback').textContent(), /请填写新编组的名字/);
       assert.strictEqual(writes.length, before, 'no name ⇒ nothing sent');
       await page.locator('#hostedNewGroup').fill('a b'); await page.locator('#hostedCreateBtn').click();
-      assert.match(await page.locator('#hostedFeedback').textContent(), /1～8 位字母或数字/);
+      assert.match(await page.locator('#hostedFeedback').textContent(), /1～24 个字母、数字或下划线/);
       assert.strictEqual(writes.length, before, 'malformed name ⇒ nothing sent');
       await page.locator('#hostedNewGroup').fill(''); await page.locator('#hostedNewGroup').click(); await page.keyboard.type('Newteam');
       await page.locator('#hostedCreateBtn').click();

@@ -54,7 +54,7 @@ func TestNewPlatformGroupCreateNormalizesAndExplainsInChinese(t *testing.T) {
 		t.Fatal("落库应为 test")
 	}
 	invalid := `{"error":"group_name_invalid","message":"` + groupNameInvalidText + `"}`
-	for _, name := range []string{"te st", "test-1", "九个字九个字九个字", "\u200b"} {
+	for _, name := range []string{"te st", "test-1", "二十五个字二十五个字二十五个字二十五个字二十五个字", "\u200b"} {
 		if st, body := post(`{"agent_id":"` + ag.ID + `","short_name":"` + name + `"}`); st != 400 || body != invalid {
 			t.Fatalf("%q: %d %s", name, st, body)
 		}
