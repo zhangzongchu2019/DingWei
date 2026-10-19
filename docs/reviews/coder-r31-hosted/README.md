@@ -1,6 +1,6 @@
 # R31 R1–R5 作者候选证据
 
-范围：`review/coder/r31-hosted`，基线 `3d99db2bf2dcff81f8060bf427f48a0790f0f775`。设计锚 `80ecff8a93cedecba3a459fcca2836eebd46f846`，审查席报告 `cd2d79ff` 为设计 PASS。生产源码冻结在 `71d14a60b12973223916dbf7061e7e0c4daa62c4`／tree `52005b5923bdb9c1f208aef43d6f794f66393241`；后继仅补测试、接线说明及证据，最终交审 commit/tree 以交件信为准。
+范围：`review/coder/r31-hosted`，基线 `3d99db2bf2dcff81f8060bf427f48a0790f0f775`。设计锚 `80ecff8a93cedecba3a459fcca2836eebd46f846`，审查席报告 `cd2d79ff` 为设计 PASS。当前生产源码冻结在 `d24e4e6fb1f2e103ca5fd784d38817bd601b12b3`／tree `9f9f459a7a51687848c6dfae007e2aeef8b51d02`；其后只补证据。初轮候选1b7c5d76已撤锚：旧会话表曾在空IP更新时保留历史IP，d24e4e6f显式清除并遮盖历史目录读数。最终受审commit/tree以替代交件信为准。
 
 这是作者本地验证，不是独立审查 PASS，也不证明 43、dw123 或真实托管席位已验收。未操作宿主、未部署、未登记生产节点。R6／R7 不在本分支。
 
@@ -23,7 +23,7 @@
 | A11 | 同格分别令 CPU／内存／磁盘不足和测量未知，自动选点跳过，显式节点拒绝；`TestCapacity*` 验固定原因白名单、模型优先级、不泄露内部错误。 |
 | A12 | Hub hard／soft 共用能力检查；旧 hard 缺快照拒新增。`TestR31HardWiringUnknownCapacityAndNoSoftEnforcer` 核未知拒绝、4 席上限、既有席启动与 soft enforcer 不启用；`TestR31HardCapacitySamplerForeignLoadOwnershipAndUnknown` 用真实共用采样器＋假 Engine 核占用、错误与恢复；`TestR31HardInventoryTracksLoginWriters` 核登录 writer 身份。完整 nodeagent 回归同时覆盖 soft 模式。 |
 | A13 | `internal/identity/httpapi/TestR31AgentListHostTypeAndBearerPrivacy` 核自有 IP／类型；既有 hosted overlay API 与托管浏览器行断言核类型／node-a。`TestR31SourceRecordedOnlyAfterAdmissionAndRetained` 走真实本机 WS 核连接成功写入、失败不改、断线保留与重连刷新。 |
-| A14 | `internal/identity/TestR31ConnectionPrivacyPGAndMemory` 与上述 API 格：本人／active 管理员读取，其他用户／失效身份／Agent bearer 不得见；IP 不进通用 Agent 对象或会话目录。 |
+| A14 | `internal/identity/TestR31ConnectionPrivacyPGAndMemory` 与上述 API 格：本人／active 管理员读取，其他用户／失效身份／Agent bearer 不得见；IP 不进通用 Agent 对象或会话目录；旧u_凭据端点即使尚未重连也在读取时遮盖历史值，重连带服务端私密来源标志清除原始旧值。传统非凭据端点的断线／空更新保留语义由存储回归固定。 |
 | A15 | `internal/m8/TestR31AgentSourceIPTrustBoundary`：显式开关、回环 TCP 对端、IPv4／IPv6、非法／重复／列表头、X-Forwarded-For 伪造。生产 nginx 只采用 prodops 02:02Z 的只读报告，P4 前仍须复核，不能拿本地测试替代现场证据。 |
 
 ## 迁移与兼容
@@ -36,7 +36,7 @@
 
 ## 撤修与复跑
 
-`tools/r31-hosted-checks/mutations.py` 使用 Go overlay，不改工作树，删除外部测试 PG DSN，强制自建临时 PG／严格失败；每格同时要求 rc=1、指定测试失败、指定业务断言见证。编译错误、panic、超时、跳过或无关断言都不算过。15 格包括 active、管理员角色、节点模型过滤、hard 容量、pending、最终准入、哈希、注册审计、active 编组成员、IP 权限、可信对端、统一账本、登录 writer、PATCH 撤权锁及浏览器凭据清除。格子明细与源码摘要在 mutations/mutations.json；恢复后的定向正对照另有日志。
+`tools/r31-hosted-checks/mutations.py` 使用 Go overlay，不改工作树，删除外部测试 PG DSN，强制自建临时 PG／严格失败；每格同时要求 rc=1、指定测试失败、指定业务断言见证。编译错误、panic、超时、跳过或无关断言都不算过。18 格包括 active、管理员角色、节点模型过滤、hard 容量、pending、最终准入、哈希、注册审计、active 编组成员、IP 权限、可信对端、统一账本、登录 writer、PATCH 撤权锁、浏览器凭据清除，以及历史IP读遮盖、写清除和真实凭据登记标志。格子明细与源码摘要在 mutations/mutations.json；恢复后的定向正对照另有日志。
 
 ```sh
 TZ=UTC HUB_TEST_PG_STRICT=1 HUB_TEST_PG_EMBEDDED=1 HUB_TEST_PG_SKIP_OK=0 \
@@ -49,6 +49,12 @@ NODE_PATH=/path/to/playwright/node_modules PW_CHANNEL=chrome \
 ```
 
 旧二进制兼容格须先独立从精确 R30 基线构建，再显式指定 `R31_R30_BINARY`；缺少时该单格 SKIP，不能算兼容通过。正常 m8 全包有历史环境开关跳过的外部环境格；规范跨运行时 shell 门另外启用真实本机 Hub／PG 场景。
+
+## 隐私后继与验证归属
+
+d24e4e6f只改变内部SessionEndpoint写入意图与SQLite通用会话IP处理，不新增数据库列或迁移、不改变HTTP接口。`PrivateClientIP`是服务端传递且不序列化的标志。读取时识别u_这个由AgentKeyID生成的凭据所有者命名空间仅用于遮盖，绝不据此授予权限。旧原始IP不搬入新的私密IP列；新的可信来源仍须实际认证登记。
+
+`TestR31PrivateSessionSourceClearsHistoricalIPAndPreservesLegacy`直接核历史原始值清除和传统端点保留；真实WS格先放入旧离线端点，再验证目录遮盖及登记意图。修复后重跑store／m8完整包、cmd完整包、全仓构建、规范构建门、18格撤修及八包R31正对照。hosted／identity／nodeagent／迁移生产代码与初轮71d14a60逐字相同，其完整包结果继续归属于那些未变的代码；新源码摘要和精确执行归属见CHECKS。
 
 ## 既有基线与测试变更限域
 

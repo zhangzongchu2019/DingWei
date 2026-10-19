@@ -1,0 +1,6 @@
+=== RUN   TestR31PrivateSessionSourceClearsHistoricalIPAndPreservesLegacy
+    r31_session_source_test.go:21: historical credential source visible before reconnect
+--- FAIL: TestR31PrivateSessionSourceClearsHistoricalIPAndPreservesLegacy (0.09s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.092s
+FAIL

@@ -1,6 +1,6 @@
 {
-  "started": "2026-10-19T03:12:34.217224+00:00",
-  "ended": "2026-10-19T03:13:08.416539+00:00",
+  "started": "2026-10-19T03:23:47.988810+00:00",
+  "ended": "2026-10-19T03:24:27.585060+00:00",
   "host": "VM-4-12-ubuntu",
   "uid": 1001,
   "scope": "local inert Go overlays and pgtest-owned temporary PostgreSQL only; no deployment",
@@ -13,8 +13,8 @@
       "witness": "hosted startup bypassed unified migration ledger",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:12:34.218400+00:00",
-      "ended": "2026-10-19T03:12:39.449853+00:00",
+      "started": "2026-10-19T03:23:47.989886+00:00",
+      "ended": "2026-10-19T03:23:53.314478+00:00",
       "log": "unified-migration-ledger.log"
     },
     {
@@ -25,8 +25,8 @@
       "witness": "tracked login rejected",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:12:34.218562+00:00",
-      "ended": "2026-10-19T03:12:34.552276+00:00",
+      "started": "2026-10-19T03:23:47.990053+00:00",
+      "ended": "2026-10-19T03:23:48.307096+00:00",
       "log": "hard-login-inventory.log"
     },
     {
@@ -37,9 +37,45 @@
       "witness": "state patch restored revoked access",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:12:34.552448+00:00",
-      "ended": "2026-10-19T03:12:39.882315+00:00",
+      "started": "2026-10-19T03:23:48.307288+00:00",
+      "ended": "2026-10-19T03:23:53.714404+00:00",
       "log": "patch-revocation-lock.log"
+    },
+    {
+      "id": "credential-private-intent",
+      "source": "internal/m8/hub.go",
+      "original_sha256": "09944703864101c0b96c6bcdb619d737fb90d0a3878722482abb25ad0d92bd76",
+      "test": "TestR31SourceRecordedOnlyAfterAdmissionAndRetained",
+      "witness": "credential admission omitted private IP clear intent",
+      "rc": 1,
+      "passed": true,
+      "started": "2026-10-19T03:23:53.314642+00:00",
+      "ended": "2026-10-19T03:23:58.833748+00:00",
+      "log": "credential-private-intent.log"
+    },
+    {
+      "id": "historical-ip-read-redaction",
+      "source": "internal/store/sqlite.go",
+      "original_sha256": "85b03c8c1c34e9b2dd276e697ac1a5a4f20ad390782dc38623c05f29c401f0ee",
+      "test": "TestR31PrivateSessionSourceClearsHistoricalIPAndPreservesLegacy",
+      "witness": "historical credential source visible before reconnect",
+      "rc": 1,
+      "passed": true,
+      "started": "2026-10-19T03:23:53.714568+00:00",
+      "ended": "2026-10-19T03:23:54.855966+00:00",
+      "log": "historical-ip-read-redaction.log"
+    },
+    {
+      "id": "historical-ip-write-clear",
+      "source": "internal/store/sqlite.go",
+      "original_sha256": "85b03c8c1c34e9b2dd276e697ac1a5a4f20ad390782dc38623c05f29c401f0ee",
+      "test": "TestR31PrivateSessionSourceClearsHistoricalIPAndPreservesLegacy",
+      "witness": "credential reconnect retained historical raw IP",
+      "rc": 1,
+      "passed": true,
+      "started": "2026-10-19T03:23:54.856656+00:00",
+      "ended": "2026-10-19T03:23:56.015290+00:00",
+      "log": "historical-ip-write-clear.log"
     },
     {
       "id": "active-human",
@@ -49,8 +85,8 @@
       "witness": "actor=disabled allowed=true want=false",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:12:39.450016+00:00",
-      "ended": "2026-10-19T03:12:41.561589+00:00",
+      "started": "2026-10-19T03:23:56.015676+00:00",
+      "ended": "2026-10-19T03:23:58.250805+00:00",
       "log": "active-human.log"
     },
     {
@@ -61,8 +97,8 @@
       "witness": "nonadmin fixture-manager: 201",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:12:39.882472+00:00",
-      "ended": "2026-10-19T03:12:45.998880+00:00",
+      "started": "2026-10-19T03:23:58.250949+00:00",
+      "ended": "2026-10-19T03:24:04.304748+00:00",
       "log": "admin-role.log"
     },
     {
@@ -73,8 +109,8 @@
       "witness": "hidden node/model disclosure",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:12:41.561759+00:00",
-      "ended": "2026-10-19T03:12:46.608726+00:00",
+      "started": "2026-10-19T03:23:58.834064+00:00",
+      "ended": "2026-10-19T03:24:04.109414+00:00",
       "log": "hidden-node-models.log"
     },
     {
@@ -85,8 +121,8 @@
       "witness": "did not skip cpu",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:12:45.999094+00:00",
-      "ended": "2026-10-19T03:12:51.078395+00:00",
+      "started": "2026-10-19T03:24:04.109560+00:00",
+      "ended": "2026-10-19T03:24:09.463667+00:00",
       "log": "hard-resource-capacity.log"
     },
     {
@@ -97,8 +133,8 @@
       "witness": "expected two seats, admitted 10",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:12:46.608927+00:00",
-      "ended": "2026-10-19T03:12:51.861893+00:00",
+      "started": "2026-10-19T03:24:04.304893+00:00",
+      "ended": "2026-10-19T03:24:09.632768+00:00",
       "log": "pending-reservations.log"
     },
     {
@@ -109,8 +145,8 @@
       "witness": "disabled node admitted seat",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:12:51.078576+00:00",
-      "ended": "2026-10-19T03:12:56.249547+00:00",
+      "started": "2026-10-19T03:24:09.464276+00:00",
+      "ended": "2026-10-19T03:24:14.665575+00:00",
       "log": "final-admission.log"
     },
     {
@@ -121,8 +157,8 @@
       "witness": "plaintext or invalid credential hash",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:12:51.862100+00:00",
-      "ended": "2026-10-19T03:12:56.938950+00:00",
+      "started": "2026-10-19T03:24:09.632953+00:00",
+      "ended": "2026-10-19T03:24:14.831324+00:00",
       "log": "credential-hashing.log"
     },
     {
@@ -133,8 +169,8 @@
       "witness": "registration ignored audit failure",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:12:56.249727+00:00",
-      "ended": "2026-10-19T03:13:01.542605+00:00",
+      "started": "2026-10-19T03:24:14.665756+00:00",
+      "ended": "2026-10-19T03:24:19.832038+00:00",
       "log": "registration-atomic-audit.log"
     },
     {
@@ -145,8 +181,8 @@
       "witness": "access member/nd_restricted got=true want=false",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:12:56.939130+00:00",
-      "ended": "2026-10-19T03:13:02.143746+00:00",
+      "started": "2026-10-19T03:24:14.831507+00:00",
+      "ended": "2026-10-19T03:24:20.020359+00:00",
       "log": "active-group-agent.log"
     },
     {
@@ -157,8 +193,8 @@
       "witness": "IP disclosed to other",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:13:01.543661+00:00",
-      "ended": "2026-10-19T03:13:05.738358+00:00",
+      "started": "2026-10-19T03:24:19.832182+00:00",
+      "ended": "2026-10-19T03:24:23.393223+00:00",
       "log": "ip-owner-privacy.log"
     },
     {
@@ -169,8 +205,8 @@
       "witness": "got \"198.51.100.2\" want \"203.0.113.9\"",
       "rc": 1,
       "passed": true,
-      "started": "2026-10-19T03:13:02.145306+00:00",
-      "ended": "2026-10-19T03:13:07.149308+00:00",
+      "started": "2026-10-19T03:24:20.020512+00:00",
+      "ended": "2026-10-19T03:24:24.981149+00:00",
       "log": "ip-trusted-peer.log"
     },
     {

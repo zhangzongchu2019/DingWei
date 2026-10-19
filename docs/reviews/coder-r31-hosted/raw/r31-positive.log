@@ -1,7 +1,8 @@
-ok  	github.com/zhangzongchu2019/dingwei/internal/identity	3.844s
-ok  	github.com/zhangzongchu2019/dingwei/internal/identity/httpapi	0.004s
-ok  	github.com/zhangzongchu2019/dingwei/internal/store/migrate	12.088s
-ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.067s
-ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.152s
-ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	8.268s
-ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	36.188s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.095s
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity	3.763s
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity/httpapi	0.005s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/migrate	11.115s
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.051s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.137s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	7.910s
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	33.614s

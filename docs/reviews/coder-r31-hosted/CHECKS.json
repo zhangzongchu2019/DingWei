@@ -1,7 +1,7 @@
 {
-  "recorded_utc": "2026-10-19T03:19:07.886624+00:00",
+  "recorded_utc": "2026-10-19T03:27:33Z",
   "base": "3d99db2bf2dcff81f8060bf427f48a0790f0f775",
-  "implementation_anchor": "71d14a60b12973223916dbf7061e7e0c4daa62c4",
+  "implementation_anchor": "d24e4e6fb1f2e103ca5fd784d38817bd601b12b3",
   "production_bytes_equal_to_anchor": true,
   "environment": {
     "host": "VM-4-12-ubuntu",
@@ -34,14 +34,17 @@
       "log": "raw/nodeagent-full.log"
     },
     {
-      "command": "go test ./internal/m8 -count=1 -timeout 10m",
+      "command": "go test ./internal/store ./internal/m8 -count=1 -timeout 10m",
       "rc": 0,
-      "log": "raw/m8-full.log"
+      "log": "raw/m8-full.log",
+      "store_seconds": 8.939,
+      "m8_seconds": 101.365
     },
     {
       "command": "R31_R30_BINARY=<independently-built-R30> go test ./cmd/workpulse -timeout 20m -count=1",
       "rc": 0,
-      "log": "raw/cmd-full.log"
+      "log": "raw/cmd-full.log",
+      "elapsed_seconds": 170.876
     },
     {
       "command": "go test ./internal/hosted -timeout 30m -count=1",
@@ -50,10 +53,10 @@
       "elapsed_seconds": 805.858
     },
     {
-      "command": "go test ./internal/identity ./internal/identity/httpapi ./internal/store/migrate ./internal/nodeagent ./internal/m8 ./cmd/workpulse ./internal/hosted -run ^TestR31 -count=1 -timeout 10m",
+      "command": "go test ./internal/store ./internal/identity ./internal/identity/httpapi ./internal/store/migrate ./internal/nodeagent ./internal/m8 ./cmd/workpulse ./internal/hosted -run ^TestR31 -count=1 -timeout 10m",
       "rc": 0,
       "log": "raw/r31-positive.log",
-      "note": "later WS/admission and audit assertions separately confirmed by raw/source-ws-positive.log, patch-order-positive.log, audit-positive.log"
+      "note": "post-privacy-fix eight-package positive controls; historical source admission and raw store clearing included"
     },
     {
       "command": "scripts/run-build-tests.sh (pinned isolated Python PATH, TZ=UTC)",
@@ -78,7 +81,7 @@
       "log": "raw/dependency-gate.log"
     },
     {
-      "command": "go vet ./internal/hosted ./internal/identity/... ./internal/nodeagent ./internal/store/migrate ./cmd/workpulse",
+      "command": "go vet ./internal/store ./internal/model ./internal/hosted ./internal/identity/... ./internal/nodeagent ./internal/store/migrate ./cmd/workpulse",
       "rc": 0,
       "log": "raw/vet-changed.log"
     },
@@ -110,7 +113,7 @@
     {
       "command": "NODE_PATH=<playwright node_modules> PW_CHANNEL=chrome python3 tools/r31-hosted-checks/mutations.py --out <private-temp-dir> --jobs 2 --browser",
       "rc": 0,
-      "passed": 15,
+      "passed": 18,
       "failed": 0,
       "receipt": "mutations/mutations.json",
       "note": "all exact witnesses; restored positive controls in raw/r31-positive.log"
@@ -153,5 +156,15 @@
     "scope": "private temporary PG startup/read only; not safe live rollback approval"
   },
   "deployment": false,
-  "host43_operations": false
+  "host43_operations": false,
+  "implementation_tree": "9f9f459a7a51687848c6dfae007e2aeef8b51d02",
+  "withdrawn_candidate": "1b7c5d769acb23dda0a48f5ad09b0a3cdb355047",
+  "withdrawal_reason": "historical generic session client_ip retained on blank reconnect; source anchor d24 adds explicit credential clear intent and read redaction",
+  "unchanged_production_packages_from_71d14a60": [
+    "internal/hosted",
+    "internal/identity",
+    "internal/nodeagent",
+    "internal/store/migrate"
+  ],
+  "verification_attribution": "Initial full hosted/identity/nodeagent/migration results cover their unchanged production bytes; d24 delta validated with full store+m8/cmd, canonical checks, whole-repo build and restored positive controls."
 }

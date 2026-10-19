@@ -1,6 +1,6 @@
 === RUN   TestR31NodeGroupAccessAndRevocation
     r31_hosted_test.go:128: access member/nd_restricted got=true want=false err=<nil>
---- FAIL: TestR31NodeGroupAccessAndRevocation (3.78s)
+--- FAIL: TestR31NodeGroupAccessAndRevocation (3.79s)
 FAIL
-FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.783s
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	3.790s
 FAIL
