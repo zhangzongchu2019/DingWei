@@ -74,8 +74,8 @@ func TestAgentDiskRejectsStaleAndRelabeledSource(t *testing.T) {
 			env := diskEnvelope(time.Now())
 			switch mode {
 			case "old_connection":
-				copy := *c
-				h.sessionClients[c.keyID][c.sessionName] = &copy
+				replacement := &sessionClient{keyID: c.keyID, sessionName: c.sessionName, metricsAgentID: c.metricsAgentID, metricsGeneration: c.metricsGeneration}
+				h.sessionClients[c.keyID][c.sessionName] = replacement
 			case "shared_key":
 				c.metricsAgentID = ""
 			case "body_identity":
