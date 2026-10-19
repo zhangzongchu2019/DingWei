@@ -1,2 +1,5 @@
-# Isolated schema-validation tooling only; not a helper runtime dependency.
-jsonschema==4.26.0
+# Test tooling only. Provide --find-links with a prepared local wheelhouse.
+--no-index
+--require-hashes
+--only-binary=:all:
+-r requirements-schema.lock
