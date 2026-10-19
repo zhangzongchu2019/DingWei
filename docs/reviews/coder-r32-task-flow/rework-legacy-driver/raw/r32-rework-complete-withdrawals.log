@@ -1,0 +1,33 @@
+Preparing worktree (detached HEAD d23ed782)
+Updating files:  59% (2475/4126)Updating files:  60% (2476/4126)Updating files:  61% (2517/4126)Updating files:  62% (2559/4126)Updating files:  63% (2600/4126)Updating files:  64% (2641/4126)Updating files:  65% (2682/4126)Updating files:  66% (2724/4126)Updating files:  67% (2765/4126)Updating files:  68% (2806/4126)Updating files:  69% (2847/4126)Updating files:  70% (2889/4126)Updating files:  71% (2930/4126)Updating files:  72% (2971/4126)Updating files:  73% (3012/4126)Updating files:  74% (3054/4126)Updating files:  75% (3095/4126)Updating files:  76% (3136/4126)Updating files:  77% (3178/4126)Updating files:  78% (3219/4126)Updating files:  79% (3260/4126)Updating files:  80% (3301/4126)Updating files:  81% (3343/4126)Updating files:  82% (3384/4126)Updating files:  83% (3425/4126)Updating files:  84% (3466/4126)Updating files:  85% (3508/4126)Updating files:  86% (3549/4126)Updating files:  87% (3590/4126)Updating files:  88% (3631/4126)Updating files:  89% (3673/4126)Updating files:  90% (3714/4126)Updating files:  91% (3755/4126)Updating files:  92% (3796/4126)Updating files:  93% (3838/4126)Updating files:  94% (3879/4126)Updating files:  95% (3920/4126)Updating files:  96% (3961/4126)Updating files:  97% (4003/4126)Updating files:  98% (4044/4126)Updating files:  99% (4085/4126)Updating files: 100% (4126/4126)Updating files: 100% (4126/4126), done.
+distinct_agents: PASS
+own_task_writer: PASS
+dependency_done: PASS
+review_before_done: PASS
+developer_no_self_confirm: PASS
+remark_resets_confirmation: PASS
+precommit_pg_recheck: PASS
+outbox_atomicity: PASS
+current_group_membership: PASS
+readonly_pg_no_fallback: PASS
+background_reconciliation: PASS
+old_helper_capability_gate: PASS
+shared_spec_task_privacy: PASS
+notification_not_executable: PASS
+driver_ack_local_only: PASS
+board_five_second_refresh: PASS
+owner_confirmation_before_tasks: PASS
+candidate_precommit_pg_recheck: PASS
+pg_release_outcome_unknown: PASS
+http_503_outcome_unknown: PASS
+owner_explicit_done_reopen: PASS
+waiting_page_does_not_starve_delivery: PASS
+legacy_driver_state_fail_closed: PASS
+legacy_driver_current_actor: PASS
+legacy_driver_locked_snapshot: PASS
+main_list_current_actor: PASS
+store_list_current_actor: PASS
+store_list_state_fail_closed: PASS
+main_list_state_fail_closed: PASS
+main_list_current_state_fail_closed: PASS
+R32_WITHDRAWALS_OK count=30

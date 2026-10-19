@@ -1,0 +1,29 @@
+{
+  "baseline_candidate": "6754f7d343301d4743b641f8feee263bbccd1807",
+  "source_commit": "d23ed782c775febeaf1ca40c12700dff7a87ef47",
+  "helper_files": 198,
+  "helper_subtree_all_blobs_equal": true,
+  "helper_tests": 736,
+  "browser_producer_fixture_files": [
+    {
+      "path": "internal/m8/console_auth.go",
+      "git_blob": "cfb5ddfb25dc837801a6932d06b6795c2000f1de"
+    },
+    {
+      "path": "internal/m8/console_specs_page.go",
+      "git_blob": "e81899a50d7e04ab45b0073786173ad7b0b32823"
+    },
+    {
+      "path": "internal/m8/console_task_board_page.go",
+      "git_blob": "8d4e32fafcda5d4b1992c0691a8262b97d799399"
+    },
+    {
+      "path": "view-service/r32-task-flow-browser-regression.js",
+      "git_blob": "f760b48848ea4dfd72248cfe188f9a35b32df5f0"
+    }
+  ],
+  "browser_blobs_equal": true,
+  "historical_receipt_directory": "../raw",
+  "historical_manifest": "../EVIDENCE-MANIFEST.json",
+  "limits": "Reuse only unchanged helper/browser producers and fixtures; new current-source Go/security gates are recorded separately."
+}

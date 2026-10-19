@@ -1,0 +1,119 @@
+{
+  "baseline": "ef439b82b1550e9ca5c179edf61be78666c5fff0",
+  "probe_fixture_shared": true,
+  "old_worktree": "/tmp/r32-old-3_bxgq7q",
+  "readings": [
+    {
+      "binary": "old-probe",
+      "operation": "seed",
+      "db": "from-r31.sqlite",
+      "result": {
+        "dod_preserved": true,
+        "principal_rows": 1,
+        "r32_ledger_rows": 0,
+        "task_content_preserved": true,
+        "tasks": 1
+      }
+    },
+    {
+      "binary": "new-probe",
+      "operation": "inspect",
+      "db": "from-r31.sqlite",
+      "result": {
+        "dod_preserved": true,
+        "principal_rows": 1,
+        "r32_ledger_rows": 1,
+        "task_content_preserved": true,
+        "tasks": 1
+      }
+    },
+    {
+      "binary": "new-probe",
+      "operation": "inspect",
+      "db": "from-r31.sqlite",
+      "result": {
+        "dod_preserved": true,
+        "principal_rows": 1,
+        "r32_ledger_rows": 1,
+        "task_content_preserved": true,
+        "tasks": 1
+      }
+    },
+    {
+      "binary": "new-probe",
+      "operation": "seed",
+      "db": "from-r32.sqlite",
+      "result": {
+        "dod_preserved": true,
+        "principal_rows": 1,
+        "r32_ledger_rows": 1,
+        "task_content_preserved": true,
+        "tasks": 1
+      }
+    },
+    {
+      "binary": "old-probe",
+      "operation": "inspect",
+      "db": "from-r32.sqlite",
+      "result": {
+        "dod_preserved": true,
+        "principal_rows": 1,
+        "r32_ledger_rows": 1,
+        "task_content_preserved": true,
+        "tasks": 1
+      }
+    },
+    {
+      "binary": "old-probe",
+      "operation": "inspect",
+      "db": "from-r32.sqlite",
+      "result": {
+        "dod_preserved": true,
+        "principal_rows": 1,
+        "r32_ledger_rows": 1,
+        "task_content_preserved": true,
+        "tasks": 1
+      }
+    },
+    {
+      "binary": "old-probe",
+      "operation": "seed",
+      "db": "rollback.sqlite",
+      "result": {
+        "dod_preserved": true,
+        "principal_rows": 1,
+        "r32_ledger_rows": 0,
+        "task_content_preserved": true,
+        "tasks": 1
+      }
+    },
+    {
+      "ledger_failure_rc": 1,
+      "rollback_columns_and_tables_absent": true,
+      "old_task_preserved": true
+    },
+    {
+      "binary": "new-probe",
+      "operation": "inspect",
+      "db": "rollback.sqlite",
+      "result": {
+        "dod_preserved": true,
+        "principal_rows": 1,
+        "r32_ledger_rows": 1,
+        "task_content_preserved": true,
+        "tasks": 1
+      }
+    },
+    {
+      "old_helper_version": "0.2.3.4",
+      "delivery_ack_v1": true,
+      "task_flow_v1": false
+    },
+    {
+      "old_hub_startup": true,
+      "old_hub_http_read": true,
+      "loopback_only": true,
+      "transport": "fake"
+    }
+  ]
+}

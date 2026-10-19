@@ -1,0 +1,5 @@
+--- FAIL: TestR32TaskStateCasesAndIndependentAgentSameOwner (0.16s)
+    console_task_flow_test.go:40: SAME_AGENT_PAIR_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.160s
+FAIL

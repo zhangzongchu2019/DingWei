@@ -1,0 +1,17 @@
+{
+  "recorded_utc": "2026-10-19T10:16:17Z",
+  "source_commit": "d23ed782c775febeaf1ca40c12700dff7a87ef47",
+  "hostname": "VM-4-12-ubuntu",
+  "uid": 1001,
+  "gid": 1001,
+  "cpus": 16,
+  "go": "go version go1.22.2 linux/amd64",
+  "python": "3.12.3",
+  "umask": "0022",
+  "external_pg_dsn_present": false,
+  "pg_skip_ok_present": false,
+  "pg": "strict embedded PG, no production database",
+  "helper_python": "/tmp/coder-0232-locked-venv/bin/python",
+  "node_module_path": "/tmp/coder-a3-playwright/node_modules",
+  "pw_channel": "chrome"
+}

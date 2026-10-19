@@ -1,0 +1,5 @@
+--- FAIL: TestR32OwnerExplicitlyReopensCompletedInvalidAssignment (0.12s)
+    console_task_flow_test.go:251: DONE_REASSIGNED_WITHOUT_CONFIRMATION: <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.120s
+FAIL

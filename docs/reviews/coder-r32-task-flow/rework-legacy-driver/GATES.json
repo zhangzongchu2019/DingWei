@@ -1,0 +1,57 @@
+{
+  "recorded_utc": "2026-10-19T10:32:12Z",
+  "source_commit": "d23ed782c775febeaf1ca40c12700dff7a87ef47",
+  "gates": [
+    {
+      "name": "go_all",
+      "command": "go test ./... -count=1 -timeout=30m",
+      "rc": 0,
+      "status": "passed",
+      "stdout_stderr": "raw/r32-rework-complete-go.log",
+      "rc_file": "raw/r32-rework-complete-go.rc"
+    },
+    {
+      "name": "vet",
+      "command": "go vet ./...",
+      "rc": 0,
+      "status": "passed",
+      "stdout_stderr": "raw/r32-rework-complete-vet.log",
+      "rc_file": "raw/r32-rework-complete-vet.rc"
+    },
+    {
+      "name": "canonical",
+      "command": "PATH=/tmp/coder-0232-locked-venv/bin:$PATH bash scripts/run-build-tests.sh",
+      "rc": 0,
+      "status": "passed",
+      "stdout_stderr": "raw/r32-rework-complete-canonical.log",
+      "rc_file": "raw/r32-rework-complete-canonical.rc"
+    },
+    {
+      "name": "race_targeted",
+      "command": "go test -race ./internal/store ./internal/m8 -run '^TestR32TaskList|TestR32LegacyTaskDriver|TestR32MainTaskList' -count=1 -timeout=5m",
+      "rc": 0,
+      "status": "passed",
+      "stdout_stderr": "raw/r32-rework-complete-race.log",
+      "rc_file": "raw/r32-rework-complete-race.rc"
+    },
+    {
+      "name": "withdrawals",
+      "command": "python3 tests/r32-task-flow/withdrawals.py --anchor d23ed782c775febeaf1ca40c12700dff7a87ef47 --output /tmp/r32-rework-complete-withdrawals",
+      "rc": 0,
+      "status": "passed",
+      "stdout_stderr": "raw/r32-rework-complete-withdrawals.log",
+      "rc_file": "raw/r32-rework-complete-withdrawals.rc"
+    },
+    {
+      "name": "compatibility",
+      "command": "python3 tests/r32-task-flow/compatibility.py --output /tmp/r32-rework-closure-compatibility",
+      "rc": 0,
+      "status": "passed",
+      "stdout_stderr": "raw/r32-rework-closure-compatibility.log",
+      "rc_file": "raw/r32-rework-closure-compatibility.rc",
+      "executed_runtime_source": "d1a1f06543570270ab740acb95d73a83e76ae071",
+      "reuse_limit": "d1a..d23 changes only one Go test file and the withdrawal test runner; all runtime/library inputs unchanged."
+    }
+  ],
+  "reused_helper_and_browsers": "REUSED-GATES.json"
+}

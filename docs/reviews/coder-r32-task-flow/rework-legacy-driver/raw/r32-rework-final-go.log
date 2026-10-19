@@ -1,0 +1,70 @@
+?   	github.com/zhangzongchu2019/dingwei/cmd/dingwei-datad	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/cmd/fcs	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/cmd/mcs-demo	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/cmd/mcsd	[no test files]
+ok  	github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout	32.734s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/file-service	0.093s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/nodeagent	0.007s
+?   	github.com/zhangzongchu2019/dingwei/internal/identity/identitytest	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/internal/model	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/specs/tools/handle-escape	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/specs/tools/legacy-name	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/specs/tools/pending-debt	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/tests/r32-task-flow/compat-probe	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/view-service	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/view-service/console-hosted-page-fixture	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/view-service/p1seed	[no test files]
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	341.977s
+ok  	github.com/zhangzongchu2019/dingwei/internal/admin	10.050s
+ok  	github.com/zhangzongchu2019/dingwei/internal/agentmetrics	0.004s
+ok  	github.com/zhangzongchu2019/dingwei/internal/bridge	0.003s
+ok  	github.com/zhangzongchu2019/dingwei/internal/bus	1.113s
+ok  	github.com/zhangzongchu2019/dingwei/internal/clock	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/config	0.006s
+ok  	github.com/zhangzongchu2019/dingwei/internal/consolemux	12.991s
+ok  	github.com/zhangzongchu2019/dingwei/internal/coordination	0.302s
+ok  	github.com/zhangzongchu2019/dingwei/internal/datad	0.880s
+ok  	github.com/zhangzongchu2019/dingwei/internal/evidence	1.021s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fanout	126.378s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fcs	1.119s
+ok  	github.com/zhangzongchu2019/dingwei/internal/feishu	0.007s
+ok  	github.com/zhangzongchu2019/dingwei/internal/filepolicy	0.005s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fileservice	3.219s
+--- FAIL: TestBackupPipelineEndToEnd (8.93s)
+    backup_test.go:189: repo.OpenPG 连不上临时 PG(HUB_TEST_PG_DSN 未设,走内嵌 PG): failed to connect to `user=hubtest database=hubtest`: 127.0.0.1:36621 (127.0.0.1): failed to receive message: unexpected EOF
+2026/10/19 03:22:20 hosted item agent=ag_x 查询失败，该行降级不出 hosted 子对象: ERROR: relation "g4_hosted_seat" does not exist (SQLSTATE 42P01)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	1208.241s
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity	136.542s
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity/httpapi	3.202s
+ok  	github.com/zhangzongchu2019/dingwei/internal/jcs	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/llm	0.004s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m5	2.197s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	150.025s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/board	0.345s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/dea	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/demo	0.295s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/dispatch	0.028s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver	0.035s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd	13.479s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/pool	0.153s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/rotation	0.044s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/route	0.003s
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	8.109s
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodegate	30.734s
+ok  	github.com/zhangzongchu2019/dingwei/internal/obs	0.558s
+ok  	github.com/zhangzongchu2019/dingwei/internal/portal	0.257s
+ok  	github.com/zhangzongchu2019/dingwei/internal/redact	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/reminder	0.389s
+ok  	github.com/zhangzongchu2019/dingwei/internal/repo	6.771s
+ok  	github.com/zhangzongchu2019/dingwei/internal/router	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/schedule	1.065s
+ok  	github.com/zhangzongchu2019/dingwei/internal/scheduler	2.380s
+ok  	github.com/zhangzongchu2019/dingwei/internal/seatcapacity	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/secretbox	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	16.004s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/migrate	96.165s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/pgtest	19.939s
+ok  	github.com/zhangzongchu2019/dingwei/internal/version	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/worker	2.686s
+FAIL

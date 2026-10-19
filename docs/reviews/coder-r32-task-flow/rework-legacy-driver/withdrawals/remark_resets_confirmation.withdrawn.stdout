@@ -1,0 +1,5 @@
+--- FAIL: TestR32TaskStateCasesAndIndependentAgentSameOwner (0.16s)
+    console_task_flow_test.go:80: REMARK_KEPT_CONFIRMATION
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.168s
+FAIL

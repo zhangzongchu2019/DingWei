@@ -1,0 +1,5 @@
+--- FAIL: TestR32TaskAuthorizationPGMembershipLocksAndOwners (6.46s)
+    task_authorization_test.go:78: READONLY_PG_AUTH_FELL_BACK: called=true
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/identity	6.465s
+FAIL

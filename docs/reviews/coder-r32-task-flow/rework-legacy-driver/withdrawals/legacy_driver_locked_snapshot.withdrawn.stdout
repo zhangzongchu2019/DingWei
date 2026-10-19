@@ -1,0 +1,10 @@
+2026/10/19 03:18:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/19 03:18:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/19 03:18:54 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/19 03:18:54 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- FAIL: TestR32LegacyTaskDriverReassignmentBetweenReads (9.28s)
+    --- FAIL: TestR32LegacyTaskDriverReassignmentBetweenReads/after-state-before-lock (4.70s)
+        console_task_driver_r32_test.go:159: LEGACY_DRIVER_REASSIGNMENT_LEAKED: phase=after-state-before-lock status=200 body={"message":"","start":{"spec_id":"spec-3b0d064de4374c31ff7d8275","revision":1,"content_sha256":"29df96fcefd5347d3b9d1cb33b2cca60ea17f3825b65c712fa893eb3bbf41892","repository_name":"dingwei","branch_name":"r32","schedule":"test","task_endpoint":"/api/agent/console/task-driver","token_instructions":"Console issues capability","announced_by":"zzc","announced_at":"2026-10-19T10:18:54.862962648Z"},"status":"active","tasks":[{"proposal_id":"r32-task","schema_version":1,"spec_id":"spec-3b0d064de4374c31ff7d8275","revision":1,"content_sha256":"29df96fcefd5347d3b9d1cb33b2cca60ea17f3825b65c712fa893eb3bbf41892","title":"task","content":"implement","status":"planned","estimated_hours":0,"depends_on_json":"[]","dependency_level":0,"parallel":false,"acceptance_json":"[]","definition_of_done":"passed","input_anchors_json":"[{\"kind\":\"owner_message\",\"ref\":\"msg:1\"}]","developer_agent_id":"ag_e0ac8a5c69bd2f80bc345f14ce1c0165","developer_agent":"kimi","developer_online":false,"reviewer_agent_id":"ag_632fedb02c16184030f3f166f3102405","reviewer_agent":"opus50ts","reviewer_online":false,"passed_cases":0,"total_cases":0,"review_id":"manual:r32-task","reviewed_at":"2026-10-19T10:18:54.861622899Z","created_at":"2026-10-19T10:18:54.861622899Z"}]}
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	9.287s
+FAIL

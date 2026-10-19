@@ -1,0 +1,5 @@
+--- FAIL: TestR32TaskListReassignmentBetweenSelectionAndProjection (0.10s)
+    console_task_flow_test.go:343: STORE_TASK_LIST_REASSIGNED_ACTOR_LEAKED: count=1 err=<nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.108s
+FAIL

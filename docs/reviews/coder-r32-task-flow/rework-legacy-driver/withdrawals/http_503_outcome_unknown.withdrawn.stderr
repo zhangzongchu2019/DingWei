@@ -1,0 +1,13 @@
+.F....
+======================================================================
+FAIL: test_http_503_mutation_is_unknown_not_rejected (tools.sessionhelper.tests.test_task_flow_r32.R32TaskFlowTest.test_http_503_mutation_is_unknown_not_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r32-withdraw-tq9zgjih/tools/sessionhelper/tests/test_task_flow_r32.py", line 65, in test_http_503_mutation_is_unknown_not_rejected
+    self.assertEqual(result.get('outcome'),'unknown','HTTP_503_CLAIMED_REJECTION')
+AssertionError: None != 'unknown' : HTTP_503_CLAIMED_REJECTION
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.694s
+
+FAILED (failures=1)

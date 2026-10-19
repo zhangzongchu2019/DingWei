@@ -1,0 +1,6 @@
+# github.com/zhangzongchu2019/dingwei/internal/store [github.com/zhangzongchu2019/dingwei/internal/store.test]
+internal/store/console_task_flow_test.go:327:20: db.consoleTaskFlowItems undefined (type *SQLite has no field or method consoleTaskFlowItems)
+internal/store/console_task_flow_test.go:364:19: db.consoleTaskFlowItems undefined (type *SQLite has no field or method consoleTaskFlowItems)
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store [build failed]
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	11.462s
+FAIL

@@ -1,0 +1,13 @@
+.....F
+======================================================================
+FAIL: test_task_notification_is_durable_deduplicated_and_not_executable (tools.sessionhelper.tests.test_task_flow_r32.R32TaskFlowTest.test_task_notification_is_durable_deduplicated_and_not_executable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r32-withdraw-tq9zgjih/tools/sessionhelper/tests/test_task_flow_r32.py", line 34, in test_task_notification_is_durable_deduplicated_and_not_executable
+    self.assertIsNone(inbox.claim_next(),'TASK_NOTIFICATION_INJECTED')
+AssertionError: ('task-event', {'body': 'notification only', 'meta': {'kind': 'task_assigned'}}) is not None : TASK_NOTIFICATION_INJECTED
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.710s
+
+FAILED (failures=1)

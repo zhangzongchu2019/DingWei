@@ -1,0 +1,5 @@
+--- FAIL: TestR32TaskAtomicAuditRecheckAndIdempotency (0.19s)
+    console_task_flow_test.go:120: PG_RECHECK_IGNORED: <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.188s
+FAIL

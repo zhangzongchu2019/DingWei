@@ -1,0 +1,16 @@
+{"time":"2026-10-19T10:11:59.681307367Z","level":"INFO","msg":"unified console authentication","enabled":false}
+{"time":"2026-10-19T10:11:59.682592712Z","level":"INFO","msg":"seeded initial admin","user":"admin"}
+2026/10/19 10:11:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/19 10:11:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+{"time":"2026-10-19T10:11:59.686025676Z","level":"WARN","msg":"L2 triage provider not configured","env":"WP_L2_DEEPSEEK_API_KEY"}
+2026/10/19 10:11:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/19 10:11:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+{"time":"2026-10-19T10:11:59.688538231Z","level":"WARN","msg":"admin file browser disabled: missing configuration","missing_env":"WP_FILE_ISSUER_URL,WP_FILE_PUBLIC_URL,WP_FILE_ISSUER_TOKEN,WP_FILE_AUDIT_TOKEN"}
+{"time":"2026-10-19T10:11:59.688991196Z","level":"INFO","msg":"feishu gateway configured","transport":"fake"}
+{"time":"2026-10-19T10:11:59.689887639Z","level":"INFO","msg":"workpulse started","addr":"127.0.0.1:57601","db":"/tmp/r32-rework-closure-compatibility/from-r32.sqlite","version":"0.2.3.4","commit":"unknown"}
+{"time":"2026-10-19T10:11:59.691708861Z","level":"INFO","msg":"effective_config WP_ADDR=127.0.0.1:57601(env) WP_DB_PATH=/tmp/r32-rework-closure-compatibility/from-r32.sqlite(env) WP_HUB_ID=r32-compat-local(env) WP_NAME_ENFORCE=warn(default!) WP_VERSION_ENFORCE=warn(default!)"}
+{"time":"2026-10-19T10:11:59.689901348Z","level":"INFO","msg":"workpulse internal (view-service dock) started","addr":"127.0.0.1:0"}
+{"time":"2026-10-19T10:11:59.69172004Z","level":"WARN","msg":"配置落在有风险的默认值上","key":"WP_NAME_ENFORCE","value":"warn","risk":"名字门只告警不拒绝 ⇒ 系统会接受一个它自己无法寻址的会话名(T-068)"}
+{"time":"2026-10-19T10:11:59.691728749Z","level":"WARN","msg":"配置落在有风险的默认值上","key":"WP_VERSION_ENFORCE","value":"warn","risk":"版本门只告警不拒绝 ⇒ 不兼容 helper 仍可连接(T-093)"}
+{"time":"2026-10-19T10:11:59.690581021Z","level":"INFO","msg":"scheduler cron configured","entries":5,"key":"group::UTC:0 0 * * *|personal::UTC:0 0,6 * * *|weekly_project::UTC:0 2 * * 6|aggregate_weekly_draft::UTC:0 22 * * 0|aggregate_weekly_publish::UTC:0 2 * * 1"}
+{"time":"2026-10-19T10:11:59.742802469Z","level":"INFO","msg":"shutting down"}

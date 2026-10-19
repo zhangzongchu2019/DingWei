@@ -1,0 +1,5 @@
+--- FAIL: TestR32TaskListStateReadFailurePropagates (0.10s)
+    console_task_flow_test.go:366: STORE_TASK_LIST_STATE_ERROR_NOT_PROPAGATED: count=0 err=<nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.103s
+FAIL
