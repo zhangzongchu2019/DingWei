@@ -1,0 +1,186 @@
+{
+  "reported_by": "nodeagent-lockfail full repository internal/identity.TestR31ConnectionPrivacyPGAndMemory",
+  "reported_pid": 304436,
+  "trace": [
+    {
+      "utc": "2026-10-19T06:50:58.175407+00:00",
+      "process": {
+        "pid": 304436,
+        "ppid": 304433,
+        "start_ticks": 18355718,
+        "state": "S",
+        "comm": "postgres",
+        "cmd": "/home/dev/.embedded-postgres-go/extracted/bin/postgres -D /tmp/dingwei-pgtest-1573520924/data -p 39995 -c synchronous_commit=on -c fsync=on "
+      },
+      "parents": [
+        {
+          "pid": 304433,
+          "ppid": 304117,
+          "start_ticks": 18355717,
+          "state": "S",
+          "comm": "pg_ctl",
+          "cmd": "/home/dev/.embedded-postgres-go/extracted/bin/pg_ctl start -w -D /tmp/dingwei-pgtest-1573520924/data -o -p 39995 -c synchronous_commit=\"on\" -c fsync=\"on\" "
+        },
+        {
+          "pid": 304117,
+          "ppid": 291047,
+          "start_ticks": 18355397,
+          "state": "S",
+          "comm": "pgtest-2c2026b5",
+          "cmd": "/home/dev/.cache/dingwei-pgtest/pgtest-2c2026b58e42f70f "
+        },
+        {
+          "pid": 291047,
+          "ppid": 290132,
+          "start_ticks": 18342404,
+          "state": "S",
+          "comm": "hosted.test",
+          "cmd": "/tmp/go-build4164087569/b470/hosted.test -test.paniconexit0 -test.count=1 -test.timeout=30m0s "
+        },
+        {
+          "pid": 290132,
+          "ppid": 290123,
+          "start_ticks": 18342195,
+          "state": "S",
+          "comm": "go"
+        },
+        {
+          "pid": 290123,
+          "ppid": 64,
+          "start_ticks": 18342194,
+          "state": "S",
+          "comm": "bash"
+        },
+        {
+          "pid": 64,
+          "ppid": 1,
+          "start_ticks": 16013683,
+          "state": "S",
+          "comm": "codex"
+        },
+        {
+          "pid": 1,
+          "ppid": 0,
+          "start_ticks": 16011207,
+          "state": "S",
+          "comm": "tini"
+        }
+      ]
+    },
+    {
+      "utc": "2026-10-19T06:50:58.280423+00:00",
+      "process": {
+        "pid": 304436,
+        "ppid": 304117,
+        "start_ticks": 18355718,
+        "state": "S",
+        "comm": "postgres",
+        "cmd": "/home/dev/.embedded-postgres-go/extracted/bin/postgres -D /tmp/dingwei-pgtest-1573520924/data -p 39995 -c synchronous_commit=on -c fsync=on "
+      },
+      "parents": [
+        {
+          "pid": 304117,
+          "ppid": 291047,
+          "start_ticks": 18355397,
+          "state": "S",
+          "comm": "pgtest-2c2026b5",
+          "cmd": "/home/dev/.cache/dingwei-pgtest/pgtest-2c2026b58e42f70f "
+        },
+        {
+          "pid": 291047,
+          "ppid": 290132,
+          "start_ticks": 18342404,
+          "state": "S",
+          "comm": "hosted.test",
+          "cmd": "/tmp/go-build4164087569/b470/hosted.test -test.paniconexit0 -test.count=1 -test.timeout=30m0s "
+        },
+        {
+          "pid": 290132,
+          "ppid": 290123,
+          "start_ticks": 18342195,
+          "state": "S",
+          "comm": "go"
+        },
+        {
+          "pid": 290123,
+          "ppid": 64,
+          "start_ticks": 18342194,
+          "state": "S",
+          "comm": "bash"
+        },
+        {
+          "pid": 64,
+          "ppid": 1,
+          "start_ticks": 16013683,
+          "state": "S",
+          "comm": "codex"
+        },
+        {
+          "pid": 1,
+          "ppid": 0,
+          "start_ticks": 16011207,
+          "state": "S",
+          "comm": "tini"
+        }
+      ]
+    },
+    {
+      "utc": "2026-10-19T06:50:59.623796+00:00",
+      "process": {
+        "pid": 304436,
+        "ppid": 304117,
+        "start_ticks": 18355718,
+        "state": "Z",
+        "comm": "postgres",
+        "cmd": ""
+      },
+      "parents": [
+        {
+          "pid": 304117,
+          "ppid": 291047,
+          "start_ticks": 18355397,
+          "state": "S",
+          "comm": "pgtest-2c2026b5",
+          "cmd": "/home/dev/.cache/dingwei-pgtest/pgtest-2c2026b58e42f70f "
+        },
+        {
+          "pid": 291047,
+          "ppid": 290132,
+          "start_ticks": 18342404,
+          "state": "S",
+          "comm": "hosted.test",
+          "cmd": "/tmp/go-build4164087569/b470/hosted.test -test.paniconexit0 -test.count=1 -test.timeout=30m0s "
+        },
+        {
+          "pid": 290132,
+          "ppid": 290123,
+          "start_ticks": 18342195,
+          "state": "S",
+          "comm": "go"
+        },
+        {
+          "pid": 290123,
+          "ppid": 64,
+          "start_ticks": 18342194,
+          "state": "S",
+          "comm": "bash"
+        },
+        {
+          "pid": 64,
+          "ppid": 1,
+          "start_ticks": 16013683,
+          "state": "S",
+          "comm": "codex"
+        },
+        {
+          "pid": 1,
+          "ppid": 0,
+          "start_ticks": 16011207,
+          "state": "S",
+          "comm": "tini"
+        }
+      ]
+    }
+  ],
+  "exists_after_recheck": false
+}

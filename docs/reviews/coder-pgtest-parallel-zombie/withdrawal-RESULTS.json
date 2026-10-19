@@ -1,0 +1,14 @@
+[
+  {
+    "case": "rotate-guard",
+    "rc": 1,
+    "marker": "ROTATING_GUARD_FALSE_POSITIVE",
+    "red": true
+  },
+  {
+    "case": "disable-persistent-guard",
+    "rc": 1,
+    "marker": "PERSISTENT_GUARD_DISABLED",
+    "red": true
+  }
+]

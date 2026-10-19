@@ -1,0 +1,18 @@
+{
+  "utc": "2026-10-19T06:56:22.165703+00:00",
+  "raw_local_file": "/tmp/coder-pg-process-observation.jsonl",
+  "selected_pairs": 40,
+  "all_selected_pids_absent_at_recheck": true,
+  "owners": {
+    "feishu-fanout.t": 3,
+    "pgtest.test": 2,
+    "fanout.test": 6,
+    "workpulse.test": 10,
+    "migrate.test": 4,
+    "nodegate.test": 2,
+    "hosted.test": 5,
+    "identity.test": 8
+  },
+  "historical_failure_pid": "UNKNOWN; no old proc stat available",
+  "method": "read-only /proc, pid+start_ticks match live/Z; parent chain to pgtest and test binary; live cmd -D data path; recheck no pid remaining"
+}
