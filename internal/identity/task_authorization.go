@@ -18,6 +18,8 @@ func (s *PGStore) WithTaskAuthorization(ctx context.Context, owner, group string
 	if group == "" || len(ids) == 0 {
 		return ErrForbidden
 	}
+	// Ordinary read/write transaction: PostgreSQL forbids FOR SHARE in SQL READ ONLY.
+	// A replica/read-only connection must error here; there is no unlocked fallback.
 	return s.inTx(ctx, func(tx repo.Tx) error {
 		g, err := lockGroup(ctx, tx, group, true)
 		if err != nil {

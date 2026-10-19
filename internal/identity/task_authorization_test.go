@@ -6,6 +6,8 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"github.com/zhangzongchu2019/dingwei/internal/store/migrate"
 	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
@@ -13,7 +15,12 @@ import (
 func TestR32TaskAuthorizationPGMembershipLocksAndOwners(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
-	pool := pgtest.Pool(t)
+	dsn := pgtest.DSN(t)
+	pool, openErr := repo.OpenPG(ctx, dsn)
+	if openErr != nil {
+		t.Fatal(openErr)
+	}
+	t.Cleanup(func() { _ = pool.Close() })
 	if _, err := migrate.Migrate(ctx, pool, migrate.HubDomains()); err != nil {
 		t.Fatal(err)
 	}
@@ -46,6 +53,36 @@ func TestR32TaskAuthorizationPGMembershipLocksAndOwners(t *testing.T) {
 	}
 	if err = s.WithTaskAuthorization(ctx, "owner", "missing", []string{"dev", "review"}, func([]Agent, func() error) error { t.Fatal("MISSING_GROUP_AUTHORIZED"); return nil }); err == nil {
 		t.Fatal("MISSING_GROUP_AUTHORIZED")
+	}
+	readonlyDSN := dsn
+	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+		u, e := url.Parse(dsn)
+		if e != nil {
+			t.Fatal("invalid test DSN")
+		}
+		q := u.Query()
+		q.Set("default_transaction_read_only", "on")
+		u.RawQuery = q.Encode()
+		readonlyDSN = u.String()
+	} else {
+		readonlyDSN += " default_transaction_read_only=on"
+	}
+	readPool, e := repo.OpenPG(ctx, readonlyDSN)
+	if e != nil {
+		t.Fatal("readonly test connection failed")
+	}
+	defer readPool.Close()
+	callbackCalled := false
+	e = NewPGStore(readPool).WithTaskAuthorization(ctx, "owner", "r32-group", []string{"dev", "review"}, func([]Agent, func() error) error { callbackCalled = true; return nil })
+	if e == nil || callbackCalled {
+		t.Fatalf("READONLY_PG_AUTH_FELL_BACK: called=%v", callbackCalled)
+	}
+	var transactionMode string
+	if e = s.WithTaskAuthorization(ctx, "owner", "r32-group", []string{"dev", "review"}, func(_ []Agent, check func() error) error {
+		transactionMode = "read-write-row-lock-held"
+		return check()
+	}); e != nil || transactionMode == "" {
+		t.Fatalf("READWRITE_PG_AUTH_REFUSED: %v", e)
 	}
 	entered, release := make(chan struct{}), make(chan struct{})
 	result := make(chan error, 1)
@@ -84,7 +121,7 @@ func TestR32TaskAuthorizationPGMembershipLocksAndOwners(t *testing.T) {
 	}
 	close(release)
 	if err = <-result; err != nil {
-		t.Fatal(err)
+		t.Fatalf("MEMBERSHIP_LOCK_NOT_HELD_THROUGH_TASK: %v", err)
 	}
 	if err = <-left; err != nil {
 		t.Fatal(err)

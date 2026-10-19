@@ -76,6 +76,9 @@ func taskError(w http.ResponseWriter, err error) {
 	taskJSON(w, status, map[string]any{"error": code})
 }
 func (h *Hub) withTaskIdentity(ctx context.Context, t store.TaskFlowState, fn func([]identity.Agent, func() error) error) error {
+	if t.Archived {
+		return store.ErrTaskFlowPermission
+	}
 	if h.Identity == nil {
 		return identity.ErrForbidden
 	}
@@ -368,6 +371,10 @@ func (h *Hub) dispatchTaskNotifications(ctx context.Context) {
 		if strings.HasPrefix(item.Recipient, "owner:") {
 			continue
 		} // Console exposes owner notices durably.
+		if current.NeedsReassignment {
+			_ = repo.SupersedeConsoleTaskNotification(ctx, item.ID, h.now())
+			continue
+		}
 		a, err := h.Identity.Store.GetAgent(ctx, item.Recipient)
 		if err != nil || a == nil || a.State != identity.AgentActive {
 			continue
@@ -481,4 +488,47 @@ func (h *Hub) taskFlowOptions(ctx context.Context, owner string) ([]taskFlowGrou
 	}
 	sort.Slice(agents, func(i, j int) bool { return agents[i].SessionName < agents[j].SessionName })
 	return groups, agents, nil
+}
+
+// Shared spec reads predate task-level Agent permissions. Never project R32
+// task data through that public surface or a legacy capability after revocation.
+func (h *Hub) filterTaskFlowProjection(r *http.Request, tasks []model.ConsoleTaskProposal) ([]model.ConsoleTaskProposal, error) {
+	flow, ok := h.taskFlowRepo()
+	if !ok {
+		return tasks, nil
+	}
+	actor := authenticatedConsoleSpecActor(r)
+	principal := platformPrincipal(r)
+	out := make([]model.ConsoleTaskProposal, 0, len(tasks))
+	for _, task := range tasks {
+		state, err := flow.ConsoleTaskFlowState(r.Context(), task.ID)
+		if errors.Is(err, store.ErrTaskFlowPermission) {
+			out = append(out, task)
+			continue
+		} // immutable legacy proposal, not a real task
+		if err != nil {
+			return nil, err
+		}
+		if state.GroupCode == "" {
+			out = append(out, task)
+			continue
+		}
+		if actor.Kind != "agent" && principal != "" && principal == state.Owner {
+			out = append(out, task)
+			continue
+		}
+		if actor.Kind != "agent" || state.NeedsReassignment || (actor.ID != state.Developer && actor.ID != state.Reviewer) {
+			continue
+		}
+		err = h.withTaskIdentity(r.Context(), state, func(_ []identity.Agent, check func() error) error { return check() })
+		if err != nil {
+			h.invalidateTaskIfDenied(r.Context(), state, err)
+			if errors.Is(err, identity.ErrForbidden) || errors.Is(err, identity.ErrNotFound) || errors.Is(err, identity.ErrGroupNotFound) || errors.Is(err, store.ErrTaskFlowPermission) {
+				continue
+			}
+			return nil, err
+		}
+		out = append(out, task)
+	}
+	return out, nil
 }

@@ -24,6 +24,7 @@ var (
 type TaskFlowState struct {
 	ID                string `json:"task_id"`
 	Owner             string `json:"-"`
+	Archived          bool   `json:"-"`
 	GroupCode         string `json:"group_code"`
 	Version           int    `json:"version"`
 	AssignmentVersion int    `json:"assignment_version"`
@@ -64,7 +65,7 @@ type taskQuery interface {
 
 func taskFlowState(ctx context.Context, q taskQuery, id string) (TaskFlowState, error) {
 	var t TaskFlowState
-	err := q.QueryRowContext(ctx, `SELECT t.id,s.principal_id,t.group_code,t.version,t.assignment_version,COALESCE(t.developer_agent_id,''),COALESCE(t.reviewer_agent_id,''),t.needs_reassignment FROM console_spec_task t JOIN console_spec s ON s.id=t.spec_id WHERE t.id=? AND s.archived=0`, id).Scan(&t.ID, &t.Owner, &t.GroupCode, &t.Version, &t.AssignmentVersion, &t.Developer, &t.Reviewer, &t.NeedsReassignment)
+	err := q.QueryRowContext(ctx, `SELECT t.id,s.principal_id,t.group_code,t.version,t.assignment_version,COALESCE(t.developer_agent_id,''),COALESCE(t.reviewer_agent_id,''),t.needs_reassignment,s.archived FROM console_spec_task t JOIN console_spec s ON s.id=t.spec_id WHERE t.id=?`, id).Scan(&t.ID, &t.Owner, &t.GroupCode, &t.Version, &t.AssignmentVersion, &t.Developer, &t.Reviewer, &t.NeedsReassignment, &t.Archived)
 	if errors.Is(err, sql.ErrNoRows) {
 		err = ErrTaskFlowPermission
 	}
@@ -114,7 +115,7 @@ func (s *SQLite) UpdateConsoleTaskFlow(ctx context.Context, id, actor string, u 
 	if err != nil {
 		return empty, err
 	}
-	if t.GroupCode == "" || t.NeedsReassignment || (actor != t.Developer && actor != t.Reviewer) {
+	if t.Archived || t.GroupCode == "" || t.NeedsReassignment || (actor != t.Developer && actor != t.Reviewer) {
 		return empty, ErrTaskFlowPermission
 	}
 	var oldHash, result string
@@ -257,7 +258,7 @@ func (s *SQLite) AssignConsoleTaskFlow(ctx context.Context, id, owner, group, de
 	if err != nil {
 		return empty, err
 	}
-	if t.Owner != owner {
+	if t.Archived || t.Owner != owner {
 		return empty, ErrTaskFlowPermission
 	}
 	if t.Version != expected {
@@ -529,7 +530,7 @@ func (s *SQLite) ListConsoleTaskFlow(ctx context.Context, agent string) ([]TaskF
 		if e != nil {
 			return nil, e
 		}
-		if state.GroupCode == "" {
+		if state.Archived || state.GroupCode == "" {
 			continue
 		}
 		var title string

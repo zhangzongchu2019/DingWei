@@ -46,6 +46,8 @@ class IPCStartupIsolationTests(unittest.IsolatedAsyncioTestCase):
                 for name in ("_make_send_handler", "_make_file_handler", "_make_desktop_inbox_handler", "_make_spec_write_handler"):
                     setattr(helper, name, lambda ws: None)
 
+                helper._make_task_flow_handler = lambda: None
+
                 async def optional_ipc(ws):
                     try:
                         await SessionHelper._ipc_server(helper, ws)

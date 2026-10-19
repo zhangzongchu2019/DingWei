@@ -15,7 +15,10 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
+	"github.com/zhangzongchu2019/dingwei/internal/store/migrate"
+	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
 
 func r32FlowEnv(t *testing.T) (*shimEnv, *identity.Group, store.TaskFlowState) {
@@ -266,5 +269,149 @@ asyncio.run(main())`
 	after, err := e.db.ConsoleTaskFlowState(e.ctx, state.ID)
 	if err != nil || after.Version != state.Version+1 {
 		t.Fatalf("MCP state %+v %v", after, err)
+	}
+}
+
+func r32UsePGIdentity(t *testing.T, e *shimEnv) *identity.PGStore {
+	t.Helper()
+	pool := pgtest.Pool(t)
+	if _, err := migrate.Migrate(e.ctx, pool, migrate.HubDomains()); err != nil {
+		t.Fatal(err)
+	}
+	access, err := repo.NewAccessCtx("test", "r32-recovery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	original := e.svc.Store
+	pg := identity.NewPGStore(pool)
+	users, err := original.ListUsers(e.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, u := range users {
+		if u.Type == "" {
+			u.Type = identity.UserMember
+		}
+		if err = pg.CreateUser(e.ctx, u); err != nil {
+			t.Fatal(err)
+		}
+		agents, e2 := original.ListAgents(e.ctx, u.UserIDLC())
+		if e2 != nil {
+			t.Fatal(e2)
+		}
+		for _, a := range agents {
+			_, err = pool.Exec(e.ctx, access, `INSERT INTO np_agent(id,owner_lc,name,name_lc,group_code,origin,state,credential_hash,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`, a.ID, a.OwnerLC, a.Name, a.NameLC(), a.GroupID, a.Origin, a.State, a.CredentialHash, a.CreatedAt)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	groups, err := original.ListGroups(e.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, g := range groups {
+		_, err = pool.Exec(e.ctx, access, `INSERT INTO np_group(code,short_name,creator_lc,leader_agent_id,additions_closed,leader_only,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, g.Code, g.ShortName, g.CreatorLC, g.LeaderAgentID, g.AdditionsClosed, g.LeaderOnly, g.CreatedAt, g.UpdatedAt)
+		if err != nil {
+			t.Fatal(err)
+		}
+		members, e2 := original.ListGroupMembers(e.ctx, g.Code)
+		if e2 != nil {
+			t.Fatal(e2)
+		}
+		for _, m := range members {
+			if _, err = pool.Exec(e.ctx, access, `INSERT INTO np_group_member(code,agent_id,created_at) VALUES($1,$2,$3)`, m.Code, m.AgentID, m.CreatedAt); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	e.svc.Store = pg
+	return pg
+}
+func TestR32TaskRecoveryAfterPGCommitBeforeSQLiteMark(t *testing.T) {
+	e, g, state := r32FlowEnv(t)
+	pg := r32UsePGIdentity(t, e)
+	dev, _ := e.svc.Store.FindAgentByName(e.ctx, "zzc", "kimi")
+	if err := pg.LeaveGroup(e.ctx, g.Code, dev.ID, "zzc"); err != nil {
+		t.Fatal(err)
+	}
+	// Simulate the crash window: PG committed, original Hub never received an
+	// Agent/user request and has not yet mirrored anything into SQLite.
+	before, err := e.db.ConsoleTaskFlowState(e.ctx, state.ID)
+	if err != nil || before.NeedsReassignment {
+		t.Fatalf("fixture crossed crash window: %+v %v", before, err)
+	}
+	ctx, cancel := context.WithCancel(e.ctx)
+	defer cancel()
+	restarted := New(e.db, ConsoleAuthDisabled())
+	restarted.Identity = identity.NewService(pg, nil, nil)
+	defer restarted.Close()
+	restarted.StartTaskFlow(ctx)
+	deadline := time.Now().Add(5 * time.Second)
+	marked := false
+	for time.Now().Before(deadline) {
+		after, e2 := e.db.ConsoleTaskFlowState(e.ctx, state.ID)
+		if e2 == nil && after.NeedsReassignment {
+			marked = true
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if !marked {
+		t.Fatal("RECOVERY_REQUIRED_USER_REQUEST")
+	}
+	// Re-running reconciliation after another restart must not add another
+	// logical owner notification (the outbox key is durable).
+	restarted.reconcileTaskFlow(ctx)
+	restarted.reconcileTaskFlow(ctx)
+	items, err := e.db.PendingConsoleTaskNotifications(e.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	owner := 0
+	for _, item := range items {
+		if item.Recipient == "owner:zzc" {
+			owner++
+		}
+	}
+	if owner != 1 {
+		t.Fatalf("RECOVERY_OWNER_NOTICE_DUPLICATED_OR_LOST: %d", owner)
+	}
+	if got := r32HTTP(e, "PATCH", state.ID, e.zKimiCred, fmt.Sprintf(`{"request_id":"after-recovery","expected_version":%d,"operation":"start"}`, before.Version)); got.Code != 403 {
+		t.Fatalf("RECOVERY_LEFT_WRITE_AUTHORITY: %d", got.Code)
+	}
+}
+
+func TestR32PublicSpecCannotBypassTaskReadRevocation(t *testing.T) {
+	e, _, state := r32FlowEnv(t)
+	all, err := e.db.ListAllConsoleTaskProposals(e.ctx)
+	if err != nil || len(all) != 1 {
+		t.Fatalf("fixture %d %v", len(all), err)
+	}
+	request := httptest.NewRequest("GET", "/api/specs/shared/public", nil)
+	request.SetPathValue("specID", all[0].SpecID)
+	response := httptest.NewRecorder()
+	e.hub.HandleConsoleSpec(response, request)
+	if response.Code != 200 || strings.Contains(response.Body.String(), "r32-task") {
+		t.Fatalf("PUBLIC_SPEC_LEAKED_R32_TASK: status=%d body=%s", response.Code, response.Body.String())
+	}
+
+	filtered, err := e.hub.filterTaskFlowProjection(request, all)
+	if err != nil || len(filtered) != 0 {
+		t.Fatalf("PUBLIC_SPEC_LEAKED_R32_TASK: %d %v", len(filtered), err)
+	}
+	ownerRequest := request.WithContext(context.WithValue(request.Context(), consolePrincipalContextKey{}, "zzc"))
+	filtered, err = e.hub.filterTaskFlowProjection(ownerRequest, all)
+	if err != nil || len(filtered) != 1 {
+		t.Fatalf("owner projection %d %v", len(filtered), err)
+	}
+	if err = e.db.InvalidateConsoleTaskFlow(e.ctx, state.ID, state.Version, e.hub.now()); err != nil {
+		t.Fatal(err)
+	}
+	assigned := context.WithValue(request.Context(), consolePrincipalContextKey{}, "zzc")
+	assigned = context.WithValue(assigned, consoleSpecActorContextKey{}, consoleSpecActor{ID: state.Developer, Kind: "agent"})
+	filtered, err = e.hub.filterTaskFlowProjection(request.WithContext(assigned), all)
+	if err != nil || len(filtered) != 0 {
+		t.Fatalf("LEGACY_SPEC_CAPABILITY_LEAKED_REVOKED_TASK: %d %v", len(filtered), err)
 	}
 }

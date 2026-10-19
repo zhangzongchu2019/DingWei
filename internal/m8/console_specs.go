@@ -478,6 +478,16 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "console tasks unavailable", http.StatusServiceUnavailable)
 			return
 		}
+		tasks, err = h.filterTaskFlowProjection(r, tasks)
+		if err != nil {
+			taskError(w, err)
+			return
+		}
+		all, err = h.filterTaskFlowProjection(r, all)
+		if err != nil {
+			taskError(w, err)
+			return
+		}
 		tasks = orderConsoleTasks(tasks, all)
 		gateReview, err := repo.ConsoleSpecGateReview(r.Context(), id, spec.CurrentRevision)
 		if err != nil {

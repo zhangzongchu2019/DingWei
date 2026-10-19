@@ -38,7 +38,7 @@ func run() error {
 		if err = s.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "fixture", Provider: "fixture", ProviderIssuer: "fixture", ProviderSubject: "fixture", DisplayName: "Fixture", Active: true}); err != nil {
 			return err
 		}
-		if err = s.CreateConsoleSpec(ctx, model.ConsoleSpec{ID: "compat-spec", PrincipalID: "fixture", Title: "Compatibility"}, model.ConsoleSpecRevision{SpecID: "compat-spec", Revision: 1, ContentMarkdown: "requirements", ContentSHA256: strings.Repeat("a", 64), AcceptanceJSON: `[{"id":"A1","text":"preserved"}]`, InputAnchorsJSON: `[]`, CreatedBy: "fixture"}, now); err != nil {
+		if err = s.CreateConsoleSpec(ctx, model.ConsoleSpec{ID: "compat-spec", PrincipalID: "fixture", Title: "Compatibility", EditCapabilityHash: strings.Repeat("b", 64)}, model.ConsoleSpecRevision{SpecID: "compat-spec", Revision: 1, ContentMarkdown: "requirements", ContentSHA256: strings.Repeat("a", 64), AcceptanceJSON: `[{"id":"A1","text":"preserved"}]`, InputAnchorsJSON: `[]`, CreatedBy: "fixture"}, now); err != nil {
 			return err
 		}
 		raw, e := sql.Open("sqlite", os.Args[2])

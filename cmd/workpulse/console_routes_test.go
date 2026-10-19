@@ -44,6 +44,10 @@ var newPlatformAuthExempt = map[string]string{
 // newPlatformSpecTaskExempt spec／任务路由里【不】按 N3 会话认人的（R-V2-SPEC-TASK-SHIM-IMPL H1），口径同 095：
 // 共享链接与静态资源公开读、写凭链接里的编辑能力令牌；Agent 侧凭专属凭据＋能力令牌。每条下面另有一格钉住无凭据时的应答。
 var newPlatformSpecTaskExempt = map[string]string{
+	"GET /api/agent/console/tasks":                              "专属Agent bearer；拒人类cookie，不依赖人签capability",
+	"PATCH /api/agent/console/tasks/{taskID}":                   "专属Agent bearer与当前指派／组成员事务重核",
+	"POST /api/agent/console/tasks/{taskID}/cases/{caseAction}": "专属Agent bearer与开发／审查角色校验",
+
 	"GET /console/specs/{specID}":                                        "共享 spec 页（公开页，095 同）",
 	"GET /console/spec-assets/{name}":                                    "spec 页静态资源（公开，095 同）",
 	"GET /api/specs/shared/{specID}":                                     "共享 spec 读（公开，095 同）",
@@ -135,8 +139,8 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 			nSpecTask++
 		}
 	}
-	if nSpecTask != len(oldRec.patterns) || nSpecTask != 38 {
-		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 38)", nSpecTask, len(oldRec.patterns))
+	if nSpecTask != len(oldRec.patterns) || nSpecTask != 42 {
+		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 42)", nSpecTask, len(oldRec.patterns))
 	}
 	for p := range newPlatformSpecTaskExempt {
 		if !seen[p] {
@@ -156,6 +160,9 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 		{"PATCH", "/api/specs/shared/nope", 404}, // 查无此 spec 先于判权
 		{"POST", "/api/specs/shared/nope/versions", 404},
 		{"GET", "/api/agent/console/task-driver/specs/x/1/tasks", 403},
+		{"GET", "/api/agent/console/tasks", 401},
+		{"PATCH", "/api/agent/console/tasks/x", 401},
+		{"POST", "/api/agent/console/tasks/x/cases/mark", 401},
 		{"POST", "/api/agent/console/specs", 401},
 		{"PATCH", "/api/agent/console/specs/x", 401},
 		{"POST", "/api/agent/console/specs/x/inferences", 403},

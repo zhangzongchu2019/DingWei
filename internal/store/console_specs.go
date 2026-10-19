@@ -1171,6 +1171,9 @@ func (s *SQLite) UpdateConsoleTaskProposalPlanAuthorized(ctx context.Context, pr
 		return flowErr
 	}
 	if flowGroup != "" {
+		if status == "proposed" {
+			return ErrTaskFlowConflict
+		}
 		if _, err = tx.ExecContext(ctx, `DELETE FROM console_spec_task_case_result WHERE task_id=? AND EXISTS(SELECT 1 FROM console_spec_task WHERE id=? AND (task_content<>? OR definition_of_done<>?))`, proposalID, proposalID, content, definitionOfDone); err != nil {
 			return err
 		}
@@ -1218,6 +1221,13 @@ func (s *SQLite) UpdateConsoleTaskProposalPlanAuthorized(ctx context.Context, pr
 		}
 	}
 	if flowGroup != "" {
+		var version int
+		if err = tx.QueryRowContext(ctx, `SELECT version FROM console_spec_task WHERE id=?`, proposalID).Scan(&version); err != nil {
+			return err
+		}
+		if err = flowAudit(ctx, tx, proposalID, principalID, "owner_plan", version, time.Now()); err != nil {
+			return err
+		}
 		if recheck == nil {
 			return ErrTaskFlowPermission
 		}
