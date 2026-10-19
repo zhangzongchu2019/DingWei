@@ -224,6 +224,7 @@ type sessionClient struct {
 	skillCancel    context.CancelFunc
 	deliveryACKV1  bool
 	taskFlowV1     bool
+	specReviewV1   bool
 	helperUpdateV1 bool // authenticated helper explicitly supports update_self v1
 	desktopInboxV1 bool
 	helperReady    bool
@@ -1247,7 +1248,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, "", "信封解析失败："+err.Error()))
 			continue
 		}
-		if metaString(env.Meta, "kind") == "task_assigned" || metaBool(env.Meta, "task_flow_internal") {
+		if specReviewType(specReviewEnvelopeType(env)) || metaString(env.Meta, "kind") == "task_assigned" || metaBool(env.Meta, "task_flow_internal") {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "task notification is Hub-only"))
 			continue
 		}
@@ -1326,6 +1327,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		delete(env.Meta, "source_session_name")
 		delete(env.Meta, hubIngressMetaKey)
 		env.Meta[hubIngressMetaKey] = hubIngressAgent
+		if h.handleSpecAgentReviewResult(r.Context(), c, env) {
+			continue
+		}
 		if h.handleConsoleSpecPresplitResult(r.Context(), c, env) {
 			continue
 		}
@@ -3151,6 +3155,9 @@ func feishuDispatchLogSource(addr address) (openID, botChannel string) {
 }
 
 func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
+	if specReviewType(specReviewEnvelopeType(env)) && ctx.Value(specAgentDispatchContextKey{}) != true {
+		return errors.New("spec review request is Hub-only")
+	}
 	if metaString(env.Meta, "kind") == "task_assigned" && ctx.Value(taskNotificationContextKey{}) != true {
 		return errors.New("task notification is Hub-only")
 	}
@@ -4258,6 +4265,9 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 // 即 @ 提及在收件侧与普通消息完全同形;no_mirror 仍保留在 Meta 里,
 // shouldSkipMirror 照旧生效,**不会**因此被镜像到飞书。
 func reliablePrimaryEnvelope(env model.Envelope) bool {
+	if env.ID != "" && specReviewType(specReviewEnvelopeType(env)) && metaBool(env.Meta, "system") {
+		return true
+	}
 	if env.ID == "" || metaBool(env.Meta, "system") {
 		return false
 	}
@@ -4304,6 +4314,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	c.helperReady = true
 	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
 	c.taskFlowV1 = metaBool(env.Meta, "task_flow_v1")
+	c.specReviewV1 = metaBool(env.Meta, "spec_review_v1")
 	c.helperUpdateV1 = metaBool(env.Meta, "helper_update_v1")
 	c.desktopInboxV1 = metaBool(env.Meta, "desktop_inbox_v1") && metaString(env.Meta, "processed_semantics") == "saved_to_desktop_inbox"
 	c.stateMu.Unlock()
@@ -4545,6 +4556,23 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 			}
 			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", "malformed_envelope")
 			continue
+		}
+		if specReviewType(specReviewEnvelopeType(env)) {
+			c.stateMu.Lock()
+			capable := c.specReviewV1 && c.deliveryACKV1
+			c.stateMu.Unlock()
+			sr, ok := h.Repo.(specAgentRepository)
+			valid := false
+			if ok && capable {
+				q, e := sr.SpecAgentRequest(ctx, metaString(env.Meta, "request_id"))
+				valid = e == nil && q.Status == "pending" && q.Deadline > h.now().Unix() && q.Boot == h.specAgentBoot()
+			}
+			if !valid {
+				if h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", "spec_review_expired_or_unsupported", time.Now().UTC()) != nil {
+					return
+				}
+				continue
+			}
 		}
 		if err := c.write(ctx, env); err != nil {
 			_ = h.Repo.UpdateSessionDelivery(ctx, d.ID, "queued", err.Error(), time.Now().UTC().Add(5*time.Second))

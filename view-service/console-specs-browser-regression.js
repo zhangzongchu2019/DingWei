@@ -178,6 +178,9 @@ async function main() {
   let failListMode = '';
   let presplitMode = 'success'; let presplitRequest = null; let presplitGenerated = false;
   const server = http.createServer(async (req, res) => {
+    // R8 lookup added to the spec page; this legacy fixture has no active requests.
+    if(req.method==='GET' && /^\/api\/console\/specs\/[^/?]+\/agent-review(?:\?|$)/.test(req.url)){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({requests:[],agents:[]}));return;}
+
     if (String(req.url).startsWith('/fixture/presplit-mode') && req.method === 'POST') {
       presplitMode = new URL(req.url, 'http://fixture').searchParams.get('mode') || 'success'; presplitRequest = null; presplitGenerated = false;
       res.writeHead(204); res.end(); return;

@@ -496,6 +496,25 @@ def _dw_task_update(args):
         raise ValueError('invalid task id')
     return _ipc_request({'type':'task_flow_v1','action':'update','task_id':task_id,'body':{k:v for k,v in args.items() if k!='task_id'}},timeout=_SPEC_IPC_TIMEOUT)
 
+@register("dw_spec_review_requests", "读取本人当前有权处理的Console预审/补标准请求；取消或失权后不可读。", {
+ "type":"object","properties":{"request_id":{"type":"string"},"cursor":{"type":"string"}},"additionalProperties":False,
+})
+def _dw_spec_review_requests(args):
+    if not isinstance(args,dict) or set(args)-{'request_id','cursor'}:
+        raise ValueError('invalid spec request list')
+    return _ipc_request({'type':'spec_review_v1','action':'list','body':args},timeout=_SPEC_IPC_TIMEOUT)
+
+@register("dw_spec_review_reply", "回Console预审issues或criteria/cases；只写pending/待人确认，不能定稿。结果未知请查询原请求。", {
+ "type":"object","properties":{"request_id":{"type":"string"},"kind":{"type":"string","enum":["review","criteria"]},"revision":{"type":"integer","minimum":1},"content_sha256":{"type":"string"},"issues":{"type":"array","items":{"type":"object"}},"criteria":{"type":"array","items":{"type":"object"}}},
+ "required":["request_id","kind","revision","content_sha256"],"additionalProperties":False,
+})
+def _dw_spec_review_reply(args):
+    if not isinstance(args,dict) or set(args)-{'request_id','kind','revision','content_sha256','issues','criteria'}:
+        raise ValueError('invalid spec reply arguments')
+    if not {'request_id','kind','revision','content_sha256'}.issubset(args):
+        raise ValueError('missing spec reply fields')
+    return _ipc_request({'type':'spec_review_v1','action':'reply','body':args},timeout=_SPEC_IPC_TIMEOUT)
+
 # ── MCP tool: upload_file (R-V2-AGENT-FILE-UPLOAD) ────────────────────
 # Same wire contract as dingwei_file.upload_file; duplicated because this file is a
 # self-contained entry point (no package imports). The shim is a child of the CLI, so the

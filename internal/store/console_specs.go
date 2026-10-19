@@ -314,6 +314,9 @@ func (s *SQLite) SaveConsoleSpecGateReview(ctx context.Context, specID, actor st
 		}
 		seen[issue.ID] = true
 	}
+	if err = annotateSpecAgentGate(ctx, tx, specID, revision, review); err != nil {
+		return err
+	}
 	stamp := now.UTC().Format(time.RFC3339Nano)
 	reviewID := review.ID
 	if reviewID == "" {
@@ -367,8 +370,17 @@ func (s *SQLite) FinalizeConsoleSpec(ctx context.Context, specID, actor string, 
 	}
 	if !legacy {
 		var issues string
-		if err = tx.QueryRowContext(ctx, `SELECT issues_json FROM console_spec_gate_review WHERE spec_id=? AND revision=? AND operator_principal=?`, specID, revision, actor).Scan(&issues); err != nil || !validCompletedSpecGateReview(issues) {
+		if err = tx.QueryRowContext(ctx, `SELECT issues_json FROM console_spec_gate_review WHERE spec_id=? AND revision=? AND operator_principal=?`, specID, revision, actor).Scan(&issues); err != nil {
 			return ErrConsoleSpecGate
+		}
+		if !validCompletedSpecGateReview(issues) {
+			allowed, e := confirmedEmptySpecAgentGate(ctx, tx, specID, revision, issues)
+			if e != nil {
+				return e
+			}
+			if !allowed {
+				return ErrConsoleSpecGate
+			}
 		}
 	}
 	res, err := tx.ExecContext(ctx, `UPDATE console_spec SET state='final',current_editor_id=NULL,updated_at=? WHERE id=? AND current_editor_id=? AND state='review' AND archived=0`, now.UTC().Format(time.RFC3339Nano), specID, actor)

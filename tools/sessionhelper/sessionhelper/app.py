@@ -551,6 +551,10 @@ class SessionHelper:
             if not getattr(self, "enroll_credential", None):
                 return {"ok": False, "error": "dedicated_agent_credential_required"}
             from .task_flow import task_request
+            if args.get("type")=="spec_review_v1":
+                from .spec_review import spec_review_request
+                ws_url, headers = self._connection()
+                return await asyncio.to_thread(spec_review_request,ws_url,headers,args)
             ws_url, headers = self._connection()
             return await asyncio.to_thread(task_request, ws_url, headers, args)
         return handle
@@ -608,7 +612,7 @@ class SessionHelper:
         return envelope(
             session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
             {"type": "session_capabilities", "delivery_ack_v1": True,
-             "persistent_inbox_v1": True, "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,
+             "persistent_inbox_v1": True, "spec_review_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,
              "unified_queue_v1": self.cfg.mode == "driver",
              "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),
              "desktop_inbox_v1": self.cfg.mode == "desktop",
@@ -965,6 +969,12 @@ class SessionHelper:
 
     async def process_inbound_message(self, ws, env: dict, raise_adapter_errors: bool = False,
                                       on_injected=None, enrich_files: bool = True) -> None:
+        from .spec_review import is_spec_review, analysis_envelope
+        if is_spec_review(env):
+            env = analysis_envelope(env,self.book.key_id)
+            if env is None:
+                return
+            enrich_files = False
         if enrich_files:
             env = await self._enrich_small_text_files(ws, env)
         from_addr = str(env.get("from") or "")
@@ -1031,6 +1041,8 @@ class SessionHelper:
             if raise_adapter_errors:
                 raise
             reply_body = f"处理失败：{exc}"
+        if (env.get("meta") or {}).get("spec_review_analysis"):
+            return
         if not reply_body:
             return
         carry: dict = {}

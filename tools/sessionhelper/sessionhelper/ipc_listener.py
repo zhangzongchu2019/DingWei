@@ -147,10 +147,12 @@ async def _handle_connection(
     if passed_fds:
         await _write_one(writer, {"ok": False, "error": "file descriptors are only accepted for file_upload_v1"})
         return
-    if msg_type == "task_flow_v1":
+    if msg_type in ("task_flow_v1","spec_review_v1"):
         if task_handler is None:
             return await _write_one(writer, {"ok": False, "error": "task_flow_unavailable"})
-        if set(msg)-{"type","request_id","action","task_id","body"}:
+        allowed={"type","request_id","action","body"}
+        if msg_type=="task_flow_v1": allowed.add("task_id")
+        if set(msg)-allowed:
             return await _write_one(writer, {"ok":False,"error":"invalid_task_request"})
         try:
             result = await asyncio.wait_for(task_handler(msg), timeout=18)

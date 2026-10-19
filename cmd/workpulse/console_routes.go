@@ -85,6 +85,22 @@ func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
 	mux.HandleFunc("GET /api/console/task-driver/specs/{specID}/{revision}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleTaskDriverStatus)))
 	mux.HandleFunc("GET /api/agent/console/task-driver/specs/{specID}/{revision}/tasks", prefixHub.RequireConsoleSpecAgentCapability(func(*http.Request) string { return m8.ConsoleAgentCapabilityTasks }, prefixHub.HandleAgentConsoleTasks))
 	mux.HandleFunc("POST /api/console/specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecs)))
+	for _, kind := range []string{"agent-review", "agent-criteria"} {
+		for _, method := range []string{"GET", "POST"} {
+			kind := kind
+			mux.HandleFunc(method+" /api/console/specs/{specID}/"+kind, prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(map[string]string{"GET": "read", "POST": "submit"}[method], func(w http.ResponseWriter, r *http.Request) {
+				r.SetPathValue("kind", kind)
+				prefixHub.HandleConsoleSpecAgentRequest(w, r)
+			})))
+		}
+	}
+	mux.HandleFunc("POST /api/console/specs/{specID}/agent-criteria/{requestID}/{action}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecAgentConfirm)))
+	mux.HandleFunc("POST /api/console/specs/{specID}/agent-review/{requestID}/cancel", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", func(w http.ResponseWriter, r *http.Request) {
+		r.SetPathValue("action", "cancel")
+		prefixHub.HandleConsoleSpecAgentConfirm(w, r)
+	})))
+	mux.HandleFunc("GET /api/agent/console/spec-review-requests", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentSpecReview))
+	mux.HandleFunc("POST /api/agent/console/spec-review-requests/{requestID}/result", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentSpecReview))
 	mux.HandleFunc("GET /api/agent/console/tasks", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentTaskFlow))
 	mux.HandleFunc("PATCH /api/agent/console/tasks/{taskID}", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentTaskFlow))
 	mux.HandleFunc("POST /api/agent/console/tasks/{taskID}/cases/{caseAction}", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentTaskFlow))

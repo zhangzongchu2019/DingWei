@@ -30,6 +30,9 @@ if (MUTATION === 'reload-spec-frame') mutate("function dwThemeToggle(){\n  var c
 const assetDir = path.join(ROOT, 'internal/m8/static/easymde');
 const json = (res, value) => { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(value)); };
 const server = http.createServer((req, res) => {
+    // R8 lookup added to the spec page; this legacy fixture has no active requests.
+    if(req.method==='GET' && /^\/api\/console\/specs\/[^/?]+\/agent-review(?:\?|$)/.test(req.url)){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({requests:[],agents:[]}));return;}
+
   const url = new URL(req.url, 'http://fixture');
   if (url.pathname === '/console') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end(shell); }
   if (url.pathname === '/console/specs') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end(specs); }

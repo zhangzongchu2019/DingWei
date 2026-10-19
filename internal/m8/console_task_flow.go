@@ -418,6 +418,7 @@ func (h *Hub) StartTaskFlow(ctx context.Context) {
 		defer ticker.Stop()
 		for {
 			h.reconcileTaskFlow(ctx)
+			h.reconcileSpecAgent(ctx)
 			h.dispatchTaskNotifications(ctx)
 			select {
 			case <-ctx.Done():

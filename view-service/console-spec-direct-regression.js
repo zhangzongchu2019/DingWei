@@ -11,6 +11,9 @@ const specs=[{id:'spec-a',title:'Agent A spec',state:'editing',current_revision:
 const calls=[];let batchFails=false;
 function json(res,value,status=200){res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(value));}
 const server=http.createServer(async(req,res)=>{
+    // R8 lookup added to the spec page; this legacy fixture has no active requests.
+    if(req.method==='GET' && /^\/api\/console\/specs\/[^/?]+\/agent-review(?:\?|$)/.test(req.url)){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({requests:[],agents:[]}));return;}
+
  const url=new URL(req.url,'http://local');let body='';for await(const chunk of req)body+=chunk;
  calls.push({path:url.pathname,method:req.method,query:url.search,body});
  if(url.pathname==='/console/specs'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(html);}

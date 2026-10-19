@@ -16,6 +16,9 @@ const agents=[{id:'dev',session_name:'Dev.owner',group_codes:['group'],online:fa
 let boardReads=0,confirmed=0,formalTasks=[],assigned=[];
 const json=(res,status,body)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(body))};
 const server=http.createServer(async(req,res)=>{
+    // R8 lookup added to the spec page; this legacy fixture has no active requests.
+    if(req.method==='GET' && /^\/api\/console\/specs\/[^/?]+\/agent-review(?:\?|$)/.test(req.url)){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({requests:[],agents:[]}));return;}
+
  const u=new URL(req.url,'http://fixture');
  if(u.pathname==='/console/task-board'){res.writeHead(200,{'Content-Type':'text/html'});return res.end(board)}
  if(u.pathname==='/console/specs'){res.writeHead(200,{'Content-Type':'text/html'});return res.end(specs)}

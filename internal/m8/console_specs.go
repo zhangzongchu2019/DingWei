@@ -702,8 +702,11 @@ func (h *Hub) HandleConsoleSpecWorkflow(w http.ResponseWriter, r *http.Request) 
 	switch action {
 	case "transfer":
 		var req struct {
-			TargetShortName string `json:"target_short_name"`
-			State           string `json:"state"`
+			TargetShortName  string `json:"target_short_name"`
+			CancelRequestID  string `json:"cancel_request_id"`
+			ExpectedRevision int    `json:"expected_revision"`
+			ExpectedSHA      string `json:"expected_content_sha256"`
+			State            string `json:"state"`
 		}
 		dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10))
 		dec.DisallowUnknownFields()
@@ -711,7 +714,16 @@ func (h *Hub) HandleConsoleSpecWorkflow(w http.ResponseWriter, r *http.Request) 
 			http.Error(w, "target_short_name required", 400)
 			return
 		}
-		err = repo.TransferConsoleSpec(r.Context(), r.PathValue("specID"), principal, strings.TrimSpace(req.TargetShortName), req.State, h.now())
+		if req.CancelRequestID != "" {
+			sr, ok := h.Repo.(specAgentRepository)
+			if !ok {
+				http.Error(w, "spec request store unavailable", 503)
+				return
+			}
+			err = sr.CancelTransferSpecAgent(r.Context(), r.PathValue("specID"), principal, strings.TrimSpace(req.TargetShortName), req.State, req.CancelRequestID, req.ExpectedRevision, req.ExpectedSHA, h.now())
+		} else {
+			err = repo.TransferConsoleSpec(r.Context(), r.PathValue("specID"), principal, strings.TrimSpace(req.TargetShortName), req.State, h.now())
+		}
 	case "submit-review":
 		err = repo.SubmitConsoleSpecReview(r.Context(), r.PathValue("specID"), principal, h.now())
 	case "review":
