@@ -72,6 +72,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"G_no_group_choice_joins_nothing", noGroupJoinsNothing},
 		{"G_approve_only_into_own_or_member_group", approveOnlyIntoUsableGroup},
 		{"N3_reset_password_revokes_only_that_users_sessions", resetPasswordRevokesSessions},
+		{"R6_promote_to_platform_admin_atomic_with_audit", promoteToPlatformAdmin},
 		{"V2_revoked_before_pickup_no_credential", revokedBeforePickup},
 		{"V2_list_agents_scoped_to_owner_case_insensitive", listAgentsOwnerScoped},
 	}
@@ -1261,6 +1262,73 @@ func resetPasswordRevokesSessions(t *testing.T, s identity.Store) {
 	}
 	if b, _ := s.GetUser(ctx, "bob"); b.MustChangePassword {
 		t.Fatal("bob marked must-change by alice's reset")
+	}
+}
+
+// AuditCounter 可选：能数审计行的存储实现它（内存实现直接数，PG 契约入口用测试包装查 audit_log），
+// 契约据此核「成功恰写一行、拒绝一行不写」。未实现则这部分跳过并记日志，不当通过。
+type AuditCounter interface {
+	CountAudit(ctx context.Context, action, target string) (int, error)
+}
+
+const promoteAction = "user.promoted_platform_admin_by_ops"
+
+func auditCount(t *testing.T, s identity.Store, target string) (int, bool) {
+	t.Helper()
+	ac, ok := s.(AuditCounter)
+	if !ok {
+		t.Logf("store %T does not implement AuditCounter; audit rows not checked", s)
+		return 0, false
+	}
+	n, err := ac.CountAudit(ctx, promoteAction, target)
+	if err != nil {
+		t.Fatalf("CountAudit: %v", err)
+	}
+	return n, true
+}
+
+// R6 promote-admin：active 用户一事务内升 platform_admin 并写恰一行审计、返回原类型；
+// 不存在／非 active／已是管理员 ⇒ 对应错误，类型不变、审计不增。其他用户不动。
+func promoteToPlatformAdmin(t *testing.T, s identity.Store) {
+	mustUser(t, s, "gina", "gi", identity.UserActive)
+	mustUser(t, s, "hank", "ha", identity.UserDisabled)
+	mustUser(t, s, "ivan", "iv", identity.UserActive)
+	if err := s.SetUserType(ctx, "gina", identity.UserManager); err != nil {
+		t.Fatal(err)
+	}
+	old, err := s.PromoteToPlatformAdmin(ctx, "GINA", "promote-admin", promoteAction, t0)
+	if err != nil || old != identity.UserManager {
+		t.Fatalf("promote gina: old=%q err=%v", old, err)
+	}
+	if u, _ := s.GetUser(ctx, "gina"); u.Type != identity.UserPlatformAdmin || u.State != identity.UserActive || u.ShortName != "gi" {
+		t.Fatalf("after promote: %+v", u)
+	}
+	if n, ok := auditCount(t, s, "gina"); ok && n != 1 {
+		t.Fatalf("audit rows for gina after promote = %d, want 1", n)
+	}
+	if u, _ := s.GetUser(ctx, "ivan"); u.Type != identity.UserMember {
+		t.Fatalf("other user changed: %+v", u)
+	}
+	for _, c := range []struct {
+		name, id string
+		want     error
+		typ      identity.UserType
+	}{
+		{"missing", "nobody", identity.ErrNotFound, ""},
+		{"disabled", "hank", identity.ErrUserNotActive, identity.UserMember},
+		{"already admin", "gina", identity.ErrAlreadyPlatformAdmin, identity.UserPlatformAdmin},
+	} {
+		before, _ := auditCount(t, s, c.id)
+		_, err := s.PromoteToPlatformAdmin(ctx, c.id, "promote-admin", promoteAction, t0.Add(time.Minute))
+		wantErr(t, "promote "+c.name, err, c.want)
+		if c.typ != "" {
+			if u, _ := s.GetUser(ctx, c.id); u.Type != c.typ {
+				t.Fatalf("promote %s changed type: %+v", c.name, u)
+			}
+		}
+		if after, ok := auditCount(t, s, c.id); ok && after != before {
+			t.Fatalf("promote %s wrote audit: %d -> %d", c.name, before, after)
+		}
 	}
 }
 

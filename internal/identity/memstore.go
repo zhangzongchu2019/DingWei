@@ -49,6 +49,19 @@ func NewMemStore() *MemStore {
 
 var _ Store = (*MemStore)(nil)
 
+// CountAudit 数某动作对某目标的审计行（测试用，满足 identitytest.AuditCounter）。
+func (m *MemStore) CountAudit(_ context.Context, action, target string) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	n := 0
+	for _, e := range m.audit {
+		if e.Action == action && e.Target == Lower(target) {
+			n++
+		}
+	}
+	return n, nil
+}
+
 // AuditLog 返回审计副本（测试用）。
 func (m *MemStore) AuditLog() []AuditEvent {
 	m.mu.Lock()
