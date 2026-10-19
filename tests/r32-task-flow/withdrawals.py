@@ -20,7 +20,7 @@ def main():
     anchor=subprocess.check_output(['git','rev-parse',args.anchor],cwd=ROOT,text=True).strip()
     work=Path(tempfile.mkdtemp(prefix='r32-withdraw-'))
     subprocess.run(['git','worktree','add','--detach',str(work),anchor],cwd=ROOT,check=True,stdout=subprocess.DEVNULL)
-    env=dict(os.environ);env['PYTHONPATH']=str(work/'tools/sessionhelper');env['NODE_PATH']='/tmp/coder-a3-playwright/node_modules';env['PW_CHANNEL']='chrome';env['PATH']='/tmp/coder-0232-locked-venv/bin:'+env['PATH']
+    env=dict(os.environ);env['PYTHONPATH']=str(work/'tools/sessionhelper');env.setdefault('NODE_PATH','/tmp/coder-a3-playwright/node_modules');env.setdefault('PW_CHANNEL','chrome');env['PATH']='/tmp/coder-0232-locked-venv/bin:'+env['PATH']
     flow='internal/store/console_task_flow.go';cases='internal/store/console_task_case_result.go';ident='internal/identity/task_authorization.go';hub='internal/m8/console_task_flow.go';inbox='tools/sessionhelper/sessionhelper/inbox.py'
     state=go('./internal/store','TestR32TaskStateCasesAndIndependentAgentSameOwner')
     specs=[]
@@ -66,6 +66,13 @@ def main():
     add('http_503_outcome_unknown','tools/sessionhelper/sessionhelper/task_flow.py',lambda s:change(s,"if action == 'update' and exc.code >= 500:","if action == 'update' and exc.code >= 999:"),['python3','-m','unittest','tools/sessionhelper/tests/test_task_flow_r32.py'],'HTTP_503_CLAIMED_REJECTION')
     add('owner_explicit_done_reopen',flow,lambda s:change(s,'if status == "done" && !allowReopen {','if status == "done" && !allowReopen && false {'),go('./internal/store','TestR32OwnerExplicitlyReopensCompletedInvalidAssignment'),'DONE_REASSIGNED_WITHOUT_CONFIRMATION')
     add('waiting_page_does_not_starve_delivery',hub,lambda s:change(s,'after = items[len(items)-1].ID','return // withdrawn stable-page advance'),go('./internal/m8','TestR32TaskNotificationWaitingPageDoesNotBlockDelivery'),'WAITING_PAGE_BLOCKED_DELIVERABLE_NOTICE')
+    driver='internal/m8/console_task_driver.go'
+    def legacy_roles(s):
+        s=change(s,'if actor.ID != state.Developer && actor.ID != state.Reviewer {','if false {')
+        return change(s,' || (actor.ID != current.Developer && actor.ID != current.Reviewer)','')
+    add('legacy_driver_state_fail_closed',driver,lambda s:change(s,'if e != nil {','if e != nil && false {'),go('./internal/m8','TestR32LegacyTaskDriverStateReadFailureCloses'),'LEGACY_DRIVER_STATE_READ_FAILED_OPEN')
+    add('legacy_driver_current_actor',driver,legacy_roles,go('./internal/m8','TestR32LegacyTaskDriverReassignmentBetweenReads'),'LEGACY_DRIVER_REASSIGNMENT_LEAKED')
+    add('legacy_driver_locked_snapshot',driver,lambda s:change(s,'current, err := flow.ConsoleTaskFlowState(r.Context(), task.ID)','current, err := state, error(nil)'),go('./internal/m8','TestR32LegacyTaskDriverReassignmentBetweenReads'),'LEGACY_DRIVER_REASSIGNMENT_LEAKED')
     results=[]
     def execute(name,phase,command):
         p=subprocess.run(command,cwd=work,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=180)

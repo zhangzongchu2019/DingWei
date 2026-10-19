@@ -101,10 +101,30 @@ func (h *Hub) HandleAgentConsoleTasks(w http.ResponseWriter, r *http.Request) {
 	for _, task := range tasks {
 		if task.SpecID == specID && task.Revision == revision {
 			if flow, ok := h.taskFlowRepo(); ok {
-				if state, e := flow.ConsoleTaskFlowState(r.Context(), task.ID); e == nil && state.GroupCode != "" {
+				state, e := flow.ConsoleTaskFlowState(r.Context(), task.ID)
+				if e != nil {
+					// A missing/deleted task is not proof of a legacy assignment.
+					// Genuine group-less tasks have a readable state row.
+					taskError(w, e)
+					return
+				}
+				if state.GroupCode != "" {
+					if actor.ID != state.Developer && actor.ID != state.Reviewer {
+						taskError(w, store.ErrTaskFlowPermission)
+						return
+					}
 					e = h.withTaskIdentity(r.Context(), state, func(_ []identity.Agent, check func() error) error {
-						if state.NeedsReassignment {
+						// Assignment lives in SQLite, independently of PG membership locks.
+						// Recheck it after acquiring those locks, before forming the response.
+						current, err := flow.ConsoleTaskFlowState(r.Context(), task.ID)
+						if err != nil {
+							return err
+						}
+						if current.NeedsReassignment || current.Archived || (actor.ID != current.Developer && actor.ID != current.Reviewer) {
 							return store.ErrTaskFlowPermission
+						}
+						if current.Version != state.Version || current.GroupCode != state.GroupCode {
+							return store.ErrTaskFlowConflict
 						}
 						return check()
 					})
