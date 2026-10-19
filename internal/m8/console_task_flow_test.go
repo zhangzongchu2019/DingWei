@@ -451,3 +451,46 @@ func TestR32PGReleaseFailureDoesNotClaimSQLiteRolledBack(t *testing.T) {
 		t.Fatalf("UNCERTAIN_WRITE_REPLAYED: %+v %v", after, err)
 	}
 }
+
+type r32WaitingPageRepository struct {
+	*store.SQLite
+	task store.TaskFlowState
+}
+
+func (r *r32WaitingPageRepository) PendingConsoleTaskNotificationsAfter(ctx context.Context, after string) ([]store.TaskFlowOutbox, error) {
+	if after == "" {
+		rows := make([]store.TaskFlowOutbox, 100)
+		for i := range rows {
+			rows[i] = store.TaskFlowOutbox{ID: fmt.Sprintf("000-waiting-%03d", i), TaskID: r.task.ID, AssignmentVersion: r.task.AssignmentVersion, Recipient: "owner:zzc"}
+		}
+		return rows, nil
+	}
+	if after == "000-waiting-099" {
+		return r.SQLite.PendingConsoleTaskNotificationsAfter(ctx, "")
+	}
+	return r.SQLite.PendingConsoleTaskNotificationsAfter(ctx, after)
+}
+func TestR32TaskNotificationWaitingPageDoesNotBlockDelivery(t *testing.T) {
+	e, _, state := r32FlowEnv(t)
+	e.hub.Repo = &r32WaitingPageRepository{SQLite: e.db, task: state}
+	conn, status, _ := e.dial(e.zKimiCred, "")
+	if status != 101 {
+		t.Fatal(status)
+	}
+	defer conn.CloseNow()
+	ctx, cancel := context.WithTimeout(e.ctx, 3*time.Second)
+	defer cancel()
+	if err := writeEnvelope(ctx, conn, model.Envelope{To: "workpulse#" + AgentKeyID("zzc"), Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true, "task_flow_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	for {
+		_, raw, err := conn.Read(ctx)
+		if err != nil {
+			t.Fatalf("WAITING_PAGE_BLOCKED_DELIVERABLE_NOTICE: %v", err)
+		}
+		var env model.Envelope
+		if json.Unmarshal(raw, &env) == nil && metaString(env.Meta, "kind") == "task_assigned" {
+			break
+		}
+	}
+}

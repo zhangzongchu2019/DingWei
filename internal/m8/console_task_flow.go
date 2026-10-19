@@ -24,6 +24,7 @@ type taskFlowRepository interface {
 	ConsoleTaskCandidates(context.Context, string, string) (*store.TaskCandidates, error)
 	ConfirmConsoleTaskCandidates(context.Context, string, string, int, int, []store.ConsoleSpecPresplitTask, func() error, time.Time) error
 	PendingConsoleTaskNotifications(context.Context) ([]store.TaskFlowOutbox, error)
+	PendingConsoleTaskNotificationsAfter(context.Context, string) ([]store.TaskFlowOutbox, error)
 	FinishConsoleTaskNotification(context.Context, string, time.Time) error
 	SupersedeConsoleTaskNotification(context.Context, string, time.Time) error
 }
@@ -360,48 +361,52 @@ func (h *Hub) dispatchTaskNotifications(ctx context.Context) {
 	if !ok || h.Identity == nil {
 		return
 	}
-	items, err := repo.PendingConsoleTaskNotifications(ctx)
-	if err != nil {
-		return
-	}
-	for _, item := range items {
-		current, e := repo.ConsoleTaskFlowState(ctx, item.TaskID)
-		if e != nil {
-			continue
+	after := ""
+	for ctx.Err() == nil {
+		items, err := repo.PendingConsoleTaskNotificationsAfter(ctx, after)
+		if err != nil || len(items) == 0 {
+			return
 		}
-		if current.AssignmentVersion != item.AssignmentVersion {
-			_ = repo.SupersedeConsoleTaskNotification(ctx, item.ID, h.now())
-			continue
+		after = items[len(items)-1].ID
+		for _, item := range items {
+			current, e := repo.ConsoleTaskFlowState(ctx, item.TaskID)
+			if e != nil {
+				continue
+			}
+			if current.AssignmentVersion != item.AssignmentVersion {
+				_ = repo.SupersedeConsoleTaskNotification(ctx, item.ID, h.now())
+				continue
+			}
+			if strings.HasPrefix(item.Recipient, "owner:") {
+				continue
+			} // Console exposes owner notices durably.
+			if current.NeedsReassignment {
+				_ = repo.SupersedeConsoleTaskNotification(ctx, item.ID, h.now())
+				continue
+			}
+			a, err := h.Identity.Store.GetAgent(ctx, item.Recipient)
+			if err != nil || a == nil || a.State != identity.AgentActive {
+				continue
+			}
+			key, name := AgentKeyID(a.OwnerLC), a.NameLC()
+			h.mu.Lock()
+			c := h.sessionClients[key][name]
+			h.mu.Unlock()
+			if c == nil {
+				continue
+			}
+			c.stateMu.Lock()
+			capable := c.taskFlowV1 && c.deliveryACKV1
+			c.stateMu.Unlock()
+			if !capable {
+				continue
+			}
+			env := model.Envelope{ID: item.ID, From: sessionAddress(systemAddressName, key), To: sessionAddress(name, key), TS: h.now().Unix(), Body: item.Body, Meta: map[string]any{"kind": "task_assigned", "reply_policy": "no_reply", "conversation_terminal": true, "task_flow_internal": true}}
+			if err = h.RouteEnvelope(context.WithValue(ctx, taskNotificationContextKey{}, true), env); err != nil {
+				continue
+			}
+			_ = repo.FinishConsoleTaskNotification(ctx, item.ID, h.now())
 		}
-		if strings.HasPrefix(item.Recipient, "owner:") {
-			continue
-		} // Console exposes owner notices durably.
-		if current.NeedsReassignment {
-			_ = repo.SupersedeConsoleTaskNotification(ctx, item.ID, h.now())
-			continue
-		}
-		a, err := h.Identity.Store.GetAgent(ctx, item.Recipient)
-		if err != nil || a == nil || a.State != identity.AgentActive {
-			continue
-		}
-		key, name := AgentKeyID(a.OwnerLC), a.NameLC()
-		h.mu.Lock()
-		c := h.sessionClients[key][name]
-		h.mu.Unlock()
-		if c == nil {
-			continue
-		}
-		c.stateMu.Lock()
-		capable := c.taskFlowV1 && c.deliveryACKV1
-		c.stateMu.Unlock()
-		if !capable {
-			continue
-		}
-		env := model.Envelope{ID: item.ID, From: sessionAddress(systemAddressName, key), To: sessionAddress(name, key), TS: h.now().Unix(), Body: item.Body, Meta: map[string]any{"kind": "task_assigned", "reply_policy": "no_reply", "conversation_terminal": true, "task_flow_internal": true}}
-		if err = h.RouteEnvelope(context.WithValue(ctx, taskNotificationContextKey{}, true), env); err != nil {
-			continue
-		}
-		_ = repo.FinishConsoleTaskNotification(ctx, item.ID, h.now())
 	}
 }
 

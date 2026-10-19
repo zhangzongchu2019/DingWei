@@ -262,3 +262,47 @@ func TestR32OwnerExplicitlyReopensCompletedInvalidAssignment(t *testing.T) {
 		t.Fatalf("OWNER_CANNOT_RESOLVE_INVALID_COMPLETED_TASK: %s %+v", status, s)
 	}
 }
+
+func TestR32TaskOutboxStablePagesPreserveWaitingRows(t *testing.T) {
+	db, now, state := taskFlowFixture(t)
+	ctx := context.Background()
+	for i := 0; i < 201; i++ {
+		if _, err := db.db.ExecContext(ctx, `INSERT INTO console_task_flow_outbox(id,task_id,assignment_version,recipient_agent_id,role,event,body,created_at) VALUES(?,?,?,?,'owner','invalidated','{}',?)`, fmt.Sprintf("000-waiting-%03d", i), state.ID, state.AssignmentVersion, fmt.Sprintf("owner:waiting-%03d", i), now.UTC().Format(time.RFC3339Nano)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	seen := map[string]bool{}
+	after := ""
+	pages := 0
+	for {
+		rows, err := db.PendingConsoleTaskNotificationsAfter(ctx, after)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(rows) == 0 {
+			break
+		}
+		pages++
+		if len(rows) > 100 {
+			t.Fatal("OUTBOX_PAGE_UNBOUNDED")
+		}
+		for _, r := range rows {
+			if seen[r.ID] || r.ID <= after {
+				t.Fatal("OUTBOX_CURSOR_NOT_ADVANCED")
+			}
+			seen[r.ID] = true
+		}
+		after = rows[len(rows)-1].ID
+	}
+	if len(seen) != 203 || pages != 3 {
+		t.Fatalf("WAITING_OUTBOX_STARVED_LATER_PAGE: rows=%d pages=%d", len(seen), pages)
+	}
+	all, err := db.PendingConsoleTaskNotifications(ctx)
+	if err != nil || len(all) != 203 {
+		t.Fatalf("BOARD_PENDING_PROJECTION_TRUNCATED: count=%d err=%v", len(all), err)
+	}
+	rows, err := db.PendingConsoleTaskNotificationsAfter(ctx, "")
+	if err != nil || len(rows) != 100 {
+		t.Fatal("WAITING_ROWS_WERE_CONSUMED", err, len(rows))
+	}
+}

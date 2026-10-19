@@ -65,6 +65,7 @@ def main():
     add('pg_release_outcome_unknown',hub,lambda s:change(s,'if status >= 500 {','if status >= 999 {'),go('./internal/m8','TestR32PGReleaseFailureDoesNotClaimSQLiteRolledBack'),'PG_RELEASE_FAILURE_CLAIMED_REJECTION')
     add('http_503_outcome_unknown','tools/sessionhelper/sessionhelper/task_flow.py',lambda s:change(s,"if action == 'update' and exc.code >= 500:","if action == 'update' and exc.code >= 999:"),['python3','-m','unittest','tools/sessionhelper/tests/test_task_flow_r32.py'],'HTTP_503_CLAIMED_REJECTION')
     add('owner_explicit_done_reopen',flow,lambda s:change(s,'if status == "done" && !allowReopen {','if status == "done" && !allowReopen && false {'),go('./internal/store','TestR32OwnerExplicitlyReopensCompletedInvalidAssignment'),'DONE_REASSIGNED_WITHOUT_CONFIRMATION')
+    add('waiting_page_does_not_starve_delivery',hub,lambda s:change(s,'after = items[len(items)-1].ID','return // withdrawn stable-page advance'),go('./internal/m8','TestR32TaskNotificationWaitingPageDoesNotBlockDelivery'),'WAITING_PAGE_BLOCKED_DELIVERABLE_NOTICE')
     results=[]
     def execute(name,phase,command):
         p=subprocess.run(command,cwd=work,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=180)

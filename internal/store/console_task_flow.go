@@ -350,7 +350,25 @@ type TaskFlowOutbox struct {
 }
 
 func (s *SQLite) PendingConsoleTaskNotifications(ctx context.Context) ([]TaskFlowOutbox, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,task_id,recipient_agent_id,body,assignment_version FROM console_task_flow_outbox WHERE dispatched_at IS NULL ORDER BY created_at,id LIMIT 100`)
+	all := []TaskFlowOutbox{}
+	after := ""
+	for {
+		page, err := s.PendingConsoleTaskNotificationsAfter(ctx, after)
+		if err != nil {
+			return nil, err
+		}
+		if len(page) == 0 {
+			return all, nil
+		}
+		all = append(all, page...)
+		after = page[len(page)-1].ID
+	}
+}
+
+// Stable-key pages let callers pass permanently queued offline/owner notices
+// without losing them or starving deliverable notifications behind the page.
+func (s *SQLite) PendingConsoleTaskNotificationsAfter(ctx context.Context, after string) ([]TaskFlowOutbox, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT id,task_id,recipient_agent_id,body,assignment_version FROM console_task_flow_outbox WHERE dispatched_at IS NULL AND id > ? ORDER BY id LIMIT 100`, after)
 	if err != nil {
 		return nil, err
 	}
