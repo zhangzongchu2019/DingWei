@@ -1072,6 +1072,9 @@ func (s *SQLite) CreateConsoleTaskProposal(ctx context.Context, proposal model.C
 }
 
 func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, principalID string, management bool, content, status string, hours float64, dependsOn []string, definitionOfDone string) error {
+	return s.UpdateConsoleTaskProposalPlanAuthorized(ctx, proposalID, principalID, management, content, status, hours, dependsOn, definitionOfDone, nil)
+}
+func (s *SQLite) UpdateConsoleTaskProposalPlanAuthorized(ctx context.Context, proposalID, principalID string, management bool, content, status string, hours float64, dependsOn []string, definitionOfDone string, recheck func() error) error {
 	if proposalID == "" || hours < 0 {
 		return errors.New("invalid task plan")
 	}
@@ -1162,6 +1165,37 @@ func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, 
 			return errors.New("task dependency cycle")
 		}
 	}
+	var flowGroup, currentState string
+	flowErr := tx.QueryRowContext(ctx, `SELECT group_code,status FROM console_spec_task WHERE id=?`, proposalID).Scan(&flowGroup, &currentState)
+	if flowErr != nil && !errors.Is(flowErr, sql.ErrNoRows) {
+		return flowErr
+	}
+	if flowGroup != "" {
+		if _, err = tx.ExecContext(ctx, `DELETE FROM console_spec_task_case_result WHERE task_id=? AND EXISTS(SELECT 1 FROM console_spec_task WHERE id=? AND (task_content<>? OR definition_of_done<>?))`, proposalID, proposalID, content, definitionOfDone); err != nil {
+			return err
+		}
+		if status == "in_progress" || status == "done" {
+			rawDeps, _ := json.Marshal(dependsOn)
+			if err = taskDependenciesDone(ctx, tx, string(rawDeps)); err != nil {
+				return err
+			}
+		}
+		if status == "done" {
+			p, n, e := taskCaseProgress(ctx, tx, proposalID, false)
+			if e != nil {
+				return e
+			}
+			if n == 0 || p != n {
+				return ErrConsoleTaskNotGreen
+			}
+		}
+		if currentState == "done" && status != "done" && status != "planned" {
+			return ErrTaskFlowConflict
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE console_spec_task SET version=version+1 WHERE id=?`, proposalID); err != nil {
+			return err
+		}
+	}
 	raw, _ := json.Marshal(dependsOn)
 	acceptanceJSON, storedDefinition := updateTaskDefinitionStorage(definitionOfDone)
 	query := `UPDATE console_task_proposal SET task_content=?,status=?,estimated_hours=?,depends_on_json=? WHERE id=?`
@@ -1183,6 +1217,14 @@ func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, 
 			return sql.ErrNoRows
 		}
 	}
+	if flowGroup != "" {
+		if recheck == nil {
+			return ErrTaskFlowPermission
+		}
+		if err = recheck(); err != nil {
+			return err
+		}
+	}
 	return tx.Commit()
 }
 
@@ -1194,6 +1236,10 @@ func (s *SQLite) UpdateConsoleSpecTaskAssignees(ctx context.Context, taskID, pri
 	}
 	if developerAgentID != "" && developerAgentID == reviewerAgentID {
 		return ErrConsoleTaskAssigneeSame
+	}
+	var flowGroup string
+	if e := s.db.QueryRowContext(ctx, `SELECT group_code FROM console_spec_task WHERE id=?`, taskID).Scan(&flowGroup); e == nil && flowGroup != "" {
+		return ErrTaskFlowConflict
 	}
 	res, err := s.db.ExecContext(ctx, `UPDATE console_spec_task
 		SET developer_agent_id=NULLIF(?,''),reviewer_agent_id=NULLIF(?,'')
@@ -1251,6 +1297,21 @@ func (s *SQLite) SetConsoleSpecTaskAcceptances(ctx context.Context, taskID, prin
 	}
 	for _, rawID := range acceptanceIDs {
 		if _, err = tx.ExecContext(ctx, `INSERT INTO console_spec_task_acceptance(task_id,acceptance_id) VALUES(?,?)`, taskID, strings.TrimSpace(rawID)); err != nil {
+			return err
+		}
+	}
+	var flowGroup, status string
+	if err = tx.QueryRowContext(ctx, `SELECT group_code,status FROM console_spec_task WHERE id=?`, taskID).Scan(&flowGroup, &status); err != nil {
+		return err
+	}
+	if flowGroup != "" {
+		if status == "done" {
+			return ErrTaskFlowConflict
+		}
+		if _, err = tx.ExecContext(ctx, `DELETE FROM console_spec_task_case_result WHERE task_id=?`, taskID); err != nil {
+			return err
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE console_spec_task SET version=version+1 WHERE id=?`, taskID); err != nil {
 			return err
 		}
 	}

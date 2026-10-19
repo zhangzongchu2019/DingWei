@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -17,12 +16,17 @@ var (
 )
 
 type ConsoleSpecPresplitTask struct {
-	ID               string
-	Title            string
-	Content          string
-	DefinitionOfDone string
-	EstimatedHours   float64
-	DependsOn        []string
+	ID               string   `json:"id"`
+	Title            string   `json:"title"`
+	Content          string   `json:"content"`
+	DefinitionOfDone string   `json:"definition_of_done"`
+	EstimatedHours   float64  `json:"estimated_hours"`
+	DependsOn        []string `json:"depends_on"`
+	DeveloperAgent   string   `json:"developer_agent,omitempty"`
+	ReviewerAgent    string   `json:"reviewer_agent,omitempty"`
+	DeveloperAgentID string   `json:"developer_agent_id,omitempty"`
+	ReviewerAgentID  string   `json:"reviewer_agent_id,omitempty"`
+	GroupCode        string   `json:"group_code,omitempty"`
 }
 
 var presplitTaskDefinitionStorage = splitTaskDefinitionOfDone
@@ -191,13 +195,15 @@ func (s *SQLite) CompleteConsoleSpecPresplit(ctx context.Context, requestID stri
 		Scan(&creator, &taskState, &hash, &acceptance, &anchors); err != nil || creator != req.OwnerPrincipal || taskState != "splitting" {
 		return ErrConsoleSpecPresplitRejected
 	}
-	for _, task := range tasks {
-		deps, _ := json.Marshal(task.DependsOn)
-		acceptanceJSON, definitionOfDone := presplitTaskDefinitionStorage(task.DefinitionOfDone)
-		if _, err = tx.ExecContext(ctx, `INSERT INTO console_spec_task(id,spec_id,revision,content_sha256,title,task_content,status,estimated_hours,depends_on_json,acceptance_json,input_anchors_json,definition_of_done,created_by,created_at) VALUES(?,?,?,?,?,?,'planned',?,?,?,?,?,?,?)`,
-			task.ID, req.SpecID, req.Revision, hash, task.Title, task.Content, task.EstimatedHours, string(deps), acceptanceJSON, anchors, definitionOfDone, agent.OwnerPrincipal, now.UTC().Format(time.RFC3339Nano)); err != nil {
-			return fmt.Errorf("persist presplit task: %w", err)
-		}
+	if err = validateTaskCandidates(tasks); err != nil {
+		return err
+	}
+	raw, err := json.Marshal(tasks)
+	if err != nil {
+		return err
+	}
+	if _, err = tx.ExecContext(ctx, `INSERT INTO console_task_candidate(request_id,tasks_json) VALUES(?,?)`, requestID, string(raw)); err != nil {
+		return err
 	}
 	res, err := tx.ExecContext(ctx, `UPDATE console_spec_presplit_request SET status='completed',completed_at=? WHERE id=? AND status='pending'`, now.UTC().Format(time.RFC3339Nano), requestID)
 	if err != nil {

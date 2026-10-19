@@ -54,8 +54,13 @@ func (h *Hub) HandleConsoleSpecPresplit(w http.ResponseWriter, r *http.Request) 
 				online = append(online, agent)
 			}
 		}
+		groups, taskAgents, e := h.taskFlowOptions(r.Context(), principal)
+		if e != nil {
+			taskError(w, e)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"request": state, "agents": online})
+		_ = json.NewEncoder(w).Encode(map[string]any{"request": state, "agents": online, "candidate": h.taskCandidateForOwner(r.Context(), r.PathValue("specID"), principal), "task_groups": groups, "task_agents": taskAgents})
 		return
 	}
 	if r.Method != http.MethodPost {
@@ -92,7 +97,7 @@ func (h *Hub) HandleConsoleSpecPresplit(w http.ResponseWriter, r *http.Request) 
 		"request_id": req.ID, "spec_id": req.SpecID, "revision": revision.Revision,
 		"content_markdown": revision.ContentMarkdown,
 		"respond_to":       sessionAddress(systemAddressName, agent.KeyID), "response_type": specPresplitResultType,
-		"response_schema": map[string]any{"tasks": []string{"title", "content", "definition_of_done", "estimated_hours", "depends_on_indexes"}},
+		"response_schema": map[string]any{"tasks": []string{"title", "content", "definition_of_done", "estimated_hours", "depends_on_indexes", "developer_agent", "reviewer_agent"}, "group_code": "same-group code"},
 		"instruction":     "拆成候选任务后，用当前会话向 respond_to 发送系统信封：Meta.type=response_type、Meta.request_id=request_id，Body 使用 response_schema JSON。",
 	})
 	env := model.Envelope{ID: randomHex(16), From: sessionAddress(systemAddressName, agent.KeyID), To: sessionAddress(agent.SessionName, agent.KeyID), TS: now.Unix(),
@@ -115,6 +120,7 @@ func (h *Hub) HandleConsoleSpecPresplit(w http.ResponseWriter, r *http.Request) 
 
 type presplitResultBody struct {
 	RequestID   string                 `json:"request_id"`
+	GroupCode   string                 `json:"group_code"`
 	Tasks       []presplitResultTask   `json:"tasks"`
 	KeyID       string                 `json:"key_id,omitempty"`
 	SessionName string                 `json:"session_name,omitempty"`
@@ -127,6 +133,8 @@ type presplitResultTask struct {
 	DefinitionOfDone string  `json:"definition_of_done"`
 	EstimatedHours   float64 `json:"estimated_hours"`
 	DependsOnIndexes []int   `json:"depends_on_indexes"`
+	DeveloperAgent   string  `json:"developer_agent"`
+	ReviewerAgent    string  `json:"reviewer_agent"`
 }
 
 func (h *Hub) handleConsoleSpecPresplitResult(ctx context.Context, c *sessionClient, env model.Envelope) bool {
@@ -150,7 +158,7 @@ func (h *Hub) handleConsoleSpecPresplitResult(ctx context.Context, c *sessionCli
 	}
 	for key := range raw {
 		switch key {
-		case "request_id", "tasks", "key_id", "session_name":
+		case "request_id", "tasks", "key_id", "session_name", "group_code":
 		default:
 			log.Printf("spec presplit callback ignored unknown field=%q request_id=%q", key, body.RequestID)
 		}
@@ -160,7 +168,7 @@ func (h *Hub) handleConsoleSpecPresplitResult(ctx context.Context, c *sessionCli
 		for index, task := range rawTasks {
 			for key := range task {
 				switch key {
-				case "title", "content", "definition_of_done", "estimated_hours", "depends_on_indexes":
+				case "title", "content", "definition_of_done", "estimated_hours", "depends_on_indexes", "developer_agent", "reviewer_agent":
 				default:
 					log.Printf("spec presplit callback ignored unknown task field=%q request_id=%q task_index=%d", key, body.RequestID, index)
 				}
@@ -179,7 +187,15 @@ func (h *Hub) handleConsoleSpecPresplitResult(ctx context.Context, c *sessionCli
 		h.rejectMalformedPresplit(ctx, repo, *agent, requestID, "invalid task format")
 		return true
 	}
-	if err = repo.CompleteConsoleSpecPresplit(ctx, requestID, *agent, tasks, h.now()); err != nil {
+	if err = h.withTaskCandidates(ctx, agent.OwnerPrincipal, body.GroupCode, tasks, func(resolved []store.ConsoleSpecPresplitTask, check func() error) error {
+		if e := check(); e != nil {
+			return e
+		}
+		return repo.CompleteConsoleSpecPresplit(ctx, requestID, *agent, resolved, h.now())
+	}); err != nil {
+		if errors.Is(err, store.ErrConsoleTaskAssigneeSame) || errors.Is(err, store.ErrConsoleTaskAssigneePair) {
+			h.rejectMalformedPresplit(ctx, repo, *agent, requestID, "invalid task assignees")
+		}
 		log.Printf("spec presplit callback rejected request_id=%q agent=%s reason=%v", requestID, agent.ID, err)
 		return true
 	}
@@ -194,7 +210,7 @@ func (h *Hub) rejectMalformedPresplit(ctx context.Context, repo consoleSpecRepos
 }
 
 func validatePresplitTasks(raw []presplitResultTask) ([]store.ConsoleSpecPresplitTask, bool) {
-	if len(raw) == 0 {
+	if len(raw) == 0 || len(raw) > 200 {
 		return nil, false
 	}
 	ids := make([]string, len(raw))
@@ -217,6 +233,7 @@ func validatePresplitTasks(raw []presplitResultTask) ([]store.ConsoleSpecPrespli
 			graph[i] = append(graph[i], dep)
 			out[i].DependsOn = append(out[i].DependsOn, ids[dep])
 		}
+		out[i].DeveloperAgent, out[i].ReviewerAgent = task.DeveloperAgent, task.ReviewerAgent
 		out[i].ID, out[i].Title, out[i].Content = ids[i], strings.TrimSpace(task.Title), strings.TrimSpace(task.Content)
 		out[i].DefinitionOfDone, out[i].EstimatedHours = strings.TrimSpace(task.DefinitionOfDone), task.EstimatedHours
 	}
@@ -251,4 +268,16 @@ func presplitFailureText(req *model.ConsoleSpecPresplitRequest) string {
 		return ""
 	}
 	return fmt.Sprintf("预拆失败，可手工添加（%s）", req.FailureReason)
+}
+
+func (h *Hub) taskCandidateForOwner(ctx context.Context, spec, owner string) *store.TaskCandidates {
+	repo, ok := h.taskFlowRepo()
+	if !ok {
+		return nil
+	}
+	c, err := repo.ConsoleTaskCandidates(ctx, spec, owner)
+	if err != nil {
+		return nil
+	}
+	return c
 }

@@ -36,15 +36,16 @@ function dwTaskInitTheme(){var initial='light';try{var stored=localStorage.getIt
  try{if('BroadcastChannel' in window){dwTaskThemeChannel=new BroadcastChannel(DW_THEME_KEY);dwTaskThemeChannel.onmessage=function(e){dwTaskApplyTheme(e&&e.data&&e.data.theme);};}}catch(_){dwTaskThemeChannel=null;}
  try{window.addEventListener('storage',function(e){if(e&&e.key===DW_THEME_KEY)dwTaskApplyTheme(e.newValue);});}catch(_){} }
 dwTaskInitTheme();
-let specPage=1,taskPage=1,selectedSpec=new URLSearchParams(location.search).get('spec_id')||'',editing=false,onlineAgents=[],currentTasks=[];
+let specPage=1,taskPage=1,selectedSpec=new URLSearchParams(location.search).get('spec_id')||'',editing=false,onlineAgents=[],currentTasks=[],taskGroups=[];
 function acceptanceDisplay(raw){try{const value=JSON.parse(raw||'[]'),list=Array.isArray(value)?value:(Array.isArray(value.criteria)?value.criteria:[]),ids=[],texts=[];list.forEach(function(v){const id=String(v.id||'').trim(),text=String(v.text||'').trim();if(id)ids.push(id);if(text)texts.push((id?id+' ':'')+text)});return {label:ids.join(', '),title:texts.join('\n')}}catch(_){return {label:'',title:''}}}
 function setPager(prefix,page,pages){document.getElementById(prefix+'-page').textContent=page+' / '+pages;document.getElementById(prefix+'-prev').disabled=page<=1;document.getElementById(prefix+'-next').disabled=page>=pages}
 function taskCell(value,title){const td=document.createElement('td');td.textContent=value||'';if(title)td.title=title;return td}
-function assigneeCell(task,role){const td=document.createElement('td'),idKey=role+'_agent_id',nameKey=role+'_agent',onlineKey=role+'_online';if(!editing||!String(task.review_id||'').startsWith('manual:')){td.textContent=task[nameKey]||'';if(task[idKey]&&!task[onlineKey]){const dot=document.createElement('span');dot.className='offline-dot';dot.title='当前离线';dot.textContent='●';td.append(dot)}return td}const select=document.createElement('select');select.className='assignee-select '+role+'-agent';const blank=document.createElement('option');blank.value='';blank.textContent='';select.append(blank);if(task[idKey]&&!task[onlineKey]){const assigned=document.createElement('option');assigned.value=task[idKey];assigned.textContent=task[nameKey]||task[idKey];assigned.disabled=true;assigned.selected=true;assigned.dataset.assignedOffline='true';select.append(assigned)}onlineAgents.forEach(function(agent){const option=document.createElement('option');option.value=agent.id;option.textContent=agent.session_name;option.selected=agent.id===task[idKey];select.append(option)});select.onchange=function(){task[idKey]=select.value;task.assignment_dirty=true};td.append(select);return td}
-async function saveAssignment(task){if(boardStopped)return false;const status=document.getElementById('task-status'),r=await fetch('/api/console/task-board/tasks/'+encodeURIComponent(task.proposal_id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({developer_agent_id:task.developer_agent_id||'',reviewer_agent_id:task.reviewer_agent_id||''})});if(r.status===401||r.status===403){boardStop('登录或访问权限已失效，请重新打开任务管理');return false}if(boardStopped)return false;if(!r.ok){status.textContent='任务保存失败，编辑内容已保留';return false}task.assignment_dirty=false;return true}
+function assigneeCell(task,role){const td=document.createElement('td'),idKey=role+'_agent_id',nameKey=role+'_agent',onlineKey=role+'_online';if(!editing||!String(task.review_id||'').startsWith('manual:')){td.textContent=task[nameKey]||'';if(task[idKey]&&!task[onlineKey]){const dot=document.createElement('span');dot.className='offline-dot';dot.title='当前离线';dot.textContent='●';td.append(dot)}return td}const select=document.createElement('select');select.className='assignee-select '+role+'-agent';const blank=document.createElement('option');blank.value='';blank.textContent='';select.append(blank);if(task[idKey]&&!task[onlineKey]){const assigned=document.createElement('option');assigned.value=task[idKey];assigned.textContent=task[nameKey]||task[idKey];assigned.disabled=true;assigned.selected=true;assigned.dataset.assignedOffline='true';select.append(assigned)}onlineAgents.filter(function(agent){return !task.group_code||!agent.group_codes||agent.group_codes.includes(task.group_code)}).forEach(function(agent){const option=document.createElement('option');option.value=agent.id;option.textContent=agent.session_name+(agent.online===false?"（离线）":"");option.selected=agent.id===task[idKey];select.append(option)});select.onchange=function(){task[idKey]=select.value;task.assignment_dirty=true};td.append(select);return td}
+async function saveAssignment(task){if(boardStopped)return false;const status=document.getElementById('task-status'),r=await fetch('/api/console/task-board/tasks/'+encodeURIComponent(task.proposal_id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({developer_agent_id:task.developer_agent_id||'',reviewer_agent_id:task.reviewer_agent_id||''},task.version?{expected_version:task.version,group_code:task.group_code||''}:{}))});if(r.status===401||r.status===403){boardStop('登录或访问权限已失效，请重新打开任务管理');return false}if(boardStopped)return false;if(!r.ok){status.textContent='任务保存失败，编辑内容已保留';return false}task.assignment_dirty=false;return true}
 async function saveAssignments(){if(!await loadBoard('verify')||boardStopped)return false;for(const task of currentTasks){if(task.assignment_dirty&&!await saveAssignment(task))return false}document.getElementById('task-status').textContent='已保存';return true}
-function taskProgress(task){if(task.developer_agent_id&&!task.reviewer_agent_id)return {text:'缺少验收 Agent，任务无法完成',problem:true};return {text:(task.status?({'planned':'已计划'}[task.status]||task.status)+' · ':'')+String(task.passed_cases||0)+'/'+String(task.total_cases||1),problem:false}}
-function renderTasks(tasks){currentTasks=tasks||[];const body=document.getElementById('task-list');body.replaceChildren();currentTasks.forEach(function(task){const tr=document.createElement('tr'),acceptance=acceptanceDisplay(task.acceptance_json),progress=taskProgress(task),progressCell=taskCell(progress.text);tr.dataset.taskId=task.proposal_id;if(progress.problem)progressCell.className='error assignment-problem';tr.append(taskCell(task.content||task.title),assigneeCell(task,'developer'),assigneeCell(task,'reviewer'),progressCell,taskCell(acceptance.label,acceptance.title));body.append(tr)})}
+function taskProgress(task){if(task.needs_reassignment)return {text:'执行人权限已失效，请改派',problem:true};if(task.developer_agent_id&&!task.reviewer_agent_id)return {text:'缺少验收 Agent，任务无法完成',problem:true};return {text:(task.status?({'planned':'已计划'}[task.status]||task.status)+' · ':'')+String(task.passed_cases||0)+'/'+String(task.total_cases||1)+(task.assignment_notification_pending?' · 通知排队中（离线或需升级helper）':''),problem:false}}
+function flowGroupCell(task){const td=document.createElement("div");if(!task.version)return td;const select=document.createElement("select");const blank=document.createElement("option");blank.value="";blank.textContent="请选择编组";select.append(blank);taskGroups.forEach(function(g){const o=document.createElement("option");o.value=g.code;o.textContent=g.name;o.selected=g.code===task.group_code;select.append(o)});select.disabled=!editing;select.onchange=function(){task.group_code=select.value;task.assignment_dirty=true;renderTasks(currentTasks)};td.append(select);return td}
+function renderTasks(tasks){currentTasks=tasks||[];const body=document.getElementById('task-list');body.replaceChildren();currentTasks.forEach(function(task){const tr=document.createElement('tr'),acceptance=acceptanceDisplay(task.acceptance_json),progress=taskProgress(task),progressCell=taskCell(progress.text);tr.dataset.taskId=task.proposal_id;if(progress.problem)progressCell.className='error assignment-problem';const contentCell=taskCell(task.content||task.title);if(editing)contentCell.append(flowGroupCell(task));tr.append(contentCell,assigneeCell(task,'developer'),assigneeCell(task,'reviewer'),progressCell,taskCell(acceptance.label,acceptance.title));body.append(tr)})}
 function taskUnknown(v){return v===null||v===undefined||v===''?'未填写/未知':String(v)}
 function renderActiveTasks(tasks){const body=document.getElementById('active-task-list');body.replaceChildren();(tasks||[]).forEach(function(task){const tr=document.createElement('tr');tr.append(taskCell(task.content||task.title),taskCell(task.status),taskCell(taskUnknown(task.started_at)),taskCell(taskUnknown(task.developer_agent)),taskCell(taskUnknown(task.reviewer_agent)),taskCell(taskUnknown(task.planned_finish_at)),taskCell(taskUnknown(task.blocker)),taskCell(taskUnknown(task.resource_coordination)));body.append(tr)})}
 function renderSpecs(specs){const body=document.getElementById('spec-list');body.replaceChildren();(specs||[]).forEach(function(spec){const tr=document.createElement('tr');tr.dataset.specId=spec.id;tr.classList.toggle('selected',spec.id===selectedSpec);tr.append(taskCell(spec.title),taskCell(spec.state));tr.onclick=function(){boardChangeSelection(function(){selectedSpec=selectedSpec===spec.id?'':spec.id;taskPage=1})};body.append(tr)})}
@@ -55,7 +56,7 @@ const boardInstance=boardParams.get('board_instance')||'';
 let boardParentActive=!boardEmbedded,boardVisibilityGeneration=-1;
 function boardIsActive(){return !document.hidden&&(!boardEmbedded||boardParentActive)}
 function boardClearTimer(){if(boardTimer!==null)clearTimeout(boardTimer);boardTimer=null}
-function boardSchedule(){boardClearTimer();if(!boardStopped&&!editing&&boardIsActive())boardTimer=setTimeout(function(){boardTimer=null;loadBoard()},60000)}
+function boardSchedule(){boardClearTimer();if(!boardStopped&&!editing&&boardIsActive())boardTimer=setTimeout(function(){boardTimer=null;loadBoard()},5000)}
 function boardStop(text){boardStopped=true;boardGeneration++;boardQueued=false;boardClearTimer();if(boardFlight)boardFlight.controller.abort();boardViewer='';boardLastGoodAt='';editing=false;onlineAgents=[];renderSpecs([]);renderTasks([]);document.getElementById('task-updated').textContent='';document.getElementById('task-status').textContent=text;document.getElementById('edit-tasks').disabled=true;document.getElementById('finish-tasks').hidden=true;document.getElementById('refresh-tasks').disabled=true}
 function boardQuery(){const q=new URLSearchParams({spec_page:String(specPage),task_page:String(taskPage)});if(selectedSpec)q.set('spec_id',selectedSpec);return q.toString()}
 async function loadBoard(mode){
@@ -74,7 +75,7 @@ async function loadBoard(mode){
   boardViewer=data.viewer_key;
   if(mode==='verify')return data;
   if(editing){boardQueued=true;return null}
-  specPage=data.spec_page;taskPage=data.task_page;onlineAgents=data.agents;
+  specPage=data.spec_page;taskPage=data.task_page;onlineAgents=data.task_agents&&data.task_agents.length?data.task_agents:data.agents;taskGroups=data.task_groups||[];
   renderSpecs(data.specs);renderTasks(data.tasks);renderActiveTasks(data.active_tasks||[]);setPager('spec',data.spec_page,data.spec_total_pages);setPager('task',data.task_page,data.task_total_pages);
   boardLastGoodAt=data.updated_at||new Date().toISOString();
   document.getElementById('task-updated').textContent='更新于 '+boardLastGoodAt;
@@ -247,6 +248,43 @@ func (h *Hub) HandleConsoleTaskBoard(w http.ResponseWriter, r *http.Request) {
 			onlineIDs[agent.ID] = true
 		}
 	}
+	notificationPending := map[string]bool{}
+	if flow, ok := h.taskFlowRepo(); ok {
+		notifications, e := flow.PendingConsoleTaskNotifications(r.Context())
+		if e != nil {
+			taskError(w, e)
+			return
+		}
+		for _, n := range notifications {
+			notificationPending[n.TaskID] = true
+		}
+	}
+	groups, taskAgents, optionErr := h.taskFlowOptions(r.Context(), principal)
+	if optionErr != nil {
+		taskError(w, optionErr)
+		return
+	}
+	if h.Identity != nil {
+		for i := range tasks {
+			tasks[i].AssignmentNotificationPending = notificationPending[tasks[i].ID]
+			if flow, ok := h.taskFlowRepo(); ok {
+				if st, e := flow.ConsoleTaskFlowState(r.Context(), tasks[i].ID); e == nil {
+					tasks[i].Version = st.Version
+					tasks[i].GroupCode = st.GroupCode
+					tasks[i].NeedsReassignment = st.NeedsReassignment
+				}
+			}
+			for _, a := range taskAgents {
+				onlineIDs[a.ID] = a.Online
+				if tasks[i].DeveloperAgentID == a.ID {
+					tasks[i].DeveloperAgent = a.SessionName
+				}
+				if tasks[i].ReviewerAgentID == a.ID {
+					tasks[i].ReviewerAgent = a.SessionName
+				}
+			}
+		}
+	}
 	visibleSpecs, specPages := pageConsoleSpecs(specs, specPage, consoleTaskBoardSpecPageSize)
 	if specPage > specPages {
 		specPage = specPages
@@ -274,7 +312,7 @@ func (h *Hub) HandleConsoleTaskBoard(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"viewer_key": hashConsoleToken("task-board:" + principal), "updated_at": h.now().UTC(), "task_total": len(tasks),
 		"specs": visibleSpecs, "spec_page": specPage, "spec_page_size": consoleTaskBoardSpecPageSize, "spec_total_pages": specPages,
-		"tasks": visibleTasks, "active_tasks": activeConsoleTasks(tasks), "agents": online, "task_page": taskPage, "task_page_size": consoleTaskBoardTaskPageSize, "task_total_pages": taskPages,
+		"tasks": visibleTasks, "active_tasks": activeConsoleTasks(tasks), "agents": online, "task_agents": taskAgents, "task_groups": groups, "task_page": taskPage, "task_page_size": consoleTaskBoardTaskPageSize, "task_total_pages": taskPages,
 	})
 }
 
@@ -297,6 +335,8 @@ func (h *Hub) HandleConsoleTaskBoardAssignment(w http.ResponseWriter, r *http.Re
 	var req struct {
 		DeveloperAgentID     string  `json:"developer_agent_id"`
 		ReviewerAgentID      string  `json:"reviewer_agent_id"`
+		GroupCode            string  `json:"group_code"`
+		ExpectedVersion      int     `json:"expected_version"`
 		StartedAt            *string `json:"started_at"`
 		PlannedFinishAt      *string `json:"planned_finish_at"`
 		Blocker              *string `json:"blocker"`
@@ -352,6 +392,20 @@ func (h *Hub) HandleConsoleTaskBoardAssignment(w http.ResponseWriter, r *http.Re
 	if current == nil {
 		http.NotFound(w, r)
 		return
+	}
+	if h.Identity != nil && (req.GroupCode != "" || req.ExpectedVersion > 0) {
+		if req.StartedAt != nil || req.PlannedFinishAt != nil || req.Blocker != nil || req.ResourceCoordination != nil {
+			taskError(w, store.ErrTaskFlowInvalid)
+			return
+		}
+		h.assignTaskFlow(w, r, current.ID, principal, req.GroupCode, req.DeveloperAgentID, req.ReviewerAgentID, req.ExpectedVersion)
+		return
+	}
+	if flow, ok := h.taskFlowRepo(); ok {
+		if t, e := flow.ConsoleTaskFlowState(r.Context(), current.ID); e == nil && t.GroupCode != "" {
+			taskError(w, store.ErrTaskFlowConflict)
+			return
+		}
 	}
 	agents, err := repo.ListConsoleAgents(r.Context(), principal)
 	if err != nil {

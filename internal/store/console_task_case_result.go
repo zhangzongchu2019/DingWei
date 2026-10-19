@@ -36,12 +36,16 @@ func decodeConsoleTaskCriteria(raw string) []consoleTaskCriterion {
 }
 
 func (s *SQLite) consoleTaskExpectedCases(ctx context.Context, taskID string) (map[string]bool, error) {
+	return taskExpectedCases(ctx, s.db, taskID)
+}
+
+func taskExpectedCases(ctx context.Context, q taskQuery, taskID string) (map[string]bool, error) {
 	var specRaw string
-	err := s.db.QueryRowContext(ctx, `SELECT r.acceptance_json FROM console_spec_task t JOIN console_spec_revision r ON r.spec_id=t.spec_id AND r.revision=t.revision WHERE t.id=?`, taskID).Scan(&specRaw)
+	err := q.QueryRowContext(ctx, `SELECT r.acceptance_json FROM console_spec_task t JOIN console_spec_revision r ON r.spec_id=t.spec_id AND r.revision=t.revision WHERE t.id=?`, taskID).Scan(&specRaw)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT acceptance_id FROM console_spec_task_acceptance WHERE task_id=?`, taskID)
+	rows, err := q.QueryContext(ctx, `SELECT acceptance_id FROM console_spec_task_acceptance WHERE task_id=?`, taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,14 +80,26 @@ func (s *SQLite) consoleTaskExpectedCases(ctx context.Context, taskID string) (m
 }
 
 func (s *SQLite) MarkConsoleSpecTaskCase(ctx context.Context, taskID, acceptanceID, caseName, actorAgentID string, at time.Time) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err = markTaskCase(ctx, tx, taskID, acceptanceID, caseName, actorAgentID, at); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func markTaskCase(ctx context.Context, tx *sql.Tx, taskID, acceptanceID, caseName, actorAgentID string, at time.Time) error {
 	var developer sql.NullString
-	if err := s.db.QueryRowContext(ctx, `SELECT developer_agent_id FROM console_spec_task WHERE id=?`, taskID).Scan(&developer); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT developer_agent_id FROM console_spec_task WHERE id=?`, taskID).Scan(&developer); err != nil {
 		return err
 	}
 	if (!developer.Valid || developer.String != actorAgentID) && !allowAnyTaskCaseMarker {
 		return ErrConsoleTaskCasePermission
 	}
-	expected, err := s.consoleTaskExpectedCases(ctx, taskID)
+	expected, err := taskExpectedCases(ctx, tx, taskID)
 	if err != nil {
 		return err
 	}
@@ -91,20 +107,32 @@ func (s *SQLite) MarkConsoleSpecTaskCase(ctx context.Context, taskID, acceptance
 	if !expected[acceptanceID+"\x00"+caseName] {
 		return ErrConsoleTaskCaseUnknown
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO console_spec_task_case_result(task_id,acceptance_id,case_name,marked_by,marked_at,confirmed_by,confirmed_at) VALUES(?,?,?,?,?,NULL,NULL)
+	_, err = tx.ExecContext(ctx, `INSERT INTO console_spec_task_case_result(task_id,acceptance_id,case_name,marked_by,marked_at,confirmed_by,confirmed_at) VALUES(?,?,?,?,?,NULL,NULL)
 		ON CONFLICT(task_id,acceptance_id,case_name) DO UPDATE SET marked_by=excluded.marked_by,marked_at=excluded.marked_at,confirmed_by=NULL,confirmed_at=NULL`, taskID, acceptanceID, caseName, actorAgentID, at.UTC().Format(time.RFC3339Nano))
 	return err
 }
 
 func (s *SQLite) ConfirmConsoleSpecTaskCase(ctx context.Context, taskID, acceptanceID, caseName, actorAgentID string, at time.Time) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err = confirmTaskCase(ctx, tx, taskID, acceptanceID, caseName, actorAgentID, at); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func confirmTaskCase(ctx context.Context, tx *sql.Tx, taskID, acceptanceID, caseName, actorAgentID string, at time.Time) error {
 	var developer, reviewer sql.NullString
-	if err := s.db.QueryRowContext(ctx, `SELECT developer_agent_id,reviewer_agent_id FROM console_spec_task WHERE id=?`, taskID).Scan(&developer, &reviewer); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT developer_agent_id,reviewer_agent_id FROM console_spec_task WHERE id=?`, taskID).Scan(&developer, &reviewer); err != nil {
 		return err
 	}
 	if (!reviewer.Valid || reviewer.String != actorAgentID || (developer.Valid && developer.String == actorAgentID)) && !allowAnyTaskCaseConfirmer {
 		return ErrConsoleTaskCasePermission
 	}
-	res, err := s.db.ExecContext(ctx, `UPDATE console_spec_task_case_result SET confirmed_by=?,confirmed_at=? WHERE task_id=? AND acceptance_id=? AND case_name=?`, actorAgentID, at.UTC().Format(time.RFC3339Nano), taskID, strings.TrimSpace(acceptanceID), strings.TrimSpace(caseName))
+	res, err := tx.ExecContext(ctx, `UPDATE console_spec_task_case_result SET confirmed_by=?,confirmed_at=? WHERE task_id=? AND acceptance_id=? AND case_name=? AND marked_by=?`, actorAgentID, at.UTC().Format(time.RFC3339Nano), taskID, strings.TrimSpace(acceptanceID), strings.TrimSpace(caseName), developer.String)
 	if err != nil {
 		return err
 	}
@@ -120,16 +148,19 @@ func (s *SQLite) ConsoleSpecTaskCaseProgress(ctx context.Context, taskID string)
 }
 
 func (s *SQLite) consoleSpecTaskCaseProgress(ctx context.Context, taskID string, countUnconfirmed bool) (int, int, error) {
-	expected, err := s.consoleTaskExpectedCases(ctx, taskID)
+	return taskCaseProgress(ctx, s.db, taskID, countUnconfirmed)
+}
+func taskCaseProgress(ctx context.Context, q taskQuery, taskID string, countUnconfirmed bool) (int, int, error) {
+	expected, err := taskExpectedCases(ctx, q, taskID)
 	if err != nil {
 		return 0, 0, err
 	}
 	passed := 0
-	query := `SELECT acceptance_id,case_name FROM console_spec_task_case_result WHERE task_id=? AND confirmed_by IS NOT NULL AND confirmed_at IS NOT NULL`
+	query := `SELECT c.acceptance_id,c.case_name FROM console_spec_task_case_result c JOIN console_spec_task t ON t.id=c.task_id WHERE c.task_id=? AND c.marked_by=t.developer_agent_id AND c.confirmed_by=t.reviewer_agent_id AND c.confirmed_at IS NOT NULL`
 	if countUnconfirmed {
 		query = `SELECT acceptance_id,case_name FROM console_spec_task_case_result WHERE task_id=?`
 	}
-	rows, err := s.db.QueryContext(ctx, query, taskID)
+	rows, err := q.QueryContext(ctx, query, taskID)
 	if err != nil {
 		return 0, 0, err
 	}

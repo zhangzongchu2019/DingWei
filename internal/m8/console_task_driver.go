@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
@@ -99,6 +100,21 @@ func (h *Hub) HandleAgentConsoleTasks(w http.ResponseWriter, r *http.Request) {
 	filtered := tasks[:0]
 	for _, task := range tasks {
 		if task.SpecID == specID && task.Revision == revision {
+			if flow, ok := h.taskFlowRepo(); ok {
+				if state, e := flow.ConsoleTaskFlowState(r.Context(), task.ID); e == nil && state.GroupCode != "" {
+					e = h.withTaskIdentity(r.Context(), state, func(_ []identity.Agent, check func() error) error {
+						if state.NeedsReassignment {
+							return store.ErrTaskFlowPermission
+						}
+						return check()
+					})
+					if e != nil {
+						h.invalidateTaskIfDenied(r.Context(), state, e)
+						taskError(w, e)
+						return
+					}
+				}
+			}
 			filtered = append(filtered, task)
 		}
 	}

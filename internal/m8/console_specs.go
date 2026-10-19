@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
@@ -588,7 +589,33 @@ func (h *Hub) HandleConsoleTaskProposalPlan(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "invalid task plan", 400)
 		return
 	}
-	if err := repo.UpdateConsoleTaskProposalPlan(r.Context(), r.PathValue("proposalID"), platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement, req.Content, req.Status, req.EstimatedHours, req.DependsOn, strings.TrimSpace(req.DefinitionOfDone)); err != nil {
+	update := func(ctx context.Context) error {
+		return repo.UpdateConsoleTaskProposalPlan(ctx, r.PathValue("proposalID"), platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement, req.Content, req.Status, req.EstimatedHours, req.DependsOn, strings.TrimSpace(req.DefinitionOfDone))
+	}
+	var updateErr error
+	if flow, ok := h.taskFlowRepo(); ok {
+		if state, e := flow.ConsoleTaskFlowState(r.Context(), r.PathValue("proposalID")); e == nil && state.GroupCode != "" {
+			if state.Owner != platformPrincipal(r) || state.NeedsReassignment {
+				taskError(w, store.ErrTaskFlowPermission)
+				return
+			}
+			authorized, ok := h.Repo.(interface {
+				UpdateConsoleTaskProposalPlanAuthorized(context.Context, string, string, bool, string, string, float64, []string, string, func() error) error
+			})
+			if !ok {
+				taskError(w, store.ErrTaskFlowPermission)
+				return
+			}
+			updateErr = h.withTaskIdentity(r.Context(), state, func(_ []identity.Agent, check func() error) error {
+				return authorized.UpdateConsoleTaskProposalPlanAuthorized(r.Context(), state.ID, platformPrincipal(r), false, req.Content, req.Status, req.EstimatedHours, req.DependsOn, strings.TrimSpace(req.DefinitionOfDone), check)
+			})
+		} else {
+			updateErr = update(r.Context())
+		}
+	} else {
+		updateErr = update(r.Context())
+	}
+	if err := updateErr; err != nil {
 		code := http.StatusConflict
 		if errors.Is(err, store.ErrConsoleSpecPermission) {
 			code = http.StatusForbidden

@@ -117,7 +117,8 @@ type Hub struct {
 	// sessionWG 正在服务中的会话（serveSession）个数；Close 等它们收尾。
 	// httptest.Server.Close 不等已升级为 WebSocket 的连接 ⇒ 不等的话，会话收尾（释放投递租约、写库、打日志）
 	// 会拖到下一条用例里，撞进别人的日志捕获窗口（复验方 qwen38maxkhovvob4 的日志卫生用例即被打红过）。
-	sessionWG sync.WaitGroup
+	sessionWG          sync.WaitGroup
+	taskFlowDispatchMu sync.Mutex
 
 	mu                hubMutex
 	serviceClients    map[string]*client
@@ -222,6 +223,7 @@ type sessionClient struct {
 	skillInstalled bool
 	skillCancel    context.CancelFunc
 	deliveryACKV1  bool
+	taskFlowV1     bool
 	helperUpdateV1 bool // authenticated helper explicitly supports update_self v1
 	desktopInboxV1 bool
 	helperReady    bool
@@ -1243,6 +1245,10 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		var env model.Envelope
 		if err := json.Unmarshal(data, &env); err != nil {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, "", "信封解析失败："+err.Error()))
+			continue
+		}
+		if metaString(env.Meta, "kind") == "task_assigned" || metaBool(env.Meta, "task_flow_internal") {
+			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "task notification is Hub-only"))
 			continue
 		}
 		if h.handleSessionCapability(c, env) || h.handleSessionDeliveryAck(r.Context(), c, env) {
@@ -3145,6 +3151,10 @@ func feishuDispatchLogSource(addr address) (openID, botChannel string) {
 }
 
 func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
+	if metaString(env.Meta, "kind") == "task_assigned" && ctx.Value(taskNotificationContextKey{}) != true {
+		return errors.New("task notification is Hub-only")
+	}
+
 	// reply-origin / loop-termination:conversation 类消息先过 R4 hop / R5 dedup 兜底 + origin 捕获。
 	// control 类与无新字段的 legacy 消息透传不变(向后兼容)。drop=静默丢弃,不回错给发方。
 	env, drop := h.applyReplyOriginTermination(env)
@@ -4293,6 +4303,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	wasDeliveryACKV1 := c.deliveryACKV1
 	c.helperReady = true
 	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
+	c.taskFlowV1 = metaBool(env.Meta, "task_flow_v1")
 	c.helperUpdateV1 = metaBool(env.Meta, "helper_update_v1")
 	c.desktopInboxV1 = metaBool(env.Meta, "desktop_inbox_v1") && metaString(env.Meta, "processed_semantics") == "saved_to_desktop_inbox"
 	c.stateMu.Unlock()
@@ -4326,6 +4337,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	if h.sessionSupportsHelperUpdate(c) {
 		go h.resumeHelperUpdateOffer(context.Background(), c)
 	}
+	go h.dispatchTaskNotifications(context.Background())
 	return true
 }
 

@@ -401,6 +401,7 @@ func run(logger *slog.Logger) error {
 	startSystemdWatchdog(ctx, logger, prefixHub)
 	go processor.Run(ctx, 200*time.Millisecond)
 	prefixHub.StartL2Workers(ctx)
+	prefixHub.StartTaskFlow(ctx)
 	go runOutboundLoop(ctx, logger, outbound, feishuGateway, 200*time.Millisecond)
 	if feishuReceiver != nil {
 		go func() {

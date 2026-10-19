@@ -288,7 +288,7 @@ def _send_message(args: dict[str, Any]) -> dict[str, Any]:
     return _ipc_send(payload)
 
 
-@register("dw_inbox", "查询本机桌面收件箱，读取、确认消息或暂停接收处理。接收不等于 AI 已执行。", {
+@register("dw_inbox", "查询本席收件箱；driver只读与本地已读，desktop另支持暂停。接收不等于AI已执行。", {
     "type": "object",
     "properties": {
         "operation": {"type": "string", "enum": ["status", "list", "read", "ack", "pause", "resume"]},
@@ -467,6 +467,34 @@ def _dw_spec_update(args: dict[str, Any]) -> dict[str, Any]:
     body = _spec_body(args, update=True)
     return _ipc_request({"type": "spec_write_v1", "action": "update", "spec_id": spec_id, "protocol": "direct-v1", "body": body}, timeout=_SPEC_IPC_TIMEOUT)
 
+
+# R32: the shim transports task data only, never the Agent credential.
+_TASK_UPDATE_PROPERTIES = {
+    "task_id":{"type":"string"}, "request_id":{"type":"string"},
+    "expected_version":{"type":"integer","minimum":1},
+    "operation":{"type":"string","enum":["start","resume","block","complete","mark_case","confirm_case"]},
+    "blocker":{"type":"string"}, "acceptance_id":{"type":"string"}, "case_name":{"type":"string"},
+}
+@register("dw_task_list", "列出当前 Agent 被指派的任务、依赖和已确认用例进度。", {
+    "type":"object", "properties":{"limit":{"type":"integer","minimum":1,"maximum":100},"cursor":{"type":"string"},"spec_id":{"type":"string"},"status":{"type":"string"}},
+    "additionalProperties":False,
+})
+def _dw_task_list(args):
+    if not isinstance(args,dict) or set(args)-{'limit','cursor','spec_id','status'}:
+        raise ValueError('invalid task list arguments')
+    return _ipc_request({'type':'task_flow_v1','action':'list','body':args},timeout=_SPEC_IPC_TIMEOUT)
+
+@register("dw_task_update", "更新自己任务；开发登记用例、审查确认。先读 version；结果不明先查询勿新ID重试。", {
+    "type":"object","properties":_TASK_UPDATE_PROPERTIES,
+    "required":["task_id","request_id","expected_version","operation"],"additionalProperties":False,
+})
+def _dw_task_update(args):
+    if not isinstance(args,dict) or set(args)-set(_TASK_UPDATE_PROPERTIES) or not {'task_id','request_id','expected_version','operation'}.issubset(args):
+        raise ValueError('invalid task update arguments')
+    task_id=args['task_id']
+    if not isinstance(task_id,str) or not 1 <= len(task_id) <= 256:
+        raise ValueError('invalid task id')
+    return _ipc_request({'type':'task_flow_v1','action':'update','task_id':task_id,'body':{k:v for k,v in args.items() if k!='task_id'}},timeout=_SPEC_IPC_TIMEOUT)
 
 # ── MCP tool: upload_file (R-V2-AGENT-FILE-UPLOAD) ────────────────────
 # Same wire contract as dingwei_file.upload_file; duplicated because this file is a

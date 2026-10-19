@@ -119,6 +119,7 @@ async def _handle_connection(
     send_body_only: bool = False,
     inbox_handler=None,
     spec_handler: _SpecHandler | None = None,
+    task_handler: _SpecHandler | None = None,
 ) -> None:
     """Serve a single Unix-socket connection: read one request, dispatch by type, ack.
 
@@ -146,6 +147,14 @@ async def _handle_connection(
     if passed_fds:
         await _write_one(writer, {"ok": False, "error": "file descriptors are only accepted for file_upload_v1"})
         return
+    if msg_type == "task_flow_v1":
+        if task_handler is None:
+            return await _write_one(writer, {"ok": False, "error": "task_flow_unavailable"})
+        try:
+            result = await task_handler(msg)
+        except (ValueError, TypeError):
+            result = {"ok": False, "error": "invalid_task_request"}
+        return await _write_one(writer, result)
     if msg_type == "desktop_inbox_v1":
         if inbox_handler is None:
             await _write_one(writer, {"ok": False, "error": "desktop_inbox_unavailable"})
@@ -516,6 +525,7 @@ async def serve_ipc(
     send_body_only: bool = False,
     inbox_handler=None,
     spec_handler: _SpecHandler | None = None,
+    task_handler: _SpecHandler | None = None,
     replace_existing: bool = True,
 ) -> None:
     """Start a Unix-domain socket server.
@@ -556,7 +566,7 @@ async def serve_ipc(
         await _handle_connection(reader, writer, send_handler, vsapi_handler, file_handler,
                                  allowed_socket_dir=allowed_socket_dir,
                                  upload_handler=upload_handler, passed_fds=fds, upload_only=upload_only, send_body_only=send_body_only, inbox_handler=inbox_handler,
-                                 spec_handler=spec_handler)
+                                 spec_handler=spec_handler, task_handler=task_handler)
 
     loop = asyncio.get_running_loop()
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

@@ -55,6 +55,9 @@ class DeliveryInbox:
             )
             self._migrate_schema(db)
             self._migrate_state_check(db)
+            db.execute("""CREATE TABLE IF NOT EXISTS delivery_inbox_read (
+                session_name TEXT NOT NULL, delivery_id TEXT NOT NULL, read_at REAL NOT NULL,
+                PRIMARY KEY(session_name,delivery_id))""")
             db.execute(
                 "CREATE INDEX IF NOT EXISTS idx_delivery_inbox_fifo ON delivery_inbox(session_name,state,received_at)"
             )
@@ -404,3 +407,40 @@ class DeliveryInbox:
             if changed != 1:  # 竞态:received 已被 claim_next 抢占 → 已进注入
                 return {"result": "not_cancelable", "state": "processing"}
             return {"result": "cancelled", "state": "cancelled"}
+
+    def accept_notification(self, delivery_id, env):
+        """Persist a non-executable notification atomically; never worker-claim it."""
+        if not delivery_id or (env.get('meta') or {}).get('kind') != 'task_assigned':
+            raise ValueError('invalid task notification')
+        now = time.time()
+        with self._lock, self._connect() as db:
+            db.execute("""INSERT OR IGNORE INTO delivery_inbox(delivery_id,session_name,envelope_json,state,received_at,updated_at)
+                VALUES(?,?,?,'processed',?,?)""", (delivery_id,self.session_name,json.dumps(env),now,now))
+
+    def request(self, args):
+        """Driver MCP inspection does not consume, pause or ACK Hub deliveries."""
+        op = args.get('operation')
+        if op not in ('status','list','read','ack'):
+            return {'ok':False, 'error':'mode_operation_unsupported', 'mode':'driver'}
+        with self._lock, self._connect() as db:
+            base = "FROM delivery_inbox d LEFT JOIN delivery_inbox_read r ON r.session_name=d.session_name AND r.delivery_id=d.delivery_id WHERE d.session_name=?"
+            if op == 'status':
+                n = db.execute("SELECT count(*) " + base + " AND r.read_at IS NULL", (self.session_name,)).fetchone()[0]
+                return {'ok':True,'mode':'driver','unread':n,'automatic_delivery_unchanged':True,'mcp_wait_supported':False}
+            if op == 'list':
+                limit = args.get('limit',20)
+                if type(limit) is not int or not 1 <= limit <= 100:
+                    raise ValueError('limit must be 1..100')
+                rows = db.execute("SELECT d.delivery_id AS id,d.received_at,d.state,r.read_at " + base + " AND r.read_at IS NULL ORDER BY d.received_at,d.delivery_id LIMIT ?",(self.session_name,limit)).fetchall()
+                return {'ok':True,'mode':'driver','messages':[dict(r) for r in rows]}
+            key = args.get('message_id')
+            if not isinstance(key,str) or not 1 <= len(key) <= 256:
+                raise ValueError('invalid message id')
+            row = db.execute("SELECT d.*,r.read_at " + base + " AND d.delivery_id=?",(self.session_name,key)).fetchone()
+            if row is None:
+                return {'ok':False,'error':'not_found'}
+            if op == 'read':
+                item=dict(row);env=json.loads(item.pop('envelope_json'));item['id']=item.pop('delivery_id');item['body']=str(env.get('body') or '')[:65536];item['body_truncated']=len(str(env.get('body') or ''))>65536
+                return {'ok':True,'message':item,'mode':'driver'}
+            db.execute("INSERT OR IGNORE INTO delivery_inbox_read(session_name,delivery_id,read_at) VALUES(?,?,?)",(self.session_name,key,time.time()))
+            return {'ok':True,'state':'read','local_only':True,'mode':'driver'}

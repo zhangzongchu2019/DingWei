@@ -546,6 +546,15 @@ class SessionHelper:
             waiter.set_result({key: meta.get(key) for key in
                                ("ok", "token", "expires_at", "public_base_url", "session", "error")})
 
+    def _make_task_flow_handler(self):
+        async def handle(args):
+            if not getattr(self, "enroll_credential", None):
+                return {"ok": False, "error": "dedicated_agent_credential_required"}
+            from .task_flow import task_request
+            ws_url, headers = self._connection()
+            return await asyncio.to_thread(task_request, ws_url, headers, args)
+        return handle
+
     def _make_spec_write_handler(self, ws):
         def failure(status: int) -> dict:
             messages = {
@@ -599,7 +608,7 @@ class SessionHelper:
         return envelope(
             session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
             {"type": "session_capabilities", "delivery_ack_v1": True,
-             "persistent_inbox_v1": True, "agent_route_v2": True,
+             "persistent_inbox_v1": True, "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not self.cfg.ipc_upload_only and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,
              "unified_queue_v1": self.cfg.mode == "driver",
              "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),
              "desktop_inbox_v1": self.cfg.mode == "desktop",
@@ -1085,6 +1094,14 @@ class SessionHelper:
         # 在线清单/上线指南/skill 推送当作正常内容**注入 CLI 对话**。
         # recv_loop(实时路径)本来就有类似跳过,durable(补发路径)没有 —— 两条路径各走各的,
         # 只在其中一条加保护是不够的。
+        if (env.get("meta") or {}).get("kind") == "task_assigned":
+            try:
+                await asyncio.to_thread(self.delivery_inbox.accept_notification, delivery_id, env)
+                ack = self.delivery_ack(delivery_id, "processed", reason="desktop_inbox_saved" if self.cfg.mode == "desktop" else "")
+            except Exception:
+                ack = self.delivery_ack(delivery_id, "failed", reason="inbox_unavailable", retryable=True)
+            await ws.send(json.dumps(ack, ensure_ascii=False))
+            return
         body = str(env.get("body") or "")
         if (env.get("meta") or {}).get("type") == "online_directory" or is_online_directory_text(body):
             await asyncio.to_thread(self.write_online_list, body)
@@ -1325,7 +1342,7 @@ class SessionHelper:
                             upload_handler=self._make_upload_handler(ws) if self.upload_policy.enabled else None,
                             bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only,
                             send_body_only=getattr(self.cfg, "ipc_send_body_only", False),
-                            inbox_handler=self._make_desktop_inbox_handler(ws), spec_handler=self._make_spec_write_handler(ws))
+                            inbox_handler=self._make_desktop_inbox_handler(ws), spec_handler=self._make_spec_write_handler(ws), task_handler=self._make_task_flow_handler())
         except IPCSocketPathError:
             self._ipc_rejected_socket_path = self.cfg.mcp_ipc_sock
             # The listener already logged only the byte counts and cleared
@@ -1335,7 +1352,9 @@ class SessionHelper:
 
     def _make_desktop_inbox_handler(self, ws=None):
         if self.cfg.mode != "desktop":
-            return None
+            async def driver_inbox(args):
+                return await asyncio.to_thread(self.delivery_inbox.request, args)
+            return driver_inbox
 
         async def handle(args):
             if args.get('operation') == 'reply':

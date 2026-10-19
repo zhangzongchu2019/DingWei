@@ -123,6 +123,17 @@ func TestConsoleSpecPresplitAgentIdentityTasksAndFirstResult(t *testing.T) {
 		t.Fatalf("forged callback changed request: %+v", got)
 	}
 	hub.handleConsoleSpecPresplitResult(context.Background(), &sessionClient{keyID: agent.KeyID, sessionName: agent.SessionName}, model.Envelope{Meta: map[string]any{"type": specPresplitResultType}, Body: result})
+	staged, e := hub.Repo.(*store.SQLite).ListConsoleTaskProposals(context.Background(), spec.ID)
+	if e != nil || len(staged) != 0 {
+		t.Fatalf("R32 unconfirmed tasks=%v err=%v", staged, e)
+	}
+	c, e := hub.Repo.(*store.SQLite).ConsoleTaskCandidates(context.Background(), spec.ID, "owner-a")
+	if e != nil || c == nil {
+		t.Fatalf("candidate=%v err=%v", c, e)
+	}
+	if e = hub.Repo.(*store.SQLite).ConfirmConsoleTaskCandidates(context.Background(), requestID, "owner-a", c.Revision, c.Version, c.Tasks, func() error { return nil }, hub.now()); e != nil {
+		t.Fatal(e)
+	}
 	tasks, err := hub.Repo.(*store.SQLite).ListConsoleTaskProposals(context.Background(), spec.ID)
 	if err != nil || len(tasks) != 2 || tasks[0].ReviewedBy != "owner-a" || tasks[1].ReviewedBy != "owner-a" {
 		t.Fatalf("tasks=%+v err=%v", tasks, err)

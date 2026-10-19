@@ -97,6 +97,13 @@ func TestConsoleTaskDefinitionOfDoneIsSeparateOnAllThreeWritePaths(t *testing.T)
 	if err := db.CompleteConsoleSpecPresplit(ctx, "request", agent, []ConsoleSpecPresplitTask{{ID: "presplit-task", Title: "pre", Content: "pre", DefinitionOfDone: "presplit DoD"}}, now.Add(time.Minute)); err != nil {
 		t.Fatal(err)
 	}
+	candidate, e := db.ConsoleTaskCandidates(ctx, "dod-paths", "owner-a")
+	if e != nil || candidate == nil {
+		t.Fatalf("candidate=%v err=%v", candidate, e)
+	}
+	if e = db.ConfirmConsoleTaskCandidates(ctx, "request", "owner-a", candidate.Revision, candidate.Version, candidate.Tasks, func() error { return nil }, now.Add(time.Minute)); e != nil {
+		t.Fatal(e)
+	}
 	assertTaskDefinitionSeparated(t, db, "presplit-task", "presplit DoD")
 }
 
