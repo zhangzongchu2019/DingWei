@@ -46,6 +46,19 @@ class R8SpecReviewTest(unittest.TestCase):
         self.assertEqual(set(criterion['required']),{'id','text','owner_ref','cases'})
         self.assertFalse(criterion['additionalProperties'])
         self.assertNotIn('checked_by',criterion['properties'])
+    def test_reply_tools_list_schema_requires_kind_specific_payload(self):
+        response=mcp_shim._dispatch(mcp_shim.Request(jsonrpc="2.0",method="tools/list",params={},id=1))
+        self.assertIsNone(response.error)
+        schema=next(t['inputSchema'] for t in response.result['tools'] if t['name']=='dw_spec_review_reply')
+        self.assertEqual(set(schema['required']),{'request_id','kind','revision','content_sha256'})
+        self.assertFalse(schema['additionalProperties'])
+        self.assertEqual(schema.get('oneOf'),[
+            {"properties":{"kind":{"const":"review"}},"required":["issues"],"not":{"required":["criteria"]}},
+            {"properties":{"kind":{"const":"criteria"}},"required":["criteria"],"not":{"required":["issues"]}},
+        ],'R8_REPLY_KIND_PAYLOAD_SCHEMA_MISSING')
+        self.assertNotIn('minItems',schema['properties']['issues'],'R8_EMPTY_REVIEW_SCHEMA_REJECTED')
+        self.assertEqual(schema['properties']['criteria']['minItems'],1)
+
     def test_tools_bound_ipc_and_no_credential_arguments(self):
         self.assertIn('dw_spec_review_requests',mcp_shim._tools);self.assertIn('dw_spec_review_reply',mcp_shim._tools)
         with patch.object(mcp_shim,'_ipc_request',return_value={'status':'ok'}) as call:

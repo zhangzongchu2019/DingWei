@@ -1,0 +1,2 @@
+# Isolated schema-validation tooling only; not a helper runtime dependency.
+jsonschema==4.26.0

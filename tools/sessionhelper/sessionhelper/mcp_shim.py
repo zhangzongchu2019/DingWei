@@ -509,6 +509,10 @@ _SPEC_REVIEW_CRITERION_SCHEMA={"type":"object","properties":{"id":{"type":"strin
 @register("dw_spec_review_reply", "回Console预审issues或criteria/cases；只写pending/待人确认，不能定稿。结果未知请查询原请求。", {
  "type":"object","properties":{"request_id":{"type":"string"},"kind":{"type":"string","enum":["review","criteria"]},"revision":{"type":"integer","minimum":1},"content_sha256":{"type":"string"},"issues":{"type":"array","maxItems":100,"items":_SPEC_REVIEW_ISSUE_SCHEMA},"criteria":{"type":"array","minItems":1,"maxItems":100,"items":_SPEC_REVIEW_CRITERION_SCHEMA}},
  "required":["request_id","kind","revision","content_sha256"],"additionalProperties":False,
+ "oneOf":[
+     {"properties":{"kind":{"const":"review"}},"required":["issues"],"not":{"required":["criteria"]}},
+     {"properties":{"kind":{"const":"criteria"}},"required":["criteria"],"not":{"required":["issues"]}},
+ ],
 })
 def _dw_spec_review_reply(args):
     if not isinstance(args,dict) or set(args)-{'request_id','kind','revision','content_sha256','issues','criteria'}:
