@@ -21,6 +21,7 @@ type AdminAgentRecord struct {
 	Name             string
 	Origin           AgentOrigin
 	State            AgentState
+	HostedNodeName   string    `json:"-"`
 	SourceIP         string    `json:"-"`
 	SourceAt         time.Time `json:"-"`
 }
@@ -99,10 +100,22 @@ func (s *PGStore) ListAdminAgents(ctx context.Context, actor, after string, limi
 		if state != string(UserActive) || kind != string(UserPlatformAdmin) {
 			return ErrForbidden
 		}
+		// Discover optional hosted tables under the same authorization lock.
+		// Never attempt a missing-table query and catch it inside this transaction:
+		// PostgreSQL would already have marked the transaction aborted.
+		var hostedTables bool
+		if err := tx.QueryRow(ctx, `SELECT to_regclass('g4_hosted_seat') IS NOT NULL AND to_regclass('g4_node') IS NOT NULL`).Scan(&hostedTables); err != nil {
+			return err
+		}
+		nodeColumn, nodeJoin := "''::text", ""
+		if hostedTables {
+			nodeColumn = "CASE WHEN a.origin='hosted' THEN COALESCE(n.name,'') ELSE '' END"
+			nodeJoin = " LEFT JOIN g4_hosted_seat hs ON hs.agent_id=a.id LEFT JOIN g4_node n ON n.id=hs.node_id"
+		}
 		rows, err := tx.Query(ctx, `SELECT a.id,COALESCE(u.user_id,a.owner_lc),COALESCE(u.short_name,''),COALESCE(u.display_name,''),a.name,a.origin,a.state,
    CASE WHEN a.origin='selfhost' THEN COALESCE(a.last_source_ip,'') ELSE '' END,
-   COALESCE(a.last_source_at,'0001-01-01'::timestamptz)
-   FROM np_agent a LEFT JOIN np_user u ON u.user_id_lc=a.owner_lc
+   COALESCE(a.last_source_at,'0001-01-01'::timestamptz),`+nodeColumn+`
+   FROM np_agent a LEFT JOIN np_user u ON u.user_id_lc=a.owner_lc`+nodeJoin+`
    WHERE a.id COLLATE "C">$1 ORDER BY a.id COLLATE "C" LIMIT $2`, after, limit+1)
 		if err != nil {
 			return err
@@ -111,7 +124,7 @@ func (s *PGStore) ListAdminAgents(ctx context.Context, actor, after string, limi
 		page.Agents = make([]AdminAgentRecord, 0, limit)
 		for rows.Next() {
 			var row AdminAgentRecord
-			if err := rows.Scan(&row.ID, &row.OwnerID, &row.OwnerShortName, &row.OwnerDisplayName, &row.Name, &row.Origin, &row.State, &row.SourceIP, &row.SourceAt); err != nil {
+			if err := rows.Scan(&row.ID, &row.OwnerID, &row.OwnerShortName, &row.OwnerDisplayName, &row.Name, &row.Origin, &row.State, &row.SourceIP, &row.SourceAt, &row.HostedNodeName); err != nil {
 				return err
 			}
 			if len(page.Agents) == limit {

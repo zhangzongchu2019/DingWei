@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/zhangzongchu2019/dingwei/internal/consolemux"
-	"github.com/zhangzongchu2019/dingwei/internal/hosted"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
@@ -178,10 +177,6 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	// 页面只认真实装配结果；不能按 env、pool 非空或浏览器 404 猜测。
 	hub.SetConsoleHostedPageEnabled(hostedOn)
 	api := &httpapi.API{Svc: svc, Claims: ob, ClaimBots: hub.ClaimGuidance, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline, Hosted: cfg.hosted, HostedAccess: cfg.hostedAccess}
-	// Read-only inventory must work even when wireHosted skipped key-dependent assembly.
-	if pool != nil {
-		api.AdminHostedNodeName = hosted.NewStore(pool).AgentNodeName
-	}
 	n3.Register(mux)
 	api.Register(mux)
 	mux.HandleFunc("GET /ws/agent", hub.HandleAgentWS)

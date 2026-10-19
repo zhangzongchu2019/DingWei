@@ -1,0 +1,3 @@
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity	16.238s
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity/httpapi	0.006s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	16.946s

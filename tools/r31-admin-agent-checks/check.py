@@ -22,9 +22,9 @@ def main():
  args.out.mkdir(parents=True,exist_ok=False)
  env=dict(os.environ,HUB_TEST_PG_STRICT='1',HUB_TEST_PG_EMBEDDED='1',HUB_TEST_PG_SKIP_OK='0');env.pop('HUB_TEST_PG_DSN',None);env.pop('MUTATION',None)
  store='internal/identity/admin_agents.go';api='internal/identity/httpapi/admin_agents.go';ordinary='internal/identity/memstore.go';projection='internal/identity/httpapi/httpapi.go'
- node_read='internal/hosted/admin_agent_node.go';wiring='cmd/workpulse/newplat.go'
- sources={p:(ROOT/p).read_text()for p in (store,api,ordinary,projection,node_read,wiring)}
- watched=[*sources,'cmd/workpulse/r31_admin_agent_keyless_test.go','internal/m8/console_auth.go','internal/m8/newplat_console.go','internal/identity/identitytest/admin_agents.go','internal/identity/admin_agents_test.go','internal/identity/admin_agents_pg_test.go','internal/identity/httpapi/r31_admin_agents_test.go','internal/m8/r31_admin_agent_capability_test.go','view-service/r31-admin-agents-browser-regression.js','tools/r31-admin-agent-checks/check.py']
+ wiring='cmd/workpulse/newplat.go'
+ sources={p:(ROOT/p).read_text()for p in (store,api,ordinary,projection,wiring)}
+ watched=[*sources,'internal/identity/admin_agents_tx_test.go','cmd/workpulse/r31_admin_agent_keyless_test.go','internal/m8/console_auth.go','internal/m8/newplat_console.go','internal/identity/identitytest/admin_agents.go','internal/identity/admin_agents_test.go','internal/identity/admin_agents_pg_test.go','internal/identity/httpapi/r31_admin_agents_test.go','internal/m8/r31_admin_agent_capability_test.go','view-service/r31-admin-agents-browser-regression.js','tools/r31-admin-agent-checks/check.py']
  source_hashes={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest()for p in watched}
  cases=[
  ('store-upper-bound',store,'limit > AdminAgentPageMax','limit > AdminAgentPageMax+1','./internal/identity','^TestR31AdminAgentMemoryContract/all_owners_private_source_and_stable_pages$','ADMIN_BOUND_MISSING'),
@@ -35,16 +35,17 @@ def main():
  ('http-role',api,'err != nil || u == nil || u.State != identity.UserActive || u.Type != identity.UserPlatformAdmin','err != nil || u == nil','./internal/identity/httpapi','^TestR31AdminAgentHTTPRoleGateBeforeProjection$','ADMIN_HTTP_ROLE_FENCE_MISSING'),
  ('bearer-cookie',api,'len(r.Header.Values("Authorization")) != 0','false','./internal/identity/httpapi','^TestR31AdminAgentBearerCannotInheritHumanCookie$','ADMIN_BEARER_INHERITED_HUMAN_ROLE'),
  ('source-response',api,'item["host"] = row.SourceIP','item["host"] = ""','./internal/identity/httpapi','^TestR31AdminAgentHTTPProjectionAndAudit$','ADMIN_RESPONSE_SOURCE_MISSING'),
- ('node-response',api,'item["host"] = name','item["host"] = name[:0]','./internal/identity/httpapi','^TestR31AdminAgentHTTPProjectionAndAudit$','ADMIN_NODE_HOST_MISSING'),
+ ('node-response',api,'item["host"] = row.HostedNodeName','item["host"] = ""','./internal/identity/httpapi','^TestR31AdminAgentHTTPProjectionAndAudit$','ADMIN_NODE_HOST_MISSING'),
  ('mem-read-audit',store,'m.audit = append(m.audit, adminAgentAudit(Lower(actor), limit, len(page.Agents), at))','_ = adminAgentAudit(Lower(actor), limit, len(page.Agents), at)','./internal/identity/httpapi','^TestR31AdminAgentHTTPProjectionAndAudit$','ADMIN_READ_AUDIT_OR_BOUND_MISSING'),
  ('pg-read-audit',store,"INSERT INTO audit_log(actor,action,target,after_json,ts) VALUES($1,$2,$3,jsonb_build_object('detail',$4::text),$5)",'SELECT $1::text,$2::text,$3::text,$4::text,$5::timestamptz','./internal/identity','^TestR31AdminAgentPGAuditAtomicAndFailClosed$','ADMIN_PG_READ_AUDIT_MISSING'),
  ('audit-fail-open',store,'if err != nil {\n\t\treturn AdminAgentPage{}, err\n\t}\n\treturn page, nil','if err != nil {\n\t\treturn page, nil\n\t}\n\treturn page, nil','./internal/identity','^TestR31AdminAgentPGAuditAtomicAndFailClosed$','ADMIN_PG_AUDIT_FAIL_OPEN'),
  ('ordinary-owner-fence',ordinary,'ag.OwnerLC == owner && ag.Current()','(ag.OwnerLC == owner || true) && ag.Current()','./internal/identity/httpapi','^TestR31AdminAgentOrdinaryListRemainsPrivate$','ORDINARY_LIST_OWNER_FENCE_MISSING'),
  ('ordinary-bearer-source',projection,'ag.Origin == identity.OriginSelfhost && len(r.Header.Values("Authorization")) == 0','ag.Origin == identity.OriginSelfhost','./internal/identity/httpapi','^TestR31AdminAgentOrdinaryListRemainsPrivate$','ORDINARY_BEARER_SOURCE_GATE_MISSING'),
- ('keyless-production-wiring',wiring,'api.AdminHostedNodeName = hosted.NewStore(pool).AgentNodeName','_ = hosted.NewStore(pool)','./cmd/workpulse','^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing$','ADMIN_NODE_KEYLESS_WIRING_MISSING'),
- ('keyless-read-query',node_read,'return name, nil','return name[:0], nil','./cmd/workpulse','^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing$','ADMIN_NODE_KEYLESS_WIRING_MISSING'),
- ('missing-hosted-tables',node_read,'state.SQLState() == "42P01"','state.SQLState() == "42P99"','./cmd/workpulse','^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-hosted-tables$','ADMIN_NODE_TABLE_ABSENCE_BROKE_LIST'),
- ('hide-unrelated-node-error',node_read,'state.SQLState() == "42P01"','state.SQLState() != ""','./cmd/workpulse','^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/unrelated-query-error$','ADMIN_NODE_UNRELATED_ERROR_HIDDEN'),
+ ('keyless-production-join',store,"nodeColumn = \"CASE WHEN a.origin='hosted' THEN COALESCE(n.name,'') ELSE '' END\"","nodeColumn = \"''::text\"",'./cmd/workpulse','^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing$','ADMIN_NODE_KEYLESS_WIRING_MISSING'),
+ ('missing-hosted-catalog',store,'if hostedTables {','if hostedTables || true {','./cmd/workpulse','^TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-hosted-tables$','ADMIN_NODE_TABLE_ABSENCE_BROKE_LIST'),
+ ('projection-query-outside-tx',store,'rows, err := tx.Query(ctx, `SELECT a.id','rows, err := s.pool.Query(ctx, s.t, `SELECT a.id','./internal/identity','^TestR31AdminAgentPGConcurrentRevokeListFirst$','ADMIN_NODE_PROJECTION_TX_SPLIT'),
+ ('release-role-before-projection',store,'FROM np_user WHERE lower(user_id)=$1 FOR SHARE','FROM np_user WHERE lower(user_id)=$1','./internal/identity','^TestR31AdminAgentPGConcurrentRevokeListFirst$','ADMIN_NODE_PROJECTION_TX_SPLIT'),
+ ('hide-node-projection-error',store,'if err != nil {\n\t\treturn AdminAgentPage{}, err\n\t}\n\treturn page, nil','if err != nil {\n\t\treturn AdminAgentPage{}, nil\n\t}\n\treturn page, nil','./internal/identity','^TestR31AdminAgentPGNodeProjectionFailureRollsBackAudit$','ADMIN_NODE_PROJECTION_FAILURE_NOT_ATOMIC'),
  ]
  positive=run(['go','test','./internal/identity','./internal/identity/httpapi','./internal/m8','./cmd/workpulse','-run','TestR31AdminAgent','-count=1'],env)
  assert positive['rc']==0,positive

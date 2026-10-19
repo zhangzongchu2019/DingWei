@@ -71,13 +71,8 @@ func (a *API) listAdminAgents(w http.ResponseWriter, r *http.Request, actor stri
 			if !row.SourceAt.IsZero() {
 				item["last_source_at"] = row.SourceAt.UTC().Format(time.RFC3339Nano)
 			}
-		} else if row.Origin == identity.OriginHosted && a.AdminHostedNodeName != nil {
-			name, err := a.AdminHostedNodeName(r.Context(), row.ID)
-			if err != nil {
-				mapErr(w, err)
-				return
-			}
-			item["host"] = name
+		} else if row.Origin == identity.OriginHosted {
+			item["host"] = row.HostedNodeName
 		}
 		out = append(out, item)
 	}

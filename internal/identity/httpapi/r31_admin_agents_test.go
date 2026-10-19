@@ -63,12 +63,7 @@ func newAdminViewEnv(t *testing.T) *adminViewEnv {
 	api := &httpapi.API{Svc: svc, Actor: n3.Actor, Online: func(id string) bool { return id == "ag-a" }, HostedAccess: func(*http.Request) bool { return false }, Hosted: func(_ context.Context, id string) (map[string]any, bool) {
 		return map[string]any{"node_name": "node-private", "credential": "fixture-must-never-leak", "account_last4": "9999"}, id == "ag-b"
 	}}
-	api.AdminHostedNodeName = func(_ context.Context, id string) (string, error) {
-		if id == "ag-b" {
-			return "node-private", nil
-		}
-		return "", nil
-	}
+	api.Svc.Store = &adminNodeFixtureStore{MemStore: st}
 	mux := http.NewServeMux()
 	api.Register(mux)
 	return &adminViewEnv{st: st, api: api, mux: mux, at: now}
@@ -283,4 +278,21 @@ func TestR31AdminAgentBearerCannotInheritHumanCookie(t *testing.T) {
 	if w.Code != 403 || strings.Contains(w.Body.String(), "203.0.113.44") || e.audits() != 0 {
 		t.Fatalf("ADMIN_BEARER_INHERITED_HUMAN_ROLE: %d %s", w.Code, w.Body.String())
 	}
+}
+
+// HTTP-only fixture projection. Production uses PGStore's joined transaction;
+// the production wiring test never injects this adapter or Hosted callbacks.
+type adminNodeFixtureStore struct{ *identity.MemStore }
+
+func (s *adminNodeFixtureStore) ListAdminAgents(ctx context.Context, actor, after string, limit int, at time.Time) (identity.AdminAgentPage, error) {
+	page, err := s.MemStore.ListAdminAgents(ctx, actor, after, limit, at)
+	if err != nil {
+		return identity.AdminAgentPage{}, err
+	}
+	for i := range page.Agents {
+		if page.Agents[i].ID == "ag-b" {
+			page.Agents[i].HostedNodeName = "node-private"
+		}
+	}
+	return page, nil
 }

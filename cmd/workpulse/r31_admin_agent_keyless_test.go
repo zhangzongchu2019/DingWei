@@ -76,6 +76,17 @@ func TestR31AdminAgentNodeWithoutMasterKeyProductionWiring(t *testing.T) {
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 			if mode == "unrelated-query-error" {
+				row, err := pool.QueryRow(ctx, tc, `SELECT count(*) FROM audit_log WHERE action='agent.admin_list'`)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var audits int
+				if err := row.Scan(&audits); err != nil {
+					t.Fatal(err)
+				}
+				if audits != 0 {
+					t.Fatal("ADMIN_NODE_FAILURE_AUDIT_COMMITTED")
+				}
 				if w.Code != 500 || strings.Contains(w.Body.String(), "Inventory.al") {
 					t.Fatalf("ADMIN_NODE_UNRELATED_ERROR_HIDDEN: %d %s", w.Code, w.Body.String())
 				}
