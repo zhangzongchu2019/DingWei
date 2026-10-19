@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-19T05:19:58.258599+00:00",
+  "command": "go run ./cmd/nodeagent --print-policy-revision",
+  "env_nonsecret": {
+    "NODEAGENT_QUOTA_MODE": "hard",
+    "NODEAGENT_MAX_SEATS": "4"
+  },
+  "rc": 0,
+  "stdout": "191f4b3ab5f0ad72ce0a49177dedb4a95f5ba00c9d35493d790c6454ed531635\n",
+  "stderr": "",
+  "scope": "prints public policy hash before credential/Engine/network initialization"
+}

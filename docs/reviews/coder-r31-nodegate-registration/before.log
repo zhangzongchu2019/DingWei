@@ -1,0 +1,13 @@
+--- FAIL: TestGateAuthCommandCapacityLifecycle (2.61s)
+    gate_test.go:56: register: hosted: 参数不合要求
+--- FAIL: TestGateOnConnectFires (2.53s)
+    gate_test.go:159: register: hosted: 参数不合要求
+--- FAIL: TestOnConnectCallbackCanSendAndReceive (2.56s)
+    gate_test.go:180: register: hosted: 参数不合要求
+--- FAIL: TestSendWithTimeoutHonorsCallerDeadline (2.54s)
+    gate_test.go:223: register: hosted: 参数不合要求
+--- FAIL: TestZZ_ReconcileOnRealGateReachesDone (2.53s)
+    reconcile_gate_test.go:21: register: hosted: 参数不合要求
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodegate	12.766s
+FAIL

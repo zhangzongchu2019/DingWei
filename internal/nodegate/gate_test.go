@@ -29,7 +29,10 @@ func mkGate(t *testing.T) (*Gate, *hosted.Store, string, string) {
 	if err := st.ApplySchema(ctx); err != nil {
 		t.Fatalf("apply: %v", err)
 	}
+	// R31 requires an explicit policy revision for newly registered hard nodes.
+	// This is a protocol/gateway fixture, not a production capacity policy.
 	secret, err := st.RegisterNode(ctx, hosted.Node{ID: "nd_g1", Name: "gate-test", Labels: json.RawMessage(`{}`),
+		QuotaMode: "hard", QuotaPolicyRevision: strings.Repeat("a", 64),
 		DockerVersion: "29", ProtocolVersion: 1}, "admin")
 	if err != nil {
 		t.Fatalf("register: %v", err)

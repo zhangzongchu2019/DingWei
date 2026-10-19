@@ -1,0 +1,20 @@
+{
+  "utc": "2026-10-19T05:20:20.986072+00:00",
+  "case": "restore pre-R31 missing hard revision fixture",
+  "argv": [
+    "go",
+    "test",
+    "-overlay",
+    "/tmp/r31-nodegate-fixture-withdrawal-l1_2isf6/overlay.json",
+    "./internal/nodegate",
+    "-run",
+    "^TestGateAuthCommandCapacityLifecycle$",
+    "-count=1"
+  ],
+  "rc": 1,
+  "stdout": "--- FAIL: TestGateAuthCommandCapacityLifecycle (4.57s)\n    gate_test.go:56: register: hosted: 参数不合要求\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/nodegate\t4.578s\nFAIL\n",
+  "stderr": "",
+  "expected_marker": "register: hosted: 参数不合要求",
+  "source_before_after_sha256": "8dfcc7be23d68a0392b6cd59df4da83a5e7385af4bd22d5c4acf37fbd0a18b89",
+  "withdrawn_fixture_sha256": "dc92f89f92d0d73c293b16d7b26ef6f3564a6f87d2ad6b417211e57a4c6de73e"
+}
