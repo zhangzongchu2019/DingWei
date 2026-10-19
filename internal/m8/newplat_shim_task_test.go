@@ -32,6 +32,7 @@ func newShimTaskEnv(t *testing.T) *shimTaskEnv {
 	mux.HandleFunc("POST /api/console/specs/{specID}/assist/inference", h.RequireConsolePrincipal(h.RequireConsolePlatformAction("submit", h.HandleConsoleSpecInferenceAssist)))
 	mux.HandleFunc("POST /api/agent/console/specs/{specID}/inferences", h.RequireConsoleSpecAgentCapability(func(r *http.Request) string { return ConsoleAgentSpecCapabilityPage(r.PathValue("specID")) }, h.HandleConsoleSpecAgentInference))
 	mux.HandleFunc("POST /api/console/specs/{specID}/presplit", h.RequireConsolePrincipal(h.RequireConsolePlatformAction("submit", h.HandleConsoleSpecPresplit)))
+	mux.HandleFunc("POST /api/console/specs/{specID}/presplit/{requestID}/confirm", h.RequireConsolePrincipal(h.RequireConsolePlatformAction("submit", h.HandleConsoleTaskCandidateConfirm)))
 	mux.HandleFunc("PATCH /api/console/task-board/tasks/{taskID}", h.RequireConsolePrincipal(h.RequireConsolePlatformAction("submit", h.HandleConsoleTaskBoardAssignment)))
 	mux.HandleFunc("GET /api/agent/console/task-driver/specs/{specID}/{revision}/tasks", h.RequireConsoleSpecAgentCapability(func(*http.Request) string { return ConsoleAgentCapabilityTasks }, h.HandleAgentConsoleTasks))
 	e.shimEnv.srv.Close()
@@ -138,7 +139,7 @@ func TestShimH6_InferenceAssistRoundTrip(t *testing.T) {
 	}
 }
 
-// H7 预拆：推送到 Agent 的新平台会话；回执按会话端点（u_zzc／kimi）认出投影 Agent、写入任务；别人的会话回执不算。
+// H7 预拆：真会话回执只暂存候选，所有者经 HTTP 确认后生成任务；别人的会话回执不算。
 func TestShimH7_PresplitPushAndReceipt(t *testing.T) {
 	e := newShimTaskEnv(t)
 	inbox, _ := e.online(e.zKimiCred, "u_zzc", "kimi")
@@ -163,6 +164,20 @@ func TestShimH7_PresplitPushAndReceipt(t *testing.T) {
 		t.Fatalf("receipt from another user's session wrote tasks: %+v", tasks)
 	}
 	e.hub.handleConsoleSpecPresplitResult(e.ctx, &sessionClient{keyID: "u_zzc", sessionName: "kimi"}, resEnv)
+	if tasks, err := e.db.ListConsoleTaskProposals(e.ctx, specID); err != nil || len(tasks) != 0 {
+		t.Fatalf("UNCONFIRMED_SHIM_TASK_CREATED: tasks=%+v err=%v", tasks, err)
+	}
+	candidate, err := e.db.ConsoleTaskCandidates(e.ctx, specID, "zzc")
+	if err != nil || candidate == nil || len(candidate.Tasks) != 1 {
+		t.Fatalf("candidate after receipt: %+v err=%v", candidate, err)
+	}
+	confirmation, err := json.Marshal(map[string]int{"expected_revision": candidate.Revision, "expected_version": candidate.Version})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st, body := e.do("POST", "/api/console/specs/"+specID+"/presplit/"+started.RequestID+"/confirm", e.tokZZC, "", "", string(confirmation)); st != http.StatusOK {
+		t.Fatalf("owner confirms candidate: %d %s", st, body)
+	}
 	tasks, err := e.db.ListConsoleTaskProposals(e.ctx, specID)
 	if err != nil || len(tasks) != 1 || tasks[0].Title != "DB" || tasks[0].ReviewedBy != "zzc" {
 		t.Fatalf("tasks after receipt: %+v err=%v", tasks, err)
