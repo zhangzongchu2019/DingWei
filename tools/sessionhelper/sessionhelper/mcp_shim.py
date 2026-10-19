@@ -504,8 +504,10 @@ def _dw_spec_review_requests(args):
         raise ValueError('invalid spec request list')
     return _ipc_request({'type':'spec_review_v1','action':'list','body':args},timeout=_SPEC_IPC_TIMEOUT)
 
+_SPEC_REVIEW_ISSUE_SCHEMA={"type":"object","properties":{"id":{"type":"string","minLength":1},"text":{"type":"string","minLength":1}},"required":["id","text"],"additionalProperties":False}
+_SPEC_REVIEW_CRITERION_SCHEMA={"type":"object","properties":{"id":{"type":"string","minLength":1},"text":{"type":"string","minLength":1},"owner_ref":{"type":"string","minLength":1,"description":"必须逐字存在于当前spec正文的引用"},"cases":{"type":"array","minItems":1,"maxItems":100,"items":{"type":"string","minLength":1}}},"required":["id","text","owner_ref","cases"],"additionalProperties":False}
 @register("dw_spec_review_reply", "回Console预审issues或criteria/cases；只写pending/待人确认，不能定稿。结果未知请查询原请求。", {
- "type":"object","properties":{"request_id":{"type":"string"},"kind":{"type":"string","enum":["review","criteria"]},"revision":{"type":"integer","minimum":1},"content_sha256":{"type":"string"},"issues":{"type":"array","items":{"type":"object"}},"criteria":{"type":"array","items":{"type":"object"}}},
+ "type":"object","properties":{"request_id":{"type":"string"},"kind":{"type":"string","enum":["review","criteria"]},"revision":{"type":"integer","minimum":1},"content_sha256":{"type":"string"},"issues":{"type":"array","maxItems":100,"items":_SPEC_REVIEW_ISSUE_SCHEMA},"criteria":{"type":"array","minItems":1,"maxItems":100,"items":_SPEC_REVIEW_CRITERION_SCHEMA}},
  "required":["request_id","kind","revision","content_sha256"],"additionalProperties":False,
 })
 def _dw_spec_review_reply(args):

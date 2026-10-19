@@ -39,6 +39,13 @@ class R8SpecReviewTest(unittest.TestCase):
             await helper.process_inbound_message(WS(),self.event())
             self.assertEqual(len(inputs),1);self.assertNotIn('MALICIOUS',inputs[0]['body'],'R8_RAW_SPEC_INJECTED')
         asyncio.run(run())
+    def test_mcp_schemas_describe_exact_result_fields(self):
+        issue=mcp_shim._SPEC_REVIEW_ISSUE_SCHEMA
+        criterion=mcp_shim._SPEC_REVIEW_CRITERION_SCHEMA
+        self.assertEqual(set(issue['required']),{'id','text'})
+        self.assertEqual(set(criterion['required']),{'id','text','owner_ref','cases'})
+        self.assertFalse(criterion['additionalProperties'])
+        self.assertNotIn('checked_by',criterion['properties'])
     def test_tools_bound_ipc_and_no_credential_arguments(self):
         self.assertIn('dw_spec_review_requests',mcp_shim._tools);self.assertIn('dw_spec_review_reply',mcp_shim._tools)
         with patch.object(mcp_shim,'_ipc_request',return_value={'status':'ok'}) as call:
