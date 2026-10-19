@@ -73,6 +73,7 @@ def main():
     add('legacy_driver_state_fail_closed',driver,lambda s:change(s,'if e != nil {','if e != nil && false {'),go('./internal/m8','TestR32LegacyTaskDriverStateReadFailureCloses'),'LEGACY_DRIVER_STATE_READ_FAILED_OPEN')
     add('legacy_driver_current_actor',driver,legacy_roles,go('./internal/m8','TestR32LegacyTaskDriverReassignmentBetweenReads'),'LEGACY_DRIVER_REASSIGNMENT_LEAKED')
     add('legacy_driver_locked_snapshot',driver,lambda s:change(s,'current, err := flow.ConsoleTaskFlowState(r.Context(), task.ID)','current, err := state, error(nil)'),go('./internal/m8','TestR32LegacyTaskDriverReassignmentBetweenReads'),'LEGACY_DRIVER_REASSIGNMENT_LEAKED')
+    add('main_list_current_actor',hub,lambda s:change(s,' || (actor != current.Developer && actor != current.Reviewer)',''),go('./internal/m8','TestR32MainTaskListRechecksCurrentActorAfterReassignment'),'MAIN_LIST_CURRENT_ACTOR_NOT_RECHECKED')
     results=[]
     def execute(name,phase,command):
         p=subprocess.run(command,cwd=work,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=180)

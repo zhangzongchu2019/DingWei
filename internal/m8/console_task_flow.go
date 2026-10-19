@@ -149,7 +149,7 @@ func (h *Hub) HandleAgentTaskFlow(w http.ResponseWriter, r *http.Request) {
 				if current.Version != item.Version {
 					return store.ErrTaskFlowConflict
 				}
-				if current.NeedsReassignment {
+				if current.NeedsReassignment || current.Archived || (actor != current.Developer && actor != current.Reviewer) {
 					return store.ErrTaskFlowPermission
 				}
 				return check()

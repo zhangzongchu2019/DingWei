@@ -175,3 +175,70 @@ func TestR32LegacyTaskDriverUnchangedAndGrouplessControls(t *testing.T) {
 		t.Fatalf("LEGACY_GROUPLESS_TASK_CHANGED: %d %s", rr.Code, rr.Body.String())
 	}
 }
+
+// ListConsoleTaskFlow performs separate task-selection and state reads. Model
+// their legal interleaving: selection sees the old actor, state sees new roles.
+type r32ReassignedListRepository struct {
+	*store.SQLite
+	selected chan struct{}
+	resume   chan struct{}
+}
+
+func (r *r32ReassignedListRepository) ListConsoleTaskFlow(ctx context.Context, actor string) ([]store.TaskFlowItem, error) {
+	items, err := r.SQLite.ListConsoleTaskFlow(ctx, actor)
+	if err != nil {
+		return nil, err
+	}
+	close(r.selected)
+	select {
+	case <-r.resume:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	for i := range items {
+		state, e := r.SQLite.ConsoleTaskFlowState(ctx, items[i].FlowState.ID)
+		if e != nil {
+			return nil, e
+		}
+		items[i].FlowState = state
+		items[i].Version = state.Version
+	}
+	return items, nil
+}
+func TestR32MainTaskListRechecksCurrentActorAfterReassignment(t *testing.T) {
+	e, _, state := r32FlowEnv(t)
+	peer, err := e.svc.Store.FindAgentByName(e.ctx, "lbl", "kimi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = e.svc.JoinGroup(e.ctx, "lbl", state.GroupCode, peer.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err = e.hub.syncNewPlatformUser(e.ctx, "lbl", nil); err != nil {
+		t.Fatal(err)
+	}
+	selected, resume := make(chan struct{}), make(chan struct{})
+	var once sync.Once
+	unblock := func() { once.Do(func() { close(resume) }) }
+	defer unblock()
+	e.hub.Repo = &r32ReassignedListRepository{e.db, selected, resume}
+	result := make(chan *httptest.ResponseRecorder, 1)
+	go func() { result <- r32HTTP(e, "GET", "", e.zKimiCred, "") }()
+	select {
+	case <-selected:
+	case <-time.After(5 * time.Second):
+		t.Fatal("list never reached selection barrier")
+	}
+	if _, err = e.db.AssignConsoleTaskFlow(e.ctx, state.ID, "zzc", state.GroupCode, peer.ID, state.Reviewer, state.Version, func() error { return nil }, e.hub.now()); err != nil {
+		t.Fatal(err)
+	}
+	unblock()
+	select {
+	case rr := <-result:
+		if rr.Code != 200 || strings.Contains(rr.Body.String(), "implement") || strings.Contains(rr.Body.String(), `"task_id":"r32-task"`) {
+			t.Fatalf("MAIN_LIST_CURRENT_ACTOR_NOT_RECHECKED: %d %s", rr.Code, rr.Body.String())
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("list stuck after reassignment")
+	}
+}
