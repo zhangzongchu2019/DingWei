@@ -1,0 +1,157 @@
+{
+  "recorded_utc": "2026-10-19T03:19:07.886624+00:00",
+  "base": "3d99db2bf2dcff81f8060bf427f48a0790f0f775",
+  "implementation_anchor": "71d14a60b12973223916dbf7061e7e0c4daa62c4",
+  "production_bytes_equal_to_anchor": true,
+  "environment": {
+    "host": "VM-4-12-ubuntu",
+    "uid": 1001,
+    "cpus": 16,
+    "go": "1.22.2 linux/amd64",
+    "python": "3.12.3",
+    "pg_mode": "pgtest-owned temporary clusters with strict failure policy; final hosted/cmd explicitly embedded=1 strict=1 skip_ok=0; earlier suites use the equivalent defaults",
+    "canonical_python": "isolated temporary venv from hashed tools/sessionhelper/requirements-runtime.lock"
+  },
+  "checks": [
+    {
+      "command": "go build ./...",
+      "rc": 0,
+      "log": "raw/build-all.log"
+    },
+    {
+      "command": "go test ./internal/identity ./internal/identity/httpapi -timeout 30m -count=1",
+      "rc": 0,
+      "log": "raw/identity-full.log"
+    },
+    {
+      "command": "go test ./internal/store/migrate -timeout 10m -count=1",
+      "rc": 0,
+      "log": "raw/migration-full.log"
+    },
+    {
+      "command": "go test ./internal/nodeagent -count=1",
+      "rc": 0,
+      "log": "raw/nodeagent-full.log"
+    },
+    {
+      "command": "go test ./internal/m8 -count=1 -timeout 10m",
+      "rc": 0,
+      "log": "raw/m8-full.log"
+    },
+    {
+      "command": "R31_R30_BINARY=<independently-built-R30> go test ./cmd/workpulse -timeout 20m -count=1",
+      "rc": 0,
+      "log": "raw/cmd-full.log"
+    },
+    {
+      "command": "go test ./internal/hosted -timeout 30m -count=1",
+      "log": "raw/hosted-full.log",
+      "rc": 0,
+      "elapsed_seconds": 805.858
+    },
+    {
+      "command": "go test ./internal/identity ./internal/identity/httpapi ./internal/store/migrate ./internal/nodeagent ./internal/m8 ./cmd/workpulse ./internal/hosted -run ^TestR31 -count=1 -timeout 10m",
+      "rc": 0,
+      "log": "raw/r31-positive.log",
+      "note": "later WS/admission and audit assertions separately confirmed by raw/source-ws-positive.log, patch-order-positive.log, audit-positive.log"
+    },
+    {
+      "command": "scripts/run-build-tests.sh (pinned isolated Python PATH, TZ=UTC)",
+      "rc": 0,
+      "result": "BUILD_TESTS_OK python=49 shell=2",
+      "log": "raw/build-tests.log"
+    },
+    {
+      "command": "scripts/repo-boundary-gate.sh",
+      "rc": 0,
+      "pending": 90,
+      "hosted_pending": 36,
+      "system": 16,
+      "opens": 5,
+      "escapes": 1,
+      "log": "raw/boundary-gate.log"
+    },
+    {
+      "command": "scripts/dependency-ratchet.sh",
+      "rc": 0,
+      "direct_count": 8,
+      "log": "raw/dependency-gate.log"
+    },
+    {
+      "command": "go vet ./internal/hosted ./internal/identity/... ./internal/nodeagent ./internal/store/migrate ./cmd/workpulse",
+      "rc": 0,
+      "log": "raw/vet-changed.log"
+    },
+    {
+      "command": "go vet ./internal/m8",
+      "rc": 1,
+      "baseline_rc": 1,
+      "note": "unchanged test copies sync.Mutex; independently reproduced on clean R30",
+      "log": "raw/vet-m8-existing.log",
+      "baseline_log": "raw/vet-m8-r30-baseline.log"
+    },
+    {
+      "command": "node view-service/r31-hosted-nodes-browser-regression.js",
+      "rc": 0,
+      "passed": 8,
+      "failed": 0,
+      "log": "raw/nodes-browser.log"
+    },
+    {
+      "command": "node view-service/console-agent-mgmt-hosted-regression.js",
+      "rc": 1,
+      "passed": 30,
+      "failed": 2,
+      "baseline_passed": 30,
+      "baseline_failed": 2,
+      "log": "raw/hosted-browser.log",
+      "baseline_log": "raw/hosted-browser-r30-baseline.log"
+    },
+    {
+      "command": "NODE_PATH=<playwright node_modules> PW_CHANNEL=chrome python3 tools/r31-hosted-checks/mutations.py --out <private-temp-dir> --jobs 2 --browser",
+      "rc": 0,
+      "passed": 15,
+      "failed": 0,
+      "receipt": "mutations/mutations.json",
+      "note": "all exact witnesses; restored positive controls in raw/r31-positive.log"
+    },
+    {
+      "command": "node view-service/console-browser-regression.js",
+      "rc": 0,
+      "passed": 20,
+      "failed": 0,
+      "log": "raw/console-browser.log"
+    },
+    {
+      "command": "node view-service/console-agent-mgmt-enroll-regression.js",
+      "rc": 0,
+      "passed": 20,
+      "failed": 0,
+      "log": "raw/enroll-browser.log"
+    },
+    {
+      "command": "node view-service/console-agent-groups-vega-regression.js",
+      "rc": 0,
+      "passed": 12,
+      "failed": 0,
+      "log": "raw/groups-browser.log"
+    },
+    {
+      "command": "node view-service/console-hosted-lifecycle-jobs-regression.js",
+      "rc": 0,
+      "passed": 15,
+      "failed": 0,
+      "log": "raw/lifecycle-browser.log"
+    }
+  ],
+  "r30_compatibility": {
+    "source": "3d99db2bf2dcff81f8060bf427f48a0790f0f775",
+    "source_worktree_clean": true,
+    "binary_sha256": "91729ef29684833e6950f00b0de9ace14d46c0c0dba329bdd2e193d33623efe7",
+    "test": "TestR31OldBinarySchemaReadCompatibility",
+    "rc": 0,
+    "scope": "private temporary PG startup/read only; not safe live rollback approval"
+  },
+  "deployment": false,
+  "host43_operations": false
+}

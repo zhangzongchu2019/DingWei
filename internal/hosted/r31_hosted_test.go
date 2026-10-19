@@ -96,6 +96,13 @@ func TestR31NodeRegistrationCredentialAndAtomicAudit(t *testing.T) {
 	if _, err := s.exec(ctx, `CREATE FUNCTION r31_fail_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture audit failure'; END $$; CREATE TRIGGER r31_fail_audit BEFORE INSERT ON g4_audit FOR EACH ROW EXECUTE FUNCTION r31_fail_audit()`); err != nil {
 		t.Fatal(err)
 	}
+	disabled := "disabled"
+	if err := s.PatchManagedNode(ctx, "nd_admin", "admin", NodePatch{SchedulingState: &disabled}); err == nil {
+		t.Fatal("node update ignored audit failure")
+	}
+	if node, err := s.GetNode(ctx, "nd_admin"); err != nil || node.SchedulingState != "enabled" {
+		t.Fatal("failed update audit left node changed")
+	}
 	if _, err := s.RegisterManagedNode(ctx, NodeRegistration{ID: "nd_rollback", Name: "rollback", QuotaPolicyRevision: strings.Repeat("a", 64), Access: NodeAccess{Scope: "public"}}, "admin"); err == nil {
 		t.Fatal("registration ignored audit failure")
 	}
@@ -417,11 +424,33 @@ func TestR31StatePatchCannotRestoreConcurrentRevocation(t *testing.T) {
 	state := "disabled"
 	done := make(chan error, 1)
 	go func() { done <- s.PatchManagedNode(ctx, "nd_patch", "admin", NodePatch{SchedulingState: &state}) }()
-	select {
-	case err := <-done:
-		close(release)
-		t.Fatalf("state patch crossed uncommitted revoke: %v", err)
-	case <-time.After(80 * time.Millisecond):
+	// Observe the patch backend actually waiting in this private PG cluster.
+	// A fixed sleep could let an unscheduled mutant pass after revoke commits.
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		select {
+		case err := <-done:
+			close(release)
+			t.Fatalf("state patch crossed uncommitted revoke: %v", err)
+		default:
+		}
+		var waiting int
+		row, err := s.qrow(ctx, `SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND wait_event_type='Lock' AND (query LIKE 'SELECT address,address_source,%' OR query LIKE 'UPDATE g4_node SET address=$2%')`)
+		if err == nil {
+			err = row.Scan(&waiting)
+		}
+		if err != nil {
+			close(release)
+			t.Fatal(err)
+		}
+		if waiting > 0 {
+			break
+		}
+		if time.Now().After(deadline) {
+			close(release)
+			t.Fatal("patch backend never reached the held revocation")
+		}
+		time.Sleep(5 * time.Millisecond)
 	}
 	close(release)
 	if err := <-revokeDone; err != nil {
@@ -437,6 +466,8 @@ func TestR31StatePatchCannotRestoreConcurrentRevocation(t *testing.T) {
 	if r.Access.Scope != "restricted" || len(r.Access.Users) != 1 || r.Access.Users[0] != "creator" || r.SchedulingState != "disabled" {
 		t.Fatal("state patch restored revoked access")
 	}
+	r31Has(t, s, "creator", "nd_patch", true)
+	r31Has(t, s, "outsider", "nd_patch", false)
 	var source string
 	row, err := s.qrow(ctx, `SELECT address_source FROM g4_node WHERE id='nd_patch'`)
 	if err != nil {

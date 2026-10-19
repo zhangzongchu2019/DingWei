@@ -70,6 +70,11 @@ func TestR31AdminNodeAPIAndOneTimeCredential(t *testing.T) {
 	if w = call("PATCH", "/api/console/admin/hosted/nodes/nd_new", "fixture-admin", "", testRouteOrigin, `{"scheduling_state":"disabled"}`); w.Code != 200 {
 		t.Fatalf("disable: %d %s", w.Code, w.Body.String())
 	}
+	for _, action := range []string{"node.register", "node.update"} {
+		if count, err := st.CountAudit(context.Background(), action, "nd_new"); err != nil || count != 1 {
+			t.Fatalf("node management audit missing action=%s count=%d err=%v", action, count, err)
+		}
+	}
 	r, err := st.GetNodeRegistration(context.Background(), "nd_new", "admin")
 	if err != nil || r.SchedulingState != "disabled" || r.Access.Scope != "public" {
 		t.Fatalf("patch reset access: %+v %v", r, err)
