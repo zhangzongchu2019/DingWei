@@ -115,7 +115,7 @@ func TestNewPlatformAgentGroupsHTTP(t *testing.T) {
 	if st, body := call("POST", "/api/console/agent-groups", v.tokZZC, `{"agent_id":"`+zID+`","short_name":"开发组"}`, false); st != 403 || body != `{"error":"origin_mismatch"}` {
 		t.Fatalf("create without Origin: %d %s", st, body)
 	}
-	if st, body := call("POST", "/api/console/agent-groups", v.tokZZC, `{"agent_id":"`+zID+`","short_name":"九个字九个字九个字"}`, true); st != 400 || body != `{"error":"group_name_invalid","message":"`+groupNameInvalidText+`"}` {
+	if st, body := call("POST", "/api/console/agent-groups", v.tokZZC, `{"agent_id":"`+zID+`","short_name":"二十五个字二十五个字二十五个字二十五个字二十五个字"}`, true); st != 400 || body != `{"error":"group_name_invalid","message":"`+groupNameInvalidText+`"}` {
 		t.Fatalf("bad name: %d %s", st, body)
 	}
 	if st, body := call("POST", "/api/console/agent-groups", v.tokZZC, `{"agent_id":"`+lID+`","short_name":"开发组"}`, true); st != 404 || body != "owned agent not found" {
@@ -203,7 +203,7 @@ func TestNewPlatformAgentGroupsHTTP(t *testing.T) {
 
 var tgSeq atomic.Int64
 
-// tg 测试用的新组名：每次不同（组名全局唯一、1～8 个字母或数字）。批准与托管新建都必须带编组（GroupAllowed）。
+// tg 测试用的新组名：每次不同（组名全局唯一、1～24 个字母、数字或下划线）。批准与托管新建都必须带编组（GroupAllowed）。
 func tg() string { return fmt.Sprintf("t%d", tgSeq.Add(1)) }
 
 var fixtureGroupName = regexp.MustCompile(`^t[0-9]+$`)

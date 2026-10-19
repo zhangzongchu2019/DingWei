@@ -12,7 +12,7 @@ import (
 )
 
 // 新平台编组（组长裁定 132246Z：甲 —— identity 建 np_group／np_group_member，成员引 np_agent.id；旧编组数据不迁）。
-// 语义按旧平台平移（internal/store/sqlite.go 的 agent_group*）：组名全局唯一、1～8 个字母或数字；组码 32 位随机；
+// 语义按旧平台平移（internal/store/sqlite.go 的 agent_group*）：组名全局唯一、1～24 个字母、数字或下划线（至少一个字母或数字）；组码 32 位随机；
 // 建组人管理（删除、关闭添加、剔除）；组长不可剔除；成员的属主可自行退出；关闭添加后不能再入。
 // 旧平台为「无建组人的历史组」留的管理分支在新平台不存在（旧数据不迁），故不移植。
 
@@ -95,17 +95,27 @@ func NormalizeGroupName(s string) string {
 	}, s))
 }
 
-// ValidGroupName 组名：1～8 个字母或数字（含中文等 Unicode 字母），首尾不留空白（与旧平台 validConsoleAgentGroupName 同）。
+// MaxGroupNameRunes 组名上限（按 Unicode 码点计）。
+const MaxGroupNameRunes = 24
+
+// ValidGroupName 组名：1～24 个码点，每个是 Unicode 字母（含中文、日文、韩文）、Unicode 数字或 ASCII 下划线，
+// 且至少含一个字母或数字（只有下划线不合法）；空格、连字符、点号及其他符号不合法，首尾不留空白。
+// 与旧平台 validConsoleAgentGroupName、m8 validConsoleGroupName 同一规则（m8 group_name_rule_parity_test.go 钉住）。
 func ValidGroupName(name string) bool {
-	if n := utf8.RuneCountInString(name); n < 1 || n > 8 {
+	if n := utf8.RuneCountInString(name); n < 1 || n > MaxGroupNameRunes {
 		return false
 	}
+	alnum := false
 	for _, r := range name {
-		if !unicode.IsLetter(r) && !unicode.IsNumber(r) {
+		switch {
+		case unicode.IsLetter(r) || unicode.IsNumber(r):
+			alnum = true
+		case r == '_':
+		default:
 			return false
 		}
 	}
-	return true
+	return alnum
 }
 
 // GroupMemberInfo 成员与其 Agent（只含未吊销的 Agent）。
@@ -241,7 +251,7 @@ func (s *Service) SuggestGroupNames(ctx context.Context, name string, count int)
 	for suffix := 1; len(out) < count; suffix++ {
 		digits := []rune(fmt.Sprint(suffix))
 		base := runes
-		if limit := 8 - len(digits); len(base) > limit {
+		if limit := MaxGroupNameRunes - len(digits); len(base) > limit {
 			base = base[:limit]
 		}
 		if c := string(base) + string(digits); !used[c] {

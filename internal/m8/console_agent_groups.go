@@ -59,16 +59,22 @@ func createConsoleAgentGroup(ctx context.Context, repo consoleAgentGroupReposito
 	return group, repo.CreateConsoleAgentGroup(ctx, group)
 }
 
+// validConsoleGroupName 与 identity.ValidGroupName 同一规则：1～24 个码点，字母／数字／下划线，至少一个字母或数字。
 func validConsoleGroupName(name string) bool {
-	if n := utf8.RuneCountInString(name); n < 1 || n > 8 {
+	if n := utf8.RuneCountInString(name); n < 1 || n > 24 {
 		return false
 	}
+	alnum := false
 	for _, r := range name {
-		if !unicode.IsLetter(r) && !unicode.IsNumber(r) {
+		switch {
+		case unicode.IsLetter(r) || unicode.IsNumber(r):
+			alnum = true
+		case r == '_':
+		default:
 			return false
 		}
 	}
-	return true
+	return alnum
 }
 
 func suggestedConsoleGroupNames(name string, groups []model.AgentGroup, count int) []string {
@@ -80,7 +86,7 @@ func suggestedConsoleGroupNames(name string, groups []model.AgentGroup, count in
 	runes := []rune(name)
 	for suffix := 1; len(suggestions) < count; suffix++ {
 		digits := []rune(fmt.Sprintf("%d", suffix))
-		limit := 8 - len(digits)
+		limit := 24 - len(digits)
 		base := runes
 		if len(base) > limit {
 			base = base[:limit]
@@ -197,7 +203,7 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 	}
 	request.ShortName = strings.TrimSpace(request.ShortName)
 	if !validConsoleGroupName(request.ShortName) {
-		http.Error(w, "group name must be 1 to 8 letters or numbers", http.StatusBadRequest)
+		http.Error(w, "group name must be 1 to 24 letters, numbers or underscores", http.StatusBadRequest)
 		return
 	}
 	var leader *model.ConsoleAgent

@@ -3842,16 +3842,23 @@ func (s *SQLite) CreateConsoleAgentGroup(ctx context.Context, group model.AgentG
 	return tx.Commit()
 }
 
+// validConsoleAgentGroupName 与 identity.ValidGroupName 同一规则：1～24 个码点，字母／数字／下划线，至少一个字母或数字；
+// 另拒首尾空白（规则本身已不含空白，保留显式判断）。
 func validConsoleAgentGroupName(name string) bool {
-	if strings.TrimSpace(name) != name || utf8.RuneCountInString(name) < 1 || utf8.RuneCountInString(name) > 8 {
+	if strings.TrimSpace(name) != name || utf8.RuneCountInString(name) < 1 || utf8.RuneCountInString(name) > 24 {
 		return false
 	}
+	alnum := false
 	for _, r := range name {
-		if !unicode.IsLetter(r) && !unicode.IsNumber(r) {
+		switch {
+		case unicode.IsLetter(r) || unicode.IsNumber(r):
+			alnum = true
+		case r == '_':
+		default:
 			return false
 		}
 	}
-	return true
+	return alnum
 }
 
 func (s *SQLite) DeleteConsoleAgentGroup(ctx context.Context, code, principalID string, management bool) error {

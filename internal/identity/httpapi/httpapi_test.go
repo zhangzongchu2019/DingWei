@@ -480,7 +480,7 @@ func TestAgentsListHostedInjection(t *testing.T) {
 
 var tgSeq atomic.Int64
 
-// tg 测试用的新组名：每次不同（组名全局唯一、1～8 个字母或数字）。批准与托管新建都必须带编组（GroupAllowed）。
+// tg 测试用的新组名：每次不同（组名全局唯一、1～24 个字母、数字或下划线）。批准与托管新建都必须带编组（GroupAllowed）。
 func tg() string { return fmt.Sprintf("t%d", tgSeq.Add(1)) }
 
 // 批准时的编组（GroupAllowed）错误码：二选一、已有组须存在且未关闭添加、新组名合规且不撞。
@@ -508,7 +508,7 @@ func TestApproveGroupErrorsOverHTTP(t *testing.T) {
 		{"blank new name", map[string]any{"new_group_name": "   "}, 422, "group_name_invalid"}, // 只有空白不当作「没给」
 		{"both", map[string]any{"group_code": "x", "new_group_name": "开发组"}, 422, "group_ambiguous"},
 		{"missing group", map[string]any{"group_code": "nope"}, 422, "group_not_found"},
-		{"bad new name", map[string]any{"new_group_name": "九个字九个字九个字"}, 422, "group_name_invalid"},
+		{"bad new name", map[string]any{"new_group_name": "二十五个字二十五个字二十五个字二十五个字二十五个字"}, 422, "group_name_invalid"},
 	} {
 		if r := approve(a1, c.extra); r.status != c.status || r.body["error"] != c.code {
 			t.Errorf("%s: %d %v, want %d %s", c.name, r.status, r.body, c.status, c.code)

@@ -740,11 +740,11 @@ async function main() {
     // R-V2-0102-GROUP-FIXES B。断言面＝添加编组面板（发不发请求、发出的 short_name、显示的文字）；
     // 实现承诺＝normalizeGroupName＋NEW_GROUP_RE 预检＋groupAction 读 JSON message、纯文本照旧（上一格已钉纯文本）。
     await test('group name: malformed names are explained locally in the shared sentence; invisible characters are stripped; a JSON error shows its message', async () => {
-      const RULE = '编组名只能用 1～8 位字母或数字（不含空格、连字符、符号）';
+      const RULE = '编组名只能用 1～24 个字母、数字或下划线（可用中文、日文、韩文；不含空格、连字符、点号及其他符号）';
       assert.strictEqual(await page.evaluate(() => GROUP_NAME_RULE_TEXT), RULE);
       if (await page.locator('#groupAddPanel').isHidden()) await page.locator('#groupAddOpen').click();
       groupWrites.length = 0;
-      for (const bad of ['te st', 'test-1', '九个字九个字九个字']) {   // 9 字绕过 maxlength 直接赋值（粘贴等场景）
+      for (const bad of ['te st', 'test-1', 'a.b', '___', '二十五个字二十五个字二十五个字二十五个字二十五个字']) {   // 25 字直接赋值（粘贴等场景）；只有下划线不合法
         await page.evaluate((v) => { document.getElementById('groupShortName').value = v; }, bad);
         await page.locator('#createGroup').click();
         assert.strictEqual(await page.locator('#groupNameFeedback').textContent(), RULE, `local precheck for ${bad}`);

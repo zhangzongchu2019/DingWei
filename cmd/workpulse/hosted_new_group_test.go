@@ -197,7 +197,7 @@ func TestHostedCreateWithNewGroup(t *testing.T) {
 
 	// 格 A3：名字不合规（连字符、9 字、只有空白）⇒ 422 group_name_invalid，不建席不建组。
 	t.Run("invalid new group names are refused with group_name_invalid", func(t *testing.T) {
-		for _, name := range []string{"test-1", "九个字九个字九个字", "   "} {
+		for _, name := range []string{"test-1", "二十五个字二十五个字二十五个字二十五个字二十五个字", "   "} {
 			groups, agents := e.groupCount(), e.currentAgents()
 			st, out := e.create("Bad", `,"new_group_name":"`+name+`"`)
 			if st != 422 || out["error"] != "group_name_invalid" {

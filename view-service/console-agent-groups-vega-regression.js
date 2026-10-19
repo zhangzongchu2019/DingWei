@@ -139,17 +139,17 @@ const MUTATION_TARGET = {
     await page.waitForFunction(() => !document.getElementById('groupLeader').disabled);
     await test('name feedback is near the name control and the obsolete pattern is absent', async () => {
       assert.strictEqual(await page.locator('#groupShortName').getAttribute('pattern'), null);
-      assert.strictEqual(await page.locator('#groupShortName').getAttribute('maxlength'), '8');
+      assert.strictEqual(await page.locator('#groupShortName').getAttribute('maxlength'), '48');
       await page.locator('#createGroup').click();
       assert.strictEqual(await page.locator('#groupNameFeedback').textContent(), '请输入团队名称');
     });
-    await test('the owner-confirmed eight-character limit is enforced by the native control', async () => {
+    await test('the native control only caps raw input at 48 UTF-16 units; the 24-code-point rule is the precheck', async () => {
       await page.locator('#groupShortName').click();
       await page.locator('#groupShortName').press('ControlOrMeta+A');
       await page.locator('#groupShortName').press('Backspace');
-      await page.evaluate(async () => navigator.clipboard.writeText('超过八个字符的团队名称'));
+      await page.evaluate(async () => navigator.clipboard.writeText('超过四十八个字符的团队名称'.repeat(4)));
       await page.locator('#groupShortName').press('ControlOrMeta+V');
-      assert.strictEqual((await page.locator('#groupShortName').inputValue()).length, 8);
+      assert.strictEqual((await page.locator('#groupShortName').inputValue()).length, 48);
     });
     await test('create trims, lists leader first, and reports exact duplicate with suggestion', async () => {
       await page.locator('#groupShortName').click(); await page.locator('#groupShortName').press('ControlOrMeta+A'); await page.locator('#groupShortName').press('Backspace'); await page.locator('#groupShortName').pressSequentially('  团队1  '); await page.locator('#createGroup').click();

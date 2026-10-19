@@ -253,7 +253,7 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	}
 }
 
-func TestConsoleAgentGroupNameIsTrimmedExactAndSuggestsWithinEightRunes(t *testing.T) {
+func TestConsoleAgentGroupNameIsTrimmedExactAndSuggestsWithin24Runes(t *testing.T) {
 	hub := newConsoleSpecTestHub(t)
 	db := hub.Repo.(*store.SQLite)
 	leader := addOwnedGroupAgent(t, db, "owner-a", "name-leader", "name-key", "owner-a-name-2642", "oa")
@@ -277,16 +277,16 @@ func TestConsoleAgentGroupNameIsTrimmedExactAndSuggestsWithinEightRunes(t *testi
 		t.Fatalf("duplicate feedback code=%d body=%q", duplicate.Code, duplicate.Body.String())
 	}
 	t.Logf("duplicate group name: status=%d body=%q", duplicate.Code, strings.TrimSpace(duplicate.Body.String()))
-	eight := call(`{"agent_id":"` + leader.ID + `","short_name":"甲乙丙丁戊己庚辛"}`)
+	eight := call(`{"agent_id":"` + leader.ID + `","short_name":"甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥天地"}`)
 	if eight.Code != http.StatusCreated {
-		t.Fatalf("eight-rune create code=%d body=%s", eight.Code, eight.Body.String())
+		t.Fatalf("24-rune create code=%d body=%s", eight.Code, eight.Body.String())
 	}
-	eightDuplicate := call(`{"agent_id":"` + leader.ID + `","short_name":"甲乙丙丁戊己庚辛"}`)
-	if eightDuplicate.Code != http.StatusConflict || !strings.Contains(eightDuplicate.Body.String(), "建议名称：甲乙丙丁戊己庚1、甲乙丙丁戊己庚2") {
-		t.Fatalf("eight-rune suggestion code=%d body=%q", eightDuplicate.Code, eightDuplicate.Body.String())
+	eightDuplicate := call(`{"agent_id":"` + leader.ID + `","short_name":"甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥天地"}`)
+	if eightDuplicate.Code != http.StatusConflict || !strings.Contains(eightDuplicate.Body.String(), "建议名称：甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥天1、甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥天2") {
+		t.Fatalf("24-rune suggestion code=%d body=%q", eightDuplicate.Code, eightDuplicate.Body.String())
 	}
 	invalid := call(`{"agent_id":"` + leader.ID + `","short_name":"team-01"}`)
-	if invalid.Code != http.StatusBadRequest || !strings.Contains(invalid.Body.String(), "1 to 8 letters or numbers") {
+	if invalid.Code != http.StatusBadRequest || !strings.Contains(invalid.Body.String(), "1 to 24 letters, numbers or underscores") {
 		t.Fatalf("punctuation must be rejected code=%d body=%q", invalid.Code, invalid.Body.String())
 	}
 }
