@@ -11,3 +11,10 @@
 helper 的 `project_context_v1` 固定路由、单次 HTTP（10 秒），IPC 15 秒、shim 20 秒。旧 datad 四键如存在只按键名一次提示，不读取其值用于新路径；三个历史 context URL 在转发到旧后端之前拒绝。旧 Hub/旧 helper 明确 unsupported/升级提示，受限 upload_only/send_body_only 模式不开放该 IPC。其他旧 datad 工具继续原行为，旧 handler 延迟导入可选 aiohttp，不让历史配置使新只读工具无法启动。
 
 没有 schema 或迁移变更。旧二进制读原库兼容；回滚后新 context 能力消失，新 shim 明确 unsupported；不能把旧同名工具误当已恢复。运行时依赖锁原字节不变。本件不迁 MCP 配置、不启用托管、不发送 PM/飞书业务消息。
+
+## 审查附注：失败与规模限制（第85条返修）
+
+- 任一所需 PG 身份／成员／用户行缺失，整个请求失败关闭为 HTTP 503，不返回局部成功；这不等于对象为空。
+- Fingerprint 每一页都重扫当前候选任务以检测跨页漂移；总候选数增大时每页开销随之增加，当前未实现增量摘要。
+- 单条投影超过 256 KiB 时始终 HTTP 413，缩小 limit 或重试不会恢复；须由所有者缩小该条内容，接口不会截断或静默跳过。
+- helper 对 HTTP 409 透传 context_changed 并标 discard_cursor；400 同样要求丢弃游标；503 透传 project_context_unavailable、retryable=true。不自动重试，不反射不可信错误正文，也不返回原游标。

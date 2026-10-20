@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -391,5 +392,54 @@ func TestProjectContextFinalAuthorizationRoundtripFailureClosed(t *testing.T) {
 	out := pcRequest(e.hub, e.zKimiCred, "scope=all", nil)
 	if out.Code != 503 || strings.Contains(out.Body.String(), "spec_id") {
 		t.Fatal("PC_PG_FINAL_RECHECK_IGNORED", out.Code, out.Body)
+	}
+}
+
+func TestProjectContextArchivedSpecAndUnreconciledPeer(t *testing.T) {
+	for _, archived := range []bool{false, true} {
+		t.Run(fmt.Sprint(archived), func(t *testing.T) {
+			e, g, state := r32FlowEnv(t)
+			if !archived {
+				var err error
+				g, err = e.svc.CreateGroup(e.ctx, "zzc", state.Developer, "PCPeer")
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err = e.svc.JoinGroup(e.ctx, "zzc", g.Code, state.Reviewer); err != nil {
+					t.Fatal(err)
+				}
+				state, err = e.db.AssignConsoleTaskFlow(e.ctx, state.ID, "zzc", g.Code, state.Developer, state.Reviewer, state.Version, func() error { return nil }, e.hub.now())
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			before := pcRequest(e.hub, e.zKimiCred, "scope=tasks", nil)
+			if before.Code != 200 || !strings.Contains(before.Body.String(), state.ID) {
+				t.Fatal("PC_POSITIVE_TASK_MISSING", before.Body)
+			}
+			marker := "PC_UNRECONCILED_PEER_LEAK"
+			if archived {
+				tasks, err := e.db.ListConsoleTaskFlow(e.ctx, state.Developer)
+				if err != nil || len(tasks) != 1 {
+					t.Fatal(err)
+				}
+				if err = e.db.ArchiveConsoleSpec(e.ctx, tasks[0].SpecID, "zzc", e.hub.now()); err != nil {
+					t.Fatal(err)
+				}
+				marker = "PC_ARCHIVED_SPEC_LEAK"
+			} else {
+				if err := e.svc.Store.LeaveGroup(e.ctx, g.Code, state.Reviewer, "zzc"); err != nil {
+					t.Fatal(err)
+				}
+			}
+			current, err := e.db.ConsoleTaskFlowState(e.ctx, state.ID)
+			if err != nil || current.NeedsReassignment {
+				t.Fatal("fixture must precede reconciliation", err)
+			}
+			out := pcRequest(e.hub, e.zKimiCred, "scope=all", nil)
+			if out.Code != 200 || strings.Contains(out.Body.String(), `"task_id":"`+state.ID+`"`) {
+				t.Fatal(marker, out.Code, out.Body)
+			}
+		})
 	}
 }

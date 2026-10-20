@@ -1,0 +1,5 @@
+--- FAIL: TestProjectContextClaimMembershipAndOwnerEntitlement (0.00s)
+    project_context_test.go:178: PC_REMOVED_PEER_MEMBERSHIP_GATE
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/identity	0.003s
+FAIL

@@ -66,6 +66,18 @@ class ContextTests(unittest.TestCase):
             self.assertEqual(result['error'],'project_context_unsupported','PC_OLD_HUB_FAKE_EMPTY')
             self.assertEqual(len(seen),1)
 
+    def test_public_errors_and_cursor_recovery(self):
+        for status,code,retry,discard in [(409,'context_changed',False,True),(503,'project_context_unavailable',True,False),(400,'invalid_context_request',False,True)]:
+            with self.subTest(status=status):
+                url,seen=self.server(status=status,body={'error':code,'private':'NEVER_REFLECT'})
+                out=context_request(url,{}, {'scope':'tasks','cursor':'stale'})
+                self.assertEqual(out['error'],code,'PC_ERROR_CODE_LOST')
+                self.assertEqual(out['retryable'],retry,'PC_ERROR_RETRY_LOST')
+                self.assertEqual(out.get('discard_cursor',False),discard,'PC_ERROR_CURSOR_NOT_DISCARDED')
+                self.assertNotIn('cursor',out)
+                self.assertNotIn('NEVER_REFLECT',json.dumps(out))
+                self.assertEqual(len(seen),1)
+
     def test_invalid_arguments_never_escape_to_http(self):
         cases=({'scope':'wrong'},{'scope':'all','limit':True},{'scope':'all','limit':0},{'scope':'all','limit':101},
                {'scope':'all','cursor':1},{'scope':'all','cursor':'x'*4097},{'scope':'all','headers':{}},{'scope':'all','owner':'other'})

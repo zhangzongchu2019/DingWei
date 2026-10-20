@@ -1,0 +1,166 @@
+{
+  "source_commit": "f5fe34aa5b107e9f510272a8057a0a34ceecf1f1",
+  "entries": [
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/REPORT.md",
+      "mode": "100644",
+      "blob": "3e2c39ee6694fa119f6e03d135c2cb65772eba9d",
+      "size": 2665,
+      "sha256": "7f75db3acfeda809fbae231e5da2decc2b56426073deb8b31dea0a3b11dd435e"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/REPRO-GATES.py",
+      "mode": "100644",
+      "blob": "d4f2e3c00ed57c0fb62309bedf4678d7f57de34c",
+      "size": 2773,
+      "sha256": "7f7e21ba4ceee784303e4b16539e7e60356321dca40654c1ae8a91002090cb0c"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/SOURCE-MANIFEST.json",
+      "mode": "100644",
+      "blob": "f90729910bfad737d828c067051a75c08db349b1",
+      "size": 457255,
+      "sha256": "c0348fd91a790b582f127c954c3776ebf4f43be8438a417bf0dd339c695d21e7"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/VERIFY.py",
+      "mode": "100644",
+      "blob": "030d5f89cf5ffaa23df7e54cbb157cf63f6aa8f7",
+      "size": 2080,
+      "sha256": "c12e6396c119fd91a7f487c78ada482ae0a74c931a91ec75dfef8c70d25f2a23"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/gates/canonical.json",
+      "mode": "100644",
+      "blob": "0e86dbe5a8d5236c6cada326a99d9fd121d98d61",
+      "size": 425,
+      "sha256": "efc9b088c65026621fa20995f3a88a5b083bb7c5b015293d660aef149ab302aa"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/gates/canonical.log",
+      "mode": "100644",
+      "blob": "baf650805756779adfe853c58ceed0a77af7230b",
+      "size": 40880,
+      "sha256": "f186bce7e316ae3674abc466d2d1b58c22ba266e3f27945f4139db6236201592"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/gates/go.json",
+      "mode": "100644",
+      "blob": "fa7745d9fbf0b29618a2a98dcf1b225dbd440a76",
+      "size": 561,
+      "sha256": "b891a18917d6c8f370a2d9ebe197a191d46654abb8b805b45cb914aae1d4d73f"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/gates/go.log",
+      "mode": "100644",
+      "blob": "587c2f55e84f648fb8118f15a12142c2956c8f09",
+      "size": 43707,
+      "sha256": "7b302ab2b85b26ea8f1629432dd3c18cadd777f10862d14ed405b5c7c9684037"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/gates/race.json",
+      "mode": "100644",
+      "blob": "217f883157f7e76d5dface88c2e198221cd1b83f",
+      "size": 612,
+      "sha256": "21c18bf83e20ac3d2d2b81b4212d3ec8b13157fdd6b10c781be3594068339e87"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/gates/race.log",
+      "mode": "100644",
+      "blob": "5f49dfea5e04768d6738ac02f221b0387193487b",
+      "size": 190,
+      "sha256": "d8dfdc2df92b2486a979b7d8ba91f0a65b7618e8e481f5c2d869925db5cbc853"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/gates/vet.json",
+      "mode": "100644",
+      "blob": "d4d4c4ead3013cf477a205ec0594f35a6a3016f2",
+      "size": 413,
+      "sha256": "aab8f041a14c344c62d84c40b4b8999e60c6fdb1bd1e9ca16e39cf24d6a3e2a2"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/withdrawals/RESULTS.json",
+      "mode": "100644",
+      "blob": "87db2f0fa9aba874d965a7ff682f4545d66b517a",
+      "size": 1054,
+      "sha256": "e21ffac3b4e28b9ae0a94b92ecec0a8eb26818c77c4040831b7dfa8878e75e3a"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/withdrawals/archived-filter.log",
+      "mode": "100644",
+      "blob": "0260da892febf4d028551a9eeb2d1d550d93fea7",
+      "size": 2008,
+      "sha256": "ea732bfc5a209b2dc7ae81df12e695f7380e65a2d2a96231b43d3617d98083e3"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/withdrawals/baseline-go.log",
+      "mode": "100644",
+      "blob": "35111bb6e2a1883280762a858a7cdf19eb3207fa",
+      "size": 189,
+      "sha256": "b8ca30bc9fce6c27ff3fb6f3480af132cf7b54e63e0399b927ea585ab2cf819e"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/withdrawals/baseline-python.log",
+      "mode": "100644",
+      "blob": "f37799e4068b861b7e78d984beca0bcca92c430a",
+      "size": 1882,
+      "sha256": "a05281f008c162fa2ae8cd5e63a94766757fd31b56b65e909315c904ea168d1e"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/withdrawals/go-restored.log",
+      "mode": "100644",
+      "blob": "4f8c8ece0edf5ab497be89a74a800944e89b1754",
+      "size": 189,
+      "sha256": "124cb9870196f2b4c438c61d58b4d3a9cf835c4eddb421eebd3a30b276427777"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/withdrawals/helper-error-code.log",
+      "mode": "100644",
+      "blob": "abfdab6348e91c199ff5dc0d8d44cfdf45ad9421",
+      "size": 4292,
+      "sha256": "b1d0737a4fe8eab3e5bb017bc02644d46b9353541b0faa7b1fbd1458f7cbac10"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/withdrawals/helper-error-cursor.log",
+      "mode": "100644",
+      "blob": "07accf4b413c214fb35f32d8a79a1722d2fe2fb5",
+      "size": 3395,
+      "sha256": "a9cf1a8b96b049bba27b920b6b4bd40ffff4584c58b08c1399c60d1aef15389d"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/withdrawals/helper-error-retry.log",
+      "mode": "100644",
+      "blob": "a3fcdfa12e1c3c020f7368dca6f19f7b0ff2b2bb",
+      "size": 2609,
+      "sha256": "e8063e54e139a1b1914f03b3f39eeb08583de9a84421bf5e239174f2a86bdec7"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/withdrawals/owner-current-entitlement.log",
+      "mode": "100644",
+      "blob": "020602e5ada2728ff69c0141067b64fe37750978",
+      "size": 209,
+      "sha256": "842e5c8bd1e6caff1ed92b288c448be0c78cb3536f4781271a01f52d1d13c52a"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/withdrawals/peer-current-membership.log",
+      "mode": "100644",
+      "blob": "81e4f5409e51c2f31f569117b87420b7bdec7aeb",
+      "size": 212,
+      "sha256": "8c64653bcbcf3b9335c403c885a4947149a49b9d5f5bca3e6940837631ef62cc"
+    },
+    {
+      "path": "docs/reviews/coder-project-context-rework-20261020/withdrawals/python-restored.log",
+      "mode": "100644",
+      "blob": "55a018bb848162898e3fd6962ce0ee69a98ac860",
+      "size": 1882,
+      "sha256": "9820431540ed11261699c3eaf9d495c7a0b038a357f2ea67c0238922f2a5fbb0"
+    }
+  ]
+}
