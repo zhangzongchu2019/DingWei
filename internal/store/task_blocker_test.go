@@ -198,8 +198,7 @@ func TestBlockerWaiterRightsAndFullMode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	encoded := fmt.Sprintf("%+v", out.Blocker)
-	if out.Blocker.SpecID != "" || out.Blocker.Developer != "" || strings.Contains(encoded, "prod/security") {
+	if out.Blocker.SpecID != "" || out.Blocker.Developer != "" || out.Blocker.Mode != "" || out.Blocker.FullApprovalRef != "" || out.Blocker.Where != "prod/security" {
 		t.Fatal("BLOCKER_WAITER_GOT_TASK_CONTEXT", out)
 	}
 	b = blockerRead(t, db, b.ID)
@@ -394,7 +393,7 @@ func TestBlockerReadOnlySnapshotAndBoundedInputHistory(t *testing.T) {
 	ctx := context.Background()
 	b := blockerCreate(t, db, now, "card", "waiting", "user:owner-a", false)
 	for i := 0; i < 105; i++ {
-		b = blockerInput(t, db, now, b, fmt.Sprintf("event-%d", i))
+		b = blockerInput(t, db, now.Add(time.Duration(i)*time.Minute), b, fmt.Sprintf("event-%d", i))
 	}
 	state, err := db.ConsoleTaskFlowState(ctx, "task")
 	if err != nil {
@@ -576,5 +575,65 @@ func TestBlockerWaiterChangeKeepsCurrentCardFingerprint(t *testing.T) {
 	again := blockerCreate(t, db, now, "same-current-waiter", "where", "agent:other", false)
 	if again.ID != b.ID || again.Version != out.Blocker.Version {
 		t.Fatal("BLOCKER_WAITER_CHANGE_CREATED_DUPLICATE", again, out)
+	}
+}
+
+func TestBlockerReplyBudgetAndIdempotentReplay(t *testing.T) {
+	db, now, _ := taskFlowFixture(t)
+	b := blockerCreate(t, db, now, "budget", "waiting", "user:owner-a", false)
+	var last BlockerUpdate
+	for i := 0; i < blockerReplyPerMinute; i++ {
+		last = BlockerUpdate{RequestID: fmt.Sprint("b", i), Operation: "input", ExpectedVersion: b.Version, Source: "user:owner-a", EventID: fmt.Sprint(i), Body: "answer", Evidence: "git:evidence"}
+		out, err := blockerApply(t, db, now, BlockerActor{UserID: "owner-a"}, b.ID, last)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b = out.Blocker
+	}
+	replay, err := blockerApply(t, db, now, BlockerActor{UserID: "owner-a"}, b.ID, last)
+	if err != nil || !replay.Replayed {
+		t.Fatal("BLOCKER_RATE_REPLAY_CHARGED", err)
+	}
+	next := BlockerUpdate{RequestID: "over", Operation: "input", ExpectedVersion: b.Version, Source: "user:owner-a", EventID: "over", Body: "answer", Evidence: "git:evidence"}
+	if _, err = blockerApply(t, db, now, BlockerActor{UserID: "owner-a"}, b.ID, next); !errors.Is(err, ErrBlockerRateLimited) {
+		t.Fatal("BLOCKER_REPLY_FREQUENCY_UNBOUNDED", err)
+	}
+	if got := blockerRead(t, db, b.ID); got.Version != b.Version {
+		t.Fatal("BLOCKER_REJECT_CHANGED_STATE")
+	}
+	for i := blockerReplyPerMinute; i < blockerReplyTotal; i++ {
+		next.RequestID = fmt.Sprint("total", i)
+		next.EventID = next.RequestID
+		next.ExpectedVersion = b.Version
+		out, e := blockerApply(t, db, now.Add(time.Duration(i)*time.Minute), BlockerActor{UserID: "owner-a"}, b.ID, next)
+		if e != nil {
+			t.Fatal(e)
+		}
+		b = out.Blocker
+	}
+	next.RequestID = "exhausted"
+	next.EventID = "exhausted"
+	next.ExpectedVersion = b.Version
+	if _, err = blockerApply(t, db, now.Add(24*time.Hour), BlockerActor{UserID: "owner-a"}, b.ID, next); !errors.Is(err, ErrBlockerRateLimited) {
+		t.Fatal("BLOCKER_REPLY_TOTAL_UNBOUNDED", err)
+	}
+}
+
+func TestBlockerAddressedWaiterGetsOnlyNeededContext(t *testing.T) {
+	db, now, state := taskFlowFixture(t)
+	b := blockerCreate(t, db, now, "minimal", "where exactly", "user:outside", false)
+	state, _ = db.ConsoleTaskFlowState(context.Background(), "task")
+	cards, inputs, err := db.ReadTaskBlockers(context.Background(), state, BlockerActor{UserID: "outside"}, b.ID, "", 1, func() error { return nil })
+	if err != nil || len(cards) != 1 || cards[0].Where != "where exactly" || cards[0].ExpectedInput != b.ExpectedInput || len(inputs) != 0 {
+		t.Fatal("BLOCKER_WAITER_MINIMAL_CONTEXT", err, cards)
+	}
+	if cards[0].SpecID != "" || cards[0].SHA != "" || cards[0].Developer != "" || len(cards[0].Conditions) != 0 {
+		t.Fatal("BLOCKER_WAITER_EXCESS_CONTEXT", cards)
+	}
+	if _, _, err = db.ReadTaskBlockers(context.Background(), state, BlockerActor{UserID: "stranger"}, b.ID, "", 1, func() error { return nil }); !errors.Is(err, ErrTaskFlowPermission) {
+		t.Fatal("BLOCKER_WAITER_ADDRESS_NOT_ENFORCED", err)
+	}
+	if _, _, err = db.ReadTaskBlockers(context.Background(), state, BlockerActor{UserID: "outside"}, "", "", 1, func() error { return nil }); !errors.Is(err, ErrTaskFlowPermission) {
+		t.Fatal("BLOCKER_WAITER_LISTED_OTHER_CARDS", err)
 	}
 }

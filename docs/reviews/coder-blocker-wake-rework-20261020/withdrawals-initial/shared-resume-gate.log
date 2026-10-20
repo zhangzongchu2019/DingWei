@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake (0.12s)
+    task_blocker_test.go:79: BLOCKER_LEGACY_RESUME_BYPASS <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.120s
+FAIL

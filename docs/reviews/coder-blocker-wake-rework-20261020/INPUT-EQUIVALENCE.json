@@ -1,0 +1,10 @@
+{
+  "gate_tree": "521b3cb13f486f0369ca4903cff208311b26a13a",
+  "complete_tree": "29d292495fe24a45cbc65ccc43025309d259c78c",
+  "changed_files": [
+    "tests/pilot-blocker-wake/withdrawals.py"
+  ],
+  "scope": "Only expected marker in offline withdrawal harness; production, Go/Python tests, canonical/browser inputs identical",
+  "helper_tree_unchanged_from": "2e6b95063132bda9ceae4b346d519901256f4ead",
+  "helper_changed_files": []
+}

@@ -1,0 +1,606 @@
+{
+  "packages": {
+    "github.com/zhangzongchu2019/dingwei/cmd/dingwei-datad": {
+      "Time": "2026-10-20T20:48:22.263593035Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/dingwei-datad",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/fcs": {
+      "Time": "2026-10-20T20:48:24.00302549Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/fcs",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/mcs-demo": {
+      "Time": "2026-10-20T20:48:24.919223932Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/mcs-demo",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/mcsd": {
+      "Time": "2026-10-20T20:48:24.9198605Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/mcsd",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/nodeagent": {
+      "Time": "2026-10-20T20:48:24.928913075Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/nodeagent",
+      "Elapsed": 0.008
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/file-service": {
+      "Time": "2026-10-20T20:48:25.03684419Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/file-service",
+      "Elapsed": 0.118
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/clock": {
+      "Time": "2026-10-20T20:48:29.590944463Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/clock",
+      "Elapsed": 0.002
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/bridge": {
+      "Time": "2026-10-20T20:48:29.591420566Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/bridge",
+      "Elapsed": 0.003
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/config": {
+      "Time": "2026-10-20T20:48:29.592434347Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/config",
+      "Elapsed": 0.003
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/agentmetrics": {
+      "Time": "2026-10-20T20:48:29.593356407Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/agentmetrics",
+      "Elapsed": 0.005
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/feishu": {
+      "Time": "2026-10-20T20:48:29.861033113Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/feishu",
+      "Elapsed": 0.008
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/filepolicy": {
+      "Time": "2026-10-20T20:48:29.866419647Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/filepolicy",
+      "Elapsed": 0.013
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/coordination": {
+      "Time": "2026-10-20T20:48:30.068720751Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/coordination",
+      "Elapsed": 0.48
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/datad": {
+      "Time": "2026-10-20T20:48:30.679353308Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Elapsed": 1.09
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/evidence": {
+      "Time": "2026-10-20T20:48:30.932962428Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/evidence",
+      "Elapsed": 1.3439999999999999
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/fcs": {
+      "Time": "2026-10-20T20:48:31.047339443Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/fcs",
+      "Elapsed": 1.458
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/bus": {
+      "Time": "2026-10-20T20:48:31.238193455Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/bus",
+      "Elapsed": 1.649
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/identity/identitytest": {
+      "Time": "2026-10-20T20:48:32.00615928Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/identity/identitytest",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/jcs": {
+      "Time": "2026-10-20T20:48:32.008897602Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/jcs",
+      "Elapsed": 0.003
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/llm": {
+      "Time": "2026-10-20T20:48:32.012280032Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/llm",
+      "Elapsed": 0.006
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/fileservice": {
+      "Time": "2026-10-20T20:48:33.123609338Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/fileservice",
+      "Elapsed": 3.079
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/identity/httpapi": {
+      "Time": "2026-10-20T20:48:35.241126211Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/identity/httpapi",
+      "Elapsed": 3.235
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/m5": {
+      "Time": "2026-10-20T20:48:36.188341562Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m5",
+      "Elapsed": 4.182
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/admin": {
+      "Time": "2026-10-20T20:48:39.743748574Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+      "Elapsed": 10.155
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/dea": {
+      "Time": "2026-10-20T20:48:39.991096607Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/dea",
+      "Elapsed": 0.003
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/model": {
+      "Time": "2026-10-20T20:48:40.003588776Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/model",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/route": {
+      "Time": "2026-10-20T20:48:40.006063224Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/route",
+      "Elapsed": 0.003
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/rotation": {
+      "Time": "2026-10-20T20:48:40.02627497Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/rotation",
+      "Elapsed": 0.038
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/dispatch": {
+      "Time": "2026-10-20T20:48:40.03220907Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/dispatch",
+      "Elapsed": 0.044
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver": {
+      "Time": "2026-10-20T20:48:40.036195271Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver",
+      "Elapsed": 0.048
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/pool": {
+      "Time": "2026-10-20T20:48:40.144743285Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/pool",
+      "Elapsed": 0.156
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/demo": {
+      "Time": "2026-10-20T20:48:40.372098091Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/demo",
+      "Elapsed": 0.384
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/board": {
+      "Time": "2026-10-20T20:48:40.49727181Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "Elapsed": 0.509
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/consolemux": {
+      "Time": "2026-10-20T20:48:41.375869575Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/consolemux",
+      "Elapsed": 11.787
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/redact": {
+      "Time": "2026-10-20T20:48:41.403428652Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/redact",
+      "Elapsed": 0.003
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/router": {
+      "Time": "2026-10-20T20:48:41.404433144Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/router",
+      "Elapsed": 0.004
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/portal": {
+      "Time": "2026-10-20T20:48:41.702741208Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/portal",
+      "Elapsed": 0.303
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/reminder": {
+      "Time": "2026-10-20T20:48:41.842389413Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/reminder",
+      "Elapsed": 0.442
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/seatcapacity": {
+      "Time": "2026-10-20T20:48:41.949966082Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/seatcapacity",
+      "Elapsed": 0.002
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/secretbox": {
+      "Time": "2026-10-20T20:48:41.950141635Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/secretbox",
+      "Elapsed": 0.002
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/obs": {
+      "Time": "2026-10-20T20:48:41.975957063Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+      "Elapsed": 0.576
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/schedule": {
+      "Time": "2026-10-20T20:48:42.867274275Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/schedule",
+      "Elapsed": 1.126
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/version": {
+      "Time": "2026-10-20T20:48:43.699990203Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/version",
+      "Elapsed": 0.002
+    },
+    "github.com/zhangzongchu2019/dingwei/specs/tools/handle-escape": {
+      "Time": "2026-10-20T20:48:43.83777966Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/specs/tools/handle-escape",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/specs/tools/legacy-name": {
+      "Time": "2026-10-20T20:48:43.89273243Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/specs/tools/legacy-name",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/specs/tools/pending-debt": {
+      "Time": "2026-10-20T20:48:43.981450372Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/specs/tools/pending-debt",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/tests/r32-task-flow/compat-probe": {
+      "Time": "2026-10-20T20:48:44.040454137Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/tests/r32-task-flow/compat-probe",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/view-service": {
+      "Time": "2026-10-20T20:48:44.040471415Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/view-service",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/view-service/console-hosted-page-fixture": {
+      "Time": "2026-10-20T20:48:44.104330696Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/view-service/console-hosted-page-fixture",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/view-service/p1seed": {
+      "Time": "2026-10-20T20:48:44.139835197Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/view-service/p1seed",
+      "Elapsed": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/scheduler": {
+      "Time": "2026-10-20T20:48:44.47867469Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/scheduler",
+      "Elapsed": 2.531
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/worker": {
+      "Time": "2026-10-20T20:48:46.615381869Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/worker",
+      "Elapsed": 2.778
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/repo": {
+      "Time": "2026-10-20T20:48:47.59851944Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/repo",
+      "Elapsed": 6.198
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/nodeagent": {
+      "Time": "2026-10-20T20:48:49.473784534Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/nodeagent",
+      "Elapsed": 8.074
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd": {
+      "Time": "2026-10-20T20:48:53.368830231Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd",
+      "Elapsed": 13.381
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store/pgtest": {
+      "Time": "2026-10-20T20:49:02.974324739Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/store/pgtest",
+      "Elapsed": 19.276
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout": {
+      "Time": "2026-10-20T20:49:03.748943244Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout",
+      "Elapsed": 38.83
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store": {
+      "Time": "2026-10-20T20:49:07.250127114Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "Elapsed": 23.552
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/nodegate": {
+      "Time": "2026-10-20T20:49:09.933588002Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/nodegate",
+      "Elapsed": 28.534
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store/migrate": {
+      "Time": "2026-10-20T20:50:01.053120086Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/store/migrate",
+      "Elapsed": 77.355
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/fanout": {
+      "Time": "2026-10-20T20:50:13.936703342Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/fanout",
+      "Elapsed": 104.347
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/identity": {
+      "Time": "2026-10-20T20:50:30.742611231Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/identity",
+      "Elapsed": 118.737
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/m8": {
+      "Time": "2026-10-20T20:51:37.33379227Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Elapsed": 177.346
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
+      "Time": "2026-10-20T20:52:31.321265677Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "Elapsed": 241.733
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/hosted": {
+      "Time": "2026-10-20T21:00:08.487569065Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/hosted",
+      "Elapsed": 696.482
+    }
+  },
+  "conditional_skips": [
+    {
+      "Time": "2026-10-20T20:48:30.631293654Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Test": "TestPGAssignFull",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:30.631311572Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Test": "TestPGA2ConcurrentUnique",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:30.63133488Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Test": "TestPGACLThreeRoles",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:30.631352498Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Test": "TestPGRoleNoLeak",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:30.631370246Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Test": "TestPGGCFirstResults",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:30.631386714Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Test": "TestPGMigrateOnly",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:30.631402823Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Test": "TestPGB3CrossTask",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:30.631425451Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Test": "TestPGB4PutAssignInterleave",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:30.631442139Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Test": "TestPGC1CrossTaskConcurrentSameRID",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:30.631457648Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Test": "TestPGC1ResponseLossRetry",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:30.631480545Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Test": "TestPGC1LockOrderNoDeadlock",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:30.65415068Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Test": "TestPGIntegration",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:38.963684882Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+      "Test": "TestGateDumpDoorABaseline",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:40.496998287Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "Test": "TestTCN5b_SameRidDifferentPayloadConflict",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:40.497188738Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "Test": "TestConformance_GAP_SLATimeoutAnnotate",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:41.936664272Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+      "Test": "TestMonitorPageInRealChrome",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:55.122302375Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "Test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:48:55.122327273Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "Test": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:49:31.461165042Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Test": "TestMuxProductHTTP1EightSeats",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:49:32.937193983Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Test": "TestConsolePlatformPayloadDump",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:49:38.590133443Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:49:59.356521835Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Test": "TestFailureNoticeDriverTurnEndToEnd",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:50:12.659984246Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Test": "TestGroupReplyMCP",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:50:14.730626651Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:50:14.730639319Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:50:14.730659218Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:50:14.730675956Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Test": "TestHelper0232MixedVersionEndToEnd",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:50:47.95268345Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Test": "TestEnvelopeReadTimeoutEnvironmentChild",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:51:17.313552824Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Test": "TestSpecMCPEndToEnd",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T20:52:31.233878255Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "Test": "TestR31OldBinarySchemaReadCompatibility",
+      "Elapsed": 0
+    }
+  ]
+}

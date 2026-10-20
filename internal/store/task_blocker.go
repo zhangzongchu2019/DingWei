@@ -13,6 +13,13 @@ import (
 	"time"
 )
 
+// Reply budgets are per blocker and authenticated actor, after idempotency checks.
+// Count committed replies only; rejection rolls back all state/outbox changes.
+const blockerReplyTotal = 256
+const blockerReplyPerMinute = 10
+
+var ErrBlockerRateLimited = errors.New("blocker reply rate limited")
+
 // The principal prefix is set by the authenticated transport, never JSON input.
 type BlockerActor struct{ AgentID, UserID string }
 
@@ -317,8 +324,7 @@ func (s *SQLite) UpdateTaskBlocker(ctx context.Context, expected TaskFlowState, 
 		}
 	}
 	canRead := actor.taskReader(t)
-	canInput := canRead || b.WaitingPrincipal == key
-	if !canRead && (u.Operation != "input" || !canInput) {
+	if !canRead && (u.Operation != "input" || b.WaitingPrincipal != key) {
 		return out, ErrTaskFlowPermission
 	}
 	if u.Operation == "input" && !(actor.owner(t) || b.WaitingPrincipal == key) {
@@ -338,8 +344,13 @@ func (s *SQLite) UpdateTaskBlocker(ctx context.Context, expected TaskFlowState, 
 		out.Replayed = true
 		// A cached receipt never preserves former task-reading authority.
 		if !canRead {
+			currentCard := blockerCurrent(b, t)
 			b := out.Blocker
-			out.Blocker = TaskBlocker{ID: b.ID, TaskID: b.TaskID, Version: b.Version, State: b.State, InputVersion: b.InputVersion}
+			out.Blocker = blockerWaiterView(b)
+			if !currentCard {
+				out.Blocker.Where = ""
+				out.Blocker.ExpectedInput = ""
+			}
 			out.TaskVersion = 0
 		}
 		return out, err
@@ -445,6 +456,13 @@ func (s *SQLite) UpdateTaskBlocker(ctx context.Context, expected TaskFlowState, 
 		} else if !errors.Is(e, sql.ErrNoRows) {
 			return out, e
 		} else {
+			var total, recent int
+			if err = tx.QueryRowContext(ctx, `SELECT count(*),COALESCE(sum(CASE WHEN julianday(created_at)>=julianday(?) THEN 1 ELSE 0 END),0) FROM console_task_blocker_input WHERE blocker_id=? AND actor_id=?`, now.Add(-time.Minute).UTC().Format(time.RFC3339Nano), b.ID, key).Scan(&total, &recent); err != nil {
+				return out, err
+			}
+			if total >= blockerReplyTotal || recent >= blockerReplyPerMinute {
+				return out, ErrBlockerRateLimited
+			}
 			if u.ProductionOrSecurity && b.Mode != "full" {
 				b.Mode = "full"
 				b.FullApprovedBy = ""
@@ -603,7 +621,7 @@ func (s *SQLite) UpdateTaskBlocker(ctx context.Context, expected TaskFlowState, 
 	}
 	out.Blocker = b
 	if !canRead {
-		out.Blocker = TaskBlocker{ID: b.ID, TaskID: b.TaskID, Version: b.Version, State: b.State, InputVersion: b.InputVersion}
+		out.Blocker = blockerWaiterView(b)
 	}
 	out.TaskVersion = t.Version
 	if !canRead {
@@ -642,7 +660,27 @@ func (s *SQLite) ReadTaskBlockers(ctx context.Context, expected TaskFlowState, a
 		return nil, nil, ErrTaskFlowPermission
 	}
 	if !actor.taskReader(t) {
-		return nil, nil, ErrTaskFlowPermission
+		// An addressed waiter receives this one card, never task/spec/history.
+		if bid == "" || after != "" {
+			return nil, nil, ErrTaskFlowPermission
+		}
+		card, e := scanBlocker(tx.QueryRowContext(ctx, `SELECT `+blockerCols+` FROM console_task_blocker WHERE id=? AND task_id=?`, bid, t.ID))
+		if errors.Is(e, sql.ErrNoRows) {
+			return nil, nil, ErrTaskFlowPermission
+		}
+		if e != nil {
+			return nil, nil, e
+		}
+		if card.WaitingPrincipal != actor.Key() || !blockerCurrent(card, t) || blockerTerminal(card.State) {
+			return nil, nil, ErrTaskFlowPermission
+		}
+		if e = recheck(); e != nil {
+			return nil, nil, e
+		}
+		if e = tx.Commit(); e != nil {
+			return nil, nil, e
+		}
+		return []TaskBlocker{blockerWaiterView(card)}, []BlockerInput{}, nil
 	}
 	var specID, sha string
 	var revision int
@@ -878,4 +916,9 @@ func (s *SQLite) BlockerTasksAfter(ctx context.Context, after string) ([]TaskFlo
 		out = append(out, t)
 	}
 	return out, rows.Err()
+}
+
+// These are the only task-context fields explicitly shared with the waiting party.
+func blockerWaiterView(b TaskBlocker) TaskBlocker {
+	return TaskBlocker{ID: b.ID, TaskID: b.TaskID, Version: b.Version, State: b.State, InputVersion: b.InputVersion, Where: b.Where, ExpectedInput: b.ExpectedInput, Kind: b.Kind}
 }

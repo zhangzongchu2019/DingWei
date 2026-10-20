@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerRequestReplayAndRollbackAreAtomic (0.10s)
+    task_blocker_test.go:182: BLOCKER_REQUEST_HASH_NOT_BOUND <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.099s
+FAIL

@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerAdoptPersistsCurrentRevisionTuple (0.10s)
+    task_blocker_test.go:564: BLOCKER_ADOPT_FINGERPRINT_NOT_REBOUND {blk:6ffff2807435133a62dbbd50a9b546dbb4c5d04cbb2a6079312a2d4e7b1fae2e task r32 2 new-sha 1 dev review 1 1 technical wait user:owner-a 真实材料与授权记录 [{identity 当前身份、编组和指派有效} {revision 原任务确切修订和范围未变} {dependencies 依赖仍满足} {materials 核实答复与材料真实且满足原任务条件} {environment 重新核实原任务环境与隔离对象} {authorization 重新核实当前有效授权与预算；唤醒不是执行授权}] full   waiting 0 0   agent:dev 2026-09-26T07:00:00Z 2026-09-26T07:00:00Z 6137f579555073878a9cc151726fd3c82408944ace92a9c5e9630b0ef3291880 } {blk:737337fa1168847f72c38dc31b64653925e7d5fa7c7a3e634d780daf50d72098 task r32 2 new-sha 1 dev review 2 4 technical wait user:owner-a 真实材料与授权记录 [{identity 当前身份、编组和指派有效} {revision 原任务确切修订和范围未变} {dependencies 依赖仍满足} {materials 核实答复与材料真实且满足原任务条件} {environment 重新核实原任务环境与隔离对象} {authorization 重新核实当前有效授权与预算；唤醒不是执行授权}] full   ready_to_recheck 1 0   agent:dev 2026-09-26T07:00:00Z 2026-09-26T07:00:00Z 069b222f8bfc211cbae3c9c5f782022f492fa1649ec089a6f2397b86d90bb82e queued_offline_or_upgrade}
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.101s
+FAIL

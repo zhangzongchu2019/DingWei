@@ -2,8 +2,10 @@ package m8
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -178,5 +180,95 @@ func TestBlockerOfflineFirstPageDoesNotStarveCurrentRecipient(t *testing.T) {
 	}
 	if p.last == "" || p.last == "000-offline-099" {
 		t.Fatal("BLOCKER_OFFLINE_PAGE_STARVED_CURRENT_RECIPIENT", p.last)
+	}
+}
+
+type blockerFinishWindow struct {
+	*store.SQLite
+	mu   sync.Mutex
+	fail bool
+	ids  []string
+}
+
+func (p *blockerFinishWindow) EnqueueSessionDelivery(ctx context.Context, d model.SessionDelivery) error {
+	if err := p.SQLite.EnqueueSessionDelivery(ctx, d); err != nil {
+		return err
+	}
+	p.mu.Lock()
+	p.ids = append(p.ids, d.ID)
+	p.mu.Unlock()
+	return nil
+}
+func (p *blockerFinishWindow) FinishBlockerWake(ctx context.Context, id, reason string, now time.Time) error {
+	p.mu.Lock()
+	fail := p.fail
+	p.mu.Unlock()
+	if fail && reason == "reliable_delivery_enqueued" {
+		return errors.New("injected after durable enqueue before outbox mark")
+	}
+	return p.SQLite.FinishBlockerWake(ctx, id, reason, now)
+}
+func TestBlockerDurableDeliverySurvivesFinishWindow(t *testing.T) {
+	e, _, _ := blockerReadyFixture(t)
+	p := &blockerFinishWindow{SQLite: e.db, fail: true}
+	e.hub.Repo = p
+	conn, status, _ := e.dial(e.zKimiCred, "")
+	if status != 101 {
+		t.Fatal(status)
+	}
+	defer conn.CloseNow()
+	var c *sessionClient
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		e.hub.mu.Lock()
+		c = e.hub.sessionClients[AgentKeyID("zzc")]["kimi"]
+		e.hub.mu.Unlock()
+		if c != nil {
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if c == nil {
+		t.Fatal("BLOCKER_SESSION_REGISTRATION_NOT_OBSERVED")
+	}
+	c.stateMu.Lock()
+	c.deliveryACKV1 = true
+	c.blockerNoticeV1 = true
+	c.blockerWakeV1 = true
+	c.stateMu.Unlock()
+	if err := e.db.SetSessionEndpointDeliveryACK(e.ctx, AgentKeyID("zzc"), "kimi", true); err != nil {
+		t.Fatal(err)
+	}
+	e.hub.dispatchBlockerWakes(e.ctx)
+	pending, err := e.db.PendingBlockerWakes(e.ctx, "")
+	if err != nil || len(pending) != 1 {
+		t.Fatal("BLOCKER_FINISH_FAILURE_LOST_OUTBOX", err, pending)
+	}
+	// Model a restart by forgetting every volatile claim, retain real SQLite.
+	e.hub.mu.Lock()
+	e.hub.envelopeIDs = map[string]string{}
+	e.hub.mu.Unlock()
+	p.mu.Lock()
+	p.fail = false
+	p.mu.Unlock()
+	e.hub.dispatchBlockerWakes(e.ctx)
+	pending, err = e.db.PendingBlockerWakes(e.ctx, "")
+	if err != nil || len(pending) != 0 {
+		t.Fatal("BLOCKER_FINISH_RETRY_NOT_COMPLETED", err)
+	}
+	p.mu.Lock()
+	ids := append([]string(nil), p.ids...)
+	p.mu.Unlock()
+	if len(ids) < 2 {
+		t.Fatal("BLOCKER_RESTART_WINDOW_NOT_EXERCISED", ids)
+	}
+	for _, id := range ids {
+		if id != ids[0] {
+			t.Fatal("BLOCKER_RESTART_DUPLICATE_DURABLE_DELIVERY", ids)
+		}
+	}
+	d, err := e.db.GetSessionDelivery(e.ctx, ids[0])
+	if err != nil || d == nil {
+		t.Fatal("BLOCKER_DURABLE_ID_MISSING", err)
 	}
 }

@@ -11,6 +11,11 @@ def case(name,file,old,new,package,test,marker):
 S='internal/store/task_blocker.go'; M='internal/m8/task_blocker.go'; P='tools/sessionhelper/sessionhelper/task_blocker.py'; J='tools/sessionhelper/sessionhelper/blocker_journal.py'; D='tools/sessionhelper/sessionhelper/driver_adapter.py'
 def store(name,old,new,test,marker):case(name,S,old,new,'./internal/store',test,marker)
 def helper(name,file,old,new,marker):case(name,file,old,new,'python','',marker)
+case('durable-retry-id','internal/m8/hub.go','if metaString(env.Meta, "kind") == "task_blocker_ready" {\n\t\t\tsum := sha256.Sum256','if false && metaString(env.Meta, "kind") == "task_blocker_ready" {\n\t\t\tsum := sha256.Sum256','./internal/m8','TestBlockerDurableDeliverySurvivesFinishWindow','BLOCKER_RESTART_DUPLICATE_DURABLE_DELIVERY')
+store('reply-frequency','recent >= blockerReplyPerMinute','false','TestBlockerReplyBudgetAndIdempotentReplay','BLOCKER_REPLY_FREQUENCY_UNBOUNDED')
+store('reply-total','total >= blockerReplyTotal','false','TestBlockerReplyBudgetAndIdempotentReplay','BLOCKER_REPLY_TOTAL_UNBOUNDED')
+store('waiter-needed-context','Where: b.Where, ExpectedInput: b.ExpectedInput','Where: "", ExpectedInput: ""','TestBlockerAddressedWaiterGetsOnlyNeededContext','BLOCKER_WAITER_MINIMAL_CONTEXT')
+store('waiter-addressed-read','card.WaitingPrincipal != actor.Key()','false','TestBlockerAddressedWaiterGetsOnlyNeededContext','BLOCKER_WAITER_ADDRESS_NOT_ENFORCED')
 store('initial-current-state','!reflect.DeepEqual(t, expected)','!reflect.DeepEqual(t, t)','TestBlockerRequestReplayAndRollbackAreAtomic','BLOCKER_INITIAL_STATE_NOT_RECHECKED')
 store('card-cas','b.Version != u.ExpectedVersion','b.Version != b.Version','TestBlockerRecheckRequiresCurrentDeveloperVersionAndLease','BLOCKER_CARD_CAS_BYPASS')
 store('developer-only-lease','if !actor.developer(t) || b.InputVersion','if false && !actor.developer(t) || b.InputVersion','TestBlockerRecheckRequiresCurrentDeveloperVersionAndLease','BLOCKER_REVIEWER_OPENED_DEVELOPER_LEASE')
@@ -31,7 +36,7 @@ store('outbox-repair','if b.State == "ready_to_recheck" || b.State == "recheckin
 case('owner-cannot-resume','internal/store/console_specs.go','if enrolled > 0 {','if false && enrolled > 0 {','./internal/store','TestBlockerOwnerCannotImpersonateResumeAfterResolution','BLOCKER_OWNER_IMPERSONATED_RESUME')
 case('old-driver-gate','internal/store/console_task_driver.go','if unresolved != 0 {','if false && unresolved != 0 {','./internal/store','TestBlockerLegacyDriverStartCannotBypassUnresolvedCards','BLOCKER_LEGACY_DRIVER_START_BYPASS <nil>')
 case('current-group-pair',M,'if !a.Allows(claim) {','if false && !a.Allows(claim) {','./internal/m8','TestBlockerCurrentGroupPairRecheckedBeforePrivateRead','BLOCKER_CURRENT_PAIR_GROUP_AUTH_BYPASS')
-case('waiter-no-private-get',S,'if !actor.taskReader(t) {','if false && !actor.taskReader(t) {','./internal/m8','TestBlockerHTTPCurrentAgentAndExplicitOutsideWaiter','BLOCKER_WAITER_READ_WHOLE_TASK')
+case('waiter-no-private-get',S,'if !actor.taskReader(t) {','if false && !actor.taskReader(t) {','./internal/m8','TestBlockerHTTPCurrentAgentAndExplicitOutsideWaiter','BLOCKER_WAITER_MINIMAL_CONTEXT')
 case('pg-human-lock','internal/identity/project_context.go','SELECT state,short_name FROM np_user WHERE user_id_lc=$1 FOR SHARE','SELECT state,short_name FROM np_user WHERE user_id_lc=$1','./internal/m8','TestBlockerPGHumanReplyCommitBeforeDisableAndDisableBeforeReply','BLOCKER_PG_HUMAN_LOCK_NOT_HELD_THROUGH_SQLITE_COMMIT')
 case('control-origin','internal/m8/hub.go','&& ctx.Value(blockerDispatchKey{}) != true','&& false && ctx.Value(blockerDispatchKey{}) != true','./internal/m8','TestBlockerOfflineOldHelperAndReliableNonExecutableWake','BLOCKER_FORGED_CONTROL_ROUTED')
 case('old-helper-capability',M,'capable := client.blockerNoticeV1 && client.deliveryACKV1','capable := client.deliveryACKV1','./internal/m8','TestBlockerOfflineOldHelperAndReliableNonExecutableWake','BLOCKER_UNKNOWN_CONTROL_SENT_TO_OLD_HELPER')
@@ -61,7 +66,7 @@ store('adopt-revision-durable','fingerprint=? WHERE id=?`, b.SpecID, b.Revision,
 store('adopt-current-fingerprint','b.Fingerprint = blockerFingerprint(b)','// fingerprint recomputation withdrawn','TestBlockerAdoptPersistsCurrentRevisionTuple','BLOCKER_ADOPT_FINGERPRINT_NOT_REBOUND')
 
 def run(args):
-    args.commit=subprocess.check_output(['git','-C',str(ROOT),'rev-parse',args.commit+'^{commit}'],text=True).strip()
+    args.commit=subprocess.check_output(['git','-C',str(ROOT),'rev-parse',args.commit+'^{tree}'],text=True).strip()
     chosen=[c for c in CASES if not args.only or c['name'] in args.only]
     if args.only and set(args.only)-{c['name'] for c in CASES}:raise ValueError('unknown withdrawal')
     out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True)

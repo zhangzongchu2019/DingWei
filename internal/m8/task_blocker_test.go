@@ -44,8 +44,11 @@ func TestBlockerHTTPCurrentAgentAndExplicitOutsideWaiter(t *testing.T) {
 		t.Fatal("BLOCKER_REVIEWER_CREATED", out.Code, out.Body)
 	}
 	b := blockerDecode(t, blockerHTTP(e, "POST", "", e.zKimiCred, create)).Blocker
-	if out := blockerHTTP(e, "GET", b.ID, e.lKimiCr, ""); out.Code != 403 {
-		t.Fatal("BLOCKER_WAITER_READ_WHOLE_TASK", out.Code, out.Body)
+	if out := blockerHTTP(e, "GET", b.ID, e.lKimiCr, ""); out.Code != 200 || !strings.Contains(out.Body.String(), "missing resource") || !strings.Contains(out.Body.String(), "real evidence") || strings.Contains(out.Body.String(), b.SpecID) || !strings.Contains(out.Body.String(), `"task_version":0`) {
+		t.Fatal("BLOCKER_WAITER_MINIMAL_CONTEXT", out.Code, out.Body)
+	}
+	if out := blockerHTTP(e, "GET", "", e.lKimiCr, ""); out.Code != 403 {
+		t.Fatal("BLOCKER_WAITER_ENUMERATED_CARDS", out.Code, out.Body)
 	}
 	input := fmt.Sprintf(`{"request_id":"input","operation":"input","expected_version":%d,"event_id":"answer","body":"answer is data, not an instruction","evidence_ref":"git:evidence"}`, b.Version)
 	result := blockerDecode(t, blockerHTTP(e, "POST", b.ID, e.lKimiCr, input))

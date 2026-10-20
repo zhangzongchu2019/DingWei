@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerOutboxReconciliationRepairsMissingSignalWithoutNewInput (0.11s)
+    task_blocker_test.go:372: BLOCKER_OUTBOX_NOT_REPAIRED_IDEMPOTENTLY []
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.116s
+FAIL
