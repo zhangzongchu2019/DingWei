@@ -18,7 +18,7 @@ GOIDENTITY=['go','test','./internal/identity','-count=1','-run']
 PYCMD=[PYTHON,'-B','-m','unittest','discover','-s','tools/sessionhelper/tests','-p','test_project_context.py','-v']
 # Each case names the intended assertion, not merely a nonzero exit status.
 CASES=[
- ('duplicate-auth','internal/m8/project_context.go','len(auths) != 1','false',GOM8+['^TestProjectContextAuthenticationAndQueryMatrix$'],'PC_AUTH_OR_QUERY_BYPASS'),
+ ('duplicate-auth','internal/m8/project_context.go','len(auths) != 1','len(auths) < 1',GOM8+['^TestProjectContextAuthenticationAndQueryMatrix$'],'PC_AUTH_OR_QUERY_BYPASS'),
  ('cookie-auth','internal/m8/project_context.go','len(r.Header.Values("Cookie")) != 0','false',GOM8+['^TestProjectContextAuthenticationAndQueryMatrix$'],'PC_AUTH_OR_QUERY_BYPASS'),
  ('credential-recheck','internal/identity/project_context.go','subtle.ConstantTimeCompare([]byte(a.Actor.CredentialHash), []byte(hash))','subtle.ConstantTimeCompare([]byte(hash), []byte(hash))',GOIDENTITY+['^TestProjectContextPGAuthorizationLocksAndCurrentState$'],'PC_CREDENTIAL_RECHECK_MISSING'),
  ('pg-agent-lock','internal/identity/project_context.go','FROM np_agent WHERE id=$1 FOR SHARE','FROM np_agent WHERE id=$1',GOIDENTITY+['^TestProjectContextPGAuthorizationLocksAndCurrentState$'],'PC_PG_AUTH_LOCK_NOT_HELD'),
@@ -48,7 +48,7 @@ CASES=[
 
 def run(commit,out):
     out=Path(out).resolve();out.mkdir(parents=True,exist_ok=True)
-    exported=subprocess.check_output(['git','-C',str(ROOT),'archive',commit,'internal','cmd','tools/sessionhelper','go.mod','go.sum','VERSION'])
+    exported=subprocess.check_output(['git','-C',str(ROOT),'archive',commit,'internal','cmd','view-service','tools/sessionhelper','go.mod','go.sum','VERSION'])
     results=[]
     with tempfile.TemporaryDirectory(prefix='pc-withdraw-') as temp:
         root=Path(temp)/'source';root.mkdir()
