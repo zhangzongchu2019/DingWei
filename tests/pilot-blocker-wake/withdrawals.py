@@ -47,7 +47,12 @@ helper('dispatch-journal',J,"SET state='dispatching',updated_at", "SET state='pe
 helper('ambiguous-no-rpc-replay',D,'receipt=self.driver.poll_receipt(command.delivery_id)','receipt=self.driver.deliver(command.delivery_id,command.text)','BLOCKER_UNKNOWN_WINDOW_OPENED_NEW_TURN')
 helper('transient-defer-same-command',D,'self._commands.defer_current(command.delivery_id);self._bridge_sleep(0.5);return','self._bridge_sleep(0.5);return','BLOCKER_TRANSIENT_FAILURE_DROPPED_WAKE')
 
+case('owner-old-plan-paired','internal/store/console_specs.go','if err = taskBlockersClear(ctx, tx, proposalID); err != nil {','if err = error(nil); err != nil {','./internal/store','TestBlockerMultipleCardsLegacyGateAndPreservation','BLOCKER_OWNER_PLAN_BYPASS <nil>')
+CASES[-1]['edits'].append(('internal/store/console_specs.go','if enrolled > 0 {','if false && enrolled > 0 {'))
+store('resolved-does-not-resume','if pass {\n\t\t\t\tb.State = "resolved"','if pass {\n\t\t\t\t_, _ = tx.ExecContext(ctx, `UPDATE console_spec_task SET status=\'in_progress\' WHERE id=?`, t.ID)\n\t\t\t\tb.State = "resolved"','TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake','BLOCKER_RECHECK_AUTO_RESUMED')
+
 def run(args):
+    args.commit=subprocess.check_output(['git','-C',str(ROOT),'rev-parse',args.commit+'^{commit}'],text=True).strip()
     chosen=[c for c in CASES if not args.only or c['name'] in args.only]
     if args.only and set(args.only)-{c['name'] for c in CASES}:raise ValueError('unknown withdrawal')
     out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True)
