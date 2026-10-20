@@ -76,13 +76,13 @@ class BuildEntrypointContractTest(unittest.TestCase):
     def test_update_modules_and_canonical_counts_are_wired(self):
         runner = self.read("scripts/run-build-tests.sh")
         for name in ("test_update_release_core.py", "test_update_core_review_regressions.py", "test_self_update_offer.py",
-                     "test_sqlite_connection_lifetime.py", "test_mcp_shim_transport_errors.py", "test_spec_review_r32.py", "test_project_context.py", "test_task_blocker.py", "test_pilot_question.py"):
+                     "test_sqlite_connection_lifetime.py", "test_mcp_shim_transport_errors.py", "test_spec_review_r32.py", "test_project_context.py", "test_task_blocker.py", "test_pilot_question.py", "test_pilot_template.py"):
             self.assertEqual(runner.count("tools/sessionhelper/tests/" + name), 1)
         python_files = runner.split("PYTHON_TESTS='", 1)[1].split("'", 1)[0].split()
         shell_files = runner.split("SHELL_TESTS='", 1)[1].split("'", 1)[0].split()
-        self.assertEqual(len(python_files), 54)
+        self.assertEqual(len(python_files), 55)
         self.assertEqual(len(shell_files), 2)
-        self.assertIn("BUILD_TESTS_OK python=54 shell=2", runner)
+        self.assertIn("BUILD_TESTS_OK python=55 shell=2", runner)
 
     def test_build_make_and_ci_share_the_canonical_test_entrypoint(self):
         self.assertIn("./scripts/run-build-tests.sh", self.read("build.sh"))
