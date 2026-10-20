@@ -1,0 +1,15 @@
+{
+  "verified_at": "2026-10-20T18:52:52.670653+00:00",
+  "verified_commit": "e1624a468bb409a93110974c2b9a78091f08427e",
+  "verified_tree": "37f5c5eaaa9468c7c16b3a0b03e0d63b0cf9aee0",
+  "manifests": {
+    "SOURCE-MANIFEST.json": 1790,
+    "EVIDENCE-MANIFEST.json": 226
+  },
+  "total_entries": 2016,
+  "all_git_blob_size_sha_match": true,
+  "non_docs_delta_from_complete_source": 0,
+  "all_local_evidence_files_tracked": true,
+  "log_files": 184,
+  "scope": "Author local evidence/Git integrity, not independent acceptance or deployment authorization"
+}
