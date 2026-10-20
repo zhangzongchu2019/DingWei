@@ -144,4 +144,28 @@ class BlockerTransportTest(unittest.TestCase):
             self.assertEqual(result['http_status'],302);self.assertEqual(len(seen),1,'BLOCKER_CREDENTIAL_REDIRECTED');self.assertEqual(seen[0][1],'Bearer SYNTHETIC')
         finally:server.shutdown();server.server_close();thread.join()
 
+class BlockerNotificationModesTest(unittest.TestCase):
+    def test_non_driver_missing_identity_and_restricted_modes_never_execute(self):
+        from sessionhelper.app import SessionHelper
+        from sessionhelper.inbox import DeliveryInbox
+        from sessionhelper.protocol import AddressBook
+        from sessionhelper.enroll import Credential
+        async def run(mode,identity,restricted):
+            with tempfile.TemporaryDirectory() as home:
+                h=SessionHelper.__new__(SessionHelper);h.cfg=types.SimpleNamespace(mode=mode,ipc_upload_only=restricted,ipc_send_body_only=False)
+                h.book=AddressBook('fixture','enrolled','');h.enroll_credential=Credential('dev','SYNTHETIC') if identity else None
+                h.delivery_inbox=DeliveryInbox(str(Path(home)/'inbox.sqlite'),session_name='fixture')
+                sent=[]
+                async def send(text):sent.append(json.loads(text))
+                ws=types.SimpleNamespace(send=send)
+                await h.accept_delivery(ws,signal())
+                claim=h.delivery_inbox.claim_next()
+                if mode!='driver' or not identity or restricted:
+                    self.assertIsNone(claim,'BLOCKER_NOTICE_INJECTED_TO_LEGACY_OR_RESTRICTED_MODE')
+                    self.assertEqual(sent[-1]['meta']['reason'],'blocker_notice_only')
+                else:
+                    self.assertIsNotNone(claim,'BLOCKER_DRIVER_WAKE_NOT_DURABLE')
+        for values in [('cli',True,False),('desktop',True,False),('driver',False,False),('driver',True,True),('driver',True,False)]:
+            with self.subTest(mode=values):asyncio.run(run(*values))
+
 if __name__=='__main__':unittest.main()

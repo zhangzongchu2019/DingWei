@@ -178,6 +178,11 @@ func (h *Hub) HandleTaskBlockers(w http.ResponseWriter, r *http.Request) {
 				taskError(w, store.ErrTaskFlowInvalid)
 				return
 			}
+			owner, e := h.Identity.Store.GetUser(ctx, a.OwnerLC)
+			if e != nil || owner == nil || owner.State != identity.UserActive {
+				taskError(w, store.ErrTaskFlowInvalid)
+				return
+			}
 		} else if strings.HasPrefix(u.WaitingPrincipal, "user:") {
 			id := strings.TrimPrefix(u.WaitingPrincipal, "user:")
 			person, e := h.Identity.Store.GetUser(ctx, id)
@@ -201,8 +206,9 @@ func (h *Hub) HandleTaskBlockers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	taskJSON(w, 200, out)
-	// Delivery is durable and asynchronous; POST acknowledgement is not execution.
-	go h.dispatchBlockerWakes(context.Background())
+	// The existing Hub-lifetime worker drains this durable outbox on its next
+	// tick; a request must not leave detached writers after Hub shutdown.
+	// POST acknowledgement is neither model admission nor execution.
 }
 
 type blockerRead struct {

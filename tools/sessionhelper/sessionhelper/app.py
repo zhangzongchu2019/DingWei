@@ -573,7 +573,8 @@ class SessionHelper:
     def _prepare_blocker_driver_wake(self,env):
         from .task_blocker import prepare_wake
         credential=getattr(self,"enroll_credential",None)
-        if credential is None or self.cfg.mode!="driver" or getattr(self.cfg,"ipc_upload_only",False) or getattr(self.cfg,"ipc_send_body_only",False):return None,"current_authorization_denied"
+        if self.cfg.mode!="driver" or getattr(self.cfg,"ipc_upload_only",False) or getattr(self.cfg,"ipc_send_body_only",False):return None,"current_authorization_denied"
+        if credential is None:return None,"current_authorization_or_read_failed"
         ws_url,headers=self._connection()
         return prepare_wake(ws_url,headers,credential.agent_id,env)
 
