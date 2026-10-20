@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionOldDispatchCannotResetToUnsent (0.10s)
+    pilot_question_test.go:604: QUESTION_OLD_DISPATCH_RESET_AS_UNSENT pending_config
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.100s
+FAIL

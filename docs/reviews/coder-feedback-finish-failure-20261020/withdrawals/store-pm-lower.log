@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionRecipientCaseCanonicalBeforeHash (0.09s)
+    pilot_question_test.go:568: QUESTION_STORE_POLICY_CASE {r32 PM leader 2 user:owner-a 2026-09-26T07:00:00Z} <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.091s
+FAIL

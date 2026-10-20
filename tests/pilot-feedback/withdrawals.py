@@ -8,6 +8,7 @@ def case(name,file,old,new,pkg,test,marker):
  cmd=[PY,'-B','-m','unittest','discover','-s','tools/sessionhelper/tests','-p','test_pilot_question.py','-v'] if pkg=='python' else ['go','test',pkg,'-count=1','-run','^'+test+'$','-timeout=2m']
  CASES.append(dict(name=name,edits=[(file,old,new)],argv=cmd,marker=marker))
 def store(name,file,old,new,test,marker):case(name,file,old,new,'./internal/store',test,marker)
+case('sent-finish-failure-attempted-boundary','internal/m8/pilot_question_worker.go','attempted = true','// attempted=true withdrawn','./internal/m8','TestPilotQuestionSendAcceptedFinishFailureNeverBecomesUnsent','QUESTION_SENT_FINISH_FAILURE_RETRY_BOUNDARY')
 case('sender-error-is-unknown','internal/m8/pilot_question_worker.go','sendErr == nil','sendErr == nil || sendErr != nil','./internal/m8','TestPilotQuestionProviderErrorUnknownAndNeverResends','QUESTION_SENDER_ERROR_NOT_UNKNOWN')
 case('late-check-before-provider','internal/m8/pilot_question_worker.go','if x = check(); x != nil {','if x = error(nil); x != nil {','./internal/m8','TestPilotQuestionPreProviderCheckFailureDisposition','QUESTION_UNSENT_DISPOSITION')
 case('late-transient-queued','internal/m8/pilot_question_worker.go','if prepared {','if false && prepared {','./internal/m8','TestPilotQuestionPreProviderCheckFailureDisposition','QUESTION_UNSENT_DISPOSITION')

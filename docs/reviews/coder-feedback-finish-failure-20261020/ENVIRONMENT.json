@@ -1,0 +1,10 @@
+{
+  "utc": "2026-10-20T22:16:10.080359+00:00",
+  "host": "VM-4-12-ubuntu",
+  "uid": 1001,
+  "gid": 1001,
+  "umask": "0o22",
+  "go": "go version go1.22.2 linux/amd64",
+  "runner": "Git-exported immutable tree; private HOME, cleared environment, offline deps and embedded PG binary cache only; no DSN",
+  "fault": "Real SQLite.FinishQuestionNotice invoked with a canceled child context after synthetic provider success. This simulates a failed completion write; no disk-loss/crash injection or external Feishu is claimed."
+}

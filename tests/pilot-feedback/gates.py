@@ -12,7 +12,7 @@ COMMANDS={
  'go':['go','test','./...','-json','-count=1','-timeout=30m'],
 }
 def run(args):
- commit=subprocess.check_output(['git','-C',str(ROOT),'rev-parse',args.commit+'^{commit}'],text=True).strip()
+ commit=subprocess.check_output(['git','-C',str(ROOT),'rev-parse',args.commit+'^{tree}'],text=True).strip()
  out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True)
  archive=subprocess.check_output(['git','-C',str(ROOT),'archive',commit])
  with tempfile.TemporaryDirectory(prefix='blocker-exact-gates-') as temp:

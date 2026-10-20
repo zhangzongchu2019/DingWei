@@ -1,0 +1,26 @@
+{
+  "request": "Leader follow-up after D1 review PASS: successful provider send but completion write fails",
+  "parent": "4124a00c5e2a526c21f98fe7ab3af37e0826858c",
+  "test": "TestPilotQuestionSendAcceptedFinishFailureNeverBecomesUnsent",
+  "setup": "Same real SQLite and real worker. MemStore current authorization remains real; synthetic known Feishu binding and synthetic provider success. Finish wrapper invokes real SQLite.FinishQuestionNotice with a canceled child context. Error is verified context.Canceled; only call-local context is canceled. Defer wrapper counts then delegates real reset if invoked. No no-op mock masks queueing or sends.",
+  "positive": {
+    "round1": "dispatching",
+    "round2": "unknown",
+    "round3": "unknown",
+    "provider_send_count": 1,
+    "finish_call_count": 1,
+    "DeferUnsent_call_count": 0,
+    "provider_id": "fixture-only accepted receipt",
+    "sent_flag": true
+  },
+  "withdrawal": {
+    "file": "internal/m8/pilot_question_worker.go",
+    "old": "attempted = true",
+    "new": "// attempted=true withdrawn",
+    "expected_marker": "QUESTION_SENT_FINISH_FAILURE_RETRY_BOUNDARY",
+    "observed": "first/second/third queued, sends=3, finish=3, defer=3; behavioral assertion red"
+  },
+  "fault_scope": "Failed completion database call via canceled context, not disk-loss/crash injection; provider is synthetic, not real Feishu",
+  "production_changed": false,
+  "deployment_authorized": false
+}

@@ -1,0 +1,8 @@
+2026/10/20 22:17:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 22:17:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- FAIL: TestPilotQuestionContactsScopedSortedAndPaginated (0.10s)
+    pilot_question_rework_test.go:229: QUESTION_CONTACT_DRIFT_NOT_RECHECKED 200 {"can_configure_policy":true,"contact_limit":1,"contacts":[{"display_name":"zulu","id":"zulu"}],"contacts_next_cursor":"2SgN_OTPBQtgPyr4aButbWsO971ngI-UVh4iFYc3wNZ2RVUzRlUUkt6V3W5xxf6rUDAgLii5x6gTxEfuN9SHmEGgs-c9hQ8HgVOctmG0l0tGqvH6z3Kqjf_Be66oYpYFBL1Ia1Q2oDJYQmQwFqvXH92dnRSuUwKJlAhvdMqH4svCbGYGPTawBcnugRXuWUtndWJVBi41R5gR_79siEXN7klLWaWOtKYvMr9rKnqAr4mo3uRf8GWBl4G3mZ97HA-LjjoFjuC2eXz3aGSCGiAbDqlq28_GrAtokoyDtLJtIEsCNHXeFBb_JZPJ2d705IN4fu9TNTnHfU1ND90MqhWGJYswo2Bh0pBR9A","execution_authorized":false,"expected_version":2,"spec_id":"spec-9da0f65e66e826de025fe5d5","task_id":"r32-task"}
+        
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.106s
+FAIL

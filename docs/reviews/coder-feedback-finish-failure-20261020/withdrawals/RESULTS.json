@@ -1,0 +1,1072 @@
+{
+  "commit": "c55213054dca5c257b9d50f125ce329b39f12876",
+  "cases": [
+    {
+      "name": "sent-finish-failure-attempted-boundary",
+      "edits": [
+        [
+          "internal/m8/pilot_question_worker.go",
+          "attempted = true",
+          "// attempted=true withdrawn"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionSendAcceptedFinishFailureNeverBecomesUnsent$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_SENT_FINISH_FAILURE_RETRY_BOUNDARY",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 7.863
+    },
+    {
+      "name": "sender-error-is-unknown",
+      "edits": [
+        [
+          "internal/m8/pilot_question_worker.go",
+          "sendErr == nil",
+          "sendErr == nil || sendErr != nil"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionProviderErrorUnknownAndNeverResends$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_SENDER_ERROR_NOT_UNKNOWN",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 7.778
+    },
+    {
+      "name": "late-check-before-provider",
+      "edits": [
+        [
+          "internal/m8/pilot_question_worker.go",
+          "if x = check(); x != nil {",
+          "if x = error(nil); x != nil {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionPreProviderCheckFailureDisposition$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_UNSENT_DISPOSITION",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 8.117
+    },
+    {
+      "name": "late-transient-queued",
+      "edits": [
+        [
+          "internal/m8/pilot_question_worker.go",
+          "if prepared {",
+          "if false && prepared {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionPreProviderCheckFailureDisposition$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_UNSENT_DISPOSITION",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 8.157
+    },
+    {
+      "name": "revocation-cancelled",
+      "edits": [
+        [
+          "internal/m8/pilot_question_worker.go",
+          "if questionNoticeRevoked(e) {",
+          "if false && questionNoticeRevoked(e) {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionPreProviderCheckFailureDisposition$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_UNSENT_DISPOSITION",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 8.117
+    },
+    {
+      "name": "prepare-failure-pending",
+      "edits": [
+        [
+          "internal/m8/pilot_question_worker.go",
+          "state := \"pending_config\"",
+          "state := \"queued\""
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionPreProviderCheckFailureDisposition$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_UNSENT_DISPOSITION",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 9.104
+    },
+    {
+      "name": "unconfigured-not-revoked",
+      "edits": [
+        [
+          "internal/m8/pilot_question_worker.go",
+          "n.Recipient != \"\" && !a.Users[n.Recipient]",
+          "!a.Users[n.Recipient]"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionNoRecipientRemainsPendingConfig$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_EMPTY_RECIPIENT_CANCELLED_OR_SENT",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 7.763
+    },
+    {
+      "name": "past-dispatch-never-unsent",
+      "edits": [
+        [
+          "internal/store/pilot_question_read.go",
+          "state='dispatching' AND NOT ? THEN 'unknown'",
+          "state='dispatching' AND NOT ? THEN 'pending_config'"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionOldDispatchCannotResetToUnsent$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_OLD_DISPATCH_RESET_AS_UNSENT",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.608
+    },
+    {
+      "name": "store-pm-lower",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "u.PMUser = strings.ToLower(strings.TrimSpace(u.PMUser))",
+          "u.PMUser = strings.TrimSpace(u.PMUser)"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionRecipientCaseCanonicalBeforeHash$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_STORE_POLICY_CASE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.561
+    },
+    {
+      "name": "store-leader-lower",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "u.LeaderUser = strings.ToLower(strings.TrimSpace(u.LeaderUser))",
+          "u.LeaderUser = strings.TrimSpace(u.LeaderUser)"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionRecipientCaseCanonicalBeforeHash$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_STORE_POLICY_CASE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.597
+    },
+    {
+      "name": "http-pm-lower",
+      "edits": [
+        [
+          "internal/m8/pilot_question.go",
+          "u.PMUser = strings.ToLower(strings.TrimSpace(u.PMUser))",
+          "u.PMUser = strings.TrimSpace(u.PMUser)"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionHTTPRecipientCaseCanonical$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_HTTP_RECIPIENT_CASE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 7.66
+    },
+    {
+      "name": "http-leader-lower",
+      "edits": [
+        [
+          "internal/m8/pilot_question.go",
+          "u.LeaderUser = strings.ToLower(strings.TrimSpace(u.LeaderUser))",
+          "u.LeaderUser = strings.TrimSpace(u.LeaderUser)"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionHTTPRecipientCaseCanonical$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_HTTP_RECIPIENT_CASE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 7.707
+    },
+    {
+      "name": "contacts-current-owner-group",
+      "edits": [
+        [
+          "internal/m8/pilot_question.go",
+          "if !ownerIn {",
+          "if false && !ownerIn {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionContactsRecheckFormerGroup$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_CONTACT_FORMER_GROUP_LEAK",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 7.594
+    },
+    {
+      "name": "contacts-sorted",
+      "edits": [
+        [
+          "internal/m8/pilot_question.go",
+          "sort.Strings(ids)",
+          "sort.Sort(sort.Reverse(sort.StringSlice(ids)))"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionContactsScopedSortedAndPaginated$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_CONTACT_ORDER_OR_PAGINATION",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 7.358
+    },
+    {
+      "name": "contacts-page-limit",
+      "edits": [
+        [
+          "internal/m8/pilot_question.go",
+          "if i == limit {",
+          "if false && i == limit {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionContactsScopedSortedAndPaginated$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_CONTACT_LIMIT_IGNORED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 7.473
+    },
+    {
+      "name": "contacts-page-drift",
+      "edits": [
+        [
+          "internal/m8/pilot_question.go",
+          "oldDigest != digest",
+          "oldDigest != oldDigest"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionContactsScopedSortedAndPaginated$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_CONTACT_DRIFT_NOT_RECHECKED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 7.448
+    },
+    {
+      "name": "card-cas",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "q.Version != u.ExpectedVersion",
+          "q.Version != q.Version"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionCASAndClockRollbackFailClosed$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_STALE_VERSION_ACCEPTED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.532
+    },
+    {
+      "name": "clock-rollback",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "e != nil || now.Before(start)",
+          "e != nil || false && now.Before(start)"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionCASAndClockRollbackFailClosed$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_CLOCK_ROLLBACK_ANSWER",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.538
+    },
+    {
+      "name": "immutable-event",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "if previous != hash {",
+          "if false && previous != hash {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionAnswerAtomicAndUsesOnlyD2Wake$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_EVENT_REPLACED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.514
+    },
+    {
+      "name": "logical-content-dedup",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "if e == nil {\n\t\t\tout.Outcome = \"unchanged\"",
+          "if false && e == nil {\n\t\t\tout.Outcome = \"unchanged\""
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionSameContentNewEventDeduplicatesAndRoleRevokes$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_CONTENT_DUPLICATED_WAKE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.561
+    },
+    {
+      "name": "no-agent-pm",
+      "edits": [
+        [
+          "internal/store/pilot_question_types.go",
+          "return a.UserID != \"\" && (questionManager(a, c) || a.UserID == q.PMUser || q.Responsible == a.Key())",
+          "return true"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionNoPartialCommitAndAgentNotPM$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_AGENT_IMPERSONATED_PM",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.522
+    },
+    {
+      "name": "final-pg-check",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "if err = check(); err != nil {\n\t\treturn out, err\n\t}\n\tif err = tx.Commit(); err != nil {\n\t\treturn out, err\n\t}\n\treturn out, nil\n}\nfunc questionAcknowledgment",
+          "if err = error(nil); err != nil {\n\t\treturn out, err\n\t}\n\tif err = tx.Commit(); err != nil {\n\t\treturn out, err\n\t}\n\treturn out, nil\n}\nfunc questionAcknowledgment"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionNoPartialCommitAndAgentNotPM$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_FINAL_CHECK_IGNORED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.52
+    },
+    {
+      "name": "sixty-minute-lower-bound",
+      "edits": [
+        [
+          "internal/store/pilot_question_read.go",
+          "if now.Before(due) {",
+          "if false && now.Before(due) {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionReminderExactlySixtyMinutesAndOncePerGeneration$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_SLA_EARLY_REMINDER",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.544
+    },
+    {
+      "name": "one-sla-per-generation",
+      "edits": [
+        [
+          "internal/store/migrations/0059_pilot_questions.sql",
+          "CREATE UNIQUE INDEX idx_pilot_question_reminder_once ON pilot_question_outbox(question_id,generation) WHERE kind='remind_60m';",
+          "-- SLA partial uniqueness withdrawn"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionSentReminderReassignmentNeverCreatesSecondReminder$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_ASSIGN_SECOND_SLA",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.516
+    },
+    {
+      "name": "assign-preserves-clock",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "// Explicit reassignment is a new policy event, not a reset of the SLA clock.",
+          "q.DueAt=now.Add(time.Hour).UTC().Format(time.RFC3339Nano)\n // clock reset withdrawn"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionReminderExactlySixtyMinutesAndOncePerGeneration$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_ASSIGN_RESET_SLA",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.563
+    },
+    {
+      "name": "unknown-no-resend",
+      "edits": [
+        [
+          "internal/store/pilot_question_read.go",
+          "if state == \"dispatching\" {",
+          "if false && state == \"dispatching\" {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionReplyFirstCancelsNoticeAndUnknownNeverRetries$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_UNKNOWN_NOTICE_RETRIED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.642
+    },
+    {
+      "name": "answer-first-cancels-reminder",
+      "edits": [
+        [
+          "internal/store/pilot_question_read.go",
+          "if q.FirstSubstantiveAt != \"\" {",
+          "if false && q.FirstSubstantiveAt != \"\" {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionReplyFirstCancelsNoticeAndUnknownNeverRetries$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_REPLY_FIRST_REMINDER_SENT",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.623
+    },
+    {
+      "name": "unconfigured-not-delivered",
+      "edits": [
+        [
+          "internal/store/pilot_question_read.go",
+          "(!configured || recipient == \"\")",
+          "(false && !configured || recipient == \"\")"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionUnconfiguredNeverClaimsSent$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_UNCONFIGURED_SENT",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.509
+    },
+    {
+      "name": "question-only-reader",
+      "edits": [
+        [
+          "internal/store/pilot_question_types.go",
+          "a.UserID == q.PMUser",
+          "true"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionReadGrantIsOnlyQuestionAndHistoryBounded$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_UNGRANTED_READ",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.53
+    },
+    {
+      "name": "history-bounded",
+      "edits": [
+        [
+          "internal/store/pilot_question_read.go",
+          "ORDER BY rowid DESC LIMIT 101",
+          "ORDER BY rowid DESC LIMIT 10000"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionReadGrantIsOnlyQuestionAndHistoryBounded$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_MINIMUM_GRANT_OR_HISTORY_BOUND",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.553
+    },
+    {
+      "name": "pending-change-blocks-old-scope",
+      "edits": [
+        [
+          "internal/store/pilot_question_types.go",
+          "if n != 0 {",
+          "if n < 0 {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionBusinessChangeBlocksAllOldScopeAndNeedsHumanDecision$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_PENDING_CHANGE_EXECUTION_BYPASS",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.547
+    },
+    {
+      "name": "owner-only-change-decision",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "a.UserID != c.Owner || u.ChangeID == \"\"",
+          "false && a.UserID != c.Owner || u.ChangeID == \"\""
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionBusinessChangeBlocksAllOldScopeAndNeedsHumanDecision$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_PM_OWNER_DECISION",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.529
+    },
+    {
+      "name": "d2-old-waiter-revoked",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "if err = questionReassignBlocker(ctx, tx, c, a, q, now); err != nil {",
+          "if err = error(nil); err != nil {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionReassignRevokesSharedD2WaiterGrant$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_REASSIGN_RETAINED_D2_WAITER",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.552
+    },
+    {
+      "name": "production-full",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "if u.ProductionOrSecurity {",
+          "if false && u.ProductionOrSecurity {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionProductionFullAndAckDoesNotStopSLA$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_PRODUCTION_NOT_FULL",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.587
+    },
+    {
+      "name": "ack-is-not-substantive",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "kind == \"substantive\" && questionAcknowledgment(u.Body)",
+          "false && kind == \"substantive\" && questionAcknowledgment(u.Body)"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionProductionFullAndAckDoesNotStopSLA$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_ACK_TREATED_AS_SUBSTANTIVE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.609
+    },
+    {
+      "name": "completed-feedback-no-wake",
+      "edits": [
+        [
+          "internal/store/pilot_question_blocker.go",
+          "if status == \"done\" {",
+          "if false && status == \"done\" {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionSpecOnlyAndCompletedTaskNeverWake$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_POST_COMPLETION_CREATED_BLOCKER",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.659
+    },
+    {
+      "name": "pm-cannot-grant-outsiders",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "(!owner && !delegated)",
+          "(false && !owner && !delegated)"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionPMDelegationLimitedToExistingQuestionReaders$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_PM_GRANTED_NEW_RIGHTS",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.601
+    },
+    {
+      "name": "historic-proposal-owner-maintenance",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "if qid != \"\" && !ownerMaintenance && !questionCurrent(q, c) {",
+          "if qid != \"\" && (!ownerMaintenance || ownerMaintenance) && !questionCurrent(q, c) {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionSpecOnlyChangeCanLinkActualNewRevision$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_SPEC_CHANGE_NEW_REVISION_DEADLOCK",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.619
+    },
+    {
+      "name": "cancel-keeps-business-proposal",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "q.State = \"cancelled\"",
+          "q.State = \"cancelled\"\n _, _ = tx.ExecContext(ctx, `DELETE FROM pilot_question_change WHERE question_id=?`, q.ID)"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionCancelPreservesPendingBusinessProposal$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_CANCEL_DROPPED_PENDING_CHANGE_GATE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.697
+    },
+    {
+      "name": "pg-send-reply-serialized",
+      "edits": [
+        [
+          "internal/identity/project_context.go",
+          "if questionID != \"\" {",
+          "if false && questionID != \"\" {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionPGActualSendReplyOrderingAndCurrentBinding$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_ANSWER_COMMITTED_DURING_SEND",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 11.573
+    },
+    {
+      "name": "safe-public-origin",
+      "edits": [
+        [
+          "internal/m8/pilot_question_worker.go",
+          "u.Scheme != \"https\"",
+          "false && u.Scheme != \"https\""
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionMessageNoPrivatePayloadAndOriginCannotBeClientSelected$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_UNTRUSTED_ORIGIN",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 7.389
+    },
+    {
+      "name": "no-private-feishu-body",
+      "edits": [
+        [
+          "internal/m8/pilot_question_worker.go",
+          "return lead + \"\\n\u7c7b\u578b\uff1a\"",
+          "return q.ObservedFact + lead + \"\\n\u7c7b\u578b\uff1a\""
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionMessageNoPrivatePayloadAndOriginCannotBeClientSelected$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_FEISHU_PRIVATE_DATA_OR_CALLBACK_CONFUSION",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 8.179
+    },
+    {
+      "name": "provider-native-uuid",
+      "edits": [
+        [
+          "internal/feishu/feishu.go",
+          "if question {\n\t\tbody.Uuid(out.RequestID)",
+          "if false && question {\n\t\tbody.Uuid(out.RequestID)"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/feishu",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionNativeSDKPrivateRecipientAndUUID$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_NATIVE_PRIVATE_UUID_LOST",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.987
+    },
+    {
+      "name": "helper-strict-version",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/pilot_question.py",
+          "type(body['expected_version']) is not int",
+          "not isinstance(body['expected_version'],int)"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_pilot_question.py",
+        "-v"
+      ],
+      "marker": "QUESTION_VERSION_TYPE_WEAK",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.799
+    },
+    {
+      "name": "helper-result-execution-flag",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/pilot_question.py",
+          "payload.get('execution_authorized') is not False",
+          "payload.get('execution_authorized') == True"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_pilot_question.py",
+        "-v"
+      ],
+      "marker": "QUESTION_RESULT_EXECUTION_FLAG_WEAK",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.721
+    },
+    {
+      "name": "helper-reject-query-mix",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/pilot_question.py",
+          "if set(body)-allowed or task:",
+          "if False:"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_pilot_question.py",
+        "-v"
+      ],
+      "marker": "QUESTION_QUERY_SCOPE_FORGED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.779
+    }
+  ]
+}

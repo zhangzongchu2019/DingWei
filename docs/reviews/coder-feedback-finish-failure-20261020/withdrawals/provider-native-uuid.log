@@ -1,0 +1,6 @@
+2026/10/20 22:18:50 [Info] [client ready]
+--- FAIL: TestPilotQuestionNativeSDKPrivateRecipientAndUUID (0.00s)
+    pilot_question_test.go:35: QUESTION_NATIVE_PRIVATE_UUID_LOST om_local <nil> 1 map[content:{"text":"safe platform link"} msg_type:text receive_id:ou_person] receive_id_type=open_id
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishu	0.004s
+FAIL
