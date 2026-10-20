@@ -42,7 +42,7 @@ html[data-theme="dark"] .spec-block-list{background:#1b2530}html[data-theme="dar
 </style>
 <h1>Spec management</h1><p>一个账号可同时管理多份 spec。认领后的版本不可原地覆盖。</p>
 <section id=spec-agent-assist><label for=spec-assist-agent>协助 Agent</label><select id=spec-assist-agent></select><button id=generate-inference type=button disabled>生成推论</button><span id=spec-assist-status role=status></span></section>
-<nav><button id=show-spec-list type=button>我的 spec</button></nav>
+<nav><button id=show-spec-list type=button>我的 spec</button> <a id=pilot-spec-template-entry href="/console/spec-templates" target="_top">试点：PRD → spec 模板</a></nav>
 <section id=new-screen class="spec-block spec-block-new" hidden><h2>New spec</h2>
 <label>Title <span class=required>*</span></label><input id=new-title required>
 <label>Markdown <span class=required>*</span></label><textarea id=new-content required></textarea>

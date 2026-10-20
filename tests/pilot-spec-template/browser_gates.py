@@ -3,7 +3,7 @@
 import argparse,datetime,io,json,subprocess,tarfile,tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-SUITES=['pilot-spec-template-browser-regression.js','pilot-feedback-browser-regression.js','pilot-blocker-wake-browser-regression.js','r32-spec-review-browser-regression.js','r32-task-flow-browser-regression.js','r31-hosted-nodes-browser-regression.js','console-browser-regression.js','console-agent-mgmt-enroll-regression.js','console-agent-groups-vega-regression.js','console-task-board-regression.js']
+SUITES=['pilot-spec-template-browser-regression.js','console-specs-browser-regression.js','pilot-feedback-browser-regression.js','pilot-blocker-wake-browser-regression.js','r32-spec-review-browser-regression.js','r32-task-flow-browser-regression.js','r31-hosted-nodes-browser-regression.js','console-browser-regression.js','console-agent-mgmt-enroll-regression.js','console-agent-groups-vega-regression.js','console-task-board-regression.js']
 def run(args):
  sha=subprocess.check_output(['git','rev-parse',args.commit+'^{commit}'],cwd=ROOT,text=True).strip();out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True)
  with tempfile.TemporaryDirectory(prefix='pilot-template-browser-') as temp:
