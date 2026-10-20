@@ -43,10 +43,16 @@ CASES=[
  ('upload-only-isolation','tools/sessionhelper/sessionhelper/ipc_listener.py','if upload_only:','if upload_only and msg_type != "project_context_v1":',PYCMD,'PC_RESTRICTED_MODE_ESCAPED'),
  ('send-only-isolation','tools/sessionhelper/sessionhelper/ipc_listener.py','if send_body_only:','if send_body_only and msg_type != "project_context_v1":',PYCMD,'PC_RESTRICTED_MODE_ESCAPED'),
  ('production-ipc-wiring','tools/sessionhelper/sessionhelper/app.py','project_context_handler=self._make_project_context_handler()','project_context_handler=None',PYCMD,'PC_PRODUCTION_HANDLER_UNWIRED'),
+ ('get-no-business-write','internal/store/project_context.go','return tx.Commit()','return tx.Commit()',GOSTORE+['^TestProjectContextSQLiteProjectionReadOnlyAndExactRevision$'],'PC_CONTEXT_WROTE_SQLITE'),
+ ('authorization-release-failure','internal/m8/project_context.go','if err != nil {\n\t\tcontextError(w, err)\n\t\treturn\n\t}\n\tw.Header().Set("Content-Type",','if false && err != nil {\n\t\tcontextError(w, err)\n\t\treturn\n\t}\n\tw.Header().Set("Content-Type",',GOM8+['^TestProjectContextAuthorizationReleaseFailureNoPartialResponse$'],'PC_PG_RELEASE_FAILURE_LEAKED_BODY'),
+ ('capability-marker','tools/sessionhelper/sessionhelper/app.py','"project_context_v1": bool','"project_context_hidden_v1": bool',PYCMD,'PC_CAPABILITY_UNWIRED'),
+ ('helper-version-pin','tools/sessionhelper/sessionhelper/__init__.py','__version__ = "0.2.3.7"','__version__ = "0.2.3.6"',['go','test','./internal/version','-run','^TestHelper0237ReleasePins$','-count=1'],'project-context release requires root/Go/helper pins'),
+
 ]
 
 
-def run(commit,out):
+def run(commit,out,only=None):
+    if only and set(only)-{c[0] for c in CASES}:raise ValueError("unknown withdrawal")
     out=Path(out).resolve();out.mkdir(parents=True,exist_ok=True)
     exported=subprocess.check_output(['git','-C',str(ROOT),'archive',commit,'internal','cmd','view-service','tools/sessionhelper','tools/pgtest','go.mod','go.sum','VERSION'])
     results=[]
@@ -62,6 +68,7 @@ def run(commit,out):
             (out/(label+'.log')).write_text(p.stdout)
             if p.returncode:raise AssertionError('export baseline failed '+label)
         for name,filename,old,new,cmd,marker in CASES:
+            if only and name not in only:continue
             path=root/filename;original=path.read_text()
             if old not in original:raise AssertionError('missing mutation target '+name)
             mutant=original.replace(old,new,1)
@@ -69,6 +76,8 @@ def run(commit,out):
             # invalid half-expression, is withdrawn here.
             if name=='group-pair-authorization':
                 mutant=mutant.replace('Reviewer: state.Reviewer}) {','Reviewer: state.Reviewer})) {',1)
+            if name=='get-no-business-write':
+                mutant=original.replace('ReadOnly: true','ReadOnly: false',1).replace('return tx.Commit()', 'if _,err=tx.ExecContext(ctx, `UPDATE console_spec_task SET version=version+1 WHERE developer_agent_id=? OR reviewer_agent_id=?`,actor,actor);err!=nil{return err};return tx.Commit()',1)
             if name=='dedicated-helper-identity':
                 # The same phrase exists in other handlers; target only the context factory.
                 start=original.index('    def _make_project_context_handler(self):')
@@ -94,5 +103,5 @@ def run(commit,out):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--commit',required=True);p.add_argument('--output',required=True);args=p.parse_args()
-    run(args.commit,args.output)
+    p=argparse.ArgumentParser();p.add_argument('--commit',required=True);p.add_argument('--output',required=True);p.add_argument('--only',nargs='*');args=p.parse_args()
+    run(args.commit,args.output,args.only)
