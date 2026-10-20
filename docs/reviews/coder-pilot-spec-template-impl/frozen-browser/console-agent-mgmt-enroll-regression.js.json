@@ -1,0 +1,13 @@
+{
+  "commit": "b611e2149be4d7bf9ced50d578d9d2a796f073cf",
+  "argv": [
+    "node",
+    "view-service/console-agent-mgmt-enroll-regression.js"
+  ],
+  "rc": 0,
+  "start": "2026-10-20T19:48:24.148735+00:00",
+  "end": "2026-10-20T19:48:30.492265+00:00",
+  "isolated_home": true,
+  "git_export": true,
+  "live_access": false
+}

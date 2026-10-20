@@ -1,0 +1,634 @@
+{
+  "commit": "28422250f347b3b25d321b3cb83d76ca64dddd89",
+  "cases": [
+    {
+      "name": "source-request-immutable",
+      "file": "internal/store/pilot_template_source.go",
+      "old": "if hash != payload {",
+      "new": "if false && hash != payload {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateSourceProvenanceDedupeAndSSRF$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_SOURCE_REQUEST_REBOUND",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.664
+    },
+    {
+      "name": "source-owner-only",
+      "file": "internal/store/pilot_template_source.go",
+      "old": "id, owner))",
+      "new": "id, \"owner-a\"))",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateSourceProvenanceDedupeAndSSRF$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_SOURCE_CROSS_OWNER_READ",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.705
+    },
+    {
+      "name": "source-https-only",
+      "file": "internal/store/pilot_template_types.go",
+      "old": "u.Scheme != \"https\"",
+      "new": "false && u.Scheme != \"https\"",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateSourceProvenanceDedupeAndSSRF$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_SSRF_SOURCE_ACCEPTED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.697
+    },
+    {
+      "name": "source-tenant-suffix",
+      "file": "internal/store/pilot_template_types.go",
+      "old": "!(strings.HasSuffix(host, \".feishu.cn\") || strings.HasSuffix(host, \".larksuite.com\"))",
+      "new": "false",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateSourceProvenanceDedupeAndSSRF$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_SSRF_SOURCE_ACCEPTED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.635
+    },
+    {
+      "name": "six-fields-not-unknown",
+      "file": "internal/store/pilot_template_validation.go",
+      "old": "if templateUnknown(field.v) || len(field.v) > 8192 {",
+      "new": "if false {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateMissingSixFieldsAndIdentity/method$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_MISSING_NOT_EXPLICIT",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.647
+    },
+    {
+      "name": "no-agent-business-responsibility",
+      "file": "internal/store/pilot_template_validation.go",
+      "old": "if !strings.HasPrefix(f.Signoff, \"user:\") || !templatePrincipal(f.Signoff) {",
+      "new": "if false {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateMissingReviewOrAgentSignoffRejected$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_INDEPENDENT_REVIEW_OR_HUMAN_SIGNOFF_BYPASSED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.613
+    },
+    {
+      "name": "independent-review-required",
+      "file": "internal/store/pilot_template_validation.go",
+      "old": "if !templatePrincipal(f.Reviewer) || d.TeamMode == \"single\" && !strings.HasPrefix(f.Reviewer, \"agent:\") {",
+      "new": "if false {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateMissingReviewOrAgentSignoffRejected$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_INDEPENDENT_REVIEW_OR_HUMAN_SIGNOFF_BYPASSED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.683
+    },
+    {
+      "name": "self-review-rejected",
+      "file": "internal/store/pilot_template_validation.go",
+      "old": "if f.Executor == f.Reviewer {",
+      "new": "if false {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateMissingReviewOrAgentSignoffRejected$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_INDEPENDENT_REVIEW_OR_HUMAN_SIGNOFF_BYPASSED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.673
+    },
+    {
+      "name": "stock-budget-preserved",
+      "file": "internal/store/pilot_template_validation.go",
+      "old": "e.Kind != \"case\" || e.BusinessWriteLimit != want.Writes",
+      "new": "e.Kind != \"case\"",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateRiskUpgradeUnknownAndStockBudget$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_STOCK_TAMPERED_BUDGET_ACCEPTED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.659
+    },
+    {
+      "name": "no-owner-proxy-receipt",
+      "file": "internal/store/pilot_template_receipt.go",
+      "old": "role.Principal == a.Key()",
+      "new": "true",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateReceiptCannotProxyAndWithdrawal$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_OWNER_PROXY_ACCEPTED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.734
+    },
+    {
+      "name": "incomplete-contract-no-consent",
+      "file": "internal/store/pilot_template_receipt.go",
+      "old": "if u.Decision == \"accepted\" {",
+      "new": "if false {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateConsentCannotAttachIncompleteContract$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_INCOMPLETE_CONTRACT_ACCEPTED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 2.921
+    },
+    {
+      "name": "receipt-plan-cas",
+      "file": "internal/store/pilot_template_receipt.go",
+      "old": "u.ExpectedVersion != r.Version || u.PlanSHA != view.PlanSHA",
+      "new": "false",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateRevisionInvalidatesReceiptsAndKeepsOldBody$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_LATE_PLAN_RECEIPT_ACCEPTED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 2.028
+    },
+    {
+      "name": "full-human-review-receipt",
+      "file": "internal/store/pilot_template_receipt.go",
+      "old": "a.UserID == \"\" || !u.ConfirmHuman || templateUnknown(u.Reason)",
+      "new": "a.UserID == \"\" || templateUnknown(u.Reason)",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateFullRequiresScopedHumanReceipt$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_FULL_HUMAN_CHECKBOX_BYPASSED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 2.368
+    },
+    {
+      "name": "preview-current-role-only",
+      "file": "internal/store/pilot_template_draft.go",
+      "old": "if !templateActorAllowed(a, ref) {",
+      "new": "if false {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateHTTPPrivateInvitationsAndHumanOnlyConfirmation$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_FOREIGN_INVITATION_LEAK",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 10.599
+    },
+    {
+      "name": "parent-final-only",
+      "file": "internal/store/pilot_template_draft.go",
+      "old": "parentState != \"final\" ||",
+      "new": "false ||",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateParentMustBeFinalAndCurrent$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_MUTABLE_PARENT_ACCEPTED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.97
+    },
+    {
+      "name": "parent-sha-pinned",
+      "file": "internal/store/pilot_template_draft.go",
+      "old": "sha != d.Parent.SHA ||",
+      "new": "false ||",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateParentMustBeFinalAndCurrent$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_PARENT_SHA_DRIFT_ACCEPTED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.825
+    },
+    {
+      "name": "draft-final-pg-check",
+      "file": "internal/store/pilot_template_draft.go",
+      "old": "if err = check(); err != nil {",
+      "new": "if err = error(nil); err != nil {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateCheckFailureRollsBack$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_REVOKE_CHECK_IGNORED",
+      "last": true,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.94
+    },
+    {
+      "name": "confirm-final-pg-check",
+      "file": "internal/store/pilot_template_confirm.go",
+      "old": "if err = check(); err != nil {",
+      "new": "if err = error(nil); err != nil {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateConfirmRollbackAndIdempotence$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_CONFIRM_REVOKE_IGNORED",
+      "last": true,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.919
+    },
+    {
+      "name": "no-receipt-transfer-between-versions",
+      "file": "internal/store/pilot_template_draft.go",
+      "old": "id, ref.Version, role.EntryID, role.Role, role.Principal",
+      "new": "id, 1, role.EntryID, role.Role, role.Principal",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateRevisionInvalidatesReceiptsAndKeepsOldBody$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_OLD_RECEIPT_REUSED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 2.017
+    },
+    {
+      "name": "sticky-template-enrollment",
+      "file": "internal/store/pilot_template_gate.go",
+      "old": "if errors.Is(err, sql.ErrNoRows) {\n\t\treturn ErrConsoleSpecGate",
+      "new": "if errors.Is(err, sql.ErrNoRows) {\n\t\treturn nil",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateRealFinalSuccessorAndStickyEnrollment$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_ENROLLMENT_DROPPED_ON_LEGACY_REVISION",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.981
+    },
+    {
+      "name": "actual-executor-cannot-review",
+      "file": "internal/store/pilot_template_gate.go",
+      "old": "if entry.Fields.Executor == \"agent:\"+agent {",
+      "new": "if false {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateActualExecutorCannotPerformIndependentReview$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_ACTUAL_EXECUTOR_ACCEPTED_AS_INDEPENDENT_REVIEW",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 2.078
+    },
+    {
+      "name": "impact-blocks-old-execution",
+      "file": "internal/store/pilot_template_gate.go",
+      "old": "if impacts > 0 {",
+      "new": "if false {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateTaskAssignmentAndImpactGuard$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_OLD_SCOPE_EXECUTION_NOT_BLOCKED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 2.087
+    },
+    {
+      "name": "group-required-for-template-start",
+      "file": "internal/store/pilot_template_gate.go",
+      "old": "if len(pair) != 2 && group == \"\" {",
+      "new": "if false {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateLegacyTaskPathsCannotSkipCurrentContract$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_LEGACY_STATUS_BYPASSED_GROUP_AUTH",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 2.047
+    },
+    {
+      "name": "task-pair-matches-accepted-roles",
+      "file": "internal/store/pilot_template_gate.go",
+      "old": "if !matches(entry.Fields.Executor, dev) || !matches(entry.Fields.Reviewer, review) {",
+      "new": "if false && (!matches(entry.Fields.Executor, dev) || !matches(entry.Fields.Reviewer, review)) {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateTaskAssignmentAndImpactGuard$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_TASK_PAIR_DIFFERS_FROM_ACCEPTED_ROLES",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.812
+    },
+    {
+      "name": "create-cannot-implicitly-start",
+      "file": "internal/store/console_specs.go",
+      "old": "templateEnrolled > 0 && proposal.Status != \"planned\" && proposal.Status != \"proposed\"",
+      "new": "false && templateEnrolled > 0 && proposal.Status != \"planned\" && proposal.Status != \"proposed\"",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateLegacyTaskPathsCannotSkipCurrentContract$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_CREATE_IMPLICITLY_STARTED_TASK",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.899
+    },
+    {
+      "name": "driver-rechecks-template",
+      "file": "internal/store/console_task_driver.go",
+      "old": "for _, id := range ids {\n\t\tif e = templateTaskGate(ctx, tx, id, start.AnnouncedAt); e != nil {",
+      "new": "for _, id := range ids {\n _ = id\n\t\tif e = error(nil); e != nil {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateLegacyTaskPathsCannotSkipCurrentContract$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_LEGACY_DRIVER_BYPASSED_GROUP_AUTH",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.852
+    },
+    {
+      "name": "d3-unchanged-copy-not-new-contract",
+      "file": "internal/store/pilot_question.go",
+      "old": "u.NewRevision < 2",
+      "new": "u.NewRevision < 1",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateD3ConfirmsActualDerivedSuccessor$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_D3_UNCHANGED_DERIVED_COPY_ACCEPTED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.779
+    },
+    {
+      "name": "helper-strict-integer-version",
+      "file": "tools/sessionhelper/sessionhelper/pilot_template.py",
+      "old": "type(body['expected_version']) is not int",
+      "new": "not isinstance(body['expected_version'],int)",
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_pilot_template.py",
+        "-v"
+      ],
+      "marker": "TEMPLATE_MCP_PLAN_CAS_WEAK",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.159
+    },
+    {
+      "name": "helper-no-human-operation",
+      "file": "tools/sessionhelper/sessionhelper/pilot_template.py",
+      "old": "body['role'] not in ('executor','reviewer')",
+      "new": "body['role'] not in ('executor','reviewer','signoff','full_review')",
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_pilot_template.py",
+        "-v"
+      ],
+      "marker": "TEMPLATE_MCP_HUMAN_BOUNDARY",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.158
+    },
+    {
+      "name": "helper-query-disjoint",
+      "file": "tools/sessionhelper/sessionhelper/pilot_template.py",
+      "old": "if not draft or body:raise ValueError('invalid template query')",
+      "new": "if not draft:raise ValueError('invalid template query')",
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_pilot_template.py",
+        "-v"
+      ],
+      "marker": "TEMPLATE_MCP_READ_SCOPE_WEAK",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.158
+    },
+    {
+      "name": "pg-current-actor-row-lock",
+      "file": "internal/identity/project_context.go",
+      "old": "FROM np_agent WHERE id=$1 FOR SHARE",
+      "new": "FROM np_agent WHERE id=$1",
+      "argv": [
+        "go",
+        "test",
+        "./internal/identity",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplatePGCurrentPrincipalAndRoleLocks$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_PG_AUTH_LOCK_NOT_HELD",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 10.016
+    }
+  ]
+}

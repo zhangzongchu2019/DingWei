@@ -1,0 +1,3155 @@
+{
+  "source_commit": "279f75f6993cb734421b1f65cf617b011d348f36",
+  "entries": [
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/COMPLETE-SOURCE-EQUIVALENCE.json",
+      "mode": "100644",
+      "blob": "4ba191f444dd922da81b552e46913cefd630fe05",
+      "size": 346,
+      "sha256": "53019483865bca775545c637c045ea82306f899d98a671d90f6d1f051fce5f27"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/ENVIRONMENT.json",
+      "mode": "100644",
+      "blob": "b0c121498c86f7db597a74fee63017e72ee0291b",
+      "size": 1308,
+      "sha256": "aa67b958fc66cb293d1be63da9aac602faf353c78742da995ead494ba8d77e73"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/GO-PACKAGES.json",
+      "mode": "100644",
+      "blob": "5605655b281b569887b59c1e043b9d37bc3b56a2",
+      "size": 24856,
+      "sha256": "d07b04cacf90619112835b6a4d415baa5d2a0169d8498017c74d95200a527b5f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/HELPER-INPUT-EQUIVALENCE.json",
+      "mode": "100644",
+      "blob": "31869a32d53c065dca73dcc656dd52573039828d",
+      "size": 30836,
+      "sha256": "3ae5a65b7e9dcfc7a34b8da618a69317a387206e6bd580162ce79559b5020167"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/REPORT.md",
+      "mode": "100644",
+      "blob": "e2582ac3dfb1397e0e2cb081719fa8980928ec1a",
+      "size": 7663,
+      "sha256": "fe3cda08119e2eddeb99d5a0fe4eb829f7f7f011971e3d8778f151747db6ff48"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/SOURCE-MANIFEST.json",
+      "mode": "100644",
+      "blob": "31561901557008f6428cad2b0b46fe56509b7574",
+      "size": 473265,
+      "sha256": "1acb09c5fbae58261aa2ff859b462516418123f8c53a5f765bea9e358a303887"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/VERIFY.py",
+      "mode": "100644",
+      "blob": "c44b7fc4c3e64006f914d78e5ba881d450480dc9",
+      "size": 2073,
+      "sha256": "3352904bd39bc4e2469f1ddcba7b134f917f2ec99c2a2ea23e0a45f9cdd84ee6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-gates/canonical.json",
+      "mode": "100644",
+      "blob": "689ee4c95594587a1698a594098949828c8eddac",
+      "size": 425,
+      "sha256": "b1ca4adf08f2a894ba59685beafc7e5eb76be798d10ed593db7d5a10bc5105f1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-gates/canonical.log",
+      "mode": "100644",
+      "blob": "aaafb0b6c59c34c3452450bdee1b46ee806a7e38",
+      "size": 12876,
+      "sha256": "023a5ec052ab76665a9bcfccb80c6646b353b7e6548ed8633dd1d6345ccfd2bb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-gates/go.json",
+      "mode": "100644",
+      "blob": "1a2f2cf3052d35dd3d0c7ea10725de5dedc7b4c1",
+      "size": 463,
+      "sha256": "4ccb220c7d205800a350386cbde25f13acf05d8f5055d1b7d4b91ade35f7aa3b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-gates/go.log",
+      "mode": "100644",
+      "blob": "8bcd74ba1423c9ddebcc9cd8fc1d2d0683febe8a",
+      "size": 4347160,
+      "sha256": "71d6d0667a532a9fa1a36186e4e1b3580b30ba94a9de6f647723cb089513b4b7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-gates/vet.json",
+      "mode": "100644",
+      "blob": "c4088fc6edd5e9320d57738927ebdd9b6b0e9495",
+      "size": 413,
+      "sha256": "92847487e4e5556651823e87bceee7ded482ee6eeeed34cf3a4be0cb4fefba0b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/RESULTS.json",
+      "mode": "100644",
+      "blob": "d43193850c774a050e05a32cd4e88ce0f709fd51",
+      "size": 19510,
+      "sha256": "c637e4b0c2a7e8fcca55e6f3254d77c2ee0f4ce248010cc3846eec40222dd93d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/actual-executor-cannot-review.log",
+      "mode": "100644",
+      "blob": "adb6cf7392887fa45136f49cbaf3c3e5a9ec23af",
+      "size": 241,
+      "sha256": "fdd3279e8e11657f0cc530c628baba29cc65a9b2e2ead037029a11d57630c46c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/baseline-go.log",
+      "mode": "100644",
+      "blob": "483107ffbe4879d11044dd5ddc722803874a5fa6",
+      "size": 189,
+      "sha256": "c63684fa265b660c802f2d6ca2097a50406ecc2f193e8c94ffb83de73e877e29"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/baseline-helper.log",
+      "mode": "100644",
+      "blob": "871657f29b55f07f4662724312ee6ac4e2850b03",
+      "size": 746,
+      "sha256": "89afcf8e089a31ee2dae4bb310ab0b658dd4292372b1ea4e7fb5ef41f8906f0e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/confirm-final-pg-check.log",
+      "mode": "100644",
+      "blob": "2036112ca958968c89bc79bdbb8e1a5381fa0fd5",
+      "size": 202,
+      "sha256": "f2f5c7c0dab4c2bb5ce5d98170bf77717d54fdfc7d2bd1df1c00af24cbf4ad23"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/create-cannot-implicitly-start.log",
+      "mode": "100644",
+      "blob": "e930b0e1c98b38ce1f51f063129422c7119b4982",
+      "size": 221,
+      "sha256": "8d41c104f618107a91df2b92a63d28dc53f198a9d9948e54cf44809f0b75b5ce"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/d3-unchanged-copy-not-new-contract.log",
+      "mode": "100644",
+      "blob": "d8a01bb8f7bce75690e5a774d0f51b7ec11060bf",
+      "size": 217,
+      "sha256": "a2c60ab82b81f4171121cbf29e804fe4f5229c5940920bd7d8384dead8b95002"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/draft-final-pg-check.log",
+      "mode": "100644",
+      "blob": "56de8910412ebfb3d07b4b5639e1ea4f49b217c6",
+      "size": 192,
+      "sha256": "1964380b2e251d2a56f9c2b3954ac3f639f3c41726616f722e315c5e87d86517"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/driver-rechecks-template.log",
+      "mode": "100644",
+      "blob": "05c2d0387e6d56e7b2ce82c6ed35d5482339c0b8",
+      "size": 224,
+      "sha256": "df5deedfa469de266d4e903442256ce9feff17b93dec1332adaa0bd777ec52ad"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/full-human-review-receipt.log",
+      "mode": "100644",
+      "blob": "9894cc00de75151762ceffad799e89ddc86156bf",
+      "size": 209,
+      "sha256": "ffec1cdbf3c1079b656cfc5b49de721fd7e23aa0a2b5d425617e8e9de9101ce0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/group-required-for-template-start.log",
+      "mode": "100644",
+      "blob": "b9c64805874998225bee0f1de056947dabaf0a54",
+      "size": 224,
+      "sha256": "733ef0ed603a3768534a5fbe427a6f01c0e4f42719808b3020d12f5cb42ab46e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/helper-no-human-operation.log",
+      "mode": "100644",
+      "blob": "31207aed796956c90d592b4d453b8b2f10c6ac68",
+      "size": 1426,
+      "sha256": "7c16c51e771e85c6f765dc8a161b358456ae6760c1d1bf0a91a401412b6f6667"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/helper-query-disjoint.log",
+      "mode": "100644",
+      "blob": "32ac57cca167919d664a18d4d85ee9621f011723",
+      "size": 1799,
+      "sha256": "27ae1c9bd84d30b5eaa8d84c3c2dc493d84bea7790b843ff67367c8e5f7ac50f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/helper-strict-integer-version.log",
+      "mode": "100644",
+      "blob": "7d150f709c3e519981befcf7e593f9db437ae39d",
+      "size": 1851,
+      "sha256": "735ea668044839e064aa9aae1be726dba58b021db229e0ac21e75398949a308f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/impact-blocks-old-execution.log",
+      "mode": "100644",
+      "blob": "9c978c0dc143a6f8e3ca098c05d9bf12ce196fd2",
+      "size": 267,
+      "sha256": "0be8067ad00752af1ea0258333c054e0192b7d67010ac1dfe7e247e7fe004376"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/incomplete-contract-no-consent.log",
+      "mode": "100644",
+      "blob": "5d522c770524d2c314e397d14c9c25ffa933f9bb",
+      "size": 216,
+      "sha256": "87bab6e361f5f13b3820a4078676a04f8279b2de0970e6f3493240f8f0e64e79"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/independent-review-required.log",
+      "mode": "100644",
+      "blob": "14d5bc0d0d5c6fb3be38ee90de87c38a4fb082a6",
+      "size": 238,
+      "sha256": "702e8f9b63ac902a06aa500c64f80993dedd79e09a1541fbe467f6d134d35a8d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/legacy-proposals-preserved.log",
+      "mode": "100644",
+      "blob": "1502b93cc7b18b2770956f79b2d12e42263a9bb9",
+      "size": 245,
+      "sha256": "58c3a718a970edd460d04ec06474578ed5a3ba2d93970755a75d8a94abfe9bef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/no-agent-business-responsibility.log",
+      "mode": "100644",
+      "blob": "7ff13456f585121c544abdebbb6cefe084048fce",
+      "size": 244,
+      "sha256": "b127fa7a590fea3f425efd3d26032d9ba1fdb77832fa6f260bac89a88d68298d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/no-owner-proxy-receipt.log",
+      "mode": "100644",
+      "blob": "7affc4a1f15053a2690888dfda51caf3dd5b4738",
+      "size": 202,
+      "sha256": "16939f1e97ecebb6dbcca71f3fbe344cf2a120333946ae35c7365db8a67ba691"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/no-receipt-transfer-between-versions.log",
+      "mode": "100644",
+      "blob": "6b34412ffab1170ea8eb2190ffebdffa8b3ea2d2",
+      "size": 211,
+      "sha256": "9a199c01c86a27b49dd05e867f77d44c933d54df80835939538ec8dae25e6a6a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/parent-final-only.log",
+      "mode": "100644",
+      "blob": "d26d7a2475567310c0452edc4d597dfa042daf1a",
+      "size": 201,
+      "sha256": "2e99ba620828a75861266af27a184960f9fcdc8b92f353c1e2474a695e7d6ebd"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/parent-sha-pinned.log",
+      "mode": "100644",
+      "blob": "61552ce8d26e5cfb49e7e2499a599327e711da2b",
+      "size": 203,
+      "sha256": "ef5489912e2c62b692a7ad074231d41517d5360ef2e9e96c0ad5dc12933a9d6a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/pending-draft-downgrade-trail.log",
+      "mode": "100644",
+      "blob": "c331523c209a401aa90e4b7802a9c3743199f01b",
+      "size": 217,
+      "sha256": "5be688fe48449830160b89670a19ceda481fa66ad83a5fd064b1bb3469194399"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/pg-current-actor-row-lock.log",
+      "mode": "100644",
+      "blob": "94effa2e63836041e0cec08e9ce6d1a3ebe9e57d",
+      "size": 205,
+      "sha256": "156854cc3ce146e2c5d87b48a7f32e192cf3813726f48d44552a83d116ad0bb5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/preview-current-role-only.log",
+      "mode": "100644",
+      "blob": "ba3eb45ad77b01132d376d197048eccd57d985e8",
+      "size": 7411,
+      "sha256": "a311584a71913f51f4cdee07297e8ebcfda55f1862c476082b8b825df4ce9ea0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/receipt-plan-cas.log",
+      "mode": "100644",
+      "blob": "3802f422c710d6a6b6d64e8d461d141a3c0839d8",
+      "size": 219,
+      "sha256": "d114340d52af3623e27ebf3bd84ca22bf53ebb0c3ff54519aea0a4c1cf57ff22"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/restored-go.log",
+      "mode": "100644",
+      "blob": "fef1212911243af2a8238ffdcf33a2c6333dff1a",
+      "size": 189,
+      "sha256": "fd944395094fe52fddb8272c07b2257c925da8f67d1a96134712bd94140d948d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/restored-helper.log",
+      "mode": "100644",
+      "blob": "1b83db69a730de2b6f8209126a38a04d4d35626e",
+      "size": 746,
+      "sha256": "4592162f86df80e5438646423beae86b3ed1957c4d0fe3d39c9c918df946b438"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/self-review-rejected.log",
+      "mode": "100644",
+      "blob": "9a08a3e48a6f5ffc8ba0db77a3ba7ebb401b72c5",
+      "size": 235,
+      "sha256": "3200bfd5fc6e8d85393af59f400df3eebfe066e3a993b1081985c856e523fef2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/six-fields-not-unknown.log",
+      "mode": "100644",
+      "blob": "9bab441ac01922e4d074abd57386c17a0314caaf",
+      "size": 448,
+      "sha256": "091de4a71492c1719bbeb9d766c4fc972daaf132c06772c7e8797a6152ec4f39"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/source-https-only.log",
+      "mode": "100644",
+      "blob": "66628d78ec290a1e7bd900fb4a55a416d5e3a427",
+      "size": 234,
+      "sha256": "2c94fe41d09fb7db06a589fcb4ef522bfeb851d600f0923e5009efb81015f497"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/source-owner-only.log",
+      "mode": "100644",
+      "blob": "e8dc3f30f3294727c640d23441c72b5c7e2208b1",
+      "size": 203,
+      "sha256": "5c2faafc690a2f4b0805b5870891ec35108ad6c159a2cc9c272ee14a1fc9e2df"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/source-request-immutable.log",
+      "mode": "100644",
+      "blob": "a23de2e8e8b95db66489964e2c847a13febeed76",
+      "size": 202,
+      "sha256": "35266343848e4cc23d1cdaab691f3838af73300c2a9673d98a990b935bf256b2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/source-tenant-suffix.log",
+      "mode": "100644",
+      "blob": "a64c4bdd3aafba18418494dc2320983d0c6af9dd",
+      "size": 227,
+      "sha256": "1873ee62de7e417edef59a2dcd92e2782ef748872c1113f88b07dbbd9f978f97"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/sticky-template-enrollment.log",
+      "mode": "100644",
+      "blob": "141338addedee2e41f16c614679d5da879572da3",
+      "size": 225,
+      "sha256": "7413797fe580bc5fa89c528f0848a6e1d0d59a7f54988e2a629e8543d6062d1b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/stock-budget-preserved.log",
+      "mode": "100644",
+      "blob": "f6e0da9ea69b39ce0eeff5380e499f39c9e2b627",
+      "size": 9075,
+      "sha256": "322642d947707225f9bde57929a68d4778562461da110bbc74ae3ce468d87a31"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/accepted-source-withdrawals/task-pair-matches-accepted-roles.log",
+      "mode": "100644",
+      "blob": "09df93b01629c8b86057f5479325fc227f9f0171",
+      "size": 216,
+      "sha256": "01f5a1526ad61d55fffddf94a8659e3d3471cb453e0757a6fb3a1bd05a265555"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/console-agent-groups-vega-regression.js.json",
+      "mode": "100644",
+      "blob": "8317faa8da009ff757d63aa67e68b1e7aa05ca80",
+      "size": 321,
+      "sha256": "28fae7a155a82a579958ca86bf21e22afd4573a1eb44c03f9d5fd473a5985105"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/console-agent-groups-vega-regression.js.log",
+      "mode": "100644",
+      "blob": "a5e226c248067bcf0974472ab41a5571ed11e1fc",
+      "size": 904,
+      "sha256": "4845d113539a199cb7cf4e0650964f1ad2855310ca7718fe0654848cc80613d6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/console-agent-mgmt-enroll-regression.js.json",
+      "mode": "100644",
+      "blob": "d777e715c025ec77101f4591559f85c26e6b8a53",
+      "size": 321,
+      "sha256": "baa0368d98323d6be4c606c195d95f36e2b7293eb01d7605b50d378e38a261a8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/console-agent-mgmt-enroll-regression.js.log",
+      "mode": "100644",
+      "blob": "784fbc2289b337f95da4333646fbcd59e6d1500a",
+      "size": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/console-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "ab67ed4b09efa32236089d17bbefebc41dc61cba",
+      "size": 311,
+      "sha256": "ed7920cde9381ad1503590d06aca0b33b0d78187fa5df648664d250a416cfd3d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/console-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "size": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/console-task-board-regression.js.json",
+      "mode": "100644",
+      "blob": "daa4343b79b8a980059a61d5a579a5bc0a4a143f",
+      "size": 314,
+      "sha256": "bfef290f1f894332bc2f4c507546a592f91591068a964f9254d07685e6936f58"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/console-task-board-regression.js.log",
+      "mode": "100644",
+      "blob": "5b2215aecd549fa825b2ba666b3a12a00591e7fa",
+      "size": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/pilot-blocker-wake-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "f746cfcbceedc26c8304abb5a8b5f444d91461ca",
+      "size": 322,
+      "sha256": "bf69d800e98c03526f18c312a4d2a2a7b713c2b0deb8dbba3fab9307cbc5894c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/pilot-blocker-wake-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "5dfd229df95fa4cfe45402e449d3b8c6c36b200e",
+      "size": 74,
+      "sha256": "18435bfdc48bbd84e845d39339ad7b2cc2b8c3f3a3ef127660a54a71dbc7ed94"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/pilot-feedback-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "a7cd508b944908759fac43e825e867765e669dc4",
+      "size": 318,
+      "sha256": "89919592f6c1476e45629ba07c6058bb2fbb75c3899f9f929d53d614090c3557"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/pilot-feedback-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "e9baace8fe413e9e3f396dbaedb3438f2392303c",
+      "size": 70,
+      "sha256": "df7202577348d29563b0a8beb9ff56c8791d152987bc98928370428628bcc575"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/pilot-spec-template-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "882b2f026680f16d2c4a341f3918b0c1c57d5945",
+      "size": 323,
+      "sha256": "cdf84794d69490302a04c691e82cf1e134ba8b4d20c2b143f6e4e6a62fbd9b5a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/pilot-spec-template-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "75916f88593398318cbb4e228d35e508b97eafcf",
+      "size": 75,
+      "sha256": "0e493e5f0737efec3e7f12a2b263560eda7c3881dc8d34c8690c082913100f9e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/r31-hosted-nodes-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "94792cf3fd04887e655d6830f8fa6d475f11c577",
+      "size": 320,
+      "sha256": "058a1ba4eb722ee1dadbe5070c2b6df200105d837fdb5ae56ca9e4eccd8703e6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/r31-hosted-nodes-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "df5393359b7ce23db70d2fb4b6dc59ccfb0e4fe5",
+      "size": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/r32-spec-review-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "8f886a4f937194c5b3189d44602a86caff73becc",
+      "size": 319,
+      "sha256": "d681b105a46d313243d5d38392d8bd72b79c11af1135054b755ffe9e37c0f7ea"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/r32-spec-review-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "74802d6e199805d4d61ddab722b4ba50da3a7cc4",
+      "size": 136,
+      "sha256": "3669a2aea92524e055b41c4428531a16b11dc061444b838c8771cabe5e7000d4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/r32-task-flow-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "58aac289c4d7bd384bbb8a8bf34e2262e0fbf4d1",
+      "size": 317,
+      "sha256": "cb3dce137532f416396aedfa2105edfe7c38702995c9e652b6e4395ec3b0f7c9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/browser/r32-task-flow-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "dca2423d4573dada216137f9c5494865f5495c05",
+      "size": 49,
+      "sha256": "e5d1a5b632d94c223b81745d4d9ed14df42f73fe9ad1e317c6da4518e36f61e9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/console-agent-groups-vega-regression.js.json",
+      "mode": "100644",
+      "blob": "f2d842d3b68078d845d84268a6d469e928a53728",
+      "size": 321,
+      "sha256": "87bcc35d645494b8b65522b27274ffba34ec624a2675935b3a564e5e49205df7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/console-agent-groups-vega-regression.js.log",
+      "mode": "100644",
+      "blob": "a5e226c248067bcf0974472ab41a5571ed11e1fc",
+      "size": 904,
+      "sha256": "4845d113539a199cb7cf4e0650964f1ad2855310ca7718fe0654848cc80613d6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/console-agent-mgmt-enroll-regression.js.json",
+      "mode": "100644",
+      "blob": "7bd44fe468862db542fe6564d62db4c7276f7c86",
+      "size": 321,
+      "sha256": "f9794dfdb38d81c3568d2ed7af14333210cb6441571ef3406f0dff7a5c5b7af9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/console-agent-mgmt-enroll-regression.js.log",
+      "mode": "100644",
+      "blob": "784fbc2289b337f95da4333646fbcd59e6d1500a",
+      "size": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/console-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "c409932f1109c87086eed67e33601dd05d1344d2",
+      "size": 311,
+      "sha256": "4f2215af059cf426b80c9018c54205edee62241eeabc4f48275dfcd60a428c8b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/console-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "size": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/console-task-board-regression.js.json",
+      "mode": "100644",
+      "blob": "16c703e427d4f1690ea7822860cd81baddf96e93",
+      "size": 314,
+      "sha256": "f49098a96d4ea8223c4f605462c8e9c2ec2957883a645dc94e576ed8a44cd149"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/console-task-board-regression.js.log",
+      "mode": "100644",
+      "blob": "5b2215aecd549fa825b2ba666b3a12a00591e7fa",
+      "size": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/pilot-blocker-wake-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "f591bdfd31a809049b146187081b529ab9fb6734",
+      "size": 322,
+      "sha256": "a9b2afdf0305ae6c16efc0b72db05be3c3431cd4094191e309d47b1b3078c029"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/pilot-blocker-wake-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "5dfd229df95fa4cfe45402e449d3b8c6c36b200e",
+      "size": 74,
+      "sha256": "18435bfdc48bbd84e845d39339ad7b2cc2b8c3f3a3ef127660a54a71dbc7ed94"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/pilot-feedback-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "2786214324e87bcdfe1ea45ddc35814a07156c9a",
+      "size": 318,
+      "sha256": "312f8ae3972e3911ef1ed171a9d76efba4a050259e9c5c3e4d6e51b4b53ca4c1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/pilot-feedback-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "e9baace8fe413e9e3f396dbaedb3438f2392303c",
+      "size": 70,
+      "sha256": "df7202577348d29563b0a8beb9ff56c8791d152987bc98928370428628bcc575"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/pilot-spec-template-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "6b5e927f9bcf24e5fbf7b5ae5c0d6c548e25b5ed",
+      "size": 323,
+      "sha256": "40e9c3618dd633f9d745e5cb7fdecf61022a7489f6a16ae09f584c35ffc246fc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/pilot-spec-template-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "8e55216c8e98e385c9a54c76aadd6d416bdfc837",
+      "size": 75,
+      "sha256": "61036a9c51231b38eb05935d79de999586a01db6d88d061aa21b28f164f3336f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/r31-hosted-nodes-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "b3fea1a09aa55072519b7287355b562cbbdd5099",
+      "size": 320,
+      "sha256": "e6bd39552b647b77caa0677247777f4496ee09260386adad9f590f3a70eec947"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/r31-hosted-nodes-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "df5393359b7ce23db70d2fb4b6dc59ccfb0e4fe5",
+      "size": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/r32-spec-review-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "19f02800b62ef925b7481f90a21887fcea4e2626",
+      "size": 319,
+      "sha256": "a9acd91378c79c6b2b686bd4bf91e5020bc895f55bb5d3537c9063c2334eedad"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/r32-spec-review-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "74802d6e199805d4d61ddab722b4ba50da3a7cc4",
+      "size": 136,
+      "sha256": "3669a2aea92524e055b41c4428531a16b11dc061444b838c8771cabe5e7000d4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/r32-task-flow-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "003fda6043679be1db19e970563eba8471c6a8d0",
+      "size": 317,
+      "sha256": "d07b3b6f76084cdff897f95081e2100daf42baec4b6494b7ea6e9e0b934bb80a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser-348/r32-task-flow-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "dca2423d4573dada216137f9c5494865f5495c05",
+      "size": 49,
+      "sha256": "e5d1a5b632d94c223b81745d4d9ed14df42f73fe9ad1e317c6da4518e36f61e9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/console-agent-groups-vega-regression.js.json",
+      "mode": "100644",
+      "blob": "44ccf7df042d45f7055b603e806ab314222dac97",
+      "size": 321,
+      "sha256": "4c74b53ba46fbfaeb75bc5cce95ee692baac9057602d91a85d77e7725d7988f3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/console-agent-groups-vega-regression.js.log",
+      "mode": "100644",
+      "blob": "a5e226c248067bcf0974472ab41a5571ed11e1fc",
+      "size": 904,
+      "sha256": "4845d113539a199cb7cf4e0650964f1ad2855310ca7718fe0654848cc80613d6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/console-agent-mgmt-enroll-regression.js.json",
+      "mode": "100644",
+      "blob": "8b661fc2ca437bd1922471e1c078b18322ca83ef",
+      "size": 321,
+      "sha256": "502983eb51e8a9347a07c8ec1a318ae7d4d8bfa9ae838fe4fcbfe48d69c57fbb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/console-agent-mgmt-enroll-regression.js.log",
+      "mode": "100644",
+      "blob": "784fbc2289b337f95da4333646fbcd59e6d1500a",
+      "size": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/console-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "2bbdad7cf8130b1d98a5278dffa4f1f4311674d5",
+      "size": 311,
+      "sha256": "672ead170d4e73921a2fd16167392e6a46bf630c6c3d580d2e3c1ce2d93309da"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/console-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "size": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/console-task-board-regression.js.json",
+      "mode": "100644",
+      "blob": "17a08cec434542cbdef1afc3703492de1192f973",
+      "size": 314,
+      "sha256": "6708f0d37ef84f99280c63cfcc06bd0663c65d9deed46e1042fd50000b1fff7f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/console-task-board-regression.js.log",
+      "mode": "100644",
+      "blob": "5b2215aecd549fa825b2ba666b3a12a00591e7fa",
+      "size": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/pilot-blocker-wake-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "d428195363f5f3a2cedf34e23c80c3431f0e5830",
+      "size": 322,
+      "sha256": "ef4a5a18b9ed933802313ef7a14bebf2a5b69daf7fb64e3e05bd972365de1858"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/pilot-blocker-wake-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "5dfd229df95fa4cfe45402e449d3b8c6c36b200e",
+      "size": 74,
+      "sha256": "18435bfdc48bbd84e845d39339ad7b2cc2b8c3f3a3ef127660a54a71dbc7ed94"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/pilot-feedback-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "1df464912820b664e6c81882c5641eca7f6b10ff",
+      "size": 318,
+      "sha256": "8c1db3138c07e411ac127c78c9e110b2441cfc1985159e6b8f41c3b05b049928"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/pilot-feedback-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "e9baace8fe413e9e3f396dbaedb3438f2392303c",
+      "size": 70,
+      "sha256": "df7202577348d29563b0a8beb9ff56c8791d152987bc98928370428628bcc575"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/pilot-spec-template-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "dd386fed10e037d0b7aff40646164345bccdc2ff",
+      "size": 323,
+      "sha256": "0744cf35830efa0ba2bf5467e2593bd19ef7f3c767decfd58cad08d955a52902"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/pilot-spec-template-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "8e55216c8e98e385c9a54c76aadd6d416bdfc837",
+      "size": 75,
+      "sha256": "61036a9c51231b38eb05935d79de999586a01db6d88d061aa21b28f164f3336f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/r31-hosted-nodes-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "a77e74713f9b4731b9a151036cfb392e736fc8bd",
+      "size": 320,
+      "sha256": "0613bcc25a4f3fe4379c16092fda4abee3953d49cd97c3369dd7a74f56e3b20f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/r31-hosted-nodes-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "df5393359b7ce23db70d2fb4b6dc59ccfb0e4fe5",
+      "size": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/r32-spec-review-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "92e8ff8dbbc230f885b0b42d93a478f3067d2986",
+      "size": 319,
+      "sha256": "914b6c1c4841d9f733793d45339d226224543ad46e1415f826600f44d6defe9c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/r32-spec-review-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "74802d6e199805d4d61ddab722b4ba50da3a7cc4",
+      "size": 136,
+      "sha256": "3669a2aea92524e055b41c4428531a16b11dc061444b838c8771cabe5e7000d4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/r32-task-flow-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "33da8a074d59befa9622778238381a2df98155b8",
+      "size": 317,
+      "sha256": "24caf958480c22ebe894c4fb67e2b8f1c193d97f081aac75c597bdcc759f5443"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-browser/r32-task-flow-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "dca2423d4573dada216137f9c5494865f5495c05",
+      "size": 49,
+      "sha256": "e5d1a5b632d94c223b81745d4d9ed14df42f73fe9ad1e317c6da4518e36f61e9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-compatibility-348/RESULTS.json",
+      "mode": "100644",
+      "blob": "c4d8835e0536b32a2458829e7e5295a2e9111089",
+      "size": 527,
+      "sha256": "022a9345cbc4d2ce49971d18e6d5b50bd0ef31e9d87a0f8f2c80a7dc35af45a3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-compatibility-348/new.log",
+      "mode": "100644",
+      "blob": "41182a55c79f8454e1bdcdc95eead43efec5bf7c",
+      "size": 170,
+      "sha256": "06d05008fe1c1008f42ea40dbf4f4ca73bfe2b855cbddabd5bf69ae25cc2386c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-compatibility-348/old.log",
+      "mode": "100644",
+      "blob": "9dca802002687b930c41eefee66b414643d6c8b6",
+      "size": 278,
+      "sha256": "45cd3ef3e5c926fedbcac6ca0b7ec65f229a6c967ac0e4d4f29bebb252bebd81"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-compatibility/RESULTS.json",
+      "mode": "100644",
+      "blob": "57aa5b8eb34c710d934f00a73fc1ae922559c852",
+      "size": 527,
+      "sha256": "52b52bf8fa69591eba741d95737325db28799ed21c6d4d9f07e79b80c362784d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-compatibility/new.log",
+      "mode": "100644",
+      "blob": "a9f898cf46698ec7dd85274259579141a0bf3740",
+      "size": 170,
+      "sha256": "5439e8d1bdd7531cb7593be7ee06175c7ebe2b05d8af701aec61f430bfb01363"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-compatibility/old.log",
+      "mode": "100644",
+      "blob": "3bf36db8a738ad91a05afff9a39eb20f00c0140c",
+      "size": 278,
+      "sha256": "d81852280d9109bb8c61bdf352943e53a4f6d873df9124fface079bc22daff1f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-gates/canonical.json",
+      "mode": "100644",
+      "blob": "956eddf94c99ede8cb04700e06d0f9bcd49fbd17",
+      "size": 425,
+      "sha256": "2c70949b861afe6dff6e5e349c85aea0553b43b0857ffdb4f30589ad60a7c129"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-gates/canonical.log",
+      "mode": "100644",
+      "blob": "2ec6efa5aa53f225852ac231a71d54089ca17bc2",
+      "size": 12010,
+      "sha256": "b3ebdc8d88e5dc8d16af8bd63a1abe71b4c0f10ffb020947474199cf889f8161"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-gates/go.json",
+      "mode": "100644",
+      "blob": "9055e2f53c20a5829bf97dc8a5966402b9bc9d37",
+      "size": 463,
+      "sha256": "25d07ea77e4a9b75222de29aacc5d6e50e4e71d2f8fd732a1992f9d4cd7d18c0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-gates/go.log",
+      "mode": "100644",
+      "blob": "07554282c09b8e7d768ce7f6e7ad4b11350a876b",
+      "size": 4351245,
+      "sha256": "e7ce70722e1ebe5f79943bb12509a1c5f4c7d059f8932f91c05968994277a206"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-gates/vet.json",
+      "mode": "100644",
+      "blob": "bcb1d90b9b490390396b881ac2df3997d5b12e23",
+      "size": 413,
+      "sha256": "521ba10ab9dc4a9c136aa7b3001d66d2c2bc8944d18e47313817707d1d833b45"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/RESULTS.json",
+      "mode": "100644",
+      "blob": "edc36eb4df746a2dd05ffc144aa3b3b065b5e9fa",
+      "size": 20226,
+      "sha256": "2ca023c2c128dce65a94fd35bf48d79d7c7cdc30b40ed78652275311569b5db1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/actual-executor-cannot-review.log",
+      "mode": "100644",
+      "blob": "f5d3789375f3badd1891d107f8a1c99f25a89279",
+      "size": 241,
+      "sha256": "ae8cc2479d601aa143a0c90d6d223a373f07e03c4c404b8b02c6993b57032602"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/baseline-go.log",
+      "mode": "100644",
+      "blob": "5e301781f13c371bedf8e900c1b5eba018ba792a",
+      "size": 189,
+      "sha256": "efd4f5972383010c59af7cda958fd5087005b5ec5ff4f37d0d1624dfd53215f8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/baseline-helper.log",
+      "mode": "100644",
+      "blob": "1b83db69a730de2b6f8209126a38a04d4d35626e",
+      "size": 746,
+      "sha256": "4592162f86df80e5438646423beae86b3ed1957c4d0fe3d39c9c918df946b438"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/confirm-final-pg-check.log",
+      "mode": "100644",
+      "blob": "9a08d5439c4147b910b5e1a24ea3d0db34f66c9e",
+      "size": 202,
+      "sha256": "13e6ebdb36f56793943e8aeed88bd0a5eea41b5d523ee4c4bc5eb0341475e444"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/create-cannot-implicitly-start.log",
+      "mode": "100644",
+      "blob": "720c4594ec25c5cec801daa9554dfef81f0d3635",
+      "size": 221,
+      "sha256": "c6a1bae11efbff921bc307e41fa235ec75c878421903d463296b8590358b7328"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/d3-unchanged-copy-not-new-contract.log",
+      "mode": "100644",
+      "blob": "7756829c9fff3d33771ae7d9e0a3126a08b6e3c8",
+      "size": 217,
+      "sha256": "ee71069d5ca5e28b9f0783c40d1091363ea1310609145a71ce194678cc17a574"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/draft-final-pg-check.log",
+      "mode": "100644",
+      "blob": "05a5855b11500c95cf5564e333ed28604429ddae",
+      "size": 192,
+      "sha256": "04109c80d6dfecaa07423462ddeacac1c0a6cccffef6240628d9ec1432a0a18c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/driver-rechecks-template.log",
+      "mode": "100644",
+      "blob": "c8063d5290d23f7e6b6bfb6ec0542541569dfdfa",
+      "size": 224,
+      "sha256": "c0c8ab05f2e1526540a0b65254a711c21f53bf40d5d4049af2ceb21d7f4a24e5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/full-human-review-receipt.log",
+      "mode": "100644",
+      "blob": "523a9fd7f2c12e2013863c733cb7044b6e042db4",
+      "size": 209,
+      "sha256": "a2a518b6a110e105d99b095d27496bfc405164af0e4d83f63290e82f0c92dc17"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/group-required-for-template-start.log",
+      "mode": "100644",
+      "blob": "3c4e4fc23c28126da402da289b5636a1b4fa6e20",
+      "size": 224,
+      "sha256": "3ab4ace83f9a11e051e9af5c3dcfa539d90a6b5ee489f37bac5955b35057e417"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/helper-no-human-operation.log",
+      "mode": "100644",
+      "blob": "80a6746ebb006ce03629058befed5ea47b37dbf7",
+      "size": 1426,
+      "sha256": "26dc427c2fac65215397ce34c8706db42bbfca11a0e4b5c758fa91b02d8ac1ac"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/helper-query-disjoint.log",
+      "mode": "100644",
+      "blob": "3af02f0ba64e861ad9a917ee08d9c4c61f647d77",
+      "size": 1799,
+      "sha256": "04a039209c08757a26b7e94ebd37a18ef74b7a2475973ed7c0e4c5ab76b4e8e3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/helper-strict-integer-version.log",
+      "mode": "100644",
+      "blob": "a9272da64c81ced79c46a29ff122dd25e286a2cc",
+      "size": 1851,
+      "sha256": "4aaa43efe7889e70384351c14ac972d3a9c666dd51af6aa9c69594032c4f4ed2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/impact-blocks-old-execution.log",
+      "mode": "100644",
+      "blob": "716e23ab9795c7f52b33ee70aba465d031ca0b9c",
+      "size": 267,
+      "sha256": "212f24851f9620968c2e4d1cf773528a20154a85646489e90b38c2f5c46bed34"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/incomplete-contract-no-consent.log",
+      "mode": "100644",
+      "blob": "2ee8c015b97ec49e6962b307f49d38e8e3c5d95e",
+      "size": 216,
+      "sha256": "fdecdc1cc11dd32d5321f251759d70fb4041ffc817d57fb85857dbe2d0a92f88"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/independent-review-required.log",
+      "mode": "100644",
+      "blob": "1b28774e662039891129f6fde9247ded6c7a898c",
+      "size": 238,
+      "sha256": "9cb61b96cdd0b9472d83605909bed90ee30192bb770740bac6dca88f4e2d8bd2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/legacy-proposals-preserved.log",
+      "mode": "100644",
+      "blob": "320d17d43c7ad30a89a2562f7ed293c1690dfc8a",
+      "size": 245,
+      "sha256": "601fa045c2e0685cc118dd8467c97ff0d5574d74835fb409c5c051e2dd1e04f2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/no-agent-business-responsibility.log",
+      "mode": "100644",
+      "blob": "d07dd0a614f4de70e6bc64839917f8ceee903534",
+      "size": 244,
+      "sha256": "2051e6391cf209641412e9711245b97896d0fcb005f715a19080165baf64fb61"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/no-owner-proxy-receipt.log",
+      "mode": "100644",
+      "blob": "efe00a2f08d6dd723d7ac990fa98c22edefa7a10",
+      "size": 202,
+      "sha256": "37dbca83e2bc15c3b0cb503f1718b104b09008c00f05d49dc018933b426a0672"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/no-receipt-transfer-between-versions.log",
+      "mode": "100644",
+      "blob": "7f5540cc41069c3531422751497a9a59ac11349f",
+      "size": 211,
+      "sha256": "929bcc6e5de64fc1362940ed2462b2d67bd8fc2e990614c56c9b275553d1c783"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/parent-final-only.log",
+      "mode": "100644",
+      "blob": "dc6513798d8f0284ad8e9c1f435e0a490e3e7a19",
+      "size": 201,
+      "sha256": "f25742204116fb649f901ba0d4b01822e114e3c29f58bda0ca444f71f24723e7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/parent-sha-pinned.log",
+      "mode": "100644",
+      "blob": "058af4d9439c22166d7a0c9ab9b3d76db0816280",
+      "size": 203,
+      "sha256": "d86524d0b1489f99dd046486058a0c8437950afcc4b6c399367f5af1f34f2927"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/pending-draft-downgrade-trail.log",
+      "mode": "100644",
+      "blob": "8ccd0fa58765c9996100f40271fec062674b8529",
+      "size": 217,
+      "sha256": "cce7ec37a509506041251247309885cdaec8bd78cf6b2db3adc531670c218867"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/pg-current-actor-row-lock.log",
+      "mode": "100644",
+      "blob": "6032aefde49241974a4169831a350a4fafbe13ba",
+      "size": 205,
+      "sha256": "5393c2966ddc5dc817260f13c39a60add3e352e3edbeb07786a6f539f4c649ad"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/preview-current-role-only.log",
+      "mode": "100644",
+      "blob": "ae3d915875af12db3b6ed37c9949dd3cb7d2c91d",
+      "size": 7411,
+      "sha256": "436c51859ff5aae290ab98f5285f2ae5dace89e95992c41e42d501c7d269b95a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/receipt-plan-cas.log",
+      "mode": "100644",
+      "blob": "858454a1523c67c3d7cb556bcf25f831031475e4",
+      "size": 219,
+      "sha256": "511d8101f646ceb0dd1f7e1eeeb0026dfab5a6b7b8f1a2726d55efd69daad30a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/restored-go.log",
+      "mode": "100644",
+      "blob": "1920937333998b252b71e5a55f374482347a983a",
+      "size": 189,
+      "sha256": "6890bf36190fe702266d1ef1cbbbe6698dee253bae4070c65c5fbbecc676b6f3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/restored-helper.log",
+      "mode": "100644",
+      "blob": "1b83db69a730de2b6f8209126a38a04d4d35626e",
+      "size": 746,
+      "sha256": "4592162f86df80e5438646423beae86b3ed1957c4d0fe3d39c9c918df946b438"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/self-review-rejected.log",
+      "mode": "100644",
+      "blob": "4da28cabbb648e53eef936137d129e3984dc6745",
+      "size": 235,
+      "sha256": "56350d3b41f94cfdde0041ee793ad20059aa962ff960419617390bab5816bb8c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/single-human-multiple-task-reviewers.log",
+      "mode": "100644",
+      "blob": "df28f3c977b501fdd336d7064da0aea4a831f9c3",
+      "size": 265,
+      "sha256": "0798046a33fb9a5f592d9c59fa3513cb4ab18cccc94d6ca70b6cb667970cb9a7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/six-fields-not-unknown.log",
+      "mode": "100644",
+      "blob": "4a9a1eed68636d298c596e871d61eeebab0ec983",
+      "size": 448,
+      "sha256": "b12d0a97b4001adb04f0de7ae4260d20db683d377ebcc36c98aeaf9e5dec323f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/source-https-only.log",
+      "mode": "100644",
+      "blob": "4cef1d2d37d7e05d53a84cc14c05c6d67e0ec285",
+      "size": 234,
+      "sha256": "d2e8663c503dfcd8e0c7d3669746b0bbda9f3affe5d899a6ccaf1588eaac8314"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/source-owner-only.log",
+      "mode": "100644",
+      "blob": "02411843c8ebe747527c2ea7a14cf8ab854cc2ae",
+      "size": 203,
+      "sha256": "d71f0c82caf71e05ad528f2bd14404bc15a6404cde273fea7d1f042868356555"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/source-request-immutable.log",
+      "mode": "100644",
+      "blob": "6d46bde8a444820858a34b8f411a4ca42a5601cb",
+      "size": 202,
+      "sha256": "3ccebc7b62852586e24b000baf8dc8f5a4f0a7e5e844b53dbfaad0c15206f7e7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/source-tenant-suffix.log",
+      "mode": "100644",
+      "blob": "6a227807fe9d48ef7a798b8857dea27fb9058652",
+      "size": 227,
+      "sha256": "832007e5d8dd2eb7f57e43b07552e7b1d59189dfc69b542a20a2e3aca404ee6d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/sticky-template-enrollment.log",
+      "mode": "100644",
+      "blob": "f02e4ace3f240e93e93736b4cc9a6d8d0d819fed",
+      "size": 225,
+      "sha256": "f824beb2530cf55507d13c16b7ad7bf730d3d6294c4f88755de367d6378ffea5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/stock-budget-preserved.log",
+      "mode": "100644",
+      "blob": "6b32095224871ee6c47bf2cb919dbab90a0c369a",
+      "size": 9075,
+      "sha256": "9270971346b28bbacacb3a2d56b4f2489fcd7745c7f4d64d9254229eedd95e94"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/candidate-withdrawals/task-pair-matches-accepted-roles.log",
+      "mode": "100644",
+      "blob": "8f4099efbeed10d9758222e539d8073f77525e2c",
+      "size": 216,
+      "sha256": "e03432f9d639eda815fcff5005989de703ce2911d1bf04392068cdc5cc584b7b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/canonical-contract-final/canonical.json",
+      "mode": "100644",
+      "blob": "fa8c72b998f73541f36e86fbede669f2ddbc7534",
+      "size": 425,
+      "sha256": "c977817b027777cb31cb72327fe36f35aa313282ae732d021e94872a0d61efa0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/canonical-contract-final/canonical.log",
+      "mode": "100644",
+      "blob": "30c2e41b0221e8d4955c6cab6a4687037f3428f1",
+      "size": 42173,
+      "sha256": "ff262266ff57617050323850993e36ce897037b28672fb8ae74cf6add63c5958"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/canonical-contract-final/race.json",
+      "mode": "100644",
+      "blob": "22ecfdc304fd9a04876225756fe7b7e2e96f916c",
+      "size": 612,
+      "sha256": "90314f15582055e78642d6205e794ec19dac89b69a8f8a7698b164935441538c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/canonical-contract-final/race.log",
+      "mode": "100644",
+      "blob": "f0cf0f1cf53fbea71f4e1d3ce057e1c6017452db",
+      "size": 192,
+      "sha256": "036a2938eff003d9ba9b71aac80c8f2321289c33facbb8cff99625a9a60d93fa"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/canonical-contract-final/vet.json",
+      "mode": "100644",
+      "blob": "f091185c65f94489f679da78f8b287640142ddd1",
+      "size": 413,
+      "sha256": "d32732acc43fa8cc3158175fe845b9f7231e03ee044448a7ec42ef62aab3e20f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/canonical-contract-final/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/compatibility/RESULTS.json",
+      "mode": "100644",
+      "blob": "b144d02b0fea3b3303359edb25a524067db7a408",
+      "size": 527,
+      "sha256": "d7684bbf68b3e3f55f22bfd14166529327adcb98434302545b25ed08816c6640"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/compatibility/new.log",
+      "mode": "100644",
+      "blob": "13b9e30b3033595a7d0b90ce80ce27cfbd08dd96",
+      "size": 170,
+      "sha256": "ab02d8d6f16215b23e5e1d8cd52a2fdf47fc796c5af21ab579e2c14aaadada60"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/compatibility/old.log",
+      "mode": "100644",
+      "blob": "3bf36db8a738ad91a05afff9a39eb20f00c0140c",
+      "size": 278,
+      "sha256": "d81852280d9109bb8c61bdf352943e53a4f6d873df9124fface079bc22daff1f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/exact-helper/helper.json",
+      "mode": "100644",
+      "blob": "65bfd20fe4ab746e0b2f216c0acf02bf4671ebb1",
+      "size": 542,
+      "sha256": "44064e76c12a9b808b33963a78153c3b576ca03e1d4b383a319163f17c15c75a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/exact-helper/helper.log",
+      "mode": "100644",
+      "blob": "5314a0545c269124ce6db541b1dd59f5c3a4f61b",
+      "size": 149466,
+      "sha256": "83d30f9a5d19da35fda528f9890dea672a483796308968e68de579268b832525"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/RESULTS.json",
+      "mode": "100644",
+      "blob": "b9eced3a79ffcf6690d9a08f6bda9de5f334f268",
+      "size": 20865,
+      "sha256": "6ac82b8db773fd884698b76f16971d22f32fb3e2bc3999d4bfba22f0b7e36f99"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/actual-executor-cannot-review.log",
+      "mode": "100644",
+      "blob": "37f47fc83c74acc91a83bf9f733f8425290ec78c",
+      "size": 241,
+      "sha256": "2c96febbcac0352c933969d049917063d59c9b2198605cdb2494f1b7b9fb51e3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/baseline-go.log",
+      "mode": "100644",
+      "blob": "60367ed848b1c4dcfb048a6ddd899b6f116a251a",
+      "size": 189,
+      "sha256": "4c87fb5279c8e121f235c9cbf54ed625950e289e4b6eb9249ae7a3f200617820"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/baseline-helper.log",
+      "mode": "100644",
+      "blob": "1b83db69a730de2b6f8209126a38a04d4d35626e",
+      "size": 746,
+      "sha256": "4592162f86df80e5438646423beae86b3ed1957c4d0fe3d39c9c918df946b438"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/bounded-invitation-summary.log",
+      "mode": "100644",
+      "blob": "dd608c284a88f47c94676d72b3a95fc1578bf050",
+      "size": 504,
+      "sha256": "f46fe4eea143f63346a1c21a4fdfd77f18d900473e7e60aadaa935a051880d3c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/confirm-final-pg-check.log",
+      "mode": "100644",
+      "blob": "c4acf508ec9a61781a1a84d24b60fa0ff591cc68",
+      "size": 202,
+      "sha256": "cf70bc8aca16d6e7ccf5e69d98d3709aa9e3cf79807c835391c3ef9de3f68d75"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/create-cannot-implicitly-start.log",
+      "mode": "100644",
+      "blob": "6b61ed24f76a0f353ae6dcbcd96ff33cad966022",
+      "size": 221,
+      "sha256": "803d35e1be77d5ae302cbff81474d3831c63900dc1d62770a639b727bbfc53b6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/d3-unchanged-copy-not-new-contract.log",
+      "mode": "100644",
+      "blob": "8fc979fedd6bbcab1df8952844b72de7b6a2b653",
+      "size": 217,
+      "sha256": "6f7c0605617f148a9268a2022af899c113cfe81e3238f22c80e5f6a573dc098c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/draft-final-pg-check.log",
+      "mode": "100644",
+      "blob": "171bcb2f092ddc7468a01838665d9743b15f1aaf",
+      "size": 192,
+      "sha256": "79d1d1a84e7d363c0dd1fe29327d148b00d3203b80f34a91901a1a61993ca24c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/driver-rechecks-template.log",
+      "mode": "100644",
+      "blob": "4806f65654425d1764d25914acc95d5812973951",
+      "size": 224,
+      "sha256": "d4cdf22f01c4eaf29613e1b84a86af56020ddd31a618a1f07eaadee00dabbaa5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/full-human-review-receipt.log",
+      "mode": "100644",
+      "blob": "ab907d8f74fade9bf268e464eead2c52000b834e",
+      "size": 209,
+      "sha256": "daed163c7d5430cd95176fe6aea56def3ee938d09166bd9fc868db8469275bd6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/group-required-for-template-start.log",
+      "mode": "100644",
+      "blob": "c1115f9730a8fd446ce8819a1cdb46b69c58919e",
+      "size": 224,
+      "sha256": "0901cfca13ccf8ce215bb8453827a3f8465907928c9a804e8ce601e80c8eeab4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/helper-no-human-operation.log",
+      "mode": "100644",
+      "blob": "678c569c75a815ba0d0253a4eb1c00d413f766a8",
+      "size": 1426,
+      "sha256": "2c0cf687771d076b2bd2729129a428fbfa5c5c6c7d0d3b2a2eb93ab2b92cb7b6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/helper-query-disjoint.log",
+      "mode": "100644",
+      "blob": "a38f03ef9995f20b22ef6e35633296d60175cbc5",
+      "size": 1799,
+      "sha256": "4d94d03b24fc967d05d4c29466ef545d1d251e8bc4fbc66caf48a0276167e8a4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/helper-strict-integer-version.log",
+      "mode": "100644",
+      "blob": "e237816a9deb5d7accfa5226f1cfa083d600fafa",
+      "size": 1851,
+      "sha256": "dae21b2fefd31938cd941ca2a0441171a9d510ff515935ce98d7f85f504aec06"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/impact-blocks-old-execution.log",
+      "mode": "100644",
+      "blob": "0f3dc736a8c7d5f6e10bbf645ed84a6e03c961e3",
+      "size": 267,
+      "sha256": "fda67e90cf10ec4992d02cf72d731c5169424acd0ac98411895197c407382860"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/incomplete-contract-no-consent.log",
+      "mode": "100644",
+      "blob": "1a04b8e73d6e2bd9af90971b19852bff808f1516",
+      "size": 216,
+      "sha256": "b699c5334b6089d92c6423a3fe3d29efaa5599c161340a360c5ff1103c83745d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/independent-review-required.log",
+      "mode": "100644",
+      "blob": "0ee7d4c8e908096870e7269e8b4a3718b108e30f",
+      "size": 238,
+      "sha256": "6c27370ee85e20b893e830b05dc32815445517cc923542117a219633f980c2aa"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/legacy-proposals-preserved.log",
+      "mode": "100644",
+      "blob": "f150ed3765c7b346bb3aded71e6ff567b43f5e56",
+      "size": 245,
+      "sha256": "8b510cf0413ed87987b568371698ab8c815bea3e61ccfdcbb797623cd2683716"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/no-agent-business-responsibility.log",
+      "mode": "100644",
+      "blob": "afe4c7a1ab9ee9f14e8125cfd3717ae15850a878",
+      "size": 244,
+      "sha256": "bc7afece04614c88a04b33a3699cfe90068847939959845ba67fed58adbfd1ad"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/no-owner-proxy-receipt.log",
+      "mode": "100644",
+      "blob": "97f308f392b52a30afea059208738151d8d3e9da",
+      "size": 202,
+      "sha256": "1c20aba9d0eecfbb8e7fa2432c97f376952ee5d9db69f8e11036b8bebab7d122"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/no-receipt-transfer-between-versions.log",
+      "mode": "100644",
+      "blob": "2f3f53b0ab6181c7111b9095fcebe138cdc68324",
+      "size": 211,
+      "sha256": "cac604eb2593ffe5bffaa147cfc214049c10c6d5634529f2e4a4a9dc2f1c6c40"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/parent-final-only.log",
+      "mode": "100644",
+      "blob": "ff440bcba1f753dd387ff5d5c81de5553152c774",
+      "size": 201,
+      "sha256": "c1ffa5ab3a7e8012de699400ef14296c05ce0af37598439d03951230e6bb06e4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/parent-sha-pinned.log",
+      "mode": "100644",
+      "blob": "d1fad0cbd2d08d338a8c8a7a77a303685989ac91",
+      "size": 203,
+      "sha256": "bbd50e6402e5636f48cac2a0883b58d7989fca286c66844aa435eb64bd999482"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/pending-draft-downgrade-trail.log",
+      "mode": "100644",
+      "blob": "731f890f8e8a980c17888a32992593f01e8edc58",
+      "size": 217,
+      "sha256": "bcea289e04f5120a4ab1c60894ff0d68815c0f9dd5f470ee0c33f3b37f3aad2f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/pg-current-actor-row-lock.log",
+      "mode": "100644",
+      "blob": "5e97a218db25fe145d7f290767fc2b9a7a5a92f2",
+      "size": 205,
+      "sha256": "2ca1cbda1fb46720e25cc922b53e36a43f427db41913fc4809aa9b05635ea352"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/preview-current-role-only.log",
+      "mode": "100644",
+      "blob": "71a291921cbd18afc7022cd981ed9c9a40516276",
+      "size": 7427,
+      "sha256": "c89a775aa5ea7f03ffcd81a504c7bae284d03b325b479c743e427cba07727b4d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/receipt-plan-cas.log",
+      "mode": "100644",
+      "blob": "efd581a515063bc659b44279eafb8b6a13ed1f89",
+      "size": 219,
+      "sha256": "cd4cd4e7c1fa5f326d0f54ef2f133bf5de94ff01e731d5045aad3988e51249d2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/restored-go.log",
+      "mode": "100644",
+      "blob": "5d423cf9697cce31c5f8926c389603eb68721256",
+      "size": 189,
+      "sha256": "b4c1bd0ff00de8ff6a246756e80a1afe927ca34a7ebdfcd7581ba2e6f5968e47"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/restored-helper.log",
+      "mode": "100644",
+      "blob": "1b83db69a730de2b6f8209126a38a04d4d35626e",
+      "size": 746,
+      "sha256": "4592162f86df80e5438646423beae86b3ed1957c4d0fe3d39c9c918df946b438"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/self-review-rejected.log",
+      "mode": "100644",
+      "blob": "a56ab20c69df5d3ba8eaa58481b8ddf44e089017",
+      "size": 235,
+      "sha256": "dfe7fa62ccbe4b6a923d5ed0162123d683982804eea245fc2df197a896c1e032"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/single-human-multiple-task-reviewers.log",
+      "mode": "100644",
+      "blob": "0c2af3d4873017ab1156242aefce8dacd32ee968",
+      "size": 265,
+      "sha256": "228322ea5cf0439812b306af7472c90e6d2a77f0542a9ce075cfbd856ba2324f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/six-fields-not-unknown.log",
+      "mode": "100644",
+      "blob": "bed606bad267d2c1dc04ce32be22aeb508c07451",
+      "size": 448,
+      "sha256": "1d518a5c07fdda2a97a6c58801af92cb31710a2e4c64fd3153eda66d73fbf56c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/source-https-only.log",
+      "mode": "100644",
+      "blob": "2892edf0d059783ce9a8a386a0de03e07089e1fc",
+      "size": 234,
+      "sha256": "1a31d271916a48864dd247a4b8435b0a72bf13213d9723516f824d8707b36f4d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/source-owner-only.log",
+      "mode": "100644",
+      "blob": "afdef4f99c323dd6fb514395be188f2b1b1c90c8",
+      "size": 203,
+      "sha256": "3d6ff40df2dffdf0729e8ea8f7cd5a92526ec0363b7fc2c8ac3c20e0ad049293"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/source-request-immutable.log",
+      "mode": "100644",
+      "blob": "396339fc9bcb0ead485259d01c06f8f81e7a94b9",
+      "size": 202,
+      "sha256": "5c8ae977b4cfb07729a625d1743bd269d570c3835bab8ad7ab8bef40fa812d51"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/source-tenant-suffix.log",
+      "mode": "100644",
+      "blob": "7bade5840f0ffadbd57b1b5e2dd4b2c59d1366c7",
+      "size": 227,
+      "sha256": "02365a5df947a23cb3dc5818b3e4492c4f897e60f9b71b075184049f1722e7e6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/sticky-template-enrollment.log",
+      "mode": "100644",
+      "blob": "4989aac357ea5e3e3916e0d0968fa2449a61db95",
+      "size": 225,
+      "sha256": "796749654c9ce72d8152fb4d50f38fe28640f4bb12b805a33da20ab0be4812f2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/stock-budget-preserved.log",
+      "mode": "100644",
+      "blob": "e050557e011033daee7d083de5599152f97be88c",
+      "size": 9075,
+      "sha256": "d97286757451d8f3c09ebbd43b3ca1b176f68c9ed08a129107073d6f41615ec2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-all-withdrawals/task-pair-matches-accepted-roles.log",
+      "mode": "100644",
+      "blob": "5a691ddb68be7feffafbd08a8e2d1f1dd6c168d2",
+      "size": 216,
+      "sha256": "b6873d09a76e4f78be740be050940187002a85b7d84b0167eeb15bc79752297c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/console-agent-groups-vega-regression.js.json",
+      "mode": "100644",
+      "blob": "761db71fd6ee91fd3e374738397fa0b7e7c669e7",
+      "size": 321,
+      "sha256": "2e6062cb38970cef3d24097d2b0c45a87918eb58a6a754e058e2cca4edc118d7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/console-agent-groups-vega-regression.js.log",
+      "mode": "100644",
+      "blob": "a5e226c248067bcf0974472ab41a5571ed11e1fc",
+      "size": 904,
+      "sha256": "4845d113539a199cb7cf4e0650964f1ad2855310ca7718fe0654848cc80613d6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/console-agent-mgmt-enroll-regression.js.json",
+      "mode": "100644",
+      "blob": "8ffc0266c2ed1da1d1b09ce5d892f4b048319720",
+      "size": 321,
+      "sha256": "8e2acc9f876a30bd997de8385cb8f35c31d30743fdde1a54b1fe9736de44f00e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/console-agent-mgmt-enroll-regression.js.log",
+      "mode": "100644",
+      "blob": "784fbc2289b337f95da4333646fbcd59e6d1500a",
+      "size": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/console-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "ace070f0cdc34a2b6f5d4333fa4944678dbcc547",
+      "size": 311,
+      "sha256": "05533e76ce414fa8a3a7785245f6b1e10ac0b191c29715269ce3710fff39f0f0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/console-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "size": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/console-specs-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "99ef1ae397ac60793b2d33d4516cddf8d8b0b1b1",
+      "size": 317,
+      "sha256": "9b3765af8b2b5db1036c91b9192a65c1f7f7a10eed5c2e32b5d454ab35da9763"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/console-specs-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "0b88f9360b851d24fe875d71cbe2791523d0bde1",
+      "size": 985,
+      "sha256": "af122999e1a0964925ace84b546dc0f351a31c6282e788ce1af1ca8fe76b6c41"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/console-task-board-regression.js.json",
+      "mode": "100644",
+      "blob": "485ac6b143995314e580954aacab6f64adebe012",
+      "size": 314,
+      "sha256": "1f42d6535c34f8b8d49e419710cbd45c181dbbafe7de47e6fa59ca00cf285257"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/console-task-board-regression.js.log",
+      "mode": "100644",
+      "blob": "5b2215aecd549fa825b2ba666b3a12a00591e7fa",
+      "size": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/pilot-blocker-wake-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "afd774c84f1b727b7c6232e04f40a5e2ad1aa26b",
+      "size": 322,
+      "sha256": "f3321be9b395d63a37c6bf7067d1d3fd8ede694de468b7dc81219d3c280bf06e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/pilot-blocker-wake-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "5dfd229df95fa4cfe45402e449d3b8c6c36b200e",
+      "size": 74,
+      "sha256": "18435bfdc48bbd84e845d39339ad7b2cc2b8c3f3a3ef127660a54a71dbc7ed94"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/pilot-feedback-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "f1758f3395c77f8ad2a8dc3ff4b308709bb75deb",
+      "size": 318,
+      "sha256": "2d1e9a98772e7befb913a63de9fffd49693fb0dcd249cf070e1576f068b8a471"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/pilot-feedback-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "e9baace8fe413e9e3f396dbaedb3438f2392303c",
+      "size": 70,
+      "sha256": "df7202577348d29563b0a8beb9ff56c8791d152987bc98928370428628bcc575"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/pilot-spec-template-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "c83273d8df91419c9ce0bfc50c32b5c8a72255bf",
+      "size": 323,
+      "sha256": "1c8fdd52e56dd93944f89ce3ee4541db049c827bc9009b2c4414fb79fde1bf10"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/pilot-spec-template-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "8e55216c8e98e385c9a54c76aadd6d416bdfc837",
+      "size": 75,
+      "sha256": "61036a9c51231b38eb05935d79de999586a01db6d88d061aa21b28f164f3336f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/r31-hosted-nodes-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "e763f1f55210323faba4df0020ff8501c5281484",
+      "size": 320,
+      "sha256": "f5d8f07efcea92b94d245217afff1236ca4e651554f7855e42ac55cb9ee15859"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/r31-hosted-nodes-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "df5393359b7ce23db70d2fb4b6dc59ccfb0e4fe5",
+      "size": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/r32-spec-review-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "c0893a2e2c1f0f705a390af6cf1113ad3e6fae24",
+      "size": 319,
+      "sha256": "bb6d1fecdcdd361620f3dcf60d7efce98bd0426f26e56a5747a6acf7f10e2f96"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/r32-spec-review-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "74802d6e199805d4d61ddab722b4ba50da3a7cc4",
+      "size": 136,
+      "sha256": "3669a2aea92524e055b41c4428531a16b11dc061444b838c8771cabe5e7000d4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/r32-task-flow-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "8c8ff33dc57e79afba9476cc7f09c654d928a092",
+      "size": 317,
+      "sha256": "a03a078270a5502b2210d607c3f1377d981c0fee5802c52c426f76a6a5fcdd59"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-browser/r32-task-flow-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "dca2423d4573dada216137f9c5494865f5495c05",
+      "size": 49,
+      "sha256": "e5d1a5b632d94c223b81745d4d9ed14df42f73fe9ad1e317c6da4518e36f61e9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/console-agent-groups-vega-regression.js.json",
+      "mode": "100644",
+      "blob": "ff56573d02acc020fb3a9c51317bd5aa0ed6f1f0",
+      "size": 321,
+      "sha256": "9d113a986d511f3438e68ddc1c9ef0aef6f443f70cd48c697980b67da1a4956c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/console-agent-groups-vega-regression.js.log",
+      "mode": "100644",
+      "blob": "a5e226c248067bcf0974472ab41a5571ed11e1fc",
+      "size": 904,
+      "sha256": "4845d113539a199cb7cf4e0650964f1ad2855310ca7718fe0654848cc80613d6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/console-agent-mgmt-enroll-regression.js.json",
+      "mode": "100644",
+      "blob": "79c7f8b777d43f764377cc56a69bf04f2b66f4a3",
+      "size": 321,
+      "sha256": "618fb38af3e39426365a84226e6b95b5c13393b34cd3af0163f8d478c397ea64"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/console-agent-mgmt-enroll-regression.js.log",
+      "mode": "100644",
+      "blob": "784fbc2289b337f95da4333646fbcd59e6d1500a",
+      "size": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/console-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "7bbfb0110e4931a8787784f97c9a8436e41f6abd",
+      "size": 311,
+      "sha256": "a7e5f38ae782410f90655c77947dabbdfa53fadb780e96d61bad3a886d46b836"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/console-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "size": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/console-specs-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "01a5623c3c0c4e625a6cfb84d735962b1e844da5",
+      "size": 317,
+      "sha256": "eee5603a559767c80cda3b969acb5db3ce730f3d4947521eefd4bcf28e630af0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/console-specs-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "8f68ff4838bbc6622147e51a872123186742ad29",
+      "size": 985,
+      "sha256": "4e310c7ff08086c68d8eb9f68142f1001219368ee86335728b6620a95a5f76b6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/console-task-board-regression.js.json",
+      "mode": "100644",
+      "blob": "e9b1688e8652a8d8593582c707c84d51ab92dfd9",
+      "size": 314,
+      "sha256": "0dac1cfd576fc73521de297d6bd352de24601f1c22829d8b30467d77a2840b69"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/console-task-board-regression.js.log",
+      "mode": "100644",
+      "blob": "5b2215aecd549fa825b2ba666b3a12a00591e7fa",
+      "size": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/pilot-blocker-wake-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "3e364db303f393241ecc9cea340c1fd52b0d5461",
+      "size": 322,
+      "sha256": "2d8e687f5c84c33041436a591ca0e0d58bec283e57be724df673ec8d73a98f33"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/pilot-blocker-wake-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "5dfd229df95fa4cfe45402e449d3b8c6c36b200e",
+      "size": 74,
+      "sha256": "18435bfdc48bbd84e845d39339ad7b2cc2b8c3f3a3ef127660a54a71dbc7ed94"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/pilot-feedback-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "df6572eebeca83b534461b35e25bebebf43d1c7a",
+      "size": 318,
+      "sha256": "19297884b4134e8f79479ff3bcac0825680fabf56a2422d8b1f18d75ce8a8f4b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/pilot-feedback-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "e9baace8fe413e9e3f396dbaedb3438f2392303c",
+      "size": 70,
+      "sha256": "df7202577348d29563b0a8beb9ff56c8791d152987bc98928370428628bcc575"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/pilot-spec-template-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "89cb5e629f764bbd2214152cada25af8fe7f04ac",
+      "size": 323,
+      "sha256": "602bdf8b7c8decefaf5475cc7fe721ba6a0a6733307860e8b3204e96c4623bde"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/pilot-spec-template-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "8e55216c8e98e385c9a54c76aadd6d416bdfc837",
+      "size": 75,
+      "sha256": "61036a9c51231b38eb05935d79de999586a01db6d88d061aa21b28f164f3336f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/r31-hosted-nodes-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "bda95d20dbff6a356e20d71d27c4cdfb64467530",
+      "size": 320,
+      "sha256": "dc74105fcf30ba5c7ce3671f2863bd54285d376e5b59264d56d4c5d86b08dea5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/r31-hosted-nodes-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "df5393359b7ce23db70d2fb4b6dc59ccfb0e4fe5",
+      "size": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/r32-spec-review-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "d25ef97510e4b6a63ce81ed25c8ebbb473f464ad",
+      "size": 319,
+      "sha256": "1c6c762e5e3c6aaf4c31231d3e9a18a6c96e96f3886f3cbfbcabda81e5b9d279"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/r32-spec-review-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "74802d6e199805d4d61ddab722b4ba50da3a7cc4",
+      "size": 136,
+      "sha256": "3669a2aea92524e055b41c4428531a16b11dc061444b838c8771cabe5e7000d4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/r32-task-flow-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "064a1560ab6225ab7afe41265eaf365510cf9266",
+      "size": 317,
+      "sha256": "809af9501cc26d7d4d61b39655c7784811b6a6e7f36bda6d20fea7438bb76c94"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-browser/r32-task-flow-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "dca2423d4573dada216137f9c5494865f5495c05",
+      "size": 49,
+      "sha256": "e5d1a5b632d94c223b81745d4d9ed14df42f73fe9ad1e317c6da4518e36f61e9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-compatibility/RESULTS.json",
+      "mode": "100644",
+      "blob": "58b4aeeea01b45a4dd70024a6bf0952e71c16f3c",
+      "size": 527,
+      "sha256": "ac2e3fbd20b3982555d3849ad9ed22d8a0fdf0eebff743e96ab9f9a4cc0da2dd"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-compatibility/new.log",
+      "mode": "100644",
+      "blob": "08ee76885ce863e17f578c172dd246c1f79e0768",
+      "size": 170,
+      "sha256": "4d0a7de3864d2cc8e614a2e9837891222749e0e3cb3fd4fd37ebc32af2e2e66c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-compatibility/old.log",
+      "mode": "100644",
+      "blob": "f30050b1e431f706043ea264af6674c2ca71de08",
+      "size": 278,
+      "sha256": "378c21fc4d9fb2f1531a815debae21db09c2b0832f8c2b74b91ad6e5ea32514a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-gates/canonical.json",
+      "mode": "100644",
+      "blob": "25d398749697ababe54b4bfa332bbbfc84ff79e8",
+      "size": 425,
+      "sha256": "686bace42fb578d9213ce3c0e120a18b13a9c225e2c2daa79334a727e67675c1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-gates/canonical.log",
+      "mode": "100644",
+      "blob": "6ecdfa707db3c1cac9f4e36bc21d98d7ff9665e0",
+      "size": 12011,
+      "sha256": "a3e12be334240a4cf2b72a17cede23b71630600428bcf4344247d31571675349"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-gates/go.json",
+      "mode": "100644",
+      "blob": "f0ef12c6c92c31e36af248462fc6c68c835ffa7c",
+      "size": 463,
+      "sha256": "4a855f9635dbc48f0232cb94cbde5f306a9fcc67e637e3b9aa66d2f92193e8f1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-gates/go.log",
+      "mode": "100644",
+      "blob": "bc24761a369e556557305321a77e00315b8ff437",
+      "size": 4335595,
+      "sha256": "8f187334ebc314a926c586005289a6c2cfff079c02be079acf0d66132b8d1b95"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-gates/vet.json",
+      "mode": "100644",
+      "blob": "f7054ce3a397e7c064d8a06ce202070e7cab41b2",
+      "size": 413,
+      "sha256": "c9830eceb31932b2cf1e9a9c47b686c0b6fcd8f5833fc266cdd42154256e7688"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/RESULTS.json",
+      "mode": "100644",
+      "blob": "f1a9b6b21a9d9b5e23da3b2b2e0f0f01ac0cbf16",
+      "size": 20224,
+      "sha256": "a2ac0eb32b717641dc2c8307db7ded24190fcecd3ac0fa08a9714682036f6b34"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/actual-executor-cannot-review.log",
+      "mode": "100644",
+      "blob": "cb48e670d5d03d3dd0408730cb673e022b793d4f",
+      "size": 241,
+      "sha256": "04871668f16d4eb06dafdf435c336f812cf6f0314cf5e628cdc9c9d809bb3264"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/baseline-go.log",
+      "mode": "100644",
+      "blob": "78c30ddb52daca78253aed8e12e897b67b57a8e5",
+      "size": 189,
+      "sha256": "6ad4dc6f04e461322a8641945812c208a379451f4b1b1b02bd2759837264f9ec"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/baseline-helper.log",
+      "mode": "100644",
+      "blob": "699ba876e9b469b8890c89cd5a56c58ed9312c83",
+      "size": 746,
+      "sha256": "b3e236b843deffdcdc4d5132f563d2c8b12698c90f954a7e9f2bb786def72b6e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/confirm-final-pg-check.log",
+      "mode": "100644",
+      "blob": "028459feeec7e2483faee2b53a64cbf57b413a7f",
+      "size": 202,
+      "sha256": "4b6a06eac101c867234043656568d4041b13d2bcfcf1acdb4f9820f3522771f4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/create-cannot-implicitly-start.log",
+      "mode": "100644",
+      "blob": "c4c81e7e1f69dfc16bcdc477d48d2d21bf94dfbd",
+      "size": 221,
+      "sha256": "54755dba059eecceadf5abf36997d3be28d7e2f5f11b311c14169f4e521588e2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/d3-unchanged-copy-not-new-contract.log",
+      "mode": "100644",
+      "blob": "821d5ea52fdeb011db1f99ce5dea1e789d1db3c5",
+      "size": 217,
+      "sha256": "7a3fd118da576d4415e955f244ed2fd62d2b71491d6a09bea45929571d4b6119"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/draft-final-pg-check.log",
+      "mode": "100644",
+      "blob": "56de8910412ebfb3d07b4b5639e1ea4f49b217c6",
+      "size": 192,
+      "sha256": "1964380b2e251d2a56f9c2b3954ac3f639f3c41726616f722e315c5e87d86517"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/driver-rechecks-template.log",
+      "mode": "100644",
+      "blob": "57fcdd25ad8606d05a98b3a42ae33d7f29d1fa22",
+      "size": 224,
+      "sha256": "ac1bdf16204e587a97c2333fc8d5ee7ffc53e83b2552135cfbc2dad2187d4934"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/full-human-review-receipt.log",
+      "mode": "100644",
+      "blob": "4325f1f6e7ec75550316df1c3c81246e03a174e0",
+      "size": 209,
+      "sha256": "7565572acead64a768395349a60bf8bfc6897b593e9528a8b6a542743fc48c2c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/group-required-for-template-start.log",
+      "mode": "100644",
+      "blob": "a3d01d2b04cc442adc1e0fc93d6a7aceac016996",
+      "size": 224,
+      "sha256": "c68ae7be49f9fa573ea4855109644f3e737e3a2900f37f8b9c7cbbdf8a3703aa"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/helper-no-human-operation.log",
+      "mode": "100644",
+      "blob": "4d14ff41030c9e994e5cba7f3dc5fc95d21ad7eb",
+      "size": 1426,
+      "sha256": "3596f507c220389b555822b9e78d0cee8a0c6169a80ba7ec100140085f58fac6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/helper-query-disjoint.log",
+      "mode": "100644",
+      "blob": "de60609c6bdd0c7558c7876f9282655fb89cb237",
+      "size": 1799,
+      "sha256": "52654e8f4836af83fdf16712ceb5f956e3dc10d1302da08573ef7d88b07bbb5a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/helper-strict-integer-version.log",
+      "mode": "100644",
+      "blob": "67412729cef4d39d9d7cff5f57da60b9de4dd03c",
+      "size": 1851,
+      "sha256": "c2ec11b406588ec66e6821949c1f9dd1ea8d417892066316181bf9e580f9325a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/impact-blocks-old-execution.log",
+      "mode": "100644",
+      "blob": "59f4779068933d45eec0a2caa139b8dde14d8b55",
+      "size": 267,
+      "sha256": "52bb8fc535a3d37eba00c34ee90ce9ecc615cab5785f87194e1ceff8f757e53e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/incomplete-contract-no-consent.log",
+      "mode": "100644",
+      "blob": "9a2096a8d6d290905998d1944f42b7bc5a5c50b4",
+      "size": 216,
+      "sha256": "7217b07eafe58161f681e9cd49d7ee9661c919e7db3a92c8d06ea14e79e5d019"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/independent-review-required.log",
+      "mode": "100644",
+      "blob": "d48da8fe8682046b9c1d032f2b3131c1eefd469a",
+      "size": 238,
+      "sha256": "2f1670248d47e7ea4710ea71e4730d86df9038608f737fed03e1a8a6a791cca1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/legacy-proposals-preserved.log",
+      "mode": "100644",
+      "blob": "a21051641e8137a037e4f7175ad325fa1589cc8a",
+      "size": 245,
+      "sha256": "b5f25eee937f085b563b21c9db3d401f2e2ab2b8992975eaadac4043238734a9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/no-agent-business-responsibility.log",
+      "mode": "100644",
+      "blob": "d257254a1b87e58ab0a06c1ae7674f4ad6751901",
+      "size": 244,
+      "sha256": "5667e94bb15b290a10a567201d410b4101ea28eb0fbd93a6ef2f1169c280dda1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/no-owner-proxy-receipt.log",
+      "mode": "100644",
+      "blob": "88ad91a6e124d84464bf0d8cd184e32268806181",
+      "size": 202,
+      "sha256": "4751753a2ed23ddf2077ea68bb696af897c96bf6ce61a818aab68154a8a6d4fe"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/no-receipt-transfer-between-versions.log",
+      "mode": "100644",
+      "blob": "2f3f53b0ab6181c7111b9095fcebe138cdc68324",
+      "size": 211,
+      "sha256": "cac604eb2593ffe5bffaa147cfc214049c10c6d5634529f2e4a4a9dc2f1c6c40"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/parent-final-only.log",
+      "mode": "100644",
+      "blob": "2d2bd68e8cd651d3a578305aa1609203c6630695",
+      "size": 201,
+      "sha256": "24687ffe6c2884925f00ebfa10eed5805e6670b4a29fb6417658f7f5bb893fb8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/parent-sha-pinned.log",
+      "mode": "100644",
+      "blob": "058af4d9439c22166d7a0c9ab9b3d76db0816280",
+      "size": 203,
+      "sha256": "d86524d0b1489f99dd046486058a0c8437950afcc4b6c399367f5af1f34f2927"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/pending-draft-downgrade-trail.log",
+      "mode": "100644",
+      "blob": "e2485b71090cd95a42f94bce386ea432b8d2c57d",
+      "size": 217,
+      "sha256": "17dd345a95935c8d309d31feb6e44c77f39e149ef1af8114e8748bf01f9975ab"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/pg-current-actor-row-lock.log",
+      "mode": "100644",
+      "blob": "797ff3fa6e9aa3b7406cce10360c987b1da696a9",
+      "size": 205,
+      "sha256": "eda440cea1c2fc3fb8004b7bd604d7f6cbace0dfe3c2530106450f850c521986"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/preview-current-role-only.log",
+      "mode": "100644",
+      "blob": "1a6fd6894c9fcdc12744d1615857407af8f67aa5",
+      "size": 7411,
+      "sha256": "61503b4df1ec7ae3f489338a5aa4d78653d7bfead0357279e46e419274802dd9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/receipt-plan-cas.log",
+      "mode": "100644",
+      "blob": "8b39ca616eb4631204dbbb6585ddfc157951891f",
+      "size": 219,
+      "sha256": "c177033de597ffb3831bf5a03d08e3f30cd0f11fc22ca1de3b1db75a3e58be88"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/restored-go.log",
+      "mode": "100644",
+      "blob": "838d75330c8e36a58e2ed2828862d29eb1e73083",
+      "size": 189,
+      "sha256": "2561ddd678905c02a74a75cc0da8da8abca827b5d6c2a005c03f166bd98728fb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/restored-helper.log",
+      "mode": "100644",
+      "blob": "871657f29b55f07f4662724312ee6ac4e2850b03",
+      "size": 746,
+      "sha256": "89afcf8e089a31ee2dae4bb310ab0b658dd4292372b1ea4e7fb5ef41f8906f0e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/self-review-rejected.log",
+      "mode": "100644",
+      "blob": "9f6f949403aa5531c44d03dbb579071d5636e39b",
+      "size": 235,
+      "sha256": "c044db923b2aea6fb20d5c291c5313808850f50b9a9c362602347729ebf855e2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/single-human-multiple-task-reviewers.log",
+      "mode": "100644",
+      "blob": "0514b8a3fc31cb2d7f76cf3cff330dabe50bf193",
+      "size": 265,
+      "sha256": "4e3dc479412452bd9b0a7c03b216bf4aae67d767bcf4567979430a64cc6b59ff"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/six-fields-not-unknown.log",
+      "mode": "100644",
+      "blob": "c1853b41dc977dbc7fd9c9a78619f70c6a71e82c",
+      "size": 448,
+      "sha256": "8092cc5caf3f99de9682a4890f05877a1f624f4ca1a7e14176717bcd46b3fa55"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/source-https-only.log",
+      "mode": "100644",
+      "blob": "7f8839c9a38257d36dde4263f2dcadb4ec68f158",
+      "size": 234,
+      "sha256": "dfd986eb6c7e22b457a3eca67278cdff2ba3991cdd6034a4bec4d5bb76375f58"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/source-owner-only.log",
+      "mode": "100644",
+      "blob": "c2fed366891396dda47b36c41168b73313631747",
+      "size": 203,
+      "sha256": "8ec880ebaddd61288dac7808e747b697a4a32ae42fb1ca56b347b97b22e9d075"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/source-request-immutable.log",
+      "mode": "100644",
+      "blob": "b3bbb4bb12e5eba8fe2ff6bdd75115545d440d82",
+      "size": 202,
+      "sha256": "3fff58e6ccd3e0a2bc15cf5001ef002ff2f1e93fef790379c8fa66639f749281"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/source-tenant-suffix.log",
+      "mode": "100644",
+      "blob": "8387e51e2fe2c0f7c1aa0a436c429a7f7373dc87",
+      "size": 227,
+      "sha256": "0dc37e0833b5475de3bf405fe3942b76d1a20d88ae8624cac0914172090fd3ad"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/sticky-template-enrollment.log",
+      "mode": "100644",
+      "blob": "141338addedee2e41f16c614679d5da879572da3",
+      "size": 225,
+      "sha256": "7413797fe580bc5fa89c528f0848a6e1d0d59a7f54988e2a629e8543d6062d1b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/stock-budget-preserved.log",
+      "mode": "100644",
+      "blob": "0ca34639d3a63456157b7ecdb79f46777f95bd14",
+      "size": 9075,
+      "sha256": "367160876d8f8498ed594fceb895d11d2d8a7babeedda44a6bd90402f5e749f2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-candidate-withdrawals/task-pair-matches-accepted-roles.log",
+      "mode": "100644",
+      "blob": "b4e37b7923bb0d5440dbd9bb50c5d91e6f7fe4ba",
+      "size": 216,
+      "sha256": "d8e436ef72bd2b34959909e43a69c26d19a4263734946fdc97c98e91fd4459af"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-checks/canonical.json",
+      "mode": "100644",
+      "blob": "9fcf9a48bd9a8abaf932a14007a3da5fcce87c18",
+      "size": 425,
+      "sha256": "2bb9f17b395737db71fa72dc62bb389d5b24972168d405ea9c33abfcfef4c98c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-checks/canonical.log",
+      "mode": "100644",
+      "blob": "9c0075b882209d2e1295eaf9d495a322f54de4b3",
+      "size": 42177,
+      "sha256": "21c66bd48181c33640387b9ed021c4853f4bacc87026c2f87f5971bb543e64c9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-checks/race.json",
+      "mode": "100644",
+      "blob": "cb3f214f1aa7c915d82ef2f366bcb2030c637620",
+      "size": 612,
+      "sha256": "e0b30f312e2b1ceb753b2524931bdab7513cd7324a3ecbec0d517fc04eaafea6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-checks/race.log",
+      "mode": "100644",
+      "blob": "f62e92eb8f36e394b0d508d02256e5078112160e",
+      "size": 192,
+      "sha256": "7dec31c896a036fc8a12c893854d1727109ec7b667df73a54610374c70d24395"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-checks/vet.json",
+      "mode": "100644",
+      "blob": "43dd7a0401f94b68cc450558c2edbcaaa6940db0",
+      "size": 413,
+      "sha256": "4068862771fce7ec9c3ba7251265936beaf3c61390318f45e1907081dce5a5f6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-checks/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-compatibility/RESULTS.json",
+      "mode": "100644",
+      "blob": "143a6c1daee2a5d43af8f4f5f1f8c1df25ba0da2",
+      "size": 527,
+      "sha256": "2b810f22d56f061cd15bc54debfc9de84e478f57bc8817c069df42ce5d53ff4e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-compatibility/new.log",
+      "mode": "100644",
+      "blob": "5013f44a4b2a56d2b33ffcbd5db760d1e33c5add",
+      "size": 170,
+      "sha256": "0e8c68b6d1c6d25fb2cd33d1e467e02b175dff698c00b35a74213c50108ace97"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-compatibility/old.log",
+      "mode": "100644",
+      "blob": "76ddfa388342780ee26e4128b9904ca49f8e0cd4",
+      "size": 278,
+      "sha256": "8455ddebace45e375c22f42c8196800867019c9f01a525682e316f2bae7e0195"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-go/go.json",
+      "mode": "100644",
+      "blob": "7c694ec4ba09b027ea90fd749f39300ec7584675",
+      "size": 463,
+      "sha256": "db18ce16a0678fc0dd98cfb8e6d05a595769a433ba6017835c978197d49f5cb2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-go/go.log",
+      "mode": "100644",
+      "blob": "5fb0c5edbb72d403627910033437da20ae03c7bc",
+      "size": 4334867,
+      "sha256": "8491e28d9899018d154c2e92c3f84796b442a8ee30697a9f21e5b1119a23f5c9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-helper/helper.json",
+      "mode": "100644",
+      "blob": "96bc2e39fbb06cd3734221aac7a42aa0573efa8a",
+      "size": 542,
+      "sha256": "f8bac241fad029474a158c79a03c0d6222a75321d8ff7b372ed499649b93670f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-helper/helper.log",
+      "mode": "100644",
+      "blob": "906743202b60b3fea4be8c9cf7792eb12f666eb2",
+      "size": 149123,
+      "sha256": "0ceda1258fdab61e8d9c6ea08507165390b27a66343a4a8fc8115d894732f0b0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-release-gates/canonical.json",
+      "mode": "100644",
+      "blob": "bbae52d33ab2bb7147a1b2a5218d9a7d817a6466",
+      "size": 425,
+      "sha256": "2531e6ddbfeabef5002868e5a71b3ce843ee2f75e07c3415a142c1cd8bde5dcc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-release-gates/canonical.log",
+      "mode": "100644",
+      "blob": "b95bdcc37a7dec0286eecbd59e41192c3b764bb0",
+      "size": 12010,
+      "sha256": "2f51e9be36e435817ce16577fa2c14036d9eb491df35498b4341b7d4c3eaa73a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-release-gates/go.json",
+      "mode": "100644",
+      "blob": "854b7fec9e65e63b3b148da26a778bf110b876c4",
+      "size": 463,
+      "sha256": "62daffb44442e0a0b002761ba861416d14bf9c81de056daf1b89e28ec8461b45"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-release-gates/go.log",
+      "mode": "100644",
+      "blob": "12ec81a0d95be5ddd6ae0f916a864c80e6779805",
+      "size": 4333985,
+      "sha256": "2c9aee61243de19e40e26f14b41ac4646fdc6d442188eb208b568801ae861cda"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-release-gates/vet.json",
+      "mode": "100644",
+      "blob": "7b6d1057ce980b00e78375638858734a53a94c33",
+      "size": 413,
+      "sha256": "15dbbecd89c441506e6ccb3b31ff1f206472c6badc81a0566d45cd9959c25496"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-release-gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-withdrawals/RESULTS.json",
+      "mode": "100644",
+      "blob": "52845c4e48451f3fae40eaa1ec4b01384c4a67d1",
+      "size": 714,
+      "sha256": "1bf922dc264546ef6362c49587d22ab51aba689461a33d5f0c4984117c9b4c9f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-withdrawals/baseline-go.log",
+      "mode": "100644",
+      "blob": "cc968bad293f8bf620e2623ee450d0cab08423e8",
+      "size": 189,
+      "sha256": "241956de1cf1430a9eaccaf239441b0bf5e5525e53ff75aaa1e627ef361dc1f7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-withdrawals/baseline-helper.log",
+      "mode": "100644",
+      "blob": "2668aaf82094515ec730be6adc290d5a824fceac",
+      "size": 746,
+      "sha256": "3670e307481b88536e46b8a3c7f44ff97ef899bd6bb5f40aa63dace112e2eba0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-withdrawals/bounded-invitation-summary.log",
+      "mode": "100644",
+      "blob": "d04cf9bbbb0eb64f49a8618a425e0ab38e60519e",
+      "size": 504,
+      "sha256": "63ba33964db8fe8f709a0908a112ec94265c39d5242b44f6151c500816b7059c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-withdrawals/restored-go.log",
+      "mode": "100644",
+      "blob": "38cb9e891b2bffa53abea976ce33dff18709e5ba",
+      "size": 189,
+      "sha256": "8f2d80c781aa425f8405d32a5e802eddd9a181fdb6538f1dface177f3cd019bd"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/final-withdrawals/restored-helper.log",
+      "mode": "100644",
+      "blob": "2668aaf82094515ec730be6adc290d5a824fceac",
+      "size": 746,
+      "sha256": "3670e307481b88536e46b8a3c7f44ff97ef899bd6bb5f40aa63dace112e2eba0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/console-agent-groups-vega-regression.js.json",
+      "mode": "100644",
+      "blob": "b90b494770f960c4229eb38b0c9610a50e214d6d",
+      "size": 321,
+      "sha256": "61fbfeefc3a0f72065861c44d8013dfafc9d1e52416ed7de9fedd432c2f61030"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/console-agent-groups-vega-regression.js.log",
+      "mode": "100644",
+      "blob": "a5e226c248067bcf0974472ab41a5571ed11e1fc",
+      "size": 904,
+      "sha256": "4845d113539a199cb7cf4e0650964f1ad2855310ca7718fe0654848cc80613d6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/console-agent-mgmt-enroll-regression.js.json",
+      "mode": "100644",
+      "blob": "c8deb2cc244a9da6353cb0c58314b0133b294eb1",
+      "size": 321,
+      "sha256": "69a9056d963759a992165889611fea91908330b244b346d260d01afc696b986f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/console-agent-mgmt-enroll-regression.js.log",
+      "mode": "100644",
+      "blob": "784fbc2289b337f95da4333646fbcd59e6d1500a",
+      "size": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/console-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "a71d88dedc8f30b1507e4cc00860c203a24204ce",
+      "size": 311,
+      "sha256": "3c295a033df6868daae4a3d84acf86cfaebf213df801e1304c43281eccf3e80a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/console-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "size": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/console-task-board-regression.js.json",
+      "mode": "100644",
+      "blob": "2a48cbf4cfe2566ebc54a1e92dae7a83c8109dab",
+      "size": 314,
+      "sha256": "1d366dd8335a3d39877ea2eab8e2615c27955286fbc9a9fce877b21385cc3fb5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/console-task-board-regression.js.log",
+      "mode": "100644",
+      "blob": "5b2215aecd549fa825b2ba666b3a12a00591e7fa",
+      "size": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/pilot-blocker-wake-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "ed12c6afdd69f7154f4a1bc221f0dace675e7b87",
+      "size": 322,
+      "sha256": "479db80bfcd84e5bb6b5b32203c63859de1c045168b7f0ac54db587691afeedd"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/pilot-blocker-wake-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "5dfd229df95fa4cfe45402e449d3b8c6c36b200e",
+      "size": 74,
+      "sha256": "18435bfdc48bbd84e845d39339ad7b2cc2b8c3f3a3ef127660a54a71dbc7ed94"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/pilot-feedback-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "cf57d5d1029cfc3e1187a64ea229ab16e72fd5c3",
+      "size": 318,
+      "sha256": "ea663814594e3bbcfb4043873288c8d22dc9c426f931020481993b4c89ebd903"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/pilot-feedback-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "e9baace8fe413e9e3f396dbaedb3438f2392303c",
+      "size": 70,
+      "sha256": "df7202577348d29563b0a8beb9ff56c8791d152987bc98928370428628bcc575"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/pilot-spec-template-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "63ad6f48b9e691e685f022f1426c3244cd8e9387",
+      "size": 323,
+      "sha256": "07773ba4caec70d86108b0826a408a9ddfcd11a6bef8f3c285af295d6d96bcd8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/pilot-spec-template-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "8e55216c8e98e385c9a54c76aadd6d416bdfc837",
+      "size": 75,
+      "sha256": "61036a9c51231b38eb05935d79de999586a01db6d88d061aa21b28f164f3336f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/r31-hosted-nodes-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "7a371bee2735c80283dd997d6e12652b3c1c0ccd",
+      "size": 320,
+      "sha256": "832f027a42b04eab416a852db67ab88951eab6831062c8707cef944b6daa858d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/r31-hosted-nodes-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "df5393359b7ce23db70d2fb4b6dc59ccfb0e4fe5",
+      "size": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/r32-spec-review-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "5184d10883e71ce560a2f1ca58db7b6938fae862",
+      "size": 319,
+      "sha256": "dca3da5a75392ddd49960dcb8657dec26c0e61372ba1d6ed51aa9cac10e9f79f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/r32-spec-review-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "74802d6e199805d4d61ddab722b4ba50da3a7cc4",
+      "size": 136,
+      "sha256": "3669a2aea92524e055b41c4428531a16b11dc061444b838c8771cabe5e7000d4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/r32-task-flow-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "fdae61e47e6bb7835d7827f5981bd37c45b503d3",
+      "size": 317,
+      "sha256": "9b46ff0fe792afad4492b3a8a182f8a578ea0ef100658b692f3f6301894121f6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-browser/r32-task-flow-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "dca2423d4573dada216137f9c5494865f5495c05",
+      "size": 49,
+      "sha256": "e5d1a5b632d94c223b81745d4d9ed14df42f73fe9ad1e317c6da4518e36f61e9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-compatibility/RESULTS.json",
+      "mode": "100644",
+      "blob": "6f69abe75806697776dc9a1e50fd6f919a62d70a",
+      "size": 527,
+      "sha256": "130884c07fcc28fb0793c2ae81845fbe5009d8c72b48ead001eb84d1da6beb36"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-compatibility/new.log",
+      "mode": "100644",
+      "blob": "cddb733cccab15cd99e831623f3f779bbd251f44",
+      "size": 170,
+      "sha256": "b3b79174b3dbda1010289c2af9588829e0ec360e5284b03870fb0ef203157ace"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-compatibility/old.log",
+      "mode": "100644",
+      "blob": "95455e68546996d8df40b5569433b3a7f826a82c",
+      "size": 278,
+      "sha256": "ea55822fda38a2aa0a0d008f15234e839b640811c59e48f26182516c778ad908"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-gates/canonical.json",
+      "mode": "100644",
+      "blob": "26a44668712c9f193c0afeeec8f7fb672a2fb375",
+      "size": 425,
+      "sha256": "f9e4570cfe280514b055c5605a4d80342a9d5022fbb916935f448c0b9f8d6e32"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-gates/canonical.log",
+      "mode": "100644",
+      "blob": "70a6148018a0aa3b316ad88b228c1f2e96a830cb",
+      "size": 12011,
+      "sha256": "97fa93b7426dda52e9018278b5dda3a9b77cbfa26fae18ea73b3795c8f32e227"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-gates/go.json",
+      "mode": "100644",
+      "blob": "002856e1a589e36f2b599045d2a0e7257d1849c2",
+      "size": 463,
+      "sha256": "a991b341d3a42cee92ec40a88c75e1a1295260710d619ddd801fd71330263636"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-gates/go.log",
+      "mode": "100644",
+      "blob": "8b0fed9c0683a0d36048189d98c5ee3e93b6758c",
+      "size": 4353114,
+      "sha256": "d7dd940fb468474d8b009dea4b6517eb3f1af477f8ab11d1a74791e73372fb08"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-gates/vet.json",
+      "mode": "100644",
+      "blob": "51ceb1fa6809b20f677eb37a215813cb3a125a55",
+      "size": 413,
+      "sha256": "c3ce044a11e421c2ec8f8320cceced1a7c6d554ea4954149d1997592c0413b80"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/RESULTS.json",
+      "mode": "100644",
+      "blob": "a894acdbf56a6d37dae13fbee044fb10ac44ce2f",
+      "size": 18899,
+      "sha256": "31dd1ea35778e1fe6681696e07dc61262a775c3c40ff4ecd0ed9d7e110b12012"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/actual-executor-cannot-review.log",
+      "mode": "100644",
+      "blob": "22dbe3380a1233da0fc25a803a9815df8d9d2b3a",
+      "size": 241,
+      "sha256": "00b7e18aa2cc856ca3b9305daadbb5611cae9822f2a6b86255ee810604d95087"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/baseline-go.log",
+      "mode": "100644",
+      "blob": "f3c6556f59e11670547be33a62b7b279a980c128",
+      "size": 189,
+      "sha256": "d53ce5552c580c9754c5ceeedcf5e2fbc30a938345b03ee4fab21834622cbb5d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/baseline-helper.log",
+      "mode": "100644",
+      "blob": "1b83db69a730de2b6f8209126a38a04d4d35626e",
+      "size": 746,
+      "sha256": "4592162f86df80e5438646423beae86b3ed1957c4d0fe3d39c9c918df946b438"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/confirm-final-pg-check.log",
+      "mode": "100644",
+      "blob": "e6d0fc50a5848bfae9b062f4e230591d2c5c68de",
+      "size": 202,
+      "sha256": "c66c3d08edbf9ac680ca58a99ba19ee9bb57e3ce8c2631525b0af9004245a1d3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/create-cannot-implicitly-start.log",
+      "mode": "100644",
+      "blob": "921c96e4d9bfbf22a0f3e1ac5644e60f63aba645",
+      "size": 221,
+      "sha256": "d7639ea954795313672ca249af227c807593bdba911ff7c4b880c99c163cbf82"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/d3-unchanged-copy-not-new-contract.log",
+      "mode": "100644",
+      "blob": "65aba99eb26509a61c3f31cafd1899642370ad52",
+      "size": 217,
+      "sha256": "7440469915684dda62f8d8370b45dac692d05669edb767c48e7afe4da18d36f2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/draft-final-pg-check.log",
+      "mode": "100644",
+      "blob": "51dc1ece1668932aad2a3f64f288addbf59dd8a3",
+      "size": 192,
+      "sha256": "f0a81e7cc789030e6f57db094e8b89629bf7424c5ed7e2cbf4ed617c9da54b90"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/driver-rechecks-template.log",
+      "mode": "100644",
+      "blob": "b61e7d4c8a8184fdb1563df1c6ec65e6025c2e31",
+      "size": 224,
+      "sha256": "2a4ec96b19e82b562577f05e811ce02d33dbc0b920ae07402eba7e2f9bb8dcad"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/full-human-review-receipt.log",
+      "mode": "100644",
+      "blob": "0c88e56507dd40fdcb701deba3b3846884e27f0a",
+      "size": 209,
+      "sha256": "32b336bd7aec2fb87a3c762221dacd9ba74151f964449c179daf0a39e0f65dc1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/group-required-for-template-start.log",
+      "mode": "100644",
+      "blob": "415bd7b865ba9aeee30a27ad698d74396a865fdc",
+      "size": 224,
+      "sha256": "62b7e524d69d6cbac8baf62ed7b04ad663de2be00333fdf42e5d07f8c7d6edaf"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/helper-no-human-operation.log",
+      "mode": "100644",
+      "blob": "00bf4a1f32dd729ea0c8d8bc0d324df9aec1b6ba",
+      "size": 1426,
+      "sha256": "362bfa260dad8a1111efc4374478278cc43745b8f5f867977e1283f37897f7b9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/helper-query-disjoint.log",
+      "mode": "100644",
+      "blob": "396c6335a827a4f50bc966cf002c70f5227aa26a",
+      "size": 1799,
+      "sha256": "366b0ff964327a1f23cb3582b74fa8c2a35fc187d30d034a64beedd1b6bb6f39"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/helper-strict-integer-version.log",
+      "mode": "100644",
+      "blob": "2d2b9d2df4eb5cae4e81f9411fc2a0e7bc6edced",
+      "size": 1851,
+      "sha256": "36fc337fba279f167b22828628a1fa3583a6097e55d778f16ab92883d35ace8f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/impact-blocks-old-execution.log",
+      "mode": "100644",
+      "blob": "8f473c0a78ff85a0419f3da61f8ca71a4cd86b2b",
+      "size": 267,
+      "sha256": "72a2737ed253479a69991f96be7abec00b97b67c56d8f75c306093963e9d08f0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/incomplete-contract-no-consent.log",
+      "mode": "100644",
+      "blob": "a62952f476cd57c2d3448217e02d4664f9b06405",
+      "size": 216,
+      "sha256": "709868579b80e1ef84bbde71656020ac53d8cf977b7fb38bc5ae10b7141c96ca"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/independent-review-required.log",
+      "mode": "100644",
+      "blob": "d661c0936bdda3f2fac2927a1e677efb0374001f",
+      "size": 238,
+      "sha256": "be5b534fa006db312d9c167fc60ad2e6a17049bec9230728cdc46f87c220ded2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/legacy-proposals-preserved.log",
+      "mode": "100644",
+      "blob": "0d0ff00ed3c727fa59a43a206d82a911dd4d9c90",
+      "size": 245,
+      "sha256": "791d374dfe783323ec0453bb5786dc16673c856dc43d4f10bf6c5908e36d3a32"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/no-agent-business-responsibility.log",
+      "mode": "100644",
+      "blob": "a49f5edf1c5f9a5dc070da0e8a2eda374849df36",
+      "size": 244,
+      "sha256": "ca4cf7c0216edd347d0e8a0cb3e7fd6eca1527e86a436bf38d37c92b4fc28dc0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/no-owner-proxy-receipt.log",
+      "mode": "100644",
+      "blob": "0b65270cc9756a0a431e097b9c680e0af62e4d13",
+      "size": 202,
+      "sha256": "9bce2cad6c6e42dd16a40e5823bb6bee44210fbd6454f6c59340f0e3e4a89761"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/no-receipt-transfer-between-versions.log",
+      "mode": "100644",
+      "blob": "abbd590a4d4213b46991dd9127c00ce6476094a6",
+      "size": 211,
+      "sha256": "21ce62d6fc2d47ef171662a79591270ea0d860948bbefc8a013aa5b3e7e7060c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/parent-final-only.log",
+      "mode": "100644",
+      "blob": "58e6b815f878c71d2f1b6c60ee1995afecbcc49b",
+      "size": 201,
+      "sha256": "ee2838b6244169f914ac154f2ee5bef5a25487906ad04db25915b7f521ce5e39"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/parent-sha-pinned.log",
+      "mode": "100644",
+      "blob": "61552ce8d26e5cfb49e7e2499a599327e711da2b",
+      "size": 203,
+      "sha256": "ef5489912e2c62b692a7ad074231d41517d5360ef2e9e96c0ad5dc12933a9d6a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/pg-current-actor-row-lock.log",
+      "mode": "100644",
+      "blob": "fcfa7b214b46887d30022d5a7a7d6b10a3cbce38",
+      "size": 205,
+      "sha256": "a69083b5bc94b8e55d470f744ddaa30d5df6a978d9e287560a74954f11c02ea2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/preview-current-role-only.log",
+      "mode": "100644",
+      "blob": "892e2d28a8432664b71f309e3e436ad24a76814c",
+      "size": 7411,
+      "sha256": "c3049f0e1e9ed6d488c8ada126a29ea24a1b0f74396099b3a07db7e4edd9d1fe"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/receipt-plan-cas.log",
+      "mode": "100644",
+      "blob": "12c1c224a2c63169ba9ab663581a316f6c12167c",
+      "size": 219,
+      "sha256": "442c1fbcaf40992f0be10ea75c2611302cb274396dc18197d8656855f27a53a2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/restored-go.log",
+      "mode": "100644",
+      "blob": "3ede8e8757068eded6f8a50293bc315679b1de76",
+      "size": 189,
+      "sha256": "2d38a5fe3d5f417ebeedb2a03c952b20f5abdf7f53647dc29b38e5661657c198"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/restored-helper.log",
+      "mode": "100644",
+      "blob": "2fcd2900efa25815ad5161e5d819d9b1b462559d",
+      "size": 746,
+      "sha256": "29877f8d76fac3041596246bb6671999a0dfd2fd7de1233e7f3c09c9d053d292"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/self-review-rejected.log",
+      "mode": "100644",
+      "blob": "e6b47ee8056c1acf727772c3bfb559a34d3d9e7e",
+      "size": 235,
+      "sha256": "acfd470676f9974882cd2b7bda9041069fabbf5a36601ee41cac590ec208d9e2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/six-fields-not-unknown.log",
+      "mode": "100644",
+      "blob": "4bee0df0ab0638a4f88841c7fbca1cfc05a4cdf3",
+      "size": 448,
+      "sha256": "2744d7b51f52412de0a88fdff7c22d901e4296a4e26f3729340f7f859f4bd879"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/source-https-only.log",
+      "mode": "100644",
+      "blob": "89af059801d70e56e0e84d385103381eb8a75700",
+      "size": 234,
+      "sha256": "d5daa6a6fb0bb4a949e9754d6aa6425b79154d46116f331a3cf330c1fefe9fd1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/source-owner-only.log",
+      "mode": "100644",
+      "blob": "6d00a6e7ccdc9d93eb4236c2c272950b12dc0cde",
+      "size": 203,
+      "sha256": "0c28da6b3c19f91b3f4e2842b6b1099a5b1afdeea5439a66a3374d3c26290963"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/source-request-immutable.log",
+      "mode": "100644",
+      "blob": "af1047e72de437f39249d8017f35c15fadb0680e",
+      "size": 202,
+      "sha256": "ec90229dd8c640bac137a7858bb50a7db95c4df14cb119dcb91c3f3e4576e438"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/source-tenant-suffix.log",
+      "mode": "100644",
+      "blob": "2cb8fcbf3c2eef2e6b8cf7ca60a40701c80876da",
+      "size": 227,
+      "sha256": "f71b84864c112426d8626a1f24dfd4ef44d7fe441487951bac496859386c00ab"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/sticky-template-enrollment.log",
+      "mode": "100644",
+      "blob": "ffa8596ed90a80e43400471168420af7148a515f",
+      "size": 225,
+      "sha256": "0081cbac602cc64b2a4088e7094a160091790ae735429160ddf91267578a8e21"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/stock-budget-preserved.log",
+      "mode": "100644",
+      "blob": "e52ce4311b685d084ba0aaf243489fb2e7a86142",
+      "size": 9075,
+      "sha256": "274708d18187563b6700902ac3d8364f74f9b6a2f8ea82ab41dd524d642023b0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/frozen-withdrawals/task-pair-matches-accepted-roles.log",
+      "mode": "100644",
+      "blob": "4e86feb32bca945b49a4c2b02a75c70709fdf013",
+      "size": 216,
+      "sha256": "92b2273d06089b51ca41083f4c65b65046d23e10d1a4716395ceed148d325216"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/preliminary-helper/SCOPE.json",
+      "mode": "100644",
+      "blob": "d9ae4acc33042d2b92d495089861ef131a1db611",
+      "size": 415,
+      "sha256": "74cbfa2e567ddda2df5064fce8e8dac11b6a74e106b79561f314ed2402019aac"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/preliminary-helper/helper.log",
+      "mode": "100644",
+      "blob": "5eb53467ea35a325ed806aaec914316972a6e84d",
+      "size": 172246,
+      "sha256": "6cbdbf0cf231213abe3497b6259bf4e4f43b1fc91dc081aab4d5410035bfa7da"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/preliminary-helper/rc.json",
+      "mode": "100644",
+      "blob": "c88a3461c5552c1ef6b54275253e1a99d61423f9",
+      "size": 54,
+      "sha256": "75d9001e3860edf76a753cae30e850cfd18b2b80e0bfc4528922003e1d2c295f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/release-gates/canonical.json",
+      "mode": "100644",
+      "blob": "beacfe4900c09dd54af92b5216094f2a32311bf2",
+      "size": 425,
+      "sha256": "18aadae84dc6222664d0be34a0ad8b156e424c16ce8ecba18080849924a847d4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/release-gates/canonical.log",
+      "mode": "100644",
+      "blob": "334685f0fe197c9f59c14fcd4febec760e0c8d42",
+      "size": 3519,
+      "sha256": "6cb31d6717de02debc9d958653990e9b0b9cf7cae97aae1623839b00dea33e33"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/release-gates/go.json",
+      "mode": "100644",
+      "blob": "b637906cb5e82f6110859fd5e48482979da89f10",
+      "size": 463,
+      "sha256": "f49cde79b0a797f2b96274448ba75979661165dc44bdff29515986d0ad90ee84"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/release-gates/go.log",
+      "mode": "100644",
+      "blob": "aef0294dff57f79ca6cc728e93bf082a83b4ae08",
+      "size": 4326971,
+      "sha256": "261bc5a411420421f3b43b9c044b5ffd4011c35b0362e74741c150febac033fd"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/release-gates/vet.json",
+      "mode": "100644",
+      "blob": "d12326e341c4a9f17c22f7a6a8a3959f7bc414b4",
+      "size": 413,
+      "sha256": "24918390b561d0af98d639c626c381a24afb6e83bdad445ae7f27cdaf0a0592d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/release-gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/RESULTS.json",
+      "mode": "100644",
+      "blob": "2b1517f665ca70904ef8f32d4fc3bc8346688a15",
+      "size": 18081,
+      "sha256": "e9589de91d3c1ffc5ee7427fb414d5ce80caa187277559cece180cb4381a667f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/actual-executor-cannot-review.log",
+      "mode": "100644",
+      "blob": "144fb990a569a2571e93e38708bc51484a33d2c3",
+      "size": 241,
+      "sha256": "b8d111aeb4c2ced20a84a381e2bb54d65ec357e5c5e31b6e88f28b5987519976"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/baseline-go.log",
+      "mode": "100644",
+      "blob": "8ef475fcc065ec83741a3f0f49a20c22e1c27064",
+      "size": 189,
+      "sha256": "ba7152d730a85c9403411f16f18f4befd2f122927642d235118236bd170a6db1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/baseline-helper.log",
+      "mode": "100644",
+      "blob": "82519fcc585fb39851a069e29411358977d2d4f0",
+      "size": 746,
+      "sha256": "2361fd56829e5f79d3a266368308ab034de5faca1484ecfced6a3d220a891f37"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/confirm-final-pg-check.log",
+      "mode": "100644",
+      "blob": "727d499f9e16ff03874008588d0400aaae03ca8b",
+      "size": 202,
+      "sha256": "20aac5ad852c2424363cc06e8ad297bd6cf993afe8d6764783346ea50be2f8ba"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/create-cannot-implicitly-start.log",
+      "mode": "100644",
+      "blob": "e930b0e1c98b38ce1f51f063129422c7119b4982",
+      "size": 221,
+      "sha256": "8d41c104f618107a91df2b92a63d28dc53f198a9d9948e54cf44809f0b75b5ce"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/d3-unchanged-copy-not-new-contract.log",
+      "mode": "100644",
+      "blob": "65683312bfecd51849ec2e2f8dc2f0926aba7818",
+      "size": 217,
+      "sha256": "371da8c05ea3e540509d513e9f9933297f3097fd6c7330d23456b83dbe5565c1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/draft-final-pg-check.log",
+      "mode": "100644",
+      "blob": "461d1667e87a32dd880d78148fa7f12b2d4eb2e9",
+      "size": 192,
+      "sha256": "6da588ba6a5323ece9484770768fd07a598363ae598037945dafd5c3fff00ea1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/driver-rechecks-template.log",
+      "mode": "100644",
+      "blob": "1ff01886c41ec9dcd2434f8861259710af4d3d76",
+      "size": 224,
+      "sha256": "df92fb583239d34d9647039b606dd26844f386295e71cc053a6edf5aff6e1461"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/full-human-review-receipt.log",
+      "mode": "100644",
+      "blob": "9894cc00de75151762ceffad799e89ddc86156bf",
+      "size": 209,
+      "sha256": "ffec1cdbf3c1079b656cfc5b49de721fd7e23aa0a2b5d425617e8e9de9101ce0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/group-required-for-template-start.log",
+      "mode": "100644",
+      "blob": "cad2a762cd6a8b381d9303431e6988c300306806",
+      "size": 224,
+      "sha256": "f3c491b963d66254a04c8c803f363516d970988d235f5caac8b8ec43c2b5e601"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/helper-no-human-operation.log",
+      "mode": "100644",
+      "blob": "cf5b27285b36d1b914621366351ac1939b5dd77a",
+      "size": 1426,
+      "sha256": "716a5d6f50a64be4efde5afe8b9d0842dae5715f032b564589129c65703926a7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/helper-query-disjoint.log",
+      "mode": "100644",
+      "blob": "dc8b260dee193272dfb14599969c228fc4657e87",
+      "size": 1799,
+      "sha256": "f039253882802f9fbba1518fca6a4d077cb41b397f85d60a81253570de69d38a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/helper-strict-integer-version.log",
+      "mode": "100644",
+      "blob": "5ab01cb926030128ced17d2f640122acd56bc300",
+      "size": 1851,
+      "sha256": "590c2384bb19299e803af0c3248dade2a81942309cd8f6a2bfdf63b88867b4ee"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/impact-blocks-old-execution.log",
+      "mode": "100644",
+      "blob": "73e09961be3a80d856cb96c01e335c20632f8d63",
+      "size": 267,
+      "sha256": "bd20da544663b296d0033d6286b48693480dcb94fa8160b4223621cc19448563"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/incomplete-contract-no-consent.log",
+      "mode": "100644",
+      "blob": "e1117252edd3081f8d76c652fc1ebd9093984f38",
+      "size": 216,
+      "sha256": "cf4d667bc9496af82c422f93702ca9f08a7df6249fa60704f7b2a0c1223cfde3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/independent-review-required.log",
+      "mode": "100644",
+      "blob": "b8aae2691e1c288c2999927011a2e963d7e0ae6c",
+      "size": 238,
+      "sha256": "baf374e1802178e3a684d7ce146ebea1c0490f1f39c32d65d707a8cb47a65163"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/no-agent-business-responsibility.log",
+      "mode": "100644",
+      "blob": "161d62857e7b8d00e2ca45ebbfc96bd534db4e55",
+      "size": 244,
+      "sha256": "d0dfb8d1364cb5add46b72d2934d150e977623845e3943ed5d73679c4e10eb0f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/no-owner-proxy-receipt.log",
+      "mode": "100644",
+      "blob": "59014c3ed39c880d854543c98b6772a65744d74d",
+      "size": 202,
+      "sha256": "216fa664d0ced92b05f384a4f3531661c5122d8a3c6264099535a5d926d1793c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/no-receipt-transfer-between-versions.log",
+      "mode": "100644",
+      "blob": "9dd2c9ec217419b894d7cf3a9123e465f011b479",
+      "size": 211,
+      "sha256": "a08bc8fe93cede97b7328a73f83b637c0b7916cdb81c29f0a368d2653a88321b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/parent-final-only.log",
+      "mode": "100644",
+      "blob": "bec08ca8eae2642d9ea750e981998ef468205fc7",
+      "size": 201,
+      "sha256": "8a08ef9445d3e6dd844de7ffa563961d08a16dc3f3978187f6ed065faf18383b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/parent-sha-pinned.log",
+      "mode": "100644",
+      "blob": "502db57c8e505fd07327230c1c79411622d6a13a",
+      "size": 203,
+      "sha256": "f1b86fe246246156c4ba0ea61b0c772961515dd894e8b181ebf8955d3b60b732"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/pg-current-actor-row-lock.log",
+      "mode": "100644",
+      "blob": "005c1cee00c15f28b6b186e9a950e2fe46a25e7e",
+      "size": 205,
+      "sha256": "0acecf77b2d1b7787473ea2ffd66c8e2c5f24250e71591d6adfd0cf0a8f5edb7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/preview-current-role-only.log",
+      "mode": "100644",
+      "blob": "a84a26c020a23c392ceab57039ce690160ccfcd4",
+      "size": 7411,
+      "sha256": "270c6a513874b74b4100da77aba1a56111e6593b7e0b66a6d5ca8f52301b66a6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/receipt-plan-cas.log",
+      "mode": "100644",
+      "blob": "c8463dd7566abdcb7280d629b1d9028ce84c6008",
+      "size": 219,
+      "sha256": "128ae7970141a119e8f32e44ff8cf6a2e50c5a780d7ff2f2b054fe922d7da008"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/restored-go.log",
+      "mode": "100644",
+      "blob": "d2a4f63921673d1048287c3ffd7fa0b3cb36ed79",
+      "size": 189,
+      "sha256": "93ae1f46891519a229f7153a72b03d7bdf7f232fa6fc51b25dbd08d0d5c71bf1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/restored-helper.log",
+      "mode": "100644",
+      "blob": "1b83db69a730de2b6f8209126a38a04d4d35626e",
+      "size": 746,
+      "sha256": "4592162f86df80e5438646423beae86b3ed1957c4d0fe3d39c9c918df946b438"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/self-review-rejected.log",
+      "mode": "100644",
+      "blob": "5dac04148b92401d1f6cc2322986fa332bf70695",
+      "size": 235,
+      "sha256": "f7f2e0b6503fc0764ace02caa3bff1931326c30e70e574e33df963a8a565d606"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/six-fields-not-unknown.log",
+      "mode": "100644",
+      "blob": "08a96c65df449c61e4f97f69963356e750b62722",
+      "size": 448,
+      "sha256": "a7f21fb15be381816028205e10b4876f101ddd45cc4773f768b8b6d1fc4a69ca"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/source-https-only.log",
+      "mode": "100644",
+      "blob": "2457d1f6095b1da95e52cfa36a30b9e703497a2c",
+      "size": 234,
+      "sha256": "b7b2b1194d933cdca727749b68592df10fa772fefac8dddd47c49ea29cf76a3e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/source-owner-only.log",
+      "mode": "100644",
+      "blob": "a80e6877dcf96670beaf004199bcbdaec1d1ebdb",
+      "size": 203,
+      "sha256": "f8cc199c1605d51ab529c3e7a15152de49eb87d269a28ccee1bbddad546adf62"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/source-request-immutable.log",
+      "mode": "100644",
+      "blob": "ffe816e94f2213109db40566dd4f9454b33a8a2e",
+      "size": 202,
+      "sha256": "82a9f4e5e29da4a1979a9f1b604e385f534262ce63ebe940d6373914165d3185"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/source-tenant-suffix.log",
+      "mode": "100644",
+      "blob": "1bad4ed47edba8bedeb02360b1f2989787cb1ff3",
+      "size": 227,
+      "sha256": "da397df7a59d5783b672477cb0bb0debe4c1c9ac037c6c389532a1de960581db"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/sticky-template-enrollment.log",
+      "mode": "100644",
+      "blob": "a386ff281807161ac75322183838cb2e62887a9b",
+      "size": 225,
+      "sha256": "950b202f74e471ea0a4a89cd6bdb616db3bb2df91ea2772d4f13816ccc16554b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/stock-budget-preserved.log",
+      "mode": "100644",
+      "blob": "9a83350c376ec37d2287d3579426f0bc6f3773f4",
+      "size": 9075,
+      "sha256": "e4534d2fa0a52ca4b82e22d689e72d551d24dfa6fa8730e2e568f640bdc3a3ba"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-final/task-pair-matches-accepted-roles.log",
+      "mode": "100644",
+      "blob": "d5b2381dd495d0889d92615b133c3fa1b8fc3010",
+      "size": 216,
+      "sha256": "035d0cc01991c9d6149fe1ae2af783831c6b273c101ef2b1ffb5a63e28ce5d61"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-initial/RESULTS.json",
+      "mode": "100644",
+      "blob": "da2902d90ddbaf4d8bf7049be357bfb32ec32c51",
+      "size": 3393,
+      "sha256": "4c992b764ac593bf9a362877a82d204a9b866a90caf6420a16a285cbde526948"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-initial/baseline-go.log",
+      "mode": "100644",
+      "blob": "e81a21bd41c24c236ce0fde9fc2aa190c911b58a",
+      "size": 189,
+      "sha256": "4ea72a3fcb1ed355f45104d2f1897d0b542321240838722937a4da7cd792fe16"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-initial/baseline-helper.log",
+      "mode": "100644",
+      "blob": "82519fcc585fb39851a069e29411358977d2d4f0",
+      "size": 746,
+      "sha256": "2361fd56829e5f79d3a266368308ab034de5faca1484ecfced6a3d220a891f37"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-initial/no-agent-business-responsibility.log",
+      "mode": "100644",
+      "blob": "5343618d26431631b4d9df11736f8b3c40e55e51",
+      "size": 63,
+      "sha256": "5a96a88aecfb9675b92039032b3a18b7bf22723ef1299789329240cbe4ab87db"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-initial/six-fields-not-unknown.log",
+      "mode": "100644",
+      "blob": "cd1e8f4f2d1a36394ce0400179b096c858bfc74b",
+      "size": 448,
+      "sha256": "6c3475f7c37400125b6704a7be5d591b86fdb86b8a3b03bc982da179f4c59fc5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-initial/source-https-only.log",
+      "mode": "100644",
+      "blob": "af7fc8e9a985880d6a3e1594ff33eb0b97c4004e",
+      "size": 234,
+      "sha256": "636858121cbd5464f23b831350e7ffc2da661c9138d89af512cdb2b139ccb692"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-initial/source-owner-only.log",
+      "mode": "100644",
+      "blob": "c05e6d17272ba13b51115d2189a022c43f1ad645",
+      "size": 203,
+      "sha256": "bcca2d20fa7f0081540329d8d8e3f427654094cfafd6152c8da90521ed175b2d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-initial/source-request-immutable.log",
+      "mode": "100644",
+      "blob": "a48938d58af9dc17624b4ad9d4310eb6998572e2",
+      "size": 202,
+      "sha256": "e7c272767f6ea1c3a8a8a978319357cd277abc43a22f52c45fe54f55444db59b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-spec-template-impl/withdrawals-initial/source-tenant-suffix.log",
+      "mode": "100644",
+      "blob": "eaf1350b069cb49136f6554400433c3077880459",
+      "size": 227,
+      "sha256": "3552632cd79ac57edb80b323cc462ea7f889c45277d35d34838a2eafaf4a8e18"
+    }
+  ]
+}

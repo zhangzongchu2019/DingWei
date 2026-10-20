@@ -1,0 +1,13 @@
+{
+  "commit": "28422250f347b3b25d321b3cb83d76ca64dddd89",
+  "argv": [
+    "node",
+    "view-service/pilot-blocker-wake-browser-regression.js"
+  ],
+  "rc": 0,
+  "start": "2026-10-20T19:43:52.685030+00:00",
+  "end": "2026-10-20T19:43:54.283719+00:00",
+  "isolated_home": true,
+  "git_export": true,
+  "live_access": false
+}

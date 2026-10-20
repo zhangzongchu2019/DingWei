@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateSourceProvenanceDedupeAndSSRF (0.14s)
+    pilot_template_test.go:198: TEMPLATE_SOURCE_REQUEST_REBOUND
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.143s
+FAIL

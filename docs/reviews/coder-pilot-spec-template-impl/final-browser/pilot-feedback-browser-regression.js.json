@@ -1,0 +1,13 @@
+{
+  "commit": "279f75f6993cb734421b1f65cf617b011d348f36",
+  "argv": [
+    "node",
+    "view-service/pilot-feedback-browser-regression.js"
+  ],
+  "rc": 0,
+  "start": "2026-10-20T20:23:45.197429+00:00",
+  "end": "2026-10-20T20:23:51.987595+00:00",
+  "isolated_home": true,
+  "git_export": true,
+  "live_access": false
+}

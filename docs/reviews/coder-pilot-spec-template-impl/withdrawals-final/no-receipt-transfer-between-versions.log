@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateRevisionInvalidatesReceiptsAndKeepsOldBody (0.14s)
+    pilot_template_test.go:224: TEMPLATE_OLD_RECEIPT_REUSED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.143s
+FAIL

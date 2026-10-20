@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateReceiptCannotProxyAndWithdrawal (0.16s)
+    pilot_template_test.go:150: TEMPLATE_OWNER_PROXY_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.167s
+FAIL

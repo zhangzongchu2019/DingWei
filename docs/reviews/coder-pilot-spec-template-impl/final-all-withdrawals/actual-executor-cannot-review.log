@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateActualExecutorCannotPerformIndependentReview (0.13s)
+    pilot_template_test.go:670: TEMPLATE_ACTUAL_EXECUTOR_ACCEPTED_AS_INDEPENDENT_REVIEW
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.130s
+FAIL

@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateFullRequiresScopedHumanReceipt (0.13s)
+    pilot_template_test.go:635: TEMPLATE_FULL_HUMAN_CHECKBOX_BYPASSED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.131s
+FAIL

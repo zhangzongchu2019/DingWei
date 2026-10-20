@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateTaskAssignmentAndImpactGuard (0.14s)
+    pilot_template_test.go:447: TEMPLATE_OLD_SCOPE_EXECUTION_NOT_BLOCKED {template-task owner-a false group 2 1 dev review false}
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.147s
+FAIL

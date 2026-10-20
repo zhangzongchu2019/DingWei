@@ -1,0 +1,19 @@
+test_list_get_disjoint (test_pilot_template.PilotTemplateTest.test_list_get_disjoint) ... ok
+test_old_helper_fails_closed (test_pilot_template.PilotTemplateTest.test_old_helper_fails_closed) ... ok
+test_one_new_visible_tool (test_pilot_template.PilotTemplateTest.test_one_new_visible_tool) ... ok
+test_roles_and_human_boundary (test_pilot_template.PilotTemplateTest.test_roles_and_human_boundary) ... FAIL
+test_strict_version_and_hash (test_pilot_template.PilotTemplateTest.test_strict_version_and_hash) ... ok
+test_unknown_never_retried_or_secret_returned (test_pilot_template.PilotTemplateTest.test_unknown_never_retried_or_secret_returned) ... ok
+
+======================================================================
+FAIL: test_roles_and_human_boundary (test_pilot_template.PilotTemplateTest.test_roles_and_human_boundary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/template-withdraw-o2x49ao3/source/tools/sessionhelper/tests/test_pilot_template.py", line 14, in test_roles_and_human_boundary
+    with patch.object(mcp_shim,'_ipc_request'),self.assertRaises(ValueError,msg='TEMPLATE_MCP_HUMAN_BOUNDARY'):mcp_shim._dw_spec_template(dict(receipt(),**{key:value}))
+AssertionError: ValueError not raised : TEMPLATE_MCP_HUMAN_BOUNDARY
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.036s
+
+FAILED (failures=1)

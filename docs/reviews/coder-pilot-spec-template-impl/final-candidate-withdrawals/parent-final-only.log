@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateParentMustBeFinalAndCurrent (0.12s)
+    pilot_template_test.go:469: TEMPLATE_MUTABLE_PARENT_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.128s
+FAIL

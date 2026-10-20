@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateSourceProvenanceDedupeAndSSRF (0.14s)
+    pilot_template_test.go:193: TEMPLATE_SSRF_SOURCE_ACCEPTED http://fixture.feishu.cn/docx/Doc
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.139s
+FAIL

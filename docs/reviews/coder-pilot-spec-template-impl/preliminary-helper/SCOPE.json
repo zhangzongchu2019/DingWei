@@ -1,0 +1,14 @@
+{
+  "source": "unfrozen worktree during implementation; diagnostic only",
+  "isolated_home": true,
+  "cleared_environment": true,
+  "result": {
+    "tests": 779,
+    "failures": 19,
+    "errors": 1,
+    "rc": 1
+  },
+  "cause": "direct mcp_shim entry called serve before new tool registration; transport error fixture also lacked new tool arguments",
+  "preserved_original": true,
+  "not_final_release_gate": true
+}

@@ -1,0 +1,25 @@
+test_list_get_disjoint (test_pilot_template.PilotTemplateTest.test_list_get_disjoint) ... ok
+test_old_helper_fails_closed (test_pilot_template.PilotTemplateTest.test_old_helper_fails_closed) ... ok
+test_one_new_visible_tool (test_pilot_template.PilotTemplateTest.test_one_new_visible_tool) ... ok
+test_roles_and_human_boundary (test_pilot_template.PilotTemplateTest.test_roles_and_human_boundary) ... ok
+test_strict_version_and_hash (test_pilot_template.PilotTemplateTest.test_strict_version_and_hash) ... ERROR
+test_unknown_never_retried_or_secret_returned (test_pilot_template.PilotTemplateTest.test_unknown_never_retried_or_secret_returned) ... ok
+
+======================================================================
+ERROR: test_strict_version_and_hash (test_pilot_template.PilotTemplateTest.test_strict_version_and_hash)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/template-withdraw-8l401eoq/source/tools/sessionhelper/tests/test_pilot_template.py", line 17, in test_strict_version_and_hash
+    with self.assertRaises(ValueError,msg='TEMPLATE_MCP_PLAN_CAS_WEAK'):mcp_shim._dw_spec_template(dict(receipt(),**{k:v}))
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/template-withdraw-8l401eoq/source/tools/sessionhelper/sessionhelper/mcp_shim.py", line 792, in _dw_spec_template
+    try:return _ipc_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/template-withdraw-8l401eoq/source/tools/sessionhelper/sessionhelper/mcp_shim.py", line 159, in _ipc_request
+    raise _transport_failure(exc) from None
+sessionhelper.mcp_shim._IPCFailure: ipc_unavailable
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.037s
+
+FAILED (errors=1)

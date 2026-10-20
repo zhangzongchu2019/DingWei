@@ -1,0 +1,33 @@
+{
+  "recorded_utc": "2026-10-20T20:02:00.457119+00:00",
+  "worktree": "/data/ai-dev-data/pilot-spec-template-impl",
+  "source": "279f75f6993cb734421b1f65cf617b011d348f36",
+  "source_tree": "25a89f7eab44c6dec81fc66d3f8652956b5b4953",
+  "uid": 1001,
+  "gid": 1001,
+  "cores": 16,
+  "umask": "0022",
+  "go": "go1.22.2 linux/amd64",
+  "python": "3.12.3",
+  "node": "v22.23.1",
+  "helper_python": "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+  "helper_dependency_lock": "tools/sessionhelper/requirements-runtime.lock",
+  "helper_dependency_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "gates_use_git_exports": true,
+  "gates_use_temporary_HOME_and_cleared_environment": true,
+  "external_DSN_unset": true,
+  "go_dependencies_offline": true,
+  "embedded_PG_binary_cache_only": "/home/dev/.embedded-postgres-go",
+  "browser_node_modules": "/tmp/coder-a3-playwright/node_modules",
+  "browser_channel": "chrome",
+  "no_deployment": true,
+  "no_live_hosts_or_seats": true,
+  "no_live_Feishu_requests": true,
+  "review_requested_from": [
+    "opus50tc2k.zzc",
+    "prodops.zzc"
+  ],
+  "review_result": "not received; author evidence only",
+  "candidate_source": "279f75f6993cb734421b1f65cf617b011d348f36",
+  "runtime_source": "279f75f6993cb734421b1f65cf617b011d348f36"
+}

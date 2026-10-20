@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateRealFinalSuccessorAndStickyEnrollment (0.16s)
+    pilot_template_test.go:345: TEMPLATE_ENROLLMENT_DROPPED_ON_LEGACY_REVISION
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.165s
+FAIL

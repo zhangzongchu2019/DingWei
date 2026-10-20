@@ -1,0 +1,6 @@
+--- FAIL: TestPilotTemplateMissingSixFieldsAndIdentity (0.15s)
+    --- FAIL: TestPilotTemplateMissingSixFieldsAndIdentity/method (0.15s)
+        pilot_template_test.go:139: TEMPLATE_MISSING_NOT_EXPLICIT [{roles.R1.executor actual_principal_acceptance_required} {roles.R1.reviewer actual_principal_acceptance_required} {roles.R1.signoff actual_principal_acceptance_required}]
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.154s
+FAIL

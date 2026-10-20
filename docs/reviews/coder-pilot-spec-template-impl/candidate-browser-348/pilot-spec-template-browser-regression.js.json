@@ -1,0 +1,13 @@
+{
+  "commit": "348b7c49240c01655e2d56657c08c56c2867b033",
+  "argv": [
+    "node",
+    "view-service/pilot-spec-template-browser-regression.js"
+  ],
+  "rc": 0,
+  "start": "2026-10-20T20:03:31.969399+00:00",
+  "end": "2026-10-20T20:03:33.690318+00:00",
+  "isolated_home": true,
+  "git_export": true,
+  "live_access": false
+}

@@ -1,0 +1,25 @@
+{
+  "commit": "279f75f6993cb734421b1f65cf617b011d348f36",
+  "cases": [
+    {
+      "name": "bounded-invitation-summary",
+      "file": "internal/m8/pilot_template.go",
+      "old": "v.Document = store.TemplateDocument{Title: v.Document.Title, Kind: v.Document.Kind, TemplateVersion: v.Document.TemplateVersion}",
+      "new": "v.Document = v.Document",
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateListSummariesFitBoundedHelperRead$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_LIST_EXCEEDS_HELPER_READ_BOUND",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 9.44
+    }
+  ]
+}

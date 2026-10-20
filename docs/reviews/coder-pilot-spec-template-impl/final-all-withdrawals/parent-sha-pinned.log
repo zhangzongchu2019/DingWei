@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateParentMustBeFinalAndCurrent (0.13s)
+    pilot_template_test.go:481: TEMPLATE_PARENT_SHA_DRIFT_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.129s
+FAIL

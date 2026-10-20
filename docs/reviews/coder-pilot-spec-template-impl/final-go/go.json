@@ -1,0 +1,20 @@
+{
+  "commit": "279f75f6993cb734421b1f65cf617b011d348f36",
+  "argv": [
+    "go",
+    "test",
+    "./...",
+    "-json",
+    "-count=1",
+    "-timeout=30m"
+  ],
+  "rc": 0,
+  "start": "2026-10-20T20:21:54.852709+00:00",
+  "end": "2026-10-20T20:34:05.262308+00:00",
+  "git_export": true,
+  "isolated_home": true,
+  "cleared_environment": true,
+  "offline_dependencies": true,
+  "embedded_pg_binary_cache_only": "/home/dev/.embedded-postgres-go",
+  "DSN_unset": true
+}

@@ -1,0 +1,9 @@
+PASS administrator sees hosted-node page and safe admin_only default
+PASS registration displays credential once with intended request fields
+PASS done clears credential from DOM and browser storage
+PASS editing changes access/address without reissuing credentials
+PASS disable sends only scheduling state; access stays unchanged
+PASS drain is explicit scheduling action
+PASS manager without platform-admin capability has no node page
+PASS no browser errors
+R31 hosted-node browser: passed=8 failed=0

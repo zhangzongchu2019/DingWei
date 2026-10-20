@@ -1,0 +1,125 @@
+{
+  "commit": "8ce8e378817b6de1373851e2446594d64dcd9878",
+  "cases": [
+    {
+      "name": "source-request-immutable",
+      "file": "internal/store/pilot_template_source.go",
+      "old": "if hash != payload {",
+      "new": "if false && hash != payload {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateSourceProvenanceDedupeAndSSRF$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_SOURCE_REQUEST_REBOUND",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.685
+    },
+    {
+      "name": "source-owner-only",
+      "file": "internal/store/pilot_template_source.go",
+      "old": "id, owner))",
+      "new": "id, \"owner-a\"))",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateSourceProvenanceDedupeAndSSRF$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_SOURCE_CROSS_OWNER_READ",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.668
+    },
+    {
+      "name": "source-https-only",
+      "file": "internal/store/pilot_template_types.go",
+      "old": "u.Scheme != \"https\"",
+      "new": "false && u.Scheme != \"https\"",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateSourceProvenanceDedupeAndSSRF$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_SSRF_SOURCE_ACCEPTED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.718
+    },
+    {
+      "name": "source-tenant-suffix",
+      "file": "internal/store/pilot_template_types.go",
+      "old": "!(strings.HasSuffix(host, \".feishu.cn\") || strings.HasSuffix(host, \".larksuite.com\"))",
+      "new": "false",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateSourceProvenanceDedupeAndSSRF$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_SSRF_SOURCE_ACCEPTED",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.698
+    },
+    {
+      "name": "six-fields-not-unknown",
+      "file": "internal/store/pilot_template_validation.go",
+      "old": "if templateUnknown(field.v) || len(field.v) > 8192 {",
+      "new": "if false {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateMissingSixFieldsAndIdentity/method$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_MISSING_NOT_EXPLICIT",
+      "last": false,
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.641
+    },
+    {
+      "name": "no-agent-business-responsibility",
+      "file": "internal/store/pilot_template_validation.go",
+      "old": "if !strings.HasPrefix(f.Signoff, \"user:\") || !templatePrincipal(f.Signoff) {",
+      "new": "if false {",
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotTemplateMissingReviewOrAgentSignoffRejected$",
+        "-timeout=2m"
+      ],
+      "marker": "TEMPLATE_INDEPENDENT_REVIEW_OR_HUMAN_SIGNOFF_BYPASSED",
+      "last": false,
+      "rc": 0,
+      "designated_red": false,
+      "seconds": 1.608
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplatePGCurrentPrincipalAndRoleLocks (8.41s)
+    pilot_template_test.go:109: TEMPLATE_PG_AUTH_LOCK_NOT_HELD
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/identity	8.411s
+FAIL

@@ -1,0 +1,17 @@
+{
+  "commit": "348b7c49240c01655e2d56657c08c56c2867b033",
+  "argv": [
+    "go",
+    "vet",
+    "./..."
+  ],
+  "rc": 0,
+  "start": "2026-10-20T20:17:05.690569+00:00",
+  "end": "2026-10-20T20:17:07.410383+00:00",
+  "git_export": true,
+  "isolated_home": true,
+  "cleared_environment": true,
+  "offline_dependencies": true,
+  "embedded_pg_binary_cache_only": "/home/dev/.embedded-postgres-go",
+  "DSN_unset": true
+}

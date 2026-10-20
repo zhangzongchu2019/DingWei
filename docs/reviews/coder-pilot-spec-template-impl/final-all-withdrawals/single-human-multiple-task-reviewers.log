@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateSingleHumanMayUseDifferentCaseReviewAgents (0.11s)
+    pilot_template_test.go:738: TEMPLATE_ACTUAL_SPEC_REVIEW_MUST_FINALIZE console spec generation gate incomplete
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.115s
+FAIL

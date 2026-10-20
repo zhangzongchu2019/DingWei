@@ -1,0 +1,13 @@
+{
+  "commit": "279f75f6993cb734421b1f65cf617b011d348f36",
+  "argv": [
+    "node",
+    "view-service/console-agent-groups-vega-regression.js"
+  ],
+  "rc": 0,
+  "start": "2026-10-20T20:24:40.061053+00:00",
+  "end": "2026-10-20T20:24:42.072947+00:00",
+  "isolated_home": true,
+  "git_export": true,
+  "live_access": false
+}

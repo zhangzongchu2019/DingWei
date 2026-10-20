@@ -1,0 +1,22 @@
+{
+  "commit": "279f75f6993cb734421b1f65cf617b011d348f36",
+  "argv": [
+    "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/sessionhelper/tests",
+    "-v"
+  ],
+  "rc": 0,
+  "start": "2026-10-20T20:25:27.228720+00:00",
+  "end": "2026-10-20T20:32:22.495030+00:00",
+  "git_export": true,
+  "isolated_home": true,
+  "cleared_environment": true,
+  "offline_dependencies": true,
+  "embedded_pg_binary_cache_only": "/home/dev/.embedded-postgres-go",
+  "DSN_unset": true
+}

@@ -1,0 +1,6 @@
+{
+  "runtime_source": "279f75f6993cb734421b1f65cf617b011d348f36",
+  "complete_reproducible_source": "279f75f6993cb734421b1f65cf617b011d348f36",
+  "changed_paths": [],
+  "statement": "Runtime, all Go/Python/browser tests, build contract and the complete reproducible source share this exact source anchor. Later commits add docs/evidence only."
+}

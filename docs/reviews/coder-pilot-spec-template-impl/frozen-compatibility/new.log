@@ -1,0 +1,4 @@
+=== RUN   TestPilotTemplateCompatibilityExport
+--- PASS: TestPilotTemplateCompatibilityExport (0.15s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.150s

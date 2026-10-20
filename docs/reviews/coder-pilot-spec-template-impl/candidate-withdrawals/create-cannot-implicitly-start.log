@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateLegacyTaskPathsCannotSkipCurrentContract (0.16s)
+    pilot_template_test.go:560: TEMPLATE_CREATE_IMPLICITLY_STARTED_TASK
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.160s
+FAIL

@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateTaskAssignmentAndImpactGuard (0.15s)
+    pilot_template_test.go:427: TEMPLATE_TASK_PAIR_DIFFERS_FROM_ACCEPTED_ROLES
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.156s
+FAIL

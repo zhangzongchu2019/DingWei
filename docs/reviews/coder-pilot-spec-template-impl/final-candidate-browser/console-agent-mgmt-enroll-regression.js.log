@@ -1,0 +1,21 @@
+PASS failed first load shows the reason and a reachable retry; retry loads the rows
+PASS each row shows IP, fingerprint (shortened), client version, request time — no CLI choice, no remaining time
+PASS an older, slower list response never overwrites a newer one
+PASS first-version defaults: the self-hosted review area is there; the hosted area is not rendered and the page never asks for hosted options
+PASS A3 direct: owned roster has no retired pending entry or polling
+PASS group dropdown: no-group first and default, then manageable groups, then new group
+PASS empty required fields are hinted locally and nothing is sent
+PASS the group is optional: with no manageable group (or none chosen) approve still goes out, with no group key at all
+PASS wrong pairing code: Hub message shown, application kept, typed inputs kept, editor stays open
+PASS duplicate name (case-insensitive, Hub-judged) is refused with the Hub text; no auto-rename
+PASS invalid name is refused by the Hub, shown in our own words, input kept
+PASS valid approve: editor closes, row and same-device sibling vanish, new agent appears in roster and nav
+PASS reject asks for confirmation; dismissing sends nothing, accepting removes the application
+PASS roster lists own agents; revoke is confirmed, dismiss sends nothing, Hub refusal is shown, success removes the row
+PASS five wrong pairing codes: last answer says the application was rejected, row leaves the list
+PASS not_pending on approve (handled elsewhere): our wording, editor closes, list refreshes
+PASS new group: choosing it shows a name box; an empty or malformed name is blocked locally with nothing sent; a valid name sends new_group_name and no group_code
+PASS Hub group refusals (closed / missing / name taken) are shown in our wording, never the Hub text, and the typed values are kept
+PASS the group panel keeps list and create, and joins by exact 32-character code using only an owned Agent (current A1)
+PASS no pageerror and no unexpected console error across the whole run
+enroll review browser: passed=20 failed=0 mutation=none
