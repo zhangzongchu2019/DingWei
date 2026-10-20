@@ -69,7 +69,17 @@ func templateSpecGate(ctx context.Context, q taskQuery, spec string, revision in
 func templateTaskGate(ctx context.Context, q taskQuery, task string, now time.Time, pair ...string) error {
 	var spec, group string
 	var revision, current, impacts int
-	if err := q.QueryRowContext(ctx, `SELECT t.spec_id,t.revision,s.current_revision,t.group_code FROM console_spec_task t JOIN console_spec s ON s.id=t.spec_id WHERE t.id=?`, task).Scan(&spec, &revision, &current, &group); err != nil {
+	// The legacy planning API also addresses console_task_proposal rows.
+	// Preserve unenrolled proposals and fail closed on cross-table ID ambiguity.
+	const refs = `SELECT id,spec_id,revision FROM console_spec_task UNION ALL SELECT id,spec_id,revision FROM console_task_proposal`
+	var count int
+	if err := q.QueryRowContext(ctx, `SELECT count(*) FROM (`+refs+`) WHERE id=?`, task).Scan(&count); err != nil {
+		return err
+	}
+	if count != 1 {
+		return ErrTaskFlowConflict
+	}
+	if err := q.QueryRowContext(ctx, `SELECT t.spec_id,t.revision,s.current_revision,COALESCE(f.group_code,'') FROM (`+refs+`) t JOIN console_spec s ON s.id=t.spec_id LEFT JOIN console_spec_task f ON f.id=t.id WHERE t.id=?`, task).Scan(&spec, &revision, &current, &group); err != nil {
 		return err
 	}
 	if err := q.QueryRowContext(ctx, `SELECT count(*) FROM pilot_template_impact WHERE predecessor_spec_id=? AND predecessor_revision=?`, spec, revision).Scan(&impacts); err != nil {

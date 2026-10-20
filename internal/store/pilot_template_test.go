@@ -670,3 +670,21 @@ func TestPilotTemplateActualExecutorCannotPerformIndependentReview(t *testing.T)
 		t.Fatal("TEMPLATE_ACTUAL_EXECUTOR_ACCEPTED_AS_INDEPENDENT_REVIEW")
 	}
 }
+func TestPilotTemplateUnenrolledLegacyProposalStillStarts(t *testing.T) {
+	s, now := lineageFixture(t, "legacy-spec")
+	ctx := context.Background()
+	stamp := now.Format(time.RFC3339Nano)
+	if _, err := s.db.Exec(`INSERT INTO console_spec_review(id,spec_id,revision,stage,verdict,reason_codes_json,detail,reviewed_by,reviewed_at) VALUES('legacy-review','legacy-spec',1,'human_review','pass','[]','','owner-a',?)`, stamp); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.db.Exec(`INSERT INTO console_task_proposal(id,schema_version,spec_id,revision,content_sha256,title,task_content,status,depends_on_json,acceptance_json,input_anchors_json,review_id,reviewed_by,reviewed_at,created_at) VALUES('old-proposal',1,'legacy-spec',1,'hash','legacy','legacy plan','planned','[]','[]','[]','legacy-review','owner-a',?,?)`, stamp, stamp); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.UpdateConsoleTaskProposalPlan(ctx, "old-proposal", "owner-a", false, "legacy plan", "in_progress", 0, []string{}, ""); err != nil {
+		t.Fatal("TEMPLATE_BROKE_UNENROLLED_LEGACY_PROPOSAL", err)
+	}
+	createLineageTask(t, s, now, "legacy-spec", "old-proposal", "real task with colliding ID")
+	if err := templateTaskGate(ctx, s.db, "old-proposal", now); !errors.Is(err, ErrTaskFlowConflict) {
+		t.Fatal("TEMPLATE_AMBIGUOUS_TASK_ID_ACCEPTED", err)
+	}
+}
