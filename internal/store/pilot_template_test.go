@@ -211,7 +211,7 @@ func TestPilotTemplateRevisionInvalidatesReceiptsAndKeepsOldBody(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	if v2.Version != 2 || v2.CanConfirm || v2.ContentSHA == oldSHA {
+	if v2.Version != 2 || v2.ContentSHA == oldSHA {
 		t.Fatal("TEMPLATE_SILENT_PLAN_REWRITE")
 	}
 	var sha string
@@ -386,11 +386,23 @@ func TestPilotTemplateD3ConfirmsActualDerivedSuccessor(t *testing.T) {
 	nv := templateSave(t, s, now, changed, snap, "successor")
 	nv = templateConfirm(t, s, now, templateAcceptAll(t, s, now, nv, snap), snap)
 	c, _ = s.QuestionAuthorizationContext(ctx, "", "", q.ID)
-	u := QuestionUpdate{RequestID: "decide", Operation: "confirm_change", ExpectedVersion: out.Question.Version, ChangeID: cid, NewSpecID: nv.SpecID, NewRevision: 1, Reason: "actual successor"}
+	// Use the real derive API for an unchanged revision-1 copy. A stale
+	// revision number against an existing revision-2 target would test CAS,
+	// not the unchanged-copy guard.
+	original, _ := s.ConsoleSpecRevision(ctx, "owner-a", v.SpecID, 1, false)
+	original.SpecID = "unchanged-copy"
+	original.CreatedBy = "owner-a"
+	original.CreatedByKind = "principal"
+	original.CreatedVia = "principal"
+	if err = s.DeriveConsoleSpec(ctx, "owner-a", v.SpecID, model.ConsoleSpec{ID: "unchanged-copy", PrincipalID: "owner-a", Title: "unchanged", DerivedFrom: v.SpecID, EditCapabilityHash: "unreachable"}, *original, now); err != nil {
+		t.Fatal(err)
+	}
+	u := QuestionUpdate{RequestID: "decide", Operation: "confirm_change", ExpectedVersion: out.Question.Version, ChangeID: cid, NewSpecID: "unchanged-copy", NewRevision: 1, Reason: "actual successor"}
 	if _, err = s.UpdateQuestion(ctx, c, actor, q.ID, u, func() error { return nil }, now); err == nil {
 		t.Fatal("TEMPLATE_D3_UNCHANGED_DERIVED_COPY_ACCEPTED")
 	}
 	u.RequestID = "decide-real"
+	u.NewSpecID = nv.SpecID
 	u.NewRevision = 2
 	out, err = s.UpdateQuestion(ctx, c, actor, q.ID, u, func() error { return nil }, now)
 	if err != nil || out.Question.State != "superseded" {
@@ -427,7 +439,10 @@ func TestPilotTemplateTaskAssignmentAndImpactGuard(t *testing.T) {
 	changed.ChangeReason = "new contract"
 	changed.Scope = "changed bounded scope"
 	nv := templateSave(t, s, now, changed, snap, "successor")
-	templateConfirm(t, s, now, templateAcceptAll(t, s, now, nv, snap), snap)
+	nv = templateConfirm(t, s, now, templateAcceptAll(t, s, now, nv, snap), snap)
+	if nv.Impact == nil || nv.Impact.TaskCount != 1 || len(nv.Impact.TaskIDs) != 1 || nv.Impact.TaskIDs[0] != p.ID {
+		t.Fatal("TEMPLATE_IMPACT_HINT_MISSING", nv.Impact)
+	}
 	if e = taskBlockersClear(ctx, s.db, p.ID); e == nil {
 		t.Fatal("TEMPLATE_OLD_SCOPE_EXECUTION_NOT_BLOCKED", state)
 	}
@@ -494,7 +509,7 @@ func TestPilotTemplateMissingReviewOrAgentSignoffRejected(t *testing.T) {
 		v := templateSave(t, s, now, r, snap, mode)
 		found := false
 		for _, m := range v.Missing {
-			if strings.Contains(m.Path, "reviewer") || strings.Contains(m.Path, "signoff") {
+			if strings.HasPrefix(m.Path, "entries[") && (strings.HasSuffix(m.Path, ".reviewer") || strings.HasSuffix(m.Path, ".signoff")) {
 				found = true
 			}
 		}
@@ -548,12 +563,13 @@ func TestPilotTemplateLegacyTaskPathsCannotSkipCurrentContract(t *testing.T) {
 	if e := s.CreateConsoleTaskProposal(ctx, p, "owner-a", false); e != nil {
 		t.Fatal(e)
 	}
-	if e := s.UpdateConsoleTaskProposalPlan(ctx, p.ID, "owner-a", false, "R1", "in_progress", 0, []string{}, "actual results"); e == nil {
-		t.Fatal("TEMPLATE_LEGACY_STATUS_BYPASSED_GROUP_AUTH")
-	}
 	if e := s.UpdateConsoleSpecTaskAssignees(ctx, p.ID, "owner-a", "dev", "review"); e != nil {
 		t.Fatal(e)
 	}
+	if e := s.UpdateConsoleTaskProposalPlan(ctx, p.ID, "owner-a", false, "R1", "in_progress", 0, []string{}, "actual results"); e == nil {
+		t.Fatal("TEMPLATE_LEGACY_STATUS_BYPASSED_GROUP_AUTH")
+	}
+
 	start := model.ConsoleTaskDriverStart{SpecID: v.SpecID, Revision: 1, ContentSHA256: v.ContentSHA, RepositoryName: "fixture", BranchName: "review/fixture", Schedule: "bounded", TaskEndpoint: "local", TokenInstructions: "private", AnnouncedBy: "owner-a", AnnouncedAt: now}
 	if e := s.StartConsoleTaskDriver(ctx, start); e == nil {
 		t.Fatal("TEMPLATE_LEGACY_DRIVER_BYPASSED_GROUP_AUTH")

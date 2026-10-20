@@ -780,8 +780,6 @@ def _dw_task_question_list(args):
 def _dw_task_question_input(args):
     return _question_ipc('input',args,{'question_id','request_id','expected_version','event_id','body','evidence_ref'},{'question_id','request_id','expected_version','event_id','body','evidence_ref'})
 
-if __name__ == "__main__":
-    serve()
 
 @register("dw_spec_template","只读本人当前模板责任邀请，或接受/撤回本人的执行、审查责任；不签收业务，不定稿，不执行任务。",{
  "type":"object","properties":{"action":{"enum":["list","get","responsibility"]},"draft_id":_Q_ID,"after":{"type":"string","maxLength":256},"request_id":{"type":"string","minLength":1,"maxLength":128},"expected_version":{"type":"integer","minimum":1},"plan_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"entry_ids":{"type":"array","minItems":1,"maxItems":100,"uniqueItems":True,"items":{"type":"string","minLength":1,"maxLength":128}},"role":{"enum":["executor","reviewer"]},"decision":{"enum":["accepted","withdrawn"]},"reason":{"type":"string","maxLength":2048}},"required":["action"],"additionalProperties":False,
@@ -795,3 +793,6 @@ def _dw_spec_template(args):
     except _IPCFailure as exc:
         if exc.category=='helper_rejected':raise _IPCFailure('template_unsupported_upgrade_helper') from None
         raise
+
+if __name__ == "__main__":
+    serve()

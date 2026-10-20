@@ -101,7 +101,16 @@ type TemplateRole struct {
 	Accepted   bool   `json:"accepted"`
 	AcceptedAt string `json:"accepted_at,omitempty"`
 }
+type TemplateImpact struct {
+	Predecessor string   `json:"predecessor_spec_id"`
+	Revision    int      `json:"predecessor_revision"`
+	Successor   string   `json:"successor_spec_id"`
+	TaskCount   int      `json:"task_count"`
+	TaskIDs     []string `json:"task_ids"`
+	Limit       int      `json:"limit"`
+}
 type TemplateView struct {
+	Impact              *TemplateImpact   `json:"impact,omitempty"`
 	ID                  string            `json:"draft_id"`
 	Owner               string            `json:"owner_principal"`
 	Version             int               `json:"version"`

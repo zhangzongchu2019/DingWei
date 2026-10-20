@@ -128,6 +128,36 @@ func templateLoadView(ctx context.Context, q taskQuery, id string, a BlockerActo
 			out.Missing = append(out.Missing, TemplateMissing{fmt.Sprintf("roles.%s.%s", role.EntryID, role.Role), "currently_active_platform_principal_required"})
 		}
 	}
+	if a.UserID == ref.Owner && out.SpecID != "" {
+		impact := &TemplateImpact{Successor: out.SpecID, TaskIDs: []string{}, Limit: 100}
+		e := q.QueryRowContext(ctx, `SELECT i.predecessor_spec_id,i.predecessor_revision FROM pilot_template_impact i JOIN console_spec p ON p.id=i.predecessor_spec_id WHERE i.successor_spec_id=? AND i.confirmed_by=? AND p.principal_id=? ORDER BY i.created_at LIMIT 1`, out.SpecID, ref.Owner, ref.Owner).Scan(&impact.Predecessor, &impact.Revision)
+		if e != nil && !errors.Is(e, sql.ErrNoRows) {
+			return out, e
+		}
+		if e == nil {
+			if e = q.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_task WHERE spec_id=? AND revision=?`, impact.Predecessor, impact.Revision).Scan(&impact.TaskCount); e != nil {
+				return out, e
+			}
+			rows, e := q.QueryContext(ctx, `SELECT id FROM console_spec_task WHERE spec_id=? AND revision=? ORDER BY id LIMIT 100`, impact.Predecessor, impact.Revision)
+			if e != nil {
+				return out, e
+			}
+			for rows.Next() {
+				var id string
+				if e = rows.Scan(&id); e != nil {
+					rows.Close()
+					return out, e
+				}
+				impact.TaskIDs = append(impact.TaskIDs, id)
+			}
+			e = rows.Err()
+			rows.Close()
+			if e != nil {
+				return out, e
+			}
+			out.Impact = impact
+		}
+	}
 	out.CanConfirm = a.UserID == ref.Owner && ref.State == "pending" && len(out.Missing) == 0
 	if a.UserID != ref.Owner || !historyContent {
 		out.Source.Content = ""
