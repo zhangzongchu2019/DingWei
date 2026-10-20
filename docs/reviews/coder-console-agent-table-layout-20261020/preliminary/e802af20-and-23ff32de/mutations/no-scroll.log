@@ -1,0 +1,5 @@
+AssertionError [ERR_ASSERTION]: LAYOUT_SCROLL_CONTAINER
+
+'visible' !== 'auto'
+
+    at /data/ai-dev-data/console-agent-table-layout/view-service/console-agent-table-layout-regression.js:70:66

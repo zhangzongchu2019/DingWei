@@ -1,0 +1,7 @@
+PASS active administrator sees a read-only inventory even without hosted enabled
+PASS pagination uses opaque cursor and replaces previous rows
+PASS explicit refresh resets cursor with one read
+PASS role refusal leaves no stale inventory or upstream private details
+PASS manager has no global-agent capability or table
+PASS no page errors
+R31 admin-agent browser: passed=6 failed=0 mutation=none

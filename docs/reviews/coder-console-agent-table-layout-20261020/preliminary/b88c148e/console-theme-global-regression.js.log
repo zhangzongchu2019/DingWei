@@ -1,0 +1,28 @@
+  · console 页取自生产源码 internal/m8/console_auth.go(122639 字节)
+  · renderer  /data/ai-dev-data/console-agent-table-layout/view-service/renderer-canary-sse.html
+    sha256=e99753c7625da9f7… 320506 字节
+    · T1 实测: {"tag":"BUTTON","text":"◐","title":"切换黑夜/白天（整个控制台）","inNav":true,"width":27.9,"height":27.5,"agentsHeading":"Agents"}
+  ✅ T1 🔴 主题开关必须在【顶层 console 的 Agent 列表区】(业主:提出来,不要放在某一个 tab)
+    · T2 点前: {"shell":{"htmlTheme":"light","bodyTheme":"light","pageBg":"rgb(255, 255, 255)","navBorder":"rgb(221, 221, 221)","tabBg":"rgb(255, 255, 255)"},"A":{"theme":"light","bg":"rgb(246, 247, 249)","hasOwnToggle":true},"B":{"theme":"light","bg":"rgb(246, 247, 249)","hasOwnToggle":true}}
+    · T2 点后: {"shell":{"htmlTheme":"dark","bodyTheme":"dark","pageBg":"rgb(17, 19, 22)","navBorder":"rgb(56, 65, 76)","tabBg":"rgb(36, 42, 49)"},"A":{"theme":"dark","bg":"rgb(17, 19, 22)","hasOwnToggle":true},"B":{"theme":"dark","bg":"rgb(17, 19, 22)","hasOwnToggle":true}}
+  ✅ T2 🔴 点顶层 ◐ ⇒ console 外壳、可见 pane、以及【隐藏的】pane 都必须真的变暗
+    · T3 实测(同一任务内): {"themeNow":"dark","pageBgNow":"rgb(17, 19, 22)","storedNow":"dark","storageEventsSeen":0}
+  ✅ T3 🔴 点下去的【同一个 JS 任务里】外壳就必须已变暗(证明写入方自己 apply,不是等 storage 事件)
+    · T4 存储实测: {"local":{"dw-theme":"dark"},"session":{}}
+    · T4 pane 内存储: {"local":"dark","session":null}
+    · T4 新开 tab 实测: {"htmlTheme":"dark","bodyTheme":"dark","pageBg":"rgb(17, 19, 22)","navBorder":"rgb(56, 65, 76)","tabBg":null}
+  ✅ T4 🔴 持久化:localStorage 有、sessionStorage 没有;重载 console 仍暗;【新开一个 tab】仍暗
+    · T5 实测: {"shell":{"htmlTheme":"dark","bodyTheme":"dark","pageBg":"rgb(17, 19, 22)","navBorder":"rgb(56, 65, 76)","tabBg":"rgb(36, 42, 49)"},"A":{"theme":"dark","bg":"rgb(17, 19, 22)","hasOwnToggle":true},"B":{"theme":"dark","bg":"rgb(17, 19, 22)","hasOwnToggle":true},"store":{"local":{"dw-theme":"dark"},"session":{}}}
+  ✅ T5 🔴 在 pane A 里点它自己的 ◐ ⇒ console 外壳与 pane B 也必须跟随(不是各管各的)
+    · T6 实测(无 pane): {"store":{"local":{"dw-theme":"dark"},"session":{}},"afterClick":{"htmlTheme":"dark","bodyTheme":"dark","pageBg":"rgb(17, 19, 22)","navBorder":"rgb(56, 65, 76)","tabBg":null}}
+  ✅ T6 🔴 一个 pane 都不开:console 自己点 ◐ 也必须落盘,且重载后保持暗
+    · T7 实测(存储被禁): {"shell":{"htmlTheme":"dark","bodyTheme":"dark","pageBg":"rgb(17, 19, 22)","navBorder":"rgb(56, 65, 76)","tabBg":"rgb(36, 42, 49)"},"A":{"theme":"dark","bg":"rgb(17, 19, 22)","hasOwnToggle":true},"B":{"theme":"dark","bg":"rgb(17, 19, 22)","hasOwnToggle":true}}
+  ✅ T7 🔴 localStorage 被禁时,广播仍必须把主题送到【隐藏的】pane(钉住 BroadcastChannel 这条路)
+    · T8 实测(无 BroadcastChannel): {"shell":{"htmlTheme":"dark","bodyTheme":"dark","pageBg":"rgb(17, 19, 22)","navBorder":"rgb(56, 65, 76)","tabBg":"rgb(36, 42, 49)"},"A":{"theme":"dark","bg":"rgb(17, 19, 22)","hasOwnToggle":true},"B":{"theme":"dark","bg":"rgb(17, 19, 22)","hasOwnToggle":true}}
+  ✅ T8 🔴 浏览器没有 BroadcastChannel 时,主题仍必须全局生效(钉住 storage 事件这条退路)
+    · T9 实测: {"tabA":{"htmlTheme":"dark","bodyTheme":"dark","pageBg":"rgb(17, 19, 22)","navBorder":"rgb(56, 65, 76)","tabBg":null},"tabB":{"htmlTheme":"dark","bodyTheme":"dark","pageBg":"rgb(17, 19, 22)","navBorder":"rgb(56, 65, 76)","tabBg":null}}
+  ✅ T9 🔴 两个 tab 同时开着,在 A 点 ◐ ⇒ B 必须实时跟随(不重载 B)
+    · T10 实测(无频道): {"tabA":{"htmlTheme":"dark","bodyTheme":"dark","pageBg":"rgb(17, 19, 22)","navBorder":"rgb(56, 65, 76)","tabBg":null},"tabB":{"htmlTheme":"dark","bodyTheme":"dark","pageBg":"rgb(17, 19, 22)","navBorder":"rgb(56, 65, 76)","tabBg":null}}
+  ✅ T10 🔴 没有 BroadcastChannel 时,两个 tab 之间仍必须实时同步(钉住 console 侧的 storage 退路)
+
+通过 10 / 失败 0   (日夜主题全局化 + 持久化)

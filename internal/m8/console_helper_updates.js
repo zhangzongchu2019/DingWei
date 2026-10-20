@@ -14,14 +14,18 @@ function mount(){
  if(document.getElementById('helperUpdatePanel'))return;
  if(dispose)dispose();
  const section=node('section');section.id='helperUpdatePanel';section.className='group-block';
- const open=node('button','helper 升级');open.type='button';open.id='helperUpdateOpen';section.append(open);
+ const open=node('button','helper 升级');open.type='button';open.id='helperUpdateOpen';
+ // Keep the existing batch panel and lifecycle; only its entry moves to the roster toolbar.
+ let toolbar=anchor.querySelector('.group-toolbar');
+ if(!toolbar){toolbar=node('div');toolbar.className='group-toolbar';const title=anchor.querySelector('h3');if(title)toolbar.append(title);anchor.prepend(toolbar);}
+ toolbar.append(open);
  const panel=node('div');panel.hidden=true;panel.id='helperUpdateBody';section.append(panel);
  const note=node('p','只可选择运维登记的 Linux helper 包。已下发或已安装不代表升级成功；以重连后的新版本确认结果为准。');panel.append(note);
  const label=node('label','升级到 '),select=node('select');select.id='helperUpdateRelease';label.append(select);panel.append(label);
  const batch=node('button','升级选中 Agent');batch.type='button';batch.id='helperUpdateBatch';panel.append(batch);
  const refresh=node('button','刷新状态');refresh.type='button';refresh.id='helperUpdateRefresh';panel.append(refresh);
  const status=node('div');status.id='helperUpdateStatus';status.setAttribute('role','status');panel.append(status);
- const table=node('table');table.className='group-table';const head=node('thead'),hr=node('tr');['选择','Agent','当前 helper 版本','升级状态','操作'].forEach(t=>hr.append(node('th',t)));head.append(hr);table.append(head);const rows=node('tbody');rows.id='helperUpdateRows';table.append(rows);panel.append(table);
+ const table=node('table');table.className='group-table';const head=node('thead'),hr=node('tr');['选择','Agent','当前 helper 版本','升级状态','操作'].forEach(t=>hr.append(node('th',t)));head.append(hr);table.append(head);const rows=node('tbody');rows.id='helperUpdateRows';table.append(rows);const scroll=node('div');scroll.className='console-table-scroll';scroll.tabIndex=0;scroll.setAttribute('role','region');scroll.setAttribute('aria-label','helper 升级表格，可横向滚动');scroll.append(table);panel.append(scroll);
  anchor.after(section);
  let agents=[],selected=new Set(),generation=0,timer=null,controller=null,busy=false,dead=false;
  function controls(){open.disabled=busy;batch.disabled=busy||!select.value||!agents.some(a=>a.eligible&&selected.has(a.agent_id));select.disabled=busy||!select.options.length;refresh.disabled=busy;rows.querySelectorAll('input,button').forEach(b=>{b.disabled=busy||b.dataset.eligible!=='true'||(b.tagName==='BUTTON'&&!select.value);});}
@@ -31,7 +35,7 @@ function mount(){
    const row=node('tr');row.dataset.agentId=a.agent_id;
    const cell=node('td'),check=node('input');check.type='checkbox';check.setAttribute('aria-label','选择 '+a.name);check.dataset.eligible=String(a.eligible===true);check.checked=selected.has(a.agent_id);check.onchange=()=>{if(check.checked)selected.add(a.agent_id);else selected.delete(a.agent_id);controls();};cell.append(check);
    const state=node('td');const job=a.job;state.textContent=job?(stages[job.stage]||'状态未知')+(job.version?'（目标 '+job.version+'）':'')+(job.reason?' · '+reasonText(job.reason):''):(a.eligible?'尚未下发':reasonText(a.reason,'暂不可升级'));
-   const op=node('td'),one=node('button','升级');one.type='button';one.dataset.eligible=String(a.eligible===true);one.onclick=()=>issue([a.agent_id]);op.append(one);row.append(cell,node('td',a.name),node('td',a.version||'未知'),state,op);rows.append(row);
+   const op=node('td'),one=node('button','升级');one.type='button';one.dataset.eligible=String(a.eligible===true);one.onclick=()=>issue([a.agent_id]);op.append(one);const name=node('td',a.name);name.className='table-name';name.title=a.name;row.append(cell,name,node('td',a.version||'未知'),state,op);rows.append(row);
   });controls();
  }
  async function request(method,body){

@@ -1,0 +1,205 @@
+{
+  "source_tree": "b88c148e53cc33b86d915c613c52ff36dab961d0",
+  "all_rc0": true,
+  "distinct_scripts": 32,
+  "new_layout_scripts": 1,
+  "existing_scripts": 31,
+  "runs": [
+    {
+      "name": "console-agent-table-layout-regression.js",
+      "start": "2026-10-20T23:12:15.193928+00:00",
+      "rc": 0,
+      "formal_log": "console-agent-table-layout-regression.js.final.log",
+      "preliminary_log": "console-agent-table-layout-regression.js.log",
+      "preliminary_note": "Preliminary pass before final short-column tuning; superseded by exact final input rerun."
+    },
+    {
+      "name": "console-browser-regression.js",
+      "start": "2026-10-20T23:12:17.763104+00:00",
+      "rc": 0,
+      "formal_log": "console-browser-regression.js.final.log",
+      "preliminary_log": "console-browser-regression.js.log",
+      "preliminary_note": "Preliminary pass before final short-column tuning; superseded by exact final input rerun."
+    },
+    {
+      "name": "console-agent-mgmt-enroll-regression.js",
+      "start": "2026-10-20T23:12:39.766234+00:00",
+      "rc": 0,
+      "formal_log": "console-agent-mgmt-enroll-regression.js.log"
+    },
+    {
+      "name": "console-agent-groups-vega-regression.js",
+      "start": "2026-10-20T23:12:45.741723+00:00",
+      "rc": 0,
+      "formal_log": "console-agent-groups-vega-regression.js.log"
+    },
+    {
+      "name": "console-agent-mgmt-hosted-regression.js",
+      "start": "2026-10-20T23:12:47.559342+00:00",
+      "rc": 0,
+      "formal_log": "console-agent-mgmt-hosted-regression.js.log"
+    },
+    {
+      "name": "console-helper-update-regression.js",
+      "start": "2026-10-20T23:12:55.691496+00:00",
+      "rc": 0,
+      "formal_log": "console-helper-update-regression.js.log"
+    },
+    {
+      "name": "console-platform-admin-regression.js",
+      "start": "2026-10-20T23:12:59.412770+00:00",
+      "rc": 0,
+      "formal_log": "console-platform-admin-regression.js.log"
+    },
+    {
+      "name": "r31-admin-agents-browser-regression.js",
+      "start": "2026-10-20T23:13:07.090573+00:00",
+      "rc": 0,
+      "formal_log": "r31-admin-agents-browser-regression.js.log"
+    },
+    {
+      "name": "r31-hosted-nodes-browser-regression.js",
+      "start": "2026-10-20T23:13:08.757552+00:00",
+      "rc": 0,
+      "formal_log": "r31-hosted-nodes-browser-regression.js.log"
+    },
+    {
+      "name": "console-llm-accounts-regression.js",
+      "start": "2026-10-20T23:13:10.726030+00:00",
+      "rc": 0,
+      "formal_log": "console-llm-accounts-regression.js.log"
+    },
+    {
+      "name": "console-quota-regression.js",
+      "start": "2026-10-20T23:13:19.456639+00:00",
+      "rc": 0,
+      "formal_log": "console-quota-regression.js.log"
+    },
+    {
+      "name": "console-soft-quota-regression.js",
+      "start": "2026-10-20T23:13:23.728586+00:00",
+      "rc": 0,
+      "formal_log": "console-soft-quota-regression.js.log"
+    },
+    {
+      "name": "console-hosted-model-regression.js",
+      "start": "2026-10-20T23:13:25.646134+00:00",
+      "rc": 0,
+      "formal_log": "console-hosted-model-regression.js.log"
+    },
+    {
+      "name": "console-hosted-lifecycle-jobs-regression.js",
+      "start": "2026-10-20T23:13:27.663831+00:00",
+      "rc": 0,
+      "formal_log": "console-hosted-lifecycle-jobs-regression.js.log"
+    },
+    {
+      "name": "console-hosted-owner-fence-regression.js",
+      "start": "2026-10-20T23:13:40.464370+00:00",
+      "rc": 0,
+      "formal_log": "console-hosted-owner-fence-regression.js.log"
+    },
+    {
+      "name": "console-agent-groups-entry-regression.js",
+      "start": "2026-10-20T23:13:41.780614+00:00",
+      "rc": 0,
+      "formal_log": "console-agent-groups-entry-regression.js.log"
+    },
+    {
+      "name": "console-agent-tree-regression.js",
+      "start": "2026-10-20T23:13:52.617129+00:00",
+      "rc": 0,
+      "formal_log": "console-agent-tree-regression.js.log"
+    },
+    {
+      "name": "console-group-live-regression.js",
+      "start": "2026-10-20T23:13:53.632869+00:00",
+      "rc": 0,
+      "formal_log": "console-group-live-regression.js.log"
+    },
+    {
+      "name": "console-groupsnapshot-refresh-regression.js",
+      "start": "2026-10-20T23:13:53.697002+00:00",
+      "rc": 0,
+      "formal_log": "console-groupsnapshot-refresh-regression.js.log"
+    },
+    {
+      "name": "console-theme-global-regression.js",
+      "start": "2026-10-20T23:13:53.761183+00:00",
+      "rc": 0,
+      "formal_log": "console-theme-global-regression.js.log"
+    },
+    {
+      "name": "console-panel-pointerevents-regression.js",
+      "start": "2026-10-20T23:14:04.094575+00:00",
+      "rc": 0,
+      "formal_log": "console-panel-pointerevents-regression.js.log"
+    },
+    {
+      "name": "console-specs-browser-regression.js",
+      "start": "2026-10-20T23:14:22.942070+00:00",
+      "rc": 0,
+      "formal_log": "console-specs-browser-regression.js.log"
+    },
+    {
+      "name": "console-task-board-regression.js",
+      "start": "2026-10-20T23:14:47.348331+00:00",
+      "rc": 0,
+      "formal_log": "console-task-board-regression.js.log"
+    },
+    {
+      "name": "console-spec-direct-regression.js",
+      "start": "2026-10-20T23:14:49.115502+00:00",
+      "rc": 0,
+      "formal_log": "console-spec-direct-regression.js.log"
+    },
+    {
+      "name": "console-spec-workflow-regression.js",
+      "start": "2026-10-20T23:14:50.281566+00:00",
+      "rc": 0,
+      "formal_log": "console-spec-workflow-regression.js.log"
+    },
+    {
+      "name": "console-specs-theme-regression.js",
+      "start": "2026-10-20T23:14:54.703266+00:00",
+      "rc": 0,
+      "formal_log": "console-specs-theme-regression.js.log"
+    },
+    {
+      "name": "r32-task-flow-browser-regression.js",
+      "start": "2026-10-20T23:14:55.919450+00:00",
+      "rc": 0,
+      "formal_log": "r32-task-flow-browser-regression.js.log"
+    },
+    {
+      "name": "r32-spec-review-browser-regression.js",
+      "start": "2026-10-20T23:15:07.803422+00:00",
+      "rc": 0,
+      "formal_log": "r32-spec-review-browser-regression.js.log"
+    },
+    {
+      "name": "pilot-spec-template-browser-regression.js",
+      "start": "2026-10-20T23:15:09.019737+00:00",
+      "rc": 0,
+      "formal_log": "pilot-spec-template-browser-regression.js.log"
+    },
+    {
+      "name": "pilot-blocker-wake-browser-regression.js",
+      "start": "2026-10-20T23:15:10.486480+00:00",
+      "rc": 0,
+      "formal_log": "pilot-blocker-wake-browser-regression.js.log"
+    },
+    {
+      "name": "pilot-feedback-browser-regression.js",
+      "start": "2026-10-20T23:15:11.652641+00:00",
+      "rc": 0,
+      "formal_log": "pilot-feedback-browser-regression.js.log"
+    },
+    {
+      "name": "console-login-regression.js",
+      "rc": 0,
+      "formal_log": "console-login-regression.js.final.log"
+    }
+  ],
+  "scope": "Console page/browser fixture regressions; historical real-Hub console-spec-task-p1-real-regression.js is not part of this fixture matrix. Existing task-board K13 remains deferred per original suite, unchanged."
+}

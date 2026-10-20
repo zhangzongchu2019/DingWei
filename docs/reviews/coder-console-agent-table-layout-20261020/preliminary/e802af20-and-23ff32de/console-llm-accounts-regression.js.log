@@ -1,0 +1,11 @@
+PASS methods follow the combo table: openai offers 账号登录 and API Key, anthropic only API Key; the input and terms note follow the method
+PASS the list shows email for account login and …last4 for API keys, with 重新登录／换 Key and 停用／启用 by state
+PASS account login: the request carries only llm＋email; the box shows the copyable link (href) and code; polling ends in 已登录 and the new account is listed
+PASS cancel: posts to the cancel endpoint, hides the box and says 已取消
+PASS login start errors use our wording, never the Hub text or machine code
+PASS API key: body kind=api_key with the combo CLI and a name with no key material; the input is cleared and the key is nowhere in the page
+PASS 换 Key: an in-page password box (no window.prompt) → PUT secret, then the in-use note says the running Agents must each be refreshed
+PASS API key with a user label: the label is the name verbatim (no key material)
+PASS 停用／启用 posts to the state endpoint and the row follows
+PASS no pageerror and no unexpected console error across the whole run
+llm accounts browser: passed=10 failed=0 mutation=none

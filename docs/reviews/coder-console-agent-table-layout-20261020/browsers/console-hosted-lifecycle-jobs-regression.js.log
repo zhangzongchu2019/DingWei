@@ -1,0 +1,16 @@
+PASS restart returns 202+job: the row shows 重启中… with the stage, every button is locked, the job reaching its success terminal gives 已完成 and a refreshed row
+PASS failed job: 中文原因 + 原因码, never the Hub text; rollback reason is its own wording; buttons come back
+PASS destroy whose backup fails: the row is still there and the failure says the container was not deleted
+PASS every failure code of the A1 contract (ten) shows its own Chinese wording and the code; none falls back to the generic line
+PASS a failure code outside the contract falls back to the generic line but still shows the raw code
+PASS a stage name outside the contract (even the old words online/done) is never success: after 5 polls the page says so visibly and stops spinning
+PASS long legitimate waits are not unknown: queued x6 then running x8 then completed shows no 无法识别 at any point and completes
+PASS unknown / known alternation never reaches 5 in a row: the page keeps tracking and completes
+PASS destroy: the job succeeds (A1 contract) ⇒ 已完成, the row is gone, never a failure text
+PASS synchronous 422 invalid_state: shown at once in our wording, no job polled, the roster is refetched
+PASS in-flight state survives a roster re-render (list refetch) and keeps the buttons locked
+PASS a job that never finishes stops at the cap with 仍在处理 (not success, not failure) and unlocks the row
+PASS poll glitches (HTTP 500 on the job read) are not a failure: the job keeps being polled and completes
+PASS legacy synchronous 200 (no job_id) still works: no polling, row refreshed, buttons usable
+PASS no pageerror and no unexpected console error across the whole run
+hosted lifecycle jobs browser: passed=15 failed=0 mutation=none

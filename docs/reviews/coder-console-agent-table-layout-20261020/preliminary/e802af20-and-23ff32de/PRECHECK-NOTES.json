@@ -1,0 +1,17 @@
+{
+  "initial_mutation_source_tree": "e802af20f484fdd5fda1918aa0d5327559989d4a",
+  "initial_status_overflow_mutation_rc": 0,
+  "initial_status_overflow_verdict": "SURVIVED, not accepted",
+  "raw_survival_log": "STATUS-WITHDRAWAL-SURVIVED-PRECHECK.log",
+  "strengthened_assertion_source_tree": "23ff32de9189068cddeafdef752d2f0ab06d7de1",
+  "strengthened_status_mutation_rc": 1,
+  "strengthened_status_marker": "LAYOUT_STATUS_TEXT_WRAP",
+  "restored_run_rc": 1,
+  "restored_marker": "LAYOUT_EXPANDED_PANEL_NO_PAGE_OVERFLOW",
+  "cause": "Long Agent option expanded group select. max-width:100% added in c684034b; final 31dfb485 retains fix and full metadata tooltips. All nine final mutation cases and restored all-viewports pass.",
+  "diagnostic_only_logs": [
+    "diagnostics/workspace-overflow.log",
+    "diagnostics/select-cap.log"
+  ],
+  "diagnostic_scope": "First diagnostic temporarily ignored workspace-only overflow to isolate status behavior; second temporarily applied select max-width in memory. Neither counts as formal PASS."
+}

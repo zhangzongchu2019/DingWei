@@ -1,0 +1,60 @@
+[
+  {
+    "name": "fixed-columns",
+    "rc": 1,
+    "marker": "LAYOUT_CONTENT_COLUMNS",
+    "assertion_red": true
+  },
+  {
+    "name": "actions-wrap",
+    "rc": 1,
+    "marker": "LAYOUT_ACTIONS_NOWRAP",
+    "assertion_red": true
+  },
+  {
+    "name": "buttons-wrap",
+    "rc": 1,
+    "marker": "LAYOUT_BUTTON_SINGLE_LINE",
+    "assertion_red": true
+  },
+  {
+    "name": "no-scroll",
+    "rc": 1,
+    "marker": "LAYOUT_SCROLL_CONTAINER",
+    "assertion_red": true
+  },
+  {
+    "name": "no-ellipsis",
+    "rc": 1,
+    "marker": "LAYOUT_NAME_ELLIPSIS",
+    "assertion_red": true
+  },
+  {
+    "name": "helper-below",
+    "rc": 1,
+    "marker": "LAYOUT_HELPER_TOOLBAR",
+    "assertion_red": true
+  },
+  {
+    "name": "wide-checkbox",
+    "rc": 1,
+    "marker": "LAYOUT_COMPACT_CHECKBOX",
+    "assertion_red": true
+  },
+  {
+    "name": "status-overflow",
+    "rc": 1,
+    "marker": "LAYOUT_STATUS_TEXT_WRAP",
+    "assertion_red": true
+  },
+  {
+    "name": "wide-select",
+    "rc": 1,
+    "marker": "LAYOUT_EXPANDED_PANEL_NO_PAGE_OVERFLOW",
+    "assertion_red": true
+  },
+  {
+    "name": "restored",
+    "rc": 0
+  }
+]

@@ -1,0 +1,162 @@
+[
+  {
+    "name": "console-agent-table-layout-regression.js",
+    "start": "2026-10-20T23:20:26.498094+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-login-regression.js",
+    "start": "2026-10-20T23:20:29.518282+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-browser-regression.js",
+    "start": "2026-10-20T23:20:33.641130+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-agent-mgmt-enroll-regression.js",
+    "start": "2026-10-20T23:20:55.744782+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-agent-groups-vega-regression.js",
+    "start": "2026-10-20T23:21:01.619102+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-agent-mgmt-hosted-regression.js",
+    "start": "2026-10-20T23:21:03.486787+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-helper-update-regression.js",
+    "start": "2026-10-20T23:21:11.066171+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-platform-admin-regression.js",
+    "start": "2026-10-20T23:21:15.038225+00:00",
+    "rc": 0
+  },
+  {
+    "name": "r31-admin-agents-browser-regression.js",
+    "start": "2026-10-20T23:21:22.765647+00:00",
+    "rc": 0
+  },
+  {
+    "name": "r31-hosted-nodes-browser-regression.js",
+    "start": "2026-10-20T23:21:24.432640+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-llm-accounts-regression.js",
+    "start": "2026-10-20T23:21:26.250063+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-quota-regression.js",
+    "start": "2026-10-20T23:21:34.927975+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-soft-quota-regression.js",
+    "start": "2026-10-20T23:21:39.249823+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-hosted-model-regression.js",
+    "start": "2026-10-20T23:21:41.217568+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-hosted-lifecycle-jobs-regression.js",
+    "start": "2026-10-20T23:21:43.285588+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-hosted-owner-fence-regression.js",
+    "start": "2026-10-20T23:21:55.971017+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-agent-groups-entry-regression.js",
+    "start": "2026-10-20T23:21:57.338073+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-agent-tree-regression.js",
+    "start": "2026-10-20T23:22:08.179192+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-group-live-regression.js",
+    "start": "2026-10-20T23:22:09.244991+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-groupsnapshot-refresh-regression.js",
+    "start": "2026-10-20T23:22:09.309264+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-theme-global-regression.js",
+    "start": "2026-10-20T23:22:09.373620+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-panel-pointerevents-regression.js",
+    "start": "2026-10-20T23:22:19.806972+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-specs-browser-regression.js",
+    "start": "2026-10-20T23:22:38.601357+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-task-board-regression.js",
+    "start": "2026-10-20T23:23:03.711477+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-spec-direct-regression.js",
+    "start": "2026-10-20T23:23:05.478862+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-spec-workflow-regression.js",
+    "start": "2026-10-20T23:23:06.697325+00:00",
+    "rc": 0
+  },
+  {
+    "name": "console-specs-theme-regression.js",
+    "start": "2026-10-20T23:23:11.321047+00:00",
+    "rc": 0
+  },
+  {
+    "name": "r32-task-flow-browser-regression.js",
+    "start": "2026-10-20T23:23:12.537415+00:00",
+    "rc": 0
+  },
+  {
+    "name": "r32-spec-review-browser-regression.js",
+    "start": "2026-10-20T23:23:24.423984+00:00",
+    "rc": 0
+  },
+  {
+    "name": "pilot-spec-template-browser-regression.js",
+    "start": "2026-10-20T23:23:25.690461+00:00",
+    "rc": 0
+  },
+  {
+    "name": "pilot-blocker-wake-browser-regression.js",
+    "start": "2026-10-20T23:23:27.207181+00:00",
+    "rc": 0
+  },
+  {
+    "name": "pilot-feedback-browser-regression.js",
+    "start": "2026-10-20T23:23:28.373545+00:00",
+    "rc": 0
+  }
+]

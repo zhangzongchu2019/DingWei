@@ -1,0 +1,15 @@
+PASS both sign-in routes are offered; the change-password form is hidden; password inputs are masked
+PASS empty fields are hinted locally; nothing is sent
+PASS wrong password: our wording (never the Hub text), the password is cleared, the user ID is kept
+PASS too many failures: the wait time from the Hub is shown
+PASS first login with the initial password: only the change form is offered, the user is NOT let into the console
+PASS change form: mismatch is hinted locally and sends nothing; a weak password is refused with the Hub minimum; a wrong old password is refused and cleared
+PASS a valid change lets the user into the console
+PASS Feishu: a malformed user ID is refused in our wording; a valid one shows the "#console <code>" command
+PASS Feishu: once the Hub reports it confirmed, the page enters the console
+PASS Feishu: an expired code is announced, the old code disappears, polling stops, and "重新获取" gives a new code
+PASS no password or session material is kept in browser storage
+PASS the console page itself sends an unauthenticated visitor to the login page
+PASS the console page sends a must-change-password session to the change form, and only that form
+PASS no pageerror and no unexpected console error across the whole run
+login browser: passed=14 failed=0 mutation=none

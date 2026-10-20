@@ -1,0 +1,1734 @@
+{
+  "source_commit": "31dfb4853e3df0d58f656544d371170ef8bc9354",
+  "entries": [
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/DIFF-CHECK.json",
+      "mode": "100644",
+      "blob": "69ab38009cca2b79c29e00998258fcd0159f9aa1",
+      "size": 219,
+      "sha256": "8a707be8672e7f7834ff21cf486410be074caf75d0fdeb0e5811232eca77b715"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/INPUTS.json",
+      "mode": "100644",
+      "blob": "12403391d8ebc93ffb2b6ba887b699ddc586290c",
+      "size": 1804,
+      "sha256": "addfb38bea3399b184f906302a96062a8c73edeca6258f078af751005a35f9dc"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/REPORT.md",
+      "mode": "100644",
+      "blob": "a830ce77cbb033f51276d9de404dc9e535b485ba",
+      "size": 5648,
+      "sha256": "f78ae5af3c3d4490f778ff1ea71e6616794ff26b77d9be32ff5fb07356b5dbd3"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/REPRODUCE.md",
+      "mode": "100644",
+      "blob": "2c6a5cf2be6f76826bae7acbfa22a61df5c29321",
+      "size": 2055,
+      "sha256": "00a52aca48e7d56c13df5912262db10b7c743b3091ee38f2c4ee487b31068bc9"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/SOURCE-MANIFEST.json",
+      "mode": "100644",
+      "blob": "56db16ff3f388771a6eb8be0f5fab189533f3442",
+      "size": 473922,
+      "sha256": "a9e8b8fdc9041665ed8a57b36a69c4d2809d591c8692aee8ef2de752e7ca75dd"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/SUMMARY.json",
+      "mode": "100644",
+      "blob": "e731384067983f2f71b38944599aa27ae1041097",
+      "size": 7317,
+      "sha256": "d6ba44efd914fdd7d364825e0a0236103d5631035d83e5a710350eb508664a68"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/VERIFY.py",
+      "mode": "100644",
+      "blob": "5da1bdaef9740a4fd79ec177fb560e131f71b3e5",
+      "size": 2084,
+      "sha256": "170b4bd8cd0cd77ec4448029cfbb6c3d1bed8ff4e82137efac75a1f7e8b2ef21"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/BROWSERS.json",
+      "mode": "100644",
+      "blob": "2e1c62f1724ec7d19e3db3c83b1e197e91c365c4",
+      "size": 3904,
+      "sha256": "3ba75cff94f3c0c82d63c5559b48d232d889a6297d6c12fe0e59bf8b6e5c6965"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/FORMAL-BROWSERS.json",
+      "mode": "100644",
+      "blob": "bf6ec93d7635263d6ea9466fe3f9a751122fe6b1",
+      "size": 6641,
+      "sha256": "703c5d2d4a21d81d7e5f9341cfc39a0b7ff73b2e8a1484bba2fb327a488de564"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-agent-groups-entry-regression.js.log",
+      "mode": "100644",
+      "blob": "2739b8332d0035f805c8d7ea5aa6189bd6481ba2",
+      "size": 860,
+      "sha256": "ea896feec3797c82d978467feba3c370c667c0f1127d0f8aa82837a2c8f118cb"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-agent-groups-vega-regression.js.log",
+      "mode": "100644",
+      "blob": "a5e226c248067bcf0974472ab41a5571ed11e1fc",
+      "size": 904,
+      "sha256": "4845d113539a199cb7cf4e0650964f1ad2855310ca7718fe0654848cc80613d6"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-agent-mgmt-enroll-regression.js.log",
+      "mode": "100644",
+      "blob": "784fbc2289b337f95da4333646fbcd59e6d1500a",
+      "size": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-agent-mgmt-hosted-regression.js.log",
+      "mode": "100644",
+      "blob": "aff23c0b34cb333e9ac8a8355ddf9070ed90aa64",
+      "size": 3357,
+      "sha256": "fd419a7831826f77cba841c378582085bae0c7d1bce6cf55f622fcedf363680b"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-agent-table-layout-regression.js.log",
+      "mode": "100644",
+      "blob": "ff4c99d3437bf2206c454249f27783b7f8c39b1a",
+      "size": 119,
+      "sha256": "fa9652abb16cec05cd895dca65300e3cf19063f0e0f2e06702b14dc90db107f4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-agent-tree-regression.js.log",
+      "mode": "100644",
+      "blob": "513d650bf282776ec052d1845f4d9dd91955d58b",
+      "size": 39,
+      "sha256": "c8c051b5f548f0c890ea4bb06234169e63e4c6bb979fd7d4f616617f69243976"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "size": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-group-live-regression.js.log",
+      "mode": "100644",
+      "blob": "70761b3ad416fd6d3e5bc8d4dad855cc7b6bb995",
+      "size": 88,
+      "sha256": "05c10eece1dad8df03f443c3df22046a429fb68fd4fed4af0b531373bd8d9679"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-groupsnapshot-refresh-regression.js.log",
+      "mode": "100644",
+      "blob": "2484d45c1d1e389a94bc9a1a2605512bc763d3e1",
+      "size": 283,
+      "sha256": "81e582f967ddfdb4b11a1aaeb1295edf5206aaaf818b5d7da71bba2484376d7b"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-helper-update-regression.js.log",
+      "mode": "100644",
+      "blob": "1b635366bf86ef1714e4ce83d3e4b5616fba86ba",
+      "size": 892,
+      "sha256": "5f08fbbb27bd5c43597905efa246b342d45cd7e7f8abdf67d8c465cf57cc722e"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-hosted-lifecycle-jobs-regression.js.log",
+      "mode": "100644",
+      "blob": "46b5354a4867dc1c37b9840e4bfcf0863477a1cd",
+      "size": 1749,
+      "sha256": "972c4a3a63e4cf3df5ed1e1bace7bcbcfa2dc37e18462c590fc61504bc7fdac5"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-hosted-model-regression.js.log",
+      "mode": "100644",
+      "blob": "e1213d5201338fa6f045b291d1791319f53d9bf9",
+      "size": 774,
+      "sha256": "b971bded91f6909861802b905403f09c53144efa101982b3d1a15ecd497a4162"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-hosted-owner-fence-regression.js.log",
+      "mode": "100644",
+      "blob": "536fdd41e0fb643a9e9e2d3b43e93ad30198f730",
+      "size": 68,
+      "sha256": "728dd889823eacd2fae19497693248911a68d866b5df8a4f2d4d5faf76b99424"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-llm-accounts-regression.js.log",
+      "mode": "100644",
+      "blob": "b266702871168578e8feaadd89a6e9adc3991155",
+      "size": 1144,
+      "sha256": "ce31b84e82a710d0774573eeb7828ae7bf815f8c10aa605ce28f396cb3aaae4c"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-login-regression.js.log",
+      "mode": "100644",
+      "blob": "8018efe915928ba8b369d92a42848054d5e432d3",
+      "size": 1301,
+      "sha256": "99e14e9af6d1f055ab458d6e000fe440718c4a0c0f0919457f1a6cea4209a73d"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-panel-pointerevents-regression.js.log",
+      "mode": "100644",
+      "blob": "a46a67a5ec9a2ea86d4d97595b018485cdceb000",
+      "size": 49,
+      "sha256": "2f15f0ede075b1f1fc244b3f7bdedb7b4ace1502176487f0eb1fde22ab8c7ab7"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-platform-admin-regression.js.log",
+      "mode": "100644",
+      "blob": "f87e181eab0215402e475b47434d608847a54ea1",
+      "size": 3687,
+      "sha256": "2cb3d4792d0d856135942b6b0643d399a199786bd8ff6457710554611cf824ff"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-quota-regression.js.log",
+      "mode": "100644",
+      "blob": "e78630db341ff9a1b2c524af449b4d7a93930a37",
+      "size": 1515,
+      "sha256": "c3b060ed6fb63d8a33b0d46b18d2b8d19e28f6cfd44b8825d00b8b427aa9ef08"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-soft-quota-regression.js.log",
+      "mode": "100644",
+      "blob": "4ea6aac94c7582874f77171efd7fb8b3e132ddfc",
+      "size": 99,
+      "sha256": "821393165c87b1557e38a1538471b3532acca48a5719fc59e816212b0f2f261d"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-spec-direct-regression.js.log",
+      "mode": "100644",
+      "blob": "f8172862ad009607c547081554b4577e99ef4eed",
+      "size": 57,
+      "sha256": "7159282586bb04e0c9a9953d14578d825b728429efc442275008d4af84e34f2a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-spec-workflow-regression.js.log",
+      "mode": "100644",
+      "blob": "517178496fb340c6e8d72d7e39fa2a0d24001676",
+      "size": 50,
+      "sha256": "50d881adb3720f18f22fc9f3dc18843cedfb57d1ac4a05be63fc69d517343673"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-specs-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "5f3649681fdbe320efe4a3bda2492f39316a88e9",
+      "size": 985,
+      "sha256": "5a7d810ace083ddf4e474db3b3e9f6cdf5ddf6e7a7aa72c4fd6d73fa188a5109"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-specs-theme-regression.js.log",
+      "mode": "100644",
+      "blob": "3d1aaa5ca6bbcaefd8634124fb10635e4ca23b56",
+      "size": 225,
+      "sha256": "592030f8e47b3009255eb968c6599aa04cc487e8c34f984838b8c51aeed5d937"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-task-board-regression.js.log",
+      "mode": "100644",
+      "blob": "5b2215aecd549fa825b2ba666b3a12a00591e7fa",
+      "size": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/console-theme-global-regression.js.log",
+      "mode": "100644",
+      "blob": "c6856b0726ec35db4a987e607b2cc49140389d48",
+      "size": 4195,
+      "sha256": "2662e7a40cfe43455bc7e6adaf682ec98544d1632cf367d3812f411489e52c7b"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/pilot-blocker-wake-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "5dfd229df95fa4cfe45402e449d3b8c6c36b200e",
+      "size": 74,
+      "sha256": "18435bfdc48bbd84e845d39339ad7b2cc2b8c3f3a3ef127660a54a71dbc7ed94"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/pilot-feedback-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "b5fe8bf732e67fd1f7fd0d903168377281ab6edf",
+      "size": 70,
+      "sha256": "505688d98432aa8e4f075cfbb0a33ecd5f9797f8485d9b38a43463900b2c8468"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/pilot-spec-template-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "6b798a0a531131b11cca7ba3d5a90aba9c6c4b39",
+      "size": 75,
+      "sha256": "cc221bdd1951382c00642fa065f704e7dcbb9053588b3515a94bf4f96ba2e20a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/r31-admin-agents-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "826d230a08dc9a197a02c0c8d992fb123a83ea64",
+      "size": 395,
+      "sha256": "4c1f47106e9afc4e718a2b6fc681bbb47aa91d1c1b774c0f50a90f87dacf6c10"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/r31-hosted-nodes-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "df5393359b7ce23db70d2fb4b6dc59ccfb0e4fe5",
+      "size": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/r32-spec-review-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "74802d6e199805d4d61ddab722b4ba50da3a7cc4",
+      "size": 136,
+      "sha256": "3669a2aea92524e055b41c4428531a16b11dc061444b838c8771cabe5e7000d4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/browsers/r32-task-flow-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "dca2423d4573dada216137f9c5494865f5495c05",
+      "size": 49,
+      "sha256": "e5d1a5b632d94c223b81745d4d9ed14df42f73fe9ad1e317c6da4518e36f61e9"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/gates/canonical.json",
+      "mode": "100644",
+      "blob": "60d9995861e94216f0bc419d5321c25f6b0a5972",
+      "size": 425,
+      "sha256": "f1a47f99b1276a01c6794a377d432a1d5337d92a1d0e69da1ce0e9ada12835f4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/gates/canonical.log",
+      "mode": "100644",
+      "blob": "811d952acc0a6bb0a4bc0ffd8b7951967b47e7ee",
+      "size": 41890,
+      "sha256": "10e3b49446d66f077464d39802b1132ef30ce5cfcef6cfa46a371cd3456d6687"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/gates/go.json",
+      "mode": "100644",
+      "blob": "01214911c251d89357066ed5c14ff6c8f6b1692b",
+      "size": 463,
+      "sha256": "751535908b3933ac76cf0a6c7e4283d6255488405d543d3869c6ad9938d3184a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/gates/go.log",
+      "mode": "100644",
+      "blob": "81d1c7fe7cb999b785f9da3bbedc87fef1eec126",
+      "size": 4365841,
+      "sha256": "1e37a60d63bd925c02dd46702a784df51b9ba0c5c6ed804fd96121d64b4a6eb3"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/gates/vet.json",
+      "mode": "100644",
+      "blob": "5be023ea0ebb2dc3af5792783416c4bb4d44386a",
+      "size": 413,
+      "sha256": "5c8cd69c909776879fdb47e13b23d11f9ce940a7c88a9be1cfb212f1e5c38736"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/BROWSERS.json",
+      "mode": "100644",
+      "blob": "282625f85b7983afc753cdfef89fab15ca9d22e8",
+      "size": 3791,
+      "sha256": "91adc5b7ae928e9632925bced77b829febd36c53c609577702e562a19815de3a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/EXTRA-BROWSERS.json",
+      "mode": "100644",
+      "blob": "e36b9c4b632860979d754ee406f27732496903fb",
+      "size": 144,
+      "sha256": "edb5204d63f884828aff58e5edee9c07deb7aa77f49e9fa47fd50c3252109ceb"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/FORMAL-BROWSERS.json",
+      "mode": "100644",
+      "blob": "5f2c3f9f05a850f830556795763fafad0d544449",
+      "size": 7008,
+      "sha256": "5603b306bd18ce6590907e49a5d0d49405f8e9b6a90384c730338b7d31d33a0d"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/INPUTS.json",
+      "mode": "100644",
+      "blob": "2b900e2e81d01f193d99ed6f8f1e65d05002f6a6",
+      "size": 1540,
+      "sha256": "3fba3b2d19a496cd0c0b7cdd2f30065ceb8aa3acd1cb3f007c8c9961b0cafeba"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-agent-groups-entry-regression.js.log",
+      "mode": "100644",
+      "blob": "a05d1d7666a88f61993309af3aa88e4437912af5",
+      "size": 860,
+      "sha256": "8807a00e8201d3f78062ca8b0c2544845bd700807c868147cad40603dbf89780"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-agent-groups-vega-regression.js.log",
+      "mode": "100644",
+      "blob": "a5e226c248067bcf0974472ab41a5571ed11e1fc",
+      "size": 904,
+      "sha256": "4845d113539a199cb7cf4e0650964f1ad2855310ca7718fe0654848cc80613d6"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-agent-mgmt-enroll-regression.js.log",
+      "mode": "100644",
+      "blob": "784fbc2289b337f95da4333646fbcd59e6d1500a",
+      "size": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-agent-mgmt-hosted-regression.js.log",
+      "mode": "100644",
+      "blob": "aff23c0b34cb333e9ac8a8355ddf9070ed90aa64",
+      "size": 3357,
+      "sha256": "fd419a7831826f77cba841c378582085bae0c7d1bce6cf55f622fcedf363680b"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-agent-table-layout-regression.js.final.log",
+      "mode": "100644",
+      "blob": "ff4c99d3437bf2206c454249f27783b7f8c39b1a",
+      "size": 119,
+      "sha256": "fa9652abb16cec05cd895dca65300e3cf19063f0e0f2e06702b14dc90db107f4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-agent-table-layout-regression.js.log",
+      "mode": "100644",
+      "blob": "ff4c99d3437bf2206c454249f27783b7f8c39b1a",
+      "size": 119,
+      "sha256": "fa9652abb16cec05cd895dca65300e3cf19063f0e0f2e06702b14dc90db107f4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-agent-tree-regression.js.log",
+      "mode": "100644",
+      "blob": "513d650bf282776ec052d1845f4d9dd91955d58b",
+      "size": 39,
+      "sha256": "c8c051b5f548f0c890ea4bb06234169e63e4c6bb979fd7d4f616617f69243976"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-browser-regression.js.final.log",
+      "mode": "100644",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "size": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "size": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-group-live-regression.js.log",
+      "mode": "100644",
+      "blob": "70761b3ad416fd6d3e5bc8d4dad855cc7b6bb995",
+      "size": 88,
+      "sha256": "05c10eece1dad8df03f443c3df22046a429fb68fd4fed4af0b531373bd8d9679"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-groupsnapshot-refresh-regression.js.log",
+      "mode": "100644",
+      "blob": "2484d45c1d1e389a94bc9a1a2605512bc763d3e1",
+      "size": 283,
+      "sha256": "81e582f967ddfdb4b11a1aaeb1295edf5206aaaf818b5d7da71bba2484376d7b"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-helper-update-regression.js.log",
+      "mode": "100644",
+      "blob": "1b635366bf86ef1714e4ce83d3e4b5616fba86ba",
+      "size": 892,
+      "sha256": "5f08fbbb27bd5c43597905efa246b342d45cd7e7f8abdf67d8c465cf57cc722e"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-hosted-lifecycle-jobs-regression.js.log",
+      "mode": "100644",
+      "blob": "46b5354a4867dc1c37b9840e4bfcf0863477a1cd",
+      "size": 1749,
+      "sha256": "972c4a3a63e4cf3df5ed1e1bace7bcbcfa2dc37e18462c590fc61504bc7fdac5"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-hosted-model-regression.js.log",
+      "mode": "100644",
+      "blob": "e1213d5201338fa6f045b291d1791319f53d9bf9",
+      "size": 774,
+      "sha256": "b971bded91f6909861802b905403f09c53144efa101982b3d1a15ecd497a4162"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-hosted-owner-fence-regression.js.log",
+      "mode": "100644",
+      "blob": "536fdd41e0fb643a9e9e2d3b43e93ad30198f730",
+      "size": 68,
+      "sha256": "728dd889823eacd2fae19497693248911a68d866b5df8a4f2d4d5faf76b99424"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-llm-accounts-regression.js.log",
+      "mode": "100644",
+      "blob": "b266702871168578e8feaadd89a6e9adc3991155",
+      "size": 1144,
+      "sha256": "ce31b84e82a710d0774573eeb7828ae7bf815f8c10aa605ce28f396cb3aaae4c"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-login-regression.js.final.log",
+      "mode": "100644",
+      "blob": "8018efe915928ba8b369d92a42848054d5e432d3",
+      "size": 1301,
+      "sha256": "99e14e9af6d1f055ab458d6e000fe440718c4a0c0f0919457f1a6cea4209a73d"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-panel-pointerevents-regression.js.log",
+      "mode": "100644",
+      "blob": "a46a67a5ec9a2ea86d4d97595b018485cdceb000",
+      "size": 49,
+      "sha256": "2f15f0ede075b1f1fc244b3f7bdedb7b4ace1502176487f0eb1fde22ab8c7ab7"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-platform-admin-regression.js.log",
+      "mode": "100644",
+      "blob": "f87e181eab0215402e475b47434d608847a54ea1",
+      "size": 3687,
+      "sha256": "2cb3d4792d0d856135942b6b0643d399a199786bd8ff6457710554611cf824ff"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-quota-regression.js.log",
+      "mode": "100644",
+      "blob": "e78630db341ff9a1b2c524af449b4d7a93930a37",
+      "size": 1515,
+      "sha256": "c3b060ed6fb63d8a33b0d46b18d2b8d19e28f6cfd44b8825d00b8b427aa9ef08"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-soft-quota-regression.js.log",
+      "mode": "100644",
+      "blob": "4ea6aac94c7582874f77171efd7fb8b3e132ddfc",
+      "size": 99,
+      "sha256": "821393165c87b1557e38a1538471b3532acca48a5719fc59e816212b0f2f261d"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-spec-direct-regression.js.log",
+      "mode": "100644",
+      "blob": "f8172862ad009607c547081554b4577e99ef4eed",
+      "size": 57,
+      "sha256": "7159282586bb04e0c9a9953d14578d825b728429efc442275008d4af84e34f2a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-spec-workflow-regression.js.log",
+      "mode": "100644",
+      "blob": "517178496fb340c6e8d72d7e39fa2a0d24001676",
+      "size": 50,
+      "sha256": "50d881adb3720f18f22fc9f3dc18843cedfb57d1ac4a05be63fc69d517343673"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-specs-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "c1fbaf182c30d40395e35e0cd3ec9a686ae647e8",
+      "size": 985,
+      "sha256": "cdcd8216c1f6768c5dbe73c6948e9098e26ba4a2629626a25f5dfd2da7b4950d"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-specs-theme-regression.js.log",
+      "mode": "100644",
+      "blob": "3d1aaa5ca6bbcaefd8634124fb10635e4ca23b56",
+      "size": 225,
+      "sha256": "592030f8e47b3009255eb968c6599aa04cc487e8c34f984838b8c51aeed5d937"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-task-board-regression.js.log",
+      "mode": "100644",
+      "blob": "5b2215aecd549fa825b2ba666b3a12a00591e7fa",
+      "size": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/console-theme-global-regression.js.log",
+      "mode": "100644",
+      "blob": "568dbca60aff31735cb78448304640756fe665cc",
+      "size": 4195,
+      "sha256": "73be0df2ed67492984f98c0d4641d3be913d36347f848dc60ce1c9c2bb6c1f30"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/go-gates/canonical.json",
+      "mode": "100644",
+      "blob": "cc9c71ab14e9b22dc810521e8189849fcd4d5d46",
+      "size": 425,
+      "sha256": "f90992ef0ce32d97a18c16918096784d2d26a61b5639fbc2f993657faef6344a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/go-gates/canonical.log",
+      "mode": "100644",
+      "blob": "68a5eeddf7b085ad23fa3f37d4f0c8cedf32bb2a",
+      "size": 41893,
+      "sha256": "1fc25869abdc3eab8e7fba8bf4c5c96e2fafc67a28d12ecbc1e974226fb3fabb"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/go-gates/go.json",
+      "mode": "100644",
+      "blob": "95a95f1a4f7cf7561ef1073e89d3a6aeb4b64534",
+      "size": 463,
+      "sha256": "a257d4a7634d16f7b4216f37e525b7478f38824cde7d041cd000a68aad24d636"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/go-gates/go.log",
+      "mode": "100644",
+      "blob": "71c46f2627a0cbe16a106874f8cbcd34954935af",
+      "size": 4364707,
+      "sha256": "b4edd0a9591796047db40dd1da2836bb9a030b92889baf1538f24c6dfc6e72c7"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/go-gates/vet.json",
+      "mode": "100644",
+      "blob": "847963f9d426b9791408b66af8f6de373fbc0131",
+      "size": 413,
+      "sha256": "559782e0da54adac0bf2fa9b7316357bd3d82c92bf6ac2f7282380877ff38f08"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/go-gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/RESULTS.json",
+      "mode": "100644",
+      "blob": "fb0a5f510459bdd0a33ee03e1a3432f00060e810",
+      "size": 741,
+      "sha256": "f1ececae34152bdde7a71aaa6fe63f60fadbf09a9fd4540555e42fe8a6704216"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/actions-wrap.log",
+      "mode": "100644",
+      "blob": "df66fa39331115477fd05415fadab82bdab239a9",
+      "size": 381,
+      "sha256": "e5c07795b2d4fa057314604d56263d3ad7aa258f8f07b856f4c366055dddd460"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/buttons-wrap.log",
+      "mode": "100644",
+      "blob": "9039a33a1dbbf13603becf7399978580180a0e43",
+      "size": 194,
+      "sha256": "652e527181c805c1b4c08cd79bafc2d06624c26d9d978f4520481bccd43da7b1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/fixed-columns.log",
+      "mode": "100644",
+      "blob": "5f48cf54825f3796b328028ce66c7cfa3af4a749",
+      "size": 188,
+      "sha256": "3cf31faaebf12acc007d5ebff2632e0a59d1b37c4c30540e6e7a9a6af5876c6c"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/helper-below.log",
+      "mode": "100644",
+      "blob": "514f86f56e03fd1022e1b58ce6d69bcef5c011cc",
+      "size": 356,
+      "sha256": "7dcc7f7b7fdab9c3f3166e09b13734f26ee6aacc043c5b4a798576e6f453fd39"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/no-ellipsis.log",
+      "mode": "100644",
+      "blob": "0ddd0eab227c25a1b699294c2be6a54869237934",
+      "size": 189,
+      "sha256": "498a2fadd312f1deaf1b69adfd989a62284166f8229811c2cb39a0debd6c2a6e"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/no-scroll.log",
+      "mode": "100644",
+      "blob": "0da73f9418ae3e539630806a713ddc35448bd99e",
+      "size": 191,
+      "sha256": "5c57105086b51300dc79285f561a2f780b27fddb98bcc7e333ed25ea2f6533f9"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/RESULTS.json",
+      "mode": "100644",
+      "blob": "75ce0ac4b03d991ec68332f44f0e616d9f887154",
+      "size": 21443,
+      "sha256": "b90448e38edfc807e074a98c3ca44f61723559d2754b250758a9737ee219b73a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/enroll-1024.png",
+      "mode": "100644",
+      "blob": "047abd38f45c27db9d13e903823cd08100818c0e",
+      "size": 14778,
+      "sha256": "9694df06da70efc05254232a56ca13bfecb363a00e8502c5a8655ee96a77691f"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/enroll-1440.png",
+      "mode": "100644",
+      "blob": "c4c2f3aea32e03d4fa6706bc8cb787e00045dba9",
+      "size": 15209,
+      "sha256": "a947379912039addc654c07cfe11fb8dbbf4c4d402b0b4de1a400ae3e6a032ac"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/enroll-768.png",
+      "mode": "100644",
+      "blob": "781b20895b1bdc778077371567210c70caa2b990",
+      "size": 14672,
+      "sha256": "fa8437f16859eb063cb2b7785634064b9183d70ecf6eef57e411b787f11ac306"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/helper-1024.png",
+      "mode": "100644",
+      "blob": "71a64ca4e3a38d8ea16418a69f744c1b13fd1cbe",
+      "size": 49486,
+      "sha256": "a28f58780940ee0a0bca5377a65ddebb78137155dda016cb395357c63d13cdb0"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/helper-1440.png",
+      "mode": "100644",
+      "blob": "2bbb0e78721d7983b04ae819db96ed5c3c06a5ed",
+      "size": 51294,
+      "sha256": "b9ea377453b9ec3bb933a3879cca444253386ae7f48296cc177dacff84a42db7"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/helper-768.png",
+      "mode": "100644",
+      "blob": "071f61e8697a97e7619ef249ca4db560ecd0507b",
+      "size": 45436,
+      "sha256": "6fb9233b4b3bba8945d728bf35583f224542e3f8822ddc94295564aa388f6388"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/roster-1024.png",
+      "mode": "100644",
+      "blob": "d23fd8bc650464584930223be197761cae704739",
+      "size": 24530,
+      "sha256": "a66e3da04bbca3a9455a89294f43054bcc5178443f05a53f8d2b907bd6583d0a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/roster-1440.png",
+      "mode": "100644",
+      "blob": "1de6f193aedf58029cf4b2ec879bbdc0d03ed37a",
+      "size": 26360,
+      "sha256": "0585a20458efd3f59eebc9f48f8cc26fcf34d9899cf41e57d65d53b92cc653f1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/roster-768.png",
+      "mode": "100644",
+      "blob": "3e87ec23efb940efd71320920212c12cc00f2084",
+      "size": 20132,
+      "sha256": "732d691b2d1d50726675adde435619bb690dccf1bf5bf2f5affb78222e57cb43"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/roster-actions-1024.png",
+      "mode": "100644",
+      "blob": "9d21e375b738140bb302e624e960d5533014a4c1",
+      "size": 24082,
+      "sha256": "7d68da2f3446a70fb7c7d05520295fec34acc2fbe651999f9b782ce95e80c698"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/roster-actions-1440.png",
+      "mode": "100644",
+      "blob": "1de6f193aedf58029cf4b2ec879bbdc0d03ed37a",
+      "size": 26360,
+      "sha256": "0585a20458efd3f59eebc9f48f8cc26fcf34d9899cf41e57d65d53b92cc653f1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored-screenshots/roster-actions-768.png",
+      "mode": "100644",
+      "blob": "5ab4728bd062538c190cc057bb998aa914e90e31",
+      "size": 17250,
+      "sha256": "2ad22a0bc243150f33e7830dbe3d0f4bfc2008e6bbb75bbe1e6e86f2b2f1c1a1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/mutations/restored.log",
+      "mode": "100644",
+      "blob": "ff4c99d3437bf2206c454249f27783b7f8c39b1a",
+      "size": 119,
+      "sha256": "fa9652abb16cec05cd895dca65300e3cf19063f0e0f2e06702b14dc90db107f4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/pilot-blocker-wake-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "5dfd229df95fa4cfe45402e449d3b8c6c36b200e",
+      "size": 74,
+      "sha256": "18435bfdc48bbd84e845d39339ad7b2cc2b8c3f3a3ef127660a54a71dbc7ed94"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/pilot-feedback-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "b5fe8bf732e67fd1f7fd0d903168377281ab6edf",
+      "size": 70,
+      "sha256": "505688d98432aa8e4f075cfbb0a33ecd5f9797f8485d9b38a43463900b2c8468"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/pilot-spec-template-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "6b798a0a531131b11cca7ba3d5a90aba9c6c4b39",
+      "size": 75,
+      "sha256": "cc221bdd1951382c00642fa065f704e7dcbb9053588b3515a94bf4f96ba2e20a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/r31-admin-agents-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "826d230a08dc9a197a02c0c8d992fb123a83ea64",
+      "size": 395,
+      "sha256": "4c1f47106e9afc4e718a2b6fc681bbb47aa91d1c1b774c0f50a90f87dacf6c10"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/r31-hosted-nodes-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "df5393359b7ce23db70d2fb4b6dc59ccfb0e4fe5",
+      "size": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/r32-spec-review-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "74802d6e199805d4d61ddab722b4ba50da3a7cc4",
+      "size": 136,
+      "sha256": "3669a2aea92524e055b41c4428531a16b11dc061444b838c8771cabe5e7000d4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/r32-task-flow-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "dca2423d4573dada216137f9c5494865f5495c05",
+      "size": 49,
+      "sha256": "e5d1a5b632d94c223b81745d4d9ed14df42f73fe9ad1e317c6da4518e36f61e9"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/RESULTS.json",
+      "mode": "100644",
+      "blob": "75ce0ac4b03d991ec68332f44f0e616d9f887154",
+      "size": 21443,
+      "sha256": "b90448e38edfc807e074a98c3ca44f61723559d2754b250758a9737ee219b73a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/enroll-1024.png",
+      "mode": "100644",
+      "blob": "047abd38f45c27db9d13e903823cd08100818c0e",
+      "size": 14778,
+      "sha256": "9694df06da70efc05254232a56ca13bfecb363a00e8502c5a8655ee96a77691f"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/enroll-1440.png",
+      "mode": "100644",
+      "blob": "c4c2f3aea32e03d4fa6706bc8cb787e00045dba9",
+      "size": 15209,
+      "sha256": "a947379912039addc654c07cfe11fb8dbbf4c4d402b0b4de1a400ae3e6a032ac"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/enroll-768.png",
+      "mode": "100644",
+      "blob": "781b20895b1bdc778077371567210c70caa2b990",
+      "size": 14672,
+      "sha256": "fa8437f16859eb063cb2b7785634064b9183d70ecf6eef57e411b787f11ac306"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/helper-1024.png",
+      "mode": "100644",
+      "blob": "71a64ca4e3a38d8ea16418a69f744c1b13fd1cbe",
+      "size": 49486,
+      "sha256": "a28f58780940ee0a0bca5377a65ddebb78137155dda016cb395357c63d13cdb0"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/helper-1440.png",
+      "mode": "100644",
+      "blob": "2bbb0e78721d7983b04ae819db96ed5c3c06a5ed",
+      "size": 51294,
+      "sha256": "b9ea377453b9ec3bb933a3879cca444253386ae7f48296cc177dacff84a42db7"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/helper-768.png",
+      "mode": "100644",
+      "blob": "071f61e8697a97e7619ef249ca4db560ecd0507b",
+      "size": 45436,
+      "sha256": "6fb9233b4b3bba8945d728bf35583f224542e3f8822ddc94295564aa388f6388"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/roster-1024.png",
+      "mode": "100644",
+      "blob": "d23fd8bc650464584930223be197761cae704739",
+      "size": 24530,
+      "sha256": "a66e3da04bbca3a9455a89294f43054bcc5178443f05a53f8d2b907bd6583d0a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/roster-1440.png",
+      "mode": "100644",
+      "blob": "1de6f193aedf58029cf4b2ec879bbdc0d03ed37a",
+      "size": 26360,
+      "sha256": "0585a20458efd3f59eebc9f48f8cc26fcf34d9899cf41e57d65d53b92cc653f1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/roster-768.png",
+      "mode": "100644",
+      "blob": "3e87ec23efb940efd71320920212c12cc00f2084",
+      "size": 20132,
+      "sha256": "732d691b2d1d50726675adde435619bb690dccf1bf5bf2f5affb78222e57cb43"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/roster-actions-1024.png",
+      "mode": "100644",
+      "blob": "9d21e375b738140bb302e624e960d5533014a4c1",
+      "size": 24082,
+      "sha256": "7d68da2f3446a70fb7c7d05520295fec34acc2fbe651999f9b782ce95e80c698"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/roster-actions-1440.png",
+      "mode": "100644",
+      "blob": "1de6f193aedf58029cf4b2ec879bbdc0d03ed37a",
+      "size": 26360,
+      "sha256": "0585a20458efd3f59eebc9f48f8cc26fcf34d9899cf41e57d65d53b92cc653f1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots-final/roster-actions-768.png",
+      "mode": "100644",
+      "blob": "5ab4728bd062538c190cc057bb998aa914e90e31",
+      "size": 17250,
+      "sha256": "2ad22a0bc243150f33e7830dbe3d0f4bfc2008e6bbb75bbe1e6e86f2b2f1c1a1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/RESULTS.json",
+      "mode": "100644",
+      "blob": "e66b4a516f96e215a7141942aa6248828736b204",
+      "size": 16243,
+      "sha256": "89c4a557cb8ea0c64e5207bfc4695c8eef8b5236032a63c60eb2e9a72503c29c"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/enroll-1024.png",
+      "mode": "100644",
+      "blob": "047abd38f45c27db9d13e903823cd08100818c0e",
+      "size": 14778,
+      "sha256": "9694df06da70efc05254232a56ca13bfecb363a00e8502c5a8655ee96a77691f"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/enroll-1440.png",
+      "mode": "100644",
+      "blob": "c4c2f3aea32e03d4fa6706bc8cb787e00045dba9",
+      "size": 15209,
+      "sha256": "a947379912039addc654c07cfe11fb8dbbf4c4d402b0b4de1a400ae3e6a032ac"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/enroll-768.png",
+      "mode": "100644",
+      "blob": "781b20895b1bdc778077371567210c70caa2b990",
+      "size": 14672,
+      "sha256": "fa8437f16859eb063cb2b7785634064b9183d70ecf6eef57e411b787f11ac306"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/helper-1024.png",
+      "mode": "100644",
+      "blob": "0c1da77dc0f8fbb602b357b3a6d15fd599c0820b",
+      "size": 49484,
+      "sha256": "f1ef7303412ea4da19dfb7933efe26538cf95bb87904b408a5b698e2eef22060"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/helper-1440.png",
+      "mode": "100644",
+      "blob": "4560a277bcec4c0e944d55c4d9d2e3de9b6b28b5",
+      "size": 52374,
+      "sha256": "5bd1ec3b3c35a497a905d51360b8cf7a43b0f1ddae02df1d6daac9d50a8481ba"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/helper-768.png",
+      "mode": "100644",
+      "blob": "0a6312c94ab9db22f7cd56c3351849a4ea3bb022",
+      "size": 45436,
+      "sha256": "0e5e17b4b5774ce800af9b99fc991c793fa0e0a68fb58a55caeb6948c133867e"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/roster-1024.png",
+      "mode": "100644",
+      "blob": "b36ee39a93f423b2da82fe0cecfefa1f1346b6ef",
+      "size": 22279,
+      "sha256": "6aded09db558115080ee39356d3c9b190fb8cae27003d8b3070f67e2a5053619"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/roster-1440.png",
+      "mode": "100644",
+      "blob": "81c7e77349abfb62b6471f647504f43980db9d67",
+      "size": 24367,
+      "sha256": "3ec1f77be49303920c6f4ccdae139cf5e0392c49c3da4e867fbdab55aa4f7d18"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/roster-768.png",
+      "mode": "100644",
+      "blob": "98cac0f2e2158e80ec2d2fdcfb6b8464f4f8bbfa",
+      "size": 19638,
+      "sha256": "425e5a3a8df596957753f7e03158a52c033acf35ab89e928db9b5008a060b8e2"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/roster-actions-1024.png",
+      "mode": "100644",
+      "blob": "b36ee39a93f423b2da82fe0cecfefa1f1346b6ef",
+      "size": 22279,
+      "sha256": "6aded09db558115080ee39356d3c9b190fb8cae27003d8b3070f67e2a5053619"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/roster-actions-1440.png",
+      "mode": "100644",
+      "blob": "81c7e77349abfb62b6471f647504f43980db9d67",
+      "size": 24367,
+      "sha256": "3ec1f77be49303920c6f4ccdae139cf5e0392c49c3da4e867fbdab55aa4f7d18"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/b88c148e/screenshots/roster-actions-768.png",
+      "mode": "100644",
+      "blob": "69249bf180679be0a6335c868bf6c17f16aa4fb6",
+      "size": 16700,
+      "sha256": "026b23cb9d7f3c5dbe1a399253da67e5adf76acf1896c5f59052f967c9c362bc"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/BROWSERS.json",
+      "mode": "100644",
+      "blob": "5a5157ae2bcc66edf7f40152d8c09580b1ab60b2",
+      "size": 3904,
+      "sha256": "864d9a09c4565a75899fa13a95d4713877b854eee1c899ce6aea3677cf343c2f"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/PRECHECK-NOTES.json",
+      "mode": "100644",
+      "blob": "6e2501fa0b79d67685cae5e11ac624be3a91f586",
+      "size": 1038,
+      "sha256": "6493367626b79f85d086d301a5174ff0c379b5c7fb457cce0f8366acca94c005"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/STATUS-WITHDRAWAL-SURVIVED-PRECHECK.log",
+      "mode": "100644",
+      "blob": "ff4c99d3437bf2206c454249f27783b7f8c39b1a",
+      "size": 119,
+      "sha256": "fa9652abb16cec05cd895dca65300e3cf19063f0e0f2e06702b14dc90db107f4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-agent-groups-entry-regression.js.log",
+      "mode": "100644",
+      "blob": "141353c9fd92ceec01d3f31e9742442c3e2720e8",
+      "size": 860,
+      "sha256": "1ff9dd41f2454a7ba44583f9507711a97e9852ae976a30bf4e113c7b35a76778"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-agent-groups-vega-regression.js.log",
+      "mode": "100644",
+      "blob": "a5e226c248067bcf0974472ab41a5571ed11e1fc",
+      "size": 904,
+      "sha256": "4845d113539a199cb7cf4e0650964f1ad2855310ca7718fe0654848cc80613d6"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-agent-mgmt-enroll-regression.js.log",
+      "mode": "100644",
+      "blob": "784fbc2289b337f95da4333646fbcd59e6d1500a",
+      "size": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-agent-mgmt-hosted-regression.js.log",
+      "mode": "100644",
+      "blob": "aff23c0b34cb333e9ac8a8355ddf9070ed90aa64",
+      "size": 3357,
+      "sha256": "fd419a7831826f77cba841c378582085bae0c7d1bce6cf55f622fcedf363680b"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-agent-table-layout-regression.js.log",
+      "mode": "100644",
+      "blob": "ff4c99d3437bf2206c454249f27783b7f8c39b1a",
+      "size": 119,
+      "sha256": "fa9652abb16cec05cd895dca65300e3cf19063f0e0f2e06702b14dc90db107f4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-agent-tree-regression.js.log",
+      "mode": "100644",
+      "blob": "513d650bf282776ec052d1845f4d9dd91955d58b",
+      "size": 39,
+      "sha256": "c8c051b5f548f0c890ea4bb06234169e63e4c6bb979fd7d4f616617f69243976"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "size": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-group-live-regression.js.log",
+      "mode": "100644",
+      "blob": "70761b3ad416fd6d3e5bc8d4dad855cc7b6bb995",
+      "size": 88,
+      "sha256": "05c10eece1dad8df03f443c3df22046a429fb68fd4fed4af0b531373bd8d9679"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-groupsnapshot-refresh-regression.js.log",
+      "mode": "100644",
+      "blob": "2484d45c1d1e389a94bc9a1a2605512bc763d3e1",
+      "size": 283,
+      "sha256": "81e582f967ddfdb4b11a1aaeb1295edf5206aaaf818b5d7da71bba2484376d7b"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-helper-update-regression.js.log",
+      "mode": "100644",
+      "blob": "1b635366bf86ef1714e4ce83d3e4b5616fba86ba",
+      "size": 892,
+      "sha256": "5f08fbbb27bd5c43597905efa246b342d45cd7e7f8abdf67d8c465cf57cc722e"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-hosted-lifecycle-jobs-regression.js.log",
+      "mode": "100644",
+      "blob": "46b5354a4867dc1c37b9840e4bfcf0863477a1cd",
+      "size": 1749,
+      "sha256": "972c4a3a63e4cf3df5ed1e1bace7bcbcfa2dc37e18462c590fc61504bc7fdac5"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-hosted-model-regression.js.log",
+      "mode": "100644",
+      "blob": "e1213d5201338fa6f045b291d1791319f53d9bf9",
+      "size": 774,
+      "sha256": "b971bded91f6909861802b905403f09c53144efa101982b3d1a15ecd497a4162"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-hosted-owner-fence-regression.js.log",
+      "mode": "100644",
+      "blob": "536fdd41e0fb643a9e9e2d3b43e93ad30198f730",
+      "size": 68,
+      "sha256": "728dd889823eacd2fae19497693248911a68d866b5df8a4f2d4d5faf76b99424"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-llm-accounts-regression.js.log",
+      "mode": "100644",
+      "blob": "b266702871168578e8feaadd89a6e9adc3991155",
+      "size": 1144,
+      "sha256": "ce31b84e82a710d0774573eeb7828ae7bf815f8c10aa605ce28f396cb3aaae4c"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-login-regression.js.log",
+      "mode": "100644",
+      "blob": "8018efe915928ba8b369d92a42848054d5e432d3",
+      "size": 1301,
+      "sha256": "99e14e9af6d1f055ab458d6e000fe440718c4a0c0f0919457f1a6cea4209a73d"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-panel-pointerevents-regression.js.log",
+      "mode": "100644",
+      "blob": "a46a67a5ec9a2ea86d4d97595b018485cdceb000",
+      "size": 49,
+      "sha256": "2f15f0ede075b1f1fc244b3f7bdedb7b4ace1502176487f0eb1fde22ab8c7ab7"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-platform-admin-regression.js.log",
+      "mode": "100644",
+      "blob": "f87e181eab0215402e475b47434d608847a54ea1",
+      "size": 3687,
+      "sha256": "2cb3d4792d0d856135942b6b0643d399a199786bd8ff6457710554611cf824ff"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-quota-regression.js.log",
+      "mode": "100644",
+      "blob": "e78630db341ff9a1b2c524af449b4d7a93930a37",
+      "size": 1515,
+      "sha256": "c3b060ed6fb63d8a33b0d46b18d2b8d19e28f6cfd44b8825d00b8b427aa9ef08"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-soft-quota-regression.js.log",
+      "mode": "100644",
+      "blob": "4ea6aac94c7582874f77171efd7fb8b3e132ddfc",
+      "size": 99,
+      "sha256": "821393165c87b1557e38a1538471b3532acca48a5719fc59e816212b0f2f261d"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-spec-direct-regression.js.log",
+      "mode": "100644",
+      "blob": "f8172862ad009607c547081554b4577e99ef4eed",
+      "size": 57,
+      "sha256": "7159282586bb04e0c9a9953d14578d825b728429efc442275008d4af84e34f2a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-spec-workflow-regression.js.log",
+      "mode": "100644",
+      "blob": "517178496fb340c6e8d72d7e39fa2a0d24001676",
+      "size": 50,
+      "sha256": "50d881adb3720f18f22fc9f3dc18843cedfb57d1ac4a05be63fc69d517343673"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-specs-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "800cda5950ebd677142d69f67a8086c0fa9a8b53",
+      "size": 985,
+      "sha256": "7574b523656ff1348d0db25e96326e3a30a4c408e9da101431e225416e026e78"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-specs-theme-regression.js.log",
+      "mode": "100644",
+      "blob": "3d1aaa5ca6bbcaefd8634124fb10635e4ca23b56",
+      "size": 225,
+      "sha256": "592030f8e47b3009255eb968c6599aa04cc487e8c34f984838b8c51aeed5d937"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-task-board-regression.js.log",
+      "mode": "100644",
+      "blob": "5b2215aecd549fa825b2ba666b3a12a00591e7fa",
+      "size": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/console-theme-global-regression.js.log",
+      "mode": "100644",
+      "blob": "d3e60a2ca292805579fac2774192e49a33b0b236",
+      "size": 4195,
+      "sha256": "67b3a6e73370371e5b88ca89565fa77bc7a46aee62a5d62fca90204da2658dea"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/diagnostics/select-cap.log",
+      "mode": "100644",
+      "blob": "ff4c99d3437bf2206c454249f27783b7f8c39b1a",
+      "size": 119,
+      "sha256": "fa9652abb16cec05cd895dca65300e3cf19063f0e0f2e06702b14dc90db107f4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/diagnostics/workspace-overflow.log",
+      "mode": "100644",
+      "blob": "a797f416e658de8179030f3bd17492fce295f635",
+      "size": 388,
+      "sha256": "7d3204aeeaab6a4ef64c161d0c1456c852603cbc7643eb06cd37df21b9938ed2"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/actions-wrap.log",
+      "mode": "100644",
+      "blob": "11167dad0a177cdf1356a22b6e6502940bf8338d",
+      "size": 190,
+      "sha256": "ea334a93500d04935432ec10eafaee51d058108acfd1e1f6e49945035e48b1e9"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/buttons-wrap.log",
+      "mode": "100644",
+      "blob": "fbdc764b259483f8ec9508462a28ab12765234e2",
+      "size": 194,
+      "sha256": "c1f7f173504d7d910e54744d994832399f5d08ea4f41d411d54249481532ad7d"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/fixed-columns.log",
+      "mode": "100644",
+      "blob": "8329339344039039d6840bc725ee22e332541e69",
+      "size": 188,
+      "sha256": "6c41f21cd36eae5183624692d76abd20daed420840978d062fff1b3a95b524c4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/helper-below.log",
+      "mode": "100644",
+      "blob": "fd9c3b42167c099a4f3b9228ae6d232acc06c8e1",
+      "size": 356,
+      "sha256": "ec239cbbb7f1e01fde6e7b6b30628302771da9ead2cbf8ad7ecc69ebb48e9793"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/no-ellipsis.log",
+      "mode": "100644",
+      "blob": "fe6d53fe14fc54257ba8c1260885c5121454bf82",
+      "size": 189,
+      "sha256": "47c290fdfc01f303d03cb8eaa7442a802b4c96724e7fa592cd11f4b4383fd7d0"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/no-scroll.log",
+      "mode": "100644",
+      "blob": "ffa47429582a043b71f31e9e7668736eafb359dd",
+      "size": 191,
+      "sha256": "e477f39ac0782119393c8d790cd7a2c412f9c80a64753ff7fe46c18a13f9c070"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/restored.log",
+      "mode": "100644",
+      "blob": "76208f93c03ffb067b9172d75b8c6bc7ca3b3ae2",
+      "size": 184,
+      "sha256": "92db0660bbecd54c9328b24e05136f0d0a743df22681ced93c75f782cb44a3e6"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow.log",
+      "mode": "100644",
+      "blob": "5b547dc5f8db3efe21cc08aea5f136184483afa7",
+      "size": 215,
+      "sha256": "667f2be75bb16b6f6a108c4557a76795c63c02b1aca414c07134dc485635572b"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/RESULTS.json",
+      "mode": "100644",
+      "blob": "13829fd091b535630510956e5da0ba47923b4e98",
+      "size": 21458,
+      "sha256": "4cd08094f0abb96002724ebbd861b21fbd236e32dfc9c35d3433e8de8df04fe5"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/enroll-1024.png",
+      "mode": "100644",
+      "blob": "047abd38f45c27db9d13e903823cd08100818c0e",
+      "size": 14778,
+      "sha256": "9694df06da70efc05254232a56ca13bfecb363a00e8502c5a8655ee96a77691f"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/enroll-1440.png",
+      "mode": "100644",
+      "blob": "c4c2f3aea32e03d4fa6706bc8cb787e00045dba9",
+      "size": 15209,
+      "sha256": "a947379912039addc654c07cfe11fb8dbbf4c4d402b0b4de1a400ae3e6a032ac"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/enroll-768.png",
+      "mode": "100644",
+      "blob": "781b20895b1bdc778077371567210c70caa2b990",
+      "size": 14672,
+      "sha256": "fa8437f16859eb063cb2b7785634064b9183d70ecf6eef57e411b787f11ac306"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/helper-1024.png",
+      "mode": "100644",
+      "blob": "a508cc2217fe1295490d0a39fe771a16f7c0e602",
+      "size": 48922,
+      "sha256": "81e63c1b4d74275bc2b8265474d58282e48d74d1c8a4333eb46f230d46a8be74"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/helper-1440.png",
+      "mode": "100644",
+      "blob": "9ed635cbe60152d2e13640101e2eed89376063b2",
+      "size": 51279,
+      "sha256": "9894ec3fa18098519b82c2910e290d68aac0396b59677b574bda061f1b9fe843"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/helper-768.png",
+      "mode": "100644",
+      "blob": "549a73182d4c1ff5ba92c503f1d5fce7319f5088",
+      "size": 47171,
+      "sha256": "b39887216f2310fb8ad6b11a1316e445fb95818a3e19afcbf4bb7e7a66e5c757"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/roster-1024.png",
+      "mode": "100644",
+      "blob": "d23fd8bc650464584930223be197761cae704739",
+      "size": 24530,
+      "sha256": "a66e3da04bbca3a9455a89294f43054bcc5178443f05a53f8d2b907bd6583d0a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/roster-1440.png",
+      "mode": "100644",
+      "blob": "1de6f193aedf58029cf4b2ec879bbdc0d03ed37a",
+      "size": 26360,
+      "sha256": "0585a20458efd3f59eebc9f48f8cc26fcf34d9899cf41e57d65d53b92cc653f1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/roster-768.png",
+      "mode": "100644",
+      "blob": "3e87ec23efb940efd71320920212c12cc00f2084",
+      "size": 20132,
+      "sha256": "732d691b2d1d50726675adde435619bb690dccf1bf5bf2f5affb78222e57cb43"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/roster-actions-1024.png",
+      "mode": "100644",
+      "blob": "9d21e375b738140bb302e624e960d5533014a4c1",
+      "size": 24082,
+      "sha256": "7d68da2f3446a70fb7c7d05520295fec34acc2fbe651999f9b782ce95e80c698"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/roster-actions-1440.png",
+      "mode": "100644",
+      "blob": "1de6f193aedf58029cf4b2ec879bbdc0d03ed37a",
+      "size": 26360,
+      "sha256": "0585a20458efd3f59eebc9f48f8cc26fcf34d9899cf41e57d65d53b92cc653f1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/status-overflow/roster-actions-768.png",
+      "mode": "100644",
+      "blob": "5ab4728bd062538c190cc057bb998aa914e90e31",
+      "size": 17250,
+      "sha256": "2ad22a0bc243150f33e7830dbe3d0f4bfc2008e6bbb75bbe1e6e86f2b2f1c1a1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/mutations/wide-checkbox.log",
+      "mode": "100644",
+      "blob": "5d3422b09dc49c344690064cd809a562167a7c3f",
+      "size": 169,
+      "sha256": "2f2bc3130ab88e0db03bc07a0d0adeda118dde414edb123b038e0d2f987d2088"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/pilot-blocker-wake-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "5dfd229df95fa4cfe45402e449d3b8c6c36b200e",
+      "size": 74,
+      "sha256": "18435bfdc48bbd84e845d39339ad7b2cc2b8c3f3a3ef127660a54a71dbc7ed94"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/pilot-feedback-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "b5fe8bf732e67fd1f7fd0d903168377281ab6edf",
+      "size": 70,
+      "sha256": "505688d98432aa8e4f075cfbb0a33ecd5f9797f8485d9b38a43463900b2c8468"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/pilot-spec-template-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "6b798a0a531131b11cca7ba3d5a90aba9c6c4b39",
+      "size": 75,
+      "sha256": "cc221bdd1951382c00642fa065f704e7dcbb9053588b3515a94bf4f96ba2e20a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/r31-admin-agents-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "826d230a08dc9a197a02c0c8d992fb123a83ea64",
+      "size": 395,
+      "sha256": "4c1f47106e9afc4e718a2b6fc681bbb47aa91d1c1b774c0f50a90f87dacf6c10"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/r31-hosted-nodes-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "df5393359b7ce23db70d2fb4b6dc59ccfb0e4fe5",
+      "size": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/r32-spec-review-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "74802d6e199805d4d61ddab722b4ba50da3a7cc4",
+      "size": 136,
+      "sha256": "3669a2aea92524e055b41c4428531a16b11dc061444b838c8771cabe5e7000d4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/r32-task-flow-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "dca2423d4573dada216137f9c5494865f5495c05",
+      "size": 49,
+      "sha256": "e5d1a5b632d94c223b81745d4d9ed14df42f73fe9ad1e317c6da4518e36f61e9"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/RESULTS.json",
+      "mode": "100644",
+      "blob": "3c281021ce863977fe029dd1be8b8dd9daa846f7",
+      "size": 21443,
+      "sha256": "1123c68a1c5894fe35a85e58387aefea3fccd894d2476ea9e3f7bdce45312da4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/enroll-1024.png",
+      "mode": "100644",
+      "blob": "047abd38f45c27db9d13e903823cd08100818c0e",
+      "size": 14778,
+      "sha256": "9694df06da70efc05254232a56ca13bfecb363a00e8502c5a8655ee96a77691f"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/enroll-1440.png",
+      "mode": "100644",
+      "blob": "c4c2f3aea32e03d4fa6706bc8cb787e00045dba9",
+      "size": 15209,
+      "sha256": "a947379912039addc654c07cfe11fb8dbbf4c4d402b0b4de1a400ae3e6a032ac"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/enroll-768.png",
+      "mode": "100644",
+      "blob": "781b20895b1bdc778077371567210c70caa2b990",
+      "size": 14672,
+      "sha256": "fa8437f16859eb063cb2b7785634064b9183d70ecf6eef57e411b787f11ac306"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/helper-1024.png",
+      "mode": "100644",
+      "blob": "17e6b3b1d152cb1f395a83a6f9bf098708812e41",
+      "size": 53278,
+      "sha256": "76489502c489599fec440d35361796d230f47cd305d5eb175d2be8a2ce9d9ed1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/helper-1440.png",
+      "mode": "100644",
+      "blob": "892a362e222921fcf7538138cd08c1acea595541",
+      "size": 52909,
+      "sha256": "13272d41a277eafe9ca14b231a42fa7f5e798285fe284773612bb3d5375d901d"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/helper-768.png",
+      "mode": "100644",
+      "blob": "bfe440bb7d7bbdad255d1ab9bf6bd34a02e1b2c6",
+      "size": 49437,
+      "sha256": "7bfa4d2e81447675f40546918348132630f5a3e67d47d36c5c6bad4438619b04"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/roster-1024.png",
+      "mode": "100644",
+      "blob": "d23fd8bc650464584930223be197761cae704739",
+      "size": 24530,
+      "sha256": "a66e3da04bbca3a9455a89294f43054bcc5178443f05a53f8d2b907bd6583d0a"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/roster-1440.png",
+      "mode": "100644",
+      "blob": "1de6f193aedf58029cf4b2ec879bbdc0d03ed37a",
+      "size": 26360,
+      "sha256": "0585a20458efd3f59eebc9f48f8cc26fcf34d9899cf41e57d65d53b92cc653f1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/roster-768.png",
+      "mode": "100644",
+      "blob": "3e87ec23efb940efd71320920212c12cc00f2084",
+      "size": 20132,
+      "sha256": "732d691b2d1d50726675adde435619bb690dccf1bf5bf2f5affb78222e57cb43"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/roster-actions-1024.png",
+      "mode": "100644",
+      "blob": "9d21e375b738140bb302e624e960d5533014a4c1",
+      "size": 24082,
+      "sha256": "7d68da2f3446a70fb7c7d05520295fec34acc2fbe651999f9b782ce95e80c698"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/roster-actions-1440.png",
+      "mode": "100644",
+      "blob": "1de6f193aedf58029cf4b2ec879bbdc0d03ed37a",
+      "size": 26360,
+      "sha256": "0585a20458efd3f59eebc9f48f8cc26fcf34d9899cf41e57d65d53b92cc653f1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/preliminary/e802af20-and-23ff32de/screenshots/roster-actions-768.png",
+      "mode": "100644",
+      "blob": "5ab4728bd062538c190cc057bb998aa914e90e31",
+      "size": 17250,
+      "sha256": "2ad22a0bc243150f33e7830dbe3d0f4bfc2008e6bbb75bbe1e6e86f2b2f1c1a1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/RESULTS.json",
+      "mode": "100644",
+      "blob": "3c281021ce863977fe029dd1be8b8dd9daa846f7",
+      "size": 21443,
+      "sha256": "1123c68a1c5894fe35a85e58387aefea3fccd894d2476ea9e3f7bdce45312da4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/enroll-1024.png",
+      "mode": "100644",
+      "blob": "047abd38f45c27db9d13e903823cd08100818c0e",
+      "size": 14778,
+      "sha256": "9694df06da70efc05254232a56ca13bfecb363a00e8502c5a8655ee96a77691f"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/enroll-1440.png",
+      "mode": "100644",
+      "blob": "c4c2f3aea32e03d4fa6706bc8cb787e00045dba9",
+      "size": 15209,
+      "sha256": "a947379912039addc654c07cfe11fb8dbbf4c4d402b0b4de1a400ae3e6a032ac"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/enroll-768.png",
+      "mode": "100644",
+      "blob": "781b20895b1bdc778077371567210c70caa2b990",
+      "size": 14672,
+      "sha256": "fa8437f16859eb063cb2b7785634064b9183d70ecf6eef57e411b787f11ac306"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/helper-1024.png",
+      "mode": "100644",
+      "blob": "17e6b3b1d152cb1f395a83a6f9bf098708812e41",
+      "size": 53278,
+      "sha256": "76489502c489599fec440d35361796d230f47cd305d5eb175d2be8a2ce9d9ed1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/helper-1440.png",
+      "mode": "100644",
+      "blob": "892a362e222921fcf7538138cd08c1acea595541",
+      "size": 52909,
+      "sha256": "13272d41a277eafe9ca14b231a42fa7f5e798285fe284773612bb3d5375d901d"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/helper-768.png",
+      "mode": "100644",
+      "blob": "bfe440bb7d7bbdad255d1ab9bf6bd34a02e1b2c6",
+      "size": 49437,
+      "sha256": "7bfa4d2e81447675f40546918348132630f5a3e67d47d36c5c6bad4438619b04"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/roster-1024.png",
+      "mode": "100644",
+      "blob": "2372a1441121922240bac56885420a8b59a0579d",
+      "size": 27491,
+      "sha256": "cfa88bdacae12da05146fa925538935242d035b100c5b58bc35b4cf03caaa030"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/roster-1440.png",
+      "mode": "100644",
+      "blob": "439ae03dae54c618c54d9fb2cb24faa3d47ac5a7",
+      "size": 31087,
+      "sha256": "5b871c2f5589d336c3eb19c192ed5a9e1285380bf1f6daeaa7a5ee289ba6cbdf"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/roster-768.png",
+      "mode": "100644",
+      "blob": "fdd0663fe7de2370be255c103e9f3b46be31475d",
+      "size": 21841,
+      "sha256": "8b2b54f1f8925957b36dba1529c268341a77de07bb6e847f182419aa0e593028"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/roster-actions-1024.png",
+      "mode": "100644",
+      "blob": "33ebf593d5f9878ab82a09c5fa662cbcd6726e22",
+      "size": 27043,
+      "sha256": "9795a79b0e15411d6760a372030919f47efac6913fdfd27c640ac19ad254455c"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/roster-actions-1440.png",
+      "mode": "100644",
+      "blob": "439ae03dae54c618c54d9fb2cb24faa3d47ac5a7",
+      "size": 31087,
+      "sha256": "5b871c2f5589d336c3eb19c192ed5a9e1285380bf1f6daeaa7a5ee289ba6cbdf"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/screenshots/roster-actions-768.png",
+      "mode": "100644",
+      "blob": "5ab4728bd062538c190cc057bb998aa914e90e31",
+      "size": 17250,
+      "sha256": "2ad22a0bc243150f33e7830dbe3d0f4bfc2008e6bbb75bbe1e6e86f2b2f1c1a1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/RESULTS.json",
+      "mode": "100644",
+      "blob": "e7734d116a695f9a65b668b9dc221a2c628fc4ff",
+      "size": 1110,
+      "sha256": "cf1cfab3a25d60a510de3c7397bdb4d7b37f7adba7e8538c1005070449151456"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/actions-wrap.log",
+      "mode": "100644",
+      "blob": "a5d20e8635159ee5245b65d8c622860c4a37f88b",
+      "size": 381,
+      "sha256": "02cc85bfba1ce03f80d53184062b09d89c60229db695f297317e887357f2a13e"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/buttons-wrap.log",
+      "mode": "100644",
+      "blob": "c28d4423cba5ccff8471db468766b565d66ff690",
+      "size": 385,
+      "sha256": "9128a14615a3c97bd175cc08e03be984081689a3adf62aba712e3433da9236a8"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/fixed-columns.log",
+      "mode": "100644",
+      "blob": "3d0b6740e1ddc2ac7d74eb0847b599eb690be24c",
+      "size": 188,
+      "sha256": "5212c0a5cac4cc53231db55066d1d5f376dd150ef6c1683b296783518382c3cd"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/helper-below.log",
+      "mode": "100644",
+      "blob": "4745889373d385dc6608e724ceb9e0912765b03b",
+      "size": 356,
+      "sha256": "a0f9dc42e55cfe493e4b448437479f999ff3345de1979edde84a9681ee254942"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/no-ellipsis.log",
+      "mode": "100644",
+      "blob": "2e7b620fe26059bd4f4a317fbb2ec888705d3cf2",
+      "size": 189,
+      "sha256": "e72853a4fc4dc72d77c615d750296842d6c4eb4112adfb95c7560cfd0f680a66"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/no-scroll.log",
+      "mode": "100644",
+      "blob": "fabbe592d2dc421d42e175e92b0ebf4d7753e153",
+      "size": 191,
+      "sha256": "f50a3e4b36255edc9eceb44cc8c61fbf7c5fdc06abd65668e34b44fbc71a46c1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/RESULTS.json",
+      "mode": "100644",
+      "blob": "3c281021ce863977fe029dd1be8b8dd9daa846f7",
+      "size": 21443,
+      "sha256": "1123c68a1c5894fe35a85e58387aefea3fccd894d2476ea9e3f7bdce45312da4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/enroll-1024.png",
+      "mode": "100644",
+      "blob": "047abd38f45c27db9d13e903823cd08100818c0e",
+      "size": 14778,
+      "sha256": "9694df06da70efc05254232a56ca13bfecb363a00e8502c5a8655ee96a77691f"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/enroll-1440.png",
+      "mode": "100644",
+      "blob": "c4c2f3aea32e03d4fa6706bc8cb787e00045dba9",
+      "size": 15209,
+      "sha256": "a947379912039addc654c07cfe11fb8dbbf4c4d402b0b4de1a400ae3e6a032ac"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/enroll-768.png",
+      "mode": "100644",
+      "blob": "781b20895b1bdc778077371567210c70caa2b990",
+      "size": 14672,
+      "sha256": "fa8437f16859eb063cb2b7785634064b9183d70ecf6eef57e411b787f11ac306"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/helper-1024.png",
+      "mode": "100644",
+      "blob": "17e6b3b1d152cb1f395a83a6f9bf098708812e41",
+      "size": 53278,
+      "sha256": "76489502c489599fec440d35361796d230f47cd305d5eb175d2be8a2ce9d9ed1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/helper-1440.png",
+      "mode": "100644",
+      "blob": "892a362e222921fcf7538138cd08c1acea595541",
+      "size": 52909,
+      "sha256": "13272d41a277eafe9ca14b231a42fa7f5e798285fe284773612bb3d5375d901d"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/helper-768.png",
+      "mode": "100644",
+      "blob": "bfe440bb7d7bbdad255d1ab9bf6bd34a02e1b2c6",
+      "size": 49437,
+      "sha256": "7bfa4d2e81447675f40546918348132630f5a3e67d47d36c5c6bad4438619b04"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/roster-1024.png",
+      "mode": "100644",
+      "blob": "2372a1441121922240bac56885420a8b59a0579d",
+      "size": 27491,
+      "sha256": "cfa88bdacae12da05146fa925538935242d035b100c5b58bc35b4cf03caaa030"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/roster-1440.png",
+      "mode": "100644",
+      "blob": "439ae03dae54c618c54d9fb2cb24faa3d47ac5a7",
+      "size": 31087,
+      "sha256": "5b871c2f5589d336c3eb19c192ed5a9e1285380bf1f6daeaa7a5ee289ba6cbdf"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/roster-768.png",
+      "mode": "100644",
+      "blob": "fdd0663fe7de2370be255c103e9f3b46be31475d",
+      "size": 21841,
+      "sha256": "8b2b54f1f8925957b36dba1529c268341a77de07bb6e847f182419aa0e593028"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/roster-actions-1024.png",
+      "mode": "100644",
+      "blob": "33ebf593d5f9878ab82a09c5fa662cbcd6726e22",
+      "size": 27043,
+      "sha256": "9795a79b0e15411d6760a372030919f47efac6913fdfd27c640ac19ad254455c"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/roster-actions-1440.png",
+      "mode": "100644",
+      "blob": "439ae03dae54c618c54d9fb2cb24faa3d47ac5a7",
+      "size": 31087,
+      "sha256": "5b871c2f5589d336c3eb19c192ed5a9e1285380bf1f6daeaa7a5ee289ba6cbdf"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored-screenshots/roster-actions-768.png",
+      "mode": "100644",
+      "blob": "5ab4728bd062538c190cc057bb998aa914e90e31",
+      "size": 17250,
+      "sha256": "2ad22a0bc243150f33e7830dbe3d0f4bfc2008e6bbb75bbe1e6e86f2b2f1c1a1"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/restored.log",
+      "mode": "100644",
+      "blob": "ff4c99d3437bf2206c454249f27783b7f8c39b1a",
+      "size": 119,
+      "sha256": "fa9652abb16cec05cd895dca65300e3cf19063f0e0f2e06702b14dc90db107f4"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/status-overflow.log",
+      "mode": "100644",
+      "blob": "9889d7ab2aed9c07b1a6470608ce4ad75ab80add",
+      "size": 215,
+      "sha256": "fa083664803561aeb7e7a01728a018f230358d14902194229398a3a03077726b"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/wide-checkbox.log",
+      "mode": "100644",
+      "blob": "782da254cde43a831c0ae7d1b839516a19cb3862",
+      "size": 169,
+      "sha256": "8d7d31340b92805d3b06a7a8acdd07775f94a12c3394cc2a3bb80d47d1b87b35"
+    },
+    {
+      "path": "docs/reviews/coder-console-agent-table-layout-20261020/withdrawals/wide-select.log",
+      "mode": "100644",
+      "blob": "256da09e68881cee0730de49a9a12bb9743224bf",
+      "size": 184,
+      "sha256": "38f9e98e4a27d70af68e13aa142bdf4aa5f33dbc4edee05fbd52805832020da7"
+    }
+  ]
+}

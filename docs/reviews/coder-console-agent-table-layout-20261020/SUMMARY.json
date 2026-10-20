@@ -1,0 +1,257 @@
+{
+  "utc": "2026-10-20T23:41:47.669776+00:00",
+  "base": "ab0f214496e6a5df1c71826cc978f40528923b8f",
+  "source_tree": "31dfb4853e3df0d58f656544d371170ef8bc9354",
+  "gates": {
+    "vet": {
+      "commit": "31dfb4853e3df0d58f656544d371170ef8bc9354",
+      "argv": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "rc": 0,
+      "start": "2026-10-20T23:27:34.484515+00:00",
+      "end": "2026-10-20T23:27:38.627232+00:00",
+      "git_export": true,
+      "isolated_home": true,
+      "cleared_environment": true,
+      "offline_dependencies": true,
+      "embedded_pg_binary_cache_only": "/home/dev/.embedded-postgres-go",
+      "DSN_unset": true
+    },
+    "canonical": {
+      "commit": "31dfb4853e3df0d58f656544d371170ef8bc9354",
+      "argv": [
+        "bash",
+        "scripts/run-build-tests.sh"
+      ],
+      "rc": 0,
+      "start": "2026-10-20T23:27:38.627618+00:00",
+      "end": "2026-10-20T23:29:52.095380+00:00",
+      "git_export": true,
+      "isolated_home": true,
+      "cleared_environment": true,
+      "offline_dependencies": true,
+      "embedded_pg_binary_cache_only": "/home/dev/.embedded-postgres-go",
+      "DSN_unset": true
+    },
+    "go": {
+      "commit": "31dfb4853e3df0d58f656544d371170ef8bc9354",
+      "argv": [
+        "go",
+        "test",
+        "./...",
+        "-json",
+        "-count=1",
+        "-timeout=30m"
+      ],
+      "rc": 0,
+      "start": "2026-10-20T23:29:52.095658+00:00",
+      "end": "2026-10-20T23:41:14.746931+00:00",
+      "git_export": true,
+      "isolated_home": true,
+      "cleared_environment": true,
+      "offline_dependencies": true,
+      "embedded_pg_binary_cache_only": "/home/dev/.embedded-postgres-go",
+      "DSN_unset": true
+    }
+  },
+  "packages": {
+    "skip": 13,
+    "pass": 52
+  },
+  "package_count": 65,
+  "conditional_test_skips": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGAssignFull"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGA2ConcurrentUnique"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGACLThreeRoles"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGRoleNoLeak"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGGCFirstResults"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGMigrateOnly"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB3CrossTask"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB4PutAssignInterleave"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1CrossTaskConcurrentSameRID"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1ResponseLossRetry"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1LockOrderNoDeadlock"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGIntegration"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+      "test": "TestGateDumpDoorABaseline"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestTCN5b_SameRidDifferentPayloadConflict"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestConformance_GAP_SLATimeoutAnnotate"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+      "test": "TestMonitorPageInRealChrome"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestMuxProductHTTP1EightSeats"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsolePlatformPayloadDump"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestFailureNoticeDriverTurnEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestGroupReplyMCP"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelper0232MixedVersionEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestEnvelopeReadTimeoutEnvironmentChild"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSpecMCPEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestR31OldBinarySchemaReadCompatibility"
+    }
+  ],
+  "canonical": "BUILD_TESTS_OK python=55 shell=2",
+  "browser_scripts": 32,
+  "existing_browser_scripts": 31,
+  "new_browser_widths": [
+    1440,
+    1024,
+    768
+  ],
+  "withdrawals": [
+    {
+      "name": "fixed-columns",
+      "rc": 1,
+      "marker": "LAYOUT_CONTENT_COLUMNS",
+      "assertion_red": true
+    },
+    {
+      "name": "actions-wrap",
+      "rc": 1,
+      "marker": "LAYOUT_ACTIONS_NOWRAP",
+      "assertion_red": true
+    },
+    {
+      "name": "buttons-wrap",
+      "rc": 1,
+      "marker": "LAYOUT_BUTTON_SINGLE_LINE",
+      "assertion_red": true
+    },
+    {
+      "name": "no-scroll",
+      "rc": 1,
+      "marker": "LAYOUT_SCROLL_CONTAINER",
+      "assertion_red": true
+    },
+    {
+      "name": "no-ellipsis",
+      "rc": 1,
+      "marker": "LAYOUT_NAME_ELLIPSIS",
+      "assertion_red": true
+    },
+    {
+      "name": "helper-below",
+      "rc": 1,
+      "marker": "LAYOUT_HELPER_TOOLBAR",
+      "assertion_red": true
+    },
+    {
+      "name": "wide-checkbox",
+      "rc": 1,
+      "marker": "LAYOUT_COMPACT_CHECKBOX",
+      "assertion_red": true
+    },
+    {
+      "name": "status-overflow",
+      "rc": 1,
+      "marker": "LAYOUT_STATUS_TEXT_WRAP",
+      "assertion_red": true
+    },
+    {
+      "name": "wide-select",
+      "rc": 1,
+      "marker": "LAYOUT_EXPANDED_PANEL_NO_PAGE_OVERFLOW",
+      "assertion_red": true
+    },
+    {
+      "name": "restored",
+      "rc": 0
+    }
+  ],
+  "production_access": false,
+  "author_completion_only": true
+}

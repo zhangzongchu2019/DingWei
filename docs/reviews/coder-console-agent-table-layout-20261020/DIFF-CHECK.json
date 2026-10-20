@@ -1,0 +1,6 @@
+{
+  "source_design_rc": 0,
+  "full_evidence_rc": 0,
+  "full_evidence_output": "",
+  "policy": "Preserve raw logs byte-for-byte; source/report/checker must be clean. Raw HTTP line whitespace is recorded, not trimmed."
+}
