@@ -120,6 +120,7 @@ async def _handle_connection(
     inbox_handler=None,
     spec_handler: _SpecHandler | None = None,
     task_handler: _SpecHandler | None = None,
+    project_context_handler: _SpecHandler | None = None,
 ) -> None:
     """Serve a single Unix-socket connection: read one request, dispatch by type, ack.
 
@@ -147,6 +148,20 @@ async def _handle_connection(
     if passed_fds:
         await _write_one(writer, {"ok": False, "error": "file descriptors are only accepted for file_upload_v1"})
         return
+    if msg_type == "project_context_v1":
+        if project_context_handler is None:
+            return await _write_one(writer, {"ok":False,"error":"project_context_unsupported"})
+        if set(msg)-{"type","request_id","body"}:
+            return await _write_one(writer, {"ok":False,"error":"invalid_context_request"})
+        from .project_context import validate_args
+        try:
+            validate_args(msg.get("body"))
+            result=await asyncio.wait_for(project_context_handler(msg),timeout=15)
+        except (ValueError,TypeError):
+            result={"status":"error","error":"invalid_context_request","retryable":False}
+        except (asyncio.TimeoutError,OSError):
+            result={"status":"error","error":"project_context_read_failed","retryable":False}
+        return await _write_one(writer,{"ok":True,"outcome":result})
     if msg_type in ("task_flow_v1","spec_review_v1"):
         if task_handler is None:
             return await _write_one(writer, {"ok": False, "error": "task_flow_unavailable"})
@@ -532,6 +547,7 @@ async def serve_ipc(
     inbox_handler=None,
     spec_handler: _SpecHandler | None = None,
     task_handler: _SpecHandler | None = None,
+    project_context_handler: _SpecHandler | None = None,
     replace_existing: bool = True,
 ) -> None:
     """Start a Unix-domain socket server.
@@ -572,7 +588,7 @@ async def serve_ipc(
         await _handle_connection(reader, writer, send_handler, vsapi_handler, file_handler,
                                  allowed_socket_dir=allowed_socket_dir,
                                  upload_handler=upload_handler, passed_fds=fds, upload_only=upload_only, send_body_only=send_body_only, inbox_handler=inbox_handler,
-                                 spec_handler=spec_handler, task_handler=task_handler)
+                                 spec_handler=spec_handler, task_handler=task_handler, project_context_handler=project_context_handler)
 
     loop = asyncio.get_running_loop()
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

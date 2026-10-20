@@ -385,29 +385,26 @@ def _heartbeat_report(args: dict[str, Any]) -> dict[str, Any]:
 
 # ── T18 MCP tool: project_context ─────────────────────────────────────
 
-@register("project_context", "拉取项目上下文(任务/名册/配置)", {
-    "type": "object",
+@register("project_context", "读取当前 Hub 的本人任务、同组在线名册及受限 spec 摘要", {
+    "type": "object", "additionalProperties": False,
     "properties": {
-        "scope": {"type": "string", "enum": ["tasks", "sessions", "config", "all"]},
-    },
-    "required": ["scope"],
+        "scope": {"type":"string","enum":["tasks","sessions","config","all"]},
+        "limit": {"type":"integer","minimum":1,"maximum":100},
+        "cursor": {"type":"string","maxLength":4096},
+    }, "required":["scope"],
 })
 def _project_context(args: dict[str, Any]) -> dict[str, Any]:
-    scope = (args.get("scope") or "").strip()
-    if scope not in ("tasks", "sessions", "config", "all"):
-        raise ValueError("scope must be tasks/sessions/config/all")
-    paths: list[str] = []
-    if scope in ("tasks", "all"):
-        paths.append("/v1/tasks?owner=me")
-    if scope in ("sessions", "all"):
-        paths.append("/v1/sessions")
-    if scope in ("config", "all"):
-        paths.append("/v1/config")
-    results: dict[str, Any] = {}
-    for path in paths:
-        key = path.split("?")[0].split("/")[-1]
-        results[key] = _ipc_vsapi("GET", path)
-    return results
+    from sessionhelper.project_context import validate_args
+    body=validate_args(args)
+    try:
+        result=_ipc_request({'type':'project_context_v1','body':body},timeout=20)
+    except _IPCFailure as exc:
+        if exc.category=='helper_rejected':
+            raise _IPCFailure('project_context_unsupported') from None
+        raise
+    if result.get('error') in ('unsupported_type','unknown_type') or str(result.get('error','')).startswith('unknown type '):
+        return {'status':'error','error':'project_context_unsupported','retryable':False}
+    return result
 
 
 # ── MCP tools: Console spec writing (A3) ─────────────────────────────

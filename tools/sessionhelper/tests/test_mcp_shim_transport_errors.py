@@ -226,7 +226,7 @@ class ShimTransportTests(unittest.TestCase):
 
     def test_all_registered_tools_return_sanitized_execution_errors(self):
         for tool in mcp_shim._handlers:
-            with self.subTest(tool=tool): self.exercise('rejected', 'helper_rejected', tool)
+            with self.subTest(tool=tool): self.exercise('rejected', 'project_context_unsupported' if tool=='project_context' else 'helper_rejected', tool)
 
     def test_unexpected_handler_error_is_contained_and_baseexception_is_not(self):
         def broken(args): raise RuntimeError(SENTINEL)

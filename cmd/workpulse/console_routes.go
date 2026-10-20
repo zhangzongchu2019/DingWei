@@ -101,6 +101,7 @@ func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
 	})))
 	mux.HandleFunc("GET /api/agent/console/spec-review-requests", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentSpecReview))
 	mux.HandleFunc("POST /api/agent/console/spec-review-requests/{requestID}/result", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentSpecReview))
+	mux.HandleFunc("GET /api/agent/console/project-context", prefixHub.HandleProjectContext)
 	mux.HandleFunc("GET /api/agent/console/tasks", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentTaskFlow))
 	mux.HandleFunc("PATCH /api/agent/console/tasks/{taskID}", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentTaskFlow))
 	mux.HandleFunc("POST /api/agent/console/tasks/{taskID}/cases/{caseAction}", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentTaskFlow))

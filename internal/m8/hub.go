@@ -63,15 +63,18 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
-	TrustProxy         bool // R31: only configured loopback nginx can supply X-Real-IP.
-	consoleMux         *consoleMuxRegistry
-	Repo               store.Repository
-	Outbound           MessageQueue
-	System             SystemHandler
-	L2                 llm.Provider
-	L2Config           L2Config
-	ViewPageUnlocker   ViewPageUnlocker
-	consoleAuthEnabled bool
+	projectContextCursorOnce sync.Once
+	projectContextCursorKey  [32]byte
+	projectContextCursorErr  error
+	TrustProxy               bool // R31: only configured loopback nginx can supply X-Real-IP.
+	consoleMux               *consoleMuxRegistry
+	Repo                     store.Repository
+	Outbound                 MessageQueue
+	System                   SystemHandler
+	L2                       llm.Provider
+	L2Config                 L2Config
+	ViewPageUnlocker         ViewPageUnlocker
+	consoleAuthEnabled       bool
 	// consoleHostedEnabled 只在服务端实际挂载托管路由后置 true；页面据此决定是否渲染托管区。
 	// 未挂路由时保持 false，避免回滚/降级部署向用户暴露一个必然 404 的坏入口。
 	consoleHostedEnabled bool

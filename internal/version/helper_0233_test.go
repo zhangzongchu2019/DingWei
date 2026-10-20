@@ -11,8 +11,8 @@ import (
 
 // A coherent rollback of all three version lines must not silently turn the
 // approved repair release back into the prior release.
-func TestHelper0236ReleasePins(t *testing.T) {
-	const release = "0.2.3.6"
+func TestHelper0237ReleasePins(t *testing.T) {
+	const release = "0.2.3.7"
 	root, err := os.ReadFile("../../VERSION")
 	if err != nil {
 		t.Fatal(err)
@@ -23,13 +23,13 @@ func TestHelper0236ReleasePins(t *testing.T) {
 	}
 	m := regexp.MustCompile(`__version__\s*=\s*"([0-9.]+)"`).FindSubmatch(helper)
 	if strings.TrimSpace(string(root)) != release || Version != release || len(m) != 2 || string(m[1]) != release {
-		t.Fatal("0.2.3.6 spec-review release requires root/Go/helper pins; 0.2.3.5 is the prior release")
+		t.Fatal("0.2.3.7 project-context release requires root/Go/helper pins; 0.2.3.6 is the prior release")
 	}
 	lock, err := os.ReadFile("../../tools/sessionhelper/requirements-runtime.lock")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if fmt.Sprintf("%x", sha256.Sum256(lock)) != "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0" {
-		t.Fatal("runtime lock changed; spec-review release cannot change dependencies")
+		t.Fatal("runtime lock changed; project-context release cannot change dependencies")
 	}
 }

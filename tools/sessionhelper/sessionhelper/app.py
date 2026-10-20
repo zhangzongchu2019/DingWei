@@ -389,6 +389,29 @@ class SessionHelper:
             return await self.outbound_receipts.send(ws, dest, body, self.book.self_addr, meta)
         return send
 
+    def _make_project_context_handler(self):
+        async def handle(args):
+            if not getattr(self, "enroll_credential", None):
+                return {"status":"error","error":"dedicated_agent_credential_required","retryable":False}
+            from .project_context import context_request
+            if not getattr(self, "_context_legacy_warned", False):
+                keys=[k for k in ("SH_DATAD_URL","DATAD_URL","SH_DATAD_TOKEN","DATAD_TOKEN") if env_get(k, None) is not None]
+                if keys:
+                    print("[project_context] ignored legacy keys: " + ",".join(keys), flush=True)
+                self._context_legacy_warned=True
+            ws_url, headers=self._connection()
+            return await asyncio.to_thread(context_request,ws_url,headers,args["body"])
+        return handle
+
+    @staticmethod
+    def _block_legacy_context(handler):
+        async def dispatch(method, path, body=None):
+            from urllib.parse import urlsplit
+            if urlsplit(path).path in ("/v1/tasks","/v1/sessions","/v1/config"):
+                return {"status":"error","error":"upgrade_required","retryable":False}
+            return await handler(method,path,body)
+        return dispatch
+
     def _make_vsapi_handler(self):
         """Return an async ``(method, path, body?) -> dict`` that forwards
         a vsapi_v1 request to datad with the session token appended.
@@ -401,11 +424,10 @@ class SessionHelper:
                                     _body: dict | None = None) -> dict:
                 raise RuntimeError("vsapi 未配置:datad_url 未配置")
 
-            return _unconfigured
-
-        import aiohttp
+            return self._block_legacy_context(_unconfigured)
 
         async def _vsapi(method: str, path: str, body: dict | None = None) -> dict:
+            import aiohttp
             url = f"{datad_url}{path}"
             async with aiohttp.ClientSession() as session:
                 async with session.request(
@@ -422,7 +444,7 @@ class SessionHelper:
                         )
                     return data
 
-        return _vsapi
+        return self._block_legacy_context(_vsapi)
 
     def _make_file_handler(self, ws):
         """Fetch bounded file data while keeping the bearer inside helper."""
@@ -612,7 +634,7 @@ class SessionHelper:
         return envelope(
             session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
             {"type": "session_capabilities", "delivery_ack_v1": True,
-             "persistent_inbox_v1": True, "spec_review_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,
+             "persistent_inbox_v1": True, "project_context_v1": bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "spec_review_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,
              "unified_queue_v1": self.cfg.mode == "driver",
              "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),
              "desktop_inbox_v1": self.cfg.mode == "desktop",
@@ -1354,7 +1376,7 @@ class SessionHelper:
                             upload_handler=self._make_upload_handler(ws) if self.upload_policy.enabled else None,
                             bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only,
                             send_body_only=getattr(self.cfg, "ipc_send_body_only", False),
-                            inbox_handler=self._make_desktop_inbox_handler(ws), spec_handler=self._make_spec_write_handler(ws), task_handler=self._make_task_flow_handler())
+                            inbox_handler=self._make_desktop_inbox_handler(ws), spec_handler=self._make_spec_write_handler(ws), task_handler=self._make_task_flow_handler(), project_context_handler=self._make_project_context_handler())
         except IPCSocketPathError:
             self._ipc_rejected_socket_path = self.cfg.mcp_ipc_sock
             # The listener already logged only the byte counts and cleared
