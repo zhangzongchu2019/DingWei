@@ -1,0 +1,47 @@
+{
+  "commit": "f5fe34aa5b107e9f510272a8057a0a34ceecf1f1",
+  "cases": [
+    {
+      "name": "archived-filter",
+      "rc": 1,
+      "marker": "PC_ARCHIVED_SPEC_LEAK",
+      "designated_red": true,
+      "seconds": 6.83
+    },
+    {
+      "name": "peer-current-membership",
+      "rc": 1,
+      "marker": "PC_REMOVED_PEER_MEMBERSHIP_GATE",
+      "designated_red": true,
+      "seconds": 1.221
+    },
+    {
+      "name": "owner-current-entitlement",
+      "rc": 1,
+      "marker": "PC_OWNER_ENTITLEMENT_MISSING",
+      "designated_red": true,
+      "seconds": 1.25
+    },
+    {
+      "name": "helper-error-code",
+      "rc": 1,
+      "marker": "PC_ERROR_CODE_LOST",
+      "designated_red": true,
+      "seconds": 30.848
+    },
+    {
+      "name": "helper-error-retry",
+      "rc": 1,
+      "marker": "PC_ERROR_RETRY_LOST",
+      "designated_red": true,
+      "seconds": 30.329
+    },
+    {
+      "name": "helper-error-cursor",
+      "rc": 1,
+      "marker": "PC_ERROR_CURSOR_NOT_DISCARDED",
+      "designated_red": true,
+      "seconds": 29.823
+    }
+  ]
+}

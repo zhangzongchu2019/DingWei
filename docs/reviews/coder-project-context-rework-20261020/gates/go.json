@@ -1,0 +1,24 @@
+{
+  "commit": "f5fe34aa5b107e9f510272a8057a0a34ceecf1f1",
+  "argv": [
+    "go",
+    "test",
+    "./internal/m8",
+    "./internal/identity",
+    "./internal/store",
+    "-json",
+    "-count=1",
+    "-run",
+    "^TestProjectContext",
+    "-timeout=10m"
+  ],
+  "rc": 0,
+  "start": "2026-10-20T20:41:04.869170+00:00",
+  "end": "2026-10-20T20:41:17.881800+00:00",
+  "git_export": true,
+  "isolated_home": true,
+  "cleared_environment": true,
+  "offline_dependencies": true,
+  "embedded_pg_binary_cache_only": "/home/dev/.embedded-postgres-go",
+  "DSN_unset": true
+}

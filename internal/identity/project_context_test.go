@@ -158,3 +158,37 @@ func TestProjectContextPGAuthorizationLocksAndCurrentState(t *testing.T) {
 	}
 
 }
+
+func TestProjectContextClaimMembershipAndOwnerEntitlement(t *testing.T) {
+	a := contextAuth()
+	a.Groups["g"] = Group{CreatorLC: "creator"}
+	a.Users["owner"] = true
+	a.Users["other"] = true
+	a.Users["creator"] = true
+	a.Agents["dev"] = Agent{OwnerLC: "other", State: AgentActive}
+	a.Agents["review"] = Agent{OwnerLC: "other", State: AgentActive}
+	a.Agents["owner-agent"] = Agent{OwnerLC: "owner", State: AgentActive}
+	a.Members["g"] = map[string]bool{"dev": true, "review": true, "owner-agent": true}
+	c := ContextClaim{"owner", "g", "dev", "review"}
+	if !a.Allows(c) {
+		t.Fatal("PC_OWNER_MEMBER_POSITIVE")
+	}
+	delete(a.Members["g"], "review")
+	if a.Allows(c) {
+		t.Fatal("PC_REMOVED_PEER_MEMBERSHIP_GATE")
+	}
+	a.Members["g"]["review"] = true
+	delete(a.Members["g"], "owner-agent")
+	if a.Allows(c) {
+		t.Fatal("PC_OWNER_ENTITLEMENT_MISSING")
+	}
+	a.Members["g"]["owner-agent"] = true
+	a.Agents["owner-agent"] = Agent{OwnerLC: "owner", State: AgentSuspended}
+	if a.Allows(c) {
+		t.Fatal("PC_OWNER_INACTIVE_MEMBER_ALLOWED")
+	}
+	c.Owner = "creator"
+	if !a.Allows(c) {
+		t.Fatal("PC_CREATOR_POSITIVE")
+	}
+}

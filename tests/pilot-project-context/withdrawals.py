@@ -18,6 +18,12 @@ GOIDENTITY=['go','test','./internal/identity','-count=1','-run']
 PYCMD=[PYTHON,'-B','-m','unittest','discover','-s','tools/sessionhelper/tests','-p','test_project_context.py','-v']
 # Each case names the intended assertion, not merely a nonzero exit status.
 CASES=[
+ ('archived-filter','internal/m8/project_context.go','!state.Archived &&','true &&',GOM8+['^TestProjectContextArchivedSpecAndUnreconciledPeer$'],'PC_ARCHIVED_SPEC_LEAK'),
+ ('peer-current-membership','internal/identity/project_context.go','!a.Member(c.Group, c.Reviewer)','false',GOIDENTITY+['^TestProjectContextClaimMembershipAndOwnerEntitlement$'],'PC_REMOVED_PEER_MEMBERSHIP_GATE'),
+ ('owner-current-entitlement','internal/identity/project_context.go','if a.Agents[id].OwnerLC == Lower(c.Owner) && a.Active(id) {','if a.Active(id) {',GOIDENTITY+['^TestProjectContextClaimMembershipAndOwnerEntitlement$'],'PC_OWNER_ENTITLEMENT_MISSING'),
+ ('helper-error-code','tools/sessionhelper/sessionhelper/project_context.py',"codes.get(exc.code,'project_context_rejected')","'project_context_rejected'",PYCMD,'PC_ERROR_CODE_LOST'),
+ ('helper-error-retry','tools/sessionhelper/sessionhelper/project_context.py',"'retryable':exc.code==503","'retryable':False",PYCMD,'PC_ERROR_RETRY_LOST'),
+ ('helper-error-cursor','tools/sessionhelper/sessionhelper/project_context.py',"result['discard_cursor']=True","result['discard_cursor']=False",PYCMD,'PC_ERROR_CURSOR_NOT_DISCARDED'),
  ('duplicate-auth','internal/m8/project_context.go','len(auths) != 1','len(auths) < 1',GOM8+['^TestProjectContextAuthenticationAndQueryMatrix$'],'PC_AUTH_OR_QUERY_BYPASS'),
  ('cookie-auth','internal/m8/project_context.go','len(r.Header.Values("Cookie")) != 0','false',GOM8+['^TestProjectContextAuthenticationAndQueryMatrix$'],'PC_AUTH_OR_QUERY_BYPASS'),
  ('credential-recheck','internal/identity/project_context.go','subtle.ConstantTimeCompare([]byte(a.Actor.CredentialHash), []byte(hash))','subtle.ConstantTimeCompare([]byte(hash), []byte(hash))',GOIDENTITY+['^TestProjectContextPGAuthorizationLocksAndCurrentState$'],'PC_CREDENTIAL_RECHECK_MISSING'),

@@ -1,0 +1,29 @@
+test_bad_schema_body_and_oversize_fail_closed (test_project_context.ContextTests.test_bad_schema_body_and_oversize_fail_closed) ... ok
+test_four_scopes_one_http_no_datad_fallback (test_project_context.ContextTests.test_four_scopes_one_http_no_datad_fallback) ... ok
+test_helper_dedicated_identity_and_warning_redaction (test_project_context.ContextTests.test_helper_dedicated_identity_and_warning_redaction) ... ok
+test_invalid_arguments_never_escape_to_http (test_project_context.ContextTests.test_invalid_arguments_never_escape_to_http) ... ok
+test_legacy_context_block_precedes_backend (test_project_context.ContextTests.test_legacy_context_block_precedes_backend) ... ok
+test_old_helper_is_explicit_upgrade_error (test_project_context.ContextTests.test_old_helper_is_explicit_upgrade_error) ... ok
+test_old_hub_explicit_unsupported (test_project_context.ContextTests.test_old_hub_explicit_unsupported) ... ok
+test_old_shim_context_urls_refused_without_datad_dependency (test_project_context.ContextTests.test_old_shim_context_urls_refused_without_datad_dependency) ... ok
+test_production_ipc_factory_is_wired (test_project_context.ContextTests.test_production_ipc_factory_is_wired) ... ok
+test_public_errors_and_cursor_recovery (test_project_context.ContextTests.test_public_errors_and_cursor_recovery) ... 
+  test_public_errors_and_cursor_recovery (test_project_context.ContextTests.test_public_errors_and_cursor_recovery) (status=503) ... FAIL
+test_real_ipc_helper_http_and_shim_with_restricted_mode_rejection (test_project_context.ContextTests.test_real_ipc_helper_http_and_shim_with_restricted_mode_rejection) ... [ipc_listener] listening on /tmp/pc-ipc-x04ef4iw/ipc.sock
+[ipc_listener] listening on /tmp/pc-ipc-x04ef4iw/ipc.sock
+[ipc_listener] listening on /tmp/pc-ipc-x04ef4iw/ipc.sock
+ok
+test_redirect_never_forwards_identity (test_project_context.ContextTests.test_redirect_never_forwards_identity) ... ok
+
+======================================================================
+FAIL: test_public_errors_and_cursor_recovery (test_project_context.ContextTests.test_public_errors_and_cursor_recovery) (status=503)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/pc-withdraw-5b1zkejn/source/tools/sessionhelper/tests/test_project_context.py", line 75, in test_public_errors_and_cursor_recovery
+    self.assertEqual(out['retryable'],retry,'PC_ERROR_RETRY_LOST')
+AssertionError: False != True : PC_ERROR_RETRY_LOST
+
+----------------------------------------------------------------------
+Ran 12 tests in 30.139s
+
+FAILED (failures=1)

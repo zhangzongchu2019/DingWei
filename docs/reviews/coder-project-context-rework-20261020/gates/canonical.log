@@ -1,0 +1,554 @@
+TEST python tools/sessionhelper/test_supervise_connection_loops.py
+----------------------------------------------------------------------
+Ran 9 tests in 0.334s
+
+OK
+TEST python tools/sessionhelper/tests/test_update_release_core.py
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmphen5zaqt/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+----------------------------------------------------------------------
+Ran 19 tests in 1.307s
+
+OK
+TEST python tools/sessionhelper/tests/test_sqlite_connection_lifetime.py
+SQLITE_FD_READINGS {"baseline_db_fd": 0, "final_db_fd": 0, "gc_enabled": false, "long_run_db_fds": {"1": 0, "100": 0, "1000": 0, "10000": 0}, "long_run_iterations": 10000, "nofile": 128, "total_fd_baseline": 4, "total_fd_final": 4, "workloads": {"audit": {"calls": 200, "peak_db_fd": 0}, "claude": {"calls": 200, "peak_db_fd": 0}, "cli_parts": {"calls": 200, "peak_db_fd": 0}, "cli_recent": {"calls": 200, "peak_db_fd": 0}, "codex": {"calls": 200, "peak_db_fd": 0}, "desktop": {"calls": 200, "peak_db_fd": 0}, "inbox": {"calls": 200, "peak_db_fd": 0}, "legacy": {"calls": 200, "peak_db_fd": 0}, "opencode": {"calls": 200, "peak_db_fd": 0}, "stop_hook": {"calls": 200, "peak_db_fd": 0}}}
+----------------------------------------------------------------------
+Ran 3 tests in 16.081s
+
+OK
+TEST python tools/sessionhelper/tests/test_mcp_shim_transport_errors.py
+MCP_TRANSPORT_READINGS errors=18 survived=18 recovery_same_process=18
+----------------------------------------------------------------------
+Ran 4 tests in 2.947s
+
+OK
+TEST python tools/sessionhelper/tests/test_update_core_review_regressions.py
+SYNTHETIC_SLOT_EXECUTED
+----------------------------------------------------------------------
+Ran 10 tests in 1.090s
+
+OK
+TEST python tools/sessionhelper/tests/test_self_update_offer.py
+[helper-update] source_denied
+[helper-update] confirmation_rejected
+[helper-update] confirmation_rejected
+----------------------------------------------------------------------
+Ran 22 tests in 12.487s
+
+OK
+TEST python tools/sessionhelper/tests/test_connection_receive_quiescence.py
+----------------------------------------------------------------------
+Ran 6 tests in 0.032s
+
+OK
+TEST python tools/sessionhelper/tests/test_connection_reconnect_backoff.py
+----------------------------------------------------------------------
+Ran 5 tests in 0.103s
+
+OK
+TEST python tools/sessionhelper/tests/test_connection_claim_cancellation.py
+----------------------------------------------------------------------
+Ran 8 tests in 0.071s
+
+OK
+TEST python tools/sessionhelper/tests/test_terminal_start_observation.py
+----------------------------------------------------------------------
+Ran 5 tests in 0.278s
+
+OK
+TEST python tools/sessionhelper/tests/test_roster_snapshot.py
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK
+TEST python tools/sessionhelper/tests/test_agent_disk_metrics.py
+----------------------------------------------------------------------
+Ran 19 tests in 0.124s
+
+OK
+TEST python tools/sessionhelper/tests/test_setup.py
+----------------------------------------------------------------------
+Ran 25 tests in 0.334s
+
+OK
+模型授权在所选工具自己的界面中完成；DW 不接收模型账号或密钥。
+两种接入方式都需要 sessionHelper。请选择：
+1. Codex 桌面应用 + DW-MCP
+2. CLI 托管（通过 DingWei Web 页面交互）
+请先在 Codex 桌面应用完成登录。自动提醒需真机验收；MCP 配置成功不代表自动唤醒已就绪。
+本次桌面应用： Codex.app 版本： fixture1 build： 1
+桌面持续监听：在原聊天要求 AI 调用 dw_wait_message；收到消息后用 dw_reply_message 回复再等待。取消或退出后需重新发起，不能自动唤醒空闲会话。
+配置已保存。启动时复制 #pair 指令并私发给当前 Hub 的官方飞书机器人，完成开户与设备配对。
+启动： /data/ai-dev-data/helper-deps-lock-venv/bin/python3 -m sessionhelper --run-profile /tmp/tmp594xfkmj/setup-profile.json
+请按原生授权提示操作；CLI 模型授权码与 DW 配对码不同。
+过期/冲突后：先退出配对等待，再显式取消未认领申请： /data/ai-dev-data/helper-deps-lock-venv/bin/python3 -m sessionhelper --cancel-pairing /tmp/tmp594xfkmj/setup-profile.json
+sessionHelper 后台进程已启动，PID： 1234 ；当前为 STARTING，连接状态请在 Web 或 DW-MCP 核实。
+TEST python tools/sessionhelper/tests/test_env_read_single_entry.py
+----------------------------------------------------------------------
+Ran 4 tests in 0.184s
+
+OK
+TEST python tools/sessionhelper/tests/test_claim_enroll.py
+----------------------------------------------------------------------
+Ran 9 tests in 0.119s
+
+OK
+TEST python tools/sessionhelper/tests/test_desktop.py
+[ipc_listener] listening on /tmp/tmpntuj_lwd/ipc.sock
+----------------------------------------------------------------------
+Ran 4 tests in 0.038s
+
+OK
+TEST python tools/sessionhelper/tests/test_task_flow_r32.py
+----------------------------------------------------------------------
+Ran 6 tests in 0.605s
+
+OK
+TEST python tools/sessionhelper/tests/test_project_context.py
+[ipc_listener] listening on /tmp/pc-ipc-vrrke3wh/ipc.sock
+[ipc_listener] listening on /tmp/pc-ipc-vrrke3wh/ipc.sock
+[ipc_listener] listening on /tmp/pc-ipc-vrrke3wh/ipc.sock
+----------------------------------------------------------------------
+Ran 12 tests in 30.136s
+
+OK
+TEST python tools/sessionhelper/tests/test_spec_review_r32.py
+[ipc_listener] listening on /tmp/r8ipc-ogk57r1_/ipc.sock
+----------------------------------------------------------------------
+Ran 9 tests in 0.625s
+
+OK
+TEST python tools/sessionhelper/tests/test_desktop_dispatch.py
+[ipc_send] to=fixture-sender#fixture-owner bytes=16
+----------------------------------------------------------------------
+Ran 18 tests in 1.001s
+
+OK
+TEST python tools/sessionhelper/tests/test_desktop_endpoint.py
+----------------------------------------------------------------------
+Ran 6 tests in 0.019s
+
+OK
+TEST python tools/sessionhelper/tests/test_outbound_receipt.py
+----------------------------------------------------------------------
+Ran 11 tests in 0.149s
+
+OK
+TEST python tools/sessionhelper/tests/test_desktop_host.py
+----------------------------------------------------------------------
+Ran 7 tests in 0.012s
+
+OK
+TEST python tools/sessionhelper/tests/test_desktop_pilot.py
+[ipc_listener] listening on /tmp/dwp-aqum31sq/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-0ff188532ac2e06c
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-aqum31sq/desktop-pilot-0ff188532ac2e06c-report.json
+[ipc_listener] listening on /tmp/dwp-aje3uhq2/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-9764b968161f4d54
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-aje3uhq2/desktop-pilot-9764b968161f4d54-report.json
+Fixture stays absent until dw_wait_message is pending; no Hub confirmation is simulated.
+[ipc_listener] listening on /tmp/dwp-mufl_43v/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-1467e1aefd5d3e09
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-mufl_43v/desktop-pilot-1467e1aefd5d3e09-report.json
+[ipc_listener] listening on /tmp/dwp-s79ug_x1/dingwei-mcp.sock
+LOCAL SYNTHETIC PILOT; automatic wake NOT_VERIFIED. Message ID: desktop-pilot-35f4e35c3e4e1d39
+Reply destination: desktop-pilot#LOCAL Report: /tmp/dwp-s79ug_x1/desktop-pilot-35f4e35c3e4e1d39-report.json
+Fixture stays absent until dw_wait_message is pending; no Hub confirmation is simulated.
+----------------------------------------------------------------------
+Ran 6 tests in 0.187s
+
+OK
+TEST python tools/sessionhelper/tests/test_desktop_wait.py
+[ipc_listener] listening on /tmp/dww-jpvwy0om/mcp.sock
+[ipc_listener] listening on /tmp/dww-1042rlxe/mcp.sock
+[ipc_listener] listening on /tmp/dww-593v7cgi/mcp.sock
+[ipc_listener] listening on /tmp/dww-y7z3tk5m/mcp.sock
+[ipc_listener] listening on /tmp/dww-5a98hvb6/mcp.sock
+[ipc_listener] listening on /tmp/dww-thonseza/mcp.sock
+[ipc_listener] listening on /tmp/dww-ek8p267k/mcp.sock
+[ipc_listener] listening on /tmp/dww-lzkdzfin/mcp.sock
+[ipc_listener] listening on /tmp/dww-vjcjfprg/mcp.sock
+[ipc_listener] listening on /tmp/dww-vjcjfprg/mcp.sock
+[ipc_listener] listening on /tmp/dww-qzc8ck1n/mcp.sock
+[ipc_listener] listening on /tmp/dww-giqpa_25/mcp.sock
+[ipc_listener] listening on /tmp/dww-r105zk_w/mcp.sock
+[ipc_listener] listening on /tmp/dww-tygb1xdl/mcp.sock
+----------------------------------------------------------------------
+Ran 13 tests in 1.959s
+
+OK
+TEST python tools/sessionhelper/tests/test_desktop_stop_hook.py
+----------------------------------------------------------------------
+Ran 8 tests in 0.513s
+
+OK
+TEST python tools/sessionhelper/tests/test_source_kit.py
+----------------------------------------------------------------------
+Ran 8 tests in 0.070s
+
+OK
+TEST python tools/sessionhelper/tests/test_macos_build.py
+----------------------------------------------------------------------
+Ran 8 tests in 0.162s
+
+OK
+TEST python deploy/image/supervisord/test_verify_supervisor_template.py
+----------------------------------------------------------------------
+Ran 15 tests in 0.768s
+
+OK
+TEST python deploy/ops/hosted-image/test_start.py
+----------------------------------------------------------------------
+Ran 20 tests in 1.160s
+
+OK
+TEST python deploy/ops/hosted-image/test_build_definition.py
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+----------------------------------------------------------------------
+Ran 18 tests in 0.298s
+
+OK
+TEST python deploy/ops/hosted-claude-image/test_claude_start.py
+hosted-claude-start: invalid or missing SH_CRED_FILE
+hosted-claude-start: invalid or missing SH_CLI
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+----------------------------------------------------------------------
+Ran 34 tests in 7.446s
+
+OK
+TEST python deploy/test_build_entrypoints.py
+----------------------------------------------------------------------
+Ran 11 tests in 0.004s
+
+OK
+TEST python deploy/test_file_service_deploy.py
+----------------------------------------------------------------------
+Ran 10 tests in 0.002s
+
+OK
+TEST python deploy/test_generate_console_seed.py
+/tmp/blocker-exact-gates-v2cy9kk6/source/deploy/test_generate_console_seed.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmp9v1kko59/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/blocker-exact-gates-v2cy9kk6/source/deploy/test_generate_console_seed.py:116: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpsjdsc5dz/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/blocker-exact-gates-v2cy9kk6/source/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmp6q41yrpk/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/blocker-exact-gates-v2cy9kk6/source/deploy/test_generate_console_seed.py:72: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmp9_e6jje8/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/blocker-exact-gates-v2cy9kk6/source/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmp9_e6jje8/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/blocker-exact-gates-v2cy9kk6/source/deploy/test_generate_console_seed.py:100: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpsucbws_r/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/blocker-exact-gates-v2cy9kk6/source/deploy/test_generate_console_seed.py:161: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpurp_ww91/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 14 tests in 0.559s
+
+OK
+TEST python deploy/test_invariants_alert_route.py
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+TEST python deploy/test_invariants_expected_hashes.py
+----------------------------------------------------------------------
+Ran 6 tests in 0.020s
+
+OK
+TEST python deploy/test_preview_console.py
+/tmp/blocker-exact-gates-v2cy9kk6/source/deploy/test_preview_console.py:78: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/blocker-exact-gates-v2cy9kk6/source/internal/store/console_auth.go' mode='r' encoding='utf-8'>
+  go = open(PROD_GO, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/blocker-exact-gates-v2cy9kk6/source/deploy/test_preview_console.py:83: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/blocker-exact-gates-v2cy9kk6/source/deploy/preview_console_for_principal.py' mode='r' encoding='utf-8'>
+  tool = open(TOOL, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 9 tests in 0.326s
+
+OK
+TEST python deploy/test_validate_console_seed.py
+----------------------------------------------------------------------
+Ran 11 tests in 0.295s
+
+OK
+TEST python view-service/test_check_public_view_deploy.py
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+TEST python view-service/test_md_render_core.py
+----------------------------------------------------------------------
+Ran 12 tests in 0.314s
+
+OK
+TEST python view-service/test_provenance_flag_injection.py
+----------------------------------------------------------------------
+Ran 8 tests in 0.638s
+
+OK
+TEST python view-service/test_renderer_iter2.py
+----------------------------------------------------------------------
+Ran 7 tests in 0.011s
+
+OK
+TEST python view-service/test_view_page_store.py
+----------------------------------------------------------------------
+Ran 13 tests in 1.780s
+
+OK
+TEST python view-service/test_view_service.py
+----------------------------------------------------------------------
+Ran 40 tests in 0.029s
+
+OK
+TEST python view-service/test_agent_disk_resource.py
+----------------------------------------------------------------------
+Ran 9 tests in 0.254s
+
+OK
+TEST python view-service/test_view_refresh.py
+----------------------------------------------------------------------
+Ran 5 tests in 0.149s
+
+OK
+TEST python view-service/test_mux_projection.py
+----------------------------------------------------------------------
+Ran 3 tests in 0.065s
+
+OK
+TEST python view-service/test_mux_projection_failure.py
+----------------------------------------------------------------------
+Ran 3 tests in 2.551s
+
+OK
+TEST python view-service/test_cost_paused.py
+ENTRYPOINT_BOUNDARY {"entry": "unsafe", "actual_rc": 1, "costdir_unchanged": false, "module_cache_in_costdir": true}
+ENTRYPOINT_BOUNDARY {"entry": "flag", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+ENTRYPOINT_BOUNDARY {"entry": "environment", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+ENTRYPOINT_BOUNDARY {"entry": "outside", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+----------------------------------------------------------------------
+Ran 9 tests in 7.433s
+
+OK
+TEST python view-service/test_mux_cost_seed.py
+----------------------------------------------------------------------
+Ran 9 tests in 0.167s
+
+OK
+TEST python view-service/test_view_unlock_v2_integration.py
+----------------------------------------------------------------------
+Ran 1 test in 1.054s
+
+OK
+TEST shell deploy/test-view-service-release.sh
+PACKAGED commit=bee3a0132817639f2f387a2e1a250b07dc9c2cac files=3 output=/tmp/tmp.TUl1u99l3h/pkg
+VERIFIED files=3 expected_commit=bee3a0132817639f2f387a2e1a250b07dc9c2cac
+PACKAGED commit=c2c44b6ac5ab8a2a50179771b4d59ecd1d5a37e0 files=3 output=/tmp/tmp.TUl1u99l3h/old
+PACKAGED commit=bee3a0132817639f2f387a2e1a250b07dc9c2cac files=3 output=/tmp/tmp.TUl1u99l3h/install-pkg
+PACKAGED commit=998a25c2d31e6fddd5c36792b7aa6bf5f364aa53 files=3 output=/tmp/tmp.TUl1u99l3h/static-pkg
+PACKAGED commit=d2ba13b83b99ab5ab41dd504147005dfac2652d5 files=3 output=/tmp/tmp.TUl1u99l3h/two-pkg
+PACKAGED commit=b1cd5d17622a9d0f4d59243672ece64c86326932 files=3 output=/tmp/tmp.TUl1u99l3h/all-pkg
+PACKAGED commit=3a41905a5d7df0bd2520973bf4645db19aa973d1 files=3 output=/tmp/tmp.TUl1u99l3h/fail-pkg
+PACKAGED commit=1b0bd0060c7936351b1127fd045922dc37d39fc3 files=3 output=/tmp/tmp.TUl1u99l3h/unhealthy-pkg
+PASS view-service release core
+TEST shell scripts/test-desktop-hub-roundtrip.sh
+=== RUN   TestDeviceClaimAcrossActualClientAndHub
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/new
+2026/10/20 20:43:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:43:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/20 20:43:52 session handshake timing key_id=u_newperson session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:43:52 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/10/20 20:43:52 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:43:52 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/reuse
+2026/10/20 20:43:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:43:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/20 20:43:53 session handshake timing key_id=u_existing session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:43:53 session capability file_upload_v1=true key_id=u_existing session=desktop conn_seq=1
+2026/10/20 20:43:53 session delivery lease release decision=requeue key_id=u_existing session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:43:53 session delivery lease release decision=requeue key_id=u_existing session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/lost_ack
+2026/10/20 20:43:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:43:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/20 20:43:53 session handshake timing key_id=u_newperson session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:43:53 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/10/20 20:43:53 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:43:53 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/takeover
+2026/10/20 20:43:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:43:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/cancel_then_new
+2026/10/20 20:43:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:43:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/20 20:43:54 session handshake timing key_id=u_newperson session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:43:54 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/10/20 20:43:54 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:43:54 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+--- PASS: TestDeviceClaimAcrossActualClientAndHub (1.63s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/new (0.31s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/reuse (0.30s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/lost_ack (0.46s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/takeover (0.24s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/cancel_then_new (0.31s)
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/new
+2026/10/20 20:43:54 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:43:54 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+2026/10/20 20:43:56 session handshake timing key_id=u_newperson session=desktop total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:43:56 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/10/20 20:43:56 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:43:56 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/reuse
+2026/10/20 20:43:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:43:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+2026/10/20 20:43:58 session handshake timing key_id=u_existing session=desktop total=2ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:43:58 session capability file_upload_v1=true key_id=u_existing session=desktop conn_seq=1
+2026/10/20 20:43:58 session delivery lease release decision=requeue key_id=u_existing session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:43:58 session delivery lease release decision=requeue key_id=u_existing session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/lost_ack
+2026/10/20 20:43:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:43:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+2026/10/20 20:44:01 session handshake timing key_id=u_newperson session=desktop total=2ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:44:01 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/10/20 20:44:01 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:44:01 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/takeover
+2026/10/20 20:44:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:44:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/cancel_then_new
+2026/10/20 20:44:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:44:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+2026/10/20 20:44:07 session handshake timing key_id=u_newperson session=desktop total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:44:07 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/10/20 20:44:07 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:44:07 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+--- PASS: TestDeviceClaimAcrossActualClientAndPostgres (13.53s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/new (2.61s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/reuse (2.75s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/lost_ack (2.92s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/takeover (2.59s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/cancel_then_new (2.67s)
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub/legacy
+2026/10/20 20:44:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:44:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/20 20:44:07 session name warning key_id=FB-synthetic-only-20261020-f49a3b8d owner= session=peer: 无法确认该 key 绑定成员 owner_key
+2026/10/20 20:44:07 session version warning key_id=FB-synthetic-only-20261020-f49a3b8d owner= session=peer version="" required=0.2.3.7: 未上报版本,要求 0.2.3.7
+2026/10/20 20:44:07 session handshake timing key_id=FB-synthetic-only-20261020-f49a3b8d session=peer total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:44:07 session delivery lease release decision=requeue key_id=FB-synthetic-only-20261020-f49a3b8d session=peer conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:44:07 session name warning key_id=FB-synthetic-only-20261020-f49a3b8d owner= session=desktop: 无法确认该 key 绑定成员 owner_key
+2026/10/20 20:44:07 session handshake timing key_id=FB-synthetic-only-20261020-f49a3b8d session=desktop total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:44:07 session capability file_upload_v1=true key_id=FB-synthetic-only-20261020-f49a3b8d session=desktop conn_seq=1
+2026/10/20 20:44:07 session delivery lease release decision=requeue key_id=FB-synthetic-only-20261020-f49a3b8d session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:44:07 session route decision=durable_queued key_id=FB-synthetic-only-20261020-f49a3b8d session=desktop client_present=true conn_seq=1 delivery_id=dw-dlv_b9afce989ce2ff5144647e64663d0a17 source_message_id=desktop-question
+2026/10/20 20:44:08 session route decision=durable_queued key_id=FB-synthetic-only-20261020-f49a3b8d session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_3ceb563116defcd34abcf4a3dbee17c2 source_message_id=7c97027f2fde4d739708b314a06a8952
+2026/10/20 20:44:08 session delivery lease release decision=requeue key_id=FB-synthetic-only-20261020-f49a3b8d session=peer conn_seq=1 reason=session_disconnected released=0
+2026/10/20 20:44:08 session delivery lease release decision=requeue key_id=FB-synthetic-only-20261020-f49a3b8d session=desktop conn_seq=1 reason=session_disconnected released=0
+    desktop_mcp_roundtrip_test.go:242: real Hub/SQLite + actual helper receive worker + MCP stdio wait/reply: PASS; synthetic identities, no model or desktop UI
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub/enrolled_leader_only
+2026/10/20 20:44:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:44:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/20 20:44:08 session handshake timing key_id=u_zzc session=peer total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:44:08 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:44:08 session handshake timing key_id=u_zzc session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:44:08 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/10/20 20:44:08 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:44:08 session route decision=durable_queued key_id=u_zzc session=desktop client_present=true conn_seq=1 delivery_id=dw-dlv_e4c2f83b806128c20823d30c0ace4883 source_message_id=desktop-question
+2026/10/20 20:44:08 session route decision=durable_queued key_id=u_zzc session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_0b31c8a0330f4f9138773cc2aacbc326 source_message_id=f654ad41b6544358949f55fc061b5b40
+2026/10/20 20:44:08 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=0
+2026/10/20 20:44:08 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    desktop_mcp_roundtrip_test.go:242: real Hub/SQLite + actual helper receive worker + MCP stdio wait/reply: PASS; synthetic identities, no model or desktop UI
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub/enrolled_group_removed
+2026/10/20 20:44:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:44:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/20 20:44:08 session handshake timing key_id=u_zzc session=peer total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:44:08 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:44:08 session delivery drain skipped decision=stale_or_offline_client key_id=FB-synthetic-only-20261020-f49a3b8d session=desktop conn_seq=1 client_present=false
+2026/10/20 20:44:09 session delivery drain skipped decision=stale_or_offline_client key_id=FB-synthetic-only-20261020-f49a3b8d session=peer conn_seq=1 client_present=false
+2026/10/20 20:44:09 session handshake timing key_id=u_zzc session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:44:09 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/10/20 20:44:09 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:44:09 session route decision=durable_queued key_id=u_zzc session=desktop client_present=true conn_seq=1 delivery_id=dw-dlv_9372c1d10418c827e88f331a747cd1fc source_message_id=desktop-question
+2026/10/20 20:44:09 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=0
+2026/10/20 20:44:09 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    desktop_mcp_roundtrip_test.go:190: actual enrolled group removal rejects MCP reply, retains unread, refuses resend: PASS
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub/enrolled_stop_hook
+2026/10/20 20:44:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:44:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/20 20:44:09 session handshake timing key_id=u_zzc session=peer total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:44:09 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:44:09 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=desktop conn_seq=1 client_present=false
+2026/10/20 20:44:09 session handshake timing key_id=u_zzc session=desktop total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:44:09 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/10/20 20:44:09 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:44:09 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=peer conn_seq=1 client_present=false
+2026/10/20 20:44:09 session route decision=durable_queued key_id=u_zzc session=desktop client_present=true conn_seq=1 delivery_id=dw-dlv_5fda823b7cc02d3832692aec60019e8d source_message_id=desktop-question
+2026/10/20 20:44:10 session route decision=durable_queued key_id=u_zzc session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_c5859d75abce90b2b9d241e8204c55d8 source_message_id=50b2df4af74645ffbbbcd50ca35f9257
+2026/10/20 20:44:10 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=desktop conn_seq=1 client_present=false
+2026/10/20 20:44:10 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=0
+2026/10/20 20:44:10 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    desktop_mcp_roundtrip_test.go:242: real Hub/SQLite + actual helper receive worker + MCP stdio wait/reply: PASS; synthetic identities, no model or desktop UI
+--- PASS: TestDesktopMCPRoundTripAcrossRealHub (2.63s)
+    --- PASS: TestDesktopMCPRoundTripAcrossRealHub/legacy (0.62s)
+    --- PASS: TestDesktopMCPRoundTripAcrossRealHub/enrolled_leader_only (0.61s)
+    --- PASS: TestDesktopMCPRoundTripAcrossRealHub/enrolled_group_removed (0.61s)
+    --- PASS: TestDesktopMCPRoundTripAcrossRealHub/enrolled_stop_hook (0.79s)
+=== RUN   TestHostedBodySendAcrossRealHub
+2026/10/20 20:44:10 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:44:10 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/20 20:44:10 session handshake timing key_id=u_zzc session=peer total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:44:10 session handshake timing key_id=u_zzc session=desktop total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 20:44:10 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/10/20 20:44:10 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/20 20:44:10 feishu dispatch rejected reason=cross_group_denied open_id="" target="peer#u_zzc" bot_channel=""
+2026/10/20 20:44:10 restart window signal event=delivery_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+2026/10/20 20:44:10 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=desktop conn_seq=1 client_present=false
+2026/10/20 20:44:10 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    hosted_body_send_test.go:116: restricted MCP body uses actual enrolled Hub routing; group removal blocks delivery; socket receipt is not delivery proof
+--- PASS: TestHostedBodySendAcrossRealHub (0.62s)
+=== RUN   TestProjectContextAcrossRealHTTPHelperIPCMCP
+2026/10/20 20:44:10 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 20:44:10 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/20 20:44:11 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=peer conn_seq=1 client_present=false
+    project_context_roundtrip_test.go:40: real local Go Hub HTTP, SessionHelper constructor/IPC, actual shim stdio, dedicated credential and bounded projection: PASS; no live Hub or AI
+--- PASS: TestProjectContextAcrossRealHTTPHelperIPCMCP (0.37s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	18.792s
+BUILD_TESTS_OK python=52 shell=2

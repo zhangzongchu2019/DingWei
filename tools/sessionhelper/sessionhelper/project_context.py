@@ -54,6 +54,11 @@ def context_request(ws_url,headers,args):
                     raise ValueError('invalid context page')
             return {'status':'ok','http_status':200,**payload}
     except urllib.error.HTTPError as exc:
-        return {'status':'error','http_status':exc.code,'error':'project_context_unsupported' if exc.code in (404,426) else 'project_context_rejected','retryable':False}
+        # Use known public error codes only; never reflect arbitrary server text.
+        codes = {400:'invalid_context_request',403:'context_access_denied',409:'context_changed',413:'context_entry_too_large',503:'project_context_unavailable'}
+        result = {'status':'error','http_status':exc.code,'error':'project_context_unsupported' if exc.code in (404,426) else codes.get(exc.code,'project_context_rejected'),'retryable':exc.code==503}
+        if exc.code in (400,409):
+            result['discard_cursor']=True
+        return result
     except (OSError,ValueError):
         return {'status':'error','error':'project_context_read_failed','retryable':False}

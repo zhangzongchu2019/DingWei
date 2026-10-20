@@ -1,0 +1,5 @@
+--- FAIL: TestProjectContextClaimMembershipAndOwnerEntitlement (0.00s)
+    project_context_test.go:183: PC_OWNER_ENTITLEMENT_MISSING
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/identity	0.003s
+FAIL
