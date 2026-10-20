@@ -421,7 +421,7 @@ func (s *SQLite) UpdateTaskBlocker(ctx context.Context, expected TaskFlowState, 
 			}
 		}
 	case "input":
-		if blockerTerminal(b.State) || u.Source == "" || len(u.Source) > 64 || u.EventID == "" || len(u.EventID) > 128 || strings.TrimSpace(u.Body) == "" || strings.TrimSpace(u.Evidence) == "" {
+		if blockerTerminal(b.State) || u.Source == "" || len(u.Source) > 256 || u.EventID == "" || len(u.EventID) > 128 || strings.TrimSpace(u.Body) == "" || strings.TrimSpace(u.Evidence) == "" {
 			return out, ErrTaskFlowInvalid
 		}
 		inputHash := blockerHash([]any{key, u.Body, u.Evidence, u.ProductionOrSecurity})
@@ -596,6 +596,9 @@ func (s *SQLite) UpdateTaskBlocker(ctx context.Context, expected TaskFlowState, 
 		out.Blocker = TaskBlocker{ID: b.ID, TaskID: b.TaskID, Version: b.Version, State: b.State, InputVersion: b.InputVersion}
 	}
 	out.TaskVersion = t.Version
+	if !canRead {
+		out.TaskVersion = 0
+	}
 	response, _ := json.Marshal(out)
 	if _, err = tx.ExecContext(ctx, `INSERT INTO console_task_blocker_request(actor_id,request_id,task_id,payload_sha,result_json,created_at) VALUES(?,?,?,?,?,?)`, key, u.RequestID, t.ID, payload, string(response), at); err != nil {
 		return out, err
