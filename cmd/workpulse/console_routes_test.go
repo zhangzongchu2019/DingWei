@@ -44,6 +44,10 @@ var newPlatformAuthExempt = map[string]string{
 // newPlatformSpecTaskExempt spec／任务路由里【不】按 N3 会话认人的（R-V2-SPEC-TASK-SHIM-IMPL H1），口径同 095：
 // 共享链接与静态资源公开读、写凭链接里的编辑能力令牌；Agent 侧凭专属凭据＋能力令牌。每条下面另有一格钉住无凭据时的应答。
 var newPlatformSpecTaskExempt = map[string]string{
+	"GET /api/agent/console/tasks/{taskID}/blockers":                  "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
+	"GET /api/agent/console/tasks/{taskID}/blockers/{blockerID}":      "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
+	"POST /api/agent/console/tasks/{taskID}/blockers":                 "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
+	"POST /api/agent/console/tasks/{taskID}/blockers/{blockerID}":     "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
 	"GET /api/agent/console/project-context":                          "专属 Agent bearer 与事务内当前角色／编组重核，只读",
 	"GET /api/agent/console/spec-review-requests":                     "专属Agent bearer；仅当前请求Agent读取",
 	"POST /api/agent/console/spec-review-requests/{requestID}/result": "专属Agent bearer；仅本人绑定请求回信",
@@ -142,8 +146,8 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 			nSpecTask++
 		}
 	}
-	if nSpecTask != len(oldRec.patterns) || nSpecTask != 51 {
-		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 51)", nSpecTask, len(oldRec.patterns))
+	if nSpecTask != len(oldRec.patterns) || nSpecTask != 59 {
+		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 59)", nSpecTask, len(oldRec.patterns))
 	}
 	for p := range newPlatformSpecTaskExempt {
 		if !seen[p] {
@@ -165,6 +169,10 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 		{"GET", "/api/agent/console/task-driver/specs/x/1/tasks", 403},
 		{"GET", "/api/agent/console/tasks", 401},
 		{"GET", "/api/agent/console/project-context", 401},
+		{"GET", "/api/agent/console/tasks/x/blockers", 401},
+		{"POST", "/api/agent/console/tasks/x/blockers", 401},
+		{"GET", "/api/agent/console/tasks/x/blockers/y", 401},
+		{"POST", "/api/agent/console/tasks/x/blockers/y", 401},
 		{"PATCH", "/api/agent/console/tasks/x", 401},
 		{"POST", "/api/agent/console/tasks/x/cases/mark", 401},
 		{"POST", "/api/agent/console/specs", 401},
@@ -300,4 +308,4 @@ func TestConsoleTasksCompatibilityRoute(t *testing.T) {
 }
 
 // specTaskRoute specs 与 task-board 两组功能的路由形状（页面、console 接口、Agent capability 接口、共享链接）。
-var specTaskRoute = regexp.MustCompile(`/(console/specs|console/tasks|console/spec-assets|api/console/specs|api/console/task-|api/console/spec-editors|api/agent/console/|api/specs/shared)`)
+var specTaskRoute = regexp.MustCompile(`/(console/specs|console/tasks|console/spec-assets|api/console/specs|api/console/task-|api/console/tasks|api/console/spec-editors|api/agent/console/|api/specs/shared)`)

@@ -104,6 +104,13 @@ class UnifiedCommandQueue:
             self._current.state = "admitting"
             return self._current
 
+    def defer_current(self, delivery_id: str) -> bool:
+        """Retry a not-dispatched current command without a new queue identity."""
+        with self._lock:
+            if self._current is None or self._current.delivery_id!=delivery_id or self._current.state!='admitting':return False
+            command=self._current;self._current=None;command.state='queued';self._pending.append(command)
+            return True
+
     def admit(self, delivery_id: str, turn_id: str) -> dict | None:
         turn_id = str(turn_id or "").strip()
         if not turn_id:

@@ -38,6 +38,8 @@ class DriverAdapter:
         self._started = False
         self._start_lock = threading.Lock()
         self._commands = UnifiedCommandQueue(cfg.busy_buffer_max)
+        self._blocker_store=None
+        self.blocker_prepare=None
         self._work_available = threading.Event()
         self._turn_progress: dict[tuple[str, str], float] = {}
         self._admission_callbacks: dict[str, tuple[object | None, object | None]] = {}
@@ -155,6 +157,12 @@ class DriverAdapter:
             return ""
         if not self._started:
             self.start()
+        if (env.get("meta") or {}).get("kind")=="task_blocker_ready":
+            staged=self._blocker_journal().stage(env)
+            env=json.loads(staged['envelope_json'])
+            if staged['state'] in ('done','failed','cancelled','unknown'):
+                if on_injected is not None:on_injected()
+                return ""
         # Register admission callbacks before waking the worker.  Calling the
         # public enqueue_envelope here would set _work_available first, allowing
         # a fast fake/local driver to admit before the callback is installed.
@@ -227,6 +235,11 @@ class DriverAdapter:
 
     def _command_worker(self) -> None:
         while True:
+            try:self._restore_blocker_commands()
+            except Exception:
+                if not getattr(self,'_blocker_restore_warned',False):
+                    print('[blocker-wake] recovery unavailable; no new wake RPC authorized',flush=True)
+                    self._blocker_restore_warned=True
             command = self._commands.start_next()
             if command is None:
                 self._work_available.clear()
@@ -237,7 +250,63 @@ class DriverAdapter:
                 continue
             self._deliver_command(command)
 
+    def _blocker_path(self):
+        return getattr(self.cfg,'inbox_db','') or os.path.join(getattr(self.cfg,'state_dir','') or os.path.expanduser('~'),'.blocker-wake.sqlite3')
+
+    def _blocker_journal(self):
+        if getattr(self,'_blocker_store',None) is None:
+            from .blocker_journal import BlockerJournal
+            self._blocker_store=BlockerJournal(self._blocker_path(),getattr(self.cfg,'session_name','default'))
+        return self._blocker_store
+
+    def _restore_blocker_commands(self):
+        from .blocker_journal import BlockerJournal
+        if not hasattr(self,'cfg'):return
+        if getattr(self,'_blocker_store',None) is None and not BlockerJournal.exists(self._blocker_path()):return
+        for env in self._blocker_journal().recover():
+            result=self._commands.enqueue(env)
+            if result.state=='queued':self._publish_queue_event(result.event)
+
     def _deliver_command(self, command: QueuedCommand) -> None:
+        if (command.envelope.get('meta') or {}).get('kind')!='task_blocker_ready':
+            return self._deliver_regular_command(command)
+        journal=None;signal=(command.envelope.get('meta') or {}).get('signal_id')
+        try:
+            journal=self._blocker_journal()
+            # Only an unattempted command may make a delivery RPC. Recovered
+            # dispatching/admitted rows query durable protocol receipts instead.
+            current=journal.stage(command.envelope)['state']
+            if current=='pending':
+                if self.blocker_prepare is None:
+                    journal.finish(signal,'unknown','preflight_unavailable');self._commands.finish(command.delivery_id,'failed');return
+                safe,reason=self.blocker_prepare(command.envelope)
+                if safe is None:
+                    if reason=='current_authorization_or_read_failed':
+                        self._commands.defer_current(command.delivery_id);self._bridge_sleep(0.5);return
+                    journal.finish(signal,'cancelled',reason);self._commands.finish(command.delivery_id,'interrupted');return
+                command.envelope=safe;command.text=safe['body']
+            previous=journal.start(signal)
+            if previous=='pending':
+                receipt=self.driver.deliver(command.delivery_id,command.text)
+            elif previous in ('dispatching','admitted'):
+                receipt=self.driver.poll_receipt(command.delivery_id)
+            else:
+                self._commands.finish(command.delivery_id,'completed');return
+            if receipt.state not in ('accepted','processing','done','failed'):
+                journal.finish(signal,'unknown','protocol_receipt_unknown_no_replay');self._commands.finish(command.delivery_id,'failed');self._publish_terminal_failure(command,'blocker_wake_outcome_unknown','Inspect receipt; do not retry the execution');return
+            journal.finish(signal,'admitted','protocol_receipt_observed')
+            self._settle_command(command,receipt)
+            journal.finish(signal,'done' if command.state=='completed' else 'failed',command.state)
+        except Exception:
+            # A request may already have crossed the protocol boundary. Never
+            # turn an exception or a process restart into a second delivery RPC.
+            if journal is not None:
+                try:journal.finish(signal,'unknown','dispatch_exception_no_replay')
+                except Exception:pass
+            self._commands.finish(command.delivery_id,'failed')
+            self._publish_terminal_failure(command,'blocker_wake_outcome_unknown','Inspect receipt; do not retry the execution')
+
+    def _deliver_regular_command(self, command: QueuedCommand) -> None:
         try:
             receipt = self.driver.deliver(command.delivery_id, command.text)
             print(

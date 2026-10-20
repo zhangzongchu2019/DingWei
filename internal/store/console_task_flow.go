@@ -183,6 +183,9 @@ func (s *SQLite) UpdateConsoleTaskFlow(ctx context.Context, id, actor string, u 
 			return empty, ErrTaskFlowConflict
 		}
 		if next != "blocked" {
+			if err = taskBlockersClear(ctx, tx, id); err != nil {
+				return empty, err
+			}
 			if err = taskDependenciesDone(ctx, tx, deps); err != nil {
 				return empty, err
 			}

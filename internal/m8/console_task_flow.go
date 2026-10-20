@@ -419,7 +419,9 @@ func (h *Hub) StartTaskFlow(ctx context.Context) {
 		for {
 			h.reconcileTaskFlow(ctx)
 			h.reconcileSpecAgent(ctx)
+			h.reconcileBlockers(ctx)
 			h.dispatchTaskNotifications(ctx)
+			h.dispatchBlockerWakes(ctx)
 			select {
 			case <-ctx.Done():
 				return

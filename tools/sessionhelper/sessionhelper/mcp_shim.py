@@ -501,6 +501,46 @@ def _dw_spec_review_requests(args):
         raise ValueError('invalid spec request list')
     return _ipc_request({'type':'spec_review_v1','action':'list','body':args},timeout=_SPEC_IPC_TIMEOUT)
 
+_BLOCKER_IDS={"task_id":{"type":"string","minLength":1,"maxLength":256},"blocker_id":{"type":"string","minLength":1,"maxLength":256}}
+_BLOCKER_REQUEST={"request_id":{"type":"string","minLength":1,"maxLength":128},"expected_version":{"type":"integer","minimum":1}}
+_BLOCKER_CONDITION={"type":"object","properties":{"id":{"type":"string","enum":["materials","environment","authorization"]},"text":{"type":"string","minLength":1,"maxLength":1024}},"required":["id","text"],"additionalProperties":False}
+_BLOCKER_CHECK={"type":"object","properties":{"id":{"type":"string","enum":["materials","environment","authorization"]},"result":{"type":"string","enum":["pass","fail","unknown"]},"evidence_ref":{"type":"string","minLength":1,"maxLength":2048}},"required":["id","result","evidence_ref"],"additionalProperties":False}
+def _blocker_ipc(action,args,allowed,required):
+    if not isinstance(args,dict) or set(args)-set(allowed) or not set(required).issubset(args):raise ValueError('invalid blocker tool arguments')
+    request={'type':'blocker_v1','action':action,'task_id':args.get('task_id'),'body':{k:v for k,v in args.items() if k not in ('task_id','blocker_id')}}
+    if 'blocker_id' in args:request['blocker_id']=args['blocker_id']
+    if action!='list':request['body']['operation']=action
+    from sessionhelper.task_blocker import validate_request
+    validate_request(request)
+    try:return _ipc_request(request,timeout=_SPEC_IPC_TIMEOUT)
+    except _IPCFailure as exc:
+        if exc.category=='helper_rejected':raise _IPCFailure('blocker_unsupported_upgrade_helper') from None
+        raise
+
+@register("dw_task_blocker_list","读取自己任务的阻塞卡、当前版本与答复；不取得恢复或业务执行授权。",{
+ "type":"object","properties":{**_BLOCKER_IDS,"limit":{"type":"integer","minimum":1,"maximum":100},"cursor":{"type":"string"},"input_before":{"type":"integer","minimum":1}},"required":["task_id"],"additionalProperties":False})
+def _dw_task_blocker_list(args):
+    return _blocker_ipc('list',args,{'task_id','blocker_id','limit','cursor','input_before'},{'task_id'})
+
+_BLOCKER_SET_PROPS={"task_id":_BLOCKER_IDS['task_id'],**_BLOCKER_REQUEST,"kind":{"type":"string","enum":["requirement_unclear","change","technical","resource"]},"where":{"type":"string","minLength":1,"maxLength":4096},"waiting_principal":{"type":"string","description":"稳定 user: 或 agent: 身份；未定为空，不能用昵称假造责任人"},"expected_input":{"type":"string","minLength":1,"maxLength":4096},"resume_recheck":{"type":"array","maxItems":3,"items":_BLOCKER_CONDITION},"production_or_security":{"type":"boolean"}}
+@register("dw_task_blocker_set","当前开发 Agent 登记卡在哪、等谁、等什么；相同卡不重复通知。真实生产/安全选完整档。",{
+ "type":"object","properties":_BLOCKER_SET_PROPS,"required":["task_id","request_id","expected_version","kind","where","expected_input"],"additionalProperties":False})
+def _dw_task_blocker_set(args):
+    return _blocker_ipc('create',args,_BLOCKER_SET_PROPS,{'task_id','request_id','expected_version','kind','where','expected_input'})
+
+_BLOCKER_INPUT_PROPS={**_BLOCKER_IDS,**_BLOCKER_REQUEST,"event_id":{"type":"string","minLength":1,"maxLength":128},"body":{"type":"string","minLength":1,"maxLength":8192},"evidence_ref":{"type":"string","minLength":1,"maxLength":2048}}
+@register("dw_task_blocker_input","所等 Agent 提交有身份的新答复；事件重发不重复唤醒，内容改变须新事件。",{
+ "type":"object","properties":_BLOCKER_INPUT_PROPS,"required":["task_id","blocker_id","request_id","expected_version","event_id","body","evidence_ref"],"additionalProperties":False})
+def _dw_task_blocker_input(args):
+    return _blocker_ipc('input',args,_BLOCKER_INPUT_PROPS,{'task_id','blocker_id','request_id','expected_version','event_id','body','evidence_ref'})
+
+_BLOCKER_RECHECK_PROPS={**_BLOCKER_IDS,**_BLOCKER_REQUEST,"operation":{"type":"string","enum":["begin_recheck","finish_recheck"]},"input_version":{"type":"integer","minimum":1},"lease_id":{"type":"string","minLength":1},"checks":{"type":"array","minItems":3,"maxItems":3,"items":_BLOCKER_CHECK}}
+@register("dw_task_blocker_recheck","当前执行人认领一次重核或登记材料/环境/授权的真实核对结果；不自动resume/完成/签收。",{
+ "type":"object","properties":_BLOCKER_RECHECK_PROPS,"required":["task_id","blocker_id","request_id","expected_version","operation","input_version"],"additionalProperties":False,
+ "oneOf":[{"properties":{"operation":{"const":"begin_recheck"}},"not":{"anyOf":[{"required":["lease_id"]},{"required":["checks"]}]}},{"properties":{"operation":{"const":"finish_recheck"}},"required":["lease_id","checks"]}]})
+def _dw_task_blocker_recheck(args):
+    return _blocker_ipc(args.get('operation') if isinstance(args,dict) else None,args,_BLOCKER_RECHECK_PROPS,{'task_id','blocker_id','request_id','expected_version','operation','input_version'})
+
 _SPEC_REVIEW_ISSUE_SCHEMA={"type":"object","properties":{"id":{"type":"string","minLength":1},"text":{"type":"string","minLength":1}},"required":["id","text"],"additionalProperties":False}
 _SPEC_REVIEW_CRITERION_SCHEMA={"type":"object","properties":{"id":{"type":"string","minLength":1},"text":{"type":"string","minLength":1},"owner_ref":{"type":"string","minLength":1,"description":"必须逐字存在于当前spec正文的引用"},"cases":{"type":"array","minItems":1,"maxItems":100,"items":{"type":"string","minLength":1}}},"required":["id","text","owner_ref","cases"],"additionalProperties":False}
 @register("dw_spec_review_reply", "回Console预审issues或criteria/cases；只写pending/待人确认，不能定稿。结果未知请查询原请求。", {

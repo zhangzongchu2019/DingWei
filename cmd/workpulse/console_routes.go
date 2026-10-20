@@ -102,6 +102,16 @@ func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
 	mux.HandleFunc("GET /api/agent/console/spec-review-requests", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentSpecReview))
 	mux.HandleFunc("POST /api/agent/console/spec-review-requests/{requestID}/result", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentSpecReview))
 	mux.HandleFunc("GET /api/agent/console/project-context", prefixHub.HandleProjectContext)
+	for _, method := range []string{"GET", "POST"} {
+		for _, suffix := range []string{"", "/{blockerID}"} {
+			mux.HandleFunc(method+" /api/agent/console/tasks/{taskID}/blockers"+suffix, prefixHub.RequireAgentBlocker(prefixHub.HandleTaskBlockers))
+			action := "read"
+			if method == "POST" {
+				action = "submit"
+			}
+			mux.HandleFunc(method+" /api/console/tasks/{taskID}/blockers"+suffix, prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleTaskBlockers)))
+		}
+	}
 	mux.HandleFunc("GET /api/agent/console/tasks", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentTaskFlow))
 	mux.HandleFunc("PATCH /api/agent/console/tasks/{taskID}", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentTaskFlow))
 	mux.HandleFunc("POST /api/agent/console/tasks/{taskID}/cases/{caseAction}", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentTaskFlow))

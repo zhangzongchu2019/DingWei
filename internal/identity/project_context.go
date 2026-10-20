@@ -26,6 +26,26 @@ type ProjectContextAuthorizationStore interface {
 	WithProjectContextAuthorization(context.Context, string, string, []ContextClaim, func(ContextAuthorization, func() error) error) error
 }
 
+// BlockerAuthorizationStore also locks an explicitly addressed waiting person.
+// A waiting person receives only that blocker's reply right, not task access.
+// Human and Agent authentication are separate server-selected entry points.
+type BlockerAuthorizationStore interface {
+	WithBlockerAuthorization(context.Context, string, string, string, ContextClaim, func(ContextAuthorization, func() error) error) error
+}
+
+func (m *MemStore) WithBlockerAuthorization(ctx context.Context, actor, hash, human string, claim ContextClaim, fn func(ContextAuthorization, func() error) error) error {
+	if claim.Group == "" || (actor == "") == (human == "") {
+		return ErrForbidden
+	}
+	return m.withContextAuthorization(ctx, actor, hash, []ContextClaim{claim}, human, fn)
+}
+func (s *PGStore) WithBlockerAuthorization(ctx context.Context, actor, hash, human string, claim ContextClaim, fn func(ContextAuthorization, func() error) error) error {
+	if claim.Group == "" || (actor == "") == (human == "") {
+		return ErrForbidden
+	}
+	return s.withContextAuthorization(ctx, actor, hash, []ContextClaim{claim}, human, fn)
+}
+
 func (a ContextAuthorization) Member(group, id string) bool { return a.Members[group][id] }
 func (a ContextAuthorization) Active(id string) bool {
 	x, ok := a.Agents[id]
@@ -84,6 +104,9 @@ func sortedContextKeys[V any](m map[string]V) []string {
 	return keys
 }
 func (m *MemStore) WithProjectContextAuthorization(ctx context.Context, actor, hash string, claims []ContextClaim, fn func(ContextAuthorization, func() error) error) error {
+	return m.withContextAuthorization(ctx, actor, hash, claims, "", fn)
+}
+func (m *MemStore) withContextAuthorization(ctx context.Context, actor, hash string, claims []ContextClaim, human string, fn func(ContextAuthorization, func() error) error) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	a := contextAuth()
@@ -92,6 +115,12 @@ func (m *MemStore) WithProjectContextAuthorization(ctx context.Context, actor, h
 		if _, ok := ids[actor]; ok {
 			groups[code] = true
 		}
+	}
+	for _, claim := range claims {
+		groups[claim.Group] = true
+	}
+	if human != "" {
+		a.Users[Lower(human)] = false
 	}
 
 	for code := range groups {
@@ -121,12 +150,21 @@ func (m *MemStore) WithProjectContextAuthorization(ctx context.Context, actor, h
 			a.Names[id] = u.ShortName
 		}
 	}
-	if err := a.validate(actor, hash); err != nil {
-		return err
+	if human != "" {
+		if !a.Users[Lower(human)] || actor != "" || hash != "" {
+			return ErrForbidden
+		}
+	} else {
+		if err := a.validate(actor, hash); err != nil {
+			return err
+		}
 	}
 	return fn(a, func() error { return ctx.Err() })
 }
 func (s *PGStore) WithProjectContextAuthorization(ctx context.Context, actor, hash string, claims []ContextClaim, fn func(ContextAuthorization, func() error) error) error {
+	return s.withContextAuthorization(ctx, actor, hash, claims, "", fn)
+}
+func (s *PGStore) withContextAuthorization(ctx context.Context, actor, hash string, claims []ContextClaim, human string, fn func(ContextAuthorization, func() error) error) error {
 	return s.inTx(ctx, func(tx repo.Tx) error {
 		a := contextAuth()
 		groups := map[string]bool{}
@@ -158,6 +196,12 @@ func (s *PGStore) WithProjectContextAuthorization(ctx context.Context, actor, ha
 			if n < 101 {
 				break
 			}
+		}
+		for _, claim := range claims {
+			groups[claim.Group] = true
+		}
+		if human != "" {
+			a.Users[Lower(human)] = false
 		}
 		for _, code := range sortedContextKeys(groups) {
 			g, err := lockGroup(ctx, tx, code, true)
@@ -239,7 +283,10 @@ func (s *PGStore) WithProjectContextAuthorization(ctx context.Context, actor, ha
 		if err := checkGroups(); err != nil {
 			return err
 		}
-		ids := map[string]bool{actor: true}
+		ids := map[string]bool{}
+		if actor != "" {
+			ids[actor] = true
+		}
 		for _, members := range a.Members {
 			for id := range members {
 				ids[id] = true
@@ -265,8 +312,14 @@ func (s *PGStore) WithProjectContextAuthorization(ctx context.Context, actor, ha
 			a.Users[id] = state == string(UserActive)
 			a.Names[id] = name
 		}
-		if err := a.validate(actor, hash); err != nil {
-			return err
+		if human != "" {
+			if !a.Users[Lower(human)] || actor != "" || hash != "" {
+				return ErrForbidden
+			}
+		} else {
+			if err := a.validate(actor, hash); err != nil {
+				return err
+			}
 		}
 		check := func() error {
 			if err := checkGroups(); err != nil {

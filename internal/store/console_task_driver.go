@@ -50,6 +50,13 @@ func (s *SQLite) StartConsoleTaskDriver(ctx context.Context, start model.Console
 	if state != "final" || principal != start.AnnouncedBy || actualSHA != start.ContentSHA256 {
 		return ErrConsoleSpecPermission
 	}
+	var unresolved int
+	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_task_blocker WHERE spec_id=? AND revision=? AND state NOT IN('resolved','cancelled')`, start.SpecID, start.Revision).Scan(&unresolved); err != nil {
+		return err
+	}
+	if unresolved != 0 {
+		return ErrTaskFlowConflict
+	}
 	stamp := start.AnnouncedAt.UTC().Format(time.RFC3339Nano)
 	_, err = tx.ExecContext(ctx, `INSERT INTO console_task_driver_start(spec_id,revision,content_sha256,repository_name,branch_name,schedule,task_endpoint,token_instructions,announced_by,announced_at)
 		VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(spec_id,revision) DO UPDATE SET content_sha256=excluded.content_sha256,repository_name=excluded.repository_name,branch_name=excluded.branch_name,schedule=excluded.schedule,task_endpoint=excluded.task_endpoint,token_instructions=excluded.token_instructions,announced_by=excluded.announced_by,announced_at=excluded.announced_at`,

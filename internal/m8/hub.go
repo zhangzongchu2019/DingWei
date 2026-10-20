@@ -122,6 +122,7 @@ type Hub struct {
 	// 会拖到下一条用例里，撞进别人的日志捕获窗口（复验方 qwen38maxkhovvob4 的日志卫生用例即被打红过）。
 	sessionWG          sync.WaitGroup
 	taskFlowDispatchMu sync.Mutex
+	blockerDispatchMu  sync.Mutex
 
 	mu                hubMutex
 	serviceClients    map[string]*client
@@ -209,30 +210,32 @@ type sessionClient struct {
 	diskMetrics        *agentmetrics.Cache // Access to the pointer is under h.mu.
 	lastMetricsAttempt time.Time           // Read/written under h.mu; rejected attempts do not renew the cache.
 
-	conn           *websocket.Conn
-	mu             sync.Mutex
-	stateMu        sync.Mutex
-	keyID          string
-	ownerKey       string
-	sessionName    string
-	localName      string // 客户端握手上报的原始名；sessionHelper 用它命名本机在线清单文件
-	connSeq        int
-	lastSeenAt     time.Time
-	targetBot      string
-	webTerminal    bool
-	osName         string
-	tool           string
-	version        string
-	skillInstalled bool
-	skillCancel    context.CancelFunc
-	deliveryACKV1  bool
-	taskFlowV1     bool
-	specReviewV1   bool
-	helperUpdateV1 bool // authenticated helper explicitly supports update_self v1
-	desktopInboxV1 bool
-	helperReady    bool
-	deviceID       string
-	deviceIDV1     bool
+	conn            *websocket.Conn
+	mu              sync.Mutex
+	stateMu         sync.Mutex
+	keyID           string
+	ownerKey        string
+	sessionName     string
+	localName       string // 客户端握手上报的原始名；sessionHelper 用它命名本机在线清单文件
+	connSeq         int
+	lastSeenAt      time.Time
+	targetBot       string
+	webTerminal     bool
+	osName          string
+	tool            string
+	version         string
+	skillInstalled  bool
+	skillCancel     context.CancelFunc
+	deliveryACKV1   bool
+	taskFlowV1      bool
+	blockerNoticeV1 bool
+	blockerWakeV1   bool
+	specReviewV1    bool
+	helperUpdateV1  bool // authenticated helper explicitly supports update_self v1
+	desktopInboxV1  bool
+	helperReady     bool
+	deviceID        string
+	deviceIDV1      bool
 
 	lastTouchWritten time.Time // R-V2-0105 件三：上次把 last_seen 落库的时刻（touchSessionEndpoint 节流）
 
@@ -1251,7 +1254,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, "", "信封解析失败："+err.Error()))
 			continue
 		}
-		if specReviewType(specReviewEnvelopeType(env)) || metaString(env.Meta, "kind") == "task_assigned" || metaBool(env.Meta, "task_flow_internal") {
+		if specReviewType(specReviewEnvelopeType(env)) || metaString(env.Meta, "kind") == "task_assigned" || metaString(env.Meta, "kind") == "task_blocker_ready" || metaBool(env.Meta, "task_flow_internal") {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "task notification is Hub-only"))
 			continue
 		}
@@ -3158,6 +3161,9 @@ func feishuDispatchLogSource(addr address) (openID, botChannel string) {
 }
 
 func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
+	if metaString(env.Meta, "kind") == "task_blocker_ready" && ctx.Value(blockerDispatchKey{}) != true {
+		return errors.New("blocker wake is Hub-only")
+	}
 	if specReviewType(specReviewEnvelopeType(env)) && ctx.Value(specAgentDispatchContextKey{}) != true {
 		return errors.New("spec review request is Hub-only")
 	}
@@ -4317,6 +4323,8 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	c.helperReady = true
 	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
 	c.taskFlowV1 = metaBool(env.Meta, "task_flow_v1")
+	c.blockerNoticeV1 = metaBool(env.Meta, "blocker_notice_v1")
+	c.blockerWakeV1 = metaBool(env.Meta, "blocker_wake_v1")
 	c.specReviewV1 = metaBool(env.Meta, "spec_review_v1")
 	c.helperUpdateV1 = metaBool(env.Meta, "helper_update_v1")
 	c.desktopInboxV1 = metaBool(env.Meta, "desktop_inbox_v1") && metaString(env.Meta, "processed_semantics") == "saved_to_desktop_inbox"

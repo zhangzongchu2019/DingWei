@@ -246,6 +246,8 @@ class SessionHelper:
         if not env_get("SH_UPDATE_LAUNCHER", ""):
             self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
         self.adapter = self._build_adapter()
+        if self.cfg.mode=="driver" and hasattr(self.adapter,"blocker_prepare"):
+            self.adapter.blocker_prepare=self._prepare_blocker_driver_wake
         from .agent_disk_metrics import BoundedDiskPublisher
         self.agent_disk_publisher = BoundedDiskPublisher()
         self.install_send_script()
@@ -568,11 +570,22 @@ class SessionHelper:
             waiter.set_result({key: meta.get(key) for key in
                                ("ok", "token", "expires_at", "public_base_url", "session", "error")})
 
+    def _prepare_blocker_driver_wake(self,env):
+        from .task_blocker import prepare_wake
+        credential=getattr(self,"enroll_credential",None)
+        if credential is None or self.cfg.mode!="driver" or getattr(self.cfg,"ipc_upload_only",False) or getattr(self.cfg,"ipc_send_body_only",False):return None,"current_authorization_denied"
+        ws_url,headers=self._connection()
+        return prepare_wake(ws_url,headers,credential.agent_id,env)
+
     def _make_task_flow_handler(self):
         async def handle(args):
             if not getattr(self, "enroll_credential", None):
                 return {"ok": False, "error": "dedicated_agent_credential_required"}
             from .task_flow import task_request
+            if args.get("type")=="blocker_v1":
+                from .task_blocker import blocker_request
+                ws_url,headers=self._connection()
+                return await asyncio.to_thread(blocker_request,ws_url,headers,args)
             if args.get("type")=="spec_review_v1":
                 from .spec_review import spec_review_request
                 ws_url, headers = self._connection()
@@ -634,7 +647,7 @@ class SessionHelper:
         return envelope(
             session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
             {"type": "session_capabilities", "delivery_ack_v1": True,
-             "persistent_inbox_v1": True, "project_context_v1": bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "spec_review_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,
+             "persistent_inbox_v1": True, "blocker_notice_v1": bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "blocker_wake_v1": self.cfg.mode=="driver" and bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "project_context_v1": bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "spec_review_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,
              "unified_queue_v1": self.cfg.mode == "driver",
              "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),
              "desktop_inbox_v1": self.cfg.mode == "desktop",
@@ -1006,7 +1019,7 @@ class SessionHelper:
             async with self.adapter_handle_lock:
                 business_env = env
                 addendum = ""
-                if guide_store is not None and self._is_real_business_input(env):
+                if guide_store is not None and self._is_real_business_input(env) and (env.get("meta") or {}).get("kind")!="task_blocker_ready":
                     guide_claim = await asyncio.to_thread(guide_store.claim)
                     addendum = await asyncio.to_thread(self.upload_addendum_due)
                     if guide_claim is not None or addendum:
@@ -1128,6 +1141,17 @@ class SessionHelper:
         # 在线清单/上线指南/skill 推送当作正常内容**注入 CLI 对话**。
         # recv_loop(实时路径)本来就有类似跳过,durable(补发路径)没有 —— 两条路径各走各的,
         # 只在其中一条加保护是不够的。
+        if (env.get("meta") or {}).get("kind") == "task_blocker_ready":
+            from .task_blocker import wake_identity
+            try:
+                m=wake_identity(env)
+                if self.cfg.mode!="driver" or not m["automatic_recheck"] or not getattr(self,"enroll_credential",None) or getattr(self.cfg,"ipc_upload_only",False) or getattr(self.cfg,"ipc_send_body_only",False):
+                    await asyncio.to_thread(self.delivery_inbox.accept_notification,delivery_id,env)
+                    await ws.send(json.dumps(self.delivery_ack(delivery_id,"processed",reason="blocker_notice_only"),ensure_ascii=False))
+                    return
+            except (ValueError,TypeError):
+                await ws.send(json.dumps(self.delivery_ack(delivery_id,"failed",reason="invalid_blocker_signal",retryable=False),ensure_ascii=False))
+                return
         if (env.get("meta") or {}).get("kind") == "task_assigned":
             try:
                 await asyncio.to_thread(self.delivery_inbox.accept_notification, delivery_id, env)
@@ -1230,6 +1254,24 @@ class SessionHelper:
                         # 保证 injected ACK 先于 handle 结果/processed。
                         asyncio.run_coroutine_threadsafe(coro, loop).result(timeout=5)
 
+                if (env.get("meta") or {}).get("kind")=="task_blocker_ready":
+                    from .task_blocker import prepare_wake
+                    credential=getattr(self,"enroll_credential",None)
+                    if self.cfg.mode!="driver" or credential is None:
+                        safe,reason=None,"blocker_notice_only"
+                    else:
+                        ws_url,headers=self._connection()
+                        safe,reason=await asyncio.to_thread(prepare_wake,ws_url,headers,credential.agent_id,env)
+                    if safe is None:
+                        if reason=="current_authorization_or_read_failed":
+                            await asyncio.to_thread(self.delivery_inbox.release,delivery_id)
+                            await ws.send(json.dumps(self.delivery_ack(delivery_id,"busy",reason="blocker_recheck_waiting",retryable=True),ensure_ascii=False))
+                            await asyncio.sleep(0.75)
+                            continue
+                        await asyncio.to_thread(self.delivery_inbox.finish,delivery_id)
+                        await ws.send(json.dumps(self.delivery_ack(delivery_id,"processed",reason=reason),ensure_ascii=False))
+                        continue
+                    env=safe
                 await self.process_inbound_message(
                     ws, env, raise_adapter_errors=True, on_injected=acknowledge_injected
                 )

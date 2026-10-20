@@ -410,7 +410,7 @@ class DeliveryInbox:
 
     def accept_notification(self, delivery_id, env):
         """Persist a non-executable notification atomically; never worker-claim it."""
-        if not delivery_id or (env.get('meta') or {}).get('kind') != 'task_assigned':
+        if not delivery_id or (env.get('meta') or {}).get('kind') not in ('task_assigned','task_blocker_ready'):
             raise ValueError('invalid task notification')
         now = time.time()
         with self._lock, self._connect() as db:

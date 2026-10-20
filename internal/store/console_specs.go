@@ -1190,6 +1190,9 @@ func (s *SQLite) UpdateConsoleTaskProposalPlanAuthorized(ctx context.Context, pr
 			return err
 		}
 		if status == "in_progress" || status == "done" {
+			if err = taskBlockersClear(ctx, tx, proposalID); err != nil {
+				return err
+			}
 			rawDeps, _ := json.Marshal(dependsOn)
 			if err = taskDependenciesDone(ctx, tx, string(rawDeps)); err != nil {
 				return err
