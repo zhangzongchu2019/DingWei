@@ -69,7 +69,7 @@ def run(args):
         (home/'.embedded-postgres-go').symlink_to('/home/dev/.embedded-postgres-go',target_is_directory=True)
         with tarfile.open(fileobj=io.BytesIO(archive)) as tar:tar.extractall(root,filter='data')
         env={'HOME':str(home),'PATH':str(Path(PY).parent)+':/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin','PYTHONPATH':str(root/'tools/sessionhelper'),'PYTHONDONTWRITEBYTECODE':'1','LANG':'C.UTF-8','TZ':'UTC','GOCACHE':'/home/dev/.cache/go-build','GOMODCACHE':'/home/dev/go/pkg/mod','GOPATH':'/home/dev/go','GOPROXY':'off','GOSUMDB':'off','DW_DESKTOP_INTEGRATION_PYTHON':PY}
-        baseline=[('go',['go','test','./internal/store','./internal/m8','-count=1','-timeout=5m','-run','^TestBlocker']),('helper',CASES[-1]['argv'])]
+        baseline=[('go',['go','test','./internal/store','./internal/m8','-count=1','-timeout=5m','-run','^TestBlocker']),('helper',[PY,'-B','-m','unittest','discover','-s','tools/sessionhelper/tests','-p','test_task_blocker.py','-v'])]
         def execute(label,cmd):
             start=time.time();p=subprocess.run(cmd,cwd=root,env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=360)
             (out/(label+'.log')).write_text(p.stdout);return p,round(time.time()-start,3)
