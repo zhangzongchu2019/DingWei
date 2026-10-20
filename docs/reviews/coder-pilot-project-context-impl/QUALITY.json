@@ -1,0 +1,7 @@
+{
+  "full_diff_whitespace_rc": 2,
+  "raw_log_exception": "withdrawals-fourth/http-schema.log line 1 trailing space from unittest progress; raw bytes deliberately preserved",
+  "source_and_docs_excluding_raw_log_rc": 0,
+  "source_manifest_files": 1752,
+  "credential_scan": "Only known synthetic must-not-be-in-url fixture appears; no private keys, real credential/env values or private databases included."
+}

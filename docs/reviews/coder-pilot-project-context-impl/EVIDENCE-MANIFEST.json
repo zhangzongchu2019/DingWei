@@ -1,5 +1,5 @@
 {
-  "recorded_at": "2026-10-20T15:44:07.432432+00:00",
+  "recorded_at": "2026-10-20T15:44:31.005274+00:00",
   "source_commit": "ca227049f05b97b3b4170db37a7ac3759b5b7764",
   "files": [
     {
@@ -68,14 +68,19 @@
       "sha256": "d989305c7212dfe1355d0fa2d749fa316ae0aec443a5f68c5a3fd8970ff010d3"
     },
     {
+      "path": "docs/reviews/coder-pilot-project-context-impl/QUALITY.json",
+      "bytes": 409,
+      "sha256": "04c08289b3ecb78b5061732f1050b322a85ac15b870c798ad0c35cbb27102192"
+    },
+    {
       "path": "docs/reviews/coder-pilot-project-context-impl/RACE.json",
       "bytes": 367,
       "sha256": "d2b34b8da24876caba3d0638edbccd6412396890cc68d1fa4f76613066b1e9c2"
     },
     {
       "path": "docs/reviews/coder-pilot-project-context-impl/REPORT.md",
-      "bytes": 7817,
-      "sha256": "86cf6b35057531672c1ab3c3e989b7d864531007703cbb8a0852640cd9296970"
+      "bytes": 8051,
+      "sha256": "70891aa907ee3c0e1dc8a5e8a798960ecc76105a2a034d12f9f1111b0d9b844e"
     },
     {
       "path": "docs/reviews/coder-pilot-project-context-impl/RUNTIME-INPUT-EQUIVALENCE.json",

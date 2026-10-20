@@ -49,3 +49,5 @@ canonical：隔离 HOME 下 `bash scripts/run-build-tests.sh`；全仓：同环�
 - 原始 Go JSON 有一条 URL 查询凭据拒绝用例的固定字符串 must-not-be-in-url，是仓库合成测试名，不是真实 token。未收集或提交真实凭据、env 内容、会话库或包体。
 
 审查请仅从 Git 独取提交与证据；本件未部署、未连接43/dw123/oaagent，也未发飞书业务消息。
+
+原始撤修 http-schema.log 首行保留 unittest 未换行输出的尾空格，整差集 whitespace 检查如实为 rc2；排除原始 .log 的源码/文档检查 rc0。没有为过格式门修剪原始证据，见 QUALITY.json。
