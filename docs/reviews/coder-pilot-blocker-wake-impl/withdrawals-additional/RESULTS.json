@@ -1,0 +1,54 @@
+{
+  "commit": "4d33846d1adcced79ff5287bbff21a35901eaec5",
+  "cases": [
+    {
+      "name": "owner-old-plan-paired",
+      "edits": [
+        [
+          "internal/store/console_specs.go",
+          "if err = taskBlockersClear(ctx, tx, proposalID); err != nil {",
+          "if err = error(nil); err != nil {"
+        ],
+        [
+          "internal/store/console_specs.go",
+          "if enrolled > 0 {",
+          "if false && enrolled > 0 {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerMultipleCardsLegacyGateAndPreservation$"
+      ],
+      "marker": "BLOCKER_OWNER_PLAN_BYPASS <nil>",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.385
+    },
+    {
+      "name": "resolved-does-not-resume",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if pass {\n\t\t\t\tb.State = \"resolved\"",
+          "if pass {\n\t\t\t\t_, _ = tx.ExecContext(ctx, `UPDATE console_spec_task SET status='in_progress' WHERE id=?`, t.ID)\n\t\t\t\tb.State = \"resolved\""
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake$"
+      ],
+      "marker": "BLOCKER_RECHECK_AUTO_RESUMED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.345
+    }
+  ]
+}

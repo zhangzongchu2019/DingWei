@@ -1,0 +1,455 @@
+{
+  "source": "43af5b9f891f336c4776657f40d2359901843083",
+  "packages": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/dingwei-datad",
+      "action": "skip",
+      "elapsed": 0
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/fcs",
+      "action": "skip",
+      "elapsed": 0
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout",
+      "action": "pass",
+      "elapsed": 37.435
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/file-service",
+      "action": "pass",
+      "elapsed": 0.068
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/mcs-demo",
+      "action": "skip",
+      "elapsed": 0
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/mcsd",
+      "action": "skip",
+      "elapsed": 0
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/nodeagent",
+      "action": "pass",
+      "elapsed": 0.003
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "action": "pass",
+      "elapsed": 251.252
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+      "action": "pass",
+      "elapsed": 9.985
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/agentmetrics",
+      "action": "pass",
+      "elapsed": 0.005
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/bridge",
+      "action": "pass",
+      "elapsed": 0.004
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/bus",
+      "action": "pass",
+      "elapsed": 1.225
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/clock",
+      "action": "pass",
+      "elapsed": 0.004
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/config",
+      "action": "pass",
+      "elapsed": 0.017
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/consolemux",
+      "action": "pass",
+      "elapsed": 11.862
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/coordination",
+      "action": "pass",
+      "elapsed": 0.398
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "action": "pass",
+      "elapsed": 1.005
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/evidence",
+      "action": "pass",
+      "elapsed": 1.112
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/fanout",
+      "action": "pass",
+      "elapsed": 105.16
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/fcs",
+      "action": "pass",
+      "elapsed": 1.2810000000000001
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/feishu",
+      "action": "pass",
+      "elapsed": 0.007
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/filepolicy",
+      "action": "pass",
+      "elapsed": 0.009
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/fileservice",
+      "action": "pass",
+      "elapsed": 2.81
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted",
+      "action": "pass",
+      "elapsed": 741.073
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/identity",
+      "action": "pass",
+      "elapsed": 120.266
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/identity/httpapi",
+      "action": "pass",
+      "elapsed": 3.243
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/identity/identitytest",
+      "action": "skip",
+      "elapsed": 0
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/jcs",
+      "action": "pass",
+      "elapsed": 0.002
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/llm",
+      "action": "pass",
+      "elapsed": 0.005
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m5",
+      "action": "pass",
+      "elapsed": 4.198
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "action": "pass",
+      "elapsed": 173.232
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "action": "pass",
+      "elapsed": 0.417
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/dea",
+      "action": "pass",
+      "elapsed": 0.002
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/demo",
+      "action": "pass",
+      "elapsed": 0.262
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/dispatch",
+      "action": "pass",
+      "elapsed": 0.031
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver",
+      "action": "pass",
+      "elapsed": 0.035
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd",
+      "action": "pass",
+      "elapsed": 12.867
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/pool",
+      "action": "pass",
+      "elapsed": 0.152
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/rotation",
+      "action": "pass",
+      "elapsed": 0.04
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/route",
+      "action": "pass",
+      "elapsed": 0.005
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/model",
+      "action": "skip",
+      "elapsed": 0
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/nodeagent",
+      "action": "pass",
+      "elapsed": 8.002
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/nodegate",
+      "action": "pass",
+      "elapsed": 27.058
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+      "action": "pass",
+      "elapsed": 0.574
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/portal",
+      "action": "pass",
+      "elapsed": 0.293
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/redact",
+      "action": "pass",
+      "elapsed": 0.004
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/reminder",
+      "action": "pass",
+      "elapsed": 0.424
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/repo",
+      "action": "pass",
+      "elapsed": 6.447
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/router",
+      "action": "pass",
+      "elapsed": 0.002
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/schedule",
+      "action": "pass",
+      "elapsed": 1.208
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/scheduler",
+      "action": "pass",
+      "elapsed": 2.6790000000000003
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/seatcapacity",
+      "action": "pass",
+      "elapsed": 0.002
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/secretbox",
+      "action": "pass",
+      "elapsed": 0.002
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "action": "pass",
+      "elapsed": 21.143
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store/migrate",
+      "action": "pass",
+      "elapsed": 77.741
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store/pgtest",
+      "action": "pass",
+      "elapsed": 18.07
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/version",
+      "action": "pass",
+      "elapsed": 0.003
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/worker",
+      "action": "pass",
+      "elapsed": 2.649
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/specs/tools/handle-escape",
+      "action": "skip",
+      "elapsed": 0
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/specs/tools/legacy-name",
+      "action": "skip",
+      "elapsed": 0
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/specs/tools/pending-debt",
+      "action": "skip",
+      "elapsed": 0
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/tests/r32-task-flow/compat-probe",
+      "action": "skip",
+      "elapsed": 0
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/view-service",
+      "action": "skip",
+      "elapsed": 0
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/view-service/console-hosted-page-fixture",
+      "action": "skip",
+      "elapsed": 0
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/view-service/p1seed",
+      "action": "skip",
+      "elapsed": 0
+    }
+  ],
+  "test_packages_passed": 52,
+  "no_test_files": 13,
+  "conditional_test_skips": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGAssignFull"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGA2ConcurrentUnique"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGACLThreeRoles"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGRoleNoLeak"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGGCFirstResults"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGMigrateOnly"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB3CrossTask"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB4PutAssignInterleave"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1CrossTaskConcurrentSameRID"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1ResponseLossRetry"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1LockOrderNoDeadlock"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGIntegration"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+      "test": "TestGateDumpDoorABaseline"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestTCN5b_SameRidDifferentPayloadConflict"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestConformance_GAP_SLATimeoutAnnotate"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+      "test": "TestMonitorPageInRealChrome"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestMuxProductHTTP1EightSeats"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsolePlatformPayloadDump"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestFailureNoticeDriverTurnEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestGroupReplyMCP"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelper0232MixedVersionEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestEnvelopeReadTimeoutEnvironmentChild"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSpecMCPEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestR31OldBinarySchemaReadCompatibility"
+    }
+  ],
+  "failed": []
+}

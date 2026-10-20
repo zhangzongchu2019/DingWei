@@ -1,0 +1,43 @@
+{
+  "checks": [
+    {
+      "label": "source",
+      "argv": [
+        "git",
+        "diff",
+        "--check",
+        "9dc27ecbee668dac9706325e0e52b95fe8fba20b",
+        "HEAD",
+        "--",
+        ".",
+        ":!docs"
+      ],
+      "rc": 0
+    },
+    {
+      "label": "all_except_raw_logs",
+      "argv": [
+        "git",
+        "diff",
+        "--check",
+        "9dc27ecbee668dac9706325e0e52b95fe8fba20b",
+        "--",
+        ".",
+        ":!*.log"
+      ],
+      "rc": 0
+    },
+    {
+      "label": "whole_difference",
+      "argv": [
+        "git",
+        "diff",
+        "--check",
+        "9dc27ecbee668dac9706325e0e52b95fe8fba20b"
+      ],
+      "rc": 0
+    }
+  ],
+  "raw_logs_preserved": true,
+  "note": "Raw failing unittest tracebacks may contain whitespace. No raw evidence changed for whitespace formatting."
+}

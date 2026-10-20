@@ -1,0 +1,21 @@
+{
+  "source_commit": "e36cbbb05377d3bfb7d7c333992d27225680f3c5",
+  "start": "2026-10-20T16:54:35.475699+00:00",
+  "end": "2026-10-20T16:55:37.441000+00:00",
+  "argv": [
+    "go",
+    "test",
+    "-race",
+    "./internal/store",
+    "./internal/m8",
+    "./internal/identity",
+    "-count=1",
+    "-run",
+    "^TestBlocker|^TestProjectContext",
+    "-timeout=10m"
+  ],
+  "rc": 0,
+  "isolated_home": true,
+  "cleared_environment": true,
+  "offline_dependencies": true
+}

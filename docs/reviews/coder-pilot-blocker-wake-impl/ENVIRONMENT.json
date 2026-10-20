@@ -1,0 +1,13 @@
+{
+  "recorded_at": "2026-10-20T16:29:45.307333+00:00",
+  "source_commit": "3cf3962d26f796c2a0db5d37c80a64b63a9bb544",
+  "hostname": "VM-4-12-ubuntu",
+  "uid": 1001,
+  "cores": 16,
+  "Go": "go version go1.22.2 linux/amd64",
+  "venv": "/data/ai-dev-data/helper-deps-lock-venv",
+  "runtime_lock_unchanged": true,
+  "DSN_unset": true,
+  "isolated_home": true,
+  "live_access": false
+}

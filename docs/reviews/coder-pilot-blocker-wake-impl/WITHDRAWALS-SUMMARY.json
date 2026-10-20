@@ -1,0 +1,11 @@
+{
+  "source": "5c368986c0590a361f090a277a955fd8711ab436",
+  "runtime": "43af5b9f891f336c4776657f40d2359901843083",
+  "count": 40,
+  "all_designated_red": true,
+  "baseline_go_rc": 0,
+  "baseline_helper_rc": 0,
+  "restored_go_rc": 0,
+  "restored_helper_rc": 0,
+  "raw_directory": "withdrawals-complete"
+}

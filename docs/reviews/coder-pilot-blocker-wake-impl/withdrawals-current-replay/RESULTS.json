@@ -1,0 +1,27 @@
+{
+  "commit": "4737bfa06cb54c4eebade029a3b93267663fe02d",
+  "cases": [
+    {
+      "name": "replay-current-privacy",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "// A cached receipt never preserves former task-reading authority.\n\t\tif !canRead {",
+          "// A cached receipt never preserves former task-reading authority.\n\t\tif false && !canRead {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerCachedReplyUsesCurrentReadingRights$"
+      ],
+      "marker": "BLOCKER_CACHED_REPLY_RETAINED_OLD_READING_AUTHORITY",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.332
+    }
+  ]
+}

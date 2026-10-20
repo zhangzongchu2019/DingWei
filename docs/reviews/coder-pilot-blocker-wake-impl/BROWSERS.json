@@ -1,0 +1,54 @@
+{
+  "source_commit": "3cf3962d26f796c2a0db5d37c80a64b63a9bb544",
+  "isolated_home": true,
+  "results": [
+    {
+      "suite": "pilot-blocker-wake-browser-regression.js",
+      "rc": 0,
+      "start": "2026-10-20T16:30:21.520810+00:00",
+      "end": "2026-10-20T16:30:23.714485+00:00"
+    },
+    {
+      "suite": "console-task-board-regression.js",
+      "rc": 0,
+      "start": "2026-10-20T16:30:23.714711+00:00",
+      "end": "2026-10-20T16:30:25.717091+00:00"
+    },
+    {
+      "suite": "r32-task-flow-browser-regression.js",
+      "rc": 0,
+      "start": "2026-10-20T16:30:25.717422+00:00",
+      "end": "2026-10-20T16:30:37.682592+00:00"
+    },
+    {
+      "suite": "r32-spec-review-browser-regression.js",
+      "rc": 1,
+      "start": "2026-10-20T16:30:37.682906+00:00",
+      "end": "2026-10-20T16:30:38.635517+00:00"
+    },
+    {
+      "suite": "console-agent-mgmt-hosted-regression.js",
+      "rc": 0,
+      "start": "2026-10-20T16:30:38.635767+00:00",
+      "end": "2026-10-20T16:31:06.799558+00:00"
+    },
+    {
+      "suite": "console-browser-regression.js",
+      "rc": 0,
+      "start": "2026-10-20T16:31:06.799912+00:00",
+      "end": "2026-10-20T16:31:29.178092+00:00"
+    },
+    {
+      "suite": "console-agent-mgmt-enroll-regression.js",
+      "rc": 0,
+      "start": "2026-10-20T16:31:29.178385+00:00",
+      "end": "2026-10-20T16:31:35.129647+00:00"
+    },
+    {
+      "suite": "console-agent-groups-vega-regression.js",
+      "rc": 0,
+      "start": "2026-10-20T16:31:35.129903+00:00",
+      "end": "2026-10-20T16:31:37.041142+00:00"
+    }
+  ]
+}

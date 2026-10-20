@@ -1,0 +1,896 @@
+{
+  "commit": "93e217fc7238a770b0500dfdd55d2cd46ae02781",
+  "cases": [
+    {
+      "name": "initial-current-state",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "!reflect.DeepEqual(t, expected)",
+          "!reflect.DeepEqual(t, t)"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerRequestReplayAndRollbackAreAtomic$"
+      ],
+      "marker": "BLOCKER_INITIAL_STATE_NOT_RECHECKED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.351
+    },
+    {
+      "name": "card-cas",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "b.Version != u.ExpectedVersion",
+          "b.Version != b.Version"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerRecheckRequiresCurrentDeveloperVersionAndLease$"
+      ],
+      "marker": "BLOCKER_CARD_CAS_BYPASS",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.352
+    },
+    {
+      "name": "developer-only-lease",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if !actor.developer(t) || b.InputVersion",
+          "if false && !actor.developer(t) || b.InputVersion"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerRecheckRequiresCurrentDeveloperVersionAndLease$"
+      ],
+      "marker": "BLOCKER_REVIEWER_OPENED_DEVELOPER_LEASE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.37
+    },
+    {
+      "name": "addressed-reply",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if u.Operation == \"input\" && !(actor.owner(t) || b.WaitingPrincipal == key)",
+          "if false && u.Operation == \"input\" && !(actor.owner(t) || b.WaitingPrincipal == key)"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerWaiterRightsAndFullMode$"
+      ],
+      "marker": "BLOCKER_UNADDRESSED_REPLY_ACCEPTED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.331
+    },
+    {
+      "name": "private-receipt",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if !canRead {\n\t\tout.Blocker =",
+          "if false && !canRead {\n\t\tout.Blocker ="
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerWaiterRightsAndFullMode$"
+      ],
+      "marker": "BLOCKER_WAITER_GOT_TASK_CONTEXT",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.35
+    },
+    {
+      "name": "request-payload-binding",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if oldHash != payload {",
+          "if false && oldHash != payload {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerRequestReplayAndRollbackAreAtomic$"
+      ],
+      "marker": "BLOCKER_REQUEST_HASH_NOT_BOUND",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.389
+    },
+    {
+      "name": "immutable-event",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if previous != inputHash {",
+          "if false && previous != inputHash {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake$"
+      ],
+      "marker": "BLOCKER_EVENT_REPLACED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.336
+    },
+    {
+      "name": "unknown-is-not-pass",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if c.Result != \"pass\" {",
+          "if false && c.Result != \"pass\" {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake$"
+      ],
+      "marker": "BLOCKER_UNKNOWN_RESOLVED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.372
+    },
+    {
+      "name": "full-approval",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "|| (b.Mode == \"full\" && b.FullApprovalRef == \"\")",
+          "|| (false && b.Mode == \"full\" && b.FullApprovalRef == \"\")"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerWaiterRightsAndFullMode$"
+      ],
+      "marker": "BLOCKER_FULL_MODE_APPROVAL_BYPASS",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.368
+    },
+    {
+      "name": "lease-identity",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "|| u.LeaseID != b.LeaseID ||",
+          "|| false && u.LeaseID != b.LeaseID ||"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerRecheckRequiresCurrentDeveloperVersionAndLease$"
+      ],
+      "marker": "BLOCKER_FORGED_LEASE_ACCEPTED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.395
+    },
+    {
+      "name": "lease-expiry",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "|| blockerLeaseExpired(b.LeaseUntil, now) {",
+          "|| false && blockerLeaseExpired(b.LeaseUntil, now) {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerRecheckRequiresCurrentDeveloperVersionAndLease$"
+      ],
+      "marker": "BLOCKER_EXPIRED_LEASE_ACCEPTED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.386
+    },
+    {
+      "name": "concurrent-new-input",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if u.InputVersion != b.InputVersion {",
+          "if false && u.InputVersion != b.InputVersion {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerNewInputDuringRecheckAndAssignmentInvalidate$"
+      ],
+      "marker": "BLOCKER_NEW_INPUT_SWALLOWED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.338
+    },
+    {
+      "name": "shared-resume-gate",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if n != 0 {",
+          "if n < 0 {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake$"
+      ],
+      "marker": "BLOCKER_LEGACY_RESUME_BYPASS",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.348
+    },
+    {
+      "name": "final-authority-check",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if err = recheck(); err != nil {\n\t\treturn out, err\n\t}\n\tif err = tx.Commit();",
+          "if err = error(nil); err != nil {\n\t\treturn out, err\n\t}\n\tif err = tx.Commit();"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerRequestReplayAndRollbackAreAtomic$"
+      ],
+      "marker": "BLOCKER_FINAL_RECHECK_COMMITTED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.404
+    },
+    {
+      "name": "legacy-text-preserved",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if status == \"blocked\" && strings.TrimSpace(old) != \"\"",
+          "if false && status == \"blocked\" && strings.TrimSpace(old) != \"\""
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerMultipleCardsLegacyGateAndPreservation$"
+      ],
+      "marker": "BLOCKER_LEGACY_TEXT_DROPPED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.337
+    },
+    {
+      "name": "condition-transition",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "changed := !was && satisfied",
+          "changed := false && !was && satisfied"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerDependencyConditionTransitionCreatesOneInput$"
+      ],
+      "marker": "BLOCKER_VERIFIED_CONDITION_NOT_WAKING",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.354
+    },
+    {
+      "name": "outbox-repair",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if b.State == \"ready_to_recheck\" || b.State == \"rechecking\" {\n\t\t\tif err = blockerWake",
+          "if false && (b.State == \"ready_to_recheck\" || b.State == \"rechecking\") {\n\t\t\tif err = blockerWake"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerOutboxReconciliationRepairsMissingSignalWithoutNewInput$"
+      ],
+      "marker": "BLOCKER_OUTBOX_NOT_REPAIRED_IDEMPOTENTLY",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.363
+    },
+    {
+      "name": "owner-cannot-resume",
+      "edits": [
+        [
+          "internal/store/console_specs.go",
+          "if enrolled > 0 {",
+          "if false && enrolled > 0 {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerOwnerCannotImpersonateResumeAfterResolution$"
+      ],
+      "marker": "BLOCKER_OWNER_IMPERSONATED_RESUME",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.347
+    },
+    {
+      "name": "old-driver-gate",
+      "edits": [
+        [
+          "internal/store/console_task_driver.go",
+          "if unresolved != 0 {",
+          "if false && unresolved != 0 {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerLegacyDriverStartCannotBypassUnresolvedCards$"
+      ],
+      "marker": "BLOCKER_LEGACY_DRIVER_START_BYPASS <nil>",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.369
+    },
+    {
+      "name": "current-group-pair",
+      "edits": [
+        [
+          "internal/m8/task_blocker.go",
+          "if !a.Allows(claim) {",
+          "if false && !a.Allows(claim) {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestBlockerCurrentGroupPairRecheckedBeforePrivateRead$"
+      ],
+      "marker": "BLOCKER_CURRENT_PAIR_GROUP_AUTH_BYPASS",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 6.519
+    },
+    {
+      "name": "waiter-no-private-get",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if !actor.taskReader(t) {",
+          "if false && !actor.taskReader(t) {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestBlockerHTTPCurrentAgentAndExplicitOutsideWaiter$"
+      ],
+      "marker": "BLOCKER_WAITER_READ_WHOLE_TASK",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 7.278
+    },
+    {
+      "name": "pg-human-lock",
+      "edits": [
+        [
+          "internal/identity/project_context.go",
+          "SELECT state,short_name FROM np_user WHERE user_id_lc=$1 FOR SHARE",
+          "SELECT state,short_name FROM np_user WHERE user_id_lc=$1"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestBlockerPGHumanReplyCommitBeforeDisableAndDisableBeforeReply$"
+      ],
+      "marker": "BLOCKER_PG_HUMAN_LOCK_NOT_HELD_THROUGH_SQLITE_COMMIT",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 14.405
+    },
+    {
+      "name": "control-origin",
+      "edits": [
+        [
+          "internal/m8/hub.go",
+          "&& ctx.Value(blockerDispatchKey{}) != true",
+          "&& false && ctx.Value(blockerDispatchKey{}) != true"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestBlockerOfflineOldHelperAndReliableNonExecutableWake$"
+      ],
+      "marker": "BLOCKER_FORGED_CONTROL_ROUTED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 7.505
+    },
+    {
+      "name": "old-helper-capability",
+      "edits": [
+        [
+          "internal/m8/task_blocker.go",
+          "capable := client.blockerNoticeV1 && client.deliveryACKV1",
+          "capable := client.deliveryACKV1"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-run",
+        "^TestBlockerOfflineOldHelperAndReliableNonExecutableWake$"
+      ],
+      "marker": "BLOCKER_UNKNOWN_CONTROL_SENT_TO_OLD_HELPER",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 6.427
+    },
+    {
+      "name": "fixed-prompt",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/task_blocker.py",
+          "safe['body']=fixed",
+          "safe['body']=env['body']"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_task_blocker.py",
+        "-v"
+      ],
+      "marker": "BLOCKER_REPLY_INJECTED_AS_COMMAND",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.975
+    },
+    {
+      "name": "metadata-whitelist",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/task_blocker.py",
+          "safe['meta']={k:m[k] for k in (",
+          "safe['meta']={**m, **{k:m[k] for k in ("
+        ],
+        [
+          "tools/sessionhelper/sessionhelper/task_blocker.py",
+          "if k in m}\n    safe['meta'].update",
+          "if k in m}}\n    safe['meta'].update"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_task_blocker.py",
+        "-v"
+      ],
+      "marker": "BLOCKER_UNTRUSTED_METADATA_COPIED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.919
+    },
+    {
+      "name": "strict-version-type",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/task_blocker.py",
+          "type(meta.get(field)) is not int",
+          "not isinstance(meta.get(field),int)"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_task_blocker.py",
+        "-v"
+      ],
+      "marker": "BLOCKER_BAD_SIGNAL_TYPE_ACCEPTED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.976
+    },
+    {
+      "name": "current-recipient",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/task_blocker.py",
+          "or b.get('developer_agent_id')!=agent_id",
+          "or False and b.get('developer_agent_id')!=agent_id"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_task_blocker.py",
+        "-v"
+      ],
+      "marker": "BLOCKER_STALE_WAKE_ENQUEUED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.956
+    },
+    {
+      "name": "helper-full-approval",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/task_blocker.py",
+          "if b.get('mode')=='full' and not b.get('full_approval_ref'):",
+          "if False and b.get('mode')=='full' and not b.get('full_approval_ref'):"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_task_blocker.py",
+        "-v"
+      ],
+      "marker": "BLOCKER_FULL_GATE_BYPASS",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.967
+    },
+    {
+      "name": "pending-restart",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/blocker_journal.py",
+          "state IN('pending','dispatching','admitted')",
+          "state IN('dispatching','admitted')"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_task_blocker.py",
+        "-v"
+      ],
+      "marker": "BLOCKER_PENDING_WAKE_LOST_ON_RESTART",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.922
+    },
+    {
+      "name": "dispatch-journal",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/blocker_journal.py",
+          "SET state='dispatching',updated_at",
+          "SET state='pending',updated_at"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_task_blocker.py",
+        "-v"
+      ],
+      "marker": "BLOCKER_UNKNOWN_DISPATCH_REPLAYED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.015
+    },
+    {
+      "name": "ambiguous-no-rpc-replay",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/driver_adapter.py",
+          "receipt=self.driver.poll_receipt(command.delivery_id)",
+          "receipt=self.driver.deliver(command.delivery_id,command.text)"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_task_blocker.py",
+        "-v"
+      ],
+      "marker": "BLOCKER_UNKNOWN_WINDOW_OPENED_NEW_TURN",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.971
+    },
+    {
+      "name": "transient-defer-same-command",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/driver_adapter.py",
+          "self._commands.defer_current(command.delivery_id);self._bridge_sleep(0.5);return",
+          "self._bridge_sleep(0.5);return"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_task_blocker.py",
+        "-v"
+      ],
+      "marker": "BLOCKER_TRANSIENT_FAILURE_DROPPED_WAKE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 0.974
+    },
+    {
+      "name": "owner-old-plan-paired",
+      "edits": [
+        [
+          "internal/store/console_specs.go",
+          "if err = taskBlockersClear(ctx, tx, proposalID); err != nil {",
+          "if err = error(nil); err != nil {"
+        ],
+        [
+          "internal/store/console_specs.go",
+          "if enrolled > 0 {",
+          "if false && enrolled > 0 {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerMultipleCardsLegacyGateAndPreservation$"
+      ],
+      "marker": "BLOCKER_OWNER_PLAN_BYPASS <nil>",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.404
+    },
+    {
+      "name": "resolved-does-not-resume",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if pass {\n\t\t\t\tb.State = \"resolved\"",
+          "if pass {\n\t\t\t\t_, _ = tx.ExecContext(ctx, `UPDATE console_spec_task SET status='in_progress' WHERE id=?`, t.ID)\n\t\t\t\tb.State = \"resolved\""
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake$"
+      ],
+      "marker": "BLOCKER_RECHECK_AUTO_RESUMED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.394
+    },
+    {
+      "name": "get-no-business-write",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "if err = tx.Commit(); err != nil {\n\t\treturn nil, nil, err\n\t}\n\treturn cards, inputs, nil",
+          "if _, err = tx.ExecContext(ctx, `UPDATE console_task_blocker SET version=version+1 WHERE task_id=?`, t.ID); err != nil {return nil,nil,err}\n\tif err = tx.Commit(); err != nil {\n\t\treturn nil, nil, err\n\t}\n\treturn cards, inputs, nil"
+        ],
+        [
+          "internal/store/task_blocker.go",
+          "&sql.TxOptions{ReadOnly: true}",
+          "&sql.TxOptions{ReadOnly: false}"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerReadOnlySnapshotAndBoundedInputHistory$"
+      ],
+      "marker": "BLOCKER_GET_WROTE_STATE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.513
+    },
+    {
+      "name": "notice-mode-fence",
+      "edits": [
+        [
+          "tools/sessionhelper/sessionhelper/app.py",
+          "if self.cfg.mode!=\"driver\" or not m[\"automatic_recheck\"] or not getattr(self,\"enroll_credential\",None) or getattr(self.cfg,\"ipc_upload_only\",False) or getattr(self.cfg,\"ipc_send_body_only\",False):",
+          "if False:"
+        ]
+      ],
+      "argv": [
+        "/data/ai-dev-data/helper-deps-lock-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-p",
+        "test_task_blocker.py",
+        "-v"
+      ],
+      "marker": "BLOCKER_NOTICE_INJECTED_TO_LEGACY_OR_RESTRICTED_MODE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.052
+    },
+    {
+      "name": "replay-current-privacy",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "// A cached receipt never preserves former task-reading authority.\n\t\tif !canRead {",
+          "// A cached receipt never preserves former task-reading authority.\n\t\tif false && !canRead {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerCachedReplyUsesCurrentReadingRights$"
+      ],
+      "marker": "BLOCKER_CACHED_REPLY_RETAINED_OLD_READING_AUTHORITY",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.341
+    }
+  ]
+}

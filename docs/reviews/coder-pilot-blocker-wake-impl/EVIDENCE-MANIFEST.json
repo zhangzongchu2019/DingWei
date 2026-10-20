@@ -1,0 +1,267 @@
+{
+  "source_commit": "5c368986c0590a361f090a277a955fd8711ab436",
+  "excluded": [
+    "EVIDENCE-MANIFEST.json",
+    "FINAL-VERIFICATION.json"
+  ],
+  "entries": [
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/BROWSERS.json",
+      "blob": "e0a74444419189fbc8738c065ea1425cbbf26c3f",
+      "bytes": 1568,
+      "sha256": "4ac3478121ca3414e8884d854a1290606b7a1d2618e2b616ad59184960902e02"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/CANONICAL-EXACT.json",
+      "blob": "c9c66cbdb9b433027faf08716c3889dfe5143d1a",
+      "bytes": 319,
+      "sha256": "ec35ebf1954151522e33b0b223a2ba09abf40b7aa0ef3982b6c93292fb08c296"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/CANONICAL-FINAL.json",
+      "blob": "cceec7b2c0414a85ca86b1df3e0b51747a11e71f",
+      "bytes": 379,
+      "sha256": "8550a7041974ec2332d4a9ae452096b8a1e0c4860f9e8b21d3e2b832bf5878e6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/CANONICAL.json",
+      "blob": "77a35c2e4897283cefeded1884dca84b0c2b08c1",
+      "bytes": 422,
+      "sha256": "a0cc5ea7da108b6e657f35fee9e34c98f66ef71ae59f959284a42900b3815f4d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/ENVIRONMENT.json",
+      "blob": "bb6db308a8341fae73be485573086c5b2078511e",
+      "bytes": 381,
+      "sha256": "d08ec7419c1fbafd5837e51e9888bcf1f6a7dd41163501487aa971e0141d402c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/FULL-GO-EXACT.json",
+      "blob": "090f2e36b18c2ec42f0b852b351e1e96d62c6d35",
+      "bytes": 357,
+      "sha256": "4d75debc7bd4005784463c82474ca85e7d6d04f09ee0cba689755e1eb210e6b7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/FULL-GO.json",
+      "blob": "6660df18a7d7b13112e1d9568f028222515fbbd1",
+      "bytes": 460,
+      "sha256": "28f9f27be13fbb1c95249bfd231683d6beb1f6fb97e92d06496e2d841c7800bf"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/GO-PACKAGES.json",
+      "blob": "694f4991c10f2c537514a25a29875a967430f9cf",
+      "bytes": 12900,
+      "sha256": "0c8fe053ee4a49c37a8765b2c1fb2d62a6f78465a59d1157781c56d2cb44b7d6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/HELPER-FINAL.json",
+      "blob": "1d99febac0e76e102ac17cfaece361c946dcc467",
+      "bytes": 496,
+      "sha256": "aef21acaa46b4c3b513f5c77f282f99566f349ad1e9370536440340d08700b42"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/HELPER.json",
+      "blob": "904c6d43be4e3217acaa0911094996a36bcaba0f",
+      "bytes": 539,
+      "sha256": "8fd8852edfa5239603f79f49e6e1782efeaf204ff8e72b336bbfde9ddba5f59a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/INPUT-EQUIVALENCE.json",
+      "blob": "dfdd2456f37e22471cc9eecbd2f5d9157a60be68",
+      "bytes": 451272,
+      "sha256": "013ea91feddfc7724632f7948c26f22e6631b7a5a8b7db35bd02b5e64e923a27"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/QUALITY.json",
+      "blob": "40cb78cbce6caafad3cf4225969d68e9314a401b",
+      "bytes": 835,
+      "sha256": "78fca87fd3ad4c6af87ab943821e6951dd8a0457930d9fd0e22fb398fda2d8ca"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/R8-BROWSER-AB.json",
+      "blob": "1fac7b53b453995f869e3010b010c56b59df0f88",
+      "bytes": 705,
+      "sha256": "97372e99a9344cd3ec25657ded73e0f5fc2295b5ea4f4a49f9adaae84f00a2f5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/R8-BROWSER-FINAL.json",
+      "blob": "7f26e2c517778ea42ffc58f050a6221cc45fb3ba",
+      "bytes": 403,
+      "sha256": "995dd47578015db20251235ef418f8cb2c70e62fae049c72592fed564b60a5a6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/RACE-EXACT.json",
+      "blob": "51e0af56439c304bf805a2786a0f6a8c32d2c4d5",
+      "bytes": 468,
+      "sha256": "40010af2e7d0fe2a19c7e68212d6837305080edcb4484d4f3978e9a50a725e7c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/RACE.json",
+      "blob": "7de3bacbed78230823d6d7c99025951c55f457c2",
+      "bytes": 570,
+      "sha256": "6f9c5149c7f4877b3a133d935216790f5dcef87589f3164e832c77d95e2b4aaa"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/REPORT.md",
+      "blob": "ea88f002fd425e3f4f3e2dc6cf770070c3bc71f4",
+      "bytes": 6328,
+      "sha256": "552c6078a24dc0682c6c063650de1eaad006e9dcfe44d8cd7d01aeead659c76f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/SOURCE-MANIFEST.json",
+      "blob": "e03c4b2d6c11f5a82ff60f2c397ac081a12bb7a7",
+      "bytes": 420698,
+      "sha256": "d7019ccc7f5acfac969c49ea7cc23fd73867f8a762d6bed3ad039e70d1a589ea"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/VET-EXACT.json",
+      "blob": "3fd79b6e5753f563d0dff614abd8c026ef08a703",
+      "bytes": 307,
+      "sha256": "25684be9222b89cfb91b7fd7d3340d038725486b3cd9ee36f1967253a1324614"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/VET.json",
+      "blob": "71b6a48586cd1795f33c0e6944f80e52e01a4db4",
+      "bytes": 410,
+      "sha256": "b1f627576cb5054566c95c64952d5c35d120210602d2b8e10553f5a1771eab14"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/WITHDRAWALS-SUMMARY.json",
+      "blob": "1547f7697bc17049091904071a9d784f38603dd0",
+      "bytes": 304,
+      "sha256": "52ef0ded51279018998d09536773e2164bb50e8987d9a6c80a6b111657a7c7fb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/WITHDRAWALS.md",
+      "blob": "5740e0ad36de6fa8c3565c52bb63d237a3e918ef",
+      "bytes": 3507,
+      "sha256": "20a873c9a0a268d06c1e36cc94de6292599c8028db4433204b163922635f62de"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/gates-final/canonical.json",
+      "blob": "0149165844ebf75f95ebf4d70cb6b56c33d21123",
+      "bytes": 425,
+      "sha256": "53e63a1835a6f587e3cc731ecb89d32b63a8ec65d45eef2923f39ed314fdc082"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/gates-final/go.json",
+      "blob": "9e1140bfd324c49edca5eaeb4d6757974baf7a3b",
+      "bytes": 463,
+      "sha256": "7278fe2a83e09bfa1ad694664c6fe31a35827944c4aef6e54ff69dd440d8489e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/gates-final/race.json",
+      "blob": "64e32e9240449fcc7fa4b9257083aa6aefc89116",
+      "bytes": 574,
+      "sha256": "8a43e8a6f0ca8814e3de882081dfbfaec2c532c2ae46f84bb32bc01e79d0f730"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/gates-final/vet.json",
+      "blob": "ae867b447daf91d074a899492da7fa58f18b140d",
+      "bytes": 413,
+      "sha256": "3fde1fdfeb3c47fae2a29c684b60c3411d623a0a7dc27e21e361441da71b90c4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/gates-release/canonical.json",
+      "blob": "1218362cba751e2a48d60ddc9f7e12aff17f4f1d",
+      "bytes": 425,
+      "sha256": "da7416dac92491714e608719c50a8f558dc2beba11c8cf283b9568d98d6530be"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/gates-release/go.json",
+      "blob": "015f0cf009beae2a0a7cc928ed96ffbc033acce4",
+      "bytes": 463,
+      "sha256": "ff697ca2453c251b18fe4fd4f341115eb5027f664f1474e954a2725c985820a9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/gates-release/race.json",
+      "blob": "f46a1e116d324b612b2728c66a2fc9a772c538b2",
+      "bytes": 574,
+      "sha256": "6c5b78e873f543271a218631af0a7e114a7cd024ed888e78074fa67b96db0c52"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/gates-release/vet.json",
+      "blob": "5a72e846aed9f19647be7245aac6f82541c6de0a",
+      "bytes": 413,
+      "sha256": "8de3e5dbbd775e3e4ce8f0f5ca692bf2407b88125b0145fe839bca2bb4c389cc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/raw/full-go.jsonl",
+      "blob": "cfc46f0f4b4679f47f3a41c5c0857a22cca37028",
+      "bytes": 4261243,
+      "sha256": "f55ecfa980c4a689f1ced876e10d0a39a3be5da78acb6c298a68fb45b9dde1a8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/sqlite-compat-final/RESULTS.json",
+      "blob": "c23dc51d14c8611ed135f93394db035fc2050a45",
+      "bytes": 525,
+      "sha256": "f9c578c084c5b1d3c42f1d8a5c63654acdb0f110c49bb93ea0f8d737d7ef92b6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/sqlite-compat-first/RESULTS.json",
+      "blob": "d142d6f46aa824c16e309d65c81419b59c75d868",
+      "bytes": 489,
+      "sha256": "89d76a13812a7efe5b3aecdf8cb4b808403536e7c6fdce817281b3970451e388"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/sqlite-compat-frozen/RESULTS.json",
+      "blob": "e69afd889d43c4a86be1f3c6048baadd1a24aa94",
+      "bytes": 525,
+      "sha256": "02d4357ed932a7ffda7ce3cc9ff90a0693b0cc2902709116cb5c41c097e0e0d3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/sqlite-compat-release/RESULTS.json",
+      "blob": "e4f1764252eca370195052956afe66bdc6806874",
+      "bytes": 525,
+      "sha256": "9b84fbc808dd0fcc8e0b97a100b0ece24081c47199a3f4d09557d5f79e913a54"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/withdrawals-additional/RESULTS.json",
+      "blob": "35582ef01c20930b9846bdb170ce78d4b9fa60ca",
+      "bytes": 1437,
+      "sha256": "380a1272a75836c64edc53da3924b5d333fb2a106478819ef848430f23d1e2e0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/withdrawals-adopt-final/RESULTS.json",
+      "blob": "c11bdc4c85ce24823787e526d13cf52700b85f1c",
+      "bytes": 1234,
+      "sha256": "42734ac718110756012fc87c0345f6ecba8fefcb284427b7bf88d35d9699101c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/withdrawals-complete/RESULTS.json",
+      "blob": "764058b58b0c215fad83aad7d841d7f915f3fe30",
+      "bytes": 24380,
+      "sha256": "7e71299f81c470b7b83b3cfc73bb375efeb554ec8f57829625269cc9f797ed21"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/withdrawals-current-replay/RESULTS.json",
+      "blob": "02d54f8225cf62d3271944599568aa58834b68a9",
+      "bytes": 742,
+      "sha256": "ede31a6008d68562fd74265dc959f7c5eac9e34ee0b90a1ecc924bb02486c3b0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/withdrawals-final/RESULTS.json",
+      "blob": "bca8306852e193d0ac6ae84582a5ca339d0d60d4",
+      "bytes": 23222,
+      "sha256": "c85d44ff397fa30b9b2ece5f10253905579707429f124d6bfed14acf4162427e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/withdrawals-first/RESULTS.json",
+      "blob": "f89131ee534da793c79e67412173459f6722b2f9",
+      "bytes": 19418,
+      "sha256": "bd4c7adcf5e825949c002e4835fc7ffa3ac5d30e5678fe6592f60263b25488de"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/withdrawals-read-notice/RESULTS.json",
+      "blob": "bc197dece60ca151d8cb2116f132a3466aab2879",
+      "bytes": 1816,
+      "sha256": "8e93174bb70142edecf9a2a6c3d892bdad2e40fbf27d0833aec593735259d995"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-blocker-wake-impl/withdrawals-release/RESULTS.json",
+      "blob": "5d9b8b323d1df3d43bcf8b0cfb97baedca4cdc7e",
+      "bytes": 23774,
+      "sha256": "aaafd01b5dbe7a56114e0d996e88d1224aa24f14dffde35068eb431ee0840908"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "source_commit": "3cf3962d26f796c2a0db5d37c80a64b63a9bb544",
+  "start": "2026-10-20T16:29:45.312105+00:00",
+  "end": "2026-10-20T16:30:47.645527+00:00",
+  "argv": [
+    "bash",
+    "scripts/run-build-tests.sh"
+  ],
+  "rc": 1,
+  "isolated_home": true,
+  "cleared_environment": true,
+  "offline_go_cache": true,
+  "locked_helper_venv": "/data/ai-dev-data/helper-deps-lock-venv",
+  "actual_cross_runtime_enabled": true
+}

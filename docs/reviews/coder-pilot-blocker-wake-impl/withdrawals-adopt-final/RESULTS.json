@@ -1,0 +1,49 @@
+{
+  "commit": "5c368986c0590a361f090a277a955fd8711ab436",
+  "cases": [
+    {
+      "name": "adopt-revision-durable",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "fingerprint=? WHERE id=?`, b.SpecID, b.Revision, b.SHA, b.AssignmentVersion",
+          "fingerprint=? WHERE id=?`, b.SpecID, 1, b.SHA, b.AssignmentVersion"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerAdoptPersistsCurrentRevisionTuple$"
+      ],
+      "marker": "BLOCKER_ADOPT_REVISION_NOT_DURABLE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.433
+    },
+    {
+      "name": "adopt-current-fingerprint",
+      "edits": [
+        [
+          "internal/store/task_blocker.go",
+          "b.Fingerprint = blockerFingerprint(b)",
+          "// fingerprint recomputation withdrawn"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestBlockerAdoptPersistsCurrentRevisionTuple$"
+      ],
+      "marker": "BLOCKER_ADOPT_FINGERPRINT_NOT_REBOUND",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.368
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "baseline": "36afa6215f00bc39a992441ab0ff8fe81442aa3e",
+  "candidate": "3cf3962d26f796c2a0db5d37c80a64b63a9bb544",
+  "identical_inputs": {
+    "view-service/r32-spec-review-browser-regression.js": "204fbcf6319b994298018119f7f6cc08434e24e6",
+    "internal/m8/console_specs_page.go": "7915e0e14c347b04a8e0f9ac16c34a5ec90b5406"
+  },
+  "results": [
+    {
+      "side": "r321-baseline",
+      "start": "2026-10-20T16:34:25.442376+00:00",
+      "end": "2026-10-20T16:34:26.828929+00:00",
+      "rc": 0
+    },
+    {
+      "side": "d2-candidate",
+      "start": "2026-10-20T16:34:26.829188+00:00",
+      "end": "2026-10-20T16:34:28.173309+00:00",
+      "rc": 0
+    }
+  ],
+  "initial_failure_retained": true
+}

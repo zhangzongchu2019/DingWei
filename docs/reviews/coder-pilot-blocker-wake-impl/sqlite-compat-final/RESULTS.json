@@ -1,0 +1,30 @@
+[
+  {
+    "label": "new",
+    "commit": "6f8a8a173090c038ce4fb6a86a0b237a8d947952",
+    "argv": [
+      "go",
+      "test",
+      "./internal/store",
+      "-count=1",
+      "-run",
+      "^TestPilotBlockerCompatibilityExport$",
+      "-v"
+    ],
+    "rc": 0
+  },
+  {
+    "label": "old",
+    "commit": "36afa6215f00bc39a992441ab0ff8fe81442aa3e",
+    "argv": [
+      "go",
+      "test",
+      "./internal/store",
+      "-count=1",
+      "-run",
+      "^TestPilotBlockerCompatibilityRead$",
+      "-v"
+    ],
+    "rc": 0
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "source_commit": "e36cbbb05377d3bfb7d7c333992d27225680f3c5",
+  "start": "2026-10-20T16:52:32.233315+00:00",
+  "end": "2026-10-20T16:52:35.210221+00:00",
+  "argv": [
+    "go",
+    "vet",
+    "./..."
+  ],
+  "rc": 0,
+  "isolated_home": true,
+  "cleared_environment": true,
+  "offline_dependencies": true
+}
