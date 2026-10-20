@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionReminderExactlySixtyMinutesAndOncePerGeneration (0.11s)
+    pilot_question_test.go:137: QUESTION_SLA_EARLY_REMINDER 1
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.108s
+FAIL

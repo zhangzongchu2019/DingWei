@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "node",
+    "view-service/console-task-board-regression.js"
+  ],
+  "rc": 0,
+  "seconds": 2.0045087337493896,
+  "isolated_home": true,
+  "offline_go": true,
+  "loopback_only": true
+}

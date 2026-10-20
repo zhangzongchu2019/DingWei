@@ -1,0 +1,189 @@
+{
+  "commit": "7b87439a94f96148fa0fec5b4944c0686f0ecb8f",
+  "cases": [
+    {
+      "name": "card-cas",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "q.Version != u.ExpectedVersion",
+          "q.Version != q.Version"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionCASAndClockRollbackFailClosed$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_STALE_VERSION_ACCEPTED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.437
+    },
+    {
+      "name": "clock-rollback",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "e != nil || now.Before(start)",
+          "e != nil || false && now.Before(start)"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionCASAndClockRollbackFailClosed$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_CLOCK_ROLLBACK_ANSWER",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.425
+    },
+    {
+      "name": "immutable-event",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "if previous != hash {",
+          "if false && previous != hash {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionAnswerAtomicAndUsesOnlyD2Wake$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_EVENT_REPLACED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.412
+    },
+    {
+      "name": "logical-content-dedup",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "if e == nil {\n\t\t\tout.Outcome = \"unchanged\"",
+          "if false && e == nil {\n\t\t\tout.Outcome = \"unchanged\""
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionSameContentNewEventDeduplicatesAndRoleRevokes$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_CONTENT_DUPLICATED_WAKE",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.416
+    },
+    {
+      "name": "no-agent-pm",
+      "edits": [
+        [
+          "internal/store/pilot_question_types.go",
+          "return a.UserID != \"\" && (questionManager(a, c) || a.UserID == q.PMUser || q.Responsible == a.Key())",
+          "return true"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionNoPartialCommitAndAgentNotPM$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_AGENT_IMPERSONATED_PM",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.424
+    },
+    {
+      "name": "final-pg-check",
+      "edits": [
+        [
+          "internal/store/pilot_question.go",
+          "if err = check(); err != nil {\n\t\treturn out, err\n\t}\n\tif err = tx.Commit(); err != nil {\n\t\treturn out, err\n\t}\n\treturn out, nil\n}\nfunc questionAcknowledgment",
+          "if err = error(nil); err != nil {\n\t\treturn out, err\n\t}\n\tif err = tx.Commit(); err != nil {\n\t\treturn out, err\n\t}\n\treturn out, nil\n}\nfunc questionAcknowledgment"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionNoPartialCommitAndAgentNotPM$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_FINAL_CHECK_IGNORED",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.391
+    },
+    {
+      "name": "sixty-minute-lower-bound",
+      "edits": [
+        [
+          "internal/store/pilot_question_read.go",
+          "if now.Before(due) {",
+          "if false && now.Before(due) {"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionReminderExactlySixtyMinutesAndOncePerGeneration$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_SLA_EARLY_REMINDER",
+      "rc": 1,
+      "designated_red": true,
+      "seconds": 1.459
+    },
+    {
+      "name": "one-sla-per-generation",
+      "edits": [
+        [
+          "internal/store/migrations/0059_pilot_questions.sql",
+          "CREATE UNIQUE INDEX idx_pilot_question_reminder_once ON pilot_question_outbox(question_id,generation) WHERE kind='remind_60m';",
+          "-- SLA partial uniqueness withdrawn"
+        ]
+      ],
+      "argv": [
+        "go",
+        "test",
+        "./internal/store",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestionReminderExactlySixtyMinutesAndOncePerGeneration$",
+        "-timeout=2m"
+      ],
+      "marker": "QUESTION_ASSIGN_SECOND_SLA",
+      "rc": 0,
+      "designated_red": false,
+      "seconds": 1.538
+    }
+  ]
+}

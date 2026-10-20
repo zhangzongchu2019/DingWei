@@ -1,0 +1,21 @@
+{
+  "recorded_utc": "2026-10-20T18:28:34.636025+00:00",
+  "host": "VM-4-12-ubuntu",
+  "uid": 1001,
+  "gid": 1001,
+  "cpu_count": 16,
+  "go_version": "go version go1.22.2 linux/amd64",
+  "python": "Python 3.12.3",
+  "runtime_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "base": "2e6b95063132bda9ceae4b346d519901256f4ead",
+  "version": "0.2.3.7",
+  "external_DSN": "unset in formal runner",
+  "formal_HOME": "fresh private temporary directory; PG binary cache symlink only",
+  "network": "Go dependencies off; Python locked preexisting venv; browser+protocol tests loopback only",
+  "deployment": false,
+  "live_Feishu_send": false,
+  "scope": "Author local environment evidence",
+  "complete_source": "b1f80c7538b19ce3a99e26388e825a823a586e49",
+  "frozen_runtime_source": "3dc0c8ca26aada7ffb90f29fbdfe446a49c34578",
+  "frozen_runtime_tree": "f76b10d58fc1b19ca8e1ef7f88afe5f9d99a73b6"
+}

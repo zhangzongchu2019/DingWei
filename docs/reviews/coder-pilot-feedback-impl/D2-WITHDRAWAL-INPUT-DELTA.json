@@ -1,0 +1,15 @@
+{
+  "tested_source": "21c335b6c5db8c084d6e9b84edb6661111d4bceb",
+  "complete_source": "b1f80c7538b19ce3a99e26388e825a823a586e49",
+  "D2_case_count": 40,
+  "D2_direct_source_unchanged": true,
+  "non_docs_delta": [
+    "internal/m8/pilot_question.go",
+    "internal/m8/pilot_question_test.go",
+    "internal/store/pilot_question.go",
+    "internal/store/pilot_question_test.go",
+    "tests/pilot-feedback/withdrawals.py",
+    "view-service/pilot-feedback-browser-regression.js"
+  ],
+  "scope": "Only D3-specific authorization/maintenance and D3 tests/browser harness changed after40-caseD2withdrawal; D2 shared appendBlockerInput, taskBlocker source, helper and identity inputs unchanged. Final complete-source fullGo/race cover integration; does not claim a second independent D2withdrawal run."
+}

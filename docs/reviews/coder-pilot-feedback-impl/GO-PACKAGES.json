@@ -1,0 +1,672 @@
+{
+  "source": "3dc0c8ca26aada7ffb90f29fbdfe446a49c34578",
+  "package_count": 65,
+  "test_packages_passed": 52,
+  "packages_without_tests": 13,
+  "conditional_test_skips": 30,
+  "failures": [],
+  "packages": [
+    {
+      "Time": "2026-10-20T18:32:12.211933091Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/dingwei-datad",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T18:32:13.413315207Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/fcs",
+      "Elapsed": 0.001
+    },
+    {
+      "Time": "2026-10-20T18:32:14.03883342Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/mcs-demo",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T18:32:14.039121662Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/mcsd",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T18:32:14.043296164Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/nodeagent",
+      "Elapsed": 0.004
+    },
+    {
+      "Time": "2026-10-20T18:32:14.135631622Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/file-service",
+      "Elapsed": 0.097
+    },
+    {
+      "Time": "2026-10-20T18:32:18.380328746Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/clock",
+      "Elapsed": 0.003
+    },
+    {
+      "Time": "2026-10-20T18:32:18.380541516Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/bridge",
+      "Elapsed": 0.003
+    },
+    {
+      "Time": "2026-10-20T18:32:18.382917004Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/config",
+      "Elapsed": 0.005
+    },
+    {
+      "Time": "2026-10-20T18:32:18.386620771Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/agentmetrics",
+      "Elapsed": 0.009
+    },
+    {
+      "Time": "2026-10-20T18:32:18.390545768Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/filepolicy",
+      "Elapsed": 0.008
+    },
+    {
+      "Time": "2026-10-20T18:32:18.3905296Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/feishu",
+      "Elapsed": 0.009
+    },
+    {
+      "Time": "2026-10-20T18:32:18.903333265Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/coordination",
+      "Elapsed": 0.526
+    },
+    {
+      "Time": "2026-10-20T18:32:19.490986338Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "Elapsed": 1.113
+    },
+    {
+      "Time": "2026-10-20T18:32:19.831327674Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/evidence",
+      "Elapsed": 1.453
+    },
+    {
+      "Time": "2026-10-20T18:32:19.898256925Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/bus",
+      "Elapsed": 1.521
+    },
+    {
+      "Time": "2026-10-20T18:32:19.909845352Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/fcs",
+      "Elapsed": 1.528
+    },
+    {
+      "Time": "2026-10-20T18:32:20.64431495Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/identity/identitytest",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T18:32:20.647768102Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/jcs",
+      "Elapsed": 0.003
+    },
+    {
+      "Time": "2026-10-20T18:32:20.65065129Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/llm",
+      "Elapsed": 0.005
+    },
+    {
+      "Time": "2026-10-20T18:32:21.915505846Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/fileservice",
+      "Elapsed": 3.533
+    },
+    {
+      "Time": "2026-10-20T18:32:23.974405327Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/identity/httpapi",
+      "Elapsed": 3.33
+    },
+    {
+      "Time": "2026-10-20T18:32:24.854736153Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m5",
+      "Elapsed": 4.209
+    },
+    {
+      "Time": "2026-10-20T18:32:29.385714115Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+      "Elapsed": 11.009
+    },
+    {
+      "Time": "2026-10-20T18:32:29.395838426Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/dea",
+      "Elapsed": 0.002
+    },
+    {
+      "Time": "2026-10-20T18:32:29.429290907Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/dispatch",
+      "Elapsed": 0.035
+    },
+    {
+      "Time": "2026-10-20T18:32:29.433212974Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/rotation",
+      "Elapsed": 0.039
+    },
+    {
+      "Time": "2026-10-20T18:32:29.443678572Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver",
+      "Elapsed": 0.049
+    },
+    {
+      "Time": "2026-10-20T18:32:29.550843101Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/pool",
+      "Elapsed": 0.157
+    },
+    {
+      "Time": "2026-10-20T18:32:29.698011442Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/demo",
+      "Elapsed": 0.304
+    },
+    {
+      "Time": "2026-10-20T18:32:29.706046566Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/model",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T18:32:29.709151523Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/route",
+      "Elapsed": 0.003
+    },
+    {
+      "Time": "2026-10-20T18:32:29.827430546Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "Elapsed": 0.434
+    },
+    {
+      "Time": "2026-10-20T18:32:30.84226532Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/redact",
+      "Elapsed": 0.002
+    },
+    {
+      "Time": "2026-10-20T18:32:30.842435994Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/router",
+      "Elapsed": 0.002
+    },
+    {
+      "Time": "2026-10-20T18:32:30.978943496Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/consolemux",
+      "Elapsed": 12.600999999999999
+    },
+    {
+      "Time": "2026-10-20T18:32:31.145946309Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/portal",
+      "Elapsed": 0.306
+    },
+    {
+      "Time": "2026-10-20T18:32:31.296594259Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/reminder",
+      "Elapsed": 0.457
+    },
+    {
+      "Time": "2026-10-20T18:32:31.403285065Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+      "Elapsed": 0.563
+    },
+    {
+      "Time": "2026-10-20T18:32:31.40957469Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/seatcapacity",
+      "Elapsed": 0.002
+    },
+    {
+      "Time": "2026-10-20T18:32:31.409588759Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/secretbox",
+      "Elapsed": 0.002
+    },
+    {
+      "Time": "2026-10-20T18:32:32.766398149Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/schedule",
+      "Elapsed": 1.577
+    },
+    {
+      "Time": "2026-10-20T18:32:33.538650535Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/version",
+      "Elapsed": 0.002
+    },
+    {
+      "Time": "2026-10-20T18:32:33.706880158Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/specs/tools/handle-escape",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T18:32:33.754023122Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/specs/tools/legacy-name",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T18:32:33.802737312Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/specs/tools/pending-debt",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T18:32:33.8540284Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/tests/r32-task-flow/compat-probe",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T18:32:33.854046369Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/view-service",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T18:32:33.924928233Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/view-service/console-hosted-page-fixture",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T18:32:33.966679274Z",
+      "Action": "skip",
+      "Package": "github.com/zhangzongchu2019/dingwei/view-service/p1seed",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-20T18:32:34.621674826Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/scheduler",
+      "Elapsed": 3.214
+    },
+    {
+      "Time": "2026-10-20T18:32:36.588932182Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/worker",
+      "Elapsed": 2.903
+    },
+    {
+      "Time": "2026-10-20T18:32:38.100236487Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/repo",
+      "Elapsed": 7.26
+    },
+    {
+      "Time": "2026-10-20T18:32:40.280946277Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/nodeagent",
+      "Elapsed": 9.441
+    },
+    {
+      "Time": "2026-10-20T18:32:43.018601819Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd",
+      "Elapsed": 13.624
+    },
+    {
+      "Time": "2026-10-20T18:32:54.336890685Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/store/pgtest",
+      "Elapsed": 20.8
+    },
+    {
+      "Time": "2026-10-20T18:32:55.911971949Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout",
+      "Elapsed": 41.873
+    },
+    {
+      "Time": "2026-10-20T18:33:01.0906229Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "Elapsed": 27.554
+    },
+    {
+      "Time": "2026-10-20T18:33:01.553913213Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/nodegate",
+      "Elapsed": 30.714
+    },
+    {
+      "Time": "2026-10-20T18:34:00.075667369Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/store/migrate",
+      "Elapsed": 86.539
+    },
+    {
+      "Time": "2026-10-20T18:34:18.552530124Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/fanout",
+      "Elapsed": 120.174
+    },
+    {
+      "Time": "2026-10-20T18:34:39.949698425Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/identity",
+      "Elapsed": 139.306
+    },
+    {
+      "Time": "2026-10-20T18:35:50.945332837Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "Elapsed": 201.552
+    },
+    {
+      "Time": "2026-10-20T18:37:25.094142767Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "Elapsed": 306.717
+    },
+    {
+      "Time": "2026-10-20T18:48:06.515168375Z",
+      "Action": "pass",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/hosted",
+      "Elapsed": 945.871
+    }
+  ],
+  "test_skip_details": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGAssignFull",
+      "output": [
+        "=== RUN   TestPGAssignFull\n",
+        "    assignment_pg_integration_test.go:103: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n",
+        "--- SKIP: TestPGAssignFull (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGA2ConcurrentUnique",
+      "output": [
+        "=== RUN   TestPGA2ConcurrentUnique\n",
+        "    assignment_pg_integration_test.go:234: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n",
+        "--- SKIP: TestPGA2ConcurrentUnique (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGACLThreeRoles",
+      "output": [
+        "=== RUN   TestPGACLThreeRoles\n",
+        "    assignment_pg_integration_test.go:298: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n",
+        "--- SKIP: TestPGACLThreeRoles (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGRoleNoLeak",
+      "output": [
+        "=== RUN   TestPGRoleNoLeak\n",
+        "    assignment_pg_integration_test.go:342: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n",
+        "--- SKIP: TestPGRoleNoLeak (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGGCFirstResults",
+      "output": [
+        "=== RUN   TestPGGCFirstResults\n",
+        "    assignment_pg_integration_test.go:376: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n",
+        "--- SKIP: TestPGGCFirstResults (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGMigrateOnly",
+      "output": [
+        "=== RUN   TestPGMigrateOnly\n",
+        "    assignment_pg_integration_test.go:425: DATAD_TEST_PG_DSN 未设\n",
+        "--- SKIP: TestPGMigrateOnly (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB3CrossTask",
+      "output": [
+        "=== RUN   TestPGB3CrossTask\n",
+        "    assignment_pg_integration_test.go:436: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n",
+        "--- SKIP: TestPGB3CrossTask (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB4PutAssignInterleave",
+      "output": [
+        "=== RUN   TestPGB4PutAssignInterleave\n",
+        "    assignment_pg_integration_test.go:471: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n",
+        "--- SKIP: TestPGB4PutAssignInterleave (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1CrossTaskConcurrentSameRID",
+      "output": [
+        "=== RUN   TestPGC1CrossTaskConcurrentSameRID\n",
+        "    assignment_pg_integration_test.go:542: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n",
+        "--- SKIP: TestPGC1CrossTaskConcurrentSameRID (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1ResponseLossRetry",
+      "output": [
+        "=== RUN   TestPGC1ResponseLossRetry\n",
+        "    assignment_pg_integration_test.go:605: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n",
+        "--- SKIP: TestPGC1ResponseLossRetry (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1LockOrderNoDeadlock",
+      "output": [
+        "=== RUN   TestPGC1LockOrderNoDeadlock\n",
+        "    assignment_pg_integration_test.go:637: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n",
+        "--- SKIP: TestPGC1LockOrderNoDeadlock (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGIntegration",
+      "output": [
+        "=== RUN   TestPGIntegration\n",
+        "    pg_integration_test.go:21: DATAD_TEST_PG_DSN 未设:PG 集成候 prodops 实例(D4c),核心逻辑已由 MemStore 同套用例盖\n",
+        "--- SKIP: TestPGIntegration (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+      "test": "TestGateDumpDoorABaseline",
+      "output": [
+        "=== RUN   TestGateDumpDoorABaseline\n",
+        "    gate_baseline_dump_test.go:41: 设 DW_ADMIN_BASELINE_OUT 才跑(跨构建基线字节对照用)\n",
+        "--- SKIP: TestGateDumpDoorABaseline (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestTCN5b_SameRidDifferentPayloadConflict",
+      "output": [
+        "=== RUN   TestTCN5b_SameRidDifferentPayloadConflict\n",
+        "    m2neg_cases_test.go:136: N5b digest 冲突检测未实现:基线 Send 无 payload/digest 参数(O1=board vNext 域),契约锚 §1.3@28f09dae,vNext 落地后启用本判据(期望 idempotency_conflict+冲突事件)\n",
+        "--- SKIP: TestTCN5b_SameRidDifferentPayloadConflict (0.01s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestConformance_GAP_SLATimeoutAnnotate",
+      "output": [
+        "=== RUN   TestConformance_GAP_SLATimeoutAnnotate\n",
+        "    conformance_test.go:385: 覆盖缺口（有意登记，非遗漏）：导出面无 SLA 设置入口，既有 TestSweep_TimeoutAnnotateThenTerminalClears 依赖裸 SQL 造前置，故该语义暂无法用外部包 conformance 固化。须先扩导出面（契约变更，归门方判）。\n",
+        "--- SKIP: TestConformance_GAP_SLATimeoutAnnotate (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+      "test": "TestMonitorPageInRealChrome",
+      "output": [
+        "=== RUN   TestMonitorPageInRealChrome\n",
+        "    page_browser_test.go:26: set OBS_PUPPETEER to an installed puppeteer-core directory for the real Chrome page check\n",
+        "--- SKIP: TestMonitorPageInRealChrome (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+      "output": [
+        "=== RUN   TestConsoleTaskLegacyDODMigrationPendingProductionCount\n",
+        "    console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision\n",
+        "--- SKIP: TestConsoleTaskLegacyDODMigrationPendingProductionCount (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+      "output": [
+        "=== RUN   TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling\n",
+        "    console_task_lineage_test.go:139: future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed\n",
+        "--- SKIP: TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestMuxProductHTTP1EightSeats",
+      "output": [
+        "=== RUN   TestMuxProductHTTP1EightSeats\n",
+        "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration\n",
+        "--- SKIP: TestMuxProductHTTP1EightSeats (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsolePlatformPayloadDump",
+      "output": [
+        "=== RUN   TestConsolePlatformPayloadDump\n",
+        "    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)\n",
+        "--- SKIP: TestConsolePlatformPayloadDump (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "output": [
+        "=== RUN   TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel\n",
+        "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically\n",
+        "--- SKIP: TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestFailureNoticeDriverTurnEndToEnd",
+      "output": [
+        "=== RUN   TestFailureNoticeDriverTurnEndToEnd\n",
+        "    failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime\n",
+        "--- SKIP: TestFailureNoticeDriverTurnEndToEnd (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestGroupReplyMCP",
+      "output": [
+        "=== RUN   TestGroupReplyMCP\n",
+        "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON\n",
+        "--- SKIP: TestGroupReplyMCP (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+      "output": [
+        "=== RUN   TestHelperSelfUpdateEndToEnd/install_restart_confirm\n",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python\n",
+        "--- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+      "output": [
+        "=== RUN   TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory\n",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python\n",
+        "--- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "output": [
+        "=== RUN   TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason\n",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python\n",
+        "--- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelper0232MixedVersionEndToEnd",
+      "output": [
+        "=== RUN   TestHelper0232MixedVersionEndToEnd\n",
+        "    helper_update_e2e_test.go:55: explicit immutable release pins required\n",
+        "--- SKIP: TestHelper0232MixedVersionEndToEnd (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestEnvelopeReadTimeoutEnvironmentChild",
+      "output": [
+        "=== RUN   TestEnvelopeReadTimeoutEnvironmentChild\n",
+        "    hub_timeout_contract_test.go:50: subprocess probe only\n",
+        "--- SKIP: TestEnvelopeReadTimeoutEnvironmentChild (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSpecMCPEndToEnd",
+      "output": [
+        "=== RUN   TestSpecMCPEndToEnd\n",
+        "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses\n",
+        "--- SKIP: TestSpecMCPEndToEnd (0.00s)\n"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestR31OldBinarySchemaReadCompatibility",
+      "output": [
+        "=== RUN   TestR31OldBinarySchemaReadCompatibility\n",
+        "    r31_rollback_compat_test.go:23: requires independently built R30 binary via R31_R30_BINARY\n",
+        "--- SKIP: TestR31OldBinarySchemaReadCompatibility (0.00s)\n"
+      ]
+    }
+  ]
+}

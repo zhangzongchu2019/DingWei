@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "node",
+    "view-service/console-browser-regression.js"
+  ],
+  "rc": 0,
+  "seconds": 22.337633848190308,
+  "isolated_home": true,
+  "offline_go": true,
+  "loopback_only": true
+}

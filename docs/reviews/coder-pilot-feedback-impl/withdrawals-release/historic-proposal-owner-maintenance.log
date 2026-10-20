@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionSpecOnlyChangeCanLinkActualNewRevision (0.11s)
+    pilot_question_test.go:533: QUESTION_SPEC_CHANGE_NEW_REVISION_DEADLOCK {{  0    0 0 0                   0 false   [] false false false [] false false}  false false} task version or state conflict
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.118s
+FAIL

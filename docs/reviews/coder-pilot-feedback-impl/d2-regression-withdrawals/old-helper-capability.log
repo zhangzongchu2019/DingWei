@@ -1,0 +1,12 @@
+2026/10/20 18:25:16 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 18:25:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/20 18:25:16 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 18:25:16 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+2026/10/20 18:25:16 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_cf37e61bc159ef0cca44e2f765f2e98a source_message_id=task:47c07fc235744eb541a43f5df9a1c7c72669ab8f482c5cf843c4fad3201d3b5b
+2026/10/20 18:25:16 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_f94259f2e799ceeebf238723dadeee3d source_message_id=blocker:b64ed63f1c8494b2100ac4572e738049d1a5c413ac70861d94f3255a52840ffd
+2026/10/20 18:25:16 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=1
+--- FAIL: TestBlockerOfflineOldHelperAndReliableNonExecutableWake (0.12s)
+    task_blocker_delivery_test.go:77: BLOCKER_UNKNOWN_CONTROL_SENT_TO_OLD_HELPER
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.127s
+FAIL

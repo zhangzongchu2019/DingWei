@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionProductionFullAndAckDoesNotStopSLA (0.13s)
+    pilot_question_test.go:401: QUESTION_PRODUCTION_NOT_FULL {{pq:acf1027b5376f43969855638dce1e9b94fb9a136921034d406712046be1c551b r32 1 44bedc7ae349af84cf1ede78ee25544ce0a929dbb08a30f06ad009fb2f62cd34 task qblk:da0707dfe588eac8ca0077f1a4b02f10eaa13e88572914052f1167baf6397609 1 1 1 resource 生产事项 涉及生产资源 明确授权 正式授权证据  agent:dev pm   light needs_owner 2026-09-26T07:00:00Z 2026-09-26T07:00:00Z 2026-09-26T08:00:00Z    1 false   [] false false false [user:owner-a user:pm agent:dev agent:review] false false} updated false false} <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.129s
+FAIL

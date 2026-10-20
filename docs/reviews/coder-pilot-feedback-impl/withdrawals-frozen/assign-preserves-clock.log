@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionReminderExactlySixtyMinutesAndOncePerGeneration (0.11s)
+    pilot_question_test.go:151: QUESTION_ASSIGN_RESET_SLA {{pq:f65dd8c784211a4eda0a13ace835e5d34ec2a6db3b884f22b230610b9e4011d7 r32 1 44bedc7ae349af84cf1ede78ee25544ce0a929dbb08a30f06ad009fb2f62cd34 task qblk:2e6ec2d9125759627e54c5f3d042e68579e94e3c9a569fb48af2370bae0e8e60 1 1 2 technical 需求问题 缺少明确事实 请给出可核对结论 明确结论与证据  agent:dev pm2 user:pm2 leader2 light awaiting_answer 2026-09-26T07:00:00Z 2026-09-26T07:00:00Z 2026-09-26T09:01:00Z    1 false   [] true true true [user:owner-a user:pm2 agent:dev agent:review] true true} updated false false} <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.118s
+FAIL

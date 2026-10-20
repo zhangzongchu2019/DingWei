@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionReadGrantIsOnlyQuestionAndHistoryBounded (0.15s)
+    pilot_question_test.go:303: QUESTION_UNGRANTED_READ <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.151s
+FAIL

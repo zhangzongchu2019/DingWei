@@ -1,0 +1,9 @@
+{
+  "argv": [
+    "node",
+    "view-service/r32-task-flow-browser-regression.js"
+  ],
+  "rc": 0,
+  "seconds": 12.21383786201477,
+  "loopback_only": true
+}

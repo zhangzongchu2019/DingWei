@@ -1,0 +1,9 @@
+{
+  "argv": [
+    "node",
+    "view-service/r32-spec-review-browser-regression.js"
+  ],
+  "rc": 0,
+  "seconds": 1.818772792816162,
+  "loopback_only": true
+}

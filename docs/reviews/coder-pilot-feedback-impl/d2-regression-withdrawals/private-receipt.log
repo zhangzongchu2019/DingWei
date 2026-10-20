@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerWaiterRightsAndFullMode (0.13s)
+    task_blocker_test.go:203: BLOCKER_WAITER_GOT_TASK_CONTEXT {{blk:76bad60392ad0d0e4c6ab2356b34f041db22027619ad9e92322e4e17612c51ce task r32 1 44bedc7ae349af84cf1ede78ee25544ce0a929dbb08a30f06ad009fb2f62cd34 1 dev review 1 2 technical prod/security agent:other 真实材料与授权记录 [{identity 当前身份、编组和指派有效} {revision 原任务确切修订和范围未变} {dependencies 依赖仍满足} {materials 核实答复与材料真实且满足原任务条件} {environment 重新核实原任务环境与隔离对象} {authorization 重新核实当前有效授权与预算；唤醒不是执行授权}] full   ready_to_recheck 1 0   agent:dev 2026-09-26T07:00:00Z 2026-09-26T07:00:00Z 63518f4a3e59b84eb46861904cdd31b3aa225b2b642ae019672c50efde0beedc } 0 false updated false}
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.129s
+FAIL

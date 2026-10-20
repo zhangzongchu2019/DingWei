@@ -1,0 +1,9 @@
+{
+  "argv": [
+    "node",
+    "view-service/pilot-blocker-wake-browser-regression.js"
+  ],
+  "rc": 0,
+  "seconds": 2.2538318634033203,
+  "loopback_only": true
+}

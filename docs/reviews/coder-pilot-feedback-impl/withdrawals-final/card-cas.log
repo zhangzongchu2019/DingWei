@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionCASAndClockRollbackFailClosed (0.08s)
+    pilot_question_test.go:389: QUESTION_STALE_VERSION_ACCEPTED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.086s
+FAIL

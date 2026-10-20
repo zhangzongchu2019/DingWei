@@ -1,0 +1,105 @@
+{
+  "complete_source": "b1f80c7538b19ce3a99e26388e825a823a586e49",
+  "production_inputs_identical_to_executed_worktree": true,
+  "suites": [
+    {
+      "file": "pilot-feedback-browser-regression.final.json",
+      "rc": 0,
+      "utc": "2026-10-20T18:34:18.516630+00:00",
+      "loopback_only": true,
+      "source_scope": "worktree exact production HTML unchanged from3dc0c8c; browser runner adds owner setup and draft creation checks"
+    },
+    {
+      "file": "pilot-blocker-wake-browser-regression.js.json",
+      "argv": [
+        "node",
+        "view-service/pilot-blocker-wake-browser-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 2.2538318634033203,
+      "loopback_only": true
+    },
+    {
+      "file": "r32-spec-review-browser-regression.js.json",
+      "argv": [
+        "node",
+        "view-service/r32-spec-review-browser-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 1.818772792816162,
+      "loopback_only": true
+    },
+    {
+      "file": "r32-task-flow-browser-regression.js.json",
+      "argv": [
+        "node",
+        "view-service/r32-task-flow-browser-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 12.21383786201477,
+      "loopback_only": true
+    },
+    {
+      "file": "r31-hosted-nodes-browser-regression.js.json",
+      "argv": [
+        "node",
+        "view-service/r31-hosted-nodes-browser-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 4.2989113330841064,
+      "isolated_home": true,
+      "offline_go": true,
+      "loopback_only": true
+    },
+    {
+      "file": "console-browser-regression.js.json",
+      "argv": [
+        "node",
+        "view-service/console-browser-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 22.337633848190308,
+      "isolated_home": true,
+      "offline_go": true,
+      "loopback_only": true
+    },
+    {
+      "file": "console-agent-mgmt-enroll-regression.js.json",
+      "argv": [
+        "node",
+        "view-service/console-agent-mgmt-enroll-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 6.447246789932251,
+      "isolated_home": true,
+      "offline_go": true,
+      "loopback_only": true
+    },
+    {
+      "file": "console-agent-groups-vega-regression.js.json",
+      "argv": [
+        "node",
+        "view-service/console-agent-groups-vega-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 2.6618196964263916,
+      "isolated_home": true,
+      "offline_go": true,
+      "loopback_only": true
+    },
+    {
+      "file": "console-task-board-regression.js.json",
+      "argv": [
+        "node",
+        "view-service/console-task-board-regression.js"
+      ],
+      "rc": 0,
+      "seconds": 2.0045087337493896,
+      "isolated_home": true,
+      "offline_go": true,
+      "loopback_only": true
+    }
+  ],
+  "author_local_not_independent": true,
+  "live_access": false
+}

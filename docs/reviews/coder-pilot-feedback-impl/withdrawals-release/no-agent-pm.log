@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionNoPartialCommitAndAgentNotPM (0.54s)
+    pilot_question_test.go:92: QUESTION_AGENT_IMPERSONATED_PM <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.539s
+FAIL

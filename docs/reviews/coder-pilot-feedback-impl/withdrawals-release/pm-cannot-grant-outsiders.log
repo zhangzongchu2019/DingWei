@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionPMDelegationLimitedToExistingQuestionReaders (0.10s)
+    pilot_question_test.go:464: QUESTION_PM_GRANTED_NEW_RIGHTS <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.103s
+FAIL

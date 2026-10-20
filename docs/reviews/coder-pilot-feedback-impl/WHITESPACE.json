@@ -1,0 +1,8 @@
+{
+  "recorded_utc": "2026-10-20T18:52:34.863006+00:00",
+  "whole_rc": 2,
+  "whole_output": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/pending-restart.log:4: trailing whitespace.\n+test_driver_preflight_revocation_and_transient_read_failure (test_task_blocker.BlockerHelperTest.test_driver_preflight_revocation_and_transient_read_failure) ... \ndocs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/transient-defer-same-command.log:4: trailing whitespace.\n+test_driver_preflight_revocation_and_transient_read_failure (test_task_blocker.BlockerHelperTest.test_driver_preflight_revocation_and_transient_read_failure) ... \ndocs/reviews/coder-pilot-feedback-impl/withdrawals-final/pg-send-reply-serialized.log:5: trailing whitespace.\n+        \ndocs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/pg-send-reply-serialized.log:5: trailing whitespace.\n+        \ndocs/reviews/coder-pilot-feedback-impl/withdrawals-release/pg-send-reply-serialized.log:5: trailing whitespace.\n+        \n",
+  "non_raw_rc": 0,
+  "non_raw_output": "",
+  "raw_whitespace_preserved": true
+}

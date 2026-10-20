@@ -1,0 +1,16 @@
+{
+  "commit": "3dc0c8ca26aada7ffb90f29fbdfe446a49c34578",
+  "argv": [
+    "bash",
+    "scripts/run-build-tests.sh"
+  ],
+  "rc": 0,
+  "start": "2026-10-20T18:49:29.362235+00:00",
+  "end": "2026-10-20T18:51:31.991807+00:00",
+  "git_export": true,
+  "isolated_home": true,
+  "cleared_environment": true,
+  "offline_dependencies": true,
+  "embedded_pg_binary_cache_only": "/home/dev/.embedded-postgres-go",
+  "DSN_unset": true
+}

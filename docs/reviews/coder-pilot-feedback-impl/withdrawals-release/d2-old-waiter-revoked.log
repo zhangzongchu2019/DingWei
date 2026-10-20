@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionReassignRevokesSharedD2WaiterGrant (0.12s)
+    pilot_question_test.go:339: QUESTION_REASSIGN_RETAINED_D2_WAITER user:pm
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.122s
+FAIL

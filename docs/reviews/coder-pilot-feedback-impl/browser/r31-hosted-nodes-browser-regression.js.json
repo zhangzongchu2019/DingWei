@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "node",
+    "view-service/r31-hosted-nodes-browser-regression.js"
+  ],
+  "rc": 0,
+  "seconds": 4.2989113330841064,
+  "isolated_home": true,
+  "offline_go": true,
+  "loopback_only": true
+}

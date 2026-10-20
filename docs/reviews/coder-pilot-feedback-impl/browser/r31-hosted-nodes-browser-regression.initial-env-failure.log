@@ -1,0 +1,31 @@
+go: module cache not found: neither GOMODCACHE nor GOPATH is set
+node:child_process:955
+    throw err;
+    ^
+
+Error: Command failed: go run ./view-service/console-hosted-page-fixture
+go: module cache not found: neither GOMODCACHE nor GOPATH is set
+
+    at genericNodeError (node:internal/errors:983:15)
+    at wrappedFn (node:internal/errors:537:14)
+    at checkExecSyncError (node:child_process:916:11)
+    at execFileSync (node:child_process:952:15)
+    at Object.<anonymous> (/data/ai-dev-data/pilot-feedback-impl/view-service/r31-hosted-nodes-browser-regression.js:8:14)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) {
+  status: 1,
+  signal: null,
+  output: [
+    null,
+    '',
+    'go: module cache not found: neither GOMODCACHE nor GOPATH is set\n'
+  ],
+  pid: 1660014,
+  stdout: '',
+  stderr: 'go: module cache not found: neither GOMODCACHE nor GOPATH is set\n'
+}
+
+Node.js v22.23.1

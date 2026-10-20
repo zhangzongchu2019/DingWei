@@ -1,0 +1,30 @@
+[
+  {
+    "label": "new",
+    "commit": "ced21d63b7d07ae0ba69a269bd8a814bcf3c6ec1",
+    "argv": [
+      "go",
+      "test",
+      "./internal/store",
+      "-count=1",
+      "-run",
+      "^TestPilotQuestionCompatibilityExport$",
+      "-v"
+    ],
+    "rc": 0
+  },
+  {
+    "label": "old",
+    "commit": "36afa6215f00bc39a992441ab0ff8fe81442aa3e",
+    "argv": [
+      "go",
+      "test",
+      "./internal/store",
+      "-count=1",
+      "-run",
+      "^TestPilotQuestionCompatibilityRead$",
+      "-v"
+    ],
+    "rc": 0
+  }
+]

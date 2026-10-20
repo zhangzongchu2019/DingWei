@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionNoPartialCommitAndAgentNotPM (0.15s)
+    pilot_question_test.go:100: QUESTION_FINAL_CHECK_IGNORED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.156s
+FAIL

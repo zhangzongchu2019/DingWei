@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionSentReminderReassignmentNeverCreatesSecondReminder (0.10s)
+    pilot_question_test.go:506: QUESTION_ASSIGN_SECOND_SLA 2
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.104s
+FAIL

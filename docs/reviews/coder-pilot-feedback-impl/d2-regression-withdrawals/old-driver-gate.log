@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerLegacyDriverStartCannotBypassUnresolvedCards (0.11s)
+    task_blocker_test.go:448: BLOCKER_LEGACY_DRIVER_START_BYPASS <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.110s
+FAIL

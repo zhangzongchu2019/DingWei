@@ -1,0 +1,21 @@
+test_input_is_technical_material_not_business_answer (test_pilot_question.PilotQuestionTest.test_input_is_technical_material_not_business_answer) ... ok
+test_list_detail_and_collection_are_disjoint (test_pilot_question.PilotQuestionTest.test_list_detail_and_collection_are_disjoint) ... ok
+test_mcp_create_only_current_task_no_human_identity (test_pilot_question.PilotQuestionTest.test_mcp_create_only_current_task_no_human_identity) ... ok
+test_old_helper_safe_failure_no_alternate_route (test_pilot_question.PilotQuestionTest.test_old_helper_safe_failure_no_alternate_route) ... ok
+test_real_http_redirect_never_forwards_credentials (test_pilot_question.PilotQuestionTest.test_real_http_redirect_never_forwards_credentials) ... ok
+test_success_requires_explicit_no_execution (test_pilot_question.PilotQuestionTest.test_success_requires_explicit_no_execution) ... FAIL
+test_three_tools_visible_and_no_pm_write_tool (test_pilot_question.PilotQuestionTest.test_three_tools_visible_and_no_pm_write_tool) ... ok
+test_unknown_write_and_unsupported_hub_are_not_retried (test_pilot_question.PilotQuestionTest.test_unknown_write_and_unsupported_hub_are_not_retried) ... ok
+
+======================================================================
+FAIL: test_success_requires_explicit_no_execution (test_pilot_question.PilotQuestionTest.test_success_requires_explicit_no_execution)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/question-withdraw-6m6xfsfl/source/tools/sessionhelper/tests/test_pilot_question.py", line 78, in test_success_requires_explicit_no_execution
+    self.assertEqual(result.get('error'),'question_read_failed','QUESTION_RESULT_EXECUTION_FLAG_WEAK')
+AssertionError: None != 'question_read_failed' : QUESTION_RESULT_EXECUTION_FLAG_WEAK
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.591s
+
+FAILED (failures=1)

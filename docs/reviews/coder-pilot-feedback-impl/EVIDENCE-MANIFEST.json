@@ -1,0 +1,1361 @@
+{
+  "entries": [
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/BROWSER-SUMMARY.json",
+      "blob": "3095e834d14d085ab6a9fd7f639411ef4585746f",
+      "bytes": 2812,
+      "sha256": "ca7c6335610a90dcf8789fcb0c15ac07d4849bd8d1652444c618e91f36c1f1ea"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/D2-WITHDRAWAL-INPUT-DELTA.json",
+      "blob": "653ac04ce50b87f465bca50aabde216bc3e89275",
+      "bytes": 797,
+      "sha256": "c80b763f64e3568763e7ed488b6cbed8d54b578f1ca2fe98e0bea3011dc783fb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/ENVIRONMENT.json",
+      "blob": "9c356b931dd964e2e13a543891247c290a235517",
+      "bytes": 924,
+      "sha256": "ef9b3522f3345fb6f307da9d88ee5cb4b43ccb72d12ec0a65d8f014fd395955a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/GO-PACKAGES.json",
+      "blob": "72a544d3b1d88e0ce0a5b597563d9394a030edf5",
+      "bytes": 24864,
+      "sha256": "ef1ac1b900495434cd5699d6bfc3196b291fb5633a47c488e4bf050721c12216"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/HELPER-INPUT-EQUIVALENCE.json",
+      "blob": "0c2e2b83b3d62e58e5ab1afb5feaf47156de00be",
+      "bytes": 60427,
+      "sha256": "80faeb9869b11c8ffbbfbd0304a87ceb5f0ac43407577b360595b9bf256143c4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/INPUT-EQUIVALENCE.json",
+      "blob": "7899062442ed9d7d646b1016477ffc128615237d",
+      "bytes": 486468,
+      "sha256": "abde89850a3318bed6dbf1265b23b86d22a65955e1a71a650b1400bb4fa5b09e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/REPORT.md",
+      "blob": "ea1c5432564adc96d0d54d4077e340488812c3fb",
+      "bytes": 6638,
+      "sha256": "3632f6f7d5c6823244b2b2f0ec89a16b3deb987ef8fa7b379aef4f48e2a9175e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/SOURCE-MANIFEST.json",
+      "blob": "68fded8f0a6c58a1a433b8535d4f52e98d35b46b",
+      "bytes": 425793,
+      "sha256": "00117ce9bd9c9fa582e0c4ac0633b8724d2f67ef95d068e3493488b9ae72f09f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/WHITESPACE.json",
+      "blob": "09fcb31545ca6d63ed7f9aa90b623579d9c486c6",
+      "bytes": 1107,
+      "sha256": "eaf8e40fd0682b6599914f5697830b1772e38659138b288d92d11b4f67a2b153"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/console-agent-groups-vega-regression.js.json",
+      "blob": "d6b9cdb2bb6f98dd917aabf8a6e2ff549d266941",
+      "bytes": 207,
+      "sha256": "765191ddd7b3f7d7859971b9a3213d649ccece515e6a6aabe837dd8e51f670f6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/console-agent-groups-vega-regression.js.log",
+      "blob": "a5e226c248067bcf0974472ab41a5571ed11e1fc",
+      "bytes": 904,
+      "sha256": "4845d113539a199cb7cf4e0650964f1ad2855310ca7718fe0654848cc80613d6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/console-agent-mgmt-enroll-regression.js.json",
+      "blob": "d39dcbfa95c6282daba62e29ab82672884a8eaee",
+      "bytes": 206,
+      "sha256": "6471a5f3d58a7f4276a6053906e39aba1e54b129f4e94987d1b82ec5115d1e18"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/console-agent-mgmt-enroll-regression.js.log",
+      "blob": "784fbc2289b337f95da4333646fbcd59e6d1500a",
+      "bytes": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/console-browser-regression.js.json",
+      "blob": "beb2232bd9ddb384171c5979ce0bf4d43ef1c134",
+      "bytes": 197,
+      "sha256": "95adee0010a134ed97487ef497cb14f779a6fce09044abb063bde289d83bcb7a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/console-browser-regression.js.log",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "bytes": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/console-task-board-regression.js.json",
+      "blob": "21f571bd1796cf2ae32d2a8c27f6a050e468b837",
+      "bytes": 200,
+      "sha256": "19d308f2ccce6d75f2860d0c116c60175fff1d3a3ca9e89b8905f553317be36e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/console-task-board-regression.js.log",
+      "blob": "5b2215aecd549fa825b2ba666b3a12a00591e7fa",
+      "bytes": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/pilot-blocker-wake-browser-regression.js.json",
+      "blob": "9c02c6f006f84d934336965b9e0f13bc38e10b0a",
+      "bytes": 161,
+      "sha256": "3d91d9f88505d1b86350680ccc3186b1ff7fa3841ce14375d4f7d4efa5620b0a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/pilot-blocker-wake-browser-regression.js.log",
+      "blob": "5dfd229df95fa4cfe45402e449d3b8c6c36b200e",
+      "bytes": 74,
+      "sha256": "18435bfdc48bbd84e845d39339ad7b2cc2b8c3f3a3ef127660a54a71dbc7ed94"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/pilot-feedback-browser-regression.final.json",
+      "blob": "758cd6847bf6ffd9521873f7d6987d7e44c74393",
+      "bytes": 217,
+      "sha256": "896af448e6234c843e0b3515edf18cd3d1ff5b9f5886f25a5bc98c4ece9045f7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/pilot-feedback-browser-regression.final.log",
+      "blob": "e9baace8fe413e9e3f396dbaedb3438f2392303c",
+      "bytes": 70,
+      "sha256": "df7202577348d29563b0a8beb9ff56c8791d152987bc98928370428628bcc575"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/pilot-feedback-browser-regression.js.json",
+      "blob": "271419c11906b6f0aec03890ecad10189d061976",
+      "bytes": 156,
+      "sha256": "1691ef1fff9d6ea58043dec34985ce53f572865d2cdc899754cd82c64af81771"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/pilot-feedback-browser-regression.js.log",
+      "blob": "126d6182cb109b1af28a8c7e8aceed369dc907c0",
+      "bytes": 70,
+      "sha256": "a8828b9432f13eaed5e38eaa4316997e7564b10e69f7ed798538f449d054f45e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/r31-hosted-nodes-browser-regression.initial-env-failure.log",
+      "blob": "a1ad556204a02979b19d96143bd8a9ade3dbbff5",
+      "bytes": 1161,
+      "sha256": "15bddc3fdfa91965c42fda8fc0470c9993acdb007da5b1528a1db4bb998f8f39"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/r31-hosted-nodes-browser-regression.js.json",
+      "blob": "cb247effdc6056c8242e7ef96c3bcc97e3d84200",
+      "bytes": 206,
+      "sha256": "534268dc2fa676f29a402b74f882facf55a861454aeffa34be79ba36d9e0a155"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/r31-hosted-nodes-browser-regression.js.log",
+      "blob": "df5393359b7ce23db70d2fb4b6dc59ccfb0e4fe5",
+      "bytes": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/r32-spec-review-browser-regression.js.json",
+      "blob": "dda2d8342febd90a4340d5c57771826aa57aa925",
+      "bytes": 157,
+      "sha256": "fabae511a84b9847340becd30dd5289fbfb73254106bd143861cbb1f72d64dff"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/r32-spec-review-browser-regression.js.log",
+      "blob": "74802d6e199805d4d61ddab722b4ba50da3a7cc4",
+      "bytes": 136,
+      "sha256": "3669a2aea92524e055b41c4428531a16b11dc061444b838c8771cabe5e7000d4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/r32-task-flow-browser-regression.js.json",
+      "blob": "1cea2be9fd76458ff795a406ee4b55a2963531e9",
+      "bytes": 155,
+      "sha256": "80bec7baa32ab7a4291c4c795aeb7f429ffce2f3142ca26cd76c7ae0a7bf7e3b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/browser/r32-task-flow-browser-regression.js.log",
+      "blob": "dca2423d4573dada216137f9c5494865f5495c05",
+      "bytes": 49,
+      "sha256": "e5d1a5b632d94c223b81745d4d9ed14df42f73fe9ad1e317c6da4518e36f61e9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/compat-frozen/RESULTS.json",
+      "blob": "99eca8c1641515c853d3be1cf854dbd7b27294d2",
+      "bytes": 527,
+      "sha256": "6d58f74e06e347d95d06cdc6b90634f039379225ab686f6dae38208270936add"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/compat-frozen/new.log",
+      "blob": "9148ea6bccbbcf28b62644820dcd646a28c73c5c",
+      "bytes": 170,
+      "sha256": "c963cb4dd455f64ce4d692aa261c7bbb6fbf8c7e9ff2b516e02dbb3e3d6c4b0c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/compat-frozen/old.log",
+      "blob": "72eb52f85b02831ea8a591684dc13bd495063eb0",
+      "bytes": 254,
+      "sha256": "0c95838d6f8e790e8d5c12eb92638337c87cccdcc22201b2c977aea415d8c443"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/compat-initial/RESULTS.json",
+      "blob": "25ccdd185f4bfd6fd1173ff3507864e9fe9eccea",
+      "bytes": 527,
+      "sha256": "4a071897ec5ef3e1bd76b8117edc3133eaf5bd2cece4acd4bf1401c055925281"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/compat-initial/new.log",
+      "blob": "f1a92f8f1d87649005008fd7231a6027d29e559f",
+      "bytes": 170,
+      "sha256": "7823afafde88604bce421abd3e01741c5d47f19c15b502c8b3628bc2bf65e510"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/compat-initial/old.log",
+      "blob": "c610017ebed4f3122f6525564862432a4f63318c",
+      "bytes": 254,
+      "sha256": "3b19d210cf87f4b61acfdd178f26e29d899dc847362e8951552f3b7296f5827b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/compat-release/RESULTS.json",
+      "blob": "e9badcd66e79ce509e986aa1c798c5cdd2a9f95e",
+      "bytes": 527,
+      "sha256": "5ee00ed0d52a9ae53e6e830128775d778c40183c7e2b126de222a36bb400e0b3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/compat-release/new.log",
+      "blob": "f3387f71a5f84edf7f0fa4737c8d03789cd8efe1",
+      "bytes": 170,
+      "sha256": "ecfe1f1bbdb020e0f1d31e5043719b09d0644af342a02bad886c2135b9807ef6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/compat-release/old.log",
+      "blob": "220ac98cdd22474e24d28b5e9e60439310ac2c50",
+      "bytes": 254,
+      "sha256": "4a174f3629252277d268931a8016f83be982c9420c18a0043b6ff820495ad45f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/RESULTS.json",
+      "blob": "39ad2c2970f93a24426d62eb430f0fc556ffa31f",
+      "bytes": 24375,
+      "sha256": "d019d929b7b1f83d3e9f77ac4790c5c19a4e9fb46d586004698a0a99680aa368"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/addressed-reply.log",
+      "blob": "dc4811dca1f57a9b4e83553b0a1302e5daa4886d",
+      "bytes": 197,
+      "sha256": "c921d36ad96d1a9eb0b2628452388ac7dafb4698687762d6f2dc2b91e3082cf5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/adopt-current-fingerprint.log",
+      "blob": "ff0bf70f678130bb45b18c68e626df6d69ab5e93",
+      "bytes": 1508,
+      "sha256": "8811e307518cf8f8af2726fc147c92a501edae4330856e5f0c7066ae03371851"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/adopt-revision-durable.log",
+      "blob": "6ad449ca9d9ce47122a6b75c6f3fa4f0866a52c2",
+      "bytes": 1515,
+      "sha256": "0b86082f9e507c160b71cebc101708f0a6594090cb6deb5446c6fb22025e4686"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/ambiguous-no-rpc-replay.log",
+      "blob": "67b5c0ec1e30533e820d26e503e3632010c98742",
+      "bytes": 3082,
+      "sha256": "d93a703455c740afe1d93958783e07b8e0c6f7861ea5c611b40111f8f60671c2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/baseline-go.log",
+      "blob": "6904554716062556d3a3fa1be2fb990e4d0bc435",
+      "bytes": 123,
+      "sha256": "2c34bb7a305085109ecc8935e32417e71d7734d214a88f194bcf60f396042e3d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/baseline-helper.log",
+      "blob": "a34f2d1f89f6debe60fcd6d575ee12e3f34fd214",
+      "bytes": 1556,
+      "sha256": "4c4f1f6280dd029786409849444804f7ae30c767390b4c6d5045c49e13992402"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/card-cas.log",
+      "blob": "3ef686f29b5d27e2d8d969a157ee54895b7772f7",
+      "bytes": 209,
+      "sha256": "0be3abab0ae7bcccc945581556120d49bef67e4295cf7543364220b79adea155"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/concurrent-new-input.log",
+      "blob": "70ee18c913f81450bcf678068a91bd7d0bcea7f8",
+      "bytes": 943,
+      "sha256": "095fe6c7c41de78f80995655fd29f3d062a0855e4dc9ba690fd2992d9c377849"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/condition-transition.log",
+      "blob": "affb8c43679082a6c8fd17cc51dd16ec219626c3",
+      "bytes": 919,
+      "sha256": "2e8015dc9bc20f1cb2d7dc2332ebcce9c3d8c8c8e186aa7ce7d3f36e14756b90"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/control-origin.log",
+      "blob": "4a18faca7028dfec2e284ffc1cb438dcd54291f1",
+      "bytes": 1637,
+      "sha256": "ecefe48ccbbe93faeacd366b0a3f6246ce3f7879f0d593c91c9881b7a99b0abd"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/current-group-pair.log",
+      "blob": "4a06e45544e9c201dd91413f005786ef20fc88da",
+      "bytes": 1805,
+      "sha256": "83f202b2b0fdd220eebdf5b2b4e950cbdc54935ee90dcffcc52e8481122f53a1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/current-recipient.log",
+      "blob": "f3c40f0594646653e5903904311c1abbab19d428",
+      "bytes": 3334,
+      "sha256": "70927457631f7350a759b978df6ca4f1706aee6e224840ab832facfe8a25489b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/developer-only-lease.log",
+      "blob": "a07a19cc050f32563115ec4150979315d852342a",
+      "bytes": 219,
+      "sha256": "593513f38ba085964edd81a52d33fc76bb5b3599fb885accfbd3203eb3c0285b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/dispatch-journal.log",
+      "blob": "edf2cbeec74703bfaefd18d6e3e2ca7141c516cd",
+      "bytes": 3935,
+      "sha256": "3a83db1ccb678b03f905925885a606e3ac5b84e2714a99540720e03bc28decdb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/final-authority-check.log",
+      "blob": "663c506cdf271e2c794fd1f85a0cf7a17115a209",
+      "bytes": 204,
+      "sha256": "9152140fb2ab0805edb899737b0c35bd66ff4456c0a48f45d74f967224ccfd0c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/fixed-prompt.log",
+      "blob": "3c1e5f81c6856d995fe7d96e7c0a9a85573c27f3",
+      "bytes": 2279,
+      "sha256": "185a4c46f3a104c0ebe9bedea124db4567376f88bfab3271ff7816a813aed7c7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/full-approval.log",
+      "blob": "3a01c4f9c4fc309e537df51d005bc2d1810ef059",
+      "bytes": 196,
+      "sha256": "f6f63cec73dcfd3420ebbc3aa309ed10a802fb05659dbf09fe7e70e98217e52a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/get-no-business-write.log",
+      "blob": "ad11621485d3c1f1e19ffcb997bfcbd5bc75c84d",
+      "bytes": 203,
+      "sha256": "694be447d05ca0dcef3f43535486e528634013a3697a08dbef5abd47b6fa9ebf"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/helper-full-approval.log",
+      "blob": "b5b2220435941e189c16c735c25ec7aad0f1fabd",
+      "bytes": 3607,
+      "sha256": "2664c7aa8b884459306e002980a43751991d1d0b8b108f0313fc98c3922c84c5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/immutable-event.log",
+      "blob": "dc25b4033742f68efd6bc22ae4e08d9edc659149",
+      "bytes": 204,
+      "sha256": "c52db44133332aae11e1c1303f861e5cc55839722d99f5b812dafdef9f1f8d92"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/initial-current-state.log",
+      "blob": "02bba6bb10ae5b95f4e503f46ef654b209b71ab3",
+      "bytes": 208,
+      "sha256": "64c57b5fc9732eb1883e0d7fce7e980c9b8e77315bc9aaa7161eced972d2e4ab"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/lease-expiry.log",
+      "blob": "953f26603d16e419aa02fa77599cfaad8d895402",
+      "bytes": 216,
+      "sha256": "89fa59d2aeab9cb4c5370342440aeccd23aa0a89ffc75f4e379f4324f63c70aa"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/lease-identity.log",
+      "blob": "5529e832794a064ce7cda2fe5d7109e3b46e2bb1",
+      "bytes": 215,
+      "sha256": "e65bdfe62c2ead48631f3b4ce5354fca59104c810666617c7b4502de4e860a7d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/legacy-text-preserved.log",
+      "blob": "fc62bfdb5d76aedbdf6a3a89b9ebd81101f58814",
+      "bytes": 201,
+      "sha256": "e4f095c776d5f622c78888e08ea32dbee860f30176a7f543f656fd19326ac785"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/metadata-whitelist.log",
+      "blob": "24f998c901abaad78719b988a941d243b952fd3e",
+      "bytes": 2568,
+      "sha256": "15ab2d143d3f49d616ee330160e585bf4d925add701cee90563bfd083fc03e86"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/notice-mode-fence.log",
+      "blob": "e7138732093b649525d63fb82ca93176d01d56ae",
+      "bytes": 9388,
+      "sha256": "54956f69deb254399b8e922f11e2c8dcba6ec4c2e5a6ccf3f2d5d09bc89a1c90"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/old-driver-gate.log",
+      "blob": "af1993f1113c21dabffd0a1b0c376152614de583",
+      "bytes": 218,
+      "sha256": "cc15e5d615f3bb57aa7b7619e6693c356c74dd6b6d0368b9b0e75d3c49db4aa1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/old-helper-capability.log",
+      "blob": "32e48903a35aa6b600415d28caeb3cfd1922854c",
+      "bytes": 1449,
+      "sha256": "b0ca7e575fc136f19a7910ed6fd837641749b0c35ee44e42fa86d591cd1fc7ba"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/outbox-repair.log",
+      "blob": "2b065427a2a31b71210ddf3b622b8e4bdd51dda3",
+      "bytes": 232,
+      "sha256": "6785ce749261f71e7ad61315899dace9ca518b9a0317784dda3c1ff0ea8306c4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/owner-cannot-resume.log",
+      "blob": "414fbe79b75dcecd2d3e932dbf50034e27821140",
+      "bytes": 216,
+      "sha256": "77cd3ffa03d9e7671be5970f7167ae3bdd52bf75208119db97d80cf458f4b078"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/owner-old-plan-paired.log",
+      "blob": "c506b866a44b24ef61b4627403444bc2466f7169",
+      "bytes": 203,
+      "sha256": "aa80a185bb9d9b8edfbd15df71b34c430977e032dc1553b1e4c58c85a46d9202"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/pending-restart.log",
+      "blob": "ce575eafb9fad73097093df5b03cc142cbfc7c6a",
+      "bytes": 5201,
+      "sha256": "8821e21f68060b157bd284c0c42c184929ef388fdc27d3f363794952420c4365"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/pg-human-lock.log",
+      "blob": "5188bf98f6b01837590ded23832d28ab5ff55713",
+      "bytes": 519,
+      "sha256": "8ab05e0675167301f96e6143b5c7161e3e3566f3978d24e5eef359313f0696ac"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/private-receipt.log",
+      "blob": "639bedaa1e4e03c532d63d39f825bdf9c1811b9c",
+      "bytes": 921,
+      "sha256": "c817039f30766f9ae6fdad09d7a7f93aaf9bf201b2a0581d053a5fd5d39c85dd"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/replay-current-privacy.log",
+      "blob": "2051b84059a85b7742727cf12e110de00600f77c",
+      "bytes": 894,
+      "sha256": "307ead280592911a8fae7a756b16603cd0803f9a373aff03ae5b3f20004875fc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/request-payload-binding.log",
+      "blob": "c58b75a8284ba4687856285b44505adba4a6c6fe",
+      "bytes": 203,
+      "sha256": "81e71437bb9816c995509a5499cdb73ec3147c2003f956acdad211ebe26dd60a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/resolved-does-not-resume.log",
+      "blob": "a61f41924b37fe74cb2738993f716fc8a9dbe68e",
+      "bytes": 222,
+      "sha256": "accb9e8246d5a5b18ffd9524bc7626937c7ce14108b9143dfe6c7d070f4254ac"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/restored-go.log",
+      "blob": "9e3aa4cc46d6cfb887f0f070e8763706347fb569",
+      "bytes": 123,
+      "sha256": "9529ae5883b710074b20dcf0e3e4be2c9faa2f3b2738e131df47897493c16e14"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/restored-helper.log",
+      "blob": "1cc12012d9542f2373ed82cb78f82699ab7fb1f5",
+      "bytes": 1556,
+      "sha256": "18ca54dd5489691c2dcde54a520fdf2b94d817e91286dcf81e2eba73d984b1b5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/shared-resume-gate.log",
+      "blob": "61403058e532b9b9e0f098b922035f63192c9dd5",
+      "bytes": 209,
+      "sha256": "0048f9b46fad3682338cc142e49c00dd5483a0bf19a01c961b80f745e42fc38a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/strict-version-type.log",
+      "blob": "cc479dfb50b67aa81c35649e29e963905f05fd41",
+      "bytes": 2212,
+      "sha256": "370026f8bcc913530b920a2ffdc9c9bba0d35ca93645ae5d28e39ae4c77084d5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/transient-defer-same-command.log",
+      "blob": "c4dc7cb805091baf8816d37ec275018e10b1940f",
+      "bytes": 2681,
+      "sha256": "f4b6073a3f79d40f49a029b50f83819e0320f1e19bced47c180a7df3cacd4847"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/unknown-is-not-pass.log",
+      "blob": "14cdacfca24c60c0cc51b1ab584135df47974087",
+      "bytes": 908,
+      "sha256": "891120aacce85b3db5e78153282db63c334e44cd2ddd685abb164a4c6bb2ecd2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/d2-regression-withdrawals/waiter-no-private-get.log",
+      "blob": "b294dce8a2b76ddf26e4413ab298096c27312980",
+      "bytes": 1840,
+      "sha256": "3e070e349ddfaf89da4e7d8fd3e08e9cdc266fe1f5f32389688f2d91c91febda"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/final-gates/go.json",
+      "blob": "cca98fd09e79ef1eb648b3690ead2f924e778e0c",
+      "bytes": 463,
+      "sha256": "bd7f3f6f1fb30d868b21926dc2ab99c4e0771da0927c2cbf3887489ce5aa9817"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/final-gates/go.log",
+      "blob": "4a634f21f00b7150280abef368628e2261769e3b",
+      "bytes": 4294935,
+      "sha256": "4e20113866bf67083002234c1d44c0b24f9e9d85b5939ffc1cda8a062c977a9d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/final-gates/race.json",
+      "blob": "070f2e1eca39d1ebfee78c2025773dc81f701888",
+      "bytes": 593,
+      "sha256": "c7d707cfe87f197a653f70fa0480af09d5294e8708c1f38c06e201bb641b9312"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/final-gates/race.log",
+      "blob": "d43fc34160bb88d2163940df05fe31ba97513a12",
+      "bytes": 191,
+      "sha256": "584cb7efcd2fa8fea9e28461760eb408ea7187ddbfaabb9ed62ffde20eb07ba2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/frozen-canonical/canonical.json",
+      "blob": "33cffa9b09d62ea18a328d1e26eebef97e75d893",
+      "bytes": 425,
+      "sha256": "fda213f3002ac9817e38107ae5f87429ee5ac9f6f716476fe937432517e3be6b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/frozen-canonical/canonical.log",
+      "blob": "55aaab2800d1f2f3c958142a831b0a83a467c4dd",
+      "bytes": 41737,
+      "sha256": "907d757895dc2be73cb4b92973add7fca469018642fa9263a78d538479a1c1ec"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/frozen-gates/go.json",
+      "blob": "104df7e3caac25045085fb568d2e24131701e72e",
+      "bytes": 463,
+      "sha256": "94aca9ad46ff022171048b613df037fe76b97a455029c78ed60633aa2ad1dfa8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/frozen-gates/go.log",
+      "blob": "5d15588e60c1e29808c08dca0ef4c6a8cc1da3f2",
+      "bytes": 4304088,
+      "sha256": "9d9b3db2e68fc3df337a525aaf0c2dc3f6872debbed831f822285e1aafe588df"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/frozen-gates/race.json",
+      "blob": "83f38991339d26506a1ac375447bb907bd74d039",
+      "bytes": 593,
+      "sha256": "1781961f6d742bc7cd5342b352c367c7b2586625d73cb66ea5e3198189860a5d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/frozen-gates/race.log",
+      "blob": "83b378b96d00e1a22c45b692f2ad66ecdcdc275e",
+      "bytes": 191,
+      "sha256": "93c9cafaa1e0c052934362d300fd77ba819ac443316ef124b78ef09d78b04ac0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/frozen-gates/vet.json",
+      "blob": "92ec9e64f5224e63b9f6f22daeeebd95b5fc05ab",
+      "bytes": 413,
+      "sha256": "58c8c1f7856883989a791b6613d6c7f509783e09245d11141dfae8979330d5d2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/frozen-gates/vet.log",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/initial-gates/canonical.json",
+      "blob": "c6775670b895536b9bc1514e5edb30f2fab441eb",
+      "bytes": 425,
+      "sha256": "ee670c6cb6f1ff689c57a969ac5c68dd65c9dbe6415b34a4257478cea0c8a49f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/initial-gates/canonical.log",
+      "blob": "7c581eb6f13101b333dba684fe31494227800d7f",
+      "bytes": 41739,
+      "sha256": "90004d7baa776512fec6bf1e442d0d4e6e728157f94595857b4b260a9d63c380"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/initial-gates/go.json",
+      "blob": "6eb289b8f5311bb25d6baca5f0549dcf53005051",
+      "bytes": 463,
+      "sha256": "bb21c61a25c368c9b7c0c7bbf429c363ff0bc15ceb3d451ba366f56c8308fb2e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/initial-gates/go.log",
+      "blob": "c294ce8d4e8247cd48f2bff2ed5b38af386ae4c3",
+      "bytes": 4307692,
+      "sha256": "52241fd64a3995d78fc258e6f276b5c5cc3f495720d35d2384c3e2b77b18c97f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/initial-gates/helper.json",
+      "blob": "dfdc96a7ad6b42aba4036489f94d754f92074a6d",
+      "bytes": 542,
+      "sha256": "03d50e9a60c0dff6983f2077057b11505d9472857b1072e759a0b2ee4b16d05e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/initial-gates/helper.log",
+      "blob": "bd7ed90446380d7301ab6eb9e20c20d7f8b57c8a",
+      "bytes": 146563,
+      "sha256": "a69ceb0886f6498bf0532768d6163abb2fda15ec3f299f2fc5a35d2082781f2a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/initial-gates/race.json",
+      "blob": "f0084f06fb8ce9db14e5cb5ebb264845ebf893f3",
+      "bytes": 593,
+      "sha256": "65db18df0cce4bd78b2ce5ede4147ec0cf55081926a8536bc29136f6979d4975"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/initial-gates/race.log",
+      "blob": "b010af4c968f9cc7c7f6e621065343f65fb72a83",
+      "bytes": 191,
+      "sha256": "ef36b9b04100e36493c8927e9391db2b31361724557febc32d99084f5df5ffbc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/initial-gates/vet.json",
+      "blob": "4ab3e227bdc2ffd3e0234018874e57c44c15cd48",
+      "bytes": 413,
+      "sha256": "94a6a28925f75eb47c35bc5f064e70ce355cb93c6eec204d500be40e61b52b5e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/initial-gates/vet.log",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/release-gates/canonical.json",
+      "blob": "f4709257acb37d47ec30fd5c4969a0b9f4d4487f",
+      "bytes": 425,
+      "sha256": "ee0bddc44df3f677212a0e3c21b08f1271cae731e242eb89b03b69fc9687a513"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/release-gates/canonical.log",
+      "blob": "7614836d2145c21456717beba5df3f43e075d9a9",
+      "bytes": 41736,
+      "sha256": "43ab92dfbc4eaa1b4e5500a99b83f8ad8f067358ec96c8a20b07b171a22a1d0e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/release-gates/go.json",
+      "blob": "2eb762d3e1ec6e29805a64af2adb4bd3d5310ec7",
+      "bytes": 463,
+      "sha256": "1b87a54692974e19d9c85205390b9829cec70a3679f8662b4dcc8fdb0968f6b3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/release-gates/go.log",
+      "blob": "b37231fe4aae77df07476287cac31ff5796316e2",
+      "bytes": 4321176,
+      "sha256": "95dc96362bab4a2f9818fe421915403c58443e5061c6f2eed139b6b3b2bcb553"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/release-gates/race.json",
+      "blob": "d60be83f607be8d09eafe44a3a60bc24e5ca7979",
+      "bytes": 593,
+      "sha256": "10c727a9dc9ec5da4f4ef5cfcf2ecc7c6ab114d185859ac59c2474639556ac5e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/release-gates/race.log",
+      "blob": "b26f21969cd3d877ce753a7ce93e99d17e13655e",
+      "bytes": 191,
+      "sha256": "d01b37f542a7f46e6a53450d01348765aa6dbc023dbb7a93d6266887a24b0606"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/release-gates/vet.json",
+      "blob": "614855b76a946a4f816b0ad3697f67057b279914",
+      "bytes": 413,
+      "sha256": "7116d81a7a42cfe2e81dd85ec53bd4d5b5ced42e489092bc22305a8ff1d8bcb8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/release-gates/vet.log",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/RESULTS.json",
+      "blob": "c9842fcdfea2e53fdf4ec6c9ef181d76b7ead1e1",
+      "bytes": 16832,
+      "sha256": "8fceceb9febfb981f5c256134312dca95b9a333870588c9c0e4d9dbf1037cf19"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/ack-is-not-substantive.log",
+      "blob": "ada286ed8dc7904b61763314e762b5ae35b4719a",
+      "bytes": 760,
+      "sha256": "8655e90e7e3fe4e1983163fa9740870fe5e76dac05a0c920b2eb3d8de2fb3564"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/answer-first-cancels-reminder.log",
+      "blob": "6d945f458e17b06d1c0759f3cd869d9dc8888acc",
+      "bytes": 333,
+      "sha256": "c0ec718726b0285e4ee45f63c7b1f4f7586f1895493c330e5806969466ac17ed"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/assign-preserves-clock.log",
+      "blob": "c5757c091ecb09f278d13a7a70c04da9bce6982e",
+      "bytes": 758,
+      "sha256": "c66908fdd9e83fc1168e2d78b8d7ba4abd9379fa5530a056d93221666942c518"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/baseline-go.log",
+      "blob": "b81ae4ed8e1d3359d4b1dcdf4adb29f79b2fe6dc",
+      "bytes": 187,
+      "sha256": "f3c505d9ae924eca35b3c6ea8b1f2c6a197f88e89612a3029cadccfea050f37e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/baseline-helper.log",
+      "blob": "a33ed48d5df5febaa1b9cb7c8776554bf7436d81",
+      "bytes": 1262,
+      "sha256": "2207ddbc578612f8618591bc4e9c9e66ef7b6b1135cd50468d643204fd513872"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/card-cas.log",
+      "blob": "47fa364f6912c4fa7b77b58b66bf2415faf35f30",
+      "bytes": 208,
+      "sha256": "23f6ab02dbaaa3ce88e606677169772c8452323c53075e4e1b5b55dd129c6731"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/clock-rollback.log",
+      "blob": "60fc6e365b10681019791de2ae47f2521a41fe6c",
+      "bytes": 207,
+      "sha256": "2b7e5cc2721a63e325b42308aaf0c5b3298771ad4b1bd5e7cd142b3262ce8784"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/completed-feedback-no-wake.log",
+      "blob": "126a57c26e18b599663a167016b62c92bfb99965",
+      "bytes": 802,
+      "sha256": "f93eba1da0008bb4cfe96297b950d5b7f8f548b35aab36c52a4171dff507bd39"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/d2-old-waiter-revoked.log",
+      "blob": "e4e4dcaf10e7a8ed082deb8fab65b55347b27924",
+      "bytes": 220,
+      "sha256": "09e79bfeb7aea46743e17d5a39dd1f54e56c382d29597b186607b4819ab7503c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/final-pg-check.log",
+      "blob": "23f9a1d20bc4cc8fb273e9796af2bfbc249c7727",
+      "bytes": 204,
+      "sha256": "f0e4cbaf526ed5c1c86b11b89512c87ea73c6c6661465d44cbc813f85cc50b72"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/helper-reject-query-mix.log",
+      "blob": "b7cb6fabb37c8b463221de27ae9d4b66523eb042",
+      "bytes": 1983,
+      "sha256": "6bd4d0d5b7cd135700994b17bda76c29760b4f78cf6c7a6ac462ab626150e1f5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/helper-result-execution-flag.log",
+      "blob": "4c5876254f3b7b170f3eaf2d301ad2af34cee925",
+      "bytes": 1935,
+      "sha256": "9c59e2f10a3fe1e9abf831c51cb4fbcb7e66d9e9f1661ff059fdad96d6babece"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/helper-strict-version.log",
+      "blob": "e964f3bc72180093f5422cc9d2dfeb3dba57b4ba",
+      "bytes": 2037,
+      "sha256": "d148506e6d0ffd10309a3ff4cd398bbadf8314e97fb5c7317d6093312fb3f88a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/history-bounded.log",
+      "blob": "38990b91213f72864bde6713291ef99dd2758781",
+      "bytes": 769,
+      "sha256": "cf98c90e6b7b12cf249df54f46f22b9a501f8c4ec398d758bfa38cc6cfb20331"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/immutable-event.log",
+      "blob": "90e56ae3490d6a5d891d636b5df231a31b75d495",
+      "bytes": 199,
+      "sha256": "285f30a21fcb9502a988cd6ca37d6e48ed1e40fb9a650afe0182f70ec5690879"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/logical-content-dedup.log",
+      "blob": "df8a61a5adf56f5fdd73ec058c0ba23024480b6c",
+      "bytes": 507,
+      "sha256": "4a084286b7e16559228d1debc96177169bbefb05da7ad2cd8032f15e97534ee0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/no-agent-pm.log",
+      "blob": "b90d5b3ba6b7febd1dfbf4abf92cd6f0bac9c3fb",
+      "bytes": 205,
+      "sha256": "e0ab938b5b5a61a9d9f21d88c89929d93a189796a97bf3a05936af9a8ff4ee48"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/no-private-feishu-body.log",
+      "blob": "e8c2e78f8ab16a8f626f75cd883e3da810c4c187",
+      "bytes": 826,
+      "sha256": "3812a1dea037bfb749c0af9e4b1154374403d14060afc9d03d33939319038046"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/one-sla-per-generation.log",
+      "blob": "ef40c06bf0cbd7391053756e12d73190486c2eb8",
+      "bytes": 220,
+      "sha256": "fef126171ce5542ca13d157f0ac7fd0ca756067422a60062016b10f45322fbe6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/owner-only-change-decision.log",
+      "blob": "fa73138f107228f1edff6086529eec24cc93bfdd",
+      "bytes": 226,
+      "sha256": "3fd69e89171d93816ec759c78aba8a03ca782a9e9f649339ba00576852a84576"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/pending-change-blocks-old-scope.log",
+      "blob": "48fc930ab83fe434ea00f8ad44efe331c462b81b",
+      "bytes": 240,
+      "sha256": "97d46abba8ad31198bbe75455ee91cafd6f2cc45c3438db4c4f325093aa1e2e7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/pg-send-reply-serialized.log",
+      "blob": "a239f61c93d87e4227a4880ad8f595284f767c35",
+      "bytes": 1861,
+      "sha256": "0050fd85331cc8707d22b4bb876c3dea3e9df523b72b13a9e88fe4a35e92dd17"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/pm-cannot-grant-outsiders.log",
+      "blob": "0d25845d8ea32f88df62cefb212753c4c2a414a6",
+      "bytes": 222,
+      "sha256": "b209159acd53a5448104aaf3db7e9065ed3088bbd7e7db598ddfa08f7fe07c85"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/production-full.log",
+      "blob": "6b71fad62e7601918c9472f52f77a9a93ec017cd",
+      "bytes": 716,
+      "sha256": "85f0be70a23ba3244af140204ab712f471b4ce6e15c27c2ef1761a05c9bba328"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/provider-native-uuid.log",
+      "blob": "1952ce298af109dd7cebc00c25be688f58bad09c",
+      "bytes": 368,
+      "sha256": "45df589f170f4c0d0cf2eb2792a850d62fb39f9b0a6534bd980a8f53e008d379"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/question-only-reader.log",
+      "blob": "9e849b533c693aa838038e95ec41b85e8d0881ae",
+      "bytes": 211,
+      "sha256": "b4e9b0fd749066ac882274bfa9d6fb318fa7d01200db997b2967bbe0c000cd47"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/restored-go.log",
+      "blob": "e7d396303a2023052518aca8e14c191405ceef91",
+      "bytes": 187,
+      "sha256": "cff08a2b472c4ab95a03c43152df29fb0b3c02396efbd09e6b0b07ab059f85f4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/restored-helper.log",
+      "blob": "a3a188df4c9d7388cbe501ce048644ffdebd9cc8",
+      "bytes": 1262,
+      "sha256": "c3c1264e1f973df8603269e96cbefd0e1db67ae6ff25560ff8dcb2e2ddebfc34"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/safe-public-origin.log",
+      "blob": "fec7651580a7c637aeb1a42205ebbf31782898ca",
+      "bytes": 523,
+      "sha256": "41d62fae38ef0fb15b8b8cbec7e270e9551395824b1a4d22a07f820565d8d2d7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/sixty-minute-lower-bound.log",
+      "blob": "f9960accd97b8da99a570357aca790996cc38aaa",
+      "bytes": 218,
+      "sha256": "15ff60c14633607ba3bebb6a5f239a87523a8740a6e9355c5a569a913b74a6e5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/unconfigured-not-delivered.log",
+      "blob": "7f754944a7ddb633bdcf245b4011d97acf3a58bd",
+      "bytes": 206,
+      "sha256": "87e22a846d5f80690f7d12c71314353f4adddee274de07d24cbe7b1197b4fe1a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-final/unknown-no-resend.log",
+      "blob": "5f51b0e83a933eab41885c22a2bcf7e3c807e304",
+      "bytes": 326,
+      "sha256": "bdc7e28c5d53cac472b84130e398cfcd2e94d1ac9f3471e5810b7603fb09f8a3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/RESULTS.json",
+      "blob": "43549625255831be43590af8737370af6a5e0eca",
+      "bytes": 16835,
+      "sha256": "316b51a0a9accaf1fa9cb80b8d5026b483c917bc6b955d94bedd34921201093a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/ack-is-not-substantive.log",
+      "blob": "b89fc6c8cc30750d5fa55f9818d31df70fa3c600",
+      "bytes": 760,
+      "sha256": "8929ff0bdf07c1118048d00f6e5c077d54650e4bd32545410375d2a81c86727c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/answer-first-cancels-reminder.log",
+      "blob": "24e3bf18fd5b2c917da87844e9a385b584e01d45",
+      "bytes": 333,
+      "sha256": "9e3417a8beb5c87914123ea9422bd99163a86e9d941d6be39368409c38fa6a5a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/assign-preserves-clock.log",
+      "blob": "0a19f1f7b3ce014637a5261908fffda75d778b63",
+      "bytes": 758,
+      "sha256": "3cd6a77dfa5ca7b515ae32920cf2205c42e1acf73cec627719ef1acb93826e0e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/baseline-go.log",
+      "blob": "95404dc4f41b28841899f28f30efcb4ba9f527c5",
+      "bytes": 187,
+      "sha256": "6e1e628598fa7c8740410476fca3ba1ef53dbf062f72b463136dce9da7dc31c2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/baseline-helper.log",
+      "blob": "a15cadf45361af40b7c5459d37d3989729a9d748",
+      "bytes": 1262,
+      "sha256": "7d0900e4058bfc597c0d2cc1c22d6e9f8da2911956b978815a97b101efe92ea6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/card-cas.log",
+      "blob": "52484fc6552234c5d3a1e3d9888a8af7ed0c7d2a",
+      "bytes": 208,
+      "sha256": "5531b5fea94c1e1477deb4b50136ee4d928f3024cec4f962b38b5ddaf6f4b33a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/clock-rollback.log",
+      "blob": "14cf3cba376060a4ec1f7b7dfb5da25f51324798",
+      "bytes": 207,
+      "sha256": "58b018d38ad9650cd1cbe884dd0b147d786c8a219e70fb2c75c47d29677cf14c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/completed-feedback-no-wake.log",
+      "blob": "ef0354903b03c6291bf6c9a1077325fe971c73da",
+      "bytes": 802,
+      "sha256": "6410cf7668d523cf7469a439397df3b4507fd8ec7ae67452c46acbd2b0fc75ab"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/d2-old-waiter-revoked.log",
+      "blob": "ec81cfe4fe60caceef088f65aeaf53a499b9f4e7",
+      "bytes": 220,
+      "sha256": "b3ed22dd074b080b3a8e9edf8b3af885e7be82da47a80295cb1957df8c95b58c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/final-pg-check.log",
+      "blob": "65993d2372b147be63e8b64199abdcd057082690",
+      "bytes": 204,
+      "sha256": "d1bc3c78554a7e87b7823eb1eb49943e830b589359aa3c8e9e535392933fdb08"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/helper-reject-query-mix.log",
+      "blob": "3468db55dd8dfa83bc5de67fd6614304ddb4410d",
+      "bytes": 1983,
+      "sha256": "90c5a1060a417df364a3e2909d50da428306ef363b779a572400ea2e70dfa2f4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/helper-result-execution-flag.log",
+      "blob": "7b65f6317a3138ae82e155facec1a11f0c09494a",
+      "bytes": 1935,
+      "sha256": "e65844c548a686c71feb3a3a76cdfa998b6aada2ccdbeee58f8afa1ab50ed314"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/helper-strict-version.log",
+      "blob": "5dc45bab1c7ea5fe5ce9c52caba6946ccf0dd66e",
+      "bytes": 2037,
+      "sha256": "a93e9576b8a54915f99092acb50fb700fd56968544f39afacd5028fd5aca3a85"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/history-bounded.log",
+      "blob": "e5953d77518d6914ff725dc9ba5e05aeb0ca5448",
+      "bytes": 769,
+      "sha256": "db1529db643c78a911a260d8c67c5424f38a6b201414be16fb79a27f6f14bca0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/immutable-event.log",
+      "blob": "3378c67ae72fd5e8b223bcc701218b0284828106",
+      "bytes": 199,
+      "sha256": "5ceedf2461e1fc62403c5c8b4c3becef44fbcc0e6bcb82c77df6de62f35ffd27"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/logical-content-dedup.log",
+      "blob": "2d6d4da1c6ed456cfd8f425fa74af66beced7a25",
+      "bytes": 507,
+      "sha256": "1d46932c69e2405416e536abbe820cb469f0c56ff83d3a9221a9c830a6f09651"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/no-agent-pm.log",
+      "blob": "f6327371aefe5219a67dcf8188fe336f0bc422f7",
+      "bytes": 205,
+      "sha256": "1a654c28b5ccfed791d4023bb8de435d9189978a85be98e31255e7937e86c5b8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/no-private-feishu-body.log",
+      "blob": "a606ae96386bc1513265789ae3684bfd2cb7bb41",
+      "bytes": 826,
+      "sha256": "c1926b5a4aed3a45b4f3c51a8244261a64e70bc24c844035f841e7f224395663"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/one-sla-per-generation.log",
+      "blob": "c632ad97fb00fef84194db7197c206862f414c65",
+      "bytes": 220,
+      "sha256": "d76557adce2b36a88e8f1a97404d22d758c9d61eb6a48f1ba92b1c2a18eeeeb3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/owner-only-change-decision.log",
+      "blob": "3289e5a6463a9232da4765a1ac37df1ab615b97e",
+      "bytes": 226,
+      "sha256": "81fffeb9f08b58e3cad00345a37697b8108d105b77a53f698e5adffea6266513"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/pending-change-blocks-old-scope.log",
+      "blob": "db204f7fea45ea9a85a23d65c1249567d9319d9b",
+      "bytes": 240,
+      "sha256": "ecd8f1c71e021863edb2e14a7b671451a335a12f15da4073943e96324a87a19d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/pg-send-reply-serialized.log",
+      "blob": "022af4378f4b51fa90ce6f2aa5ee92a8fc1b4d0c",
+      "bytes": 1861,
+      "sha256": "1d3c250981b6f93a1fd3dc69ff005aa6b988fe7c84de63d9a19c741d66159405"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/pm-cannot-grant-outsiders.log",
+      "blob": "cb280d25dd2a038ae86509908e4412dbb72b299a",
+      "bytes": 222,
+      "sha256": "8e2340ff512ee001b50e208ee059357c51a58c69efad166024ade69641fd797f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/production-full.log",
+      "blob": "0a00fda17c8eba3176dcfa2759611fd086404152",
+      "bytes": 716,
+      "sha256": "b273822a6305fb93009838e2b3b63899b558de04428d29fc0279846218a64e0a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/provider-native-uuid.log",
+      "blob": "c3fa1205be03cabcfc92b5a3599e29a666ef67fb",
+      "bytes": 368,
+      "sha256": "88400820e7502dd7f2f14ef2ae7afd4e1a4f511862c970621736a8f6fe24d809"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/question-only-reader.log",
+      "blob": "22ecf1434cc23e864862e8e2531075a7a27aa61f",
+      "bytes": 211,
+      "sha256": "7c92eecc87d4b90415df31d73730206797005307d60e8f5b71f6b05a42853065"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/restored-go.log",
+      "blob": "2c048346ce360c7d866e0c9a9f0d403071e58cad",
+      "bytes": 187,
+      "sha256": "d4add5bdc22b14bb0f13327bedf926302c08eda2b9c5c5924ff7c5922bcf5470"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/restored-helper.log",
+      "blob": "9dae6cee240dec096f5f1481f039e72431bf7975",
+      "bytes": 1262,
+      "sha256": "5d186e4a30520a148decfffcc6920c93484457278fd4a21bf8f8908dbb7f1c80"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/safe-public-origin.log",
+      "blob": "9a681fdbf8b2cc04f1fb43bb4075a45fba85f79c",
+      "bytes": 523,
+      "sha256": "3eb59f33e6f2eef812364841044d7ec30267aef4be8bff96677ca81b786f1978"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/sixty-minute-lower-bound.log",
+      "blob": "cbabb0a9fc6aa6099d8c598132f4c3dc93390893",
+      "bytes": 218,
+      "sha256": "064f97f8205806552ffb25859dab1f488c1bf66f78688120fe03a84e8f3555d2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/unconfigured-not-delivered.log",
+      "blob": "9658b6deb3ed8c5728f970c5ac5df080d9589359",
+      "bytes": 206,
+      "sha256": "976a58b642832c6ddd4418687c1d86c8b53d47a0442c92fc65381892fa1260fb"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-frozen/unknown-no-resend.log",
+      "blob": "bdcdf3d30a3195ca6008f11c352e2abed182c552",
+      "bytes": 326,
+      "sha256": "ed3472f2f8e22ebeed4dcb742f57373f05300db9bced82a886f2bc44f3b25436"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-initial/RESULTS.json",
+      "blob": "84862e169280cef41a9085875838f9a4cfdef851",
+      "bytes": 4967,
+      "sha256": "8b558a9f34892638ca6b5e0133303fa2aedf210cddf000712ac8f7e52065b5c2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-initial/baseline-go.log",
+      "blob": "0a86b00c0d4a29fbfb862b26df2d5fb3c6078925",
+      "bytes": 187,
+      "sha256": "1824d7bbf50e1ce4c3f86162cc6b5675b8f50357a7b43107e1b83ddb699f9d0e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-initial/baseline-helper.log",
+      "blob": "7db220581622603deb7b42867080cd45a7afb868",
+      "bytes": 1262,
+      "sha256": "5dfc9c5a4c85f38d298f23888015660966043cffd498c20521b6ace5d06d5fdc"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-initial/card-cas.log",
+      "blob": "d57ce8689c867b8f27c05780f626fc0c554d5a18",
+      "bytes": 208,
+      "sha256": "57006ef4cc46a81a2b3db4067606beb7d164cbdf5c2263bf17c1c99470ad986e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-initial/clock-rollback.log",
+      "blob": "0cef6dce309adf9c9f598adc31cb2a50ece39e66",
+      "bytes": 207,
+      "sha256": "42e521232757f7f65e40e190d08d599feba2315c40fe56094135b6d0f4ed4cff"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-initial/final-pg-check.log",
+      "blob": "8baa4fcfaae0090498d20192621b3c21c162ed1c",
+      "bytes": 204,
+      "sha256": "0748a510d97b55163e0f340922084be8151fb29e3971d6028622c618915f459e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-initial/immutable-event.log",
+      "blob": "6dfe69a15686fbc73ec4fc12df60d90dff6002c4",
+      "bytes": 199,
+      "sha256": "a31237cd8dfc480ef14ac0b6ebf418a056ae52000f391a3143b7aede5472cef5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-initial/logical-content-dedup.log",
+      "blob": "f2d367f9241401032acd8c5555c692671254312b",
+      "bytes": 507,
+      "sha256": "e1e1e70effe08a2adf9eaa5f6b2d6e5fded0d57f968517c5410179a9c1b49677"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-initial/no-agent-pm.log",
+      "blob": "a18a67426638c633bb2b6e12d5652f3731aef688",
+      "bytes": 205,
+      "sha256": "05f6a97348db3b7fbaab5fcb6703defe053ce3edeff54df11b0e1e2d08079a21"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-initial/one-sla-per-generation.log",
+      "blob": "01925a0694ee8ffd2e16e116d89f48adbaeaf34f",
+      "bytes": 63,
+      "sha256": "cfb5c76db1af62b5e049aa6efd070085b489394de52188922e26866005ebd1e9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-initial/sixty-minute-lower-bound.log",
+      "blob": "9f9f064b9d227a598eca35f48e1436838fd8da81",
+      "bytes": 218,
+      "sha256": "245ec1b3f33d9c5e977ec2f38ce018b79b0a764c9f159f3fcdf240fd814ec0d8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/RESULTS.json",
+      "blob": "a89a0b3b119f59a1c3679c17342301a46f469b53",
+      "bytes": 18169,
+      "sha256": "44d1e51563ab95d7ced09ab35ba72449d909bd074cf077a4a937ccbf41c987a8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/ack-is-not-substantive.log",
+      "blob": "cdebad901f01c0e593c518aa02a38fd0f6cdce01",
+      "bytes": 760,
+      "sha256": "2272a5d594291725f88e8cfdf7a960abbc1000a11b9d4ef88707fe07ad265bf7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/answer-first-cancels-reminder.log",
+      "blob": "634551335645fb72a023b9c7121f130e77bea30e",
+      "bytes": 333,
+      "sha256": "46767c1bf637ff2985aae0fe18b960b1e68b151e76a64b4ec7e42e0e8fa6298a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/assign-preserves-clock.log",
+      "blob": "8ea8e9f895712c8f670a27637fb866dfe0780a1f",
+      "bytes": 758,
+      "sha256": "5fc3c5b7df4755d115890720a8c16c8f817f447d781a4fb6eed1ed6ec66c8a6f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/baseline-go.log",
+      "blob": "00778db76f6942d9b540f8139f42f4911f1b07e0",
+      "bytes": 187,
+      "sha256": "e3e8187c769cfe4922b3d57601e5a35081eb5ddbc6920e2d92837f4099638754"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/baseline-helper.log",
+      "blob": "d52a90c69f458ff6f193c9e54f6be6b54866c642",
+      "bytes": 1262,
+      "sha256": "4666b22843851e75f5113c8d3d66a5016b7307078d277198c1e5a8f2e92aa1a6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/cancel-keeps-business-proposal.log",
+      "blob": "df0a2e53f5fffae478006891cba34b2f8ed8a6b8",
+      "bytes": 229,
+      "sha256": "14f088dda0c697d829ce3b4c5b10cd03bd6e47a7fdec17beffdb89aaf5b02a18"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/card-cas.log",
+      "blob": "24b1fdeff1a02ade3c895e106074918f7d1ce7e8",
+      "bytes": 208,
+      "sha256": "4f566f3ef08d6d61cbbedb1db38d4b32f4796265e202ef710933784926ac6509"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/clock-rollback.log",
+      "blob": "1dde7203e851d8f504aa44b8946dff7b7ea61569",
+      "bytes": 207,
+      "sha256": "b7c9f5a9d426721ddaed42798dc8633f5b3ae3f515ed8fc9bd95b366419f1fd8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/completed-feedback-no-wake.log",
+      "blob": "5ad4d5a716e5fb508c5832ff05323c1c77a48664",
+      "bytes": 802,
+      "sha256": "faa12ce5c41d10f38b9361a145c03be9048e3fd53a2e4a7e6e24e287bf020da2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/d2-old-waiter-revoked.log",
+      "blob": "c3ab0a6d27c161025864cafcf0af4a0a58388825",
+      "bytes": 220,
+      "sha256": "8758301a4f8b03870156b786168fcbe9ef86aafce555c8d4172cd0c07393b03d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/final-pg-check.log",
+      "blob": "517a3efc16af8fae025c461bc73e6008091fd998",
+      "bytes": 204,
+      "sha256": "a1952c27f3d0acc3543a221481bdd5adf2b3cb77d79a74df62aa83715029aa19"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/helper-reject-query-mix.log",
+      "blob": "00a62c5b9d2154c32d8d3b091c338bfd4ce097fd",
+      "bytes": 1983,
+      "sha256": "2f7059b92c893ca523f97a9b3b283c49c4d8f30da80f2d12b61bb63abb630d30"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/helper-result-execution-flag.log",
+      "blob": "dfa4d8df02ccf082ce140427de24ae69a5e087ab",
+      "bytes": 1935,
+      "sha256": "0827ba47abde4e46d2180b7c7322ccf793dd44c02488ee3bba0e4be61f943165"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/helper-strict-version.log",
+      "blob": "a0940f64049059ceb8cd5befa23340e4be7a36ec",
+      "bytes": 2037,
+      "sha256": "e15d106313354b8b7d0143c127856d123d0ec26164a21558a602f07566bee84d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/historic-proposal-owner-maintenance.log",
+      "blob": "5ccf8c49e7cd2ac9f7355876f6f3a36d9f2fe344",
+      "bytes": 347,
+      "sha256": "bdfeee54e73bf696270bea1420ddefaafe4798a0b5fd257bd3befa980c39416f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/history-bounded.log",
+      "blob": "d63ad179dcdf0d22a6a5ca17d55997dd6343913c",
+      "bytes": 769,
+      "sha256": "6bba824b11d18d871c7168c0e1f3d53b920425922dfcfcc6c105c8bb50c6a377"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/immutable-event.log",
+      "blob": "5a04a8108271d5f85184e228e70537dd22d202d0",
+      "bytes": 199,
+      "sha256": "263a26618dbad7447b7d2ff4a6dbd10e7dd8baf29750c10dc9529fd5644cd611"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/logical-content-dedup.log",
+      "blob": "ee0bb02a931220ed3e96e403d7dfc60460f63e68",
+      "bytes": 507,
+      "sha256": "952d287c8a8d9cd95b5844dac36ba64f58c599c035d1d1b0278f96fd708633ff"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/no-agent-pm.log",
+      "blob": "8abddf4a8af9388176faf62037a7ac4bfb59e3c7",
+      "bytes": 205,
+      "sha256": "f7b3959d9ad47444f58376e1dd14223c8b7ee9f35fb677b4e226e9a9df40a1e5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/no-private-feishu-body.log",
+      "blob": "9184043940011bd19b07eeeca7bd49f76fc81846",
+      "bytes": 826,
+      "sha256": "cf8b595439f4a94520291a16010d88e28581ecbb76c61b05de13c3af3b08b0a4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/one-sla-per-generation.log",
+      "blob": "4d716cb2ecae92c377043b84fc6e64e11bac88ab",
+      "bytes": 220,
+      "sha256": "d9823afb3425f8dd708e0dec892ff65d7834cfeead52fa5aec450d9c8fc447e1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/owner-only-change-decision.log",
+      "blob": "dbbfd871876516f0884dfad8de663f5e0b137152",
+      "bytes": 226,
+      "sha256": "c04191e6d52fa0f8461bdb4b68384ca9d97e6cf0b3c836e392a78ca405d0bbc3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/pending-change-blocks-old-scope.log",
+      "blob": "ffec7acc01b33f628ddb6d330d469b128fe398c4",
+      "bytes": 240,
+      "sha256": "7cfbdd825465dbe89912c3db7695fb51bde11be5b09ee2f0b1012c393008d17e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/pg-send-reply-serialized.log",
+      "blob": "c913f1193bc78846b12fb9c1b3e9e33b0fabdcfe",
+      "bytes": 1861,
+      "sha256": "be6671c4f8b03b58c5f50338e0bdf54e201be733a6e4be34494b27368477674f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/pm-cannot-grant-outsiders.log",
+      "blob": "6f9f7f2467f17bfd26e68b762423c2ee9a7be5ee",
+      "bytes": 222,
+      "sha256": "12e220db650f0484dd6c1af615ba3b27d47fb33d8dbbc936db027873e61ed430"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/production-full.log",
+      "blob": "994fed69ef6c311cccda0a23730bb79e4b4360e3",
+      "bytes": 716,
+      "sha256": "ea9471dd9524aa28a8625ee85be791dadfb9c07229e356fe1be191818cc20eb6"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/provider-native-uuid.log",
+      "blob": "0b376c3fad8b17f4f2d31311683c886ef012c8fb",
+      "bytes": 368,
+      "sha256": "12d4dab4992e12e5553653123806e411eec637e91a8aea97ce70ab1c5c2ad142"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/question-only-reader.log",
+      "blob": "2f009dc2f22fe31e31d9e218cb78eddbbae2fdf8",
+      "bytes": 211,
+      "sha256": "872cdf2a05e7fab38ffd1c1b84a26d1856514651e72fc12833733103a4ee5972"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/restored-go.log",
+      "blob": "be823d2fa13070efa41201065efdc020e2fbd5e8",
+      "bytes": 187,
+      "sha256": "1330f43ecc1f6fcd647d2601a70ca747466b2641a22c48652bc64bf3acf4d8c4"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/restored-helper.log",
+      "blob": "17b1a7e0ea7fd271d3796168aa0b3afae98bb931",
+      "bytes": 1262,
+      "sha256": "cd447a32b22d267f64ab6b15fc13455b1375fdee2f8ac606e814c4a38921bd50"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/safe-public-origin.log",
+      "blob": "40e7e0e4cda888d938417a1a02759cdd230e258b",
+      "bytes": 523,
+      "sha256": "3f154705b8a3447f5047c92114cb02a88ea809626fed1ead0ee87f41802f0033"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/sixty-minute-lower-bound.log",
+      "blob": "8bf6a3b70b427e7f1a4e43a0923b40ce105370ce",
+      "bytes": 218,
+      "sha256": "592f1af1d506f1debb8fa4b2c9a4763940d91efcd9fdf096b3d3573a506880b0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/unconfigured-not-delivered.log",
+      "blob": "381ca32ba32d7a7e1eec1d1e89c3120de2c8c649",
+      "bytes": 206,
+      "sha256": "0fb0aee02afd7202558c2933a0deef494cace978c6885133052455a098d34e67"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-feedback-impl/withdrawals-release/unknown-no-resend.log",
+      "blob": "bdcdf3d30a3195ca6008f11c352e2abed182c552",
+      "bytes": 326,
+      "sha256": "ed3472f2f8e22ebeed4dcb742f57373f05300db9bced82a886f2bc44f3b25436"
+    }
+  ],
+  "excluded_self_and_final_verification": true
+}

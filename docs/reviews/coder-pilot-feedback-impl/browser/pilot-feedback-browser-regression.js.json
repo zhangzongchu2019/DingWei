@@ -1,0 +1,9 @@
+{
+  "argv": [
+    "node",
+    "view-service/pilot-feedback-browser-regression.js"
+  ],
+  "rc": 0,
+  "seconds": 7.812576055526733,
+  "loopback_only": true
+}
