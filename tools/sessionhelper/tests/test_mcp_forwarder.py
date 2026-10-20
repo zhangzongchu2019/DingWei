@@ -54,8 +54,8 @@ def assert_tools(test, proc, version):
     replies = {item['id']: item for item in map(json.loads, proc.stdout.splitlines())}
     test.assertEqual(replies[1]['result']['serverInfo']['version'], version)
     tools = replies[2]['result']['tools']
-    test.assertEqual(len(tools), 20)
-    test.assertEqual(len({tool['name'] for tool in tools}), 20)
+    test.assertEqual(len(tools), 21)
+    test.assertEqual(len({tool['name'] for tool in tools}), 21)
     test.assertTrue({'send_message','dw_task_list','dw_task_update','dw_spec_review_requests','dw_spec_review_reply','dw_task_blocker_list','dw_task_blocker_set','dw_task_blocker_input','dw_task_blocker_recheck'}.issubset({tool['name'] for tool in tools}))
 
 

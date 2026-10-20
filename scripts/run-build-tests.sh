@@ -31,6 +31,7 @@ tools/sessionhelper/tests/test_task_flow_r32.py
 tools/sessionhelper/tests/test_project_context.py
 tools/sessionhelper/tests/test_task_blocker.py
 tools/sessionhelper/tests/test_pilot_question.py
+tools/sessionhelper/tests/test_pilot_template.py
 tools/sessionhelper/tests/test_spec_review_r32.py
 tools/sessionhelper/tests/test_desktop_dispatch.py
 tools/sessionhelper/tests/test_desktop_endpoint.py
@@ -82,4 +83,4 @@ printf '%s\n' "$SHELL_TESTS" | while IFS= read -r test_file; do
   echo "TEST shell $test_file"
   bash "$test_file"
 done
-echo 'BUILD_TESTS_OK python=54 shell=2'
+echo 'BUILD_TESTS_OK python=55 shell=2'

@@ -102,6 +102,24 @@ func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
 	mux.HandleFunc("GET /api/agent/console/spec-review-requests", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentSpecReview))
 	mux.HandleFunc("POST /api/agent/console/spec-review-requests/{requestID}/result", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentSpecReview))
 	mux.HandleFunc("GET /api/agent/console/project-context", prefixHub.HandleProjectContext)
+	mux.HandleFunc("GET /console/spec-templates", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleTemplatePage)))
+	mux.HandleFunc("GET /api/console/spec-templates/parents", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleTemplateParents)))
+	mux.HandleFunc("GET /api/console/spec-templates/options", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleTemplateOptions)))
+	for _, method := range []string{"GET", "POST"} {
+		action := "read"
+		if method == "POST" {
+			action = "submit"
+		}
+		mux.HandleFunc(method+" /api/console/spec-template-sources", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleTemplateSource)))
+		mux.HandleFunc(method+" /api/console/spec-templates", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleTemplateDraft)))
+		mux.HandleFunc(method+" /api/console/spec-templates/{draftID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleTemplateDraft)))
+		if method == "GET" {
+			mux.HandleFunc(method+" /api/agent/console/spec-templates", prefixHub.RequireAgentBlocker(prefixHub.HandleTemplateDraft))
+		}
+		mux.HandleFunc(method+" /api/agent/console/spec-templates/{draftID}", prefixHub.RequireAgentBlocker(prefixHub.HandleTemplateDraft))
+	}
+	mux.HandleFunc("GET /api/console/spec-template-sources/{sourceID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleTemplateSource)))
+
 	mux.HandleFunc("GET /api/console/specs/{specID}/question-context", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleQuestionCreateContext)))
 	mux.HandleFunc("GET /console/questions", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleQuestionsPage)))
 	for _, method := range []string{"GET", "POST"} {

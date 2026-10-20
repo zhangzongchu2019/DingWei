@@ -106,14 +106,14 @@ func (s *SQLite) readQuestion(ctx context.Context, expected QuestionContext, a B
 		if err != nil {
 			return q, nil, nil, err
 		}
-		rows, err = tx.QueryContext(ctx, `SELECT rowid,id,state,revision,new_revision,reason FROM pilot_question_change WHERE question_id=? AND (?=0 OR rowid<?) ORDER BY rowid DESC LIMIT 101`, qid, changeBefore, changeBefore)
+		rows, err = tx.QueryContext(ctx, `SELECT rowid,id,state,revision,new_revision,new_spec_id,reason FROM pilot_question_change WHERE question_id=? AND (?=0 OR rowid<?) ORDER BY rowid DESC LIMIT 101`, qid, changeBefore, changeBefore)
 		if err != nil {
 			return q, nil, nil, err
 		}
 		changes = []QuestionChange{}
 		for rows.Next() {
 			var v QuestionChange
-			if err = rows.Scan(&v.Sequence, &v.ID, &v.State, &v.Revision, &v.NewRevision, &v.Reason); err != nil {
+			if err = rows.Scan(&v.Sequence, &v.ID, &v.State, &v.Revision, &v.NewRevision, &v.NewSpecID, &v.Reason); err != nil {
 				rows.Close()
 				return q, nil, nil, err
 			}

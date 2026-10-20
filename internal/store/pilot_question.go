@@ -427,20 +427,27 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 				}
 			}
 		} else {
-			var sha string
+
+			target := u.NewSpecID
+			if target == "" {
+				target = q.SpecID
+			}
+			var sha, owner, derived string
 			var current int
-			if err = tx.QueryRowContext(ctx, `SELECT current_revision FROM console_spec WHERE id=?`, q.SpecID).Scan(&current); err != nil {
+			var archived bool
+			if err = tx.QueryRowContext(ctx, `SELECT principal_id,COALESCE(derived_from,''),current_revision,archived FROM console_spec WHERE id=?`, target).Scan(&owner, &derived, &current, &archived); err != nil {
 				return out, err
 			}
-			if u.NewRevision <= q.Revision || u.NewRevision != current {
+			if owner != c.Owner || archived || u.NewRevision != current || target == q.SpecID && u.NewRevision <= q.Revision || target != q.SpecID && (derived != q.SpecID || u.NewRevision < 2) {
 				return out, ErrTaskFlowConflict
 			}
-			if err = tx.QueryRowContext(ctx, `SELECT content_sha256 FROM console_spec_revision WHERE spec_id=? AND revision=?`, q.SpecID, u.NewRevision).Scan(&sha); err != nil {
+			if err = tx.QueryRowContext(ctx, `SELECT content_sha256 FROM console_spec_revision WHERE spec_id=? AND revision=?`, target, u.NewRevision).Scan(&sha); err != nil {
 				return out, err
 			}
-			if _, err = tx.ExecContext(ctx, `UPDATE pilot_question_change SET state='confirmed_new_revision',decided_by=?,reason=?,new_revision=?,new_content_sha256=? WHERE id=?`, a.Key(), u.Reason, u.NewRevision, sha, u.ChangeID); err != nil {
+			if _, err = tx.ExecContext(ctx, `UPDATE pilot_question_change SET state='confirmed_new_revision',decided_by=?,reason=?,new_revision=?,new_content_sha256=?,new_spec_id=? WHERE id=?`, a.Key(), u.Reason, u.NewRevision, sha, target, u.ChangeID); err != nil {
 				return out, err
 			}
+
 			q.State = "superseded"
 		}
 		q.Version++

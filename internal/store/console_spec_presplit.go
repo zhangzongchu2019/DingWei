@@ -75,6 +75,9 @@ func (s *SQLite) StartConsoleSpecPresplit(ctx context.Context, req model.Console
 		Scan(&revision.SpecID, &revision.Revision, &revision.ContentMarkdown, &revision.AcceptanceJSON, &revision.InputAnchorsJSON, &revision.ContentSHA256, &revision.CreatedBy, &revision.CreatedByKind, &revision.CreatedVia, &revision.Supersedes, &revisionCreated); err != nil {
 		return nil, nil, err
 	}
+	if err = templateSpecGate(ctx, tx, req.SpecID, revision.Revision, req.CreatedAt); err != nil {
+		return nil, nil, err
+	}
 	revision.CreatedAt, _ = time.Parse(time.RFC3339Nano, revisionCreated)
 	var agent model.ConsoleAgent
 	var active int

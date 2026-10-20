@@ -70,7 +70,7 @@ func taskError(w http.ResponseWriter, err error) {
 	case errors.Is(err, store.ErrTaskFlowInvalid), errors.Is(err, store.ErrConsoleTaskCaseUnknown):
 		status = 400
 		code = "invalid_task_request"
-	case errors.Is(err, store.ErrTaskFlowConflict), errors.Is(err, store.ErrConsoleTaskNotGreen), errors.Is(err, store.ErrConsoleTaskAssigneeSame), errors.Is(err, store.ErrConsoleTaskAssigneePair):
+	case errors.Is(err, store.ErrConsoleSpecGate), errors.Is(err, store.ErrConsoleSpecConflict), errors.Is(err, store.ErrTaskFlowConflict), errors.Is(err, store.ErrConsoleTaskNotGreen), errors.Is(err, store.ErrConsoleTaskAssigneeSame), errors.Is(err, store.ErrConsoleTaskAssigneePair):
 		status = 409
 		code = "task_conflict"
 	}

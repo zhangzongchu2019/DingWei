@@ -583,6 +583,10 @@ class SessionHelper:
             if not getattr(self, "enroll_credential", None):
                 return {"ok": False, "error": "dedicated_agent_credential_required"}
             from .task_flow import task_request
+            if args.get("type")=="pilot_template_v1":
+                from .pilot_template import template_request
+                ws_url,headers=self._connection()
+                return await asyncio.to_thread(template_request,ws_url,headers,args)
             if args.get("type")=="pilot_question_v1":
                 from .pilot_question import question_request
                 ws_url,headers=self._connection()
@@ -652,6 +656,7 @@ class SessionHelper:
         return envelope(
             session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
             {"type": "session_capabilities", "delivery_ack_v1": True,
+             "pilot_template_v1": bool(getattr(self,"enroll_credential",None) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False)),
              "pilot_question_v1": bool(getattr(self,"enroll_credential",None) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False)),
              "persistent_inbox_v1": True, "blocker_notice_v1": bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "blocker_wake_v1": self.cfg.mode=="driver" and bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "project_context_v1": bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "spec_review_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,
              "unified_queue_v1": self.cfg.mode == "driver",

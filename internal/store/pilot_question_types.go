@@ -87,6 +87,7 @@ type QuestionChange struct {
 	State       string `json:"state"`
 	Revision    int    `json:"revision"`
 	NewRevision int    `json:"new_revision"`
+	NewSpecID   string `json:"new_spec_id,omitempty"`
 	Reason      string `json:"reason"`
 }
 type QuestionUpdate struct {
@@ -112,6 +113,7 @@ type QuestionUpdate struct {
 	Reason               string `json:"reason,omitempty"`
 	ChangeID             string `json:"change_id,omitempty"`
 	NewRevision          int    `json:"new_revision,omitempty"`
+	NewSpecID            string `json:"new_spec_id,omitempty"`
 }
 type QuestionResult struct {
 	Question            PilotQuestion `json:"question"`

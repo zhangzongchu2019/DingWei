@@ -278,7 +278,7 @@ func (h *Hub) HandleQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if actor.actor.AgentID != "" {
-		if u.PMUser != "" || u.LeaderUser != "" || u.Responsible != "" || u.Reason != "" || u.ChangeID != "" || u.NewRevision != 0 {
+		if u.PMUser != "" || u.LeaderUser != "" || u.Responsible != "" || u.Reason != "" || u.ChangeID != "" || u.NewRevision != 0 || u.NewSpecID != "" {
 			returnQuestionDenied(w)
 			return
 		}

@@ -267,6 +267,9 @@ func (s *SQLite) AssignConsoleTaskFlow(ctx context.Context, id, owner, group, de
 	if t.Version != expected {
 		return empty, ErrTaskFlowConflict
 	}
+	if err = templateTaskGate(ctx, tx, id, at, dev, review); err != nil {
+		return empty, err
+	}
 	var status string
 	if err = tx.QueryRowContext(ctx, `SELECT status FROM console_spec_task WHERE id=?`, id).Scan(&status); err != nil {
 		return empty, err
@@ -485,6 +488,9 @@ func (s *SQLite) ConfirmConsoleTaskCandidates(ctx context.Context, request, owne
 	if revision != currentRevision || version != currentVersion {
 		return ErrTaskFlowConflict
 	}
+	if err = templateSpecGate(ctx, tx, spec, revision, at); err != nil {
+		return err
+	}
 	var old []ConsoleSpecPresplitTask
 	if json.Unmarshal([]byte(original), &old) != nil || len(old) != len(tasks) {
 		return ErrTaskFlowConflict
@@ -522,6 +528,11 @@ func (s *SQLite) ConfirmConsoleTaskCandidates(ctx context.Context, request, owne
 		}
 		if _, err = tx.ExecContext(ctx, `INSERT INTO console_spec_task(id,spec_id,revision,content_sha256,title,task_content,status,estimated_hours,depends_on_json,acceptance_json,input_anchors_json,definition_of_done,created_by,created_at,developer_agent_id,reviewer_agent_id,group_code,assignment_version) VALUES(?,?,?,?,?,?,'planned',?,?,?,?,?,?,?,?,?,?,?)`, task.ID, spec, revision, hash, task.Title, task.Content, task.EstimatedHours, string(deps), a, anchors, dod, owner, at.UTC().Format(time.RFC3339Nano), dev, review, task.GroupCode, assignment); err != nil {
 			return err
+		}
+		if dev != nil {
+			if err = templateTaskGate(ctx, tx, task.ID, at, task.DeveloperAgentID, task.ReviewerAgentID); err != nil {
+				return err
+			}
 		}
 		t := TaskFlowState{ID: task.ID, Owner: owner, Version: 1, AssignmentVersion: assignment, GroupCode: task.GroupCode, Developer: task.DeveloperAgentID, Reviewer: task.ReviewerAgentID}
 		for _, v := range []struct{ id, role string }{{t.Developer, "developer"}, {t.Reviewer, "reviewer"}} {

@@ -49,6 +49,10 @@ var newPlatformAuthExempt = map[string]string{
 // newPlatformSpecTaskExempt spec／任务路由里【不】按 N3 会话认人的（R-V2-SPEC-TASK-SHIM-IMPL H1），口径同 095：
 // 共享链接与静态资源公开读、写凭链接里的编辑能力令牌；Agent 侧凭专属凭据＋能力令牌。每条下面另有一格钉住无凭据时的应答。
 var newPlatformSpecTaskExempt = map[string]string{
+	"GET /api/agent/console/spec-templates":            "专属Agent凭据；只列当前本人责任邀请",
+	"GET /api/agent/console/spec-templates/{draftID}":  "专属Agent凭据；当前单模板邀请，不授任务权限",
+	"POST /api/agent/console/spec-templates/{draftID}": "专属Agent凭据；仅本人执行或审查责任接受/撤回，不授业务签收",
+
 	"GET /api/agent/console/tasks/{taskID}/blockers":                  "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
 	"GET /api/agent/console/tasks/{taskID}/blockers/{blockerID}":      "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
 	"POST /api/agent/console/tasks/{taskID}/blockers":                 "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
@@ -151,8 +155,8 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 			nSpecTask++
 		}
 	}
-	if nSpecTask != len(oldRec.patterns) || nSpecTask != 71 {
-		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 71)", nSpecTask, len(oldRec.patterns))
+	if nSpecTask != len(oldRec.patterns) || nSpecTask != 84 {
+		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 84)", nSpecTask, len(oldRec.patterns))
 	}
 	for p := range newPlatformSpecTaskExempt {
 		if !seen[p] {
@@ -313,4 +317,4 @@ func TestConsoleTasksCompatibilityRoute(t *testing.T) {
 }
 
 // specTaskRoute specs 与 task-board 两组功能的路由形状（页面、console 接口、Agent capability 接口、共享链接）。
-var specTaskRoute = regexp.MustCompile(`/(console/specs|console/tasks|console/questions|console/spec-assets|api/console/specs|api/console/task-|api/console/questions|api/console/tasks|api/console/spec-editors|api/agent/console/|api/specs/shared)`)
+var specTaskRoute = regexp.MustCompile(`/(console/specs|console/tasks|console/questions|console/spec-templates|console/spec-assets|api/console/specs|api/console/task-|api/console/questions|api/console/spec-template|api/console/tasks|api/console/spec-editors|api/agent/console/|api/specs/shared)`)

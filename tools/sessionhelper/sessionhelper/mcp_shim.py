@@ -782,3 +782,16 @@ def _dw_task_question_input(args):
 
 if __name__ == "__main__":
     serve()
+
+@register("dw_spec_template","只读本人当前模板责任邀请，或接受/撤回本人的执行、审查责任；不签收业务，不定稿，不执行任务。",{
+ "type":"object","properties":{"action":{"enum":["list","get","responsibility"]},"draft_id":_Q_ID,"after":{"type":"string","maxLength":256},"request_id":{"type":"string","minLength":1,"maxLength":128},"expected_version":{"type":"integer","minimum":1},"plan_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"entry_ids":{"type":"array","minItems":1,"maxItems":100,"uniqueItems":True,"items":{"type":"string","minLength":1,"maxLength":128}},"role":{"enum":["executor","reviewer"]},"decision":{"enum":["accepted","withdrawn"]},"reason":{"type":"string","maxLength":2048}},"required":["action"],"additionalProperties":False,
+ "oneOf":[{"properties":{"action":{"const":"list"}},"not":{"anyOf":[{"required":[k]} for k in ('draft_id','request_id','expected_version','plan_sha256','entry_ids','role','decision','reason')]}},{"properties":{"action":{"const":"get"}},"required":["draft_id"],"not":{"anyOf":[{"required":[k]} for k in ('after','request_id','expected_version','plan_sha256','entry_ids','role','decision','reason')]}},{"properties":{"action":{"const":"responsibility"}},"required":["draft_id","request_id","expected_version","plan_sha256","entry_ids","role","decision"],"not":{"required":["after"]}}]})
+def _dw_spec_template(args):
+    if not isinstance(args,dict):raise ValueError('invalid template arguments')
+    request={'type':'pilot_template_v1','action':args.get('action'),'draft_id':args.get('draft_id',''),'body':{k:v for k,v in args.items() if k not in ('action','draft_id')}}
+    from sessionhelper.pilot_template import validate_request
+    validate_request(request)
+    try:return _ipc_request(request)
+    except _IPCFailure as exc:
+        if exc.category=='helper_rejected':raise _IPCFailure('template_unsupported_upgrade_helper') from None
+        raise

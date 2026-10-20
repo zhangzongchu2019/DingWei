@@ -15,13 +15,14 @@ import (
 // ContextClaim contains only candidate identity references, never document data.
 type ContextClaim struct{ Owner, Group, Developer, Reviewer string }
 type ContextAuthorization struct {
-	Actor    Agent
-	Groups   map[string]Group
-	Members  map[string]map[string]bool
-	Agents   map[string]Agent
-	Users    map[string]bool
-	Names    map[string]string
-	Bindings map[string]Identity
+	Actor      Agent
+	Groups     map[string]Group
+	Members    map[string]map[string]bool
+	Agents     map[string]Agent
+	Users      map[string]bool
+	Names      map[string]string
+	Bindings   map[string]Identity
+	HumanTypes map[string]string
 }
 type ProjectContextAuthorizationStore interface {
 	WithProjectContextAuthorization(context.Context, string, string, []ContextClaim, func(ContextAuthorization, func() error) error) error
@@ -94,7 +95,7 @@ func (a ContextAuthorization) validate(actor, hash string) error {
 	return nil
 }
 func contextAuth() ContextAuthorization {
-	return ContextAuthorization{Groups: map[string]Group{}, Members: map[string]map[string]bool{}, Agents: map[string]Agent{}, Users: map[string]bool{}, Names: map[string]string{}, Bindings: map[string]Identity{}}
+	return ContextAuthorization{Groups: map[string]Group{}, Members: map[string]map[string]bool{}, Agents: map[string]Agent{}, Users: map[string]bool{}, Names: map[string]string{}, Bindings: map[string]Identity{}, HumanTypes: map[string]string{}}
 }
 func sortedContextKeys[V any](m map[string]V) []string {
 	keys := make([]string, 0, len(m))
@@ -164,6 +165,7 @@ func (m *MemStore) withContextAuthorization(ctx context.Context, actor, hash str
 		a.Users[id] = u != nil && u.State == UserActive
 		if u != nil {
 			a.Names[id] = u.ShortName
+			a.HumanTypes[id] = string(u.Type)
 		}
 	}
 	if len(extraUsers) > 0 {
@@ -351,13 +353,14 @@ func (s *PGStore) withContextAuthorization(ctx context.Context, actor, hash stri
 			}
 		}
 		for _, id := range sortedContextKeys(a.Users) {
-			var state, name string
-			err := tx.QueryRow(ctx, `SELECT state,short_name FROM np_user WHERE user_id_lc=$1 FOR SHARE`, id).Scan(&state, &name)
+			var state, name, kind string
+			err := tx.QueryRow(ctx, `SELECT state,short_name,type FROM np_user WHERE user_id_lc=$1 FOR SHARE`, id).Scan(&state, &name, &kind)
 			if err != nil {
 				return err
 			}
 			a.Users[id] = state == string(UserActive)
 			a.Names[id] = name
+			a.HumanTypes[id] = kind
 		}
 		if len(extraUsers) > 0 {
 			for _, id := range sortedContextKeys(a.Users) {

@@ -165,6 +165,9 @@ func blockerConditions(input []BlockerCondition) ([]BlockerCondition, error) {
 	return out, nil
 }
 func taskBlockersClear(ctx context.Context, q taskQuery, id string) error {
+	if err := templateTaskGate(ctx, q, id, time.Now()); err != nil {
+		return err
+	}
 	var n int
 	err := q.QueryRowContext(ctx, `SELECT count(*) FROM console_task_blocker WHERE task_id=? AND state NOT IN('resolved','cancelled')`, id).Scan(&n)
 	if err != nil {
