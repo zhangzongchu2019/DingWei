@@ -100,3 +100,16 @@ func TestBlockerHTTPHumanOwnerRecordsWithoutImpersonatingAgent(t *testing.T) {
 		t.Fatal("BLOCKER_HUMAN_IMPERSONATED_AGENT", b)
 	}
 }
+
+func TestBlockerCurrentGroupPairRecheckedBeforePrivateRead(t *testing.T) {
+	e, g, state := r32FlowEnv(t)
+	create := fmt.Sprintf(`{"request_id":"card","operation":"create","expected_version":%d,"kind":"technical","where":"group facts","expected_input":"evidence"}`, state.Version)
+	b := blockerDecode(t, blockerHTTP(e, "POST", "", e.zKimiCred, create)).Blocker
+	if err := e.svc.Store.LeaveGroup(e.ctx, g.Code, state.Developer, "zzc"); err != nil {
+		t.Fatal(err)
+	}
+	out := blockerHTTP(e, "GET", b.ID, e.zKimiCred, "")
+	if out.Code != 403 || strings.Contains(out.Body.String(), "group facts") {
+		t.Fatal("BLOCKER_CURRENT_PAIR_GROUP_AUTH_BYPASS", out.Code, out.Body)
+	}
+}

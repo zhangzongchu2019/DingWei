@@ -30,7 +30,7 @@ class BlockerHelperTest(unittest.TestCase):
         self.assertNotIn('file_refs',safe['meta'],'BLOCKER_UNTRUSTED_METADATA_COPIED')
         self.assertIn('不执行业务写',safe['body']);self.assertEqual(safe['meta']['delivery_id'],'delivery')
         for field in ['generation','input_version','assignment_version','automatic_recheck']:
-            for bad in [None,0,'false','',False] if field!='automatic_recheck' else [None,0,'false','']:
+            for bad in [None,0,'false','',False,True] if field!='automatic_recheck' else [None,0,'false','']:
                 forged=signal();forged['meta'][field]=bad
                 with self.assertRaises(ValueError,msg='BLOCKER_BAD_SIGNAL_TYPE_ACCEPTED'):
                     api.wake_identity(forged)

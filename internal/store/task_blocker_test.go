@@ -158,7 +158,7 @@ func TestBlockerRequestReplayAndRollbackAreAtomic(t *testing.T) {
 	u := BlockerUpdate{RequestID: "stable", ExpectedVersion: state.Version, Operation: "create", Kind: "resource", Where: "resource", ExpectedInput: "real resource"}
 	injected := errors.New("PG final check failed")
 	if _, err := db.UpdateTaskBlocker(ctx, state, BlockerActor{AgentID: "dev"}, "", u, func() error { return injected }, now); !errors.Is(err, injected) {
-		t.Fatal(err)
+		t.Fatal("BLOCKER_FINAL_RECHECK_COMMITTED", err)
 	}
 	for _, table := range []string{"console_task_blocker", "console_task_blocker_outbox", "console_task_blocker_input", "console_task_blocker_request", "console_task_blocker_audit"} {
 		var n int
@@ -181,7 +181,7 @@ func TestBlockerRequestReplayAndRollbackAreAtomic(t *testing.T) {
 	state, _ = db.ConsoleTaskFlowState(ctx, "task")
 	bad := state
 	bad.Version--
-	if _, err = db.UpdateTaskBlocker(ctx, bad, BlockerActor{AgentID: "dev"}, out.Blocker.ID, BlockerUpdate{RequestID: "state-race", ExpectedVersion: out.Blocker.Version, Operation: "begin_recheck", InputVersion: 1}, func() error { return nil }, now); !errors.Is(err, ErrTaskFlowConflict) {
+	if _, err = db.UpdateTaskBlocker(ctx, bad, BlockerActor{AgentID: "dev"}, out.Blocker.ID, BlockerUpdate{RequestID: "state-race", ExpectedVersion: state.Version, Operation: "create", Kind: "technical", Where: "another valid card", ExpectedInput: "evidence"}, func() error { return nil }, now); !errors.Is(err, ErrTaskFlowConflict) {
 		t.Fatal("BLOCKER_INITIAL_STATE_NOT_RECHECKED", err)
 	}
 }
@@ -311,5 +311,111 @@ func TestBlockerDependencyConditionTransitionCreatesOneInput(t *testing.T) {
 	b = blockerRead(t, db, b.ID)
 	if b.InputVersion != 2 {
 		t.Fatal("BLOCKER_NEW_CONDITION_TRANSITION_LOST", b)
+	}
+}
+
+func TestBlockerRecheckRequiresCurrentDeveloperVersionAndLease(t *testing.T) {
+	db, now, _ := taskFlowFixture(t)
+	b := blockerCreate(t, db, now, "card", "waiting", "user:owner-a", false)
+	b = blockerInput(t, db, now, b, "facts")
+	base := BlockerUpdate{RequestID: "reviewer-begin", ExpectedVersion: b.Version, Operation: "begin_recheck", InputVersion: b.InputVersion}
+	if _, err := blockerApply(t, db, now, BlockerActor{AgentID: "review"}, b.ID, base); err == nil {
+		t.Fatal("BLOCKER_REVIEWER_OPENED_DEVELOPER_LEASE")
+	}
+	base.RequestID = "stale-version"
+	base.ExpectedVersion = b.Version - 1
+	if _, err := blockerApply(t, db, now, BlockerActor{AgentID: "dev"}, b.ID, base); !errors.Is(err, ErrTaskFlowConflict) {
+		t.Fatal("BLOCKER_CARD_CAS_BYPASS", err)
+	}
+	base.RequestID = "begin-current"
+	base.ExpectedVersion = b.Version
+	out, err := blockerApply(t, db, now, BlockerActor{AgentID: "dev"}, b.ID, base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b = out.Blocker
+	finish := BlockerUpdate{RequestID: "forged-lease", ExpectedVersion: b.Version, Operation: "finish_recheck", InputVersion: b.InputVersion, LeaseID: "wrong", Checks: []BlockerCheck{{"materials", "pass", "git:material"}, {"environment", "pass", "local:fixture"}, {"authorization", "pass", "owner:recheck-only"}}}
+	if _, err = blockerApply(t, db, now, BlockerActor{AgentID: "dev"}, b.ID, finish); !errors.Is(err, ErrTaskFlowConflict) {
+		t.Fatal("BLOCKER_FORGED_LEASE_ACCEPTED", err)
+	}
+	finish.RequestID = "expired-lease"
+	finish.LeaseID = b.LeaseID
+	if _, err = blockerApply(t, db, now.Add(6*time.Minute), BlockerActor{AgentID: "dev"}, b.ID, finish); !errors.Is(err, ErrTaskFlowConflict) {
+		t.Fatal("BLOCKER_EXPIRED_LEASE_ACCEPTED", err)
+	}
+}
+func TestBlockerOutboxReconciliationRepairsMissingSignalWithoutNewInput(t *testing.T) {
+	db, now, _ := taskFlowFixture(t)
+	ctx := context.Background()
+	b := blockerCreate(t, db, now, "card", "waiting", "user:owner-a", false)
+	b = blockerInput(t, db, now, b, "facts")
+	before, _ := db.PendingBlockerWakes(ctx, "")
+	if len(before) != 1 {
+		t.Fatal(before)
+	}
+	if _, err := db.db.Exec(`DELETE FROM console_task_blocker_outbox WHERE blocker_id=?`, b.ID); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		state, err := db.ConsoleTaskFlowState(ctx, "task")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = db.ReconcileTaskBlockers(ctx, state, func() error { return nil }, now); err != nil {
+			t.Fatal(err)
+		}
+	}
+	after, _ := db.PendingBlockerWakes(ctx, "")
+	if len(after) != 1 || after[0].ID != before[0].ID || after[0].InputVersion != 1 {
+		t.Fatal("BLOCKER_OUTBOX_NOT_REPAIRED_IDEMPOTENTLY", after)
+	}
+}
+
+func TestBlockerOwnerCannotImpersonateResumeAfterResolution(t *testing.T) {
+	db, now, state := taskFlowFixture(t)
+	var err error
+	state, err = flowApply(t, db, now, state, "dev", "start")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := blockerCreate(t, db, now, "card", "waiting", "user:owner-a", false)
+	b = blockerInput(t, db, now, b, "answer")
+	blockerFinish(t, db, now, b, "pass")
+	if err = db.UpdateConsoleTaskProposalPlanAuthorized(context.Background(), "task", "owner-a", false, "delivered", "in_progress", 1, nil, "", func() error { return nil }); !errors.Is(err, ErrTaskFlowPermission) {
+		t.Fatal("BLOCKER_OWNER_IMPERSONATED_RESUME", err)
+	}
+}
+
+func TestBlockerReadOnlySnapshotAndBoundedInputHistory(t *testing.T) {
+	db, now, _ := taskFlowFixture(t)
+	ctx := context.Background()
+	b := blockerCreate(t, db, now, "card", "waiting", "user:owner-a", false)
+	for i := 0; i < 105; i++ {
+		b = blockerInput(t, db, now, b, fmt.Sprintf("event-%d", i))
+	}
+	state, err := db.ConsoleTaskFlowState(ctx, "task")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var before, after int
+	if err = db.db.QueryRow(`SELECT total_changes()`).Scan(&before); err != nil {
+		t.Fatal(err)
+	}
+	cards, inputs, err := db.ReadTaskBlockers(ctx, state, BlockerActor{AgentID: "dev"}, b.ID, "", 2, func() error { return nil })
+	if err != nil || len(cards) != 1 || len(inputs) != 101 || inputs[0].InputVersion != 105 || inputs[100].InputVersion != 5 {
+		t.Fatal("BLOCKER_INPUT_HISTORY_UNBOUNDED_OR_SKIPPED", len(cards), len(inputs), err)
+	}
+	_, older, err := db.ReadTaskBlockers(ctx, state, BlockerActor{AgentID: "dev"}, b.ID, "", 2, func() error { return nil }, 5)
+	if err != nil || len(older) != 4 || older[0].InputVersion != 4 || older[3].InputVersion != 1 {
+		t.Fatal("BLOCKER_INPUT_CONTINUATION_BROKEN", older, err)
+	}
+	if err = db.db.QueryRow(`SELECT total_changes()`).Scan(&after); err != nil {
+		t.Fatal(err)
+	}
+	if after != before {
+		t.Fatal("BLOCKER_GET_WROTE_STATE", before, after)
+	}
+	if _, _, err = db.ReadTaskBlockers(ctx, state, BlockerActor{AgentID: "dev"}, b.ID, "", 102, func() error { return nil }); !errors.Is(err, ErrTaskFlowInvalid) {
+		t.Fatal("BLOCKER_UNBOUNDED_READ_ACCEPTED", err)
 	}
 }

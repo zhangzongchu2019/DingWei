@@ -39,6 +39,8 @@ async function main(){
  let checks=0;const check=(v,msg)=>{assert.ok(v,msg);checks++};
  try{
  await page.goto(base+'/console/specs');await page.locator('.spec-title').click();await page.locator('#spec-review-assist').waitFor({state:'visible'});
+ // Visibility precedes the asynchronous authorized-Agent response; wait for data, then keep the exact count assertion.
+ await page.waitForFunction(()=>document.querySelector('#spec-review-agent').options.length>0);
  check(await page.locator('#spec-review-agent option').count()===1,'R8_AGENT_PICKER_WRONG');
  await page.click('#request-spec-review');await page.waitForFunction(()=>!!specAgentActive);check(await page.locator('#save-spec').isDisabled(),'R8_UI_EDIT_NOT_LOCKED');check(spec.current_revision===1,'R8_REVIEW_CHANGED_REVISION');
  await page.request.post(base+'/fixture/reply');await page.evaluate(()=>loadSpecAgentAssist());await page.waitForFunction(()=>document.querySelectorAll('.review-issue').length===1);

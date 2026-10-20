@@ -631,6 +631,11 @@ func (s *SQLite) ReadTaskBlockers(ctx context.Context, expected TaskFlowState, a
 	if !actor.taskReader(t) {
 		return nil, nil, ErrTaskFlowPermission
 	}
+	var specID, sha string
+	var revision int
+	if err = tx.QueryRowContext(ctx, `SELECT spec_id,revision,content_sha256 FROM console_spec_task WHERE id=?`, t.ID).Scan(&specID, &revision, &sha); err != nil {
+		return nil, nil, err
+	}
 	rows, err := tx.QueryContext(ctx, `SELECT `+blockerCols+` FROM console_task_blocker WHERE task_id=? AND id>? AND (?='' OR id=?) ORDER BY id LIMIT ?`, t.ID, after, bid, bid, limit)
 	if err != nil {
 		return nil, nil, err
@@ -642,7 +647,7 @@ func (s *SQLite) ReadTaskBlockers(ctx context.Context, expected TaskFlowState, a
 			rows.Close()
 			return nil, nil, e
 		}
-		if !blockerCurrent(b, t) && !blockerTerminal(b.State) {
+		if !blockerTerminal(b.State) && (!blockerCurrent(b, t) || b.SpecID != specID || b.Revision != revision || b.SHA != sha) {
 			b.State = "needs_reassignment"
 			b.LeaseID = ""
 			b.LeaseUntil = ""
@@ -762,10 +767,15 @@ func (s *SQLite) ReconcileTaskBlockers(ctx context.Context, t TaskFlowState, rec
 	if err != nil {
 		return err
 	}
+	var specID, sha string
+	var revision int
+	if err = tx.QueryRowContext(ctx, `SELECT spec_id,revision,content_sha256 FROM console_spec_task WHERE id=?`, t.ID).Scan(&specID, &revision, &sha); err != nil {
+		return err
+	}
 	at := now.UTC().Format(time.RFC3339Nano)
 	changed := false
 	for _, b := range cards {
-		if !blockerCurrent(b, t) {
+		if !blockerCurrent(b, t) || b.SpecID != specID || b.Revision != revision || b.SHA != sha {
 			if b.State != "needs_reassignment" {
 				changed = true
 				b.State = "needs_reassignment"
@@ -780,6 +790,9 @@ func (s *SQLite) ReconcileTaskBlockers(ctx context.Context, t TaskFlowState, rec
 					return err
 				}
 			}
+			continue
+		}
+		if b.State == "resolved" {
 			continue
 		}
 		inputChanged, e := blockerDependencyInput(ctx, tx, &b, at)
@@ -828,7 +841,7 @@ func (s *SQLite) ReconcileTaskBlockers(ctx context.Context, t TaskFlowState, rec
 func (s *SQLite) BlockerWakeCurrent(ctx context.Context, w BlockerWake) (bool, error) {
 	var state, dev string
 	var gen, iv, av int
-	err := s.db.QueryRowContext(ctx, `SELECT state,developer_agent_id,generation,input_version,assignment_version FROM console_task_blocker WHERE id=? AND task_id=?`, w.BlockerID, w.TaskID).Scan(&state, &dev, &gen, &iv, &av)
+	err := s.db.QueryRowContext(ctx, `SELECT b.state,b.developer_agent_id,b.generation,b.input_version,b.assignment_version FROM console_task_blocker b JOIN console_spec_task t ON t.id=b.task_id WHERE b.id=? AND b.task_id=? AND b.spec_id=t.spec_id AND b.revision=t.revision AND b.content_sha256=t.content_sha256`, w.BlockerID, w.TaskID).Scan(&state, &dev, &gen, &iv, &av)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}

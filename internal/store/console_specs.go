@@ -1193,6 +1193,15 @@ func (s *SQLite) UpdateConsoleTaskProposalPlanAuthorized(ctx context.Context, pr
 			if err = taskBlockersClear(ctx, tx, proposalID); err != nil {
 				return err
 			}
+			if status != currentState {
+				var enrolled int
+				if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_task_blocker WHERE task_id=?`, proposalID).Scan(&enrolled); err != nil {
+					return err
+				}
+				if enrolled > 0 {
+					return ErrTaskFlowPermission
+				}
+			}
 			rawDeps, _ := json.Marshal(dependsOn)
 			if err = taskDependenciesDone(ctx, tx, string(rawDeps)); err != nil {
 				return err
