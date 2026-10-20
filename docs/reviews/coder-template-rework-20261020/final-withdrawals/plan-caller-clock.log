@@ -1,0 +1,6 @@
+--- FAIL: TestPilotTemplateFullAuthorizationExpiryRechecked (0.10s)
+    --- FAIL: TestPilotTemplateFullAuthorizationExpiryRechecked/caller_clocks (0.10s)
+        pilot_template_test.go:845: TEMPLATE_PLAN_IGNORED_CALLER_CLOCK <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.099s
+FAIL

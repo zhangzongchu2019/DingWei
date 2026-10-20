@@ -1061,7 +1061,7 @@ func (s *SQLite) CreateConsoleTaskProposal(ctx context.Context, proposal model.C
 	if err = tx.QueryRowContext(ctx, `SELECT current_revision FROM console_spec WHERE id=?`, proposal.SpecID).Scan(&templateRev); err != nil {
 		return err
 	}
-	if err = templateSpecGate(ctx, tx, proposal.SpecID, templateRev, time.Now()); err != nil {
+	if err = templateSpecGate(ctx, tx, proposal.SpecID, templateRev, proposal.CreatedAt); err != nil {
 		return err
 	}
 	var templateEnrolled int
@@ -1145,6 +1145,16 @@ func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, 
 	return s.UpdateConsoleTaskProposalPlanAuthorized(ctx, proposalID, principalID, management, content, status, hours, dependsOn, definitionOfDone, nil)
 }
 func (s *SQLite) UpdateConsoleTaskProposalPlanAuthorized(ctx context.Context, proposalID, principalID string, management bool, content, status string, hours float64, dependsOn []string, definitionOfDone string, recheck func() error) error {
+	return s.UpdateConsoleTaskProposalPlanAuthorizedAt(ctx, proposalID, principalID, management, content, status, hours, dependsOn, definitionOfDone, recheck, time.Now())
+}
+
+// UpdateConsoleTaskProposalPlanAt uses the caller's clock for contract expiry
+// and audit. The old entry points remain compatible for legacy callers.
+func (s *SQLite) UpdateConsoleTaskProposalPlanAt(ctx context.Context, proposalID, principalID string, management bool, content, status string, hours float64, dependsOn []string, definitionOfDone string, now time.Time) error {
+	return s.UpdateConsoleTaskProposalPlanAuthorizedAt(ctx, proposalID, principalID, management, content, status, hours, dependsOn, definitionOfDone, nil, now)
+}
+
+func (s *SQLite) UpdateConsoleTaskProposalPlanAuthorizedAt(ctx context.Context, proposalID, principalID string, management bool, content, status string, hours float64, dependsOn []string, definitionOfDone string, recheck func() error, now time.Time) error {
 	if proposalID == "" || hours < 0 {
 		return errors.New("invalid task plan")
 	}
@@ -1241,7 +1251,7 @@ func (s *SQLite) UpdateConsoleTaskProposalPlanAuthorized(ctx context.Context, pr
 		return flowErr
 	}
 	if flowGroup == "" && (status == "in_progress" || status == "done") {
-		if err = templateTaskGate(ctx, tx, proposalID, time.Now()); err != nil {
+		if err = templateTaskGate(ctx, tx, proposalID, now); err != nil {
 			return err
 		}
 	}
@@ -1253,7 +1263,7 @@ func (s *SQLite) UpdateConsoleTaskProposalPlanAuthorized(ctx context.Context, pr
 			return err
 		}
 		if status == "in_progress" || status == "done" {
-			if err = taskBlockersClear(ctx, tx, proposalID); err != nil {
+			if err = taskBlockersClearAt(ctx, tx, proposalID, now); err != nil {
 				return err
 			}
 			if status != currentState {
@@ -1312,7 +1322,7 @@ func (s *SQLite) UpdateConsoleTaskProposalPlanAuthorized(ctx context.Context, pr
 		if err = tx.QueryRowContext(ctx, `SELECT version FROM console_spec_task WHERE id=?`, proposalID).Scan(&version); err != nil {
 			return err
 		}
-		if err = flowAudit(ctx, tx, proposalID, principalID, "owner_plan", version, time.Now()); err != nil {
+		if err = flowAudit(ctx, tx, proposalID, principalID, "owner_plan", version, now); err != nil {
 			return err
 		}
 		if recheck == nil {

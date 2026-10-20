@@ -203,6 +203,25 @@ func templateTaskRolesMatch(ctx context.Context, q taskQuery, task, spec string,
 		var owner string
 		return q.QueryRowContext(ctx, `SELECT owner_principal FROM console_agent WHERE id=?`, agent).Scan(&owner) == nil && principal == "user:"+owner
 	}
+	// The executor can be a human principal whose Agents all match the
+	// accepted role. Preserve independence against the actual completed R8
+	// reviewer, not only against the spelling of the declared executor.
+	var preReviewAgent string
+	if err = q.QueryRowContext(ctx, `SELECT g.agent_id FROM console_spec_agent_gate g
+		JOIN console_spec_agent_request a ON a.id=g.request_id
+		JOIN pilot_template_binding b ON b.spec_id=g.spec_id AND b.revision=g.revision
+		WHERE g.spec_id=? AND g.revision=? AND g.human_confirmed=1
+		AND a.status='completed' AND a.kind='review' AND a.agent_id=g.agent_id
+		AND a.spec_id=g.spec_id AND a.revision=g.revision
+		AND a.snapshot_sha=b.content_sha256`, spec, revision).Scan(&preReviewAgent); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrTaskFlowConflict
+		}
+		return err
+	}
+	if dev == preReviewAgent {
+		return ErrTaskFlowConflict
+	}
 	found := 0
 	for _, entry := range d.Entries {
 		if len(selected) > 0 && !selected[entry.ID] {

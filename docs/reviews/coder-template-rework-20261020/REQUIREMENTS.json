@@ -1,0 +1,32 @@
+[
+  {
+    "request": 1,
+    "status": "author gates passed; leader review/prodops crosscheck pending",
+    "changes": "Three negatives in TestPilotTemplateD3ConfirmsActualDerivedSuccessor require exact ErrTaskFlowConflict: own unrelated revision2, other-owner real derived successor, archived real derived successor. Unrelated uses actual create/append. Foreign case deliberately changes only owner projection of a genuine derived successor to isolate the owner guard; it does not claim a public API can transfer original ownership. Archive uses actual API. Rejected cases assert no successor link, followed by valid derived/current revision2 positive."
+  },
+  {
+    "request": 2,
+    "status": "author gates passed; leader review/prodops crosscheck pending",
+    "changes": "TestPilotTemplateFullAuthorizationExpiryRechecked/finalize and /start complete full template confirmation and R8 review with live authorization, advance only operation clock past expiry, require ErrConsoleSpecGate, then perform live-clock positive. R9 start also checks no version/request write after refusal. Two independent withdrawal invocations target the common revalidation and must reach the respective operation assertion."
+  },
+  {
+    "request": 3,
+    "status": "author gates passed; leader review/prodops crosscheck pending",
+    "changes": "templateTaskRolesMatch loads completed/human-confirmed same-spec/revision R8 reviewer through bound request+SHA in the same SQLite transaction. Developer ID equal that reviewer is ErrTaskFlowConflict. Applies to assignment, candidate confirmation and start/resume/complete. Single/multi tests isolate same-human executor vs actual Agent, valid different owned developer, unknown developer refusal and old bad assignment start refusal. No different-owner requirement introduced."
+  },
+  {
+    "request": 4,
+    "status": "author gates passed; leader review/prodops crosscheck pending",
+    "changes": "Manual proposal check uses caller-stamped proposal.CreatedAt. At plan APIs take now from Hub h.now(), also used by audit; R9 and plan blocked-entry gate pass operation time via taskBlockersClearAt. Existing public wrappers preserve real-clock source compatibility. Expired caller clock checked for create/plan as distinct subtest to avoid masking the actual start withdrawal."
+  },
+  {
+    "request": 5,
+    "status": "author gates passed; leader review/prodops crosscheck pending",
+    "changes": "PM header visibly states 「未评估」不等于「无风险」; full-mode detail retains same meaning. Production/security still force full mode. Actual production HTML is browser tested."
+  },
+  {
+    "request": 6,
+    "status": "documented",
+    "changes": "Implemented design distinguishes template-confirmed successor impact records from legacy derive of enrolled final specs: legacy derive keeps enrollment but writes no impact record. No claim this old path blocks old-task impacts."
+  }
+]

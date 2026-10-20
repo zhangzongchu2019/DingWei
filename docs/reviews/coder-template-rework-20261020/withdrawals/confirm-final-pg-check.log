@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateConfirmRollbackAndIdempotence (0.09s)
+    pilot_template_test.go:565: TEMPLATE_CONFIRM_REVOKE_IGNORED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.095s
+FAIL

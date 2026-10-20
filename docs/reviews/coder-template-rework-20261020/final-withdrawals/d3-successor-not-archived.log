@@ -1,0 +1,7 @@
+--- FAIL: TestPilotTemplateD3ConfirmsActualDerivedSuccessor (0.10s)
+    --- FAIL: TestPilotTemplateD3ConfirmsActualDerivedSuccessor/archived (0.00s)
+        pilot_template_test.go:433: TEMPLATE_D3_INVALID_SUCCESSOR_ACCEPTED_archived: <nil>
+    pilot_template_test.go:446: TEMPLATE_D3_REAL_SUCCESSOR_DEADLOCK task version or state conflict
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.100s
+FAIL

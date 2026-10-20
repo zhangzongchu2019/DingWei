@@ -44,8 +44,19 @@ case('bounded-invitation-summary',M,'v.Document = store.TemplateDocument{Title: 
 # A real PG lock schedule, rather than sleep-and-assume concurrency evidence.
 case('pg-current-actor-row-lock','internal/identity/project_context.go','FROM np_agent WHERE id=$1 FOR SHARE','FROM np_agent WHERE id=$1','TestPilotTemplatePGCurrentPrincipalAndRoleLocks','TEMPLATE_PG_AUTH_LOCK_NOT_HELD','./internal/identity')
 
+# D1 review rework: isolate each formerly surviving guard.
+case('d3-derived-lineage-required','internal/store/pilot_question.go','derived != q.SpecID','false','TestPilotTemplateD3ConfirmsActualDerivedSuccessor','TEMPLATE_D3_INVALID_SUCCESSOR_ACCEPTED_unrelated')
+case('d3-successor-owner-required','internal/store/pilot_question.go','owner != c.Owner || archived','false || archived','TestPilotTemplateD3ConfirmsActualDerivedSuccessor','TEMPLATE_D3_INVALID_SUCCESSOR_ACCEPTED_foreign')
+case('d3-successor-not-archived','internal/store/pilot_question.go','owner != c.Owner || archived','owner != c.Owner || false','TestPilotTemplateD3ConfirmsActualDerivedSuccessor','TEMPLATE_D3_INVALID_SUCCESSOR_ACCEPTED_archived')
+case('full-expiry-rechecked-finalize',G,'len(templateValidate(d, source, now)) != 0','false','TestPilotTemplateFullAuthorizationExpiryRechecked/finalize','TEMPLATE_EXPIRED_AUTH_FINALIZED')
+case('full-expiry-rechecked-start',G,'len(templateValidate(d, source, now)) != 0','false','TestPilotTemplateFullAuthorizationExpiryRechecked/start','TEMPLATE_EXPIRED_AUTH_STARTED')
+case('human-executor-vs-completed-prereview',G,'if dev == preReviewAgent {','if false {','TestPilotTemplateHumanExecutorCannotReuseCompletedPreReviewAgent','TEMPLATE_HUMAN_EXECUTOR_REUSES_PREREVIEW_AGENT')
+case('proposal-caller-clock','internal/store/console_specs.go','templateSpecGate(ctx, tx, proposal.SpecID, templateRev, proposal.CreatedAt)','templateSpecGate(ctx, tx, proposal.SpecID, templateRev, time.Now())','TestPilotTemplateFullAuthorizationExpiryRechecked/caller_clocks','TEMPLATE_PROPOSAL_IGNORED_CALLER_CLOCK')
+case('plan-caller-clock','internal/store/console_specs.go','taskBlockersClearAt(ctx, tx, proposalID, now)','taskBlockersClear(ctx, tx, proposalID)','TestPilotTemplateFullAuthorizationExpiryRechecked/caller_clocks','TEMPLATE_PLAN_IGNORED_CALLER_CLOCK')
+case('r9-start-caller-clock','internal/store/console_task_flow.go','taskBlockersClearAt(ctx, tx, id, at)','taskBlockersClear(ctx, tx, id)','TestPilotTemplateFullAuthorizationExpiryRechecked/start','TEMPLATE_EXPIRED_AUTH_STARTED')
+
 def run(args):
- commit=subprocess.check_output(['git','rev-parse',args.commit+'^{commit}'],cwd=ROOT,text=True).strip();out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True)
+ commit=subprocess.check_output(['git','rev-parse',args.commit+'^{tree}'],cwd=ROOT,text=True).strip();out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True)
  chosen=[c for c in CASES if not args.only or c['name'] in args.only]
  if args.only and set(args.only)-{c['name'] for c in CASES}:raise ValueError('unknown case')
  archive=subprocess.check_output(['git','archive',commit],cwd=ROOT)

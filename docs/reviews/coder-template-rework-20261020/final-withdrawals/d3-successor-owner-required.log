@@ -1,0 +1,9 @@
+--- FAIL: TestPilotTemplateD3ConfirmsActualDerivedSuccessor (0.11s)
+    --- FAIL: TestPilotTemplateD3ConfirmsActualDerivedSuccessor/foreign (0.00s)
+        pilot_template_test.go:433: TEMPLATE_D3_INVALID_SUCCESSOR_ACCEPTED_foreign: <nil>
+    --- FAIL: TestPilotTemplateD3ConfirmsActualDerivedSuccessor/archived (0.00s)
+        pilot_template_test.go:437: TEMPLATE_D3_REJECTED_SUCCESSOR_WROTE_LINK tpspec:930feafd94f5b6cff386c8e12b2a4ae67ecf8b51bf363b231cceec20aad30246 <nil>
+    pilot_template_test.go:446: TEMPLATE_D3_REAL_SUCCESSOR_DEADLOCK task version or state conflict
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.116s
+FAIL

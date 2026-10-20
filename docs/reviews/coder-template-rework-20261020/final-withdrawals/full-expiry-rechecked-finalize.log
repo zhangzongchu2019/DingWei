@@ -1,0 +1,6 @@
+--- FAIL: TestPilotTemplateFullAuthorizationExpiryRechecked (0.10s)
+    --- FAIL: TestPilotTemplateFullAuthorizationExpiryRechecked/finalize (0.10s)
+        pilot_template_test.go:817: TEMPLATE_EXPIRED_AUTH_FINALIZED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.099s
+FAIL

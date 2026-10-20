@@ -62,7 +62,7 @@ func templateConfirm(t *testing.T, s *SQLite, now time.Time, v TemplateView, sna
 	}
 	return out
 }
-func templateReviewFinal(t *testing.T, s *SQLite, now time.Time, v TemplateView) {
+func templateReviewReady(t *testing.T, s *SQLite, now time.Time, v TemplateView) {
 	t.Helper()
 	ctx := context.Background()
 	rev, e := s.ConsoleSpecRevision(ctx, "owner-a", v.SpecID, v.SpecRevision, false)
@@ -88,7 +88,11 @@ func templateReviewFinal(t *testing.T, s *SQLite, now time.Time, v TemplateView)
 	if e = s.SaveConsoleSpecGateReview(ctx, v.SpecID, "owner-a", *gate, now); e != nil {
 		t.Fatal(e)
 	}
-	if e = s.FinalizeConsoleSpec(ctx, v.SpecID, "owner-a", now); e != nil {
+}
+func templateReviewFinal(t *testing.T, s *SQLite, now time.Time, v TemplateView) {
+	t.Helper()
+	templateReviewReady(t, s, now, v)
+	if e := s.FinalizeConsoleSpec(context.Background(), v.SpecID, "owner-a", now); e != nil {
 		t.Fatal("TEMPLATE_ACTUAL_SPEC_REVIEW_MUST_FINALIZE", e)
 	}
 }
@@ -401,6 +405,39 @@ func TestPilotTemplateD3ConfirmsActualDerivedSuccessor(t *testing.T) {
 	if _, err = s.UpdateQuestion(ctx, c, actor, q.ID, u, func() error { return nil }, now); err == nil {
 		t.Fatal("TEMPLATE_D3_UNCHANGED_DERIVED_COPY_ACCEPTED")
 	}
+	createSpec(t, s, "unrelated-v2", "unrelated owned spec", now)
+	if _, err = s.AppendConsoleSpecRevision(ctx, "owner-a", "unrelated-v2", 1, specRevision("unrelated-v2", 2, "actual unrelated change"), now); err != nil {
+		t.Fatal(err)
+	}
+	for _, negative := range []string{"unrelated", "foreign", "archived"} {
+		t.Run(negative, func(t *testing.T) {
+			u.RequestID = "reject-" + negative
+			u.NewSpecID, u.NewRevision = nv.SpecID, 2
+			switch negative {
+			case "unrelated":
+				u.NewSpecID = "unrelated-v2"
+			case "foreign":
+				// Keep the actual derived spec, revision and SHA; alter only
+				// the ownership projection to isolate the owner guard.
+				if _, e := s.db.Exec(`UPDATE console_spec SET principal_id='owner-b' WHERE id=?`, nv.SpecID); e != nil {
+					t.Fatal(e)
+				}
+				defer s.db.Exec(`UPDATE console_spec SET principal_id='owner-a' WHERE id=?`, nv.SpecID)
+			case "archived":
+				if e := s.ArchiveConsoleSpec(ctx, nv.SpecID, "owner-a", now); e != nil {
+					t.Fatal(e)
+				}
+				defer s.SetConsoleSpecsArchived(ctx, []string{nv.SpecID}, "owner-a", false, false, now)
+			}
+			if _, e := s.UpdateQuestion(ctx, c, actor, q.ID, u, func() error { return nil }, now); !errors.Is(e, ErrTaskFlowConflict) {
+				t.Fatalf("TEMPLATE_D3_INVALID_SUCCESSOR_ACCEPTED_%s: %v", negative, e)
+			}
+			var target string
+			if e := s.db.QueryRow(`SELECT COALESCE(new_spec_id,'') FROM pilot_question_change WHERE id=?`, cid).Scan(&target); e != nil || target != "" {
+				t.Fatal("TEMPLATE_D3_REJECTED_SUCCESSOR_WROTE_LINK", target, e)
+			}
+		})
+	}
 	u.RequestID = "decide-real"
 	u.NewSpecID = nv.SpecID
 	u.NewRevision = 2
@@ -423,7 +460,12 @@ func TestPilotTemplateTaskAssignmentAndImpactGuard(t *testing.T) {
 	if e := s.CreateConsoleTaskProposal(ctx, p, "owner-a", false); e != nil {
 		t.Fatal(e)
 	}
-	if _, e := s.AssignConsoleTaskFlow(ctx, p.ID, "owner-a", "group", "review", "dev", 1, func() error { return nil }, now); e == nil {
+	// Keep the wrong executor distinct from the completed R8 reviewer, so
+	// the role-matching withdrawal cannot be masked by independence.
+	if e := s.UpsertConsoleAgent(ctx, model.ConsoleAgent{ID: "other", KeyID: "key-other", SessionName: "other", OwnerPrincipal: "owner-a", Active: true}); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := s.AssignConsoleTaskFlow(ctx, p.ID, "owner-a", "group", "other", "review", 1, func() error { return nil }, now); e == nil {
 		t.Fatal("TEMPLATE_TASK_PAIR_DIFFERS_FROM_ACCEPTED_ROLES")
 	}
 	state, e := s.AssignConsoleTaskFlow(ctx, p.ID, "owner-a", "group", "dev", "review", 1, func() error { return nil }, now)
@@ -623,11 +665,7 @@ func TestPilotTemplateMigrationAtomicRollbackAndReapply(t *testing.T) {
 }
 func TestPilotTemplateFullRequiresScopedHumanReceipt(t *testing.T) {
 	s, now, d, snap := templateFixture(t)
-	d.Production = true
-	d.Full = TemplateFull{Attributes: map[string]string{"外部契约变更": "兼容新增", "数据模型变更": "加列加表", "影响范围": "单模块", "在产影响": "灰度可回滚", "回滚成本": "重启即回滚", "安全面": "否", "预估节点数": "1"}, RuleVersion: "SpecDoc-v3.77", RuleIDs: []string{"G1"}, ContentFaces: map[string]string{}, AuthorizationReference: "owner:scope1", AuthorizationScope: "fixture-only action1", AuthorizationPurpose: "verify bounded fixture", AuthorizationExpiresAt: now.Add(time.Hour).Format(time.RFC3339), ReviewPrincipal: "user:owner-a", ReviewReference: "git:human-review", AnalyzeReference: "git:analyze", DeliverableContractReference: "git:contract", ProbesReference: "git:probes"}
-	for _, k := range []string{"system_integration", "runtime_constraints", "estimates_with_basis_and_recheck", "environment", "design_constraints", "input_sources"} {
-		d.Full.ContentFaces[k] = "bounded fixture; basis=local; recheck=before action"
-	}
+	d = templateFullDocument(d, now)
 	v := templateSave(t, s, now, d, snap, "full")
 	ref, _ := s.TemplateReferences(context.Background(), v.ID)
 	u := TemplateOperation{RequestID: "human", ExpectedVersion: 1, PlanSHA: v.PlanSHA, EntryIDs: []string{"__full__"}, Role: "full_review", Decision: "accepted", Reason: "actual scoped review"}
@@ -748,5 +786,138 @@ func TestPilotTemplateSingleHumanMayUseDifferentCaseReviewAgents(t *testing.T) {
 	}
 	if _, err := s.AssignConsoleTaskFlow(ctx, p.ID, "owner-a", "group", "dev", "review-two", 1, func() error { return nil }, now); err != nil {
 		t.Fatal("TEMPLATE_CASE_REVIEWER_CANNOT_DIFFER_FROM_SPEC_REVIEWER", err)
+	}
+}
+
+func templateFullDocument(d TemplateDocument, now time.Time) TemplateDocument {
+	d.Production = true
+	d.Full = TemplateFull{Attributes: map[string]string{"外部契约变更": "兼容新增", "数据模型变更": "加列加表", "影响范围": "单模块", "在产影响": "灰度可回滚", "回滚成本": "重启即回滚", "安全面": "否", "预估节点数": "1"}, RuleVersion: "SpecDoc-v3.77", RuleIDs: []string{"G1"}, ContentFaces: map[string]string{}, AuthorizationReference: "owner:scope1", AuthorizationScope: "fixture-only action1", AuthorizationPurpose: "verify bounded fixture", AuthorizationExpiresAt: now.Add(time.Hour).Format(time.RFC3339), ReviewPrincipal: "user:owner-a", ReviewReference: "git:human-review", AnalyzeReference: "git:analyze", DeliverableContractReference: "git:contract", ProbesReference: "git:probes"}
+	for _, k := range []string{"system_integration", "runtime_constraints", "estimates_with_basis_and_recheck", "environment", "design_constraints", "input_sources"} {
+		d.Full.ContentFaces[k] = "bounded fixture; basis=local; recheck=before action"
+	}
+	return d
+}
+
+// Use the real finalize / R9 start operations after a confirmed full contract.
+// No process-clock, sleep, stored expiry or product guard is changed by tests.
+func TestPilotTemplateFullAuthorizationExpiryRechecked(t *testing.T) {
+	for _, operation := range []string{"finalize", "start", "caller_clocks"} {
+		t.Run(operation, func(t *testing.T) {
+			s, now, d, snap := templateFixture(t)
+			ctx := context.Background()
+			d = templateFullDocument(d, now)
+			v := templateConfirm(t, s, now, templateAcceptAll(t, s, now, templateSave(t, s, now, d, snap, "full"), snap), snap)
+			expiry, err := time.Parse(time.RFC3339, d.Full.AuthorizationExpiresAt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			templateReviewReady(t, s, now, v)
+			if operation == "finalize" {
+				if e := s.FinalizeConsoleSpec(ctx, v.SpecID, "owner-a", expiry.Add(time.Second)); !errors.Is(e, ErrConsoleSpecGate) {
+					t.Fatal("TEMPLATE_EXPIRED_AUTH_FINALIZED", e)
+				}
+				// A live authorization is the positive control, using the same DB.
+				if e := s.FinalizeConsoleSpec(ctx, v.SpecID, "owner-a", now); e != nil {
+					t.Fatal(e)
+				}
+				return
+			}
+			if e := s.FinalizeConsoleSpec(ctx, v.SpecID, "owner-a", now); e != nil {
+				t.Fatal(e)
+			}
+			p := model.ConsoleTaskProposal{ID: "expiry-task", SpecID: v.SpecID, Title: "bounded", TaskContent: "R1 only", Status: "planned", DependsOnJSON: `[]`, CreatedAt: now, ReviewedBy: "owner-a"}
+			if operation == "caller_clocks" {
+				p.CreatedAt = expiry.Add(time.Second)
+				if e := s.CreateConsoleTaskProposal(ctx, p, "owner-a", false); !errors.Is(e, ErrConsoleSpecGate) {
+					t.Fatal("TEMPLATE_PROPOSAL_IGNORED_CALLER_CLOCK", e)
+				}
+				p.CreatedAt = now
+			}
+			if e := s.CreateConsoleTaskProposal(ctx, p, "owner-a", false); e != nil {
+				t.Fatal(e)
+			}
+			state, e := s.AssignConsoleTaskFlow(ctx, p.ID, "owner-a", "group", "dev", "review", 1, func() error { return nil }, now)
+			if e != nil {
+				t.Fatal(e)
+			}
+			if operation == "caller_clocks" {
+				if e = s.UpdateConsoleTaskProposalPlanAuthorizedAt(ctx, p.ID, "owner-a", false, "R1 only", "in_progress", 0, nil, "", func() error { return nil }, expiry.Add(time.Second)); !errors.Is(e, ErrConsoleSpecGate) {
+					t.Fatal("TEMPLATE_PLAN_IGNORED_CALLER_CLOCK", e)
+				}
+				if e = s.UpdateConsoleTaskProposalPlanAuthorizedAt(ctx, p.ID, "owner-a", false, "R1 only", "in_progress", 0, nil, "", func() error { return nil }, now); e != nil {
+					t.Fatal("TEMPLATE_PLAN_LIVE_CLOCK_REJECTED", e)
+				}
+				return
+			}
+			u := TaskFlowUpdate{RequestID: "expired-start", ExpectedVersion: state.Version, Operation: "start"}
+			if _, e = s.UpdateConsoleTaskFlow(ctx, p.ID, "dev", u, func() error { return nil }, expiry.Add(time.Second)); !errors.Is(e, ErrConsoleSpecGate) {
+				t.Fatal("TEMPLATE_EXPIRED_AUTH_STARTED", e)
+			}
+			after, e := s.ConsoleTaskFlowState(ctx, p.ID)
+			if e != nil || after.Version != state.Version {
+				t.Fatal("TEMPLATE_EXPIRED_AUTH_CHANGED_TASK", e)
+			}
+			var count int
+			if e = s.db.QueryRow(`SELECT count(*) FROM console_task_flow_request WHERE request_id=?`, u.RequestID).Scan(&count); e != nil || count != 0 {
+				t.Fatal("TEMPLATE_EXPIRED_AUTH_STORED_REQUEST", count, e)
+			}
+			u.RequestID = "live-start"
+			if _, e = s.UpdateConsoleTaskFlow(ctx, p.ID, "dev", u, func() error { return nil }, now); e != nil {
+				t.Fatal("TEMPLATE_LIVE_AUTH_CANNOT_START", e)
+			}
+		})
+	}
+}
+
+func TestPilotTemplateHumanExecutorCannotReuseCompletedPreReviewAgent(t *testing.T) {
+	for _, mode := range []string{"single", "multi"} {
+		t.Run(mode, func(t *testing.T) {
+			s, now, d, snap := templateFixture(t)
+			ctx := context.Background()
+			d.TeamMode = mode
+			d.Defaults.Executor = "user:owner-a"
+			d.Defaults.Reviewer = "agent:dev"
+			d.Entries = append(d.Entries, TemplateEntry{ID: "R2", Kind: "requirement", Title: "second bounded case", OwnerRef: "R1", Fields: TemplateFields{Reviewer: "agent:review"}})
+			v := templateConfirm(t, s, now, templateAcceptAll(t, s, now, templateSave(t, s, now, d, snap, "human-executor"), snap), snap)
+			// R8 pre-review is review (accepted reviewer of R2); the later
+			// R1 task reviewer is dev. R9's same-Agent gate does not mask
+			// the prohibition against developing one's completed pre-review.
+			templateReviewFinal(t, s, now, v)
+			p := model.ConsoleTaskProposal{ID: "human-task", SpecID: v.SpecID, Title: "bounded", TaskContent: "R1", Status: "planned", DependsOnJSON: `[]`, CreatedAt: now, ReviewedBy: "owner-a"}
+			if e := s.CreateConsoleTaskProposal(ctx, p, "owner-a", false); e != nil {
+				t.Fatal(e)
+			}
+			if e := s.SetConsoleSpecTaskAcceptances(ctx, p.ID, "owner-a", []string{"R1"}); e != nil {
+				t.Fatal(e)
+			}
+			if _, e := s.AssignConsoleTaskFlow(ctx, p.ID, "owner-a", "group", "review", "dev", 1, func() error { return nil }, now); !errors.Is(e, ErrTaskFlowConflict) {
+				t.Fatal("TEMPLATE_HUMAN_EXECUTOR_REUSES_PREREVIEW_AGENT", e)
+			}
+			if _, e := s.AssignConsoleTaskFlow(ctx, p.ID, "owner-a", "group", "other", "dev", 1, func() error { return nil }, now); !errors.Is(e, ErrTaskFlowConflict) {
+				t.Fatal("TEMPLATE_UNOWNED_EXECUTOR_ACCEPTED", e)
+			}
+			if e := s.UpsertConsoleAgent(ctx, model.ConsoleAgent{ID: "dev-two", KeyID: "key-dev-two", SessionName: "dev-two", OwnerPrincipal: "owner-a", Active: true}); e != nil {
+				t.Fatal(e)
+			}
+			state, e := s.AssignConsoleTaskFlow(ctx, p.ID, "owner-a", "group", "dev-two", "dev", 1, func() error { return nil }, now)
+			if e != nil {
+				t.Fatal("TEMPLATE_HUMAN_DISTINCT_OWNED_EXECUTOR_REJECTED", e)
+			}
+			// Existing bad assignments from before the fix also cannot start.
+			if _, e = s.db.Exec(`UPDATE console_spec_task SET developer_agent_id='review' WHERE id=?`, p.ID); e != nil {
+				t.Fatal(e)
+			}
+			u := TaskFlowUpdate{RequestID: "old-bad-assignment", ExpectedVersion: state.Version, Operation: "start"}
+			if _, e = s.UpdateConsoleTaskFlow(ctx, p.ID, "review", u, func() error { return nil }, now); !errors.Is(e, ErrTaskFlowConflict) {
+				t.Fatal("TEMPLATE_EXISTING_BAD_PREREVIEW_ASSIGNMENT_STARTED", e)
+			}
+			if _, e = s.db.Exec(`UPDATE console_spec_task SET developer_agent_id='dev-two' WHERE id=?`, p.ID); e != nil {
+				t.Fatal(e)
+			}
+			u.RequestID = "distinct-start"
+			if _, e = s.UpdateConsoleTaskFlow(ctx, p.ID, "dev-two", u, func() error { return nil }, now); e != nil {
+				t.Fatal("TEMPLATE_DISTINCT_OWNED_EXECUTOR_CANNOT_START", e)
+			}
+		})
 	}
 }

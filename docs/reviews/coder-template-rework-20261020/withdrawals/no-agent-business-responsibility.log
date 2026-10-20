@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateMissingReviewOrAgentSignoffRejected (0.08s)
+    pilot_template_test.go:554: TEMPLATE_INDEPENDENT_REVIEW_OR_HUMAN_SIGNOFF_BYPASSED agent_signoff
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.088s
+FAIL

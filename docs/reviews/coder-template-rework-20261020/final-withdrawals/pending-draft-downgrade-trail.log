@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplatePendingFullCannotSilentlyDowngrade (0.08s)
+    pilot_template_test.go:746: TEMPLATE_PENDING_FULL_SILENTLY_DOWNGRADED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.087s
+FAIL

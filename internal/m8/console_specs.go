@@ -599,7 +599,13 @@ func (h *Hub) HandleConsoleTaskProposalPlan(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "invalid task plan", 400)
 		return
 	}
+	now := h.now()
 	update := func(ctx context.Context) error {
+		if timed, ok := repo.(interface {
+			UpdateConsoleTaskProposalPlanAt(context.Context, string, string, bool, string, string, float64, []string, string, time.Time) error
+		}); ok {
+			return timed.UpdateConsoleTaskProposalPlanAt(ctx, r.PathValue("proposalID"), platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement, req.Content, req.Status, req.EstimatedHours, req.DependsOn, strings.TrimSpace(req.DefinitionOfDone), now)
+		}
 		return repo.UpdateConsoleTaskProposalPlan(ctx, r.PathValue("proposalID"), platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement, req.Content, req.Status, req.EstimatedHours, req.DependsOn, strings.TrimSpace(req.DefinitionOfDone))
 	}
 	var updateErr error
@@ -610,14 +616,14 @@ func (h *Hub) HandleConsoleTaskProposalPlan(w http.ResponseWriter, r *http.Reque
 				return
 			}
 			authorized, ok := h.Repo.(interface {
-				UpdateConsoleTaskProposalPlanAuthorized(context.Context, string, string, bool, string, string, float64, []string, string, func() error) error
+				UpdateConsoleTaskProposalPlanAuthorizedAt(context.Context, string, string, bool, string, string, float64, []string, string, func() error, time.Time) error
 			})
 			if !ok {
 				taskError(w, store.ErrTaskFlowPermission)
 				return
 			}
 			updateErr = h.withTaskIdentity(r.Context(), state, func(_ []identity.Agent, check func() error) error {
-				return authorized.UpdateConsoleTaskProposalPlanAuthorized(r.Context(), state.ID, platformPrincipal(r), false, req.Content, req.Status, req.EstimatedHours, req.DependsOn, strings.TrimSpace(req.DefinitionOfDone), check)
+				return authorized.UpdateConsoleTaskProposalPlanAuthorizedAt(r.Context(), state.ID, platformPrincipal(r), false, req.Content, req.Status, req.EstimatedHours, req.DependsOn, strings.TrimSpace(req.DefinitionOfDone), check, now)
 			})
 		} else {
 			updateErr = update(r.Context())

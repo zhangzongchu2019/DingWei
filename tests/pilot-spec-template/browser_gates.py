@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 SUITES=['pilot-spec-template-browser-regression.js','console-specs-browser-regression.js','pilot-feedback-browser-regression.js','pilot-blocker-wake-browser-regression.js','r32-spec-review-browser-regression.js','r32-task-flow-browser-regression.js','r31-hosted-nodes-browser-regression.js','console-browser-regression.js','console-agent-mgmt-enroll-regression.js','console-agent-groups-vega-regression.js','console-task-board-regression.js']
 def run(args):
- sha=subprocess.check_output(['git','rev-parse',args.commit+'^{commit}'],cwd=ROOT,text=True).strip();out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True)
+ sha=subprocess.check_output(['git','rev-parse',args.commit+'^{tree}'],cwd=ROOT,text=True).strip();out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True)
  with tempfile.TemporaryDirectory(prefix='pilot-template-browser-') as temp:
   root=Path(temp)/'source';root.mkdir();home=Path(temp)/'home';home.mkdir(mode=0o700);(home/'.embedded-postgres-go').symlink_to('/home/dev/.embedded-postgres-go',target_is_directory=True)
   archive=subprocess.check_output(['git','archive',sha],cwd=ROOT)

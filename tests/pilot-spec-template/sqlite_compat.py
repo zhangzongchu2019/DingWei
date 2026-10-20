@@ -33,7 +33,7 @@ func TestPilotTemplateCompatibilityRead(t *testing.T){
 
 def run(args):
  out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True);results=[]
- args.commit=subprocess.check_output(['git','-C',str(ROOT),'rev-parse',args.commit+'^{commit}'],text=True).strip()
+ args.commit=subprocess.check_output(['git','-C',str(ROOT),'rev-parse',args.commit+'^{tree}'],text=True).strip()
  with tempfile.TemporaryDirectory(prefix='blocker-sqlite-compat-') as temp:
   home=Path(temp)/'home';home.mkdir(mode=0o700)
   env={'HOME':str(home),'PATH':'/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin','LANG':'C.UTF-8','TZ':'UTC','GOCACHE':'/home/dev/.cache/go-build','GOMODCACHE':'/home/dev/go/pkg/mod','GOPATH':'/home/dev/go','GOPROXY':'off','GOSUMDB':'off','PILOT_COMPAT_DB':str(Path(temp)/'compat.sqlite')}

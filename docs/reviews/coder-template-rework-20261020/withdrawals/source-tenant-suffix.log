@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateSourceProvenanceDedupeAndSSRF (0.08s)
+    pilot_template_test.go:197: TEMPLATE_SSRF_SOURCE_ACCEPTED https://127.0.0.1/docx/Doc
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.087s
+FAIL

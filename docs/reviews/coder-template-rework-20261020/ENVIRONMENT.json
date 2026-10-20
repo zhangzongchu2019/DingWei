@@ -1,0 +1,18 @@
+{
+  "utc": "2026-10-20T21:53:35.504333+00:00",
+  "host": "VM-4-12-ubuntu",
+  "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+  "uid": 1001,
+  "gid": 1001,
+  "umask": "0o22",
+  "cores": 16,
+  "go": "go version go1.22.2 linux/amd64",
+  "python_runner": "Python 3.12.3",
+  "locked_helper_python": "Python 3.12.3",
+  "git": "git version 2.43.0",
+  "scope": "Local Git exports, disposable SQLite/embedded PG and loopback browser only; no seats or production hosts",
+  "gates_environment": "cleared; isolated HOME; existing locked venv; no DSN; offline modules; embedded PG binary cache only",
+  "input_object_type": "tree",
+  "input_tree": "b85f7fd6c86f91d9d1a508f948d462b5d7c74a70",
+  "gate_field_note": "Legacy runner receipt commit field is the resolved tree ID"
+}

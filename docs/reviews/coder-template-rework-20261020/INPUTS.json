@@ -1,0 +1,52 @@
+{
+  "baseline_commit": "bc5d6257cf2d48c82f47ff6894afe6c14113b180",
+  "final_input_tree": "b85f7fd6c86f91d9d1a508f948d462b5d7c74a70",
+  "earlier_input_tree": "e362f42b8b2c348711328fd6701290e7b9efaf91",
+  "final_input_tag": "refs/tags/evidence/coder/template-rework-final-b85f7fd6",
+  "earlier_input_tag": "refs/tags/evidence/coder/template-rework-input-e362f42b",
+  "previous_full_helper_readout": "779 tests rc0, author evidence in baseline docs/reviews/coder-pilot-spec-template-impl; reused only under byte equivalence below",
+  "unchanged": {
+    "tools/sessionhelper": {
+      "baseline_blob_or_tree": "51c0cd47a652d2b29c28cf3903937585d3a0bb87",
+      "final_blob_or_tree": "51c0cd47a652d2b29c28cf3903937585d3a0bb87",
+      "equal": true
+    },
+    "go.mod": {
+      "baseline_blob_or_tree": "0896be6fba935292731d1d375250af3445689bc9",
+      "final_blob_or_tree": "0896be6fba935292731d1d375250af3445689bc9",
+      "equal": true
+    },
+    "go.sum": {
+      "baseline_blob_or_tree": "c0f593fbabbd673b22d93b1108eae84c307a5137",
+      "final_blob_or_tree": "c0f593fbabbd673b22d93b1108eae84c307a5137",
+      "equal": true
+    },
+    "internal/store/migrations": {
+      "baseline_blob_or_tree": "adc0680d1a49e9596d3795f91a47cf6b60034ec8",
+      "final_blob_or_tree": "adc0680d1a49e9596d3795f91a47cf6b60034ec8",
+      "equal": true
+    },
+    "tools/pgtest": {
+      "baseline_blob_or_tree": "564bc90652d3dfbffcd462a7949afacd89cf187f",
+      "final_blob_or_tree": "564bc90652d3dfbffcd462a7949afacd89cf187f",
+      "equal": true
+    },
+    "internal/consolemux": {
+      "baseline_blob_or_tree": "ec4be32aebfe756786f20b19a1e68fc687af05b2",
+      "final_blob_or_tree": "ec4be32aebfe756786f20b19a1e68fc687af05b2",
+      "equal": true
+    },
+    "internal/repo": {
+      "baseline_blob_or_tree": "dae2625df5cece730322367183fa4363db18ba6a",
+      "final_blob_or_tree": "dae2625df5cece730322367183fa4363db18ba6a",
+      "equal": true
+    }
+  },
+  "runtime_lock_candidates": [
+    {
+      "path": "tools/sessionhelper/requirements-runtime.lock",
+      "sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+    }
+  ],
+  "early_to_final_diff": " internal/m8/pilot_template_page.go                     | 2 +-\n internal/store/pilot_template_test.go                  | 7 ++++++-\n view-service/pilot-spec-template-browser-regression.js | 2 +-\n 3 files changed, 8 insertions(+), 3 deletions(-)\n"
+}

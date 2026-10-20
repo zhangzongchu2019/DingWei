@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateConsentCannotAttachIncompleteContract (0.09s)
+    pilot_template_test.go:528: TEMPLATE_INCOMPLETE_CONTRACT_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.090s
+FAIL

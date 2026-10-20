@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateD3ConfirmsActualDerivedSuccessor (0.10s)
+    pilot_template_test.go:406: TEMPLATE_D3_UNCHANGED_DERIVED_COPY_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.101s
+FAIL

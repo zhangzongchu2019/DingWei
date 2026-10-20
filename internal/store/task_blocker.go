@@ -165,7 +165,10 @@ func blockerConditions(input []BlockerCondition) ([]BlockerCondition, error) {
 	return out, nil
 }
 func taskBlockersClear(ctx context.Context, q taskQuery, id string) error {
-	if err := templateTaskGate(ctx, q, id, time.Now()); err != nil {
+	return taskBlockersClearAt(ctx, q, id, time.Now())
+}
+func taskBlockersClearAt(ctx context.Context, q taskQuery, id string, now time.Time) error {
+	if err := templateTaskGate(ctx, q, id, now); err != nil {
 		return err
 	}
 	var n int

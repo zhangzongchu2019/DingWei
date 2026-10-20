@@ -1,0 +1,5 @@
+--- FAIL: TestPilotTemplateLegacyTaskPathsCannotSkipCurrentContract (0.09s)
+    pilot_template_test.go:617: TEMPLATE_LEGACY_DRIVER_BYPASSED_GROUP_AUTH
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.093s
+FAIL

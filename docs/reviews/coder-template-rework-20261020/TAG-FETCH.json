@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-20T21:58:05.943080+00:00",
+  "empty_repository_fetch": true,
+  "shallow": false,
+  "refs": [
+    {
+      "tag": "refs/tags/evidence/coder/template-rework-input-e362f42b",
+      "resolved": "e362f42b8b2c348711328fd6701290e7b9efaf91",
+      "type": "tree"
+    },
+    {
+      "tag": "refs/tags/evidence/coder/template-rework-final-b85f7fd6",
+      "resolved": "b85f7fd6c86f91d9d1a508f948d462b5d7c74a70",
+      "type": "tree"
+    }
+  ],
+  "rc": 0,
+  "initial_attempt": {
+    "rc": 128,
+    "only_tree_tags_with_depth_1": true,
+    "stderr": "fatal: remote error: No commits selected for shallow request",
+    "reason": "Tree tags have no commit histories to shallow. Use ordinary fetch or include candidate commit; this is not a credential/reachability failure."
+  }
+}

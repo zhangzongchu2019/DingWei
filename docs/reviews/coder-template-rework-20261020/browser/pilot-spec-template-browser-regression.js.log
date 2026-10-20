@@ -1,0 +1,2 @@
+AssertionError [ERR_ASSERTION]: TEMPLATE_PM_UNASSESSED_CONFUSED_WITH_NO_RISK
+    at /tmp/pilot-template-browser-0mdj4jut/source/view-service/pilot-spec-template-browser-regression.js:10:502

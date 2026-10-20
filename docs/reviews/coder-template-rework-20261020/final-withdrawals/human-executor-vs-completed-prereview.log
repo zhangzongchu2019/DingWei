@@ -1,0 +1,8 @@
+--- FAIL: TestPilotTemplateHumanExecutorCannotReuseCompletedPreReviewAgent (0.19s)
+    --- FAIL: TestPilotTemplateHumanExecutorCannotReuseCompletedPreReviewAgent/single (0.09s)
+        pilot_template_test.go:894: TEMPLATE_HUMAN_EXECUTOR_REUSES_PREREVIEW_AGENT <nil>
+    --- FAIL: TestPilotTemplateHumanExecutorCannotReuseCompletedPreReviewAgent/multi (0.09s)
+        pilot_template_test.go:894: TEMPLATE_HUMAN_EXECUTOR_REUSES_PREREVIEW_AGENT <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.192s
+FAIL
