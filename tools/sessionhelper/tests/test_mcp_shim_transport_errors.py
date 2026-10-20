@@ -31,6 +31,9 @@ def request(request_id, tool='send_message', upload_path=''):
         'dw_task_blocker_set': {'task_id':'fixture','request_id':'stable','expected_version':1,'kind':'technical','where':'blocked','expected_input':'facts'},
         'dw_task_blocker_input': {'task_id':'fixture','blocker_id':'blk:one','request_id':'stable','expected_version':1,'event_id':'answer','body':'data','evidence_ref':'git:ref'},
         'dw_task_blocker_recheck': {'task_id':'fixture','blocker_id':'blk:one','request_id':'stable','expected_version':1,'operation':'begin_recheck','input_version':1},
+        'dw_task_question_list': {},
+        'dw_task_question_create': {'task_id':'fixture','request_id':'stable','expected_version':1,'kind':'technical','title':'question','observed_fact':'fact','question':'which','expected_answer':'evidence'},
+        'dw_task_question_input': {'question_id':'q_fixture','request_id':'stable','expected_version':1,'event_id':'answer','body':'technical material','evidence_ref':'git:ref'},
         'dw_task_list': {'limit': 10},
         'dw_task_update': {'task_id':'fixture','request_id':'stable','expected_version':1,'operation':'start'},
         'dw_wait_message': {'wait_seconds': 1},
@@ -230,7 +233,7 @@ class ShimTransportTests(unittest.TestCase):
 
     def test_all_registered_tools_return_sanitized_execution_errors(self):
         for tool in mcp_shim._handlers:
-            with self.subTest(tool=tool): self.exercise('rejected', 'project_context_unsupported' if tool=='project_context' else 'blocker_unsupported_upgrade_helper' if tool.startswith('dw_task_blocker_') else 'helper_rejected', tool)
+            with self.subTest(tool=tool): self.exercise('rejected', 'project_context_unsupported' if tool=='project_context' else 'blocker_unsupported_upgrade_helper' if tool.startswith('dw_task_blocker_') else 'question_unsupported_upgrade_helper' if tool.startswith('dw_task_question_') else 'helper_rejected', tool)
 
     def test_unexpected_handler_error_is_contained_and_baseexception_is_not(self):
         def broken(args): raise RuntimeError(SENTINEL)

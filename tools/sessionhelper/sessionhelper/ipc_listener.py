@@ -162,12 +162,13 @@ async def _handle_connection(
         except (asyncio.TimeoutError,OSError):
             result={"status":"error","error":"project_context_read_failed","retryable":False}
         return await _write_one(writer,{"ok":True,"outcome":result})
-    if msg_type in ("task_flow_v1","spec_review_v1","blocker_v1"):
+    if msg_type in ("task_flow_v1","spec_review_v1","blocker_v1", "pilot_question_v1"):
         if task_handler is None:
             return await _write_one(writer, {"ok": False, "error": "task_flow_unavailable"})
         allowed={"type","request_id","action","body"}
-        if msg_type in ("task_flow_v1","blocker_v1"): allowed.add("task_id")
+        if msg_type in ("task_flow_v1","blocker_v1", "pilot_question_v1"): allowed.add("task_id")
         if msg_type=="blocker_v1": allowed.add("blocker_id")
+        if msg_type=="pilot_question_v1":allowed.add("question_id")
         if set(msg)-allowed:
             return await _write_one(writer, {"ok":False,"error":"invalid_task_request"})
         try:

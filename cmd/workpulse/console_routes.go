@@ -102,6 +102,22 @@ func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
 	mux.HandleFunc("GET /api/agent/console/spec-review-requests", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentSpecReview))
 	mux.HandleFunc("POST /api/agent/console/spec-review-requests/{requestID}/result", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentSpecReview))
 	mux.HandleFunc("GET /api/agent/console/project-context", prefixHub.HandleProjectContext)
+	mux.HandleFunc("GET /api/console/specs/{specID}/question-context", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleQuestionCreateContext)))
+	mux.HandleFunc("GET /console/questions", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleQuestionsPage)))
+	for _, method := range []string{"GET", "POST"} {
+		action := "read"
+		if method == "POST" {
+			action = "submit"
+		}
+		mux.HandleFunc(method+" /api/console/specs/{specID}/question-policy", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleQuestionPolicy)))
+		mux.HandleFunc(method+" /api/console/questions/{questionID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleQuestion)))
+	}
+	mux.HandleFunc("GET /api/console/questions", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleQuestion)))
+	mux.HandleFunc("POST /api/console/specs/{specID}/questions", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleQuestion)))
+	mux.HandleFunc("GET /api/agent/console/questions", prefixHub.RequireAgentBlocker(prefixHub.HandleQuestion))
+	mux.HandleFunc("GET /api/agent/console/questions/{questionID}", prefixHub.RequireAgentBlocker(prefixHub.HandleQuestion))
+	mux.HandleFunc("POST /api/agent/console/questions/{questionID}/inputs", prefixHub.RequireAgentBlocker(prefixHub.HandleQuestion))
+	mux.HandleFunc("POST /api/agent/console/tasks/{taskID}/questions", prefixHub.RequireAgentBlocker(prefixHub.HandleQuestion))
 	for _, method := range []string{"GET", "POST"} {
 		for _, suffix := range []string{"", "/{blockerID}"} {
 			mux.HandleFunc(method+" /api/agent/console/tasks/{taskID}/blockers"+suffix, prefixHub.RequireAgentBlocker(prefixHub.HandleTaskBlockers))

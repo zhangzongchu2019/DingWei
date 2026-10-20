@@ -173,7 +173,7 @@ func taskBlockersClear(ctx context.Context, q taskQuery, id string) error {
 	if n != 0 {
 		return ErrTaskFlowConflict
 	}
-	return nil
+	return taskQuestionChangesClear(ctx, q, id)
 }
 func blockerAudit(ctx context.Context, tx *sql.Tx, b TaskBlocker, actor, op string, details any, at string) error {
 	raw, _ := json.Marshal(details)
@@ -431,37 +431,12 @@ func (s *SQLite) UpdateTaskBlocker(ctx context.Context, expected TaskFlowState, 
 			}
 		}
 	case "input":
-		if blockerTerminal(b.State) || u.Source == "" || len(u.Source) > 256 || u.EventID == "" || len(u.EventID) > 128 || strings.TrimSpace(u.Body) == "" || strings.TrimSpace(u.Evidence) == "" {
-			return out, ErrTaskFlowInvalid
-		}
-		inputHash := blockerHash([]any{key, u.Body, u.Evidence, u.ProductionOrSecurity})
-		var previous string
-		e := tx.QueryRowContext(ctx, `SELECT payload_sha FROM console_task_blocker_input WHERE blocker_id=? AND source=? AND event_id=?`, b.ID, u.Source, u.EventID).Scan(&previous)
-		if e == nil {
-			if previous != inputHash {
-				return out, ErrTaskFlowConflict
-			}
-			out.Outcome = "unchanged"
-		} else if !errors.Is(e, sql.ErrNoRows) {
+		changed, e := appendBlockerInput(ctx, tx, &b, key, u.Source, u.EventID, u.Body, u.Evidence, u.ProductionOrSecurity, at)
+		if e != nil {
 			return out, e
-		} else {
-			if u.ProductionOrSecurity && b.Mode != "full" {
-				b.Mode = "full"
-				b.FullApprovedBy = ""
-				b.FullApprovalRef = ""
-			}
-			b.InputVersion++
-			b.Version++
-			b.UpdatedAt = at
-			if b.State != "rechecking" {
-				b.State = "ready_to_recheck"
-			}
-			if _, err = tx.ExecContext(ctx, `INSERT INTO console_task_blocker_input(blocker_id,source,event_id,payload_sha,input_version,actor_id,body,evidence_ref,created_at) VALUES(?,?,?,?,?,?,?,?,?)`, b.ID, u.Source, u.EventID, inputHash, b.InputVersion, key, u.Body, u.Evidence, at); err != nil {
-				return out, err
-			}
-			if err = blockerWake(ctx, tx, b, at); err != nil {
-				return out, err
-			}
+		}
+		if !changed {
+			out.Outcome = "unchanged"
 		}
 	case "assign_waiter":
 		if !actor.owner(t) || blockerTerminal(b.State) || u.WaitingPrincipal == "" {
@@ -530,6 +505,13 @@ func (s *SQLite) UpdateTaskBlocker(ctx context.Context, expected TaskFlowState, 
 				}
 			}
 			if e := taskDependenciesDone(ctx, tx, deps); e != nil {
+				if errors.Is(e, ErrTaskFlowConflict) {
+					pass = false
+				} else {
+					return out, e
+				}
+			}
+			if e := taskQuestionChangesClear(ctx, tx, t.ID); e != nil {
 				if errors.Is(e, ErrTaskFlowConflict) {
 					pass = false
 				} else {

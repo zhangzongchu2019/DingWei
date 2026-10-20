@@ -15,12 +15,13 @@ import (
 // ContextClaim contains only candidate identity references, never document data.
 type ContextClaim struct{ Owner, Group, Developer, Reviewer string }
 type ContextAuthorization struct {
-	Actor   Agent
-	Groups  map[string]Group
-	Members map[string]map[string]bool
-	Agents  map[string]Agent
-	Users   map[string]bool
-	Names   map[string]string
+	Actor    Agent
+	Groups   map[string]Group
+	Members  map[string]map[string]bool
+	Agents   map[string]Agent
+	Users    map[string]bool
+	Names    map[string]string
+	Bindings map[string]Identity
 }
 type ProjectContextAuthorizationStore interface {
 	WithProjectContextAuthorization(context.Context, string, string, []ContextClaim, func(ContextAuthorization, func() error) error) error
@@ -93,7 +94,7 @@ func (a ContextAuthorization) validate(actor, hash string) error {
 	return nil
 }
 func contextAuth() ContextAuthorization {
-	return ContextAuthorization{Groups: map[string]Group{}, Members: map[string]map[string]bool{}, Agents: map[string]Agent{}, Users: map[string]bool{}, Names: map[string]string{}}
+	return ContextAuthorization{Groups: map[string]Group{}, Members: map[string]map[string]bool{}, Agents: map[string]Agent{}, Users: map[string]bool{}, Names: map[string]string{}, Bindings: map[string]Identity{}}
 }
 func sortedContextKeys[V any](m map[string]V) []string {
 	keys := make([]string, 0, len(m))
@@ -106,9 +107,14 @@ func sortedContextKeys[V any](m map[string]V) []string {
 func (m *MemStore) WithProjectContextAuthorization(ctx context.Context, actor, hash string, claims []ContextClaim, fn func(ContextAuthorization, func() error) error) error {
 	return m.withContextAuthorization(ctx, actor, hash, claims, "", fn)
 }
-func (m *MemStore) withContextAuthorization(ctx context.Context, actor, hash string, claims []ContextClaim, human string, fn func(ContextAuthorization, func() error) error) error {
+func (m *MemStore) withContextAuthorization(ctx context.Context, actor, hash string, claims []ContextClaim, human string, fn func(ContextAuthorization, func() error) error, options ...contextAuthOptions) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	var extraUsers, extraAgents []string
+	if len(options) > 0 {
+		extraUsers = options[0].Users
+		extraAgents = options[0].Agents
+	}
 	a := contextAuth()
 	groups := map[string]bool{}
 	for code, ids := range m.members {
@@ -122,6 +128,11 @@ func (m *MemStore) withContextAuthorization(ctx context.Context, actor, hash str
 	if human != "" {
 		a.Users[Lower(human)] = false
 	}
+	for _, id := range extraUsers {
+		if id != "" {
+			a.Users[Lower(id)] = false
+		}
+	}
 
 	for code := range groups {
 		if g := m.groups[code]; g != nil {
@@ -134,6 +145,11 @@ func (m *MemStore) withContextAuthorization(ctx context.Context, actor, hash str
 					a.Agents[id] = *x
 				}
 			}
+		}
+	}
+	for _, id := range extraAgents {
+		if x := m.agents[id]; x != nil {
+			a.Agents[id] = *x
 		}
 	}
 	if x := m.agents[actor]; x != nil {
@@ -150,6 +166,20 @@ func (m *MemStore) withContextAuthorization(ctx context.Context, actor, hash str
 			a.Names[id] = u.ShortName
 		}
 	}
+	if len(extraUsers) > 0 {
+		counts := map[string]int{}
+		for ident, id := range m.idents {
+			if ident.Provider == "feishu" && a.Users[id] {
+				counts[id]++
+				a.Bindings[id] = ident
+			}
+		}
+		for id, n := range counts {
+			if n != 1 {
+				delete(a.Bindings, id)
+			}
+		}
+	}
 	if human != "" {
 		if !a.Users[Lower(human)] || actor != "" || hash != "" {
 			return ErrForbidden
@@ -164,8 +194,15 @@ func (m *MemStore) withContextAuthorization(ctx context.Context, actor, hash str
 func (s *PGStore) WithProjectContextAuthorization(ctx context.Context, actor, hash string, claims []ContextClaim, fn func(ContextAuthorization, func() error) error) error {
 	return s.withContextAuthorization(ctx, actor, hash, claims, "", fn)
 }
-func (s *PGStore) withContextAuthorization(ctx context.Context, actor, hash string, claims []ContextClaim, human string, fn func(ContextAuthorization, func() error) error) error {
+func (s *PGStore) withContextAuthorization(ctx context.Context, actor, hash string, claims []ContextClaim, human string, fn func(ContextAuthorization, func() error) error, options ...contextAuthOptions) error {
 	return s.inTx(ctx, func(tx repo.Tx) error {
+		var extraUsers, extraAgents []string
+		questionID := ""
+		if len(options) > 0 {
+			extraUsers = options[0].Users
+			extraAgents = options[0].Agents
+			questionID = options[0].QuestionID
+		}
 		a := contextAuth()
 		groups := map[string]bool{}
 		initial := map[string]bool{}
@@ -202,6 +239,11 @@ func (s *PGStore) withContextAuthorization(ctx context.Context, actor, hash stri
 		}
 		if human != "" {
 			a.Users[Lower(human)] = false
+		}
+		for _, id := range extraUsers {
+			if id != "" {
+				a.Users[Lower(id)] = false
+			}
 		}
 		for _, code := range sortedContextKeys(groups) {
 			g, err := lockGroup(ctx, tx, code, true)
@@ -284,6 +326,11 @@ func (s *PGStore) withContextAuthorization(ctx context.Context, actor, hash stri
 			return err
 		}
 		ids := map[string]bool{}
+		for _, id := range extraAgents {
+			if id != "" {
+				ids[id] = true
+			}
+		}
 		if actor != "" {
 			ids[actor] = true
 		}
@@ -312,12 +359,45 @@ func (s *PGStore) withContextAuthorization(ctx context.Context, actor, hash stri
 			a.Users[id] = state == string(UserActive)
 			a.Names[id] = name
 		}
+		if len(extraUsers) > 0 {
+			for _, id := range sortedContextKeys(a.Users) {
+				if !a.Users[id] {
+					continue
+				}
+				rows, e := tx.Query(ctx, `SELECT provider,issuer,subject FROM np_identity WHERE user_id_lc=$1 AND provider='feishu' ORDER BY issuer,subject FOR SHARE`, id)
+				if e != nil {
+					return e
+				}
+				count := 0
+				var binding Identity
+				for rows.Next() {
+					if e = rows.Scan(&binding.Provider, &binding.Issuer, &binding.Subject); e != nil {
+						rows.Close()
+						return e
+					}
+					count++
+				}
+				e = rows.Err()
+				rows.Close()
+				if e != nil {
+					return e
+				}
+				if count == 1 {
+					a.Bindings[id] = binding
+				}
+			}
+		}
 		if human != "" {
 			if !a.Users[Lower(human)] || actor != "" || hash != "" {
 				return ErrForbidden
 			}
 		} else {
 			if err := a.validate(actor, hash); err != nil {
+				return err
+			}
+		}
+		if questionID != "" {
+			if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, questionLockID(questionID)); err != nil {
 				return err
 			}
 		}

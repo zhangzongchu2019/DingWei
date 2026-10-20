@@ -120,9 +120,13 @@ type Hub struct {
 	// sessionWG 正在服务中的会话（serveSession）个数；Close 等它们收尾。
 	// httptest.Server.Close 不等已升级为 WebSocket 的连接 ⇒ 不等的话，会话收尾（释放投递租约、写库、打日志）
 	// 会拖到下一条用例里，撞进别人的日志捕获窗口（复验方 qwen38maxkhovvob4 的日志卫生用例即被打红过）。
-	sessionWG          sync.WaitGroup
-	taskFlowDispatchMu sync.Mutex
-	blockerDispatchMu  sync.Mutex
+	sessionWG             sync.WaitGroup
+	taskFlowDispatchMu    sync.Mutex
+	blockerDispatchMu     sync.Mutex
+	questionDispatchMu    sync.Mutex
+	QuestionSender        QuestionSender
+	questionReminderAfter string
+	questionOutboxAfter   string
 
 	mu                hubMutex
 	serviceClients    map[string]*client

@@ -422,6 +422,7 @@ func (h *Hub) StartTaskFlow(ctx context.Context) {
 			h.reconcileBlockers(ctx)
 			h.dispatchTaskNotifications(ctx)
 			h.dispatchBlockerWakes(ctx)
+			h.processQuestions(ctx)
 			select {
 			case <-ctx.Done():
 				return

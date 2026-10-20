@@ -33,7 +33,8 @@ type OutMessage struct {
 	ToType       string // personal|group（按名发送时消歧用）
 	Text         string
 	// RequestID T17 v2.3 §C1 托管幂等键(UUIDv5,DeriveRequestID 派生,调用点填充)。
-	// 仅 transport=proxy 托管路使用;空=ProxyGateway 走 legacy 立发,直连路忽略。
+	// transport=proxy 托管路使用；空=ProxyGateway 走 legacy 立发。
+	// 普通直连 Send 忽略；显式 SendQuestion 使用飞书 uuid 字段去重。
 	RequestID string `json:"request_id,omitempty"`
 }
 
@@ -246,6 +247,25 @@ func NewLarkGateway(botChannelID, appID, appSecret string, logger *slog.Logger) 
 
 // Send 通过 REST im/v1/messages 发送文本消息。
 func (g *LarkGateway) Send(ctx context.Context, out OutMessage) (string, error) {
+	return g.send(ctx, out, false)
+}
+func (g *LarkGateway) SendQuestion(ctx context.Context, out OutMessage) (string, error) {
+	if err := validateQuestionMessage(out); err != nil {
+		return "", err
+	}
+	if out.BotChannelID != g.botChannelID {
+		return "", errors.New("question bot binding mismatch")
+	}
+	return g.send(ctx, out, true)
+}
+func (m *MultiGateway) SendQuestion(ctx context.Context, out OutMessage) (string, error) {
+	g, err := m.gateway(out.BotChannelID)
+	if err != nil {
+		return "", err
+	}
+	return g.SendQuestion(ctx, out)
+}
+func (g *LarkGateway) send(ctx context.Context, out OutMessage, question bool) (string, error) {
 	toID := strings.TrimSpace(out.ToID)
 	if toID == "" && strings.TrimSpace(out.ToName) != "" {
 		id, err := g.ResolveNameToID(ctx, out.BotChannelID, out.ToName, out.ToType)
@@ -261,14 +281,11 @@ func (g *LarkGateway) Send(ctx context.Context, out OutMessage) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	req := larkim.NewCreateMessageReqBuilder().
-		ReceiveIdType(receiveIDType(out.ToType, toID)).
-		Body(larkim.NewCreateMessageReqBodyBuilder().
-			ReceiveId(toID).
-			MsgType("text").
-			Content(string(content)).
-			Build()).
-		Build()
+	body := larkim.NewCreateMessageReqBodyBuilder().ReceiveId(toID).MsgType("text").Content(string(content))
+	if question {
+		body.Uuid(out.RequestID)
+	}
+	req := larkim.NewCreateMessageReqBuilder().ReceiveIdType(receiveIDType(out.ToType, toID)).Body(body.Build()).Build()
 	resp, err := g.api.Im.Message.Create(ctx, req)
 	if err != nil {
 		return "", err

@@ -348,11 +348,11 @@ func TestNewPlatformConsolePlatform(t *testing.T) {
 		return strings.Join(out, ",")
 	}
 	if st, body := call("GET", "/api/console/platform", "tok-mgr"); st != 200 || !strings.Contains(body, `"role":"management"`) ||
-		ids(body) != "specs,task-board,agent-groups,platform-admin" {
+		ids(body) != "specs,task-board,agent-groups,pilot-questions,platform-admin" {
 		t.Errorf("manager platform: %d %s", st, body)
 	}
 	st, body := call("GET", "/api/console/platform", "tok-mem")
-	if st != 200 || !strings.Contains(body, `"role":"owner"`) || ids(body) != "specs,task-board,agent-groups" ||
+	if st != 200 || !strings.Contains(body, `"role":"owner"`) || ids(body) != "specs,task-board,agent-groups,pilot-questions" ||
 		!strings.Contains(body, `{"id":"specs","kind":"spec","title":"Specs","href":"#specs","status":"approved","active":true,`) ||
 		!strings.Contains(body, `{"id":"task-board","kind":"task-board","title":"任务管理","href":"#task-board","status":"approved","active":true,`) {
 		t.Errorf("member platform: %d %s", st, body)

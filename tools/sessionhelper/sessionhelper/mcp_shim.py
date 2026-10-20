@@ -747,5 +747,38 @@ def _serve_requests(active_waits, start_wait):
         _write(_dispatch(req))
 
 
+
+
+
+# Pilot questions never expose human PM business-answer, grant or signoff tools.
+_Q_ID={"type":"string","minLength":1,"maxLength":256}
+def _question_ipc(action,args,allowed,required):
+    if not isinstance(args,dict) or set(args)-set(allowed) or not set(required)<=set(args):raise ValueError('invalid question arguments')
+    from sessionhelper.pilot_question import validate_request
+    request={'type':'pilot_question_v1','action':action,'body':{k:v for k,v in args.items() if k not in ('question_id',) and not (action=='create' and k=='task_id')}}
+    if action=='create':request['task_id']=args['task_id']
+    if 'question_id' in args:request['question_id']=args['question_id']
+    validate_request(request)
+    try:return _ipc_request(request)
+    except _IPCFailure as exc:
+        if exc.category=='helper_rejected':raise _IPCFailure('question_unsupported_upgrade_helper') from None
+        raise
+
+@register("dw_task_question_create","在自己当前任务挂研发问题；用所有者配置的产品联系人，不授予新执行或签收权限。",{
+ "type":"object","properties":{"task_id":_Q_ID,"request_id":{"type":"string","minLength":1,"maxLength":128},"expected_version":{"type":"integer","minimum":1},"kind":{"enum":["requirement_unclear","change","technical","resource"]},"title":{"type":"string","minLength":1,"maxLength":512},"observed_fact":{"type":"string","minLength":1,"maxLength":4096},"question":{"type":"string","minLength":1,"maxLength":4096},"expected_answer":{"type":"string","minLength":1,"maxLength":4096},"input_anchors":{"type":"string","maxLength":4096},"production_or_security":{"type":"boolean"}},"required":["task_id","request_id","expected_version","kind","title","observed_fact","question","expected_answer"],"additionalProperties":False})
+def _dw_task_question_create(args):
+    return _question_ipc('create',args,{'task_id','request_id','expected_version','kind','title','observed_fact','question','expected_answer','input_anchors','production_or_security'},{'task_id','request_id','expected_version','kind','title','observed_fact','question','expected_answer'})
+
+@register("dw_task_question_list","只读当前仍获准的问题摘要及答复；问题最小授权不扩大为整个spec/任务权限。",{
+ "type":"object","properties":{"question_id":_Q_ID,"task_id":_Q_ID,"spec_id":_Q_ID,"limit":{"type":"integer","minimum":1,"maximum":100},"cursor":{"type":"string","maxLength":4096},"before":{"type":"integer","minimum":1},"change_before":{"type":"integer","minimum":1}},"additionalProperties":False,
+ "oneOf":[{"required":["question_id"],"not":{"anyOf":[{"required":[x]} for x in ('task_id','spec_id','limit','cursor')]}},{"not":{"anyOf":[{"required":[x]} for x in ('question_id','before','change_before')]}}]})
+def _dw_task_question_list(args):
+    return _question_ipc('list',args,{'question_id','task_id','spec_id','limit','cursor','before','change_before'},set())
+
+@register("dw_task_question_input","向仍获准的问题补技术材料和证据；不冒充人类PM业务决定，不改spec或执行任务。",{
+ "type":"object","properties":{"question_id":_Q_ID,"request_id":{"type":"string","minLength":1,"maxLength":128},"expected_version":{"type":"integer","minimum":1},"event_id":{"type":"string","minLength":1,"maxLength":128},"body":{"type":"string","minLength":1,"maxLength":8192},"evidence_ref":{"type":"string","minLength":1,"maxLength":2048}},"required":["question_id","request_id","expected_version","event_id","body","evidence_ref"],"additionalProperties":False})
+def _dw_task_question_input(args):
+    return _question_ipc('input',args,{'question_id','request_id','expected_version','event_id','body','evidence_ref'},{'question_id','request_id','expected_version','event_id','body','evidence_ref'})
+
 if __name__ == "__main__":
     serve()

@@ -27,6 +27,11 @@ func (r *routeRecorder) HandleFunc(p string, h func(http.ResponseWriter, *http.R
 // newPlatformAuthExempt 新平台模式下【不】按 N3 会话认人的路由，每条写明凭什么放行。
 // 不在此表的路由一律按 N3 会话认人；新增路由若漏包认人中间件，下面的扫描用例必红（组长裁定 140013Z ③）。
 var newPlatformAuthExempt = map[string]string{
+	"GET /api/agent/console/questions":                      "专属Agent凭据；当前任务或单问题最小授权，不取得PM答复权",
+	"GET /api/agent/console/questions/{questionID}":         "专属Agent凭据；当前任务或单问题最小授权",
+	"POST /api/agent/console/questions/{questionID}/inputs": "专属Agent凭据；仅技术材料，不得冒充人类PM决定",
+	"POST /api/agent/console/tasks/{taskID}/questions":      "专属Agent凭据；仅自己当前任务提问题",
+
 	"POST /api/enroll/claims":             "临时无属主申请：限频与短期码，不能匿名建号",
 	"GET /api/enroll/claims/{id}":         "设备私有轮询凭证",
 	"POST /api/enroll/claims/{id}/cancel": "设备私有轮询凭证；仅取消尚未认领申请，不撤销已发凭据",
@@ -146,8 +151,8 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 			nSpecTask++
 		}
 	}
-	if nSpecTask != len(oldRec.patterns) || nSpecTask != 59 {
-		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 59)", nSpecTask, len(oldRec.patterns))
+	if nSpecTask != len(oldRec.patterns) || nSpecTask != 71 {
+		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 71)", nSpecTask, len(oldRec.patterns))
 	}
 	for p := range newPlatformSpecTaskExempt {
 		if !seen[p] {
@@ -308,4 +313,4 @@ func TestConsoleTasksCompatibilityRoute(t *testing.T) {
 }
 
 // specTaskRoute specs 与 task-board 两组功能的路由形状（页面、console 接口、Agent capability 接口、共享链接）。
-var specTaskRoute = regexp.MustCompile(`/(console/specs|console/tasks|console/spec-assets|api/console/specs|api/console/task-|api/console/tasks|api/console/spec-editors|api/agent/console/|api/specs/shared)`)
+var specTaskRoute = regexp.MustCompile(`/(console/specs|console/tasks|console/questions|console/spec-assets|api/console/specs|api/console/task-|api/console/questions|api/console/tasks|api/console/spec-editors|api/agent/console/|api/specs/shared)`)
