@@ -464,12 +464,45 @@ func TestPilotQuestionPMDelegationLimitedToExistingQuestionReaders(t *testing.T)
 			t.Fatal("QUESTION_PM_GRANTED_NEW_RIGHTS", err)
 		}
 	}
-	out, err := questionApply(t, db, now, BlockerActor{UserID: "pm"}, q.ID, QuestionUpdate{RequestID: "delegate", ExpectedVersion: q.Version, Operation: "assign", PMUser: "pm", LeaderUser: "leader", Responsible: "agent:dev"})
+	out, err := questionApply(t, db, now, BlockerActor{UserID: "pm"}, q.ID, QuestionUpdate{RequestID: "delegate", ExpectedVersion: q.Version, Operation: "assign", PMUser: "pm", LeaderUser: "", Responsible: "agent:dev"})
 	if err != nil || out.Question.Responsible != "agent:dev" {
 		t.Fatal("QUESTION_PM_TECHNICAL_DELEGATION", out, err)
 	}
 	out, err = questionApply(t, db, now.Add(time.Minute), BlockerActor{AgentID: "dev"}, q.ID, QuestionUpdate{RequestID: "technical", ExpectedVersion: out.Question.Version, Operation: "input", EventID: "facts", Body: "实际技术事实与证据", Evidence: "git:tech"})
 	if err != nil || out.Question.FirstSubstantiveAt == "" {
 		t.Fatal("QUESTION_DELEGATED_TECHNICAL_FIRST_RESPONSE", out, err)
+	}
+}
+func TestPilotQuestionSentReminderReassignmentNeverCreatesSecondReminder(t *testing.T) {
+	db, now, _ := questionFixture(t)
+	ctx := context.Background()
+	q := questionCreate(t, db, now, "technical")
+	c, _ := db.QuestionAuthorizationContext(ctx, "", "", q.ID)
+	if err := db.QueueQuestionReminder(ctx, c, q.ID, func() error { return nil }, now.Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	ns, _ := db.PendingQuestionNotices(ctx, "")
+	for _, n := range ns {
+		if n.Kind == "remind_60m" {
+			_, ready, err := db.PrepareQuestionNotice(ctx, c, n, true, func() error { return nil }, now.Add(time.Hour))
+			if err != nil || !ready {
+				t.Fatal(err, ready)
+			}
+			if err = db.FinishQuestionNotice(ctx, n.ID, "provider", true, now.Add(time.Hour)); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if _, err := questionApply(t, db, now.Add(61*time.Minute), BlockerActor{UserID: "owner-a"}, q.ID, QuestionUpdate{RequestID: "reassign-after-sent", ExpectedVersion: q.Version, Operation: "assign", PMUser: "pm", LeaderUser: "newleader", Responsible: "user:pm"}); err != nil {
+		t.Fatal(err)
+	}
+	c, _ = db.QuestionAuthorizationContext(ctx, "", "", q.ID)
+	if err := db.QueueQuestionReminder(ctx, c, q.ID, func() error { return nil }, now.Add(2*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	var count int
+	db.db.QueryRow(`SELECT count(*) FROM pilot_question_outbox WHERE kind='remind_60m'`).Scan(&count)
+	if count != 1 {
+		t.Fatal("QUESTION_ASSIGN_SECOND_SLA", count)
 	}
 }

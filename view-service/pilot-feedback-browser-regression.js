@@ -1,7 +1,7 @@
 // Exact production HTML, loopback only. No Feishu/Hub/account/AI traffic.
 const assert=require('assert'),fs=require('fs'),http=require('http'),path=require('path'),{chromium}=require('playwright');
 const source=fs.readFileSync(path.join(__dirname,'../internal/m8/pilot_question_page.go'),'utf8'),begin=source.indexOf('<!doctype html>'),end=source.lastIndexOf('`');assert(begin>0&&end>begin);const html=source.slice(begin,end);
-let q={id:'pq:one',spec_id:'spec',revision:1,task_id:'task',version:1,generation:1,kind:'requirement_unclear',title:'真实需求问题',observed_fact:'<script>window.INJECTED=true</script>',question:'请澄清本轮范围',expected_answer:'明确的范围结论',responsible_principal:'user:pm',pm_user:'pm',state:'awaiting_answer',due_at:'2026-10-20T19:00:00Z',can_answer:true,can_manage:false,can_assign:false,can_decide_change:false,notifications:[{state:'pending_config'}],recheck_state:'waiting'};
+let q={id:'pq:one',spec_id:'spec',revision:1,task_id:'task',version:1,generation:1,kind:'requirement_unclear',title:'真实需求问题',observed_fact:'<script>window.INJECTED=true</script>',question:'请澄清本轮范围',expected_answer:'明确的范围结论',responsible_principal:'user:pm',pm_user:'pm',state:'awaiting_answer',due_at:'2026-10-20T19:00:00Z',can_answer:true,can_manage:false,can_assign:true,can_configure_recipients:false,assignment_options:["user:owner","user:pm","agent:dev"],can_decide_change:false,notifications:[{state:'pending_config'}],recheck_state:'waiting'};
 let answers=[],posts=[],reject=0,denied=false,nextBefore=9;const cache=new Map();
 function json(res,status,body){res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(body))}
 const server=http.createServer(async(req,res)=>{const u=new URL(req.url,'http://fixture');if(u.pathname==='/console/questions'){res.writeHead(200,{'Content-Type':'text/html'});return res.end(html)}
@@ -13,13 +13,15 @@ if(decodeURIComponent(u.pathname)==='/api/console/questions/pq:one'){
  if(reject){const status=reject;reject=0;return json(res,status,{error:'unknown'})}
  if(cache.has(b.request_id))return json(res,200,cache.get(b.request_id));
  if(b.expected_version!==q.version)return json(res,409,{error:'conflict'});
+ if(b.operation==='assign'){q={...q,version:q.version+1,responsible_principal:b.responsible_principal};return json(res,200,{question:q,outcome:'updated',execution_authorized:false})}
  q={...q,version:q.version+1,state:'answered_pending_recheck',first_substantive_answer_at:'2026-10-20T18:10:00Z',recheck_state:'ready_to_recheck'};answers.push({...b,generation:1,actor:'user:pm',created_at:'2026-10-20T18:10:00Z'});const out={question:q,outcome:'updated',execution_authorized:false};cache.set(b.request_id,out);return json(res,200,out)
 }
 return json(res,404,{error:'not_found'})});
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch(process.env.PW_CHANNEL?{headless:true,channel:process.env.PW_CHANNEL}:{headless:true});let checks=0;const errors=[];
 try{const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(origin+'/console/questions?question_id=pq:one');await page.waitForSelector('#answer-form:not([hidden])');checks++;
 assert((await page.locator('#detail-delivery').innerText()).includes('待配置'));assert.equal(await page.evaluate(()=>window.INJECTED),undefined);assert((await page.locator('#detail-fact').innerText()).includes('<script>'));checks++;
-assert(await page.locator('#assign-form').isHidden());assert(await page.locator('#manage').isHidden());checks++;
+assert(!(await page.locator('#assign-form').isHidden()));assert(await page.locator('#assign-pm').isDisabled());assert(await page.locator('#assign-leader').isDisabled());assert(await page.locator('#manage').isHidden());checks++;
+await page.selectOption('#assign-responsible','agent:dev');await page.click('#assign-form button');await page.waitForFunction(()=>document.querySelector('#detail-wait').textContent.includes('agent:dev'));assert.equal(posts.at(-1).pm_user,'pm');assert.equal(posts.at(-1).leader_user,'');checks++;
 await page.fill('#answer-body','明确的范围答复，不是执行指令');await page.fill('#answer-evidence','git:immutable');reject=503;await page.click('#answer-form button');await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('待核对'));const unknown=posts.at(-1);assert(unknown.event_id&&unknown.request_id);assert.equal(await page.locator('#answer-body').inputValue(),'明确的范围答复，不是执行指令');checks++;
 await page.click('#answer-form button');await page.waitForFunction(()=>document.querySelector('#detail-state').textContent.includes('到件'));assert.equal(posts.at(-1).request_id,unknown.request_id);assert.equal(posts.at(-1).event_id,unknown.event_id);assert.equal(answers.length,1);checks++;
 await page.click('#older-answers');await page.waitForFunction(()=>document.querySelector('#answers').textContent.includes('历史答复'));checks++;
