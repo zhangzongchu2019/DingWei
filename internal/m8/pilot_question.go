@@ -347,7 +347,7 @@ func (h *Hub) HandleQuestion(w http.ResponseWriter, r *http.Request) {
 		extra = append(extra, strings.TrimPrefix(u.Responsible, "user:"))
 	}
 	var out store.QuestionResult
-	err = h.withQuestionIdentity(ctx, c, actor, ref, extra, u.Operation == "cancel", func(a identity.ContextAuthorization, check func() error) error {
+	err = h.withQuestionIdentity(ctx, c, actor, ref, extra, (u.Operation == "cancel" || u.Operation == "reject_change" || u.Operation == "confirm_change") && actor.actor.UserID == c.Owner, func(a identity.ContextAuthorization, check func() error) error {
 		for _, id := range extra {
 			if id != "" && !strings.HasPrefix(id, "agent:") && !a.Users[id] {
 				return store.ErrTaskFlowInvalid

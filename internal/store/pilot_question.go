@@ -212,7 +212,8 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 	if qid != "" && q.Version != u.ExpectedVersion {
 		return out, ErrTaskFlowConflict
 	}
-	if qid != "" && u.Operation != "cancel" && !questionCurrent(q, c) {
+	ownerMaintenance := a.UserID == c.Owner && (u.Operation == "cancel" || u.Operation == "reject_change" || u.Operation == "confirm_change")
+	if qid != "" && !ownerMaintenance && !questionCurrent(q, c) {
 		return out, ErrTaskFlowConflict
 	}
 	at := now.UTC().Format(time.RFC3339Nano)
@@ -420,7 +421,7 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 			if _, err = tx.ExecContext(ctx, `UPDATE pilot_question_change SET state='rejected',decided_by=?,reason=? WHERE id=?`, a.Key(), u.Reason, u.ChangeID); err != nil {
 				return out, err
 			}
-			if q.BlockerID != "" {
+			if q.BlockerID != "" && questionCurrent(q, c) {
 				if err = questionBlockerInput(ctx, tx, c, a, q, "reject:"+u.RequestID, "所有者拒绝变更，原范围仍须重核", u.Reason, now); err != nil {
 					return out, err
 				}
@@ -451,7 +452,7 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 		if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM pilot_question_change WHERE question_id=? AND state='pending'`, q.ID).Scan(&pending); err != nil {
 			return out, err
 		}
-		if pending != 0 {
+		if pending != 0 && u.Operation == "resolve" {
 			return out, ErrTaskFlowConflict
 		}
 		if u.Operation == "resolve" {

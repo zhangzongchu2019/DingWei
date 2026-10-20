@@ -506,3 +506,52 @@ func TestPilotQuestionSentReminderReassignmentNeverCreatesSecondReminder(t *test
 		t.Fatal("QUESTION_ASSIGN_SECOND_SLA", count)
 	}
 }
+func TestPilotQuestionSpecOnlyChangeCanLinkActualNewRevision(t *testing.T) {
+	db, now, _ := questionFixture(t)
+	ctx := context.Background()
+	c, _ := db.QuestionAuthorizationContext(ctx, "r32", "", "")
+	out, err := db.UpdateQuestion(ctx, c, BlockerActor{UserID: "owner-a"}, "", QuestionUpdate{RequestID: "spec-change", ExpectedVersion: c.Revision, Operation: "create", Kind: "change", Title: "需变更", ObservedFact: "原范围缺口", Question: "请明确新范围", ExpectedAnswer: "明确新增条件"}, func() error { return nil }, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := out.Question
+	out, err = questionApply(t, db, now, BlockerActor{UserID: "pm"}, q.ID, QuestionUpdate{RequestID: "proposal", ExpectedVersion: q.Version, Operation: "answer", EventID: "proposal", AnswerKind: "substantive", Body: "新增明确条件", Evidence: "git:proposal"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cid string
+	db.db.QueryRow(`SELECT id FROM pilot_question_change WHERE question_id=?`, q.ID).Scan(&cid)
+	// Disposable fixture simulates the existing R8 human-confirmed revision path.
+	if _, err = db.db.Exec(`INSERT INTO console_spec_revision(spec_id,revision,content_markdown,acceptance_json,input_anchors_json,content_sha256,created_by,created_by_kind,created_via,supersedes_revision,created_at) SELECT spec_id,2,content_markdown,acceptance_json,input_anchors_json,'new-sha',created_by,created_by_kind,created_via,revision,created_at FROM console_spec_revision WHERE spec_id='r32' AND revision=1`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.db.Exec(`UPDATE console_spec SET current_revision=2 WHERE id='r32'`); err != nil {
+		t.Fatal(err)
+	}
+	out, err = questionApply(t, db, now, BlockerActor{UserID: "owner-a"}, q.ID, QuestionUpdate{RequestID: "confirm", ExpectedVersion: out.Question.Version, Operation: "confirm_change", ChangeID: cid, NewRevision: 2, Reason: "已通过原R8流程形成真实新修订"})
+	if err != nil || out.Question.State != "superseded" {
+		t.Fatal("QUESTION_SPEC_CHANGE_NEW_REVISION_DEADLOCK", out, err)
+	}
+	if err = taskQuestionChangesClear(ctx, db.db, "task"); !errors.Is(err, ErrTaskFlowConflict) {
+		t.Fatal("QUESTION_CONFIRMED_NEW_SCOPE_STARTED_OLD_TASK", err)
+	}
+}
+func TestPilotQuestionCancelPreservesPendingBusinessProposal(t *testing.T) {
+	db, now, _ := questionFixture(t)
+	ctx := context.Background()
+	q := questionCreate(t, db, now, "change")
+	out, err := questionApply(t, db, now, BlockerActor{UserID: "pm"}, q.ID, QuestionUpdate{RequestID: "proposal", ExpectedVersion: q.Version, Operation: "answer", EventID: "change", AnswerKind: "substantive", Body: "必须确认业务变更", Evidence: "git:change"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.db.Exec(`UPDATE console_spec_task SET needs_reassignment=1 WHERE id='task'`); err != nil {
+		t.Fatal(err)
+	}
+	out, err = questionApply(t, db, now, BlockerActor{UserID: "owner-a"}, q.ID, QuestionUpdate{RequestID: "cancel", ExpectedVersion: out.Question.Version, Operation: "cancel", Reason: "指派失效，取消旧问题等待但保留业务变更待决"})
+	if err != nil || out.Question.State != "cancelled" {
+		t.Fatal("QUESTION_OWNER_CANCEL_SCOPE_DEADLOCK", out, err)
+	}
+	if err = taskQuestionChangesClear(ctx, db.db, "task"); !errors.Is(err, ErrTaskFlowConflict) {
+		t.Fatal("QUESTION_CANCEL_DROPPED_PENDING_CHANGE_GATE", err)
+	}
+}
