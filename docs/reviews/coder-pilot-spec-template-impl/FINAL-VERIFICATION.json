@@ -1,0 +1,11 @@
+{
+  "verified_commit": "37a268166afeebe4875029e9fc64fe78fbdd7688",
+  "runtime_source": "279f75f6993cb734421b1f65cf617b011d348f36",
+  "source_files": 1814,
+  "evidence_files": 450,
+  "total_verified": 2264,
+  "read_source": "Git blob, not worktree",
+  "deployment_authorized": false,
+  "rc": 0,
+  "scope": "Predecessor evidence commit; receipt excluded from self-manifest. Final HEAD must be verified again."
+}
