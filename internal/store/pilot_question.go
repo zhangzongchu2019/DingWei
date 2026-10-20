@@ -63,6 +63,7 @@ func (s *SQLite) QuestionPolicy(ctx context.Context, spec string) (QuestionPolic
 	return readQuestionPolicy(ctx, s.db, spec)
 }
 func (s *SQLite) SetQuestionPolicy(ctx context.Context, expected QuestionContext, a BlockerActor, u QuestionUpdate, check func() error, now time.Time) (QuestionPolicy, error) {
+	u = normalizeQuestionRecipients(u)
 	var out QuestionPolicy
 	if a.UserID == "" || check == nil || u.RequestID == "" || !validQuestionUser(u.PMUser) || !validQuestionUser(u.LeaderUser) {
 		return out, ErrTaskFlowInvalid
@@ -153,6 +154,7 @@ func questionCurrent(q PilotQuestion, c QuestionContext) bool {
 	return c.Task == nil || (q.TaskID == c.Task.ID && !c.Task.NeedsReassignment && !c.Task.Archived && q.AssignmentVersion == c.Task.AssignmentVersion)
 }
 func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a BlockerActor, qid string, u QuestionUpdate, check func() error, now time.Time) (QuestionResult, error) {
+	u = normalizeQuestionRecipients(u)
 	var out QuestionResult
 	if a.Key() == "" || check == nil || !questionNonempty(u.RequestID, 128) || len(u.Title) > 512 || len(u.ObservedFact) > 4096 || len(u.Question) > 4096 || len(u.ExpectedAnswer) > 4096 || len(u.InputAnchors) > 4096 || len(u.Body) > 8192 || len(u.Evidence) > 2048 || len(u.Reason) > 2048 || !validBlockerPrincipal(u.Responsible) {
 		return out, ErrTaskFlowInvalid
@@ -545,4 +547,10 @@ func questionAcknowledgment(body string) bool {
 		return true
 	}
 	return false
+}
+
+func normalizeQuestionRecipients(u QuestionUpdate) QuestionUpdate {
+	u.PMUser = strings.ToLower(strings.TrimSpace(u.PMUser))
+	u.LeaderUser = strings.ToLower(strings.TrimSpace(u.LeaderUser))
+	return u
 }

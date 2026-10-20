@@ -8,6 +8,21 @@ def case(name,file,old,new,pkg,test,marker):
  cmd=[PY,'-B','-m','unittest','discover','-s','tools/sessionhelper/tests','-p','test_pilot_question.py','-v'] if pkg=='python' else ['go','test',pkg,'-count=1','-run','^'+test+'$','-timeout=2m']
  CASES.append(dict(name=name,edits=[(file,old,new)],argv=cmd,marker=marker))
 def store(name,file,old,new,test,marker):case(name,file,old,new,'./internal/store',test,marker)
+case('sender-error-is-unknown','internal/m8/pilot_question_worker.go','sendErr == nil','sendErr == nil || sendErr != nil','./internal/m8','TestPilotQuestionProviderErrorUnknownAndNeverResends','QUESTION_SENDER_ERROR_NOT_UNKNOWN')
+case('late-check-before-provider','internal/m8/pilot_question_worker.go','if x = check(); x != nil {','if x = error(nil); x != nil {','./internal/m8','TestPilotQuestionPreProviderCheckFailureDisposition','QUESTION_UNSENT_DISPOSITION')
+case('late-transient-queued','internal/m8/pilot_question_worker.go','if prepared {','if false && prepared {','./internal/m8','TestPilotQuestionPreProviderCheckFailureDisposition','QUESTION_UNSENT_DISPOSITION')
+case('revocation-cancelled','internal/m8/pilot_question_worker.go','if questionNoticeRevoked(e) {','if false && questionNoticeRevoked(e) {','./internal/m8','TestPilotQuestionPreProviderCheckFailureDisposition','QUESTION_UNSENT_DISPOSITION')
+case('prepare-failure-pending','internal/m8/pilot_question_worker.go','state := "pending_config"','state := "queued"','./internal/m8','TestPilotQuestionPreProviderCheckFailureDisposition','QUESTION_UNSENT_DISPOSITION')
+case('unconfigured-not-revoked','internal/m8/pilot_question_worker.go','n.Recipient != "" && !a.Users[n.Recipient]','!a.Users[n.Recipient]','./internal/m8','TestPilotQuestionNoRecipientRemainsPendingConfig','QUESTION_EMPTY_RECIPIENT_CANCELLED_OR_SENT')
+store('past-dispatch-never-unsent',R,"state='dispatching' AND NOT ? THEN 'unknown'","state='dispatching' AND NOT ? THEN 'pending_config'",'TestPilotQuestionOldDispatchCannotResetToUnsent','QUESTION_OLD_DISPATCH_RESET_AS_UNSENT')
+store('store-pm-lower',Q,'u.PMUser = strings.ToLower(strings.TrimSpace(u.PMUser))','u.PMUser = strings.TrimSpace(u.PMUser)','TestPilotQuestionRecipientCaseCanonicalBeforeHash','QUESTION_STORE_POLICY_CASE')
+store('store-leader-lower',Q,'u.LeaderUser = strings.ToLower(strings.TrimSpace(u.LeaderUser))','u.LeaderUser = strings.TrimSpace(u.LeaderUser)','TestPilotQuestionRecipientCaseCanonicalBeforeHash','QUESTION_STORE_POLICY_CASE')
+case('http-pm-lower','internal/m8/pilot_question.go','u.PMUser = strings.ToLower(strings.TrimSpace(u.PMUser))','u.PMUser = strings.TrimSpace(u.PMUser)','./internal/m8','TestPilotQuestionHTTPRecipientCaseCanonical','QUESTION_HTTP_RECIPIENT_CASE')
+case('http-leader-lower','internal/m8/pilot_question.go','u.LeaderUser = strings.ToLower(strings.TrimSpace(u.LeaderUser))','u.LeaderUser = strings.TrimSpace(u.LeaderUser)','./internal/m8','TestPilotQuestionHTTPRecipientCaseCanonical','QUESTION_HTTP_RECIPIENT_CASE')
+case('contacts-current-owner-group','internal/m8/pilot_question.go','if !ownerIn {','if false && !ownerIn {','./internal/m8','TestPilotQuestionContactsRecheckFormerGroup','QUESTION_CONTACT_FORMER_GROUP_LEAK')
+case('contacts-sorted','internal/m8/pilot_question.go','sort.Strings(ids)','sort.Sort(sort.Reverse(sort.StringSlice(ids)))','./internal/m8','TestPilotQuestionContactsScopedSortedAndPaginated','QUESTION_CONTACT_ORDER_OR_PAGINATION')
+case('contacts-page-limit','internal/m8/pilot_question.go','if i == limit {','if false && i == limit {','./internal/m8','TestPilotQuestionContactsScopedSortedAndPaginated','QUESTION_CONTACT_LIMIT_IGNORED')
+case('contacts-page-drift','internal/m8/pilot_question.go','oldDigest != digest','oldDigest != oldDigest','./internal/m8','TestPilotQuestionContactsScopedSortedAndPaginated','QUESTION_CONTACT_DRIFT_NOT_RECHECKED')
 store('card-cas',Q,'q.Version != u.ExpectedVersion','q.Version != q.Version','TestPilotQuestionCASAndClockRollbackFailClosed','QUESTION_STALE_VERSION_ACCEPTED')
 store('clock-rollback',Q,'e != nil || now.Before(start)','e != nil || false && now.Before(start)','TestPilotQuestionCASAndClockRollbackFailClosed','QUESTION_CLOCK_ROLLBACK_ANSWER')
 store('immutable-event',Q,'if previous != hash {','if false && previous != hash {','TestPilotQuestionAnswerAtomicAndUsesOnlyD2Wake','QUESTION_EVENT_REPLACED')
@@ -40,7 +55,7 @@ case('helper-result-execution-flag',P,"payload.get('execution_authorized') is no
 case('helper-reject-query-mix',P,"if set(body)-allowed or task:","if False:",'python','','QUESTION_QUERY_SCOPE_FORGED')
 
 def run(args):
- commit=subprocess.check_output(['git','rev-parse',args.commit+'^{commit}'],cwd=ROOT,text=True).strip();out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True)
+ commit=subprocess.check_output(['git','rev-parse',args.commit+'^{tree}'],cwd=ROOT,text=True).strip();out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True)
  chosen=[c for c in CASES if not args.only or c['name'] in args.only]
  if args.only and set(args.only)-{c['name'] for c in CASES}:raise ValueError('unknown case')
  archive=subprocess.check_output(['git','archive',commit],cwd=ROOT)

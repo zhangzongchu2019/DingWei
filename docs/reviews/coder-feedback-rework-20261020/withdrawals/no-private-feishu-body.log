@@ -1,0 +1,10 @@
+2026/10/20 21:12:28 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 21:12:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- FAIL: TestPilotQuestionMessageNoPrivatePayloadAndOriginCannotBeClientSelected (0.14s)
+    pilot_question_test.go:147: QUESTION_FEISHU_PRIVATE_DATA_OR_CALLBACK_CONFUSION PRIVATE_FACT研发问题有新待办。
+        类型：技术受阻
+        请打开待答清单并登录平台：https://console.fixture.invalid/console/questions?question_id=question
+        直接回复此消息不会回写问题。答复到件仍须重核，不是业务签收或执行授权。
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.143s
+FAIL

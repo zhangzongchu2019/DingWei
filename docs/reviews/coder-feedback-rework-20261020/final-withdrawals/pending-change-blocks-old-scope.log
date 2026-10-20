@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionBusinessChangeBlocksAllOldScopeAndNeedsHumanDecision (0.11s)
+    pilot_question_test.go:278: QUESTION_PENDING_CHANGE_EXECUTION_BYPASS <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.113s
+FAIL

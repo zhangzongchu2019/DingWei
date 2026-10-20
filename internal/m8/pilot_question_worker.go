@@ -2,6 +2,7 @@ package m8
 
 import (
 	"context"
+	"errors"
 	"net/url"
 	"strings"
 	"time"
@@ -113,7 +114,11 @@ func (h *Hub) dispatchQuestionNotices(ctx context.Context, repo questionReposito
 				continue
 			}
 			actor := blockerCredential{actor: store.BlockerActor{UserID: c.Owner}}
+			prepared, attempted := false, false
 			e = h.withQuestionIdentity(ctx, c, actor, ref, []string{n.Recipient}, false, func(a identity.ContextAuthorization, check func() error) error {
+				if n.Recipient != "" && !a.Users[n.Recipient] {
+					return identity.ErrForbidden
+				}
 				binding, bound := a.Bindings[n.Recipient]
 				link, originOK := h.questionLink(n.QuestionID)
 				configured := h.QuestionSender != nil && bound && a.Users[n.Recipient] && binding.Issuer != "" && feishu.IsPersonalOpenID(binding.Subject) && originOK
@@ -121,6 +126,7 @@ func (h *Hub) dispatchQuestionNotices(ctx context.Context, repo questionReposito
 				if x != nil || !ready {
 					return x
 				}
+				prepared = true
 				// Keep the question advisory and active identity locks through send. An
 				// answer cannot commit between this check and the provider request.
 				if x = check(); x != nil {
@@ -128,12 +134,31 @@ func (h *Hub) dispatchQuestionNotices(ctx context.Context, repo questionReposito
 				}
 				sendCtx, done := context.WithTimeout(ctx, 8*time.Second)
 				defer done()
+				attempted = true
 				id, sendErr := h.QuestionSender(sendCtx, binding.Issuer, binding.Subject, n.ID, questionMessage(q, n.Kind, link))
 				return repo.FinishQuestionNotice(ctx, n.ID, id, sendErr == nil, h.now())
 			})
+			if e != nil && !attempted {
+				if reset, ok := repo.(unsentQuestionRepository); ok {
+					state := "pending_config"
+					if prepared {
+						state = "queued"
+					}
+					if questionNoticeRevoked(e) {
+						state = "cancelled"
+					}
+					cleanup, done := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+					_ = reset.DeferUnsentQuestionNotice(cleanup, n, state, prepared, h.now())
+					done()
+				}
+			}
 			if e != nil && c.Task != nil {
 				h.invalidateTaskIfDenied(ctx, *c.Task, e)
 			}
 		}
 	}
+}
+
+func questionNoticeRevoked(err error) bool {
+	return errors.Is(err, identity.ErrForbidden) || errors.Is(err, identity.ErrNotFound) || errors.Is(err, identity.ErrGroupNotFound) || errors.Is(err, store.ErrTaskFlowPermission)
 }

@@ -9,6 +9,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -31,6 +33,11 @@ type questionRepository interface {
 	PrepareQuestionNotice(context.Context, store.QuestionContext, store.QuestionNotice, bool, func() error, time.Time) (store.PilotQuestion, bool, error)
 	FinishQuestionNotice(context.Context, string, string, bool, time.Time) error
 	QuestionReferences(context.Context, string) (store.PilotQuestion, error)
+}
+
+// Worker-only recovery never treats an uncertain provider attempt as unsent.
+type unsentQuestionRepository interface {
+	DeferUnsentQuestionNotice(context.Context, store.QuestionNotice, string, bool, time.Time) error
 }
 type QuestionSender func(context.Context, string, string, string, string) (string, error)
 
@@ -104,6 +111,8 @@ func decodeQuestion(w http.ResponseWriter, r *http.Request, u *store.QuestionUpd
 		taskError(w, store.ErrTaskFlowInvalid)
 		return false
 	}
+	u.PMUser = strings.ToLower(strings.TrimSpace(u.PMUser))
+	u.LeaderUser = strings.ToLower(strings.TrimSpace(u.LeaderUser))
 	return true
 }
 func (h *Hub) HandleQuestionPolicy(w http.ResponseWriter, r *http.Request) {
@@ -507,6 +516,11 @@ func (h *Hub) listQuestions(ctx context.Context, w http.ResponseWriter, r *http.
 func returnQuestionDenied(w http.ResponseWriter) { taskError(w, store.ErrTaskFlowPermission) }
 
 func (h *Hub) HandleQuestionCreateContext(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	if r.Method != "GET" {
+		taskJSON(w, 405, map[string]any{"error": "method_not_allowed"})
+		return
+	}
 	repo, err := h.questionRepo()
 	if err != nil {
 		taskError(w, err)
@@ -522,13 +536,46 @@ func (h *Hub) HandleQuestionCreateContext(w http.ResponseWriter, r *http.Request
 		taskError(w, store.ErrTaskFlowInvalid)
 		return
 	}
-	task := ""
+	task, cursor := "", ""
+	limit := 50
+	explicit := map[string]bool{}
 	for k, v := range values {
-		if k != "task_id" || len(v) != 1 {
+		if k != "allow_user" && len(v) != 1 {
 			taskError(w, store.ErrTaskFlowInvalid)
 			return
 		}
-		task = v[0]
+		switch k {
+		case "task_id":
+			task = v[0]
+		case "limit":
+			limit, e = strconv.Atoi(v[0])
+			if e != nil || limit < 1 || limit > 100 {
+				taskError(w, store.ErrTaskFlowInvalid)
+				return
+			}
+		case "cursor":
+			cursor = v[0]
+		case "allow_user":
+			if len(v) > 20 {
+				taskError(w, store.ErrTaskFlowInvalid)
+				return
+			}
+			for _, id := range v {
+				id = identity.Lower(strings.TrimSpace(id))
+				if id == "" || len(id) > 128 || strings.ContainsAny(id, " :/\\") {
+					taskError(w, store.ErrTaskFlowInvalid)
+					return
+				}
+				explicit[id] = true
+			}
+		default:
+			taskError(w, store.ErrTaskFlowInvalid)
+			return
+		}
+	}
+	if len(task) > 256 || len(cursor) > 4096 {
+		taskError(w, store.ErrTaskFlowInvalid)
+		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
@@ -541,30 +588,168 @@ func (h *Hub) HandleQuestionCreateContext(w http.ResponseWriter, r *http.Request
 		taskError(w, store.ErrTaskFlowPermission)
 		return
 	}
-	contacts := []map[string]string{}
-	if actor.actor.UserID == c.Owner {
-		users, x := h.Identity.Store.ListUsers(ctx)
-		if x != nil {
-			taskError(w, x)
-			return
-		}
-		for _, user := range users {
-			if user.State == identity.UserActive {
-				contacts = append(contacts, map[string]string{"id": user.UserIDLC(), "display_name": user.ShortName})
-				if len(contacts) >= 500 {
-					break
-				}
-			}
-		}
-	}
-	version := c.Revision
-	if c.Task != nil {
-		version = c.Task.Version
-	}
 	err = h.withQuestionIdentity(ctx, c, actor, store.PilotQuestion{}, nil, false, func(_ identity.ContextAuthorization, check func() error) error { return check() })
 	if err != nil {
 		taskError(w, err)
 		return
 	}
-	taskJSON(w, 200, map[string]any{"spec_id": c.SpecID, "task_id": task, "expected_version": version, "can_configure_policy": actor.actor.UserID == c.Owner, "contacts": contacts, "contact_limit": 500, "execution_authorized": false})
+	contacts := []map[string]string{}
+	next := ""
+	if actor.actor.UserID == c.Owner {
+		auth, ok := h.Identity.Store.(identity.QuestionContactAuthorizationStore)
+		if !ok {
+			taskError(w, errors.New("question contacts authorization unavailable"))
+			return
+		}
+		groups := map[string]bool{}
+		if c.Task != nil {
+			groups[c.Task.GroupCode] = true
+		} else {
+			owned, x := h.Identity.Store.ListAgents(ctx, c.Owner)
+			if x != nil {
+				taskError(w, x)
+				return
+			}
+			for _, ag := range owned {
+				if ag.State != identity.AgentActive {
+					continue
+				}
+				gs, x := h.Identity.Store.ListAgentGroups(ctx, ag.ID)
+				if x != nil {
+					taskError(w, x)
+					return
+				}
+				for _, g := range gs {
+					groups[g] = true
+				}
+			}
+			all, x := h.Identity.Store.ListGroups(ctx)
+			if x != nil {
+				taskError(w, x)
+				return
+			}
+			for _, g := range all {
+				if g.CreatorLC == c.Owner {
+					groups[g.Code] = true
+				}
+			}
+		}
+		policy, x := repo.QuestionPolicy(ctx, c.SpecID)
+		if x != nil {
+			taskError(w, x)
+			return
+		}
+		allow := map[string]bool{c.Owner: true}
+		for id := range explicit {
+			allow[id] = true
+		}
+		for _, id := range []string{policy.PMUser, policy.LeaderUser} {
+			if id != "" {
+				allow[id] = true
+			}
+		}
+		gs := []string{}
+		for g := range groups {
+			if g != "" {
+				gs = append(gs, g)
+			}
+		}
+		sort.Strings(gs)
+		us := []string{}
+		for id := range allow {
+			us = append(us, id)
+		}
+		sort.Strings(us)
+		raw, _ := json.Marshal([]any{c.SpecID, task, us})
+		scope := fmt.Sprintf("question-contacts:%x", sha256.Sum256(raw))
+		after, oldDigest := "", ""
+		if cursor != "" {
+			page, x := h.decodeContextCursor(cursor, actor.actor.Key(), scope, limit)
+			if x != nil {
+				taskError(w, store.ErrTaskFlowInvalid)
+				return
+			}
+			after = page.SessionAfter
+			oldDigest = page.Auth
+		}
+		err = auth.WithQuestionContacts(ctx, c.Owner, gs, us, func(a identity.ContextAuthorization, check func() error) error {
+			if c.Task != nil && c.Task.GroupCode != "" && !a.Allows(identity.ContextClaim{Owner: c.Task.Owner, Group: c.Task.GroupCode, Developer: c.Task.Developer, Reviewer: c.Task.Reviewer}) {
+				return identity.ErrForbidden
+			}
+			now, x := repo.QuestionAuthorizationContext(ctx, c.SpecID, task, "")
+			if x != nil {
+				return x
+			}
+			if !reflect.DeepEqual(now, c) {
+				return store.ErrTaskFlowConflict
+			}
+			allowed := map[string]bool{}
+			for id := range allow {
+				if a.Users[id] {
+					allowed[id] = true
+				}
+			}
+			for g, group := range a.Groups {
+				ownerIn := group.CreatorLC == c.Owner
+				for id := range a.Members[g] {
+					if a.Agents[id].OwnerLC == c.Owner && a.Active(id) {
+						ownerIn = true
+					}
+				}
+				if !ownerIn {
+					continue
+				}
+				for id := range a.Members[g] {
+					if a.Active(id) {
+						allowed[a.Agents[id].OwnerLC] = true
+					}
+				}
+			}
+			digest := a.Digest()
+			if oldDigest != "" && oldDigest != digest {
+				return errContextChanged
+			}
+			ids := []string{}
+			for id := range allowed {
+				if id > after {
+					ids = append(ids, id)
+				}
+			}
+			sort.Strings(ids)
+			for i, id := range ids {
+				if i == limit {
+					var x error
+					next, x = h.encodeContextCursor(contextCursor{Actor: actor.actor.Key(), Scope: scope, Limit: limit, Auth: digest, SessionAfter: ids[i-1], Expires: h.now().Add(5 * time.Minute).Unix()})
+					if x != nil {
+						return x
+					}
+					break
+				}
+				contacts = append(contacts, map[string]string{"id": id, "display_name": a.Names[id]})
+			}
+			if x = check(); x != nil {
+				return x
+			}
+			now, x = repo.QuestionAuthorizationContext(ctx, c.SpecID, task, "")
+			if x != nil {
+				return x
+			}
+			if !reflect.DeepEqual(now, c) {
+				return store.ErrTaskFlowConflict
+			}
+			return nil
+		})
+		if err != nil {
+			contextError(w, err)
+			return
+		}
+	} else if len(explicit) > 0 || cursor != "" {
+		taskError(w, store.ErrTaskFlowPermission)
+		return
+	}
+	version := c.Revision
+	if c.Task != nil {
+		version = c.Task.Version
+	}
+	taskJSON(w, 200, map[string]any{"spec_id": c.SpecID, "task_id": task, "expected_version": version, "can_configure_policy": actor.actor.UserID == c.Owner, "contacts": contacts, "contact_limit": limit, "contacts_next_cursor": next, "execution_authorized": false})
 }

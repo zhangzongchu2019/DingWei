@@ -1,0 +1,11 @@
+{
+  "utc": "2026-10-20T21:13:57.230968+00:00",
+  "repository": "wego-ai/dingwei",
+  "ref": "refs/tags/evidence/coder/feedback-rework-input-5175f2ce",
+  "tag_object": "06585643de7c2a44e82aeac7785e618136d30f92",
+  "tree": "5175f2cee711a68ccd0ee3982213ed61bf9a6c85",
+  "object_type": "tree",
+  "fresh_repository": true,
+  "fetch_rc": 0,
+  "no_shared_object_cache": true
+}

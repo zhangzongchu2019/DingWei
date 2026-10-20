@@ -1,0 +1,1244 @@
+{
+  "source_commit": "5175f2cee711a68ccd0ee3982213ed61bf9a6c85",
+  "entries": [
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/EARLY-TREE-FETCH.json",
+      "mode": "100644",
+      "blob": "ef99136db6827a87279414fab64d2bb603fc288f",
+      "size": 215,
+      "sha256": "221f15918fad405879f340b52c190c04f64abb2859c3ef161728c39f5957756c"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/FROZEN-TREE-FETCH.json",
+      "mode": "100644",
+      "blob": "48e17cec484f981730ecba491dae35b386cc8ad8",
+      "size": 369,
+      "sha256": "5cf2a3e50060bf77380c996e17fc62700d502a630bf15a6b51d1021865ccf987"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/GO-PACKAGES.json",
+      "mode": "100644",
+      "blob": "46cffbad96cc181a3340805a2016b7a77baf2484",
+      "size": 22357,
+      "sha256": "76b9104a31765dedafc71072c9994275f7601edaee535f2433106a41f24f332b"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/INPUT-SCOPE.json",
+      "mode": "100644",
+      "blob": "099aa69404618564144b8589c23b7e2517353b03",
+      "size": 413,
+      "sha256": "c4d5a5fa2f3229a628dc331fcb10184fd49c4b7b3df40ea54922db9edbf01683"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/PREVIOUS-GO-FAILURES.json",
+      "mode": "100644",
+      "blob": "f74a527c69f8f8306a3c050ff0f53ab6f160c20b",
+      "size": 2117,
+      "sha256": "a0b8feab40caafd160832778005a3144a32920691d492c04df1d6a311ab9cad7"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/REPORT.md",
+      "mode": "100644",
+      "blob": "c2dbb6a25bfab408b86eaecc4c3ec4aa8a42203f",
+      "size": 6850,
+      "sha256": "de8f8af5b785ee884156bffbce61382aba89eb8cbc90020685054f8764bdd2c4"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/REPRO-BROWSERS.py",
+      "mode": "100644",
+      "blob": "177d4d531c7b56207a715a17066f4fd103865655",
+      "size": 2438,
+      "sha256": "0ee8d83235866dc20b8ebd7ebdbab0873d3ce164980db08798d1440bcb850025"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/REPRO-CONDITIONAL-PAIRS.py",
+      "mode": "100644",
+      "blob": "d3bd6f61a0fe864370be0c6a001e9302bf441a35",
+      "size": 2187,
+      "sha256": "4dedb28269ce09d9bbe6db17f44fab0fb6ded8e1f57ad46b156fd22c3c71dafe"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/REPRO-GATES.py",
+      "mode": "100644",
+      "blob": "699413c776ee719a84e44bc785446d889ca04760",
+      "size": 2676,
+      "sha256": "1464e7c92127d31283530956d83e9c7bcb29be3720ebf86c8a35c45d49120742"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/SOURCE-MANIFEST.json",
+      "mode": "100644",
+      "blob": "5c0346bb38bb2ee226dc5ffdfce9f780b43e0f40",
+      "size": 467481,
+      "sha256": "ba48fad6c0734e600bd9735aaca32596be82f49d2591a86036bc2b9f49967ff7"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/UNCHANGED-FAILURE-INPUTS.json",
+      "mode": "100644",
+      "blob": "c84e29f83bfe5bd1440791a7a5d4fce7cc8dba9f",
+      "size": 1342,
+      "sha256": "8d8fc5ea667aa7e713ffb41a449ae77a5a10e3a24d880fc2a2062ffa0d8d49a5"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/VERIFY.py",
+      "mode": "100644",
+      "blob": "ed6e0043dba72e638d02afa4d4188959fc925ec5",
+      "size": 2073,
+      "sha256": "a13b5048711f8434f35fa66661f4076fdc18bf785e764e00249742f1d12447e4"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/accepted-go/go.json",
+      "mode": "100644",
+      "blob": "f028e6b4db58355522e18c2a5f8d22a38904305c",
+      "size": 463,
+      "sha256": "e529f8cf6070c0892be739111385a34401a759d77f1099c02abd9eb9dfa85e80"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/accepted-go/go.log",
+      "mode": "100644",
+      "blob": "c951b19c093a0b4273be1adc7995b76384b27a5a",
+      "size": 4311018,
+      "sha256": "646b698ed217a354f7b1908ab569af5ef182b708849b605d33caf681b3741fce"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/console-agent-groups-vega-regression.js.json",
+      "mode": "100644",
+      "blob": "e9e2948f8a5412da455ef0ae47e1b294362b7b53",
+      "size": 321,
+      "sha256": "aeb10c17a3d0a733c56435a6c91c8e107f2d90c9761536e2c6053afcec6a56ca"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/console-agent-groups-vega-regression.js.log",
+      "mode": "100644",
+      "blob": "a5e226c248067bcf0974472ab41a5571ed11e1fc",
+      "size": 904,
+      "sha256": "4845d113539a199cb7cf4e0650964f1ad2855310ca7718fe0654848cc80613d6"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/console-agent-mgmt-enroll-regression.js.json",
+      "mode": "100644",
+      "blob": "df4cbfb9b3e5c57ee8ae5a5af51c1cf8fee6afd7",
+      "size": 321,
+      "sha256": "31e1dd14d4af332eb12ebb4bfb06165f156c446df0871f31e9f346a5ae37a8f2"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/console-agent-mgmt-enroll-regression.js.log",
+      "mode": "100644",
+      "blob": "784fbc2289b337f95da4333646fbcd59e6d1500a",
+      "size": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/console-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "738b089d405fc01a92df49db8cada2c0000ddfb4",
+      "size": 311,
+      "sha256": "8a0bfb804008c87cc0fdb40f0624fdb0bdbfe26d6144b2bdc88813a0d4256488"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/console-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "size": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/console-specs-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "a503fe55980e4b20ee7cf5f673d1eee26bd9669a",
+      "size": 317,
+      "sha256": "d4ce878fe44cc64a30ca2965d5d223d02eca755f990c60275c6870394c6c1082"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/console-specs-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "d37f01bf256f59c48002f9fc4d745d51ccbc1635",
+      "size": 985,
+      "sha256": "e6fa477bf9b923fbd7b6feb1dc63e5fce94d4f5e0c0fe37fa16bb6590a99f4bc"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/console-task-board-regression.js.json",
+      "mode": "100644",
+      "blob": "fa36596f3e31c146398f655a63133ed86f8b8fb3",
+      "size": 314,
+      "sha256": "d0a9b92225129bdc9ba7e3d757d3dc348a03d36f16f72dd116bb4d28f1bdb565"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/console-task-board-regression.js.log",
+      "mode": "100644",
+      "blob": "5b2215aecd549fa825b2ba666b3a12a00591e7fa",
+      "size": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/pilot-blocker-wake-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "1b395510fb60668065ad2a227fb92a9ad449b574",
+      "size": 322,
+      "sha256": "e709f4a6a90d8112b9a4b47f57b2d4bc17ac349e9fb46ee206692fb4dc7c35cb"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/pilot-blocker-wake-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "5dfd229df95fa4cfe45402e449d3b8c6c36b200e",
+      "size": 74,
+      "sha256": "18435bfdc48bbd84e845d39339ad7b2cc2b8c3f3a3ef127660a54a71dbc7ed94"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/pilot-feedback-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "26a10c97bd38ade6b0554e3284dc0d9babb8e199",
+      "size": 318,
+      "sha256": "1ad1cf6e4fb00f2be6818a31d1b80422e48e2dd18e387d5ce6b931def312f256"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/pilot-feedback-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "42230a7e662f1a7db32c450fcc11ec015fd5f14b",
+      "size": 70,
+      "sha256": "7a331ee0f620e65378133c448a9550567a65e9fbdb5fe7235fef461cdd45b63e"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/r31-hosted-nodes-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "c8739f7b667693a657b9d6b9b58b93bbc4e79b06",
+      "size": 320,
+      "sha256": "7c348618ea04688c622f3d80553006e463d8ae1f9fc6e378075b051a75bf3cdb"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/r31-hosted-nodes-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "df5393359b7ce23db70d2fb4b6dc59ccfb0e4fe5",
+      "size": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/r32-spec-review-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "edd260e79f955e4e892c8718bc48582cfff03cc9",
+      "size": 319,
+      "sha256": "5f7068e341e918c09d5cbd01e873e3e992dccd1d3b3e70d131f8dee66c5410ed"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/r32-spec-review-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "74802d6e199805d4d61ddab722b4ba50da3a7cc4",
+      "size": 136,
+      "sha256": "3669a2aea92524e055b41c4428531a16b11dc061444b838c8771cabe5e7000d4"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/r32-task-flow-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "49a377f67a668a5231fa29502ca1689f3abb3385",
+      "size": 317,
+      "sha256": "5bf9f12ca9c64e1b0b61206aab3ad1d02423fb7b8171089c63caf6ec5d920fb5"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/browsers/r32-task-flow-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "dca2423d4573dada216137f9c5494865f5495c05",
+      "size": 49,
+      "sha256": "e5d1a5b632d94c223b81745d4d9ed14df42f73fe9ad1e317c6da4518e36f61e9"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/conditional-pairs/1-baseline.log",
+      "mode": "100644",
+      "blob": "79bf39a86b9f45c24d6ebbce1ac67df9f33abc14",
+      "size": 17132,
+      "sha256": "911f45cd9f2a773c130bc9605bf539a8c7bcd5441fdfb688f4e6767278fdc182"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/conditional-pairs/1-final.log",
+      "mode": "100644",
+      "blob": "2839554e5f3327bfd84eae79dafd78d83a82491c",
+      "size": 15820,
+      "sha256": "5a4f99af71c5e282155197f9599a1c218b2a5e158ba77b5c0c6e76ca5e185f1f"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/conditional-pairs/2-baseline.log",
+      "mode": "100644",
+      "blob": "ae5db9a7ddceca6623c8e87385b523aae05c725e",
+      "size": 15836,
+      "sha256": "a0ecf0b18059c624830dd4225f655c88c3af708b081c5030d5bd4c885c465236"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/conditional-pairs/2-final.log",
+      "mode": "100644",
+      "blob": "6692efc7b2d7910efa7fe06db0341dab8cd47846",
+      "size": 16507,
+      "sha256": "a832bc7b336c904fe2a690190c8939000a8ff36fb96dba88250c5407a64fd0ab"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/conditional-pairs/3-baseline.log",
+      "mode": "100644",
+      "blob": "30034d3a28421db8902bd9ea216501ae374cd38a",
+      "size": 15830,
+      "sha256": "ebb5d1472bbd2a1f5212784398f579be42510147a4ccf9c6572e0a05e92a1757"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/conditional-pairs/3-final.log",
+      "mode": "100644",
+      "blob": "f46883289e1e54954728e980abe15f5ad37810cf",
+      "size": 15826,
+      "sha256": "98b5c6ec124b03f063dc0bfe568cdd960a99cff8295e9bbedbc02be8c15feaa5"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/conditional-pairs/RESULTS.json",
+      "mode": "100644",
+      "blob": "e872c2293454393a74569a8a5ac7e48209e9894a",
+      "size": 3294,
+      "sha256": "e3d734ef43d7081ba11a2ce1d3c552d590020d470a9acf0321c749e9965eddd0"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/console-agent-groups-vega-regression.js.json",
+      "mode": "100644",
+      "blob": "c34d7985c896e28b7d45742eb15a0003ce3ad0c9",
+      "size": 321,
+      "sha256": "6e9d76093107f1f978d95896a571b34bdcf93115e8e1dc8900b0fe737c466e05"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/console-agent-groups-vega-regression.js.log",
+      "mode": "100644",
+      "blob": "a5e226c248067bcf0974472ab41a5571ed11e1fc",
+      "size": 904,
+      "sha256": "4845d113539a199cb7cf4e0650964f1ad2855310ca7718fe0654848cc80613d6"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/console-agent-mgmt-enroll-regression.js.json",
+      "mode": "100644",
+      "blob": "073ad84340b78be69fe635628498fa566d8e1697",
+      "size": 321,
+      "sha256": "01641c3750ddc20f4e6720fd36c9c24edff012ecaac747a95474e2507fd1227f"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/console-agent-mgmt-enroll-regression.js.log",
+      "mode": "100644",
+      "blob": "784fbc2289b337f95da4333646fbcd59e6d1500a",
+      "size": 2073,
+      "sha256": "3a84813ba52e7ded1c536b3a75872f485cf1db617fffadfc043cc801aab92ebc"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/console-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "a730e23e60bdd4cb200e7a10b8d1b51bcb85ba84",
+      "size": 311,
+      "sha256": "5d1a6046517c7155a1de503811f799c9431dd6db4b1c1ff9cdbf7ec9c66b3370"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/console-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "08d665e173b011cda19c81b9629473d94f68686d",
+      "size": 1521,
+      "sha256": "49bba84d3c5c9bcc062a192e0780f77b9cd103e4bcced5f3ba0dc963397f14ef"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/console-specs-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "21780233b543f03e7eebae3fab8e4082c34b4b5f",
+      "size": 317,
+      "sha256": "0f948fbff9daaf4ffdb10739f0cc6abfcaa9edeb3b2bf323400bc344b5bb5751"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/console-specs-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "21480824e9837bff36be9d2668d0ed6b78db093a",
+      "size": 985,
+      "sha256": "c68cf16e8e2bff9b443b88485d335dabc0e856f28e154b0f6e9b9e5bbbb2edad"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/console-task-board-regression.js.json",
+      "mode": "100644",
+      "blob": "bbe2b5d1e69624bf572a02df66c215fed9273cc8",
+      "size": 314,
+      "sha256": "6de82d623d6c39c2109f8c7a193d77a4f752160f62c5b92efc77082f05cc5a78"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/console-task-board-regression.js.log",
+      "mode": "100644",
+      "blob": "5b2215aecd549fa825b2ba666b3a12a00591e7fa",
+      "size": 67,
+      "sha256": "9e0b5f4707167a2bb4020146fb8233cb3f06c9615a1345537524efbaac11fdbb"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/pilot-blocker-wake-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "cf93731b9eb7c290a955d7c8cefcacd49e13a96e",
+      "size": 322,
+      "sha256": "8baeef7c48a56dec63032d26e4c52be4412142620c4bbe1a1aaf94c6eb2f21a6"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/pilot-blocker-wake-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "5dfd229df95fa4cfe45402e449d3b8c6c36b200e",
+      "size": 74,
+      "sha256": "18435bfdc48bbd84e845d39339ad7b2cc2b8c3f3a3ef127660a54a71dbc7ed94"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/pilot-feedback-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "7213fcbbfe20ce56d4c94b71174d26f2bae901fb",
+      "size": 318,
+      "sha256": "c19f27a76323485fd9bf747bc13f6a07294633c0dcb6d0e0d2e7e5f1da7b6e9e"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/pilot-feedback-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "b5fe8bf732e67fd1f7fd0d903168377281ab6edf",
+      "size": 70,
+      "sha256": "505688d98432aa8e4f075cfbb0a33ecd5f9797f8485d9b38a43463900b2c8468"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/r31-hosted-nodes-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "c1728569b02def985ff94d6d00172d54963752dd",
+      "size": 320,
+      "sha256": "f1926c91c01876cc2c0fafe9a8187021ae73155bfeb0e8e3876f0b62117759b6"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/r31-hosted-nodes-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "df5393359b7ce23db70d2fb4b6dc59ccfb0e4fe5",
+      "size": 500,
+      "sha256": "76bd4ecea1dd3ec3046976778e8253c092c3ab7d819d01e99f028adc81c80eef"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/r32-spec-review-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "861da9d37f98762d728e9a0fdbf2b171815035f1",
+      "size": 319,
+      "sha256": "930281e839431eb3d55d2342153a4d5dfb82cf3b1cbb89072d7fef0e34a770d1"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/r32-spec-review-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "74802d6e199805d4d61ddab722b4ba50da3a7cc4",
+      "size": 136,
+      "sha256": "3669a2aea92524e055b41c4428531a16b11dc061444b838c8771cabe5e7000d4"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/r32-task-flow-browser-regression.js.json",
+      "mode": "100644",
+      "blob": "d1740337501bcb0d586c845b0bf0967c0e43f608",
+      "size": 317,
+      "sha256": "08cc6cfaf61fa7e742a1246919d76bf514d3058e7f73fe33fcb0bc633c19cec8"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-browsers/r32-task-flow-browser-regression.js.log",
+      "mode": "100644",
+      "blob": "dca2423d4573dada216137f9c5494865f5495c05",
+      "size": 49,
+      "sha256": "e5d1a5b632d94c223b81745d4d9ed14df42f73fe9ad1e317c6da4518e36f61e9"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-gates/canonical.json",
+      "mode": "100644",
+      "blob": "97fb967493d33e533541e81648fb0675fc844625",
+      "size": 425,
+      "sha256": "229b668af2f866c0f1c9c59bf8684966be99f5d863e230563411cd77d91a2844"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-gates/canonical.log",
+      "mode": "100644",
+      "blob": "7b5ce8cd7a29208c6cee001c7a662df289d21321",
+      "size": 42012,
+      "sha256": "428c683431940d2dddf4a680494f0fa9d911d00b10c21796d234f396c1141a7c"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-gates/go.json",
+      "mode": "100644",
+      "blob": "db4b38d5e18e8a51200f751ea973e9870510b05b",
+      "size": 463,
+      "sha256": "a82902105be52ce43e469cc321c714fe049ae47d02f443d436895b33d126c1b0"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-gates/go.log",
+      "mode": "100644",
+      "blob": "ff375ef6713304c214e83fd8e69652441f1a5ccf",
+      "size": 4331154,
+      "sha256": "571079b9e40ccb64877728dcb7f56ee1f62bfc3be460a4739cd57eac6ceea412"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-gates/race.json",
+      "mode": "100644",
+      "blob": "a4472f103ff1e27aca576e913d966865ef1d8540",
+      "size": 593,
+      "sha256": "0697bcd8cc3a1f251720f76e37ee17f2069eaecd20e6d5594f36c6d821c4d19f"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-gates/race.log",
+      "mode": "100644",
+      "blob": "b8eac8b0d602d7f767b02d391177a364ed20b678",
+      "size": 194,
+      "sha256": "e454324dc833b5d4e0becb298ee27272218c7a58f74077421091f008a41ebb66"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-gates/vet.json",
+      "mode": "100644",
+      "blob": "f3befade6e74b7d536181aa96f57b61c4dd8e245",
+      "size": 413,
+      "sha256": "e3fb07f6c30a5f08b63b49435cbd7e23eee2f8b21be3ec3afb34f46029c3eb57"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/RESULTS.json",
+      "mode": "100644",
+      "blob": "814f559d6f7c9fafa45af744f53dd62aa176b86d",
+      "size": 26524,
+      "sha256": "74d9c32907befe3006a8a098e0ee4cb47219765b8a381390b979da9adc490f58"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/ack-is-not-substantive.log",
+      "mode": "100644",
+      "blob": "a3fde77f0c7d908f3815ebfbc9c13ab278b49161",
+      "size": 760,
+      "sha256": "3de31036293406802416cd824ecf2a06490480abb2bfb17938619c7251f81c1d"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/answer-first-cancels-reminder.log",
+      "mode": "100644",
+      "blob": "06c7d797ea08fd68be1561cd0bb6a35eab6f4963",
+      "size": 333,
+      "sha256": "b6bc60749d17cf2695b8b0d1288bcb20d2cd6848afaf40a7e5e3bfc5dd17d8dd"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/assign-preserves-clock.log",
+      "mode": "100644",
+      "blob": "f70aeca1cc2f82d3898e6c32574f26168047f171",
+      "size": 758,
+      "sha256": "744a21543c8b8322e0372393bd9a85968498b1b192f7418c4e8492e4451a5fc4"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/baseline-go.log",
+      "mode": "100644",
+      "blob": "37c1fdf4d7efc95c77ae4a2335924a73298e1bd5",
+      "size": 188,
+      "sha256": "66dcff8b06f099567bae7f96b6c285b7ccfc3302ec1413fbea8d69e1387d4343"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/baseline-helper.log",
+      "mode": "100644",
+      "blob": "f7c09a14c1a129c2d3c1ba8030d1a02f275700af",
+      "size": 1262,
+      "sha256": "6edfe5268b8698c7466ff84d068a3bbe4976687cfbb5c4c44786b21c4ff4e05b"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/cancel-keeps-business-proposal.log",
+      "mode": "100644",
+      "blob": "61aacb85b2f542850d3afd70ccd9925606f2f72b",
+      "size": 229,
+      "sha256": "edd498a434ee1ae9e98ffdf3140a40541047a00186bae4f379a65f00d97569dd"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/card-cas.log",
+      "mode": "100644",
+      "blob": "bf143d6788e8dd872da8bef693c0ebad7c279fd9",
+      "size": 208,
+      "sha256": "ff7cf84edbc70bd30c5b43b5f468a2145bc29a5023397f491b767a8a9b0ea0dc"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/clock-rollback.log",
+      "mode": "100644",
+      "blob": "a6335f20d3a595bfd7c4aa26418c085f3de9469e",
+      "size": 207,
+      "sha256": "1b1b76d5bcab070e49e58f51bd61d941e7b3c42d3686341b93f68cc41f5782eb"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/completed-feedback-no-wake.log",
+      "mode": "100644",
+      "blob": "242909ebbb7b8a06e78e4b35e16757f8e1be9688",
+      "size": 802,
+      "sha256": "3749bcf2168b30a52cf6a908b478dfede299000f88b3cec47275d5d6d18fa51e"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/contacts-current-owner-group.log",
+      "mode": "100644",
+      "blob": "6e2ce4e0852bc9a58d7944a301da591651b1408b",
+      "size": 760,
+      "sha256": "1c3060666afa99d5c69832b29021eab2912eecb001b364868b60f3dcc8de6f6c"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/contacts-page-drift.log",
+      "mode": "100644",
+      "blob": "579d6c54a4ba13acaffaf17f48682a6dea04be0c",
+      "size": 1098,
+      "sha256": "6469a8007a40aef6e1c1caf090dc426ef2e2ec96df2ed2e611ad1a9627fecaf2"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/contacts-page-limit.log",
+      "mode": "100644",
+      "blob": "dfdb748912865f7d44542311cbfc7a5b371b32b2",
+      "size": 491,
+      "sha256": "0535173940fefa6e99eeedff8362d715f51eb1ad3b9bec0d9c563fc09572f815"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/contacts-sorted.log",
+      "mode": "100644",
+      "blob": "f24b1e3d80061240be7adeebec9c19b026c3b1ae",
+      "size": 501,
+      "sha256": "cb4ac097563065a63beb74ee64ea154130c6e6a03b73cc514876f9ddf507ae5d"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/d2-old-waiter-revoked.log",
+      "mode": "100644",
+      "blob": "786a3e28f6a0f15dab31463950a4b58ca68e84eb",
+      "size": 220,
+      "sha256": "26545504b394ff1dd8f575fb9eec84bb5efbb6c2524bc81acb041e1e8964aadc"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/final-pg-check.log",
+      "mode": "100644",
+      "blob": "23f9a1d20bc4cc8fb273e9796af2bfbc249c7727",
+      "size": 204,
+      "sha256": "f0e4cbaf526ed5c1c86b11b89512c87ea73c6c6661465d44cbc813f85cc50b72"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/helper-reject-query-mix.log",
+      "mode": "100644",
+      "blob": "4c01e3d599227614349f4359d3802bf6012760be",
+      "size": 1983,
+      "sha256": "25b009ddcefef451711a345408c70a975c1851a29684cb907f282d30494a73b8"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/helper-result-execution-flag.log",
+      "mode": "100644",
+      "blob": "764e7a709b68dd4288cc1f92270f651d5b3e9a17",
+      "size": 1935,
+      "sha256": "e7264c5faaaacfa45b9ef4a21f38838ca8fa1adf0035b27aa6507724fead0a9a"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/helper-strict-version.log",
+      "mode": "100644",
+      "blob": "3a46202831eb93a0ab8715c8e244b86fef5b7cd6",
+      "size": 2037,
+      "sha256": "b42e5ca58df7a96112b1f641917ed8cf4ce111c2c42cda5de062e1eac50033fc"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/historic-proposal-owner-maintenance.log",
+      "mode": "100644",
+      "blob": "41fa10848c915e6bee5115ab9f93d4c96c3ebee9",
+      "size": 347,
+      "sha256": "7285733eedab0ce73350739687a50b037a6b383d443e306a8e6cd2805445ce06"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/history-bounded.log",
+      "mode": "100644",
+      "blob": "7f76b0830e4a5b5a61b3cbd1f73d05f89dd37932",
+      "size": 769,
+      "sha256": "b0b8a3feb8c581de68a7f9b85167a2da7366bc5f0080ee954fc14891def6062d"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/http-leader-lower.log",
+      "mode": "100644",
+      "blob": "602d3f2de97cfa65713727d46e83b478c017dbde",
+      "size": 527,
+      "sha256": "178e278a850c29120a59d6694025573e914c68bfb15d79714031fba3accb2823"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/http-pm-lower.log",
+      "mode": "100644",
+      "blob": "37a7303f4085851d58ec018e9c94de32b1b5863c",
+      "size": 527,
+      "sha256": "e8d7d5c3710e72e25c77e7d6430af14f41e0840c26c6160eb55126f92d666ca4"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/immutable-event.log",
+      "mode": "100644",
+      "blob": "1807bfec2ddc71064d8b30f137e27fb6ecff42b0",
+      "size": 199,
+      "sha256": "bebcef2a858054e93e27fc6df9cbf4f910fa8eaf4ce8e62e69cf40adbead0271"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/late-check-before-provider.log",
+      "mode": "100644",
+      "blob": "b854a1743a4af1d6eb3f3f48e2af61e4f4796238",
+      "size": 1330,
+      "sha256": "bdf89ac8313f094598d03442fd727d9ed289dbe09a6a9d41771ce5ca6302148e"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/late-transient-queued.log",
+      "mode": "100644",
+      "blob": "a486f7ce7d5355e4a7a2fdd88eb24476813554d8",
+      "size": 1166,
+      "sha256": "c4e74890c72be750bdb5e1445597f7ef8d0d6f42ec702beaa60b8587ad0d0057"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/logical-content-dedup.log",
+      "mode": "100644",
+      "blob": "9190ac879fe56d8a0a2ffec2718688245255889c",
+      "size": 507,
+      "sha256": "8e88196814217e1f7932ab245a4974e446910bc125b7a31c2a597ff7c8568c14"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/no-agent-pm.log",
+      "mode": "100644",
+      "blob": "01d756616599da6dab5ee6dcb783cbe13f01ecc6",
+      "size": 205,
+      "sha256": "279de0efd201c99c941028facd18392092678903c68a82720d6d4d00635dcf27"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/no-private-feishu-body.log",
+      "mode": "100644",
+      "blob": "c2331946348e1961efb2664bfcca411227bf20af",
+      "size": 826,
+      "sha256": "a3d5566de32acc7074530565ae21193b9173534f3cab72dd155ffbe0a566864a"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/one-sla-per-generation.log",
+      "mode": "100644",
+      "blob": "4d716cb2ecae92c377043b84fc6e64e11bac88ab",
+      "size": 220,
+      "sha256": "d9823afb3425f8dd708e0dec892ff65d7834cfeead52fa5aec450d9c8fc447e1"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/owner-only-change-decision.log",
+      "mode": "100644",
+      "blob": "eb77b7c8dbf155202196cc5ac9fcf6d3108fde95",
+      "size": 226,
+      "sha256": "84c99a72464410e68c8f381121db7379c9f1d2d298ddecb1a2618ee2aadd586f"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/past-dispatch-never-unsent.log",
+      "mode": "100644",
+      "blob": "2fe363a983e7cffd96f77b155c9487f000c2cf20",
+      "size": 224,
+      "sha256": "25d83f23977b2acdacc36adc1b220d9d1fd22aab721ef379ac8a44100683fafb"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/pending-change-blocks-old-scope.log",
+      "mode": "100644",
+      "blob": "f93d97b2dcfcb756ded6440221a3184f57608023",
+      "size": 240,
+      "sha256": "a26e1ab97b6abe7c3e52f67fccc473a02997e55e35769dc977036660d1a1ae84"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/pg-send-reply-serialized.log",
+      "mode": "100644",
+      "blob": "228eb94ee4be589d8110e45eeea8bb7bafeb9af7",
+      "size": 1861,
+      "sha256": "35bbf4c445dd6a4eed2635aeef9ac28b76a8f35ea8cd7e7072549cbd26dbdd65"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/pm-cannot-grant-outsiders.log",
+      "mode": "100644",
+      "blob": "209d8eb387713a2166d4cc6b271c2f35f6bb4cb1",
+      "size": 222,
+      "sha256": "53c38f53b9f6d0768c3df63b842d8ccc1a83523661cf17229b45036339a669bd"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/prepare-failure-pending.log",
+      "mode": "100644",
+      "blob": "5c15311c96bb2e585e0cc7aa460ecefd3581ce62",
+      "size": 1159,
+      "sha256": "00616923500acad6e4baae975bffaa99fd21d487e8c78758f756e3d7317a1943"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/production-full.log",
+      "mode": "100644",
+      "blob": "16641d7c5ac1cd34e3901d2c24eb2d3ef221b58f",
+      "size": 716,
+      "sha256": "edecd06f77b6c6bc460d8a3dcf624b9b1b3fc7728aa5b85bbf461ced4ac89f98"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/provider-native-uuid.log",
+      "mode": "100644",
+      "blob": "1127d3c248772bca38e70af381bd30d542528a7e",
+      "size": 368,
+      "sha256": "216bcfc36fe26f3d953de5caae86e4a3ae51e13c9b8e8d7ac73cfb9a79def006"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/question-only-reader.log",
+      "mode": "100644",
+      "blob": "226f413dfbe3d2944eadbb8162241e85ca379a59",
+      "size": 211,
+      "sha256": "860f128217f3cf3dc7a76bc6cb1ec6cc7b926f8a6b7932d696deda11d35e8fdc"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/restored-go.log",
+      "mode": "100644",
+      "blob": "bfca9afe06a8ada80f8d3315c9ac56fad3735cbe",
+      "size": 187,
+      "sha256": "71ff8913466bf01a8c5ec27f4738e2aa5dfa557d8dd0a9487e7c12cead35dae3"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/restored-helper.log",
+      "mode": "100644",
+      "blob": "6b85369fc992c04204c139c5b91863debea29a85",
+      "size": 1262,
+      "sha256": "9ebf1103dbb06e9e0f2517d5c4127edcf74d807a3ac6487e73ff327e7386f686"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/revocation-cancelled.log",
+      "mode": "100644",
+      "blob": "04a13a2d6174dfa97e5be8fe79e9f63e190b9eec",
+      "size": 1159,
+      "sha256": "b15a7f365d60c5e6be1b96e9931385fef8aecaaf19c11d9af30fde1a3ae9c800"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/safe-public-origin.log",
+      "mode": "100644",
+      "blob": "b3cf10a640d4015363abef97352298cd009288c9",
+      "size": 523,
+      "sha256": "b768df45b8f00c8003655a763762da54f2403c5858241245d05e7499dc68f435"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/sender-error-is-unknown.log",
+      "mode": "100644",
+      "blob": "7e5499391b6d9953023a89531e4bcb99299a2644",
+      "size": 499,
+      "sha256": "14d7b309bc6a1474d50ee39abda74268bef7e9a948e373210ce974e128385477"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/sixty-minute-lower-bound.log",
+      "mode": "100644",
+      "blob": "e81f9a87194df3ea073e9546e856fd05b2ac6cd2",
+      "size": 218,
+      "sha256": "dd43fa11f65e2e3706453222b2c28c5c1d4bec065d12f3925c4cc3dfed04f2d9"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/store-leader-lower.log",
+      "mode": "100644",
+      "blob": "f769edff39e3c99ae37a2d86064c3a342ea467a9",
+      "size": 258,
+      "sha256": "f17296d6f4783e38baa91130c025e3b2250a76ef4e7b7651092168d3b4a043c9"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/store-pm-lower.log",
+      "mode": "100644",
+      "blob": "b69ecfe972a6ce1001628b924bbab07d459a1290",
+      "size": 258,
+      "sha256": "58d02768c22e4e8cee3adb6c70cd20eafce8ba4e563b012131b1d7c07cb62c7b"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/unconfigured-not-delivered.log",
+      "mode": "100644",
+      "blob": "86df353be1fc1b2b9fc5d5d6a3158e509882478d",
+      "size": 206,
+      "sha256": "49183d5e4fd1341965e948832c0467f7e8bd555ec197c8521137303e1c8e1bfc"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/unconfigured-not-revoked.log",
+      "mode": "100644",
+      "blob": "a59df6159907239735297716d7e3f7fd66d5964f",
+      "size": 512,
+      "sha256": "d083160bb9b54d12fa41f81a3b0f8309d31dd34b0f84f07caab92b9b255b22e3"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/final-withdrawals/unknown-no-resend.log",
+      "mode": "100644",
+      "blob": "45d3c9049fd2fa0a9965341a7ce8c2544ff7c447",
+      "size": 326,
+      "sha256": "1665cadbd726c5b483a119008e5586e1437c7825f03513ae9a8232d3711794d9"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/gates/canonical.json",
+      "mode": "100644",
+      "blob": "dd8e8d58b483ee313a1ccbb5c580832c07b6d9e4",
+      "size": 425,
+      "sha256": "b54403d15cc8ba642a63ce770665980cec228ed6ceed95de188be186b4427cba"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/gates/canonical.log",
+      "mode": "100644",
+      "blob": "ef2ea5ebf4b43a6439a62be4130629c37e03415f",
+      "size": 43808,
+      "sha256": "cafa3ecc06388a2ec0d060f50c687edf8d1bf202c1bfc263fa511bac5d189acf"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/gates/go.json",
+      "mode": "100644",
+      "blob": "63890f344941486330e7974e82f7ddffc55f12f6",
+      "size": 463,
+      "sha256": "520a9210587f4c9d825d96da9779d6a08b74958465122715fd57ba232f7f6f88"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/gates/go.log",
+      "mode": "100644",
+      "blob": "e2611ba77be86b316cfd6132c4c8300e4f444504",
+      "size": 4339853,
+      "sha256": "02f8d74de142f4a1a8bbb8eb7f9b2784ffdfed56f5111f217ecd435e577a3c8a"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/gates/race.json",
+      "mode": "100644",
+      "blob": "19739a161e7e1bf79fde7254c2f20804ddd1c4ab",
+      "size": 593,
+      "sha256": "8c55f3e757ef5f1d46884eaf0fc9392c777710818a60b763b73a9c708780d06a"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/gates/race.log",
+      "mode": "100644",
+      "blob": "f2cf22779d91144e29fac6acf63eed530101bd1e",
+      "size": 191,
+      "sha256": "03fe18b09e44962519d61503c5ef0199a435dd94b6b1357ad311bca29bf4e192"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/gates/vet.json",
+      "mode": "100644",
+      "blob": "2e135f26b5070d25eddfeababf09a785e5a2a436",
+      "size": 413,
+      "sha256": "a70587922e9b8bc38c3df76c76437d97089c31332b07d6e8443987bc23881f46"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/RESULTS.json",
+      "mode": "100644",
+      "blob": "9b1ad82876cab1526b2e6ea74abc1f708c88a7ad",
+      "size": 26520,
+      "sha256": "2dc9ed92f371d5998a270186d1cb04ea1f6b96bd1df30d7d61df7e6905670829"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/ack-is-not-substantive.log",
+      "mode": "100644",
+      "blob": "0375eff0d511eab8979a8fcae6019adea9c5ec69",
+      "size": 760,
+      "sha256": "57517308e74e2cf612ae1b9d3d0d4af8b5e8ccff84638f84c4dd37934cc1f80a"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/answer-first-cancels-reminder.log",
+      "mode": "100644",
+      "blob": "d63b0b9b8a5e0865489c5464a025f522fc2e777f",
+      "size": 333,
+      "sha256": "3cd3bf26d9dac5767656a4c72afd569327b450beb199ad68a3b177fc88e369e5"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/assign-preserves-clock.log",
+      "mode": "100644",
+      "blob": "ef4e38591cb8af2560f7e305c3fc30cac073a541",
+      "size": 758,
+      "sha256": "3a93fbe263c7cfa29601592788e89a3cbbf25850d6181a64c456bcb7a4319f62"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/baseline-go.log",
+      "mode": "100644",
+      "blob": "b27262c6dee28b0a68eb71b1eca34a7f62027592",
+      "size": 187,
+      "sha256": "96c06020b734898ab07fe331ce719b796fc49c26e94c1f728ca37098e91be40d"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/baseline-helper.log",
+      "mode": "100644",
+      "blob": "0e27e188735f52f226ce600cb2ca069195123eb6",
+      "size": 1262,
+      "sha256": "5cd75aa79fcae6639772552291c1d2cac506f0c19abf41d08e519585ee9c4848"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/cancel-keeps-business-proposal.log",
+      "mode": "100644",
+      "blob": "d73158147f403e16a1f665292e935a7c593bfa20",
+      "size": 229,
+      "sha256": "e6011e06e92e212438a515b8db3aca28ff1e8a8e3a5b4eaba9208c7e87f29580"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/card-cas.log",
+      "mode": "100644",
+      "blob": "e61806965147ea020b4528249e6f0401db043c2d",
+      "size": 208,
+      "sha256": "9e37efa1a92f9ec202d31656c213ce4f86ede6d3ec25747e124e9a0e33522009"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/clock-rollback.log",
+      "mode": "100644",
+      "blob": "35bfa2b5fa21685f9a5660800f59f12e1deaa5b4",
+      "size": 207,
+      "sha256": "cddc3d70019687a9d2bcce653dafb7224e6614709c99a16a2633dd01ff2410c2"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/completed-feedback-no-wake.log",
+      "mode": "100644",
+      "blob": "0905d61119a1694d31accd90febcf1ce895554df",
+      "size": 802,
+      "sha256": "552db8a9a9ef7f2094c7d0b433c0fe6cdbf554ee8257ce8501e0704f7f726336"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/contacts-current-owner-group.log",
+      "mode": "100644",
+      "blob": "e8c67b0aa4d2edb1a5c4ee281ff42f9f5e59d438",
+      "size": 760,
+      "sha256": "11b56162bec54e7d438da2abcd1be740e09ac922df9b0de0390600085c24aec8"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/contacts-page-drift.log",
+      "mode": "100644",
+      "blob": "9579046fa7032db6ffb1c3bdf2a9ca093838eb13",
+      "size": 1098,
+      "sha256": "7cfafcb1d901d5f6e6e4bebd155a653ab0d769b6bb3a2eaafee619b2ca643a30"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/contacts-page-limit.log",
+      "mode": "100644",
+      "blob": "bbfdd61df6e15e5089044af04adda4123ece6506",
+      "size": 491,
+      "sha256": "6150edf35385c407309925377e8883a8dc00cf5fa4f8a5884c0a0e096817a2a8"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/contacts-sorted.log",
+      "mode": "100644",
+      "blob": "8073a937acc1fc02aca21522cd5b3710b5b1ae51",
+      "size": 501,
+      "sha256": "71a3d6d16f91fba98d2e46f158adbc8ce56b907b93d1c1912800098ab879b977"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/d2-old-waiter-revoked.log",
+      "mode": "100644",
+      "blob": "2e4c519aa4b4a8f556239847cc95ccfa4bed1c42",
+      "size": 220,
+      "sha256": "1def16dc7e2abed5b7421641fc3c1dc0b2fee0fc777aca20d91e91d07da65168"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/final-pg-check.log",
+      "mode": "100644",
+      "blob": "fabfcd28d0b9d329cfc1b7eee28b6daf1f63da1b",
+      "size": 204,
+      "sha256": "c6307097fdccf72954c36bcb52f21cfa0d117acd502bcb1388beef716e5604b9"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/helper-reject-query-mix.log",
+      "mode": "100644",
+      "blob": "62f9480f0197a382bd4724d7d9ecb3256fa5f482",
+      "size": 1983,
+      "sha256": "db059c443a53802f26deb4f229240bd2cc44e1ae5ef04e7c8802d13df154b14a"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/helper-result-execution-flag.log",
+      "mode": "100644",
+      "blob": "1d7190fd0f746fd12903e297b87a1f41b59be1c1",
+      "size": 1935,
+      "sha256": "97f14cd237badb91f78b1dcbf8f74f40d90a3014ca505d0f44d00a267a4ff7b1"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/helper-strict-version.log",
+      "mode": "100644",
+      "blob": "706c0ece222b89217599700eef2bad27c4f61dab",
+      "size": 2037,
+      "sha256": "f558f13764d3fd73937b1c23c89953045f528fb0279f79d560d45666eef40854"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/historic-proposal-owner-maintenance.log",
+      "mode": "100644",
+      "blob": "9eb95a3f7192eceefcd2fce49b27b6aae9b803de",
+      "size": 347,
+      "sha256": "9d745fe6bc9f5a167a6d484796ec4224ac2e334444a2b414b676ecff3b357c5f"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/history-bounded.log",
+      "mode": "100644",
+      "blob": "412da8e46fc89484eca10ebd30c41af83156914c",
+      "size": 769,
+      "sha256": "9f2d69283076e1f330057462f19c5f757b99029956ec71865ebebd77f86d503a"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/http-leader-lower.log",
+      "mode": "100644",
+      "blob": "748448ae1d9a8080eb35afaf5dd5479340e25512",
+      "size": 527,
+      "sha256": "f2754d2a6c3a17875065d749186a7048259df53fa5ee314205ff1761366405db"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/http-pm-lower.log",
+      "mode": "100644",
+      "blob": "5a7c0b022f97e8f407351d74041a1d857dbf294a",
+      "size": 527,
+      "sha256": "882bb50a84fa0e1eb5f3f3e994b85df865bf904cde35d431123c1dbf3075f357"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/immutable-event.log",
+      "mode": "100644",
+      "blob": "e812af9115c830c701317ede2c7d00d5d2c090d2",
+      "size": 199,
+      "sha256": "1251337f83128003afd2d30674da3a253e2bc2bf955ea351544ba84b67fb0f83"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/late-check-before-provider.log",
+      "mode": "100644",
+      "blob": "8c9c0a6a03cb285f1932830f171a3a119dd0a231",
+      "size": 1330,
+      "sha256": "e0c3186c85b26a922732eacc55fecd4dc7aeb6b2d9fc100cbd9b5c855f8f6b85"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/late-transient-queued.log",
+      "mode": "100644",
+      "blob": "5c0637594dbfb12711ffab22b05db6f973ab9b0a",
+      "size": 1166,
+      "sha256": "c100173c33c2e6f0e795e6fed74b8eaaa9b6374074ed40a2506966f63aee17b5"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/logical-content-dedup.log",
+      "mode": "100644",
+      "blob": "eb100109e64a272b331dd45670fe70ac600a7a83",
+      "size": 507,
+      "sha256": "e1b8f0827ef8206433f391d0253d76dc9ce208b8198666394f2ff85c8f2bd2ca"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/no-agent-pm.log",
+      "mode": "100644",
+      "blob": "ef4e158c76454681263a263750818d5dd155b276",
+      "size": 205,
+      "sha256": "b47cb90ff04b5b17395130c8aa4d4f69b575f66e590156bbe5a201403274fca6"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/no-private-feishu-body.log",
+      "mode": "100644",
+      "blob": "3eb48a63253d9b0fc8a8bfca85b315ff5d7d2ef6",
+      "size": 826,
+      "sha256": "d84487aae16e0e1351146c39e4b8e24e15a83e974ae96fb98190b13e0f8e1dd7"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/one-sla-per-generation.log",
+      "mode": "100644",
+      "blob": "4733ecdefde71149ccd9f0bc505598806b89c2ac",
+      "size": 220,
+      "sha256": "56516d22c89b414011009dbdff7d95cccfe021a3dd225db88fc5183f7d0521c0"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/owner-only-change-decision.log",
+      "mode": "100644",
+      "blob": "cea447543fb7db50b2bca182c0fbb57e722c3d58",
+      "size": 226,
+      "sha256": "c594b4bc8824491639ed9b439f030c841b3b48faa5191951f29cf9702e6358b1"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/past-dispatch-never-unsent.log",
+      "mode": "100644",
+      "blob": "6c64da8f71b1d5b445415040a707a53f5a49aa03",
+      "size": 224,
+      "sha256": "6eb822fa4577f1429c52981148d626adb3caf5d024cc00a744029f3d29ff6eb3"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/pending-change-blocks-old-scope.log",
+      "mode": "100644",
+      "blob": "5ba896e1c33eb253dcf9c563771192ec8cdc2780",
+      "size": 240,
+      "sha256": "d4d711f4c730edc71b422b15c32c65c27597159fc829dc6cce9a1b8c49a320c8"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/pg-send-reply-serialized.log",
+      "mode": "100644",
+      "blob": "161540fa6d12453cae6dfaca6f90bef80b3eea40",
+      "size": 1859,
+      "sha256": "38df4533601071059dd211f53ac09e22c659b6ed49bcdefe0a4250dd17b82a52"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/pm-cannot-grant-outsiders.log",
+      "mode": "100644",
+      "blob": "cc17796a14d1cca760bc85ded6f085553c1cae2d",
+      "size": 222,
+      "sha256": "f9e60de3d3290cfcf4c25ab4409a6aa00899590f8e4d516338a2093362748d39"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/prepare-failure-pending.log",
+      "mode": "100644",
+      "blob": "c599b862d78b23c3a90291433d4e4225bd604eda",
+      "size": 1159,
+      "sha256": "c3727596fbed82f13942c86c543ee0fe8af1c936ac47cd927ba69f1d2e7ba3e5"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/production-full.log",
+      "mode": "100644",
+      "blob": "c477a834bbdcc70d0a0e8bf4f0f65ae9ebd8313a",
+      "size": 716,
+      "sha256": "07e476ce9abea5f20a7026666e1f0ce68b570f1fb4047ac1c4b7c2f128993b99"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/provider-native-uuid.log",
+      "mode": "100644",
+      "blob": "25e7ba9bc98e0fa72105253d11f37b1bf01a062d",
+      "size": 368,
+      "sha256": "0ab796b7d8e4428ddc774f8e17fe030f219288355f3e47ae948d76a9401c9430"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/question-only-reader.log",
+      "mode": "100644",
+      "blob": "655cdd3385f92306ee577a30cee75e05870826fa",
+      "size": 211,
+      "sha256": "cca22d70c5b8823dff7215b2a36cfc7d847a3968157d02598e740e16e5461e95"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/restored-go.log",
+      "mode": "100644",
+      "blob": "43329792b83e18882e3d038e5a225c37ccf2362b",
+      "size": 187,
+      "sha256": "a0aaa38dbd18ddc10c7f6c6715e895af394c8a52b5dca1a5bee9bccddbefbfb3"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/restored-helper.log",
+      "mode": "100644",
+      "blob": "d4a904e3d218e85093d5a2f12e2cda688c2832e5",
+      "size": 1262,
+      "sha256": "84d617b6b2ee519084369b60884e35336a99541cd8bd2519c3a2257a81c43192"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/revocation-cancelled.log",
+      "mode": "100644",
+      "blob": "7a57ee97de5782b819132e7961a7f67840d90a36",
+      "size": 1159,
+      "sha256": "3b5cd33e2862a5c8a2fc2ba14114634873c0636894cc45132084a665633bbdb6"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/safe-public-origin.log",
+      "mode": "100644",
+      "blob": "ac3255efe7cdac2879f7f629a00e45d530b011a9",
+      "size": 523,
+      "sha256": "a3a69a427c2db84d7b266b1fd027bf7696047e8b18c3e75a6144faab1cebf411"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/sender-error-is-unknown.log",
+      "mode": "100644",
+      "blob": "fc1b0d85304f14bbe58e43b2511e3c8cad3b97b8",
+      "size": 499,
+      "sha256": "8f6bb3c877bea51dc0c8311a24494bd4a75fc393659e9d5c71b930af814e1cab"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/sixty-minute-lower-bound.log",
+      "mode": "100644",
+      "blob": "829991aa7ef3550b3acc4afbdf71a9dbe34198db",
+      "size": 218,
+      "sha256": "5ca8d9609da9ee1354301d6e781d6e4b7a332ccf066eb7f586b08eebcfb4ecc3"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/store-leader-lower.log",
+      "mode": "100644",
+      "blob": "15063d6fb171082249bfa7577ba2456c52c2f88b",
+      "size": 258,
+      "sha256": "8c07a0138f58155aa6651575cb749f7e286313c71436d7b9d10bacd0e2708216"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/store-pm-lower.log",
+      "mode": "100644",
+      "blob": "f8697cca140046d8eae2671cc1e1dc3c75f0da67",
+      "size": 258,
+      "sha256": "3600ae6ba8cf873ca3dcc051016ec2d634563da6ce20ad865cded31bde1502f5"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/unconfigured-not-delivered.log",
+      "mode": "100644",
+      "blob": "320088dd235716856ed05a8f9d7c71ff61a15f37",
+      "size": 206,
+      "sha256": "ba88a9bdcab2a9475dde47a8868b73ee08f79a0c406542d0a2c901b8e2fc42b7"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/unconfigured-not-revoked.log",
+      "mode": "100644",
+      "blob": "3a7f0ae5a84be33b05d65d6b6401424f95c1dc2d",
+      "size": 512,
+      "sha256": "8800094aafaab42f20ff8d657a669e287270e96c62a4ad52e10954013fe22de9"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-rework-20261020/withdrawals/unknown-no-resend.log",
+      "mode": "100644",
+      "blob": "7e317fed42b48b66a94857db49677e680284fc27",
+      "size": 326,
+      "sha256": "c9f31b3cedc6d696cbb6fb73b229038b08bd0b4aea9e973e4ccfa456dd9e3c21"
+    }
+  ]
+}

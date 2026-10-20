@@ -1,0 +1,13 @@
+{
+  "commit": "966d4884be7ec38c0518eaa465721731bbada671",
+  "argv": [
+    "node",
+    "view-service/console-browser-regression.js"
+  ],
+  "rc": 0,
+  "start": "2026-10-20T21:09:49.637385+00:00",
+  "end": "2026-10-20T21:10:12.513015+00:00",
+  "isolated_home": true,
+  "git_export": true,
+  "live_access": false
+}
