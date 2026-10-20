@@ -332,6 +332,12 @@ func (s *SQLite) UpdateTaskBlocker(ctx context.Context, expected TaskFlowState, 
 		}
 		err = json.Unmarshal([]byte(raw), &out)
 		out.Replayed = true
+		// A cached receipt never preserves former task-reading authority.
+		if !canRead {
+			b := out.Blocker
+			out.Blocker = TaskBlocker{ID: b.ID, TaskID: b.TaskID, Version: b.Version, State: b.State, InputVersion: b.InputVersion}
+			out.TaskVersion = 0
+		}
 		return out, err
 	}
 	if !errors.Is(err, sql.ErrNoRows) {

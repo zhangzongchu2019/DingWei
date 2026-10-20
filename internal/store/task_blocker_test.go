@@ -498,3 +498,32 @@ func TestBlockerMigrationFailureRollsBackDDLAndLedger(t *testing.T) {
 		t.Fatal("BLOCKER_MIGRATION_REAPPLY_WRONG", tables, err)
 	}
 }
+
+func TestBlockerCachedReplyUsesCurrentReadingRights(t *testing.T) {
+	db, now, _ := taskFlowFixture(t)
+	b := blockerCreate(t, db, now, "card", "PRIVATE-CARD-CONTEXT", "agent:dev", false)
+	u := BlockerUpdate{RequestID: "previous-developer-reply", ExpectedVersion: b.Version, Operation: "input", Source: "agent:dev", EventID: "answer", Body: "material", Evidence: "git:evidence"}
+	out, err := blockerApply(t, db, now, BlockerActor{AgentID: "dev"}, b.ID, u)
+	if err != nil || out.Blocker.SpecID == "" || out.TaskVersion == 0 {
+		t.Fatal("positive control did not have reading rights", out, err)
+	}
+	state, err := db.ConsoleTaskFlowState(context.Background(), "task")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.AssignConsoleTaskFlow(context.Background(), "task", state.Owner, state.GroupCode, "other", "review", state.Version, func() error { return nil }, now); err != nil {
+		t.Fatal(err)
+	}
+	// The former developer remains explicitly addressed, but is now only a waiter.
+	again, err := blockerApply(t, db, now, BlockerActor{AgentID: "dev"}, b.ID, u)
+	if err != nil || !again.Replayed {
+		t.Fatal(err, again)
+	}
+	if again.Blocker.SpecID != "" || again.Blocker.Developer != "" || again.Blocker.Where != "" || again.TaskVersion != 0 {
+		t.Fatal("BLOCKER_CACHED_REPLY_RETAINED_OLD_READING_AUTHORITY", again)
+	}
+	var n int
+	if err = db.db.QueryRow(`SELECT count(*) FROM console_task_blocker_input WHERE blocker_id=?`, b.ID).Scan(&n); err != nil || n != 1 {
+		t.Fatal("BLOCKER_CACHED_REPLY_CREATED_NEW_INPUT", n, err)
+	}
+}

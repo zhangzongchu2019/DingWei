@@ -55,6 +55,8 @@ store('get-no-business-write','if err = tx.Commit(); err != nil {\n\t\treturn ni
 CASES[-1]['edits'].append((S,'&sql.TxOptions{ReadOnly: true}','&sql.TxOptions{ReadOnly: false}'))
 helper('notice-mode-fence','tools/sessionhelper/sessionhelper/app.py','if self.cfg.mode!="driver" or not m["automatic_recheck"] or not getattr(self,"enroll_credential",None) or getattr(self.cfg,"ipc_upload_only",False) or getattr(self.cfg,"ipc_send_body_only",False):','if False:','BLOCKER_NOTICE_INJECTED_TO_LEGACY_OR_RESTRICTED_MODE')
 
+store('replay-current-privacy','// A cached receipt never preserves former task-reading authority.\n\t\tif !canRead {','// A cached receipt never preserves former task-reading authority.\n\t\tif false && !canRead {','TestBlockerCachedReplyUsesCurrentReadingRights','BLOCKER_CACHED_REPLY_RETAINED_OLD_READING_AUTHORITY')
+
 def run(args):
     args.commit=subprocess.check_output(['git','-C',str(ROOT),'rev-parse',args.commit+'^{commit}'],text=True).strip()
     chosen=[c for c in CASES if not args.only or c['name'] in args.only]
