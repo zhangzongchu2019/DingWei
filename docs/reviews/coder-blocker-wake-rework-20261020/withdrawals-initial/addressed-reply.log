@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerWaiterRightsAndFullMode (0.12s)
+    task_blocker_test.go:195: BLOCKER_UNADDRESSED_REPLY_ACCEPTED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.128s
+FAIL

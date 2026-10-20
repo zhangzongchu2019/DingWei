@@ -27,6 +27,15 @@ func appendBlockerInput(ctx context.Context, tx *sql.Tx, b *TaskBlocker, actor, 
 	if !errors.Is(err, sql.ErrNoRows) {
 		return false, err
 	}
+	// Integration (r33): the D2 reply budget applies to every new committed input
+	// on this card by the same authenticated actor, after idempotent replay.
+	var total, recent int
+	if err = tx.QueryRowContext(ctx, `SELECT count(*),COALESCE(sum(CASE WHEN julianday(created_at)>=julianday(?)-1.0/1440 THEN 1 ELSE 0 END),0) FROM console_task_blocker_input WHERE blocker_id=? AND actor_id=?`, at, b.ID, actor).Scan(&total, &recent); err != nil {
+		return false, err
+	}
+	if total >= blockerReplyTotal || recent >= blockerReplyPerMinute {
+		return false, ErrBlockerRateLimited
+	}
 	if production && b.Mode != "full" {
 		b.Mode = "full"
 		b.FullApprovedBy = ""

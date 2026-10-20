@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerAddressedWaiterGetsOnlyNeededContext (0.14s)
+    task_blocker_test.go:628: BLOCKER_WAITER_MINIMAL_CONTEXT <nil> [{blk:9195c8979cc09598568f2067ec546890d7f18828d0c2b6ec16c45ceb0632b321 task  0  0   0 1 technical    []    waiting 0 0       }]
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.141s
+FAIL

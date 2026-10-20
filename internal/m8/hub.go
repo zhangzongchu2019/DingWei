@@ -4196,6 +4196,12 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		// (sessionhelper/app.py:532),Hub 侧 GetSessionDelivery 为精确匹配、全树不剥前缀。
 		// 存量行仍为 `dlv_` 开头,精确匹配照常命中,不需要迁移。
 		deliveryID := deliveryIDPrefix + randomHex(16)
+		// A crash after enqueue but before marking the blocker outbox must reuse
+		// the durable ID, even after the in-memory envelope claim map is lost.
+		if metaString(env.Meta, "kind") == "task_blocker_ready" {
+			sum := sha256.Sum256([]byte("blocker-wake-v1\x00" + keyID + "\x00" + sessionName + "\x00" + env.ID))
+			deliveryID = deliveryIDPrefix + hex.EncodeToString(sum[:])
+		}
 		env.Meta["type"] = "delivery"
 		env.Meta["delivery_id"] = deliveryID
 		env.Meta["delivery_version"] = 1

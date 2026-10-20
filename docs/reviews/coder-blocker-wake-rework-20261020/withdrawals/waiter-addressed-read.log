@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerAddressedWaiterGetsOnlyNeededContext (0.09s)
+    task_blocker_test.go:634: BLOCKER_WAITER_ADDRESS_NOT_ENFORCED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.097s
+FAIL

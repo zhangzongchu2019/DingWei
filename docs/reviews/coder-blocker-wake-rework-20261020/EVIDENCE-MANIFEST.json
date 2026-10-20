@@ -1,0 +1,656 @@
+{
+  "source_commit": "29d292495fe24a45cbc65ccc43025309d259c78c",
+  "entries": [
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/GO-PACKAGES.json",
+      "mode": "100644",
+      "blob": "535994162e61b165111c64b586a124e949811f59",
+      "size": 22342,
+      "sha256": "c552262e885ee5f352f02b44af479da9b7e25b57a6d3be58b4cdef9ca73576ff"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/INPUT-EQUIVALENCE.json",
+      "mode": "100644",
+      "blob": "122c81d0087bb48b26580d5e55df6de6f243a986",
+      "size": 433,
+      "sha256": "8b139f9b0c2ef91d5f868a53eb510c4d13ec99870c573126a96392f7d0ccbfbd"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/REPORT.md",
+      "mode": "100644",
+      "blob": "2d497c4676d0427e439562cc4bd842da15a8016e",
+      "size": 3899,
+      "sha256": "393a0c7a21280702ac0e02ad5dcc1ccf14e9f8802c1c38c19b7935b2acca95fd"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/REPRO-GATES.py",
+      "mode": "100644",
+      "blob": "ae2a687548c6b821aebc2f7496fd5c29e7f88a88",
+      "size": 2571,
+      "sha256": "f328ee955e7ea411f516bee909cf0e84ff019b4c716dce352e941305d2aa95e4"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/SOURCE-MANIFEST.json",
+      "mode": "100644",
+      "blob": "b1afe06d15e48c67616f2a9992c0f1f223a69ece",
+      "size": 461369,
+      "sha256": "f87d25544259b2756f921cd53e47162855f2de8fbd05a84ae0c342aa242fbf2b"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/VERIFY.py",
+      "mode": "100644",
+      "blob": "ea7bdabd4711bd6e5ca91639cf29d0bc3f4b047f",
+      "size": 2077,
+      "sha256": "84cdfe482afb807338da7a6a7df64ab479a079c49d4c81798e306c650e03b231"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/gates/canonical.json",
+      "mode": "100644",
+      "blob": "ea26489f0d3e9261f0d754a5526f7ce12c674fe6",
+      "size": 425,
+      "sha256": "5288ad92bcdb8dd7f3378d00205541e674abb575318497b48363f9b2bf33b8ff"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/gates/canonical.log",
+      "mode": "100644",
+      "blob": "c6c28ac9b1d040f427c3fb350ae0cd05985ed680",
+      "size": 41581,
+      "sha256": "22869696911e797f4b75306321258f991bac723ecdeb147f513f2407822ad9be"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/gates/go.json",
+      "mode": "100644",
+      "blob": "883efba9dc31f312ec11911a9a6af83c494a0763",
+      "size": 463,
+      "sha256": "6273c3710fcc604237cd4b83fb21c98b60a940ee9ad8ebdea200494d8ff65641"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/gates/go.log",
+      "mode": "100644",
+      "blob": "2eb292bddde165923aa5b9397f70443b1891461b",
+      "size": 4278984,
+      "sha256": "9d7391952b512862d983d937afb77c090703e7436e375d7299cfd3a59091918e"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/gates/race.json",
+      "mode": "100644",
+      "blob": "7a752587f18aec8641c13f98a6829fcb9831c72b",
+      "size": 574,
+      "sha256": "6c44cbf5da34f2c7b580a278f2e5cdc779b3d37d05cb33f93bba7648cd4d8dd0"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/gates/race.log",
+      "mode": "100644",
+      "blob": "3791dcefc4e22e93fbd0878cb537c5d93cabc604",
+      "size": 191,
+      "sha256": "3a69bad8997bced2d534815652fcc7c4f47eea84806f94913b10486e84839b12"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/gates/vet.json",
+      "mode": "100644",
+      "blob": "7193c05457c0b63c8bb2c8bbad69b81e3a4e25d7",
+      "size": 413,
+      "sha256": "9cbc0447597b0c2d1a4d60168c1a8118305070e3160cc71435c32b17e932ff85"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/RESULTS.json",
+      "mode": "100644",
+      "blob": "a2259c0b9d34e77c6b27d2b61e6fa104427bf7b7",
+      "size": 14295,
+      "sha256": "17a8d3ab25596c67d1fc41cbe8ddc0949e4393144d22ae6ace9f7e615fadb812"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/addressed-reply.log",
+      "mode": "100644",
+      "blob": "161b378038fb3ed9b0c7156516ab011c75e42bfe",
+      "size": 197,
+      "sha256": "262c7df64ae72b621ea865ac3f24b7e042493580913fea7981dad9888c0cc98b"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/baseline-go.log",
+      "mode": "100644",
+      "blob": "8b6996b6e34212e5c0ca7f55fa32620c37d970c4",
+      "size": 123,
+      "sha256": "39a363898b9e808ec264cde46bc8f54dfbaff663ef0f19ebc41d853bb3bb61cb"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/baseline-helper.log",
+      "mode": "100644",
+      "blob": "0acd46383d61a84bdc097d8941c0841402325ee4",
+      "size": 1556,
+      "sha256": "bb0e6c521e164460e97e2cd67c21d5564de4d3762fc3536c6dffd69f8f3d9605"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/card-cas.log",
+      "mode": "100644",
+      "blob": "5d77229d1ec7d568dd212481e8eff6c80d31c42c",
+      "size": 209,
+      "sha256": "0e12135cb2f15e7ecde5fa66f305e8247419ec0cb7ca7628b5e9a5b432b02dd9"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/concurrent-new-input.log",
+      "mode": "100644",
+      "blob": "14cc0c764734545ea6c2b416964a967ab8428d34",
+      "size": 943,
+      "sha256": "af4a7afd3becbbc514dca862f0419a65811ad9c69e233f42f9fddaf872a6a011"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/condition-transition.log",
+      "mode": "100644",
+      "blob": "f294e4b0ca64c7a62115686c5ed767e6458def7b",
+      "size": 919,
+      "sha256": "c8fe127fe2df1a579fcb1b8c477ecc0f73343a5e736ecbad4203a33f09221a0c"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/current-group-pair.log",
+      "mode": "100644",
+      "blob": "d62e71584a908bfa19ff8fff1466920dbde8828a",
+      "size": 1805,
+      "sha256": "2c49ccaaa8c008719b12e13e3dd64f695c07d7078dbc260589cd5a889a98ebc0"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/developer-only-lease.log",
+      "mode": "100644",
+      "blob": "8d63ff76fa87d25b5aa40c5640a2e5c52b7595c3",
+      "size": 219,
+      "sha256": "0ce02fca9c7f668ebe065eb262454f1b2acd29f74ee4b10d2c77e84904b0b8bd"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/durable-retry-id.log",
+      "mode": "100644",
+      "blob": "e92bf374b5061165bf6c13efa5cf2dbca8c4bb5d",
+      "size": 1384,
+      "sha256": "92c7f1bfe060d88fc23e1c5c6934d72c1c6f3898681864a9e6a9d82e63af5102"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/final-authority-check.log",
+      "mode": "100644",
+      "blob": "cd915713bb42c355e3442bacb6a8ce1bb7812c72",
+      "size": 204,
+      "sha256": "78cf935b08df7f609f8d8c16d920269d2acc97690565a853523931a49cec712e"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/full-approval.log",
+      "mode": "100644",
+      "blob": "6904808f3097cf809147c5ec40b4ec82ba158ad1",
+      "size": 196,
+      "sha256": "fe2c7367fb7e6701c8b351f864ed6c32122264ab709ff993eb8100f001cb00f4"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/immutable-event.log",
+      "mode": "100644",
+      "blob": "e3959856b6b8a1977cddea2d5304cfee1778a678",
+      "size": 204,
+      "sha256": "f4ae145dd04e0fe6b1a2fcf4b539f6917455f7ced1a5215b91c841151b4bbdbb"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/initial-current-state.log",
+      "mode": "100644",
+      "blob": "8c9976814761c29306af0fe39b22ff0074b86cc7",
+      "size": 208,
+      "sha256": "43eac20376bf1d987274fe919b37b5f29b6b9ba7e087eb503899491bac6b510b"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/lease-expiry.log",
+      "mode": "100644",
+      "blob": "4bdab68a93a239c06fd8c668cc76992ac12c1fb2",
+      "size": 216,
+      "sha256": "3ec7793979642f2beafa153e449871b66cd6c236639ae75427b0a996b9bee983"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/lease-identity.log",
+      "mode": "100644",
+      "blob": "870aa92d67bc9dac48349011798fa077766c52cb",
+      "size": 215,
+      "sha256": "e1a6a590f830fe68dff4fc6f8204aed89427a3f6c334d900f0efc9b4d42302d6"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/legacy-text-preserved.log",
+      "mode": "100644",
+      "blob": "c44c1dda0e31b72202b2497aff699e8728cbdf7b",
+      "size": 201,
+      "sha256": "07c722e3014992cd19833a474f1f99ae457e0716d8fc68439d50e3af7ab263a0"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/old-driver-gate.log",
+      "mode": "100644",
+      "blob": "94f708736e6a3a8ca2dfd21d78413d389b6cceb7",
+      "size": 218,
+      "sha256": "afd7c656d569ee72520971f73f9e3598832abfcbfae443e3fea0debb4ca819bb"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/outbox-repair.log",
+      "mode": "100644",
+      "blob": "d5b9a1c0654007cd9f5f2218daa63823612673d7",
+      "size": 232,
+      "sha256": "520e5767a52781c97f1ea0d3b8d1d1099c142c2bdb769fe667c24e4f6b2f257b"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/owner-cannot-resume.log",
+      "mode": "100644",
+      "blob": "fe367175f9c9b2700b27d2f48d94c97cc6d2bb25",
+      "size": 216,
+      "sha256": "0e806fd443f38dd6b24532f1d2f2121a59b21bc2adc5df7437e58592ec3a0c0a"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/private-receipt.log",
+      "mode": "100644",
+      "blob": "374ec8bcef6c6cd819faafcd4959ad0846061cb1",
+      "size": 921,
+      "sha256": "732501fa145863bd952565924b02007bbf3b880d285b75eae7befaa4c9c54182"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/reply-frequency.log",
+      "mode": "100644",
+      "blob": "20162dc0e5b5d77eaf0d4390c5cad00b5d97fde4",
+      "size": 203,
+      "sha256": "0e6875c47b0d5b06df85d4aed2220b5323070d22b7178a4a7dd703016dc9f8d3"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/reply-total.log",
+      "mode": "100644",
+      "blob": "1b40942f1fe02e48d39622867e7267b80bfc50f5",
+      "size": 199,
+      "sha256": "534c215d6237fc357017569e95bc9a7a175f500f4dc89400ae16b860a4da4a56"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/request-payload-binding.log",
+      "mode": "100644",
+      "blob": "aa1b3de2956dbc6443e1c0622fcde223217c6609",
+      "size": 203,
+      "sha256": "456af548dbb6642c48c80a60599505c17d0d949caa9c4d1ff6bf41dd8e738e19"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/shared-resume-gate.log",
+      "mode": "100644",
+      "blob": "cc2811969eab89afdb06927018fa960366f149fd",
+      "size": 209,
+      "sha256": "1644fc9d19e3f187006bd392e61812f5cfe11046057aaa450110f176bacc4512"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/unknown-is-not-pass.log",
+      "mode": "100644",
+      "blob": "89df1bb787035fe17ffdc4379cdd8fb3f660d466",
+      "size": 908,
+      "sha256": "a404b3a3ec215bbb4e187bce986830a239b0f893eb19b549da27219b4214f2ae"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/waiter-addressed-read.log",
+      "mode": "100644",
+      "blob": "ce73198bf9e1de8b6e6c84210fd1b75a9aa4a0a3",
+      "size": 211,
+      "sha256": "ec95c63e889c07d2023e793192e0db63d9b4a617e005c99cfe47bedcc0dddef7"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/waiter-needed-context.log",
+      "mode": "100644",
+      "blob": "b1ca7b9d1d73dc67fdbcdb7b7bb2a0e100a466d6",
+      "size": 334,
+      "sha256": "29b968cc34963097874cdfac5e22e13e713cabe1f81e6361d4df50d422e3e164"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals-initial/waiter-no-private-get.log",
+      "mode": "100644",
+      "blob": "851db999da47dd69387a9232eef177ed5cbab4a4",
+      "size": 1840,
+      "sha256": "803ebe16edd68cc4bf042a8a63c479afa3a403fbe87509cb787e33aed2038774"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/RESULTS.json",
+      "mode": "100644",
+      "blob": "cd70a8941ecbf15c45d1babd24c72c1dd85b3515",
+      "size": 27049,
+      "sha256": "adec63e4a00ebdf79187d3c8d6ca10090976678241236f4e824da0e2f53fdccc"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/addressed-reply.log",
+      "mode": "100644",
+      "blob": "c85976b3144412e6ba8f1b4c4aa70ef2be39b804",
+      "size": 197,
+      "sha256": "1392564b482939b1944a2ded3841d333e1e0618aa95d7238bc9e7bfd96b79e56"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/adopt-current-fingerprint.log",
+      "mode": "100644",
+      "blob": "c50ad3e04d11ad4d1f3fe296f6038de3689c546e",
+      "size": 1508,
+      "sha256": "5a8b8b9c45615117bf117b0260ab170e47dcadbbf678ad7303e2f09011f6dccf"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/adopt-revision-durable.log",
+      "mode": "100644",
+      "blob": "fa0d6db0ed8e64e059d66240ef4c1d11cae7805b",
+      "size": 1515,
+      "sha256": "5d10eeaeccf246160c68feb0daaee25a80b14580a71f0d05774c3d2d2a1d60b8"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/ambiguous-no-rpc-replay.log",
+      "mode": "100644",
+      "blob": "0d9b145d46ba2f6f0e2e1e490cc0475caf70fd5d",
+      "size": 3082,
+      "sha256": "95107bc2627d921f95030013447ed3993be3349ebf7f3aeeb3684f2f75c63cf2"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/baseline-go.log",
+      "mode": "100644",
+      "blob": "6e986f31fadb05d39506a203c04178adf70a2e67",
+      "size": 123,
+      "sha256": "8d80cb03985f8a78be84648608c41dee2819f8188043fbf82a0e126735a16cd8"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/baseline-helper.log",
+      "mode": "100644",
+      "blob": "9579e5e349973dd73e33ee992dff797f9c328c04",
+      "size": 1556,
+      "sha256": "29b7e34541c58e7b179a8f1b4f269e45792499bb76ca56866b5d2d8908594792"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/card-cas.log",
+      "mode": "100644",
+      "blob": "4295a3fd31cf106deba5dbaea697cdce1fc53cc3",
+      "size": 209,
+      "sha256": "9dba4a10474d09d576f6fbbd827182af602aacd3d552f37251750f348033db8f"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/concurrent-new-input.log",
+      "mode": "100644",
+      "blob": "0dcb9aa5eba4a9aadea8245ddb8f9896f68279ad",
+      "size": 943,
+      "sha256": "a9d511573a6b3ec53faf9655ad22752a9bef761e5d110315140769e3a394fd01"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/condition-transition.log",
+      "mode": "100644",
+      "blob": "ffc03aca96149217941c102544d388a614cf086d",
+      "size": 919,
+      "sha256": "6ef894d9cea567c6624b71dfc6790db03a2e629186d4f8c3f89997238b69da5e"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/control-origin.log",
+      "mode": "100644",
+      "blob": "0201bc1c6e0765fd3c373656780abefd51f8606e",
+      "size": 1701,
+      "sha256": "ecc27e5217603b804510e35c51e659454ceddb8bbfa6e327cf6a9a590e8400c3"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/current-group-pair.log",
+      "mode": "100644",
+      "blob": "5f7caae8e6fda19d3276ef82b1e4d6f9d9c29b8c",
+      "size": 1805,
+      "sha256": "a860234a7b65fef129112634106cdaa1f183dfa8ce9ebeeabb2fcce90601dd3f"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/current-recipient.log",
+      "mode": "100644",
+      "blob": "49f18625372e8daf5324985b1c14f47626796eba",
+      "size": 3334,
+      "sha256": "529559f2facb7ccea2d8addd71630d314c79e28af17d1283638101da59c00c3c"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/developer-only-lease.log",
+      "mode": "100644",
+      "blob": "6e940f6aa1f5986f094ddb6015ff359ab2fc1fca",
+      "size": 219,
+      "sha256": "35e35d3770188aeda85d43a1f7856cafe3a391bd0444bec6ae472f66fee2ed37"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/dispatch-journal.log",
+      "mode": "100644",
+      "blob": "45939ce4a5d067e07e167d95b8e7141026834170",
+      "size": 3935,
+      "sha256": "12d03e2e0050d46e93a6dc65c0ba84e36a5367ae790a5ca04fd9f585340110c5"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/durable-retry-id.log",
+      "mode": "100644",
+      "blob": "ca5284a08fa68888058e78a0585a78825f66cc23",
+      "size": 1383,
+      "sha256": "aab81785f7b662abf17aa6e849ad4319d3643a56d58fa3ad787dd6ee43f1286b"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/final-authority-check.log",
+      "mode": "100644",
+      "blob": "53d8e685fd6f160c85539ffff7be79051b13ad22",
+      "size": 204,
+      "sha256": "155f76ae7db901d08b09ef42f677f69c0584b5615887a5e9bce00262bfd943cf"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/fixed-prompt.log",
+      "mode": "100644",
+      "blob": "ecef81e6b59bc499199c1c45cc21d80e97fd27f1",
+      "size": 2279,
+      "sha256": "de807252991e6dbe2bbc248ee554bb6a4d3f7ac0bbcf6c444b74cd2b83fa5616"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/full-approval.log",
+      "mode": "100644",
+      "blob": "975e7d946806d579bd1c4c0027077b934484f652",
+      "size": 196,
+      "sha256": "bc94d46b5aca80d3c8ab8b3b7ef163aca57d99a4feebc44f6366a6d38de39aaa"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/get-no-business-write.log",
+      "mode": "100644",
+      "blob": "bf264da7dfd05178389fc4034315b5ce3ba5423e",
+      "size": 203,
+      "sha256": "5aecd52d858c0bb42e3a8277251bb119afe2f06431c14aa5898e51f01fdb210e"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/helper-full-approval.log",
+      "mode": "100644",
+      "blob": "e95daaf2c5cf8648706c609b1d351097969edafd",
+      "size": 3607,
+      "sha256": "4bc628b6faafea059862488afae462a84ecb1144389ca167c0b8cf7398ad41fe"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/immutable-event.log",
+      "mode": "100644",
+      "blob": "6fb58b776b83f77fe227503013501bc5d761ac0b",
+      "size": 204,
+      "sha256": "68d3f8329da0235e73c41a61e39bbde28587823bb6e58147ca9c87b0e7595dc9"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/initial-current-state.log",
+      "mode": "100644",
+      "blob": "62124a252cd47221341de4666c1ab6f74ae97e37",
+      "size": 208,
+      "sha256": "10f7478c8e50ebdbf1d0517b65d63b7735b42d1b23a26191ecf1a1ef8db72ac6"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/lease-expiry.log",
+      "mode": "100644",
+      "blob": "4aa66fd88014fb49dcbace7a1dc0ab5ce019ec4e",
+      "size": 216,
+      "sha256": "0e70f3a34ab5aacc7164281418b0d7913e8366d651e2e0c26a80762740d9e652"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/lease-identity.log",
+      "mode": "100644",
+      "blob": "e969efddca78c96748c61570829b6c89d18e55a9",
+      "size": 215,
+      "sha256": "78df2cfbb7d6815d0efd8edd56bd6dd02ecec7cddc1b4fab82c00ec4da74440d"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/legacy-text-preserved.log",
+      "mode": "100644",
+      "blob": "6ea06399c92b65ed104027d8d39573e975e1a664",
+      "size": 201,
+      "sha256": "a040208a1263cd9cc6a25ac76ff8efb50cd83e2897ac3f7e4b78f1ba0f9c4702"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/metadata-whitelist.log",
+      "mode": "100644",
+      "blob": "1f4b2ee5f07380fee89805444ae5e3374b5209a8",
+      "size": 2568,
+      "sha256": "0c44987baa79dcaff61a14d39d89c2f3d28430bf661364b5c7f32ed6106cbe94"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/notice-mode-fence.log",
+      "mode": "100644",
+      "blob": "f23941d8b9025b01e9cf75e8fcb7074c2350d9ac",
+      "size": 9388,
+      "sha256": "eae81723142082aa086817aeed23f7ed8b6046b2e1d39ecbecf5332843f919b4"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/old-driver-gate.log",
+      "mode": "100644",
+      "blob": "55154f8a83024c0461462f9eece174fa07d8ef76",
+      "size": 218,
+      "sha256": "ec1e3152eec830dab1dbb0dcfccc023b8a35961949c89aaad7064feb3b72108a"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/old-helper-capability.log",
+      "mode": "100644",
+      "blob": "d1c54973182eb77e0bb4bc008703bb494a20bb6b",
+      "size": 1482,
+      "sha256": "bb1ebb3b24e78d304e89847cf636bcd7b7bd3b549ed18f809caa50baf3180036"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/outbox-repair.log",
+      "mode": "100644",
+      "blob": "00d80379a668f39469da7b7728ca98ea3ab56442",
+      "size": 232,
+      "sha256": "a5fc387644ddcbcb60a001237971fddce0d2091759a821d671757cae3800bdd4"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/owner-cannot-resume.log",
+      "mode": "100644",
+      "blob": "0702ddbac04919ed07776471f5cfdb9d84597663",
+      "size": 216,
+      "sha256": "43b76981ca0fb540ef0b5d8b124be2a4f4a937843c42706ff0afe0d55717d161"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/owner-old-plan-paired.log",
+      "mode": "100644",
+      "blob": "759eee47e55a2c555e7e218e7b70c16ef9a54d33",
+      "size": 203,
+      "sha256": "f350f006bfaa57f649184acceb4a8979af5b0813e16edf8fc2e532188fb2ab13"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/pending-restart.log",
+      "mode": "100644",
+      "blob": "118f1ef3cf0db101156be7c5a01eaccab2d3e0fc",
+      "size": 5201,
+      "sha256": "e87ac7671e353d9b43376d0cb5f3827dc544e4bdf93621930e3122d9f40072b6"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/pg-human-lock.log",
+      "mode": "100644",
+      "blob": "72df823ea64d9cda15ec3920044a6b3e52167c86",
+      "size": 519,
+      "sha256": "808604ea21b36ed60b000fec57aaf120fbe7d62e5777256d1fc29c2d72ab536c"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/private-receipt.log",
+      "mode": "100644",
+      "blob": "c48ed7cbc87402441a27e7dfe10671799433a4d3",
+      "size": 921,
+      "sha256": "5aad7fca12ad4e2463bb3e9048830a77189f43a32222698a1f6ef20f8ef452a4"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/replay-current-privacy.log",
+      "mode": "100644",
+      "blob": "191e09ea2ad7f3a4fe4c46260c0c0bd9ce5ccad0",
+      "size": 894,
+      "sha256": "88efbf9bc4dc15286f191641683f99fd7c3f02a86c32940999f82ec42d90bca2"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/reply-frequency.log",
+      "mode": "100644",
+      "blob": "c7a96987f4377a11c651adacdc32eb0ed584e378",
+      "size": 203,
+      "sha256": "04dca4d95fa675a1b01a021c497013b56fc120760eaf81a60b94be87b0506cab"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/reply-total.log",
+      "mode": "100644",
+      "blob": "34232b6160544748f8390bfe1e912a8819602e59",
+      "size": 199,
+      "sha256": "c3e004d2562f4eee8cf68ab4e13978c43000045d51592bd7eebb46cb71e5b991"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/request-payload-binding.log",
+      "mode": "100644",
+      "blob": "fc7bc6be408eece681e2e4590698cf649afd0c58",
+      "size": 203,
+      "sha256": "f7b251d4bc3770cb350b7ae55623b90773909fe21b3d5e54569da74e42e9a834"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/resolved-does-not-resume.log",
+      "mode": "100644",
+      "blob": "ccfbf446bab12a40e15c944c9316621dbbf88d24",
+      "size": 222,
+      "sha256": "3ad9bff3eb6ff90bb4e2757ec8a65163677aea585e05ffae70e938a5fa03212b"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/restored-go.log",
+      "mode": "100644",
+      "blob": "ad8a08f2ce58eaf82778623216bb48f1041e813c",
+      "size": 123,
+      "sha256": "4ea995ccf9d791cb1b79886f1f77780960da6c93a55a18ad55f9135a01628f56"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/restored-helper.log",
+      "mode": "100644",
+      "blob": "c4873de7410729c7a5a3144792b940d238a3a4ba",
+      "size": 1556,
+      "sha256": "a60a25e5681c0ce49ccea6e2970355d5e8f676365d9ffee797e34edafc1b2ae8"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/shared-resume-gate.log",
+      "mode": "100644",
+      "blob": "188465332a9ac98ee73c0cd6791d8a8d9ec0b362",
+      "size": 209,
+      "sha256": "9a4c9614280c2e22e00d5196ae3991d2fa95930c7f3880a43f145bd3a2abcda4"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/strict-version-type.log",
+      "mode": "100644",
+      "blob": "eaf92283b4502fa91802a198299935f6e95e17ae",
+      "size": 2212,
+      "sha256": "e1a0ef59dc5ff46cd778396ba1dfc6ec71d731f896a24b39da959ac8b109c371"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/transient-defer-same-command.log",
+      "mode": "100644",
+      "blob": "6faec055901fe1d9449cb8ce90842f5136c47309",
+      "size": 2681,
+      "sha256": "f69b3efa661ec1220f1045378362dcb9ad5eeff1f65792808c36e1f8d24127d2"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/unknown-is-not-pass.log",
+      "mode": "100644",
+      "blob": "30d78bd71c3c517f4b9ead80e0c796d4bda86f6b",
+      "size": 908,
+      "sha256": "e29500135a58bea31d56dffb226b58b8f16b47f88eedb76653f2f75d173a51ce"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/waiter-addressed-read.log",
+      "mode": "100644",
+      "blob": "85e43b4b9c3c59fc16d2b53773d520307f0d2423",
+      "size": 211,
+      "sha256": "73a33046b18ee75f83ed8543d1b67db898ef2b3b63d1f68682ab81133266484a"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/waiter-needed-context.log",
+      "mode": "100644",
+      "blob": "d857ec80e85d2beb2b82358a9372d15aff1c52f5",
+      "size": 334,
+      "sha256": "049bc954578fa2e002fff47ace80669f2f9b061c4c538972dc73eec53b60a8a9"
+    },
+    {
+      "path": "docs/reviews/coder-blocker-wake-rework-20261020/withdrawals/waiter-no-private-get.log",
+      "mode": "100644",
+      "blob": "d46b39eef5c916d98433c5b9e22f214fd0033f75",
+      "size": 1840,
+      "sha256": "52b147ad45c5fc0e6185c65f903749b26aea2dd6077bd65629b5f823ff88555a"
+    }
+  ]
+}

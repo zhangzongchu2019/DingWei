@@ -64,6 +64,9 @@ func taskError(w http.ResponseWriter, err error) {
 	status := http.StatusServiceUnavailable
 	code := "task_unavailable"
 	switch {
+	case errors.Is(err, store.ErrBlockerRateLimited):
+		taskJSON(w, 429, map[string]any{"error": "blocker_reply_rate_limited"})
+		return
 	case errors.Is(err, store.ErrTaskFlowPermission), errors.Is(err, store.ErrConsoleSpecPermission), errors.Is(err, store.ErrConsoleTaskCasePermission), errors.Is(err, identity.ErrForbidden), errors.Is(err, identity.ErrNotFound), errors.Is(err, identity.ErrGroupNotFound):
 		status = 403
 		code = "task_access_denied"

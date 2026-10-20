@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerReplyBudgetAndIdempotentReplay (0.10s)
+    task_blocker_test.go:599: BLOCKER_REPLY_FREQUENCY_UNBOUNDED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.104s
+FAIL

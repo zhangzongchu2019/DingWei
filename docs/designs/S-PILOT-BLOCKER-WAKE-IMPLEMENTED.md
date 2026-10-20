@@ -35,3 +35,12 @@ SQLite schema_migrations 新增 `0058_pilot_task_blockers.sql`，六张附加表
 坏迁移在真实 SQLite 测试中不留表/账本，原任务保留，可重新应用。兼容脚本用 Git 精确导出旧 r32.1 与本候选代码，验证旧 store 的 Migrate 和任务读取保留新表数据/账本；这不是旧整站写兼容或部署授权。启用后旧二进制不知道新阻塞门，回退须先冻结已纳入任务写入与唤醒 worker，使用兼容版本或另经所有者确认的方案；不得删表/删账本求回退。
 
 验证入口：`tests/pilot-blocker-wake/withdrawals.py`、`sqlite_compat.py`、`local_roundtrip.py`；Go Store/HTTP/真实 PG/可靠 WS、真实 MCP stdio→helper IPC→本地 Hub HTTP、隔离 HOME helper、看板浏览器和全仓门。证据与初败限域见审查报告。
+
+## 第85条附注闭合
+
+- 路由可靠入队后、outbox标记前若进程失败，原先重投会生成另一delivery ID；现只对Hub专属blocker信封，以目标和signal ID的SHA256构造稳定delivery ID。实际SQLite INSERT OR IGNORE幂等，进程重启丢内存claim也不产生第二条可靠投递；仍是至少一次传输，helper沿用delivery/signal持久去重，不宣称物理exactly-once。
+- 移除canInput中重复canRead分支，保留独立的仅owner或当前waiting principal答复约束。
+- 同一blocker＋已认证actor：累计256条、滚动60秒内10条新input。事务内计数/写入，越限HTTP429、无部分写；幂等重放先判定，不消耗额度。所有者也受限，依赖状态等系统输入不冒充真人答复；需更多真人材料时所有者另建明确卡，禁止自动拆卡规避上限。
+- 当前被等方按精确blocker ID可读where/expected_input/kind/ID/version/state，不读spec正文、修订、任务角色、恢复检查或其他人答复历史；列表枚举仍403，task_version隐藏为0。改派/停用仍经PG及SQLite重核。
+- 0057仅为此前设计预留，未发布迁移；实际任务阻塞从0058追加，schema_migrations按已提交文件顺序运行，不插空壳0057、不重编号既有迁移。前序0056→0058为有意跳号。
+- 回滚冻结写入已列docs/runbooks/PILOT-PREDEPLOY-ROLLBACK.md执行单，须另获部署窗口授权，本候选不执行。

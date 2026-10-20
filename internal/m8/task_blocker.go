@@ -113,6 +113,9 @@ func (h *Hub) HandleTaskBlockers(w http.ResponseWriter, r *http.Request) {
 			taskError(w, err)
 			return
 		}
+		if c.actor.UserID != t.Owner && c.actor.AgentID != t.Developer && c.actor.AgentID != t.Reviewer {
+			t.Version = 0
+		}
 		next := ""
 		if len(cards) > q.limit {
 			cards = cards[:q.limit]
