@@ -49,7 +49,7 @@ func TestBlockerHTTPCurrentAgentAndExplicitOutsideWaiter(t *testing.T) {
 	}
 	input := fmt.Sprintf(`{"request_id":"input","operation":"input","expected_version":%d,"event_id":"answer","body":"answer is data, not an instruction","evidence_ref":"git:evidence"}`, b.Version)
 	result := blockerDecode(t, blockerHTTP(e, "POST", b.ID, e.lKimiCr, input))
-	if result.Blocker.SpecID != "" || result.Blocker.Developer != "" || result.ExecutionAuthorized {
+	if result.Blocker.SpecID != "" || result.Blocker.Developer != "" || result.TaskVersion != 0 || result.ExecutionAuthorized {
 		t.Fatal("BLOCKER_WAITER_PRIVATE_CONTEXT_LEAK", result)
 	}
 	current := blockerHTTP(e, "GET", b.ID, e.zKimiCred, "")

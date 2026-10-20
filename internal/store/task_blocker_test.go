@@ -2,8 +2,11 @@ package store
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"strings"
 	"testing"
 	"time"
@@ -417,5 +420,81 @@ func TestBlockerReadOnlySnapshotAndBoundedInputHistory(t *testing.T) {
 	}
 	if _, _, err = db.ReadTaskBlockers(ctx, state, BlockerActor{AgentID: "dev"}, b.ID, "", 102, func() error { return nil }); !errors.Is(err, ErrTaskFlowInvalid) {
 		t.Fatal("BLOCKER_UNBOUNDED_READ_ACCEPTED", err)
+	}
+}
+
+func TestBlockerLegacyDriverStartCannotBypassUnresolvedCards(t *testing.T) {
+	db, now, _ := taskFlowFixture(t)
+	ctx := context.Background()
+	var start model.ConsoleTaskDriverStart
+	if err := db.db.QueryRow(`SELECT spec_id,revision,content_sha256 FROM console_spec_task WHERE id='task'`).Scan(&start.SpecID, &start.Revision, &start.ContentSHA256); err != nil {
+		t.Fatal(err)
+	}
+	start.RepositoryName = "local-fixture"
+	start.BranchName = "fixture"
+	start.Schedule = "test-only"
+	start.TaskEndpoint = "http://127.0.0.1/fixture"
+	start.TokenInstructions = "synthetic no credentials"
+	start.AnnouncedBy = "owner-a"
+	start.AnnouncedAt = now
+	if err := db.StartConsoleTaskDriver(ctx, start); err != nil {
+		t.Fatal("positive control", err)
+	}
+	if _, err := db.db.Exec(`DELETE FROM console_task_driver_start WHERE spec_id=? AND revision=?`, start.SpecID, start.Revision); err != nil {
+		t.Fatal(err)
+	}
+	blockerCreate(t, db, now, "card", "waiting", "user:owner-a", false)
+	if err := db.StartConsoleTaskDriver(ctx, start); !errors.Is(err, ErrTaskFlowConflict) {
+		t.Fatal("BLOCKER_LEGACY_DRIVER_START_BYPASS", err)
+	}
+	var n int
+	if err := db.db.QueryRow(`SELECT count(*) FROM console_task_driver_start`).Scan(&n); err != nil || n != 0 {
+		t.Fatal("BLOCKER_LEGACY_START_RECORD_CREATED", n, err)
+	}
+}
+
+func TestBlockerMigrationFailureRollsBackDDLAndLedger(t *testing.T) {
+	db, _, _ := taskFlowFixture(t)
+	ctx := context.Background()
+	// Only this disposable fixture is reset to its immediately preceding schema.
+	for _, table := range []string{"console_task_blocker_condition", "console_task_blocker_outbox", "console_task_blocker_input", "console_task_blocker_audit", "console_task_blocker_request", "console_task_blocker"} {
+		if _, err := db.db.Exec(`DROP TABLE ` + table); err != nil {
+			t.Fatal(err)
+		}
+	}
+	name := "0058_pilot_task_blockers.sql"
+	if _, err := db.db.Exec(`DELETE FROM schema_migrations WHERE version=?`, name); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := migrationFS.ReadFile("migrations/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(raw)
+	digest := hex.EncodeToString(sum[:])
+	if err = db.applyMigration(ctx, name, string(raw)+";DELIBERATELY_INVALID_SQL;", digest); err == nil {
+		t.Fatal("BLOCKER_BAD_MIGRATION_ACCEPTED")
+	}
+	var tables, ledger, tasks int
+	if err = db.db.QueryRow(`SELECT count(*) FROM sqlite_master WHERE type='table' AND name LIKE 'console_task_blocker%'`).Scan(&tables); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.db.QueryRow(`SELECT count(*) FROM schema_migrations WHERE version=?`, name).Scan(&ledger); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.db.QueryRow(`SELECT count(*) FROM console_spec_task`).Scan(&tasks); err != nil {
+		t.Fatal(err)
+	}
+	if tables != 0 || ledger != 0 || tasks != 1 {
+		t.Fatal("BLOCKER_MIGRATION_LEFT_PARTIAL_STATE", tables, ledger, tasks)
+	}
+	if err = db.applyMigration(ctx, name, string(raw), digest); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.db.QueryRow(`SELECT count(*) FROM sqlite_master WHERE type='table' AND name LIKE 'console_task_blocker%'`).Scan(&tables); err != nil || tables != 6 {
+		t.Fatal("BLOCKER_MIGRATION_REAPPLY_WRONG", tables, err)
 	}
 }
