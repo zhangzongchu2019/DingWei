@@ -51,6 +51,10 @@ case('owner-old-plan-paired','internal/store/console_specs.go','if err = taskBlo
 CASES[-1]['edits'].append(('internal/store/console_specs.go','if enrolled > 0 {','if false && enrolled > 0 {'))
 store('resolved-does-not-resume','if pass {\n\t\t\t\tb.State = "resolved"','if pass {\n\t\t\t\t_, _ = tx.ExecContext(ctx, `UPDATE console_spec_task SET status=\'in_progress\' WHERE id=?`, t.ID)\n\t\t\t\tb.State = "resolved"','TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake','BLOCKER_RECHECK_AUTO_RESUMED')
 
+store('get-no-business-write','if err = tx.Commit(); err != nil {\n\t\treturn nil, nil, err\n\t}\n\treturn cards, inputs, nil','if _, err = tx.ExecContext(ctx, `UPDATE console_task_blocker SET version=version+1 WHERE task_id=?`, t.ID); err != nil {return nil,nil,err}\n\tif err = tx.Commit(); err != nil {\n\t\treturn nil, nil, err\n\t}\n\treturn cards, inputs, nil','TestBlockerReadOnlySnapshotAndBoundedInputHistory','BLOCKER_GET_WROTE_STATE')
+CASES[-1]['edits'].append((S,'&sql.TxOptions{ReadOnly: true}','&sql.TxOptions{ReadOnly: false}'))
+helper('notice-mode-fence','tools/sessionhelper/sessionhelper/app.py','if self.cfg.mode!="driver" or not m["automatic_recheck"] or not getattr(self,"enroll_credential",None) or getattr(self.cfg,"ipc_upload_only",False) or getattr(self.cfg,"ipc_send_body_only",False):','if False:','BLOCKER_NOTICE_INJECTED_TO_LEGACY_OR_RESTRICTED_MODE')
+
 def run(args):
     args.commit=subprocess.check_output(['git','-C',str(ROOT),'rev-parse',args.commit+'^{commit}'],text=True).strip()
     chosen=[c for c in CASES if not args.only or c['name'] in args.only]
