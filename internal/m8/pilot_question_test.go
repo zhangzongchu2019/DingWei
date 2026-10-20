@@ -82,7 +82,7 @@ func TestPilotQuestionHTTPPolicyAndMinimalPMObjectGrant(t *testing.T) {
 	}
 	q := questionHTTPCreate(t, e, state)
 	out := questionHTTP(e, "GET", q.ID, "", "lbl", "", "")
-	if out.Code != 200 || !strings.Contains(out.Body.String(), "实际现象") || strings.Contains(out.Body.String(), `"can_manage":true`) || strings.Contains(out.Body.String(), `"leader_user":"zzc"`) {
+	if out.Code != 200 || !strings.Contains(out.Body.String(), "实际现象") || strings.Contains(out.Body.String(), `"can_manage":true`) || strings.Contains(out.Body.String(), `"can_configure_recipients":true`) || strings.Contains(out.Body.String(), `"leader_user":"zzc"`) {
 		t.Fatal("QUESTION_PM_MINIMAL_OBJECT_GRANT", out.Code, out.Body)
 	}
 	body := fmt.Sprintf(`{"request_id":"human-answer","operation":"answer","expected_version":%d,"event_id":"answer","answer_kind":"substantive","body":"明确的范围结论","evidence_ref":"git:answer"}`, q.Version)

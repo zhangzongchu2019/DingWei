@@ -11,8 +11,16 @@ import (
 func questionPresentation(q PilotQuestion, c QuestionContext, a BlockerActor, current PilotQuestion) PilotQuestion {
 	q.CanAnswer = questionAnswerer(a, c, current)
 	q.CanManage = questionManager(a, c)
-	q.CanAssign = a.UserID != "" && a.UserID == c.Owner
-	q.CanDecideChange = q.CanAssign
+	q.CanConfigureRecipients = a.UserID != "" && a.UserID == c.Owner
+	q.CanAssign = q.CanConfigureRecipients || a.UserID != "" && a.UserID == current.PMUser
+	q.CanDecideChange = q.CanConfigureRecipients
+	q.AssignmentOptions = []string{"user:" + c.Owner, "user:" + q.PMUser}
+	if c.Editor != "" {
+		q.AssignmentOptions = append(q.AssignmentOptions, "user:"+c.Editor)
+	}
+	if c.Task != nil {
+		q.AssignmentOptions = append(q.AssignmentOptions, "agent:"+c.Task.Developer, "agent:"+c.Task.Reviewer)
+	}
 	if !q.CanManage {
 		q.LeaderUser = ""
 		for i := range q.Notifications {

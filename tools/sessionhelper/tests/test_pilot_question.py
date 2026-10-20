@@ -21,24 +21,24 @@ class PilotQuestionTest(unittest.TestCase):
         self.assertEqual(req['type'],'pilot_question_v1');self.assertEqual(req['task_id'],'task')
         self.assertEqual(req['body']['request_id'],'stable')
         for field in ('pm_user','leader_user','responsible_principal','agent_id','credential','url','operation','scope_change'):
-            with self.subTest(field=field),self.assertRaises(ValueError,msg='QUESTION_FORGED_MCP_IDENTITY'):
+            with patch.object(mcp_shim,'_ipc_request',return_value={}),self.subTest(field=field),self.assertRaises(ValueError,msg='QUESTION_FORGED_MCP_IDENTITY'):
                 mcp_shim._dw_task_question_create(dict(create(),**{field:'forged'}))
         for value in (True,False,0,'1',None):
-            with self.assertRaises(ValueError):mcp_shim._dw_task_question_create(dict(create(),expected_version=value))
+            with patch.object(mcp_shim,'_ipc_request',return_value={}),self.assertRaises(ValueError,msg='QUESTION_VERSION_TYPE_WEAK'):mcp_shim._dw_task_question_create(dict(create(),expected_version=value))
 
     def test_input_is_technical_material_not_business_answer(self):
         args={'question_id':'question','request_id':'stable','expected_version':1,'event_id':'event','body':'技术材料','evidence_ref':'git:immutable'}
         with patch.object(mcp_shim,'_ipc_request',return_value={}) as call:mcp_shim._dw_task_question_input(args)
         self.assertEqual(call.call_args.args[0]['action'],'input')
         for field in ('answer_kind','scope_change','operation','pm_user','responsible_principal','task_id'):
-            with self.assertRaises(ValueError,msg='QUESTION_AGENT_BUSINESS_DECISION'):
+            with patch.object(mcp_shim,'_ipc_request',return_value={}),self.assertRaises(ValueError,msg='QUESTION_AGENT_BUSINESS_DECISION'):
                 mcp_shim._dw_task_question_input(dict(args,**{field:'forged'}))
 
     def test_list_detail_and_collection_are_disjoint(self):
         for args in ({},{'task_id':'task','limit':100},{'spec_id':'spec','cursor':'opaque'},{'question_id':'q','before':4,'change_before':8}):
             with patch.object(mcp_shim,'_ipc_request',return_value={}):mcp_shim._dw_task_question_list(args)
         for args in ({'question_id':'q','task_id':'task'},{'before':1},{'limit':101},{'limit':True},{'question_id':'q\nforged'},{'url':'https://outside.invalid'}):
-            with self.assertRaises(ValueError,msg='QUESTION_QUERY_SCOPE_FORGED'):mcp_shim._dw_task_question_list(args)
+            with patch.object(mcp_shim,'_ipc_request',return_value={}),self.assertRaises(ValueError,msg='QUESTION_QUERY_SCOPE_FORGED'):mcp_shim._dw_task_question_list(args)
 
     def test_old_helper_safe_failure_no_alternate_route(self):
         for method,args in ((mcp_shim._dw_task_question_create,create()),(mcp_shim._dw_task_question_list,{})):
@@ -75,7 +75,7 @@ class PilotQuestionTest(unittest.TestCase):
         for payload in ({},{'execution_authorized':True},{'execution_authorized':0}):
             with patch('urllib.request.OpenerDirector.open',return_value=Response(json.dumps(payload).encode())):
                 result=api.question_request('wss://hub.invalid',{}, {'action':'list','body':{}})
-            self.assertEqual(result['error'],'question_read_failed','QUESTION_RESULT_EXECUTION_FLAG_WEAK')
+            self.assertEqual(result.get('error'),'question_read_failed','QUESTION_RESULT_EXECUTION_FLAG_WEAK')
         with patch('urllib.request.OpenerDirector.open',return_value=Response(b'{"execution_authorized":false,"questions":[]}')):
             self.assertEqual(api.question_request('wss://hub.invalid',{}, {'action':'list','body':{}})['status'],'ok')
 

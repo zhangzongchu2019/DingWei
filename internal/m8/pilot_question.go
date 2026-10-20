@@ -540,6 +540,22 @@ func (h *Hub) HandleQuestionCreateContext(w http.ResponseWriter, r *http.Request
 		taskError(w, store.ErrTaskFlowPermission)
 		return
 	}
+	contacts := []map[string]string{}
+	if actor.actor.UserID == c.Owner {
+		users, x := h.Identity.Store.ListUsers(ctx)
+		if x != nil {
+			taskError(w, x)
+			return
+		}
+		for _, user := range users {
+			if user.State == identity.UserActive {
+				contacts = append(contacts, map[string]string{"id": user.UserIDLC(), "display_name": user.ShortName})
+				if len(contacts) >= 500 {
+					break
+				}
+			}
+		}
+	}
 	version := c.Revision
 	if c.Task != nil {
 		version = c.Task.Version
@@ -549,5 +565,5 @@ func (h *Hub) HandleQuestionCreateContext(w http.ResponseWriter, r *http.Request
 		taskError(w, err)
 		return
 	}
-	taskJSON(w, 200, map[string]any{"spec_id": c.SpecID, "task_id": task, "expected_version": version, "can_configure_policy": actor.actor.UserID == c.Owner, "execution_authorized": false})
+	taskJSON(w, 200, map[string]any{"spec_id": c.SpecID, "task_id": task, "expected_version": version, "can_configure_policy": actor.actor.UserID == c.Owner, "contacts": contacts, "contact_limit": 500, "execution_authorized": false})
 }

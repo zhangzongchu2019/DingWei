@@ -17,7 +17,7 @@ store('developer-only-lease','if !actor.developer(t) || b.InputVersion','if fals
 store('addressed-reply','if u.Operation == "input" && !(actor.owner(t) || b.WaitingPrincipal == key)','if false && u.Operation == "input" && !(actor.owner(t) || b.WaitingPrincipal == key)','TestBlockerWaiterRightsAndFullMode','BLOCKER_UNADDRESSED_REPLY_ACCEPTED')
 store('private-receipt','if !canRead {\n\t\tout.Blocker =','if false && !canRead {\n\t\tout.Blocker =','TestBlockerWaiterRightsAndFullMode','BLOCKER_WAITER_GOT_TASK_CONTEXT')
 store('request-payload-binding','if oldHash != payload {','if false && oldHash != payload {','TestBlockerRequestReplayAndRollbackAreAtomic','BLOCKER_REQUEST_HASH_NOT_BOUND')
-store('immutable-event','if previous != inputHash {','if false && previous != inputHash {','TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake','BLOCKER_EVENT_REPLACED')
+case('immutable-event','internal/store/pilot_question_blocker.go','if previous != hash {','if false && previous != hash {','./internal/store','TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake','BLOCKER_EVENT_REPLACED')
 store('unknown-is-not-pass','if c.Result != "pass" {','if false && c.Result != "pass" {','TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake','BLOCKER_UNKNOWN_RESOLVED')
 store('full-approval','|| (b.Mode == "full" && b.FullApprovalRef == "")','|| (false && b.Mode == "full" && b.FullApprovalRef == "")','TestBlockerWaiterRightsAndFullMode','BLOCKER_FULL_MODE_APPROVAL_BYPASS')
 store('lease-identity','|| u.LeaseID != b.LeaseID ||','|| false && u.LeaseID != b.LeaseID ||','TestBlockerRecheckRequiresCurrentDeveloperVersionAndLease','BLOCKER_FORGED_LEASE_ACCEPTED')

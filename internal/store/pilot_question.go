@@ -362,14 +362,26 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 		}
 		q.Version++
 	case "assign":
-		if a.UserID != c.Owner || questionTerminal(q.State) || !validQuestionUser(u.PMUser) || !validQuestionUser(u.LeaderUser) {
+		owner := a.UserID != "" && a.UserID == c.Owner
+		delegated := a.UserID != "" && a.UserID == q.PMUser && (u.PMUser == "" || u.PMUser == q.PMUser) && (u.LeaderUser == "" || u.LeaderUser == q.LeaderUser) &&
+			(u.Responsible == "user:"+c.Owner || c.Editor != "" && u.Responsible == "user:"+c.Editor || u.Responsible == "user:"+q.PMUser || c.Task != nil && (u.Responsible == "agent:"+c.Task.Developer || u.Responsible == "agent:"+c.Task.Reviewer))
+		if (!owner && !delegated) || questionTerminal(q.State) || !validQuestionUser(u.PMUser) || !validQuestionUser(u.LeaderUser) {
 			return out, ErrTaskFlowPermission
+		}
+		if !owner {
+			u.PMUser = q.PMUser
+			u.LeaderUser = q.LeaderUser
 		}
 		oldPM, oldResponsible := q.PMUser, q.Responsible
 		q.PMUser = u.PMUser
 		q.Responsible = u.Responsible
 		q.LeaderUser = u.LeaderUser
 		q.Version++
+		if q.BlockerID != "" {
+			if err = questionReassignBlocker(ctx, tx, c, a, q, now); err != nil {
+				return out, err
+			}
+		}
 		if q.Responsible == "" {
 			q.State = "needs_owner"
 		} else if q.State == "needs_owner" {

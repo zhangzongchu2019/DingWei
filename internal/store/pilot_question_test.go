@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"testing"
@@ -311,11 +313,163 @@ func TestPilotQuestionReadGrantIsOnlyQuestionAndHistoryBounded(t *testing.T) {
 		}
 	}
 	got, answers, _, err := db.ReadQuestion(ctx, c, BlockerActor{UserID: "pm"}, q.ID, 0, func() error { return nil })
-	if err != nil || len(answers) != 101 || got.CanManage || got.CanAssign || got.LeaderUser != "" {
+	if err != nil || len(answers) != 101 || got.CanManage || got.CanConfigureRecipients || got.LeaderUser != "" {
 		t.Fatal("QUESTION_MINIMUM_GRANT_OR_HISTORY_BOUND", got, len(answers), err)
 	}
 	_, older, _, err := db.ReadQuestion(ctx, c, BlockerActor{UserID: "pm"}, q.ID, answers[100].Sequence, func() error { return nil })
 	if err != nil || len(older) != 2 {
 		t.Fatal("QUESTION_HISTORY_PAGE_LOST", len(older), err)
+	}
+}
+func TestPilotQuestionReassignRevokesSharedD2WaiterGrant(t *testing.T) {
+	db, now, _ := questionFixture(t)
+	q := questionCreate(t, db, now, "requirement_unclear")
+	if _, err := questionApply(t, db, now, BlockerActor{UserID: "owner-a"}, q.ID, QuestionUpdate{RequestID: "move", ExpectedVersion: q.Version, Operation: "assign", PMUser: "newpm", Responsible: "user:newpm", LeaderUser: "leader"}); err != nil {
+		t.Fatal(err)
+	}
+	state, err := db.ConsoleTaskFlowState(context.Background(), "task")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards, _, err := db.ReadTaskBlockers(context.Background(), state, BlockerActor{AgentID: "dev"}, q.BlockerID, "", 10, func() error { return nil })
+	if err != nil || len(cards) != 1 {
+		t.Fatal(err, cards)
+	}
+	if cards[0].WaitingPrincipal != "user:newpm" {
+		t.Fatal("QUESTION_REASSIGN_RETAINED_D2_WAITER", cards[0].WaitingPrincipal)
+	}
+	_, err = db.UpdateTaskBlocker(context.Background(), state, BlockerActor{UserID: "pm"}, q.BlockerID, BlockerUpdate{RequestID: "old-input", ExpectedVersion: cards[0].Version, Operation: "input", EventID: "old", Body: "旧联系人无权追加", Evidence: "git:old"}, func() error { return nil }, now)
+	if !errors.Is(err, ErrTaskFlowPermission) {
+		t.Fatal("QUESTION_OLD_PM_D2_INPUT_ALLOWED", err)
+	}
+}
+func TestPilotQuestionMigrationRollbackAndReapply(t *testing.T) {
+	db, _, _ := taskFlowFixture(t)
+	ctx := context.Background()
+	for _, name := range []string{"pilot_question_answer", "pilot_question_event", "pilot_question_request", "pilot_question_outbox", "pilot_question_change", "pilot_question_audit", "pilot_question", "pilot_question_policy"} {
+		if _, err := db.db.Exec(`DROP TABLE ` + name); err != nil {
+			t.Fatal(err)
+		}
+	}
+	name := "0059_pilot_questions.sql"
+	if _, err := db.db.Exec(`DELETE FROM schema_migrations WHERE version=?`, name); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := migrationFS.ReadFile("migrations/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(raw)
+	digest := hex.EncodeToString(sum[:])
+	if err = db.applyMigration(ctx, name, string(raw)+";BAD_QUESTION_MIGRATION;", digest); err == nil {
+		t.Fatal("QUESTION_BAD_MIGRATION_ACCEPTED")
+	}
+	var tables, ledger int
+	db.db.QueryRow(`SELECT count(*) FROM sqlite_master WHERE type='table' AND name LIKE 'pilot_question%'`).Scan(&tables)
+	db.db.QueryRow(`SELECT count(*) FROM schema_migrations WHERE version=?`, name).Scan(&ledger)
+	if tables != 0 || ledger != 0 {
+		t.Fatal("QUESTION_PARTIAL_MIGRATION", tables, ledger)
+	}
+	if err = db.applyMigration(ctx, name, string(raw), digest); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	db.db.QueryRow(`SELECT count(*) FROM sqlite_master WHERE type='table' AND name LIKE 'pilot_question%'`).Scan(&tables)
+	if tables != 8 {
+		t.Fatal("QUESTION_MIGRATION_TABLES", tables)
+	}
+}
+func TestPilotQuestionCASAndClockRollbackFailClosed(t *testing.T) {
+	db, now, _ := questionFixture(t)
+	q := questionCreate(t, db, now, "technical")
+	u := QuestionUpdate{RequestID: "bad-version", ExpectedVersion: q.Version + 1, Operation: "answer", EventID: "event", AnswerKind: "substantive", Body: "真实答复", Evidence: "git:one"}
+	if _, err := questionApply(t, db, now, BlockerActor{UserID: "pm"}, q.ID, u); !errors.Is(err, ErrTaskFlowConflict) {
+		t.Fatal("QUESTION_STALE_VERSION_ACCEPTED", err)
+	}
+	u.RequestID = "clock"
+	u.ExpectedVersion = q.Version
+	if _, err := questionApply(t, db, now.Add(-time.Second), BlockerActor{UserID: "pm"}, q.ID, u); !errors.Is(err, ErrTaskFlowConflict) {
+		t.Fatal("QUESTION_CLOCK_ROLLBACK_ANSWER", err)
+	}
+}
+func TestPilotQuestionProductionFullAndAckDoesNotStopSLA(t *testing.T) {
+	db, now, c := questionFixture(t)
+	out, err := db.UpdateQuestion(context.Background(), c, BlockerActor{AgentID: "dev"}, "", QuestionUpdate{RequestID: "risk", ExpectedVersion: c.Task.Version, Operation: "create", TaskID: "task", Kind: "resource", Title: "生产事项", ObservedFact: "涉及生产资源", Question: "明确授权", ExpectedAnswer: "正式授权证据", ProductionOrSecurity: true}, func() error { return nil }, now)
+	if err != nil || out.Question.Mode != "full" {
+		t.Fatal("QUESTION_PRODUCTION_NOT_FULL", out, err)
+	}
+	q := out.Question
+	out, err = questionApply(t, db, now.Add(time.Minute), BlockerActor{UserID: "pm"}, q.ID, QuestionUpdate{RequestID: "ack-as-substantive", ExpectedVersion: q.Version, Operation: "answer", EventID: "ack", AnswerKind: "substantive", Body: "收到", Evidence: "git:received"})
+	if err != nil || out.Question.FirstSubstantiveAt != "" || questionCount(t, db, "console_task_blocker_input") != 0 {
+		t.Fatal("QUESTION_ACK_TREATED_AS_SUBSTANTIVE", out, err)
+	}
+	var mode string
+	db.db.QueryRow(`SELECT mode FROM console_task_blocker WHERE id=?`, q.BlockerID).Scan(&mode)
+	if mode != "full" {
+		t.Fatal("QUESTION_RISK_D2_MODE_DOWNGRADED", mode)
+	}
+}
+func TestPilotQuestionSpecOnlyAndCompletedTaskNeverWake(t *testing.T) {
+	for _, done := range []bool{false, true} {
+		t.Run(fmt.Sprint(done), func(t *testing.T) {
+			db, now, _ := questionFixture(t)
+			ctx := context.Background()
+			task := ""
+			if done {
+				task = "task"
+				if _, err := db.db.Exec(`UPDATE console_spec_task SET status='done' WHERE id='task'`); err != nil {
+					t.Fatal(err)
+				}
+			}
+			c, err := db.QuestionAuthorizationContext(ctx, "r32", task, "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			v := c.Revision
+			if done {
+				v = c.Task.Version
+			}
+			out, err := db.UpdateQuestion(ctx, c, BlockerActor{UserID: "owner-a"}, "", QuestionUpdate{RequestID: "post", ExpectedVersion: v, Operation: "create", TaskID: task, Kind: "technical", Title: "后续问题", ObservedFact: "后续事实", Question: "后续澄清", ExpectedAnswer: "独立答复"}, func() error { return nil }, now)
+			if err != nil || out.Question.BlockerID != "" {
+				t.Fatal("QUESTION_POST_COMPLETION_CREATED_BLOCKER", out, err)
+			}
+			out, err = questionApply(t, db, now, BlockerActor{UserID: "pm"}, out.Question.ID, QuestionUpdate{RequestID: "answer", ExpectedVersion: out.Question.Version, Operation: "answer", EventID: "post", AnswerKind: "substantive", Body: "后续明确结论", Evidence: "git:one"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if questionCount(t, db, "console_task_blocker_outbox") != 0 || questionCount(t, db, "console_task_blocker") != 0 {
+				t.Fatal("QUESTION_SPEC_OR_DONE_AUTO_WAKE")
+			}
+			if done {
+				var status string
+				db.db.QueryRow(`SELECT status FROM console_spec_task WHERE id='task'`).Scan(&status)
+				if status != "done" {
+					t.Fatal("QUESTION_COMPLETED_TASK_REOPENED", status)
+				}
+			}
+		})
+	}
+}
+func TestPilotQuestionPMDelegationLimitedToExistingQuestionReaders(t *testing.T) {
+	db, now, _ := questionFixture(t)
+	q := questionCreate(t, db, now, "technical")
+	for _, u := range []QuestionUpdate{
+		{RequestID: "external", ExpectedVersion: q.Version, Operation: "assign", PMUser: "pm", LeaderUser: "leader", Responsible: "user:outsider"},
+		{RequestID: "pm-replace", ExpectedVersion: q.Version, Operation: "assign", PMUser: "newpm", LeaderUser: "leader", Responsible: "agent:dev"},
+		{RequestID: "leader-replace", ExpectedVersion: q.Version, Operation: "assign", PMUser: "pm", LeaderUser: "newleader", Responsible: "agent:dev"},
+	} {
+		if _, err := questionApply(t, db, now, BlockerActor{UserID: "pm"}, q.ID, u); !errors.Is(err, ErrTaskFlowPermission) {
+			t.Fatal("QUESTION_PM_GRANTED_NEW_RIGHTS", err)
+		}
+	}
+	out, err := questionApply(t, db, now, BlockerActor{UserID: "pm"}, q.ID, QuestionUpdate{RequestID: "delegate", ExpectedVersion: q.Version, Operation: "assign", PMUser: "pm", LeaderUser: "leader", Responsible: "agent:dev"})
+	if err != nil || out.Question.Responsible != "agent:dev" {
+		t.Fatal("QUESTION_PM_TECHNICAL_DELEGATION", out, err)
+	}
+	out, err = questionApply(t, db, now.Add(time.Minute), BlockerActor{AgentID: "dev"}, q.ID, QuestionUpdate{RequestID: "technical", ExpectedVersion: out.Question.Version, Operation: "input", EventID: "facts", Body: "实际技术事实与证据", Evidence: "git:tech"})
+	if err != nil || out.Question.FirstSubstantiveAt == "" {
+		t.Fatal("QUESTION_DELEGATED_TECHNICAL_FIRST_RESPONSE", out, err)
 	}
 }

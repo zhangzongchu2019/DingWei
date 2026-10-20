@@ -156,3 +156,37 @@ func questionCancelBlocker(ctx context.Context, tx *sql.Tx, c QuestionContext, a
 	}
 	return blockerAudit(ctx, tx, b, a.Key(), "question_cancel", map[string]any{"question_id": q.ID, "reason": reason}, b.UpdatedAt)
 }
+
+// The linked D2 card is the only wake path; its explicit waiter grant must be
+// revoked in the very same transaction as the question recipient changes.
+func questionReassignBlocker(ctx context.Context, tx *sql.Tx, c QuestionContext, a BlockerActor, q PilotQuestion, now time.Time) error {
+	b, err := scanBlocker(tx.QueryRowContext(ctx, `SELECT `+blockerCols+` FROM console_task_blocker WHERE id=? AND task_id=?`, q.BlockerID, c.TaskID))
+	if err != nil {
+		return err
+	}
+	if b.WaitingPrincipal == q.Responsible {
+		return nil
+	}
+	b.WaitingPrincipal = q.Responsible
+	b.Version++
+	b.LeaseID = ""
+	b.LeaseUntil = ""
+	b.Fingerprint = blockerFingerprint(b)
+	b.UpdatedAt = now.UTC().Format(time.RFC3339Nano)
+	if !blockerTerminal(b.State) {
+		if q.Responsible == "" {
+			b.State = "needs_owner"
+		} else if b.InputVersion > 0 {
+			b.State = "ready_to_recheck"
+		} else {
+			b.State = "waiting"
+		}
+	}
+	if err = saveBlocker(ctx, tx, b); err != nil {
+		return err
+	}
+	if _, err = tx.ExecContext(ctx, `UPDATE console_spec_task SET version=version+1 WHERE id=?`, c.TaskID); err != nil {
+		return err
+	}
+	return blockerAudit(ctx, tx, b, a.Key(), "question_recipient_reassigned", map[string]any{"question_id": q.ID}, b.UpdatedAt)
+}
