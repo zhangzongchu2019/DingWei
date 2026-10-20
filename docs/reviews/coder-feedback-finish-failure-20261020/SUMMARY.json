@@ -1,0 +1,215 @@
+{
+  "utc": "2026-10-20T22:34:32.569369+00:00",
+  "input_tree": "c55213054dca5c257b9d50f125ce329b39f12876",
+  "gates": {
+    "vet": {
+      "commit": "c55213054dca5c257b9d50f125ce329b39f12876",
+      "argv": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "rc": 0,
+      "start": "2026-10-20T22:16:39.045720+00:00",
+      "end": "2026-10-20T22:16:43.740524+00:00",
+      "git_export": true,
+      "isolated_home": true,
+      "cleared_environment": true,
+      "offline_dependencies": true,
+      "embedded_pg_binary_cache_only": "/home/dev/.embedded-postgres-go",
+      "DSN_unset": true
+    },
+    "canonical": {
+      "commit": "c55213054dca5c257b9d50f125ce329b39f12876",
+      "argv": [
+        "bash",
+        "scripts/run-build-tests.sh"
+      ],
+      "rc": 0,
+      "start": "2026-10-20T22:16:43.740776+00:00",
+      "end": "2026-10-20T22:19:17.450590+00:00",
+      "git_export": true,
+      "isolated_home": true,
+      "cleared_environment": true,
+      "offline_dependencies": true,
+      "embedded_pg_binary_cache_only": "/home/dev/.embedded-postgres-go",
+      "DSN_unset": true
+    },
+    "race": {
+      "commit": "c55213054dca5c257b9d50f125ce329b39f12876",
+      "argv": [
+        "go",
+        "test",
+        "-race",
+        "./internal/store",
+        "./internal/m8",
+        "./internal/identity",
+        "-count=1",
+        "-run",
+        "^TestPilotQuestion|^TestBlocker|^TestProjectContext",
+        "-timeout=10m"
+      ],
+      "rc": 0,
+      "start": "2026-10-20T22:19:56.721435+00:00",
+      "end": "2026-10-20T22:21:38.278499+00:00",
+      "git_export": true,
+      "isolated_home": true,
+      "cleared_environment": true,
+      "offline_dependencies": true,
+      "embedded_pg_binary_cache_only": "/home/dev/.embedded-postgres-go",
+      "DSN_unset": true
+    },
+    "go": {
+      "commit": "c55213054dca5c257b9d50f125ce329b39f12876",
+      "argv": [
+        "go",
+        "test",
+        "./...",
+        "-json",
+        "-count=1",
+        "-timeout=30m"
+      ],
+      "rc": 0,
+      "start": "2026-10-20T22:21:38.278739+00:00",
+      "end": "2026-10-20T22:34:02.916182+00:00",
+      "git_export": true,
+      "isolated_home": true,
+      "cleared_environment": true,
+      "offline_dependencies": true,
+      "embedded_pg_binary_cache_only": "/home/dev/.embedded-postgres-go",
+      "DSN_unset": true
+    }
+  },
+  "packages": {
+    "skip": 13,
+    "pass": 52
+  },
+  "package_count": 65,
+  "conditional_test_skips": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGAssignFull"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGA2ConcurrentUnique"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGACLThreeRoles"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGRoleNoLeak"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGGCFirstResults"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGMigrateOnly"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB3CrossTask"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB4PutAssignInterleave"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1CrossTaskConcurrentSameRID"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1ResponseLossRetry"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1LockOrderNoDeadlock"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGIntegration"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+      "test": "TestGateDumpDoorABaseline"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestTCN5b_SameRidDifferentPayloadConflict"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestConformance_GAP_SLATimeoutAnnotate"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+      "test": "TestMonitorPageInRealChrome"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestMuxProductHTTP1EightSeats"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsolePlatformPayloadDump"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestFailureNoticeDriverTurnEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestGroupReplyMCP"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelper0232MixedVersionEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestEnvelopeReadTimeoutEnvironmentChild"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSpecMCPEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestR31OldBinarySchemaReadCompatibility"
+    }
+  ],
+  "withdrawals": 46,
+  "all_designated_red": true,
+  "canonical": "BUILD_TESTS_OK python=54 shell=2",
+  "production_changed": false,
+  "review": "author completion only, leader/prodops pending"
+}

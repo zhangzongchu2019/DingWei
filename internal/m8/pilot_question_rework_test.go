@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Synthetic binding/check failure fixture; all object/actor authorization is
@@ -74,6 +75,57 @@ func TestPilotQuestionProviderErrorUnknownAndNeverResends(t *testing.T) {
 	if sent != 1 {
 		t.Fatal("QUESTION_SENDER_ERROR_RETRIED", sent)
 	}
+}
+
+// Inject a real FinishQuestionNotice database call failure after the synthetic
+// provider has accepted the message. The original SQLite remains readable;
+// cancellation is limited to that one completion call, not the worker loop.
+type questionFinishFailureFixture struct {
+	*store.SQLite
+	finishCalls int
+	deferCalls  int
+	finishErr   error
+	providerID  string
+	sent        bool
+}
+
+func (f *questionFinishFailureFixture) FinishQuestionNotice(ctx context.Context, id, providerID string, sent bool, now time.Time) error {
+	f.finishCalls++
+	f.providerID, f.sent = providerID, sent
+	cancelled, cancel := context.WithCancel(ctx)
+	cancel()
+	f.finishErr = f.SQLite.FinishQuestionNotice(cancelled, id, providerID, sent, now)
+	return f.finishErr
+}
+func (f *questionFinishFailureFixture) DeferUnsentQuestionNotice(ctx context.Context, n store.QuestionNotice, state string, preparedHere bool, now time.Time) error {
+	f.deferCalls++
+	return f.SQLite.DeferUnsentQuestionNotice(ctx, n, state, preparedHere, now)
+}
+func TestPilotQuestionSendAcceptedFinishFailureNeverBecomesUnsent(t *testing.T) {
+	e, q := questionWorkerConfigured(t)
+	original := e.svc.Store
+	e.svc.Store = questionCheckFixture{Store: original, auth: original.(identity.QuestionAuthorizationStore)}
+	e.hub.PublicOrigin = "https://console.fixture.invalid"
+	fixture := &questionFinishFailureFixture{SQLite: e.db}
+	e.hub.Repo = fixture
+	sends := 0
+	e.hub.QuestionSender = func(context.Context, string, string, string, string) (string, error) {
+		sends++
+		return "provider-accepted-before-local-write-failure", nil
+	}
+	e.hub.processQuestions(e.ctx)
+	first := questionDeliveryState(t, e, q.ID)
+	// Run the actual next worker cycle: dispatching is reconciled to unknown,
+	// never reset to queued. Do not stop early on a bad first-cycle state:
+	// withdrawing attempted=true must also expose the duplicate provider call.
+	e.hub.processQuestions(e.ctx)
+	second := questionDeliveryState(t, e, q.ID)
+	e.hub.processQuestions(e.ctx)
+	third := questionDeliveryState(t, e, q.ID)
+	if !errors.Is(fixture.finishErr, context.Canceled) || fixture.providerID != "provider-accepted-before-local-write-failure" || !fixture.sent || fixture.finishCalls != 1 || fixture.deferCalls != 0 || first != "dispatching" || second != "unknown" || third != "unknown" || sends != 1 {
+		t.Fatalf("QUESTION_SENT_FINISH_FAILURE_RETRY_BOUNDARY: first=%s second=%s third=%s sends=%d finish=%d defer=%d accepted=%t finishErr=%v", first, second, third, sends, fixture.finishCalls, fixture.deferCalls, fixture.sent, fixture.finishErr)
+	}
+	t.Logf("provider accepted; actual FinishQuestionNotice returned %v; dispatching -> unknown -> unknown; sends=1 finish=1 DeferUnsent=0", fixture.finishErr)
 }
 func TestPilotQuestionPreProviderCheckFailureDisposition(t *testing.T) {
 	for _, tc := range []struct {

@@ -1,0 +1,509 @@
+{
+  "source_commit": "c55213054dca5c257b9d50f125ce329b39f12876",
+  "entries": [
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/DIFF-CHECK.json",
+      "mode": "100644",
+      "blob": "e663492a7cd49ffc6edef3d57a7cca6dd79d31d4",
+      "size": 687,
+      "sha256": "d4330a851c4e40058b8720ee4890baa69f940634fdb5465eaebe23b9ec1fc50a"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/ENVIRONMENT.json",
+      "mode": "100644",
+      "blob": "46de9a7d6ae3e0fb6386f98504fb25e652a978b8",
+      "size": 523,
+      "sha256": "d883b97135c980875d9a480b1994a412ca75fb52ba9987bc458c9dfd389dcf64"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/INPUTS.json",
+      "mode": "100644",
+      "blob": "851271018b967706cee70a0d636b97e54672be91",
+      "size": 2461,
+      "sha256": "e34d97e8d43dd2cdf501e6b9d160f4efd68ecc251f293eef3bfbdefa124442f5"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/NEW-REGRESSION-FULL-GO.json",
+      "mode": "100644",
+      "blob": "4a94e0e1d65675cacdfe4837fb2bd114e8677bc7",
+      "size": 2540,
+      "sha256": "66180c5c650f4dc38afd30a6b05b17c5f937f434ee4ccb684c03eda319fd3d13"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/REPORT.md",
+      "mode": "100644",
+      "blob": "bcb2e616ac3dca1bafdadea5f4c15518617188fe",
+      "size": 4639,
+      "sha256": "9d5201cd6aa2b35f10a6087a6bf30c8f8ec3c284aefcc1c6653f438e3a6488ac"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/REPRODUCE.md",
+      "mode": "100644",
+      "blob": "24104e31e52074de9cd933d51b347cd083fa67ed",
+      "size": 1822,
+      "sha256": "d12a7ebdaa5ab26c0efcb79a94067f782752569cc6cdf455f77367886958ae68"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/REQUIREMENT.json",
+      "mode": "100644",
+      "blob": "c8017e6e84c21299a4595f59fead7c53fdb4e20a",
+      "size": 1444,
+      "sha256": "7f8bb4186805ae238f149f151ba603a380265a11e946c903295442f8d36b8a8c"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/SOURCE-MANIFEST.json",
+      "mode": "100644",
+      "blob": "06879c7e231e1ae244b453d5cc4207937f826db0",
+      "size": 467482,
+      "sha256": "c6d037d4f014d4785b3739583ab4aa0b49b05736d11f44eebabe33132db61fa3"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/SUMMARY.json",
+      "mode": "100644",
+      "blob": "beb4b9314bd352294cba1436af3213d1f8d3972d",
+      "size": 6676,
+      "sha256": "b49f38ff1d32952ece2aa6ee98c1c6cd415c63194b789bcc222849a5809e2b1a"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/TAG-FETCH.json",
+      "mode": "100644",
+      "blob": "6bda4044e822ff8fafdbac3921299e6beb7babc8",
+      "size": 264,
+      "sha256": "a87bab0cbb99592c65457947bd6db73133e9c2093ceb956b6769a6bf244a7c7d"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/VERIFY.py",
+      "mode": "100644",
+      "blob": "8163d77ae9716d048cbc6dc644e21557163230ce",
+      "size": 2081,
+      "sha256": "897acda7caf96133aeb128147b09659bc47e08d01d63e84f3abdd529b745390d"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/gates/canonical.json",
+      "mode": "100644",
+      "blob": "c5d83afcd36b54cc77de6631aa53f213f9531a9a",
+      "size": 425,
+      "sha256": "bce5ca1a074f37f6890e1d0db4f59335601581a9bf816f96dccc4aadc920e0eb"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/gates/canonical.log",
+      "mode": "100644",
+      "blob": "8dbf3598b4b87c1ab811932d223495d6062b04c9",
+      "size": 42012,
+      "sha256": "5f9a56d71a8da44d62cae6191c6548d1b2b7ccd33139ce1c7fe286657ad44084"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/gates/go.json",
+      "mode": "100644",
+      "blob": "5062d3991c4227ddc2b82054b680652f8b7ad1b7",
+      "size": 463,
+      "sha256": "b8032ed7f24a39dc3f4dee040be00108041d9da982d25ce189d5b15882861282"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/gates/go.log",
+      "mode": "100644",
+      "blob": "b4919a85b88af01d321165c9312d56847b9d8e4e",
+      "size": 4314969,
+      "sha256": "8d18603da4a32958629709f4cf4e73d39110cd7385ddca9e1d6cc06354fe5949"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/gates/race.json",
+      "mode": "100644",
+      "blob": "4bc754b7f3f303317d43878af3971a035c59dc6e",
+      "size": 593,
+      "sha256": "c125b22ba501650323072e85a92739faca2e94d534e9fb443f7be1c34d4f9066"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/gates/race.log",
+      "mode": "100644",
+      "blob": "f6cbc2f94e2a53aad33ee847c9cc1c26af4c6c4c",
+      "size": 191,
+      "sha256": "40f29eae4f2000793bea7e57a2c2999dd81e270ed210fd746e212a9857784d3d"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/gates/vet.json",
+      "mode": "100644",
+      "blob": "d1e82604a04353fba5f97d6262e7320e55caf543",
+      "size": 413,
+      "sha256": "23e81dd6a69dfee8d10610f1d42ac159c82f7188056f89485790d82e6367e60f"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/gates/vet.log",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/tag-fetch.stderr",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/tag-fetch.stdout",
+      "mode": "100644",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/RESULTS.json",
+      "mode": "100644",
+      "blob": "6ae230a422e6f1b971ec6f30c5af69e0e1988eb6",
+      "size": 27100,
+      "sha256": "432b9fcfcc8934c2e5eb82a9c447b5256abd1243215e1cb76760eeb6a339b3d2"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/ack-is-not-substantive.log",
+      "mode": "100644",
+      "blob": "ce16f91861e783686d9d47c1bb7fc77f08cec928",
+      "size": 760,
+      "sha256": "45a381d845c45806648b826ebbb9894936ffde98d912d3554d174bfbf61ff058"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/answer-first-cancels-reminder.log",
+      "mode": "100644",
+      "blob": "fd65839b3158b0254eee44face9a3899b99ad3b3",
+      "size": 333,
+      "sha256": "7e37d8fe40003605cd29931c39221ea925f54c031477842cdc7f09e6aab43ec6"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/assign-preserves-clock.log",
+      "mode": "100644",
+      "blob": "26569631c5f2b1c4721849fba060162597be3599",
+      "size": 758,
+      "sha256": "87301abddae051c05ff3dcd8cc6e156026bdc106e5b0bd5eda8bcda63627a8e9"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/baseline-go.log",
+      "mode": "100644",
+      "blob": "20c9534c861b9968cff65738776b7eeba0cf014d",
+      "size": 187,
+      "sha256": "02c997ff73f9c037fb68748527c789059df012350a15f9099ea8895f39e979a2"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/baseline-helper.log",
+      "mode": "100644",
+      "blob": "e70ee95d4a42a92a458a1c5a32da020c53df475f",
+      "size": 1262,
+      "sha256": "221fdeab74c5127000eae6c09936aad05298e6154b431b7cf942b386ce9b341f"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/cancel-keeps-business-proposal.log",
+      "mode": "100644",
+      "blob": "eb7a7e5299122126df57b705afcc10d60e6e88cd",
+      "size": 229,
+      "sha256": "0420dcdb7f099c78917e30b748402a54832f16fbe945016de9a153d073d62e22"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/card-cas.log",
+      "mode": "100644",
+      "blob": "21019f213b449784c0ddb4ca3b82d0314037a285",
+      "size": 208,
+      "sha256": "fe2f1702e2d59b76b2b21fc606e520e542cd624fd7d3dc17e517b5e2c19d72cc"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/clock-rollback.log",
+      "mode": "100644",
+      "blob": "a0231f6b34c4d54ecaeb1bd704796ffe14c3955f",
+      "size": 207,
+      "sha256": "53f79b2b71ab03416cfaa0fbb45e3bd7b3b04296f10b0c197a3d095765aced7a"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/completed-feedback-no-wake.log",
+      "mode": "100644",
+      "blob": "c77f8743810a2a3b7014727fe90a5441167e4699",
+      "size": 802,
+      "sha256": "d90c5eea3158fa66b70936902d2e9ffd1308ef2bd9f2ccfd0daae2d8406b5774"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/contacts-current-owner-group.log",
+      "mode": "100644",
+      "blob": "a70a69662fc863d978ecdaee9c51b73afeca56a2",
+      "size": 760,
+      "sha256": "014fbaf036e3bbde2bb99e3a6f7ad47766b93cb7053becf7a4b77fd53f00bb26"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/contacts-page-drift.log",
+      "mode": "100644",
+      "blob": "d81068fc33ad0125870e5ecbe19faf7afb1d1c26",
+      "size": 1098,
+      "sha256": "f138d6d6eac7d8375cf41a9fc7ea41eb54b3039707e266281d095762880d21c8"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/contacts-page-limit.log",
+      "mode": "100644",
+      "blob": "14529944bdc5f7d7b0fd99ddf37ac3ee3c85041a",
+      "size": 491,
+      "sha256": "445e112fc664f55be3b3390ae1fee0d1edbb3f96bc72ea924cace67f473a991c"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/contacts-sorted.log",
+      "mode": "100644",
+      "blob": "06047454251c309c2f35b0f05fabb1d9b3a7b171",
+      "size": 501,
+      "sha256": "66e79e1c92e7a888cde33aca99ed886a5d8bf93db5f066ba81881772f84ce177"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/d2-old-waiter-revoked.log",
+      "mode": "100644",
+      "blob": "7d7b968e7615a20ac64f3377064ae8874bda7240",
+      "size": 220,
+      "sha256": "851d7ed9e9146ebd36344daf6acf85baab18b6e7de64fa5cc5c14c14c06fb83b"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/final-pg-check.log",
+      "mode": "100644",
+      "blob": "2f5e70e2ad78a3cd6aa2eb60aee0cdc00016d687",
+      "size": 204,
+      "sha256": "d0c40d8ef8769494e443d9b3a7f6e4a7f3775c433601f13272eb64bcbfc15d48"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/helper-reject-query-mix.log",
+      "mode": "100644",
+      "blob": "9250ca9c81afd904c30718f3338a3e8bc02bc835",
+      "size": 1983,
+      "sha256": "63ed0e9ecfe24276569b88f7df6fc6ccb4011d2a9de4aaf771af0c2ad20a7e1f"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/helper-result-execution-flag.log",
+      "mode": "100644",
+      "blob": "3a6abe36384c49df583fa7e669b59aa93b549452",
+      "size": 1935,
+      "sha256": "ca9f253a74140c08b36d1b2b6eb1d6f2033f2d388c648b75d23f72892406be12"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/helper-strict-version.log",
+      "mode": "100644",
+      "blob": "8cf4da0fb5a29519e0de7ee5818ed13275aa1d07",
+      "size": 2037,
+      "sha256": "a1164f7140daa7b1773fa449ac54fd09323dd8c512c63086d5df85632b5e6415"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/historic-proposal-owner-maintenance.log",
+      "mode": "100644",
+      "blob": "8abd65fae4c9c6f2cdc2382efe82f45446affd15",
+      "size": 347,
+      "sha256": "4074f2978728881e53628e03fd490756c29a79781b8a362fab4812e91a698c98"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/history-bounded.log",
+      "mode": "100644",
+      "blob": "08df597b671c19d63617638da530b8b268ffd4d4",
+      "size": 769,
+      "sha256": "7fad12375baca89c6144772cc5f20de6a0cb517ca970afd2e518eaec79d243fe"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/http-leader-lower.log",
+      "mode": "100644",
+      "blob": "b8c03dc740aca59df1c3634d4774a18af74ec395",
+      "size": 527,
+      "sha256": "ac7e20b65973a9f6230ea8e1cc74c4c6273bdc360135c087f54ce940ec46979b"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/http-pm-lower.log",
+      "mode": "100644",
+      "blob": "fc9ded58d76357abfd8e6645efa2c956656b8b59",
+      "size": 527,
+      "sha256": "11cc30ea1b169c5a493568a42995909495f91d68d336be3777f37dc919896aec"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/immutable-event.log",
+      "mode": "100644",
+      "blob": "9e5c65c6ead743163ab8018905370f6facdaf176",
+      "size": 199,
+      "sha256": "9e871f756c9e79f7b01ca83786178cadb941ab5c32ee092926303306b3c120bb"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/late-check-before-provider.log",
+      "mode": "100644",
+      "blob": "4ea346295312ecc193b5dc0763d90fcf93825fe9",
+      "size": 1332,
+      "sha256": "1d34b818405c8c82c224704d90270cba2ad8e879eb457bae9a336c050ae029f4"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/late-transient-queued.log",
+      "mode": "100644",
+      "blob": "3d884e247f8a2b041eaaf8b8e5171457592e10f7",
+      "size": 1167,
+      "sha256": "bc26018492cb75ba38aebed5c24002925bda86223bd17662a6f4daf9478c2eff"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/logical-content-dedup.log",
+      "mode": "100644",
+      "blob": "ea36bc0847eab2abefd17738362ed76b2690a27d",
+      "size": 507,
+      "sha256": "0f50dd7949cc49d1c0118c2b4737e90f2cbf0cb85a50c39a8c3fb98fa7196ca1"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/no-agent-pm.log",
+      "mode": "100644",
+      "blob": "6cc4927281f47717d724e1d9be19db00beea737a",
+      "size": 205,
+      "sha256": "aa089695e0b3515bf7238494bebdd7d63a72da6ab01362e6f2d70321675641e6"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/no-private-feishu-body.log",
+      "mode": "100644",
+      "blob": "8634404d145e688fd2f00fdfeaeb59c4f6e429b6",
+      "size": 826,
+      "sha256": "4421245123b8616c40a2ac0a1042f22b461cc38d7442a10a63df8bcc54e82eab"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/one-sla-per-generation.log",
+      "mode": "100644",
+      "blob": "451d32526b2f05b3c928a0abdcf114c99546364b",
+      "size": 220,
+      "sha256": "5914a051fcd33dbb01c59a9038dfa9321e7494fb131a53b55cbd0f54a0befe7e"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/owner-only-change-decision.log",
+      "mode": "100644",
+      "blob": "0ac8fd6ee813ebf4e6cbb42a99c5e9f184574186",
+      "size": 226,
+      "sha256": "5efd0b23776943bad54e4cbc992b3f4a4ec8166b56f601ca1fae945956653900"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/past-dispatch-never-unsent.log",
+      "mode": "100644",
+      "blob": "3f8c2dec70cb594e04440ecb84fe95eaf5eb14b5",
+      "size": 224,
+      "sha256": "568214fdbbbc9545bfda3783a04899661459aaae03ce5503ce363671c8416e80"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/pending-change-blocks-old-scope.log",
+      "mode": "100644",
+      "blob": "615a3390215b2bcb2d87102b3cc0199158f7678f",
+      "size": 240,
+      "sha256": "4046fad74bef9cfc2931c7a666bed198fbbc12e6e793e8446799dc570a7102bd"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/pg-send-reply-serialized.log",
+      "mode": "100644",
+      "blob": "6fd4c6dd08592f4f19591e61231f31a1a9bc9041",
+      "size": 1859,
+      "sha256": "3bff477b553dc8d30fa39126313f5d57d7527b2b29feb5e9c850b1db29e1ff07"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/pm-cannot-grant-outsiders.log",
+      "mode": "100644",
+      "blob": "f774b9f29f8a097b0cb706917469a772e9f15ed9",
+      "size": 222,
+      "sha256": "5dd337b9f174ea37f63d94f869fd845b3119080a0043027b06a29f7ae38bf5f1"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/prepare-failure-pending.log",
+      "mode": "100644",
+      "blob": "1de0a2d8b0b92465aef7f38999df55099c1a0acb",
+      "size": 1160,
+      "sha256": "e16453c0dbeb02fe48be2f27f5c75bdc9c65ddec90d3829a1c8037ee7ffbc6fb"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/production-full.log",
+      "mode": "100644",
+      "blob": "dee4f8467d7ca4188f3b818aea4c38c7c4b54cdc",
+      "size": 716,
+      "sha256": "396fb9fc2c4c6903f0f6d74d2579f5df01d0ca6e6bb6f20e874e6da3285d6cbe"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/provider-native-uuid.log",
+      "mode": "100644",
+      "blob": "5c8a2d204e206c2d417d9f363fe26a419454403c",
+      "size": 368,
+      "sha256": "ee4149e62708d24cc09e62d440b60a9550775861d8983e9334f4deec37b4fc14"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/question-only-reader.log",
+      "mode": "100644",
+      "blob": "854f1a3c0e6e8a456c539ff7f03faed47ab730d6",
+      "size": 211,
+      "sha256": "4224bd98d1bc3f8bb0918064195e51597cdf45ab336b1b8b5bf5d85181d88656"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/restored-go.log",
+      "mode": "100644",
+      "blob": "ec7243300ad7574e00cc348cd19a02f666fd6707",
+      "size": 187,
+      "sha256": "94b0e1dd4a3484b10989634567b2197db67ac9e16633888cff330ae8d4d5488f"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/restored-helper.log",
+      "mode": "100644",
+      "blob": "042e1660cef34e62ea5a17fcd6889fc4f1d0023e",
+      "size": 1262,
+      "sha256": "0ac98efc7b9904d457bc9f68efdcbd3f72d065b413f5d86db5f567f791fef486"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/revocation-cancelled.log",
+      "mode": "100644",
+      "blob": "a445d72fbd33e617648f3a6af107011202fdb69a",
+      "size": 1160,
+      "sha256": "07fd9b15344fd87b49501fe1841eaa44d0588a7a7df6c4695d6cf453c634c501"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/safe-public-origin.log",
+      "mode": "100644",
+      "blob": "4517406124cb663ab5c090d32bcce99c1f750127",
+      "size": 523,
+      "sha256": "d81db4c27483f5ab3bc8c24a4ac575e540834c7eb1377a363ed261793d222ea7"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/sender-error-is-unknown.log",
+      "mode": "100644",
+      "blob": "4387bafabac0034b3e558225dce3cc361b3df43f",
+      "size": 499,
+      "sha256": "ded65484879c899087473ab740d9a9c204635e390c1f70dfff762f8e74896d6b"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/sent-finish-failure-attempted-boundary.log",
+      "mode": "100644",
+      "blob": "59fe91faf93a00986cce908bd21a6fa583f427da",
+      "size": 620,
+      "sha256": "24268ae809b54e59b9037faa0aa44550b619697b4f54933d43d099f454f5274f"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/sixty-minute-lower-bound.log",
+      "mode": "100644",
+      "blob": "9f9f064b9d227a598eca35f48e1436838fd8da81",
+      "size": 218,
+      "sha256": "245ec1b3f33d9c5e977ec2f38ce018b79b0a764c9f159f3fcdf240fd814ec0d8"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/store-leader-lower.log",
+      "mode": "100644",
+      "blob": "a19993ab62702d0fcb0a2130ec21526392dc9c28",
+      "size": 258,
+      "sha256": "0f2d673e6e6b01a137e2e52ebc63006511680a689e6535a3c6eea34ecc9f52af"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/store-pm-lower.log",
+      "mode": "100644",
+      "blob": "c2f363938671a4084844b268021b57d62348024b",
+      "size": 258,
+      "sha256": "f7182b68e1bc81d0f2c7656faad34ad165658f8ff2dc36fa8ecf9c5911531715"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/unconfigured-not-delivered.log",
+      "mode": "100644",
+      "blob": "2a2ea383b110c0b659d9746409a6e5100644ce9e",
+      "size": 206,
+      "sha256": "0355eba068136ddcee3e294efb244ea4b8ca60968f825679d4dce51cb8b0df57"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/unconfigured-not-revoked.log",
+      "mode": "100644",
+      "blob": "3b6c3ec52b5e256547dca5ab2468baa88de6fe13",
+      "size": 512,
+      "sha256": "f51b99ab3e27de3a2a1dae47554837c2cb440b3bbae2f98b4897a6e7a29dd850"
+    },
+    {
+      "path": "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/unknown-no-resend.log",
+      "mode": "100644",
+      "blob": "08c0f1d4e1826d8199710450a93d84e83e441b03",
+      "size": 326,
+      "sha256": "632a9fdcf10c53b2b804c16e0a98399f697431cd2a4b9b3cd0e2e991cd685075"
+    }
+  ]
+}

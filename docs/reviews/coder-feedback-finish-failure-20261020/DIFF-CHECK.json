@@ -1,0 +1,12 @@
+{
+  "source_design_rc": 0,
+  "full_evidence_rc": 2,
+  "raw_log_whitespace_paths": [
+    "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/contacts-current-owner-group.log",
+    "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/contacts-page-drift.log",
+    "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/http-leader-lower.log",
+    "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/http-pm-lower.log",
+    "docs/reviews/coder-feedback-finish-failure-20261020/withdrawals/pg-send-reply-serialized.log"
+  ],
+  "note": "Only whitespace-only HTTP response lines in five mutation logs; exact raw bytes preserved, not trimmed."
+}

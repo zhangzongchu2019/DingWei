@@ -1,0 +1,65 @@
+{
+  "base_commit": "4124a00c5e2a526c21f98fe7ab3af37e0826858c",
+  "input_tree": "c55213054dca5c257b9d50f125ce329b39f12876",
+  "input_tag": "refs/tags/evidence/coder/feedback-finish-failure-c5521305",
+  "only_changed_paths": [
+    "internal/m8/pilot_question_rework_test.go",
+    "tests/pilot-feedback/gates.py",
+    "tests/pilot-feedback/withdrawals.py"
+  ],
+  "production_go_changed": false,
+  "runtime_hub_changed": false,
+  "helper_changed": false,
+  "unchanged": {
+    "tools/sessionhelper": {
+      "base_blob_or_tree": "0044f49f2d40ee671094ad7ec9b8d5b25af7deb5",
+      "input_blob_or_tree": "0044f49f2d40ee671094ad7ec9b8d5b25af7deb5",
+      "equal": true
+    },
+    "internal/hosted": {
+      "base_blob_or_tree": "d9f874ef7d0f54103a9f25c1457f330a05796d4f",
+      "input_blob_or_tree": "d9f874ef7d0f54103a9f25c1457f330a05796d4f",
+      "equal": true
+    },
+    "internal/consolemux": {
+      "base_blob_or_tree": "ec4be32aebfe756786f20b19a1e68fc687af05b2",
+      "input_blob_or_tree": "ec4be32aebfe756786f20b19a1e68fc687af05b2",
+      "equal": true
+    },
+    "tools/pgtest": {
+      "base_blob_or_tree": "564bc90652d3dfbffcd462a7949afacd89cf187f",
+      "input_blob_or_tree": "564bc90652d3dfbffcd462a7949afacd89cf187f",
+      "equal": true
+    },
+    "go.mod": {
+      "base_blob_or_tree": "0896be6fba935292731d1d375250af3445689bc9",
+      "input_blob_or_tree": "0896be6fba935292731d1d375250af3445689bc9",
+      "equal": true
+    },
+    "go.sum": {
+      "base_blob_or_tree": "c0f593fbabbd673b22d93b1108eae84c307a5137",
+      "input_blob_or_tree": "c0f593fbabbd673b22d93b1108eae84c307a5137",
+      "equal": true
+    },
+    "internal/m8/pilot_question_worker.go": {
+      "base_blob_or_tree": "d84909e49a1973c6c9fcd69988a711b05d060a8c",
+      "input_blob_or_tree": "d84909e49a1973c6c9fcd69988a711b05d060a8c",
+      "equal": true
+    },
+    "internal/store/pilot_question_read.go": {
+      "base_blob_or_tree": "1ef08a3bab7e20a1117ce758657fd70acb4d013e",
+      "input_blob_or_tree": "1ef08a3bab7e20a1117ce758657fd70acb4d013e",
+      "equal": true
+    },
+    "view-service": {
+      "base_blob_or_tree": "38b9db1df87dce0ef15f509e4312d6efe39befbb",
+      "input_blob_or_tree": "38b9db1df87dce0ef15f509e4312d6efe39befbb",
+      "equal": true
+    },
+    "scripts/run-build-tests.sh": {
+      "base_blob_or_tree": "d3d68f00783cf11377a4a0ea16a6215a406a7189",
+      "input_blob_or_tree": "d3d68f00783cf11377a4a0ea16a6215a406a7189",
+      "equal": true
+    }
+  }
+}

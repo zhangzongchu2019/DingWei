@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionSameContentNewEventDeduplicatesAndRoleRevokes (0.10s)
+    pilot_question_test.go:252: QUESTION_CONTENT_DUPLICATED_WAKE {{  0    0 0 0                   0 false   [] false false false [] false false} updated false false} constraint failed: UNIQUE constraint failed: pilot_question_answer.question_id, pilot_question_answer.generation, pilot_question_answer.actor_id, pilot_question_answer.payload_sha (2067)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.108s
+FAIL
