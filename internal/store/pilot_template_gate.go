@@ -139,13 +139,20 @@ func templateFinalReviewGate(ctx context.Context, q taskQuery, spec string, revi
 	if json.Unmarshal([]byte(raw), &d) != nil {
 		return ErrConsoleSpecGate
 	}
+	namedReviewer := false
 	for _, entry := range d.Entries {
 		if entry.Fields.Executor == "agent:"+agent {
 			return ErrConsoleSpecGate
 		}
-		if d.TeamMode == "single" && entry.Fields.Reviewer != "agent:"+agent {
-			return ErrConsoleSpecGate
+		if entry.Fields.Reviewer == "agent:"+agent {
+			namedReviewer = true
 		}
+	}
+	// R8 reviews the whole spec once. Different entries may name different task
+	// reviewers; single-person mode uses one of those actually accepted reviewing
+	// Agents for the spec pre-review, not an impossible all-Agent identity match.
+	if d.TeamMode == "single" && !namedReviewer {
+		return ErrConsoleSpecGate
 	}
 	return nil
 }

@@ -89,7 +89,7 @@ func templateReviewFinal(t *testing.T, s *SQLite, now time.Time, v TemplateView)
 		t.Fatal(e)
 	}
 	if e = s.FinalizeConsoleSpec(ctx, v.SpecID, "owner-a", now); e != nil {
-		t.Fatal(e)
+		t.Fatal("TEMPLATE_ACTUAL_SPEC_REVIEW_MUST_FINALIZE", e)
 	}
 }
 func TestPilotTemplateActualResponsibilityAndR8Finalization(t *testing.T) {
@@ -722,5 +722,31 @@ func TestPilotTemplatePendingFullCannotSilentlyDowngrade(t *testing.T) {
 	v3 = templateConfirm(t, s, now, v3, snap)
 	if v3.Mode != "light" || v3.ExecutionAuthorized {
 		t.Fatal("TEMPLATE_DOWNGRADE_CONFIRM_CHANGED_MODE_OR_AUTH")
+	}
+}
+func TestPilotTemplateSingleHumanMayUseDifferentCaseReviewAgents(t *testing.T) {
+	s, now, d, snap := templateFixture(t)
+	ctx := context.Background()
+	if err := s.UpsertConsoleAgent(ctx, model.ConsoleAgent{ID: "review-two", KeyID: "key-review-two", SessionName: "review-two", OwnerPrincipal: "owner-a", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	snap.Active["agent:review-two"] = true
+	snap.AgentOwners["review-two"] = "owner-a"
+	d.Entries = append(d.Entries, TemplateEntry{ID: "R2", Kind: "requirement", Title: "second bounded requirement", OwnerRef: "R1", Fields: TemplateFields{Reviewer: "agent:review-two"}})
+	v := templateSave(t, s, now, d, snap, "two-reviewers")
+	v = templateConfirm(t, s, now, templateAcceptAll(t, s, now, v, snap), snap)
+	templateReviewFinal(t, s, now, v)
+	p := model.ConsoleTaskProposal{ID: "second-case-task", SpecID: v.SpecID, Title: "second", TaskContent: "R2 only", Status: "planned", DependsOnJSON: `[]`, CreatedAt: now, ReviewedBy: "owner-a"}
+	if err := s.CreateConsoleTaskProposal(ctx, p, "owner-a", false); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetConsoleSpecTaskAcceptances(ctx, p.ID, "owner-a", []string{"R2"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.AssignConsoleTaskFlow(ctx, p.ID, "owner-a", "group", "dev", "review", 1, func() error { return nil }, now); err == nil {
+		t.Fatal("TEMPLATE_WHOLE_SPEC_REVIEW_OVERRAN_CASE_REVIEWER")
+	}
+	if _, err := s.AssignConsoleTaskFlow(ctx, p.ID, "owner-a", "group", "dev", "review-two", 1, func() error { return nil }, now); err != nil {
+		t.Fatal("TEMPLATE_CASE_REVIEWER_CANNOT_DIFFER_FROM_SPEC_REVIEWER", err)
 	}
 }
