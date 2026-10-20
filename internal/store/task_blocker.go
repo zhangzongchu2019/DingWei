@@ -188,9 +188,13 @@ func blockerWake(ctx context.Context, tx *sql.Tx, b TaskBlocker, at string) erro
 	_, err := tx.ExecContext(ctx, `INSERT INTO console_task_blocker_outbox(id,blocker_id,task_id,generation,input_version,assignment_version,recipient_agent_id,created_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(blocker_id,generation,input_version,assignment_version,recipient_agent_id) DO NOTHING`, id, b.ID, b.TaskID, b.Generation, b.InputVersion, b.AssignmentVersion, b.Developer, at)
 	return err
 }
+func blockerFingerprint(b TaskBlocker) string {
+	return blockerHash([]any{b.TaskID, b.SpecID, b.Revision, b.SHA, b.AssignmentVersion, b.Kind, strings.TrimSpace(b.Where), b.WaitingPrincipal, strings.TrimSpace(b.ExpectedInput), b.Conditions, b.Mode})
+}
 func saveBlocker(ctx context.Context, tx *sql.Tx, b TaskBlocker) error {
+	b.Fingerprint = blockerFingerprint(b)
 	conditions, _ := json.Marshal(b.Conditions)
-	_, err := tx.ExecContext(ctx, `UPDATE console_task_blocker SET assignment_version=?,developer_agent_id=?,reviewer_agent_id=?,generation=?,version=?,waiting_principal=?,conditions_json=?,mode=?,full_approved_by=?,full_approval_ref=?,state=?,input_version=?,checked_input_version=?,lease_id=?,lease_until=?,updated_at=? WHERE id=?`, b.AssignmentVersion, b.Developer, b.Reviewer, b.Generation, b.Version, b.WaitingPrincipal, string(conditions), b.Mode, b.FullApprovedBy, b.FullApprovalRef, b.State, b.InputVersion, b.CheckedInputVersion, b.LeaseID, b.LeaseUntil, b.UpdatedAt, b.ID)
+	_, err := tx.ExecContext(ctx, `UPDATE console_task_blocker SET spec_id=?,revision=?,content_sha256=?,assignment_version=?,developer_agent_id=?,reviewer_agent_id=?,generation=?,version=?,waiting_principal=?,conditions_json=?,mode=?,full_approved_by=?,full_approval_ref=?,state=?,input_version=?,checked_input_version=?,lease_id=?,lease_until=?,updated_at=?,fingerprint=? WHERE id=?`, b.SpecID, b.Revision, b.SHA, b.AssignmentVersion, b.Developer, b.Reviewer, b.Generation, b.Version, b.WaitingPrincipal, string(conditions), b.Mode, b.FullApprovedBy, b.FullApprovalRef, b.State, b.InputVersion, b.CheckedInputVersion, b.LeaseID, b.LeaseUntil, b.UpdatedAt, b.Fingerprint, b.ID)
 	return err
 }
 func insertBlocker(ctx context.Context, tx *sql.Tx, b TaskBlocker) error {
@@ -380,7 +384,7 @@ func (s *SQLite) UpdateTaskBlocker(ctx context.Context, expected TaskFlowState, 
 		if u.ProductionOrSecurity {
 			mode = "full"
 		}
-		fingerprint := blockerHash([]any{t.ID, t.AssignmentVersion, u.Kind, strings.TrimSpace(u.Where), u.WaitingPrincipal, strings.TrimSpace(u.ExpectedInput), conditions, mode})
+		fingerprint := blockerHash([]any{t.ID, specID, revision, sha, t.AssignmentVersion, u.Kind, strings.TrimSpace(u.Where), u.WaitingPrincipal, strings.TrimSpace(u.ExpectedInput), conditions, mode})
 		existing, e := scanBlocker(tx.QueryRowContext(ctx, `SELECT `+blockerCols+` FROM console_task_blocker WHERE task_id=? AND fingerprint=? AND state NOT IN('resolved','cancelled') ORDER BY id LIMIT 1`, t.ID, fingerprint))
 		if e == nil {
 			b = existing

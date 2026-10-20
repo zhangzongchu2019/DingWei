@@ -527,3 +527,54 @@ func TestBlockerCachedReplyUsesCurrentReadingRights(t *testing.T) {
 		t.Fatal("BLOCKER_CACHED_REPLY_CREATED_NEW_INPUT", n, err)
 	}
 }
+
+func TestBlockerAdoptPersistsCurrentRevisionTuple(t *testing.T) {
+	db, now, _ := taskFlowFixture(t)
+	ctx := context.Background()
+	b := blockerCreate(t, db, now, "card", "wait", "user:owner-a", true)
+	b = blockerInput(t, db, now, b, "old-answer")
+	// Model a fully materialized current task reference, not a broken FK or an
+	// unconfirmed change proposal. The old revision remains immutable history.
+	if _, err := db.db.Exec(`INSERT INTO console_spec_revision(spec_id,revision,content_markdown,acceptance_json,input_anchors_json,content_sha256,created_by,created_by_kind,created_via,supersedes_revision,created_at) SELECT spec_id,2,content_markdown,acceptance_json,input_anchors_json,'new-sha',created_by,created_by_kind,created_via,revision,created_at FROM console_spec_revision WHERE spec_id='r32' AND revision=1`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.db.Exec(`UPDATE console_spec_task SET revision=2,content_sha256='new-sha',version=version+1 WHERE id='task'`); err != nil {
+		t.Fatal(err)
+	}
+	state, err := db.ConsoleTaskFlowState(ctx, "task")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = db.ReconcileTaskBlockers(ctx, state, func() error { return nil }, now); err != nil {
+		t.Fatal(err)
+	}
+	old := blockerRead(t, db, b.ID)
+	if old.State != "needs_reassignment" {
+		t.Fatal(old)
+	}
+	out, err := blockerApply(t, db, now, BlockerActor{UserID: "owner-a"}, b.ID, BlockerUpdate{RequestID: "adopt-new-revision", ExpectedVersion: old.Version, Operation: "adopt"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := blockerRead(t, db, b.ID)
+	if actual.Revision != 2 || actual.SHA != "new-sha" || actual.State != "ready_to_recheck" || actual.Generation != out.Blocker.Generation || actual.FullApprovalRef != "" {
+		t.Fatal("BLOCKER_ADOPT_REVISION_NOT_DURABLE", actual, out)
+	}
+	again := blockerCreate(t, db, now, "same-current-card", "wait", "user:owner-a", true)
+	if again.ID != b.ID || again.Generation != actual.Generation {
+		t.Fatal("BLOCKER_ADOPT_FINGERPRINT_NOT_REBOUND", again, actual)
+	}
+}
+
+func TestBlockerWaiterChangeKeepsCurrentCardFingerprint(t *testing.T) {
+	db, now, _ := taskFlowFixture(t)
+	b := blockerCreate(t, db, now, "card", "where", "user:owner-a", false)
+	out, err := blockerApply(t, db, now, BlockerActor{UserID: "owner-a"}, b.ID, BlockerUpdate{RequestID: "waiter-change", ExpectedVersion: b.Version, Operation: "assign_waiter", WaitingPrincipal: "agent:other"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	again := blockerCreate(t, db, now, "same-current-waiter", "where", "agent:other", false)
+	if again.ID != b.ID || again.Version != out.Blocker.Version {
+		t.Fatal("BLOCKER_WAITER_CHANGE_CREATED_DUPLICATE", again, out)
+	}
+}
