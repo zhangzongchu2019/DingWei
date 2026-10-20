@@ -1,0 +1,18 @@
+{
+  "runtime_commit": "989ae8de55e8a234f170d4f7ea59448a58af701e",
+  "start": "2026-10-20T15:12:04.295532+00:00",
+  "end": "2026-10-20T15:12:46.714334+00:00",
+  "argv": [
+    "go",
+    "test",
+    "-race",
+    "./internal/m8",
+    "./internal/identity",
+    "./internal/store",
+    "-run",
+    "^TestProjectContext",
+    "-count=1",
+    "-timeout=5m"
+  ],
+  "rc": 0
+}

@@ -1,0 +1,12 @@
+{
+  "commit": "989ae8de55e8a234f170d4f7ea59448a58af701e",
+  "cases": [
+    {
+      "name": "duplicate-auth",
+      "rc": 1,
+      "marker": "PC_AUTH_OR_QUERY_BYPASS",
+      "designated_red": false,
+      "seconds": 0.435
+    }
+  ]
+}

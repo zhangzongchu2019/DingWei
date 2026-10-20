@@ -1,0 +1,244 @@
+{
+  "runtime_commit": "989ae8de55e8a234f170d4f7ea59448a58af701e",
+  "harness_commit": "ca227049f05b97b3b4170db37a7ac3759b5b7764",
+  "case_count": 29,
+  "execution_batches": [
+    25,
+    4
+  ],
+  "baseline_and_restore": "Both selected batches include successful Go and Python baseline/restore logs. Earlier aborted harness attempts remain separate and do not count.",
+  "cases": [
+    {
+      "name": "duplicate-auth",
+      "rc": 1,
+      "marker": "PC_AUTH_OR_QUERY_BYPASS",
+      "designated_red": true,
+      "seconds": 6.546,
+      "evidence": "withdrawals-fourth/duplicate-auth.log"
+    },
+    {
+      "name": "cookie-auth",
+      "rc": 1,
+      "marker": "PC_AUTH_OR_QUERY_BYPASS",
+      "designated_red": true,
+      "seconds": 6.338,
+      "evidence": "withdrawals-fourth/cookie-auth.log"
+    },
+    {
+      "name": "credential-recheck",
+      "rc": 1,
+      "marker": "PC_CREDENTIAL_RECHECK_MISSING",
+      "designated_red": true,
+      "seconds": 4.655,
+      "evidence": "withdrawals-fourth/credential-recheck.log"
+    },
+    {
+      "name": "pg-agent-lock",
+      "rc": 1,
+      "marker": "PC_PG_AUTH_LOCK_NOT_HELD",
+      "designated_red": true,
+      "seconds": 8.657,
+      "evidence": "withdrawals-fourth/pg-agent-lock.log"
+    },
+    {
+      "name": "current-role",
+      "rc": 1,
+      "marker": "PC_SQLITE_STALE_CURRENT_ROLE",
+      "designated_red": true,
+      "seconds": 1.256,
+      "evidence": "withdrawals-fourth/current-role.log"
+    },
+    {
+      "name": "current-revision",
+      "rc": 1,
+      "marker": "PC_SQLITE_STALE_REVISION_PROJECTED",
+      "designated_red": true,
+      "seconds": 1.249,
+      "evidence": "withdrawals-fourth/current-revision.log"
+    },
+    {
+      "name": "directory-privacy",
+      "rc": 1,
+      "marker": "PC_NODIRECTORY_BYPASS",
+      "designated_red": true,
+      "seconds": 6.85,
+      "evidence": "withdrawals-fourth/directory-privacy.log"
+    },
+    {
+      "name": "group-pair-authorization",
+      "rc": 1,
+      "marker": "PC_MOVED_AGENT_STILL_READS_TASK",
+      "designated_red": true,
+      "seconds": 6.198,
+      "evidence": "withdrawals-fourth/group-pair-authorization.log"
+    },
+    {
+      "name": "online-agent-binding",
+      "rc": 1,
+      "marker": "PC_ONLINE_IDENTITY_NOT_BOUND",
+      "designated_red": true,
+      "seconds": 6.06,
+      "evidence": "withdrawals-fourth/online-agent-binding.log"
+    },
+    {
+      "name": "needs-reassignment",
+      "rc": 1,
+      "marker": "PC_NEEDS_REASSIGNMENT_LEAK",
+      "designated_red": true,
+      "seconds": 5.998,
+      "evidence": "withdrawals-fourth/needs-reassignment.log"
+    },
+    {
+      "name": "cursor-authority-drift",
+      "rc": 1,
+      "marker": "PC_CURSOR_AUTH_DRIFT_IGNORED",
+      "designated_red": true,
+      "seconds": 5.985,
+      "evidence": "withdrawals-fourth/cursor-authority-drift.log"
+    },
+    {
+      "name": "cursor-actor-binding",
+      "rc": 1,
+      "marker": "PC_CURSOR_ACTOR_UNBOUND",
+      "designated_red": true,
+      "seconds": 6.04,
+      "evidence": "withdrawals-fourth/cursor-actor-binding.log"
+    },
+    {
+      "name": "cursor-expiry",
+      "rc": 1,
+      "marker": "PC_CURSOR_NO_EXPIRY",
+      "designated_red": true,
+      "seconds": 6.005,
+      "evidence": "withdrawals-fourth/cursor-expiry.log"
+    },
+    {
+      "name": "query-upper-limit",
+      "rc": 1,
+      "marker": "PC_QUERY_LIMIT_OR_SELECTOR_GATE",
+      "designated_red": true,
+      "seconds": 5.956,
+      "evidence": "withdrawals-fourth/query-upper-limit.log"
+    },
+    {
+      "name": "body-size-limit",
+      "rc": 1,
+      "marker": "PC_BODY_LIMIT_OR_CONTINUATION_MISSING",
+      "designated_red": true,
+      "seconds": 6.08,
+      "evidence": "withdrawals-fourth/body-size-limit.log"
+    },
+    {
+      "name": "single-item-no-truncation",
+      "rc": 1,
+      "marker": "PC_SINGLE_ENTRY_TRUNCATED_OR_RETURNED",
+      "designated_red": true,
+      "seconds": 6.062,
+      "evidence": "withdrawals-fourth/single-item-no-truncation.log"
+    },
+    {
+      "name": "pg-final-recheck",
+      "rc": 1,
+      "marker": "PC_PG_FINAL_RECHECK_IGNORED",
+      "designated_red": true,
+      "seconds": 5.975,
+      "evidence": "withdrawals-fourth/pg-final-recheck.log"
+    },
+    {
+      "name": "linked-criteria-only",
+      "rc": 1,
+      "marker": "PC_SQLITE_PRIVATE_CRITERION_LEAK",
+      "designated_red": true,
+      "seconds": 1.226,
+      "evidence": "withdrawals-fourth/linked-criteria-only.log"
+    },
+    {
+      "name": "http-schema",
+      "rc": 1,
+      "marker": "PC_BAD_SCHEMA_ACCEPTED",
+      "designated_red": true,
+      "seconds": 25.798,
+      "evidence": "withdrawals-fourth/http-schema.log"
+    },
+    {
+      "name": "http-no-redirect",
+      "rc": 1,
+      "marker": "PC_CREDENTIAL_REDIRECTED",
+      "designated_red": true,
+      "seconds": 25.795,
+      "evidence": "withdrawals-fourth/http-no-redirect.log"
+    },
+    {
+      "name": "dedicated-helper-identity",
+      "rc": 1,
+      "marker": "PC_SHARED_CREDENTIAL_FALLBACK",
+      "designated_red": true,
+      "seconds": 24.821,
+      "evidence": "withdrawals-fourth/dedicated-helper-identity.log"
+    },
+    {
+      "name": "legacy-datad-refusal",
+      "rc": 1,
+      "marker": "PC_LEGACY_DATAD_CONTEXT_FALLBACK",
+      "designated_red": true,
+      "seconds": 26.304,
+      "evidence": "withdrawals-fourth/legacy-datad-refusal.log"
+    },
+    {
+      "name": "upload-only-isolation",
+      "rc": 1,
+      "marker": "PC_RESTRICTED_MODE_ESCAPED",
+      "designated_red": true,
+      "seconds": 26.318,
+      "evidence": "withdrawals-fourth/upload-only-isolation.log"
+    },
+    {
+      "name": "send-only-isolation",
+      "rc": 1,
+      "marker": "PC_RESTRICTED_MODE_ESCAPED",
+      "designated_red": true,
+      "seconds": 26.328,
+      "evidence": "withdrawals-fourth/send-only-isolation.log"
+    },
+    {
+      "name": "production-ipc-wiring",
+      "rc": 1,
+      "marker": "PC_PRODUCTION_HANDLER_UNWIRED",
+      "designated_red": true,
+      "seconds": 26.296,
+      "evidence": "withdrawals-fourth/production-ipc-wiring.log"
+    },
+    {
+      "name": "get-no-business-write",
+      "rc": 1,
+      "marker": "PC_CONTEXT_WROTE_SQLITE",
+      "designated_red": true,
+      "seconds": 1.206,
+      "evidence": "withdrawals-additional/get-no-business-write.log"
+    },
+    {
+      "name": "authorization-release-failure",
+      "rc": 1,
+      "marker": "PC_PG_RELEASE_FAILURE_LEAKED_BODY",
+      "designated_red": true,
+      "seconds": 6.005,
+      "evidence": "withdrawals-additional/authorization-release-failure.log"
+    },
+    {
+      "name": "capability-marker",
+      "rc": 1,
+      "marker": "PC_CAPABILITY_UNWIRED",
+      "designated_red": true,
+      "seconds": 25.803,
+      "evidence": "withdrawals-additional/capability-marker.log"
+    },
+    {
+      "name": "helper-version-pin",
+      "rc": 1,
+      "marker": "project-context release requires root/Go/helper pins",
+      "designated_red": true,
+      "seconds": 0.153,
+      "evidence": "withdrawals-additional/helper-version-pin.log"
+    }
+  ]
+}

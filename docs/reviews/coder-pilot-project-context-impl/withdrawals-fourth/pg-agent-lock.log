@@ -1,0 +1,5 @@
+--- FAIL: TestProjectContextPGAuthorizationLocksAndCurrentState (7.44s)
+    project_context_test.go:120: PC_PG_AUTH_LOCK_NOT_HELD
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/identity	7.445s
+FAIL

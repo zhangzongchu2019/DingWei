@@ -1,0 +1,4 @@
+# github.com/zhangzongchu2019/dingwei/internal/m8 [github.com/zhangzongchu2019/dingwei/internal/m8.test]
+internal/m8/project_context.go:144:2: auths declared and not used
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8 [build failed]
+FAIL

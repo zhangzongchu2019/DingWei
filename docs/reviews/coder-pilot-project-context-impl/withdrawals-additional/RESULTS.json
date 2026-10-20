@@ -1,0 +1,33 @@
+{
+  "commit": "989ae8de55e8a234f170d4f7ea59448a58af701e",
+  "cases": [
+    {
+      "name": "get-no-business-write",
+      "rc": 1,
+      "marker": "PC_CONTEXT_WROTE_SQLITE",
+      "designated_red": true,
+      "seconds": 1.206
+    },
+    {
+      "name": "authorization-release-failure",
+      "rc": 1,
+      "marker": "PC_PG_RELEASE_FAILURE_LEAKED_BODY",
+      "designated_red": true,
+      "seconds": 6.005
+    },
+    {
+      "name": "capability-marker",
+      "rc": 1,
+      "marker": "PC_CAPABILITY_UNWIRED",
+      "designated_red": true,
+      "seconds": 25.803
+    },
+    {
+      "name": "helper-version-pin",
+      "rc": 1,
+      "marker": "project-context release requires root/Go/helper pins",
+      "designated_red": true,
+      "seconds": 0.153
+    }
+  ]
+}

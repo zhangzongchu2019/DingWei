@@ -1,0 +1,18 @@
+{
+  "venv": "/data/ai-dev-data/helper-deps-lock-venv",
+  "provenance": "Existing isolated helper dependency validation venv reused; no package installation or runtime image mutation in this implementation.",
+  "installed_distributions": {
+    "ptyprocess": "0.7.0",
+    "certifi": "2026.7.22",
+    "pexpect": "4.9.0",
+    "websockets": "15.0.1",
+    "pip": "24.0"
+  },
+  "new_dependencies": [],
+  "runtime_lock": {
+    "path": "tools/sessionhelper/requirements-runtime.lock",
+    "sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "bytes": 6255,
+    "unchanged_from": "36afa6215f00bc39a992441ab0ff8fe81442aa3e"
+  }
+}

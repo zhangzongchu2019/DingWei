@@ -1,0 +1,22 @@
+{
+  "start": "2026-10-20T15:31:57.771384+00:00",
+  "end": "2026-10-20T15:43:27.701356+00:00",
+  "rc": 0,
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-json",
+    "-count=1",
+    "-timeout=30m"
+  ],
+  "source_commit": "ca227049f05b97b3b4170db37a7ac3759b5b7764",
+  "runtime_commit": "989ae8de55e8a234f170d4f7ea59448a58af701e",
+  "isolated_home": true,
+  "cleared_environment": true,
+  "helper_venv": "/data/ai-dev-data/helper-deps-lock-venv",
+  "GOPROXY": "off",
+  "GOSUMDB": "off",
+  "pg_binary_cache": "/home/dev/.embedded-postgres-go",
+  "cross_runtime_python_enabled": true
+}

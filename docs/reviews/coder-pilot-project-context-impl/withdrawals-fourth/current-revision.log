@@ -1,0 +1,5 @@
+--- FAIL: TestProjectContextSQLiteCandidateMetadataAndRoleRace (0.08s)
+    project_context_test.go:81: PC_SQLITE_STALE_REVISION_PROJECTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.088s
+FAIL

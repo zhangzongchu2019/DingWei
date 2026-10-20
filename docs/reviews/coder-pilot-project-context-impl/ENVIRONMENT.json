@@ -1,0 +1,12 @@
+{
+  "recorded_at": "2026-10-20T15:15:36.252861+00:00",
+  "hostname": "VM-4-12-ubuntu",
+  "uid": 1001,
+  "cpu_count": 16,
+  "go_version": "go version go1.22.2 linux/amd64",
+  "python_version": "Python 3.12.3",
+  "external_dsn_present": false,
+  "explicit_skip_override_present": false,
+  "helper_venv": "/data/ai-dev-data/helper-deps-lock-venv",
+  "no_live_target_access": true
+}

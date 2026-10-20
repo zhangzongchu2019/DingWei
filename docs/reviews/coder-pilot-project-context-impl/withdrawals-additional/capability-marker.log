@@ -1,0 +1,27 @@
+test_bad_schema_body_and_oversize_fail_closed (test_project_context.ContextTests.test_bad_schema_body_and_oversize_fail_closed) ... ok
+test_four_scopes_one_http_no_datad_fallback (test_project_context.ContextTests.test_four_scopes_one_http_no_datad_fallback) ... ok
+test_helper_dedicated_identity_and_warning_redaction (test_project_context.ContextTests.test_helper_dedicated_identity_and_warning_redaction) ... ok
+test_invalid_arguments_never_escape_to_http (test_project_context.ContextTests.test_invalid_arguments_never_escape_to_http) ... ok
+test_legacy_context_block_precedes_backend (test_project_context.ContextTests.test_legacy_context_block_precedes_backend) ... ok
+test_old_helper_is_explicit_upgrade_error (test_project_context.ContextTests.test_old_helper_is_explicit_upgrade_error) ... ok
+test_old_hub_explicit_unsupported (test_project_context.ContextTests.test_old_hub_explicit_unsupported) ... ok
+test_old_shim_context_urls_refused_without_datad_dependency (test_project_context.ContextTests.test_old_shim_context_urls_refused_without_datad_dependency) ... ok
+test_production_ipc_factory_is_wired (test_project_context.ContextTests.test_production_ipc_factory_is_wired) ... FAIL
+test_real_ipc_helper_http_and_shim_with_restricted_mode_rejection (test_project_context.ContextTests.test_real_ipc_helper_http_and_shim_with_restricted_mode_rejection) ... [ipc_listener] listening on /tmp/pc-ipc-4rd1xv1l/ipc.sock
+[ipc_listener] listening on /tmp/pc-ipc-4rd1xv1l/ipc.sock
+[ipc_listener] listening on /tmp/pc-ipc-4rd1xv1l/ipc.sock
+ok
+test_redirect_never_forwards_identity (test_project_context.ContextTests.test_redirect_never_forwards_identity) ... ok
+
+======================================================================
+FAIL: test_production_ipc_factory_is_wired (test_project_context.ContextTests.test_production_ipc_factory_is_wired)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/pc-withdraw-3p6h527a/source/tools/sessionhelper/tests/test_project_context.py", line 134, in test_production_ipc_factory_is_wired
+    self.assertIn('project_context_v1',caps,'PC_CAPABILITY_UNWIRED')
+AssertionError: 'project_context_v1' not found in '    def session_capabilities_envelope(self, outbound_capabilities=None) -> dict:\n        return envelope(\n            session_addr("workpulse", self.book.key_id), "", self.book.self_addr,\n            {"type": "session_capabilities", "delivery_ack_v1": True,\n             "persistent_inbox_v1": True, "project_context_hidden_v1": bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "spec_review_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,\n             "unified_queue_v1": self.cfg.mode == "driver",\n             "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),\n             "desktop_inbox_v1": self.cfg.mode == "desktop",\n             "processed_semantics": "saved_to_desktop_inbox" if self.cfg.mode == "desktop" else "accepted_to_cli",\n             "helper_version": __version__,\n             "helper_update_v1": bool(env_get("SH_UPDATE_LAUNCHER", "")) and sys.platform.startswith("linux") and bool(getattr(self, "enroll_credential", None)),\n             # 只作 Hub 统计（组长裁定 C）；附注是否附加由 upload_addendum_due 在合并时自判。\n             "file_upload_v1": self.upload_configured(),\n             **(outbound_capabilities or {})},\n        )\n' : PC_CAPABILITY_UNWIRED
+
+----------------------------------------------------------------------
+Ran 11 tests in 25.616s
+
+FAILED (failures=1)

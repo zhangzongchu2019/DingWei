@@ -1,0 +1,5 @@
+--- FAIL: TestProjectContextSQLiteProjectionReadOnlyAndExactRevision (0.08s)
+    project_context_test.go:37: PC_SQLITE_PRIVATE_CRITERION_LEAK [{"task_id":"task","role":"developer","status":"planned","version":2,"assignment_version":1,"blocker":"","cases":[{"acceptance_id":"A1","case_name":"one","marked":false,"confirmed":false}],"spec_id":"r32","title":"task","revision":1,"content_sha256":"44bedc7ae349af84cf1ede78ee25544ce0a929dbb08a30f06ad009fb2f62cd34","acceptance":[{"id":"A1","text":"allowed","cases":["one"]},{"id":"PRIVATE","text":"UNLINKED_SECRET_CASE"}]},{"task_id":"task","spec_id":"r32","title":"r32","revision":1,"content_sha256":"44bedc7ae349af84cf1ede78ee25544ce0a929dbb08a30f06ad009fb2f62cd34","acceptance":[{"id":"A1","text":"allowed","cases":["one"]},{"id":"PRIVATE","text":"UNLINKED_SECRET_CASE"}]}]
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.084s
+FAIL

@@ -1,0 +1,5 @@
+--- FAIL: TestProjectContextSQLiteProjectionReadOnlyAndExactRevision (0.08s)
+    project_context_test.go:53: PC_CONTEXT_WROTE_SQLITE 123 124
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.084s
+FAIL

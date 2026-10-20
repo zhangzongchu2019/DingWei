@@ -1,0 +1,10 @@
+{
+  "commit": "8b28c22989a061cd8bae085b8c561dbb5daccba3",
+  "runtime_commit": "989ae8de55e8a234f170d4f7ea59448a58af701e",
+  "start": "2026-10-20T15:17:59.688374+00:00",
+  "end": "2026-10-20T15:24:46.298501+00:00",
+  "rc": 0,
+  "isolated_home": true,
+  "cleared_environment": true,
+  "venv": "/data/ai-dev-data/helper-deps-lock-venv"
+}

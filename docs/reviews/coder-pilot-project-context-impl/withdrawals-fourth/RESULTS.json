@@ -1,0 +1,180 @@
+{
+  "commit": "989ae8de55e8a234f170d4f7ea59448a58af701e",
+  "cases": [
+    {
+      "name": "duplicate-auth",
+      "rc": 1,
+      "marker": "PC_AUTH_OR_QUERY_BYPASS",
+      "designated_red": true,
+      "seconds": 6.546
+    },
+    {
+      "name": "cookie-auth",
+      "rc": 1,
+      "marker": "PC_AUTH_OR_QUERY_BYPASS",
+      "designated_red": true,
+      "seconds": 6.338
+    },
+    {
+      "name": "credential-recheck",
+      "rc": 1,
+      "marker": "PC_CREDENTIAL_RECHECK_MISSING",
+      "designated_red": true,
+      "seconds": 4.655
+    },
+    {
+      "name": "pg-agent-lock",
+      "rc": 1,
+      "marker": "PC_PG_AUTH_LOCK_NOT_HELD",
+      "designated_red": true,
+      "seconds": 8.657
+    },
+    {
+      "name": "current-role",
+      "rc": 1,
+      "marker": "PC_SQLITE_STALE_CURRENT_ROLE",
+      "designated_red": true,
+      "seconds": 1.256
+    },
+    {
+      "name": "current-revision",
+      "rc": 1,
+      "marker": "PC_SQLITE_STALE_REVISION_PROJECTED",
+      "designated_red": true,
+      "seconds": 1.249
+    },
+    {
+      "name": "directory-privacy",
+      "rc": 1,
+      "marker": "PC_NODIRECTORY_BYPASS",
+      "designated_red": true,
+      "seconds": 6.85
+    },
+    {
+      "name": "group-pair-authorization",
+      "rc": 1,
+      "marker": "PC_MOVED_AGENT_STILL_READS_TASK",
+      "designated_red": true,
+      "seconds": 6.198
+    },
+    {
+      "name": "online-agent-binding",
+      "rc": 1,
+      "marker": "PC_ONLINE_IDENTITY_NOT_BOUND",
+      "designated_red": true,
+      "seconds": 6.06
+    },
+    {
+      "name": "needs-reassignment",
+      "rc": 1,
+      "marker": "PC_NEEDS_REASSIGNMENT_LEAK",
+      "designated_red": true,
+      "seconds": 5.998
+    },
+    {
+      "name": "cursor-authority-drift",
+      "rc": 1,
+      "marker": "PC_CURSOR_AUTH_DRIFT_IGNORED",
+      "designated_red": true,
+      "seconds": 5.985
+    },
+    {
+      "name": "cursor-actor-binding",
+      "rc": 1,
+      "marker": "PC_CURSOR_ACTOR_UNBOUND",
+      "designated_red": true,
+      "seconds": 6.04
+    },
+    {
+      "name": "cursor-expiry",
+      "rc": 1,
+      "marker": "PC_CURSOR_NO_EXPIRY",
+      "designated_red": true,
+      "seconds": 6.005
+    },
+    {
+      "name": "query-upper-limit",
+      "rc": 1,
+      "marker": "PC_QUERY_LIMIT_OR_SELECTOR_GATE",
+      "designated_red": true,
+      "seconds": 5.956
+    },
+    {
+      "name": "body-size-limit",
+      "rc": 1,
+      "marker": "PC_BODY_LIMIT_OR_CONTINUATION_MISSING",
+      "designated_red": true,
+      "seconds": 6.08
+    },
+    {
+      "name": "single-item-no-truncation",
+      "rc": 1,
+      "marker": "PC_SINGLE_ENTRY_TRUNCATED_OR_RETURNED",
+      "designated_red": true,
+      "seconds": 6.062
+    },
+    {
+      "name": "pg-final-recheck",
+      "rc": 1,
+      "marker": "PC_PG_FINAL_RECHECK_IGNORED",
+      "designated_red": true,
+      "seconds": 5.975
+    },
+    {
+      "name": "linked-criteria-only",
+      "rc": 1,
+      "marker": "PC_SQLITE_PRIVATE_CRITERION_LEAK",
+      "designated_red": true,
+      "seconds": 1.226
+    },
+    {
+      "name": "http-schema",
+      "rc": 1,
+      "marker": "PC_BAD_SCHEMA_ACCEPTED",
+      "designated_red": true,
+      "seconds": 25.798
+    },
+    {
+      "name": "http-no-redirect",
+      "rc": 1,
+      "marker": "PC_CREDENTIAL_REDIRECTED",
+      "designated_red": true,
+      "seconds": 25.795
+    },
+    {
+      "name": "dedicated-helper-identity",
+      "rc": 1,
+      "marker": "PC_SHARED_CREDENTIAL_FALLBACK",
+      "designated_red": true,
+      "seconds": 24.821
+    },
+    {
+      "name": "legacy-datad-refusal",
+      "rc": 1,
+      "marker": "PC_LEGACY_DATAD_CONTEXT_FALLBACK",
+      "designated_red": true,
+      "seconds": 26.304
+    },
+    {
+      "name": "upload-only-isolation",
+      "rc": 1,
+      "marker": "PC_RESTRICTED_MODE_ESCAPED",
+      "designated_red": true,
+      "seconds": 26.318
+    },
+    {
+      "name": "send-only-isolation",
+      "rc": 1,
+      "marker": "PC_RESTRICTED_MODE_ESCAPED",
+      "designated_red": true,
+      "seconds": 26.328
+    },
+    {
+      "name": "production-ipc-wiring",
+      "rc": 1,
+      "marker": "PC_PRODUCTION_HANDLER_UNWIRED",
+      "designated_red": true,
+      "seconds": 26.296
+    }
+  ]
+}

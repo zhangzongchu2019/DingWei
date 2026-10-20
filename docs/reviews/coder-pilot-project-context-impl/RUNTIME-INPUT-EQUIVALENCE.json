@@ -1,0 +1,479 @@
+{
+  "runtime_commit": "989ae8de55e8a234f170d4f7ea59448a58af701e",
+  "gate_commit": "ca227049f05b97b3b4170db37a7ac3759b5b7764",
+  "changes_since_runtime": [
+    "deploy/test_build_entrypoints.py",
+    "internal/m8/project_context_roundtrip_test.go",
+    "scripts/run-build-tests.sh",
+    "scripts/test-desktop-hub-roundtrip.sh",
+    "tests/pilot-project-context/local_context_roundtrip.py",
+    "tests/pilot-project-context/withdrawals.py",
+    "tools/sessionhelper/tests/test_ipc_socket_path_isolation.py"
+  ],
+  "production_go_and_helper_runtime_unchanged": true,
+  "browser_static_inputs_equal_base": "36afa6215f00bc39a992441ab0ff8fe81442aa3e",
+  "browser_static_inputs": [
+    {
+      "path": "cmd/workpulse/testdata/hosted_quota_page.cjs",
+      "blob": "1c33466d7ff65b81d474b9f65d0c56758bca9f20"
+    },
+    {
+      "path": "internal/m8/console_helper_updates.js",
+      "blob": "921413bd4c6afca94e91727bbec2c61197df8146"
+    },
+    {
+      "path": "internal/m8/console_mux_broker.js",
+      "blob": "0763a44d67072c80493d2c47d7553859b5a07aa9"
+    },
+    {
+      "path": "internal/m8/static/easymde/easymde.min.css",
+      "blob": "8d29eae9b4cb9ccc4b5909d20f34df20f065e034"
+    },
+    {
+      "path": "internal/m8/static/easymde/easymde.min.js",
+      "blob": "db7a87f354deb7cb9f908d4af060599793a59bf2"
+    },
+    {
+      "path": "internal/m8/testdata/console_mux_create_timeout.cjs",
+      "blob": "a9914bb32763adebc323a478368dd0f23220fef8"
+    },
+    {
+      "path": "internal/m8/testdata/console_mux_product.cjs",
+      "blob": "5496f7f7ddfa714e8d1c5e70ec8be4a206a9037e"
+    },
+    {
+      "path": "internal/m8/testdata/console_mux_refill_recheck.cjs",
+      "blob": "45d09724993f2a31c516aceae3488f8f65f8bf6b"
+    },
+    {
+      "path": "internal/m8/testdata/console_mux_scope_error.cjs",
+      "blob": "6e9ff9a1878028396f129cc1cc1afcb596ba2a1b"
+    },
+    {
+      "path": "internal/m8/testdata/managed_recovery_result.cjs",
+      "blob": "249343ef451c6957ac53e5ff3542d0608728d149"
+    },
+    {
+      "path": "internal/m8/testdata/renderer_history_priority.cjs",
+      "blob": "34d94f5f1dcc673613151862b9a4b6af8ef0ac2b"
+    },
+    {
+      "path": "internal/m8/testdata/renderer_integrity_recovery.cjs",
+      "blob": "bff56a311c31a6e96a9a73e15bd5ccf000efc12c"
+    },
+    {
+      "path": "runbooks/harness/easymde-offline/console-iframe-dark-probe.js",
+      "blob": "13810618336c7fba7e2317fcaf5637e674c642d5"
+    },
+    {
+      "path": "runbooks/harness/easymde-offline/cp-probe.js",
+      "blob": "11b224c8368765c76c6f2621cc02582ac01abc83"
+    },
+    {
+      "path": "runbooks/harness/easymde-offline/dark-contrast-probe.js",
+      "blob": "71744505d6462e504ec4435e2f892617046711c6"
+    },
+    {
+      "path": "runbooks/harness/easymde-offline/fa-page.html",
+      "blob": "ec5a0c83533557394e3ee5e41ebbad891a151a73"
+    },
+    {
+      "path": "runbooks/harness/easymde-offline/fa-probe.js",
+      "blob": "b8c01d0e2d6c1578c6e20d2b2a134e0b0fd890b2"
+    },
+    {
+      "path": "runbooks/harness/easymde-offline/measure-core.js",
+      "blob": "1b419bde828ad711b32085bea7b751274949c53d"
+    },
+    {
+      "path": "runbooks/harness/easymde-offline/page.html",
+      "blob": "173e94e42e92be9cd0738198efaac005bb55ee03"
+    },
+    {
+      "path": "runbooks/harness/easymde-offline/prepare-vendor.js",
+      "blob": "d115f832f8e9b8c508936c809a69093a2969b93b"
+    },
+    {
+      "path": "runbooks/harness/easymde-offline/run.js",
+      "blob": "b0772cbdd3f86d534fb9c95a5791853c53f95ebe"
+    },
+    {
+      "path": "runbooks/harness/easymde-offline/vendor-pins.js",
+      "blob": "34919e4d4256d946617ab0c17db391f9ba5cb3ff"
+    },
+    {
+      "path": "tests/a1-show-code.cjs",
+      "blob": "d8d9843ac4ad8f1fb62ef7b3814472af9a5371de"
+    },
+    {
+      "path": "tests/a4-epoch-notice.cjs",
+      "blob": "f7d733b1dfc3a06c5d80632c75789947ec0e5118"
+    },
+    {
+      "path": "tests/a4-notice-tone.cjs",
+      "blob": "2adc3f4e2279034f30e29f2fe1f3eaec99b0f127"
+    },
+    {
+      "path": "tests/a4-overflow-preserve.cjs",
+      "blob": "2cb65a6b07955c0f5f1c16a6181e13d3ee258d6a"
+    },
+    {
+      "path": "tests/a5-real-gap-timer.cjs",
+      "blob": "ff7df43a11ef3295b413e140016bdce70d520d03"
+    },
+    {
+      "path": "tests/a5-replay-state.cjs",
+      "blob": "081d5001c04a95b90377ca50249c9e26846d998b"
+    },
+    {
+      "path": "tests/a6-agent-disk-real.cjs",
+      "blob": "3c4d7ce3fe6bc38bae14af4274b11cfc5b987f72"
+    },
+    {
+      "path": "tests/a6-agent-disk-unknown.cjs",
+      "blob": "86c79e203f5a69ef99e4e6098825a211b99c2c49"
+    },
+    {
+      "path": "tests/file-card-streaming.cjs",
+      "blob": "c986fe5807a0e83e3f44771ab3629db7b347156e"
+    },
+    {
+      "path": "tests/group-code-restore.cjs",
+      "blob": "d57856be4fec91469900b870920e57d4d32fa0e0"
+    },
+    {
+      "path": "tests/view-header-no-tasks.cjs",
+      "blob": "b75a56aea1dfc4080ab439f60acc66d6ff9da4d9"
+    },
+    {
+      "path": "tests/view-history-toast.cjs",
+      "blob": "be3d16c7f13974694e4b17dd2844ab325686dc8c"
+    },
+    {
+      "path": "view-service/console-agent-groups-entry-regression.js",
+      "blob": "b7967a0e3120fabc6c521feefd2d9ed26668cd2b"
+    },
+    {
+      "path": "view-service/console-agent-groups-vega-regression.js",
+      "blob": "14d4c6431981e6dd7304c047824582f012185423"
+    },
+    {
+      "path": "view-service/console-agent-mgmt-enroll-regression.js",
+      "blob": "90c27cfd87b4e6a6a3eb28407f437921df8c745f"
+    },
+    {
+      "path": "view-service/console-agent-mgmt-hosted-regression.js",
+      "blob": "a321a2c33e57d80580964854a45afb352a91aaf9"
+    },
+    {
+      "path": "view-service/console-agent-tree-regression.js",
+      "blob": "110be175751d230d15554a84def68a10d6cae55c"
+    },
+    {
+      "path": "view-service/console-browser-regression.js",
+      "blob": "a446bf0e7f33fab03cf82befba189dcd47eeb907"
+    },
+    {
+      "path": "view-service/console-group-live-regression.js",
+      "blob": "ef4a96ebdbad6d99bb04feabf0af141dbeef07f7"
+    },
+    {
+      "path": "view-service/console-groupsnapshot-refresh-regression.js",
+      "blob": "1b78dcf0e161837f221fad1df15c393fc1554f54"
+    },
+    {
+      "path": "view-service/console-helper-update-regression.js",
+      "blob": "e4711d3fe3d73a0d58d2a5c91c752fd9c0c4a90f"
+    },
+    {
+      "path": "view-service/console-hosted-lifecycle-jobs-regression.js",
+      "blob": "b8a75a49ccdc702caccb749f6791b8668213e273"
+    },
+    {
+      "path": "view-service/console-hosted-model-regression.js",
+      "blob": "bfdb7d77d8624d0a10daf1bfdc3b9e77aff577f4"
+    },
+    {
+      "path": "view-service/console-hosted-owner-fence-regression.js",
+      "blob": "e442d0feb39c24f9082d969642bb6ffcc11007b1"
+    },
+    {
+      "path": "view-service/console-llm-accounts-regression.js",
+      "blob": "aeccc91bf8506b23ff15df1c40ce3470d939100a"
+    },
+    {
+      "path": "view-service/console-login-regression.js",
+      "blob": "ad3d4e0b6bd01dd546ab5ffd21f5826c54d155b4"
+    },
+    {
+      "path": "view-service/console-panel-pointerevents-regression.js",
+      "blob": "c1a1cec84382e4dfbb8454cbf28664aa94f789e1"
+    },
+    {
+      "path": "view-service/console-platform-admin-regression.js",
+      "blob": "17819c5332771277782974d1c5818bd56f9e7ccb"
+    },
+    {
+      "path": "view-service/console-quota-regression.js",
+      "blob": "554328f9865b31fa66e58dcdf1baf758caecdbc5"
+    },
+    {
+      "path": "view-service/console-soft-quota-regression.js",
+      "blob": "8bf003ff93952f57dc18c5aa655b8f8250c69bb6"
+    },
+    {
+      "path": "view-service/console-spec-direct-regression.js",
+      "blob": "9077aafcc85171aa5f74ce8d2b4b2e40387bba65"
+    },
+    {
+      "path": "view-service/console-spec-task-p1-real-regression.js",
+      "blob": "e1a56cb1a2c5102fc62a14e81604c436fae44600"
+    },
+    {
+      "path": "view-service/console-spec-workflow-regression.js",
+      "blob": "27b01a213b2c6dd809db166cf14fa42183e8856d"
+    },
+    {
+      "path": "view-service/console-specs-browser-regression.js",
+      "blob": "e75453f3b16601cd6896f2ad003cb47f844cca61"
+    },
+    {
+      "path": "view-service/console-specs-theme-regression.js",
+      "blob": "0b727606fc70cc1dc653679184ccf3b0e4fc19f8"
+    },
+    {
+      "path": "view-service/console-task-board-regression.js",
+      "blob": "83bbc4c18e2f3d5f3f7e619f34336f8994abc888"
+    },
+    {
+      "path": "view-service/console-theme-global-regression.js",
+      "blob": "7117ec034c117fc6e0dcb32eb591328d0ff1b67e"
+    },
+    {
+      "path": "view-service/fixture-agents.js",
+      "blob": "487ce17193f2e07c020d86ed4d9f3f1cc4d66918"
+    },
+    {
+      "path": "view-service/fixtures-0206/sample-dangerous.html",
+      "blob": "8d417ba749ec2bb73c58161bb3000377b27522ea"
+    },
+    {
+      "path": "view-service/md-injection-payloads.js",
+      "blob": "d16474b8fad08b85faadce6de97409764119557c"
+    },
+    {
+      "path": "view-service/md-render-core-parity.js",
+      "blob": "39b7d477b2e4a773311321abd689bcbf0f515650"
+    },
+    {
+      "path": "view-service/md-render-core.js",
+      "blob": "4772b62c3da83a578edffbca288316524bdbdd01"
+    },
+    {
+      "path": "view-service/owned-task-board-regression.cjs",
+      "blob": "fadbdc9dd6f02bc687062dc25154fd5e21ac28da"
+    },
+    {
+      "path": "view-service/r31-admin-agents-browser-regression.js",
+      "blob": "ea885269eac39fb6947f293b6d1f1b22a5544ed4"
+    },
+    {
+      "path": "view-service/r31-hosted-nodes-browser-regression.js",
+      "blob": "bebc0fbe0f55c216d059010a88a19b2b3495a024"
+    },
+    {
+      "path": "view-service/r32-spec-review-browser-regression.js",
+      "blob": "204fbcf6319b994298018119f7f6cc08434e24e6"
+    },
+    {
+      "path": "view-service/r32-task-flow-browser-regression.js",
+      "blob": "58339815aaa6cebb6b4b7bba97f69c4c66123d99"
+    },
+    {
+      "path": "view-service/renderer-0206-file-render-regression.js",
+      "blob": "94154506993714c9a26890b6f04685b8b95ab20b"
+    },
+    {
+      "path": "view-service/renderer-c2-regression.js",
+      "blob": "c6a18bb4b8bd935ddda53ef18554c45c19d3c847"
+    },
+    {
+      "path": "view-service/renderer-canary-g2-regression.js",
+      "blob": "85ca4452fa5888339906e14d2c54f5f7b3114e7b"
+    },
+    {
+      "path": "view-service/renderer-canary-sse.html",
+      "blob": "00dc2b002e9db8a869324518b5165e5dbab783ff"
+    },
+    {
+      "path": "view-service/renderer-failcard-regression.js",
+      "blob": "dae1091cd27f7ca2cf396d2b3f1bd6f98ac95bfb"
+    },
+    {
+      "path": "view-service/renderer-failure-dock-embedded-regression.js",
+      "blob": "0ab22bdaa28f2ec4eaa9ca90accb990a2b8b00ce"
+    },
+    {
+      "path": "view-service/renderer-failure-dock-regression.js",
+      "blob": "a7e7cfc4cea9f6023ce73c20bc31909ad605bc59"
+    },
+    {
+      "path": "view-service/renderer-flood-stress-regression.js",
+      "blob": "886850e91b303c3cbeee0af1593a0cbeedde85b5"
+    },
+    {
+      "path": "view-service/renderer-in-console-iframe-regression.js",
+      "blob": "9f4c4656bc653639f562cadb08310b7a04d00e4e"
+    },
+    {
+      "path": "view-service/renderer-longtext-regression.js",
+      "blob": "400c082af9628794c192bf29d72f66f759cd05a5"
+    },
+    {
+      "path": "view-service/renderer-markdown-image-regression.js",
+      "blob": "666306108a17505513e765b9cc530dbd03581694"
+    },
+    {
+      "path": "view-service/renderer-markdown-injection-regression.js",
+      "blob": "b2b265ea136175937d740691120db48389c4c011"
+    },
+    {
+      "path": "view-service/renderer-mention-candidates-regression.js",
+      "blob": "f6afc080ddad2f3fef65104197b150c904681e20"
+    },
+    {
+      "path": "view-service/renderer-mention-reply-regression.js",
+      "blob": "136420c9c2eaccfdeac1b20936e2e58e6a8c82a4"
+    },
+    {
+      "path": "view-service/renderer-mention-route-regression.js",
+      "blob": "3ed72dc703e9dece7daddab91641fa3ee784ce7c"
+    },
+    {
+      "path": "view-service/renderer-newplat-login-writable-regression.js",
+      "blob": "d5f3a418da1db62f056222078e9ab3a1fb37802c"
+    },
+    {
+      "path": "view-service/renderer-page-identity-regression.js",
+      "blob": "df0f55b523c762b6a1fa49ead618c1ba3ddb297b"
+    },
+    {
+      "path": "view-service/renderer-provenance-icon-regression.js",
+      "blob": "29fec648f8a04dfd6ec709c18e6f3ba2d98dc0f1"
+    },
+    {
+      "path": "view-service/renderer-regression-selfhost.js",
+      "blob": "d2154662a45d44ee2cb61491d1066695f16b4955"
+    },
+    {
+      "path": "view-service/renderer-regression.js",
+      "blob": "6546f8b854810a0756a6551114f7003a51a959a3"
+    },
+    {
+      "path": "view-service/renderer-replay-seq-regression.js",
+      "blob": "63c3f37d55703c50e7a406a220438cbd799381b3"
+    },
+    {
+      "path": "view-service/renderer-scroll-follow-regression.js",
+      "blob": "8b0d752d2d7db67511b1c04cd1bca9b0b563d53c"
+    },
+    {
+      "path": "view-service/renderer-sse-profile.js",
+      "blob": "f19d2ac965bbe8cc0cf2be5ca671f1203355bc0b"
+    },
+    {
+      "path": "view-service/renderer-sse-reconnect.js",
+      "blob": "6c34fba4dab250530ce5799d0f76d8e051f52a4b"
+    },
+    {
+      "path": "view-service/renderer-sse-smoke.js",
+      "blob": "79c25bf2f72244f0532335ab7343ca97411f50b5"
+    },
+    {
+      "path": "view-service/renderer-storage-denied-regression.js",
+      "blob": "62ea9b80927996c6f49183d2b884044607495cf8"
+    },
+    {
+      "path": "view-service/renderer-t054-errorboard-regression.js",
+      "blob": "649e143f5e940a34e7d0881cbc78a72f3aa46c89"
+    },
+    {
+      "path": "view-service/renderer-t074-delivery-id-regression.js",
+      "blob": "6b53488bca6790577905d2791f3a869f744d67b4"
+    },
+    {
+      "path": "view-service/renderer-t086-deferred-clear-regression.js",
+      "blob": "93e4d6855fcca41f3f5f234e67a3c358bc5f700a"
+    },
+    {
+      "path": "view-service/renderer-t086-empty-ring-e2e-regression.js",
+      "blob": "6885eec05a03b7b8758b8d690673c86805ab7cab"
+    },
+    {
+      "path": "view-service/renderer-t138-shortname-regression.js",
+      "blob": "4e0cdb260b5d0ec0cb876a65c17643956e606c45"
+    },
+    {
+      "path": "view-service/renderer-t141-capability-reuse-regression.js",
+      "blob": "86bc45584829d86244129b00eb694eb82d1df70e"
+    },
+    {
+      "path": "view-service/renderer-t145-t146-mutations.js",
+      "blob": "ed83dbf5afa99eaa7c6eb963280d618780e02653"
+    },
+    {
+      "path": "view-service/renderer-t145-tabs-regression.js",
+      "blob": "429a5071cdd65038fadccfbded9db3a5b03a5949"
+    },
+    {
+      "path": "view-service/renderer-t146-agent-refresh-regression.js",
+      "blob": "0bd991ea51e3a8deab5d40290b7d64132ab49646"
+    },
+    {
+      "path": "view-service/renderer-t147-paste-regression.js",
+      "blob": "8de35ebb3d44bcc8f642654c7a39b4e883c88455"
+    },
+    {
+      "path": "view-service/renderer-upload-ticket-timeout-regression.js",
+      "blob": "ef3b7f1c65d916199151ab45712c9dfcae688be4"
+    },
+    {
+      "path": "view-service/renderer-view-unavailable-regression.js",
+      "blob": "c0326ecf9acd4c705390037d79fde29b757d6cfe"
+    },
+    {
+      "path": "view-service/renderer-waiting-stage-regression.cjs",
+      "blob": "e388fc7d2f216bc800208d47d2a3b1fe317c4b62"
+    },
+    {
+      "path": "view-service/terminal-storage-denied-regression.js",
+      "blob": "e170af5ff6e32d4ea9fae18c7bf2196033b2fc97"
+    },
+    {
+      "path": "view-service/three-slice-coexistence.cjs",
+      "blob": "dbf602139236539fec6af8139951fd47e8947c78"
+    },
+    {
+      "path": "view-service/view-refresh-regression.cjs",
+      "blob": "f00e4b21df455456f5d3d09f67d9623f4b28411d"
+    }
+  ],
+  "browser_suites_not_rerun": true,
+  "runtime_lock_unchanged": true,
+  "categories": {
+    "helper_tests_changed": [
+      "tools/sessionhelper/tests/test_ipc_socket_path_isolation.py"
+    ],
+    "go_tests_changed": [
+      "internal/m8/project_context_roundtrip_test.go"
+    ],
+    "gate_harness_changed": [
+      "deploy/test_build_entrypoints.py",
+      "scripts/run-build-tests.sh",
+      "scripts/test-desktop-hub-roundtrip.sh",
+      "tests/pilot-project-context/local_context_roundtrip.py",
+      "tests/pilot-project-context/withdrawals.py"
+    ]
+  },
+  "no_migration_changes": true
+}

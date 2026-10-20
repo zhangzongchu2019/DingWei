@@ -1,0 +1,165 @@
+{
+  "packages": 65,
+  "test_packages": 52,
+  "passed_packages": 52,
+  "no_test_packages": 13,
+  "failed_events": [],
+  "skipped_tests": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGAssignFull"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGA2ConcurrentUnique"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGACLThreeRoles"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGRoleNoLeak"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGGCFirstResults"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGMigrateOnly"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB3CrossTask"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB4PutAssignInterleave"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1CrossTaskConcurrentSameRID"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1ResponseLossRetry"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1LockOrderNoDeadlock"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGIntegration"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+      "test": "TestGateDumpDoorABaseline"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestTCN5b_SameRidDifferentPayloadConflict"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestConformance_GAP_SLATimeoutAnnotate"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+      "test": "TestMonitorPageInRealChrome"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestMuxProductHTTP1EightSeats"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsolePlatformPayloadDump"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestFailureNoticeDriverTurnEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestGroupReplyMCP"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelper0232MixedVersionEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestEnvelopeReadTimeoutEnvironmentChild"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSpecMCPEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestR31OldBinarySchemaReadCompatibility"
+    }
+  ],
+  "skipped_test_count": 30,
+  "project_context_pass_events": [
+    "TestProjectContextPGAuthorizationLocksAndCurrentState",
+    "TestProjectContextSQLiteProjectionReadOnlyAndExactRevision",
+    "TestProjectContextSQLiteCandidateMetadataAndRoleRace",
+    "TestProjectContextSQLiteReadSnapshotKeepsOneAssignment",
+    "TestProjectContextPGSQLiteReadThenRevokeAndRevokeThenRead",
+    "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+    "TestProjectContextScopesAndPrivateProjection",
+    "TestProjectContextAuthenticationAndQueryMatrix/missing",
+    "TestProjectContextAuthenticationAndQueryMatrix/forged",
+    "TestProjectContextAuthenticationAndQueryMatrix/mixed",
+    "TestProjectContextAuthenticationAndQueryMatrix/double",
+    "TestProjectContextAuthenticationAndQueryMatrix/spoof",
+    "TestProjectContextAuthenticationAndQueryMatrix/no-scope",
+    "TestProjectContextAuthenticationAndQueryMatrix/unknown-scope",
+    "TestProjectContextAuthenticationAndQueryMatrix/duplicate",
+    "TestProjectContextAuthenticationAndQueryMatrix/selector",
+    "TestProjectContextAuthenticationAndQueryMatrix/limit-zero",
+    "TestProjectContextAuthenticationAndQueryMatrix/limit-large",
+    "TestProjectContextAuthenticationAndQueryMatrix/limit-float",
+    "TestProjectContextAuthenticationAndQueryMatrix/bad-cursor",
+    "TestProjectContextAuthenticationAndQueryMatrix",
+    "TestProjectContextNoDirectoryAndCrossOwnerMembership",
+    "TestProjectContextPaginationBindingAndDrift",
+    "TestProjectContextRevokedAndUnassignedNoData",
+    "TestProjectContextCandidateRaceAndSnapshotFailureClosed",
+    "TestProjectContextCursorExpiry",
+    "TestProjectContextResponseBudgetAndOversizedItem",
+    "TestProjectContextMovedAgentEmptyAndNoReconciliationWrites",
+    "TestProjectContextAuthorizationReleaseFailureNoPartialResponse",
+    "TestProjectContextParserLimitAndIdentityInputs",
+    "TestProjectContextFinalAuthorizationRoundtripFailureClosed"
+  ],
+  "real_pg_context_tests_ran": true,
+  "real_mcp_roundtrip_ran": true
+}

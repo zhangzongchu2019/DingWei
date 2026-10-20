@@ -1,0 +1,37 @@
+test_bad_schema_body_and_oversize_fail_closed (test_project_context.ContextTests.test_bad_schema_body_and_oversize_fail_closed) ... ok
+test_four_scopes_one_http_no_datad_fallback (test_project_context.ContextTests.test_four_scopes_one_http_no_datad_fallback) ... ok
+test_helper_dedicated_identity_and_warning_redaction (test_project_context.ContextTests.test_helper_dedicated_identity_and_warning_redaction) ... ok
+test_invalid_arguments_never_escape_to_http (test_project_context.ContextTests.test_invalid_arguments_never_escape_to_http) ... ok
+test_legacy_context_block_precedes_backend (test_project_context.ContextTests.test_legacy_context_block_precedes_backend) ... ok
+test_old_helper_is_explicit_upgrade_error (test_project_context.ContextTests.test_old_helper_is_explicit_upgrade_error) ... ok
+test_old_hub_explicit_unsupported (test_project_context.ContextTests.test_old_hub_explicit_unsupported) ... ok
+test_old_shim_context_urls_refused_without_datad_dependency (test_project_context.ContextTests.test_old_shim_context_urls_refused_without_datad_dependency) ... ok
+test_production_ipc_factory_is_wired (test_project_context.ContextTests.test_production_ipc_factory_is_wired) ... ok
+test_real_ipc_helper_http_and_shim_with_restricted_mode_rejection (test_project_context.ContextTests.test_real_ipc_helper_http_and_shim_with_restricted_mode_rejection) ... [ipc_listener] listening on /tmp/pc-ipc-hqr4d41y/ipc.sock
+[ipc_listener] listening on /tmp/pc-ipc-hqr4d41y/ipc.sock
+FAIL
+test_redirect_never_forwards_identity (test_project_context.ContextTests.test_redirect_never_forwards_identity) ... ok
+
+======================================================================
+FAIL: test_real_ipc_helper_http_and_shim_with_restricted_mode_rejection (test_project_context.ContextTests.test_real_ipc_helper_http_and_shim_with_restricted_mode_rejection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/pc-withdraw-nn14xlmt/source/tools/sessionhelper/tests/test_project_context.py", line 162, in test_real_ipc_helper_http_and_shim_with_restricted_mode_rejection
+    asyncio.run(run())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/pc-withdraw-nn14xlmt/source/tools/sessionhelper/tests/test_project_context.py", line 156, in run
+    with self.assertRaises(mcp_shim._IPCFailure,msg='PC_RESTRICTED_MODE_ESCAPED'):
+AssertionError: _IPCFailure not raised : PC_RESTRICTED_MODE_ESCAPED
+
+----------------------------------------------------------------------
+Ran 11 tests in 26.135s
+
+FAILED (failures=1)

@@ -1,0 +1,5 @@
+--- FAIL: TestHelper0237ReleasePins (0.00s)
+    helper_0233_test.go:26: 0.2.3.7 project-context release requires root/Go/helper pins; 0.2.3.6 is the prior release
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/version	0.001s
+FAIL

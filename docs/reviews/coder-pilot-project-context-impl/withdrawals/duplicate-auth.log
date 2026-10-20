@@ -1,0 +1,2 @@
+internal/m8/console_specs_page.go:8:2: no required module provides package github.com/zhangzongchu2019/dingwei/view-service; to add it:
+	go get github.com/zhangzongchu2019/dingwei/view-service

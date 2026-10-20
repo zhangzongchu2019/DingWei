@@ -1,0 +1,396 @@
+{
+  "recorded_at": "2026-10-20T15:44:07.432432+00:00",
+  "source_commit": "ca227049f05b97b3b4170db37a7ac3759b5b7764",
+  "files": [
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/CANONICAL-DELIVERY.json",
+      "bytes": 550,
+      "sha256": "e64fd25d42c78039fff2c3c527df69ab72dc45f45ca6b2dac351f2e062d55a76"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/CANONICAL-FINAL.json",
+      "bytes": 279,
+      "sha256": "ffc82ff058892ab7c00e8081806f81a1b4595214384c9d2bf519701a96bd357b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/CANONICAL-LOCKED.json",
+      "bytes": 271,
+      "sha256": "5b2b8d71b628d51904f73c27c7b51a6a64e90868cd14f792f7fa99f9b5ada97c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/CANONICAL-OFFLINE.json",
+      "bytes": 573,
+      "sha256": "cede1f1df2cdad461727eddc0a1c53eaac91ca0f9667186b1abfc1490dd08158"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/CANONICAL.json",
+      "bytes": 224,
+      "sha256": "61efb907ad30a1353a534f5cc7c83910b4e2b79716fb56d9a4c16d733ed4c229"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/DEPENDENCIES.json",
+      "bytes": 648,
+      "sha256": "d318d200a2a9defff9b0eae5dd700d929f7ba143a521679c53110a499af60f11"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/ENVIRONMENT.json",
+      "bytes": 379,
+      "sha256": "5c27ba211974551c52065009e55ba9f60c90e9ae517bb2d621c8be94859e5eb1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/FULL-GO-DELIVERY.json",
+      "bytes": 588,
+      "sha256": "1ccc26167ced0a551c5a2ab9426d2312cdf5120415755c4a0daabc056aa410a5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/FULL-GO.json",
+      "bytes": 262,
+      "sha256": "f478d7365f6345331a7ff0f85e67c7b8489f422b25285c42b6edac3142488c41"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/GO-DELIVERY-SUMMARY.json",
+      "bytes": 6160,
+      "sha256": "2299a62cc8617d2a5ee8e9317920e7a3f9514790fe1a24960cadc9d1955e1bf2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/GO-SUMMARY.json",
+      "bytes": 9411,
+      "sha256": "58e4525edc27d05932b2e50f85a4156ee67041846de5b451ff95950b9cc902ca"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/HELPER-FINAL.json",
+      "bytes": 335,
+      "sha256": "b873d83f0d2e9db5304bf4578f7f2c40eaa27f978616f86029c5d8203a6cfe5b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/HELPER.json",
+      "bytes": 271,
+      "sha256": "d989305c7212dfe1355d0fa2d749fa316ae0aec443a5f68c5a3fd8970ff010d3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/RACE.json",
+      "bytes": 367,
+      "sha256": "d2b34b8da24876caba3d0638edbccd6412396890cc68d1fa4f76613066b1e9c2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/REPORT.md",
+      "bytes": 7817,
+      "sha256": "86cf6b35057531672c1ab3c3e989b7d864531007703cbb8a0852640cd9296970"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/RUNTIME-INPUT-EQUIVALENCE.json",
+      "bytes": 16029,
+      "sha256": "6953fc427496f9fca10d5a06afa425e1a8f19a5b41fc54348d6a7109b781bc5c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/SOURCE-MANIFEST.json",
+      "bytes": 416957,
+      "sha256": "84a0b9a74f6799d6272f767a9aa32b5c79114c5ee2e2b2ec79748938aebb9e3e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/VET.json",
+      "bytes": 212,
+      "sha256": "256a24a788f2f678fb4e82b98964cffe1c427d2eddb6a137c6e779c4a178f490"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/WITHDRAWAL-UNION.json",
+      "bytes": 7038,
+      "sha256": "d213cece24f4e019f1cc538e367839a14c20f07bb2241ba9bef4044aa05c11bd"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/raw/canonical-delivery.log",
+      "bytes": 40922,
+      "sha256": "025ade306a312bcab771a09f34c780074c1279855c08c92f95c3126cc4ce45f2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/raw/canonical-final.log",
+      "bytes": 40714,
+      "sha256": "c44b3bd061e026364a020f51313fdbc84c7ab29dcd5c3e00f385b282b6c56eb0"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/raw/canonical-locked-venv.log",
+      "bytes": 11542,
+      "sha256": "8e657738363ee090a3ddbbb73b6bbe38384acde47a35e8ae69dc1134a4943929"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/raw/canonical-offline.log",
+      "bytes": 40199,
+      "sha256": "547acb29abb3136cc7c7b19dbcd82fc565ef998caa0c8a9bb29b68d4a4fdcdb1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/raw/canonical.log",
+      "bytes": 4845,
+      "sha256": "c8758b72bd897ed6edc2ba25ea711c190b7505de0a63de551d8dcec04954b77c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/raw/full-go-delivery.jsonl",
+      "bytes": 4231142,
+      "sha256": "894d032356ddd7d34331d68dbfc283a1792943edda8a55a889060fd777108614"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/raw/full-go.jsonl",
+      "bytes": 4255855,
+      "sha256": "23e994abfff78a6898211dc1f8192d9809768815bb3d65e66ad9fbb4146cd86c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/raw/helper-final.log",
+      "bytes": 155560,
+      "sha256": "32654f0c7ba37be1eceeb55b0b2dca95a26ca6e641540cbdc3b5259850f331e5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/raw/helper-full.log",
+      "bytes": 154166,
+      "sha256": "96a3ac3529d4ef4932fc6f64f46ea8e37157523102d297b097c2cf6678f35c36"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/raw/ipc-fixture-fix.log",
+      "bytes": 468,
+      "sha256": "b838b0e6791b7e5082a17d7e97e6197094c9a23a3f97d280c221f979d30f06c9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/raw/race.log",
+      "bytes": 190,
+      "sha256": "d4c54b14d04a555ca47067dfa341f973dadbf8f9a4ab410cc40f647a93dc4245"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/raw/vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals/RESULTS.json",
+      "bytes": 233,
+      "sha256": "31ed2c3fd7e9a57806de9c5a30db47f4b0a781aa5966c8c306a787af83072e6e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals/duplicate-auth.log",
+      "bytes": 193,
+      "sha256": "df818fc11e35f5439cd46b296b4bf20a35c7d13779456e09818a34be7fb1b5ed"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-additional/RESULTS.json",
+      "bytes": 767,
+      "sha256": "ffec4b62b22917ab6f17e102062c8e7b63efe8d32fd3b97f6d5855cc5f8ca2af"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-additional/authorization-release-failure.log",
+      "bytes": 1671,
+      "sha256": "b0a852e738a0b094566c9de5fd3962e56697353be17f846373c1c77f9f37b27c"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-additional/baseline-go.log",
+      "bytes": 189,
+      "sha256": "b53a5453d91eb407c92485eb10bc7a7850f28caff83c9695ada747d985427bd2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-additional/baseline-python.log",
+      "bytes": 1761,
+      "sha256": "3b23118f2b89562e79ecdad5920f6661e92ab137247bfe4a203e469faddc4d6e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-additional/capability-marker.log",
+      "bytes": 3972,
+      "sha256": "9e971a095f4b93bfc03819c3a85bd59a2d28abcf26107cd9e770b9ce5802a45a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-additional/get-no-business-write.log",
+      "bytes": 214,
+      "sha256": "0eb1c4133db9e33f9dc758dc65625048a9a9ff985f8a8f266e5dee7cb4df60ab"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-additional/go-restored.log",
+      "bytes": 189,
+      "sha256": "c9c48aec900eab32febdffe60377f7cbc8a2343d79a1b009b079c4d9ae3a6445"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-additional/helper-version-pin.log",
+      "bytes": 238,
+      "sha256": "6fd17aea5d935bc0138a04adbb32a856c3c3269d04cb0232bd5391ddf626c9d8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-additional/python-restored.log",
+      "bytes": 1761,
+      "sha256": "fb2e2c6a326ab5dbb9cd0b8afccf63dcc198bd308c3051169e8ddde9137400b3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/RESULTS.json",
+      "bytes": 4187,
+      "sha256": "0da2f0e8bfdec39f5ff0e4fdc83b707af41c72a49834457cabe71240be20c505"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/baseline-go.log",
+      "bytes": 189,
+      "sha256": "f226d414daf658a637a4c933376e83c7dc2cda44f7a8dd390abe90f66e2fef26"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/baseline-python.log",
+      "bytes": 1761,
+      "sha256": "a6488af4024d1cc52fe80ca5976024d2ebf7eda0affea55131d3d401c1a59e0e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/body-size-limit.log",
+      "bytes": 500,
+      "sha256": "2757115d2db843122ed9218bc0d1776454a73da0ae69be5aaa7f052e7762eb42"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/cookie-auth.log",
+      "bytes": 1737,
+      "sha256": "1258ed88b0e2fe1ed745bc9d8e85ed21ef2c77ea1cebb7180e494c8cf140fe48"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/credential-recheck.log",
+      "bytes": 216,
+      "sha256": "086605c2b00f68212cda93127e37f48d170aa452c2f3ce783731c298fa1bb88a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/current-revision.log",
+      "bytes": 211,
+      "sha256": "25791a0dd526394446dce860facc4497678759cec9ff8948ad1887a96d330a5e"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/current-role.log",
+      "bytes": 211,
+      "sha256": "b94e82f7ceecad210ba3ba6d24d811f3c7f99c5f4ae9507cf1aa7b5817d4e94a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/cursor-actor-binding.log",
+      "bytes": 474,
+      "sha256": "634f133ec195d9496aca8edf8f9e34ed4adfa77628e991784b9214c6a44adee3"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/cursor-authority-drift.log",
+      "bytes": 1103,
+      "sha256": "969abcc257218b09a71768adab905549c4524ebabf2c9018a5c02f86c304c463"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/cursor-expiry.log",
+      "bytes": 453,
+      "sha256": "3e672ede76115c2d17d95369620c48fe6d2d0bb1d562d98fd3e146d6cb1a57c9"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/dedicated-helper-identity.log",
+      "bytes": 2470,
+      "sha256": "c2c21810bad6f55a7cea0e5ec9dd4350bd05db6d6f86fb38d61c1baf6279532b"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/directory-privacy.log",
+      "bytes": 477,
+      "sha256": "41c4a5ee56f46cdf7be78b0f89e2e4995512809bb2e976fc980e58220e96931a"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/duplicate-auth.log",
+      "bytes": 1738,
+      "sha256": "c6d1091cda2361a5f9bfc58e0b8cef5b6fcfc59f73b29d9ea0e5fa4c892bd0b7"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/go-restored.log",
+      "bytes": 189,
+      "sha256": "91731435f109f9d12a9a57ec083b0ca5d071eb6b926a5920e7bd47b965ba31af"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/group-pair-authorization.log",
+      "bytes": 1665,
+      "sha256": "d90639e7af19a81730cce90f1a086df1ab5c24dbc3db6884ef52e9f856c58498"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/http-no-redirect.log",
+      "bytes": 2330,
+      "sha256": "43c6472e84d1d114241609e9e5246e9430953740677f368105a621ec878d9b24"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/http-schema.log",
+      "bytes": 2546,
+      "sha256": "0757e9762a50f775f8bbf01a8fd12763b930f7740df84f8d82b102acbe026303"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/legacy-datad-refusal.log",
+      "bytes": 3810,
+      "sha256": "1b227b4e2f32b5fd8b9ae3cfcaba8f4bd901971aa935988cd94d5e5b3b3544d1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/linked-criteria-only.log",
+      "bytes": 894,
+      "sha256": "080791d2303adf19ece7a7a618e84d4df90ee6f9562cff4238dc6b167c3c49ba"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/needs-reassignment.log",
+      "bytes": 1646,
+      "sha256": "f11b9816750037f3c24151eb8c8ce03932c486c0aec1ca647bbb2b3e9886bec2"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/online-agent-binding.log",
+      "bytes": 484,
+      "sha256": "8fa424ce5c383684617de6cbe63c2920fda6be9b0a20beb716d67569b774740f"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/pg-agent-lock.log",
+      "bytes": 206,
+      "sha256": "f314b98111d165fbffc4c9bb4f7a5509e9bc1f30ced1c989a959b284b7c6538d"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/pg-final-recheck.log",
+      "bytes": 1661,
+      "sha256": "0d6827368b1a7bb80bacc4872ec8c446a58004f482b6dfac9e495341f5c223f5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/production-ipc-wiring.log",
+      "bytes": 4491,
+      "sha256": "a0b4f87f1a03a3c73b12167fa88abf4e7703ac434bb268eee4d1d6d0e3d1a4e8"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/python-restored.log",
+      "bytes": 1761,
+      "sha256": "0a604b081a8bf08712ebd5558d4e79ce013fb421e95fb38c8b5c93e99e7b6846"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/query-upper-limit.log",
+      "bytes": 220,
+      "sha256": "26282b0145d50b348dbe35ec3933d45879a9f9d2f5e762b9dada9ee10d38f089"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/send-only-isolation.log",
+      "bytes": 3009,
+      "sha256": "bdb8a1253b9331e5bcfda547c4224f47ce3dd617ba0ac62e0b3face77ef684a1"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/single-item-no-truncation.log",
+      "bytes": 497,
+      "sha256": "012aef6c4d13353280019bffe8364b5240e226e3e138057fb9388166dc130017"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-fourth/upload-only-isolation.log",
+      "bytes": 2951,
+      "sha256": "0651edea92066fc4cf54635e1b814fa3a76d9d52ddcfe711aa054f40891e28a5"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-second/RESULTS.json",
+      "bytes": 233,
+      "sha256": "05f7eb3a98c8282d085307382488cf77fcf87e9f68552f801ab1115b8376cacd"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-second/duplicate-auth.log",
+      "bytes": 244,
+      "sha256": "09ca1b4cf28e428d2c5237797dbd8d3a4bbd4f7da30bfb425012abca734cfc80"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-third/RESULTS.json",
+      "bytes": 552,
+      "sha256": "a0c4c80ce7c8a08c821905b4d8a7c880118de3e24d719b7fcd1007f1ece6b127"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-third/cookie-auth.log",
+      "bytes": 1737,
+      "sha256": "d31799bc5e569b69aa285db159f5681c1ce512f30849e1097bd6369380a87071"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-third/credential-recheck.log",
+      "bytes": 421,
+      "sha256": "2f1f755ca85f04f3a623b8808484f6ee2f3ff59a960513c0d55712086b688acf"
+    },
+    {
+      "path": "docs/reviews/coder-pilot-project-context-impl/withdrawals-third/duplicate-auth.log",
+      "bytes": 1738,
+      "sha256": "9aac40ede64b781445e5c0596da52fc2a3c4de830fd0fefb0a5501085651ac4a"
+    }
+  ]
+}
