@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerWaiterRightsAndFullMode (0.09s)
+    task_blocker_test.go:207: BLOCKER_FULL_MODE_APPROVAL_BYPASS <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.095s
+FAIL

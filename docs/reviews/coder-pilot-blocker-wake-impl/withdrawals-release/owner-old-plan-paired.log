@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerMultipleCardsLegacyGateAndPreservation (0.10s)
+    task_blocker_test.go:155: BLOCKER_OWNER_PLAN_BYPASS <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.099s
+FAIL

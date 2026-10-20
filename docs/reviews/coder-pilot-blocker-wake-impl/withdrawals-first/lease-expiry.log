@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerRecheckRequiresCurrentDeveloperVersionAndLease (0.09s)
+    task_blocker_test.go:347: BLOCKER_EXPIRED_LEASE_ACCEPTED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.090s
+FAIL

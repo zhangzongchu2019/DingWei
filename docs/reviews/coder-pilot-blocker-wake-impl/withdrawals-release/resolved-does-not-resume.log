@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake (0.11s)
+    task_blocker_test.go:118: BLOCKER_RECHECK_AUTO_RESUMED in_progress <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.114s
+FAIL

@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerRecheckRequiresCurrentDeveloperVersionAndLease (0.12s)
+    task_blocker_test.go:331: BLOCKER_CARD_CAS_BYPASS <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.127s
+FAIL

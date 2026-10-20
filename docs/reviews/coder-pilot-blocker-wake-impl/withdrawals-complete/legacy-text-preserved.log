@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerMultipleCardsLegacyGateAndPreservation (0.11s)
+    task_blocker_test.go:144: BLOCKER_LEGACY_TEXT_DROPPED 0
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.113s
+FAIL

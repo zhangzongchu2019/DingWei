@@ -1,0 +1,5 @@
+=== RUN   TestPilotBlockerCompatibilityRead
+    pilot_blocker_compat_probe_test.go:9: OLD_R321_STARTUP_READ_PRESERVES_BLOCKER_DATA
+--- PASS: TestPilotBlockerCompatibilityRead (0.03s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.030s

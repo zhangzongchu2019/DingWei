@@ -35,9 +35,9 @@
         "--check",
         "9dc27ecbee668dac9706325e0e52b95fe8fba20b"
       ],
-      "rc": 0
+      "rc": 2
     }
   ],
   "raw_logs_preserved": true,
-  "note": "Raw failing unittest tracebacks may contain whitespace. No raw evidence changed for whitespace formatting."
+  "note": "All log evidence is explicitly force-added because repository ignores log files. Raw whitespace is preserved; formatting check result is reported separately."
 }

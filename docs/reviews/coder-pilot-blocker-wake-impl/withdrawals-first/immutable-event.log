@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake (0.09s)
+    task_blocker_test.go:101: BLOCKER_EVENT_REPLACED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.098s
+FAIL

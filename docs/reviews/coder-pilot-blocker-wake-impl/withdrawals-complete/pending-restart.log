@@ -1,0 +1,52 @@
+test_current_assignment_and_inconclusive_recheck_are_not_execution (test_task_blocker.BlockerHelperTest.test_current_assignment_and_inconclusive_recheck_are_not_execution) ... ok
+test_driver_ambiguous_dispatch_never_retries_rpc (test_task_blocker.BlockerHelperTest.test_driver_ambiguous_dispatch_never_retries_rpc) ... ok
+test_driver_pending_recovery_delivers_once_and_known_receipt_attaches (test_task_blocker.BlockerHelperTest.test_driver_pending_recovery_delivers_once_and_known_receipt_attaches) ... FAIL
+test_driver_preflight_revocation_and_transient_read_failure (test_task_blocker.BlockerHelperTest.test_driver_preflight_revocation_and_transient_read_failure) ... 
+  test_driver_preflight_revocation_and_transient_read_failure (test_task_blocker.BlockerHelperTest.test_driver_preflight_revocation_and_transient_read_failure) (reason='current_authorization_denied') ... ERROR
+  test_driver_preflight_revocation_and_transient_read_failure (test_task_blocker.BlockerHelperTest.test_driver_preflight_revocation_and_transient_read_failure) (reason='current_authorization_or_read_failed') ... ERROR
+test_journal_pending_restart_and_unknown_are_distinct (test_task_blocker.BlockerHelperTest.test_journal_pending_restart_and_unknown_are_distinct) ... FAIL
+test_wake_strict_types_and_fixed_nonbusiness_prompt (test_task_blocker.BlockerHelperTest.test_wake_strict_types_and_fixed_nonbusiness_prompt) ... ok
+test_non_driver_missing_identity_and_restricted_modes_never_execute (test_task_blocker.BlockerNotificationModesTest.test_non_driver_missing_identity_and_restricted_modes_never_execute) ... ok
+test_http_one_shot_redirect_and_unknown_write (test_task_blocker.BlockerTransportTest.test_http_one_shot_redirect_and_unknown_write) ... ok
+test_mcp_validation_identity_and_old_helper_failure (test_task_blocker.BlockerTransportTest.test_mcp_validation_identity_and_old_helper_failure) ... ok
+
+======================================================================
+ERROR: test_driver_preflight_revocation_and_transient_read_failure (test_task_blocker.BlockerHelperTest.test_driver_preflight_revocation_and_transient_read_failure) (reason='current_authorization_denied')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/blocker-withdraw-93l7h2pa/source/tools/sessionhelper/tests/test_task_blocker.py", line 104, in test_driver_preflight_revocation_and_transient_read_failure
+    a._restore_blocker_commands();command=a._commands.start_next();seq=command.queue_seq;a._deliver_command(command)
+                                                                       ^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'queue_seq'
+
+======================================================================
+ERROR: test_driver_preflight_revocation_and_transient_read_failure (test_task_blocker.BlockerHelperTest.test_driver_preflight_revocation_and_transient_read_failure) (reason='current_authorization_or_read_failed')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/blocker-withdraw-93l7h2pa/source/tools/sessionhelper/tests/test_task_blocker.py", line 104, in test_driver_preflight_revocation_and_transient_read_failure
+    a._restore_blocker_commands();command=a._commands.start_next();seq=command.queue_seq;a._deliver_command(command)
+                                                                       ^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'queue_seq'
+
+======================================================================
+FAIL: test_driver_pending_recovery_delivers_once_and_known_receipt_attaches (test_task_blocker.BlockerHelperTest.test_driver_pending_recovery_delivers_once_and_known_receipt_attaches)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/blocker-withdraw-93l7h2pa/source/tools/sessionhelper/tests/test_task_blocker.py", line 81, in test_driver_pending_recovery_delivers_once_and_known_receipt_attaches
+    a._restore_blocker_commands();command=a._commands.start_next();self.assertIsNotNone(command)
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: unexpectedly None
+
+======================================================================
+FAIL: test_journal_pending_restart_and_unknown_are_distinct (test_task_blocker.BlockerHelperTest.test_journal_pending_restart_and_unknown_are_distinct)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/blocker-withdraw-93l7h2pa/source/tools/sessionhelper/tests/test_task_blocker.py", line 59, in test_journal_pending_restart_and_unknown_are_distinct
+    b=BlockerJournal(path,'seat');self.assertEqual(len(b.recover()),1,'BLOCKER_PENDING_WAKE_LOST_ON_RESTART')
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : BLOCKER_PENDING_WAKE_LOST_ON_RESTART
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.883s
+
+FAILED (failures=2, errors=2)

@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerRecheckRequiresCurrentDeveloperVersionAndLease (0.20s)
+    task_blocker_test.go:326: BLOCKER_REVIEWER_OPENED_DEVELOPER_LEASE
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.210s
+FAIL

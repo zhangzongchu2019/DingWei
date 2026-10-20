@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerReadOnlySnapshotAndBoundedInputHistory (0.17s)
+    task_blocker_test.go:419: BLOCKER_GET_WROTE_STATE 864 866
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.172s
+FAIL

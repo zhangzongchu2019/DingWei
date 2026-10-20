@@ -1,0 +1,56 @@
+test_current_assignment_and_inconclusive_recheck_are_not_execution (test_task_blocker.BlockerHelperTest.test_current_assignment_and_inconclusive_recheck_are_not_execution) ... ok
+test_driver_ambiguous_dispatch_never_retries_rpc (test_task_blocker.BlockerHelperTest.test_driver_ambiguous_dispatch_never_retries_rpc) ... FAIL
+test_driver_pending_recovery_delivers_once_and_known_receipt_attaches (test_task_blocker.BlockerHelperTest.test_driver_pending_recovery_delivers_once_and_known_receipt_attaches) ... FAIL
+test_driver_preflight_revocation_and_transient_read_failure (test_task_blocker.BlockerHelperTest.test_driver_preflight_revocation_and_transient_read_failure) ... ok
+test_journal_pending_restart_and_unknown_are_distinct (test_task_blocker.BlockerHelperTest.test_journal_pending_restart_and_unknown_are_distinct) ... FAIL
+test_wake_strict_types_and_fixed_nonbusiness_prompt (test_task_blocker.BlockerHelperTest.test_wake_strict_types_and_fixed_nonbusiness_prompt) ... ok
+test_non_driver_missing_identity_and_restricted_modes_never_execute (test_task_blocker.BlockerNotificationModesTest.test_non_driver_missing_identity_and_restricted_modes_never_execute) ... ok
+test_http_one_shot_redirect_and_unknown_write (test_task_blocker.BlockerTransportTest.test_http_one_shot_redirect_and_unknown_write) ... ok
+test_mcp_validation_identity_and_old_helper_failure (test_task_blocker.BlockerTransportTest.test_mcp_validation_identity_and_old_helper_failure) ... ok
+
+======================================================================
+FAIL: test_driver_ambiguous_dispatch_never_retries_rpc (test_task_blocker.BlockerHelperTest.test_driver_ambiguous_dispatch_never_retries_rpc)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/blocker-withdraw-c4a0ivcm/source/tools/sessionhelper/tests/test_task_blocker.py", line 96, in test_driver_ambiguous_dispatch_never_retries_rpc
+    self.assertEqual(a.calls,['poll'],'BLOCKER_UNKNOWN_WINDOW_OPENED_NEW_TURN')
+AssertionError: Lists differ: ['deliver'] != ['poll']
+
+First differing element 0:
+'deliver'
+'poll'
+
+- ['deliver']
++ ['poll'] : BLOCKER_UNKNOWN_WINDOW_OPENED_NEW_TURN
+
+======================================================================
+FAIL: test_driver_pending_recovery_delivers_once_and_known_receipt_attaches (test_task_blocker.BlockerHelperTest.test_driver_pending_recovery_delivers_once_and_known_receipt_attaches)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/blocker-withdraw-c4a0ivcm/source/tools/sessionhelper/tests/test_task_blocker.py", line 89, in test_driver_pending_recovery_delivers_once_and_known_receipt_attaches
+    self.assertEqual(a.calls,['poll'],'BLOCKER_EXISTING_TURN_DELIVERED_TWICE')
+AssertionError: Lists differ: ['deliver'] != ['poll']
+
+First differing element 0:
+'deliver'
+'poll'
+
+- ['deliver']
++ ['poll'] : BLOCKER_EXISTING_TURN_DELIVERED_TWICE
+
+======================================================================
+FAIL: test_journal_pending_restart_and_unknown_are_distinct (test_task_blocker.BlockerHelperTest.test_journal_pending_restart_and_unknown_are_distinct)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/blocker-withdraw-c4a0ivcm/source/tools/sessionhelper/tests/test_task_blocker.py", line 61, in test_journal_pending_restart_and_unknown_are_distinct
+    c=BlockerJournal(path,'seat');self.assertEqual(c.start('blocker:signal'),'dispatching','BLOCKER_UNKNOWN_DISPATCH_REPLAYED')
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'pending' != 'dispatching'
+- pending
++ dispatching
+ : BLOCKER_UNKNOWN_DISPATCH_REPLAYED
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.795s
+
+FAILED (failures=3)

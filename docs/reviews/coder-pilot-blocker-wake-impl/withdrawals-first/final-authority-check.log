@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerRequestReplayAndRollbackAreAtomic (0.08s)
+    task_blocker_test.go:164: BLOCKER_FINAL_RECHECK_COMMITTED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.088s
+FAIL

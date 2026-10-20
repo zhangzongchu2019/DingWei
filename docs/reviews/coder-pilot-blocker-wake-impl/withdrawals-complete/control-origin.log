@@ -1,0 +1,13 @@
+2026/10/20 17:11:29 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/20 17:11:29 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/20 17:11:29 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/20 17:11:29 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+2026/10/20 17:11:29 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_a7cb79cb23eea7e37f4cadec95e5d4b6 source_message_id=task:9a2bae1778002a29713b69fc7ca182eaace636c60daa1b30b4234931276a0eed
+2026/10/20 17:11:29 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_b6fd7f02050b7272a26d8ba49d1d621f source_message_id=blocker:bb2e02d7c26aa87fc7fffab55de19c27077faa2f1ca26ec82164e5efa3db8860
+2026/10/20 17:11:30 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_ca87102d813bbbedcede844d02f32dc7 source_message_id=forged-control
+2026/10/20 17:11:30 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=2
+--- FAIL: TestBlockerOfflineOldHelperAndReliableNonExecutableWake (1.12s)
+    task_blocker_delivery_test.go:102: BLOCKER_FORGED_CONTROL_ROUTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	1.123s
+FAIL

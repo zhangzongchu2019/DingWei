@@ -36,4 +36,4 @@
 6. 旧二进制可启动/读新库，却不懂 D2 写门；启用后回退须冻结已纳入任务的写入/唤醒 worker，使用兼容回滚方案，不删阻塞历史或迁移账本。
 7. HTTP 接收、可靠投递、模型认领、重核、恢复与人类签收分别记录，不互相替代；本报告作者读数待组长审和 prodops 独立交叉核。
 
-源码清单 SOURCE-MANIFEST.json 共 1768 项。证据清单 EVIDENCE-MANIFEST.json 与 Git blob 全量核对见 FINAL-VERIFICATION.json（该验证回执自身不作递归清单成员）。原始失败与日志保持原样；源码、排除原始日志的说明差分、全差分三项 diff-check 均 rc0，见 QUALITY.json。
+源码清单 SOURCE-MANIFEST.json 共 1768 项。证据清单 EVIDENCE-MANIFEST.json 与 Git blob 全量核对见 FINAL-VERIFICATION.json（该验证回执自身不作递归清单成员）。原始失败与日志保持原样；源码、排除原始日志的说明差分均 rc0；全差分 rc2，原始日志空白不改写，见 QUALITY.json。仓库默认忽略 .log，所有本件日志均显式 force-add 入 Git，非仅本地留存。

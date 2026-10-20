@@ -1,0 +1,13 @@
+AssertionError [ERR_ASSERTION]: R8_AGENT_PICKER_WRONG
+    at check (/data/ai-dev-data/pilot-blocker-wake-impl/view-service/r32-spec-review-browser-regression.js:39:44)
+    at main (/data/ai-dev-data/pilot-blocker-wake-impl/view-service/r32-spec-review-browser-regression.js:42:2)
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processImmediate (node:internal/timers:452:9)
+    at process.callbackTrampoline (node:internal/async_hooks:130:17) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

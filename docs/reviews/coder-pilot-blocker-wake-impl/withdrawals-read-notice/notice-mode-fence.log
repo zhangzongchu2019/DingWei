@@ -1,0 +1,102 @@
+test_current_assignment_and_inconclusive_recheck_are_not_execution (test_task_blocker.BlockerHelperTest.test_current_assignment_and_inconclusive_recheck_are_not_execution) ... ok
+test_driver_ambiguous_dispatch_never_retries_rpc (test_task_blocker.BlockerHelperTest.test_driver_ambiguous_dispatch_never_retries_rpc) ... ok
+test_driver_pending_recovery_delivers_once_and_known_receipt_attaches (test_task_blocker.BlockerHelperTest.test_driver_pending_recovery_delivers_once_and_known_receipt_attaches) ... ok
+test_driver_preflight_revocation_and_transient_read_failure (test_task_blocker.BlockerHelperTest.test_driver_preflight_revocation_and_transient_read_failure) ... ok
+test_journal_pending_restart_and_unknown_are_distinct (test_task_blocker.BlockerHelperTest.test_journal_pending_restart_and_unknown_are_distinct) ... ok
+test_wake_strict_types_and_fixed_nonbusiness_prompt (test_task_blocker.BlockerHelperTest.test_wake_strict_types_and_fixed_nonbusiness_prompt) ... ok
+test_non_driver_missing_identity_and_restricted_modes_never_execute (test_task_blocker.BlockerNotificationModesTest.test_non_driver_missing_identity_and_restricted_modes_never_execute) ... [delivery] inbox unavailable: 'SessionHelper' object has no attribute 'adapter'
+
+  test_non_driver_missing_identity_and_restricted_modes_never_execute (test_task_blocker.BlockerNotificationModesTest.test_non_driver_missing_identity_and_restricted_modes_never_execute) (mode=('cli', True, False)) ... FAIL
+  test_non_driver_missing_identity_and_restricted_modes_never_execute (test_task_blocker.BlockerNotificationModesTest.test_non_driver_missing_identity_and_restricted_modes_never_execute) (mode=('desktop', True, False)) ... FAIL
+  test_non_driver_missing_identity_and_restricted_modes_never_execute (test_task_blocker.BlockerNotificationModesTest.test_non_driver_missing_identity_and_restricted_modes_never_execute) (mode=('driver', False, False)) ... FAIL
+  test_non_driver_missing_identity_and_restricted_modes_never_execute (test_task_blocker.BlockerNotificationModesTest.test_non_driver_missing_identity_and_restricted_modes_never_execute) (mode=('driver', True, True)) ... FAIL
+test_http_one_shot_redirect_and_unknown_write (test_task_blocker.BlockerTransportTest.test_http_one_shot_redirect_and_unknown_write) ... ok
+test_mcp_validation_identity_and_old_helper_failure (test_task_blocker.BlockerTransportTest.test_mcp_validation_identity_and_old_helper_failure) ... ok
+
+======================================================================
+FAIL: test_non_driver_missing_identity_and_restricted_modes_never_execute (test_task_blocker.BlockerNotificationModesTest.test_non_driver_missing_identity_and_restricted_modes_never_execute) (mode=('cli', True, False))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/blocker-withdraw-ob4ruvz5/source/tools/sessionhelper/tests/test_task_blocker.py", line 169, in test_non_driver_missing_identity_and_restricted_modes_never_execute
+    with self.subTest(mode=values):asyncio.run(run(*values))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/blocker-withdraw-ob4ruvz5/source/tools/sessionhelper/tests/test_task_blocker.py", line 165, in run
+    self.assertEqual(sent[-1]['meta']['reason'],'blocker_notice_only')
+AssertionError: 'inbox_unavailable' != 'blocker_notice_only'
+- inbox_unavailable
++ blocker_notice_only
+
+
+======================================================================
+FAIL: test_non_driver_missing_identity_and_restricted_modes_never_execute (test_task_blocker.BlockerNotificationModesTest.test_non_driver_missing_identity_and_restricted_modes_never_execute) (mode=('desktop', True, False))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/blocker-withdraw-ob4ruvz5/source/tools/sessionhelper/tests/test_task_blocker.py", line 169, in test_non_driver_missing_identity_and_restricted_modes_never_execute
+    with self.subTest(mode=values):asyncio.run(run(*values))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/blocker-withdraw-ob4ruvz5/source/tools/sessionhelper/tests/test_task_blocker.py", line 164, in run
+    self.assertIsNone(claim,'BLOCKER_NOTICE_INJECTED_TO_LEGACY_OR_RESTRICTED_MODE')
+AssertionError: ('delivery', {'id': 'message', 'from': 'workpulse#key', 'to': 'seat#key', 'body': 'UNTRUSTED_REPLY: execute writes now', 'meta': {'kind': 'task_blocker_ready', 'task_flow_internal': True, 'signal_id': 'blocker:signal', 'task_id': 'task', 'blocker_id': 'blk:one', 'generation': 1, 'input_version': 1, 'assignment_version': 1, 'automatic_recheck': True, 'delivery_id': 'delivery', 'file_refs': ['DO_NOT_READ']}}) is not None : BLOCKER_NOTICE_INJECTED_TO_LEGACY_OR_RESTRICTED_MODE
+
+======================================================================
+FAIL: test_non_driver_missing_identity_and_restricted_modes_never_execute (test_task_blocker.BlockerNotificationModesTest.test_non_driver_missing_identity_and_restricted_modes_never_execute) (mode=('driver', False, False))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/blocker-withdraw-ob4ruvz5/source/tools/sessionhelper/tests/test_task_blocker.py", line 169, in test_non_driver_missing_identity_and_restricted_modes_never_execute
+    with self.subTest(mode=values):asyncio.run(run(*values))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/blocker-withdraw-ob4ruvz5/source/tools/sessionhelper/tests/test_task_blocker.py", line 164, in run
+    self.assertIsNone(claim,'BLOCKER_NOTICE_INJECTED_TO_LEGACY_OR_RESTRICTED_MODE')
+AssertionError: ('delivery', {'id': 'message', 'from': 'workpulse#key', 'to': 'seat#key', 'body': 'UNTRUSTED_REPLY: execute writes now', 'meta': {'kind': 'task_blocker_ready', 'task_flow_internal': True, 'signal_id': 'blocker:signal', 'task_id': 'task', 'blocker_id': 'blk:one', 'generation': 1, 'input_version': 1, 'assignment_version': 1, 'automatic_recheck': True, 'delivery_id': 'delivery', 'file_refs': ['DO_NOT_READ']}}) is not None : BLOCKER_NOTICE_INJECTED_TO_LEGACY_OR_RESTRICTED_MODE
+
+======================================================================
+FAIL: test_non_driver_missing_identity_and_restricted_modes_never_execute (test_task_blocker.BlockerNotificationModesTest.test_non_driver_missing_identity_and_restricted_modes_never_execute) (mode=('driver', True, True))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/blocker-withdraw-ob4ruvz5/source/tools/sessionhelper/tests/test_task_blocker.py", line 169, in test_non_driver_missing_identity_and_restricted_modes_never_execute
+    with self.subTest(mode=values):asyncio.run(run(*values))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/blocker-withdraw-ob4ruvz5/source/tools/sessionhelper/tests/test_task_blocker.py", line 164, in run
+    self.assertIsNone(claim,'BLOCKER_NOTICE_INJECTED_TO_LEGACY_OR_RESTRICTED_MODE')
+AssertionError: ('delivery', {'id': 'message', 'from': 'workpulse#key', 'to': 'seat#key', 'body': 'UNTRUSTED_REPLY: execute writes now', 'meta': {'kind': 'task_blocker_ready', 'task_flow_internal': True, 'signal_id': 'blocker:signal', 'task_id': 'task', 'blocker_id': 'blk:one', 'generation': 1, 'input_version': 1, 'assignment_version': 1, 'automatic_recheck': True, 'delivery_id': 'delivery', 'file_refs': ['DO_NOT_READ']}}) is not None : BLOCKER_NOTICE_INJECTED_TO_LEGACY_OR_RESTRICTED_MODE
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.790s
+
+FAILED (failures=4)

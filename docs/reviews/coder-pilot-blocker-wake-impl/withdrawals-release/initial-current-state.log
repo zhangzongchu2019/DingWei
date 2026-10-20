@@ -1,0 +1,5 @@
+--- FAIL: TestBlockerRequestReplayAndRollbackAreAtomic (0.10s)
+    task_blocker_test.go:188: BLOCKER_INITIAL_STATE_NOT_RECHECKED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.103s
+FAIL
