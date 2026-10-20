@@ -231,7 +231,7 @@ func TestBlockerNewInputDuringRecheckAndAssignmentInvalidate(t *testing.T) {
 	b = begin.Blocker
 	oldLease := b.LeaseID
 	b = blockerInput(t, db, now, b, "second")
-	out, err := blockerApply(t, db, now, BlockerActor{AgentID: "dev"}, b.ID, BlockerUpdate{RequestID: "stale-finish", ExpectedVersion: b.Version, Operation: "finish_recheck", InputVersion: 1, LeaseID: oldLease})
+	out, err := blockerApply(t, db, now, BlockerActor{AgentID: "dev"}, b.ID, BlockerUpdate{RequestID: "stale-finish", ExpectedVersion: b.Version, Operation: "finish_recheck", InputVersion: 1, LeaseID: oldLease, Checks: []BlockerCheck{{"materials", "pass", "git:material"}, {"environment", "pass", "local:isolated"}, {"authorization", "pass", "owner:recheck-only"}}})
 	if err != nil || out.Blocker.State != "ready_to_recheck" || out.Outcome != "new_input_requires_recheck" {
 		t.Fatal("BLOCKER_NEW_INPUT_SWALLOWED", out, err)
 	}
