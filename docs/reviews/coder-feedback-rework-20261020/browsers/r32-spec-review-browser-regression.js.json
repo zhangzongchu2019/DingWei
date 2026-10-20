@@ -1,0 +1,13 @@
+{
+  "commit": "966d4884be7ec38c0518eaa465721731bbada671",
+  "argv": [
+    "node",
+    "view-service/r32-spec-review-browser-regression.js"
+  ],
+  "rc": 0,
+  "start": "2026-10-20T21:09:31.234700+00:00",
+  "end": "2026-10-20T21:09:32.722904+00:00",
+  "isolated_home": true,
+  "git_export": true,
+  "live_access": false
+}

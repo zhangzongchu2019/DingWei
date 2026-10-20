@@ -21,3 +21,11 @@ UI：5 秒只读轮询，不更新正在编辑表单的 CAS 版本；未知提�
 兼容：0059 为追加表；真实 r32.1 旧 Store 可启动并读取新库，保留新表/账本，不构成旧写路径兼容证明。回滚必须先冻结试点问题/任务写入和 worker，保留数据库与 outbox，不能让旧二进制绕过新增变更门。旧 helper 不识别新 IPC 工具时只提示升级；D3 不向 helper 增加一条会注入指令的通知信封，任务唤醒完全复用 D2 的受限核验提示。
 
 验收/限域及每项撤修读数见 docs/reviews/coder-pilot-feedback-impl/REPORT.md；任何本地 PASS 均不代表飞书真实投递或生产验收。
+
+## 第85条附注闭合
+
+- 真实processQuestions回归：QuestionSender同时给非空provider ID和error，通知unknown；再次process发送次数仍1。错误绝不被当作成功凭据，也不盲重发；保留provider原语UUID。
+- Prepare后的最后PG check失败且本次确定未调用provider：临时失败回queued、撤权cancelled。Prepare本身未提交则临时失败pending_config、撤权cancelled。恢复方法以outbox ID/问题/代次/收件人CAS；已sent/unknown/cancelled不回排队，过去dispatching且本次没有新Prepare证明时只能unknown，不能声称未发送。
+- question-context不再列全平台active用户。挂R9任务时按当前任务编组；仅挂spec时按owner创建或其当前active Agent所在编组并集；当前PG成员/用户/Agent锁内重核owner仍相关。仅owner可额外用allow_user明确输入最多20个稳定平台用户ID；已有policy的PM/leader属于owner先前显式选择，保留为允许人选。这只返回最小ID/显示名，不建立问题/任务授权；实际configure/assign仍重新鉴权。
+- contacts以稳定user ID升序、limit1–100（默认50）、5分钟加密游标分页；游标绑定actor/spec/task/显式集合/limit和当前授权摘要，变动409，不能沿旧游标读过期组。空白/旧协议游标不能枚举整个平台。当前最多200候选组，超出失败关闭；每页仍扫描相关组成员以生成摘要，不宣称增量索引优化。页面逐页载入，极大名单提示精确ID选择；未配置不猜姓名。
+- pm_user/leader_user在HTTP身份查找前及store幂等hash/写入前统一trim并小写，直接store调用同样规范；不改已发布schema/锁/版本，不做历史库改写。

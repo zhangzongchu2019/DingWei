@@ -339,3 +339,13 @@ func (s *SQLite) QuestionReferences(ctx context.Context, qid string) (PilotQuest
 	}
 	return q, err
 }
+
+// Only the trusted worker calls this when it knows the provider was NOT called.
+// CAS refuses sent/unknown/cancelled rows and old generation/recipient snapshots.
+func (s *SQLite) DeferUnsentQuestionNotice(ctx context.Context, n QuestionNotice, state string, preparedHere bool, now time.Time) error {
+	if state != "queued" && state != "pending_config" && state != "cancelled" {
+		return ErrTaskFlowInvalid
+	}
+	_, err := s.db.ExecContext(ctx, `UPDATE pilot_question_outbox SET state=CASE WHEN state='dispatching' AND NOT ? THEN 'unknown' ELSE ? END,reason=CASE WHEN state='dispatching' AND NOT ? THEN 'dispatch_receipt_unknown_no_retry' ELSE 'provider_not_attempted_authorization_recheck' END,attempted_at=CASE WHEN state='dispatching' AND NOT ? THEN attempted_at ELSE NULL END,finished_at=CASE WHEN (?='cancelled' OR (state='dispatching' AND NOT ?)) THEN ? ELSE NULL END WHERE id=? AND question_id=? AND generation=? AND recipient_user=? AND state IN('queued','pending_config','dispatching')`, preparedHere, state, preparedHere, preparedHere, state, preparedHere, now.UTC().Format(time.RFC3339Nano), n.ID, n.QuestionID, n.Generation, n.Recipient)
+	return err
+}

@@ -1,0 +1,6 @@
+--- FAIL: TestPilotQuestionReplyFirstCancelsNoticeAndUnknownNeverRetries (0.49s)
+    --- FAIL: TestPilotQuestionReplyFirstCancelsNoticeAndUnknownNeverRetries/unknown (0.28s)
+        pilot_question_test.go:204: QUESTION_UNKNOWN_NOTICE_RETRIED true <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.492s
+FAIL

@@ -1,0 +1,134 @@
+[
+  {
+    "pair": 1,
+    "source": "48befea2bfbd8cbe0685f35be5a8c5fbbfad4576",
+    "label": "baseline",
+    "argv": [
+      "go",
+      "test",
+      "./internal/consolemux",
+      "./internal/m8",
+      "-json",
+      "-count=1",
+      "-run",
+      "^TestBudgetRealPGDeadlineAndCapacity$|^TestTerminalViewEmptyBufferRequestsRefresh$",
+      "-timeout=3m"
+    ],
+    "rc": 0,
+    "start": "2026-10-20T21:25:33.425567+00:00",
+    "end": "2026-10-20T21:25:41.460130+00:00",
+    "isolated_home": true,
+    "offline": true,
+    "external_dsn": false
+  },
+  {
+    "pair": 1,
+    "source": "5175f2cee711a68ccd0ee3982213ed61bf9a6c85",
+    "label": "final",
+    "argv": [
+      "go",
+      "test",
+      "./internal/consolemux",
+      "./internal/m8",
+      "-json",
+      "-count=1",
+      "-run",
+      "^TestBudgetRealPGDeadlineAndCapacity$|^TestTerminalViewEmptyBufferRequestsRefresh$",
+      "-timeout=3m"
+    ],
+    "rc": 0,
+    "start": "2026-10-20T21:25:41.460600+00:00",
+    "end": "2026-10-20T21:25:49.497669+00:00",
+    "isolated_home": true,
+    "offline": true,
+    "external_dsn": false
+  },
+  {
+    "pair": 2,
+    "source": "48befea2bfbd8cbe0685f35be5a8c5fbbfad4576",
+    "label": "baseline",
+    "argv": [
+      "go",
+      "test",
+      "./internal/consolemux",
+      "./internal/m8",
+      "-json",
+      "-count=1",
+      "-run",
+      "^TestBudgetRealPGDeadlineAndCapacity$|^TestTerminalViewEmptyBufferRequestsRefresh$",
+      "-timeout=3m"
+    ],
+    "rc": 0,
+    "start": "2026-10-20T21:25:49.498071+00:00",
+    "end": "2026-10-20T21:25:53.519474+00:00",
+    "isolated_home": true,
+    "offline": true,
+    "external_dsn": false
+  },
+  {
+    "pair": 2,
+    "source": "5175f2cee711a68ccd0ee3982213ed61bf9a6c85",
+    "label": "final",
+    "argv": [
+      "go",
+      "test",
+      "./internal/consolemux",
+      "./internal/m8",
+      "-json",
+      "-count=1",
+      "-run",
+      "^TestBudgetRealPGDeadlineAndCapacity$|^TestTerminalViewEmptyBufferRequestsRefresh$",
+      "-timeout=3m"
+    ],
+    "rc": 0,
+    "start": "2026-10-20T21:25:53.519875+00:00",
+    "end": "2026-10-20T21:25:57.592483+00:00",
+    "isolated_home": true,
+    "offline": true,
+    "external_dsn": false
+  },
+  {
+    "pair": 3,
+    "source": "48befea2bfbd8cbe0685f35be5a8c5fbbfad4576",
+    "label": "baseline",
+    "argv": [
+      "go",
+      "test",
+      "./internal/consolemux",
+      "./internal/m8",
+      "-json",
+      "-count=1",
+      "-run",
+      "^TestBudgetRealPGDeadlineAndCapacity$|^TestTerminalViewEmptyBufferRequestsRefresh$",
+      "-timeout=3m"
+    ],
+    "rc": 0,
+    "start": "2026-10-20T21:25:57.592919+00:00",
+    "end": "2026-10-20T21:26:01.764776+00:00",
+    "isolated_home": true,
+    "offline": true,
+    "external_dsn": false
+  },
+  {
+    "pair": 3,
+    "source": "5175f2cee711a68ccd0ee3982213ed61bf9a6c85",
+    "label": "final",
+    "argv": [
+      "go",
+      "test",
+      "./internal/consolemux",
+      "./internal/m8",
+      "-json",
+      "-count=1",
+      "-run",
+      "^TestBudgetRealPGDeadlineAndCapacity$|^TestTerminalViewEmptyBufferRequestsRefresh$",
+      "-timeout=3m"
+    ],
+    "rc": 0,
+    "start": "2026-10-20T21:26:01.765215+00:00",
+    "end": "2026-10-20T21:26:05.886723+00:00",
+    "isolated_home": true,
+    "offline": true,
+    "external_dsn": false
+  }
+]

@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionCancelPreservesPendingBusinessProposal (0.18s)
+    pilot_question_test.go:555: QUESTION_CANCEL_DROPPED_PENDING_CHANGE_GATE <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.181s
+FAIL

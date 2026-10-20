@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionCASAndClockRollbackFailClosed (0.12s)
+    pilot_question_test.go:394: QUESTION_CLOCK_ROLLBACK_ANSWER <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.120s
+FAIL

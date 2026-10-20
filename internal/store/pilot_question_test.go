@@ -555,3 +555,62 @@ func TestPilotQuestionCancelPreservesPendingBusinessProposal(t *testing.T) {
 		t.Fatal("QUESTION_CANCEL_DROPPED_PENDING_CHANGE_GATE", err)
 	}
 }
+
+func TestPilotQuestionRecipientCaseCanonicalBeforeHash(t *testing.T) {
+	db, now, c := questionFixture(t)
+	spec, err := db.QuestionAuthorizationContext(context.Background(), c.SpecID, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	u := QuestionUpdate{RequestID: "case-policy", ExpectedVersion: 1, PMUser: "PM", LeaderUser: "LEADER"}
+	policy, err := db.SetQuestionPolicy(context.Background(), spec, BlockerActor{UserID: "owner-a"}, u, func() error { return nil }, now)
+	if err != nil || policy.PMUser != "pm" || policy.LeaderUser != "leader" {
+		t.Fatal("QUESTION_STORE_POLICY_CASE", policy, err)
+	}
+	u.PMUser = "pm"
+	u.LeaderUser = "leader"
+	if _, err = db.SetQuestionPolicy(context.Background(), spec, BlockerActor{UserID: "owner-a"}, u, func() error { return nil }, now); err != nil {
+		t.Fatal("QUESTION_POLICY_CASE_CHANGED_REPLAY_HASH", err)
+	}
+	q := questionCreate(t, db, now, "technical")
+	out, err := questionApply(t, db, now, BlockerActor{UserID: "owner-a"}, q.ID, QuestionUpdate{RequestID: "case-assign", Operation: "assign", ExpectedVersion: q.Version, PMUser: "PM", LeaderUser: "LEADER"})
+	if err != nil || out.Question.PMUser != "pm" || out.Question.LeaderUser != "leader" {
+		t.Fatal("QUESTION_STORE_ASSIGN_CASE", out, err)
+	}
+}
+
+func TestPilotQuestionOldDispatchCannotResetToUnsent(t *testing.T) {
+	db, now, _ := questionFixture(t)
+	q := questionCreate(t, db, now, "technical")
+	ctx := context.Background()
+	ns, err := db.PendingQuestionNotices(ctx, "")
+	if err != nil || len(ns) != 1 {
+		t.Fatal(err, ns)
+	}
+	n := ns[0]
+	c, err := db.QuestionAuthorizationContext(ctx, "", "", q.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ready, e := db.PrepareQuestionNotice(ctx, c, n, true, func() error { return nil }, now); e != nil || !ready {
+		t.Fatal(e, ready)
+	}
+	if err = db.DeferUnsentQuestionNotice(ctx, n, "pending_config", false, now); err != nil {
+		t.Fatal(err)
+	}
+	var state string
+	db.db.QueryRow(`SELECT state FROM pilot_question_outbox WHERE id=?`, n.ID).Scan(&state)
+	if state != "unknown" {
+		t.Fatal("QUESTION_OLD_DISPATCH_RESET_AS_UNSENT", state)
+	}
+	if _, ready, e := db.PrepareQuestionNotice(ctx, c, n, true, func() error { return nil }, now); e != nil || ready {
+		t.Fatal("QUESTION_OLD_DISPATCH_RETRIED", e, ready)
+	}
+	if err = db.DeferUnsentQuestionNotice(ctx, n, "queued", true, now); err != nil {
+		t.Fatal(err)
+	}
+	db.db.QueryRow(`SELECT state FROM pilot_question_outbox WHERE id=?`, n.ID).Scan(&state)
+	if state != "unknown" {
+		t.Fatal("QUESTION_UNKNOWN_RESET_AS_UNSENT", state)
+	}
+}

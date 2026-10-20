@@ -1,0 +1,6 @@
+--- FAIL: TestPilotQuestionReplyFirstCancelsNoticeAndUnknownNeverRetries (0.73s)
+    --- FAIL: TestPilotQuestionReplyFirstCancelsNoticeAndUnknownNeverRetries/reply_first (0.44s)
+        pilot_question_test.go:198: QUESTION_REPLY_FIRST_REMINDER_SENT true <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.742s
+FAIL

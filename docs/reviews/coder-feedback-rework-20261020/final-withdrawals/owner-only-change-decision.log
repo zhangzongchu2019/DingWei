@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionBusinessChangeBlocksAllOldScopeAndNeedsHumanDecision (0.12s)
+    pilot_question_test.go:283: QUESTION_PM_OWNER_DECISION <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.122s
+FAIL

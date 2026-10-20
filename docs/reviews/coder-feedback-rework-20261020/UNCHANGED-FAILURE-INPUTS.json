@@ -1,0 +1,37 @@
+{
+  "baseline": "48befea2bfbd8cbe0685f35be5a8c5fbbfad4576",
+  "final_tree": "5175f2cee711a68ccd0ee3982213ed61bf9a6c85",
+  "entries": [
+    {
+      "path": "internal/consolemux",
+      "baseline_blob_or_tree": "ec4be32aebfe756786f20b19a1e68fc687af05b2",
+      "final_blob_or_tree": "ec4be32aebfe756786f20b19a1e68fc687af05b2",
+      "equal": true
+    },
+    {
+      "path": "internal/repo",
+      "baseline_blob_or_tree": "dae2625df5cece730322367183fa4363db18ba6a",
+      "final_blob_or_tree": "dae2625df5cece730322367183fa4363db18ba6a",
+      "equal": true
+    },
+    {
+      "path": "internal/store/pgtest",
+      "baseline_blob_or_tree": "5ab2c17ce8690cd8d1a9794650db10e57ec219f4",
+      "final_blob_or_tree": "5ab2c17ce8690cd8d1a9794650db10e57ec219f4",
+      "equal": true
+    },
+    {
+      "path": "internal/m8/hub.go",
+      "baseline_blob_or_tree": "c7f1dfa0e7dbd775d3d17a855f3da9c8a255b4be",
+      "final_blob_or_tree": "c7f1dfa0e7dbd775d3d17a855f3da9c8a255b4be",
+      "equal": true
+    },
+    {
+      "path": "internal/m8/hub_test.go",
+      "baseline_blob_or_tree": "a60da5578ebce07d74f5a863aecbe95b8c4c2241",
+      "final_blob_or_tree": "a60da5578ebce07d74f5a863aecbe95b8c4c2241",
+      "equal": true
+    }
+  ],
+  "limit": "Exact listed paths unchanged; this alone does not establish failure cause or whole-process equivalence."
+}

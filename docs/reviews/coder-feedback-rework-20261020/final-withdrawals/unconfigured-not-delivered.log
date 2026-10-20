@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionUnconfiguredNeverClaimsSent (0.11s)
+    pilot_question_test.go:230: QUESTION_UNCONFIGURED_SENT true <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.118s
+FAIL

@@ -1,0 +1,5 @@
+--- FAIL: TestPilotQuestionAnswerAtomicAndUsesOnlyD2Wake (0.09s)
+    pilot_question_test.go:84: QUESTION_EVENT_REPLACED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.096s
+FAIL
