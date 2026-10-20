@@ -47,6 +47,7 @@ class IPCStartupIsolationTests(unittest.IsolatedAsyncioTestCase):
                     setattr(helper, name, lambda ws: None)
 
                 helper._make_task_flow_handler = lambda: None
+                helper._make_project_context_handler = lambda: None
 
                 async def optional_ipc(ws):
                     try:

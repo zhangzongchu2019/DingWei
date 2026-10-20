@@ -48,7 +48,7 @@ CASES=[
 
 def run(commit,out):
     out=Path(out).resolve();out.mkdir(parents=True,exist_ok=True)
-    exported=subprocess.check_output(['git','-C',str(ROOT),'archive',commit,'internal','cmd','view-service','tools/sessionhelper','go.mod','go.sum','VERSION'])
+    exported=subprocess.check_output(['git','-C',str(ROOT),'archive',commit,'internal','cmd','view-service','tools/sessionhelper','tools/pgtest','go.mod','go.sum','VERSION'])
     results=[]
     with tempfile.TemporaryDirectory(prefix='pc-withdraw-') as temp:
         root=Path(temp)/'source';root.mkdir()
@@ -56,6 +56,11 @@ def run(commit,out):
         home=Path(temp)/'home';home.mkdir(mode=0o700)
         pyenv={'HOME':str(home),'PATH':str(Path(PYTHON).parent)+':/usr/bin:/bin','PYTHONPATH':str(root/'tools/sessionhelper'),'PYTHONDONTWRITEBYTECODE':'1','LANG':'C.UTF-8'}
         goenv=dict(os.environ);goenv.pop('HUB_TEST_PG_DSN',None)
+        baseline_go=['go','test','./internal/m8','./internal/identity','./internal/store','-count=1','-run','^TestProjectContext']
+        for label,cmd,env in [('baseline-go',baseline_go,goenv),('baseline-python',PYCMD,pyenv)]:
+            p=subprocess.run(cmd,cwd=root,env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=180)
+            (out/(label+'.log')).write_text(p.stdout)
+            if p.returncode:raise AssertionError('export baseline failed '+label)
         for name,filename,old,new,cmd,marker in CASES:
             path=root/filename;original=path.read_text()
             if old not in original:raise AssertionError('missing mutation target '+name)
@@ -81,7 +86,7 @@ def run(commit,out):
             (out/'RESULTS.json').write_text(json.dumps({'commit':commit,'cases':results},indent=2)+'\n')
             print(name,rc,ok,flush=True)
             if not ok:raise AssertionError('withdrawal did not reach designated assertion: '+name)
-        for label,cmd,env in [('go-restored',GOM8+['^TestProjectContext'],goenv),('python-restored',PYCMD,pyenv)]:
+        for label,cmd,env in [('go-restored',baseline_go,goenv),('python-restored',PYCMD,pyenv)]:
             p=subprocess.run(cmd,cwd=root,env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=180)
             (out/(label+'.log')).write_text(p.stdout)
             if p.returncode:raise AssertionError('restore failed '+label)
