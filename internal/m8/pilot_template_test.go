@@ -153,3 +153,37 @@ func TestPilotTemplateHTTPActualConfirmRemainsEditing(t *testing.T) {
 		t.Fatal("TEMPLATE_HTTP_CONFIRM_FINAL_OR_EXECUTED", spec, err)
 	}
 }
+func TestPilotTemplateListSummariesFitBoundedHelperRead(t *testing.T) {
+	e, v := templateHTTPFixture(t)
+	d := v.Document
+	d.Defaults.Method = strings.Repeat("m", 6000)
+	d.Entries = nil
+	for i := 0; i < 40; i++ {
+		d.Entries = append(d.Entries, store.TemplateEntry{ID: fmt.Sprintf("R%d", i+1), Kind: "requirement", Title: "bounded large contract", OwnerRef: "R1"})
+	}
+	var id string
+	for i := 0; i < 10; i++ {
+		d.Title = fmt.Sprintf("large-%d", i)
+		var saved store.TemplateView
+		err := e.hub.withTemplateIdentity(e.ctx, blockerCredential{actor: store.BlockerActor{UserID: "zzc"}}, store.TemplateReferences{Owner: "zzc"}, &d, func(snap store.TemplatePrincipalSnapshot, check func() error) error {
+			var x error
+			saved, x = e.db.SaveTemplateDraft(e.ctx, "zzc", "", store.TemplateOperation{RequestID: fmt.Sprintf("large-%d", i), Document: &d}, snap, check, e.hub.now())
+			return x
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		id = saved.ID
+	}
+	out := templateHTTP(e, "GET", "", e.zKimiCred, "", "", "/api/agent/console/spec-templates")
+	if out.Code != 200 || out.Body.Len() > 64<<10 {
+		t.Fatal("TEMPLATE_LIST_EXCEEDS_HELPER_READ_BOUND", out.Code, out.Body.Len())
+	}
+	if strings.Contains(out.Body.String(), strings.Repeat("m", 50)) || strings.Contains(out.Body.String(), "PRIVATE_RAW_SOURCE") {
+		t.Fatal("TEMPLATE_LIST_REPEATS_PRIVATE_CONTRACTS")
+	}
+	detail := templateHTTP(e, "GET", id, e.zKimiCred, "", "", "/api/agent/console/spec-templates/x")
+	if detail.Code != 200 || detail.Body.Len() < 200<<10 {
+		t.Fatal("TEMPLATE_DETAIL_CONTRACT_LOST", detail.Code, detail.Body.Len())
+	}
+}

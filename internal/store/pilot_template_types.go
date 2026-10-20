@@ -110,6 +110,8 @@ type TemplateImpact struct {
 	Limit       int      `json:"limit"`
 }
 type TemplateView struct {
+	Summary             bool              `json:"summary"`
+	MissingCount        int               `json:"missing_count,omitempty"`
 	Impact              *TemplateImpact   `json:"impact,omitempty"`
 	ID                  string            `json:"draft_id"`
 	Owner               string            `json:"owner_principal"`

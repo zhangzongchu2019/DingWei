@@ -201,8 +201,17 @@ func (h *Hub) HandleTemplateDraft(w http.ResponseWriter, r *http.Request) {
 				taskError(w, x)
 				return
 			}
+			// Lists are summaries. Repeating up to 100 full 512KiB contracts
+			// would exceed the helper's bounded read and disclose unnecessary
+			// details before the caller selects a single invitation.
+			v.Summary = true
+			v.MissingCount = len(v.Missing)
+			v.Document = store.TemplateDocument{Title: v.Document.Title, Kind: v.Document.Kind, TemplateVersion: v.Document.TemplateVersion}
 			v.ContentMarkdown = ""
-			v.Source.Content = ""
+			v.Source = store.TemplateSource{}
+			v.Missing = nil
+			v.Roles = nil
+			v.Impact = nil
 			out = append(out, v)
 		}
 		next := ""
