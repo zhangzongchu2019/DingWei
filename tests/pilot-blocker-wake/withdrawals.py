@@ -57,7 +57,7 @@ helper('notice-mode-fence','tools/sessionhelper/sessionhelper/app.py','if self.c
 
 store('replay-current-privacy','// A cached receipt never preserves former task-reading authority.\n\t\tif !canRead {','// A cached receipt never preserves former task-reading authority.\n\t\tif false && !canRead {','TestBlockerCachedReplyUsesCurrentReadingRights','BLOCKER_CACHED_REPLY_RETAINED_OLD_READING_AUTHORITY')
 
-store('adopt-revision-durable','b.SpecID, b.Revision, b.SHA, b.AssignmentVersion','b.SpecID, 1, b.SHA, b.AssignmentVersion','TestBlockerAdoptPersistsCurrentRevisionTuple','BLOCKER_ADOPT_REVISION_NOT_DURABLE')
+store('adopt-revision-durable','fingerprint=? WHERE id=?`, b.SpecID, b.Revision, b.SHA, b.AssignmentVersion','fingerprint=? WHERE id=?`, b.SpecID, 1, b.SHA, b.AssignmentVersion','TestBlockerAdoptPersistsCurrentRevisionTuple','BLOCKER_ADOPT_REVISION_NOT_DURABLE')
 store('adopt-current-fingerprint','b.Fingerprint = blockerFingerprint(b)','// fingerprint recomputation withdrawn','TestBlockerAdoptPersistsCurrentRevisionTuple','BLOCKER_ADOPT_FINGERPRINT_NOT_REBOUND')
 
 def run(args):
