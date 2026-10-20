@@ -70,13 +70,14 @@ func (h *Hub) withQuestionIdentity(ctx context.Context, c store.QuestionContext,
 	if strings.HasPrefix(q.Responsible, "user:") {
 		users = append(users, strings.TrimPrefix(q.Responsible, "user:"))
 	}
-	agents := []string{}
+	agents, mustActive := []string{}, []string{}
 	if strings.HasPrefix(q.Responsible, "agent:") {
 		agents = append(agents, strings.TrimPrefix(q.Responsible, "agent:"))
 	}
 	for _, id := range extra {
 		if strings.HasPrefix(id, "agent:") {
 			agents = append(agents, strings.TrimPrefix(id, "agent:"))
+			mustActive = append(mustActive, strings.TrimPrefix(id, "agent:"))
 		} else {
 			users = append(users, id)
 		}
@@ -88,7 +89,7 @@ func (h *Hub) withQuestionIdentity(ctx context.Context, c store.QuestionContext,
 		if claim != nil && !a.Allows(*claim) && !(ownerReadOrCancel && actor.actor.UserID == c.Owner) {
 			return identity.ErrForbidden
 		}
-		for _, id := range agents {
+		for _, id := range mustActive {
 			if !a.Active(id) {
 				return identity.ErrForbidden
 			}

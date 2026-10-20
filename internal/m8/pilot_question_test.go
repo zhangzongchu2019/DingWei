@@ -147,3 +147,36 @@ func TestPilotQuestionMessageNoPrivatePayloadAndOriginCannotBeClientSelected(t *
 		t.Fatal("QUESTION_FEISHU_PRIVATE_DATA_OR_CALLBACK_CONFUSION", body)
 	}
 }
+func TestPilotQuestionRevokedResponsibleDoesNotTrapOwnerCleanup(t *testing.T) {
+	e, _, state := r32FlowEnv(t)
+	q := questionHTTPCreate(t, e, state)
+	outside, _, err := e.svc.AuthenticateAgent(e.ctx, e.lKimiCr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := fmt.Sprintf(`{"request_id":"outside","operation":"assign","expected_version":%d,"pm_user":"zzc","leader_user":"zzc","responsible_principal":"agent:%s"}`, q.Version, outside.ID)
+	out := questionHTTP(e, "POST", q.ID, "", "zzc", body, "")
+	if out.Code != 200 {
+		t.Fatal("QUESTION_EXTERNAL_ASSIGN", out.Code, out.Body)
+	}
+	var assigned store.QuestionResult
+	if err = json.Unmarshal(out.Body.Bytes(), &assigned); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = e.svc.Store.Revoke(e.ctx, outside.ID, outside.OwnerLC, outside.OwnerLC, e.hub.now()); err != nil {
+		t.Fatal(err)
+	}
+	out = questionHTTP(e, "GET", q.ID, e.lKimiCr, "", "", "")
+	if out.Code != 403 {
+		t.Fatal("QUESTION_REVOKED_RESPONSIBLE_READ", out.Code, out.Body)
+	}
+	out = questionHTTP(e, "GET", q.ID, "", "zzc", "", "")
+	if out.Code != 200 {
+		t.Fatal("QUESTION_OWNER_TRAPPED_BY_REVOKED_RESPONSIBLE", out.Code, out.Body)
+	}
+	body = fmt.Sprintf(`{"request_id":"cleanup","operation":"cancel","expected_version":%d,"reason":"责任Agent已吊销，停止旧问题等待"}`, assigned.Question.Version)
+	out = questionHTTP(e, "POST", q.ID, "", "zzc", body, "")
+	if out.Code != 200 {
+		t.Fatal("QUESTION_OWNER_CANNOT_CANCEL_REVOKED_RESPONSIBLE", out.Code, out.Body)
+	}
+}
