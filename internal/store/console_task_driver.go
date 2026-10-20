@@ -57,6 +57,29 @@ func (s *SQLite) StartConsoleTaskDriver(ctx context.Context, start model.Console
 	if unresolved != 0 {
 		return ErrTaskFlowConflict
 	}
+	rows, e := tx.QueryContext(ctx, `SELECT id FROM console_spec_task WHERE spec_id=? AND revision=?`, start.SpecID, start.Revision)
+	if e != nil {
+		return e
+	}
+	ids := []string{}
+	for rows.Next() {
+		var id string
+		if e = rows.Scan(&id); e != nil {
+			rows.Close()
+			return e
+		}
+		ids = append(ids, id)
+	}
+	e = rows.Err()
+	rows.Close()
+	if e != nil {
+		return e
+	}
+	for _, id := range ids {
+		if e = templateTaskGate(ctx, tx, id, start.AnnouncedAt); e != nil {
+			return e
+		}
+	}
 	stamp := start.AnnouncedAt.UTC().Format(time.RFC3339Nano)
 	_, err = tx.ExecContext(ctx, `INSERT INTO console_task_driver_start(spec_id,revision,content_sha256,repository_name,branch_name,schedule,task_endpoint,token_instructions,announced_by,announced_at)
 		VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(spec_id,revision) DO UPDATE SET content_sha256=excluded.content_sha256,repository_name=excluded.repository_name,branch_name=excluded.branch_name,schedule=excluded.schedule,task_endpoint=excluded.task_endpoint,token_instructions=excluded.token_instructions,announced_by=excluded.announced_by,announced_at=excluded.announced_at`,

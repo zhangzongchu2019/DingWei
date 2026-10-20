@@ -42,10 +42,9 @@ func templateDecode(w http.ResponseWriter, r *http.Request, v any) bool {
 	return true
 }
 func templateSnapshot(a identity.ContextAuthorization) store.TemplatePrincipalSnapshot {
-	s := store.TemplatePrincipalSnapshot{Active: map[string]bool{}, AgentOwners: map[string]string{}, HumanTypes: map[string]string{}}
+	s := store.TemplatePrincipalSnapshot{Active: map[string]bool{}, AgentOwners: map[string]string{}}
 	for id, ok := range a.Users {
 		s.Active["user:"+id] = ok
-		s.HumanTypes["user:"+id] = a.HumanTypes[id]
 	}
 	for id, x := range a.Agents {
 		s.Active["agent:"+id] = a.Active(id)
@@ -244,6 +243,9 @@ func (h *Hub) HandleTemplateDraft(w http.ResponseWriter, r *http.Request) {
 		var err error
 		switch {
 		case r.Method == "GET":
+			if len(r.URL.Query()) != 0 {
+				return store.ErrTaskFlowInvalid
+			}
 			if _, x := templateAfter(r); x != nil {
 				return x
 			}

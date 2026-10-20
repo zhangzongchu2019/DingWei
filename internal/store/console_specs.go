@@ -1064,6 +1064,14 @@ func (s *SQLite) CreateConsoleTaskProposal(ctx context.Context, proposal model.C
 	if err = templateSpecGate(ctx, tx, proposal.SpecID, templateRev, time.Now()); err != nil {
 		return err
 	}
+	var templateEnrolled int
+	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM pilot_template_enrollment WHERE spec_id=?`, proposal.SpecID).Scan(&templateEnrolled); err != nil {
+		return err
+	}
+	if templateEnrolled > 0 && proposal.Status != "planned" && proposal.Status != "proposed" {
+		return ErrTaskFlowConflict
+	}
+
 	seen := map[string]bool{}
 	for _, dep := range dependsOn {
 		if dep == "" || dep == proposal.ID || seen[dep] {
@@ -1231,6 +1239,11 @@ func (s *SQLite) UpdateConsoleTaskProposalPlanAuthorized(ctx context.Context, pr
 	flowErr := tx.QueryRowContext(ctx, `SELECT group_code,status FROM console_spec_task WHERE id=?`, proposalID).Scan(&flowGroup, &currentState)
 	if flowErr != nil && !errors.Is(flowErr, sql.ErrNoRows) {
 		return flowErr
+	}
+	if flowGroup == "" && (status == "in_progress" || status == "done") {
+		if err = templateTaskGate(ctx, tx, proposalID, time.Now()); err != nil {
+			return err
+		}
 	}
 	if flowGroup != "" {
 		if status == "proposed" {

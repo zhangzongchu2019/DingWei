@@ -67,9 +67,9 @@ func templateSpecGate(ctx context.Context, q taskQuery, spec string, revision in
 	return nil
 }
 func templateTaskGate(ctx context.Context, q taskQuery, task string, now time.Time, pair ...string) error {
-	var spec string
+	var spec, group string
 	var revision, current, impacts int
-	if err := q.QueryRowContext(ctx, `SELECT t.spec_id,t.revision,s.current_revision FROM console_spec_task t JOIN console_spec s ON s.id=t.spec_id WHERE t.id=?`, task).Scan(&spec, &revision, &current); err != nil {
+	if err := q.QueryRowContext(ctx, `SELECT t.spec_id,t.revision,s.current_revision,t.group_code FROM console_spec_task t JOIN console_spec s ON s.id=t.spec_id WHERE t.id=?`, task).Scan(&spec, &revision, &current, &group); err != nil {
 		return err
 	}
 	if err := q.QueryRowContext(ctx, `SELECT count(*) FROM pilot_template_impact WHERE predecessor_spec_id=? AND predecessor_revision=?`, spec, revision).Scan(&impacts); err != nil {
@@ -84,6 +84,9 @@ func templateTaskGate(ctx context.Context, q taskQuery, task string, now time.Ti
 	}
 	if enrolled == 0 {
 		return nil
+	}
+	if len(pair) != 2 && group == "" {
+		return ErrTaskFlowConflict
 	}
 	if current != revision {
 		return ErrTaskFlowConflict

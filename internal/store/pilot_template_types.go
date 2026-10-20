@@ -141,7 +141,6 @@ type TemplateReferences struct {
 type TemplatePrincipalSnapshot struct {
 	Active      map[string]bool
 	AgentOwners map[string]string
-	HumanTypes  map[string]string
 }
 
 var templateID = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`)

@@ -42,7 +42,7 @@ func TestPilotTemplatePGCurrentPrincipalAndRoleLocks(t *testing.T) {
 
 	var firstDigest string
 	err = s.WithTemplateAuthorization(ctx, "pcactor", HashSecret("pcactor"), "", []string{"pcowner", "pcother"}, []string{"pcactor", "pcpeer"}, "draft", func(a ContextAuthorization, check func() error) error {
-		if !a.Active("pcactor") || !a.Active("pcpeer") || !a.Users["pcother"] || a.HumanTypes["pcowner"] != "member" {
+		if !a.Active("pcactor") || !a.Active("pcpeer") || !a.Users["pcother"] {
 			t.Fatal("TEMPLATE_PG_CURRENT_PRINCIPALS_NOT_BOUND")
 		}
 

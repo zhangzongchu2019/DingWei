@@ -23,8 +23,7 @@ func (s *SQLite) UpdateTemplateResponsibility(ctx context.Context, expected Temp
 		return out, ErrTaskFlowPermission
 	}
 	if u.Role == "full_review" {
-		kind := snapshot.HumanTypes[a.Key()]
-		if a.UserID == "" || kind != "manager" && kind != "platform_admin" || !u.ConfirmHuman || templateUnknown(u.Reason) {
+		if a.UserID == "" || !u.ConfirmHuman || templateUnknown(u.Reason) {
 			return out, ErrTaskFlowPermission
 		}
 	}
