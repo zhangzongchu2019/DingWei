@@ -49,6 +49,11 @@ func templateSpecGate(ctx context.Context, q taskQuery, spec string, revision in
 	if source.State != "ready" || templateContentSHA(source.Content) != source.SHA || len(templateValidate(d, source, now)) != 0 {
 		return ErrConsoleSpecGate
 	}
+	if missing, e := templateDraftDowngrade(ctx, q, draft, version, d); e != nil {
+		return e
+	} else if len(missing) > 0 {
+		return ErrConsoleSpecGate
+	}
 	// Target CAS constraints apply only while preparing that revision, not after
 	// it was atomically created. Parent references remain immutable live guards.
 	parentOnly := d

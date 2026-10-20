@@ -103,6 +103,11 @@ func templateLoadView(ctx context.Context, q taskQuery, id string, a BlockerActo
 		return out, err
 	}
 	out.Missing = templateValidate(out.Document, out.Source, now)
+	downgrade, e := templateDraftDowngrade(ctx, q, id, ref.Version, out.Document)
+	if e != nil {
+		return out, e
+	}
+	out.Missing = append(out.Missing, downgrade...)
 	crossDoc := out.Document
 	if ref.State == "confirmed" {
 		crossDoc.TargetSpecID = ""
@@ -332,4 +337,20 @@ func (s *SQLite) TemplateParents(ctx context.Context, owner, after string) ([]ma
 		out = append(out, map[string]any{"spec_id": id, "title": title, "revision": n, "content_sha256": sha})
 	}
 	return out, rows.Err()
+}
+
+// A pending preview is versioned too. Removing a known production/security flag
+// from its next version must not erase the downgrade trail before first confirm.
+func templateDraftDowngrade(ctx context.Context, q taskQuery, id string, version int, d TemplateDocument) ([]TemplateMissing, error) {
+	if d.RequestedMode != "light" || version <= 1 {
+		return nil, nil
+	}
+	var n int
+	if err := q.QueryRowContext(ctx, `SELECT count(*) FROM pilot_template_revision WHERE draft_id=? AND version<? AND mode='full'`, id, version).Scan(&n); err != nil {
+		return nil, err
+	}
+	if n > 0 && (templateUnknown(d.DowngradeReason) || templateUnknown(d.RiskClearanceReference)) {
+		return []TemplateMissing{{"downgrade_reason", "prior_full_draft_requires_new_owner_risk_clearance"}}, nil
+	}
+	return nil, nil
 }

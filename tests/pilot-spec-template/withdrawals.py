@@ -38,6 +38,7 @@ case('helper-strict-integer-version',P,"type(body['expected_version']) is not in
 case('helper-no-human-operation',P,"body['role'] not in ('executor','reviewer')","body['role'] not in ('executor','reviewer','signoff','full_review')",'','TEMPLATE_MCP_HUMAN_BOUNDARY','python')
 case('helper-query-disjoint',P,"if not draft or body:raise ValueError('invalid template query')","if not draft:raise ValueError('invalid template query')",'','TEMPLATE_MCP_READ_SCOPE_WEAK','python')
 case('legacy-proposals-preserved',G,"SELECT t.spec_id,t.revision,s.current_revision,COALESCE(f.group_code,'') FROM (`+refs+`) t JOIN console_spec s ON s.id=t.spec_id LEFT JOIN console_spec_task f ON f.id=t.id WHERE t.id=?","SELECT t.spec_id,t.revision,s.current_revision,t.group_code FROM console_spec_task t JOIN console_spec s ON s.id=t.spec_id WHERE t.id=?",'TestPilotTemplateUnenrolledLegacyProposalStillStarts','TEMPLATE_BROKE_UNENROLLED_LEGACY_PROPOSAL')
+case('pending-draft-downgrade-trail',D,'if n > 0 && (templateUnknown(d.DowngradeReason) || templateUnknown(d.RiskClearanceReference)) {','if false {','TestPilotTemplatePendingFullCannotSilentlyDowngrade','TEMPLATE_PENDING_FULL_SILENTLY_DOWNGRADED')
 # A real PG lock schedule, rather than sleep-and-assume concurrency evidence.
 case('pg-current-actor-row-lock','internal/identity/project_context.go','FROM np_agent WHERE id=$1 FOR SHARE','FROM np_agent WHERE id=$1','TestPilotTemplatePGCurrentPrincipalAndRoleLocks','TEMPLATE_PG_AUTH_LOCK_NOT_HELD','./internal/identity')
 

@@ -688,3 +688,39 @@ func TestPilotTemplateUnenrolledLegacyProposalStillStarts(t *testing.T) {
 		t.Fatal("TEMPLATE_AMBIGUOUS_TASK_ID_ACCEPTED", err)
 	}
 }
+func TestPilotTemplatePendingFullCannotSilentlyDowngrade(t *testing.T) {
+	s, now, d, snap := templateFixture(t)
+	d.Security = true
+	v := templateSave(t, s, now, d, snap, "full-preview")
+	d.Security = false
+	d.RequestedMode = "light"
+	v2, e := s.SaveTemplateDraft(context.Background(), "owner-a", v.ID, TemplateOperation{RequestID: "remove-risk", ExpectedVersion: 1, Document: &d}, snap, func() error { return nil }, now)
+	if e != nil {
+		t.Fatal(e)
+	}
+	found := false
+	for _, m := range v2.Missing {
+		if m.Reason == "prior_full_draft_requires_new_owner_risk_clearance" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("TEMPLATE_PENDING_FULL_SILENTLY_DOWNGRADED")
+	}
+	d.DowngradeReason = "security-sensitive work removed from this scope"
+	d.RiskClearanceReference = "git:owner-risk-clearance"
+	v3, e := s.SaveTemplateDraft(context.Background(), "owner-a", v.ID, TemplateOperation{RequestID: "explicit-clearance", ExpectedVersion: 2, Document: &d}, snap, func() error { return nil }, now)
+	if e != nil {
+		t.Fatal(e)
+	}
+	for _, m := range v3.Missing {
+		if m.Path == "downgrade_reason" {
+			t.Fatal("TEMPLATE_EXPLICIT_DOWNGRADE_CLEARANCE_REJECTED")
+		}
+	}
+	v3 = templateAcceptAll(t, s, now, v3, snap)
+	v3 = templateConfirm(t, s, now, v3, snap)
+	if v3.Mode != "light" || v3.ExecutionAuthorized {
+		t.Fatal("TEMPLATE_DOWNGRADE_CONFIRM_CHANGED_MODE_OR_AUTH")
+	}
+}
