@@ -1,0 +1,6 @@
+--- FAIL: TestClarificationDirectInboundGuardFields (0.11s)
+    --- FAIL: TestClarificationDirectInboundGuardFields/parent (0.11s)
+        spec_clarification_guard_test.go:57: CLARIFICATION_DIRECT_PARENT_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.116s
+FAIL

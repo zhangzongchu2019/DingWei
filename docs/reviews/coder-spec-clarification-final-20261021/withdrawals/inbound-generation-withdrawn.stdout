@@ -1,0 +1,6 @@
+--- FAIL: TestClarificationDirectInboundGuardFields (0.15s)
+    --- FAIL: TestClarificationDirectInboundGuardFields/generation (0.15s)
+        spec_clarification_guard_test.go:57: CLARIFICATION_DIRECT_GENERATION_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.150s
+FAIL

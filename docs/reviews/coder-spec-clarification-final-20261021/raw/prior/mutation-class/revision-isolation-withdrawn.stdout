@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationPublicRevisionDoesNotInheritOldThread (0.12s)
+    spec_clarification_guard_test.go:106: CLARIFICATION_PUBLIC_REVISION_CROSS_BIND 1 <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.125s
+FAIL

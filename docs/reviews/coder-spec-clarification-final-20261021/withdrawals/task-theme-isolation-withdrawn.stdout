@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationContextProjectionChangesCursorWithoutReopeningTask (0.14s)
+    spec_clarification_projection_test.go:64: CLARIFICATION_CONTEXT_OTHER_THEME_LEAK
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.144s
+FAIL

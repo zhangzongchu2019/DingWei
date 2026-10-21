@@ -1,0 +1,16 @@
+F
+======================================================================
+FAIL: test_wire_route_is_technical_no_auto_retry_no_redirect (test_spec_clarification.ClarificationToolTest.test_wire_route_is_technical_no_auto_retry_no_redirect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/clar-withdraw-5ueuea65/tools/sessionhelper/tests/test_spec_clarification.py", line 60, in test_wire_route_is_technical_no_auto_retry_no_redirect
+    self.assertEqual(seen[0][1]['kind'],'technical','CLARIFICATION_AGENT_WIRE_AUTHORITY')
+AssertionError: 'explanation' != 'technical'
+- explanation
++ technical
+ : CLARIFICATION_AGENT_WIRE_AUTHORITY
+
+----------------------------------------------------------------------
+Ran 1 test in 0.520s
+
+FAILED (failures=1)

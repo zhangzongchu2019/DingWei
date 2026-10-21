@@ -1,0 +1,10 @@
+E
+======================================================================
+ERROR: ClarificationTests (unittest.loader._FailedTest.ClarificationTests)
+----------------------------------------------------------------------
+AttributeError: module 'test_spec_clarification' has no attribute 'ClarificationTests'. Did you mean: 'ClarificationToolTest'?
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

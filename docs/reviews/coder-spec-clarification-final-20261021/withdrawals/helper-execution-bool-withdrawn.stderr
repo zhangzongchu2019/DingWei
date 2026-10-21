@@ -1,0 +1,16 @@
+F
+======================================================================
+FAIL: test_response_is_data_without_execution (test_spec_clarification.ClarificationToolTest.test_response_is_data_without_execution)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/clar-withdraw-5ueuea65/tools/sessionhelper/tests/test_spec_clarification.py", line 92, in test_response_is_data_without_execution
+    self.assertEqual(out['status'],'error','CLARIFICATION_HELPER_EXECUTION_FLAG_WEAK')
+AssertionError: 'ok' != 'error'
+- ok
++ error
+ : CLARIFICATION_HELPER_EXECUTION_FLAG_WEAK
+
+----------------------------------------------------------------------
+Ran 1 test in 0.051s
+
+FAILED (failures=1)

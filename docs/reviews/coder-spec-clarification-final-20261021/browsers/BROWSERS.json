@@ -1,0 +1,34 @@
+[
+  {
+    "suite": "spec-clarification-browser-regression",
+    "rc": 0
+  },
+  {
+    "suite": "spec-clarification-mobile-flow-regression",
+    "rc": 0
+  },
+  {
+    "suite": "pilot-spec-template-browser-regression",
+    "rc": 0
+  },
+  {
+    "suite": "pilot-feedback-browser-regression",
+    "rc": 0
+  },
+  {
+    "suite": "pilot-blocker-wake-browser-regression",
+    "rc": 0
+  },
+  {
+    "suite": "console-specs-browser-regression",
+    "rc": 0
+  },
+  {
+    "suite": "r32-task-flow-browser-regression",
+    "rc": 0
+  },
+  {
+    "suite": "r32-spec-review-browser-regression",
+    "rc": 0
+  }
+]

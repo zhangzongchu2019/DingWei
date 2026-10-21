@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationContextProjectionChangesCursorWithoutReopeningTask (0.15s)
+    spec_clarification_projection_test.go:53: CLARIFICATION_CONTEXT_CURSOR_NOT_INVALIDATED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.157s
+FAIL

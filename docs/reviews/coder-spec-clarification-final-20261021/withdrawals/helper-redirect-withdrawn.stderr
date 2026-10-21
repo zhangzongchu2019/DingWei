@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_wire_route_is_technical_no_auto_retry_no_redirect (test_spec_clarification.ClarificationToolTest.test_wire_route_is_technical_no_auto_retry_no_redirect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/clar-withdraw-5ueuea65/tools/sessionhelper/tests/test_spec_clarification.py", line 57, in test_wire_route_is_technical_no_auto_retry_no_redirect
+    self.assertEqual(len(seen),1,'CLARIFICATION_REDIRECT_CREDENTIAL_LEAK')
+AssertionError: 2 != 1 : CLARIFICATION_REDIRECT_CREDENTIAL_LEAK
+
+----------------------------------------------------------------------
+Ran 1 test in 0.035s
+
+FAILED (failures=1)

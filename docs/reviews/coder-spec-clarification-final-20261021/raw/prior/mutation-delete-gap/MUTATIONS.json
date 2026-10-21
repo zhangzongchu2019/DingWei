@@ -1,0 +1,70 @@
+{
+  "source": "0fe752bb14a15047aeae6a52970a2e912b2023bc",
+  "rows": [
+    {
+      "id": "post-update",
+      "file": "internal/store/migrations/0061_spec_clarification_thread.sql",
+      "old": "CREATE TRIGGER spec_clarification_post_no_update BEFORE UPDATE ON spec_clarification_post",
+      "new": "CREATE TRIGGER spec_clarification_post_no_update BEFORE UPDATE ON spec_clarification_post WHEN 0",
+      "count": 1,
+      "test": "TestClarificationAppendReplayAndEqualTextSupplement",
+      "marker": "CLARIFICATION_METADATA_MUTABLE",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAppendReplayAndEqualTextSupplement$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "post-delete",
+      "file": "internal/store/migrations/0061_spec_clarification_thread.sql",
+      "old": "CREATE TRIGGER spec_clarification_post_no_delete BEFORE DELETE ON spec_clarification_post",
+      "new": "CREATE TRIGGER spec_clarification_post_no_delete BEFORE DELETE ON spec_clarification_post WHEN 0",
+      "count": 1,
+      "test": "TestClarificationAppendReplayAndEqualTextSupplement",
+      "marker": "CLARIFICATION_POST_DELETABLE",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAppendReplayAndEqualTextSupplement$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    }
+  ],
+  "started_at": "2026-10-21T06:13:32.342088+00:00"
+}

@@ -1,0 +1,6 @@
+--- FAIL: TestClarificationDurableInboundDoubleIDConflict (0.11s)
+    --- FAIL: TestClarificationDurableInboundDoubleIDConflict/event (0.11s)
+        spec_clarification_guard_test.go:83: CLARIFICATION_STAGE_EVENT_CONFLICT_ACCEPTED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.113s
+FAIL

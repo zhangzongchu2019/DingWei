@@ -1,0 +1,31 @@
+{
+  "utc": "2026-10-21T06:20:10.017248+00:00",
+  "uid": 1001,
+  "gid": 1001,
+  "host": "VM-4-12-ubuntu",
+  "cpu_count": 16,
+  "go_version": "go version go1.22.2 linux/amd64",
+  "python_version": "Python 3.12.3",
+  "node_version": "v22.23.1",
+  "source": "7115b67946fee16e64cd76a68284a41773932f75",
+  "source_tree": "8e82db39df0340692528454a22bf62853ad0f652",
+  "runtime_lock_blob": "27c77f43077e18019dd42575b6beb2f5815e27d8",
+  "go_tests": {
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "HUB_TEST_PG_EMBEDDED": "1",
+    "HUB_TEST_PG_DSN": "unset",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "TMPDIR": "private0700 under /tmp"
+  },
+  "helper_tests": {
+    "env_i": true,
+    "HOME": "private temporary0700",
+    "PATH": "locked venv:/usr/bin:/bin"
+  },
+  "no_live_changes": true,
+  "browser_provider": "local Chrome via playwright",
+  "real_feishu_inapp": false
+}

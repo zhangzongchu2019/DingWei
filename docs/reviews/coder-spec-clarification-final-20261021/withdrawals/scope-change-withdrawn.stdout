@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationAnchorCorrectionScopeAndWriteFreeze (0.11s)
+    spec_clarification_test.go:252: CLARIFICATION_SCOPE_CHANGE_MISSING_GATE 0 <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.115s
+FAIL

@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationLegacyAnswerPathsCannotBypassEnrollment (0.11s)
+    spec_clarification_test.go:328: CLARIFICATION_LEGACY_WRITE_BYPASS { pm} <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.113s
+FAIL

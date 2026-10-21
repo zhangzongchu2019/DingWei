@@ -1,0 +1,6 @@
+--- FAIL: TestClarificationFinalCheckAndAuditFailuresRollBackAll (0.12s)
+    --- FAIL: TestClarificationFinalCheckAndAuditFailuresRollBackAll/blocker (0.12s)
+        spec_clarification_test.go:212: CLARIFICATION_PARTIAL_COMMIT <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.128s
+FAIL

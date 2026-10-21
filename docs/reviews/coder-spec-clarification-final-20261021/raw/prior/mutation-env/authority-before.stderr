@@ -1,0 +1,2 @@
+go: downloading modernc.org/sqlite v1.34.1
+internal/store/sqlite.go:24:2: module lookup disabled by GOPROXY=off

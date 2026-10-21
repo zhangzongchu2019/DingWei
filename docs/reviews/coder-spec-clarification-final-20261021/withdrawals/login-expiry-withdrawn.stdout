@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationLoginContinuationCookieExpiryAndSingleUse (0.11s)
+    spec_clarification_login_test.go:33: CLARIFICATION_RETURN_EXPIRED_ACCEPTED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.118s
+FAIL

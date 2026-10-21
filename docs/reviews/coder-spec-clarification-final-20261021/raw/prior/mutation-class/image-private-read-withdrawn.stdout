@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationPrivateImageActorQuestionAndImmutableLink (0.14s)
+    spec_clarification_images_test.go:25: CLARIFICATION_UNLINKED_IMAGE_DISCLOSED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.145s
+FAIL

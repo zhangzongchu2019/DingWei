@@ -1,0 +1,32 @@
+{
+  "source": "0fe752bb14a15047aeae6a52970a2e912b2023bc",
+  "rows": [
+    {
+      "id": "authority",
+      "file": "internal/store/spec_clarification.go",
+      "old": "if role == \"technical\" && (u.Kind != \"technical\" || u.Corrects != 0 || u.Confirms != 0) {",
+      "new": "if false && role == \"technical\" && (u.Kind != \"technical\" || u.Corrects != 0 || u.Confirms != 0) {",
+      "count": 1,
+      "test": "TestClarificationAuthorityCurrentPolicyAndDeputy",
+      "marker": "CLARIFICATION_NON_PM_AUTHORITY",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 1,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAuthorityCurrentPolicyAndDeputy$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    }
+  ],
+  "started_at": "2026-10-21T06:09:45.067997+00:00"
+}
