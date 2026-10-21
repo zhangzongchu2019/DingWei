@@ -1,0 +1,7 @@
+AssertionError [ERR_ASSERTION]: LAYOUT_STATUS_TEXT_WRAP
++ actual - expected
+
++ 'normal'
+- 'anywhere'
+
+    at /data/ai-dev-data/console-agent-table-layout/view-service/console-agent-table-layout-regression.js:95:366

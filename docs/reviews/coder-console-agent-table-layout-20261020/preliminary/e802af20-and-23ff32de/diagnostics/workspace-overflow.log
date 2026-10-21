@@ -1,0 +1,7 @@
+DIAGNOSTIC_OVERFLOW 1440 {"root":false,"workspace":true,"status":false,"wrap":"anywhere"}
+PASS layout 1440
+DIAGNOSTIC_OVERFLOW 1024 {"root":false,"workspace":true,"status":false,"wrap":"anywhere"}
+PASS layout 1024
+DIAGNOSTIC_OVERFLOW 768 {"root":false,"workspace":true,"status":false,"wrap":"anywhere"}
+PASS layout 768
+LAYOUT_PASS 3 widths; screenshots; live handlers with synthetic HTTP

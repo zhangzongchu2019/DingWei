@@ -1,0 +1,2 @@
+AssertionError [ERR_ASSERTION]: LAYOUT_EXPANDED_PANEL_NO_PAGE_OVERFLOW
+    at /data/ai-dev-data/console-agent-table-layout/view-service/console-agent-table-layout-regression.js:92:429

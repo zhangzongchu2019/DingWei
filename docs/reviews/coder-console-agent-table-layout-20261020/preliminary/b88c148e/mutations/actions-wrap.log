@@ -1,0 +1,8 @@
+AssertionError [ERR_ASSERTION]: LAYOUT_ACTIONS_NOWRAP
+
+'normal' !== 'nowrap'
+
+    at /data/ai-dev-data/console-agent-table-layout/view-service/console-agent-table-layout-regression.js:69:11
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processImmediate (node:internal/timers:452:9)
+    at process.callbackTrampoline (node:internal/async_hooks:130:17)

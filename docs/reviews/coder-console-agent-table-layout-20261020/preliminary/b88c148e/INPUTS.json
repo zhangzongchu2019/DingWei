@@ -1,0 +1,35 @@
+{
+  "utc": "2026-10-20T23:14:44.199887+00:00",
+  "base": "ab0f214496e6a5df1c71826cc978f40528923b8f",
+  "source_tree": "b88c148e53cc33b86d915c613c52ff36dab961d0",
+  "changed_files": [
+    "internal/m8/console_auth.go",
+    "internal/m8/console_helper_updates.js",
+    "view-service/console-agent-table-layout-regression.js"
+  ],
+  "all_Go_outside_consolePageHTML_identical": true,
+  "helper_client_diff": [],
+  "existing_browser_scripts_changed": false,
+  "source_files": {
+    "internal/m8/console_auth.go": {
+      "base_blob": "cfb5ddfb25dc837801a6932d06b6795c2000f1de",
+      "source_blob": "27163cbed10e586b6bce7a3c3ed3d65c8c26c135",
+      "sha256": "34c5cab5eacf91814845fa03526ace134fe410e8d90364e3aac695b933c6c565"
+    },
+    "internal/m8/console_helper_updates.js": {
+      "base_blob": "921413bd4c6afca94e91727bbec2c61197df8146",
+      "source_blob": "fc17b184c4b1e11e27f6ca227e2fc7b2870cf5e4",
+      "sha256": "c1ea4617af0a4cedf9aa3f19277fa4c64fcbf522c0b05166b40bb83115a873c5"
+    },
+    "view-service/console-agent-table-layout-regression.js": {
+      "base_blob": null,
+      "source_blob": "0c188eeadffef0b7af0761479d38f0204a7941dd",
+      "sha256": "12314782850b57ccf021d0eb324c315bf99c0d9c4c3e5ed6658e0fa6020a3f27"
+    }
+  },
+  "go_version": "go version go1.22.2 linux/amd64",
+  "python_version": "Python 3.12.3",
+  "node_version": "v22.23.1",
+  "uid": "1001",
+  "browser_readout_scope": "actual embedded Console HTML and actual helper update JS, synthetic local HTTP; not production authorization or deployment validation"
+}

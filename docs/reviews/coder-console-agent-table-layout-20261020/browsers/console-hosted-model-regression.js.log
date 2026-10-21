@@ -1,0 +1,9 @@
+PASS the model dropdown lists 默认 first then the Hub-aggregated models, de-duplicated strings
+PASS choosing a model sends it in the create body (real keystrokes for the name)
+PASS 默认 sends no model key at all (old request shape unchanged)
+PASS model_not_available (422): our wording, no Hub text, the form input is kept
+PASS model_not_supported (422): our wording
+PASS no models offered (missing or empty): the dropdown only says 默认 with the reason, creation is still possible and carries no model
+PASS the roster shows each hosted seat's effective model: value, 默认 for empty, nothing when the field is absent, nothing on self-hosted
+PASS no pageerror and no unexpected console error across the whole run
+hosted model browser: passed=8 failed=0 mutation=none

@@ -1,0 +1,587 @@
+{
+  "mutation": "",
+  "widths": [
+    {
+      "width": 1440,
+      "metrics": {
+        "tables": [
+          {
+            "id": "rosterTable",
+            "layout": "auto",
+            "width": 1144,
+            "wrapWidth": 1144,
+            "scrollWidth": 1144,
+            "overflow": "auto",
+            "actionWhiteSpace": "nowrap",
+            "actionMin": 98,
+            "headers": [
+              {
+                "text": "Agent",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "类型",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "主机",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "状态",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "操作",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              }
+            ],
+            "buttons": [
+              {
+                "text": "吊销",
+                "y": 850.984375,
+                "height": 32,
+                "textRects": [
+                  {
+                    "x": 1236.5625,
+                    "y": 858.984375,
+                    "width": 26.65625,
+                    "height": 15
+                  }
+                ],
+                "whiteSpace": "nowrap"
+              }
+            ]
+          },
+          {
+            "id": "enrollTable",
+            "layout": "auto",
+            "width": 491.015625,
+            "wrapWidth": 1144,
+            "scrollWidth": 1144,
+            "overflow": "auto",
+            "actionWhiteSpace": "nowrap",
+            "actionMin": 98,
+            "headers": [
+              {
+                "text": "IP 来源",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "设备指纹",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "客户端版本",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "申请时间",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "操作",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              }
+            ],
+            "buttons": [
+              {
+                "text": "审核",
+                "y": 672.1875,
+                "height": 32,
+                "textRects": [
+                  {
+                    "x": 669.015625,
+                    "y": 680.1875,
+                    "width": 26.65625,
+                    "height": 15
+                  }
+                ],
+                "whiteSpace": "nowrap"
+              }
+            ]
+          },
+          {
+            "id": "groupListTable",
+            "layout": "auto",
+            "width": 333.703125,
+            "wrapWidth": 1144,
+            "scrollWidth": 1144,
+            "overflow": "auto",
+            "actionWhiteSpace": "nowrap",
+            "actionMin": 98,
+            "headers": [
+              {
+                "text": "组名",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "组长",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "业主",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "操作",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              }
+            ],
+            "buttons": [
+              {
+                "text": "删除",
+                "y": 215.84375,
+                "height": 32,
+                "textRects": [
+                  {
+                    "x": 511.703125,
+                    "y": 223.84375,
+                    "width": 26.65625,
+                    "height": 15
+                  }
+                ],
+                "whiteSpace": "nowrap"
+              }
+            ]
+          }
+        ],
+        "name": {
+          "title": "Agent名称很长需要保留完整提示_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_.owner",
+          "ellipsis": "ellipsis",
+          "whiteSpace": "nowrap",
+          "clipped": true
+        },
+        "toolbar": {
+          "top": 766.984375,
+          "bottom": 806.984375,
+          "right": 1412
+        },
+        "open": {
+          "top": 770.984375,
+          "bottom": 802.984375,
+          "right": 1408
+        },
+        "tableTop": 806.984375,
+        "bodyOverflow": false
+      },
+      "writes": [
+        {
+          "path": "/api/console/agents/self/revoke",
+          "body": null
+        },
+        {
+          "path": "/api/console/helper-updates",
+          "body": {
+            "release_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "agent_ids": [
+              "self"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "width": 1024,
+      "metrics": {
+        "tables": [
+          {
+            "id": "rosterTable",
+            "layout": "auto",
+            "width": 728,
+            "wrapWidth": 728,
+            "scrollWidth": 728,
+            "overflow": "auto",
+            "actionWhiteSpace": "nowrap",
+            "actionMin": 98,
+            "headers": [
+              {
+                "text": "Agent",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "类型",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "主机",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "状态",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "操作",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              }
+            ],
+            "buttons": [
+              {
+                "text": "吊销",
+                "y": 850.984375,
+                "height": 32,
+                "textRects": [
+                  {
+                    "x": 878.5,
+                    "y": 858.984375,
+                    "width": 26.65625,
+                    "height": 15
+                  }
+                ],
+                "whiteSpace": "nowrap"
+              }
+            ]
+          },
+          {
+            "id": "enrollTable",
+            "layout": "auto",
+            "width": 491.015625,
+            "wrapWidth": 728,
+            "scrollWidth": 728,
+            "overflow": "auto",
+            "actionWhiteSpace": "nowrap",
+            "actionMin": 98,
+            "headers": [
+              {
+                "text": "IP 来源",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "设备指纹",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "客户端版本",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "申请时间",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "操作",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              }
+            ],
+            "buttons": [
+              {
+                "text": "审核",
+                "y": 672.1875,
+                "height": 32,
+                "textRects": [
+                  {
+                    "x": 669.015625,
+                    "y": 680.1875,
+                    "width": 26.65625,
+                    "height": 15
+                  }
+                ],
+                "whiteSpace": "nowrap"
+              }
+            ]
+          },
+          {
+            "id": "groupListTable",
+            "layout": "auto",
+            "width": 333.703125,
+            "wrapWidth": 728,
+            "scrollWidth": 728,
+            "overflow": "auto",
+            "actionWhiteSpace": "nowrap",
+            "actionMin": 98,
+            "headers": [
+              {
+                "text": "组名",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "组长",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "业主",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "操作",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              }
+            ],
+            "buttons": [
+              {
+                "text": "删除",
+                "y": 215.84375,
+                "height": 32,
+                "textRects": [
+                  {
+                    "x": 511.703125,
+                    "y": 223.84375,
+                    "width": 26.65625,
+                    "height": 15
+                  }
+                ],
+                "whiteSpace": "nowrap"
+              }
+            ]
+          }
+        ],
+        "name": {
+          "title": "Agent名称很长需要保留完整提示_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_.owner",
+          "ellipsis": "ellipsis",
+          "whiteSpace": "nowrap",
+          "clipped": true
+        },
+        "toolbar": {
+          "top": 766.984375,
+          "bottom": 806.984375,
+          "right": 996
+        },
+        "open": {
+          "top": 770.984375,
+          "bottom": 802.984375,
+          "right": 992
+        },
+        "tableTop": 806.984375,
+        "bodyOverflow": false
+      },
+      "writes": [
+        {
+          "path": "/api/console/agents/self/revoke",
+          "body": null
+        },
+        {
+          "path": "/api/console/helper-updates",
+          "body": {
+            "release_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "agent_ids": [
+              "self"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "metrics": {
+        "tables": [
+          {
+            "id": "rosterTable",
+            "layout": "auto",
+            "width": 553.6875,
+            "wrapWidth": 472,
+            "scrollWidth": 554,
+            "overflow": "auto",
+            "actionWhiteSpace": "nowrap",
+            "actionMin": 98,
+            "headers": [
+              {
+                "text": "Agent",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "类型",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "主机",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "状态",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "操作",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              }
+            ],
+            "buttons": [
+              {
+                "text": "吊销",
+                "y": 850.984375,
+                "height": 32,
+                "textRects": [
+                  {
+                    "x": 731.6875,
+                    "y": 858.984375,
+                    "width": 26.65625,
+                    "height": 15
+                  }
+                ],
+                "whiteSpace": "nowrap"
+              }
+            ]
+          },
+          {
+            "id": "enrollTable",
+            "layout": "auto",
+            "width": 472,
+            "wrapWidth": 472,
+            "scrollWidth": 472,
+            "overflow": "auto",
+            "actionWhiteSpace": "nowrap",
+            "actionMin": 98,
+            "headers": [
+              {
+                "text": "IP 来源",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "设备指纹",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "客户端版本",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "申请时间",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "操作",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              }
+            ],
+            "buttons": [
+              {
+                "text": "审核",
+                "y": 672.1875,
+                "height": 32,
+                "textRects": [
+                  {
+                    "x": 649.984375,
+                    "y": 680.1875,
+                    "width": 26.65625,
+                    "height": 15
+                  }
+                ],
+                "whiteSpace": "nowrap"
+              }
+            ]
+          },
+          {
+            "id": "groupListTable",
+            "layout": "auto",
+            "width": 333.703125,
+            "wrapWidth": 472,
+            "scrollWidth": 472,
+            "overflow": "auto",
+            "actionWhiteSpace": "nowrap",
+            "actionMin": 98,
+            "headers": [
+              {
+                "text": "组名",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "组长",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "业主",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              },
+              {
+                "text": "操作",
+                "whiteSpace": "nowrap",
+                "height": 32.5
+              }
+            ],
+            "buttons": [
+              {
+                "text": "删除",
+                "y": 215.84375,
+                "height": 32,
+                "textRects": [
+                  {
+                    "x": 511.703125,
+                    "y": 223.84375,
+                    "width": 26.65625,
+                    "height": 15
+                  }
+                ],
+                "whiteSpace": "nowrap"
+              }
+            ]
+          }
+        ],
+        "name": {
+          "title": "Agent名称很长需要保留完整提示_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_long_agent_name_.owner",
+          "ellipsis": "ellipsis",
+          "whiteSpace": "nowrap",
+          "clipped": true
+        },
+        "toolbar": {
+          "top": 766.984375,
+          "bottom": 806.984375,
+          "right": 740
+        },
+        "open": {
+          "top": 770.984375,
+          "bottom": 802.984375,
+          "right": 736
+        },
+        "tableTop": 806.984375,
+        "bodyOverflow": false
+      },
+      "writes": [
+        {
+          "path": "/api/console/agents/self/revoke",
+          "body": null
+        },
+        {
+          "path": "/api/console/helper-updates",
+          "body": {
+            "release_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "agent_ids": [
+              "self"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+S-6④ 独立用例: 拆解=true 工作流=true 预拆在详情内=true
+editor usable 1KB(阳性对照:也必须红): 焦点=TEXTAREA 命中=PRE 渲染行=71/71 直接键入=560→562
+editor usable 业主真实正文 15423B: 焦点=TEXTAREA 命中=PRE 渲染行=199/199 直接键入=15421→15423
+editor usable 30KB: 焦点=TEXTAREA 命中=PRE 渲染行=2941/2941 直接键入=23520→23522
+S-5: 失败有文案=true 重试可见=true 重试后错误行消失=true 分页状态="1 / 2" 行数=20
+一 保存按钮: save.left=952 anchor.right=944 垂直重叠=28px 文案=验收判据/规范锚定
+S-6乙: 可编辑(只读=false 存=true 同屏=true) 只读(编辑器隐藏=true 详情可见=true 源码泄漏=false 可输入正文控件=0 选中=67)
+S-7: 列表复制=http://127.0.0.1:34619/console/specs/spec-readonly 反馈="link address copied" 详情反馈="link address copied"
+editor wrap metrics overflow=0 lineOverhang=0
+console specs browser: assertions=220 floor=220 failed=0

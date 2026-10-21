@@ -1,0 +1,5 @@
+① groupSnapshot 刷新（源自 internal/m8/console_auth.go 实际文本）
+  ✅ 甲 编组工作区未打开时,refreshGroups 仍把响应写进 groupSnapshot
+  ✅ 乙 变异 snapshot-back-inside-groupmode:把赋值关回 if(groupMode) 里 ⇒ 甲必须红
+
+通过 2 / 失败 0

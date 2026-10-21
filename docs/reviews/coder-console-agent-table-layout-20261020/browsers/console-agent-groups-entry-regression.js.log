@@ -1,0 +1,12 @@
+  · console 页取自生产源码 internal/m8/console_auth.go(122969 字节)
+  · 平台载荷取自真 Go handler(TestConsolePlatformPayloadDump):manager/owner 两份
+    manager.items=[["specs",""],["task-board",""],["agent-groups",""],["platform-admin",""],["admin","_blank"]]
+    owner.items  =[["specs",""],["task-board",""],["agent-groups",""]]
+  · renderer  /data/ai-dev-data/console-agent-table-layout/view-service/renderer-canary-sse.html
+    sha256=e99753c7625da9f7… 320506 字节
+  ✅ G1 🔴 management 必须拿到「agent-groups」内部 tab 平台项
+  ✅ G2 🔴 点击入口后 pane 数不变、iframe 对象不变、SSE 不断、console 页还在
+  ✅ G3 🔴 builtin「Agents」入口必须不存在
+  ✅ G4 🔴 owner 左栏必须有 agent-groups 内部 tab,且仍不得出现 builtin Agents / admin
+
+  合计 4 条:✅ 4 · 🔴 0
