@@ -29,18 +29,18 @@ func configureClarificationReplyAuthority(h *m8.Hub, gateway feishu.Gateway) err
 		}
 	}
 	capable, ok := gateway.(interface{ ReplyApplication(string) (string, bool) })
-	if !ok {
-		return nil
-	} // No verified reply capability, not a permissive fallback.
 	for issuer, tenant := range tenants {
 		if issuer == "" || len(issuer) > 256 || tenant == "" || len(tenant) > 256 || strings.TrimSpace(issuer) != issuer || strings.TrimSpace(tenant) != tenant || strings.ContainsAny(issuer+tenant, "\x00\r\n") {
 			return errors.New("invalid clarification authority identity")
 		}
-		if app, ready := capable.ReplyApplication(issuer); ready {
+		if !ok {
+			continue
+		} // No verified reply capability: no authority, no fallback.
+		if app, ready := capable.ReplyApplication(issuer); ready && app != "" && len(app) <= 256 && strings.TrimSpace(app) == app && !strings.ContainsAny(app, "\x00\r\n") {
 			h.ClarificationReplyAuthorities[issuer] = m8.ClarificationReplyAuthority{AppID: app, Tenant: tenant}
 		}
 	}
-	if !h.SpecClarificationFeishuReplyEnabled {
+	if !ok || !h.SpecClarificationFeishuReplyEnabled {
 		return nil
 	}
 	h.ClarificationReceiptSender = func(ctx context.Context, issuer, subject, id, text string) (string, error) {

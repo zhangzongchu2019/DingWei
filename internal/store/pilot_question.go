@@ -108,6 +108,20 @@ func (s *SQLite) SetQuestionPolicy(ctx context.Context, expected QuestionContext
 	if _, err = tx.ExecContext(ctx, `INSERT INTO pilot_question_policy(spec_id,pm_user,leader_user,version,updated_by,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(spec_id) DO UPDATE SET pm_user=excluded.pm_user,leader_user=excluded.leader_user,version=excluded.version,updated_by=excluded.updated_by,updated_at=excluded.updated_at`, c.SpecID, u.PMUser, u.LeaderUser, old.Version+1, a.Key(), at); err != nil {
 		return out, err
 	}
+	// The legacy recipient form must not create a parallel authority source.
+	// It remains owner-only and updates the current explicit PM in the same TX;
+	// a PM change clears the old deputy rather than retaining their authority.
+	currentPolicy, e := readClarificationPolicy(ctx, tx, c.SpecID)
+	if e != nil {
+		return out, e
+	}
+	deputy := currentPolicy.DeputyUser
+	if currentPolicy.PMUser != u.PMUser {
+		deputy = ""
+	}
+	if _, e = s.setClarificationPolicyTx(ctx, tx, c, a, ClarificationPolicyUpdate{ExpectedVersion: currentPolicy.Version, PMUser: u.PMUser, DeputyUser: deputy}, check, now); e != nil {
+		return out, e
+	}
 	if err = questionAudit(ctx, tx, "", a.Key(), "configure_policy", old.Version+1, map[string]any{"spec_id": c.SpecID, "pm_user": u.PMUser, "leader_user": u.LeaderUser, "applies": "new_questions_only"}, at); err != nil {
 		return out, err
 	}
@@ -155,6 +169,9 @@ func questionCurrent(q PilotQuestion, c QuestionContext) bool {
 }
 func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a BlockerActor, qid string, u QuestionUpdate, check func() error, now time.Time) (QuestionResult, error) {
 	u = normalizeQuestionRecipients(u)
+	if u.Operation == "answer" || u.Operation == "input" {
+		return QuestionResult{}, ErrClarificationUpgradeRequired
+	}
 	var out QuestionResult
 	if a.Key() == "" || check == nil || !questionNonempty(u.RequestID, 128) || len(u.Title) > 512 || len(u.ObservedFact) > 4096 || len(u.Question) > 4096 || len(u.ExpectedAnswer) > 4096 || len(u.InputAnchors) > 4096 || len(u.Body) > 8192 || len(u.Evidence) > 2048 || len(u.Reason) > 2048 || !validBlockerPrincipal(u.Responsible) {
 		return out, ErrTaskFlowInvalid
@@ -228,6 +245,10 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 	}
 	switch u.Operation {
 	case "create":
+		if len(u.EntryRefs) == 0 {
+			return out, ErrClarificationUpgradeRequired
+		}
+
 		if qid != "" || !validQuestionKind(u.Kind) || !questionNonempty(u.Title, 512) || !questionNonempty(u.ObservedFact, 4096) || !questionNonempty(u.Question, 4096) || !questionNonempty(u.ExpectedAnswer, 4096) {
 			return out, ErrTaskFlowInvalid
 		}
@@ -279,25 +300,23 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 		if err != nil {
 			return out, err
 		}
-		if threadPolicy.Version > 0 {
-			if len(u.EntryRefs) < 1 || len(u.EntryRefs) > 32 {
-				return out, ErrClarificationUpgradeRequired
+		if len(u.EntryRefs) < 1 || len(u.EntryRefs) > 32 {
+			return out, ErrClarificationUpgradeRequired
+		}
+		anchors, e := clarificationAnchors(ctx, tx, q, true)
+		if e != nil {
+			return out, e
+		}
+		seen := map[string]bool{}
+		for _, id := range u.EntryRefs {
+			if anchors[id] != 1 || seen[id] {
+				return out, ErrTaskFlowInvalid
 			}
-			anchors, e := clarificationAnchors(ctx, tx, q, true)
-			if e != nil {
-				return out, e
-			}
-			seen := map[string]bool{}
-			for _, id := range u.EntryRefs {
-				if anchors[id] != 1 || seen[id] {
-					return out, ErrTaskFlowInvalid
-				}
-				seen[id] = true
-			}
-			refs, _ := json.Marshal(u.EntryRefs)
-			if _, err = tx.ExecContext(ctx, `INSERT INTO spec_clarification_question(question_id,entry_refs_json,created_at) VALUES(?,?,?)`, q.ID, string(refs), at); err != nil {
-				return out, err
-			}
+			seen[id] = true
+		}
+		refs, _ := json.Marshal(u.EntryRefs)
+		if _, err = tx.ExecContext(ctx, `INSERT INTO spec_clarification_question(question_id,entry_refs_json,created_at) VALUES(?,?,?)`, q.ID, string(refs), at); err != nil {
+			return out, err
 		}
 		if err = questionNotice(ctx, tx, q, "question", q.PMUser, at); err != nil {
 			return out, err
@@ -307,101 +326,6 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 				return out, err
 			}
 		}
-	case "answer", "input":
-		// Once this spec uses append-only clarification, old HTTP/MCP/store
-		// operations cannot bypass its explicit type/anchors or current PM/deputy
-		// checks. Disabling the new UI never restores the old broad answer grant.
-		threadPolicy, policyErr := readClarificationPolicy(ctx, tx, q.SpecID)
-		if policyErr != nil {
-			return out, policyErr
-		}
-		if threadPolicy.Version != 0 {
-			return out, ErrClarificationUpgradeRequired
-		}
-		if questionTerminal(q.State) || !questionNonempty(u.EventID, 128) || !questionNonempty(u.Body, 8192) || !questionNonempty(u.Evidence, 2048) {
-			return out, ErrTaskFlowInvalid
-		}
-		kind := u.AnswerKind
-		if u.Operation == "input" {
-			if a.AgentID == "" || c.Task == nil || !(a.taskReader(*c.Task) || q.Responsible == a.Key()) {
-				return out, ErrTaskFlowPermission
-			}
-			kind = "technical_input"
-			if u.ScopeChange {
-				return out, ErrTaskFlowPermission
-			}
-		} else if !questionAnswerer(a, c, q) || (kind != "ack" && kind != "substantive") {
-			return out, ErrTaskFlowPermission
-		}
-		if kind == "substantive" && questionAcknowledgment(u.Body) {
-			kind = "ack"
-		}
-		if kind == "ack" && u.ScopeChange {
-			return out, ErrTaskFlowInvalid
-		}
-		hash := blockerHash([]any{q.Generation, a.Key(), kind, u.Body, u.Evidence, u.ScopeChange})
-		var previous string
-		e := tx.QueryRowContext(ctx, `SELECT payload_sha FROM pilot_question_event WHERE question_id=? AND actor_id=? AND event_id=?`, q.ID, a.Key(), u.EventID).Scan(&previous)
-		if e == nil {
-			if previous != hash {
-				return out, ErrTaskFlowConflict
-			}
-			out.Outcome = "unchanged"
-			break
-		}
-		if !errors.Is(e, sql.ErrNoRows) {
-			return out, e
-		}
-		canonical := u.EventID
-		e = tx.QueryRowContext(ctx, `SELECT event_id FROM pilot_question_answer WHERE question_id=? AND generation=? AND actor_id=? AND payload_sha=?`, q.ID, q.Generation, a.Key(), hash).Scan(&canonical)
-		if e != nil && !errors.Is(e, sql.ErrNoRows) {
-			return out, e
-		}
-		if _, err = tx.ExecContext(ctx, `INSERT INTO pilot_question_event(question_id,actor_id,event_id,generation,payload_sha,canonical_event_id) VALUES(?,?,?,?,?,?)`, q.ID, a.Key(), u.EventID, q.Generation, hash, canonical); err != nil {
-			return out, err
-		}
-		if e == nil {
-			out.Outcome = "unchanged"
-			break
-		}
-		if _, err = tx.ExecContext(ctx, `INSERT INTO pilot_question_answer(question_id,generation,actor_id,event_id,payload_sha,answer_kind,body,evidence_ref,scope_change,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)`, q.ID, q.Generation, a.Key(), u.EventID, hash, kind, u.Body, u.Evidence, u.ScopeChange, at); err != nil {
-			return out, err
-		}
-		if kind != "ack" {
-			substantive := kind == "substantive" || (kind == "technical_input" && (q.Kind == "technical" || q.Kind == "resource") && q.Responsible == a.Key() && !questionAcknowledgment(u.Body))
-			if substantive && q.FirstSubstantiveAt == "" {
-				q.FirstSubstantiveAt = at
-			}
-			q.AnsweredAt = at
-			q.State = "answered_pending_recheck"
-			if q.Responsible == "" {
-				q.State = "needs_owner"
-			}
-			if q.BlockerID != "" {
-				if err = questionBlockerInput(ctx, tx, c, a, q, u.EventID, u.Body, u.Evidence, now); err != nil {
-					return out, err
-				}
-			}
-			if q.TaskID != "" && q.BlockerID == "" {
-				if _, err = tx.ExecContext(ctx, `UPDATE console_spec_task SET version=version+1 WHERE id=?`, q.TaskID); err != nil {
-					return out, err
-				}
-				if err = flowAudit(ctx, tx, q.TaskID, a.Key(), "question_answer_recorded_no_wake", c.Task.Version+1, now); err != nil {
-					return out, err
-				}
-			}
-			detail, _ := json.Marshal(map[string]any{"question_id": q.ID, "event_id": u.EventID, "answer_kind": kind, "evidence_ref": u.Evidence})
-			if err = appendConsoleSpecEvent(ctx, tx, q.SpecID, q.Revision, a.Key(), "pilot_question_answer", string(detail), now); err != nil {
-				return out, err
-			}
-			if kind == "substantive" && (q.Kind == "change" || u.ScopeChange) {
-				id := "qchange:" + blockerHash([]string{q.ID, a.Key(), u.EventID})
-				if _, err = tx.ExecContext(ctx, `INSERT INTO pilot_question_change(id,question_id,generation,answer_actor,answer_event,spec_id,revision,content_sha256,state,created_at) VALUES(?,?,?,?,?,?,?,?,'pending',?)`, id, q.ID, q.Generation, a.Key(), u.EventID, q.SpecID, q.Revision, q.SHA, at); err != nil {
-					return out, err
-				}
-			}
-		}
-		q.Version++
 	case "assign":
 		owner := a.UserID != "" && a.UserID == c.Owner
 		delegated := a.UserID != "" && a.UserID == q.PMUser && (u.PMUser == "" || u.PMUser == q.PMUser) && (u.LeaderUser == "" || u.LeaderUser == q.LeaderUser) &&

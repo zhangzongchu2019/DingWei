@@ -31,7 +31,7 @@ const server=http.createServer(async(req,res)=>{
    assert.equal(await page.evaluate(()=>window.INJECTED),undefined);assert((await page.locator('#title').innerText()).includes('<script>'));checks++;
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
    for(const id of ['submit','lookup','kind','refs','refresh']){const box=await page.locator('#'+id).boundingBox();assert(box&&box.height>=44,`${width} ${id} touch size`)}checks++;
-   assert((await page.locator('#spec-link').getAttribute('href')).includes('spec_id=spec'));assert((await page.locator('#change-link').getAttribute('href')).includes('predecessor_spec_id=spec'));checks++;
+   assert((await page.locator('#spec-link').getAttribute('href')).includes('/console/specs/spec?clarification_readonly=1'));assert((await page.locator('#change-link').getAttribute('href')).includes('predecessor_spec_id=spec'));checks++;
    await page.fill('#body','解释不改变范围');await page.click('#submit');await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('已入第'));const first=requests.at(-1);checks++;
    const expectedCount=posts.length+1;await page.click('#submit');await page.waitForFunction(n=>document.querySelectorAll('#posts article').length===n,expectedCount);assert.notEqual(requests.at(-1).request_id,first.request_id);checks++;
    await page.selectOption('#kind','scope_change');assert((await page.locator('#scope-hint').innerText()).includes('不能用一句话批准'));checks++;

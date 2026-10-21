@@ -27,17 +27,27 @@ func (s *SQLite) ClarificationPolicy(ctx context.Context, spec string) (Clarific
 // Owner may select the PM; only that current PM may appoint/revoke a deputy.
 // Changing PM atomically revokes the former PM and their deputy for new writes.
 func (s *SQLite) SetClarificationPolicy(ctx context.Context, expected QuestionContext, a BlockerActor, u ClarificationPolicyUpdate, check func() error, now time.Time) (ClarificationPolicy, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return ClarificationPolicy{}, err
+	}
+	defer tx.Rollback()
+	out, err := s.setClarificationPolicyTx(ctx, tx, expected, a, u, check, now)
+	if err != nil {
+		return out, err
+	}
+	if err = tx.Commit(); err != nil {
+		return out, err
+	}
+	return out, nil
+}
+func (s *SQLite) setClarificationPolicyTx(ctx context.Context, tx *sql.Tx, expected QuestionContext, a BlockerActor, u ClarificationPolicyUpdate, check func() error, now time.Time) (ClarificationPolicy, error) {
 	var out ClarificationPolicy
 	u.PMUser = strings.ToLower(strings.TrimSpace(u.PMUser))
 	u.DeputyUser = strings.ToLower(strings.TrimSpace(u.DeputyUser))
 	if a.UserID == "" || a.AgentID != "" || check == nil || !validQuestionUser(u.PMUser) || !validQuestionUser(u.DeputyUser) || u.PMUser == u.DeputyUser && u.PMUser != "" || u.PMUser == "" && u.DeputyUser != "" {
 		return out, ErrTaskFlowInvalid
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return out, err
-	}
-	defer tx.Rollback()
 	c, err := questionContext(ctx, tx, expected.SpecID, "", "")
 	if err != nil {
 		return out, err
@@ -73,9 +83,6 @@ func (s *SQLite) SetClarificationPolicy(ctx context.Context, expected QuestionCo
 		return out, err
 	}
 	if err = check(); err != nil {
-		return out, err
-	}
-	if err = tx.Commit(); err != nil {
 		return out, err
 	}
 	return out, nil

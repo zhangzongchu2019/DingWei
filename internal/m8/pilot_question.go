@@ -89,7 +89,7 @@ func (h *Hub) withQuestionIdentity(ctx context.Context, c store.QuestionContext,
 			users = append(users, id)
 		}
 	}
-	return auth.WithQuestionAuthorization(ctx, actor.actor.AgentID, actor.hash, actor.actor.UserID, claim, users, agents, c.ID, func(a identity.ContextAuthorization, check func() error) error {
+	return auth.WithQuestionAuthorization(ctx, actor.actor.AgentID, actor.hash, actor.actor.UserID, claim, users, agents, "clarification-spec:"+c.SpecID, func(a identity.ContextAuthorization, check func() error) error {
 		if !a.Users[identity.Lower(c.Owner)] {
 			return identity.ErrForbidden
 		}
@@ -751,5 +751,23 @@ func (h *Hub) HandleQuestionCreateContext(w http.ResponseWriter, r *http.Request
 	if c.Task != nil {
 		version = c.Task.Version
 	}
-	taskJSON(w, 200, map[string]any{"spec_id": c.SpecID, "task_id": task, "expected_version": version, "can_configure_policy": actor.actor.UserID == c.Owner, "contacts": contacts, "contact_limit": limit, "contacts_next_cursor": next, "execution_authorized": false})
+	anchorsRepo, ok := h.Repo.(interface {
+		ClarificationCreateAnchors(context.Context, store.QuestionContext, func() error) ([]string, bool, error)
+	})
+	if !ok {
+		taskJSON(w, 503, map[string]any{"error": "anchored_question_unavailable"})
+		return
+	}
+	var refs []string
+	var truncated bool
+	err = h.withQuestionIdentity(ctx, c, actor, store.PilotQuestion{}, nil, false, func(_ identity.ContextAuthorization, check func() error) error {
+		var e error
+		refs, truncated, e = anchorsRepo.ClarificationCreateAnchors(ctx, c, check)
+		return e
+	})
+	if err != nil {
+		taskError(w, err)
+		return
+	}
+	taskJSON(w, 200, map[string]any{"spec_id": c.SpecID, "task_id": task, "expected_version": version, "entry_refs": refs, "anchors_truncated": truncated, "can_configure_policy": actor.actor.UserID == c.Owner, "contacts": contacts, "contact_limit": limit, "contacts_next_cursor": next, "execution_authorized": false})
 }

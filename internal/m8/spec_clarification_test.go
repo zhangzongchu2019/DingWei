@@ -166,3 +166,34 @@ func TestClarificationHTTPStrictBodyAndSelectors(t *testing.T) {
 		}
 	}
 }
+
+func TestClarificationPublicSpecProjectionDoesNotExposeLegacyQuestionHistory(t *testing.T) {
+	e, _, _, q := clarificationHTTPFixture(t)
+	if err := e.svc.Store.CreateUser(e.ctx, identity.User{UserID: "reader", ShortName: "rd", State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	w := clarificationHTTP(e, "POST", q.ID, "", "lbl", "", clarificationHTTPBody("public-floor", "explanation"), "", false)
+	if w.Code != 200 {
+		t.Fatal(w.Code, w.Body)
+	}
+	r := httptest.NewRequest("GET", "/api/console/specs/"+q.SpecID+"/clarifications?revision=1&limit=1", nil)
+	r.SetPathValue("specID", q.SpecID)
+	r = r.WithContext(context.WithValue(r.Context(), consolePrincipalContextKey{}, "reader"))
+	w = httptest.NewRecorder()
+	e.hub.HandleSpecClarifications(w, r)
+	if w.Code != 200 || !strings.Contains(w.Body.String(), `"floor":1`) || strings.Contains(w.Body.String(), "实际现象") || strings.Contains(w.Body.String(), "期待澄清") || strings.Contains(w.Body.String(), `"pm_user"`) {
+		t.Fatal("CLARIFICATION_PUBLIC_PRIVATE_HISTORY_BOUNDARY", w.Code, w.Body)
+	}
+	w = clarificationHTTP(e, "GET", q.ID, "", "reader", "", "", "", false)
+	if w.Code != 403 {
+		t.Fatal("CLARIFICATION_PUBLIC_SPEC_GRANTED_PRIVATE_THEME", w.Code, w.Body)
+	}
+	r = httptest.NewRequest("GET", "/api/console/specs/"+q.SpecID+"/clarifications?revision=1&user_id=lbl", nil)
+	r.SetPathValue("specID", q.SpecID)
+	r = r.WithContext(context.WithValue(r.Context(), consolePrincipalContextKey{}, "reader"))
+	w = httptest.NewRecorder()
+	e.hub.HandleSpecClarifications(w, r)
+	if w.Code != 400 {
+		t.Fatal("CLARIFICATION_SPEC_PROJECTION_SELECTOR", w.Code)
+	}
+}

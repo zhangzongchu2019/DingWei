@@ -13,13 +13,8 @@ func clarificationFixture(t *testing.T) (*SQLite, time.Time, PilotQuestion) {
 	t.Helper()
 	db, now, _ := questionFixture(t)
 	q := questionCreate(t, db, now, "requirement_unclear")
-	c, err := db.QuestionAuthorizationContext(context.Background(), q.SpecID, "", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err = db.SetClarificationPolicy(context.Background(), c, BlockerActor{UserID: "owner-a"}, ClarificationPolicyUpdate{PMUser: "pm"}, func() error { return nil }, now); err != nil {
-		t.Fatal(err)
-	}
+	// questionFixture's owner-selected PM is now the same current policy;
+	// no second policy registration is needed merely to enter the new UI.
 	return db, now, q
 }
 func clarificationApply(t *testing.T, db *SQLite, now time.Time, a BlockerActor, q PilotQuestion, u ClarificationUpdate) (ClarificationResult, error) {
@@ -320,7 +315,8 @@ func TestClarificationLegacyAnswerPathsCannotBypassEnrollment(t *testing.T) {
 		if actor.AgentID != "" {
 			u.Operation = "input"
 		}
-		if _, err := questionApply(t, db, now, actor, q.ID, u); !errors.Is(err, ErrTaskFlowPermission) {
+		c, _ := db.QuestionAuthorizationContext(context.Background(), "", "", q.ID)
+		if _, err := db.UpdateQuestion(context.Background(), c, actor, q.ID, u, func() error { return nil }, now); !errors.Is(err, ErrClarificationUpgradeRequired) {
 			t.Fatal("CLARIFICATION_LEGACY_WRITE_BYPASS", actor, err)
 		}
 	}

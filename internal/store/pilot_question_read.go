@@ -167,7 +167,8 @@ func (s *SQLite) readQuestion(ctx context.Context, expected QuestionContext, a B
 	if e != nil {
 		return PilotQuestion{}, nil, nil, e
 	}
-	view.ClarificationRequired = p.Version > 0
+	view.ClarificationRequired = true
+	_ = p
 	if view.ClarificationRequired {
 		view.CanAnswer = false
 	}

@@ -32,6 +32,37 @@ func questionApply(t *testing.T, db *SQLite, now time.Time, a BlockerActor, qid 
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Tests that exercise D3 lifecycle consequences now submit through the
+	// approved typed append API, never through old substantive/input bypasses.
+	if u.Operation == "answer" || u.Operation == "input" {
+		kind := "explanation"
+		if u.Operation == "input" {
+			kind = "technical"
+		} else if u.ScopeChange {
+			kind = "scope_change"
+		} else {
+			var originalKind string
+			if e := db.db.QueryRow(`SELECT kind FROM pilot_question WHERE id=?`, qid).Scan(&originalKind); e != nil {
+				t.Fatal(e)
+			}
+			if originalKind == "change" {
+				kind = "scope_change"
+			}
+		}
+		post, e := db.AppendClarification(context.Background(), c, a, qid, ClarificationUpdate{RequestID: u.RequestID, Kind: kind, EntryRefs: []string{"A1"}, Body: u.Body, Evidence: u.Evidence}, true, func() error { return nil }, now)
+		if e != nil {
+			return QuestionResult{}, e
+		}
+		q, e := scanQuestion(db.db.QueryRow(`SELECT `+questionCols+` FROM pilot_question WHERE id=?`, qid))
+		if e != nil {
+			return QuestionResult{}, e
+		}
+		outcome := "recorded"
+		if post.Replayed {
+			outcome = "unchanged"
+		}
+		return QuestionResult{Question: q, Outcome: outcome, Replayed: post.Replayed}, nil
+	}
 	return db.UpdateQuestion(context.Background(), c, a, qid, u, func() error { return nil }, now)
 }
 func questionCreate(t *testing.T, db *SQLite, now time.Time, kind string) PilotQuestion {
@@ -40,7 +71,7 @@ func questionCreate(t *testing.T, db *SQLite, now time.Time, kind string) PilotQ
 	if err != nil {
 		t.Fatal(err)
 	}
-	out, err := db.UpdateQuestion(context.Background(), c, BlockerActor{AgentID: "dev"}, "", QuestionUpdate{RequestID: "create-" + kind, ExpectedVersion: c.Task.Version, Operation: "create", TaskID: "task", Kind: kind, Title: "需求问题", ObservedFact: "缺少明确事实", Question: "请给出可核对结论", ExpectedAnswer: "明确结论与证据"}, func() error { return nil }, now)
+	out, err := db.UpdateQuestion(context.Background(), c, BlockerActor{AgentID: "dev"}, "", QuestionUpdate{RequestID: "create-" + kind, ExpectedVersion: c.Task.Version, Operation: "create", EntryRefs: []string{"A1"}, TaskID: "task", Kind: kind, Title: "需求问题", ObservedFact: "缺少明确事实", Question: "请给出可核对结论", ExpectedAnswer: "明确结论与证据"}, func() error { return nil }, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +108,7 @@ func TestPilotQuestionAnswerAtomicAndUsesOnlyD2Wake(t *testing.T) {
 	if status != "planned" {
 		t.Fatal("QUESTION_ANSWER_STARTED_TASK", status)
 	}
-	u.RequestID = "changed"
+	u.RequestID = "answer"
 	u.ExpectedVersion = out.Question.Version
 	u.Body = "changed same event"
 	if _, err = questionApply(t, db, now.Add(3*time.Minute), BlockerActor{UserID: "pm"}, q.ID, u); !errors.Is(err, ErrTaskFlowConflict) {
@@ -96,7 +127,7 @@ func TestPilotQuestionNoPartialCommitAndAgentNotPM(t *testing.T) {
 		t.Fatal(err)
 	}
 	injected := errors.New("injected final PG check")
-	if _, err = db.UpdateQuestion(context.Background(), c, BlockerActor{UserID: "pm"}, q.ID, u, func() error { return injected }, now); !errors.Is(err, injected) {
+	if _, err = db.AppendClarification(context.Background(), c, BlockerActor{UserID: "pm"}, q.ID, ClarificationUpdate{RequestID: u.RequestID, Kind: "explanation", EntryRefs: []string{"A1"}, Body: u.Body, Evidence: u.Evidence}, true, func() error { return injected }, now); !errors.Is(err, injected) {
 		t.Fatal("QUESTION_FINAL_CHECK_IGNORED", err)
 	}
 	for _, table := range []string{"pilot_question_answer", "console_task_blocker_input", "console_task_blocker_outbox"} {
@@ -236,7 +267,7 @@ func TestPilotQuestionUnconfiguredNeverClaimsSent(t *testing.T) {
 	}
 	_ = q
 }
-func TestPilotQuestionSameContentNewEventDeduplicatesAndRoleRevokes(t *testing.T) {
+func TestPilotQuestionDistinctTypedRepliesAppendAndCurrentPolicyRevokes(t *testing.T) {
 	db, now, _ := questionFixture(t)
 	q := questionCreate(t, db, now, "requirement_unclear")
 	u := QuestionUpdate{RequestID: "first", ExpectedVersion: q.Version, Operation: "answer", EventID: "event1", AnswerKind: "substantive", Body: "明确实质答复", Evidence: "git:one"}
@@ -248,11 +279,16 @@ func TestPilotQuestionSameContentNewEventDeduplicatesAndRoleRevokes(t *testing.T
 	u.EventID = "event2"
 	u.ExpectedVersion = out.Question.Version
 	out, err = questionApply(t, db, now.Add(2*time.Minute), BlockerActor{UserID: "pm"}, q.ID, u)
-	if err != nil || out.Outcome != "unchanged" || questionCount(t, db, "pilot_question_answer") != 1 || questionCount(t, db, "console_task_blocker_input") != 1 || questionCount(t, db, "console_task_blocker_outbox") != 1 {
+	if err != nil || out.Outcome != "recorded" || questionCount(t, db, "pilot_question_answer") != 2 || questionCount(t, db, "console_task_blocker_input") != 2 || questionCount(t, db, "console_task_blocker_outbox") != 2 {
 		t.Fatal("QUESTION_CONTENT_DUPLICATED_WAKE", out, err)
 	}
 	_, err = questionApply(t, db, now.Add(3*time.Minute), BlockerActor{UserID: "owner-a"}, q.ID, QuestionUpdate{RequestID: "reassign", ExpectedVersion: out.Question.Version, Operation: "assign", PMUser: "newpm", Responsible: "user:newpm", LeaderUser: "leader"})
 	if err != nil {
+		t.Fatal(err)
+	}
+	policyContext, _ := db.QuestionAuthorizationContext(context.Background(), q.SpecID, "", "")
+	policy, _ := db.ClarificationPolicy(context.Background(), q.SpecID)
+	if _, err = db.SetClarificationPolicy(context.Background(), policyContext, BlockerActor{UserID: "owner-a"}, ClarificationPolicyUpdate{ExpectedVersion: policy.Version, PMUser: "newpm"}, func() error { return nil }, now.Add(3*time.Minute)); err != nil {
 		t.Fatal(err)
 	}
 	c, _ := db.QuestionAuthorizationContext(context.Background(), "", "", q.ID)
@@ -385,8 +421,9 @@ func TestPilotQuestionCASAndClockRollbackFailClosed(t *testing.T) {
 	db, now, _ := questionFixture(t)
 	q := questionCreate(t, db, now, "technical")
 	u := QuestionUpdate{RequestID: "bad-version", ExpectedVersion: q.Version + 1, Operation: "answer", EventID: "event", AnswerKind: "substantive", Body: "真实答复", Evidence: "git:one"}
-	if _, err := questionApply(t, db, now, BlockerActor{UserID: "pm"}, q.ID, u); !errors.Is(err, ErrTaskFlowConflict) {
-		t.Fatal("QUESTION_STALE_VERSION_ACCEPTED", err)
+	c, _ := db.QuestionAuthorizationContext(context.Background(), "", "", q.ID)
+	if _, err := db.UpdateQuestion(context.Background(), c, BlockerActor{UserID: "pm"}, q.ID, u, func() error { return nil }, now); !errors.Is(err, ErrClarificationUpgradeRequired) {
+		t.Fatal("QUESTION_UNTYPED_LEGACY_ACCEPTED", err)
 	}
 	u.RequestID = "clock"
 	u.ExpectedVersion = q.Version
@@ -396,7 +433,7 @@ func TestPilotQuestionCASAndClockRollbackFailClosed(t *testing.T) {
 }
 func TestPilotQuestionProductionFullAndAckDoesNotStopSLA(t *testing.T) {
 	db, now, c := questionFixture(t)
-	out, err := db.UpdateQuestion(context.Background(), c, BlockerActor{AgentID: "dev"}, "", QuestionUpdate{RequestID: "risk", ExpectedVersion: c.Task.Version, Operation: "create", TaskID: "task", Kind: "resource", Title: "生产事项", ObservedFact: "涉及生产资源", Question: "明确授权", ExpectedAnswer: "正式授权证据", ProductionOrSecurity: true}, func() error { return nil }, now)
+	out, err := db.UpdateQuestion(context.Background(), c, BlockerActor{AgentID: "dev"}, "", QuestionUpdate{RequestID: "risk", ExpectedVersion: c.Task.Version, Operation: "create", EntryRefs: []string{"A1"}, TaskID: "task", Kind: "resource", Title: "生产事项", ObservedFact: "涉及生产资源", Question: "明确授权", ExpectedAnswer: "正式授权证据", ProductionOrSecurity: true}, func() error { return nil }, now)
 	if err != nil || out.Question.Mode != "full" {
 		t.Fatal("QUESTION_PRODUCTION_NOT_FULL", out, err)
 	}
@@ -431,7 +468,7 @@ func TestPilotQuestionSpecOnlyAndCompletedTaskNeverWake(t *testing.T) {
 			if done {
 				v = c.Task.Version
 			}
-			out, err := db.UpdateQuestion(ctx, c, BlockerActor{UserID: "owner-a"}, "", QuestionUpdate{RequestID: "post", ExpectedVersion: v, Operation: "create", TaskID: task, Kind: "technical", Title: "后续问题", ObservedFact: "后续事实", Question: "后续澄清", ExpectedAnswer: "独立答复"}, func() error { return nil }, now)
+			out, err := db.UpdateQuestion(ctx, c, BlockerActor{UserID: "owner-a"}, "", QuestionUpdate{RequestID: "post", ExpectedVersion: v, Operation: "create", EntryRefs: []string{"A1"}, TaskID: task, Kind: "technical", Title: "后续问题", ObservedFact: "后续事实", Question: "后续澄清", ExpectedAnswer: "独立答复"}, func() error { return nil }, now)
 			if err != nil || out.Question.BlockerID != "" {
 				t.Fatal("QUESTION_POST_COMPLETION_CREATED_BLOCKER", out, err)
 			}
@@ -469,8 +506,8 @@ func TestPilotQuestionPMDelegationLimitedToExistingQuestionReaders(t *testing.T)
 		t.Fatal("QUESTION_PM_TECHNICAL_DELEGATION", out, err)
 	}
 	out, err = questionApply(t, db, now.Add(time.Minute), BlockerActor{AgentID: "dev"}, q.ID, QuestionUpdate{RequestID: "technical", ExpectedVersion: out.Question.Version, Operation: "input", EventID: "facts", Body: "实际技术事实与证据", Evidence: "git:tech"})
-	if err != nil || out.Question.FirstSubstantiveAt == "" {
-		t.Fatal("QUESTION_DELEGATED_TECHNICAL_FIRST_RESPONSE", out, err)
+	if err != nil || out.Question.FirstSubstantiveAt != "" {
+		t.Fatal("QUESTION_DELEGATED_TECHNICAL_BECAME_AUTHORITY", out, err)
 	}
 }
 func TestPilotQuestionSentReminderReassignmentNeverCreatesSecondReminder(t *testing.T) {
@@ -510,7 +547,7 @@ func TestPilotQuestionSpecOnlyChangeCanLinkActualNewRevision(t *testing.T) {
 	db, now, _ := questionFixture(t)
 	ctx := context.Background()
 	c, _ := db.QuestionAuthorizationContext(ctx, "r32", "", "")
-	out, err := db.UpdateQuestion(ctx, c, BlockerActor{UserID: "owner-a"}, "", QuestionUpdate{RequestID: "spec-change", ExpectedVersion: c.Revision, Operation: "create", Kind: "change", Title: "需变更", ObservedFact: "原范围缺口", Question: "请明确新范围", ExpectedAnswer: "明确新增条件"}, func() error { return nil }, now)
+	out, err := db.UpdateQuestion(ctx, c, BlockerActor{UserID: "owner-a"}, "", QuestionUpdate{RequestID: "spec-change", ExpectedVersion: c.Revision, Operation: "create", EntryRefs: []string{"A1"}, Kind: "change", Title: "需变更", ObservedFact: "原范围缺口", Question: "请明确新范围", ExpectedAnswer: "明确新增条件"}, func() error { return nil }, now)
 	if err != nil {
 		t.Fatal(err)
 	}

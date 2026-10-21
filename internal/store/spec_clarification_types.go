@@ -1,6 +1,9 @@
 package store
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/zhangzongchu2019/dingwei/internal/clarificationimage"
+)
 
 var ErrClarificationUpgradeRequired = fmt.Errorf("clarification requires typed anchored tools: %w", ErrTaskFlowPermission)
 
@@ -24,6 +27,7 @@ type ClarificationPolicyUpdate struct {
 // No actor, provider identity, transport, or authority is accepted from clients.
 type ClarificationUpdate struct {
 	RequestID string   `json:"request_id"`
+	Files     []string `json:"file_ids,omitempty"`
 	Kind      string   `json:"kind"`
 	EntryRefs []string `json:"entry_refs"`
 	Body      string   `json:"body"`
@@ -34,25 +38,26 @@ type ClarificationUpdate struct {
 }
 
 type ClarificationPost struct {
-	SpecID        string   `json:"spec_id"`
-	Floor         int64    `json:"floor"`
-	Revision      int      `json:"revision"`
-	SHA           string   `json:"content_sha256"`
-	QuestionID    string   `json:"question_id"`
-	Actor         string   `json:"actor"`
-	EventID       string   `json:"event_id"`
-	Role          string   `json:"role"`
-	Kind          string   `json:"kind"`
-	EntryRefs     []string `json:"entry_refs"`
-	Body          string   `json:"body"`
-	Evidence      string   `json:"evidence_ref"`
-	Corrects      int64    `json:"corrects,omitempty"`
-	Confirms      int64    `json:"confirms,omitempty"`
-	Reason        string   `json:"reason,omitempty"`
-	Source        string   `json:"source"`
-	PreviousFloor int64    `json:"previous_floor,omitempty"`
-	PolicyVersion int      `json:"policy_version"`
-	CreatedAt     string   `json:"created_at"`
+	Images        []clarificationimage.File `json:"images,omitempty"`
+	SpecID        string                    `json:"spec_id"`
+	Floor         int64                     `json:"floor"`
+	Revision      int                       `json:"revision"`
+	SHA           string                    `json:"content_sha256"`
+	QuestionID    string                    `json:"question_id"`
+	Actor         string                    `json:"actor"`
+	EventID       string                    `json:"event_id"`
+	Role          string                    `json:"role"`
+	Kind          string                    `json:"kind"`
+	EntryRefs     []string                  `json:"entry_refs"`
+	Body          string                    `json:"body"`
+	Evidence      string                    `json:"evidence_ref"`
+	Corrects      int64                     `json:"corrects,omitempty"`
+	Confirms      int64                     `json:"confirms,omitempty"`
+	Reason        string                    `json:"reason,omitempty"`
+	Source        string                    `json:"source"`
+	PreviousFloor int64                     `json:"previous_floor,omitempty"`
+	PolicyVersion int                       `json:"policy_version"`
+	CreatedAt     string                    `json:"created_at"`
 }
 
 type ClarificationResult struct {

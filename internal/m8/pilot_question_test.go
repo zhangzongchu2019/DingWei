@@ -30,7 +30,7 @@ func questionHTTP(e *shimEnv, method, qid, credential, user, body, query string)
 }
 func questionHTTPCreate(t *testing.T, e *shimEnv, state store.TaskFlowState) store.PilotQuestion {
 	t.Helper()
-	body := fmt.Sprintf(`{"request_id":"question-create","expected_version":%d,"kind":"requirement_unclear","title":"真实问题","observed_fact":"实际现象","question":"期待澄清","expected_answer":"可验证的明确答复"}`, state.Version)
+	body := fmt.Sprintf(`{"request_id":"question-create","expected_version":%d,"kind":"requirement_unclear","title":"真实问题","observed_fact":"实际现象","question":"期待澄清","expected_answer":"可验证的明确答复","entry_refs":["A1"]}`, state.Version)
 	out := questionHTTP(e, "POST", "", e.zKimiCred, "", body, "")
 	if out.Code != 200 {
 		t.Fatal("QUESTION_HTTP_CREATE", out.Code, out.Body)
@@ -52,7 +52,12 @@ func TestPilotQuestionHTTPAuthorizationAndNoPMImpersonation(t *testing.T) {
 		fmt.Sprintf(`{"request_id":"spoof","expected_version":%d,"operation":"input","event_id":"event","body":"材料","evidence_ref":"git:ref","scope_change":true}`, q.Version),
 		fmt.Sprintf(`{"request_id":"spoof","expected_version":%d,"operation":"assign","pm_user":"lbl"}`, q.Version),
 	} {
-		if out := questionHTTP(e, "POST", q.ID, e.zKimiCred, "", body, ""); out.Code != 403 {
+		want := 403
+		if strings.Contains(body, `"operation":"input"`) {
+			want = 426
+		}
+
+		if out := questionHTTP(e, "POST", q.ID, e.zKimiCred, "", body, ""); out.Code != want {
 			t.Fatal("QUESTION_AGENT_HUMAN_BOUNDARY", out.Code, out.Body)
 		}
 	}
@@ -87,6 +92,11 @@ func TestPilotQuestionHTTPPolicyAndMinimalPMObjectGrant(t *testing.T) {
 	}
 	body := fmt.Sprintf(`{"request_id":"human-answer","operation":"answer","expected_version":%d,"event_id":"answer","answer_kind":"substantive","body":"明确的范围结论","evidence_ref":"git:answer"}`, q.Version)
 	out = questionHTTP(e, "POST", q.ID, "", "lbl", body, "")
+	if out.Code != 426 {
+		t.Fatal("QUESTION_OLD_PM_WRITE_NOT_UPGRADE_REJECTED", out.Code, out.Body)
+	}
+	e.hub.SpecClarificationEnabled = true
+	out = clarificationHTTP(e, "POST", q.ID, "", "lbl", "", clarificationHTTPBody("human-answer", "explanation"), "", false)
 	if out.Code != 200 {
 		t.Fatal("QUESTION_PM_ANSWER_FAILED", out.Code, out.Body)
 	}

@@ -90,6 +90,9 @@ func readClarificationPost(ctx context.Context, db taskQuery, spec string, floor
 	if err == nil {
 		err = json.Unmarshal([]byte(refs), &p.EntryRefs)
 	}
+	if err == nil {
+		p.Images, err = clarificationPostImages(ctx, db, spec, floor)
+	}
 	return p, err
 }
 
@@ -119,7 +122,7 @@ func (s *SQLite) appendClarificationTx(ctx context.Context, tx *sql.Tx, expected
 	if !enabled {
 		return out, ErrTaskFlowPermission
 	}
-	if (a.UserID == "") == (a.AgentID == "") || check == nil || !questionNonempty(u.RequestID, 128) || !questionNonempty(u.Body, 8192) || len(u.Evidence) > 2048 || len(u.Reason) > 2048 || len(u.EntryRefs) < 1 || len(u.EntryRefs) > 32 || u.Corrects < 0 || u.Confirms < 0 {
+	if (a.UserID == "") == (a.AgentID == "") || check == nil || !questionNonempty(u.RequestID, 128) || !questionNonempty(u.Body, 8192) || len(u.Evidence) > 2048 || len(u.Reason) > 2048 || len(u.EntryRefs) < 1 || len(u.EntryRefs) > 32 || u.Corrects < 0 || u.Confirms < 0 || len(u.Files) > 4 {
 		return out, ErrTaskFlowInvalid
 	}
 	u.EntryRefs = append([]string{}, u.EntryRefs...)
@@ -206,6 +209,25 @@ func (s *SQLite) appendClarificationTx(ctx context.Context, tx *sql.Tx, expected
 	if !errors.Is(err, sql.ErrNoRows) {
 		return out, err
 	}
+	files := map[string]bool{}
+	for _, id := range u.Files {
+		if !clarificationDigest(id) || files[id] {
+			return out, ErrTaskFlowInvalid
+		}
+		files[id] = true
+		var owner, question string
+		var linked bool
+		if err = tx.QueryRowContext(ctx, `SELECT actor_id,question_id,EXISTS(SELECT 1 FROM spec_clarification_post_image p WHERE p.file_id=i.file_id) FROM spec_clarification_image i WHERE file_id=?`, id).Scan(&owner, &question, &linked); err != nil {
+			return out, ErrTaskFlowInvalid
+		}
+		if owner != a.Key() || question != qid || linked {
+			return out, ErrTaskFlowPermission
+		}
+	}
+	started, e := time.Parse(time.RFC3339Nano, q.GenerationStartedAt)
+	if e != nil || now.Before(started) {
+		return out, ErrTaskFlowConflict
+	}
 	anchors, err := clarificationAnchors(ctx, tx, q, true)
 	if err != nil {
 		return out, err
@@ -278,6 +300,11 @@ func (s *SQLite) appendClarificationTx(ctx context.Context, tx *sql.Tx, expected
 	if _, err = tx.ExecContext(ctx, `INSERT INTO spec_clarification_post(spec_id,floor,revision,content_sha256,question_id,answer_actor,answer_event,role,kind,entry_refs_json,corrects_floor,confirms_floor,reason,source,parent_key,previous_floor,policy_version,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, q.SpecID, floor, q.Revision, q.SHA, qid, a.Key(), event, role, u.Kind, string(refs), u.Corrects, u.Confirms, u.Reason, source, origin.Parent, previousFloor, p.Version, at); err != nil {
 		return out, err
 	}
+	for _, id := range u.Files {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO spec_clarification_post_image(spec_id,floor,file_id) VALUES(?,?,?)`, q.SpecID, floor, id); err != nil {
+			return out, err
+		}
+	}
 	if u.Kind == "scope_change" {
 		id := "qchange:" + blockerHash([]string{qid, a.Key(), event})
 		if _, err = tx.ExecContext(ctx, `INSERT INTO pilot_question_change(id,question_id,generation,answer_actor,answer_event,spec_id,revision,content_sha256,state,created_at) VALUES(?,?,?,?,?,?,?,?,'pending',?)`, id, qid, q.Generation, a.Key(), event, q.SpecID, q.Revision, q.SHA, at); err != nil {
@@ -286,7 +313,7 @@ func (s *SQLite) appendClarificationTx(ctx context.Context, tx *sql.Tx, expected
 	}
 	// Reuse exactly the D2 append/wake path, never create a parallel wake or
 	// reopen a completed/resolved task just because its discussion continued.
-	if q.BlockerID != "" && c.Task != nil && questionCurrent(q, c) {
+	if !questionAcknowledgment(u.Body) && q.BlockerID != "" && c.Task != nil && questionCurrent(q, c) {
 		var bstate, tstate string
 		if err = tx.QueryRowContext(ctx, `SELECT b.state,t.status FROM console_task_blocker b JOIN console_spec_task t ON t.id=b.task_id WHERE b.id=?`, q.BlockerID).Scan(&bstate, &tstate); err != nil {
 			return out, err
@@ -297,12 +324,20 @@ func (s *SQLite) appendClarificationTx(ctx context.Context, tx *sql.Tx, expected
 			}
 		}
 	}
-	if role != "technical" && q.FirstSubstantiveAt == "" {
+	if u.Kind == "correction" && c.Task != nil && questionCurrent(q, c) {
+		event := fmt.Sprintf("clarification_correction/%s/%d", q.ID, floor)
+		for _, r := range []struct{ agent, role string }{{c.Task.Developer, "developer"}, {c.Task.Reviewer, "reviewer"}, {"owner:" + c.Owner, "owner"}} {
+			if err = flowOutbox(ctx, tx, *c.Task, r.agent, r.role, event, now); err != nil {
+				return out, err
+			}
+		}
+	}
+	if role != "technical" && !questionAcknowledgment(u.Body) && q.FirstSubstantiveAt == "" {
 		q.FirstSubstantiveAt = at
 	}
 	q.AnsweredAt = at
 	q.Version++
-	if !questionTerminal(q.State) {
+	if !questionAcknowledgment(u.Body) && !questionTerminal(q.State) {
 		q.State = "answered_pending_recheck"
 	}
 	if err = saveQuestion(ctx, tx, q); err != nil {

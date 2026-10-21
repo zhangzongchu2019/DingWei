@@ -120,9 +120,10 @@ func TestPilotQuestionPGActualSendReplyOrderingAndCurrentBinding(t *testing.T) {
 	case <-ctx.Done():
 		t.Fatal(ctx.Err())
 	}
-	answer := fmt.Sprintf(`{"request_id":"answer","operation":"answer","expected_version":%d,"event_id":"actual-reply","answer_kind":"substantive","body":"明确的范围结论","evidence_ref":"git:answer"}`, q.Version)
+	answer := clarificationHTTPBody("answer", "explanation")
+	e.hub.SpecClarificationEnabled = true
 	result := make(chan *httptest.ResponseRecorder, 1)
-	go func() { result <- questionHTTP(e, "POST", q.ID, "", "lbl", answer, "") }()
+	go func() { result <- clarificationHTTP(e, "POST", q.ID, "", "lbl", "", answer, "", false) }()
 	// The waiter must be the same-question advisory lock, not an unrelated SQLite failure.
 	waiting := false
 	deadline := time.Now().Add(3 * time.Second)

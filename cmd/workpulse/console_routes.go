@@ -133,7 +133,12 @@ func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
 	}
 	mux.HandleFunc("GET /api/console/questions/{questionID}/clarifications/requests/{requestID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleClarification)))
 	mux.HandleFunc("GET /api/agent/console/questions/{questionID}/clarifications/requests/{requestID}", prefixHub.RequireAgentBlocker(prefixHub.HandleClarification))
-	mux.HandleFunc("GET /console/spec-clarifications", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleClarificationPage)))
+	mux.HandleFunc("POST /api/console/questions/{questionID}/clarification-images", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleClarificationImage)))
+	mux.HandleFunc("GET /api/console/questions/{questionID}/clarification-images/{fileID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleClarificationImage)))
+	mux.HandleFunc("GET /api/agent/console/questions/{questionID}/clarification-images/{fileID}", prefixHub.RequireAgentBlocker(prefixHub.HandleClarificationImage))
+	mux.HandleFunc("GET /api/console/specs/{specID}/clarifications", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleSpecClarifications)))
+	mux.HandleFunc("GET /console/spec-clarifications", prefixHub.RequireClarificationPage(prefixHub.HandleClarificationPage))
+	mux.HandleFunc("GET /console/clarification-return", prefixHub.RequireConsolePrincipal(prefixHub.HandleClarificationReturn))
 	for _, method := range []string{"GET", "POST"} {
 		action := "read"
 		if method == "POST" {

@@ -7,7 +7,7 @@ import urllib.request
 from .task_flow import NoRedirect
 from .task_blocker import ID
 
-CREATE={'request_id','expected_version','kind','title','observed_fact','question','expected_answer','input_anchors','production_or_security'}
+CREATE={'request_id','expected_version','kind','title','observed_fact','question','expected_answer','input_anchors','production_or_security','entry_refs'}
 INPUT={'request_id','expected_version','event_id','body','evidence_ref'}
 COLLECTION={'spec_id','task_id','limit','cursor'}
 DETAIL={'before','change_before'}
@@ -26,11 +26,14 @@ def validate_request(args):
             elif not isinstance(v,str) or len(v)>4096 or (k in ('spec_id','task_id') and not ID.fullmatch(v)):raise ValueError('invalid question selector')
     else:
         allowed=CREATE if action=='create' else INPUT
-        required={'request_id','expected_version','kind','title','observed_fact','question','expected_answer'} if action=='create' else INPUT
+        required={'request_id','expected_version','kind','title','observed_fact','question','expected_answer','entry_refs'} if action=='create' else INPUT
         if set(body)-allowed or not required<=set(body):raise ValueError('invalid question fields')
         if not isinstance(body['request_id'],str) or not 1<=len(body['request_id'])<=128 or type(body['expected_version']) is not int or body['expected_version']<1:raise ValueError('invalid question request/version')
         if action=='create':
             if not task or qid or body['kind'] not in ('requirement_unclear','change','technical','resource'):raise ValueError('invalid question creation')
+            if 'entry_refs' in body:
+                refs=body['entry_refs']
+                if not isinstance(refs,list) or not 1<=len(refs)<=32 or any(not isinstance(v,str) or not ID.fullmatch(v) for v in refs) or len(set(refs))!=len(refs):raise ValueError('invalid question entry references')
             if 'production_or_security' in body and type(body['production_or_security']) is not bool:raise ValueError('invalid question risk')
             for k,n in [('title',512),('observed_fact',4096),('question',4096),('expected_answer',4096)]:
                 if not isinstance(body[k],str) or not body[k].strip() or len(body[k].encode())>n:raise ValueError('invalid question text')
@@ -65,6 +68,6 @@ def question_request(ws_url,headers,args):
             return {'status':'ok','http_status':response.status,**payload}
     except urllib.error.HTTPError as exc:
         unknown=method!='GET' and exc.code>=500
-        return {'status':'error','http_status':exc.code,'error':'question_outcome_unknown' if unknown else 'question_unsupported_upgrade_hub' if exc.code in (404,426) else 'question_request_rejected','outcome':'unknown' if unknown else 'rejected','retryable':False}
+        return {'status':'error','http_status':exc.code,'error':'question_outcome_unknown' if unknown else 'clarification_requires_anchored_tools_upgrade_helper' if exc.code==426 else 'question_unsupported_upgrade_hub' if exc.code==404 else 'question_request_rejected','outcome':'unknown' if unknown else 'rejected','retryable':False}
     except (OSError,ValueError):
         return {'status':'error','error':'question_outcome_unknown' if method!='GET' else 'question_read_failed','outcome':'unknown' if method!='GET' else 'failed','retryable':False}

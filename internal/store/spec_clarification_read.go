@@ -158,3 +158,45 @@ func (s *SQLite) FindClarificationRequest(ctx context.Context, expected Question
 	}
 	return out, found, nil
 }
+
+// A create form can expose only bounded structured anchor IDs from its already
+// authorized task/spec revision. This read never materializes legacy sidecars.
+func (s *SQLite) ClarificationCreateAnchors(ctx context.Context, expected QuestionContext, check func() error) ([]string, bool, error) {
+	if check == nil {
+		return nil, false, ErrTaskFlowPermission
+	}
+	tx, e := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if e != nil {
+		return nil, false, e
+	}
+	defer tx.Rollback()
+	c, e := questionContext(ctx, tx, expected.SpecID, expected.TaskID, "")
+	if e != nil {
+		return nil, false, e
+	}
+	if !reflect.DeepEqual(c, expected) {
+		return nil, false, ErrTaskFlowConflict
+	}
+	anchors, e := clarificationAnchors(ctx, tx, PilotQuestion{SpecID: c.SpecID, Revision: c.Revision, SHA: c.SHA}, false)
+	if e != nil {
+		return nil, false, e
+	}
+	refs := []string{}
+	for id, n := range anchors {
+		if n == 1 {
+			refs = append(refs, id)
+		}
+	}
+	sort.Strings(refs)
+	truncated := len(refs) > 300
+	if truncated {
+		refs = refs[:300]
+	}
+	if e = check(); e != nil {
+		return nil, false, e
+	}
+	if e = tx.Commit(); e != nil {
+		return nil, false, e
+	}
+	return refs, truncated, nil
+}

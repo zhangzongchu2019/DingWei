@@ -92,7 +92,7 @@ async function post(path,body){
     return {ok:r.ok,status:r.status,data:data||{},text:r.ok?'':errText(r.status,data)};
   }catch(e){return {ok:false,status:0,data:{},text:'请求失败，请检查网络后重试'};}
 }
-function enter(){location.assign('/console');}
+function enter(){var state=new URLSearchParams(location.search).get('clarification_state')||'';location.assign(/^[a-f0-9]{64}$/.test(state)?'/console/clarification-return?state='+encodeURIComponent(state):'/console');}
 function showChange(prefillOld){
   $('pwSection').hidden=true;$('fsSection').hidden=true;$('changeSection').hidden=false;
   $('chOld').value=prefillOld||'';

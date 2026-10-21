@@ -93,6 +93,7 @@ type QuestionChange struct {
 	Reason      string `json:"reason"`
 }
 type QuestionUpdate struct {
+	ClarificationKind    string   `json:"clarification_kind,omitempty"`
 	RequestID            string   `json:"request_id"`
 	ExpectedVersion      int      `json:"expected_version"`
 	Operation            string   `json:"operation"`
@@ -147,7 +148,7 @@ func questionManager(a BlockerActor, c QuestionContext) bool {
 	return a.UserID != "" && (a.UserID == c.Owner || a.UserID == c.Editor)
 }
 func questionAnswerer(a BlockerActor, c QuestionContext, q PilotQuestion) bool {
-	return a.UserID != "" && (questionManager(a, c) || a.UserID == q.PMUser || q.Responsible == a.Key())
+	return a.UserID != "" && a.UserID == q.PMUser
 }
 func validQuestionKind(s string) bool {
 	return s == "requirement_unclear" || s == "change" || s == "technical" || s == "resource"
