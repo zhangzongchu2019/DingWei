@@ -1,0 +1,8 @@
+=== RUN   TestClarificationFeishuOriginRequiresPMAtAppendBoundary
+=== RUN   TestClarificationFeishuOriginRequiresPMAtAppendBoundary/technical_reader
+    spec_clarification_feishu_role_test.go:48: CLARIFICATION_FEISHU_NON_PM_ORIGIN_ACCEPTED_technical_reader <nil> technical
+--- FAIL: TestClarificationFeishuOriginRequiresPMAtAppendBoundary (0.11s)
+    --- FAIL: TestClarificationFeishuOriginRequiresPMAtAppendBoundary/technical_reader (0.11s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.117s
+FAIL

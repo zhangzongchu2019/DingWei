@@ -1,0 +1,14 @@
+{
+  "UTC": "2026-10-21T07:03:14.227053+00:00",
+  "UID": 1001,
+  "go_version": "go version go1.22.2 linux/amd64",
+  "GOTOOLCHAIN": "local",
+  "GOPROXY": "off",
+  "GOSUMDB": "off",
+  "HUB_TEST_PG_DSN": "unset",
+  "HUB_TEST_PG_STRICT": "1",
+  "HUB_TEST_PG_SKIP_OK": "0",
+  "HUB_TEST_PG_EMBEDDED": "1",
+  "TMPDIR": "/tmp/cc-nonpm-tests mode0700",
+  "scope": "local synthetic fixtures only"
+}

@@ -1,0 +1,6 @@
+=== RUN   TestClarificationFeishuOriginRequiresPMAtAppendBoundary
+=== RUN   TestClarificationFeishuOriginRequiresPMAtAppendBoundary/technical_reader
+--- PASS: TestClarificationFeishuOriginRequiresPMAtAppendBoundary (0.11s)
+    --- PASS: TestClarificationFeishuOriginRequiresPMAtAppendBoundary/technical_reader (0.11s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.113s
