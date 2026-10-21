@@ -98,6 +98,7 @@ func TestPilotQuestionHTTPPolicyAndMinimalPMObjectGrant(t *testing.T) {
 	}
 	e.hub.PublicOrigin = "https://console.fixture.invalid"
 	sent := 0
+	e.hub.QuestionFeishuEnabled = true
 	e.hub.QuestionSender = func(context.Context, string, string, string, string) (string, error) { sent++; return "provider", nil }
 	e.hub.processQuestions(context.Background())
 	if sent != 0 {

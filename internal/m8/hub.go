@@ -128,6 +128,9 @@ type Hub struct {
 	questionReminderAfter string
 	questionOutboxAfter   string
 
+	// Startup-only D3 outbound opt-in; unrelated to spec clarification inbound.
+	QuestionFeishuEnabled bool
+
 	mu                hubMutex
 	serviceClients    map[string]*client
 	sessionClients    map[string]map[string]*sessionClient

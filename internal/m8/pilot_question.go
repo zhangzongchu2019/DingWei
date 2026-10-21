@@ -30,7 +30,7 @@ type questionRepository interface {
 	OpenQuestionIDs(context.Context, string) ([]string, error)
 	QueueQuestionReminder(context.Context, store.QuestionContext, string, func() error, time.Time) error
 	PendingQuestionNotices(context.Context, string) ([]store.QuestionNotice, error)
-	PrepareQuestionNotice(context.Context, store.QuestionContext, store.QuestionNotice, bool, func() error, time.Time) (store.PilotQuestion, bool, error)
+	PrepareQuestionNotice(context.Context, store.QuestionContext, store.QuestionNotice, bool, func() error, time.Time, ...string) (store.PilotQuestion, bool, error)
 	FinishQuestionNotice(context.Context, string, string, bool, time.Time) error
 	QuestionReferences(context.Context, string) (store.PilotQuestion, error)
 }
