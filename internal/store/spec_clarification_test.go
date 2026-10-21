@@ -254,7 +254,17 @@ func TestClarificationAnchorCorrectionScopeAndWriteFreeze(t *testing.T) {
 }
 
 func TestClarificationReplyBudgetAndReplayOrder(t *testing.T) {
-	db, now, q := clarificationFixture(t)
+	db, now, _ := clarificationFixture(t)
+	// Use a real spec-only question: no D2 blocker exists to mask withdrawal
+	// of the thread's own budget. Task-linked replies share the separate D2 gate.
+	created, err := questionApply(t, db, now, BlockerActor{UserID: "owner-a"}, "", QuestionUpdate{
+		RequestID: "spec-only-budget", ExpectedVersion: 1, Operation: "create", Kind: "requirement_unclear",
+		Title: "spec 级问题", ObservedFact: "无关联任务", Question: "请解释 A1", ExpectedAnswer: "保持范围的解释",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := created.Question
 	pm := BlockerActor{UserID: "pm"}
 	for i := 0; i < 10; i++ {
 		if _, err := clarificationApply(t, db, now, pm, q, clarificationUpdate(fmt.Sprintf("budget-%d", i))); err != nil {
