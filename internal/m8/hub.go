@@ -128,6 +128,17 @@ type Hub struct {
 	questionReminderAfter string
 	questionOutboxAfter   string
 
+	// Startup-only D3 outbound opt-in; unrelated to spec clarification inbound.
+	QuestionFeishuEnabled bool
+	// Startup-only clarification flags. Reply ingestion never reads the D3
+	// outbound opt-in; disabling either clarification flag does not undo policy.
+	SpecClarificationEnabled            bool
+	SpecClarificationFeishuReplyEnabled bool
+	ClarificationReplyAuthorities       map[string]ClarificationReplyAuthority
+	ClarificationReceiptSender          QuestionSender
+	clarificationDispatchMu             sync.Mutex
+	clarificationInboundAfter           int64
+
 	mu                hubMutex
 	serviceClients    map[string]*client
 	sessionClients    map[string]map[string]*sessionClient
@@ -337,36 +348,37 @@ var (
 
 func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 	h := &Hub{
-		Repo:                        repo,
-		serviceClients:              map[string]*client{},
-		sessionClients:              map[string]map[string]*sessionClient{},
-		keyAccounts:                 map[string]map[string]bool{},
-		botChannels:                 map[string]string{},
-		botNames:                    map[string]string{},
-		envelopeIDs:                 map[string]string{},
-		replyDedup:                  newReplyDedup(envDuration("REPLY_ORIGIN_DEDUP_TTL", replyDedupDefaultTTL)),
-		onlineTimers:                map[string]*time.Timer{},
-		seenSessions:                map[string]bool{},
-		terminals:                   map[string]*terminalState{},
-		terminalLastSize:            map[string][2]int{},
-		syncTargets:                 map[string]map[string]feishuSyncTarget{},
-		recentTerminal:              map[string][]terminalSyncItem{},
-		syncBuffers:                 map[string]*feishuSyncBuffer{},
-		syncToolSummaries:           map[string]*terminalToolSummary{},
-		linkTokens:                  map[string]ownerLinkToken{},
-		onboardPushed:               map[string]time.Time{},
-		consoleTouched:              map[string]time.Time{},
-		onboardContexts:             map[string]onboardContext{},
-		viewV2Nonces:                map[string]time.Time{},
-		viewV2Requests:              map[string]viewV2RequestResult{},
-		deliveryNotices:             map[string]time.Time{},
-		capabilityPendingAdmissions: map[string]*capabilityPendingAdmission{},
-		startedAt:                   time.Now().UTC(),
-		restartWindow:               envDuration("WP_RESTART_STABILITY_WINDOW", time.Minute),
-		onlineDebounce:              2500 * time.Millisecond,
-		onboardInterval:             envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
-		newSessionNotice:            true,
-		consoleAuthEnabled:          consoleAuthMode.Enabled(),
+		Repo:                          repo,
+		ClarificationReplyAuthorities: map[string]ClarificationReplyAuthority{},
+		serviceClients:                map[string]*client{},
+		sessionClients:                map[string]map[string]*sessionClient{},
+		keyAccounts:                   map[string]map[string]bool{},
+		botChannels:                   map[string]string{},
+		botNames:                      map[string]string{},
+		envelopeIDs:                   map[string]string{},
+		replyDedup:                    newReplyDedup(envDuration("REPLY_ORIGIN_DEDUP_TTL", replyDedupDefaultTTL)),
+		onlineTimers:                  map[string]*time.Timer{},
+		seenSessions:                  map[string]bool{},
+		terminals:                     map[string]*terminalState{},
+		terminalLastSize:              map[string][2]int{},
+		syncTargets:                   map[string]map[string]feishuSyncTarget{},
+		recentTerminal:                map[string][]terminalSyncItem{},
+		syncBuffers:                   map[string]*feishuSyncBuffer{},
+		syncToolSummaries:             map[string]*terminalToolSummary{},
+		linkTokens:                    map[string]ownerLinkToken{},
+		onboardPushed:                 map[string]time.Time{},
+		consoleTouched:                map[string]time.Time{},
+		onboardContexts:               map[string]onboardContext{},
+		viewV2Nonces:                  map[string]time.Time{},
+		viewV2Requests:                map[string]viewV2RequestResult{},
+		deliveryNotices:               map[string]time.Time{},
+		capabilityPendingAdmissions:   map[string]*capabilityPendingAdmission{},
+		startedAt:                     time.Now().UTC(),
+		restartWindow:                 envDuration("WP_RESTART_STABILITY_WINDOW", time.Minute),
+		onlineDebounce:                2500 * time.Millisecond,
+		onboardInterval:               envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
+		newSessionNotice:              true,
+		consoleAuthEnabled:            consoleAuthMode.Enabled(),
 		L2Config: L2Config{
 			Workers:             4,
 			PollInterval:        200 * time.Millisecond,
@@ -1530,6 +1542,9 @@ func sessionNameRequestWarning(requested, keyID, ownerKey string) string {
 }
 
 func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {
+	if result, handled, err := h.dispatchClarificationReply(ctx, msg, text); handled {
+		return result, err
+	}
 	if h.Repo == nil {
 		return h.dispatchL1Direct(ctx, msg, text)
 	}

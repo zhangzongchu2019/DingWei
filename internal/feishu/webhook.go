@@ -1,6 +1,7 @@
 package feishu
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,6 +31,8 @@ func WebhookMessageFromPayload(botChannelID string, data []byte) (model.Message,
 }
 
 type fakeWebhookPayload struct {
+	ParentID     string          `json:"parent_id"`
+	RootID       string          `json:"root_id"`
 	MsgID        string          `json:"msg_id"`
 	ChatType     string          `json:"chat_type"`
 	ChatID       string          `json:"chat_id"`
@@ -74,6 +77,7 @@ func fakeWebhookMessage(botChannelID string, data []byte) (model.Message, bool, 
 		SenderOpenID: firstNonEmpty(p.SenderOpenID, p.OpenID),
 		Content:      content,
 		CreatedAt:    time.Now().UTC(),
+		FeishuReply:  untrustedReplyMetadata(msgID, p.ParentID, p.RootID, content),
 	}, true, nil
 }
 
@@ -84,6 +88,8 @@ type webhookV2Payload struct {
 		EventType  string `json:"event_type"`
 		CreateTime string `json:"create_time"`
 		Token      string `json:"token"`
+		AppID      string `json:"app_id"`
+		Tenant     string `json:"tenant_key"`
 	} `json:"header"`
 	Event struct {
 		Sender  webhookSender  `json:"sender"`
@@ -100,6 +106,8 @@ type webhookSender struct {
 }
 
 type webhookMessage struct {
+	ParentID   string `json:"parent_id"`
+	RootID     string `json:"root_id"`
 	MessageID  string `json:"message_id"`
 	ChatID     string `json:"chat_id"`
 	ChatType   string `json:"chat_type"`
@@ -135,6 +143,7 @@ func v2WebhookMessage(botChannelID string, data []byte) (model.Message, bool, er
 		SenderOpenID: sender,
 		Content:      normalizeContent(p.Event.Message.Content),
 		CreatedAt:    created,
+		FeishuReply:  untrustedReplyMetadata(msgID, p.Event.Message.ParentID, p.Event.Message.RootID, p.Event.Message.Content),
 	}, true, nil
 }
 
@@ -142,6 +151,8 @@ type legacyWebhookPayload struct {
 	Type  string `json:"type"`
 	Token string `json:"token"`
 	Event struct {
+		ParentID      string `json:"parent_id"`
+		RootID        string `json:"root_id"`
 		Type          string `json:"type"`
 		OpenMessageID string `json:"open_message_id"`
 		MessageID     string `json:"message_id"`
@@ -184,7 +195,19 @@ func legacyWebhookMessage(botChannelID string, data []byte) (model.Message, bool
 		SenderOpenID: sender,
 		Content:      normalizeContent(content),
 		CreatedAt:    parseMillisTime(p.Event.CreateTime),
+		FeishuReply:  untrustedReplyMetadata(msgID, p.Event.ParentID, p.Event.RootID, content),
 	}, true, nil
+}
+
+// Even a token-verified legacy webhook is not the SDK reply authority. Preserve
+// only enough correlation for the Hub to consume a known reply instead of
+// forwarding it as an ordinary Agent instruction; never accept a payload trust
+// bit, sender account, or question number as authority.
+func untrustedReplyMetadata(id, parent, root, content string) *model.FeishuReplyMetadata {
+	if parent == "" && root == "" {
+		return nil
+	}
+	return &model.FeishuReplyMetadata{MessageID: id, ParentID: parent, RootID: root, ContentSHA: fmt.Sprintf("%x", sha256.Sum256([]byte(content)))}
 }
 
 func normalizeWebhookChat(chatType, chatID, senderOpenID string) (model.ChatType, string, error) {

@@ -1,0 +1,120 @@
+{
+  "source": "7115b67946fee16e64cd76a68284a41773932f75",
+  "source_tree": "8e82db39df0340692528454a22bf62853ad0f652",
+  "started_at": "2026-10-21T06:16:09.073213999Z",
+  "local_only": true,
+  "gates": {
+    "go": {
+      "rc": 0,
+      "source": "7115b67946fee16e64cd76a68284a41773932f75",
+      "packages": 66,
+      "tested_packages": 53,
+      "no_test_packages": 13,
+      "individual_skips": 39
+    },
+    "helper": {
+      "rc": 0,
+      "source": "7115b67946fee16e64cd76a68284a41773932f75"
+    },
+    "canonical": {
+      "rc": 0,
+      "source": "7115b67946fee16e64cd76a68284a41773932f75"
+    },
+    "vet": {
+      "rc": 0,
+      "source": "7115b67946fee16e64cd76a68284a41773932f75"
+    },
+    "race": {
+      "rc": 0,
+      "source": "7115b67946fee16e64cd76a68284a41773932f75"
+    },
+    "build-final": {
+      "rc": 0,
+      "source": "7115b67946fee16e64cd76a68284a41773932f75"
+    },
+    "withdrawals": {
+      "rc": 0,
+      "source": "7115b67946fee16e64cd76a68284a41773932f75",
+      "count": 38,
+      "all_designated_markers": true
+    },
+    "compatibility": {
+      "rc": 0,
+      "source": "7115b67946fee16e64cd76a68284a41773932f75",
+      "old_source": "ab0f214496e6a5df1c71826cc978f40528923b8f",
+      "ledger_counts": {
+        "r33": 59,
+        "after_committed_0061_and_failed_0062": 60,
+        "after_0061_0062_0063": 62,
+        "after_repeated_migrate": 62
+      }
+    },
+    "browsers": {
+      "rc": 0,
+      "source": "0fe752bb14a15047aeae6a52970a2e912b2023bc",
+      "frozen_input_equivalence": "INPUT-EQUIVALENCE.json",
+      "suites": [
+        {
+          "suite": "spec-clarification-browser-regression",
+          "rc": 0
+        },
+        {
+          "suite": "spec-clarification-mobile-flow-regression",
+          "rc": 0
+        },
+        {
+          "suite": "pilot-spec-template-browser-regression",
+          "rc": 0
+        },
+        {
+          "suite": "pilot-feedback-browser-regression",
+          "rc": 0
+        },
+        {
+          "suite": "pilot-blocker-wake-browser-regression",
+          "rc": 0
+        },
+        {
+          "suite": "console-specs-browser-regression",
+          "rc": 0
+        },
+        {
+          "suite": "r32-task-flow-browser-regression",
+          "rc": 0
+        },
+        {
+          "suite": "r32-spec-review-browser-regression",
+          "rc": 0
+        }
+      ],
+      "live_provider": false
+    }
+  },
+  "finished_at": "2026-10-21T06:30:23.041754+00:00",
+  "local_binaries": [
+    {
+      "name": "fcs",
+      "bytes": 11624600,
+      "sha256": "265de47017af3c5519208932ce302c4a96cdd3581cb7ea24bcdc205901db276e",
+      "in_git": false
+    },
+    {
+      "name": "file-service",
+      "bytes": 9420952,
+      "sha256": "9e05b4d9751a4db174ffdc58fae4cf7756b926d77b68fb19a5f0cd70d03e4d80",
+      "in_git": false
+    },
+    {
+      "name": "nodeagent",
+      "bytes": 6099096,
+      "sha256": "361113a3c09ed21d2fa1a7619013f552375ce3cc3eac9c9548650f03e2be71d0",
+      "in_git": false
+    },
+    {
+      "name": "workpulse",
+      "bytes": 22622360,
+      "sha256": "1bc27792070b86abbbae1ec3b071cce56daffd4fc53488afdc930a17ab9edb46",
+      "in_git": false
+    }
+  ]
+}

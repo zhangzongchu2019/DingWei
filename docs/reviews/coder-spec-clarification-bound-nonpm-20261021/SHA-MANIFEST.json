@@ -1,0 +1,145 @@
+{
+  "count": 28,
+  "files": [
+    {
+      "path": "CHECKS.json",
+      "bytes": 4355,
+      "sha256": "477fc1affd167045257a3a2a671ebc4578e9342f50719b613f209fd6456d4532"
+    },
+    {
+      "path": "ENVIRONMENT.json",
+      "bytes": 388,
+      "sha256": "b8f11ef5e2e1efa7a8bacac3821571eba544cb1c3b1283568126dfab4b8e99be"
+    },
+    {
+      "path": "README.md",
+      "bytes": 4330,
+      "sha256": "a6fcf395eeb9aa4ed43898bd625b643bf1c321f13dceafa96c17681459ef5306"
+    },
+    {
+      "path": "REPRODUCE.md",
+      "bytes": 1364,
+      "sha256": "6be0d72c370cb2e1e9058ab86c82d2770e973b722270aae52e6d6853cc02c66d"
+    },
+    {
+      "path": "TEST-ONLY-PROOF.json",
+      "bytes": 982,
+      "sha256": "f380c29994c137bc8a924b1d07533bc5aac17edcb62431804d1978ff17ec3e21"
+    },
+    {
+      "path": "VERIFY.py",
+      "bytes": 1680,
+      "sha256": "e111935238c65e7885d2db11eb2deeb2953a4727ff7ab1aeefb101afc60d680d"
+    },
+    {
+      "path": "raw/initial-pre-freeze-target.log",
+      "bytes": 1747,
+      "sha256": "2e8c4c6c1c01533b311e94bad423383d13ac3cbbfded28a0c6ccef4a7194bb4b"
+    },
+    {
+      "path": "raw/initial-pre-freeze-target.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "raw/packages.jsonl",
+      "bytes": 2534590,
+      "sha256": "af5a043e45b6a47a8535627ef97a628075d889d751ca4d49b70d076df2e0631f"
+    },
+    {
+      "path": "raw/packages.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "raw/packages.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "raw/race.log",
+      "bytes": 1747,
+      "sha256": "33490ba62b2b32dd8f3c742d06a0bf6fd0d788d7d6cc80b1f83b4bb968f6fd48"
+    },
+    {
+      "path": "raw/race.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "raw/vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "raw/vet.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "withdrawals/MUTATIONS.json",
+      "bytes": 1627,
+      "sha256": "e75ea4f0720db5b6d276148012fa842847c3090d633d476b14f701459a077d87"
+    },
+    {
+      "path": "withdrawals/deputy-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "withdrawals/deputy-before.stdout",
+      "bytes": 366,
+      "sha256": "ad8cd4367e51b49bc67432fd6479943c4a4786f7361a1a283c9ece53f001f716"
+    },
+    {
+      "path": "withdrawals/deputy-restored.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "withdrawals/deputy-restored.stdout",
+      "bytes": 366,
+      "sha256": "21306879dc9c90533a91fe58a85bda2b0391ba902fd002e7c8e9eedefc7a46f7"
+    },
+    {
+      "path": "withdrawals/deputy-withdrawn.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "withdrawals/deputy-withdrawn.stdout",
+      "bytes": 482,
+      "sha256": "5d27faf02b2d52ef4ca99c38f19381a5978f9ae34c52cc7d95d7af5dced5e443"
+    },
+    {
+      "path": "withdrawals/technical_reader-before.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "withdrawals/technical_reader-before.stdout",
+      "bytes": 386,
+      "sha256": "155d94dd3e24c0a7792bacd2f2530035079cc77522240223a8b53786ccc793df"
+    },
+    {
+      "path": "withdrawals/technical_reader-restored.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "withdrawals/technical_reader-restored.stdout",
+      "bytes": 386,
+      "sha256": "a3b31a674d7eab527138d0de1ef6222c6e3f502ab85952b98eadd6e74230f656"
+    },
+    {
+      "path": "withdrawals/technical_reader-withdrawn.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "withdrawals/technical_reader-withdrawn.stdout",
+      "bytes": 515,
+      "sha256": "d0a33f005345fad010b10cf1c85dfac441a286122683a2965fa34f40e2e4467c"
+    }
+  ]
+}

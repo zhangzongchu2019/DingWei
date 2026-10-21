@@ -256,12 +256,10 @@ func run(logger *slog.Logger) error {
 			return err
 		}
 	}
-	switch feishuGateway.(type) {
-	case *feishu.Fake, feishu.Stub, nil:
-	default:
-		prefixHub.QuestionSender = func(sendCtx context.Context, issuer, subject, noticeID, text string) (string, error) {
-			return feishu.SendPilotQuestion(sendCtx, feishuGateway, feishu.OutMessage{BotChannelID: issuer, ToID: subject, ToType: "personal", Text: text, RequestID: feishu.DeriveRequestID("reply", noticeID, "pilot-question")})
-		}
+	configurePilotQuestionFeishu(prefixHub, feishuGateway)
+	configureSpecClarification(prefixHub)
+	if err := configureClarificationReplyAuthority(prefixHub, feishuGateway); err != nil {
+		return err
 	}
 	adm.Collector = collectorOrNil(feishuGateway)
 	if channels, err := st.ListBotChannels(ctx); err == nil {

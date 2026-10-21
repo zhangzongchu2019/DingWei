@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationAppendReplayAndEqualTextSupplement (0.15s)
+    spec_clarification_test.go:93: CLARIFICATION_BODY_DELETABLE
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.149s
+FAIL

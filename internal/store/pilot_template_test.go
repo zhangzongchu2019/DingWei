@@ -370,13 +370,14 @@ func TestPilotTemplateD3ConfirmsActualDerivedSuccessor(t *testing.T) {
 	if _, err := s.SetQuestionPolicy(ctx, c, actor, QuestionUpdate{RequestID: "policy", PMUser: "owner-a", LeaderUser: "owner-a"}, func() error { return nil }, now); err != nil {
 		t.Fatal(err)
 	}
-	out, err := s.UpdateQuestion(ctx, c, actor, "", QuestionUpdate{RequestID: "question", Operation: "create", ExpectedVersion: 1, Kind: "change", Title: "bounded change", ObservedFact: "missing acceptance", Question: "clarify", ExpectedAnswer: "new version"}, func() error { return nil }, now)
+	out, err := s.UpdateQuestion(ctx, c, actor, "", QuestionUpdate{RequestID: "question", Operation: "create", EntryRefs: []string{"R1"}, ExpectedVersion: 1, Kind: "change", Title: "bounded change", ObservedFact: "missing acceptance", Question: "clarify", ExpectedAnswer: "new version"}, func() error { return nil }, now)
 	if err != nil {
 		t.Fatal(err)
 	}
 	q := out.Question
 	c, _ = s.QuestionAuthorizationContext(ctx, "", "", q.ID)
-	out, err = s.UpdateQuestion(ctx, c, actor, q.ID, QuestionUpdate{RequestID: "proposal", Operation: "answer", ExpectedVersion: q.Version, EventID: "event", AnswerKind: "substantive", Body: "explicit new condition", Evidence: "git:proposal"}, func() error { return nil }, now)
+	_, err = s.AppendClarification(ctx, c, actor, q.ID, ClarificationUpdate{RequestID: "proposal", Kind: "scope_change", EntryRefs: []string{"R1"}, Body: "explicit new condition", Evidence: "git:proposal"}, true, func() error { return nil }, now)
+	out.Question, _ = scanQuestion(s.db.QueryRow(`SELECT `+questionCols+` FROM pilot_question WHERE id=?`, q.ID))
 	if err != nil {
 		t.Fatal(err)
 	}

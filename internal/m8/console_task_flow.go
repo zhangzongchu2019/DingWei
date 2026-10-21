@@ -64,6 +64,9 @@ func taskError(w http.ResponseWriter, err error) {
 	status := http.StatusServiceUnavailable
 	code := "task_unavailable"
 	switch {
+	case errors.Is(err, store.ErrClarificationUpgradeRequired):
+		taskJSON(w, 426, map[string]any{"error": "clarification_upgrade_required", "helper_min_version": "0.2.3.8", "use": "anchored_clarification_tools"})
+		return
 	case errors.Is(err, store.ErrBlockerRateLimited):
 		taskJSON(w, 429, map[string]any{"error": "blocker_reply_rate_limited"})
 		return
@@ -426,6 +429,7 @@ func (h *Hub) StartTaskFlow(ctx context.Context) {
 			h.dispatchTaskNotifications(ctx)
 			h.dispatchBlockerWakes(ctx)
 			h.processQuestions(ctx)
+			h.reconcileClarificationReplies(ctx)
 			select {
 			case <-ctx.Done():
 				return

@@ -1,0 +1,25 @@
+test_all_registered_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_registered_tools_return_sanitized_execution_errors) ... 
+  test_all_registered_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_registered_tools_return_sanitized_execution_errors) (tool='dw_spec_clarifications') ... FAIL
+test_eighteen_failures_preserve_process_and_allow_explicit_recovery (test_mcp_shim_transport_errors.ShimTransportTests.test_eighteen_failures_preserve_process_and_allow_explicit_recovery) ... MCP_TRANSPORT_READINGS errors=18 survived=18 recovery_same_process=18
+ok
+test_invalid_tool_arguments_remain_protocol_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_invalid_tool_arguments_remain_protocol_errors) ... ok
+test_unexpected_handler_error_is_contained_and_baseexception_is_not (test_mcp_shim_transport_errors.ShimTransportTests.test_unexpected_handler_error_is_contained_and_baseexception_is_not) ... ok
+
+======================================================================
+FAIL: test_all_registered_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_registered_tools_return_sanitized_execution_errors) (tool='dw_spec_clarifications')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/spec-clarification-thread/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 238, in test_all_registered_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'project_context_unsupported' if tool=='project_context' else 'blocker_unsupported_upgrade_helper' if tool.startswith('dw_task_blocker_') else 'question_unsupported_upgrade_helper' if tool.startswith('dw_task_question_') else 'template_unsupported_upgrade_helper' if tool=='dw_spec_template' else 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/spec-clarification-thread/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 182, in exercise
+    self.assertEqual(error['error'], expected)
+AssertionError: 'clarification_unsupported_upgrade_helper' != 'helper_rejected'
+- clarification_unsupported_upgrade_helper
++ helper_rejected
+
+
+----------------------------------------------------------------------
+Ran 4 tests in 3.709s
+
+FAILED (failures=1)

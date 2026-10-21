@@ -1,0 +1,45 @@
+[
+  {
+    "name": "store-full",
+    "command": [
+      "go",
+      "test",
+      "./internal/store",
+      "-count=1",
+      "-timeout=10m"
+    ],
+    "source": "2ec504c6cd7d8a2d012a2fc8ce14a906bff9638e",
+    "start": "2026-10-21T04:28:03.398100+00:00",
+    "rc": 0,
+    "end": "2026-10-21T04:28:24.603158+00:00"
+  },
+  {
+    "name": "race-final",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "./internal/store",
+      "-run",
+      "^TestClarification",
+      "-count=1",
+      "-timeout=5m"
+    ],
+    "source": "2ec504c6cd7d8a2d012a2fc8ce14a906bff9638e",
+    "start": "2026-10-21T04:28:24.603430+00:00",
+    "rc": 0,
+    "end": "2026-10-21T04:28:55.003106+00:00"
+  },
+  {
+    "name": "vet-final",
+    "command": [
+      "go",
+      "vet",
+      "./internal/store"
+    ],
+    "source": "2ec504c6cd7d8a2d012a2fc8ce14a906bff9638e",
+    "start": "2026-10-21T04:28:55.003377+00:00",
+    "rc": 0,
+    "end": "2026-10-21T04:28:55.270385+00:00"
+  }
+]

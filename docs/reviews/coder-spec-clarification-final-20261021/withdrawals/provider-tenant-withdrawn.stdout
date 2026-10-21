@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationSDKRejectsApplicationAndTenantDrift (0.00s)
+    spec_clarification_test.go:48: CLARIFICATION_SDK_WRONG_TENANT_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishu	0.003s
+FAIL

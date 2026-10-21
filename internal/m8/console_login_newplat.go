@@ -31,11 +31,12 @@ const newPlatformLoginPageHTML = `<!doctype html><meta charset=utf-8><meta name=
 body{font:14px/1.5 -apple-system,"Segoe UI",sans-serif;margin:0;background:#f5f6f8;color:#222}
 main{max-width:420px;margin:8vh auto;background:#fff;border-radius:10px;padding:24px 28px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
 h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:18px 0 8px}p.sub{margin:0 0 16px;color:#666}
-label{display:block;margin:10px 0}input{display:block;width:100%;box-sizing:border-box;padding:7px 9px;margin-top:4px;font-size:14px}
-button{padding:7px 14px;font-size:14px;cursor:pointer}button[disabled]{cursor:default;opacity:.6}
+label{display:block;margin:10px 0}input{min-height:44px;display:block;width:100%;box-sizing:border-box;padding:7px 9px;margin-top:4px;font-size:14px}
+button{min-height:44px;padding:7px 14px;font-size:14px;cursor:pointer}button[disabled]{cursor:default;opacity:.6}
 section{border-top:1px solid #e3e5e8;margin-top:16px;padding-top:4px}section[hidden]{display:none}
 .err{min-height:1.3em;color:#9d1b1b;margin:6px 0}.hint{color:#666;font-size:13px}
 code{display:inline-block;background:#f0f1f4;padding:3px 8px;border-radius:5px;font-size:15px;user-select:all}
+@media(max-width:600px){input,button{font-size:16px}main{padding:20px}}
 </style>
 <main>
 <h1>登录 DingWei</h1><p class=sub>用户 ID 加密码，或用飞书确认。</p>
@@ -92,7 +93,7 @@ async function post(path,body){
     return {ok:r.ok,status:r.status,data:data||{},text:r.ok?'':errText(r.status,data)};
   }catch(e){return {ok:false,status:0,data:{},text:'请求失败，请检查网络后重试'};}
 }
-function enter(){location.assign('/console');}
+function enter(){var state=new URLSearchParams(location.search).get('clarification_state')||'';location.assign(/^[a-f0-9]{64}$/.test(state)?'/console/clarification-return?state='+encodeURIComponent(state):'/console');}
 function showChange(prefillOld){
   $('pwSection').hidden=true;$('fsSection').hidden=true;$('changeSection').hidden=false;
   $('chOld').value=prefillOld||'';

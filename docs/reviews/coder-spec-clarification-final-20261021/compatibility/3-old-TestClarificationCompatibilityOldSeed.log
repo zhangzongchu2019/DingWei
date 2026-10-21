@@ -1,0 +1,4 @@
+=== RUN   TestClarificationCompatibilityOldSeed
+--- PASS: TestClarificationCompatibilityOldSeed (0.13s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.135s

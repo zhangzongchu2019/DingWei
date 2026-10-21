@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationAppendReplayAndEqualTextSupplement (0.10s)
+    spec_clarification_test.go:57: CLARIFICATION_EQUAL_TEXT_SUPPLEMENT_LOST {{ 0 0       []   0 0   0 0 } false false} constraint failed: UNIQUE constraint failed: pilot_question_answer.question_id, pilot_question_answer.generation, pilot_question_answer.actor_id, pilot_question_answer.payload_sha (2067)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.100s
+FAIL

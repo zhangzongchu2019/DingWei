@@ -73,6 +73,7 @@ func TestPilotQuestionPGActualSendReplyOrderingAndCurrentBinding(t *testing.T) {
 	}
 	q := questionHTTPCreate(t, e, state)
 	sends := 0
+	e.hub.QuestionFeishuEnabled = true
 	e.hub.QuestionSender = func(_ context.Context, bot, person, key, body string) (string, error) {
 		sends++
 		if bot != "question-bot" || person != "ou_lbl" || strings.Contains(body, "实际现象") {
@@ -80,6 +81,13 @@ func TestPilotQuestionPGActualSendReplyOrderingAndCurrentBinding(t *testing.T) {
 		}
 		return "om_initial", nil
 	}
+	e.hub.QuestionFeishuEnabled = false
+	e.hub.processQuestions(ctx)
+	closed := questionHTTP(e, "GET", q.ID, "", "zzc", "", "")
+	if sends != 0 || closed.Code != 200 || !strings.Contains(closed.Body.String(), `"state":"pending_config"`) || !strings.Contains(closed.Body.String(), store.QuestionFeishuDisabledReason) {
+		t.Fatal("D3_PG_BOUND_SWITCH_OFF_SENT_OR_LOST_REASON", sends, closed.Code, closed.Body)
+	}
+	e.hub.QuestionFeishuEnabled = true
 	e.hub.processQuestions(ctx)
 	if sends != 1 {
 		t.Fatal("QUESTION_CONFIGURED_INITIAL_NOTICE", sends)
@@ -91,6 +99,7 @@ func TestPilotQuestionPGActualSendReplyOrderingAndCurrentBinding(t *testing.T) {
 	}
 	e.hub.NowFunc = func() time.Time { return now }
 	sending, release := make(chan struct{}), make(chan struct{})
+	e.hub.QuestionFeishuEnabled = true
 	e.hub.QuestionSender = func(_ context.Context, bot, person, key, body string) (string, error) {
 		sends++
 		if person != "ou_zzc" || !strings.Contains(body, "60分钟") {
@@ -111,9 +120,10 @@ func TestPilotQuestionPGActualSendReplyOrderingAndCurrentBinding(t *testing.T) {
 	case <-ctx.Done():
 		t.Fatal(ctx.Err())
 	}
-	answer := fmt.Sprintf(`{"request_id":"answer","operation":"answer","expected_version":%d,"event_id":"actual-reply","answer_kind":"substantive","body":"明确的范围结论","evidence_ref":"git:answer"}`, q.Version)
+	answer := clarificationHTTPBody("answer", "explanation")
+	e.hub.SpecClarificationEnabled = true
 	result := make(chan *httptest.ResponseRecorder, 1)
-	go func() { result <- questionHTTP(e, "POST", q.ID, "", "lbl", answer, "") }()
+	go func() { result <- clarificationHTTP(e, "POST", q.ID, "", "lbl", "", answer, "", false) }()
 	// The waiter must be the same-question advisory lock, not an unrelated SQLite failure.
 	waiting := false
 	deadline := time.Now().Add(3 * time.Second)
@@ -154,6 +164,7 @@ func TestPilotQuestionPGActualSendReplyOrderingAndCurrentBinding(t *testing.T) {
 		t.Fatal("QUESTION_AFTER_SEND_ANSWER_REJECTED", out.Code, out.Body)
 	}
 	// A later worker sees the committed substantive answer and sends nothing.
+	e.hub.QuestionFeishuEnabled = true
 	e.hub.QuestionSender = func(context.Context, string, string, string, string) (string, error) {
 		t.Error("QUESTION_AFTER_ANSWER_SENT_REMINDER")
 		return "", nil

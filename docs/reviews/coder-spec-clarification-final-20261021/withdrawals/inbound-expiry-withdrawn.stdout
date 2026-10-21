@@ -1,0 +1,6 @@
+--- FAIL: TestClarificationDirectInboundGuardFields (0.12s)
+    --- FAIL: TestClarificationDirectInboundGuardFields/expiry (0.11s)
+        spec_clarification_guard_test.go:57: CLARIFICATION_DIRECT_EXPIRY_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.119s
+FAIL

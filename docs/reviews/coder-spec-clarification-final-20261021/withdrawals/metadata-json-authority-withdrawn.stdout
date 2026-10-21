@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationSDKPreservesAuthenticatedReplyMetadata (0.00s)
+    spec_clarification_test.go:32: CLARIFICATION_REPLY_METADATA_JSON_FORGERY &{true    om_exact_notice      } <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishu	0.003s
+FAIL

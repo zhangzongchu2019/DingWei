@@ -127,6 +127,23 @@ func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
 		if method == "POST" {
 			action = "submit"
 		}
+		mux.HandleFunc(method+" /api/console/specs/{specID}/clarification-policy", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleClarificationPolicy)))
+		mux.HandleFunc(method+" /api/console/questions/{questionID}/clarifications", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleClarification)))
+		mux.HandleFunc(method+" /api/agent/console/questions/{questionID}/clarifications", prefixHub.RequireAgentBlocker(prefixHub.HandleClarification))
+	}
+	mux.HandleFunc("GET /api/console/questions/{questionID}/clarifications/requests/{requestID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleClarification)))
+	mux.HandleFunc("GET /api/agent/console/questions/{questionID}/clarifications/requests/{requestID}", prefixHub.RequireAgentBlocker(prefixHub.HandleClarification))
+	mux.HandleFunc("POST /api/console/questions/{questionID}/clarification-images", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleClarificationImage)))
+	mux.HandleFunc("GET /api/console/questions/{questionID}/clarification-images/{fileID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleClarificationImage)))
+	mux.HandleFunc("GET /api/agent/console/questions/{questionID}/clarification-images/{fileID}", prefixHub.RequireAgentBlocker(prefixHub.HandleClarificationImage))
+	mux.HandleFunc("GET /api/console/specs/{specID}/clarifications", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleSpecClarifications)))
+	mux.HandleFunc("GET /console/spec-clarifications", prefixHub.RequireClarificationPage(prefixHub.HandleClarificationPage))
+	mux.HandleFunc("GET /console/clarification-return", prefixHub.RequireConsolePrincipal(prefixHub.HandleClarificationReturn))
+	for _, method := range []string{"GET", "POST"} {
+		action := "read"
+		if method == "POST" {
+			action = "submit"
+		}
 		mux.HandleFunc(method+" /api/console/specs/{specID}/question-policy", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleQuestionPolicy)))
 		mux.HandleFunc(method+" /api/console/questions/{questionID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleQuestion)))
 	}

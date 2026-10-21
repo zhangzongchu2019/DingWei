@@ -1,0 +1,6 @@
+=== RUN   TestClarificationFeishuOriginRequiresPMAtAppendBoundary
+=== RUN   TestClarificationFeishuOriginRequiresPMAtAppendBoundary/deputy
+--- PASS: TestClarificationFeishuOriginRequiresPMAtAppendBoundary (0.16s)
+    --- PASS: TestClarificationFeishuOriginRequiresPMAtAppendBoundary/deputy (0.16s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.164s

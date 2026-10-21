@@ -1,0 +1,6 @@
+--- FAIL: TestClarificationFinalCheckAndAuditFailuresRollBackAll (0.12s)
+    --- FAIL: TestClarificationFinalCheckAndAuditFailuresRollBackAll/identity (0.12s)
+        spec_clarification_test.go:204: CLARIFICATION_PARTIAL_COMMIT <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.123s
+FAIL

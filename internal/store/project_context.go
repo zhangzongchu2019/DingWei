@@ -45,27 +45,29 @@ func (s *SQLite) ProjectContextCandidates(ctx context.Context, actor, after stri
 }
 
 type ContextTask struct {
-	ID                string            `json:"task_id"`
-	Role              string            `json:"role"`
-	Status            string            `json:"status"`
-	Version           int               `json:"version"`
-	AssignmentVersion int               `json:"assignment_version"`
-	Blocker           string            `json:"blocker"`
-	BlockerAgent      string            `json:"blocker_agent_id,omitempty"`
-	Cases             []TaskFlowCase    `json:"cases"`
-	SpecID            string            `json:"spec_id"`
-	Title             string            `json:"title"`
-	Revision          int               `json:"revision"`
-	SHA               string            `json:"content_sha256"`
-	Acceptance        []json.RawMessage `json:"acceptance"`
+	Clarifications    ContextClarifications `json:"clarifications"`
+	ID                string                `json:"task_id"`
+	Role              string                `json:"role"`
+	Status            string                `json:"status"`
+	Version           int                   `json:"version"`
+	AssignmentVersion int                   `json:"assignment_version"`
+	Blocker           string                `json:"blocker"`
+	BlockerAgent      string                `json:"blocker_agent_id,omitempty"`
+	Cases             []TaskFlowCase        `json:"cases"`
+	SpecID            string                `json:"spec_id"`
+	Title             string                `json:"title"`
+	Revision          int                   `json:"revision"`
+	SHA               string                `json:"content_sha256"`
+	Acceptance        []json.RawMessage     `json:"acceptance"`
 }
 type ContextSpec struct {
-	TaskID     string            `json:"task_id"`
-	SpecID     string            `json:"spec_id"`
-	Title      string            `json:"title"`
-	Revision   int               `json:"revision"`
-	SHA        string            `json:"content_sha256"`
-	Acceptance []json.RawMessage `json:"acceptance"`
+	Clarifications ContextClarifications `json:"clarifications"`
+	TaskID         string                `json:"task_id"`
+	SpecID         string                `json:"spec_id"`
+	Title          string                `json:"title"`
+	Revision       int                   `json:"revision"`
+	SHA            string                `json:"content_sha256"`
+	Acceptance     []json.RawMessage     `json:"acceptance"`
 }
 
 type ContextSnapshot struct {
@@ -113,7 +115,11 @@ func (s *ContextSnapshot) Fingerprint() (string, error) {
 		}
 		for _, c := range page {
 			// TaskFlowState has intentionally non-JSON owner/archive fields; explicitly bind them.
-			raw, _ := json.Marshal([]any{c.State.ID, c.State.Owner, c.State.Archived, c.State.GroupCode, c.State.Version, c.State.AssignmentVersion, c.State.Developer, c.State.Reviewer, c.State.NeedsReassignment, c.SpecID, c.Revision, c.SHA})
+			var lastFloor int64
+			if err = s.tx.QueryRowContext(s.ctx, `SELECT COALESCE(max(p.floor),0) FROM spec_clarification_post p JOIN pilot_question q ON q.id=p.question_id WHERE q.task_id=? AND p.spec_id=? AND p.revision=? AND p.content_sha256=?`, c.State.ID, c.SpecID, c.Revision, c.SHA).Scan(&lastFloor); err != nil {
+				return "", err
+			}
+			raw, _ := json.Marshal([]any{lastFloor, c.State.ID, c.State.Owner, c.State.Archived, c.State.GroupCode, c.State.Version, c.State.AssignmentVersion, c.State.Developer, c.State.Reviewer, c.State.NeedsReassignment, c.SpecID, c.Revision, c.SHA})
 			h.Write(raw)
 			h.Write([]byte{0})
 			after = c.State.ID
@@ -219,5 +225,9 @@ func (s *ContextSnapshot) Project(c ContextCandidate) (ContextTask, ContextSpec,
 		row.Confirmed = row.Marked && confirmed.Valid && confirmed.String == c.State.Reviewer
 		t.Cases = append(t.Cases, row)
 	}
-	return t, ContextSpec{c.State.ID, c.SpecID, specTitle, c.Revision, c.SHA, t.Acceptance}, nil
+	t.Clarifications, e = taskContextClarifications(s.ctx, s.tx, c)
+	if e != nil {
+		return t, ContextSpec{}, e
+	}
+	return t, ContextSpec{TaskID: c.State.ID, SpecID: c.SpecID, Title: specTitle, Revision: c.Revision, SHA: c.SHA, Acceptance: t.Acceptance, Clarifications: t.Clarifications}, nil
 }

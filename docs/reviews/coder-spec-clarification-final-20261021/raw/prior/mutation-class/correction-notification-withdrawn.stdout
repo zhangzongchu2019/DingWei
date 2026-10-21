@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationCorrectionNotifiesCurrentReadersWithoutReopening (0.10s)
+    spec_clarification_guard_test.go:132: CLARIFICATION_CORRECTION_NOTIFICATION_MISSING 0 <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.108s
+FAIL

@@ -1,0 +1,1275 @@
+{
+  "source": "7115b67946fee16e64cd76a68284a41773932f75",
+  "rows": [
+    {
+      "id": "authority",
+      "file": "internal/store/spec_clarification.go",
+      "old": "if role == \"technical\" && (u.Kind != \"technical\" || u.Corrects != 0 || u.Confirms != 0) {",
+      "new": "if false && role == \"technical\" && (u.Kind != \"technical\" || u.Corrects != 0 || u.Confirms != 0) {",
+      "count": 1,
+      "test": "TestClarificationAuthorityCurrentPolicyAndDeputy",
+      "marker": "CLARIFICATION_NON_PM_AUTHORITY",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAuthorityCurrentPolicyAndDeputy$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "equal-text",
+      "file": "internal/store/spec_clarification.go",
+      "old": "answerHash := blockerHash([]any{hash, event})",
+      "new": "answerHash := blockerHash([]any{q.Generation, a.Key(), u.Kind, u.Body, u.Evidence})",
+      "count": 1,
+      "test": "TestClarificationAppendReplayAndEqualTextSupplement",
+      "marker": "CLARIFICATION_EQUAL_TEXT_SUPPLEMENT_LOST",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAppendReplayAndEqualTextSupplement$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "last-identity-check",
+      "file": "internal/store/spec_clarification.go",
+      "old": "if err = check(); err != nil {\n\t\treturn out, err\n\t}\n\treturn out, nil",
+      "new": "if false { return out, err }; return out, nil",
+      "count": 1,
+      "test": "TestClarificationFinalCheckAndAuditFailuresRollBackAll/identity",
+      "marker": "CLARIFICATION_PARTIAL_COMMIT",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationFinalCheckAndAuditFailuresRollBackAll/identity$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "legacy-refusal-contract",
+      "file": "internal/store/pilot_question.go",
+      "old": "return QuestionResult{}, ErrClarificationUpgradeRequired",
+      "new": "return QuestionResult{}, nil",
+      "count": 1,
+      "test": "TestClarificationLegacyAnswerPathsCannotBypassEnrollment",
+      "marker": "CLARIFICATION_LEGACY_WRITE_BYPASS",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationLegacyAnswerPathsCannotBypassEnrollment$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "scope-change",
+      "file": "internal/store/spec_clarification.go",
+      "old": "if u.Kind == \"scope_change\" {",
+      "new": "if false && u.Kind == \"scope_change\" {",
+      "count": 1,
+      "test": "TestClarificationAnchorCorrectionScopeAndWriteFreeze",
+      "marker": "CLARIFICATION_SCOPE_CHANGE_MISSING_GATE",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAnchorCorrectionScopeAndWriteFreeze$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "historic-pm-reader",
+      "file": "internal/store/spec_clarification_read.go",
+      "old": "a.UserID == p.PMUser || a.UserID == p.DeputyUser",
+      "new": "a.UserID == p.PMUser || a.UserID == q.PMUser || a.UserID == p.DeputyUser",
+      "count": 1,
+      "test": "TestClarificationReadPaginationCurrentGrantAndPrivateHistory",
+      "marker": "CLARIFICATION_OLD_PM_READ_GRANT_SURVIVED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationReadPaginationCurrentGrantAndPrivateHistory$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "reply-budget",
+      "file": "internal/store/spec_clarification.go",
+      "old": "if total >= blockerReplyTotal || recent >= blockerReplyPerMinute {",
+      "new": "if false && (total >= blockerReplyTotal || recent >= blockerReplyPerMinute) {",
+      "count": 1,
+      "test": "TestClarificationReplyBudgetAndReplayOrder",
+      "marker": "CLARIFICATION_RATE_LIMIT_BYPASS",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationReplyBudgetAndReplayOrder$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "inbound-parent",
+      "file": "internal/store/spec_clarification_inbound.go",
+      "old": "n.ProviderMessageID != r.ParentID",
+      "new": "false",
+      "count": 1,
+      "test": "TestClarificationDirectInboundGuardFields/parent",
+      "marker": "CLARIFICATION_DIRECT_PARENT_ACCEPTED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationDirectInboundGuardFields/parent$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "inbound-binding",
+      "file": "internal/store/spec_clarification_inbound.go",
+      "old": "n.Binding != b",
+      "new": "false",
+      "count": 1,
+      "test": "TestClarificationDirectInboundGuardFields/binding",
+      "marker": "CLARIFICATION_DIRECT_BINDING_ACCEPTED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationDirectInboundGuardFields/binding$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "inbound-policy",
+      "file": "internal/store/spec_clarification_inbound.go",
+      "old": "p.Version != n.PolicyVersion",
+      "new": "false",
+      "count": 1,
+      "test": "TestClarificationDirectInboundGuardFields/policy",
+      "marker": "CLARIFICATION_DIRECT_POLICY_ACCEPTED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationDirectInboundGuardFields/policy$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "inbound-generation",
+      "file": "internal/store/spec_clarification_inbound.go",
+      "old": "q.Generation != n.Generation",
+      "new": "false",
+      "count": 1,
+      "test": "TestClarificationDirectInboundGuardFields/generation",
+      "marker": "CLARIFICATION_DIRECT_GENERATION_ACCEPTED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationDirectInboundGuardFields/generation$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "inbound-expiry",
+      "file": "internal/store/spec_clarification_inbound.go",
+      "old": "if now.Before(created) || !now.Before(expires) {",
+      "new": "if false && (now.Before(created) || !now.Before(expires)) {",
+      "count": 1,
+      "test": "TestClarificationDirectInboundGuardFields/expiry",
+      "marker": "CLARIFICATION_DIRECT_EXPIRY_ACCEPTED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationDirectInboundGuardFields/expiry$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "inbound-switch",
+      "file": "internal/store/spec_clarification_inbound.go",
+      "old": "if !enabled || check == nil",
+      "new": "if false || check == nil",
+      "count": 1,
+      "test": "TestClarificationDirectInboundGuardFields/disabled",
+      "marker": "CLARIFICATION_DIRECT_DISABLED_ACCEPTED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationDirectInboundGuardFields/disabled$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "event-replay",
+      "file": "internal/store/spec_clarification_inbound.go",
+      "old": "if err == nil && (oldMessage != r.MessageID || oldHash != hash) {",
+      "new": "if false && err == nil && (oldMessage != r.MessageID || oldHash != hash) {",
+      "count": 1,
+      "test": "TestClarificationDurableInboundDoubleIDConflict/event",
+      "marker": "CLARIFICATION_STAGE_EVENT_CONFLICT_ACCEPTED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationDurableInboundDoubleIDConflict/event$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "message-replay",
+      "file": "internal/store/spec_clarification_inbound.go",
+      "old": "if out.PayloadSHA != hash {",
+      "new": "if false && out.PayloadSHA != hash {",
+      "count": 1,
+      "test": "TestClarificationDurableInboundDoubleIDConflict/message",
+      "marker": "CLARIFICATION_STAGE_MESSAGE_CONFLICT_ACCEPTED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationDurableInboundDoubleIDConflict/message$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "image-upload-owner",
+      "file": "internal/store/spec_clarification.go",
+      "old": "if owner != a.Key() || question != qid || linked {",
+      "new": "if false && owner != a.Key() || question != qid || linked {",
+      "count": 1,
+      "test": "TestClarificationPrivateImageActorQuestionAndImmutableLink",
+      "marker": "CLARIFICATION_OTHER_ACTOR_STAGED_IMAGE_ATTACHED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationPrivateImageActorQuestionAndImmutableLink$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "image-private-read",
+      "file": "internal/store/spec_clarification_images.go",
+      "old": "if !linked && owner != a.Key() {",
+      "new": "if false && !linked && owner != a.Key() {",
+      "count": 1,
+      "test": "TestClarificationPrivateImageActorQuestionAndImmutableLink",
+      "marker": "CLARIFICATION_UNLINKED_IMAGE_DISCLOSED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationPrivateImageActorQuestionAndImmutableLink$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "revision-isolation",
+      "file": "internal/store/spec_clarification_projection.go",
+      "old": "WHERE spec_id=? AND revision=? AND content_sha256=? AND",
+      "new": "WHERE spec_id=? AND ?>0 AND content_sha256=? AND",
+      "count": 1,
+      "test": "TestClarificationPublicRevisionDoesNotInheritOldThread",
+      "marker": "CLARIFICATION_PUBLIC_REVISION_CROSS_BIND",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationPublicRevisionDoesNotInheritOldThread$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "cursor-post-generation",
+      "file": "internal/store/project_context.go",
+      "old": "[]any{lastFloor, c.State.ID",
+      "new": "[]any{lastFloor-lastFloor, c.State.ID",
+      "count": 1,
+      "test": "TestClarificationContextProjectionChangesCursorWithoutReopeningTask",
+      "marker": "CLARIFICATION_CONTEXT_CURSOR_NOT_INVALIDATED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationContextProjectionChangesCursorWithoutReopeningTask$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "task-theme-isolation",
+      "file": "internal/store/spec_clarification_projection.go",
+      "old": "WHERE q.task_id=? AND p.spec_id=?",
+      "new": "WHERE ? IS NOT NULL AND p.spec_id=?",
+      "count": 1,
+      "test": "TestClarificationContextProjectionChangesCursorWithoutReopeningTask",
+      "marker": "CLARIFICATION_CONTEXT_OTHER_THEME_LEAK",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationContextProjectionChangesCursorWithoutReopeningTask$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "correction-notification",
+      "file": "internal/store/spec_clarification.go",
+      "old": "if (u.Kind == \"correction\" || u.Kind == \"scope_change\") &&",
+      "new": "if false && (u.Kind == \"correction\" || u.Kind == \"scope_change\") &&",
+      "count": 1,
+      "test": "TestClarificationCorrectionNotifiesCurrentReadersWithoutReopening",
+      "marker": "CLARIFICATION_CORRECTION_NOTIFICATION_MISSING",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationCorrectionNotifiesCurrentReadersWithoutReopening$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "login-single-use",
+      "file": "internal/store/spec_clarification_login.go",
+      "old": " AND consumed_at IS NULL",
+      "new": "",
+      "count": 2,
+      "test": "TestClarificationLoginContinuationCookieExpiryAndSingleUse",
+      "marker": "CLARIFICATION_RETURN_REPLAYED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationLoginContinuationCookieExpiryAndSingleUse$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "login-cookie-binding",
+      "file": "internal/store/spec_clarification_login.go",
+      "old": "cookie_sha=?",
+      "new": "? IS NOT NULL",
+      "count": 2,
+      "test": "TestClarificationLoginContinuationCookieExpiryAndSingleUse",
+      "marker": "CLARIFICATION_RETURN_COOKIE_UNBOUND",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationLoginContinuationCookieExpiryAndSingleUse$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "login-expiry",
+      "file": "internal/store/spec_clarification_login.go",
+      "old": "expires_at>?",
+      "new": "? IS NOT NULL",
+      "count": 1,
+      "test": "TestClarificationLoginContinuationCookieExpiryAndSingleUse",
+      "marker": "CLARIFICATION_RETURN_EXPIRED_ACCEPTED",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationLoginContinuationCookieExpiryAndSingleUse$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "provider-app",
+      "file": "internal/feishu/feishu.go",
+      "old": "ev.EventV2Base.Header.AppID != \"\" && ev.EventV2Base.Header.AppID != g.appID",
+      "new": "false",
+      "count": 1,
+      "test": "TestClarificationSDKRejectsApplicationAndTenantDrift",
+      "marker": "CLARIFICATION_SDK_WRONG_APP_ACCEPTED",
+      "kind": "go",
+      "pkg": "feishu",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/feishu",
+        "-run",
+        "^TestClarificationSDKRejectsApplicationAndTenantDrift$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "provider-tenant",
+      "file": "internal/feishu/feishu.go",
+      "old": "tenant != \"\" && reply.Tenant != \"\" && tenant != reply.Tenant",
+      "new": "false && tenant != \"\" && reply.Tenant != \"\" && tenant != reply.Tenant",
+      "count": 1,
+      "test": "TestClarificationSDKRejectsApplicationAndTenantDrift",
+      "marker": "CLARIFICATION_SDK_WRONG_TENANT_ACCEPTED",
+      "kind": "go",
+      "pkg": "feishu",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/feishu",
+        "-run",
+        "^TestClarificationSDKRejectsApplicationAndTenantDrift$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "helper-wire-role",
+      "file": "tools/sessionhelper/sessionhelper/spec_clarification.py",
+      "old": "kind='technical'",
+      "new": "kind='explanation'",
+      "count": 1,
+      "kind": "python",
+      "test": "test_wire_route_is_technical_no_auto_retry_no_redirect",
+      "marker": "CLARIFICATION_AGENT_WIRE_AUTHORITY",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-m",
+        "unittest",
+        "test_spec_clarification.ClarificationToolTest.test_wire_route_is_technical_no_auto_retry_no_redirect"
+      ]
+    },
+    {
+      "id": "helper-redirect",
+      "file": "tools/sessionhelper/sessionhelper/spec_clarification.py",
+      "old": "ProxyHandler({}),NoRedirect()",
+      "new": "ProxyHandler({})",
+      "count": 1,
+      "kind": "python",
+      "test": "test_wire_route_is_technical_no_auto_retry_no_redirect",
+      "marker": "CLARIFICATION_REDIRECT_CREDENTIAL_LEAK",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-m",
+        "unittest",
+        "test_spec_clarification.ClarificationToolTest.test_wire_route_is_technical_no_auto_retry_no_redirect"
+      ]
+    },
+    {
+      "id": "helper-execution-bool",
+      "file": "tools/sessionhelper/sessionhelper/spec_clarification.py",
+      "old": "payload.get('execution_authorized') is not False",
+      "new": "payload.get('execution_authorized') != False",
+      "count": 1,
+      "kind": "python",
+      "test": "test_response_is_data_without_execution",
+      "marker": "CLARIFICATION_HELPER_EXECUTION_FLAG_WEAK",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-m",
+        "unittest",
+        "test_spec_clarification.ClarificationToolTest.test_response_is_data_without_execution"
+      ]
+    },
+    {
+      "id": "mobile-unknown-id",
+      "file": "internal/m8/spec_clarification_page.go",
+      "old": "if(pending&&pending.logical!==logical)",
+      "new": "pending=null;if(pending&&pending.logical!==logical)",
+      "count": 1,
+      "kind": "browser",
+      "test": "spec-clarification-browser-regression.js",
+      "marker": "MOBILE_UNKNOWN_REKEY_DUPLICATED",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "node",
+        "view-service/spec-clarification-browser-regression.js"
+      ]
+    },
+    {
+      "id": "mobile-upload-boundary",
+      "file": "internal/m8/spec_clarification_page.go",
+      "old": "if($('images').files.length&&uploaded.length!==$('images').files.length)",
+      "new": "if(false&&$('images').files.length&&uploaded.length!==$('images').files.length)",
+      "count": 1,
+      "kind": "browser",
+      "test": "spec-clarification-mobile-flow-regression.js",
+      "marker": "MOBILE_INCOMPLETE_UPLOAD_POSTED",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "node",
+        "view-service/spec-clarification-mobile-flow-regression.js"
+      ]
+    },
+    {
+      "id": "post-update",
+      "file": "internal/store/migrations/0061_spec_clarification_thread.sql",
+      "old": "CREATE TRIGGER spec_clarification_post_no_update BEFORE UPDATE ON spec_clarification_post",
+      "new": "CREATE TRIGGER spec_clarification_post_no_update BEFORE UPDATE ON spec_clarification_post WHEN 0",
+      "count": 1,
+      "test": "TestClarificationAppendReplayAndEqualTextSupplement",
+      "marker": "CLARIFICATION_METADATA_MUTABLE",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAppendReplayAndEqualTextSupplement$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "post-delete",
+      "file": "internal/store/migrations/0061_spec_clarification_thread.sql",
+      "old": "CREATE TRIGGER spec_clarification_post_no_delete BEFORE DELETE ON spec_clarification_post",
+      "new": "CREATE TRIGGER spec_clarification_post_no_delete BEFORE DELETE ON spec_clarification_post WHEN 0",
+      "count": 1,
+      "test": "TestClarificationAppendReplayAndEqualTextSupplement",
+      "marker": "CLARIFICATION_POST_DELETABLE",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAppendReplayAndEqualTextSupplement$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "body-update",
+      "file": "internal/store/migrations/0061_spec_clarification_thread.sql",
+      "old": "CREATE TRIGGER spec_clarification_body_no_update BEFORE UPDATE ON pilot_question_answer\n WHEN EXISTS",
+      "new": "CREATE TRIGGER spec_clarification_body_no_update BEFORE UPDATE ON pilot_question_answer\n WHEN 0 AND EXISTS",
+      "count": 1,
+      "test": "TestClarificationAppendReplayAndEqualTextSupplement",
+      "marker": "CLARIFICATION_BODY_MUTABLE",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAppendReplayAndEqualTextSupplement$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "body-delete",
+      "file": "internal/store/migrations/0061_spec_clarification_thread.sql",
+      "old": "CREATE TRIGGER spec_clarification_body_no_delete BEFORE DELETE ON pilot_question_answer\n WHEN EXISTS",
+      "new": "CREATE TRIGGER spec_clarification_body_no_delete BEFORE DELETE ON pilot_question_answer\n WHEN 0 AND EXISTS",
+      "count": 1,
+      "test": "TestClarificationAppendReplayAndEqualTextSupplement",
+      "marker": "CLARIFICATION_BODY_DELETABLE",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAppendReplayAndEqualTextSupplement$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "metadata-json-authority",
+      "file": "internal/feishu/../model/model.go",
+      "old": "FeishuReply *FeishuReplyMetadata `json:\"-\"`",
+      "new": "FeishuReply *FeishuReplyMetadata `json:\"feishu_reply\"`",
+      "count": 1,
+      "test": "TestClarificationSDKPreservesAuthenticatedReplyMetadata",
+      "marker": "CLARIFICATION_REPLY_METADATA_JSON_FORGERY",
+      "kind": "go",
+      "pkg": "feishu",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/feishu",
+        "-run",
+        "^TestClarificationSDKPreservesAuthenticatedReplyMetadata$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "audit-atomic",
+      "file": "internal/store/spec_clarification.go",
+      "old": "if err = questionAudit(ctx, tx, qid, a.Key(), \"clarification_append\", q.Version, map[string]any{\"floor\": floor, \"role\": role, \"kind\": u.Kind, \"policy_version\": p.Version}, at); err != nil {",
+      "new": "if err = error(nil); err != nil {",
+      "count": 1,
+      "test": "TestClarificationFinalCheckAndAuditFailuresRollBackAll/audit",
+      "marker": "CLARIFICATION_PARTIAL_COMMIT",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationFinalCheckAndAuditFailuresRollBackAll/audit$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    },
+    {
+      "id": "blocker-atomic",
+      "file": "internal/store/spec_clarification.go",
+      "old": "if err = questionBlockerInput(ctx, tx, c, a, q, event, u.Body, u.Evidence, now); err != nil {",
+      "new": "if err = error(nil); err != nil {",
+      "count": 1,
+      "test": "TestClarificationFinalCheckAndAuditFailuresRollBackAll/blocker",
+      "marker": "CLARIFICATION_PARTIAL_COMMIT",
+      "kind": "go",
+      "pkg": "store",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationFinalCheckAndAuditFailuresRollBackAll/blocker$",
+        "-count=1",
+        "-timeout=3m"
+      ]
+    }
+  ],
+  "started_at": "2026-10-21T06:16:09.910531+00:00",
+  "finished_at": "2026-10-21T06:18:19.333096+00:00"
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "name": "focused",
+    "command": [
+      "go",
+      "test",
+      "./internal/store",
+      "-run",
+      "^(TestClarification|TestPilotQuestion|TestMigrationLedger_)",
+      "-count=1",
+      "-timeout=5m"
+    ],
+    "start": "2026-10-21T04:25:43.369001+00:00",
+    "end": "2026-10-21T04:25:47.091045+00:00",
+    "rc": 0
+  },
+  {
+    "name": "race",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "./internal/store",
+      "-run",
+      "^TestClarification",
+      "-count=1",
+      "-timeout=5m"
+    ],
+    "start": "2026-10-21T04:25:47.091355+00:00",
+    "end": "2026-10-21T04:26:17.249802+00:00",
+    "rc": 0
+  },
+  {
+    "name": "vet",
+    "command": [
+      "go",
+      "vet",
+      "./internal/store"
+    ],
+    "start": "2026-10-21T04:26:17.250059+00:00",
+    "end": "2026-10-21T04:26:17.513669+00:00",
+    "rc": 0
+  }
+]

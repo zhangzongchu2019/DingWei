@@ -89,7 +89,12 @@ type Message struct {
 	// IngressProvenance is assigned by the authenticated ingress adapter, never
 	// decoded from message content. Direct/internal enqueue defaults untrusted.
 	IngressProvenance IngressProvenance
-	Content           string // content_json
+	// Assigned only by authenticated SDK ingress. Never decoded from ordinary
+	// client JSON, never displayed or logged. FCS must verify its own service
+	// attestation before it may preserve this metadata; a provenance string alone
+	// is insufficient. SQLite stores the snapshot across worker restarts.
+	FeishuReply *FeishuReplyMetadata `json:"-"`
+	Content     string               // content_json
 	// SensitiveContent is an in-memory-only delivery override. It is never stored.
 	SensitiveContent string
 	Status           string
@@ -97,6 +102,20 @@ type Message struct {
 	Err              string
 	CreatedAt        time.Time
 	ProcessedAt      *time.Time
+}
+
+type FeishuReplyMetadata struct {
+	Authenticated bool   `json:"authenticated"`
+	ContentSHA    string `json:"content_sha256"`
+	EventID       string `json:"event_id"`
+	MessageID     string `json:"message_id"`
+	ParentID      string `json:"parent_id"`
+	RootID        string `json:"root_id"`
+	MessageType   string `json:"message_type"`
+	Tenant        string `json:"tenant"`
+	AppID         string `json:"app_id"`
+	ChatID        string `json:"chat_id"`
+	SenderType    string `json:"sender_type"`
 }
 
 // SessionDelivery is a durable Hub-to-session delivery record.

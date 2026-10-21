@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationAppendReplayAndEqualTextSupplement (0.14s)
+    spec_clarification_test.go:90: CLARIFICATION_BODY_MUTABLE
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.142s
+FAIL

@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationReplyBudgetAndReplayOrder (0.12s)
+    spec_clarification_test.go:271: CLARIFICATION_RATE_LIMIT_BYPASS <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.120s
+FAIL

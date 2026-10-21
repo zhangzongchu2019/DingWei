@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationPrivateImageActorQuestionAndImmutableLink (0.11s)
+    spec_clarification_images_test.go:31: CLARIFICATION_OTHER_ACTOR_STAGED_IMAGE_ATTACHED <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.112s
+FAIL

@@ -1,0 +1,5 @@
+AssertionError [ERR_ASSERTION]: MOBILE_INCOMPLETE_UPLOAD_POSTED
+
+2 !== 1
+
+    at /tmp/clar-withdraw-5ueuea65/view-service/spec-clarification-mobile-flow-regression.js:62:330

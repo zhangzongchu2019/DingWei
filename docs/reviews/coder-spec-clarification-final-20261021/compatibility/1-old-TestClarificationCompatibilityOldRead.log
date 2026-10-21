@@ -1,0 +1,4 @@
+=== RUN   TestClarificationCompatibilityOldRead
+--- PASS: TestClarificationCompatibilityOldRead (0.02s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.026s

@@ -10,7 +10,7 @@ from sessionhelper import pilot_question as api, mcp_shim
 
 
 def create():
-    return {'task_id':'task','request_id':'stable','expected_version':1,'kind':'technical','title':'问题','observed_fact':'实际现象','question':'需明确内容','expected_answer':'结论与证据'}
+    return {'task_id':'task','request_id':'stable','expected_version':1,'kind':'technical','title':'问题','observed_fact':'实际现象','question':'需明确内容','expected_answer':'结论与证据','entry_refs':['A1']}
 
 class PilotQuestionTest(unittest.TestCase):
     def test_mcp_create_only_current_task_no_human_identity(self):
@@ -83,7 +83,7 @@ class PilotQuestionTest(unittest.TestCase):
         from sessionhelper.mcp_shim import Request
         response=mcp_shim._dispatch(Request(id=1,jsonrpc='2.0',method='tools/list',params={}))
         names={x['name'] for x in response.result['tools']}
-        self.assertEqual(len(names),21)
+        self.assertEqual(len(names),22)
         self.assertTrue({'dw_task_question_create','dw_task_question_list','dw_task_question_input'}<=names,'QUESTION_MCP_REGISTRATION_MISSING')
         self.assertFalse(any('question_answer' in n or 'question_assign' in n for n in names))
 

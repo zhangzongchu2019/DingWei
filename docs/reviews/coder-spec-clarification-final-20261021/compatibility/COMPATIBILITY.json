@@ -1,0 +1,64 @@
+{
+  "old_commit": "ab0f214496e6a5df1c71826cc978f40528923b8f",
+  "new_commit": "7115b67946fee16e64cd76a68284a41773932f75",
+  "started_at": "2026-10-21T06:16:09.828243+00:00",
+  "scope": "local exact old/new libraries; actual old Hub loopback fake; no deployment or old production writes",
+  "commands": [
+    {
+      "source": "new",
+      "test": "TestClarificationCompatibilityExport",
+      "rc": 0,
+      "log": "0-new-TestClarificationCompatibilityExport.log"
+    },
+    {
+      "source": "old",
+      "test": "TestClarificationCompatibilityOldRead",
+      "rc": 0,
+      "log": "1-old-TestClarificationCompatibilityOldRead.log"
+    },
+    {
+      "source": "new",
+      "test": "TestClarificationCompatibilityMigrate",
+      "rc": 0,
+      "log": "2-new-TestClarificationCompatibilityMigrate.log"
+    },
+    {
+      "source": "old",
+      "test": "TestClarificationCompatibilityOldSeed",
+      "rc": 0,
+      "log": "3-old-TestClarificationCompatibilityOldSeed.log"
+    },
+    {
+      "source": "new",
+      "test": "TestClarificationCompatibilityMigrate",
+      "rc": 1,
+      "log": "4-new-TestClarificationCompatibilityMigrate.log"
+    },
+    {
+      "source": "new",
+      "test": "TestClarificationCompatibilityMigrate",
+      "rc": 0,
+      "log": "5-new-TestClarificationCompatibilityMigrate.log"
+    },
+    {
+      "source": "new",
+      "test": "TestClarificationCompatibilityMigrate",
+      "rc": 0,
+      "log": "6-new-TestClarificationCompatibilityMigrate.log"
+    }
+  ],
+  "old_hub_sha256": "e9aacd032b59149f382c900f4319cea8408bf85f702febbd627d7bf94570f06c",
+  "actual_old_hub_http_read": true,
+  "old_hub_discussion_data_preserved": true,
+  "snapshot_restore_preserves_threads": true,
+  "explicit_pm_backfill_idempotent": true,
+  "ledger_counts": {
+    "r33": 59,
+    "after_committed_0061_and_failed_0062": 60,
+    "after_0061_0062_0063": 62,
+    "after_repeated_migrate": 62
+  },
+  "failed_0062_ddl_rolled_back": true,
+  "old_writes_authorized": false,
+  "finished_at": "2026-10-21T06:16:22.509137+00:00"
+}

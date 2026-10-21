@@ -1,0 +1,8 @@
+=== RUN   TestClarificationFeishuOriginRequiresPMAtAppendBoundary
+=== RUN   TestClarificationFeishuOriginRequiresPMAtAppendBoundary/deputy
+    spec_clarification_feishu_role_test.go:48: CLARIFICATION_FEISHU_NON_PM_ORIGIN_ACCEPTED_deputy <nil> deputy
+--- FAIL: TestClarificationFeishuOriginRequiresPMAtAppendBoundary (0.12s)
+    --- FAIL: TestClarificationFeishuOriginRequiresPMAtAppendBoundary/deputy (0.12s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.128s
+FAIL

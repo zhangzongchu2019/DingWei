@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationAuthorityCurrentPolicyAndDeputy (0.10s)
+    spec_clarification_test.go:106: CLARIFICATION_NON_PM_AUTHORITY { owner-a} <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.102s
+FAIL

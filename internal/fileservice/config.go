@@ -87,6 +87,20 @@ func ConfigFromEnv() (Config, error) {
 	if !filepath.IsAbs(c.DataRoot) || c.ObjectPrefix == "" || strings.ContainsAny(c.ObjectPrefix, `/\\`) || c.ObjectPrefix == "." || c.ObjectPrefix == ".." {
 		return Config{}, fmt.Errorf("FS_DATA_ROOT must be absolute and FS_OBJECT_PREFIX must be one path segment")
 	}
+	// Private clarification bytes live only in metadata, never below the
+	// nginx-served object root (including already-existing symlink ancestors).
+	privateDB, e := resolveFuturePath(c.DatabasePath)
+	if e != nil {
+		return Config{}, fmt.Errorf("invalid private metadata path")
+	}
+	publicRoot, e := resolveFuturePath(c.DataRoot)
+	if e != nil {
+		return Config{}, fmt.Errorf("invalid public object path")
+	}
+	relative, e := filepath.Rel(publicRoot, privateDB)
+	if e != nil || relative == "." || relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		return Config{}, fmt.Errorf("FS_DATABASE_PATH must be outside public FS_DATA_ROOT")
+	}
 	if c.IssuerToken == "" || c.AuditToken == "" {
 		return Config{}, fmt.Errorf("FS_INTERNAL_ISSUER_TOKEN/audit token are required")
 	}
@@ -131,4 +145,35 @@ func envBool(key string) bool {
 		return true
 	}
 	return false
+}
+
+// Resolve existing ancestors without creating any deployment paths.
+func resolveFuturePath(raw string) (string, error) {
+	abs, e := filepath.Abs(raw)
+	if e != nil {
+		return "", e
+	}
+	tail := []string{}
+	current := abs
+	for {
+		if _, e = os.Lstat(current); e == nil {
+			break
+		} else if !os.IsNotExist(e) {
+			return "", e
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			return "", fmt.Errorf("no existing path ancestor")
+		}
+		tail = append(tail, filepath.Base(current))
+		current = parent
+	}
+	resolved, e := filepath.EvalSymlinks(current)
+	if e != nil {
+		return "", e
+	}
+	for n := len(tail) - 1; n >= 0; n-- {
+		resolved = filepath.Join(resolved, tail[n])
+	}
+	return resolved, nil
 }

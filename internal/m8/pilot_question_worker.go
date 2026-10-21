@@ -115,18 +115,55 @@ func (h *Hub) dispatchQuestionNotices(ctx context.Context, repo questionReposito
 			}
 			actor := blockerCredential{actor: store.BlockerActor{UserID: c.Owner}}
 			prepared, attempted := false, false
-			e = h.withQuestionIdentity(ctx, c, actor, ref, []string{n.Recipient}, false, func(a identity.ContextAuthorization, check func() error) error {
+			e = h.withQuestionNoticeIdentity(ctx, repo, c, actor, ref, n, func(a identity.ContextAuthorization, check func() error, p store.ClarificationPolicy) error {
 				if n.Recipient != "" && !a.Users[n.Recipient] {
 					return identity.ErrForbidden
 				}
 				binding, bound := a.Bindings[n.Recipient]
 				link, originOK := h.questionLink(n.QuestionID)
-				configured := h.QuestionSender != nil && bound && a.Users[n.Recipient] && binding.Issuer != "" && feishu.IsPersonalOpenID(binding.Subject) && originOK
-				q, ready, x := repo.PrepareQuestionNotice(ctx, c, n, configured, check, h.now())
+				configured := h.QuestionFeishuEnabled && h.QuestionSender != nil && bound && a.Users[n.Recipient] && binding.Issuer != "" && feishu.IsPersonalOpenID(binding.Subject) && originOK
+				unconfiguredReason := ""
+				if !h.QuestionFeishuEnabled {
+					unconfiguredReason = store.QuestionFeishuDisabledReason
+				}
+				replyMode := h.SpecClarificationEnabled && h.SpecClarificationFeishuReplyEnabled && p.Version > 0 && n.Kind != "remind_60m" && n.Recipient == p.PMUser
+				if p.Version > 0 {
+					link = strings.Replace(link, "/console/questions?", "/console/spec-clarifications?", 1)
+				}
+				authority, authorityReady := h.ClarificationReplyAuthorities[binding.Issuer]
+				cr, transportReady := repo.(clarificationTransportRepository)
+				if replyMode {
+					refsReady := false
+					if transportReady {
+						refs, refErr := cr.ClarificationQuestionRefs(ctx, n.QuestionID)
+						refsReady = refErr == nil && len(refs) > 0
+					}
+					if !authorityReady || !refsReady {
+						configured = false
+						if h.QuestionFeishuEnabled {
+							unconfiguredReason = store.ClarificationReplyUnavailableReason
+						}
+					}
+				}
+				if p.Version > 0 && n.Recipient == ref.PMUser && ref.PMUser != p.PMUser {
+					configured = false
+					if h.QuestionFeishuEnabled {
+						unconfiguredReason = store.ClarificationReplyUnavailableReason
+					}
+				}
+				q, ready, x := repo.PrepareQuestionNotice(ctx, c, n, configured, check, h.now(), unconfiguredReason)
 				if x != nil || !ready {
 					return x
 				}
 				prepared = true
+				text := questionMessage(q, n.Kind, link)
+				if replyMode {
+					snapshot, x := cr.PrepareClarificationNotice(ctx, c, n, clarificationBinding(binding, authority), check, h.now())
+					if x != nil {
+						return x
+					}
+					text = clarificationNoticeText(q, snapshot, link)
+				}
 				// Keep the question advisory and active identity locks through send. An
 				// answer cannot commit between this check and the provider request.
 				if x = check(); x != nil {
@@ -135,7 +172,7 @@ func (h *Hub) dispatchQuestionNotices(ctx context.Context, repo questionReposito
 				sendCtx, done := context.WithTimeout(ctx, 8*time.Second)
 				defer done()
 				attempted = true
-				id, sendErr := h.QuestionSender(sendCtx, binding.Issuer, binding.Subject, n.ID, questionMessage(q, n.Kind, link))
+				id, sendErr := h.QuestionSender(sendCtx, binding.Issuer, binding.Subject, n.ID, text)
 				return repo.FinishQuestionNotice(ctx, n.ID, id, sendErr == nil, h.now())
 			})
 			if e != nil && !attempted {

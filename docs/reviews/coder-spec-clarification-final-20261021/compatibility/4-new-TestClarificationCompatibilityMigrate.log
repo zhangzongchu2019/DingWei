@@ -1,0 +1,6 @@
+=== RUN   TestClarificationCompatibilityMigrate
+    clarification_compat_probe_test.go:10: migrate 0062_spec_clarification_transport.sql: 记账失败: constraint failed: injected ledger failure (1811)
+--- FAIL: TestClarificationCompatibilityMigrate (0.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.025s
+FAIL

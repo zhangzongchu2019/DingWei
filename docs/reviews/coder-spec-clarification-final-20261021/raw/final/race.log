@@ -1,0 +1,5 @@
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	70.135s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	60.920s
+ok  	github.com/zhangzongchu2019/dingwei/internal/feishu	1.015s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fileservice	1.088s
+ok  	github.com/zhangzongchu2019/dingwei/internal/clarificationimage	1.014s

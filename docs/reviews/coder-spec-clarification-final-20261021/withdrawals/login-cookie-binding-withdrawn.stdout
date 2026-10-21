@@ -1,0 +1,5 @@
+--- FAIL: TestClarificationLoginContinuationCookieExpiryAndSingleUse (0.13s)
+    spec_clarification_login_test.go:20: CLARIFICATION_RETURN_COOKIE_UNBOUND <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.137s
+FAIL

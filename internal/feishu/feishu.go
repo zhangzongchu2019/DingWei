@@ -6,6 +6,7 @@ package feishu
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -423,6 +424,22 @@ func (g *LarkGateway) messageFromEvent(ev *larkim.P2MessageReceiveV1) (model.Mes
 	}
 	senderOpenID := senderOpenID(ev.Event.Sender)
 	content := normalizeContent(value(m.Content))
+	var reply *model.FeishuReplyMetadata
+	if value(m.ParentId) != "" || value(m.RootId) != "" {
+		reply = &model.FeishuReplyMetadata{Authenticated: true, ContentSHA: fmt.Sprintf("%x", sha256.Sum256([]byte(content))), MessageID: msgID, ParentID: value(m.ParentId), RootID: value(m.RootId), MessageType: value(m.MessageType), ChatID: value(m.ChatId)}
+		if ev.EventV2Base != nil && ev.EventV2Base.Header != nil {
+			if ev.EventV2Base.Header.AppID != "" && ev.EventV2Base.Header.AppID != g.appID {
+				return model.Message{}, errors.New("feishu reply application mismatch")
+			}
+			reply.EventID, reply.AppID, reply.Tenant = ev.EventV2Base.Header.EventID, ev.EventV2Base.Header.AppID, ev.EventV2Base.Header.TenantKey
+		}
+		if ev.Event.Sender != nil {
+			reply.SenderType = value(ev.Event.Sender.SenderType)
+			if tenant := value(ev.Event.Sender.TenantKey); tenant != "" && reply.Tenant != "" && tenant != reply.Tenant {
+				return model.Message{}, errors.New("feishu reply tenant mismatch")
+			}
+		}
+	}
 	return model.Message{
 		ID:                msgID,
 		ChatEntityID:      entityID(g.botChannelID, chatType, feishuID),
@@ -432,6 +449,7 @@ func (g *LarkGateway) messageFromEvent(ev *larkim.P2MessageReceiveV1) (model.Mes
 		ChatType:          chatType,
 		SenderOpenID:      senderOpenID,
 		IngressProvenance: model.IngressFeishuWSAuthenticated,
+		FeishuReply:       reply,
 		Content:           content,
 		CreatedAt:         parseMillisTime(value(m.CreateTime)),
 	}, nil

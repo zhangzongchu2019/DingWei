@@ -1,0 +1,26 @@
+{
+  "helper": {
+    "previous_source": "0fe752bb14a15047aeae6a52970a2e912b2023bc",
+    "frozen_source": "7115b67946fee16e64cd76a68284a41773932f75",
+    "changed_paths": [],
+    "note": "Final helper is rerun at frozen7115b67; earlier787 pass retained as prior evidence.",
+    "used_for_final_gate": false
+  },
+  "browsers": {
+    "previous_source": "0fe752bb14a15047aeae6a52970a2e912b2023bc",
+    "frozen_source": "7115b67946fee16e64cd76a68284a41773932f75",
+    "changed_paths": [],
+    "note": "The only changed path in these broad roots is a Go *_test.go file, never loaded by browser fixtures. Production HTML/JS and all browser scripts/assets are byte identical.",
+    "excluded_render_inputs": [
+      "internal/store/spec_clarification_test.go"
+    ]
+  },
+  "go_product": {
+    "previous_source": "0fe752bb14a15047aeae6a52970a2e912b2023bc",
+    "frozen_source": "7115b67946fee16e64cd76a68284a41773932f75",
+    "changed_paths": [
+      "internal/store/spec_clarification_test.go"
+    ],
+    "note": "Only store test changes for Go; browser reads production HTML/JS, not *_test.go. All helper input paths unchanged."
+  }
+}

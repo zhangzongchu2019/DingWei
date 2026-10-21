@@ -1,0 +1,66 @@
+{
+  "source": "a94070b18e1f1fd64817536390777f74f43c7177",
+  "product_file": "internal/store/spec_clarification.go",
+  "old": "if origin.Source != \"feishu\" || role != \"pm\" {",
+  "withdrawn": "if origin.Source != \"feishu\" {",
+  "started_at": "2026-10-21T06:58:21.180784+00:00",
+  "cases": [
+    {
+      "role": "deputy",
+      "marker": "CLARIFICATION_FEISHU_NON_PM_ORIGIN_ACCEPTED_deputy",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationFeishuOriginRequiresPMAtAppendBoundary/deputy$",
+        "-count=1",
+        "-timeout=2m",
+        "-v"
+      ]
+    },
+    {
+      "role": "technical_reader",
+      "marker": "CLARIFICATION_FEISHU_NON_PM_ORIGIN_ACCEPTED_technical_reader",
+      "phases": {
+        "before": {
+          "rc": 0,
+          "marker_present": false
+        },
+        "withdrawn": {
+          "rc": 1,
+          "marker_present": true
+        },
+        "restored": {
+          "rc": 0,
+          "marker_present": false
+        }
+      },
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationFeishuOriginRequiresPMAtAppendBoundary/technical_reader$",
+        "-count=1",
+        "-timeout=2m",
+        "-v"
+      ]
+    }
+  ],
+  "finished_at": "2026-10-21T06:58:28.456123+00:00"
+}

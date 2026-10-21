@@ -1,0 +1,6 @@
+--- FAIL: TestClarificationDirectInboundGuardFields (0.77s)
+    --- FAIL: TestClarificationDirectInboundGuardFields/policy (0.77s)
+        spec_clarification_guard_test.go:57: CLARIFICATION_DIRECT_POLICY_ACCEPTED
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.770s
+FAIL

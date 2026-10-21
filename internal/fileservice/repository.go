@@ -50,6 +50,12 @@ media_type TEXT NOT NULL, created_at TEXT NOT NULL);`); err != nil {
 		db.Close()
 		return nil, err
 	}
+	if _, err = db.Exec(`CREATE TABLE IF NOT EXISTS clarification_private_image (
+id TEXT PRIMARY KEY, media_type TEXT NOT NULL, sha256 TEXT NOT NULL,
+body BLOB NOT NULL, created_at TEXT NOT NULL);`); err != nil {
+		db.Close()
+		return nil, err
+	}
 	for _, column := range []struct{ name, ddl string }{
 		{"archived", `ALTER TABLE files ADD COLUMN archived INTEGER NOT NULL DEFAULT 0`},
 		{"retention_class", `ALTER TABLE files ADD COLUMN retention_class TEXT NOT NULL DEFAULT 'temporary'`},

@@ -1,0 +1,27 @@
+{
+  "base": "3748ee9a458e93040dc7c7925d0c281139e86b8c",
+  "source": "a94070b18e1f1fd64817536390777f74f43c7177",
+  "tree": "e50d0d469928194b3067169d5eaa6dc5de14d853",
+  "files": [
+    {
+      "path": "internal/m8/spec_clarification_reply_test.go",
+      "blob": "10cd99906a40fd5ee08eb901ee48a34914410090",
+      "bytes": 13706,
+      "sha256": "0cb3066476bae4b027e8b1b7a2ae36010ce8af7c633612711e77cdfcffc110b4"
+    },
+    {
+      "path": "internal/store/spec_clarification_feishu_role_test.go",
+      "blob": "6b286ec95f84df7ceb36f516fa2539a57775b24d",
+      "bytes": 2342,
+      "sha256": "3708941672006c866265cfbff1b3179f28c3b5cbda9745154c2b2c2f3ba7f650"
+    },
+    {
+      "path": "tests/spec-clarification/bound_nonpm_mutation.py",
+      "blob": "9c350e62a0a4c0850ec53195dfe9bcf846193501",
+      "bytes": 3069,
+      "sha256": "9cb600fef1df2db7642034f39ece4149d1cf518fb9a1d33dfa5e2eb700a5c9bd"
+    }
+  ],
+  "product_changes": 0,
+  "no_runtime_helper_or_protocol_changes": true
+}
