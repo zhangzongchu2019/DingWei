@@ -245,7 +245,11 @@ func (s *SQLite) PendingQuestionNotices(ctx context.Context, after string) ([]Qu
 	}
 	return out, rows.Err()
 }
-func (s *SQLite) PrepareQuestionNotice(ctx context.Context, expected QuestionContext, n QuestionNotice, configured bool, check func() error, now time.Time) (PilotQuestion, bool, error) {
+
+// QuestionFeishuDisabledReason is persisted only for a not-attempted notice.
+const QuestionFeishuDisabledReason = "DW_PILOT_QUESTION_FEISHU_ENABLED_disabled"
+
+func (s *SQLite) PrepareQuestionNotice(ctx context.Context, expected QuestionContext, n QuestionNotice, configured bool, check func() error, now time.Time, unconfiguredReason ...string) (PilotQuestion, bool, error) {
 	var q PilotQuestion
 	if check == nil {
 		return q, false, ErrTaskFlowPermission
@@ -309,6 +313,9 @@ func (s *SQLite) PrepareQuestionNotice(ctx context.Context, expected QuestionCon
 	if next == "dispatching" && (!configured || recipient == "") {
 		next = "pending_config"
 		reason = "binding_or_transport_unconfigured"
+		if len(unconfiguredReason) == 1 && unconfiguredReason[0] == QuestionFeishuDisabledReason {
+			reason = QuestionFeishuDisabledReason
+		}
 	}
 	if _, err = tx.ExecContext(ctx, `UPDATE pilot_question_outbox SET state=?,reason=?,attempted_at=CASE WHEN ?='dispatching' THEN ? ELSE attempted_at END,finished_at=CASE WHEN ? IN('unknown','cancelled') THEN ? ELSE finished_at END WHERE id=?`, next, reason, next, at, next, at, n.ID); err != nil {
 		return q, false, err

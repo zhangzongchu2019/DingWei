@@ -121,8 +121,12 @@ func (h *Hub) dispatchQuestionNotices(ctx context.Context, repo questionReposito
 				}
 				binding, bound := a.Bindings[n.Recipient]
 				link, originOK := h.questionLink(n.QuestionID)
-				configured := h.QuestionSender != nil && bound && a.Users[n.Recipient] && binding.Issuer != "" && feishu.IsPersonalOpenID(binding.Subject) && originOK
-				q, ready, x := repo.PrepareQuestionNotice(ctx, c, n, configured, check, h.now())
+				configured := h.QuestionFeishuEnabled && h.QuestionSender != nil && bound && a.Users[n.Recipient] && binding.Issuer != "" && feishu.IsPersonalOpenID(binding.Subject) && originOK
+				unconfiguredReason := ""
+				if !h.QuestionFeishuEnabled {
+					unconfiguredReason = store.QuestionFeishuDisabledReason
+				}
+				q, ready, x := repo.PrepareQuestionNotice(ctx, c, n, configured, check, h.now(), unconfiguredReason)
 				if x != nil || !ready {
 					return x
 				}

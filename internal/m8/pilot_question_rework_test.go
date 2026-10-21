@@ -63,6 +63,7 @@ func TestPilotQuestionProviderErrorUnknownAndNeverResends(t *testing.T) {
 	e.svc.Store = questionCheckFixture{Store: original, auth: original.(identity.QuestionAuthorizationStore)}
 	e.hub.PublicOrigin = "https://console.fixture.invalid"
 	sent := 0
+	e.hub.QuestionFeishuEnabled = true
 	e.hub.QuestionSender = func(context.Context, string, string, string, string) (string, error) {
 		sent++
 		return "provider-may-have-accepted", errors.New("lost provider receipt")
@@ -109,6 +110,7 @@ func TestPilotQuestionSendAcceptedFinishFailureNeverBecomesUnsent(t *testing.T) 
 	fixture := &questionFinishFailureFixture{SQLite: e.db}
 	e.hub.Repo = fixture
 	sends := 0
+	e.hub.QuestionFeishuEnabled = true
 	e.hub.QuestionSender = func(context.Context, string, string, string, string) (string, error) {
 		sends++
 		return "provider-accepted-before-local-write-failure", nil
@@ -140,6 +142,7 @@ func TestPilotQuestionPreProviderCheckFailureDisposition(t *testing.T) {
 			e.svc.Store = questionCheckFixture{Store: original, auth: original.(identity.QuestionAuthorizationStore), failAt: tc.at, fail: tc.err}
 			e.hub.PublicOrigin = "https://console.fixture.invalid"
 			sent := 0
+			e.hub.QuestionFeishuEnabled = true
 			e.hub.QuestionSender = func(context.Context, string, string, string, string) (string, error) { sent++; return "ok", nil }
 			e.hub.processQuestions(e.ctx)
 			// Read with ordinary current authorization, not the failing-check fixture.
@@ -304,6 +307,7 @@ func TestPilotQuestionNoRecipientRemainsPendingConfig(t *testing.T) {
 	q := questionHTTPCreate(t, e, state)
 	sent := 0
 	e.hub.PublicOrigin = "https://console.fixture.invalid"
+	e.hub.QuestionFeishuEnabled = true
 	e.hub.QuestionSender = func(context.Context, string, string, string, string) (string, error) {
 		sent++
 		return "unexpected", nil
