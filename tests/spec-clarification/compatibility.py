@@ -107,7 +107,23 @@ def main():
    assert 'feishu_reply_json' not in {r[1] for r in c.execute('PRAGMA table_info(message)')},'partial 0062 column'
    assert c.execute('SELECT count(*) FROM pilot_question').fetchone()[0]==1
    c.execute('DROP TRIGGER reject_0062')
+  with sqlite3.connect(rollback) as c:assert c.execute('SELECT count(*) FROM schema_migrations').fetchone()[0]==60
   run('new','TestClarificationCompatibilityMigrate',rollback)
+  with sqlite3.connect(rollback) as c:
+   expected=c.execute('SELECT spec_id,pm_user,updated_by,updated_at FROM pilot_question_policy ORDER BY spec_id').fetchall()
+   got=c.execute('SELECT spec_id,pm_user,updated_by,updated_at FROM spec_clarification_policy ORDER BY spec_id').fetchall()
+   assert got==expected and len(got)>0,'legacy explicit PM backfill differs'
+   assert c.execute('SELECT count(*) FROM schema_migrations').fetchone()[0]==62
+   assert c.execute("SELECT count(*) FROM spec_clarification_policy WHERE deputy_user<>''").fetchone()[0]==0
+   policies=c.execute('SELECT * FROM spec_clarification_policy').fetchall()
+   history=c.execute('SELECT * FROM spec_clarification_policy_history').fetchall()
+  run('new','TestClarificationCompatibilityMigrate',rollback)
+  with sqlite3.connect(rollback) as c:
+   assert c.execute('SELECT * FROM spec_clarification_policy').fetchall()==policies
+   assert c.execute('SELECT * FROM spec_clarification_policy_history').fetchall()==history
+   assert c.execute('SELECT count(*) FROM schema_migrations').fetchone()[0]==62
+  readings['explicit_pm_backfill_idempotent']=True
+  readings['ledger_counts']={'r33':59,'after_committed_0061_and_failed_0062':60,'after_0061_0062_0063':62,'after_repeated_migrate':62}
   readings['failed_0062_ddl_rolled_back']=True
   readings['old_writes_authorized']=False
  readings['finished_at']=datetime.datetime.now(datetime.timezone.utc).isoformat();save();print('CLARIFICATION_COMPATIBILITY_PASS')
