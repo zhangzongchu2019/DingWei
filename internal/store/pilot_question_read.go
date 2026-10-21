@@ -88,7 +88,9 @@ func (s *SQLite) readQuestion(ctx context.Context, expected QuestionContext, a B
 	answers := []QuestionAnswer{}
 	changes := []QuestionChange{}
 	if includeHistory {
-		rows, err := tx.QueryContext(ctx, `SELECT rowid,generation,actor_id,event_id,answer_kind,body,evidence_ref,scope_change,created_at FROM pilot_question_answer WHERE question_id=? AND (?=0 OR rowid<?) ORDER BY rowid DESC LIMIT 101`, qid, before, before)
+		// New public thread posts have their own current policy/role gate. Never
+		// leak them through a private legacy question grant after PM revocation.
+		rows, err := tx.QueryContext(ctx, `SELECT a.rowid,a.generation,a.actor_id,a.event_id,a.answer_kind,a.body,a.evidence_ref,a.scope_change,a.created_at FROM pilot_question_answer a WHERE a.question_id=? AND (?=0 OR a.rowid<?) AND NOT EXISTS(SELECT 1 FROM spec_clarification_post p WHERE p.question_id=a.question_id AND p.answer_actor=a.actor_id AND p.answer_event=a.event_id) ORDER BY a.rowid DESC LIMIT 101`, qid, before, before)
 		if err != nil {
 			return q, nil, nil, err
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"reflect"
+	"sort"
 )
 
 func clarificationReader(a BlockerActor, c QuestionContext, q PilotQuestion, p ClarificationPolicy) bool {
@@ -52,6 +53,22 @@ func (s *SQLite) ReadClarificationThread(ctx context.Context, expected QuestionC
 	if !clarificationReader(a, c, q, p) {
 		return out, ErrTaskFlowPermission
 	}
+	anchors, e := clarificationAnchors(ctx, tx, q, false)
+	if e != nil {
+		return out, e
+	}
+	refs := []string{}
+	for id, n := range anchors {
+		if n == 1 {
+			refs = append(refs, id)
+		}
+	}
+	sort.Strings(refs)
+	truncated := len(refs) > 300
+	if truncated {
+		refs = refs[:300]
+	}
+	out.Context = ClarificationContext{SpecID: q.SpecID, Revision: q.Revision, SHA: q.SHA, QuestionID: q.ID, Title: q.Title, Question: q.Question, ExpectedAnswer: q.ExpectedAnswer, Role: clarificationRole(a, p), EntryRefs: refs, AnchorsTruncated: truncated, Archived: c.Archived, PolicyVersion: p.Version}
 	// First collect bounded keys, then close rows before reading the unique
 	// body join, respecting SQLite's single-connection discipline.
 	rows, err := tx.QueryContext(ctx, `SELECT floor FROM spec_clarification_post WHERE question_id=? AND (?=0 OR floor<?) ORDER BY floor DESC LIMIT ?`, qid, before, before, limit+1)

@@ -249,6 +249,13 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 		if e != nil {
 			return out, e
 		}
+		threadPolicy, e := readClarificationPolicy(ctx, tx, c.SpecID)
+		if e != nil {
+			return out, e
+		}
+		if threadPolicy.Version > 0 {
+			policy.PMUser = threadPolicy.PMUser
+		}
 		q = PilotQuestion{ID: "pq:" + blockerHash([]string{a.Key(), u.RequestID}), SpecID: c.SpecID, Revision: c.Revision, SHA: c.SHA, TaskID: c.TaskID, Generation: 1, Version: 1, Kind: u.Kind, Title: strings.TrimSpace(u.Title), ObservedFact: strings.TrimSpace(u.ObservedFact), Question: strings.TrimSpace(u.Question), ExpectedAnswer: strings.TrimSpace(u.ExpectedAnswer), InputAnchors: u.InputAnchors, CreatedBy: a.Key(), PMUser: policy.PMUser, Responsible: u.Responsible, LeaderUser: policy.LeaderUser, Mode: "light", State: "awaiting_answer", CreatedAt: at, GenerationStartedAt: at, DueAt: now.Add(time.Hour).UTC().Format(time.RFC3339Nano), PolicyVersion: policy.Version}
 		if q.Responsible == "" && (q.Kind == "requirement_unclear" || q.Kind == "change") && q.PMUser != "" {
 			q.Responsible = "user:" + q.PMUser

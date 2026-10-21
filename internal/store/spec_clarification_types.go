@@ -58,7 +58,25 @@ type ClarificationResult struct {
 }
 
 type ClarificationThread struct {
-	Posts               []ClarificationPost `json:"posts"`
-	NextBefore          int64               `json:"next_before,omitempty"`
-	ExecutionAuthorized bool                `json:"execution_authorized"`
+	Posts               []ClarificationPost  `json:"posts"`
+	NextBefore          int64                `json:"next_before,omitempty"`
+	ExecutionAuthorized bool                 `json:"execution_authorized"`
+	Context             ClarificationContext `json:"context"`
+}
+
+// This is the necessary question excerpt, not a grant to its private D3
+// history, observed facts/attachments, or the entire spec/task.
+type ClarificationContext struct {
+	SpecID           string   `json:"spec_id"`
+	Revision         int      `json:"revision"`
+	SHA              string   `json:"content_sha256"`
+	QuestionID       string   `json:"question_id"`
+	Title            string   `json:"title"`
+	Question         string   `json:"question"`
+	ExpectedAnswer   string   `json:"expected_answer"`
+	Role             string   `json:"role"`
+	EntryRefs        []string `json:"entry_refs"`
+	AnchorsTruncated bool     `json:"anchors_truncated"`
+	Archived         bool     `json:"archived"`
+	PolicyVersion    int      `json:"policy_version"`
 }

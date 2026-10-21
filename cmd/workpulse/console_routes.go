@@ -127,6 +127,15 @@ func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
 		if method == "POST" {
 			action = "submit"
 		}
+		mux.HandleFunc(method+" /api/console/specs/{specID}/clarification-policy", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleClarificationPolicy)))
+		mux.HandleFunc(method+" /api/console/questions/{questionID}/clarifications", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleClarification)))
+		mux.HandleFunc(method+" /api/agent/console/questions/{questionID}/clarifications", prefixHub.RequireAgentBlocker(prefixHub.HandleClarification))
+	}
+	for _, method := range []string{"GET", "POST"} {
+		action := "read"
+		if method == "POST" {
+			action = "submit"
+		}
 		mux.HandleFunc(method+" /api/console/specs/{specID}/question-policy", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleQuestionPolicy)))
 		mux.HandleFunc(method+" /api/console/questions/{questionID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction(action, prefixHub.HandleQuestion)))
 	}

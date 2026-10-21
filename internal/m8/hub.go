@@ -130,6 +130,10 @@ type Hub struct {
 
 	// Startup-only D3 outbound opt-in; unrelated to spec clarification inbound.
 	QuestionFeishuEnabled bool
+	// Startup-only clarification flags. Reply ingestion never reads the D3
+	// outbound opt-in; disabling either clarification flag does not undo policy.
+	SpecClarificationEnabled            bool
+	SpecClarificationFeishuReplyEnabled bool
 
 	mu                hubMutex
 	serviceClients    map[string]*client

@@ -15,7 +15,7 @@ import (
 // clarificationAnchors uses only structured criterion/case/template IDs. Legacy
 // documents without any IDs use immutable SHA + line positions, never a rewrite
 // of final Markdown. Duplicate IDs are deliberately ambiguous and rejected.
-func clarificationAnchors(ctx context.Context, tx *sql.Tx, q PilotQuestion) (map[string]int, error) {
+func clarificationAnchors(ctx context.Context, tx *sql.Tx, q PilotQuestion, persist bool) (map[string]int, error) {
 	var body, raw, sha string
 	if err := tx.QueryRowContext(ctx, `SELECT content_markdown,acceptance_json,content_sha256 FROM console_spec_revision WHERE spec_id=? AND revision=?`, q.SpecID, q.Revision).Scan(&body, &raw, &sha); err != nil {
 		return nil, err
@@ -58,8 +58,10 @@ func clarificationAnchors(ctx context.Context, tx *sql.Tx, q PilotQuestion) (map
 			}
 			id := fmt.Sprintf("snapshot:%s:line:%d", q.SHA, i+1)
 			refs[id] = 1
-			if _, err = tx.ExecContext(ctx, `INSERT INTO spec_clarification_anchor(spec_id,revision,content_sha256,anchor_id,line_number) VALUES(?,?,?,?,?) ON CONFLICT DO NOTHING`, q.SpecID, q.Revision, q.SHA, id, i+1); err != nil {
-				return nil, err
+			if persist {
+				if _, err = tx.ExecContext(ctx, `INSERT INTO spec_clarification_anchor(spec_id,revision,content_sha256,anchor_id,line_number) VALUES(?,?,?,?,?) ON CONFLICT DO NOTHING`, q.SpecID, q.Revision, q.SHA, id, i+1); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
@@ -195,7 +197,7 @@ func (s *SQLite) appendClarification(ctx context.Context, expected QuestionConte
 	if !errors.Is(err, sql.ErrNoRows) {
 		return out, err
 	}
-	anchors, err := clarificationAnchors(ctx, tx, q)
+	anchors, err := clarificationAnchors(ctx, tx, q, true)
 	if err != nil {
 		return out, err
 	}

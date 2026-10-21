@@ -257,6 +257,7 @@ func run(logger *slog.Logger) error {
 		}
 	}
 	configurePilotQuestionFeishu(prefixHub, feishuGateway)
+	configureSpecClarification(prefixHub)
 	adm.Collector = collectorOrNil(feishuGateway)
 	if channels, err := st.ListBotChannels(ctx); err == nil {
 		for _, ch := range channels {
