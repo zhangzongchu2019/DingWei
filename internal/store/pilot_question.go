@@ -280,6 +280,16 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 			}
 		}
 	case "answer", "input":
+		// Once this spec uses append-only clarification, old HTTP/MCP/store
+		// operations cannot bypass its explicit type/anchors or current PM/deputy
+		// checks. Disabling the new UI never restores the old broad answer grant.
+		threadPolicy, policyErr := readClarificationPolicy(ctx, tx, q.SpecID)
+		if policyErr != nil {
+			return out, policyErr
+		}
+		if threadPolicy.Version != 0 {
+			return out, ErrTaskFlowPermission
+		}
 		if questionTerminal(q.State) || !questionNonempty(u.EventID, 128) || !questionNonempty(u.Body, 8192) || !questionNonempty(u.Evidence, 2048) {
 			return out, ErrTaskFlowInvalid
 		}
