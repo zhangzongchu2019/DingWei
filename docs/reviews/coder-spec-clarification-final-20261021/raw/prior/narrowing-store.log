@@ -1,0 +1,91 @@
+migrate 0044: principal display_name rewritten id=owner-entry-a old="Owner" new="zzc"
+migrate 0044: principal display_name rewritten id=a old="Owner" new="team"
+migrate 0044: principal display_name rewritten id=b old="Owner" new="team-2"
+store: 纯数据迁移 0025_owner_links_page.sql 由 DINGWEI_MIGRATION_LEGACY_ACK 人工确认放行（仅补账，不执行）
+store: legacy 迁移补账 60 件（已核验对象存在，未重放语句）
+--- FAIL: TestPilotQuestionDisabledReasonDoesNotResetUnknown (0.09s)
+    pilot_question_switch_test.go:10: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionAnswerAtomicAndUsesOnlyD2Wake (0.09s)
+    pilot_question_test.go:51: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionNoPartialCommitAndAgentNotPM (0.09s)
+    pilot_question_test.go:89: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionReminderExactlySixtyMinutesAndOncePerGeneration (0.09s)
+    pilot_question_test.go:126: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionReplyFirstCancelsNoticeAndUnknownNeverRetries (0.18s)
+    --- FAIL: TestPilotQuestionReplyFirstCancelsNoticeAndUnknownNeverRetries/unknown (0.09s)
+        pilot_question_test.go:171: clarification requires typed anchored tools: task access denied
+    --- FAIL: TestPilotQuestionReplyFirstCancelsNoticeAndUnknownNeverRetries/reply_first (0.09s)
+        pilot_question_test.go:171: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionUnconfiguredNeverClaimsSent (0.09s)
+    pilot_question_test.go:221: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionSameContentNewEventDeduplicatesAndRoleRevokes (0.09s)
+    pilot_question_test.go:241: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionBusinessChangeBlocksAllOldScopeAndNeedsHumanDecision (0.09s)
+    pilot_question_test.go:271: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionReadGrantIsOnlyQuestionAndHistoryBounded (0.09s)
+    pilot_question_test.go:299: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionReassignRevokesSharedD2WaiterGrant (0.09s)
+    pilot_question_test.go:326: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionCASAndClockRollbackFailClosed (0.09s)
+    pilot_question_test.go:386: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionProductionFullAndAckDoesNotStopSLA (0.09s)
+    pilot_question_test.go:401: QUESTION_PRODUCTION_NOT_FULL {{  0    0 0 0                   0 false   [] false false false [] false false false} updated false false} clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionSpecOnlyAndCompletedTaskNeverWake (0.18s)
+    --- FAIL: TestPilotQuestionSpecOnlyAndCompletedTaskNeverWake/false (0.09s)
+        pilot_question_test.go:436: QUESTION_POST_COMPLETION_CREATED_BLOCKER {{  0    0 0 0                   0 false   [] false false false [] false false false} updated false false} clarification requires typed anchored tools: task access denied
+    --- FAIL: TestPilotQuestionSpecOnlyAndCompletedTaskNeverWake/true (0.09s)
+        pilot_question_test.go:436: QUESTION_POST_COMPLETION_CREATED_BLOCKER {{  0    0 0 0                   0 false   [] false false false [] false false false} updated false false} clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionPMDelegationLimitedToExistingQuestionReaders (0.09s)
+    pilot_question_test.go:457: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionSentReminderReassignmentNeverCreatesSecondReminder (0.09s)
+    pilot_question_test.go:479: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionSpecOnlyChangeCanLinkActualNewRevision (0.09s)
+    pilot_question_test.go:515: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionCancelPreservesPendingBusinessProposal (0.09s)
+    pilot_question_test.go:542: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionRecipientCaseCanonicalBeforeHash (0.09s)
+    pilot_question_test.go:575: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotQuestionOldDispatchCannotResetToUnsent (0.09s)
+    pilot_question_test.go:584: clarification requires typed anchored tools: task access denied
+--- FAIL: TestPilotTemplateD3ConfirmsActualDerivedSuccessor (0.09s)
+    pilot_template_test.go:375: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationNoticeFinishIsAtomicWithProviderParent (0.09s)
+    spec_clarification_atomic_test.go:55: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationInboundPostRollbackAndUncertainReceiptNoRetry (0.09s)
+    spec_clarification_atomic_test.go:84: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationPrivateImageActorQuestionAndImmutableLink (0.09s)
+    spec_clarification_images_test.go:12: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationLoginContinuationCookieExpiryAndSingleUse (0.09s)
+    spec_clarification_login_test.go:12: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationContextProjectionChangesCursorWithoutReopeningTask (0.09s)
+    spec_clarification_projection_test.go:11: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationAppendReplayAndEqualTextSupplement (0.09s)
+    spec_clarification_test.go:39: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationAuthorityCurrentPolicyAndDeputy (0.09s)
+    spec_clarification_test.go:102: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationTechnicalDoesNotBecomeAuthorityOrCompleteTask (0.09s)
+    spec_clarification_test.go:159: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationFinalCheckAndAuditFailuresRollBackAll (0.27s)
+    --- FAIL: TestClarificationFinalCheckAndAuditFailuresRollBackAll/identity (0.09s)
+        spec_clarification_test.go:185: clarification requires typed anchored tools: task access denied
+    --- FAIL: TestClarificationFinalCheckAndAuditFailuresRollBackAll/audit (0.09s)
+        spec_clarification_test.go:185: clarification requires typed anchored tools: task access denied
+    --- FAIL: TestClarificationFinalCheckAndAuditFailuresRollBackAll/blocker (0.09s)
+        spec_clarification_test.go:185: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationAnchorCorrectionScopeAndWriteFreeze (0.09s)
+    spec_clarification_test.go:222: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationReplyBudgetAndReplayOrder (0.09s)
+    spec_clarification_test.go:257: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationLegacySnapshotAnchorsAndHistory (0.09s)
+    spec_clarification_test.go:287: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationLegacyAnswerPathsCannotBypassEnrollment (0.09s)
+    spec_clarification_test.go:317: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationContinuedResolvedDiscussionDoesNotReopen (0.09s)
+    spec_clarification_test.go:334: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationReadPaginationCurrentGrantAndPrivateHistory (0.09s)
+    spec_clarification_test.go:361: clarification requires typed anchored tools: task access denied
+--- FAIL: TestClarificationPolicyFailureAndConcurrentRevocation (0.09s)
+    spec_clarification_test.go:412: clarification requires typed anchored tools: task access denied
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	21.853s
+FAIL
