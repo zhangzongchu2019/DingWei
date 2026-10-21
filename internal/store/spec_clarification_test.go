@@ -78,6 +78,11 @@ func TestClarificationAppendReplayAndEqualTextSupplement(t *testing.T) {
 	if _, err = db.db.Exec(`UPDATE spec_clarification_post SET role='pm' WHERE floor=1`); err == nil {
 		t.Fatal("CLARIFICATION_METADATA_MUTABLE")
 	}
+	// Isolate the append-only triggers from redundant FK protection: a missing
+	// trigger must not appear covered merely because request/post FKs reject it.
+	if _, err = db.db.Exec(`PRAGMA foreign_keys=OFF`); err != nil {
+		t.Fatal(err)
+	}
 	if _, err = db.db.Exec(`DELETE FROM spec_clarification_post WHERE floor=1`); err == nil {
 		t.Fatal("CLARIFICATION_POST_DELETABLE")
 	}
@@ -86,6 +91,9 @@ func TestClarificationAppendReplayAndEqualTextSupplement(t *testing.T) {
 	}
 	if _, err = db.db.Exec(`DELETE FROM pilot_question_answer WHERE event_id=?`, first.Post.EventID); err == nil {
 		t.Fatal("CLARIFICATION_BODY_DELETABLE")
+	}
+	if _, err = db.db.Exec(`PRAGMA foreign_keys=ON`); err != nil {
+		t.Fatal(err)
 	}
 	var original string
 	if err = db.db.QueryRow(`SELECT body FROM pilot_question_answer WHERE event_id=?`, first.Post.EventID).Scan(&original); err != nil || original != first.Post.Body {

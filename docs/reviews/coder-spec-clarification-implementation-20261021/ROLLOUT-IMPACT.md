@@ -10,7 +10,7 @@ Hub/helper compatibility remains major/minor based: this feature does not reject
 |---|---|---|
 | send_message, ordinary delivery, dw_reply_message | Existing behavior/authentication unchanged | Unchanged |
 | dw_inbox | Existing driver read/local mark behavior unchanged | Existing 0.2.3.6 behavior unchanged; the separate factory-shim transport issue is not fixed by a Hub release |
-| project_context | Existing authorization/pagination/budget; bounded new discussion data added and cursor invalidated by new floors | Tool exists; same Hub contract, subject to the separately diagnosed local MCP transport |
+| project_context | Existing authorization/pagination/budget; bounded new discussion data added and cursor invalidated by new floors | Stock 0.2.3.6 still calls legacy vsapi/datad (not the new Hub context); absent datad stays unconfigured. Requires 0.2.3.8 upgrade for the new Hub-backed tool, separately from its local MCP transport repair |
 | dw_task_list/update, R8 pre-review tools, spec create/update | Existing R9/R8 authorization, immutable/final/template gates retained | Existing tools retained; no new blanket 426 |
 | D2 blocker list/set/input/recheck | Existing authorization, shared limits and wake/recheck semantics retained | These r33 tools are absent from the stock 0.2.3.6 shim; absence is not HTTP 426 |
 | dw_task_question_list | Existing read path retained; old private history stays under its old ACL; legacy answers labelled unverified, can_answer=false | D3 tool absent from stock shim |
