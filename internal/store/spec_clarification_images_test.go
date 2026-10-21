@@ -24,6 +24,12 @@ func TestClarificationPrivateImageActorQuestionAndImmutableLink(t *testing.T) {
 	if _, e = db.ReadClarificationImageMetadata(ctx, c, BlockerActor{AgentID: "dev"}, q.ID, f.ID, check); !errors.Is(e, ErrTaskFlowPermission) {
 		t.Fatal("CLARIFICATION_UNLINKED_IMAGE_DISCLOSED", e)
 	}
+	bad := clarificationUpdate("steal-staged-image")
+	bad.Kind = "technical"
+	bad.Files = []string{f.ID}
+	if _, e = db.AppendClarification(ctx, c, BlockerActor{AgentID: "dev"}, q.ID, bad, true, check, now); !errors.Is(e, ErrTaskFlowPermission) {
+		t.Fatal("CLARIFICATION_OTHER_ACTOR_STAGED_IMAGE_ATTACHED", e)
+	}
 	u := clarificationUpdate("image-post")
 	u.Files = []string{f.ID}
 	out, e := db.AppendClarification(ctx, c, actor, q.ID, u, true, check, now)

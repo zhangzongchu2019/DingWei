@@ -310,7 +310,7 @@ func TestClarificationLegacySnapshotAnchorsAndHistory(t *testing.T) {
 
 func TestClarificationLegacyAnswerPathsCannotBypassEnrollment(t *testing.T) {
 	db, now, q := clarificationFixture(t)
-	for _, actor := range []BlockerActor{{UserID: "owner-a"}, {UserID: "pm"}, {AgentID: "dev"}} {
+	for _, actor := range []BlockerActor{{UserID: "pm"}, {UserID: "owner-a"}, {AgentID: "dev"}} {
 		u := QuestionUpdate{RequestID: "old-" + actor.Key(), Operation: "answer", ExpectedVersion: q.Version, EventID: "old-event", AnswerKind: "substantive", Body: "old broad answer", Evidence: "git:evidence"}
 		if actor.AgentID != "" {
 			u.Operation = "input"

@@ -324,8 +324,8 @@ func (s *SQLite) appendClarificationTx(ctx context.Context, tx *sql.Tx, expected
 			}
 		}
 	}
-	if u.Kind == "correction" && c.Task != nil && questionCurrent(q, c) {
-		event := fmt.Sprintf("clarification_correction/%s/%d", q.ID, floor)
+	if (u.Kind == "correction" || u.Kind == "scope_change") && c.Task != nil && questionCurrent(q, c) {
+		event := fmt.Sprintf("clarification_%s/%s/%d", u.Kind, q.ID, floor)
 		for _, r := range []struct{ agent, role string }{{c.Task.Developer, "developer"}, {c.Task.Reviewer, "reviewer"}, {"owner:" + c.Owner, "owner"}} {
 			if err = flowOutbox(ctx, tx, *c.Task, r.agent, r.role, event, now); err != nil {
 				return out, err

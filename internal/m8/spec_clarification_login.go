@@ -5,6 +5,8 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"net/http"
 	"net/url"
 	"strings"
@@ -43,10 +45,17 @@ func (h *Hub) RequireClarificationPage(next http.HandlerFunc) http.HandlerFunc {
 			protected(w, r)
 			return
 		}
+		if r.URL.RawQuery == "" {
+			protected(w, r)
+			return
+		}
+		mustChange := false
 		if c, e := r.Cookie(httpapi.SessionCookie); e == nil {
 			if _, e = h.Onboarding.ResolveSession(r.Context(), c.Value); e == nil {
 				protected(w, r)
 				return
+			} else {
+				mustChange = errors.Is(e, identity.ErrMustChange)
 			}
 		}
 		values, e := url.ParseQuery(r.URL.RawQuery)
@@ -78,7 +87,11 @@ func (h *Hub) RequireClarificationPage(next http.HandlerFunc) http.HandlerFunc {
 		http.SetCookie(w, &http.Cookie{Name: clarificationLoginCookie, Value: cookie, Path: "/console/clarification-return", HttpOnly: true, Secure: secure, SameSite: http.SameSiteLaxMode, MaxAge: 600})
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Referrer-Policy", "no-referrer")
-		http.Redirect(w, r, "/console/login?clarification_state="+state, http.StatusFound)
+		target := "/console/login?clarification_state=" + state
+		if mustChange {
+			target += "#change"
+		}
+		http.Redirect(w, r, target, http.StatusFound)
 	}
 }
 func (h *Hub) HandleClarificationReturn(w http.ResponseWriter, r *http.Request) {

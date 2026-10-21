@@ -135,3 +135,27 @@ func TestClarificationInboundPostRollbackAndUncertainReceiptNoRetry(t *testing.T
 		t.Fatal("CLARIFICATION_RECEIPT_STATE_LOST", got.State, got.ReceiptState, err)
 	}
 }
+
+func TestClarificationFreshGenerationPinsCurrentDeputyPolicy(t *testing.T) {
+	db, now, q := clarificationFixture(t)
+	ctx := context.Background()
+	c, e := db.QuestionAuthorizationContext(ctx, q.SpecID, "", "")
+	if e != nil {
+		t.Fatal(e)
+	}
+	policy, e := db.SetClarificationPolicy(ctx, c, BlockerActor{UserID: "pm"}, ClarificationPolicyUpdate{ExpectedVersion: 1, PMUser: "pm", DeputyUser: "owner-a"}, func() error { return nil }, now)
+	if e != nil {
+		t.Fatal(e)
+	}
+	result, e := questionApply(t, db, now, BlockerActor{UserID: "owner-a"}, q.ID, QuestionUpdate{RequestID: "cancel", Operation: "cancel", ExpectedVersion: q.Version, Reason: "explicit old generation cancellation"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	result, e = questionApply(t, db, now, BlockerActor{UserID: "owner-a"}, q.ID, QuestionUpdate{RequestID: "reopen", Operation: "reopen", ExpectedVersion: result.Question.Version, Reason: "fresh authorized notification"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	if result.Question.PolicyVersion != policy.Version {
+		t.Fatal("CLARIFICATION_NEW_GENERATION_STALE_POLICY", result.Question.PolicyVersion, policy.Version)
+	}
+}

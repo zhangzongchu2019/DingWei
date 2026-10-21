@@ -2,6 +2,8 @@ package fileservice
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -88,5 +90,27 @@ func TestValidRetentionConfigActuallyDeletesExpiredObject(t *testing.T) {
 	objects.mu.Unlock()
 	if remains {
 		t.Fatal("expired object bytes were not deleted")
+	}
+}
+
+func TestClarificationPrivateMetadataCannotBeServedFromPublicRoot(t *testing.T) {
+	setRequiredConfigEnv(t)
+	root := t.TempDir()
+	t.Setenv("FS_DATA_ROOT", root)
+	t.Setenv("FS_DATABASE_PATH", filepath.Join(root, "private.db"))
+	if _, e := ConfigFromEnv(); e == nil {
+		t.Fatal("CLARIFICATION_PRIVATE_DB_IN_PUBLIC_ROOT")
+	}
+	alias := filepath.Join(t.TempDir(), "public-alias")
+	if e := os.Symlink(root, alias); e != nil {
+		t.Fatal(e)
+	}
+	t.Setenv("FS_DATABASE_PATH", filepath.Join(alias, "future", "private.db"))
+	if _, e := ConfigFromEnv(); e == nil {
+		t.Fatal("CLARIFICATION_PRIVATE_DB_SYMLINK_PUBLIC_ROOT")
+	}
+	t.Setenv("FS_DATABASE_PATH", filepath.Join(t.TempDir(), "private.db"))
+	if _, e := ConfigFromEnv(); e != nil {
+		t.Fatal(e)
 	}
 }

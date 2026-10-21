@@ -18,7 +18,7 @@ func TestClarificationImageTypeAndDimensionValidation(t *testing.T) {
 	if media, e := Validate(b.Bytes()); e != nil || media != "image/png" {
 		t.Fatal(media, e)
 	}
-	for _, bad := range [][]byte{[]byte("<svg><script>alert(1)</script></svg>"), []byte("package main\nfunc main(){}"), []byte("-----BEGIN PRIVATE KEY-----"), b.Bytes()[:20], make([]byte, MaxBytes+1)} {
+	for _, bad := range [][]byte{[]byte("<svg><script>alert(1)</script></svg>"), []byte("package main\nfunc main(){}"), []byte("-----BEGIN PRIVATE KEY-----"), b.Bytes()[:20], append(append([]byte{}, b.Bytes()...), []byte("package main")...), make([]byte, MaxBytes+1)} {
 		if _, e := Validate(bad); e == nil {
 			t.Fatal("CLARIFICATION_IMAGE_CONTENT_ACCEPTED")
 		}

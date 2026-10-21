@@ -38,7 +38,7 @@ func clarificationBinding(id identity.Identity, authority ClarificationReplyAuth
 	return store.ClarificationBinding{Issuer: id.Issuer, Subject: id.Subject, AppID: authority.AppID, Tenant: authority.Tenant, BindingSHA: fmt.Sprintf("%x", sha256.Sum256(raw))}
 }
 
-var clarificationCorrection = regexp.MustCompile(`^更正[ \t]*([1-9][0-9]{0,17})[：: \n]+([\s\S]+)$`)
+var clarificationCorrection = regexp.MustCompile(`^更正(?:第)?[ \t]*([1-9][0-9]{0,17})(?:条)?[：: \n]+([\s\S]+)$`)
 
 func parseClarificationReply(text string) (store.ClarificationUpdate, error) {
 	u := store.ClarificationUpdate{Kind: "explanation", Body: strings.TrimSpace(text)}

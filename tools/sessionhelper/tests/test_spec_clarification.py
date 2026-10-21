@@ -44,6 +44,9 @@ class ClarificationToolTest(unittest.TestCase):
                 body=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
                 seen.append((self.path,body,self.headers.get('Authorization')))
                 self.send_response(302);self.send_header('Location','/leak');self.end_headers()
+            def do_GET(self):
+                seen.append((self.path,{},self.headers.get('Authorization')))
+                self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(b'{"execution_authorized":false}')
             def log_message(self,*args):pass
         server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
         thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
@@ -51,8 +54,8 @@ class ClarificationToolTest(unittest.TestCase):
             a=self.technical();action=a.pop('action');qid=a.pop('question_id')
             req={'action':action,'question_id':qid,'body':a}
             out=api.clarification_request('ws://127.0.0.1:'+str(server.server_port),{'Authorization':'Bearer SYNTHETIC'},req)
-            self.assertEqual(out['http_status'],302)
             self.assertEqual(len(seen),1,'CLARIFICATION_REDIRECT_CREDENTIAL_LEAK')
+            self.assertEqual(out['http_status'],302)
             self.assertEqual(seen[0][0],'/api/agent/console/questions/q/clarifications')
             self.assertEqual(seen[0][1]['kind'],'technical','CLARIFICATION_AGENT_WIRE_AUTHORITY')
         finally:server.shutdown();server.server_close();thread.join()
@@ -92,7 +95,7 @@ class ClarificationToolTest(unittest.TestCase):
         self.assertTrue(out['data_only']);self.assertFalse(out['execution_authorized'])
 
     def test_create_question_passes_typed_refs(self):
-        from test_pilot_question import create
+        def create():return {'task_id':'task','request_id':'stable','expected_version':1,'kind':'technical','title':'问题','observed_fact':'实际现象','question':'需明确内容','expected_answer':'结论与证据','entry_refs':['A1']}
         with patch.object(mcp_shim,'_ipc_request',return_value={}) as call:
             mcp_shim._dw_task_question_create(dict(create(),entry_refs=['A1']))
         self.assertEqual(call.call_args.args[0]['body']['entry_refs'],['A1'])

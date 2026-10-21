@@ -25,10 +25,14 @@ func TestClarificationSDKPreservesAuthenticatedReplyMetadata(t *testing.T) {
 		t.Fatal("CLARIFICATION_SDK_REPLY_EVIDENCE_LOST", m.FeishuReply, err)
 	}
 	// Ordinary client JSON cannot manufacture this trusted in-memory field.
-	var forged model.Message
-	if err = json.Unmarshal([]byte(`{"FeishuReply":{"authenticated":true,"parent_id":"om_exact_notice"}}`), &forged); err != nil || forged.FeishuReply != nil {
-		t.Fatal("CLARIFICATION_REPLY_METADATA_JSON_FORGERY", forged.FeishuReply, err)
+
+	for _, field := range []string{"FeishuReply", "feishu_reply"} {
+		var forged model.Message
+		if err = json.Unmarshal([]byte(`{"`+field+`":{"authenticated":true,"parent_id":"om_exact_notice"}}`), &forged); err != nil || forged.FeishuReply != nil {
+			t.Fatal("CLARIFICATION_REPLY_METADATA_JSON_FORGERY", forged.FeishuReply, err)
+		}
 	}
+
 }
 
 func TestClarificationSDKRejectsApplicationAndTenantDrift(t *testing.T) {

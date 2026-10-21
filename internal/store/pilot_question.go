@@ -339,6 +339,14 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 		}
 		oldPM, oldResponsible := q.PMUser, q.Responsible
 		q.PMUser = u.PMUser
+		currentPolicy, policyErr := readClarificationPolicy(ctx, tx, q.SpecID)
+		if policyErr != nil {
+			return out, policyErr
+		}
+		if currentPolicy.Version > 0 && currentPolicy.PMUser == q.PMUser {
+			q.PolicyVersion = currentPolicy.Version
+		}
+
 		q.Responsible = u.Responsible
 		q.LeaderUser = u.LeaderUser
 		q.Version++
@@ -455,6 +463,14 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 			return out, ErrTaskFlowPermission
 		}
 		q.Generation++
+		currentPolicy, policyErr := readClarificationPolicy(ctx, tx, q.SpecID)
+		if policyErr != nil {
+			return out, policyErr
+		}
+		if currentPolicy.Version > 0 && currentPolicy.PMUser == q.PMUser {
+			q.PolicyVersion = currentPolicy.Version
+		}
+
 		q.Version++
 		q.GenerationStartedAt = at
 		q.DueAt = now.Add(time.Hour).UTC().Format(time.RFC3339Nano)
