@@ -61,6 +61,7 @@ type PilotQuestion struct {
 	AssignmentOptions      []string           `json:"assignment_options,omitempty"`
 	CanAssign              bool               `json:"can_assign"`
 	CanDecideChange        bool               `json:"can_decide_change"`
+	ClarificationRequired  bool               `json:"clarification_required"`
 }
 type QuestionDelivery struct {
 	Kind        string `json:"kind"`
@@ -71,6 +72,7 @@ type QuestionDelivery struct {
 	FinishedAt  string `json:"finished_at,omitempty"`
 }
 type QuestionAnswer struct {
+	Authority   string `json:"authority"`
 	Sequence    int64  `json:"sequence"`
 	Generation  int    `json:"generation"`
 	Actor       string `json:"actor"`
@@ -91,29 +93,30 @@ type QuestionChange struct {
 	Reason      string `json:"reason"`
 }
 type QuestionUpdate struct {
-	RequestID            string `json:"request_id"`
-	ExpectedVersion      int    `json:"expected_version"`
-	Operation            string `json:"operation"`
-	TaskID               string `json:"task_id,omitempty"`
-	Kind                 string `json:"kind,omitempty"`
-	Title                string `json:"title,omitempty"`
-	ObservedFact         string `json:"observed_fact,omitempty"`
-	Question             string `json:"question,omitempty"`
-	ExpectedAnswer       string `json:"expected_answer,omitempty"`
-	InputAnchors         string `json:"input_anchors,omitempty"`
-	Responsible          string `json:"responsible_principal,omitempty"`
-	ProductionOrSecurity bool   `json:"production_or_security,omitempty"`
-	EventID              string `json:"event_id,omitempty"`
-	AnswerKind           string `json:"answer_kind,omitempty"`
-	Body                 string `json:"body,omitempty"`
-	Evidence             string `json:"evidence_ref,omitempty"`
-	ScopeChange          bool   `json:"scope_change,omitempty"`
-	PMUser               string `json:"pm_user,omitempty"`
-	LeaderUser           string `json:"leader_user,omitempty"`
-	Reason               string `json:"reason,omitempty"`
-	ChangeID             string `json:"change_id,omitempty"`
-	NewRevision          int    `json:"new_revision,omitempty"`
-	NewSpecID            string `json:"new_spec_id,omitempty"`
+	RequestID            string   `json:"request_id"`
+	ExpectedVersion      int      `json:"expected_version"`
+	Operation            string   `json:"operation"`
+	TaskID               string   `json:"task_id,omitempty"`
+	Kind                 string   `json:"kind,omitempty"`
+	Title                string   `json:"title,omitempty"`
+	ObservedFact         string   `json:"observed_fact,omitempty"`
+	Question             string   `json:"question,omitempty"`
+	ExpectedAnswer       string   `json:"expected_answer,omitempty"`
+	InputAnchors         string   `json:"input_anchors,omitempty"`
+	EntryRefs            []string `json:"entry_refs,omitempty"`
+	Responsible          string   `json:"responsible_principal,omitempty"`
+	ProductionOrSecurity bool     `json:"production_or_security,omitempty"`
+	EventID              string   `json:"event_id,omitempty"`
+	AnswerKind           string   `json:"answer_kind,omitempty"`
+	Body                 string   `json:"body,omitempty"`
+	Evidence             string   `json:"evidence_ref,omitempty"`
+	ScopeChange          bool     `json:"scope_change,omitempty"`
+	PMUser               string   `json:"pm_user,omitempty"`
+	LeaderUser           string   `json:"leader_user,omitempty"`
+	Reason               string   `json:"reason,omitempty"`
+	ChangeID             string   `json:"change_id,omitempty"`
+	NewRevision          int      `json:"new_revision,omitempty"`
+	NewSpecID            string   `json:"new_spec_id,omitempty"`
 }
 type QuestionResult struct {
 	Question            PilotQuestion `json:"question"`

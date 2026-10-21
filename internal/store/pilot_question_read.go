@@ -162,13 +162,25 @@ func (s *SQLite) readQuestion(ctx context.Context, expected QuestionContext, a B
 			return q, nil, nil, err
 		}
 	}
+	view := questionPresentation(q, c, a, q)
+	p, e := readClarificationPolicy(ctx, tx, q.SpecID)
+	if e != nil {
+		return PilotQuestion{}, nil, nil, e
+	}
+	view.ClarificationRequired = p.Version > 0
+	if view.ClarificationRequired {
+		view.CanAnswer = false
+	}
+	for i := range answers {
+		answers[i].Authority = "legacy_unverified"
+	}
 	if err = check(); err != nil {
 		return q, nil, nil, err
 	}
 	if err = tx.Commit(); err != nil {
 		return q, nil, nil, err
 	}
-	return questionPresentation(q, c, a, q), answers, changes, nil
+	return view, answers, changes, nil
 }
 func (s *SQLite) OpenQuestionIDs(ctx context.Context, after string) ([]string, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT id FROM pilot_question WHERE id>? AND state NOT IN('resolved','cancelled','superseded') AND first_substantive_answer_at IS NULL ORDER BY id LIMIT 100`, after)
@@ -318,6 +330,9 @@ func (s *SQLite) PrepareQuestionNotice(ctx context.Context, expected QuestionCon
 		if len(unconfiguredReason) == 1 && unconfiguredReason[0] == QuestionFeishuDisabledReason {
 			reason = QuestionFeishuDisabledReason
 		}
+		if len(unconfiguredReason) == 1 && unconfiguredReason[0] == ClarificationReplyUnavailableReason {
+			reason = ClarificationReplyUnavailableReason
+		}
 	}
 	if _, err = tx.ExecContext(ctx, `UPDATE pilot_question_outbox SET state=?,reason=?,attempted_at=CASE WHEN ?='dispatching' THEN ? ELSE attempted_at END,finished_at=CASE WHEN ? IN('unknown','cancelled') THEN ? ELSE finished_at END WHERE id=?`, next, reason, next, at, next, at, n.ID); err != nil {
 		return q, false, err
@@ -336,8 +351,24 @@ func (s *SQLite) FinishQuestionNotice(ctx context.Context, id, providerID string
 		state = "sent"
 		reason = "provider_accepted_not_human_read"
 	}
-	_, err := s.db.ExecContext(ctx, `UPDATE pilot_question_outbox SET state=?,reason=?,finished_at=?,provider_message_id=? WHERE id=? AND state='dispatching'`, state, reason, now.UTC().Format(time.RFC3339Nano), providerID, id)
-	return err
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(ctx, `UPDATE pilot_question_outbox SET state=?,reason=?,finished_at=?,provider_message_id=? WHERE id=? AND state='dispatching'`, state, reason, now.UTC().Format(time.RFC3339Nano), providerID, id); err != nil {
+		return err
+	}
+	// Commit the exact provider parent and D3 receipt together. A crash cannot
+	// create a sent notice with a guessed or missing clarification mapping.
+	mappedID := ""
+	if state == "sent" {
+		mappedID = providerID
+	}
+	if _, err = tx.ExecContext(ctx, `UPDATE spec_clarification_notice SET state=?,provider_message_id=? WHERE notice_id=? AND state='prepared'`, state, mappedID, id); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // A raw reference accessor for the trusted worker, never an HTTP response.

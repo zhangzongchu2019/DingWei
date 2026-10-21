@@ -103,7 +103,17 @@ func (r receiverClient) Start(ctx context.Context, onInbound func(ctx context.Co
 // TODO(B0/A0): carry env.MessageID/RequestID/full Source into Envelope.Meta
 // protected keys + derive trust_decision (§5.3) once B0's source object lands.
 func envToMessage(env InboundEnvelope) model.Message {
+	var reply *model.FeishuReplyMetadata
+	if env.FeishuReply != nil {
+		copy := *env.FeishuReply
+		// SourceStub/AttestedBy/provenance are not a verified transport receipt.
+		// Until the authenticated service attestation is wired, fail closed even
+		// if the sender self-reports authenticated=true in the wire object.
+		copy.Authenticated = false
+		reply = &copy
+	}
 	return model.Message{
+		FeishuReply:  reply,
 		ChatEntityID: env.ChatEntityID,
 		Direction:    model.DirectionIn,
 		BotChannelID: env.BotChannelID,

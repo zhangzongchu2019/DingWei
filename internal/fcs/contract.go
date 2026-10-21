@@ -18,7 +18,10 @@
 // language-level seams; the wire encoding is chosen in a later step with dev55 (B).
 package fcs
 
-import "context"
+import (
+	"context"
+	"github.com/zhangzongchu2019/dingwei/internal/model"
+)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Outbound (hub → FCS, single exit). Mirrors internal/feishu.OutMessage plus the
@@ -81,6 +84,10 @@ type InboundEnvelope struct {
 	ChatEntityID string
 	SenderOpenID string // 群消息=发言人
 	Content      string // content_json
+	// Correlation data survives FCS even when its service attestation is not
+	// implemented. Hub must consume/reject such a reply, never turn it into an
+	// ordinary Agent instruction. This field alone is not authenticated evidence.
+	FeishuReply *model.FeishuReplyMetadata
 
 	// A0 protected IDs, FCS-minted at the authenticated ingress boundary
 	// (A0 §2: mint at the first authenticated trusted platform component).

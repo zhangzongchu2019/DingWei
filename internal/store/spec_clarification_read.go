@@ -68,7 +68,7 @@ func (s *SQLite) ReadClarificationThread(ctx context.Context, expected QuestionC
 	if truncated {
 		refs = refs[:300]
 	}
-	out.Context = ClarificationContext{SpecID: q.SpecID, Revision: q.Revision, SHA: q.SHA, QuestionID: q.ID, Title: q.Title, Question: q.Question, ExpectedAnswer: q.ExpectedAnswer, Role: clarificationRole(a, p), EntryRefs: refs, AnchorsTruncated: truncated, Archived: c.Archived, PolicyVersion: p.Version}
+	out.Context = ClarificationContext{Actor: a.Key(), SpecID: q.SpecID, Revision: q.Revision, SHA: q.SHA, QuestionID: q.ID, Title: q.Title, Question: q.Question, ExpectedAnswer: q.ExpectedAnswer, Role: clarificationRole(a, p), EntryRefs: refs, AnchorsTruncated: truncated, Archived: c.Archived, PolicyVersion: p.Version}
 	// First collect bounded keys, then close rows before reading the unique
 	// body join, respecting SQLite's single-connection discipline.
 	rows, err := tx.QueryContext(ctx, `SELECT floor FROM spec_clarification_post WHERE question_id=? AND (?=0 OR floor<?) ORDER BY floor DESC LIMIT ?`, qid, before, before, limit+1)
@@ -107,4 +107,54 @@ func (s *SQLite) ReadClarificationThread(ctx context.Context, expected QuestionC
 		return ClarificationThread{}, err
 	}
 	return out, nil
+}
+
+func (s *SQLite) FindClarificationRequest(ctx context.Context, expected QuestionContext, a BlockerActor, qid, requestID string, check func() error) (ClarificationResult, bool, error) {
+	var out ClarificationResult
+	if a.Key() == "" || (a.AgentID != "" && a.UserID != "") || !questionNonempty(requestID, 128) || check == nil {
+		return out, false, ErrTaskFlowInvalid
+	}
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return out, false, err
+	}
+	defer tx.Rollback()
+	c, err := questionContext(ctx, tx, "", "", qid)
+	if err != nil {
+		return out, false, err
+	}
+	if !reflect.DeepEqual(c, expected) {
+		return out, false, ErrTaskFlowConflict
+	}
+	q, err := scanQuestion(tx.QueryRowContext(ctx, `SELECT `+questionCols+` FROM pilot_question WHERE id=?`, qid))
+	if err != nil {
+		return out, false, err
+	}
+	p, err := readClarificationPolicy(ctx, tx, q.SpecID)
+	if err != nil {
+		return out, false, err
+	}
+	if !clarificationReader(a, c, q, p) {
+		return out, false, ErrTaskFlowPermission
+	}
+	var floor int64
+	err = tx.QueryRowContext(ctx, `SELECT r.floor FROM spec_clarification_request r JOIN spec_clarification_post p ON p.spec_id=r.spec_id AND p.floor=r.floor WHERE r.actor_id=? AND r.request_id=? AND p.question_id=?`, a.Key(), requestID, qid).Scan(&floor)
+	found := err == nil
+	if err != nil && err != sql.ErrNoRows {
+		return out, false, err
+	}
+	if found {
+		out.Post, err = readClarificationPost(ctx, tx, q.SpecID, floor)
+		if err != nil {
+			return out, false, err
+		}
+		out.Replayed = true
+	}
+	if err = check(); err != nil {
+		return ClarificationResult{}, false, err
+	}
+	if err = tx.Commit(); err != nil {
+		return ClarificationResult{}, false, err
+	}
+	return out, found, nil
 }

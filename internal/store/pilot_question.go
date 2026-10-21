@@ -255,6 +255,7 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 		}
 		if threadPolicy.Version > 0 {
 			policy.PMUser = threadPolicy.PMUser
+			policy.Version = threadPolicy.Version
 		}
 		q = PilotQuestion{ID: "pq:" + blockerHash([]string{a.Key(), u.RequestID}), SpecID: c.SpecID, Revision: c.Revision, SHA: c.SHA, TaskID: c.TaskID, Generation: 1, Version: 1, Kind: u.Kind, Title: strings.TrimSpace(u.Title), ObservedFact: strings.TrimSpace(u.ObservedFact), Question: strings.TrimSpace(u.Question), ExpectedAnswer: strings.TrimSpace(u.ExpectedAnswer), InputAnchors: u.InputAnchors, CreatedBy: a.Key(), PMUser: policy.PMUser, Responsible: u.Responsible, LeaderUser: policy.LeaderUser, Mode: "light", State: "awaiting_answer", CreatedAt: at, GenerationStartedAt: at, DueAt: now.Add(time.Hour).UTC().Format(time.RFC3339Nano), PolicyVersion: policy.Version}
 		if q.Responsible == "" && (q.Kind == "requirement_unclear" || q.Kind == "change") && q.PMUser != "" {
@@ -278,6 +279,26 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 		if err != nil {
 			return out, err
 		}
+		if threadPolicy.Version > 0 {
+			if len(u.EntryRefs) < 1 || len(u.EntryRefs) > 32 {
+				return out, ErrClarificationUpgradeRequired
+			}
+			anchors, e := clarificationAnchors(ctx, tx, q, true)
+			if e != nil {
+				return out, e
+			}
+			seen := map[string]bool{}
+			for _, id := range u.EntryRefs {
+				if anchors[id] != 1 || seen[id] {
+					return out, ErrTaskFlowInvalid
+				}
+				seen[id] = true
+			}
+			refs, _ := json.Marshal(u.EntryRefs)
+			if _, err = tx.ExecContext(ctx, `INSERT INTO spec_clarification_question(question_id,entry_refs_json,created_at) VALUES(?,?,?)`, q.ID, string(refs), at); err != nil {
+				return out, err
+			}
+		}
 		if err = questionNotice(ctx, tx, q, "question", q.PMUser, at); err != nil {
 			return out, err
 		}
@@ -295,7 +316,7 @@ func (s *SQLite) UpdateQuestion(ctx context.Context, expected QuestionContext, a
 			return out, policyErr
 		}
 		if threadPolicy.Version != 0 {
-			return out, ErrTaskFlowPermission
+			return out, ErrClarificationUpgradeRequired
 		}
 		if questionTerminal(q.State) || !questionNonempty(u.EventID, 128) || !questionNonempty(u.Body, 8192) || !questionNonempty(u.Evidence, 2048) {
 			return out, ErrTaskFlowInvalid

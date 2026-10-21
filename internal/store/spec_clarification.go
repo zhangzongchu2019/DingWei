@@ -97,10 +97,24 @@ func readClarificationPost(ctx context.Context, db taskQuery, spec string, floor
 // a field of u; the authenticated Feishu adapter uses a separate internal path.
 // The caller holds PG identity/member locks until this SQLite commit completes.
 func (s *SQLite) AppendClarification(ctx context.Context, expected QuestionContext, a BlockerActor, qid string, u ClarificationUpdate, enabled bool, check func() error, now time.Time) (ClarificationResult, error) {
-	return s.appendClarification(ctx, expected, a, qid, u, enabled, check, now)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return ClarificationResult{}, err
+	}
+	defer tx.Rollback()
+	out, err := s.appendClarificationTx(ctx, tx, expected, a, qid, u, enabled, check, now, clarificationOrigin{})
+	if err != nil {
+		return ClarificationResult{}, err
+	}
+	if err = tx.Commit(); err != nil {
+		return ClarificationResult{}, err
+	}
+	return out, nil
 }
 
-func (s *SQLite) appendClarification(ctx context.Context, expected QuestionContext, a BlockerActor, qid string, u ClarificationUpdate, enabled bool, check func() error, now time.Time) (ClarificationResult, error) {
+type clarificationOrigin struct{ Source, Parent string }
+
+func (s *SQLite) appendClarificationTx(ctx context.Context, tx *sql.Tx, expected QuestionContext, a BlockerActor, qid string, u ClarificationUpdate, enabled bool, check func() error, now time.Time, origin clarificationOrigin) (ClarificationResult, error) {
 	var out ClarificationResult
 	if !enabled {
 		return out, ErrTaskFlowPermission
@@ -118,11 +132,6 @@ func (s *SQLite) appendClarification(ctx context.Context, expected QuestionConte
 	if u.Evidence == "" {
 		u.Evidence = "未提供证据"
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return out, err
-	}
-	defer tx.Rollback()
 	c, err := questionContext(ctx, tx, "", "", qid)
 	if err != nil {
 		return out, err
@@ -176,7 +185,7 @@ func (s *SQLite) appendClarification(ctx context.Context, expected QuestionConte
 	}
 	// Replay remains subject to current authorization and payload equality. It
 	// precedes rate limits; a new request ID with identical text is a NEW post.
-	hash := blockerHash([]any{qid, u})
+	hash := blockerHash([]any{qid, u, origin})
 	var previousHash, spec string
 	var floor int64
 	err = tx.QueryRowContext(ctx, `SELECT payload_sha,spec_id,floor FROM spec_clarification_request WHERE actor_id=? AND request_id=?`, a.Key(), u.RequestID).Scan(&previousHash, &spec, &floor)
@@ -192,7 +201,7 @@ func (s *SQLite) appendClarification(ctx context.Context, expected QuestionConte
 			return out, err
 		}
 		out.Replayed = true
-		return out, tx.Commit()
+		return out, nil
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
 		return out, err
@@ -239,6 +248,21 @@ func (s *SQLite) appendClarification(ctx context.Context, expected QuestionConte
 	if a.AgentID != "" {
 		source = "agent"
 	}
+	if origin.Source != "" {
+		if origin.Source != "feishu" || role != "pm" {
+			return out, ErrTaskFlowPermission
+		}
+		source = "feishu"
+	}
+	var previousFloor int64
+	if origin.Parent != "" {
+		if source != "feishu" {
+			return out, ErrTaskFlowPermission
+		}
+		if err = tx.QueryRowContext(ctx, `SELECT COALESCE(max(floor),0) FROM spec_clarification_post WHERE spec_id=? AND parent_key=? AND answer_actor=?`, q.SpecID, origin.Parent, a.Key()).Scan(&previousFloor); err != nil {
+			return out, err
+		}
+	}
 	event := "clarification:" + blockerHash([]string{a.Key(), u.RequestID})
 	answerKind := "substantive"
 	if role == "technical" {
@@ -251,7 +275,7 @@ func (s *SQLite) appendClarification(ctx context.Context, expected QuestionConte
 		return out, err
 	}
 	refs, _ := json.Marshal(u.EntryRefs)
-	if _, err = tx.ExecContext(ctx, `INSERT INTO spec_clarification_post(spec_id,floor,revision,content_sha256,question_id,answer_actor,answer_event,role,kind,entry_refs_json,corrects_floor,confirms_floor,reason,source,policy_version,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, q.SpecID, floor, q.Revision, q.SHA, qid, a.Key(), event, role, u.Kind, string(refs), u.Corrects, u.Confirms, u.Reason, source, p.Version, at); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO spec_clarification_post(spec_id,floor,revision,content_sha256,question_id,answer_actor,answer_event,role,kind,entry_refs_json,corrects_floor,confirms_floor,reason,source,parent_key,previous_floor,policy_version,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, q.SpecID, floor, q.Revision, q.SHA, qid, a.Key(), event, role, u.Kind, string(refs), u.Corrects, u.Confirms, u.Reason, source, origin.Parent, previousFloor, p.Version, at); err != nil {
 		return out, err
 	}
 	if u.Kind == "scope_change" {
@@ -297,5 +321,5 @@ func (s *SQLite) appendClarification(ctx context.Context, expected QuestionConte
 	if err = check(); err != nil {
 		return out, err
 	}
-	return out, tx.Commit()
+	return out, nil
 }

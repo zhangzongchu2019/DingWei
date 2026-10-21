@@ -1,5 +1,9 @@
 package store
 
+import "fmt"
+
+var ErrClarificationUpgradeRequired = fmt.Errorf("clarification requires typed anchored tools: %w", ErrTaskFlowPermission)
+
 // ClarificationPolicy grants only discussion rights. It does not grant access to
 // a whole spec, permit editing final content, or authorize execution/signoff.
 type ClarificationPolicy struct {
@@ -67,6 +71,7 @@ type ClarificationThread struct {
 // This is the necessary question excerpt, not a grant to its private D3
 // history, observed facts/attachments, or the entire spec/task.
 type ClarificationContext struct {
+	Actor            string   `json:"actor"`
 	SpecID           string   `json:"spec_id"`
 	Revision         int      `json:"revision"`
 	SHA              string   `json:"content_sha256"`

@@ -134,6 +134,10 @@ type Hub struct {
 	// outbound opt-in; disabling either clarification flag does not undo policy.
 	SpecClarificationEnabled            bool
 	SpecClarificationFeishuReplyEnabled bool
+	ClarificationReplyAuthorities       map[string]ClarificationReplyAuthority
+	ClarificationReceiptSender          QuestionSender
+	clarificationDispatchMu             sync.Mutex
+	clarificationInboundAfter           int64
 
 	mu                hubMutex
 	serviceClients    map[string]*client
@@ -1537,6 +1541,9 @@ func sessionNameRequestWarning(requested, keyID, ownerKey string) string {
 }
 
 func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {
+	if result, handled, err := h.dispatchClarificationReply(ctx, msg, text); handled {
+		return result, err
+	}
 	if h.Repo == nil {
 		return h.dispatchL1Direct(ctx, msg, text)
 	}

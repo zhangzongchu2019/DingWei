@@ -260,6 +260,7 @@ func TestClarificationReplyBudgetAndReplayOrder(t *testing.T) {
 	created, err := questionApply(t, db, now, BlockerActor{UserID: "owner-a"}, "", QuestionUpdate{
 		RequestID: "spec-only-budget", ExpectedVersion: 1, Operation: "create", Kind: "requirement_unclear",
 		Title: "spec 级问题", ObservedFact: "无关联任务", Question: "请解释 A1", ExpectedAnswer: "保持范围的解释",
+		EntryRefs: []string{"A1"},
 	})
 	if err != nil {
 		t.Fatal(err)

@@ -222,6 +222,7 @@ func (s *service) inboundEnvelope(m model.Message, requestID string) (InboundEnv
 		ChatEntityID: m.ChatEntityID,
 		SenderOpenID: m.SenderOpenID,
 		Content:      m.Content,
+		FeishuReply:  m.FeishuReply,
 		MessageID:    messageID,
 		RequestID:    requestID, // persistent RANDOM request_id (G1-3) — NOT the native FeishuMsgID
 		Source: SourceStub{

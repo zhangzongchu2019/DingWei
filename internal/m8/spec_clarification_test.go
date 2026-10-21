@@ -121,7 +121,7 @@ func TestClarificationHTTPDeputyRevocationAndDisabledLegacyBoundary(t *testing.T
 	}
 	old := fmt.Sprintf(`{"request_id":"legacy-disabled","operation":"answer","expected_version":%d,"event_id":"legacy","answer_kind":"substantive","body":"不能恢复旧授权","evidence_ref":"evidence"}`, ref.Version)
 	w = questionHTTP(e, "POST", q.ID, "", "zzc", old, "")
-	if w.Code != 403 {
+	if w.Code != 426 {
 		t.Fatal("CLARIFICATION_HTTP_DISABLED_RESTORED_LEGACY_GRANT", w.Code, w.Body)
 	}
 	w = clarificationHTTP(e, "GET", q.ID, "", "lbl", "", "", "", false)

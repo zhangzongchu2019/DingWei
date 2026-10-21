@@ -22,7 +22,10 @@ type clarificationRepository interface {
 	SetClarificationPolicy(context.Context, store.QuestionContext, store.BlockerActor, store.ClarificationPolicyUpdate, func() error, time.Time) (store.ClarificationPolicy, error)
 	AppendClarification(context.Context, store.QuestionContext, store.BlockerActor, string, store.ClarificationUpdate, bool, func() error, time.Time) (store.ClarificationResult, error)
 	ReadClarificationThread(context.Context, store.QuestionContext, store.BlockerActor, string, int64, int, func() error) (store.ClarificationThread, error)
+	FindClarificationRequest(context.Context, store.QuestionContext, store.BlockerActor, string, string, func() error) (store.ClarificationResult, bool, error)
 }
+
+type ClarificationReplyAuthority struct{ AppID, Tenant string }
 
 func (h *Hub) clarificationRepo() (clarificationRepository, error) {
 	r, ok := h.Repo.(clarificationRepository)
@@ -167,6 +170,29 @@ func (h *Hub) HandleClarification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "GET" {
+		if requestID := r.PathValue("requestID"); requestID != "" {
+			if r.URL.RawQuery != "" {
+				taskError(w, store.ErrTaskFlowInvalid)
+				return
+			}
+			var out store.ClarificationResult
+			found := false
+			err = h.withClarificationIdentity(ctx, repo, c, p, actor, nil, func(_ identity.ContextAuthorization, check func() error) error {
+				var e error
+				out, found, e = repo.FindClarificationRequest(ctx, c, actor.actor, qid, requestID, check)
+				return e
+			})
+			if err != nil {
+				taskError(w, err)
+				return
+			}
+			if !found {
+				taskJSON(w, 404, map[string]any{"error": "request_not_recorded", "retry_same_request_id_only": true})
+				return
+			}
+			taskJSON(w, 200, out)
+			return
+		}
 		values, e := url.ParseQuery(r.URL.RawQuery)
 		if e != nil {
 			taskError(w, store.ErrTaskFlowInvalid)
@@ -206,7 +232,7 @@ func (h *Hub) HandleClarification(w http.ResponseWriter, r *http.Request) {
 			taskError(w, err)
 			return
 		}
-		taskJSON(w, 200, out)
+		taskJSON(w, 200, map[string]any{"posts": out.Posts, "next_before": out.NextBefore, "context": out.Context, "enabled": h.SpecClarificationEnabled, "execution_authorized": false})
 		return
 	}
 	if r.Method != "POST" {
