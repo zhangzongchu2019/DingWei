@@ -1,0 +1,5 @@
+{
+  "source": "9b49f653de905dc5aef0e0c34724aa06f7bdfe16",
+  "result": "M1-M6 designated red; M7 survived because task-linked D2 limit masked withdrawal of the thread limit",
+  "fix": "use a real spec-only question with no D2 card; production unchanged"
+}

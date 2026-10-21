@@ -1,0 +1,222 @@
+{
+  "source": "2ec504c6cd7d8a2d012a2fc8ce14a906bff9638e",
+  "rows": [
+    {
+      "id": "M1",
+      "path": "internal/store/spec_clarification.go",
+      "test": "TestClarificationAuthorityCurrentPolicyAndDeputy",
+      "marker": "CLARIFICATION_NON_PM_AUTHORITY",
+      "old": "if role == \"technical\" && (u.Kind != \"technical\" || u.Corrects != 0 || u.Confirms != 0) {",
+      "new": "if false && role == \"technical\" && (u.Kind != \"technical\" || u.Corrects != 0 || u.Confirms != 0) {",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAuthorityCurrentPolicyAndDeputy$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:27:53.466314+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:27:57.212481+00:00"
+    },
+    {
+      "id": "M2",
+      "path": "internal/store/spec_clarification.go",
+      "test": "TestClarificationAppendReplayAndEqualTextSupplement",
+      "marker": "CLARIFICATION_EQUAL_TEXT_SUPPLEMENT_LOST",
+      "old": "answerHash := blockerHash([]any{hash, event})",
+      "new": "answerHash := blockerHash([]any{q.Generation, a.Key(), u.Kind, u.Body, u.Evidence})",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAppendReplayAndEqualTextSupplement$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:27:57.212734+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:27:59.592620+00:00"
+    },
+    {
+      "id": "M3",
+      "path": "internal/store/spec_clarification.go",
+      "test": "TestClarificationFinalCheckAndAuditFailuresRollBackAll/identity",
+      "marker": "CLARIFICATION_PARTIAL_COMMIT",
+      "old": "if err = check(); err != nil {\n\t\treturn out, err\n\t}\n\treturn out, tx.Commit()",
+      "new": "if false { return out, err }\n\treturn out, tx.Commit()",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationFinalCheckAndAuditFailuresRollBackAll/identity$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:27:59.592886+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:28:01.980723+00:00"
+    },
+    {
+      "id": "M4",
+      "path": "internal/store/pilot_question.go",
+      "test": "TestClarificationLegacyAnswerPathsCannotBypassEnrollment",
+      "marker": "CLARIFICATION_LEGACY_WRITE_BYPASS",
+      "old": "if threadPolicy.Version != 0 {",
+      "new": "if false && threadPolicy.Version != 0 {",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationLegacyAnswerPathsCannotBypassEnrollment$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:28:01.981023+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:28:04.476791+00:00"
+    },
+    {
+      "id": "M5",
+      "path": "internal/store/spec_clarification.go",
+      "test": "TestClarificationAnchorCorrectionScopeAndWriteFreeze",
+      "marker": "CLARIFICATION_SCOPE_CHANGE_MISSING_GATE",
+      "old": "if u.Kind == \"scope_change\" {",
+      "new": "if false && u.Kind == \"scope_change\" {",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAnchorCorrectionScopeAndWriteFreeze$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:28:04.477097+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:28:06.972615+00:00"
+    },
+    {
+      "id": "M6",
+      "path": "internal/store/spec_clarification_read.go",
+      "test": "TestClarificationReadPaginationCurrentGrantAndPrivateHistory",
+      "marker": "CLARIFICATION_OLD_PM_READ_GRANT_SURVIVED",
+      "old": "a.UserID == p.PMUser || a.UserID == p.DeputyUser",
+      "new": "a.UserID == p.PMUser || a.UserID == q.PMUser || a.UserID == p.DeputyUser",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationReadPaginationCurrentGrantAndPrivateHistory$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:28:06.972925+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:28:09.490949+00:00"
+    },
+    {
+      "id": "M7",
+      "path": "internal/store/spec_clarification.go",
+      "test": "TestClarificationReplyBudgetAndReplayOrder",
+      "marker": "CLARIFICATION_RATE_LIMIT_BYPASS",
+      "old": "if total >= blockerReplyTotal || recent >= blockerReplyPerMinute {",
+      "new": "if false && (total >= blockerReplyTotal || recent >= blockerReplyPerMinute) {",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationReplyBudgetAndReplayOrder$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:28:09.491316+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:28:12.051213+00:00"
+    }
+  ]
+}

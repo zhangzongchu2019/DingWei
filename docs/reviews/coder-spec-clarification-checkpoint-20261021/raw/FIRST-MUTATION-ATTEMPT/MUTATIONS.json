@@ -1,0 +1,191 @@
+{
+  "source": "9b49f653de905dc5aef0e0c34724aa06f7bdfe16",
+  "rows": [
+    {
+      "id": "M1",
+      "path": "internal/store/spec_clarification.go",
+      "test": "TestClarificationAuthorityCurrentPolicyAndDeputy",
+      "marker": "CLARIFICATION_NON_PM_AUTHORITY",
+      "old": "if role == \"technical\" && (u.Kind != \"technical\" || u.Corrects != 0 || u.Confirms != 0) {",
+      "new": "if false && role == \"technical\" && (u.Kind != \"technical\" || u.Corrects != 0 || u.Confirms != 0) {",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAuthorityCurrentPolicyAndDeputy$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:27:01.036091+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:27:04.783544+00:00"
+    },
+    {
+      "id": "M2",
+      "path": "internal/store/spec_clarification.go",
+      "test": "TestClarificationAppendReplayAndEqualTextSupplement",
+      "marker": "CLARIFICATION_EQUAL_TEXT_SUPPLEMENT_LOST",
+      "old": "answerHash := blockerHash([]any{hash, event})",
+      "new": "answerHash := blockerHash([]any{q.Generation, a.Key(), u.Kind, u.Body, u.Evidence})",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAppendReplayAndEqualTextSupplement$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:27:04.783791+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:27:07.202324+00:00"
+    },
+    {
+      "id": "M3",
+      "path": "internal/store/spec_clarification.go",
+      "test": "TestClarificationFinalCheckAndAuditFailuresRollBackAll/identity",
+      "marker": "CLARIFICATION_PARTIAL_COMMIT",
+      "old": "if err = check(); err != nil {\n\t\treturn out, err\n\t}\n\treturn out, tx.Commit()",
+      "new": "if false { return out, err }\n\treturn out, tx.Commit()",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationFinalCheckAndAuditFailuresRollBackAll/identity$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:27:07.202607+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:27:09.611186+00:00"
+    },
+    {
+      "id": "M4",
+      "path": "internal/store/pilot_question.go",
+      "test": "TestClarificationLegacyAnswerPathsCannotBypassEnrollment",
+      "marker": "CLARIFICATION_LEGACY_WRITE_BYPASS",
+      "old": "if threadPolicy.Version != 0 {",
+      "new": "if false && threadPolicy.Version != 0 {",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationLegacyAnswerPathsCannotBypassEnrollment$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:27:09.611532+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:27:11.994056+00:00"
+    },
+    {
+      "id": "M5",
+      "path": "internal/store/spec_clarification.go",
+      "test": "TestClarificationAnchorCorrectionScopeAndWriteFreeze",
+      "marker": "CLARIFICATION_SCOPE_CHANGE_MISSING_GATE",
+      "old": "if u.Kind == \"scope_change\" {",
+      "new": "if false && u.Kind == \"scope_change\" {",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationAnchorCorrectionScopeAndWriteFreeze$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:27:11.994400+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:27:14.406685+00:00"
+    },
+    {
+      "id": "M6",
+      "path": "internal/store/spec_clarification_read.go",
+      "test": "TestClarificationReadPaginationCurrentGrantAndPrivateHistory",
+      "marker": "CLARIFICATION_OLD_PM_READ_GRANT_SURVIVED",
+      "old": "a.UserID == p.PMUser || a.UserID == p.DeputyUser",
+      "new": "a.UserID == p.PMUser || a.UserID == q.PMUser || a.UserID == p.DeputyUser",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestClarificationReadPaginationCurrentGrantAndPrivateHistory$",
+        "-count=1",
+        "-timeout=2m"
+      ],
+      "start": "2026-10-21T04:27:14.407012+00:00",
+      "before": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "withdrawn": {
+        "rc": 1,
+        "marker_present": true
+      },
+      "restored": {
+        "rc": 0,
+        "marker_present": false
+      },
+      "end": "2026-10-21T04:27:16.823246+00:00"
+    }
+  ]
+}
