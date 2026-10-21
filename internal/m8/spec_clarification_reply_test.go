@@ -14,7 +14,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
-func clarificationReplyFixture(t *testing.T) (*shimEnv, store.PilotQuestion, *int, *[]string) {
+func clarificationReplyFixture(t *testing.T, beforeCreate ...func(*shimEnv, store.PilotQuestion)) (*shimEnv, store.PilotQuestion, *int, *[]string) {
 	t.Helper()
 	e, _, state, old := clarificationHTTPFixture(t)
 	if err := e.svc.Store.CreateRegistrationCode(e.ctx, "lbl", "clarification-bind", e.hub.now().Add(time.Hour)); err != nil {
@@ -22,6 +22,9 @@ func clarificationReplyFixture(t *testing.T) (*shimEnv, store.PilotQuestion, *in
 	}
 	if _, err := e.svc.Store.RedeemRegistrationCode(e.ctx, "clarification-bind", identity.Identity{Provider: "feishu", Issuer: "fixture", Subject: "ou_pm"}, e.hub.now()); err != nil {
 		t.Fatal(err)
+	}
+	for _, configure := range beforeCreate {
+		configure(e, old)
 	}
 	c, err := e.db.QuestionAuthorizationContext(e.ctx, old.SpecID, state.ID, "")
 	if err != nil {
@@ -228,5 +231,93 @@ func TestClarificationFeishuOptionalAnchorsAndCorrection(t *testing.T) {
 	posts := clarificationReplyPosts(t, e, q)
 	if len(posts) != 3 || posts[0].Corrects != 1 || posts[1].EntryRefs[0] != "A1/case-1" || posts[2].Body != "原范围解释" {
 		t.Fatal("CLARIFICATION_OPTIONAL_PREFIX_OR_CORRECTION", posts)
+	}
+}
+
+// Both rejected actors have a valid current binding and a same-group Agent.
+// ResolveIdentity must succeed: an unbound fake subject cannot cover this gate.
+func TestClarificationFeishuRejectsBoundNonPMMembers(t *testing.T) {
+	for _, role := range []string{"deputy", "ordinary_member"} {
+		t.Run(role, func(t *testing.T) {
+			e, q, sends, receipts := clarificationReplyFixture(t, func(e *shimEnv, old store.PilotQuestion) {
+				if err := e.svc.Store.SetUserType(e.ctx, "lbl", identity.UserMember); err != nil {
+					t.Fatal(err)
+				}
+				agent, err := e.svc.Store.FindAgentByName(e.ctx, "lbl", "kimi")
+				if err != nil {
+					t.Fatal(err)
+				}
+				c, err := e.db.QuestionAuthorizationContext(e.ctx, "", "", old.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err = e.svc.JoinGroup(e.ctx, "lbl", c.Task.GroupCode, agent.ID); err != nil {
+					t.Fatal(err)
+				}
+				w := clarificationHTTP(e, "POST", "", old.SpecID, "zzc", "", `{"expected_version":1,"pm_user":"zzc"}`, "", true)
+				if w.Code != 200 {
+					t.Fatal(w.Code, w.Body)
+				}
+				if role == "deputy" {
+					w = clarificationHTTP(e, "POST", "", old.SpecID, "zzc", "", `{"expected_version":2,"pm_user":"zzc","deputy_user":"lbl"}`, "", true)
+					if w.Code != 200 {
+						t.Fatal(w.Code, w.Body)
+					}
+				}
+				if err = e.svc.Store.CreateRegistrationCode(e.ctx, "zzc", "current-pm-code", e.hub.now().Add(time.Hour)); err != nil {
+					t.Fatal(err)
+				}
+				if _, err = e.svc.Store.RedeemRegistrationCode(e.ctx, "current-pm-code", identity.Identity{Provider: "feishu", Issuer: "fixture", Subject: "ou_current_pm"}, e.hub.now()); err != nil {
+					t.Fatal(err)
+				}
+			})
+			user, err := e.svc.Store.ResolveIdentity(e.ctx, identity.Identity{Provider: "feishu", Issuer: "fixture", Subject: "ou_pm"})
+			if err != nil || user == nil || user.UserIDLC() != "lbl" || user.State != identity.UserActive || user.Type != identity.UserMember {
+				t.Fatal("CLARIFICATION_NON_PM_FIXTURE_NOT_BOUND_ACTIVE_MEMBER", user, err)
+			}
+			policy, err := e.db.ClarificationPolicy(e.ctx, q.SpecID)
+			if err != nil || policy.PMUser != "zzc" || (role == "deputy") != (policy.DeputyUser == "lbl") {
+				t.Fatal("CLARIFICATION_NON_PM_FIXTURE_ROLE", policy, err)
+			}
+			e.hub.processQuestions(e.ctx)
+			if *sends != 1 {
+				t.Fatal("CLARIFICATION_NON_PM_FIXTURE_NOTICE_MISSING", *sends)
+			}
+			text := "已绑定非PM也不能通过飞书解释"
+			message := clarificationReplyMessage("om_non_pm", "ev_non_pm", text)
+			result, err := e.hub.Dispatch(e.ctx, message, text)
+			if err != nil || !result.Matched || result.Reply != "" {
+				t.Fatal("CLARIFICATION_BOUND_NON_PM_REPLY_FELL_THROUGH", result, err)
+			}
+			e.hub.reconcileClarificationReplies(e.ctx)
+			if posts := clarificationReplyPosts(t, e, q); len(posts) != 0 {
+				t.Fatal("CLARIFICATION_BOUND_NON_PM_REPLY_POSTED", role, posts)
+			}
+			in, err := e.db.StageClarificationInbound(e.ctx, message, text, e.hub.now())
+			if err != nil || in.State != "rejected" || in.Reason != "current_pm_identity_required" {
+				t.Fatal("CLARIFICATION_BOUND_NON_PM_NOT_EXPLICITLY_REJECTED", role, in.State, in.Reason, err)
+			}
+			if len(*receipts) != 1 || !strings.Contains((*receipts)[0], "未入帖") {
+				t.Fatal("CLARIFICATION_BOUND_NON_PM_RECEIPT", *receipts)
+			}
+			// The exact same issued parent still works for its current PM: this is not
+			// a disabled/unmatched/expired-notice false red.
+			positive := clarificationReplyMessage("om_current_pm", "ev_current_pm", "当前PM本人解释")
+			positive.SenderOpenID = "ou_current_pm"
+			if _, err = e.hub.Dispatch(e.ctx, positive, "当前PM本人解释"); err != nil {
+				t.Fatal(err)
+			}
+			if posts := clarificationReplyPosts(t, e, q); len(posts) != 1 || posts[0].Role != "pm" || posts[0].Source != "feishu" {
+				t.Fatal("CLARIFICATION_CURRENT_PM_POSITIVE_FAILED", posts)
+			}
+			console := clarificationHTTP(e, "POST", q.ID, "", "lbl", "", clarificationHTTPBody("console-non-pm", "explanation"), "", false)
+			want := 403
+			if role == "deputy" {
+				want = 200
+			}
+			if console.Code != want {
+				t.Fatal("CLARIFICATION_NON_PM_CONSOLE_BOUNDARY", role, console.Code, console.Body)
+			}
+		})
 	}
 }
