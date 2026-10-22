@@ -1,0 +1,43 @@
+{
+  "scope": "NATIVE_CAPABILITY_ONLY_NOT_PRODUCT_GATE",
+  "version": "0.161.0",
+  "binary_sha256": "9a820c17865fa825d04db416818679a9d63bd72e50835c396f496e5684626c9c",
+  "turn_start_calls": 1,
+  "thread_id": "01a1652f-3414-70e3-b3d1-fd5bd7d170b4",
+  "owned_pid": 3264980,
+  "materialized_status": {
+    "type": "active",
+    "activeFlags": []
+  },
+  "fixture_restart_escalated": true,
+  "first_child_reaped": true,
+  "owned_pid_after_restart": 3265144,
+  "loaded_before": {
+    "data": [
+      "01a1652f-3414-70e3-b3d1-fd5bd7d170b4"
+    ],
+    "nextCursor": null
+  },
+  "read_before": {
+    "type": "idle"
+  },
+  "pty_ready_marker": true,
+  "tui_alive_before_close": true,
+  "read_during": {
+    "type": "idle"
+  },
+  "tui_exitstatus": 0,
+  "tui_signalstatus": null,
+  "same_native_peer_after": true,
+  "read_after": {
+    "type": "idle"
+  },
+  "loaded_after": {
+    "data": [
+      "01a1652f-3414-70e3-b3d1-fd5bd7d170b4"
+    ],
+    "nextCursor": null
+  },
+  "pty_contains_same_resume_id": true,
+  "child_reaped": true
+}

@@ -329,9 +329,12 @@ class Client:
             try:
                 fcntl.flock(writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 unchanged_root(self.spec, fd)
-            except Exception:
+            except BlockingIOError:
                 os.close(writer)
                 fail('busy')
+            except Exception:
+                os.close(writer)
+                raise
             self._writer = writer
 
     def release_writer(self):

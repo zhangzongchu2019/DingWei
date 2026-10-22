@@ -1,0 +1,32 @@
+[
+  {
+    "version": "0.161.0",
+    "binary_sha256": "9a820c17865fa825d04db416818679a9d63bd72e50835c396f496e5684626c9c",
+    "requested_endpoint_kind": "symlink",
+    "requested_mode": "0o777",
+    "target": "/tmp/codex-daemon-1001/f39505a5b210304556b1f23d81a98c8426fb98c4057156841951cb161692aa88",
+    "target_kind": "socket",
+    "target_mode": "0o600",
+    "target_parent_mode": "0o700",
+    "requested_device": 64,
+    "target_device": 64,
+    "peer_matches_owned": true,
+    "turns": 0,
+    "child_reaped": true
+  },
+  {
+    "version": "0.163.0",
+    "binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215",
+    "requested_endpoint_kind": "symlink",
+    "requested_mode": "0o777",
+    "target": "/tmp/codex-daemon-1001/fef7f676cffd1ffc0f2992849ed371672a7004006d0362298961c91f1cdeb786",
+    "target_kind": "socket",
+    "target_mode": "0o600",
+    "target_parent_mode": "0o700",
+    "requested_device": 64,
+    "target_device": 64,
+    "peer_matches_owned": true,
+    "turns": 0,
+    "child_reaped": true
+  }
+]
