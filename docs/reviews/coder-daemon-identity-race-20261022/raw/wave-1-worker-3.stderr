@@ -1,0 +1,23 @@
+test_default_observe_wrong_exe_warns_and_connects (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects) ... ok
+test_direct_proxy_keep_contract_without_linux_gate (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_direct_proxy_keep_contract_without_linux_gate) ... ok
+test_enforce_real_kernel_then_initialize_and_reconnect (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_enforce_real_kernel_then_initialize_and_reconnect) ... ok
+test_env_three_modes_and_invalid_snapshot (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_env_three_modes_and_invalid_snapshot) ... ok
+test_explicit_off_is_visible_and_invalid_setting_refused (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_explicit_off_is_visible_and_invalid_setting_refused) ... ok
+test_observe_unverifiable_proc_warns_and_rechecks (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_observe_unverifiable_proc_warns_and_rechecks) ... ok
+test_owned_binding_wired_and_foreign_instance_rejected (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_owned_binding_wired_and_foreign_instance_rejected) ... ok
+test_rejected_delivery_persists_and_never_starts_thread_or_turn (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_delivery_persists_and_never_starts_thread_or_turn) ... ok
+test_rejected_fd_is_explicitly_closed_without_gc (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_fd_is_explicitly_closed_without_gc) ... ok
+test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc) ... ok
+test_foreign_uid_rejected (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_foreign_uid_rejected) ... ok
+test_owned_pid_starttime_and_types_are_strict (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_owned_pid_starttime_and_types_are_strict) ... ok
+test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable) ... ok
+test_real_kernel_uid_exe_and_optional_owned_binding (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_real_kernel_uid_exe_and_optional_owned_binding) ... ok
+test_starttime_missing_and_process_change_rejected (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_starttime_missing_and_process_change_rejected) ... ok
+test_stat_parser_handles_parentheses_and_fails_closed (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_stat_parser_handles_parentheses_and_fails_closed) ... ok
+test_unverifiable_peer_and_unsupported_platform (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_unverifiable_peer_and_unsupported_platform) ... ok
+test_wrong_executable_and_missing_expected_file (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_wrong_executable_and_missing_expected_file) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.958s
+
+OK

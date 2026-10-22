@@ -1,0 +1,85 @@
+{
+  "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+  "rows": [
+    {
+      "name": "delay-positive",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "/tmp/coder-daemon-identity-race-20261022/delay-probe.py"
+      ],
+      "start": "2026-10-22T19:19:06.758750+00:00",
+      "end": "2026-10-22T19:19:07.165683+00:00",
+      "start_ns": 487645868556519,
+      "end_ns": 487646275498718,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python",
+      "test_copy_sha256": "7cfeb112289ca3cb4708cb159da075cf5ec66297996b68b7bfc1ff0c3714f998",
+      "withdraw_wait": false,
+      "drop_notification": false
+    },
+    {
+      "name": "delay-withdrawal",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "/tmp/coder-daemon-identity-race-20261022/delay-probe.py"
+      ],
+      "start": "2026-10-22T19:19:07.166506+00:00",
+      "end": "2026-10-22T19:19:07.377469+00:00",
+      "start_ns": 487646276311569,
+      "end_ns": 487646487288775,
+      "rc": 1,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python",
+      "test_copy_sha256": "14fb02e9b07f1f858f3d12b683f6b7a584af50578169c8133f416bc78aa0d8b4",
+      "withdraw_wait": true,
+      "drop_notification": false
+    },
+    {
+      "name": "delay-restored",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "/tmp/coder-daemon-identity-race-20261022/delay-probe.py"
+      ],
+      "start": "2026-10-22T19:19:07.378307+00:00",
+      "end": "2026-10-22T19:19:07.787489+00:00",
+      "start_ns": 487646488118413,
+      "end_ns": 487646897304733,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python",
+      "test_copy_sha256": "7cfeb112289ca3cb4708cb159da075cf5ec66297996b68b7bfc1ff0c3714f998",
+      "withdraw_wait": false,
+      "drop_notification": false
+    },
+    {
+      "name": "missing-notification",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "/tmp/coder-daemon-identity-race-20261022/delay-probe.py"
+      ],
+      "start": "2026-10-22T19:19:07.788248+00:00",
+      "end": "2026-10-22T19:19:12.902926+00:00",
+      "start_ns": 487646898054350,
+      "end_ns": 487652012740551,
+      "rc": 1,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python",
+      "test_copy_sha256": "7cfeb112289ca3cb4708cb159da075cf5ec66297996b68b7bfc1ff0c3714f998",
+      "withdraw_wait": false,
+      "drop_notification": true
+    }
+  ]
+}

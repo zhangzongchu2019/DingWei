@@ -1,0 +1,20 @@
+{
+  "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+  "base": "ce58c1bfd0a49e3d12161df6b1dffcea38cfb945",
+  "changed_non_docs": [
+    "tools/sessionhelper/tests/test_daemon_identity.py"
+  ],
+  "test_sha256": "7cfeb112289ca3cb4708cb159da075cf5ec66297996b68b7bfc1ff0c3714f998",
+  "workers": 4,
+  "waves": 5,
+  "module_runs": 20,
+  "tests_per_run": 18,
+  "total_test_executions": 360,
+  "failures": 0,
+  "all_waves_four_overlapping": true,
+  "delay_ms": 200,
+  "proof_runs": 4,
+  "product_changes": false,
+  "online_changes": false,
+  "uid": 1001
+}

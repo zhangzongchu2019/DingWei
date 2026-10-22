@@ -1,0 +1,11 @@
+{
+  "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+  "tree": "c19b7c767e4f572aaa641f60ffc3caacf121e966",
+  "base": "ce58c1bfd0a49e3d12161df6b1dffcea38cfb945",
+  "test_path": "tools/sessionhelper/tests/test_daemon_identity.py",
+  "test_sha256": "7cfeb112289ca3cb4708cb159da075cf5ec66297996b68b7bfc1ff0c3714f998",
+  "test_bytes": 19303,
+  "product_changes": false,
+  "python": "/tmp/coder-0232-locked-venv/bin/python",
+  "uid": 1001
+}
