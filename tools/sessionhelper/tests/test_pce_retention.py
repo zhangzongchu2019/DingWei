@@ -47,6 +47,38 @@ class RetainTests(unittest.TestCase):
         with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
         if reason:self.assertEqual(str(error.exception),reason,marker)
 
+    def legacy_selection_and_arm(self, marker):
+        item = dict.fromkeys(guard.TUPLE, 'legacy-fixture'); item['sha256']='a'*64
+        try:
+            self.assertEqual(self.state.select(), (self.factory, None), marker)
+            self.assertEqual(self.state.arm(item), 'pending', marker)
+            self.assertEqual(self.state.select(now=0)[0], self.package, marker)
+        except guard.UpdateError as exc:
+            self.fail(marker + ': ' + str(exc))
+        self.assertFalse(os.path.lexists(self.ret.path), marker)
+
+    def test_legacy_no_retain_group_writable_parent_unchanged(self):
+        self.base.chmod(0o775)
+        self.legacy_selection_and_arm('LEGACY_GROUP_PARENT_REJECTED')
+        self.assertFalse((self.root/'retain.txn.lock').exists(), 'LEGACY_CREATED_RETAIN_LOCK')
+
+    def test_legacy_no_retain_ignores_busy_transaction_lock(self):
+        fd=os.open(self.root/'retain.txn.lock', os.O_CREAT|os.O_RDWR, 0o600)
+        try:
+            guard.fcntl.flock(fd, guard.fcntl.LOCK_EX|guard.fcntl.LOCK_NB)
+            self.legacy_selection_and_arm('LEGACY_WAITED_FOR_UNUSED_RETAIN_LOCK')
+        finally:
+            os.close(fd)
+
+    def test_first_registration_drift_after_legacy_snapshot_refused(self):
+        # A registration creates retain before taking state.lock. The guard
+        # must stop rather than miss that new pin or reverse the lock order.
+        with self.ret.transaction(if_present=True) as fd:
+            self.assertIsNone(fd)
+            self.ret.path.mkdir(mode=0o700)
+            self.denied('LEGACY_SNAPSHOT_IGNORED_FIRST_REGISTRATION',
+                        lambda:self.ret.check_locked(fd,self.factory), 'retain_busy')
+
     def test_registration_is_durable_and_locks_every_resource_before_popen(self):
         pin=self.register()
         with self.ret.transaction() as fd:

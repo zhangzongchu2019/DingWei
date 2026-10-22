@@ -62,6 +62,10 @@ MUTATIONS = [
  ('private-launcher-root',PRIVATE,'if bound and (not Path(bound).is_absolute()', 'if False and (not Path(bound).is_absolute()','test_pce_retention.RetainTests.test_private_root_must_match_launcher_update_root_if_bound','PRIVATE_RETAIN_ROOT_MISMATCH_ACCEPTED'),
  ('updater-launcher-root',UPDATE,'if bound and (not Path(bound).is_absolute()', 'if False and (not Path(bound).is_absolute()','test_self_update_offer.OfferTests.test_updater_root_must_match_launcher_update_root_if_bound','UPDATER_RETAIN_ROOT_MISMATCH_ACCEPTED'),
 
+ ('legacy-retain-absent',GUARD,'if if_present and not os.path.lexists(self.path):','if False:','test_pce_retention.RetainTests.test_legacy_no_retain_group_writable_parent_unchanged','LEGACY_GROUP_PARENT_REJECTED'),
+ ('legacy-retain-no-lock',GUARD,'if if_present and not os.path.lexists(self.path):','if False:','test_pce_retention.RetainTests.test_legacy_no_retain_ignores_busy_transaction_lock','LEGACY_WAITED_FOR_UNUSED_RETAIN_LOCK'),
+ ('legacy-first-registration-race',GUARD,"if os.path.lexists(self.path):\n                raise UpdateError('retain_busy')",'if False:\n                raise UpdateError(\'retain_busy\')','test_pce_retention.RetainTests.test_first_registration_drift_after_legacy_snapshot_refused','LEGACY_SNAPSHOT_IGNORED_FIRST_REGISTRATION'),
+
 ]
 
 

@@ -149,11 +149,17 @@ class Retention:
             try: os.unlink(temp, dir_fd=fd)
             except FileNotFoundError: pass
 
-    def transaction(self, *, create=False):
+    def transaction(self, *, create=False, if_present=False):
         from contextlib import contextmanager
         import stat
         @contextmanager
         def locked():
+            # Legacy guard calls must not create or validate retention resources.
+            # Registration alone creates them; a later state-lock recheck closes
+            # a concurrent first registration without reversing the lock order.
+            if if_present and not os.path.lexists(self.path):
+                yield None
+                return
             # Walk all parents without following links. Sticky root /tmp is
             # permitted; the private update and retain leaves must be ours 0700.
             current = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC)
@@ -306,6 +312,10 @@ class Retention:
             return pin
 
     def check_locked(self, fd, candidate=None, *, replacing=None):
+        if fd is None:
+            if os.path.lexists(self.path):
+                raise UpdateError('retain_busy')
+            return []
         records = self.records(fd)
         if replacing is not None and any(p['state'] != 'reclaimed' and p['package'] == str(Path(replacing)) for p in records):
             raise UpdateError('retain_pinned')
@@ -437,7 +447,7 @@ class State:
             raise UpdateError('offer_invalid')
         self.slot(item)
         retention = Retention(self.root)
-        with retention.transaction(create=True) as retain_fd:
+        with retention.transaction(if_present=True) as retain_fd:
             with self.locked():
                 retention.check_locked(retain_fd, self.slot(item))
                 data = self.read()
@@ -465,7 +475,7 @@ class State:
     def select(self, trial=True, now=None):
         now = time.time() if now is None else now
         retention = Retention(self.root)
-        with retention.transaction(create=True) as retain_fd:
+        with retention.transaction(if_present=True) as retain_fd:
             with self.locked():
                 data = self.read()
                 pending = data['pending']
