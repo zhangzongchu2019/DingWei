@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-22T01:47:30.084696+00:00",
+  "base": "57784f114f5ef18e8920255333bc87a8def2c733",
+  "version": "0.2.3.9",
+  "source_changed": [
+    "VERSION",
+    "tools/sessionhelper/sessionhelper/__init__.py",
+    "internal/version/version.go",
+    "internal/version/helper_0233_test.go",
+    "tests/pilot-project-context/local_context_roundtrip.py"
+  ],
+  "go_rc": 0,
+  "go_tests_passed": 5,
+  "go_tests_skipped": 0,
+  "helper_rc": 0,
+  "helper_tests": 23,
+  "helper_isolated_HOME": true,
+  "locked_venv": "/tmp/coder-0232-locked-venv/bin/python",
+  "toolchain": "go version go1.22.2 linux/amd64",
+  "runtime_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "approved_fix_and_renderer_bytes_unchanged": true,
+  "integration_branch_modified": false,
+  "production_actions": false
+}
