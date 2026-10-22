@@ -1,0 +1,5 @@
+--- FAIL: TestHelper02310ReleasePins (0.00s)
+    helper_0233_test.go:26: 0.2.3.10 r37 release requires root/Go/helper pins; 0.2.3.9 is the prior release
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/version	0.001s
+FAIL
