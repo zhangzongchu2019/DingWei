@@ -1,0 +1,2 @@
+command=go test ./internal/m8 -run ^TestAMRBackfillAfterHubRestartIsDroppedBeforeAccumulator$ -count=1
+rc=0

@@ -1,0 +1,6 @@
+--- FAIL: TestAMRBackfillAfterHubRestartIsDroppedBeforeAccumulator (0.00s)
+    amr_test.go:229: AMR_BACKFILL_REOPENED_TURN: turns=0 completed=1
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.005s
+FAIL
+WITHDRAWAL_RC=1
