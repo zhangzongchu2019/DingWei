@@ -6,13 +6,18 @@
   },
   {
     "path": "FINISH.py",
-    "size": 8704,
-    "sha256": "cc6f5370ff82aa245e2fa149752447f0e6d48ac5fd4a6372a521b2c7e8f483c4"
+    "size": 8882,
+    "sha256": "f18d9a808e5c65623f233511ffc4c0c9e21472a295edfce4afc8de81720b8a9d"
   },
   {
     "path": "REVIEW.md",
-    "size": 5030,
-    "sha256": "26be04e01fcad02308e3d52a5271b8fbbcb4f37b0dc9163cef86a9e8713154e6"
+    "size": 5208,
+    "sha256": "9a59b7e4e1f2266d4177e7caec9b32c153f4f11cc6b7c2696ac595558f3d8abf"
+  },
+  {
+    "path": "STYLE-CHECK.json",
+    "size": 1276,
+    "sha256": "33dfaee51b9d901daf5b90b919723a164fb860c4d3d2a2c563ed51f8b9871617"
   },
   {
     "path": "SUMMARY.json",

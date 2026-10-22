@@ -1,0 +1,15 @@
+{
+  "authored_files_rc": 0,
+  "raw_stderr_whitespace_preserved": [
+    "docs/reviews/coder-pce-retain-20261022/development/withdrawals-v1/gc-journal-reference-withdrawn.stderr:1: trailing whitespace.",
+    "docs/reviews/coder-pce-retain-20261022/development/withdrawals-v1/old-launcher-refusal-withdrawn.stderr:1: trailing whitespace.",
+    "docs/reviews/coder-pce-retain-20261022/development/withdrawals-v2/gc-journal-reference-withdrawn.stderr:1: trailing whitespace.",
+    "docs/reviews/coder-pce-retain-20261022/development/withdrawals-v2/old-launcher-refusal-withdrawn.stderr:1: trailing whitespace.",
+    "docs/reviews/coder-pce-retain-20261022/development/withdrawals-v3/old-launcher-refusal-withdrawn.stderr:1: trailing whitespace.",
+    "docs/reviews/coder-pce-retain-20261022/development/withdrawals-v4/old-launcher-refusal-withdrawn.stderr:1: trailing whitespace.",
+    "docs/reviews/coder-pce-retain-20261022/final-70d8875/pce-withdrawals/old-launcher-refusal-withdrawn.stderr:1: trailing whitespace.",
+    "docs/reviews/coder-pce-retain-20261022/final-b75eb8d/pce-withdrawals/old-launcher-refusal-withdrawn.stderr:1: trailing whitespace."
+  ],
+  "crlf_pty_preserved": true,
+  "note": "Raw unittest output is immutable evidence, not authored source formatting."
+}

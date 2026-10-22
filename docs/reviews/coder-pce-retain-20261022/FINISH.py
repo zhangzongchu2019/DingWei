@@ -64,7 +64,7 @@ report=f'''# S-PCE-UPDATER-RETAIN 最小首期候选交审
 
 限域：原设计“连续两次跨版本升级仍复用owner”不作为首期已实现的能力，按收窄裁定以活pin拒绝变化及移出指针后的保留／回收门验收。稳定retention-capable launcher迁移执行单未交、未安装；现网旧launcher仍拒private，后续本组隔离验证与明确启用令仍必要。兼容摘要放宽、人工lease、owner失联恢复、pin审计归档均后续。运行时／系统标准库是固定基线，受控源码升级不原位pip／替换venv；不声称阻止管理员绕过流程改系统。pin达到128（含审计）只阻新注册，不自动清历史。不存在任何Hub迁移、Go产品、席位或43／dw123操作。
 
-原始stdout／stderr／rc／命令／环境键名／UTC在 `{meta['gate_directory']}`；SOURCE.json核{len(inputs)}输入的Git blob／大小／SHA，VERIFY.py另核全部证据清单。报告生成UTC {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}。作者门不代替独立验收。
+格式检查：排除原始stderr的源码／文档diff-check rc0；8处unittest原始行尾空格与PTY的CRLF均原样保留（STYLE-CHECK.json），未为格式改写回执。原始stdout／stderr／rc／命令／环境键名／UTC在 `{meta['gate_directory']}`；SOURCE.json核{len(inputs)}输入的Git blob／大小／SHA，VERIFY.py另核全部证据清单。报告生成UTC {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}。作者门不代替独立验收。
 '''
 (BASE/'REVIEW.md').write_text(report)
 files=sorted(p for p in BASE.rglob('*') if p.is_file() and p.name!='EVIDENCE-MANIFEST.json')
