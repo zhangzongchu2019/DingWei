@@ -513,7 +513,9 @@ class UnixWebSocketJsonRpc:
         return bytes(header) + masked
 
     def _recv_text(self) -> str | None:
-        assert self._sock is not None
+        sock = self._sock
+        if sock is None:
+            raise OSError('websocket closed')
         first = self._recv_exact(2)
         if not first:
             return None
@@ -532,17 +534,19 @@ class UnixWebSocketJsonRpc:
             return None
         if opcode == 0x9:
             with self._write_lock:
-                self._sock.sendall(self._encode_frame(0xA, payload))
+                sock.sendall(self._encode_frame(0xA, payload))
             return self._recv_text()
         if opcode != 0x1:
             return self._recv_text()
         return payload.decode("utf-8")
 
     def _recv_exact(self, n: int) -> bytes:
-        assert self._sock is not None
+        sock = self._sock
+        if sock is None:
+            raise OSError('websocket closed')
         chunks = bytearray()
         while len(chunks) < n:
-            chunk = self._sock.recv(n - len(chunks))
+            chunk = sock.recv(n - len(chunks))
             if not chunk:
                 raise OSError("websocket closed")
             chunks.extend(chunk)

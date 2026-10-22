@@ -279,6 +279,7 @@ class EventBridgeReplayTest(unittest.TestCase):
 
         drv = CodexProtocolDriver.__new__(CodexProtocolDriver)
         drv._rpc = DeadRpc()
+        drv._endpoint_mode = 'legacy'  # This fixture bypasses constructor defaults.
         drv._transport_mode = "__test_abort__"  # 停旧 rpc 之后立即因未知传输方式中止，不起真进程
         with self.assertRaises(ValueError):
             CodexProtocolDriver.start(drv)
