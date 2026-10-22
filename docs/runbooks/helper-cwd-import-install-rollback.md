@@ -5,6 +5,7 @@
 ## 前置和制品
 
 - prodops 先保存交接；只读核目标真实 venv 的 `sys.executable`、`sys.prefix`、`sysconfig.get_path('purelib')`、Python 版本、容器入口、cwd、PYTHONPATH 路径结构、源码挂载、所有既有 .pth/sitecustomize、venv 是否被其他服务共用。检查使用实际解释器加 `-I -B -c`；不要在可写项目下裸跑 Python。只接受受信根／venv、已核非组写／他写祖先、无路径软链替换、无不可信启动钩子和用户 site；本件不抵御能任意改写可信 venv 的主体。未知启动形态、共享范围不清或源挂载无法更新均 STOP。
+- **入口命令须逐字核对（r38 安装硬门，选择文档约束，不扩改钩子识别器）。** 安装前将容器实际 Entrypoint＋Cmd 与本席已批准执行单冻结的原始参数逐项、按顺序比对，包括 tini／shell 包裹及 shell 命令文本；不能只搜索 `-m sessionhelper` 子串。本批解释器必须为已绑定的 `SEAT_PYTHON`，其模块入口参数须精确为 `-m sessionhelper`，不带额外前置选项。发现 `-X`、`-W`、`-S` 或其他未冻结选项／参数变化，一律在写钩子和重启之前 STOP，报组长另审；不得仅因 Python 能启动就放行。钩子虽支持 -B／-u／-E／-s／-P，本批也不据此自动扩大已批准入口。逐字核对结果与冻结配置摘要入证据；安装后再次核容器配置未变，并保留实际 helper 的隔离成功标记。
 - 生成器 `tools/sessionhelper/update_launcher/cwd_import.py` 只输出一个 .pth 文件，不触碰任何 venv。参数绑定**目标实际**解释器与稳定根；不得把 current 槽位写入参数。用从 Git 独取的候选生成，记 Git commit/tree、生成器 blob/SHA、输出 SHA 和字节数；不放入 factory、自升级压缩包、依赖锁或镜像。
 - 稳定根中 `helper_update_guard.py` 和 `sessionhelper/mcp_shim.py` 必须是本候选的两份已审隔离子跳（分别来自 update_launcher/guard.py、mcp_forwarder.py）。若仍是 r37 旧文件，先在本席维护窗按既有 bootstrap **完整稳定根安装／备份事务**更新由本候选 Git 重建且验包的制品并核 MANIFEST，禁止仅 Console factory 更新；这一步另列执行单审批，不在 hook 中偷偷改根。不得覆盖已部署的 RETAIN 新 guard 为本分支旧基线：若已含 RETAIN，先合成并审查两件的并集制品。启动前确认 guard、MCP 与 hook 三面齐备。若该席显式配置了旧布局稳定入口，还须核已安装的 legacy_mcp_entry.py 为本候选隔离子跳；其独立入口只按既有迁移执行单更新，不改指具体槽位，不给组外席位新增迁移。
 - 有活／未知 private owner、retain pin 时，修改其运行包／解释器闭包须先依保留件合同判 manual_required；不得为装钩子删除 pin、强停 orphan 或绕过保护。现有 legacy 无 pin 无新增保留目录要求。
