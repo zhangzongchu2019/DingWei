@@ -1,0 +1,14 @@
+test_once_per_process_not_per_call (test_boot_origin.BootOriginTests.test_once_per_process_not_per_call) ... FAIL
+
+======================================================================
+FAIL: test_once_per_process_not_per_call (test_boot_origin.BootOriginTests.test_once_per_process_not_per_call)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/boot-origin-withdraw-bhlopkhx/helper/tests/test_boot_origin.py", line 70, in test_once_per_process_not_per_call
+    self.assertEqual(len(self.stderr.getvalue().splitlines()), 1, 'BOOT_REPEATED')
+AssertionError: 3 != 1 : BOOT_REPEATED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=1)

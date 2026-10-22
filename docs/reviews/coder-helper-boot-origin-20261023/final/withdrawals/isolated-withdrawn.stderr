@@ -1,0 +1,14 @@
+test_isolation_flag_matches_real_interpreters (test_boot_origin.BootOriginTests.test_isolation_flag_matches_real_interpreters) ... FAIL
+
+======================================================================
+FAIL: test_isolation_flag_matches_real_interpreters (test_boot_origin.BootOriginTests.test_isolation_flag_matches_real_interpreters)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/boot-origin-withdraw-bhlopkhx/helper/tests/test_boot_origin.py", line 55, in test_isolation_flag_matches_real_interpreters
+    self.assertEqual(data['isolated'], int(isolated), 'BOOT_ISOLATION_MISMATCH')
+AssertionError: 0 != 1 : BOOT_ISOLATION_MISMATCH
+
+----------------------------------------------------------------------
+Ran 1 test in 0.072s
+
+FAILED (failures=1)

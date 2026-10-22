@@ -1,0 +1,6 @@
+test_isolation_flag_matches_real_interpreters (test_boot_origin.BootOriginTests.test_isolation_flag_matches_real_interpreters) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.069s
+
+OK

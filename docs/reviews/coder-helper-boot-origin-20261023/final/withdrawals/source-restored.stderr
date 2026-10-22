@@ -1,0 +1,6 @@
+test_source_symlink_resolves (test_boot_origin.BootOriginTests.test_source_symlink_resolves) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+OK

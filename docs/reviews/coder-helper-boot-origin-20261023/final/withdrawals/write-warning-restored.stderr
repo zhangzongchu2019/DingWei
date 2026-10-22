@@ -1,0 +1,6 @@
+test_failure_warns_sanitized_and_remains_nonblocking (test_boot_origin.BootOriginTests.test_failure_warns_sanitized_and_remains_nonblocking) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

@@ -1,0 +1,6 @@
+test_unprotected_or_symlink_state_directory_refused (test_boot_origin.BootOriginTests.test_unprotected_or_symlink_state_directory_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

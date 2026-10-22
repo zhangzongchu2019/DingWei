@@ -1,0 +1,21 @@
+test_replace_failure_preserves_old_and_cleans_temporary (test_boot_origin.BootOriginTests.test_replace_failure_preserves_old_and_cleans_temporary) ... ERROR
+
+======================================================================
+ERROR: test_replace_failure_preserves_old_and_cleans_temporary (test_boot_origin.BootOriginTests.test_replace_failure_preserves_old_and_cleans_temporary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/boot-origin-withdraw-0j89ebil/helper/tests/test_boot_origin.py", line 99, in test_replace_failure_preserves_old_and_cleans_temporary
+    self.assertEqual(target.read_text(), 'previous', 'BOOT_NOT_ATOMIC')
+                     ^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpye04n5ke/helper-boot-origin.json'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (errors=1)

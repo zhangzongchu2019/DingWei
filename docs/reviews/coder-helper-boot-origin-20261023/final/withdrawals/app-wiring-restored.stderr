@@ -1,0 +1,6 @@
+test_application_wiring_and_write_failure_do_not_block_run (test_boot_origin.BootOriginTests.test_application_wiring_and_write_failure_do_not_block_run) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.074s
+
+OK

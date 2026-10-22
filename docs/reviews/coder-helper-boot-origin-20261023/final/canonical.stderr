@@ -1,0 +1,292 @@
+----------------------------------------------------------------------
+Ran 9 tests in 0.322s
+
+OK
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/tmp5uuuw62q/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+----------------------------------------------------------------------
+Ran 19 tests in 1.203s
+
+OK
+----------------------------------------------------------------------
+Ran 18 tests in 1.030s
+
+OK
+----------------------------------------------------------------------
+Ran 15 tests in 0.127s
+
+OK
+----------------------------------------------------------------------
+Ran 14 tests in 0.797s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 14.994s
+
+OK
+----------------------------------------------------------------------
+Ran 23 tests in 0.295s
+
+OK
+----------------------------------------------------------------------
+Ran 18 tests in 0.894s
+
+OK
+----------------------------------------------------------------------
+Ran 4 tests in 4.080s
+
+OK
+----------------------------------------------------------------------
+Ran 10 tests in 1.087s
+
+OK
+----------------------------------------------------------------------
+Ran 22 tests in 12.465s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.031s
+
+OK
+----------------------------------------------------------------------
+Ran 5 tests in 0.109s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.071s
+
+OK
+----------------------------------------------------------------------
+Ran 5 tests in 0.284s
+
+OK
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK
+----------------------------------------------------------------------
+Ran 19 tests in 0.087s
+
+OK
+----------------------------------------------------------------------
+Ran 25 tests in 0.298s
+
+OK
+----------------------------------------------------------------------
+Ran 4 tests in 0.201s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 0.111s
+
+OK
+----------------------------------------------------------------------
+Ran 4 tests in 0.040s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.604s
+
+OK
+----------------------------------------------------------------------
+Ran 12 tests in 29.636s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 0.732s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.635s
+
+OK
+----------------------------------------------------------------------
+Ran 7 tests in 0.652s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.037s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 0.574s
+
+OK
+----------------------------------------------------------------------
+Ran 18 tests in 0.612s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.015s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 0.113s
+
+OK
+----------------------------------------------------------------------
+Ran 7 tests in 0.008s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.143s
+
+OK
+----------------------------------------------------------------------
+Ran 13 tests in 1.828s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.503s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.078s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.160s
+
+OK
+----------------------------------------------------------------------
+Ran 15 tests in 0.778s
+
+OK
+----------------------------------------------------------------------
+Ran 20 tests in 1.172s
+
+OK
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+----------------------------------------------------------------------
+Ran 18 tests in 0.278s
+
+OK
+hosted-claude-start: invalid or missing SH_CRED_FILE
+hosted-claude-start: invalid or missing SH_CLI
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+----------------------------------------------------------------------
+Ran 34 tests in 7.449s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 0.004s
+
+OK
+----------------------------------------------------------------------
+Ran 10 tests in 0.002s
+
+OK
+/data/ai-dev-data/helper-boot-origin/deploy/test_generate_console_seed.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmprdaz5fm7/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/helper-boot-origin/deploy/test_generate_console_seed.py:116: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpzp0mj6n9/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/helper-boot-origin/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpia3v52u6/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/helper-boot-origin/deploy/test_generate_console_seed.py:72: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpvty049pk/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/helper-boot-origin/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpvty049pk/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/helper-boot-origin/deploy/test_generate_console_seed.py:100: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpuayjijci/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/helper-boot-origin/deploy/test_generate_console_seed.py:161: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpy2lkfico/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 14 tests in 0.569s
+
+OK
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.020s
+
+OK
+/data/ai-dev-data/helper-boot-origin/deploy/test_preview_console.py:78: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/helper-boot-origin/internal/store/console_auth.go' mode='r' encoding='utf-8'>
+  go = open(PROD_GO, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/helper-boot-origin/deploy/test_preview_console.py:83: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/helper-boot-origin/deploy/preview_console_for_principal.py' mode='r' encoding='utf-8'>
+  tool = open(TOOL, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 9 tests in 0.313s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 0.295s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+----------------------------------------------------------------------
+Ran 12 tests in 0.384s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.637s
+
+OK
+----------------------------------------------------------------------
+Ran 7 tests in 0.011s
+
+OK
+----------------------------------------------------------------------
+Ran 13 tests in 1.812s
+
+OK
+----------------------------------------------------------------------
+Ran 40 tests in 0.031s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 0.256s
+
+OK
+----------------------------------------------------------------------
+Ran 5 tests in 0.157s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 0.070s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 2.062s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 6.955s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 0.174s
+
+OK
+----------------------------------------------------------------------
+Ran 1 test in 1.060s
+
+OK

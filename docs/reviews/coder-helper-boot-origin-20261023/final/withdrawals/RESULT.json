@@ -1,0 +1,368 @@
+{
+  "scope": "LOCAL_ISOLATED_NOT_ONLINE",
+  "mutations": 12,
+  "rows": [
+    {
+      "label": "baseline",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin"
+      ],
+      "utc": "2026-10-22T23:48:34.557265+00:00"
+    },
+    {
+      "label": "pid-withdrawn",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin"
+      ],
+      "utc": "2026-10-22T23:48:34.671409+00:00",
+      "marker": "BOOT_PID_MISMATCH",
+      "designated_red": true
+    },
+    {
+      "label": "pid-restored",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin"
+      ],
+      "utc": "2026-10-22T23:48:34.785539+00:00"
+    },
+    {
+      "label": "starttime-withdrawn",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin"
+      ],
+      "utc": "2026-10-22T23:48:34.899700+00:00",
+      "marker": "BOOT_STARTTIME_MISMATCH",
+      "designated_red": true
+    },
+    {
+      "label": "starttime-restored",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin"
+      ],
+      "utc": "2026-10-22T23:48:35.013837+00:00"
+    },
+    {
+      "label": "source-withdrawn",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_source_symlink_resolves"
+      ],
+      "utc": "2026-10-22T23:48:35.127941+00:00",
+      "marker": "BOOT_SOURCE_NOT_RESOLVED",
+      "designated_red": true
+    },
+    {
+      "label": "source-restored",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_source_symlink_resolves"
+      ],
+      "utc": "2026-10-22T23:48:35.241991+00:00"
+    },
+    {
+      "label": "isolated-withdrawn",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_isolation_flag_matches_real_interpreters"
+      ],
+      "utc": "2026-10-22T23:48:35.456332+00:00",
+      "marker": "BOOT_ISOLATION_MISMATCH",
+      "designated_red": true
+    },
+    {
+      "label": "isolated-restored",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_isolation_flag_matches_real_interpreters"
+      ],
+      "utc": "2026-10-22T23:48:35.620381+00:00"
+    },
+    {
+      "label": "marker-withdrawn",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin"
+      ],
+      "utc": "2026-10-22T23:48:35.734476+00:00",
+      "marker": "BOOT_MARKER_MISSING",
+      "designated_red": true
+    },
+    {
+      "label": "marker-restored",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin"
+      ],
+      "utc": "2026-10-22T23:48:35.848561+00:00"
+    },
+    {
+      "label": "stderr-withdrawn",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin"
+      ],
+      "utc": "2026-10-22T23:48:35.962731+00:00",
+      "marker": "BOOT_STDERR_MISMATCH",
+      "designated_red": true
+    },
+    {
+      "label": "stderr-restored",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin"
+      ],
+      "utc": "2026-10-22T23:48:36.076826+00:00"
+    },
+    {
+      "label": "once-withdrawn",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_once_per_process_not_per_call"
+      ],
+      "utc": "2026-10-22T23:48:36.190926+00:00",
+      "marker": "BOOT_REPEATED",
+      "designated_red": true
+    },
+    {
+      "label": "once-restored",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_once_per_process_not_per_call"
+      ],
+      "utc": "2026-10-22T23:48:36.304998+00:00"
+    },
+    {
+      "label": "write-warning-withdrawn",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_failure_warns_sanitized_and_remains_nonblocking"
+      ],
+      "utc": "2026-10-22T23:48:36.419158+00:00",
+      "marker": "BOOT_FAILURE_SILENT",
+      "designated_red": true
+    },
+    {
+      "label": "write-warning-restored",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_failure_warns_sanitized_and_remains_nonblocking"
+      ],
+      "utc": "2026-10-22T23:48:36.533483+00:00"
+    },
+    {
+      "label": "atomic-withdrawn",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_replace_failure_preserves_old_and_cleans_temporary"
+      ],
+      "utc": "2026-10-22T23:48:36.647623+00:00",
+      "marker": "BOOT_NOT_ATOMIC",
+      "designated_red": true
+    },
+    {
+      "label": "atomic-restored",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_replace_failure_preserves_old_and_cleans_temporary"
+      ],
+      "utc": "2026-10-22T23:48:36.761711+00:00"
+    },
+    {
+      "label": "directory-mode-withdrawn",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_unprotected_or_symlink_state_directory_refused"
+      ],
+      "utc": "2026-10-22T23:48:36.875838+00:00",
+      "marker": "BOOT_UNSAFE_DIRECTORY_WRITTEN",
+      "designated_red": true
+    },
+    {
+      "label": "directory-mode-restored",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_unprotected_or_symlink_state_directory_refused"
+      ],
+      "utc": "2026-10-22T23:48:36.989981+00:00"
+    },
+    {
+      "label": "directory-symlink-withdrawn",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_unprotected_or_symlink_state_directory_refused"
+      ],
+      "utc": "2026-10-22T23:48:37.104142+00:00",
+      "marker": "BOOT_UNSAFE_DIRECTORY_WRITTEN",
+      "designated_red": true
+    },
+    {
+      "label": "directory-symlink-restored",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_unprotected_or_symlink_state_directory_refused"
+      ],
+      "utc": "2026-10-22T23:48:37.218262+00:00"
+    },
+    {
+      "label": "app-wiring-withdrawn",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_application_wiring_and_write_failure_do_not_block_run"
+      ],
+      "utc": "2026-10-22T23:48:37.433504+00:00",
+      "marker": "BOOT_APP_UNWIRED",
+      "designated_red": true
+    },
+    {
+      "label": "app-wiring-restored",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin.BootOriginTests.test_application_wiring_and_write_failure_do_not_block_run"
+      ],
+      "utc": "2026-10-22T23:48:37.647922+00:00"
+    },
+    {
+      "label": "final",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_boot_origin"
+      ],
+      "utc": "2026-10-22T23:48:37.912303+00:00"
+    }
+  ]
+}

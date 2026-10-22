@@ -1,0 +1,20 @@
+test_actual_pid_starttime_and_resolved_package_origin (test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin) ... ok
+test_application_records_before_constructor (test_boot_origin.BootOriginTests.test_application_records_before_constructor) ... ok
+test_application_wiring_and_write_failure_do_not_block_run (test_boot_origin.BootOriginTests.test_application_wiring_and_write_failure_do_not_block_run) ... ok
+test_broken_stderr_does_not_block (test_boot_origin.BootOriginTests.test_broken_stderr_does_not_block) ... ok
+test_collection_failure_is_nonblocking_sanitized (test_boot_origin.BootOriginTests.test_collection_failure_is_nonblocking_sanitized) ... ok
+test_failure_warns_sanitized_and_remains_nonblocking (test_boot_origin.BootOriginTests.test_failure_warns_sanitized_and_remains_nonblocking) ... ok
+test_isolation_flag_matches_real_interpreters (test_boot_origin.BootOriginTests.test_isolation_flag_matches_real_interpreters) ... ok
+test_once_per_process_not_per_call (test_boot_origin.BootOriginTests.test_once_per_process_not_per_call) ... ok
+test_replace_failure_preserves_old_and_cleans_temporary (test_boot_origin.BootOriginTests.test_replace_failure_preserves_old_and_cleans_temporary) ... ok
+test_self_stat_invalid_never_fabricates_starttime (test_boot_origin.BootOriginTests.test_self_stat_invalid_never_fabricates_starttime) ... ok
+test_source_symlink_resolves (test_boot_origin.BootOriginTests.test_source_symlink_resolves) ... ok
+test_target_symlink_does_not_modify_referent (test_boot_origin.BootOriginTests.test_target_symlink_does_not_modify_referent) ... ok
+test_umask_cannot_make_record_public (test_boot_origin.BootOriginTests.test_umask_cannot_make_record_public) ... ok
+test_unprotected_or_symlink_state_directory_refused (test_boot_origin.BootOriginTests.test_unprotected_or_symlink_state_directory_refused) ... ok
+test_version_probe_does_not_write (test_boot_origin.BootOriginTests.test_version_probe_does_not_write) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.170s
+
+OK

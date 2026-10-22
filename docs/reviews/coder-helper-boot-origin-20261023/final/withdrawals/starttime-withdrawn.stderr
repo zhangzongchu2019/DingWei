@@ -1,0 +1,14 @@
+test_actual_pid_starttime_and_resolved_package_origin (test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin) ... FAIL
+
+======================================================================
+FAIL: test_actual_pid_starttime_and_resolved_package_origin (test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/boot-origin-withdraw-bhlopkhx/helper/tests/test_boot_origin.py", line 36, in test_actual_pid_starttime_and_resolved_package_origin
+    self.assertEqual(data['starttime'], int(raw.rpartition(')')[2].split()[19]), 'BOOT_STARTTIME_MISMATCH')
+AssertionError: 1 != 50381389 : BOOT_STARTTIME_MISMATCH
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=1)

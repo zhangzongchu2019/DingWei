@@ -1,0 +1,14 @@
+test_application_wiring_and_write_failure_do_not_block_run (test_boot_origin.BootOriginTests.test_application_wiring_and_write_failure_do_not_block_run) ... FAIL
+
+======================================================================
+FAIL: test_application_wiring_and_write_failure_do_not_block_run (test_boot_origin.BootOriginTests.test_application_wiring_and_write_failure_do_not_block_run)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/boot-origin-withdraw-bhlopkhx/helper/tests/test_boot_origin.py", line 156, in test_application_wiring_and_write_failure_do_not_block_run
+    self.assertIn('record_write_failed', self.stderr.getvalue(), 'BOOT_APP_UNWIRED')
+AssertionError: 'record_write_failed' not found in '' : BOOT_APP_UNWIRED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.075s
+
+FAILED (failures=1)

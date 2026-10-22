@@ -1,0 +1,6 @@
+test_replace_failure_preserves_old_and_cleans_temporary (test_boot_origin.BootOriginTests.test_replace_failure_preserves_old_and_cleans_temporary) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+OK
