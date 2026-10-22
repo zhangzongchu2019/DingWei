@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import tempfile
 import time
 import uuid
@@ -76,6 +77,9 @@ class SelfUpdater:
         self.guard = load_stable(path, '_dw_stable_guard')
         self.package = load_stable(self.mount / 'helper_update_package.py', '_dw_stable_package')
         state_root = Path(os.path.expanduser(cfg.state_dir or '~/.dingwei')) / 'update'
+        bound = env_get('SH_UPDATE_ROOT', '')
+        if bound and (not Path(bound).is_absolute() or Path(bound).resolve() != state_root.resolve()):
+            raise UpdateRejected('manual_required')
         self.state = self.guard.State(state_root, self.mount / 'factory')
 
     def runtime_lock_sha256(self):
@@ -187,8 +191,20 @@ class SelfUpdater:
     @contextmanager
     def retention_transaction(self):
         if getattr(self.guard, 'RETENTION_API', None) != 1:
-            if os.path.lexists(self.state.root / 'retain'):
-                raise UpdateRejected('manual_required')
+            retained = self.state.root / 'retain'
+            if os.path.lexists(retained):
+                directory = None
+                try:
+                    directory = os.open(retained, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+                    info = os.fstat(directory)
+                    if info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != 0o700:
+                        raise UpdateRejected('manual_required')
+                    if os.listdir(directory):
+                        raise UpdateRejected('manual_required')
+                except OSError:
+                    raise UpdateRejected('manual_required') from None
+                finally:
+                    if directory is not None: os.close(directory)
             yield None, None
             return
         retention = self.guard.Retention(self.state.root)

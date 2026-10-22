@@ -190,6 +190,14 @@ sys.stdin.read(1)
         self.state.arm(item)
         self.denied('OWNER_RACED_PENDING_UPGRADE',lambda:self.register(),'manual_required')
 
+    def test_private_root_must_match_launcher_update_root_if_bound(self):
+        home=self.base/'ch';home.mkdir(mode=0o700)
+        spec=ep.Spec(str(self.base/'s'),'seat',str(home),str(self.base),sys.executable,sys.executable)
+        env={'SH_UPDATE_LAUNCHER':str(ROOT/'update_launcher/guard.py'),'SH_UPDATE_ROOT':str(self.root/'other')}
+        with mock.patch.dict(os.environ,env):
+            with self.assertRaises(ep.PrivateEndpointError,msg='PRIVATE_RETAIN_ROOT_MISMATCH_ACCEPTED'):
+                ep.retention_kernel(spec)
+
     def test_old_or_absent_launcher_refuses_private(self):
         home=self.base/'home';home.mkdir(mode=0o700)
         spec=ep.Spec(str(self.base/'state'),'seat',str(home),str(self.base),sys.executable,sys.executable)
@@ -244,6 +252,21 @@ sys.stdin.read(1)
     def test_pin_limit_refuses_before_registering_new_owner(self):
         with mock.patch.object(self.ret,'LIMIT',0):
             self.denied('PIN_LIMIT_IGNORED',lambda:self.register(),'retain_limit')
+
+    def test_stopped_pin_collision_requires_explicit_reclaim_first(self):
+        pin=self.register();self.stopped(pin)
+        with self.ret.transaction() as fd:
+            self.denied('STOPPED_PIN_REPLACED_WITHOUT_RECLAIM',
+                        lambda:self.ret.check_locked(fd,replacing=self.package),'retain_pinned')
+        self.ret.reclaim(pin['id'],self.state)
+        with self.ret.transaction() as fd:self.ret.check_locked(fd,replacing=self.package)
+
+    def test_bad_completed_pin_state_cannot_disable_update_protection(self):
+        pin=self.register()
+        with self.ret.transaction() as fd:
+            record=self.ret.records(fd)[0];record['state']='stopped'
+            self.ret._write(fd,'pin-'+pin['id']+'.json',record)
+        self.denied('BAD_COMPLETED_PIN_ALLOWED_UPDATE',lambda:self.ret.check(self.factory),'retain_stop')
 
     def test_actual_owner_crash_does_not_reclaim_live_child(self):
         script = ROOT/'tests/pce_retention_crash_fixture.py'

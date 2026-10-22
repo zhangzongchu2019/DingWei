@@ -82,6 +82,22 @@ class OfferTests(unittest.TestCase):
             'url':'http://127.0.0.1:'+str(self.server.server_port)+'/source.tgz','platform':'linux',
             'expires_at':(datetime.now(timezone.utc)+timedelta(minutes=29)).isoformat()}}
 
+    def test_updater_root_must_match_launcher_update_root_if_bound(self):
+        with patch.dict(os.environ,{'SH_UPDATE_ROOT':str(self.updater.state.root/'other')}):
+            with self.assertRaisesRegex(UpdateRejected,'^manual_required$',msg='UPDATER_RETAIN_ROOT_MISMATCH_ACCEPTED'):
+                SelfUpdater(self.cfg,self.provisioner.validate_source,'agent.owner',
+                            launcher=str(self.mount/'helper_update_guard.py'),allow_loopback=True)
+
+    def test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused(self):
+        retained=self.updater.state.root/'retain'
+        with patch.object(self.updater.guard,'RETENTION_API',0):
+            with self.updater.retention_transaction():pass
+            retained.mkdir(mode=0o700)
+            with self.updater.retention_transaction():pass
+            (retained/'unknown-record').write_text('{}')
+            with self.assertRaisesRegex(UpdateRejected,'^manual_required$',msg='OLD_GUARD_IGNORED_PINS'):
+                with self.updater.retention_transaction():pass
+
     def test_pce_pinned_collision_and_incompatible_candidate_refused(self):
         meta, _, _ = self.updater.prepare(self.env)
         slot = self.updater.state.slot(meta)

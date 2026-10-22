@@ -59,6 +59,9 @@ def implementation_hash():
 def retention_kernel(spec):
     path = Path(env_get('SH_UPDATE_LAUNCHER', ''))
     try:
+        bound = env_get('SH_UPDATE_ROOT', '')
+        if bound and (not Path(bound).is_absolute() or Path(bound).resolve() != (Path(spec.state_dir) / 'update').resolve()):
+            fail('retention')
         if not path.is_absolute() or path.resolve(strict=True) != path or path.is_symlink():
             fail('retention')
         info = path.stat()
@@ -628,7 +631,9 @@ class Client:
                         env = env_snapshot()
                         env['CODEX_HOME'] = self.spec.codex_home
                         env['PYTHONPATH'] = package_root()
-                        proc = subprocess.Popen([sys.executable, '-B', '-m', 'sessionhelper.private_endpoint', '--owner'],
+                        owner_main = ('import sys;sys.path.insert(0,sys.argv.pop(1));import runpy;'
+                                      'runpy.run_module("sessionhelper.private_endpoint",run_name="__main__",alter_sys=True)')
+                        proc = subprocess.Popen([sys.executable, '-I', '-B', '-c', owner_main, package_root(), '--owner'],
                             stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                             env=env, cwd=self.spec.workdir, start_new_session=True, close_fds=True,
                             pass_fds=tuple(handles))

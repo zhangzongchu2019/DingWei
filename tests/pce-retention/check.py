@@ -52,6 +52,16 @@ MUTATIONS = [
  ('pin-storage-limit',GUARD,'if len(records) >= self.LIMIT:','if False:','test_pce_retention.RetainTests.test_pin_limit_refuses_before_registering_new_owner','PIN_LIMIT_IGNORED'),
  ('authenticated-stop-commit',PRIVATE,"retention.finish(record['pin'], record['pin_nonce'],\n                                {k: reply[k] for k in ('pin','boot','challenge','state')})",'pass','test_private_endpoint.RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop','AUTHENTICATED_STOP_PIN_NOT_CERTIFIED'),
  ('old-launcher-refusal',PRIVATE,"if getattr(module, 'RETENTION_API', None) != 1:",'if False:','test_pce_retention.RetainTests.test_old_or_absent_launcher_refuses_private','OLD_LAUNCHER_PRIVATE_ACCEPTED'),
+ ('owner-isolated-import',PRIVATE,"sys.executable, '-I', '-B', '-c', owner_main", "sys.executable, '-B', '-c', owner_main",'test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd','OWNER_STDLIB_SHADOWED_BY_CWD'),
+ ('owner-pinned-import',PRIVATE,'sys.path.insert(0,sys.argv.pop(1));','sys.argv.pop(1);','test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd','OWNER_PINNED_PACKAGE_NOT_STARTED'),
+ ('legacy-old-guard-pins',UPDATE,'if os.listdir(directory):','if False:','test_self_update_offer.OfferTests.test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused','OLD_GUARD_IGNORED_PINS'),
+ ('stopped-pin-still-protected',GUARD,"p['state'] != 'reclaimed' and p['package'] == str(Path(replacing))", "p['state'] in ('active','unknown') and p['package'] == str(Path(replacing))",'test_pce_retention.RetainTests.test_stopped_pin_collision_requires_explicit_reclaim_first','STOPPED_PIN_REPLACED_WITHOUT_RECLAIM'),
+ ('completed-pin-receipt-required',GUARD,"if pin['state'] in ('stopped','reclaimed') and not self.valid_stop(pin):",'if False:','test_pce_retention.RetainTests.test_bad_completed_pin_state_cannot_disable_update_protection','BAD_COMPLETED_PIN_ALLOWED_UPDATE'),
+ ('core-pin-collision',GUARD,"if replacing is not None and any(p['state'] != 'reclaimed' and p['package'] == str(Path(replacing)) for p in records):",'if False:','test_pce_retention.RetainTests.test_replacing_pinned_slot_rejected_without_inspecting_pid','PINNED_SLOT_REPLACED'),
+
+ ('private-launcher-root',PRIVATE,'if bound and (not Path(bound).is_absolute()', 'if False and (not Path(bound).is_absolute()','test_pce_retention.RetainTests.test_private_root_must_match_launcher_update_root_if_bound','PRIVATE_RETAIN_ROOT_MISMATCH_ACCEPTED'),
+ ('updater-launcher-root',UPDATE,'if bound and (not Path(bound).is_absolute()', 'if False and (not Path(bound).is_absolute()','test_self_update_offer.OfferTests.test_updater_root_must_match_launcher_update_root_if_bound','UPDATER_RETAIN_ROOT_MISMATCH_ACCEPTED'),
+
 ]
 
 

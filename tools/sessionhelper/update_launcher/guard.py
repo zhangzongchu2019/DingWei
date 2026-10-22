@@ -199,6 +199,19 @@ class Retention:
                     if f is not None: os.close(f)
         return locked()
 
+    @staticmethod
+    def valid_stop(pin):
+        import re
+        receipt = pin.get('stop')
+        if type(receipt) is not dict:
+            return False
+        if (receipt.get('pin') != pin['id'] or receipt.get('nonce') != pin['nonce']
+                or receipt.get('state') != 'stopped'
+                or any(type(receipt.get(k)) is not str or not re.fullmatch('[0-9a-f]{32}', receipt[k])
+                       for k in ('boot','challenge'))):
+            return False
+        return True
+
     def records(self, fd):
         import re
         names = [n for n in os.listdir(fd) if n.endswith('.json')]
@@ -226,6 +239,8 @@ class Retention:
                     or type(pin.get('package_identity')) is not list or len(pin['package_identity']) != 2
                     or any(type(n) is not int or n < 0 for n in pin['package_identity'])):
                 raise UpdateError('retain_invalid')
+            if pin['state'] in ('stopped','reclaimed') and not self.valid_stop(pin):
+                raise UpdateError('retain_stop')
             result.append(pin)
         return result
 
@@ -291,10 +306,11 @@ class Retention:
             return pin
 
     def check_locked(self, fd, candidate=None, *, replacing=None):
-        active = [p for p in self.records(fd) if p['state'] in ('active', 'unknown')]
+        records = self.records(fd)
+        if replacing is not None and any(p['state'] != 'reclaimed' and p['package'] == str(Path(replacing)) for p in records):
+            raise UpdateError('retain_pinned')
+        active = [p for p in records if p['state'] in ('active', 'unknown')]
         for pin in active:
-            if replacing is not None and Path(pin['package']) == Path(replacing):
-                raise UpdateError('retain_pinned')
             if (_retain_identity(pin['package'])[:2] != pin['package_identity']
                     or package_fingerprint(pin['package']) != pin['digest']):
                 raise UpdateError('manual_required')
@@ -340,11 +356,7 @@ class Retention:
                 records = self.records(fd); pin = next((p for p in records if p['id'] == ident), None)
                 if not pin or pin['state'] != 'stopped' or type(pin.get('stop')) is not dict:
                     raise UpdateError('retain_stop')
-                receipt = pin['stop']
-                if (receipt.get('pin') != ident or receipt.get('nonce') != pin['nonce']
-                        or receipt.get('state') != 'stopped'
-                        or any(type(receipt.get(k)) is not str or not re.fullmatch('[0-9a-f]{32}', receipt[k])
-                               for k in ('boot','challenge'))):
+                if not self.valid_stop(pin):
                     raise UpdateError('retain_stop')
                 path = Path(pin['package']); sha = path.name
                 if (path.parent != self.root / 'slots' or not re.fullmatch('[0-9a-f]{64}', sha)

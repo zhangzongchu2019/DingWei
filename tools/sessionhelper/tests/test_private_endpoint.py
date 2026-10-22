@@ -116,14 +116,16 @@ class Paths(Fixture):
     def test_orphan_registry_never_spawns_or_adopts(self):
         with self.root() as fd:
             ep.write_json(fd, ep.REGISTRY, {'owner_pid': os.getpid()})
-        with mock.patch.object(ep.subprocess, 'Popen', side_effect=AssertionError('ORPHAN_WAS_RESTARTED')) as launch:
+        with mock.patch.dict(os.environ, {'SH_UPDATE_LAUNCHER': str(Path(__file__).resolve().parents[1] / 'update_launcher/guard.py')}), \
+             mock.patch.object(ep.subprocess, 'Popen', side_effect=AssertionError('ORPHAN_WAS_RESTARTED')) as launch:
             self.reject('dirty', lambda: ep.Client(self.spec).ensure())
         launch.assert_not_called()
 
     def test_stopped_tombstone_refuses_automatic_start(self):
         with self.root() as fd:
             ep.write_json(fd, 'stopped.json', {'format': 1})
-        with mock.patch.object(ep.subprocess, 'Popen', side_effect=AssertionError('STOPPED_OWNER_AUTORESTARTED')) as launch:
+        with mock.patch.dict(os.environ, {'SH_UPDATE_LAUNCHER': str(Path(__file__).resolve().parents[1] / 'update_launcher/guard.py')}), \
+             mock.patch.object(ep.subprocess, 'Popen', side_effect=AssertionError('STOPPED_OWNER_AUTORESTARTED')) as launch:
             self.reject('stopped', lambda: ep.Client(self.spec).ensure())
         launch.assert_not_called()
 
@@ -672,6 +674,22 @@ class RealOwnerProcess(Fixture):
                         # retained Popen. This is not a product recovery API.
                         os.killpg(proc.pid, signal.SIGKILL)
                         proc.wait(timeout=3)
+
+    def test_owner_launch_uses_pinned_package_before_business_cwd(self):
+        shadow = self.base/'sessionhelper';shadow.mkdir(mode=0o700)
+        package_marker=self.base/'package-shadow';stdlib_marker=self.base/'stdlib-shadow'
+        for path,marker in ((shadow/'__init__.py',package_marker),(self.base/'json.py',stdlib_marker)):
+            path.write_text('from pathlib import Path\nPath('+repr(str(marker))+').write_text("local fixture only")\n')
+        # This Python fake represents a Rust binary; keep its own interpreter
+        # independent of the business cwd so the test measures only the owner.
+        wrapper=Path(self.spec.command)
+        wrapper.write_text(wrapper.read_text().replace('#!'+sys.executable+'\n','#!'+sys.executable+' -I\n',1))
+        current=None;reason=None
+        try:current=self.clients[0].ensure()
+        except ep.DaemonIdentityError as error:reason=error.reason
+        self.assertFalse(package_marker.exists(),'OWNER_PACKAGE_SHADOWED_BY_CWD')
+        self.assertFalse(stdlib_marker.exists(),'OWNER_STDLIB_SHADOWED_BY_CWD')
+        self.assertIsNotNone(current,'OWNER_PINNED_PACKAGE_NOT_STARTED '+str(reason))
 
     def test_double_start_helper_restart_child_exit_and_idle_stop(self):
         rows, errors = [], []
