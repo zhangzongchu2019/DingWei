@@ -17,11 +17,12 @@ func TestPilotQuestionAcrossRealHTTPHelperIPCMCP(t *testing.T) {
 		t.Skip("set locked helper Python; canonical runs this local integration")
 	}
 	e, _, state := r32FlowEnv(t)
+	e.hub.SpecClarificationEnabled = true
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/agent/console/tasks/{taskID}/questions", e.hub.RequireAgentBlocker(e.hub.HandleQuestion))
 	mux.HandleFunc("GET /api/agent/console/questions", e.hub.RequireAgentBlocker(e.hub.HandleQuestion))
 	mux.HandleFunc("GET /api/agent/console/questions/{questionID}", e.hub.RequireAgentBlocker(e.hub.HandleQuestion))
-	mux.HandleFunc("POST /api/agent/console/questions/{questionID}/inputs", e.hub.RequireAgentBlocker(e.hub.HandleQuestion))
+	mux.HandleFunc("POST /api/agent/console/questions/{questionID}/clarifications", e.hub.RequireAgentBlocker(e.hub.HandleClarification))
 	server := httptest.NewServer(mux)
 	defer server.Close()
 	root, err := filepath.Abs("../..")

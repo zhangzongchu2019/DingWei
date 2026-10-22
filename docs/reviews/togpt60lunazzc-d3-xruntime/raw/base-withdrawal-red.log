@@ -1,0 +1,28 @@
+=== RUN   TestPilotQuestionAcrossRealHTTPHelperIPCMCP
+2026/10/22 10:16:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 10:16:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    pilot_question_roundtrip_test.go:40: QUESTION_PRODUCTION_IPC_MCP_UNWIRED: exit status 1 [ipc_listener] listening on /tmp/blocker-rt-3zyy3o3s/mcp.sock
+        Traceback (most recent call last):
+          File "/tmp/d3-xruntime-base-9e73/tests/pilot-feedback/local_roundtrip.py", line 48, in <module>
+            if __name__=='__main__':asyncio.run(main())
+                                    ^^^^^^^^^^^^^^^^^^^
+          File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+            return runner.run(main)
+                   ^^^^^^^^^^^^^^^^
+          File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+            return self._loop.run_until_complete(task)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+            return future.result()
+                   ^^^^^^^^^^^^^^^
+          File "/tmp/d3-xruntime-base-9e73/tests/pilot-feedback/local_roundtrip.py", line 34, in main
+            out=await call('dw_task_question_create',{'task_id':fixture['task_id'],'request_id':'mcp-create','expected_version':fixture['task_version'],'kind':'technical','title':'待核技术事实','observed_fact':'原任务技术缺口','question':'请提供核验材料','expected_answer':'材料与证据'})
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          File "/tmp/d3-xruntime-base-9e73/tests/pilot-feedback/local_roundtrip.py", line 29, in call
+            result=replies[2]['result'];assert not result.get('isError'),'QUESTION_REAL_IPC_TOOL_ERROR'
+                   ~~~~~~~~~~^^^^^^^^^^
+        KeyError: 'result'
+--- FAIL: TestPilotQuestionAcrossRealHTTPHelperIPCMCP (0.38s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.389s
+FAIL

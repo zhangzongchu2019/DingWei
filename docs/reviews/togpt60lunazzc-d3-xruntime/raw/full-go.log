@@ -1,0 +1,66 @@
+?   	github.com/zhangzongchu2019/dingwei/cmd/dingwei-datad	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/cmd/fcs	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/cmd/mcs-demo	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/cmd/mcsd	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/internal/identity/identitytest	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/internal/model	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/specs/tools/handle-escape	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/specs/tools/legacy-name	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/specs/tools/pending-debt	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/tests/r32-task-flow/compat-probe	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/view-service	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/view-service/console-hosted-page-fixture	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/view-service/p1seed	[no test files]
+ok  	github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout	36.979s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/file-service	0.074s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/nodeagent	0.003s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	254.771s
+ok  	github.com/zhangzongchu2019/dingwei/internal/admin	10.588s
+ok  	github.com/zhangzongchu2019/dingwei/internal/agentmetrics	0.005s
+ok  	github.com/zhangzongchu2019/dingwei/internal/bridge	0.003s
+ok  	github.com/zhangzongchu2019/dingwei/internal/bus	1.284s
+ok  	github.com/zhangzongchu2019/dingwei/internal/clarificationimage	0.004s
+ok  	github.com/zhangzongchu2019/dingwei/internal/clock	0.003s
+ok  	github.com/zhangzongchu2019/dingwei/internal/config	0.003s
+ok  	github.com/zhangzongchu2019/dingwei/internal/consolemux	11.462s
+ok  	github.com/zhangzongchu2019/dingwei/internal/coordination	0.390s
+ok  	github.com/zhangzongchu2019/dingwei/internal/datad	1.018s
+ok  	github.com/zhangzongchu2019/dingwei/internal/evidence	1.248s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fanout	103.323s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fcs	1.252s
+ok  	github.com/zhangzongchu2019/dingwei/internal/feishu	0.010s
+ok  	github.com/zhangzongchu2019/dingwei/internal/filepolicy	0.013s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fileservice	2.829s
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	795.501s
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity	124.497s
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity/httpapi	3.143s
+ok  	github.com/zhangzongchu2019/dingwei/internal/jcs	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/llm	0.004s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m5	4.382s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	164.195s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/board	0.326s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/dea	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/demo	0.255s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/dispatch	0.032s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver	0.039s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd	12.997s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/pool	0.152s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/rotation	0.038s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/route	0.004s
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	7.801s
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodegate	26.048s
+ok  	github.com/zhangzongchu2019/dingwei/internal/obs	0.791s
+ok  	github.com/zhangzongchu2019/dingwei/internal/portal	0.319s
+ok  	github.com/zhangzongchu2019/dingwei/internal/redact	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/reminder	0.508s
+ok  	github.com/zhangzongchu2019/dingwei/internal/repo	6.159s
+ok  	github.com/zhangzongchu2019/dingwei/internal/router	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/schedule	1.266s
+ok  	github.com/zhangzongchu2019/dingwei/internal/scheduler	2.637s
+ok  	github.com/zhangzongchu2019/dingwei/internal/seatcapacity	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/secretbox	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	33.595s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/migrate	77.549s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/pgtest	17.279s
+ok  	github.com/zhangzongchu2019/dingwei/internal/version	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/worker	2.745s
