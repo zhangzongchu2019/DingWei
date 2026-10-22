@@ -1,0 +1,6 @@
+test_already_isolated_and_internal_marker_are_idempotent (test_cwd_import.CwdImportTests.test_already_isolated_and_internal_marker_are_idempotent) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.039s
+
+OK

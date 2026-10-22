@@ -1,0 +1,6 @@
+test_exec_error_exits_instead_of_site_swallowing_exception (test_cwd_import.CwdImportTests.test_exec_error_exits_instead_of_site_swallowing_exception) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.023s
+
+OK

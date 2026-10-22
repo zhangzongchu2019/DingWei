@@ -1,0 +1,11 @@
+{
+  "task": "S-HELPER-CWD-IMPORT",
+  "base_commit": "29e63f9963dedcc32010ca89265d78ba12664bf2",
+  "source_commit": "c8c023c289b254f9f8a3ad8ca4ac1357e21071d0",
+  "source_tree": "f12efa2d60ed7487105b1d5b4313019f84b72384",
+  "source_tag": "evidence/coder/helper-cwd-import-f12efa2d",
+  "gate_directory": "final-successor",
+  "design_commit": "3d46b6b75f99555d83ee4b8c3ec62b371e5a1f43",
+  "deployment": false,
+  "version_changed": false
+}

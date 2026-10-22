@@ -1,0 +1,6 @@
+test_cwd_fake_package_cannot_execute (test_cwd_import.CwdImportTests.test_cwd_fake_package_cannot_execute) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.051s
+
+OK

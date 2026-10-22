@@ -1,0 +1,86 @@
+{
+  "source": "c8c023c289b254f9f8a3ad8ca4ac1357e21071d0",
+  "rows": [
+    {
+      "label": "withdrawals",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "tests/helper-cwd-import/check.py",
+        "/data/ai-dev-data/helper-cwd-import-impl/docs/reviews/coder-helper-cwd-import-impl-20261022/final-successor/withdrawals"
+      ],
+      "rc": 0,
+      "start": "2026-10-22T23:25:54.937847+00:00",
+      "end": "2026-10-22T23:26:00.961299+00:00",
+      "env_i": true,
+      "env_keys": [
+        "DW_DESKTOP_INTEGRATION_PYTHON",
+        "GOCACHE",
+        "GOMODCACHE",
+        "GOPATH",
+        "GOTOOLCHAIN",
+        "HOME",
+        "LANG",
+        "PATH",
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONPATH"
+      ],
+      "isolated_HOME": "/tmp/cwd-final-4zf0ipy0/withdrawals"
+    },
+    {
+      "label": "canonical",
+      "command": [
+        "sh",
+        "scripts/run-build-tests.sh"
+      ],
+      "rc": 0,
+      "start": "2026-10-22T23:25:54.937788+00:00",
+      "end": "2026-10-22T23:28:31.683169+00:00",
+      "env_i": true,
+      "env_keys": [
+        "DW_DESKTOP_INTEGRATION_PYTHON",
+        "GOCACHE",
+        "GOMODCACHE",
+        "GOPATH",
+        "GOTOOLCHAIN",
+        "HOME",
+        "LANG",
+        "PATH",
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONPATH"
+      ],
+      "isolated_HOME": "/tmp/cwd-final-4zf0ipy0/canonical"
+    },
+    {
+      "label": "helper",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-v"
+      ],
+      "rc": 0,
+      "start": "2026-10-22T23:25:54.936935+00:00",
+      "end": "2026-10-22T23:32:59.884749+00:00",
+      "env_i": true,
+      "env_keys": [
+        "DW_DESKTOP_INTEGRATION_PYTHON",
+        "GOCACHE",
+        "GOMODCACHE",
+        "GOPATH",
+        "GOTOOLCHAIN",
+        "HOME",
+        "LANG",
+        "PATH",
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONPATH"
+      ],
+      "isolated_HOME": "/tmp/cwd-final-4zf0ipy0/helper"
+    }
+  ],
+  "passed": true
+}

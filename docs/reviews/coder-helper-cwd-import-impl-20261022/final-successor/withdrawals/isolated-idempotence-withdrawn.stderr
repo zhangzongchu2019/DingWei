@@ -1,0 +1,25 @@
+test_already_isolated_and_internal_marker_are_idempotent (test_cwd_import.CwdImportTests.test_already_isolated_and_internal_marker_are_idempotent) ... FAIL
+
+======================================================================
+FAIL: test_already_isolated_and_internal_marker_are_idempotent (test_cwd_import.CwdImportTests.test_already_isolated_and_internal_marker_are_idempotent)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cwd-withdraw-ssyyqy1t/helper/tests/test_cwd_import.py", line 116, in test_already_isolated_and_internal_marker_are_idempotent
+    self.assertEqual((p.returncode,p.stdout.strip()),(0,'ISOLATED_NOOP'),'ISOLATED_HOOK_REEXECUTED')
+AssertionError: Tuples differ: (0, '{"isolated": 1, "cwd": "/tmp/dw-cwd-ccyso[231 chars]y"}') != (0, 'ISOLATED_NOOP')
+
+First differing element 1:
+'{"isolated": 1, "cwd": "/tmp/dw-cwd-ccyso[230 chars]py"}'
+'ISOLATED_NOOP'
+
++ (0, 'ISOLATED_NOOP')
+- (0,
+-  '{"isolated": 1, "cwd": "/tmp/dw-cwd-ccysowkv/business", "prefix": '
+-  '"/tmp/dw-cwd-ccysowkv/venv", "unbuffered": false, "argv": [], "codex": '
+-  '"/tmp/dw-cwd-ccysowkv/codex", "workdir": "/tmp/dw-cwd-ccysowkv/business", '
+-  '"file": "/tmp/dw-cwd-ccysowkv/stable/sessionhelper/__main__.py"}') : ISOLATED_HOOK_REEXECUTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.051s
+
+FAILED (failures=1)

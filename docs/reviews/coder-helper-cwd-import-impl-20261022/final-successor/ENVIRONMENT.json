@@ -1,0 +1,10 @@
+{
+  "source": "c8c023c289b254f9f8a3ad8ca4ac1357e21071d0",
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "executable": "/tmp/coder-0232-locked-venv/bin/python",
+  "uid": 1001,
+  "hostname": "VM-4-12-ubuntu",
+  "example_hook_sha256": "a14dd4e8813c0dd51cc25d4fcdcb01939a6a6036d36a37a56c04e4f451cbd71a",
+  "example_hook_bytes": 2904,
+  "example_paths_not_independently_verified_on_production": true
+}

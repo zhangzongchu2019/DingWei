@@ -1,0 +1,6 @@
+test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.058s
+
+OK
