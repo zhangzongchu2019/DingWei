@@ -6,6 +6,11 @@
       "sha256": "24fe796e2efde9d55a5afdf59b9db43cf8559f0e429346c1750bbe5d5230ee93"
     },
     {
+      "path": "DESIGN-MANIFEST.json",
+      "bytes": 322,
+      "sha256": "1a9b43ae4cb1cd11add9a333c222927da2ae4fd6f7dbdaa457192707a41898c5"
+    },
+    {
       "path": "GO-COLD-SUMMARY.json",
       "bytes": 10980,
       "sha256": "4a98323cd66ea0a864f43046326257a17e518782891c19691a4d64fbfa75cf93"
@@ -27,8 +32,8 @@
     },
     {
       "path": "REPORT.md",
-      "bytes": 5947,
-      "sha256": "19e2757b1cdaa4afcb8112e52cbb7d2cb4e8e9cd2991b45656e9aa8e82442323"
+      "bytes": 6444,
+      "sha256": "c83cd83be72f160aad986110626a2db1beaf429fcc8cbc4e2a2ae220c404ec05"
     },
     {
       "path": "SOURCE-MANIFEST.json",
@@ -37,8 +42,8 @@
     },
     {
       "path": "VERIFY.py",
-      "bytes": 4493,
-      "sha256": "c0f0b60a6bd76a77ab767c1607d8654cd6a37c1d937ecc07c6a7ffc1404158fc"
+      "bytes": 4574,
+      "sha256": "f550758fedc64ffdfae875fa1b7d47cb7503008b2031c4188f29ac5ce99d9d94"
     },
     {
       "path": "raw/gates/candidate-d3-control.rc",

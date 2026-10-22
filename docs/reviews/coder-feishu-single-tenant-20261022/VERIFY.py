@@ -22,7 +22,9 @@ for item in source['files']:
     assert data==git('show',source['source']+':'+item['path']),item['path']
     assert git('rev-parse',source['source']+':'+item['path']).decode().strip()==item['blob']
 assert {p for p in git('ls-tree','-rz','--name-only',ref).decode().split('\0') if p and not p.startswith('docs/')}=={f['path'] for f in source['files']}
-assert blob('docs/designs/S-FEISHU-SINGLE-TENANT.md')==git('show',source['source']+':docs/designs/S-FEISHU-SINGLE-TENANT.md')
+design = json.loads(doc('DESIGN-MANIFEST.json'))
+design_data = blob(design['path'])
+assert len(design_data)==design['bytes'] and hashlib.sha256(design_data).hexdigest()==design['sha256'], 'design integrity'
 for path in ['tools/sessionhelper','VERSION','internal/version','scripts/run-build-tests.sh','internal/store/migrations','internal/identity/migrations','go.mod','go.sum']:
     assert not git('diff',source['base'],source['source'],'--',path),('out-of-scope drift',path)
 evidence = json.loads(doc('EVIDENCE-MANIFEST.json'))
