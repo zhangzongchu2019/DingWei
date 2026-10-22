@@ -79,4 +79,6 @@
 
 交件前 VERIFY 首轮因 Git 默认转义中文路径未过；改用 NUL 分隔读取。仓库默认忽略 .log，已显式纳入原始日志；原轮记录在 preliminary/VERIFY-FIRST-ATTEMPT.json，不计最终通过。
 
+源码diff-check rc0；含原始日志的完整diff-check会报告 unittest失败行末空格（未清洗日志），排除 .log 后源码与文档diff-check rc0，记录在 raw/final/DIFF-CHECKS.json。
+
 SOURCE-MANIFEST.json 记录冻结源非docs文件的Git blob、字节与SHA256；EVIDENCE-MANIFEST.json记录本目录证据。VERIFY.py 从Git对象独取复核，可对任意候选提交运行，不依赖工作区文件。二进制包、私有HOME、账本、凭据均不入Git。

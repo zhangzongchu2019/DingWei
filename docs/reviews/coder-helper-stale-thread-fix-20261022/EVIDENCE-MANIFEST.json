@@ -7,8 +7,8 @@
     },
     {
       "path": "REPORT.md",
-      "bytes": 9578,
-      "sha256": "5a255f054bd80d819f06c4ca984c490acea8f6c98e6fe6a54a5f9631386c4b4e"
+      "bytes": 9783,
+      "sha256": "1e1db0640d714e38e9b365ee1486629e7e07693bdd65958b409fe1df910fe60c"
     },
     {
       "path": "SOURCE-MANIFEST.json",
@@ -116,6 +116,11 @@
       "sha256": "948fb39d8476e16971b61c7157bc85c4ac1b9a87992222e824c165b62347482f"
     },
     {
+      "path": "raw/final/DIFF-CHECKS.json",
+      "bytes": 276,
+      "sha256": "06399f708f5470c43f142830f4cf022d0563d07256d587a1b03dd35f6cf4fe64"
+    },
+    {
       "path": "raw/final/GO-CHECKS.json",
       "bytes": 720,
       "sha256": "6eb97cff41429ea10d00b80d8b0e0e645ec88e32fdaad519c2df86edcf138b43"
@@ -139,6 +144,11 @@
       "path": "raw/final/canonical.rc",
       "bytes": 2,
       "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "raw/final/diff-full.log",
+      "bytes": 5482,
+      "sha256": "cae3e9151a919f438baddd22428e71d435faf537d5caa3f7132ae884ef421e94"
     },
     {
       "path": "raw/final/go-full.log",

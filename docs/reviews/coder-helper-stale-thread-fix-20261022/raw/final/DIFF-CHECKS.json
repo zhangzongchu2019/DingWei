@@ -1,0 +1,17 @@
+[
+  {
+    "name": "source",
+    "rc": 0,
+    "reason": ""
+  },
+  {
+    "name": "candidate-with-raw",
+    "rc": 2,
+    "reason": "raw unittest failure logs preserve trailing spaces verbatim"
+  },
+  {
+    "name": "candidate-except-raw-logs",
+    "rc": 0,
+    "reason": ""
+  }
+]
