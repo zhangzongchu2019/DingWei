@@ -1,0 +1,6 @@
+test_unset_endpoint_mode_load_config_remains_legacy (test_private_endpoint.DriverWiring.test_unset_endpoint_mode_load_config_remains_legacy) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

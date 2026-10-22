@@ -1,0 +1,17 @@
+test_unset_endpoint_mode_load_config_remains_legacy (test_private_endpoint.DriverWiring.test_unset_endpoint_mode_load_config_remains_legacy) ... FAIL
+
+======================================================================
+FAIL: test_unset_endpoint_mode_load_config_remains_legacy (test_private_endpoint.DriverWiring.test_unset_endpoint_mode_load_config_remains_legacy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/pce-def-j9lqgz1t/helper/tests/test_private_endpoint.py", line 554, in test_unset_endpoint_mode_load_config_remains_legacy
+    self.assertEqual(load_config().codex_endpoint_mode, 'legacy',
+AssertionError: 'private' != 'legacy'
+- private
++ legacy
+ : CONFIG_UNSET_ENDPOINT_DEFAULT_PRIVATE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)

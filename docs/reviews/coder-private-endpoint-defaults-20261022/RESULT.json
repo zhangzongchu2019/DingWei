@@ -1,0 +1,123 @@
+{
+  "source": "6d6719aeda69c7bf91edbf63310646f37b68e38a",
+  "passed": true,
+  "module_tests": 44,
+  "mutations": 3,
+  "rows": [
+    {
+      "label": "module",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint"
+      ],
+      "start": "2026-10-22T21:41:07.057911+00:00",
+      "end": "2026-10-22T21:41:12.813503+00:00",
+      "rc": 0
+    },
+    {
+      "label": "config-dataclass-withdrawn",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.DriverWiring.test_unset_endpoint_mode_load_config_remains_legacy"
+      ],
+      "start": "2026-10-22T21:41:12.813766+00:00",
+      "end": "2026-10-22T21:41:12.950692+00:00",
+      "rc": 1,
+      "designated_red": true,
+      "marker": "CONFIG_DATACLASS_DEFAULT_PRIVATE"
+    },
+    {
+      "label": "config-dataclass-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.DriverWiring.test_unset_endpoint_mode_load_config_remains_legacy"
+      ],
+      "start": "2026-10-22T21:41:12.950813+00:00",
+      "end": "2026-10-22T21:41:13.093836+00:00",
+      "rc": 0
+    },
+    {
+      "label": "config-loader-withdrawn",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.DriverWiring.test_unset_endpoint_mode_load_config_remains_legacy"
+      ],
+      "start": "2026-10-22T21:41:13.094088+00:00",
+      "end": "2026-10-22T21:41:13.228979+00:00",
+      "rc": 1,
+      "designated_red": true,
+      "marker": "CONFIG_UNSET_ENDPOINT_DEFAULT_PRIVATE"
+    },
+    {
+      "label": "config-loader-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.DriverWiring.test_unset_endpoint_mode_load_config_remains_legacy"
+      ],
+      "start": "2026-10-22T21:41:13.229106+00:00",
+      "end": "2026-10-22T21:41:13.365167+00:00",
+      "rc": 0
+    },
+    {
+      "label": "driver-default-withdrawn",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.DriverWiring.test_unset_endpoint_mode_driver_remains_legacy"
+      ],
+      "start": "2026-10-22T21:41:13.365846+00:00",
+      "end": "2026-10-22T21:41:13.505397+00:00",
+      "rc": 1,
+      "designated_red": true,
+      "marker": "DRIVER_UNSET_ENDPOINT_DEFAULT_PRIVATE"
+    },
+    {
+      "label": "driver-default-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.DriverWiring.test_unset_endpoint_mode_driver_remains_legacy"
+      ],
+      "start": "2026-10-22T21:41:13.505591+00:00",
+      "end": "2026-10-22T21:41:13.645173+00:00",
+      "rc": 0
+    }
+  ],
+  "env_keys": [
+    "HOME",
+    "LANG",
+    "PATH",
+    "PYTHONDONTWRITEBYTECODE",
+    "PYTHONPATH",
+    "TMPDIR"
+  ],
+  "python": "/tmp/coder-0232-locked-venv/bin/python",
+  "test_sha256": "be988532b67ca498e5f838624442eed5b697a89c64cc173979dce09466159cf7",
+  "scope": "isolated HOME, copied helper only; no native daemon or online seat"
+}

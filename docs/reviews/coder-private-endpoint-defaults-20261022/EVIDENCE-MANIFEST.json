@@ -1,0 +1,127 @@
+[
+  {
+    "path": "RESULT.json",
+    "size": 3483,
+    "sha256": "0735e04aa07a68c6b88cd9517caaaad6e074b51a8cce43972b178300405170a8"
+  },
+  {
+    "path": "REVIEW.md",
+    "size": 2010,
+    "sha256": "6e0fea4bee4cc824dd6a0cc87189ec67832a92433a436d9c60ad943368a02628"
+  },
+  {
+    "path": "RUN.py",
+    "size": 2950,
+    "sha256": "c1b0603ca6ae387572ac3a9a05bcacc263f89ce982e52fdb2a7c81dd1cbf15a5"
+  },
+  {
+    "path": "VERIFY.py",
+    "size": 1464,
+    "sha256": "34f8bbf68dcea4ee7a2b5fea9736b8fbccb30b8328838519d1da342b909f8bfe"
+  },
+  {
+    "path": "config-dataclass-restored.rc",
+    "size": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  {
+    "path": "config-dataclass-restored.stderr",
+    "size": 245,
+    "sha256": "96eea4410624a334f283d76a368fecd5a14ab25d48a230f73611a2d220360d6f"
+  },
+  {
+    "path": "config-dataclass-restored.stdout",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "config-dataclass-withdrawn.rc",
+    "size": 2,
+    "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+  },
+  {
+    "path": "config-dataclass-withdrawn.stderr",
+    "size": 882,
+    "sha256": "7409198f38a4881672bfc71fd5c534af51a684dea8e6306a4db2d29cbe19437e"
+  },
+  {
+    "path": "config-dataclass-withdrawn.stdout",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "config-loader-restored.rc",
+    "size": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  {
+    "path": "config-loader-restored.stderr",
+    "size": 245,
+    "sha256": "19b44423f5ddeac27687641264f8790175a94d5a28e6bdff482192e9b8bba995"
+  },
+  {
+    "path": "config-loader-restored.stdout",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "config-loader-withdrawn.rc",
+    "size": 2,
+    "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+  },
+  {
+    "path": "config-loader-withdrawn.stderr",
+    "size": 888,
+    "sha256": "792bd71af2022143fbe1cb5d880b426a4a87ef14a4175bff298c96eaf91dc556"
+  },
+  {
+    "path": "config-loader-withdrawn.stdout",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "driver-default-restored.rc",
+    "size": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  {
+    "path": "driver-default-restored.stderr",
+    "size": 235,
+    "sha256": "dedbbe973336e42eaad3f8d3f1a5c8858c25876a3f7af5159f4756ae00a53aa1"
+  },
+  {
+    "path": "driver-default-restored.stdout",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "driver-default-withdrawn.rc",
+    "size": 2,
+    "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+  },
+  {
+    "path": "driver-default-withdrawn.stderr",
+    "size": 851,
+    "sha256": "1ce47452a6e6ce2a410c3fc18e36930bb64692dab8e65aa8d0024dbc6702daa8"
+  },
+  {
+    "path": "driver-default-withdrawn.stdout",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "module.rc",
+    "size": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  {
+    "path": "module.stderr",
+    "size": 6752,
+    "sha256": "535459ccebfbc7bb2d7c089ef38aacc05763100764b188b7bc8281176788e191"
+  },
+  {
+    "path": "module.stdout",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]
