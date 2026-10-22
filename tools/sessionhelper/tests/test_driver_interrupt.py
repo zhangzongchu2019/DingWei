@@ -89,7 +89,8 @@ class DriverInterruptTest(unittest.TestCase):
             restarted._request = mock.Mock(side_effect=AssertionError("must not start a second turn"))
             receipt = restarted.deliver("delivery-1", "same command")
             self.assertEqual(receipt.state, "processing")
-            self.assertEqual(restarted._thread_id, "thread-1")
+            self.assertEqual(restarted._thread_id, "fresh-thread")
+            self.assertEqual(restarted._session_id, "fresh-thread")
             restarted._request.assert_not_called()
 
     def test_opencode_restart_hits_durable_ledger_without_post(self):

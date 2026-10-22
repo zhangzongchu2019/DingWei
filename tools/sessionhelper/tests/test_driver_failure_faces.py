@@ -181,7 +181,7 @@ class DriverFailureFacesTest(unittest.TestCase):
             adapter = self._mk_adapter(td, "authfail")
             state, reasons, logs = self._drive_one(adapter)
             self.assertEqual(state, "failed", f"投递须以 failed 结束；日志：{logs[:400]}")
-            self.assertIn("FAKE_AUTH_BAD", logs, "helper 日志须读出可见原因（401 无效凭据）")
+            self.assertIn("authentication", logs, "helper 日志须读出可见原因（401 无效凭据）")
             self.assertIn("deliver_failed", reasons, "事件面须带原因（deliver_failed）")
 
     def test_face2_appserver_wont_start(self):
@@ -190,7 +190,7 @@ class DriverFailureFacesTest(unittest.TestCase):
             state, reasons, logs = self._drive_one(adapter)
             self.assertEqual(state, "failed", f"投递须以 failed 结束；日志：{logs[:400]}")
             self.assertIn("[FAILED]", logs, "helper 日志须读出可见失败")
-            self.assertIn("FAKE_START_BAD", logs, "helper 日志须读出起不来的原因")
+            self.assertIn("rpc_error", logs, "helper 日志须读出起不来的原因")
             self.assertIn("driver_start_failed", reasons)
 
     def test_face1b_invalid_credential_at_turn(self):
@@ -199,13 +199,13 @@ class DriverFailureFacesTest(unittest.TestCase):
             adapter = self._mk_adapter(td, "turnauthfail")
             state, reasons, logs = self._drive_one(adapter)
             self.assertEqual(state, "failed", f"投递须以 failed 结束；日志：{logs[:400]}")
-            # helper 日志的可见原因：adapter 打印 detail 前 60 字（截断是已知小项——
-            # 登记修类，不挡），鉴权失败落在头部 ⇒ "turn/start failed"＋"401" 可见。
-            self.assertIn("turn/start failed", logs, "helper 日志须读出失败点")
-            self.assertIn("401", logs, "helper 日志须读出鉴权失败原因（401）")
+            # Public failures carry a stable class and method/code, never raw
+            # server messages (which can contain private request context).
+            self.assertIn("session_unavailable", logs, "helper 日志须读出会话准入失败")
+            self.assertIn("authentication", reasons, "helper 日志须读出鉴权失败原因（401）")
             # 事件面（缺口修复后）：turn 未建立的同步失败也发终态事件、带完整原因
-            self.assertIn("turn_failed", reasons, "事件面须带 turn_failed")
-            self.assertIn("FAKE_TURN_AUTH_BAD", reasons, "事件面 detail 须含完整鉴权原因")
+            self.assertIn("session_unavailable", reasons, "事件面须带 session_unavailable")
+            self.assertIn("authentication", reasons, "事件面 detail 须含稳定鉴权分类")
 
     def test_face3_stuck_no_terminal_event(self):
         with tempfile.TemporaryDirectory() as td:
@@ -309,7 +309,12 @@ class HubDeliveryPathTest(unittest.TestCase):
             adapter = self._mk(td, "crash")
             with self.assertRaises(Exception) as cm:
                 adapter.handle_delivery({"body": "ping", "meta": {"source_kind": "user"}})
-            self.assertIn("FAKE_START_BAD", str(cm.exception))
+            from sessionhelper.codexDriver import JsonRpcError
+            self.assertIsInstance(cm.exception, JsonRpcError)
+            self.assertEqual(cm.exception.code, -32001)
+            self.assertEqual(cm.exception.method, "initialize")
+            self.assertIn("FAKE_START_BAD", cm.exception.message)
+            self.assertNotIn("FAKE_START_BAD", str(cm.exception))
 
     def test_enqueue_human_start_failure_fails_with_reason(self):
         # 小提示①：enqueue_human 的 catch 也要有格——crash 时投递以带原因 failed 结束

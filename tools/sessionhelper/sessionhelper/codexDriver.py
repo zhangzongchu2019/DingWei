@@ -49,6 +49,53 @@ EVENT_DRAIN_TIMEOUT = 5.0
 FANOUT_QUEUE_MAX = 1000
 
 
+class JsonRpcError(RuntimeError):
+    """Keep the protocol error separate from transport failure, without logging payloads."""
+
+    def __init__(self, method: str, error: dict):
+        self.method = method
+        self.code = error.get("code") if type(error.get("code")) is int else None
+        self.message = error.get("message")
+        super().__init__(f"{method} failed: error_class={self.classify()} rpc_code={self.code}")
+
+    def classify(self, thread_id: str = "") -> str:
+        # These exact method/code/message combinations were measured on 0.159.2.
+        if type(self.code) is int and self.code == -32600 and thread_id:
+            if self.method == "thread/read" and self.message == f"thread not loaded: {thread_id}":
+                return "thread_not_loaded"
+            if ((self.method == "thread/resume" and self.message == f"no rollout found for thread id {thread_id}")
+                    or (self.method == "turn/start" and self.message == f"thread not found: {thread_id}")):
+                return "missing_thread"
+        if self.code in (401, 403) or (isinstance(self.message, str)
+                and self.message.startswith(("401 Unauthorized", "403 Forbidden"))):
+            return "authentication"
+        return "rpc_error"
+
+
+class ThreadUnavailable(RuntimeError):
+    pass
+
+
+def _error_class(exc: Exception, thread_id: str = "") -> str:
+    if isinstance(exc, JsonRpcError):
+        return exc.classify(thread_id)
+    if isinstance(exc, TimeoutError):
+        return "timeout"
+    if isinstance(exc, (ConnectionError, OSError)):
+        return "disconnected"
+    if isinstance(exc, ThreadUnavailable):
+        return "invalid_thread_binding"
+    return "driver_error"
+
+
+def _failure_detail(prefix: str, exc: Exception, thread_id: str = "") -> str:
+    # No raw server text, prompts, environment values or error.data in events/logs.
+    category = _error_class(exc, thread_id)
+    method = exc.method if isinstance(exc, JsonRpcError) else "local"
+    code = exc.code if isinstance(exc, JsonRpcError) and type(exc.code) is int else "none"
+    return f"{prefix}: error_class={category}; method={method}; rpc_code={code}"
+
+
 @dataclass
 class _DeliveryRecord:
     envelope_id: str
@@ -214,7 +261,7 @@ class StdioJsonRpc:
 
     def request(self, method: str, params: dict | None = None, *, timeout: float = JSONRPC_TIMEOUT) -> dict:
         if self._proc is None or self._proc.stdin is None or self._proc.poll() is not None:
-            raise RuntimeError("JSON-RPC transport is not running")
+            raise ConnectionError("JSON-RPC transport is not running")
 
         with self._write_lock:
             request_id = self._next_id
@@ -224,8 +271,12 @@ class StdioJsonRpc:
             msg = {"id": request_id, "method": method}
             if params is not None:
                 msg["params"] = params
-            self._proc.stdin.write(json.dumps(msg, separators=(",", ":")) + "\n")
-            self._proc.stdin.flush()
+            try:
+                self._proc.stdin.write(json.dumps(msg, separators=(",", ":")) + "\n")
+                self._proc.stdin.flush()
+            except Exception:
+                self._pending.pop(request_id, None)
+                raise
 
         try:
             response = response_q.get(timeout=timeout)
@@ -234,13 +285,15 @@ class StdioJsonRpc:
         finally:
             self._pending.pop(request_id, None)
 
+        if response.get("_transport_closed") is True:
+            raise ConnectionError(f"JSON-RPC connection closed: {method}")
         if "error" in response:
-            raise RuntimeError(f"{method} failed: {response['error']}")
+            raise JsonRpcError(method, response["error"])
         return response.get("result", {})
 
     def notify(self, method: str, params: dict | None = None) -> None:
         if self._proc is None or self._proc.stdin is None or self._proc.poll() is not None:
-            raise RuntimeError("JSON-RPC transport is not running")
+            raise ConnectionError("JSON-RPC transport is not running")
         msg = {"method": method}
         if params is not None:
             msg["params"] = params
@@ -267,6 +320,11 @@ class StdioJsonRpc:
         finally:
             if not self._stop.is_set():
                 self._reader_dead.set()
+            for pending in list(self._pending.values()):
+                try:
+                    pending.put_nowait({"_transport_closed": True})
+                except queue.Full:
+                    pass
 
     def _read_stderr(self) -> None:
         assert self._proc is not None and self._proc.stderr is not None
@@ -341,15 +399,21 @@ class UnixWebSocketJsonRpc:
             msg = {"id": request_id, "method": method}
             if params is not None:
                 msg["params"] = params
-            self._send_text(json.dumps(msg, separators=(",", ":")))
+            try:
+                self._send_text(json.dumps(msg, separators=(",", ":")))
+            except Exception:
+                self._pending.pop(request_id, None)
+                raise
         try:
             response = response_q.get(timeout=timeout)
         except queue.Empty as exc:
             raise TimeoutError(f"JSON-RPC request timed out: {method}") from exc
         finally:
             self._pending.pop(request_id, None)
+        if response.get("_transport_closed") is True:
+            raise ConnectionError(f"JSON-RPC connection closed: {method}")
         if "error" in response:
-            raise RuntimeError(f"{method} failed: {response['error']}")
+            raise JsonRpcError(method, response["error"])
         return response.get("result", {})
 
     def notify(self, method: str, params: dict | None = None) -> None:
@@ -381,10 +445,15 @@ class UnixWebSocketJsonRpc:
         finally:
             if not self._stop.is_set():
                 self._reader_dead.set()
+            for pending in list(self._pending.values()):
+                try:
+                    pending.put_nowait({"_transport_closed": True})
+                except queue.Full:
+                    pass
 
     def _send_text(self, text: str) -> None:
         if self._sock is None:
-            raise RuntimeError("websocket transport is not running")
+            raise ConnectionError("websocket transport is not running")
         payload = text.encode("utf-8")
         self._sock.sendall(self._encode_frame(0x1, payload))
 
@@ -488,6 +557,8 @@ class CodexProtocolDriver(Driver):
         self._initialized = False
         self._thread_id = ""
         self._session_id = ""  # compatibility with the conformance draft
+        self._connection_generation = 0
+        self._verified_binding = None
         self._active_turn_id = ""
         self._envelope_states: dict[str, ReceiptState] = {}
         self._envelope_to_turn: dict[str, str] = {}
@@ -574,7 +645,8 @@ class CodexProtocolDriver(Driver):
 
     def start(self) -> None:
         # R-V2-0105 件二：重连锁内重判健康；停旧 rpc 与建新 rpc 都在锁内（两线程同时进入只建一个）。
-        # 注意：只重建 rpc 与通知泵，不 resume Codex 线程——线程要到下一次 deliver 才恢复。
+        # Transport reconnection invalidates admission; the next new delivery
+        # must validate/resume the exact bound thread under this same lock.
         lock = self.__dict__.get("_start_lock") or self.__dict__.setdefault("_start_lock", threading.Lock())
         with lock:
             if self._rpc is not None and self._rpc.healthy():
@@ -638,59 +710,74 @@ class CodexProtocolDriver(Driver):
         return self._rpc is not None and self._rpc.healthy() and self._initialized
 
     def deliver(self, envelope_id: str, body: str) -> DeliveryReceipt:
-        if not self.health():
-            self.start()
-        self._sync_thread_alias()
-        if not self._thread_id:
-            self._ensure_thread()
-
         with self._delivery_lock:
+            self._sync_thread_alias()
             body_hash = hashlib.sha256(body.encode("utf-8")).hexdigest()
             existing = self._store.get(self._thread_id, envelope_id) or self._store.get_by_envelope(envelope_id)
-            if existing is not None and existing.state != "failed":
-                self._thread_id = existing.thread_id
-                self._session_id = existing.thread_id
+            if existing is not None and (existing.state != "failed" or existing.turn_id
+                    or existing.detail.startswith("session_unavailable:")):
+                # Historical receipt lookup must not rebind the active session.
                 self._remember_delivery(envelope_id, existing.turn_id, existing.state)
                 return DeliveryReceipt(
                     id=envelope_id,
-                    state=existing.state,
+                    state="failed" if existing.state == "unknown" else existing.state,
                     source="protocol",
-                    detail=f"persistent idempotency hit: turn={existing.turn_id}",
+                    detail=existing.detail or f"persistent idempotency hit: turn={existing.turn_id}",
                 )
+            if not self.health():
+                self.start()
+            # Do not replace the connection between validation and turn/start.
+            with self._start_lock:
+                if not self._thread_id:
+                    self._ensure_thread()
+                try:
+                    self._validate_bound_thread()
+                except Exception as exc:
+                    return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
+                idle_error = self._wait_until_idle_for_delivery()
+                if idle_error:
+                    self._envelope_states[envelope_id] = "failed"
+                    return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=idle_error)
+                params = {
+                    "threadId": self._thread_id,
+                    "input": [{"type": "text", "text": body}],
+                    "clientUserMessageId": envelope_id,
+                }
+                # Close the crash/EOF window before dispatch: uncertainty is
+                # durable and cannot turn into a second submission after restart.
+                self._store.upsert(self._thread_id, envelope_id, "", body_hash, "unknown", "model_admission_unknown: dispatch pending")
+                try:
+                    result = self._request("turn/start", params)
+                except Exception as exc:
+                    return self._admission_failure(envelope_id, body_hash, exc, uncertain=not isinstance(exc, JsonRpcError))
+                turn = result.get("turn", {})
+                turn_id = turn.get("id", "")
+                if not isinstance(turn_id, str) or not turn_id:
+                    return self._admission_failure(envelope_id, body_hash, ThreadUnavailable("missing turn id"), uncertain=True)
+                state: ReceiptState = "processing" if turn.get("status") == "inProgress" else "accepted"
+                detail = f"turn={turn_id} status={turn.get('status')}"
+                self._store.upsert(self._thread_id, envelope_id, turn_id, body_hash, state, detail)
+                self._remember_delivery(envelope_id, turn_id, state)
+                self._delivery_timestamps[envelope_id] = time.monotonic()
+                self._active_turn_id = turn_id
+                return DeliveryReceipt(id=envelope_id, state=state, source="protocol", detail=detail)
 
-            idle_error = self._wait_until_idle_for_delivery()
-            if idle_error:
-                self._envelope_states[envelope_id] = "failed"
-                return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=idle_error)
-
-            params = {
-                "threadId": self._thread_id,
-                "input": [{"type": "text", "text": body}],
-                "clientUserMessageId": envelope_id,
-            }
-            try:
-                result = self._request("turn/start", params)
-            except Exception as exc:
-                self._envelope_states[envelope_id] = "failed"
-                return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=str(exc))
-
-            turn = result.get("turn", {})
-            turn_id = turn.get("id", "")
-            state: ReceiptState = "processing" if turn.get("status") == "inProgress" else "accepted"
-            detail = f"turn={turn_id} status={turn.get('status')}"
-            self._store.upsert(self._thread_id, envelope_id, turn_id, body_hash, state, detail)
-            self._remember_delivery(envelope_id, turn_id, state)
-            self._delivery_timestamps[envelope_id] = time.monotonic()
-            self._active_turn_id = turn_id
-            return DeliveryReceipt(id=envelope_id, state=state, source="protocol", detail=detail)
+    def _admission_failure(self, envelope_id: str, body_hash: str, exc: Exception, *, uncertain: bool) -> DeliveryReceipt:
+        self._verified_binding = None
+        prefix = "model_admission_unknown" if uncertain else "session_unavailable"
+        detail = _failure_detail(prefix, exc, self._thread_id)
+        self._store.upsert(self._thread_id, envelope_id, "", body_hash, "unknown" if uncertain else "failed", detail)
+        self._envelope_states[envelope_id] = "failed"
+        return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=detail)
 
     def poll_receipt(self, envelope_id: str) -> DeliveryReceipt:
         self._sync_thread_alias()
-        if not self._thread_id:
-            return DeliveryReceipt(id=envelope_id, state="unknown", source="protocol", detail="no thread")
-
         current_state = self._envelope_states.get(envelope_id)
         record = self._store.get(self._thread_id, envelope_id) or self._store.get_by_envelope(envelope_id)
+        if record is not None and record.state == "unknown" and not record.turn_id:
+            return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=record.detail)
+        if not self._thread_id and record is None:
+            return DeliveryReceipt(id=envelope_id, state="unknown", source="protocol", detail="no thread")
         if record is not None and record.state == "done":
             self._remember_delivery(envelope_id, record.turn_id, record.state)
             return DeliveryReceipt(
@@ -715,7 +802,7 @@ class CodexProtocolDriver(Driver):
             return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=detail)
         if turn_id:
             try:
-                state, detail = self._read_turn_state(turn_id)
+                state, detail = self._read_record_turn_state(turn_id, record)
             except Exception as exc:
                 state, detail = current_state or "unknown", f"turn poll failed: {exc}"
             if (
@@ -723,7 +810,7 @@ class CodexProtocolDriver(Driver):
                 and "interrupted" in detail.lower()
                 and turn_id not in self._interrupt_requested_turns
             ):
-                state, detail = self._confirm_unrequested_interrupt(turn_id)
+                state, detail = self._confirm_unrequested_interrupt(turn_id, record)
             if state == "done":
                 return self._done_receipt_after_event_drain(envelope_id, detail)
             if state == "failed":
@@ -823,9 +910,9 @@ class CodexProtocolDriver(Driver):
     def interrupt_delivery(self, envelope_id: str, turn_id: str) -> bool:
         """Interrupt the durable delivery mapping, never a mutable 'latest turn'."""
         self._sync_thread_alias()
-        if not self._thread_id:
+        record = self._store.get(self._thread_id, envelope_id) or self._store.get_by_envelope(envelope_id)
+        if not self._thread_id and record is None:
             return False
-        record = self._store.get(self._thread_id, envelope_id)
         mapped_turn = self._envelope_to_turn.get(envelope_id) or (record.turn_id if record else "")
         if not mapped_turn or mapped_turn != turn_id:
             self._last_interrupt_evidence = "stale or unverifiable delivery/turn mapping"
@@ -841,7 +928,7 @@ class CodexProtocolDriver(Driver):
 
         deadline = time.monotonic() + 8.0
         while time.monotonic() < deadline:
-            state, detail = self._read_turn_state(turn_id)
+            state, detail = self._read_record_turn_state(turn_id, record)
             if state == "failed" and "interrupt" in detail.lower():
                 self._last_interrupt_evidence = detail
                 return True
@@ -858,8 +945,6 @@ class CodexProtocolDriver(Driver):
     def human_input(self, data: bytes) -> None:
         if not data:
             return
-        if not self._thread_id:
-            self._ensure_thread()
         text = data.decode("utf-8", errors="replace")
         self.deliver(f"human-{int(time.time() * 1000)}", text)
 
@@ -904,6 +989,8 @@ class CodexProtocolDriver(Driver):
         )
         self._rpc.notify("initialized")
         self._initialized = True
+        self._connection_generation += 1
+        self._verified_binding = None
 
     def _ensure_thread(self) -> None:
         params: dict = {"cwd": self._workdir, "ephemeral": self._ephemeral}
@@ -919,10 +1006,35 @@ class CodexProtocolDriver(Driver):
         thread = result.get("thread", {})
         self._thread_id = thread["id"]
         self._session_id = self._thread_id
+        self._verified_binding = self._binding_key()
+
+    def _binding_key(self):
+        return (self._rpc, self._connection_generation, self._thread_id)
+
+    def _validate_bound_thread(self) -> None:
+        if self._verified_binding == self._binding_key():
+            return
+        try:
+            result = self._request("thread/read", {"threadId": self._thread_id, "includeTurns": False}, timeout=15)
+        except JsonRpcError as exc:
+            if exc.classify(self._thread_id) != "thread_not_loaded":
+                raise
+            result = {"thread": {"status": {"type": "notLoaded"}}}
+        thread = result.get("thread", {})
+        if thread.get("status", {}).get("type") == "notLoaded":
+            result = self._request("thread/resume", {"threadId": self._thread_id, "excludeTurns": True}, timeout=15)
+            thread = result.get("thread", {})
+        if (thread.get("id") != self._thread_id
+                or not isinstance(thread.get("cwd"), str)
+                or os.path.realpath(thread["cwd"]) != os.path.realpath(self._workdir)
+                or thread.get("status", {}).get("type") not in ("idle", "active")
+                or thread.get("canAcceptDirectInput") is not True):
+            raise ThreadUnavailable("thread identity, directory or admission status mismatch")
+        self._verified_binding = self._binding_key()
 
     def _request(self, method: str, params: dict | None = None, *, timeout: float = JSONRPC_TIMEOUT) -> dict:
         if self._rpc is None:
-            raise RuntimeError("driver not started")
+            raise ConnectionError("driver not started")
         return self._rpc.request(method, params or {}, timeout=timeout)
 
     def _pump_notifications(self) -> None:
@@ -1230,10 +1342,10 @@ class CodexProtocolDriver(Driver):
                 parts.append(str(item.get("text", "")))
         return "".join(parts)
 
-    def _read_turn_state(self, turn_id: str) -> tuple[ReceiptState, str]:
+    def _read_turn_state(self, turn_id: str, *, thread_id: str | None = None) -> tuple[ReceiptState, str]:
         result = self._request(
             "thread/turns/list",
-            {"threadId": self._thread_id, "limit": 20, "itemsView": "full", "sortDirection": "desc"},
+            {"threadId": self._thread_id if thread_id is None else thread_id, "limit": 20, "itemsView": "full", "sortDirection": "desc"},
             timeout=15,
         )
         for turn in result.get("data", []):
@@ -1305,14 +1417,19 @@ class CodexProtocolDriver(Driver):
                 return f"session busy: active turn {turn_id} still {detail} after {self._stall_timeout:.0f}s"
             time.sleep(0.5)
 
-    def _confirm_unrequested_interrupt(self, turn_id: str) -> tuple[ReceiptState, str]:
+    def _read_record_turn_state(self, turn_id: str, record: _DeliveryRecord | None) -> tuple[ReceiptState, str]:
+        if record is not None and record.thread_id != self._thread_id:
+            return self._read_turn_state(turn_id, thread_id=record.thread_id)
+        return self._read_turn_state(turn_id)
+
+    def _confirm_unrequested_interrupt(self, turn_id: str, record: _DeliveryRecord | None = None) -> tuple[ReceiptState, str]:
         """Avoid treating a transient active-turn snapshot as a terminal interrupt.
 
         Interruptions are only accepted immediately if this driver sent
         `turn/interrupt`. Otherwise, require the same persisted status twice.
         """
         time.sleep(1.0)
-        state, detail = self._read_turn_state(turn_id)
+        state, detail = self._read_record_turn_state(turn_id, record)
         if state == "failed" and "interrupted" in detail.lower():
             return state, detail
         return state, detail
@@ -1340,8 +1457,11 @@ class CodexProtocolDriver(Driver):
     def _mark_delivery(self, envelope_id: str, state: ReceiptState, detail: str) -> None:
         turn_id = self._envelope_to_turn.get(envelope_id, "")
         self._envelope_states[envelope_id] = state
-        if self._thread_id and turn_id:
-            self._store.update_state(self._thread_id, envelope_id, state, detail)
+        record = self._store.get_by_envelope(envelope_id)
+        if turn_id or record is not None:
+            thread_id = record.thread_id if record is not None else self._thread_id
+            if thread_id:
+                self._store.update_state(thread_id, envelope_id, state, detail)
 
     def _sync_thread_alias(self) -> None:
         if self._session_id and self._session_id != self._thread_id:
