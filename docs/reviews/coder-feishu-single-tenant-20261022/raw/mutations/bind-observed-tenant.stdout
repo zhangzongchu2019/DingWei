@@ -1,0 +1,6 @@
+=== RUN   TestSingleTenantStorePersistsObservedTenantAndSender
+    feishu_single_tenant_test.go:43: SINGLE_TENANT_STORE_BINDING_REJECTED task access denied
+--- FAIL: TestSingleTenantStorePersistsObservedTenantAndSender (0.12s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.125s
+FAIL

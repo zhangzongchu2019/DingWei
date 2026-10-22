@@ -1,0 +1,12 @@
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/#00
+2026/10/22 16:54:14 [Info] [client ready]
+2026/10/22 16:54:14 [Info] [client ready]
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/{"native":"tenant-one"}
+2026/10/22 16:54:14 [Info] [client ready]
+2026/10/22 16:54:14 [Info] [client ready]
+--- PASS: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping (0.00s)
+    --- PASS: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/#00 (0.00s)
+    --- PASS: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/{"native":"tenant-one"} (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.005s

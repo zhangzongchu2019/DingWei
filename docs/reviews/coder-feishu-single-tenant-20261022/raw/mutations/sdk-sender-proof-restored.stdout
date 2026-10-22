@@ -1,0 +1,4 @@
+=== RUN   TestSingleTenantSDKPreservesSenderTenantForAudit
+--- PASS: TestSingleTenantSDKPreservesSenderTenantForAudit (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/feishu	0.003s

@@ -1,0 +1,20 @@
+[
+  {
+    "original_name": "go-final.stdout",
+    "stored_path": "raw/gates/go-final.stdout.gz",
+    "raw_bytes": 4452050,
+    "raw_sha256": "6ea7dc5d2680db99eadc2745ec9c62c34c2fc7fb1a407bb6c29470b80d87bac5"
+  },
+  {
+    "original_name": "go-standard.stdout",
+    "stored_path": "raw/gates/go-standard.stdout.gz",
+    "raw_bytes": 4473891,
+    "raw_sha256": "7cee6f4863a83970473b9100eaa1293e6fe731d383399c5857b929835f920ae6"
+  },
+  {
+    "original_name": "go.stdout",
+    "stored_path": "raw/gates/go.stdout.gz",
+    "raw_bytes": 4514931,
+    "raw_sha256": "8937379620457849a22a468067164bda475c1d4edd9cdf8a4b52f4b0fcf26b7b"
+  }
+]

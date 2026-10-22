@@ -1,0 +1,6 @@
+=== RUN   TestSingleTenantAuthorityGates
+=== RUN   TestSingleTenantAuthorityGates/tenant-long
+--- PASS: TestSingleTenantAuthorityGates (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/tenant-long (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.007s

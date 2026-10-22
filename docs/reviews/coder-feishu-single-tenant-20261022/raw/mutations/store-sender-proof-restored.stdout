@@ -1,0 +1,6 @@
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/sender-mismatch
+--- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict (0.14s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/sender-mismatch (0.14s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.141s

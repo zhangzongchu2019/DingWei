@@ -1,0 +1,6 @@
+=== RUN   TestSingleTenantAmbiguousParentFailsClosed
+    feishu_single_tenant_test.go:110: SINGLE_TENANT_AMBIGUOUS_PARENT_ACCEPTED <nil>
+--- FAIL: TestSingleTenantAmbiguousParentFailsClosed (0.12s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.128s
+FAIL

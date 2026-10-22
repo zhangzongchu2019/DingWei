@@ -119,7 +119,15 @@ func (s *SQLite) RecordFeishuClarification(ctx context.Context, expected Questio
 	if err != nil {
 		return out, err
 	}
-	if !reflect.DeepEqual(nowNotice, n) || n.State != "sent" || n.ProviderMessageID != r.ParentID || n.Binding != b || b.Issuer != in.Message.BotChannelID || b.Subject != in.Message.SenderOpenID || b.Tenant != r.Tenant || b.AppID != r.AppID || a.UserID != n.PMUser {
+	expectedBinding := n.Binding
+	if expectedBinding.Tenant == "" {
+		// Only a tenant-less notice may learn tenant from the authenticated event.
+		if r.SenderTenant != r.Tenant {
+			return out, ErrTaskFlowPermission
+		}
+		expectedBinding.Tenant = r.Tenant
+	}
+	if !reflect.DeepEqual(nowNotice, n) || n.State != "sent" || n.ProviderMessageID != r.ParentID || expectedBinding != b || b.Issuer != in.Message.BotChannelID || b.Subject != in.Message.SenderOpenID || b.Tenant != r.Tenant || b.AppID != r.AppID || a.UserID != n.PMUser {
 		return out, ErrTaskFlowPermission
 	}
 	created, e := time.Parse(time.RFC3339Nano, n.CreatedAt)

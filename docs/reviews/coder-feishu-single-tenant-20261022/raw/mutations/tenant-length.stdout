@@ -1,0 +1,8 @@
+=== RUN   TestSingleTenantAuthorityGates
+=== RUN   TestSingleTenantAuthorityGates/tenant-long
+    feishu_single_tenant_test.go:59: SINGLE_TENANT_AUTH_tenant-long: expected=false got={AppID:app Tenant:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx} ready=true
+--- FAIL: TestSingleTenantAuthorityGates (0.00s)
+    --- FAIL: TestSingleTenantAuthorityGates/tenant-long (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.008s
+FAIL

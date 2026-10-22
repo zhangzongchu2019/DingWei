@@ -1,0 +1,6 @@
+=== RUN   TestSingleTenantSDKPreservesSenderTenantForAudit
+    spec_clarification_test.go:69: SINGLE_TENANT_SDK_SENDER_EVIDENCE_LOST <nil>
+--- FAIL: TestSingleTenantSDKPreservesSenderTenantForAudit (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishu	0.003s
+FAIL

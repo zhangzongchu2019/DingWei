@@ -1,0 +1,31 @@
+[
+  {
+    "label": "missing-entry-refs",
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "error": {
+        "code": -32602,
+        "message": "invalid tool arguments"
+      }
+    },
+    "process_rc": 0
+  },
+  {
+    "label": "with-entry-refs",
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "result": {
+        "isError": true,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"error\": \"ipc_unavailable\", \"outcome\": \"unknown\", \"retryable\": false, \"message\": \"Tool failed; do not automatically resend.\"}"
+          }
+        ]
+      }
+    },
+    "process_rc": 0
+  }
+]

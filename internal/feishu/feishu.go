@@ -435,6 +435,7 @@ func (g *LarkGateway) messageFromEvent(ev *larkim.P2MessageReceiveV1) (model.Mes
 		}
 		if ev.Event.Sender != nil {
 			reply.SenderType = value(ev.Event.Sender.SenderType)
+			reply.SenderTenant = value(ev.Event.Sender.TenantKey)
 			if tenant := value(ev.Event.Sender.TenantKey); tenant != "" && reply.Tenant != "" && tenant != reply.Tenant {
 				return model.Message{}, errors.New("feishu reply tenant mismatch")
 			}

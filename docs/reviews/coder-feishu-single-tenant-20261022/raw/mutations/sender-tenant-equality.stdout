@@ -1,0 +1,8 @@
+=== RUN   TestSingleTenantAuthorityGates
+=== RUN   TestSingleTenantAuthorityGates/sender-mismatch
+    feishu_single_tenant_test.go:59: SINGLE_TENANT_AUTH_sender-mismatch: expected=false got={AppID:app Tenant:tenant} ready=true
+--- FAIL: TestSingleTenantAuthorityGates (0.00s)
+    --- FAIL: TestSingleTenantAuthorityGates/sender-mismatch (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.005s
+FAIL

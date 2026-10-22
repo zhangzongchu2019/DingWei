@@ -1,0 +1,6 @@
+=== RUN   TestSingleTenantAuthorityGates
+=== RUN   TestSingleTenantAuthorityGates/pin-mismatch
+--- PASS: TestSingleTenantAuthorityGates (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/pin-mismatch (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.005s

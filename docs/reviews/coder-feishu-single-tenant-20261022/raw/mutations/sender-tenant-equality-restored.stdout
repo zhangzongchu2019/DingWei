@@ -1,0 +1,6 @@
+=== RUN   TestSingleTenantAuthorityGates
+=== RUN   TestSingleTenantAuthorityGates/sender-mismatch
+--- PASS: TestSingleTenantAuthorityGates (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/sender-mismatch (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.008s

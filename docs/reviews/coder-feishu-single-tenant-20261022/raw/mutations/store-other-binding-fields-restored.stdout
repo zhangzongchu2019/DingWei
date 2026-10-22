@@ -1,0 +1,6 @@
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/binding-sha
+--- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict (0.13s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/binding-sha (0.13s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.135s

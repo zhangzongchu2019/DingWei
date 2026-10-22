@@ -1,0 +1,4 @@
+=== RUN   TestSingleTenantAmbiguousParentFailsClosed
+--- PASS: TestSingleTenantAmbiguousParentFailsClosed (0.11s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.119s

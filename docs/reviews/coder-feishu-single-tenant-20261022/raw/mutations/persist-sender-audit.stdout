@@ -1,0 +1,6 @@
+=== RUN   TestSingleTenantStorePersistsObservedTenantAndSender
+    feishu_single_tenant_test.go:38: SINGLE_TENANT_AUDIT_NOT_DURABLE tenant {true cf79cc518f22bab440f4018f1d3e53773d816194e80599e0c6a4e3c896e4f41e event om_reply om_parent om_parent text tenant  app oc_dm user} <nil>
+--- FAIL: TestSingleTenantStorePersistsObservedTenantAndSender (0.12s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.124s
+FAIL

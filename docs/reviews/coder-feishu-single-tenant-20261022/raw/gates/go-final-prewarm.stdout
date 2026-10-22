@@ -1,0 +1,4 @@
+=== RUN   TestGateOnConnectFires
+--- PASS: TestGateOnConnectFires (7.20s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodegate	7.205s
