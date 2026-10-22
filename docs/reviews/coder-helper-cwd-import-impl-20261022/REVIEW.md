@@ -27,4 +27,4 @@
 
 安装／回滚：docs/runbooks/helper-cwd-import-install-rollback.md。钩子单文件新增／删除、root:root 0644、SHA 前后核、容器命名空间和唯一 helper 门均列明；受信 venv／根若无法核实、共享范围不清即 STOP。稳定 guard／MCP 更新须另审完整根事务，不能只做 factory 更新；不能把已含 RETAIN 的根回退成此分支旧基线。活／未知 owner 仍按 pin 合同 manual_required，不能旁路。回滚明确恢复旧 cwd 风险。
 
-集成时 RETAIN 与本件 canonical 清单须取并集，按实际清单同步回显与合同（当前预计62）。本 PASS 提请组长审，不自作独立验收；没有改容器入口、重建／重启容器或接触任何在线席位。
+集成时 RETAIN 与本件 canonical 清单须取并集，按实际清单同步回显与合同（当前预计62）。本件提请组长审，不自作独立验收；没有改容器入口、重建／重启容器或接触任何在线席位。
