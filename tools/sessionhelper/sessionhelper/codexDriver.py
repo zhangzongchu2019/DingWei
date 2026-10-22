@@ -27,6 +27,7 @@ from typing import Iterator, Optional
 from .sqlite_utils import connection as sqlite_connection
 from .config import env_get
 from .daemon_identity import DaemonIdentityError, OwnedDaemonIdentity, verify_peer
+from .private_endpoint import Client as PrivateEndpointClient, Spec as PrivateEndpointSpec, PrivateEndpointError
 from .contract import (
     Capabilities,
     DeliveryReceipt,
@@ -569,6 +570,10 @@ class CodexProtocolDriver(Driver):
         daemon_identity_check: str | None = None,
         daemon_expected_exe: str | None = None,
         owned_daemon_identity: OwnedDaemonIdentity | None = None,
+        endpoint_mode: str | None = None,
+        endpoint_state_dir: str | None = None,
+        endpoint_seat: str | None = None,
+        endpoint_codex_home: str | None = None,
     ):
         self._workdir = workdir
         self._transport_mode = transport_mode
@@ -587,6 +592,9 @@ class CodexProtocolDriver(Driver):
         # This is a trusted launcher API, never a PID guessed from process lists
         # or supplied by an unverified pidfile/environment variable.
         self._owned_daemon_identity = owned_daemon_identity
+        self._endpoint_mode = env_get('SH_CODEX_ENDPOINT_MODE', 'legacy') if endpoint_mode is None else endpoint_mode
+        self._private_endpoint = None
+        self._endpoint_options = (endpoint_state_dir, endpoint_seat, endpoint_codex_home)
         self._model = model
         self._model_provider = model_provider
         self._sandbox = sandbox
@@ -709,11 +717,29 @@ class CodexProtocolDriver(Driver):
             self._verified_binding = None
             self._rpc = None
             try:
-                if self._manage_daemon:
-                    # Current CLI returns no verifiable daemon PID contract.
-                    # Do not confuse its short-lived start command with daemon.
-                    self._start_daemon()
-                socket_path = self._daemon_socket_path()
+                if self._endpoint_mode not in ('legacy', 'private'):
+                    raise PrivateEndpointError('endpoint_config')
+                if self._endpoint_mode == 'private':
+                    if self._daemon_identity_check != 'enforce' or self._manage_daemon is not True:
+                        raise PrivateEndpointError('endpoint_config')
+                    if self._private_endpoint is None:
+                        state, seat, codex_home = self._endpoint_options
+                        spec = PrivateEndpointSpec(
+                            state or env_get('SH_STATE_DIR') or os.path.expanduser('~/.dingwei'),
+                            seat or env_get('SH_SESSION_NAME') or '',
+                            codex_home or env_get('CODEX_HOME') or os.path.expanduser('~/.codex'),
+                            self._workdir, _CODEX_BIN, self._daemon_expected_exe)
+                        self._private_endpoint = PrivateEndpointClient(spec)
+                    live = self._private_endpoint.ensure()
+                    child = live['child']
+                    self._owned_daemon_identity = OwnedDaemonIdentity(child['pid'], child['starttime'])
+                    socket_path = str(self._private_endpoint.spec.root / 'app.sock')
+                else:
+                    if self._manage_daemon:
+                        # Current CLI returns no verifiable daemon PID contract.
+                        # Do not confuse its short-lived start command with daemon.
+                        self._start_daemon()
+                    socket_path = self._daemon_socket_path()
                 self._rpc = UnixWebSocketJsonRpc(socket_path,
                     identity_check=self._daemon_identity_check,
                     expected_exe=self._daemon_expected_exe,
@@ -748,6 +774,8 @@ class CodexProtocolDriver(Driver):
             self._event_thread = threading.Thread(target=self._pump_notifications, daemon=True)
             self._event_thread.start()
             return
+        if self._endpoint_mode != 'legacy':
+            raise PrivateEndpointError('endpoint_config')
         if self._transport_mode == "proxy":
             if self._manage_daemon:
                 self._start_daemon()
@@ -808,7 +836,10 @@ class CodexProtocolDriver(Driver):
             # Do not replace the connection between validation and turn/start.
             with self._start_lock:
                 if not self._thread_id:
-                    self._ensure_thread()
+                    try:
+                        self._ensure_thread()
+                    except PrivateEndpointError as exc:
+                        return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
                 try:
                     self._validate_bound_thread()
                 except Exception as exc:
@@ -832,7 +863,8 @@ class CodexProtocolDriver(Driver):
                     # server did nothing. Only explicit known rejections can be
                     # labelled not admitted; every other dispatch result stays
                     # durably uncertain, without automatic submission again.
-                    rejected = isinstance(exc, JsonRpcError) and exc.classify(self._thread_id) in ("missing_thread", "authentication")
+                    rejected = (isinstance(exc, PrivateEndpointError)
+                                or (isinstance(exc, JsonRpcError) and exc.classify(self._thread_id) in ("missing_thread", "authentication")))
                     return self._admission_failure(envelope_id, body_hash, exc, uncertain=not rejected)
                 turn = result.get("turn", {})
                 turn_id = turn.get("id", "")
@@ -1119,6 +1151,9 @@ class CodexProtocolDriver(Driver):
     def _request(self, method: str, params: dict | None = None, *, timeout: float = JSONRPC_TIMEOUT) -> dict:
         if self._rpc is None:
             raise ConnectionError("driver not started")
+        if self._private_endpoint is not None and method in ('thread/start', 'turn/start'):
+            with self._private_endpoint.admission(self._rpc.peer_identity):
+                return self._rpc.request(method, params or {}, timeout=timeout)
         return self._rpc.request(method, params or {}, timeout=timeout)
 
     def _pump_notifications(self) -> None:

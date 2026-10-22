@@ -86,7 +86,11 @@ class DriverAdapter:
         from .codexDriver import CodexProtocolDriver
         return CodexProtocolDriver(store_path=store, workdir=cwd, model=model or None,
                                    sandbox=env_get("SH_CODEX_SANDBOX", "danger-full-access"),
-                                   approval_policy=env_get("SH_CODEX_APPROVAL", "never"))
+                                   approval_policy=env_get("SH_CODEX_APPROVAL", "never"),
+                                   endpoint_mode=getattr(self.cfg, 'codex_endpoint_mode', 'legacy'),
+                                   endpoint_state_dir=getattr(self.cfg, 'state_dir', None),
+                                   endpoint_seat=getattr(self.cfg, 'session_full_name', '') or getattr(self.cfg, 'session_name', ''),
+                                   endpoint_codex_home=getattr(self.cfg, 'codex_home', None))
 
     def agent_metrics_workdir(self):
         from .agent_disk_metrics import process_workdir
