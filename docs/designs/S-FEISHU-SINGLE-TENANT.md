@@ -2,6 +2,8 @@
 
 基r34 c61866cd。不改变helper、VERSION、运行时锁、三开关默认值或SDK验签入口；只使用已认证原生SDK路径，Fake／Stub／FCS代理不新增权限。
 
+适用范围：tenant 为空的无映射模式仅适用于自建的单企业应用；未来接入 ISV 多企业应用时必须配置 issuer→tenant 映射，不适用本模式。此为部署适用边界，不表示本件新增了应用类型自动识别。
+
 启动时从原生gateway枚举本机当前配置的issuer，以ReplyApplication确认对应AppID。映射存在则仍保存严格Tenant pin，空值／坏配置仍启动失败；未配置该issuer时保存AppID＋空Tenant，表示仅允许由可信原生事件提供tenant。回复处理和延迟对账均重核：原生认证与provenance、当前issuer AppID、非空合法header tenant、与SDK sender tenant完全相等。明确映射绝不被事件值覆盖；已配置路径兼容r34旧持久化metadata没有sender字段的记录。
 
 现有通知也依赖tenant，故必须同步解开前置：未知tenant时仍为已核PM身份／binding SHA／当前应用／政策与修订／条目创建通知快照，Tenant暂为空。回信只匹配该issuer的准确parent，不能凭root猜测；查询可匹配同tenant或尚未绑定tenant的通知，多条候选即冲突拒绝。入帖事务只在原快照Tenant为空时用已核事件tenant补全比较值，其他绑定字段与PG锁、PM本人、政策／修订／有效期、双ID去重、D2唤醒限额全部保留。通知快照不被修改为隐式租户配置，也不凭首次事件为全issuer自动设pin。

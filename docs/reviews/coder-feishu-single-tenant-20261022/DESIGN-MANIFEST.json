@@ -1,0 +1,7 @@
+{
+  "path": "docs/designs/S-FEISHU-SINGLE-TENANT.md",
+  "bytes": 3319,
+  "sha256": "5cc62af056c937b5d8cb1c5cae984eee28234d7eb998725fdffbff8f0650bf05",
+  "product_review_anchor": "38aa55213d65018d2ff25f7e14e1f9e190e14363",
+  "scope": "docs-only single-enterprise application restriction; frozen non-doc source unchanged"
+}
