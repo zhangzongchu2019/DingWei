@@ -1,0 +1,14 @@
+test_capability_defaults_off_and_nonmatching_value_does_not_read_history (__main__.CodexItemBackfill.test_capability_defaults_off_and_nonmatching_value_does_not_read_history) ... ok
+test_delta_identity_and_adapter_backfill_suppression (__main__.CodexItemBackfill.test_delta_identity_and_adapter_backfill_suppression) ... ok
+test_history_failure_is_view_only_and_never_starts_or_acks_a_turn (__main__.CodexItemBackfill.test_history_failure_is_view_only_and_never_starts_or_acks_a_turn) ... [view-backfill] history unavailable thread=thread-bound error=TimeoutError
+ok
+test_incomplete_agent_item_is_not_backfilled (__main__.CodexItemBackfill.test_incomplete_agent_item_is_not_backfilled) ... ok
+test_only_reconnect_marks_backfill_pending (__main__.CodexItemBackfill.test_only_reconnect_marks_backfill_pending) ... ok
+test_reconnect_backfill_subscribes_first_and_replaces_completed_item (__main__.CodexItemBackfill.test_reconnect_backfill_subscribes_first_and_replaces_completed_item) ... ok
+test_wrong_bound_thread_fails_closed_without_history_read (__main__.CodexItemBackfill.test_wrong_bound_thread_fails_closed_without_history_read) ... [view-backfill] history unavailable thread=thread-bound error=RuntimeError
+ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.071s
+
+OK

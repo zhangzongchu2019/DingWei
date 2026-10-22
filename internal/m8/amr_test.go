@@ -201,6 +201,54 @@ func TestAMRWaitsForExistingTurnCompletedAndAggregatesFragments(t *testing.T) {
 	}
 }
 
+func TestAMRBackfillAfterHubRestartIsDroppedBeforeAccumulator(t *testing.T) {
+	// A fresh Hub process has no volatile completed-turn memory. The View-only
+	// marker must still stop both restored text and any accidental terminal event
+	// before AMR can recreate the key and route mentions or reply to the source.
+	p := testAMRProcessor()
+	if len(p.completed) != 0 {
+		t.Fatal("fresh AMR processor unexpectedly has completed-turn memory")
+	}
+	routed := 0
+	p.routeEnvelope = func(context.Context, model.Envelope) error {
+		routed++
+		return nil
+	}
+	p.ingest("key", "source", amrEventJSON(t, amrSessionEvent{
+		Kind: "assistant_text", Text: "old completed body @other", DeliveryID: "old-delivery", TurnID: "old-turn",
+		Data: map[string]any{"backfill": true},
+	}))
+	p.ingest("key", "source", amrEventJSON(t, amrSessionEvent{
+		Kind: "state_change", DeliveryID: "old-delivery", TurnID: "old-turn",
+		Data: map[string]any{"backfill": true, "change": "turn_completed", "status": "completed"},
+	}))
+	if routed != 0 {
+		t.Fatalf("AMR_BACKFILL_RESTART_ROUTED: routed=%d", routed)
+	}
+	if len(p.turns) != 0 || len(p.completed) != 0 {
+		t.Fatalf("AMR_BACKFILL_REOPENED_TURN: turns=%d completed=%d", len(p.turns), len(p.completed))
+	}
+	if len(p.queue) != 0 || len(p.noticeQueue) != 0 {
+		t.Fatalf("AMR_BACKFILL_CREATED_ROUTE_OR_REPLY: routes=%d notices=%d", len(p.queue), len(p.noticeQueue))
+	}
+	if p.stats.eventsObserved != 2 || p.stats.eventsRejected != 2 || p.stats.viewBackfillDropped != 2 {
+		t.Fatalf("AMR_BACKFILL_DROP_NOT_COUNTED: stats=%+v", p.stats)
+	}
+	if p.stats.opened != 0 || p.stats.queued != 0 || p.stats.replyOriginRouted != 0 || p.stats.replyOriginSkipped != 0 || p.stats.replyOriginUnavailable != 0 {
+		t.Fatalf("AMR_BACKFILL_CHANGED_ROUTE_OR_REPLY_STATS: stats=%+v", p.stats)
+	}
+	var heartbeat safeBuffer
+	previous := log.Writer()
+	log.SetOutput(&heartbeat)
+	p.mu.Lock()
+	p.logStatsLocked()
+	p.mu.Unlock()
+	log.SetOutput(previous)
+	if !strings.Contains(heartbeat.String(), "view_backfill_dropped=2") {
+		t.Fatalf("AMR_BACKFILL_DROP_NOT_EXPORTED: heartbeat=%q", heartbeat.String())
+	}
+}
+
 func TestAMRHasNoPerSessionRolloutDimension(t *testing.T) {
 	source, err := os.ReadFile("amr.go")
 	if err != nil {

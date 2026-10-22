@@ -1,0 +1,3 @@
+  · 自起静态服务 http://127.0.0.1:45779/renderer-canary-sse.html(自挑端口 · 退出必收 · 不再依赖 :19312)
+    renderer sha256=a0f50f284a054827…
+renderer regression PASS: waiting admission + continuous SSE scroll ownership + async reflow (1280x900, 390x844)

@@ -1,0 +1,46 @@
+{
+  "date_utc": "2026-10-22",
+  "python": "3.12.3",
+  "runtime_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "helper_full": {
+    "command": "python -m unittest discover -s tools/sessionhelper/tests",
+    "result": "817 tests OK",
+    "elapsed_seconds": 430.384,
+    "rc": 0,
+    "home": "/tmp/tg60-stale-backfill-final-home2",
+    "venv": "/tmp/tg60-stale-backfill-venv",
+    "isolated_env": true
+  },
+  "focused_helper": {
+    "file": "tools/sessionhelper/tests/test_codex_item_backfill.py",
+    "tests": 7,
+    "rc": 0
+  },
+  "canonical": {
+    "python": 57,
+    "shell": 2,
+    "rc": 0
+  },
+  "browser_new": {
+    "passed": 3,
+    "failed": 0,
+    "rc": 0
+  },
+  "browser_existing": {
+    "result": "PASS",
+    "rc": 0
+  },
+  "withdrawals": {
+    "cases": 6,
+    "expected_red": 6,
+    "raw_dir": "withdrawals"
+  },
+  "codex_isolated_probe": {
+    "cli_version": "codex-cli 0.157.1",
+    "initialize": "PASS",
+    "temp_thread_start": "PASS",
+    "bound_thread_read": "PASS",
+    "turns_list": "-32600; empty thread is not materialized until first user message",
+    "turn_start_requests": 0
+  }
+}

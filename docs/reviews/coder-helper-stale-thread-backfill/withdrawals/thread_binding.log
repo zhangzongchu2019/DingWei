@@ -1,0 +1,31 @@
+test_wrong_bound_thread_fails_closed_without_history_read (test_codex_item_backfill.CodexItemBackfill.test_wrong_bound_thread_fails_closed_without_history_read) ... FAIL
+
+======================================================================
+FAIL: test_wrong_bound_thread_fails_closed_without_history_read (test_codex_item_backfill.CodexItemBackfill.test_wrong_bound_thread_fails_closed_without_history_read)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/work/dw-docs/tools/sessionhelper/tests/test_codex_item_backfill.py", line 160, in test_wrong_bound_thread_fails_closed_without_history_read
+    self.assertEqual(self.driver._take_completed_item_backfill(), [])
+AssertionError: Lists differ: [SessionEvent(kind='assistant_text', text=[251 chars]et')] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+SessionEvent(kind='assistant_text', text='must not leak', data={'thread_id': 'thread-bound', 'item_id': 'item-secret', 'backfill': True, 'replay': True, 'raw_method': 'history/completed_item'}, session_id='thread-bound', cursor='turn:turn-secret:item:0001', delivery_id='', turn_id='turn-secret')
+
++ []
+- [SessionEvent(kind='assistant_text',
+-               text='must not leak',
+-               data={'backfill': True,
+-                     'item_id': 'item-secret',
+-                     'raw_method': 'history/completed_item',
+-                     'replay': True,
+-                     'thread_id': 'thread-bound'},
+-               session_id='thread-bound',
+-               cursor='turn:turn-secret:item:0001',
+-               delivery_id='',
+-               turn_id='turn-secret')]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)

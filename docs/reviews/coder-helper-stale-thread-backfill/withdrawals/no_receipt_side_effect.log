@@ -1,0 +1,22 @@
+test_history_failure_is_view_only_and_never_starts_or_acks_a_turn (test_codex_item_backfill.CodexItemBackfill.test_history_failure_is_view_only_and_never_starts_or_acks_a_turn) ... [view-backfill] history unavailable thread=thread-bound error=AssertionError
+FAIL
+
+======================================================================
+FAIL: test_history_failure_is_view_only_and_never_starts_or_acks_a_turn (test_codex_item_backfill.CodexItemBackfill.test_history_failure_is_view_only_and_never_starts_or_acks_a_turn)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/work/dw-docs/tools/sessionhelper/tests/test_codex_item_backfill.py", line 184, in test_history_failure_is_view_only_and_never_starts_or_acks_a_turn
+    self.assertEqual([c[0] for c in self.rpc.calls], ["thread/turns/list"])
+AssertionError: Lists differ: [] != ['thread/turns/list']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'thread/turns/list'
+
+- []
++ ['thread/turns/list']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)

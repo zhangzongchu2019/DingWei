@@ -1,0 +1,2 @@
+command=env -i HOME=/tmp/tg60-stale-backfill-canonical-home-rework PATH=/tmp/tg60-stale-backfill-venv/bin:/usr/bin:/bin bash scripts/run-build-tests.sh
+rc=0
