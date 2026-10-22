@@ -86,7 +86,8 @@ class DriverAdapter:
         from .codexDriver import CodexProtocolDriver
         return CodexProtocolDriver(store_path=store, workdir=cwd, model=model or None,
                                    sandbox=env_get("SH_CODEX_SANDBOX", "danger-full-access"),
-                                   approval_policy=env_get("SH_CODEX_APPROVAL", "never"))
+                                   approval_policy=env_get("SH_CODEX_APPROVAL", "never"),
+                                   view_item_backfill=(env_get("SH_VIEW_ITEM_BACKFILL", "") == "item-backfill/v1"))
 
     def agent_metrics_workdir(self):
         from .agent_disk_metrics import process_workdir
@@ -483,7 +484,8 @@ class DriverAdapter:
                         )
                         self._bridged[id(ev)] = ev  # 有意不发，也算已处理（重放时不再重复记日志）
                         continue
-                    if ev.delivery_id and ev.turn_id:
+                    is_backfill = ev.data.get("backfill") is True
+                    if ev.delivery_id and ev.turn_id and not is_backfill:
                         self._turn_progress[event_key] = time.monotonic()
                     # C5:同一条事件既喂老 view(文本)也喂新 View Service(结构化 session_event)
                     try:
@@ -559,6 +561,10 @@ class DriverAdapter:
 
     def _format_event(self, ev: SessionEvent) -> str:
         if ev.kind == "assistant_text":
+            # A completed item replacement is for the structured View only;
+            # appending it to the legacy terminal stream would duplicate text.
+            if ev.data.get("backfill") is True:
+                return ""
             # 终端要 \r\n（只 \n 会逐行右移成阶梯）
             return ev.text.replace("\r\n", "\n").replace("\n", "\r\n")
         if ev.kind == "tool_call":

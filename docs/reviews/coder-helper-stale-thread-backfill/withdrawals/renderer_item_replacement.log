@@ -1,0 +1,2 @@
+AssertionError [ERR_ASSERTION]: BACKFILL_LEFT_OLD_ITEM_FRAGMENTS
+    at /tmp/tg60-stale-backfill-withdrawals/renderer_item_replacement/stale-thread-backfill-browser-regression.js:48:12

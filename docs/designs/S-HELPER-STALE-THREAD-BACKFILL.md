@@ -16,6 +16,6 @@ Codex 的 `item/agentMessage/delta` 是实时正文来源（`tools/sessionhelper
 
 ## Hub 兼容、验证与撤修格
 
-继续使用旧 Hub 已识别的 `session_event` 信封和 `assistant_text` kind，不增加 envelope 类型；新增字段放在事件 `data` 中。旧 Hub 可转发未知 JSON 字段但旧 View 不具 item-key 替换语义，因此默认关闭补显；仅在部署配置显式声明 View 支持 `item-backfill/v1` 后启用，旧部署保持现有实时路径，不发送可能重复累加的补显事件。不得回退到 `terminal_output`。
+继续使用旧 Hub 已识别的 `session_event` 信封和 `assistant_text` kind，不增加 envelope 类型；新增字段放在事件 `data` 中。旧 Hub 可转发未知 JSON 字段但旧 View 不具 item-key 替换语义，因此默认关闭补显；仅在 helper 部署配置精确设置 `SH_VIEW_ITEM_BACKFILL=item-backfill/v1`（表示对应 View renderer 已支持替换）后启用，未设置或其他值一律关闭，旧部署保持现有实时路径，不发送可能重复累加的补显事件。不得回退到 `terminal_output`。
 
-建议由本组 `codex61sol217.zzc` 在隔离 Codex daemon／临时 thread 上验收，`togpt60lunazzc.zzc` 独立审查；不在真实工作 thread 制造测试输出。实现撤修格：删除 completed-item 查询后缺失正文仍红；删除 item-key 替换后 delta＋全文重复红；删除实时订阅先行／合并屏障后快照竞态漏项红；放宽 exact-thread 校验后错误 thread 内容泄露格红；能力门绕过后旧 View 重复显示格红；补显触发新 turn、改变 delivery receipt/ACK 的断言红。另有正例覆盖 helper 重启、RPC 短断重连、同键重复扫描、历史读取失败、活动 turn 中已完成 item、旧 Hub 能力关闭时无重复补发。
+验收由本席 `togpt60lunazzc.zzc` 在隔离 Codex daemon／临时 thread 上执行，`opus50tc2k.zzc` 独立审查；不在真实工作 thread 制造测试输出。实现撤修格：删除 completed-item 查询后缺失正文仍红；删除 item-key 替换后 delta＋全文重复红；删除实时订阅先行／合并屏障后快照竞态漏项红；放宽 exact-thread 校验后错误 thread 内容泄露格红；能力门绕过后旧 View 重复显示格红；补显触发新 turn、改变 delivery receipt/ACK 的断言红。另有正例覆盖 helper 重启、RPC 短断重连、同键重复扫描、历史读取失败、活动 turn 中已完成 item、旧 Hub 能力关闭时无重复补发。
