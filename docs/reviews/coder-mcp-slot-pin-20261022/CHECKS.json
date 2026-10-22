@@ -1,0 +1,32 @@
+{
+  "source": "3e3019e35d8f0e4dda860eb10be7d1e740a41b79",
+  "tree": "3a6057e047065c252c8f6839a7cf7d24fb7d0fa7",
+  "uid": 1001,
+  "helper_final": {
+    "rc": 0,
+    "tests": 824,
+    "new_entry_tests": 14,
+    "skipped": 0
+  },
+  "canonical": {
+    "rc": 0,
+    "python": 58,
+    "shell": 2
+  },
+  "mutations": {
+    "rc": 0,
+    "mutations": 16,
+    "commands": 34,
+    "all_named_assertion_red": true,
+    "all_restored_green": true
+  },
+  "helper_first_attempt": {
+    "rc": 1,
+    "tests": 469,
+    "import_errors": 27,
+    "preserved": true
+  },
+  "go_vet_full_go_browser": "not rerun; r35 unchanged input proof, canonical includes existing directed Go roundtrips",
+  "online_changes": false,
+  "utc": "2026-10-22T17:53:10.148266+00:00"
+}

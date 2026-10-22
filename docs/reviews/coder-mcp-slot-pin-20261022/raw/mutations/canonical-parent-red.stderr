@@ -1,0 +1,22 @@
+test_path_and_permission_guards (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards) ... FAIL
+
+======================================================================
+FAIL: test_path_and_permission_guards (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 172, in test_path_and_permission_guards
+    self.assertEqual(entry.selected_root(parent_alias / 'state', self.factory), (self.factory, True), 'PARENT_ALIAS_ACCEPTED')
+AssertionError: Tuples differ: (Posi[36 chars]xt43/parent-alias/state/update/slots/aaaaaaaaa[60 chars]alse) != (Posi[36 chars]xt43/mount/factory'), True)
+
+First differing element 0:
+Posix[35 chars]xt43/parent-alias/state/update/slots/aaaaaaaaa[52 chars]aaa')
+Posix[35 chars]xt43/mount/factory')
+
++ (PosixPath('/tmp/mcp-mut-y6l_6e40/tmpqwlbxt43/mount/factory'), True)
+- (PosixPath('/tmp/mcp-mut-y6l_6e40/tmpqwlbxt43/parent-alias/state/update/slots/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
+-  False) : PARENT_ALIAS_ACCEPTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)

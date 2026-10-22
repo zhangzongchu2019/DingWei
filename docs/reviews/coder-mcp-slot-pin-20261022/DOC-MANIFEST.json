@@ -1,0 +1,14 @@
+{
+  "files": [
+    {
+      "path": "docs/designs/S-OAAGENT-MCP-SLOT-PIN.md",
+      "bytes": 5163,
+      "sha256": "08da51ae36eb7778d6f932c43ce2e04a12812bbc2cc0fb1cb6773a0ff77ce05d"
+    },
+    {
+      "path": "docs/runbooks/legacy-mcp-slot-entry.md",
+      "bytes": 5205,
+      "sha256": "6970647eab650d0a94164e80a39589a7b1cf5facd7388e3aa6a2d89d03499534"
+    }
+  ]
+}

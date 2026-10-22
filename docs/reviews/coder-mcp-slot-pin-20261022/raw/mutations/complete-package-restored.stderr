@@ -1,0 +1,6 @@
+test_no_valid_factory_visible_failure (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_no_valid_factory_visible_failure) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.033s
+
+OK

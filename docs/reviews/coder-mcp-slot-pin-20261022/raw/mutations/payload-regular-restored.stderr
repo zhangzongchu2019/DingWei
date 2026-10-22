@@ -1,0 +1,6 @@
+test_slot_symlinks_incomplete_and_special_files_fall_back (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_slot_symlinks_incomplete_and_special_files_fall_back) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+OK

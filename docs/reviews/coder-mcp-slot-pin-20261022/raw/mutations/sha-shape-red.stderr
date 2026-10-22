@@ -1,0 +1,22 @@
+test_invalid_journal_shapes_fall_back (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_invalid_journal_shapes_fall_back) ... FAIL
+
+======================================================================
+FAIL: test_invalid_journal_shapes_fall_back (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_invalid_journal_shapes_fall_back)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 130, in test_invalid_journal_shapes_fall_back
+    self.assertEqual(self.selected(), (self.factory, True), 'INVALID_SHA_ACCEPTED')
+AssertionError: Tuples differ: (Posi[36 chars]8nxp/state/update/slots/gggggggggggggggggggggg[47 chars]alse) != (Posi[36 chars]8nxp/mount/factory'), True)
+
+First differing element 0:
+Posix[35 chars]8nxp/state/update/slots/gggggggggggggggggggggg[39 chars]ggg')
+Posix[35 chars]8nxp/mount/factory')
+
++ (PosixPath('/tmp/mcp-mut-y6l_6e40/tmps__88nxp/mount/factory'), True)
+- (PosixPath('/tmp/mcp-mut-y6l_6e40/tmps__88nxp/state/update/slots/gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg'),
+-  False) : INVALID_SHA_ACCEPTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.023s
+
+FAILED (failures=1)

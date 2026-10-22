@@ -1,0 +1,24 @@
+test_path_and_permission_guards (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards) ... 
+  test_path_and_permission_guards (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards) (path='state') ... FAIL
+
+======================================================================
+FAIL: test_path_and_permission_guards (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards) (path='state')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 165, in test_path_and_permission_guards
+    try: self.assertEqual(self.selected(), (self.factory, True), 'UNSAFE_MODE_ACCEPTED')
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (Posi[36 chars]lrmt/state/update/slots/aaaaaaaaaaaaaaaaaaaaaa[47 chars]alse) != (Posi[36 chars]lrmt/mount/factory'), True)
+
+First differing element 0:
+Posix[35 chars]lrmt/state/update/slots/aaaaaaaaaaaaaaaaaaaaaa[39 chars]aaa')
+Posix[35 chars]lrmt/mount/factory')
+
++ (PosixPath('/tmp/mcp-mut-y6l_6e40/tmpfft1lrmt/mount/factory'), True)
+- (PosixPath('/tmp/mcp-mut-y6l_6e40/tmpfft1lrmt/state/update/slots/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
+-  False) : UNSAFE_MODE_ACCEPTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)

@@ -1,0 +1,21 @@
+test_actual_shim_uses_only_supplied_fake_ipc (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_actual_shim_uses_only_supplied_fake_ipc) ... FAIL
+
+======================================================================
+FAIL: test_actual_shim_uses_only_supplied_fake_ipc (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_actual_shim_uses_only_supplied_fake_ipc)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 275, in test_actual_shim_uses_only_supplied_fake_ipc
+    self.assertEqual(errors, [], 'FAKE_IPC_FAILED')
+AssertionError: Lists differ: ['TimeoutError'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'TimeoutError'
+
+- ['TimeoutError']
++ [] : FAKE_IPC_FAILED
+
+----------------------------------------------------------------------
+Ran 1 test in 3.016s
+
+FAILED (failures=1)

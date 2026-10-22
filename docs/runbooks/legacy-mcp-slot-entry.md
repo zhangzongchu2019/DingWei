@@ -20,4 +20,4 @@
 
 在完整Git历史检出中使用锁定runtime venv；测试从不可变 `b5faf73c8fe4d5c71720daf4eed5b133b8d45dbd` 直接读取旧verifier、guard和旧shim原文字节（无需联网；浅克隆缺对象即失败，须先经Git补齐，不跳过）。夹具包是本地合成旧格式载荷，不是可发布升级包；真实旧verifier验包并拒绝加根mcp_shim的错误布局，真实旧guard驱动pending→confirmed→失败回退→第二次确认。真正旧helper进程和真实席位升级均未执行。
 
-定向：`python -B -m unittest -v tools/sessionhelper/tests/test_legacy_mcp_entry.py`。撤修：以同一锁定解释器运行 `tests/mcp-slot-pin/check.py`，参数为不存在的私有输出目录；它建立隔离detached worktree并保留每格原始stdout/stderr/rc，指定断言红后恢复绿。全套helper须在 `env -i`、临时HOME／短TMPDIR、最小PATH和锁定venv下 `unittest discover -s tools/sessionhelper/tests`；canonical同样隔离运行 `scripts/run-build-tests.sh`（58 Python＋2 shell）。不要在真实HOME跑helper测试；正式门与撤修输出随交件入Git，线上验收另批。
+定向：`python -B -m unittest -v tools/sessionhelper/tests/test_legacy_mcp_entry.py`。撤修：以同一锁定解释器运行 `tests/mcp-slot-pin/check.py`，参数为不存在的私有输出目录；它建立隔离detached worktree并保留每格原始stdout/stderr/rc，指定断言红后恢复绿。全套helper须在 `env -i`、临时HOME／短TMPDIR、最小PATH、源码 `PYTHONPATH=<检出>/tools/sessionhelper:<检出>/tools/sessionhelper/tests` 和锁定venv下 `unittest discover -s tools/sessionhelper/tests`；canonical同样隔离运行 `scripts/run-build-tests.sh`（58 Python＋2 shell）。不要在真实HOME跑helper测试；正式门与撤修输出随交件入Git，线上验收另批。
