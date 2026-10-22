@@ -1,0 +1,19 @@
+{
+  "utc": "2026-10-22T17:23:06.659002+00:00",
+  "source": "7942d5071ba5f4e103250b5b06acf6b992fc862a",
+  "tree": "341ccb13b36e71c70023611e05024d19a8d61fa0",
+  "vet_rc": 0,
+  "canonical_rc": 0,
+  "canonical_python": 56,
+  "canonical_shell": 2,
+  "full_go_final_rc": 0,
+  "go_test_packages": 53,
+  "go_no_test_packages": 13,
+  "conditional_tests_skipped": 39,
+  "mutations": 18,
+  "all_specified_assertion_red_and_restored_green": true,
+  "runtime_source_changed_after_freeze": false,
+  "helper_version_lock_flags_defaults_and_migrations_unchanged": true,
+  "production_access_or_deployment": false,
+  "dataConnector_requests": false
+}

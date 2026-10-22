@@ -1,0 +1,24 @@
+=== RUN   TestSingleTenantStorePersistsObservedTenantAndSender
+--- PASS: TestSingleTenantStorePersistsObservedTenantAndSender (0.10s)
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/issuer
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/subject
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/app
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/binding-sha
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/sender-empty
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/sender-mismatch
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/tenant-binding
+--- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict (0.69s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/issuer (0.10s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/subject (0.09s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/app (0.10s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/binding-sha (0.09s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/sender-empty (0.11s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/sender-mismatch (0.10s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/tenant-binding (0.09s)
+=== RUN   TestSingleTenantAmbiguousParentFailsClosed
+    feishu_single_tenant_test.go:104: constraint failed: NOT NULL constraint failed: pilot_question_outbox.policy_version (1299)
+--- FAIL: TestSingleTenantAmbiguousParentFailsClosed (0.09s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.891s
+FAIL

@@ -1,0 +1,17 @@
+[
+  {
+    "path": "tools/sessionhelper/sessionhelper/mcp_shim.py",
+    "unchanged_from_r34": true,
+    "sha256": "bc44ce09d9dbfb1ba8497ff7268424c9d1d45986728ec114fae4af6dbb1b738c"
+  },
+  {
+    "path": "tests/pilot-feedback/local_roundtrip.py",
+    "unchanged_from_r34": true,
+    "sha256": "e33c253a4f40d80930643e1dfd276a22eca8757677c5754c01fc343d1d90caa0"
+  },
+  {
+    "path": "internal/m8/pilot_question_roundtrip_test.go",
+    "unchanged_from_r34": true,
+    "sha256": "cc2587f7345de07f62236c411c2ffffed900d7a802b531a8a461b2220450c89c"
+  }
+]

@@ -1,0 +1,2 @@
+{"jsonrpc": "2.0", "id": 1, "result": {"protocolVersion": "2024-11-05", "capabilities": {"tools": {}}, "serverInfo": {"name": "dingwei-mcp-shim", "version": "0.2.3.8"}}}
+{"jsonrpc": "2.0", "id": 2, "result": {"isError": true, "content": [{"type": "text", "text": "{\"error\": \"ipc_unavailable\", \"outcome\": \"unknown\", \"retryable\": false, \"message\": \"Tool failed; do not automatically resend.\"}"}]}}

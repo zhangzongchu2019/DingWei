@@ -1,0 +1,290 @@
+=== RUN   TestClarificationSDKPreservesAuthenticatedReplyMetadata
+--- PASS: TestClarificationSDKPreservesAuthenticatedReplyMetadata (0.00s)
+=== RUN   TestClarificationSDKRejectsApplicationAndTenantDrift
+--- PASS: TestClarificationSDKRejectsApplicationAndTenantDrift (0.00s)
+=== RUN   TestClarificationWebhookNeverClaimsReplyAuthority
+--- PASS: TestClarificationWebhookNeverClaimsReplyAuthority (0.00s)
+=== RUN   TestSingleTenantSDKPreservesSenderTenantForAudit
+--- PASS: TestSingleTenantSDKPreservesSenderTenantForAudit (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/feishu	0.003s
+=== RUN   TestSingleTenantStorePersistsObservedTenantAndSender
+--- PASS: TestSingleTenantStorePersistsObservedTenantAndSender (0.10s)
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/issuer
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/subject
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/app
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/binding-sha
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/sender-empty
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/sender-mismatch
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/tenant-binding
+--- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict (0.67s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/issuer (0.10s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/subject (0.10s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/app (0.09s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/binding-sha (0.10s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/sender-empty (0.09s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/sender-mismatch (0.09s)
+    --- PASS: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/tenant-binding (0.09s)
+=== RUN   TestSingleTenantAmbiguousParentFailsClosed
+--- PASS: TestSingleTenantAmbiguousParentFailsClosed (0.09s)
+=== RUN   TestClarificationNoticeFinishIsAtomicWithProviderParent
+--- PASS: TestClarificationNoticeFinishIsAtomicWithProviderParent (0.11s)
+=== RUN   TestClarificationInboundPostRollbackAndUncertainReceiptNoRetry
+--- PASS: TestClarificationInboundPostRollbackAndUncertainReceiptNoRetry (0.10s)
+=== RUN   TestClarificationFreshGenerationPinsCurrentDeputyPolicy
+--- PASS: TestClarificationFreshGenerationPinsCurrentDeputyPolicy (0.09s)
+=== RUN   TestClarificationFeishuOriginRequiresPMAtAppendBoundary
+=== RUN   TestClarificationFeishuOriginRequiresPMAtAppendBoundary/deputy
+=== RUN   TestClarificationFeishuOriginRequiresPMAtAppendBoundary/technical_reader
+=== RUN   TestClarificationFeishuOriginRequiresPMAtAppendBoundary/pm
+--- PASS: TestClarificationFeishuOriginRequiresPMAtAppendBoundary (0.27s)
+    --- PASS: TestClarificationFeishuOriginRequiresPMAtAppendBoundary/deputy (0.10s)
+    --- PASS: TestClarificationFeishuOriginRequiresPMAtAppendBoundary/technical_reader (0.09s)
+    --- PASS: TestClarificationFeishuOriginRequiresPMAtAppendBoundary/pm (0.09s)
+=== RUN   TestClarificationDirectInboundGuardFields
+=== RUN   TestClarificationDirectInboundGuardFields/parent
+=== RUN   TestClarificationDirectInboundGuardFields/binding
+=== RUN   TestClarificationDirectInboundGuardFields/generation
+=== RUN   TestClarificationDirectInboundGuardFields/policy
+=== RUN   TestClarificationDirectInboundGuardFields/expiry
+=== RUN   TestClarificationDirectInboundGuardFields/disabled
+--- PASS: TestClarificationDirectInboundGuardFields (0.56s)
+    --- PASS: TestClarificationDirectInboundGuardFields/parent (0.09s)
+    --- PASS: TestClarificationDirectInboundGuardFields/binding (0.09s)
+    --- PASS: TestClarificationDirectInboundGuardFields/generation (0.09s)
+    --- PASS: TestClarificationDirectInboundGuardFields/policy (0.09s)
+    --- PASS: TestClarificationDirectInboundGuardFields/expiry (0.10s)
+    --- PASS: TestClarificationDirectInboundGuardFields/disabled (0.09s)
+=== RUN   TestClarificationDurableInboundDoubleIDConflict
+=== RUN   TestClarificationDurableInboundDoubleIDConflict/message
+=== RUN   TestClarificationDurableInboundDoubleIDConflict/event
+--- PASS: TestClarificationDurableInboundDoubleIDConflict (0.17s)
+    --- PASS: TestClarificationDurableInboundDoubleIDConflict/message (0.09s)
+    --- PASS: TestClarificationDurableInboundDoubleIDConflict/event (0.09s)
+=== RUN   TestClarificationPublicRevisionDoesNotInheritOldThread
+--- PASS: TestClarificationPublicRevisionDoesNotInheritOldThread (0.09s)
+=== RUN   TestClarificationCorrectionNotifiesCurrentReadersWithoutReopening
+--- PASS: TestClarificationCorrectionNotifiesCurrentReadersWithoutReopening (0.10s)
+=== RUN   TestClarificationPrivateImageActorQuestionAndImmutableLink
+--- PASS: TestClarificationPrivateImageActorQuestionAndImmutableLink (0.11s)
+=== RUN   TestClarificationLoginContinuationCookieExpiryAndSingleUse
+--- PASS: TestClarificationLoginContinuationCookieExpiryAndSingleUse (0.09s)
+=== RUN   TestClarificationContextProjectionChangesCursorWithoutReopeningTask
+--- PASS: TestClarificationContextProjectionChangesCursorWithoutReopeningTask (0.09s)
+=== RUN   TestClarificationAppendReplayAndEqualTextSupplement
+--- PASS: TestClarificationAppendReplayAndEqualTextSupplement (0.09s)
+=== RUN   TestClarificationAuthorityCurrentPolicyAndDeputy
+--- PASS: TestClarificationAuthorityCurrentPolicyAndDeputy (0.10s)
+=== RUN   TestClarificationTechnicalDoesNotBecomeAuthorityOrCompleteTask
+--- PASS: TestClarificationTechnicalDoesNotBecomeAuthorityOrCompleteTask (0.09s)
+=== RUN   TestClarificationFinalCheckAndAuditFailuresRollBackAll
+=== RUN   TestClarificationFinalCheckAndAuditFailuresRollBackAll/identity
+=== RUN   TestClarificationFinalCheckAndAuditFailuresRollBackAll/audit
+=== RUN   TestClarificationFinalCheckAndAuditFailuresRollBackAll/blocker
+--- PASS: TestClarificationFinalCheckAndAuditFailuresRollBackAll (0.30s)
+    --- PASS: TestClarificationFinalCheckAndAuditFailuresRollBackAll/identity (0.12s)
+    --- PASS: TestClarificationFinalCheckAndAuditFailuresRollBackAll/audit (0.09s)
+    --- PASS: TestClarificationFinalCheckAndAuditFailuresRollBackAll/blocker (0.09s)
+=== RUN   TestClarificationAnchorCorrectionScopeAndWriteFreeze
+--- PASS: TestClarificationAnchorCorrectionScopeAndWriteFreeze (0.09s)
+=== RUN   TestClarificationReplyBudgetAndReplayOrder
+--- PASS: TestClarificationReplyBudgetAndReplayOrder (0.10s)
+=== RUN   TestClarificationLegacySnapshotAnchorsAndHistory
+--- PASS: TestClarificationLegacySnapshotAnchorsAndHistory (0.09s)
+=== RUN   TestClarificationLegacyAnswerPathsCannotBypassEnrollment
+--- PASS: TestClarificationLegacyAnswerPathsCannotBypassEnrollment (0.09s)
+=== RUN   TestClarificationContinuedResolvedDiscussionDoesNotReopen
+--- PASS: TestClarificationContinuedResolvedDiscussionDoesNotReopen (0.13s)
+=== RUN   TestClarificationReadPaginationCurrentGrantAndPrivateHistory
+--- PASS: TestClarificationReadPaginationCurrentGrantAndPrivateHistory (0.09s)
+=== RUN   TestClarificationPolicyFailureAndConcurrentRevocation
+--- PASS: TestClarificationPolicyFailureAndConcurrentRevocation (0.09s)
+=== RUN   TestClarificationReplyEvidencePersistsQueueRestart
+=== RUN   TestClarificationReplyEvidencePersistsQueueRestart/single
+=== RUN   TestClarificationReplyEvidencePersistsQueueRestart/batch
+--- PASS: TestClarificationReplyEvidencePersistsQueueRestart (0.19s)
+    --- PASS: TestClarificationReplyEvidencePersistsQueueRestart/single (0.09s)
+    --- PASS: TestClarificationReplyEvidencePersistsQueueRestart/batch (0.09s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	4.105s
+=== RUN   TestSingleTenantAuthorityGates
+=== RUN   TestSingleTenantAuthorityGates/valid
+=== RUN   TestSingleTenantAuthorityGates/tenant-empty
+=== RUN   TestSingleTenantAuthorityGates/tenant-whitespace
+=== RUN   TestSingleTenantAuthorityGates/tenant-long
+=== RUN   TestSingleTenantAuthorityGates/tenant-control
+=== RUN   TestSingleTenantAuthorityGates/sender-empty
+=== RUN   TestSingleTenantAuthorityGates/sender-mismatch
+=== RUN   TestSingleTenantAuthorityGates/app-mismatch
+=== RUN   TestSingleTenantAuthorityGates/app-empty
+=== RUN   TestSingleTenantAuthorityGates/issuer-mismatch
+=== RUN   TestSingleTenantAuthorityGates/unverified
+=== RUN   TestSingleTenantAuthorityGates/provenance
+=== RUN   TestSingleTenantAuthorityGates/pin-match
+=== RUN   TestSingleTenantAuthorityGates/pin-mismatch
+=== RUN   TestSingleTenantAuthorityGates/pin-legacy
+--- PASS: TestSingleTenantAuthorityGates (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/valid (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/tenant-empty (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/tenant-whitespace (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/tenant-long (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/tenant-control (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/sender-empty (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/sender-mismatch (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/app-mismatch (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/app-empty (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/issuer-mismatch (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/unverified (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/provenance (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/pin-match (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/pin-mismatch (0.00s)
+    --- PASS: TestSingleTenantAuthorityGates/pin-legacy (0.00s)
+=== RUN   TestSingleTenantUnmappedNoticeReplyAuditAndReplay
+2026/10/22 09:52:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:52:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSingleTenantUnmappedNoticeReplyAuditAndReplay (0.11s)
+=== RUN   TestSingleTenantMappingAddedAfterUnboundNoticeIsStrict
+2026/10/22 09:52:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:52:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSingleTenantMappingAddedAfterUnboundNoticeIsStrict (0.10s)
+=== RUN   TestSingleTenantEarlyReplyRechecksCurrentAppAndPin
+=== RUN   TestSingleTenantEarlyReplyRechecksCurrentAppAndPin/valid
+2026/10/22 09:52:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:52:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestSingleTenantEarlyReplyRechecksCurrentAppAndPin/app-changed
+2026/10/22 09:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestSingleTenantEarlyReplyRechecksCurrentAppAndPin/pin-added
+2026/10/22 09:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSingleTenantEarlyReplyRechecksCurrentAppAndPin (0.29s)
+    --- PASS: TestSingleTenantEarlyReplyRechecksCurrentAppAndPin/valid (0.10s)
+    --- PASS: TestSingleTenantEarlyReplyRechecksCurrentAppAndPin/app-changed (0.10s)
+    --- PASS: TestSingleTenantEarlyReplyRechecksCurrentAppAndPin/pin-added (0.09s)
+=== RUN   TestClarificationImageHTTPPrivateServiceAndCurrentQuestionACL
+2026/10/22 09:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationImageHTTPPrivateServiceAndCurrentQuestionACL (0.11s)
+=== RUN   TestClarificationLoginReturnBoundedAndNotAnAuthenticationGrant
+2026/10/22 09:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationLoginReturnBoundedAndNotAnAuthenticationGrant (0.09s)
+=== RUN   TestClarificationPGRevocationAndBindingWriteSerialization
+2026/10/22 09:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationPGRevocationAndBindingWriteSerialization (2.59s)
+=== RUN   TestClarificationFeishuPlainReplySupplementsAndReplay
+2026/10/22 09:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationFeishuPlainReplySupplementsAndReplay (0.11s)
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/unverified
+2026/10/22 09:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/tenant
+2026/10/22 09:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/app
+2026/10/22 09:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/sender
+2026/10/22 09:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/bot
+2026/10/22 09:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/group
+2026/10/22 09:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/image
+2026/10/22 09:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/root-only
+2026/10/22 09:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/wrong-parent
+2026/10/22 09:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/expired
+2026/10/22 09:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/disabled
+2026/10/22 09:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/policy-changed
+2026/10/22 09:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsForgedMetadataAndWrongParent/inactive
+2026/10/22 09:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent (1.22s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/unverified (0.10s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/tenant (0.09s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/app (0.09s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/sender (0.09s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/bot (0.09s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/group (0.09s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/image (0.09s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/root-only (0.09s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/wrong-parent (0.09s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/expired (0.09s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/disabled (0.09s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/policy-changed (0.09s)
+    --- PASS: TestClarificationFeishuRejectsForgedMetadataAndWrongParent/inactive (0.10s)
+=== RUN   TestClarificationFeishuEarlyReplyReconcilesExactParent
+2026/10/22 09:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationFeishuEarlyReplyReconcilesExactParent (0.10s)
+=== RUN   TestClarificationFeishuOptionalAnchorsAndCorrection
+2026/10/22 09:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationFeishuOptionalAnchorsAndCorrection (0.10s)
+=== RUN   TestClarificationFeishuRejectsBoundNonPMMembers
+=== RUN   TestClarificationFeishuRejectsBoundNonPMMembers/deputy
+2026/10/22 09:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestClarificationFeishuRejectsBoundNonPMMembers/ordinary_member
+2026/10/22 09:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationFeishuRejectsBoundNonPMMembers (0.20s)
+    --- PASS: TestClarificationFeishuRejectsBoundNonPMMembers/deputy (0.10s)
+    --- PASS: TestClarificationFeishuRejectsBoundNonPMMembers/ordinary_member (0.10s)
+=== RUN   TestClarificationHTTPHumanAgentAuthorityAndReplay
+2026/10/22 09:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationHTTPHumanAgentAuthorityAndReplay (0.10s)
+=== RUN   TestClarificationHTTPDeputyRevocationAndDisabledLegacyBoundary
+2026/10/22 09:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationHTTPDeputyRevocationAndDisabledLegacyBoundary (0.10s)
+=== RUN   TestClarificationHTTPMemberRevocationAndInactiveHuman
+2026/10/22 09:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationHTTPMemberRevocationAndInactiveHuman (0.09s)
+=== RUN   TestClarificationHTTPStrictBodyAndSelectors
+2026/10/22 09:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationHTTPStrictBodyAndSelectors (0.09s)
+=== RUN   TestClarificationPublicSpecProjectionDoesNotExposeLegacyQuestionHistory
+2026/10/22 09:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 09:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestClarificationPublicSpecProjectionDoesNotExposeLegacyQuestionHistory (0.09s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	5.499s
+=== RUN   TestClarificationStartupFlagsIndependent
+--- PASS: TestClarificationStartupFlagsIndependent (0.00s)
+=== RUN   TestClarificationReplyRequiresPinnedTenantAndNativeCapability
+--- PASS: TestClarificationReplyRequiresPinnedTenantAndNativeCapability (0.00s)
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/#00
+2026/10/22 09:52:59 [Info] [client ready]
+2026/10/22 09:52:59 [Info] [client ready]
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/{"native":"tenant-one"}
+2026/10/22 09:52:59 [Info] [client ready]
+2026/10/22 09:52:59 [Info] [client ready]
+--- PASS: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping (0.00s)
+    --- PASS: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/#00 (0.00s)
+    --- PASS: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/{"native":"tenant-one"} (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.008s

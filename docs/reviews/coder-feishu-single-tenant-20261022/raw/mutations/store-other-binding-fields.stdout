@@ -1,0 +1,8 @@
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict
+=== RUN   TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/binding-sha
+    feishu_single_tenant_test.go:91: SINGLE_TENANT_STORE_BAD_BINDING_ACCEPTED_binding-sha <nil>
+--- FAIL: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict (0.12s)
+    --- FAIL: TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict/binding-sha (0.12s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.126s
+FAIL

@@ -1,0 +1,24 @@
+{
+  "source": "7942d5071ba5f4e103250b5b06acf6b992fc862a",
+  "start": "2026-10-22T16:54:40.663637+00:00",
+  "end": "2026-10-22T17:09:00.720667+00:00",
+  "rc": 1,
+  "env": {
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "HOME": "/tmp/fst-go-h-xmldzggv",
+    "TMPDIR": "/tmp/fst-t-5g07rz51",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "LANG": "C.UTF-8",
+    "GOPATH": "/home/dev/go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod"
+  },
+  "go_version": "go version go1.22.2 linux/amd64",
+  "uid": 1001
+}

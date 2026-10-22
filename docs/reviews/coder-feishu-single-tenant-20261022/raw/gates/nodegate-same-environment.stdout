@@ -1,0 +1,14 @@
+=== RUN   TestGateAuthCommandCapacityLifecycle
+--- PASS: TestGateAuthCommandCapacityLifecycle (4.21s)
+=== RUN   TestGateOnConnectFires
+--- PASS: TestGateOnConnectFires (4.23s)
+=== RUN   TestOnConnectCallbackCanSendAndReceive
+--- PASS: TestOnConnectCallbackCanSendAndReceive (5.88s)
+=== RUN   TestSendWithTimeoutHonorsCallerDeadline
+--- PASS: TestSendWithTimeoutHonorsCallerDeadline (7.58s)
+=== RUN   TestZZ_ReconcileOnRealGateReachesDone
+    reconcile_gate_test.go:52: ZZ node received destroy_seat
+    reconcile_gate_test.go:66: ZZ reconcile finished after 101.993875ms
+--- PASS: TestZZ_ReconcileOnRealGateReachesDone (5.61s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodegate	27.516s

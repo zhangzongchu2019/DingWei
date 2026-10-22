@@ -1,0 +1,24 @@
+{
+  "source": "7942d5071ba5f4e103250b5b06acf6b992fc862a",
+  "start": "2026-10-22T17:03:33.133626+00:00",
+  "end": "2026-10-22T17:19:06.271097+00:00",
+  "rc": 1,
+  "env": {
+    "PATH": "/usr/bin:/bin",
+    "HOME": "/tmp/fst-std-h-rnuaccud",
+    "TMPDIR": "/tmp/fst-t-t5e1gazw",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "LANG": "C.UTF-8",
+    "GOPATH": "/home/dev/go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod"
+  },
+  "extra_cross_runtime_flag": "unset (standard full Go profile; real cross-runtime canonical gate recorded separately)",
+  "go_version": "go version go1.22.2 linux/amd64",
+  "uid": 1001
+}

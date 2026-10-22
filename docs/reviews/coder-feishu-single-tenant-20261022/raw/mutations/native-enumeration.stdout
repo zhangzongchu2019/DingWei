@@ -1,0 +1,15 @@
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/#00
+2026/10/22 16:54:13 [Info] [client ready]
+2026/10/22 16:54:13 [Info] [client ready]
+    spec_clarification_test.go:80: SINGLE_TENANT_NATIVE_STARTUP_UNAVAILABLE map[]
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/{"native":"tenant-one"}
+2026/10/22 16:54:13 [Info] [client ready]
+2026/10/22 16:54:13 [Info] [client ready]
+    spec_clarification_test.go:84: SINGLE_TENANT_PER_ISSUER_FALLBACK_LOST
+--- FAIL: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping (0.00s)
+    --- FAIL: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/#00 (0.00s)
+    --- FAIL: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/{"native":"tenant-one"} (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.005s
+FAIL
