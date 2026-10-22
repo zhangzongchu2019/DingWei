@@ -70,6 +70,7 @@ class CodexStaleThread(unittest.TestCase):
 
     def test_loaded_thread_validated_before_admission(self):
         self.assertEqual(self.driver.deliver('one', 'input').state, 'processing')
+        self.assertIn('thread/read', self.methods(), 'THREAD_ADMISSION_UNVALIDATED')
         self.assertLess(self.methods().index('thread/read'), self.methods().index('turn/start'), 'THREAD_ADMISSION_UNVALIDATED')
         self.assertNotIn('thread/resume', self.methods())
         self.assertNotIn('thread/start', self.methods())
@@ -175,6 +176,7 @@ class CodexStaleThread(unittest.TestCase):
                 self.assertEqual(record.state, 'unknown', 'UNCERTAIN_ADMISSION_NOT_DURABLE')
                 before = len([m for m in self.methods() if m == 'turn/start'])
                 self.driver.deliver(eid, 'input')
+                self.assertEqual(len([m for m in self.methods() if m == 'turn/start']), before, 'UNCERTAIN_ADMISSION_REPLAYED')
                 restarted = CodexProtocolDriver(store_path=str(Path(self.tmp.name) / 'ledger.db'))
                 restarted._request = mock.Mock(side_effect=AssertionError('must not contact server'))
                 restarted.start = mock.Mock(side_effect=AssertionError('must not create connection'))
@@ -184,15 +186,16 @@ class CodexStaleThread(unittest.TestCase):
 
     def test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain(self):
         original = self.rpc.request
+        observed = []
         def request(method, params, timeout=0):
             if method == 'turn/start':
                 record = self.driver._store.get_by_envelope('one')
-                self.assertIsNotNone(record, 'DISPATCH_NOT_DURABLE')
-                self.assertEqual(record.state, 'unknown', 'DISPATCH_NOT_DURABLE')
+                observed.append(record.state if record else None)
                 return {'turn': {}}
             return original(method, params, timeout)
         self.rpc.request = request
         receipt = self.driver.deliver('one', 'input')
+        self.assertEqual(observed, ['unknown'], 'DISPATCH_NOT_DURABLE')
         self.assertTrue(receipt.detail.startswith('model_admission_unknown:'))
         self.assertEqual(self.driver._store.get_by_envelope('one').state, 'unknown')
 
@@ -206,7 +209,7 @@ class CodexStaleThread(unittest.TestCase):
                 self.driver.deliver(eid, 'input')
                 self.assertEqual((self.driver._thread_id, self.driver._session_id), ('bound-thread', 'bound-thread'), 'HISTORICAL_RECEIPT_REBOUND_ACTIVE')
                 self.assertEqual(self.driver._verified_binding, binding)
-                self.assertEqual(self.methods(), [])
+                self.assertEqual(self.methods(), [], 'HISTORICAL_ACCEPTED_REPLAYED')
         self.driver._thread_id = self.driver._session_id = ''
         self.driver.start = mock.Mock(side_effect=AssertionError('must not start'))
         self.driver.deliver('old-done', 'input')
@@ -294,7 +297,7 @@ class CodexStaleThread(unittest.TestCase):
         while not adapter._event_q.empty():
             events.append(json.loads(adapter._event_q.get_nowait()))
         failed = [x for x in events if x.get('data', {}).get('reason') == reason]
-        self.assertEqual(len(failed), 1, 'SESSION_UNAVAILABLE_EVENT_NOT_VISIBLE')
+        self.assertEqual(len(failed), 1, 'ADMISSION_FAILURE_EVENT_NOT_VISIBLE')
         self.assertEqual(failed[0]['delivery_id'], command.delivery_id)
         self.assertEqual(failed[0]['data']['outcome'], 'failed')
         self.assertEqual(failed[0]['kind'], 'state_change')
@@ -308,6 +311,32 @@ class CodexStaleThread(unittest.TestCase):
 
     def test_adapter_uncertain_admission_is_visible_and_not_a_success(self):
         self._adapter_failure('model_admission_unknown')
+
+
+class StructuredAdmissionOutput(unittest.IsolatedAsyncioTestCase):
+    async def test_session_event_loop_forwards_failure_with_delivery_correlation(self):
+        from sessionhelper.app import SessionHelper
+        class EndProbe(Exception):
+            pass
+        payload = json.dumps({'kind': 'state_change', 'delivery_id': 'dw-local',
+                              'data': {'change': 'turn_completed', 'outcome': 'failed', 'reason': 'session_unavailable'}})
+        helper = object.__new__(SessionHelper)
+        helper.adapter = types.SimpleNamespace(next_session_event=lambda timeout: payload)
+        helper.cfg = types.SimpleNamespace(session_name='local-fixture', key_id='local-fixture')
+        helper.book = types.SimpleNamespace(self_addr='local-fixture')
+        sent = []
+        class WS:
+            async def send(self, frame):
+                sent.append(json.loads(frame))
+                raise EndProbe()
+        with mock.patch.dict(os.environ, {'SH_EMIT_SESSION_EVENT': '1'}):
+            with self.assertRaises(EndProbe):
+                await helper.session_event_loop(WS())
+        self.assertEqual(len(sent), 1, 'SESSION_EVENT_FAILURE_NOT_FORWARDED')
+        self.assertEqual(sent[0]['meta']['type'], 'session_event')
+        self.assertEqual(json.loads(sent[0]['body'])['delivery_id'], 'dw-local')
+        self.assertEqual(json.loads(sent[0]['body'])['data']['reason'], 'session_unavailable')
+        self.assertNotEqual(sent[0]['meta']['type'], 'delivery_ack')
 
 
 class RPCErrorShapes(unittest.TestCase):
@@ -328,8 +357,12 @@ class RPCErrorShapes(unittest.TestCase):
                 else:
                     rpc._recv_text = lambda: None
                     rpc._send_text = lambda text: rpc._read_loop()
-                with self.assertRaises(ConnectionError, msg='EOF_MISCLASSIFIED_AS_TIMEOUT'):
+                try:
                     rpc.request('turn/start', {}, timeout=0.05)
+                except Exception as error:
+                    self.assertIsInstance(error, ConnectionError, 'EOF_MISCLASSIFIED_AS_TIMEOUT')
+                else:
+                    self.fail('EOF_MISCLASSIFIED_AS_TIMEOUT: no exception')
                 self.assertEqual(rpc._pending, {})
                 def fail(*args):
                     raise BrokenPipeError('send failed')
@@ -350,11 +383,15 @@ class RPCErrorShapes(unittest.TestCase):
                     rpc._pending[msg['id']].put({'id': msg['id'], 'error': {'code': -32600, 'message': 'thread not found: bound-thread', 'data': 'PRIVATE_TEST_PAYLOAD'}})
                 rpc._send_text = send
                 rpc._proc = types.SimpleNamespace(poll=lambda: None, stdin=types.SimpleNamespace(write=send, flush=lambda: None))
-                with self.assertRaises(JsonRpcError) as caught:
+                caught = None
+                try:
                     rpc.request('turn/start', {'threadId': 'bound-thread'})
-                self.assertEqual(caught.exception.classify('bound-thread'), 'missing_thread', 'RPC_ERROR_SHAPE_DISCARDED')
-                self.assertNotIn('PRIVATE', str(caught.exception))
-                self.assertNotIn('bound-thread', str(caught.exception))
+                except Exception as error:
+                    caught = error
+                self.assertIsInstance(caught, JsonRpcError, 'RPC_ERROR_SHAPE_DISCARDED')
+                self.assertEqual(caught.classify('bound-thread'), 'missing_thread', 'RPC_ERROR_SHAPE_DISCARDED')
+                self.assertNotIn('PRIVATE', str(caught))
+                self.assertNotIn('bound-thread', str(caught), 'RAW_RPC_ERROR_EXPOSED')
 
 
 if __name__ == '__main__':
