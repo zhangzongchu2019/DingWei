@@ -1,0 +1,20 @@
+{
+  "source": "b58f4e990237e6a53c26ef80518d035afd2bc458",
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-json",
+    "-count=1",
+    "-timeout=30m"
+  ],
+  "env_i": true,
+  "isolated_HOME": true,
+  "strict_pg": true,
+  "skip_ok": false,
+  "dsn_set": false,
+  "DW_DESKTOP_INTEGRATION_PYTHON": "locked venv",
+  "start": "2026-10-22T18:27:52.202752+00:00",
+  "end": "2026-10-22T18:41:42.152250+00:00",
+  "rc": 0
+}

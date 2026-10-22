@@ -1,0 +1,15 @@
+{
+  "source": "b58f4e990237e6a53c26ef80518d035afd2bc458",
+  "command": [
+    "sh",
+    "scripts/run-build-tests.sh"
+  ],
+  "env_i": true,
+  "isolated_HOME": true,
+  "locked_venv": "/tmp/coder-0232-locked-venv",
+  "strict_pg": true,
+  "skip_ok": false,
+  "start": "2026-10-22T18:27:41.093027+00:00",
+  "end": "2026-10-22T18:30:25.183358+00:00",
+  "rc": 0
+}

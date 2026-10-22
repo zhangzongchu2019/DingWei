@@ -1,0 +1,6 @@
+test_unverifiable_peer_and_unsupported_platform (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_unverifiable_peer_and_unsupported_platform) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

@@ -1,0 +1,6 @@
+test_owned_pid_starttime_and_types_are_strict (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_owned_pid_starttime_and_types_are_strict) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

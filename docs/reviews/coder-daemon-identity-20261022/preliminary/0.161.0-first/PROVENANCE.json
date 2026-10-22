@@ -1,0 +1,9 @@
+{
+  "version": "0.161.0",
+  "binary_sha256": "9a820c17865fa825d04db416818679a9d63bd72e50835c396f496e5684626c9c",
+  "binary_bytes": 292309256,
+  "prior_provenance": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/PROVENANCE.json",
+  "not_from_PATH": true,
+  "source": "241fbda0ad45b3ed47ff516b8f2c2720412ada89",
+  "start": "2026-10-22T18:16:10.352101+00:00"
+}
