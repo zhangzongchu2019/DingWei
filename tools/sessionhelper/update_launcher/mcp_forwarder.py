@@ -62,10 +62,10 @@ def main() -> None:
     selected = selected_root(mount)
     # A fresh interpreter removes the already-imported stable sessionhelper
     # package. Explicit path insertion also works when cwd is the mounted root.
-    trampoline = ('import runpy,sys;sys.path.insert(0,sys.argv.pop(1));'
+    trampoline = ('import sys;sys.path.insert(0,sys.argv.pop(1));import runpy;'
                   'runpy.run_module("sessionhelper.mcp_shim",run_name="__main__",alter_sys=True)')
     env = dict(os.environ, PYTHONPATH=str(selected), PYTHONDONTWRITEBYTECODE='1')
-    os.execve(sys.executable, [sys.executable, '-B', '-c', trampoline,
+    os.execve(sys.executable, [sys.executable, '-I', '-B', '-c', trampoline,
                              str(selected), *sys.argv[1:]], env)
 
 

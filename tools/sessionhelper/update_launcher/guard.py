@@ -179,8 +179,8 @@ def run(factory, root, args=()):
     env['SH_UPDATE_LAUNCHER'] = str(Path(__file__).resolve())
     # Preserve business cwd (notably default driver/A6 workdir), while putting
     # the selected package before the read-only launcher even when cwd is its root.
-    trampoline = 'import runpy,sys;sys.path.insert(0,sys.argv.pop(1));runpy.run_module("sessionhelper",run_name="__main__",alter_sys=True)'
-    child = subprocess.Popen([sys.executable, '-c', trampoline, str(path), *args], env=env, start_new_session=True)
+    trampoline = 'import sys;sys.path.insert(0,sys.argv.pop(1));import runpy;runpy.run_module("sessionhelper",run_name="__main__",alter_sys=True)'
+    child = subprocess.Popen([sys.executable, '-I', '-B', '-c', trampoline, str(path), *args], env=env, start_new_session=True)
     old = {}
     stopping = None
     stop_deadline = None

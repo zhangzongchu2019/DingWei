@@ -103,11 +103,11 @@ def main() -> int:
         sys.stderr.write('mcp_slot_pin: factory_fallback\n')
     # A fresh interpreter avoids any imported stable/factory package shadowing
     # the confirmed slot. No callback or catch around the exec can replay calls.
-    trampoline = ('import runpy,sys;sys.path.insert(0,sys.argv.pop(1));'
+    trampoline = ('import sys;sys.path.insert(0,sys.argv.pop(1));import runpy;'
                   'runpy.run_module("sessionhelper.mcp_shim",run_name="__main__",alter_sys=True)')
     env = dict(os.environ, PYTHONPATH=str(selected), PYTHONDONTWRITEBYTECODE='1')
     try:
-        os.execve(sys.executable, [sys.executable, '-B', '-c', trampoline, str(selected)], env)
+        os.execve(sys.executable, [sys.executable, '-I', '-B', '-c', trampoline, str(selected)], env)
     except OSError:
         sys.stderr.write('mcp_slot_pin: exec_failed\n')
         return 78
