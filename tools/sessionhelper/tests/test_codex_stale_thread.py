@@ -184,6 +184,15 @@ class CodexStaleThread(unittest.TestCase):
                 self.assertEqual(restarted._thread_id, '')
                 self.assertEqual(len([m for m in self.methods() if m == 'turn/start']), before, 'UNCERTAIN_ADMISSION_REPLAYED')
 
+    def test_unclassified_turn_error_is_uncertain_and_never_replayed(self):
+        self.rpc.errors['turn/start'] = JsonRpcError('turn/start', {'code': -32603, 'message': 'internal failure after unknown work'})
+        receipt = self.driver.deliver('one', 'input')
+        self.assertTrue(receipt.detail.startswith('model_admission_unknown:'), 'RPC_ERROR_AMBIGUITY_LOST')
+        self.assertIn('error_class=rpc_error', receipt.detail)
+        self.assertEqual(self.driver._store.get_by_envelope('one').state, 'unknown', 'RPC_ERROR_AMBIGUITY_LOST')
+        self.driver.deliver('one', 'input')
+        self.assertEqual(self.methods().count('turn/start'), 1, 'RPC_ERROR_AMBIGUITY_REPLAYED')
+
     def test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain(self):
         original = self.rpc.request
         observed = []

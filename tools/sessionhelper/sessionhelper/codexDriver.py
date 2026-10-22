@@ -749,7 +749,12 @@ class CodexProtocolDriver(Driver):
                 try:
                     result = self._request("turn/start", params)
                 except Exception as exc:
-                    return self._admission_failure(envelope_id, body_hash, exc, uncertain=not isinstance(exc, JsonRpcError))
+                    # An arbitrary/internal RPC error is not evidence that the
+                    # server did nothing. Only explicit known rejections can be
+                    # labelled not admitted; every other dispatch result stays
+                    # durably uncertain, without automatic submission again.
+                    rejected = isinstance(exc, JsonRpcError) and exc.classify(self._thread_id) in ("missing_thread", "authentication")
+                    return self._admission_failure(envelope_id, body_hash, exc, uncertain=not rejected)
                 turn = result.get("turn", {})
                 turn_id = turn.get("id", "")
                 if not isinstance(turn_id, str) or not turn_id:

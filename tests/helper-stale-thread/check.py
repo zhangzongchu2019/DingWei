@@ -31,6 +31,7 @@ MUTATIONS = [
     ('no-predispatch-journal', DRIVER, '                self._store.upsert(self._thread_id, envelope_id, "", body_hash, "unknown", "model_admission_unknown: dispatch pending")\n', '', 'CodexStaleThread.test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain', 'DISPATCH_NOT_DURABLE'),
     ('uncertain-replayed', DRIVER, 'existing.state != "failed" or existing.turn_id', 'existing.state not in ("failed", "unknown") or existing.turn_id', 'CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart', 'UNCERTAIN_ADMISSION_REPLAYED'),
     ('accepted-failed-replayed', DRIVER, 'existing.state != "failed" or existing.turn_id', 'existing.state != "failed"', 'CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread', 'HISTORICAL_ACCEPTED_REPLAYED'),
+    ('unknown-rpc-marked-rejected', DRIVER, 'uncertain=not rejected)', 'uncertain=not isinstance(exc, JsonRpcError))', 'CodexStaleThread.test_unclassified_turn_error_is_uncertain_and_never_replayed', 'RPC_ERROR_AMBIGUITY_LOST'),
     ('rpc-shape-discarded', DRIVER, '            raise JsonRpcError(method, response["error"])\n', '            raise RuntimeError("withdrawn structured error")\n', 'RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string', 'RPC_ERROR_SHAPE_DISCARDED'),
     ('missing-classification-discarded', DRIVER, '                return "missing_thread"\n', '                return "rpc_error"\n', 'RPCErrorShapes.test_missing_thread_requires_exact_method_code_and_id', 'MISSING_ERROR_NOT_RECOGNIZED'),
     ('eof-not-signalled', DRIVER, '            for pending in list(self._pending.values()):\n                try:\n                    pending.put_nowait({"_transport_closed": True})\n                except queue.Full:\n                    pass\n', '', 'RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned', 'EOF_MISCLASSIFIED_AS_TIMEOUT'),
@@ -113,7 +114,7 @@ def main(output):
     assert run('final-unit', '')['rc'] == 0
     assert run('final-browser', 'browser')['rc'] == 0
     assert not subprocess.check_output(['git', 'diff', '--name-only'], cwd=wt, text=True).strip()
-    result = {'source': source, 'regression_tests': 22, 'browser_checks': 15, 'mutations': len(MUTATIONS), 'all_specified_assertion_red': True, 'all_restored_green': True, 'scope': 'LOCAL_INERT_PASS_NOT_SEAT_ACCEPTANCE'}
+    result = {'source': source, 'regression_tests': 23, 'browser_checks': 15, 'mutations': len(MUTATIONS), 'all_specified_assertion_red': True, 'all_restored_green': True, 'scope': 'LOCAL_INERT_PASS_NOT_SEAT_ACCEPTANCE'}
     (out / 'RESULT.json').write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps(result))
 
