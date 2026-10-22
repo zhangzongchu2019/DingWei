@@ -14,6 +14,7 @@ PYTHON_TESTS='
 tools/sessionhelper/test_supervise_connection_loops.py
 tools/sessionhelper/tests/test_update_release_core.py
 tools/sessionhelper/tests/test_cwd_import.py
+tools/sessionhelper/tests/test_boot_origin.py
 tools/sessionhelper/tests/test_legacy_mcp_entry.py
 tools/sessionhelper/tests/test_sqlite_connection_lifetime.py
 tools/sessionhelper/tests/test_codex_stale_thread.py
@@ -88,4 +89,4 @@ printf '%s\n' "$SHELL_TESTS" | while IFS= read -r test_file; do
   echo "TEST shell $test_file"
   bash "$test_file"
 done
-echo 'BUILD_TESTS_OK python=60 shell=2'
+echo 'BUILD_TESTS_OK python=61 shell=2'
