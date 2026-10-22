@@ -31,14 +31,16 @@ async def main():
             return data
         try:
             await asyncio.wait_for(helper.ipc_bound.wait(),5)
-            out=await call('dw_task_question_create',{'task_id':fixture['task_id'],'request_id':'mcp-create','expected_version':fixture['task_version'],'kind':'technical','title':'待核技术事实','observed_fact':'原任务技术缺口','question':'请提供核验材料','expected_answer':'材料与证据'})
+            out=await call('dw_task_question_create',{'task_id':fixture['task_id'],'request_id':'mcp-create','expected_version':fixture['task_version'],'kind':'technical','title':'待核技术事实','observed_fact':'原任务技术缺口','question':'请提供核验材料','expected_answer':'材料与证据','entry_refs':['A1']})
             q=out['question'];qid=q['id'];assert q['state']=='needs_owner','QUESTION_REAL_CREATE_LOST'
             listing=await call('dw_task_question_list',{'task_id':fixture['task_id']})
             assert len(listing['questions'])==1 and listing['questions'][0]['id']==qid,'QUESTION_REAL_LIST_LOST'
             detail=await call('dw_task_question_list',{'question_id':qid})
             assert detail['answers']==[],'QUESTION_REAL_DETAIL_LOST'
-            out=await call('dw_task_question_input',{'question_id':qid,'request_id':'mcp-input','expected_version':q['version'],'event_id':'material','body':'真实技术材料，仅供重核','evidence_ref':'local:immutable-fixture'})
-            assert out['question']['state']=='needs_owner' and not out['question'].get('first_substantive_answer_at'),'QUESTION_TECHNICAL_INPUT_IMPERSONATED_PM'
+            out=await call('dw_spec_clarifications',{'action':'technical','question_id':qid,'request_id':'mcp-input','entry_refs':['A1'],'body':'真实技术材料，仅供重核','evidence_ref':'local:immutable-fixture'})
+            assert out['post']['kind']=='technical' and out['post']['entry_refs']==['A1'],'QUESTION_TECHNICAL_CLARIFICATION_NOT_RECORDED'
+            detail=await call('dw_task_question_list',{'question_id':qid})
+            assert detail['question']['state']=='answered_pending_recheck' and detail['question']['recheck_state']=='ready_to_recheck' and detail['question']['task_status']=='planned','QUESTION_TECHNICAL_INPUT_DID_NOT_WAIT_FOR_RECHECK'
             print(json.dumps({'result':'LOCAL_QUESTION_ROUNDTRIP_PASS','transport':'real MCP stdio -> actual helper IPC -> Go HTTP','mode':cfg.mode,'operations':4,'business_execution':False}))
         finally:
             ipc.cancel()
