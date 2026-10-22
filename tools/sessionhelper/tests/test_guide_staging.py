@@ -562,9 +562,10 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
         from sessionhelper.codexDriver import CodexProtocolDriver
 
         with tempfile.TemporaryDirectory() as tmp:
-            driver = CodexProtocolDriver(store_path=str(Path(tmp) / "codex.sqlite3"))
+            driver = CodexProtocolDriver(workdir=tmp, store_path=str(Path(tmp) / "codex.sqlite3"))
             driver._thread_id = "thread-guide"
             calls = []
+            probes = []
             driver.health = lambda: True
             driver.start = lambda: None
             driver._sync_thread_alias = lambda: None
@@ -573,7 +574,11 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
             driver.poll_receipt = lambda delivery_id: DeliveryReceipt(
                 delivery_id, "done", "fixture", f"turn={driver._envelope_to_turn[delivery_id]}"
             )
-            def request(method, params):
+            def request(method, params, timeout=0):
+                if method == "thread/read":
+                    probes.append((method, params))
+                    return {"thread": {"id": "thread-guide", "cwd": tmp,
+                                       "status": {"type": "idle"}, "canAcceptDirectInput": True}}
                 calls.append((method, params))
                 return {"turn": {"id": f"turn-{len(calls)}", "status": "inProgress"}}
             driver._request = request
@@ -583,6 +588,7 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
             self.assertEqual(calls, [])
             asyncio.run(helper.process_inbound_message(FakeWS(), business_env("FIRST")))
             self.wait_for(lambda: len(calls) == 1)
+            self.assertEqual(len(probes), 1, "bound thread must be validated before the first business turn")
             self.assertEqual(calls[0][0], "turn/start")
             self.assertIn("GUIDE", calls[0][1]["input"][0]["text"])
             asyncio.run(helper.process_inbound_message(FakeWS(), business_env("SECOND", eid="business-2")))

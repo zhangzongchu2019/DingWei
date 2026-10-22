@@ -48,6 +48,10 @@ import json,sys,unittest
 expected=sys.argv[2]
 class Result(unittest.TextTestResult):
     hits=[]
+    def addSubTest(self,test,subtest,error):
+        super().addSubTest(test,subtest,error)
+        if error and issubclass(error[0],AssertionError) and expected and expected in str(error[1]):
+            self.hits.append(subtest.id())
     def addFailure(self,test,error):
         super().addFailure(test,error)
         if expected and expected in str(error[1]):
