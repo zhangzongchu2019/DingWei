@@ -499,11 +499,12 @@ class Owner:
             if self.child.poll() is not None:
                 fail('child')
             if exists(self.fd, APP):
-                # Codex may set socket mode itself, independently of umask.
-                # Behind the private root, prove our held child on this FD
-                # before changing only that newly created socket's mode.
+                # A new local endpoint is not trusted merely because our
+                # process was started. Prove the same FD and stable inode.
+                # Native alias support is pending an explicit design ruling.
                 info = os.stat(APP, dir_fd=self.fd, follow_symlinks=False)
-                if not stat.S_ISSOCK(info.st_mode) or info.st_uid != os.getuid():
+                if (not stat.S_ISSOCK(info.st_mode) or info.st_uid != os.getuid()
+                        or stat.S_IMODE(info.st_mode) != 0o600):
                     fail('permissions')
                 candidate_identity = info.st_dev, info.st_ino
                 probe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -515,7 +516,6 @@ class Owner:
                     current = os.stat(APP, dir_fd=self.fd, follow_symlinks=False)
                     if (current.st_dev, current.st_ino) != candidate_identity:
                         fail('path')
-                    os.chmod(APP, 0o600, dir_fd=self.fd, follow_symlinks=False)
                     self.app_identity = socket_identity(self.fd, APP)
                 finally:
                     probe.close()
