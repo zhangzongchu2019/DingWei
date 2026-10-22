@@ -1,0 +1,16 @@
+test_stopped_pin_collision_requires_explicit_reclaim_first (test_pce_retention.RetainTests.test_stopped_pin_collision_requires_explicit_reclaim_first) ... FAIL
+
+======================================================================
+FAIL: test_stopped_pin_collision_requires_explicit_reclaim_first (test_pce_retention.RetainTests.test_stopped_pin_collision_requires_explicit_reclaim_first)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-8onfwffx/helper/tests/test_pce_retention.py", line 251, in test_stopped_pin_collision_requires_explicit_reclaim_first
+    self.denied('STOPPED_PIN_REPLACED_WITHOUT_RECLAIM',
+  File "/tmp/dwpe-check-8onfwffx/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : STOPPED_PIN_REPLACED_WITHOUT_RECLAIM
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+FAILED (failures=1)

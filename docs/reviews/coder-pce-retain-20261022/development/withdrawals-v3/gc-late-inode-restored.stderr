@@ -1,0 +1,6 @@
+test_last_moment_inode_swap_before_rmtree_is_refused (test_pce_retention.RetainTests.test_last_moment_inode_swap_before_rmtree_is_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+OK

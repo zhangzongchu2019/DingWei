@@ -1,0 +1,6 @@
+test_readlink_once_and_connects_only_calculated_target (test_private_endpoint.NativeAlias.test_readlink_once_and_connects_only_calculated_target) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.103s
+
+OK

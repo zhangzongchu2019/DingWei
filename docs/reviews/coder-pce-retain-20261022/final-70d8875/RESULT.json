@@ -1,0 +1,224 @@
+{
+  "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+  "rows": [
+    {
+      "label": "pg-prewarm",
+      "command": [
+        "go",
+        "test",
+        "./internal/store/pgtest",
+        "-run",
+        "^TestPool_RoundTrip$",
+        "-count=1",
+        "-timeout=5m"
+      ],
+      "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+      "start": "2026-10-22T22:34:42.769258+00:00",
+      "end": "2026-10-22T22:34:47.040086+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-ymjtz71v/h0",
+        "TMPDIR": "/tmp/gs0kutjoc",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h0/.cache"
+      }
+    },
+    {
+      "label": "canonical",
+      "command": [
+        "sh",
+        "scripts/run-build-tests.sh"
+      ],
+      "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+      "start": "2026-10-22T22:34:47.040392+00:00",
+      "end": "2026-10-22T22:37:02.269078+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-ymjtz71v/h3",
+        "TMPDIR": "/tmp/dwpe-g-ymjtz71v/t/3",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h3/.cache"
+      }
+    },
+    {
+      "label": "vet",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+      "start": "2026-10-22T22:37:02.269659+00:00",
+      "end": "2026-10-22T22:37:04.301554+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-ymjtz71v/h1",
+        "TMPDIR": "/tmp/dwpe-g-ymjtz71v/t/1",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h1/.cache"
+      }
+    },
+    {
+      "label": "withdrawals",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "tests/private-control-endpoint/check.py",
+        "/data/ai-dev-data/pce-updater-retain-impl/docs/reviews/coder-pce-retain-20261022/final-70d8875/withdrawals"
+      ],
+      "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+      "start": "2026-10-22T22:37:04.301984+00:00",
+      "end": "2026-10-22T22:37:43.997054+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-ymjtz71v/h4",
+        "TMPDIR": "/tmp/dwpe-g-ymjtz71v/t/4",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h4/.cache"
+      }
+    },
+    {
+      "label": "pce-withdrawals",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "tests/pce-retention/check.py",
+        "/data/ai-dev-data/pce-updater-retain-impl/docs/reviews/coder-pce-retain-20261022/final-70d8875/pce-withdrawals"
+      ],
+      "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+      "start": "2026-10-22T22:37:43.997438+00:00",
+      "end": "2026-10-22T22:39:34.550439+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-ymjtz71v/h5",
+        "TMPDIR": "/tmp/dwpe-g-ymjtz71v/t/5",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h5/.cache"
+      }
+    },
+    {
+      "label": "native-0161",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "tests/private-control-endpoint/real.py",
+        "0.161.0",
+        "/data/ai-dev-data/pce-updater-retain-impl/docs/reviews/coder-pce-retain-20261022/final-70d8875/native-0.161.0"
+      ],
+      "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+      "start": "2026-10-22T22:39:34.550730+00:00",
+      "end": "2026-10-22T22:39:37.920027+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-ymjtz71v/h6",
+        "TMPDIR": "/tmp/dwpe-g-ymjtz71v/t/6",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h6/.cache"
+      }
+    },
+    {
+      "label": "native-0163",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "tests/private-control-endpoint/real.py",
+        "0.163.0",
+        "/data/ai-dev-data/pce-updater-retain-impl/docs/reviews/coder-pce-retain-20261022/final-70d8875/native-0.163.0"
+      ],
+      "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+      "start": "2026-10-22T22:39:37.920339+00:00",
+      "end": "2026-10-22T22:39:41.289431+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-ymjtz71v/h7",
+        "TMPDIR": "/tmp/dwpe-g-ymjtz71v/t/7",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h7/.cache"
+      }
+    },
+    {
+      "label": "helper",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-v"
+      ],
+      "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+      "start": "2026-10-22T22:37:02.270115+00:00",
+      "end": "2026-10-22T22:44:14.610220+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-ymjtz71v/h2",
+        "TMPDIR": "/tmp/dwpe-g-ymjtz71v/t/2",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h2/.cache"
+      }
+    },
+    {
+      "label": "go-full",
+      "command": [
+        "go",
+        "test",
+        "./...",
+        "-json",
+        "-count=1",
+        "-timeout=30m"
+      ],
+      "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+      "start": "2026-10-22T22:37:02.269874+00:00",
+      "end": "2026-10-22T22:48:30.716229+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-ymjtz71v/h0",
+        "TMPDIR": "/tmp/gs0kutjoc",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h0/.cache"
+      }
+    },
+    {
+      "label": "browser-admission",
+      "command": [
+        "node",
+        "view-service/renderer-model-admission-regression.js"
+      ],
+      "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+      "start": "2026-10-22T22:48:30.716716+00:00",
+      "end": "2026-10-22T22:48:31.782283+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-ymjtz71v/h8",
+        "TMPDIR": "/tmp/dwpe-g-ymjtz71v/t/8",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h8/.cache"
+      }
+    },
+    {
+      "label": "browser-mention",
+      "command": [
+        "node",
+        "view-service/renderer-mention-reply-regression.js"
+      ],
+      "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+      "start": "2026-10-22T22:48:31.782541+00:00",
+      "end": "2026-10-22T22:48:33.599672+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-ymjtz71v/h9",
+        "TMPDIR": "/tmp/dwpe-g-ymjtz71v/t/9",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h9/.cache"
+      }
+    },
+    {
+      "label": "browser-backfill",
+      "command": [
+        "node",
+        "view-service/stale-thread-backfill-browser-regression.js"
+      ],
+      "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+      "start": "2026-10-22T22:48:33.599924+00:00",
+      "end": "2026-10-22T22:48:34.916066+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-ymjtz71v/h10",
+        "TMPDIR": "/tmp/dwpe-g-ymjtz71v/t/10",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h10/.cache"
+      }
+    }
+  ],
+  "passed": true
+}

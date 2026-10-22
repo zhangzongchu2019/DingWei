@@ -1,0 +1,14 @@
+test_pce_pinned_collision_and_incompatible_candidate_refused (test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused) ... FAIL
+
+======================================================================
+FAIL: test_pce_pinned_collision_and_incompatible_candidate_refused (test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-8onfwffx/helper/tests/test_self_update_offer.py", line 107, in test_pce_pinned_collision_and_incompatible_candidate_refused
+    self.assertEqual(slot.stat().st_ino, before, 'PINNED_COLLISION_RMTREE')
+AssertionError: 11291025 != 11290809 : PINNED_COLLISION_RMTREE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.616s
+
+FAILED (failures=1)

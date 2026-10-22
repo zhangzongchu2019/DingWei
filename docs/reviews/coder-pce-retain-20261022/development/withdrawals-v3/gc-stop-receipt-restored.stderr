@@ -1,0 +1,6 @@
+test_resource_lock_and_receipt_are_independent_reclaim_gates (test_pce_retention.RetainTests.test_resource_lock_and_receipt_are_independent_reclaim_gates) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.012s
+
+OK

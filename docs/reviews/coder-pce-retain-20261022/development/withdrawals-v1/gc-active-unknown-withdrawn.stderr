@@ -1,0 +1,16 @@
+test_owner_death_free_lock_does_not_authorize_reclaim (test_pce_retention.RetainTests.test_owner_death_free_lock_does_not_authorize_reclaim) ... FAIL
+
+======================================================================
+FAIL: test_owner_death_free_lock_does_not_authorize_reclaim (test_pce_retention.RetainTests.test_owner_death_free_lock_does_not_authorize_reclaim)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-rsmhwv26/helper/tests/test_pce_retention.py", line 89, in test_owner_death_free_lock_does_not_authorize_reclaim
+    self.denied('LOST_OWNER_RECLAIMED',lambda:self.ret.reclaim(pin['id'],self.state),'retain_stop')
+  File "/tmp/dwpe-check-rsmhwv26/helper/tests/test_pce_retention.py", line 46, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : LOST_OWNER_RECLAIMED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+FAILED (failures=1)

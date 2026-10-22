@@ -1,0 +1,14 @@
+test_owner_launch_uses_pinned_package_before_business_cwd (test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd) ... FAIL
+
+======================================================================
+FAIL: test_owner_launch_uses_pinned_package_before_business_cwd (test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-ymjtz71v/t/5/dwpe-check-py5_pmxr/helper/tests/test_private_endpoint.py", line 692, in test_owner_launch_uses_pinned_package_before_business_cwd
+    self.assertIsNotNone(current,'OWNER_PINNED_PACKAGE_NOT_STARTED '+str(reason))
+AssertionError: unexpectedly None : OWNER_PINNED_PACKAGE_NOT_STARTED endpoint_owner
+
+----------------------------------------------------------------------
+Ran 1 test in 12.033s
+
+FAILED (failures=1)

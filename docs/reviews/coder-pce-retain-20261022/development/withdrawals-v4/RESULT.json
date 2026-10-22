@@ -1,0 +1,1163 @@
+{
+  "source_head": "b75eb8d369517ad8ff28eeb7b2cc87b5dae7b6a2",
+  "scope": "ISOLATED_RETENTION_AND_OWNER_FIXTURES_NOT_PRODUCTION",
+  "mutations": 35,
+  "commands": 72,
+  "rows": [
+    {
+      "label": "baseline",
+      "case": "",
+      "start": "2026-10-22T22:29:39.001618+00:00",
+      "end": "2026-10-22T22:29:59.547449+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention",
+        "test_private_endpoint",
+        "test_self_update_offer"
+      ]
+    },
+    {
+      "label": "durable-pin-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen",
+      "start": "2026-10-22T22:29:59.547703+00:00",
+      "end": "2026-10-22T22:29:59.661639+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen"
+      ],
+      "required_marker": "PIN_NOT_DURABLE_BEFORE_POPEN",
+      "designated_red": true
+    },
+    {
+      "label": "durable-pin-restored",
+      "case": "test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen",
+      "start": "2026-10-22T22:29:59.661813+00:00",
+      "end": "2026-10-22T22:29:59.825814+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen"
+      ]
+    },
+    {
+      "label": "resource-shared-lock-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen",
+      "start": "2026-10-22T22:29:59.826072+00:00",
+      "end": "2026-10-22T22:29:59.990086+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen"
+      ],
+      "required_marker": "REGISTERED_RESOURCE_NOT_LOCKED",
+      "designated_red": true
+    },
+    {
+      "label": "resource-shared-lock-restored",
+      "case": "test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen",
+      "start": "2026-10-22T22:29:59.990277+00:00",
+      "end": "2026-10-22T22:30:00.154337+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen"
+      ]
+    },
+    {
+      "label": "inherited-fd-identity-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_missing_or_wrong_inherited_descriptor_refused",
+      "start": "2026-10-22T22:30:00.154552+00:00",
+      "end": "2026-10-22T22:30:00.318572+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_missing_or_wrong_inherited_descriptor_refused"
+      ],
+      "required_marker": "FOREIGN_PIN_FD_ACCEPTED",
+      "designated_red": true
+    },
+    {
+      "label": "inherited-fd-identity-restored",
+      "case": "test_pce_retention.RetainTests.test_missing_or_wrong_inherited_descriptor_refused",
+      "start": "2026-10-22T22:30:00.318741+00:00",
+      "end": "2026-10-22T22:30:00.482789+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_missing_or_wrong_inherited_descriptor_refused"
+      ]
+    },
+    {
+      "label": "endpoint-pin-binding-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_missing_or_wrong_inherited_descriptor_refused",
+      "start": "2026-10-22T22:30:00.483062+00:00",
+      "end": "2026-10-22T22:30:00.647143+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_missing_or_wrong_inherited_descriptor_refused"
+      ],
+      "required_marker": "WRONG_ENDPOINT_PIN_ACCEPTED",
+      "designated_red": true
+    },
+    {
+      "label": "endpoint-pin-binding-restored",
+      "case": "test_pce_retention.RetainTests.test_missing_or_wrong_inherited_descriptor_refused",
+      "start": "2026-10-22T22:30:00.647342+00:00",
+      "end": "2026-10-22T22:30:00.811388+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_missing_or_wrong_inherited_descriptor_refused"
+      ]
+    },
+    {
+      "label": "popen-pass-fds-withdrawn",
+      "case": "test_private_endpoint.RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop",
+      "start": "2026-10-22T22:30:00.811805+00:00",
+      "end": "2026-10-22T22:30:12.994183+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop"
+      ],
+      "required_marker": "OWNER_DOUBLE_START_FAILED",
+      "designated_red": true
+    },
+    {
+      "label": "popen-pass-fds-restored",
+      "case": "test_private_endpoint.RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop",
+      "start": "2026-10-22T22:30:12.994420+00:00",
+      "end": "2026-10-22T22:30:16.864402+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop"
+      ]
+    },
+    {
+      "label": "owner-package-closure-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_any_package_or_runtime_change_requires_manual",
+      "start": "2026-10-22T22:30:16.864659+00:00",
+      "end": "2026-10-22T22:30:17.028787+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_any_package_or_runtime_change_requires_manual"
+      ],
+      "required_marker": "OWNER_CLOSURE_CHANGED",
+      "designated_red": true
+    },
+    {
+      "label": "owner-package-closure-restored",
+      "case": "test_pce_retention.RetainTests.test_any_package_or_runtime_change_requires_manual",
+      "start": "2026-10-22T22:30:17.028977+00:00",
+      "end": "2026-10-22T22:30:17.193087+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_any_package_or_runtime_change_requires_manual"
+      ]
+    },
+    {
+      "label": "owner-interpreter-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_any_package_or_runtime_change_requires_manual",
+      "start": "2026-10-22T22:30:17.193353+00:00",
+      "end": "2026-10-22T22:30:17.357442+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_any_package_or_runtime_change_requires_manual"
+      ],
+      "required_marker": "OWNER_INTERPRETER_CHANGED",
+      "designated_red": true
+    },
+    {
+      "label": "owner-interpreter-restored",
+      "case": "test_pce_retention.RetainTests.test_any_package_or_runtime_change_requires_manual",
+      "start": "2026-10-22T22:30:17.357621+00:00",
+      "end": "2026-10-22T22:30:17.521660+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_any_package_or_runtime_change_requires_manual"
+      ]
+    },
+    {
+      "label": "pending-owner-race-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_pending_incompatible_upgrade_prevents_new_owner_pin",
+      "start": "2026-10-22T22:30:17.521885+00:00",
+      "end": "2026-10-22T22:30:17.687520+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_pending_incompatible_upgrade_prevents_new_owner_pin"
+      ],
+      "required_marker": "OWNER_RACED_PENDING_UPGRADE",
+      "designated_red": true
+    },
+    {
+      "label": "pending-owner-race-restored",
+      "case": "test_pce_retention.RetainTests.test_pending_incompatible_upgrade_prevents_new_owner_pin",
+      "start": "2026-10-22T22:30:17.687709+00:00",
+      "end": "2026-10-22T22:30:17.851821+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_pending_incompatible_upgrade_prevents_new_owner_pin"
+      ]
+    },
+    {
+      "label": "prepare-collision-withdrawn",
+      "case": "test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused",
+      "start": "2026-10-22T22:30:17.852053+00:00",
+      "end": "2026-10-22T22:30:18.617143+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused"
+      ],
+      "required_marker": "PINNED_COLLISION_RMTREE",
+      "designated_red": true
+    },
+    {
+      "label": "prepare-collision-restored",
+      "case": "test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused",
+      "start": "2026-10-22T22:30:18.617349+00:00",
+      "end": "2026-10-22T22:30:19.482492+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused"
+      ]
+    },
+    {
+      "label": "prepare-before-arm-withdrawn",
+      "case": "test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused",
+      "start": "2026-10-22T22:30:19.482732+00:00",
+      "end": "2026-10-22T22:30:20.347948+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused"
+      ],
+      "required_marker": "OWNER_UPDATE_CLOSURE_CHANGED",
+      "designated_red": true
+    },
+    {
+      "label": "prepare-before-arm-restored",
+      "case": "test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused",
+      "start": "2026-10-22T22:30:20.348136+00:00",
+      "end": "2026-10-22T22:30:21.213383+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused"
+      ]
+    },
+    {
+      "label": "guard-arm-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime",
+      "start": "2026-10-22T22:30:21.213644+00:00",
+      "end": "2026-10-22T22:30:21.377753+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime"
+      ],
+      "required_marker": "INCOMPATIBLE_ARM_ACCEPTED",
+      "designated_red": true
+    },
+    {
+      "label": "guard-arm-restored",
+      "case": "test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime",
+      "start": "2026-10-22T22:30:21.377936+00:00",
+      "end": "2026-10-22T22:30:21.541997+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime"
+      ]
+    },
+    {
+      "label": "guard-current-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime",
+      "start": "2026-10-22T22:30:21.542248+00:00",
+      "end": "2026-10-22T22:30:21.706321+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime"
+      ],
+      "required_marker": "INCOMPATIBLE_CURRENT_SELECTED",
+      "designated_red": true
+    },
+    {
+      "label": "guard-current-restored",
+      "case": "test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime",
+      "start": "2026-10-22T22:30:21.706502+00:00",
+      "end": "2026-10-22T22:30:21.870595+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime"
+      ]
+    },
+    {
+      "label": "guard-factory-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime",
+      "start": "2026-10-22T22:30:21.870840+00:00",
+      "end": "2026-10-22T22:30:22.035061+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime"
+      ],
+      "required_marker": "INCOMPATIBLE_FACTORY_SELECTED",
+      "designated_red": true
+    },
+    {
+      "label": "guard-factory-restored",
+      "case": "test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime",
+      "start": "2026-10-22T22:30:22.035263+00:00",
+      "end": "2026-10-22T22:30:22.199370+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime"
+      ]
+    },
+    {
+      "label": "gc-active-unknown-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_owner_death_free_lock_does_not_authorize_reclaim",
+      "start": "2026-10-22T22:30:22.199618+00:00",
+      "end": "2026-10-22T22:30:22.363682+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_owner_death_free_lock_does_not_authorize_reclaim"
+      ],
+      "required_marker": "LOST_OWNER_RECLAIMED",
+      "designated_red": true
+    },
+    {
+      "label": "gc-active-unknown-restored",
+      "case": "test_pce_retention.RetainTests.test_owner_death_free_lock_does_not_authorize_reclaim",
+      "start": "2026-10-22T22:30:22.363868+00:00",
+      "end": "2026-10-22T22:30:22.527935+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_owner_death_free_lock_does_not_authorize_reclaim"
+      ]
+    },
+    {
+      "label": "gc-stop-receipt-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_resource_lock_and_receipt_are_independent_reclaim_gates",
+      "start": "2026-10-22T22:30:22.528165+00:00",
+      "end": "2026-10-22T22:30:22.693276+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_resource_lock_and_receipt_are_independent_reclaim_gates"
+      ],
+      "required_marker": "GC_STOP_RECEIPT_IGNORED",
+      "designated_red": true
+    },
+    {
+      "label": "gc-stop-receipt-restored",
+      "case": "test_pce_retention.RetainTests.test_resource_lock_and_receipt_are_independent_reclaim_gates",
+      "start": "2026-10-22T22:30:22.693453+00:00",
+      "end": "2026-10-22T22:30:22.857495+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_resource_lock_and_receipt_are_independent_reclaim_gates"
+      ]
+    },
+    {
+      "label": "gc-same-inode-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_inode_swap_factory_and_arbitrary_path_never_reclaimed",
+      "start": "2026-10-22T22:30:22.857752+00:00",
+      "end": "2026-10-22T22:30:23.021820+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_inode_swap_factory_and_arbitrary_path_never_reclaimed"
+      ],
+      "required_marker": "SWAPPED_SLOT_RECLAIMED",
+      "designated_red": true
+    },
+    {
+      "label": "gc-same-inode-restored",
+      "case": "test_pce_retention.RetainTests.test_inode_swap_factory_and_arbitrary_path_never_reclaimed",
+      "start": "2026-10-22T22:30:23.022003+00:00",
+      "end": "2026-10-22T22:30:23.186132+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_inode_swap_factory_and_arbitrary_path_never_reclaimed"
+      ]
+    },
+    {
+      "label": "gc-late-inode-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_last_moment_inode_swap_before_rmtree_is_refused",
+      "start": "2026-10-22T22:30:23.186404+00:00",
+      "end": "2026-10-22T22:30:23.350546+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_last_moment_inode_swap_before_rmtree_is_refused"
+      ],
+      "required_marker": "LATE_INODE_SWAP_RECLAIMED",
+      "designated_red": true
+    },
+    {
+      "label": "gc-late-inode-restored",
+      "case": "test_pce_retention.RetainTests.test_last_moment_inode_swap_before_rmtree_is_refused",
+      "start": "2026-10-22T22:30:23.350729+00:00",
+      "end": "2026-10-22T22:30:23.514806+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_last_moment_inode_swap_before_rmtree_is_refused"
+      ]
+    },
+    {
+      "label": "gc-journal-reference-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim",
+      "start": "2026-10-22T22:30:23.515044+00:00",
+      "end": "2026-10-22T22:30:23.679146+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim"
+      ],
+      "required_marker": "REFERENCED_SLOT_RECLAIMED_current",
+      "designated_red": true
+    },
+    {
+      "label": "gc-journal-reference-restored",
+      "case": "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim",
+      "start": "2026-10-22T22:30:23.679351+00:00",
+      "end": "2026-10-22T22:30:23.893549+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim"
+      ]
+    },
+    {
+      "label": "gc-previous-reference-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim",
+      "start": "2026-10-22T22:30:23.893793+00:00",
+      "end": "2026-10-22T22:30:24.057827+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim"
+      ],
+      "required_marker": "REFERENCED_SLOT_RECLAIMED_previous",
+      "designated_red": true
+    },
+    {
+      "label": "gc-previous-reference-restored",
+      "case": "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim",
+      "start": "2026-10-22T22:30:24.058003+00:00",
+      "end": "2026-10-22T22:30:24.222061+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim"
+      ]
+    },
+    {
+      "label": "gc-pending-reference-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim",
+      "start": "2026-10-22T22:30:24.222315+00:00",
+      "end": "2026-10-22T22:30:24.386400+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim"
+      ],
+      "required_marker": "REFERENCED_SLOT_RECLAIMED_pending",
+      "designated_red": true
+    },
+    {
+      "label": "gc-pending-reference-restored",
+      "case": "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim",
+      "start": "2026-10-22T22:30:24.386573+00:00",
+      "end": "2026-10-22T22:30:24.550655+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim"
+      ]
+    },
+    {
+      "label": "gc-other-pin-reference-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim",
+      "start": "2026-10-22T22:30:24.550889+00:00",
+      "end": "2026-10-22T22:30:24.714949+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim"
+      ],
+      "required_marker": "SHARED_PACKAGE_RECLAIMED",
+      "designated_red": true
+    },
+    {
+      "label": "gc-other-pin-reference-restored",
+      "case": "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim",
+      "start": "2026-10-22T22:30:24.715114+00:00",
+      "end": "2026-10-22T22:30:24.879221+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim"
+      ]
+    },
+    {
+      "label": "gc-resource-locked-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_resource_lock_and_receipt_are_independent_reclaim_gates",
+      "start": "2026-10-22T22:30:24.879464+00:00",
+      "end": "2026-10-22T22:30:25.043556+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_resource_lock_and_receipt_are_independent_reclaim_gates"
+      ],
+      "required_marker": "SHARED_RESOURCE_LOCK_IGNORED",
+      "designated_red": true
+    },
+    {
+      "label": "gc-resource-locked-restored",
+      "case": "test_pce_retention.RetainTests.test_resource_lock_and_receipt_are_independent_reclaim_gates",
+      "start": "2026-10-22T22:30:25.043741+00:00",
+      "end": "2026-10-22T22:30:25.207798+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_resource_lock_and_receipt_are_independent_reclaim_gates"
+      ]
+    },
+    {
+      "label": "stop-nonce-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_stop_receipt_nonce_and_held_lock_required",
+      "start": "2026-10-22T22:30:25.208051+00:00",
+      "end": "2026-10-22T22:30:25.372147+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_stop_receipt_nonce_and_held_lock_required"
+      ],
+      "required_marker": "FORGED_STOP_CERT_ACCEPTED",
+      "designated_red": true
+    },
+    {
+      "label": "stop-nonce-restored",
+      "case": "test_pce_retention.RetainTests.test_stop_receipt_nonce_and_held_lock_required",
+      "start": "2026-10-22T22:30:25.372354+00:00",
+      "end": "2026-10-22T22:30:25.536445+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_stop_receipt_nonce_and_held_lock_required"
+      ]
+    },
+    {
+      "label": "stop-held-lease-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_stop_receipt_nonce_and_held_lock_required",
+      "start": "2026-10-22T22:30:25.536681+00:00",
+      "end": "2026-10-22T22:30:25.700689+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_stop_receipt_nonce_and_held_lock_required"
+      ],
+      "required_marker": "LIVE_STOP_CERT_ACCEPTED",
+      "designated_red": true
+    },
+    {
+      "label": "stop-held-lease-restored",
+      "case": "test_pce_retention.RetainTests.test_stop_receipt_nonce_and_held_lock_required",
+      "start": "2026-10-22T22:30:25.700846+00:00",
+      "end": "2026-10-22T22:30:25.864934+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_stop_receipt_nonce_and_held_lock_required"
+      ]
+    },
+    {
+      "label": "register-gc-transaction-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_registration_serializes_with_reclaim_without_deletion_window",
+      "start": "2026-10-22T22:30:25.865175+00:00",
+      "end": "2026-10-22T22:30:26.079431+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_registration_serializes_with_reclaim_without_deletion_window"
+      ],
+      "required_marker": "PIN_REGISTER_GC_RACE",
+      "designated_red": true
+    },
+    {
+      "label": "register-gc-transaction-restored",
+      "case": "test_pce_retention.RetainTests.test_registration_serializes_with_reclaim_without_deletion_window",
+      "start": "2026-10-22T22:30:26.079621+00:00",
+      "end": "2026-10-22T22:30:26.293794+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_registration_serializes_with_reclaim_without_deletion_window"
+      ]
+    },
+    {
+      "label": "private-pin-permissions-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_bad_pin_symlink_permissions_and_storage_failure_fail_closed",
+      "start": "2026-10-22T22:30:26.294027+00:00",
+      "end": "2026-10-22T22:30:26.458125+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_bad_pin_symlink_permissions_and_storage_failure_fail_closed"
+      ],
+      "required_marker": "PUBLIC_PIN_IGNORED",
+      "designated_red": true
+    },
+    {
+      "label": "private-pin-permissions-restored",
+      "case": "test_pce_retention.RetainTests.test_bad_pin_symlink_permissions_and_storage_failure_fail_closed",
+      "start": "2026-10-22T22:30:26.458338+00:00",
+      "end": "2026-10-22T22:30:26.622477+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_bad_pin_symlink_permissions_and_storage_failure_fail_closed"
+      ]
+    },
+    {
+      "label": "pin-storage-limit-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_pin_limit_refuses_before_registering_new_owner",
+      "start": "2026-10-22T22:30:26.622734+00:00",
+      "end": "2026-10-22T22:30:26.786804+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_pin_limit_refuses_before_registering_new_owner"
+      ],
+      "required_marker": "PIN_LIMIT_IGNORED",
+      "designated_red": true
+    },
+    {
+      "label": "pin-storage-limit-restored",
+      "case": "test_pce_retention.RetainTests.test_pin_limit_refuses_before_registering_new_owner",
+      "start": "2026-10-22T22:30:26.786983+00:00",
+      "end": "2026-10-22T22:30:26.900982+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_pin_limit_refuses_before_registering_new_owner"
+      ]
+    },
+    {
+      "label": "authenticated-stop-commit-withdrawn",
+      "case": "test_private_endpoint.RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop",
+      "start": "2026-10-22T22:30:26.901316+00:00",
+      "end": "2026-10-22T22:30:30.771211+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop"
+      ],
+      "required_marker": "AUTHENTICATED_STOP_PIN_NOT_CERTIFIED",
+      "designated_red": true
+    },
+    {
+      "label": "authenticated-stop-commit-restored",
+      "case": "test_private_endpoint.RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop",
+      "start": "2026-10-22T22:30:30.771430+00:00",
+      "end": "2026-10-22T22:30:34.641313+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop"
+      ]
+    },
+    {
+      "label": "old-launcher-refusal-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_old_or_absent_launcher_refuses_private",
+      "start": "2026-10-22T22:30:34.641644+00:00",
+      "end": "2026-10-22T22:30:34.755591+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_old_or_absent_launcher_refuses_private"
+      ],
+      "required_marker": "OLD_LAUNCHER_PRIVATE_ACCEPTED",
+      "designated_red": true
+    },
+    {
+      "label": "old-launcher-refusal-restored",
+      "case": "test_pce_retention.RetainTests.test_old_or_absent_launcher_refuses_private",
+      "start": "2026-10-22T22:30:34.755788+00:00",
+      "end": "2026-10-22T22:30:34.869759+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_old_or_absent_launcher_refuses_private"
+      ]
+    },
+    {
+      "label": "owner-isolated-import-withdrawn",
+      "case": "test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd",
+      "start": "2026-10-22T22:30:34.870080+00:00",
+      "end": "2026-10-22T22:30:47.052865+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd"
+      ],
+      "required_marker": "OWNER_STDLIB_SHADOWED_BY_CWD",
+      "designated_red": true
+    },
+    {
+      "label": "owner-isolated-import-restored",
+      "case": "test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd",
+      "start": "2026-10-22T22:30:47.053082+00:00",
+      "end": "2026-10-22T22:30:47.467635+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd"
+      ]
+    },
+    {
+      "label": "owner-pinned-import-withdrawn",
+      "case": "test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd",
+      "start": "2026-10-22T22:30:47.468071+00:00",
+      "end": "2026-10-22T22:30:59.651926+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd"
+      ],
+      "required_marker": "OWNER_PINNED_PACKAGE_NOT_STARTED",
+      "designated_red": true
+    },
+    {
+      "label": "owner-pinned-import-restored",
+      "case": "test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd",
+      "start": "2026-10-22T22:30:59.652117+00:00",
+      "end": "2026-10-22T22:31:00.066643+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd"
+      ]
+    },
+    {
+      "label": "legacy-old-guard-pins-withdrawn",
+      "case": "test_self_update_offer.OfferTests.test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused",
+      "start": "2026-10-22T22:31:00.066878+00:00",
+      "end": "2026-10-22T22:31:00.781836+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_self_update_offer.OfferTests.test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused"
+      ],
+      "required_marker": "OLD_GUARD_IGNORED_PINS",
+      "designated_red": true
+    },
+    {
+      "label": "legacy-old-guard-pins-restored",
+      "case": "test_self_update_offer.OfferTests.test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused",
+      "start": "2026-10-22T22:31:00.782017+00:00",
+      "end": "2026-10-22T22:31:01.497030+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_self_update_offer.OfferTests.test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused"
+      ]
+    },
+    {
+      "label": "stopped-pin-still-protected-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_stopped_pin_collision_requires_explicit_reclaim_first",
+      "start": "2026-10-22T22:31:01.497623+00:00",
+      "end": "2026-10-22T22:31:01.661791+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_stopped_pin_collision_requires_explicit_reclaim_first"
+      ],
+      "required_marker": "STOPPED_PIN_REPLACED_WITHOUT_RECLAIM",
+      "designated_red": true
+    },
+    {
+      "label": "stopped-pin-still-protected-restored",
+      "case": "test_pce_retention.RetainTests.test_stopped_pin_collision_requires_explicit_reclaim_first",
+      "start": "2026-10-22T22:31:01.661982+00:00",
+      "end": "2026-10-22T22:31:01.826110+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_stopped_pin_collision_requires_explicit_reclaim_first"
+      ]
+    },
+    {
+      "label": "completed-pin-receipt-required-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_bad_completed_pin_state_cannot_disable_update_protection",
+      "start": "2026-10-22T22:31:01.826383+00:00",
+      "end": "2026-10-22T22:31:01.990529+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_bad_completed_pin_state_cannot_disable_update_protection"
+      ],
+      "required_marker": "BAD_COMPLETED_PIN_ALLOWED_UPDATE",
+      "designated_red": true
+    },
+    {
+      "label": "completed-pin-receipt-required-restored",
+      "case": "test_pce_retention.RetainTests.test_bad_completed_pin_state_cannot_disable_update_protection",
+      "start": "2026-10-22T22:31:01.990708+00:00",
+      "end": "2026-10-22T22:31:02.154816+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_bad_completed_pin_state_cannot_disable_update_protection"
+      ]
+    },
+    {
+      "label": "core-pin-collision-withdrawn",
+      "case": "test_pce_retention.RetainTests.test_replacing_pinned_slot_rejected_without_inspecting_pid",
+      "start": "2026-10-22T22:31:02.155055+00:00",
+      "end": "2026-10-22T22:31:02.319166+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_replacing_pinned_slot_rejected_without_inspecting_pid"
+      ],
+      "required_marker": "PINNED_SLOT_REPLACED",
+      "designated_red": true
+    },
+    {
+      "label": "core-pin-collision-restored",
+      "case": "test_pce_retention.RetainTests.test_replacing_pinned_slot_rejected_without_inspecting_pid",
+      "start": "2026-10-22T22:31:02.319354+00:00",
+      "end": "2026-10-22T22:31:02.483462+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention.RetainTests.test_replacing_pinned_slot_rejected_without_inspecting_pid"
+      ]
+    },
+    {
+      "label": "final-baseline",
+      "case": "",
+      "start": "2026-10-22T22:31:02.483534+00:00",
+      "end": "2026-10-22T22:31:23.181644+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_pce_retention",
+        "test_private_endpoint",
+        "test_self_update_offer"
+      ]
+    }
+  ],
+  "failures": []
+}

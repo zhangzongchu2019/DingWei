@@ -1,0 +1,6 @@
+test_registry_permissions_symlink_hardlink_and_size_refused (test_private_endpoint.Paths.test_registry_permissions_symlink_hardlink_and_size_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.017s
+
+OK

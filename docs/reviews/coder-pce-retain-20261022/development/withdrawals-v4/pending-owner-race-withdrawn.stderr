@@ -1,0 +1,16 @@
+test_pending_incompatible_upgrade_prevents_new_owner_pin (test_pce_retention.RetainTests.test_pending_incompatible_upgrade_prevents_new_owner_pin) ... FAIL
+
+======================================================================
+FAIL: test_pending_incompatible_upgrade_prevents_new_owner_pin (test_pce_retention.RetainTests.test_pending_incompatible_upgrade_prevents_new_owner_pin)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-8onfwffx/helper/tests/test_pce_retention.py", line 191, in test_pending_incompatible_upgrade_prevents_new_owner_pin
+    self.denied('OWNER_RACED_PENDING_UPGRADE',lambda:self.register(),'manual_required')
+  File "/tmp/dwpe-check-8onfwffx/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : OWNER_RACED_PENDING_UPGRADE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)

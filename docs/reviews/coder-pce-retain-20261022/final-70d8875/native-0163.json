@@ -1,0 +1,19 @@
+{
+  "label": "native-0163",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python",
+    "-B",
+    "tests/private-control-endpoint/real.py",
+    "0.163.0",
+    "/data/ai-dev-data/pce-updater-retain-impl/docs/reviews/coder-pce-retain-20261022/final-70d8875/native-0.163.0"
+  ],
+  "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+  "start": "2026-10-22T22:39:37.920339+00:00",
+  "end": "2026-10-22T22:39:41.289431+00:00",
+  "rc": 0,
+  "isolated_profile": {
+    "HOME": "/tmp/dwpe-g-ymjtz71v/h7",
+    "TMPDIR": "/tmp/dwpe-g-ymjtz71v/t/7",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h7/.cache"
+  }
+}

@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/data/ai-dev-data/pce-updater-retain-impl/tests/private-control-endpoint/check.py", line 131, in <module>
+    run(sys.argv[1])
+  File "/data/ai-dev-data/pce-updater-retain-impl/tests/private-control-endpoint/check.py", line 126, in run
+    assert not failures, ','.join(failures)
+           ^^^^^^^^^^^^
+AssertionError: MUTATION_NOT_DESIGNATED_RED_orphan-no-adopt,MUTATION_NOT_DESIGNATED_RED_stopped-no-restart

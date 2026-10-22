@@ -1,0 +1,14 @@
+test_private_root_must_match_launcher_update_root_if_bound (test_pce_retention.RetainTests.test_private_root_must_match_launcher_update_root_if_bound) ... FAIL
+
+======================================================================
+FAIL: test_private_root_must_match_launcher_update_root_if_bound (test_pce_retention.RetainTests.test_private_root_must_match_launcher_update_root_if_bound)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-ymjtz71v/t/5/dwpe-check-py5_pmxr/helper/tests/test_pce_retention.py", line 198, in test_private_root_must_match_launcher_update_root_if_bound
+    with self.assertRaises(ep.PrivateEndpointError,msg='PRIVATE_RETAIN_ROOT_MISMATCH_ACCEPTED'):
+AssertionError: PrivateEndpointError not raised : PRIVATE_RETAIN_ROOT_MISMATCH_ACCEPTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+FAILED (failures=1)

@@ -1,0 +1,62 @@
+{
+  "go-full": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h0",
+    "TMPDIR": "/tmp/gqm_1k2c6",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h0/.cache"
+  },
+  "vet": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h1",
+    "TMPDIR": "/tmp/dwpe-g-8ivkzlxp/t/1",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h1/.cache"
+  },
+  "helper": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h2",
+    "TMPDIR": "/tmp/dwpe-g-8ivkzlxp/t/2",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h2/.cache"
+  },
+  "canonical": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h3",
+    "TMPDIR": "/tmp/dwpe-g-8ivkzlxp/t/3",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h3/.cache"
+  },
+  "withdrawals": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h4",
+    "TMPDIR": "/tmp/dwpe-g-8ivkzlxp/t/4",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h4/.cache"
+  },
+  "pce-withdrawals": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h5",
+    "TMPDIR": "/tmp/dwpe-g-8ivkzlxp/t/5",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h5/.cache"
+  },
+  "native-0161": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h6",
+    "TMPDIR": "/tmp/dwpe-g-8ivkzlxp/t/6",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h6/.cache"
+  },
+  "native-0163": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h7",
+    "TMPDIR": "/tmp/dwpe-g-8ivkzlxp/t/7",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h7/.cache"
+  },
+  "browser-admission": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h8",
+    "TMPDIR": "/tmp/dwpe-g-8ivkzlxp/t/8",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h8/.cache"
+  },
+  "browser-mention": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h9",
+    "TMPDIR": "/tmp/dwpe-g-8ivkzlxp/t/9",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h9/.cache"
+  },
+  "browser-backfill": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h10",
+    "TMPDIR": "/tmp/dwpe-g-8ivkzlxp/t/10",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h10/.cache"
+  },
+  "pg-prewarm": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h0",
+    "TMPDIR": "/tmp/gqm_1k2c6",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h0/.cache"
+  }
+}

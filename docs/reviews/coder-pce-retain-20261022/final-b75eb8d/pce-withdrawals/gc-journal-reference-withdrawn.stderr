@@ -1,0 +1,16 @@
+test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim) ... FAIL
+
+======================================================================
+FAIL: test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-8ivkzlxp/t/5/dwpe-check-rx_0uhek/helper/tests/test_pce_retention.py", line 138, in test_current_previous_pending_and_other_pin_block_reclaim
+    self.denied('REFERENCED_SLOT_RECLAIMED_'+role,lambda:self.ret.reclaim(pin['id'],self.state),'retain_pinned')
+  File "/tmp/dwpe-g-8ivkzlxp/t/5/dwpe-check-rx_0uhek/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : REFERENCED_SLOT_RECLAIMED_current
+
+----------------------------------------------------------------------
+Ran 1 test in 0.022s
+
+FAILED (failures=1)

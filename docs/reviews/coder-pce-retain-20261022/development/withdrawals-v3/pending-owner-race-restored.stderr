@@ -1,0 +1,6 @@
+test_pending_incompatible_upgrade_prevents_new_owner_pin (test_pce_retention.RetainTests.test_pending_incompatible_upgrade_prevents_new_owner_pin) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+OK

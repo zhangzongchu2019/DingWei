@@ -1,0 +1,13 @@
+{
+  "task": "S-PCE-UPDATER-RETAIN minimal phase1",
+  "base_commit": "c6851ed97bf0c5154f2beafbb090802942c62ad0",
+  "source_commit": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+  "source_tree": "fb862753d8df4393195a9ac43a1a41b71b8b08e5",
+  "source_tag": "evidence/coder/pce-updater-retain-fb862753",
+  "gate_directory": "final-70d8875",
+  "design_commit": "7d0756b8c8c9e41ac4c5829fa77c1ee230905919",
+  "new_mutations": 37,
+  "deployment": false,
+  "private_enabled": false,
+  "launcher_migration_included": false
+}

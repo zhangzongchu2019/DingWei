@@ -1,0 +1,16 @@
+test_duplicate_helper_cannot_take_writer_but_restart_can (test_private_endpoint.Control.test_duplicate_helper_cannot_take_writer_but_restart_can) ... FAIL
+
+======================================================================
+FAIL: test_duplicate_helper_cannot_take_writer_but_restart_can (test_private_endpoint.Control.test_duplicate_helper_cannot_take_writer_but_restart_can)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-8ivkzlxp/t/4/dwpe-check-rqv101qp/helper/tests/test_private_endpoint.py", line 408, in test_duplicate_helper_cannot_take_writer_but_restart_can
+    self.reject('busy', other.take_writer)
+  File "/tmp/dwpe-g-8ivkzlxp/t/4/dwpe-check-rqv101qp/helper/tests/test_private_endpoint.py", line 39, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_busy
+
+----------------------------------------------------------------------
+Ran 1 test in 0.058s
+
+FAILED (failures=1)

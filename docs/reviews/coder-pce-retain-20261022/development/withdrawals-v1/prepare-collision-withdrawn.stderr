@@ -1,0 +1,24 @@
+test_pce_pinned_collision_and_incompatible_candidate_refused (test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused) ... ERROR
+
+======================================================================
+ERROR: test_pce_pinned_collision_and_incompatible_candidate_refused (test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-rsmhwv26/helper/tests/test_self_update_offer.py", line 95, in test_pce_pinned_collision_and_incompatible_candidate_refused
+    try: self.updater.prepare(second)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-check-rsmhwv26/helper/sessionhelper/self_update.py", line 183, in prepare
+    return self._prepare(env)
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-check-rsmhwv26/helper/sessionhelper/self_update.py", line 282, in _prepare
+    self.state.arm(meta)
+  File "/tmp/tmppdpo90_a/mounted/helper_update_guard.py", line 428, in arm
+    retention.check_locked(retain_fd, self.slot(item))
+  File "/tmp/tmppdpo90_a/mounted/helper_update_guard.py", line 299, in check_locked
+    raise UpdateError('manual_required')
+_dw_stable_guard.UpdateError: manual_required
+
+----------------------------------------------------------------------
+Ran 1 test in 0.614s
+
+FAILED (errors=1)

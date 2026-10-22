@@ -1,0 +1,6 @@
+test_bad_pin_symlink_permissions_and_storage_failure_fail_closed (test_pce_retention.RetainTests.test_bad_pin_symlink_permissions_and_storage_failure_fail_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+OK

@@ -1,0 +1,16 @@
+test_replacing_pinned_slot_rejected_without_inspecting_pid (test_pce_retention.RetainTests.test_replacing_pinned_slot_rejected_without_inspecting_pid) ... FAIL
+
+======================================================================
+FAIL: test_replacing_pinned_slot_rejected_without_inspecting_pid (test_pce_retention.RetainTests.test_replacing_pinned_slot_rejected_without_inspecting_pid)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-8onfwffx/helper/tests/test_pce_retention.py", line 99, in test_replacing_pinned_slot_rejected_without_inspecting_pid
+    self.denied('PINNED_SLOT_REPLACED',lambda:self.ret.check_locked(fd,replacing=self.package),'retain_pinned')
+  File "/tmp/dwpe-check-8onfwffx/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : PINNED_SLOT_REPLACED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)

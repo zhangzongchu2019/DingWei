@@ -1,0 +1,6 @@
+test_private_observe_cannot_reach_transport_even_with_valid_peer (test_private_endpoint.DriverWiring.test_private_observe_cannot_reach_transport_even_with_valid_peer) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.014s
+
+OK

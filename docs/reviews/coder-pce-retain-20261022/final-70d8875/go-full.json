@@ -1,0 +1,20 @@
+{
+  "label": "go-full",
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-json",
+    "-count=1",
+    "-timeout=30m"
+  ],
+  "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+  "start": "2026-10-22T22:37:02.269874+00:00",
+  "end": "2026-10-22T22:48:30.716229+00:00",
+  "rc": 0,
+  "isolated_profile": {
+    "HOME": "/tmp/dwpe-g-ymjtz71v/h0",
+    "TMPDIR": "/tmp/gs0kutjoc",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-ymjtz71v/h0/.cache"
+  }
+}

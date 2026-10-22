@@ -1,0 +1,6 @@
+test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused (test_self_update_offer.OfferTests.test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.548s
+
+OK

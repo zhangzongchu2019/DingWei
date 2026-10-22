@@ -1,0 +1,6 @@
+test_old_owner_or_config_cannot_supply_current_thread_hint (test_private_endpoint.Control.test_old_owner_or_config_cannot_supply_current_thread_hint) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.071s
+
+OK

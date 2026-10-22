@@ -1,0 +1,6 @@
+test_outside_relative_and_wrong_digest_alias_are_refused (test_private_endpoint.NativeAlias.test_outside_relative_and_wrong_digest_alias_are_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.103s
+
+OK

@@ -1,0 +1,6 @@
+test_guard_arm_select_and_fallback_refuse_incompatible_runtime (test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+OK

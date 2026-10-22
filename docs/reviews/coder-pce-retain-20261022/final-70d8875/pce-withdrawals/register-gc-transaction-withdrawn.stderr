@@ -1,0 +1,14 @@
+test_registration_serializes_with_reclaim_without_deletion_window (test_pce_retention.RetainTests.test_registration_serializes_with_reclaim_without_deletion_window) ... FAIL
+
+======================================================================
+FAIL: test_registration_serializes_with_reclaim_without_deletion_window (test_pce_retention.RetainTests.test_registration_serializes_with_reclaim_without_deletion_window)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-ymjtz71v/t/5/dwpe-check-py5_pmxr/helper/tests/test_pce_retention.py", line 235, in test_registration_serializes_with_reclaim_without_deletion_window
+    self.assertFalse(errors,'PIN_REGISTER_GC_RACE '+repr(errors))
+AssertionError: ['retain_invalid'] is not false : PIN_REGISTER_GC_RACE ['retain_invalid']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.066s
+
+FAILED (failures=1)

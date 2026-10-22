@@ -1,0 +1,80 @@
+test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim) ... 
+  test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim) (role='current') ... FAIL
+  test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim) (role='previous') ... ERROR
+  test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim) (role='pending') ... ERROR
+test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim) ... ERROR
+
+======================================================================
+ERROR: test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim) (role='previous')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-rsmhwv26/helper/tests/test_pce_retention.py", line 136, in test_current_previous_pending_and_other_pin_block_reclaim
+    pin=self.register();self.stopped(pin)
+        ^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-check-rsmhwv26/helper/tests/test_pce_retention.py", line 37, in register
+    pin,handles=self.ret.register(package or self.package,'endpoint-fixture')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-check-rsmhwv26/helper/update_launcher/guard.py", line 233, in register
+    package = Path(package).resolve(strict=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1242, in resolve
+    s = self._flavour.realpath(self, strict=strict)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen posixpath>", line 432, in realpath
+  File "<frozen posixpath>", line 476, in _joinrealpath
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pcer-yxtlxpt5/update/slots/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+
+======================================================================
+ERROR: test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim) (role='pending')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-rsmhwv26/helper/tests/test_pce_retention.py", line 136, in test_current_previous_pending_and_other_pin_block_reclaim
+    pin=self.register();self.stopped(pin)
+        ^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-check-rsmhwv26/helper/tests/test_pce_retention.py", line 37, in register
+    pin,handles=self.ret.register(package or self.package,'endpoint-fixture')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-check-rsmhwv26/helper/update_launcher/guard.py", line 233, in register
+    package = Path(package).resolve(strict=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1242, in resolve
+    s = self._flavour.realpath(self, strict=strict)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen posixpath>", line 432, in realpath
+  File "<frozen posixpath>", line 476, in _joinrealpath
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pcer-yxtlxpt5/update/slots/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+
+======================================================================
+ERROR: test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-rsmhwv26/helper/tests/test_pce_retention.py", line 140, in test_current_previous_pending_and_other_pin_block_reclaim
+    pin=self.register();self.stopped(pin);self.register();self.close_handles()
+        ^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-check-rsmhwv26/helper/tests/test_pce_retention.py", line 37, in register
+    pin,handles=self.ret.register(package or self.package,'endpoint-fixture')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-check-rsmhwv26/helper/update_launcher/guard.py", line 233, in register
+    package = Path(package).resolve(strict=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1242, in resolve
+    s = self._flavour.realpath(self, strict=strict)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen posixpath>", line 432, in realpath
+  File "<frozen posixpath>", line 476, in _joinrealpath
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pcer-yxtlxpt5/update/slots/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+
+======================================================================
+FAIL: test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim) (role='current')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-rsmhwv26/helper/tests/test_pce_retention.py", line 138, in test_current_previous_pending_and_other_pin_block_reclaim
+    self.denied('REFERENCED_SLOT_RECLAIMED_'+role,lambda:self.ret.reclaim(pin['id'],self.state),'retain_pinned')
+  File "/tmp/dwpe-check-rsmhwv26/helper/tests/test_pce_retention.py", line 46, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : REFERENCED_SLOT_RECLAIMED_current
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=1, errors=3)

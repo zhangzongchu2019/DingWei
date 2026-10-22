@@ -1,0 +1,14 @@
+test_registration_is_durable_and_locks_every_resource_before_popen (test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen) ... FAIL
+
+======================================================================
+FAIL: test_registration_is_durable_and_locks_every_resource_before_popen (test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-yco151lc/helper/tests/test_pce_retention.py", line 52, in test_registration_is_durable_and_locks_every_resource_before_popen
+    self.assertTrue(any(p['id']==pin['id'] and p['state']=='active' for p in self.ret.records(fd)),
+AssertionError: False is not true : PIN_NOT_DURABLE_BEFORE_POPEN
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

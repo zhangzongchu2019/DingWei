@@ -1,0 +1,15 @@
+test_old_or_absent_launcher_refuses_private (test_pce_retention.RetainTests.test_old_or_absent_launcher_refuses_private) ... 
+  test_old_or_absent_launcher_refuses_private (test_pce_retention.RetainTests.test_old_or_absent_launcher_refuses_private) (value='/tmp/pcer-cy0zna7c/old_guard.py') ... FAIL
+
+======================================================================
+FAIL: test_old_or_absent_launcher_refuses_private (test_pce_retention.RetainTests.test_old_or_absent_launcher_refuses_private) (value='/tmp/pcer-cy0zna7c/old_guard.py')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-8onfwffx/helper/tests/test_pce_retention.py", line 199, in test_old_or_absent_launcher_refuses_private
+    with self.assertRaises(ep.PrivateEndpointError,msg='OLD_LAUNCHER_PRIVATE_ACCEPTED'):
+AssertionError: PrivateEndpointError not raised : OLD_LAUNCHER_PRIVATE_ACCEPTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)

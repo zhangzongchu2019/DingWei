@@ -1,0 +1,16 @@
+test_config_implementation_and_owner_python_must_match (test_private_endpoint.Control.test_config_implementation_and_owner_python_must_match) ... FAIL
+
+======================================================================
+FAIL: test_config_implementation_and_owner_python_must_match (test_private_endpoint.Control.test_config_implementation_and_owner_python_must_match)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-6h2vwfgl/helper/tests/test_private_endpoint.py", line 384, in test_config_implementation_and_owner_python_must_match
+    self.reject(reason, self.client.status)
+  File "/tmp/dwpe-check-6h2vwfgl/helper/tests/test_private_endpoint.py", line 39, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_registry
+
+----------------------------------------------------------------------
+Ran 1 test in 0.061s
+
+FAILED (failures=1)

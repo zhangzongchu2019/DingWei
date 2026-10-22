@@ -1,0 +1,6 @@
+test_registration_is_durable_and_locks_every_resource_before_popen (test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+OK

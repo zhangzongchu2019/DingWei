@@ -1,0 +1,6 @@
+test_child_binding_rechecks_starttime_and_restart_budget_is_finite (test_private_endpoint.Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+OK

@@ -1,0 +1,6 @@
+test_registration_serializes_with_reclaim_without_deletion_window (test_pce_retention.RetainTests.test_registration_serializes_with_reclaim_without_deletion_window) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.081s
+
+OK

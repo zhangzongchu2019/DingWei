@@ -1,0 +1,16 @@
+test_pin_limit_refuses_before_registering_new_owner (test_pce_retention.RetainTests.test_pin_limit_refuses_before_registering_new_owner) ... FAIL
+
+======================================================================
+FAIL: test_pin_limit_refuses_before_registering_new_owner (test_pce_retention.RetainTests.test_pin_limit_refuses_before_registering_new_owner)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-yco151lc/helper/tests/test_pce_retention.py", line 246, in test_pin_limit_refuses_before_registering_new_owner
+    self.denied('PIN_LIMIT_IGNORED',lambda:self.register(),'retain_limit')
+  File "/tmp/dwpe-check-yco151lc/helper/tests/test_pce_retention.py", line 46, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : PIN_LIMIT_IGNORED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=1)

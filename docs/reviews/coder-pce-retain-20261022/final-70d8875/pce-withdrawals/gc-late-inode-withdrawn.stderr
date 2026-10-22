@@ -1,0 +1,16 @@
+test_last_moment_inode_swap_before_rmtree_is_refused (test_pce_retention.RetainTests.test_last_moment_inode_swap_before_rmtree_is_refused) ... FAIL
+
+======================================================================
+FAIL: test_last_moment_inode_swap_before_rmtree_is_refused (test_pce_retention.RetainTests.test_last_moment_inode_swap_before_rmtree_is_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-ymjtz71v/t/5/dwpe-check-py5_pmxr/helper/tests/test_pce_retention.py", line 160, in test_last_moment_inode_swap_before_rmtree_is_refused
+    self.denied('LATE_INODE_SWAP_RECLAIMED',lambda:self.ret.reclaim(pin['id'],self.state),'retain_invalid')
+  File "/tmp/dwpe-g-ymjtz71v/t/5/dwpe-check-py5_pmxr/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : LATE_INODE_SWAP_RECLAIMED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (failures=1)

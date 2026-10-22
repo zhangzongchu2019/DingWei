@@ -1,0 +1,17 @@
+test_native_location_uses_canonical_request_bytes_and_fixed_uid_root (test_private_endpoint.NativeAlias.test_native_location_uses_canonical_request_bytes_and_fixed_uid_root) ... FAIL
+
+======================================================================
+FAIL: test_native_location_uses_canonical_request_bytes_and_fixed_uid_root (test_private_endpoint.NativeAlias.test_native_location_uses_canonical_request_bytes_and_fixed_uid_root)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-6h2vwfgl/helper/tests/test_private_endpoint.py", line 190, in test_native_location_uses_canonical_request_bytes_and_fixed_uid_root
+    self.assertEqual(name, expected, 'NATIVE_LOCATION_HASH_DRIFT')
+AssertionError: '0000000000000000000000000000000000000000000000000000000000000000' != '09a5359f9a74bfbfe8bc34ca3cd6f5fc2a5bfddb13d6f18082a109d28d1c02c8'
+- 0000000000000000000000000000000000000000000000000000000000000000
++ 09a5359f9a74bfbfe8bc34ca3cd6f5fc2a5bfddb13d6f18082a109d28d1c02c8
+ : NATIVE_LOCATION_HASH_DRIFT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.102s
+
+FAILED (failures=1)

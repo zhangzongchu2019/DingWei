@@ -1,0 +1,16 @@
+test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim) ... FAIL
+
+======================================================================
+FAIL: test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-8ivkzlxp/t/5/dwpe-check-rx_0uhek/helper/tests/test_pce_retention.py", line 141, in test_current_previous_pending_and_other_pin_block_reclaim
+    self.denied('SHARED_PACKAGE_RECLAIMED',lambda:self.ret.reclaim(pin['id'],self.state),'retain_pinned')
+  File "/tmp/dwpe-g-8ivkzlxp/t/5/dwpe-check-rx_0uhek/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : SHARED_PACKAGE_RECLAIMED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.091s
+
+FAILED (failures=1)

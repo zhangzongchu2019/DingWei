@@ -1,0 +1,16 @@
+test_inode_swap_factory_and_arbitrary_path_never_reclaimed (test_pce_retention.RetainTests.test_inode_swap_factory_and_arbitrary_path_never_reclaimed) ... FAIL
+
+======================================================================
+FAIL: test_inode_swap_factory_and_arbitrary_path_never_reclaimed (test_pce_retention.RetainTests.test_inode_swap_factory_and_arbitrary_path_never_reclaimed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-ymjtz71v/t/5/dwpe-check-py5_pmxr/helper/tests/test_pce_retention.py", line 146, in test_inode_swap_factory_and_arbitrary_path_never_reclaimed
+    self.denied('SWAPPED_SLOT_RECLAIMED',lambda:self.ret.reclaim(pin['id'],self.state),'retain_invalid')
+  File "/tmp/dwpe-g-ymjtz71v/t/5/dwpe-check-py5_pmxr/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : SWAPPED_SLOT_RECLAIMED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.023s
+
+FAILED (failures=1)

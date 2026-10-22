@@ -1,0 +1,16 @@
+test_child_exit_reaps_actual_handle_before_one_replacement (test_private_endpoint.Lifecycle.test_child_exit_reaps_actual_handle_before_one_replacement) ... FAIL
+
+======================================================================
+FAIL: test_child_exit_reaps_actual_handle_before_one_replacement (test_private_endpoint.Lifecycle.test_child_exit_reaps_actual_handle_before_one_replacement)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-6h2vwfgl/helper/tests/test_private_endpoint.py", line 515, in test_child_exit_reaps_actual_handle_before_one_replacement
+    self.child.wait.assert_called_once_with()
+  File "/usr/lib/python3.12/unittest/mock.py", line 955, in assert_called_once_with
+    raise AssertionError(msg)
+AssertionError: Expected 'wait' to be called once. Called 0 times.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+FAILED (failures=1)

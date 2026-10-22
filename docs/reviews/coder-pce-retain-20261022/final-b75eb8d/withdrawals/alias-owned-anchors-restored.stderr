@@ -1,0 +1,6 @@
+test_cleanup_cannot_remove_replaced_alias (test_private_endpoint.NativeAlias.test_cleanup_cannot_remove_replaced_alias) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.105s
+
+OK

@@ -1,0 +1,6 @@
+test_inode_swap_factory_and_arbitrary_path_never_reclaimed (test_pce_retention.RetainTests.test_inode_swap_factory_and_arbitrary_path_never_reclaimed) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+OK

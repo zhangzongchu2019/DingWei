@@ -1,0 +1,19 @@
+test_stopped_tombstone_refuses_automatic_start (test_private_endpoint.Paths.test_stopped_tombstone_refuses_automatic_start) ... FAIL
+
+======================================================================
+FAIL: test_stopped_tombstone_refuses_automatic_start (test_private_endpoint.Paths.test_stopped_tombstone_refuses_automatic_start)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-8ivkzlxp/t/4/dwpe-check-rqv101qp/helper/tests/test_private_endpoint.py", line 127, in test_stopped_tombstone_refuses_automatic_start
+    self.reject('stopped', lambda: ep.Client(self.spec).ensure())
+  File "/tmp/dwpe-g-8ivkzlxp/t/4/dwpe-check-rqv101qp/helper/tests/test_private_endpoint.py", line 41, in reject
+    self.assertEqual(caught.exception.reason, 'endpoint_' + reason,
+AssertionError: 'endpoint_retention' != 'endpoint_stopped'
+- endpoint_retention
++ endpoint_stopped
+ : PRIVATE_WRONG_REASON_stopped
+
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+FAILED (failures=1)

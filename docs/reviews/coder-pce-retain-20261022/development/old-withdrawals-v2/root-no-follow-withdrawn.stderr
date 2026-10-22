@@ -1,0 +1,16 @@
+test_unsafe_directory_modes_and_symlink_refused (test_private_endpoint.Paths.test_unsafe_directory_modes_and_symlink_refused) ... FAIL
+
+======================================================================
+FAIL: test_unsafe_directory_modes_and_symlink_refused (test_private_endpoint.Paths.test_unsafe_directory_modes_and_symlink_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-6h2vwfgl/helper/tests/test_private_endpoint.py", line 78, in test_unsafe_directory_modes_and_symlink_refused
+    self.reject('path', self.check_root)
+  File "/tmp/dwpe-check-6h2vwfgl/helper/tests/test_private_endpoint.py", line 39, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_path
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)

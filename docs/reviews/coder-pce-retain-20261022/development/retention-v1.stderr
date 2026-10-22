@@ -1,0 +1,38 @@
+test_any_package_or_runtime_change_requires_manual (test_pce_retention.RetainTests.test_any_package_or_runtime_change_requires_manual) ... ok
+test_bad_pin_symlink_permissions_and_storage_failure_fail_closed (test_pce_retention.RetainTests.test_bad_pin_symlink_permissions_and_storage_failure_fail_closed) ... ok
+test_clean_stop_reclaims_only_exact_unreferenced_slot (test_pce_retention.RetainTests.test_clean_stop_reclaims_only_exact_unreferenced_slot) ... ok
+test_current_previous_pending_and_other_pin_block_reclaim (test_pce_retention.RetainTests.test_current_previous_pending_and_other_pin_block_reclaim) ... ok
+test_fd_handoff_child_holds_package_after_parent_closes (test_pce_retention.RetainTests.test_fd_handoff_child_holds_package_after_parent_closes) ... ok
+test_guard_arm_select_and_fallback_refuse_incompatible_runtime (test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime) ... ok
+test_inode_swap_factory_and_arbitrary_path_never_reclaimed (test_pce_retention.RetainTests.test_inode_swap_factory_and_arbitrary_path_never_reclaimed) ... ok
+test_missing_or_wrong_inherited_descriptor_refused (test_pce_retention.RetainTests.test_missing_or_wrong_inherited_descriptor_refused) ... ok
+test_no_pins_legacy_contract_unchanged (test_pce_retention.RetainTests.test_no_pins_legacy_contract_unchanged) ... ok
+test_old_or_absent_launcher_refuses_private (test_pce_retention.RetainTests.test_old_or_absent_launcher_refuses_private) ... ok
+test_owner_death_free_lock_does_not_authorize_reclaim (test_pce_retention.RetainTests.test_owner_death_free_lock_does_not_authorize_reclaim) ... ok
+test_pending_incompatible_upgrade_prevents_new_owner_pin (test_pce_retention.RetainTests.test_pending_incompatible_upgrade_prevents_new_owner_pin) ... ok
+test_replacing_pinned_slot_rejected_without_inspecting_pid (test_pce_retention.RetainTests.test_replacing_pinned_slot_rejected_without_inspecting_pid) ... ok
+test_stop_receipt_nonce_and_held_lock_required (test_pce_retention.RetainTests.test_stop_receipt_nonce_and_held_lock_required) ... ok
+test_storage_error_does_not_start_or_reclaim_anything (test_pce_retention.RetainTests.test_storage_error_does_not_start_or_reclaim_anything) ... ERROR
+
+======================================================================
+ERROR: test_storage_error_does_not_start_or_reclaim_anything (test_pce_retention.RetainTests.test_storage_error_does_not_start_or_reclaim_anything)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/pce-updater-retain-impl/tools/sessionhelper/tests/test_pce_retention.py", line 144, in test_storage_error_does_not_start_or_reclaim_anything
+    with self.assertRaises(OSError,msg='PIN_DISK_FULL_IGNORED'):self.register()
+                                                                ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/pce-updater-retain-impl/tools/sessionhelper/tests/test_pce_retention.py", line 36, in register
+    pin,handles=self.ret.register(package or self.package,'endpoint-fixture')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/pce-updater-retain-impl/tools/sessionhelper/update_launcher/guard.py", line 217, in register
+    with self.transaction(create=True) as fd:
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/data/ai-dev-data/pce-updater-retain-impl/tools/sessionhelper/update_launcher/guard.py", line 189, in locked
+    raise UpdateError('retain_invalid') from None
+update_launcher.guard.UpdateError: retain_invalid
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.186s
+
+FAILED (errors=1)

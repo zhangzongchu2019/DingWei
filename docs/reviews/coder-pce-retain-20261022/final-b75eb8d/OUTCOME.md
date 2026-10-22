@@ -1,0 +1,1 @@
+本冻结轮外层rc1：原49撤修中orphan-no-adopt／stopped-no-restart被新launcher能力门提前拒绝，未到指定Popen断言，其余命令均rc0（helper915、Go全仓、canonical61+2、新29、两原生与三浏览器）。原始结果不改写。另开发隔离探针证实业务cwd包可在owner入口先执行，且坏stopped状态无完整回执时未在候选检查拦住；均未部署，后继修正并完整重跑。

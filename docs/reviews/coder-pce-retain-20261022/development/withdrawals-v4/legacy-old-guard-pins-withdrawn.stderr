@@ -1,0 +1,14 @@
+test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused (test_self_update_offer.OfferTests.test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused) ... FAIL
+
+======================================================================
+FAIL: test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused (test_self_update_offer.OfferTests.test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-8onfwffx/helper/tests/test_self_update_offer.py", line 92, in test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused
+    with self.assertRaisesRegex(UpdateRejected,'^manual_required$',msg='OLD_GUARD_IGNORED_PINS'):
+AssertionError: UpdateRejected not raised : OLD_GUARD_IGNORED_PINS
+
+----------------------------------------------------------------------
+Ran 1 test in 0.547s
+
+FAILED (failures=1)

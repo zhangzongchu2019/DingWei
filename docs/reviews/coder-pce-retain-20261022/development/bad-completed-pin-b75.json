@@ -1,0 +1,8 @@
+{
+  "source": "b75eb8d369517ad8ff28eeb7b2cc87b5dae7b6a2",
+  "accepted_after_bad_state_only": [
+    "candidate",
+    "collision"
+  ],
+  "scope": "local metadata-only probe; no owner/native or deletion"
+}

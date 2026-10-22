@@ -1,0 +1,6 @@
+test_any_package_or_runtime_change_requires_manual (test_pce_retention.RetainTests.test_any_package_or_runtime_change_requires_manual) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+OK

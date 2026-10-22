@@ -1,0 +1,18 @@
+test_stop_during_partial_frame_uses_captured_socket_or_oserror (test_private_endpoint.DriverWiring.test_stop_during_partial_frame_uses_captured_socket_or_oserror) ... ERROR
+
+======================================================================
+ERROR: test_stop_during_partial_frame_uses_captured_socket_or_oserror (test_private_endpoint.DriverWiring.test_stop_during_partial_frame_uses_captured_socket_or_oserror)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-8ivkzlxp/t/4/dwpe-check-rqv101qp/helper/tests/test_private_endpoint.py", line 584, in test_stop_during_partial_frame_uses_captured_socket_or_oserror
+    self.assertEqual(rpc._recv_exact(2), b'xx', 'RECV_LOST_SOCKET_DURING_STOP')
+                     ^^^^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-g-8ivkzlxp/t/4/dwpe-check-rqv101qp/helper/sessionhelper/codexDriver.py", line 559, in _recv_exact
+    chunk = self._sock.recv(n - len(chunks))
+            ^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'recv'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (errors=1)

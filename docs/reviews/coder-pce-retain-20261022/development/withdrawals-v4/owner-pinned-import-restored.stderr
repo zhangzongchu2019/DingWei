@@ -1,0 +1,6 @@
+test_owner_launch_uses_pinned_package_before_business_cwd (test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.274s
+
+OK

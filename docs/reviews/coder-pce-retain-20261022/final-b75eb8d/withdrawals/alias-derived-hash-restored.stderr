@@ -1,0 +1,6 @@
+test_native_location_uses_canonical_request_bytes_and_fixed_uid_root (test_private_endpoint.NativeAlias.test_native_location_uses_canonical_request_bytes_and_fixed_uid_root) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.104s
+
+OK

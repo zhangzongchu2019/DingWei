@@ -1,0 +1,16 @@
+test_stop_receipt_nonce_and_held_lock_required (test_pce_retention.RetainTests.test_stop_receipt_nonce_and_held_lock_required) ... FAIL
+
+======================================================================
+FAIL: test_stop_receipt_nonce_and_held_lock_required (test_pce_retention.RetainTests.test_stop_receipt_nonce_and_held_lock_required)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-8onfwffx/helper/tests/test_pce_retention.py", line 122, in test_stop_receipt_nonce_and_held_lock_required
+    self.denied('FORGED_STOP_CERT_ACCEPTED',lambda:self.ret.finish(pin['id'],'wrong',self.proof(pin)),'retain_stop')
+  File "/tmp/dwpe-check-8onfwffx/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : FORGED_STOP_CERT_ACCEPTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+FAILED (failures=1)

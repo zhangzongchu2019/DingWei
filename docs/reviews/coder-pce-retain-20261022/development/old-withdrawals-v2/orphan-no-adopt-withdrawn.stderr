@@ -1,0 +1,30 @@
+test_orphan_registry_never_spawns_or_adopts (test_private_endpoint.Paths.test_orphan_registry_never_spawns_or_adopts) ... FAIL
+
+======================================================================
+FAIL: test_orphan_registry_never_spawns_or_adopts (test_private_endpoint.Paths.test_orphan_registry_never_spawns_or_adopts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-6h2vwfgl/helper/tests/test_private_endpoint.py", line 121, in test_orphan_registry_never_spawns_or_adopts
+    self.reject('dirty', lambda: ep.Client(self.spec).ensure())
+  File "/tmp/dwpe-check-6h2vwfgl/helper/tests/test_private_endpoint.py", line 40, in reject
+    callback()
+  File "/tmp/dwpe-check-6h2vwfgl/helper/tests/test_private_endpoint.py", line 121, in <lambda>
+    self.reject('dirty', lambda: ep.Client(self.spec).ensure())
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-check-6h2vwfgl/helper/sessionhelper/private_endpoint.py", line 633, in ensure
+    proc = subprocess.Popen([sys.executable, '-I', '-B', '-c', owner_main, package_root(), '--owner'],
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1193, in _execute_mock_call
+    raise effect
+AssertionError: ORPHAN_WAS_RESTARTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.019s
+
+FAILED (failures=1)

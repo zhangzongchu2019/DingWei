@@ -1,0 +1,14 @@
+test_registration_is_durable_and_locks_every_resource_before_popen (test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen) ... FAIL
+
+======================================================================
+FAIL: test_registration_is_durable_and_locks_every_resource_before_popen (test_pce_retention.RetainTests.test_registration_is_durable_and_locks_every_resource_before_popen)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-yco151lc/helper/tests/test_pce_retention.py", line 57, in test_registration_is_durable_and_locks_every_resource_before_popen
+    with self.assertRaises(BlockingIOError,msg='REGISTERED_RESOURCE_NOT_LOCKED'):
+AssertionError: BlockingIOError not raised : REGISTERED_RESOURCE_NOT_LOCKED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+FAILED (failures=1)

@@ -1,0 +1,6 @@
+test_late_exit_after_stop_timeout_never_auto_restarts (test_private_endpoint.Lifecycle.test_late_exit_after_stop_timeout_never_auto_restarts) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.012s
+
+OK

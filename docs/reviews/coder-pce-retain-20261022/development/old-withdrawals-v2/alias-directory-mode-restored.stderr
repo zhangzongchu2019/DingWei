@@ -1,0 +1,6 @@
+test_target_and_native_directory_permissions_are_hard_gates (test_private_endpoint.NativeAlias.test_target_and_native_directory_permissions_are_hard_gates) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.102s
+
+OK

@@ -1,0 +1,31 @@
+{
+  "source": "70d8875bb62d94e714cd77827c153cc2e15b3e43",
+  "tree": "fb862753d8df4393195a9ac43a1a41b71b8b08e5",
+  "source_count": 1897,
+  "helper_tests": 921,
+  "go_packages_pass": 53,
+  "go_no_test_packages": 13,
+  "conditional_go_skips": 30,
+  "canonical": "61+2",
+  "withdrawals": [
+    {
+      "label": "withdrawals",
+      "mutations": 49,
+      "commands": 100
+    },
+    {
+      "label": "pce-withdrawals",
+      "mutations": 37,
+      "commands": 76
+    }
+  ],
+  "native": [
+    "0.161.0",
+    "0.163.0"
+  ],
+  "gates": 12,
+  "source_locked": true,
+  "deployment": false,
+  "private_enabled": false,
+  "launcher_migration_included": false
+}

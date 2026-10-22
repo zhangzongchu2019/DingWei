@@ -1,0 +1,16 @@
+{
+  "label": "canonical",
+  "command": [
+    "sh",
+    "scripts/run-build-tests.sh"
+  ],
+  "source": "b75eb8d369517ad8ff28eeb7b2cc87b5dae7b6a2",
+  "start": "2026-10-22T22:10:39.844410+00:00",
+  "end": "2026-10-22T22:13:04.261923+00:00",
+  "rc": 0,
+  "isolated_profile": {
+    "HOME": "/tmp/dwpe-g-8ivkzlxp/h3",
+    "TMPDIR": "/tmp/dwpe-g-8ivkzlxp/t/3",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-8ivkzlxp/h3/.cache"
+  }
+}

@@ -1,0 +1,8 @@
+test_private_root_must_match_launcher_update_root_if_bound (test_pce_retention.RetainTests.test_private_root_must_match_launcher_update_root_if_bound) ... ok
+test_updater_root_must_match_launcher_update_root_if_bound (test_self_update_offer.OfferTests.test_updater_root_must_match_launcher_update_root_if_bound) ... ok
+test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused (test_self_update_offer.OfferTests.test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.092s
+
+OK

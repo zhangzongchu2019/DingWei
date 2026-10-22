@@ -1,0 +1,14 @@
+test_owner_launch_uses_pinned_package_before_business_cwd (test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd) ... FAIL
+
+======================================================================
+FAIL: test_owner_launch_uses_pinned_package_before_business_cwd (test_private_endpoint.RealOwnerProcess.test_owner_launch_uses_pinned_package_before_business_cwd)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-check-8onfwffx/helper/tests/test_private_endpoint.py", line 691, in test_owner_launch_uses_pinned_package_before_business_cwd
+    self.assertFalse(stdlib_marker.exists(),'OWNER_STDLIB_SHADOWED_BY_CWD')
+AssertionError: True is not false : OWNER_STDLIB_SHADOWED_BY_CWD
+
+----------------------------------------------------------------------
+Ran 1 test in 12.031s
+
+FAILED (failures=1)

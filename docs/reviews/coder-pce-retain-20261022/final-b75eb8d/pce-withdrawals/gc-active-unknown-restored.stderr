@@ -1,0 +1,6 @@
+test_owner_death_free_lock_does_not_authorize_reclaim (test_pce_retention.RetainTests.test_owner_death_free_lock_does_not_authorize_reclaim) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.018s
+
+OK
