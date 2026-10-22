@@ -1,0 +1,14 @@
+{
+  "label": "native-0161",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python",
+    "-B",
+    "tests/private-control-endpoint/real.py",
+    "0.161.0",
+    "/data/ai-dev-data/private-control-endpoint-impl/docs/reviews/coder-private-endpoint-phase1-20261022/final-d624035/native-0.161.0"
+  ],
+  "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+  "start": "2026-10-22T20:46:25.308898+00:00",
+  "end": "2026-10-22T20:46:29.102517+00:00",
+  "rc": 0
+}

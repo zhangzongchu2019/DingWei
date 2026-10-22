@@ -1,0 +1,16 @@
+test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused (test_private_endpoint.Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused) ... FAIL
+
+======================================================================
+FAIL: test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused (test_private_endpoint.Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-9nk_w0fa/t/dwpe-check-svbr86sn/helper/tests/test_private_endpoint.py", line 383, in test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused
+    self.reject(reason, self.client.status)
+  File "/tmp/dwpe-g-9nk_w0fa/t/dwpe-check-svbr86sn/helper/tests/test_private_endpoint.py", line 38, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_owner
+
+----------------------------------------------------------------------
+Ran 1 test in 0.059s
+
+FAILED (failures=1)

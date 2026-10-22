@@ -1,0 +1,16 @@
+test_old_owner_or_config_cannot_supply_current_thread_hint (test_private_endpoint.Control.test_old_owner_or_config_cannot_supply_current_thread_hint) ... FAIL
+
+======================================================================
+FAIL: test_old_owner_or_config_cannot_supply_current_thread_hint (test_private_endpoint.Control.test_old_owner_or_config_cannot_supply_current_thread_hint)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-9rfgj08l/t/4/dwpe-check-wdchh5p0/helper/tests/test_private_endpoint.py", line 448, in test_old_owner_or_config_cannot_supply_current_thread_hint
+    self.reject('binding', self.client.bound_thread)
+  File "/tmp/dwpe-g-9rfgj08l/t/4/dwpe-check-wdchh5p0/helper/tests/test_private_endpoint.py", line 38, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_binding
+
+----------------------------------------------------------------------
+Ran 1 test in 0.065s
+
+FAILED (failures=1)

@@ -1,0 +1,14 @@
+test_update_modules_and_canonical_counts_are_wired (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_update_modules_and_canonical_counts_are_wired) ... FAIL
+
+======================================================================
+FAIL: test_update_modules_and_canonical_counts_are_wired (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_update_modules_and_canonical_counts_are_wired)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-wire-80c0gkkd/deploy/test_build_entrypoints.py", line 80, in test_update_modules_and_canonical_counts_are_wired
+    self.assertEqual(runner.count("tools/sessionhelper/tests/" + name), 1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (failures=1)

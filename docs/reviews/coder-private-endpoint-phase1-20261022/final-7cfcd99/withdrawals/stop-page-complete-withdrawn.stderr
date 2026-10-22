@@ -1,0 +1,16 @@
+test_incomplete_or_unbounded_loaded_list_cannot_prove_idle (test_private_endpoint.Lifecycle.test_incomplete_or_unbounded_loaded_list_cannot_prove_idle) ... FAIL
+
+======================================================================
+FAIL: test_incomplete_or_unbounded_loaded_list_cannot_prove_idle (test_private_endpoint.Lifecycle.test_incomplete_or_unbounded_loaded_list_cannot_prove_idle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-9rfgj08l/t/4/dwpe-check-wdchh5p0/helper/tests/test_private_endpoint.py", line 487, in test_incomplete_or_unbounded_loaded_list_cannot_prove_idle
+    self.reject('protocol', self.owner.idle)
+  File "/tmp/dwpe-g-9rfgj08l/t/4/dwpe-check-wdchh5p0/helper/tests/test_private_endpoint.py", line 38, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_protocol
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+FAILED (failures=1)

@@ -1,0 +1,1607 @@
+{
+  "source_head": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+  "scope": "LOCAL_INERT_NOT_NATIVE_VERSION_ACCEPTANCE",
+  "mutations": 49,
+  "commands": 100,
+  "rows": [
+    {
+      "label": "baseline",
+      "case": "",
+      "start": "2026-10-22T20:46:21.560857+00:00",
+      "end": "2026-10-22T20:46:28.026466+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint"
+      ]
+    },
+    {
+      "label": "path-length-withdrawn",
+      "case": "Paths.test_long_path_and_parent_traversal_refused",
+      "start": "2026-10-22T20:46:28.026907+00:00",
+      "end": "2026-10-22T20:46:28.191029+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_long_path_and_parent_traversal_refused"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_path",
+      "designated_red": true
+    },
+    {
+      "label": "path-length-restored",
+      "case": "Paths.test_long_path_and_parent_traversal_refused",
+      "start": "2026-10-22T20:46:28.191397+00:00",
+      "end": "2026-10-22T20:46:28.355516+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_long_path_and_parent_traversal_refused"
+      ]
+    },
+    {
+      "label": "root-no-follow-withdrawn",
+      "case": "Paths.test_unsafe_directory_modes_and_symlink_refused",
+      "start": "2026-10-22T20:46:28.355870+00:00",
+      "end": "2026-10-22T20:46:28.521836+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_unsafe_directory_modes_and_symlink_refused"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_path",
+      "designated_red": true
+    },
+    {
+      "label": "root-no-follow-restored",
+      "case": "Paths.test_unsafe_directory_modes_and_symlink_refused",
+      "start": "2026-10-22T20:46:28.522073+00:00",
+      "end": "2026-10-22T20:46:28.686350+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_unsafe_directory_modes_and_symlink_refused"
+      ]
+    },
+    {
+      "label": "private-mode-withdrawn",
+      "case": "Paths.test_unsafe_directory_modes_and_symlink_refused",
+      "start": "2026-10-22T20:46:28.690154+00:00",
+      "end": "2026-10-22T20:46:28.904821+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_unsafe_directory_modes_and_symlink_refused"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_permissions",
+      "designated_red": true
+    },
+    {
+      "label": "private-mode-restored",
+      "case": "Paths.test_unsafe_directory_modes_and_symlink_refused",
+      "start": "2026-10-22T20:46:28.905081+00:00",
+      "end": "2026-10-22T20:46:29.120894+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_unsafe_directory_modes_and_symlink_refused"
+      ]
+    },
+    {
+      "label": "registry-mode-withdrawn",
+      "case": "Paths.test_registry_permissions_symlink_hardlink_and_size_refused",
+      "start": "2026-10-22T20:46:29.121344+00:00",
+      "end": "2026-10-22T20:46:29.335611+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_registry_permissions_symlink_hardlink_and_size_refused"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_file",
+      "designated_red": true
+    },
+    {
+      "label": "registry-mode-restored",
+      "case": "Paths.test_registry_permissions_symlink_hardlink_and_size_refused",
+      "start": "2026-10-22T20:46:29.335860+00:00",
+      "end": "2026-10-22T20:46:29.500051+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_registry_permissions_symlink_hardlink_and_size_refused"
+      ]
+    },
+    {
+      "label": "registry-size-withdrawn",
+      "case": "Paths.test_registry_permissions_symlink_hardlink_and_size_refused",
+      "start": "2026-10-22T20:46:29.500380+00:00",
+      "end": "2026-10-22T20:46:29.714650+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_registry_permissions_symlink_hardlink_and_size_refused"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_registry",
+      "designated_red": true
+    },
+    {
+      "label": "registry-size-restored",
+      "case": "Paths.test_registry_permissions_symlink_hardlink_and_size_refused",
+      "start": "2026-10-22T20:46:29.714834+00:00",
+      "end": "2026-10-22T20:46:29.878942+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_registry_permissions_symlink_hardlink_and_size_refused"
+      ]
+    },
+    {
+      "label": "owner-kernel-binding-withdrawn",
+      "case": "Control.test_registry_is_locator_not_authority",
+      "start": "2026-10-22T20:46:29.879284+00:00",
+      "end": "2026-10-22T20:46:30.093487+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_registry_is_locator_not_authority"
+      ],
+      "required_marker": "REGISTRY_AUTHORIZED_FOREIGN_OWNER",
+      "designated_red": true
+    },
+    {
+      "label": "owner-kernel-binding-restored",
+      "case": "Control.test_registry_is_locator_not_authority",
+      "start": "2026-10-22T20:46:30.093743+00:00",
+      "end": "2026-10-22T20:46:30.257940+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_registry_is_locator_not_authority"
+      ]
+    },
+    {
+      "label": "owner-live-lock-withdrawn",
+      "case": "Control.test_listener_without_live_owner_lock_is_not_owner",
+      "start": "2026-10-22T20:46:30.258273+00:00",
+      "end": "2026-10-22T20:46:30.472675+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_listener_without_live_owner_lock_is_not_owner"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_owner",
+      "designated_red": true
+    },
+    {
+      "label": "owner-live-lock-restored",
+      "case": "Control.test_listener_without_live_owner_lock_is_not_owner",
+      "start": "2026-10-22T20:46:30.472850+00:00",
+      "end": "2026-10-22T20:46:30.687155+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_listener_without_live_owner_lock_is_not_owner"
+      ]
+    },
+    {
+      "label": "owner-config-withdrawn",
+      "case": "Control.test_config_implementation_and_owner_python_must_match",
+      "start": "2026-10-22T20:46:30.687584+00:00",
+      "end": "2026-10-22T20:46:30.901841+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_config_implementation_and_owner_python_must_match"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_registry",
+      "designated_red": true
+    },
+    {
+      "label": "owner-config-restored",
+      "case": "Control.test_config_implementation_and_owner_python_must_match",
+      "start": "2026-10-22T20:46:30.902527+00:00",
+      "end": "2026-10-22T20:46:31.116699+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_config_implementation_and_owner_python_must_match"
+      ]
+    },
+    {
+      "label": "owner-implementation-withdrawn",
+      "case": "Control.test_config_implementation_and_owner_python_must_match",
+      "start": "2026-10-22T20:46:31.117094+00:00",
+      "end": "2026-10-22T20:46:31.381628+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_config_implementation_and_owner_python_must_match"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_registry",
+      "designated_red": true
+    },
+    {
+      "label": "owner-implementation-restored",
+      "case": "Control.test_config_implementation_and_owner_python_must_match",
+      "start": "2026-10-22T20:46:31.382215+00:00",
+      "end": "2026-10-22T20:46:31.596457+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_config_implementation_and_owner_python_must_match"
+      ]
+    },
+    {
+      "label": "owner-python-withdrawn",
+      "case": "Control.test_config_implementation_and_owner_python_must_match",
+      "start": "2026-10-22T20:46:31.596782+00:00",
+      "end": "2026-10-22T20:46:31.861092+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_config_implementation_and_owner_python_must_match"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_owner",
+      "designated_red": true
+    },
+    {
+      "label": "owner-python-restored",
+      "case": "Control.test_config_implementation_and_owner_python_must_match",
+      "start": "2026-10-22T20:46:31.861357+00:00",
+      "end": "2026-10-22T20:46:32.075701+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_config_implementation_and_owner_python_must_match"
+      ]
+    },
+    {
+      "label": "owner-challenge-withdrawn",
+      "case": "Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused",
+      "start": "2026-10-22T20:46:32.076637+00:00",
+      "end": "2026-10-22T20:46:32.290904+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_owner",
+      "designated_red": true
+    },
+    {
+      "label": "owner-challenge-restored",
+      "case": "Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused",
+      "start": "2026-10-22T20:46:32.292802+00:00",
+      "end": "2026-10-22T20:46:32.506969+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused"
+      ]
+    },
+    {
+      "label": "owner-boot-withdrawn",
+      "case": "Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused",
+      "start": "2026-10-22T20:46:32.508976+00:00",
+      "end": "2026-10-22T20:46:32.723127+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_owner",
+      "designated_red": true
+    },
+    {
+      "label": "owner-boot-restored",
+      "case": "Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused",
+      "start": "2026-10-22T20:46:32.723326+00:00",
+      "end": "2026-10-22T20:46:32.937519+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused"
+      ]
+    },
+    {
+      "label": "owner-reply-bool-withdrawn",
+      "case": "Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused",
+      "start": "2026-10-22T20:46:32.938016+00:00",
+      "end": "2026-10-22T20:46:33.152242+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_protocol",
+      "designated_red": true
+    },
+    {
+      "label": "owner-reply-bool-restored",
+      "case": "Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused",
+      "start": "2026-10-22T20:46:33.152510+00:00",
+      "end": "2026-10-22T20:46:33.366601+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused"
+      ]
+    },
+    {
+      "label": "writer-exclusion-withdrawn",
+      "case": "Control.test_duplicate_helper_cannot_take_writer_but_restart_can",
+      "start": "2026-10-22T20:46:33.366878+00:00",
+      "end": "2026-10-22T20:46:33.581040+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_duplicate_helper_cannot_take_writer_but_restart_can"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_busy",
+      "designated_red": true
+    },
+    {
+      "label": "writer-exclusion-restored",
+      "case": "Control.test_duplicate_helper_cannot_take_writer_but_restart_can",
+      "start": "2026-10-22T20:46:33.581257+00:00",
+      "end": "2026-10-22T20:46:33.795440+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_duplicate_helper_cannot_take_writer_but_restart_can"
+      ]
+    },
+    {
+      "label": "writer-required-withdrawn",
+      "case": "Control.test_duplicate_helper_cannot_take_writer_but_restart_can",
+      "start": "2026-10-22T20:46:33.796303+00:00",
+      "end": "2026-10-22T20:46:34.010464+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_duplicate_helper_cannot_take_writer_but_restart_can"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_binding",
+      "designated_red": true
+    },
+    {
+      "label": "writer-required-restored",
+      "case": "Control.test_duplicate_helper_cannot_take_writer_but_restart_can",
+      "start": "2026-10-22T20:46:34.010642+00:00",
+      "end": "2026-10-22T20:46:34.224875+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_duplicate_helper_cannot_take_writer_but_restart_can"
+      ]
+    },
+    {
+      "label": "admission-live-child-withdrawn",
+      "case": "Control.test_model_admission_compares_live_child_not_stale_rpc",
+      "start": "2026-10-22T20:46:34.225215+00:00",
+      "end": "2026-10-22T20:46:34.439512+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_model_admission_compares_live_child_not_stale_rpc"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_binding",
+      "designated_red": true
+    },
+    {
+      "label": "admission-live-child-restored",
+      "case": "Control.test_model_admission_compares_live_child_not_stale_rpc",
+      "start": "2026-10-22T20:46:34.439683+00:00",
+      "end": "2026-10-22T20:46:34.653827+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_model_admission_compares_live_child_not_stale_rpc"
+      ]
+    },
+    {
+      "label": "admission-stop-exclusion-withdrawn",
+      "case": "Control.test_stop_exclusion_blocks_new_model_admission",
+      "start": "2026-10-22T20:46:34.654163+00:00",
+      "end": "2026-10-22T20:46:34.868416+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_stop_exclusion_blocks_new_model_admission"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_busy",
+      "designated_red": true
+    },
+    {
+      "label": "admission-stop-exclusion-restored",
+      "case": "Control.test_stop_exclusion_blocks_new_model_admission",
+      "start": "2026-10-22T20:46:34.868587+00:00",
+      "end": "2026-10-22T20:46:35.082775+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_stop_exclusion_blocks_new_model_admission"
+      ]
+    },
+    {
+      "label": "orphan-no-adopt-withdrawn",
+      "case": "Paths.test_orphan_registry_never_spawns_or_adopts",
+      "start": "2026-10-22T20:46:35.083090+00:00",
+      "end": "2026-10-22T20:46:35.247186+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_orphan_registry_never_spawns_or_adopts"
+      ],
+      "required_marker": "ORPHAN_WAS_RESTARTED",
+      "designated_red": true
+    },
+    {
+      "label": "orphan-no-adopt-restored",
+      "case": "Paths.test_orphan_registry_never_spawns_or_adopts",
+      "start": "2026-10-22T20:46:35.247384+00:00",
+      "end": "2026-10-22T20:46:35.411511+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_orphan_registry_never_spawns_or_adopts"
+      ]
+    },
+    {
+      "label": "stopped-no-restart-withdrawn",
+      "case": "Paths.test_stopped_tombstone_refuses_automatic_start",
+      "start": "2026-10-22T20:46:35.411890+00:00",
+      "end": "2026-10-22T20:46:35.575989+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_stopped_tombstone_refuses_automatic_start"
+      ],
+      "required_marker": "STOPPED_OWNER_AUTORESTARTED",
+      "designated_red": true
+    },
+    {
+      "label": "stopped-no-restart-restored",
+      "case": "Paths.test_stopped_tombstone_refuses_automatic_start",
+      "start": "2026-10-22T20:46:35.576243+00:00",
+      "end": "2026-10-22T20:46:35.740343+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_stopped_tombstone_refuses_automatic_start"
+      ]
+    },
+    {
+      "label": "native-owned-before-http-withdrawn",
+      "case": "Paths.test_wrong_app_binding_receives_no_handshake_bytes",
+      "start": "2026-10-22T20:46:35.740629+00:00",
+      "end": "2026-10-22T20:46:36.054902+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_wrong_app_binding_receives_no_handshake_bytes"
+      ],
+      "required_marker": "NATIVE_UNVERIFIED_HANDSHAKE_SENT",
+      "designated_red": true
+    },
+    {
+      "label": "native-owned-before-http-restored",
+      "case": "Paths.test_wrong_app_binding_receives_no_handshake_bytes",
+      "start": "2026-10-22T20:46:36.055242+00:00",
+      "end": "2026-10-22T20:46:36.319540+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_wrong_app_binding_receives_no_handshake_bytes"
+      ]
+    },
+    {
+      "label": "native-exe-before-http-withdrawn",
+      "case": "Paths.test_wrong_app_executable_receives_no_handshake_bytes",
+      "start": "2026-10-22T20:46:36.320501+00:00",
+      "end": "2026-10-22T20:46:36.584779+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_wrong_app_executable_receives_no_handshake_bytes"
+      ],
+      "required_marker": "WRONG_NATIVE_EXE_RECEIVED_BYTES",
+      "designated_red": true
+    },
+    {
+      "label": "native-exe-before-http-restored",
+      "case": "Paths.test_wrong_app_executable_receives_no_handshake_bytes",
+      "start": "2026-10-22T20:46:36.584955+00:00",
+      "end": "2026-10-22T20:46:36.899429+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Paths.test_wrong_app_executable_receives_no_handshake_bytes"
+      ]
+    },
+    {
+      "label": "child-pid-reuse-withdrawn",
+      "case": "Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite",
+      "start": "2026-10-22T20:46:36.899854+00:00",
+      "end": "2026-10-22T20:46:37.064100+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_child",
+      "designated_red": true
+    },
+    {
+      "label": "child-pid-reuse-restored",
+      "case": "Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite",
+      "start": "2026-10-22T20:46:37.064302+00:00",
+      "end": "2026-10-22T20:46:37.228357+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite"
+      ]
+    },
+    {
+      "label": "child-reap-withdrawn",
+      "case": "Lifecycle.test_child_exit_reaps_actual_handle_before_one_replacement",
+      "start": "2026-10-22T20:46:37.228658+00:00",
+      "end": "2026-10-22T20:46:37.392728+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_child_exit_reaps_actual_handle_before_one_replacement"
+      ],
+      "required_marker": "Expected 'wait' to be called once",
+      "designated_red": true
+    },
+    {
+      "label": "child-reap-restored",
+      "case": "Lifecycle.test_child_exit_reaps_actual_handle_before_one_replacement",
+      "start": "2026-10-22T20:46:37.392963+00:00",
+      "end": "2026-10-22T20:46:37.557168+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_child_exit_reaps_actual_handle_before_one_replacement"
+      ]
+    },
+    {
+      "label": "restart-budget-withdrawn",
+      "case": "Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite",
+      "start": "2026-10-22T20:46:37.557784+00:00",
+      "end": "2026-10-22T20:46:37.721830+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite"
+      ],
+      "required_marker": "RESTART_BUDGET_RAISED IndexError",
+      "designated_red": true
+    },
+    {
+      "label": "restart-budget-restored",
+      "case": "Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite",
+      "start": "2026-10-22T20:46:37.722030+00:00",
+      "end": "2026-10-22T20:46:37.886181+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite"
+      ]
+    },
+    {
+      "label": "stop-human-confirmation-withdrawn",
+      "case": "Lifecycle.test_stop_requires_human_confirmation_and_idle_native_proof",
+      "start": "2026-10-22T20:46:37.886522+00:00",
+      "end": "2026-10-22T20:46:38.100834+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_stop_requires_human_confirmation_and_idle_native_proof"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_human_confirmation",
+      "designated_red": true
+    },
+    {
+      "label": "stop-human-confirmation-restored",
+      "case": "Lifecycle.test_stop_requires_human_confirmation_and_idle_native_proof",
+      "start": "2026-10-22T20:46:38.101126+00:00",
+      "end": "2026-10-22T20:46:38.265490+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_stop_requires_human_confirmation_and_idle_native_proof"
+      ]
+    },
+    {
+      "label": "stop-helper-exclusion-withdrawn",
+      "case": "Lifecycle.test_helper_admission_lock_prevents_owner_stop",
+      "start": "2026-10-22T20:46:38.266744+00:00",
+      "end": "2026-10-22T20:46:38.430923+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_helper_admission_lock_prevents_owner_stop"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_busy",
+      "designated_red": true
+    },
+    {
+      "label": "stop-helper-exclusion-restored",
+      "case": "Lifecycle.test_helper_admission_lock_prevents_owner_stop",
+      "start": "2026-10-22T20:46:38.431465+00:00",
+      "end": "2026-10-22T20:46:38.595681+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_helper_admission_lock_prevents_owner_stop"
+      ]
+    },
+    {
+      "label": "stop-page-complete-withdrawn",
+      "case": "Lifecycle.test_incomplete_or_unbounded_loaded_list_cannot_prove_idle",
+      "start": "2026-10-22T20:46:38.596100+00:00",
+      "end": "2026-10-22T20:46:38.760398+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_incomplete_or_unbounded_loaded_list_cannot_prove_idle"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_protocol",
+      "designated_red": true
+    },
+    {
+      "label": "stop-page-complete-restored",
+      "case": "Lifecycle.test_incomplete_or_unbounded_loaded_list_cannot_prove_idle",
+      "start": "2026-10-22T20:46:38.760589+00:00",
+      "end": "2026-10-22T20:46:38.975004+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_incomplete_or_unbounded_loaded_list_cannot_prove_idle"
+      ]
+    },
+    {
+      "label": "stop-idle-only-withdrawn",
+      "case": "Lifecycle.test_stop_requires_human_confirmation_and_idle_native_proof",
+      "start": "2026-10-22T20:46:38.975884+00:00",
+      "end": "2026-10-22T20:46:39.140153+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_stop_requires_human_confirmation_and_idle_native_proof"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_busy",
+      "designated_red": true
+    },
+    {
+      "label": "stop-idle-only-restored",
+      "case": "Lifecycle.test_stop_requires_human_confirmation_and_idle_native_proof",
+      "start": "2026-10-22T20:46:39.140385+00:00",
+      "end": "2026-10-22T20:46:39.304611+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_stop_requires_human_confirmation_and_idle_native_proof"
+      ]
+    },
+    {
+      "label": "private-enforce-only-withdrawn",
+      "case": "DriverWiring.test_private_observe_cannot_reach_transport_even_with_valid_peer",
+      "start": "2026-10-22T20:46:39.305408+00:00",
+      "end": "2026-10-22T20:46:39.469524+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.DriverWiring.test_private_observe_cannot_reach_transport_even_with_valid_peer"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_config",
+      "designated_red": true
+    },
+    {
+      "label": "private-enforce-only-restored",
+      "case": "DriverWiring.test_private_observe_cannot_reach_transport_even_with_valid_peer",
+      "start": "2026-10-22T20:46:39.470469+00:00",
+      "end": "2026-10-22T20:46:39.634641+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.DriverWiring.test_private_observe_cannot_reach_transport_even_with_valid_peer"
+      ]
+    },
+    {
+      "label": "stop-reader-partial-frame-withdrawn",
+      "case": "DriverWiring.test_stop_during_partial_frame_uses_captured_socket_or_oserror",
+      "start": "2026-10-22T20:46:39.635435+00:00",
+      "end": "2026-10-22T20:46:39.799675+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.DriverWiring.test_stop_during_partial_frame_uses_captured_socket_or_oserror"
+      ],
+      "required_marker": "has no attribute 'recv'",
+      "designated_red": true
+    },
+    {
+      "label": "stop-reader-partial-frame-restored",
+      "case": "DriverWiring.test_stop_during_partial_frame_uses_captured_socket_or_oserror",
+      "start": "2026-10-22T20:46:39.799964+00:00",
+      "end": "2026-10-22T20:46:39.964338+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.DriverWiring.test_stop_during_partial_frame_uses_captured_socket_or_oserror"
+      ]
+    },
+    {
+      "label": "alias-before-popen-withdrawn",
+      "case": "NativeAlias.test_preexisting_alias_stops_before_popen_and_unbound_alias_cannot_connect",
+      "start": "2026-10-22T20:46:39.964866+00:00",
+      "end": "2026-10-22T20:46:40.229298+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_preexisting_alias_stops_before_popen_and_unbound_alias_cannot_connect"
+      ],
+      "required_marker": "PREEXISTING_ALIAS_SPAWNED",
+      "designated_red": true
+    },
+    {
+      "label": "alias-before-popen-restored",
+      "case": "NativeAlias.test_preexisting_alias_stops_before_popen_and_unbound_alias_cannot_connect",
+      "start": "2026-10-22T20:46:40.229476+00:00",
+      "end": "2026-10-22T20:46:40.493708+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_preexisting_alias_stops_before_popen_and_unbound_alias_cannot_connect"
+      ]
+    },
+    {
+      "label": "alias-exact-target-withdrawn",
+      "case": "NativeAlias.test_outside_relative_and_wrong_digest_alias_are_refused",
+      "start": "2026-10-22T20:46:40.494765+00:00",
+      "end": "2026-10-22T20:46:40.759026+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_outside_relative_and_wrong_digest_alias_are_refused"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_path",
+      "designated_red": true
+    },
+    {
+      "label": "alias-exact-target-restored",
+      "case": "NativeAlias.test_outside_relative_and_wrong_digest_alias_are_refused",
+      "start": "2026-10-22T20:46:40.759250+00:00",
+      "end": "2026-10-22T20:46:41.023546+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_outside_relative_and_wrong_digest_alias_are_refused"
+      ]
+    },
+    {
+      "label": "alias-target-uid-withdrawn",
+      "case": "NativeAlias.test_target_and_native_directory_permissions_are_hard_gates",
+      "start": "2026-10-22T20:46:41.025043+00:00",
+      "end": "2026-10-22T20:46:41.289352+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_target_and_native_directory_permissions_are_hard_gates"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_permissions",
+      "designated_red": true
+    },
+    {
+      "label": "alias-target-uid-restored",
+      "case": "NativeAlias.test_target_and_native_directory_permissions_are_hard_gates",
+      "start": "2026-10-22T20:46:41.289529+00:00",
+      "end": "2026-10-22T20:46:41.553793+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_target_and_native_directory_permissions_are_hard_gates"
+      ]
+    },
+    {
+      "label": "alias-target-mode-withdrawn",
+      "case": "NativeAlias.test_target_and_native_directory_permissions_are_hard_gates",
+      "start": "2026-10-22T20:46:41.554127+00:00",
+      "end": "2026-10-22T20:46:41.818427+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_target_and_native_directory_permissions_are_hard_gates"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_permissions",
+      "designated_red": true
+    },
+    {
+      "label": "alias-target-mode-restored",
+      "case": "NativeAlias.test_target_and_native_directory_permissions_are_hard_gates",
+      "start": "2026-10-22T20:46:41.819500+00:00",
+      "end": "2026-10-22T20:46:42.083855+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_target_and_native_directory_permissions_are_hard_gates"
+      ]
+    },
+    {
+      "label": "alias-directory-mode-withdrawn",
+      "case": "NativeAlias.test_target_and_native_directory_permissions_are_hard_gates",
+      "start": "2026-10-22T20:46:42.084366+00:00",
+      "end": "2026-10-22T20:46:42.348673+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_target_and_native_directory_permissions_are_hard_gates"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_permissions",
+      "designated_red": true
+    },
+    {
+      "label": "alias-directory-mode-restored",
+      "case": "NativeAlias.test_target_and_native_directory_permissions_are_hard_gates",
+      "start": "2026-10-22T20:46:42.348852+00:00",
+      "end": "2026-10-22T20:46:42.613010+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_target_and_native_directory_permissions_are_hard_gates"
+      ]
+    },
+    {
+      "label": "alias-directory-uid-withdrawn",
+      "case": "NativeAlias.test_target_and_native_directory_permissions_are_hard_gates",
+      "start": "2026-10-22T20:46:42.613359+00:00",
+      "end": "2026-10-22T20:46:42.877525+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_target_and_native_directory_permissions_are_hard_gates"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_permissions",
+      "designated_red": true
+    },
+    {
+      "label": "alias-directory-uid-restored",
+      "case": "NativeAlias.test_target_and_native_directory_permissions_are_hard_gates",
+      "start": "2026-10-22T20:46:42.877708+00:00",
+      "end": "2026-10-22T20:46:43.141867+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_target_and_native_directory_permissions_are_hard_gates"
+      ]
+    },
+    {
+      "label": "alias-derived-hash-withdrawn",
+      "case": "NativeAlias.test_native_location_uses_canonical_request_bytes_and_fixed_uid_root",
+      "start": "2026-10-22T20:46:43.142223+00:00",
+      "end": "2026-10-22T20:46:43.406468+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_native_location_uses_canonical_request_bytes_and_fixed_uid_root"
+      ],
+      "required_marker": "NATIVE_LOCATION_HASH_DRIFT",
+      "designated_red": true
+    },
+    {
+      "label": "alias-derived-hash-restored",
+      "case": "NativeAlias.test_native_location_uses_canonical_request_bytes_and_fixed_uid_root",
+      "start": "2026-10-22T20:46:43.407037+00:00",
+      "end": "2026-10-22T20:46:43.671361+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_native_location_uses_canonical_request_bytes_and_fixed_uid_root"
+      ]
+    },
+    {
+      "label": "alias-directory-no-follow-withdrawn",
+      "case": "NativeAlias.test_native_directory_symlink_is_not_followed",
+      "start": "2026-10-22T20:46:43.671812+00:00",
+      "end": "2026-10-22T20:46:43.936118+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_native_directory_symlink_is_not_followed"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_path",
+      "designated_red": true
+    },
+    {
+      "label": "alias-directory-no-follow-restored",
+      "case": "NativeAlias.test_native_directory_symlink_is_not_followed",
+      "start": "2026-10-22T20:46:43.936440+00:00",
+      "end": "2026-10-22T20:46:44.200773+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_native_directory_symlink_is_not_followed"
+      ]
+    },
+    {
+      "label": "alias-owned-peer-withdrawn",
+      "case": "NativeAlias.test_wrong_peer_pid_or_starttime_is_rejected_before_http",
+      "start": "2026-10-22T20:46:44.201077+00:00",
+      "end": "2026-10-22T20:46:44.465340+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_wrong_peer_pid_or_starttime_is_rejected_before_http"
+      ],
+      "required_marker": "ALIAS_WRONG_PEER_ACCEPTED",
+      "designated_red": true
+    },
+    {
+      "label": "alias-owned-peer-restored",
+      "case": "NativeAlias.test_wrong_peer_pid_or_starttime_is_rejected_before_http",
+      "start": "2026-10-22T20:46:44.465518+00:00",
+      "end": "2026-10-22T20:46:44.729761+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_wrong_peer_pid_or_starttime_is_rejected_before_http"
+      ]
+    },
+    {
+      "label": "alias-inode-drift-withdrawn",
+      "case": "NativeAlias.test_alias_replaced_after_resolution_is_refused",
+      "start": "2026-10-22T20:46:44.730475+00:00",
+      "end": "2026-10-22T20:46:44.994691+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_alias_replaced_after_resolution_is_refused"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_path",
+      "designated_red": true
+    },
+    {
+      "label": "alias-inode-drift-restored",
+      "case": "NativeAlias.test_alias_replaced_after_resolution_is_refused",
+      "start": "2026-10-22T20:46:44.994878+00:00",
+      "end": "2026-10-22T20:46:45.259081+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_alias_replaced_after_resolution_is_refused"
+      ]
+    },
+    {
+      "label": "alias-target-drift-withdrawn",
+      "case": "NativeAlias.test_target_replaced_after_resolution_is_refused_and_not_unlinked",
+      "start": "2026-10-22T20:46:45.259451+00:00",
+      "end": "2026-10-22T20:46:45.523708+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_target_replaced_after_resolution_is_refused_and_not_unlinked"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_path",
+      "designated_red": true
+    },
+    {
+      "label": "alias-target-drift-restored",
+      "case": "NativeAlias.test_target_replaced_after_resolution_is_refused_and_not_unlinked",
+      "start": "2026-10-22T20:46:45.523905+00:00",
+      "end": "2026-10-22T20:46:45.788180+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_target_replaced_after_resolution_is_refused_and_not_unlinked"
+      ]
+    },
+    {
+      "label": "alias-owned-anchors-withdrawn",
+      "case": "NativeAlias.test_cleanup_cannot_remove_replaced_alias",
+      "start": "2026-10-22T20:46:45.788485+00:00",
+      "end": "2026-10-22T20:46:46.052740+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_cleanup_cannot_remove_replaced_alias"
+      ],
+      "required_marker": "ALIAS_ANCHORS_NOT_RETAINED",
+      "designated_red": true
+    },
+    {
+      "label": "alias-owned-anchors-restored",
+      "case": "NativeAlias.test_cleanup_cannot_remove_replaced_alias",
+      "start": "2026-10-22T20:46:46.052927+00:00",
+      "end": "2026-10-22T20:46:46.317258+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_cleanup_cannot_remove_replaced_alias"
+      ]
+    },
+    {
+      "label": "alias-connect-target-withdrawn",
+      "case": "NativeAlias.test_readlink_once_and_connects_only_calculated_target",
+      "start": "2026-10-22T20:46:46.317559+00:00",
+      "end": "2026-10-22T20:46:46.581858+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_readlink_once_and_connects_only_calculated_target"
+      ],
+      "required_marker": "ALIAS_REUSED_FOR_CONNECT",
+      "designated_red": true
+    },
+    {
+      "label": "alias-connect-target-restored",
+      "case": "NativeAlias.test_readlink_once_and_connects_only_calculated_target",
+      "start": "2026-10-22T20:46:46.582780+00:00",
+      "end": "2026-10-22T20:46:46.847041+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.NativeAlias.test_readlink_once_and_connects_only_calculated_target"
+      ]
+    },
+    {
+      "label": "current-binding-owner-boot-withdrawn",
+      "case": "Control.test_old_owner_or_config_cannot_supply_current_thread_hint",
+      "start": "2026-10-22T20:46:46.848082+00:00",
+      "end": "2026-10-22T20:46:47.062294+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_old_owner_or_config_cannot_supply_current_thread_hint"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_binding",
+      "designated_red": true
+    },
+    {
+      "label": "current-binding-owner-boot-restored",
+      "case": "Control.test_old_owner_or_config_cannot_supply_current_thread_hint",
+      "start": "2026-10-22T20:46:47.062483+00:00",
+      "end": "2026-10-22T20:46:47.326795+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_old_owner_or_config_cannot_supply_current_thread_hint"
+      ]
+    },
+    {
+      "label": "current-binding-config-withdrawn",
+      "case": "Control.test_old_owner_or_config_cannot_supply_current_thread_hint",
+      "start": "2026-10-22T20:46:47.327107+00:00",
+      "end": "2026-10-22T20:46:47.541320+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_old_owner_or_config_cannot_supply_current_thread_hint"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_binding",
+      "designated_red": true
+    },
+    {
+      "label": "current-binding-config-restored",
+      "case": "Control.test_old_owner_or_config_cannot_supply_current_thread_hint",
+      "start": "2026-10-22T20:46:47.541500+00:00",
+      "end": "2026-10-22T20:46:47.755686+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_old_owner_or_config_cannot_supply_current_thread_hint"
+      ]
+    },
+    {
+      "label": "current-binding-no-reassign-withdrawn",
+      "case": "Control.test_current_thread_hint_survives_writer_restart_but_is_not_reassigned",
+      "start": "2026-10-22T20:46:47.755978+00:00",
+      "end": "2026-10-22T20:46:47.970157+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_current_thread_hint_survives_writer_restart_but_is_not_reassigned"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_binding",
+      "designated_red": true
+    },
+    {
+      "label": "current-binding-no-reassign-restored",
+      "case": "Control.test_current_thread_hint_survives_writer_restart_but_is_not_reassigned",
+      "start": "2026-10-22T20:46:47.971113+00:00",
+      "end": "2026-10-22T20:46:48.235476+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_current_thread_hint_survives_writer_restart_but_is_not_reassigned"
+      ]
+    },
+    {
+      "label": "human-only-current-binding-withdrawn",
+      "case": "Control.test_human_resume_is_explicit_id_and_live_owner_only",
+      "start": "2026-10-22T20:46:48.235841+00:00",
+      "end": "2026-10-22T20:46:48.450182+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_human_resume_is_explicit_id_and_live_owner_only"
+      ],
+      "required_marker": "PRIVATE_ACCEPTED_binding",
+      "designated_red": true
+    },
+    {
+      "label": "human-only-current-binding-restored",
+      "case": "Control.test_human_resume_is_explicit_id_and_live_owner_only",
+      "start": "2026-10-22T20:46:48.450438+00:00",
+      "end": "2026-10-22T20:46:48.664737+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Control.test_human_resume_is_explicit_id_and_live_owner_only"
+      ]
+    },
+    {
+      "label": "private-quiet-stream-withdrawn",
+      "case": "RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop",
+      "start": "2026-10-22T20:46:48.665359+00:00",
+      "end": "2026-10-22T20:46:49.130032+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop"
+      ],
+      "required_marker": "PRIVATE_RPC_IDLE_TIMEOUT",
+      "designated_red": true
+    },
+    {
+      "label": "private-quiet-stream-restored",
+      "case": "RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop",
+      "start": "2026-10-22T20:46:49.130439+00:00",
+      "end": "2026-10-22T20:46:52.957500+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop"
+      ]
+    },
+    {
+      "label": "stop-intent-no-restart-withdrawn",
+      "case": "Lifecycle.test_late_exit_after_stop_timeout_never_auto_restarts",
+      "start": "2026-10-22T20:46:52.963661+00:00",
+      "end": "2026-10-22T20:46:53.278248+00:00",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_late_exit_after_stop_timeout_never_auto_restarts"
+      ],
+      "required_marker": "STOP_TIMEOUT_RESTARTED_CHILD",
+      "designated_red": true
+    },
+    {
+      "label": "stop-intent-no-restart-restored",
+      "case": "Lifecycle.test_late_exit_after_stop_timeout_never_auto_restarts",
+      "start": "2026-10-22T20:46:53.278538+00:00",
+      "end": "2026-10-22T20:46:53.442883+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint.Lifecycle.test_late_exit_after_stop_timeout_never_auto_restarts"
+      ]
+    },
+    {
+      "label": "final-baseline",
+      "case": "",
+      "start": "2026-10-22T20:46:53.442956+00:00",
+      "end": "2026-10-22T20:46:59.519192+00:00",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_private_endpoint"
+      ]
+    }
+  ],
+  "failures": []
+}

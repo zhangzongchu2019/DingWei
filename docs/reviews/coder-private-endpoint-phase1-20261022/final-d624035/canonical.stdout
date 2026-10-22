@@ -1,0 +1,2 @@
+TEST python tools/sessionhelper/test_supervise_connection_loops.py
+TEST python tools/sessionhelper/tests/test_update_release_core.py

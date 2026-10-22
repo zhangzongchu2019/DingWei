@@ -1,0 +1,6 @@
+test_stopped_tombstone_refuses_automatic_start (test_private_endpoint.Paths.test_stopped_tombstone_refuses_automatic_start) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+OK

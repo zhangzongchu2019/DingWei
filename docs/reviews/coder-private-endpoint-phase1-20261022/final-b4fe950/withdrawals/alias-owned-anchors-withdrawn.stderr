@@ -1,0 +1,14 @@
+test_cleanup_cannot_remove_replaced_alias (test_private_endpoint.NativeAlias.test_cleanup_cannot_remove_replaced_alias) ... FAIL
+
+======================================================================
+FAIL: test_cleanup_cannot_remove_replaced_alias (test_private_endpoint.NativeAlias.test_cleanup_cannot_remove_replaced_alias)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-yy_jhuqf/t/4/dwpe-check-eqrxfbk4/helper/tests/test_private_endpoint.py", line 285, in test_cleanup_cannot_remove_replaced_alias
+    self.assertEqual(len(anchors), 3, 'ALIAS_ANCHORS_NOT_RETAINED')
+AssertionError: 0 != 3 : ALIAS_ANCHORS_NOT_RETAINED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.105s
+
+FAILED (failures=1)

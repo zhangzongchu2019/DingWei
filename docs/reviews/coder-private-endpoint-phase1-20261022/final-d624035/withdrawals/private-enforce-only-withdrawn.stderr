@@ -1,0 +1,16 @@
+test_private_observe_cannot_reach_transport_even_with_valid_peer (test_private_endpoint.DriverWiring.test_private_observe_cannot_reach_transport_even_with_valid_peer) ... FAIL
+
+======================================================================
+FAIL: test_private_observe_cannot_reach_transport_even_with_valid_peer (test_private_endpoint.DriverWiring.test_private_observe_cannot_reach_transport_even_with_valid_peer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-9nk_w0fa/t/dwpe-check-svbr86sn/helper/tests/test_private_endpoint.py", line 564, in test_private_observe_cannot_reach_transport_even_with_valid_peer
+    self.reject('config', driver.start)
+  File "/tmp/dwpe-g-9nk_w0fa/t/dwpe-check-svbr86sn/helper/tests/test_private_endpoint.py", line 38, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_config
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)

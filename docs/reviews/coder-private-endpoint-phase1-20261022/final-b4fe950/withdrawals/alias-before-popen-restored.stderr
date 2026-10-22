@@ -1,0 +1,6 @@
+test_preexisting_alias_stops_before_popen_and_unbound_alias_cannot_connect (test_private_endpoint.NativeAlias.test_preexisting_alias_stops_before_popen_and_unbound_alias_cannot_connect) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.104s
+
+OK

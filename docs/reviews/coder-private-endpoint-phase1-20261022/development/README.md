@@ -5,3 +5,5 @@
 前序两轮开发失败留在本机：空线程缺 rollout 的初始 PTY 失败；等待本地 turn 回 idle 超时。第二轮探针 finally 优雅退出等待也超时，事后按唯一探针命令行只读核无活动进程；没有按 registry PID 接管或杀进程。现脚本在仍持 Popen 时完成超时清理。这些失败不改写为 PASS。
 
 NATIVE_ALIAS 两版均为真实二进制读数；官方 0.163.0 固定路径合同见设计补页 Git 坐标。0.161.0 官方源码 fetch 网络失败，未声称两版源文件相同。Python 驱动取本地开发分支；这些记录不是最终冻结源全门。
+
+后续20:39Z已成功补取0.161.0官方Git源码；先前fetch失败仍为当时事实，最终来源与annotated-tag类型订正在上级OFFICIAL-SOURCES.json。两版路径函数一致、整个transport文件存在startup-lock差异。

@@ -1,0 +1,16 @@
+test_target_and_native_directory_permissions_are_hard_gates (test_private_endpoint.NativeAlias.test_target_and_native_directory_permissions_are_hard_gates) ... FAIL
+
+======================================================================
+FAIL: test_target_and_native_directory_permissions_are_hard_gates (test_private_endpoint.NativeAlias.test_target_and_native_directory_permissions_are_hard_gates)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-9nk_w0fa/t/dwpe-check-svbr86sn/helper/tests/test_private_endpoint.py", line 220, in test_target_and_native_directory_permissions_are_hard_gates
+    self.reject('permissions', self.connect)
+  File "/tmp/dwpe-g-9nk_w0fa/t/dwpe-check-svbr86sn/helper/tests/test_private_endpoint.py", line 38, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_permissions
+
+----------------------------------------------------------------------
+Ran 1 test in 0.104s
+
+FAILED (failures=1)

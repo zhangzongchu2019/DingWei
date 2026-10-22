@@ -1,0 +1,19 @@
+{
+  "label": "native-0163",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python",
+    "-B",
+    "tests/private-control-endpoint/real.py",
+    "0.163.0",
+    "/data/ai-dev-data/private-control-endpoint-impl/docs/reviews/coder-private-endpoint-phase1-20261022/final-7cfcd99/native-0.163.0"
+  ],
+  "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+  "start": "2026-10-22T21:24:03.165653+00:00",
+  "end": "2026-10-22T21:24:06.485289+00:00",
+  "rc": 0,
+  "isolated_profile": {
+    "HOME": "/tmp/dwpe-g-9rfgj08l/h6",
+    "TMPDIR": "/tmp/dwpe-g-9rfgj08l/t/6",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h6/.cache"
+  }
+}

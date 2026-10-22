@@ -1,0 +1,16 @@
+{
+  "label": "browser-mention",
+  "command": [
+    "node",
+    "view-service/renderer-mention-reply-regression.js"
+  ],
+  "source": "b4fe9504e41e3d38a6b3a3e109655cac60269823",
+  "start": "2026-10-22T21:17:00.967953+00:00",
+  "end": "2026-10-22T21:17:02.734919+00:00",
+  "rc": 0,
+  "isolated_profile": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h8",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/8",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h8/.cache"
+  }
+}

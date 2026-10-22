@@ -1,0 +1,6 @@
+test_wrong_app_binding_receives_no_handshake_bytes (test_private_endpoint.Paths.test_wrong_app_binding_receives_no_handshake_bytes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.125s
+
+OK

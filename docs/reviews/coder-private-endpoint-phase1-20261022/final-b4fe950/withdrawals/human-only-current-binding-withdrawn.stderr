@@ -1,0 +1,16 @@
+test_human_resume_is_explicit_id_and_live_owner_only (test_private_endpoint.Control.test_human_resume_is_explicit_id_and_live_owner_only) ... FAIL
+
+======================================================================
+FAIL: test_human_resume_is_explicit_id_and_live_owner_only (test_private_endpoint.Control.test_human_resume_is_explicit_id_and_live_owner_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-yy_jhuqf/t/4/dwpe-check-eqrxfbk4/helper/tests/test_private_endpoint.py", line 429, in test_human_resume_is_explicit_id_and_live_owner_only
+    self.reject('binding', lambda: human.resume_command('12345678-1234-1234-1234-123456789abd'))
+  File "/tmp/dwpe-g-yy_jhuqf/t/4/dwpe-check-eqrxfbk4/helper/tests/test_private_endpoint.py", line 38, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_binding
+
+----------------------------------------------------------------------
+Ran 1 test in 0.065s
+
+FAILED (failures=1)

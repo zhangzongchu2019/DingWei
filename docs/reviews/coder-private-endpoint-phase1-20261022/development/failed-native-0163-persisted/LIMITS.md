@@ -1,0 +1,1 @@
+开发阶段失败：等待本地turn回idle超时，随后finally的优雅退出wait超过8秒；该轮脚本未写出RESULT，原始工具stderr未落文件，故不伪造raw.stderr。server.stderr原样保留；只读核唯一探针命令行无活动进程、原端点连接被拒。后继脚本在自持Popen内完成kill与wait，正式两版门另记。

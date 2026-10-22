@@ -1,0 +1,19 @@
+{
+  "scope": "DEVELOPMENT_FUTURE_FIX_PRECHECK_NOT_ACTIVE_SOURCE",
+  "active_source_unchanged": "b4fe9504",
+  "future_patch": "/tmp/private-canonical-count-fix.py",
+  "rows": [
+    {
+      "label": "future-positive",
+      "rc": 0
+    },
+    {
+      "label": "withdrawn-wire",
+      "rc": 1
+    },
+    {
+      "label": "restored",
+      "rc": 0
+    }
+  ]
+}

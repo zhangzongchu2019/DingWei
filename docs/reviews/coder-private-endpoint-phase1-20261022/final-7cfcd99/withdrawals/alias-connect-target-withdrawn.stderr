@@ -1,0 +1,23 @@
+test_readlink_once_and_connects_only_calculated_target (test_private_endpoint.NativeAlias.test_readlink_once_and_connects_only_calculated_target) ... FAIL
+
+======================================================================
+FAIL: test_readlink_once_and_connects_only_calculated_target (test_private_endpoint.NativeAlias.test_readlink_once_and_connects_only_calculated_target)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-9rfgj08l/t/4/dwpe-check-wdchh5p0/helper/tests/test_private_endpoint.py", line 204, in test_readlink_once_and_connects_only_calculated_target
+    self.assertEqual(connected, [str(self.target), str(self.target)], 'ALIAS_REUSED_FOR_CONNECT')
+AssertionError: Lists differ: ['/tmp/dwpe-pvzl3c60/s/codex-control/2ce5c62d14d[75 chars]ock'] != ['/tmp/pe-n-1735t3lp/n/1111111111111111111111111[125 chars]111']
+
+First differing element 0:
+'/tmp/dwpe-pvzl3c60/s/codex-control/2ce5c62d14d330b0/app.sock'
+'/tmp/pe-n-1735t3lp/n/1111111111111111111111111[35 chars]1111'
+
+- ['/tmp/dwpe-pvzl3c60/s/codex-control/2ce5c62d14d330b0/app.sock',
+-  '/tmp/dwpe-pvzl3c60/s/codex-control/2ce5c62d14d330b0/app.sock']
++ ['/tmp/pe-n-1735t3lp/n/1111111111111111111111111111111111111111111111111111111111111111',
++  '/tmp/pe-n-1735t3lp/n/1111111111111111111111111111111111111111111111111111111111111111'] : ALIAS_REUSED_FOR_CONNECT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.107s
+
+FAILED (failures=1)

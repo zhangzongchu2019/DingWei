@@ -1,0 +1,206 @@
+{
+  "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+  "rows": [
+    {
+      "label": "pg-prewarm",
+      "command": [
+        "go",
+        "test",
+        "./internal/store/pgtest",
+        "-run",
+        "^TestPool_RoundTrip$",
+        "-count=1",
+        "-timeout=5m"
+      ],
+      "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+      "start": "2026-10-22T21:20:53.486181+00:00",
+      "end": "2026-10-22T21:20:57.858081+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-9rfgj08l/h0",
+        "TMPDIR": "/tmp/gcfa2thm6",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h0/.cache"
+      }
+    },
+    {
+      "label": "canonical",
+      "command": [
+        "sh",
+        "scripts/run-build-tests.sh"
+      ],
+      "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+      "start": "2026-10-22T21:20:57.858377+00:00",
+      "end": "2026-10-22T21:23:18.727422+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-9rfgj08l/h3",
+        "TMPDIR": "/tmp/dwpe-g-9rfgj08l/t/3",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h3/.cache"
+      }
+    },
+    {
+      "label": "vet",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+      "start": "2026-10-22T21:23:18.727975+00:00",
+      "end": "2026-10-22T21:23:20.801321+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-9rfgj08l/h1",
+        "TMPDIR": "/tmp/dwpe-g-9rfgj08l/t/1",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h1/.cache"
+      }
+    },
+    {
+      "label": "withdrawals",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "tests/private-control-endpoint/check.py",
+        "/data/ai-dev-data/private-control-endpoint-impl/docs/reviews/coder-private-endpoint-phase1-20261022/final-7cfcd99/withdrawals"
+      ],
+      "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+      "start": "2026-10-22T21:23:20.801677+00:00",
+      "end": "2026-10-22T21:23:59.845694+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-9rfgj08l/h4",
+        "TMPDIR": "/tmp/dwpe-g-9rfgj08l/t/4",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h4/.cache"
+      }
+    },
+    {
+      "label": "native-0161",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "tests/private-control-endpoint/real.py",
+        "0.161.0",
+        "/data/ai-dev-data/private-control-endpoint-impl/docs/reviews/coder-private-endpoint-phase1-20261022/final-7cfcd99/native-0.161.0"
+      ],
+      "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+      "start": "2026-10-22T21:23:59.845979+00:00",
+      "end": "2026-10-22T21:24:03.165264+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-9rfgj08l/h5",
+        "TMPDIR": "/tmp/dwpe-g-9rfgj08l/t/5",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h5/.cache"
+      }
+    },
+    {
+      "label": "native-0163",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "tests/private-control-endpoint/real.py",
+        "0.163.0",
+        "/data/ai-dev-data/private-control-endpoint-impl/docs/reviews/coder-private-endpoint-phase1-20261022/final-7cfcd99/native-0.163.0"
+      ],
+      "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+      "start": "2026-10-22T21:24:03.165653+00:00",
+      "end": "2026-10-22T21:24:06.485289+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-9rfgj08l/h6",
+        "TMPDIR": "/tmp/dwpe-g-9rfgj08l/t/6",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h6/.cache"
+      }
+    },
+    {
+      "label": "helper",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-v"
+      ],
+      "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+      "start": "2026-10-22T21:23:18.728378+00:00",
+      "end": "2026-10-22T21:30:29.172083+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-9rfgj08l/h2",
+        "TMPDIR": "/tmp/dwpe-g-9rfgj08l/t/2",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h2/.cache"
+      }
+    },
+    {
+      "label": "go-full",
+      "command": [
+        "go",
+        "test",
+        "./...",
+        "-json",
+        "-count=1",
+        "-timeout=30m"
+      ],
+      "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+      "start": "2026-10-22T21:23:18.728156+00:00",
+      "end": "2026-10-22T21:35:03.133235+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-9rfgj08l/h0",
+        "TMPDIR": "/tmp/gcfa2thm6",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h0/.cache"
+      }
+    },
+    {
+      "label": "browser-admission",
+      "command": [
+        "node",
+        "view-service/renderer-model-admission-regression.js"
+      ],
+      "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+      "start": "2026-10-22T21:35:03.133764+00:00",
+      "end": "2026-10-22T21:35:04.149313+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-9rfgj08l/h7",
+        "TMPDIR": "/tmp/dwpe-g-9rfgj08l/t/7",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h7/.cache"
+      }
+    },
+    {
+      "label": "browser-mention",
+      "command": [
+        "node",
+        "view-service/renderer-mention-reply-regression.js"
+      ],
+      "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+      "start": "2026-10-22T21:35:04.149618+00:00",
+      "end": "2026-10-22T21:35:05.916448+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-9rfgj08l/h8",
+        "TMPDIR": "/tmp/dwpe-g-9rfgj08l/t/8",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h8/.cache"
+      }
+    },
+    {
+      "label": "browser-backfill",
+      "command": [
+        "node",
+        "view-service/stale-thread-backfill-browser-regression.js"
+      ],
+      "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+      "start": "2026-10-22T21:35:05.916722+00:00",
+      "end": "2026-10-22T21:35:07.232738+00:00",
+      "rc": 0,
+      "isolated_profile": {
+        "HOME": "/tmp/dwpe-g-9rfgj08l/h9",
+        "TMPDIR": "/tmp/dwpe-g-9rfgj08l/t/9",
+        "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h9/.cache"
+      }
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,23 @@
+{
+  "task": "S-HELPER-PRIVATE-CONTROL-ENDPOINT phase1",
+  "source_commit": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+  "source_tree": "8a7a67519a57b777eb2d12a18b9f8fb90207f7d8",
+  "source_tag": "evidence/coder/private-control-endpoint-8a7a6751",
+  "base_commit": "29e63f9963dedcc32010ca89265d78ba12664bf2",
+  "base_tree": "65cf4df2ea3d928aff263dc03c63dbaff81175e6",
+  "design_commit": "dbb7cf0ec99d52607b333861e1bb10ee0d4d5489",
+  "phase1_contract": "docs/designs/S-HELPER-PRIVATE-CONTROL-ENDPOINT-PHASE1.md",
+  "source_manifest": "final-7cfcd99/SOURCE.json",
+  "gates_result": "final-7cfcd99/RESULT.json",
+  "activation_blocker": "S-PCE-UPDATER-RETAIN must close before enabling private on any seat",
+  "default_endpoint_mode": "legacy",
+  "private_requires": "Linux daemon_ws + explicit private + identity enforce",
+  "deployment_authorized": false,
+  "excluded": [
+    "human attach lease heartbeat",
+    "lost-owner recovery tool",
+    "transparent live switching",
+    "online rollout",
+    "updater slot retention modification"
+  ]
+}

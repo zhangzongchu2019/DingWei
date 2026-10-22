@@ -1,0 +1,13 @@
+{
+  "label": "withdrawals",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python",
+    "-B",
+    "tests/private-control-endpoint/check.py",
+    "/data/ai-dev-data/private-control-endpoint-impl/docs/reviews/coder-private-endpoint-phase1-20261022/final-d624035/withdrawals"
+  ],
+  "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+  "start": "2026-10-22T20:46:21.509078+00:00",
+  "end": "2026-10-22T20:46:59.550150+00:00",
+  "rc": 0
+}

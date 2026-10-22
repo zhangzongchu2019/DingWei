@@ -1,0 +1,6 @@
+test_helper_admission_lock_prevents_owner_stop (test_private_endpoint.Lifecycle.test_helper_admission_lock_prevents_owner_stop) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+OK

@@ -1,0 +1,6 @@
+test_stop_during_partial_frame_uses_captured_socket_or_oserror (test_private_endpoint.DriverWiring.test_stop_during_partial_frame_uses_captured_socket_or_oserror) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+OK

@@ -1,0 +1,30 @@
+test_stopped_tombstone_refuses_automatic_start (test_private_endpoint.Paths.test_stopped_tombstone_refuses_automatic_start) ... FAIL
+
+======================================================================
+FAIL: test_stopped_tombstone_refuses_automatic_start (test_private_endpoint.Paths.test_stopped_tombstone_refuses_automatic_start)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-9rfgj08l/t/4/dwpe-check-wdchh5p0/helper/tests/test_private_endpoint.py", line 126, in test_stopped_tombstone_refuses_automatic_start
+    self.reject('stopped', lambda: ep.Client(self.spec).ensure())
+  File "/tmp/dwpe-g-9rfgj08l/t/4/dwpe-check-wdchh5p0/helper/tests/test_private_endpoint.py", line 39, in reject
+    callback()
+  File "/tmp/dwpe-g-9rfgj08l/t/4/dwpe-check-wdchh5p0/helper/tests/test_private_endpoint.py", line 126, in <lambda>
+    self.reject('stopped', lambda: ep.Client(self.spec).ensure())
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-g-9rfgj08l/t/4/dwpe-check-wdchh5p0/helper/sessionhelper/private_endpoint.py", line 592, in ensure
+    proc = subprocess.Popen([sys.executable, '-B', '-m', 'sessionhelper.private_endpoint', '--owner'],
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1193, in _execute_mock_call
+    raise effect
+AssertionError: STOPPED_OWNER_AUTORESTARTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+FAILED (failures=1)

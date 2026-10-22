@@ -1,0 +1,35 @@
+{
+  "source_type_correction": "129b8ec7 is an annotated tag object, not a commit; original file blob references remain correct",
+  "path_contract_equal": true,
+  "directory_blob_equal": true,
+  "whole_transport_file_equal": false,
+  "difference_scope": "native startup lock lifetime and removable-file guard; this feature never modifies native lock files",
+  "rows": [
+    {
+      "version": "0.161.0",
+      "repository": "https://github.com/openai/codex.git",
+      "tag": "refs/tags/rust-v0.161.0",
+      "tag_object": "7e21416b38834816c224ea0dfd135c3de94b2f15",
+      "peeled_commit": "979011409de0a60b52f179721948e65531d26144",
+      "blobs": {
+        "codex-rs/app-server-transport/src/transport/unix_socket.rs": "3f70bcced464e3ce0592c722d155efd06ea04ae1",
+        "codex-rs/uds/src/daemon_directory.rs": "90c3c103bc8d564a2cdfc658e1e80e76769bcebe"
+      },
+      "official_binary_sha256": "9a820c17865fa825d04db416818679a9d63bd72e50835c396f496e5684626c9c",
+      "provenance_reference": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/PROVENANCE.json"
+    },
+    {
+      "version": "0.163.0",
+      "repository": "https://github.com/openai/codex.git",
+      "tag": "refs/tags/rust-v0.163.0",
+      "tag_object": "129b8ec7ee6f4511557a4856279f529025c25af4",
+      "peeled_commit": "83086188ae0614bd882818ff1aa23f3194962012",
+      "blobs": {
+        "codex-rs/app-server-transport/src/transport/unix_socket.rs": "afc69753b292bda40f3111bfae06316965f2e27e",
+        "codex-rs/uds/src/daemon_directory.rs": "90c3c103bc8d564a2cdfc658e1e80e76769bcebe"
+      },
+      "official_binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215",
+      "provenance_reference": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/PROVENANCE.json"
+    }
+  ]
+}

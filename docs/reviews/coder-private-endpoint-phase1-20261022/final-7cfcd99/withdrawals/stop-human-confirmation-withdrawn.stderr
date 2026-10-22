@@ -1,0 +1,16 @@
+test_stop_requires_human_confirmation_and_idle_native_proof (test_private_endpoint.Lifecycle.test_stop_requires_human_confirmation_and_idle_native_proof) ... FAIL
+
+======================================================================
+FAIL: test_stop_requires_human_confirmation_and_idle_native_proof (test_private_endpoint.Lifecycle.test_stop_requires_human_confirmation_and_idle_native_proof)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-9rfgj08l/t/4/dwpe-check-wdchh5p0/helper/tests/test_private_endpoint.py", line 472, in test_stop_requires_human_confirmation_and_idle_native_proof
+    self.reject('human_confirmation', lambda: self.owner.stop_idle(False))
+  File "/tmp/dwpe-g-9rfgj08l/t/4/dwpe-check-wdchh5p0/helper/tests/test_private_endpoint.py", line 38, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_human_confirmation
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+FAILED (failures=1)

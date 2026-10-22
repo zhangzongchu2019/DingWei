@@ -1,0 +1,16 @@
+{
+  "label": "browser-admission",
+  "command": [
+    "node",
+    "view-service/renderer-model-admission-regression.js"
+  ],
+  "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+  "start": "2026-10-22T21:35:03.133764+00:00",
+  "end": "2026-10-22T21:35:04.149313+00:00",
+  "rc": 0,
+  "isolated_profile": {
+    "HOME": "/tmp/dwpe-g-9rfgj08l/h7",
+    "TMPDIR": "/tmp/dwpe-g-9rfgj08l/t/7",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-9rfgj08l/h7/.cache"
+  }
+}

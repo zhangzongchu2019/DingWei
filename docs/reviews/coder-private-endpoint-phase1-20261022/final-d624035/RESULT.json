@@ -1,0 +1,151 @@
+{
+  "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+  "rows": [
+    {
+      "label": "pg-prewarm",
+      "command": [
+        "go",
+        "test",
+        "./internal/store/pgtest",
+        "-run",
+        "^TestPool_RoundTrip$",
+        "-count=1",
+        "-timeout=5m"
+      ],
+      "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+      "start": "2026-10-22T20:46:16.934536+00:00",
+      "end": "2026-10-22T20:46:21.507190+00:00",
+      "rc": 0
+    },
+    {
+      "label": "canonical",
+      "command": [
+        "sh",
+        "scripts/run-build-tests.sh"
+      ],
+      "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+      "start": "2026-10-22T20:46:21.508640+00:00",
+      "end": "2026-10-22T20:46:25.307439+00:00",
+      "rc": 1
+    },
+    {
+      "label": "vet",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+      "start": "2026-10-22T20:46:21.507852+00:00",
+      "end": "2026-10-22T20:46:28.075604+00:00",
+      "rc": 0
+    },
+    {
+      "label": "native-0161",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "tests/private-control-endpoint/real.py",
+        "0.161.0",
+        "/data/ai-dev-data/private-control-endpoint-impl/docs/reviews/coder-private-endpoint-phase1-20261022/final-d624035/native-0.161.0"
+      ],
+      "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+      "start": "2026-10-22T20:46:25.308898+00:00",
+      "end": "2026-10-22T20:46:29.102517+00:00",
+      "rc": 0
+    },
+    {
+      "label": "native-0163",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "tests/private-control-endpoint/real.py",
+        "0.163.0",
+        "/data/ai-dev-data/private-control-endpoint-impl/docs/reviews/coder-private-endpoint-phase1-20261022/final-d624035/native-0.163.0"
+      ],
+      "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+      "start": "2026-10-22T20:46:28.075981+00:00",
+      "end": "2026-10-22T20:46:31.445916+00:00",
+      "rc": 0
+    },
+    {
+      "label": "withdrawals",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "tests/private-control-endpoint/check.py",
+        "/data/ai-dev-data/private-control-endpoint-impl/docs/reviews/coder-private-endpoint-phase1-20261022/final-d624035/withdrawals"
+      ],
+      "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+      "start": "2026-10-22T20:46:21.509078+00:00",
+      "end": "2026-10-22T20:46:59.550150+00:00",
+      "rc": 0
+    },
+    {
+      "label": "helper",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-v"
+      ],
+      "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+      "start": "2026-10-22T20:46:21.508410+00:00",
+      "end": "2026-10-22T20:53:30.497337+00:00",
+      "rc": 1
+    },
+    {
+      "label": "go-full",
+      "command": [
+        "go",
+        "test",
+        "./...",
+        "-json",
+        "-count=1",
+        "-timeout=30m"
+      ],
+      "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+      "start": "2026-10-22T20:46:21.508077+00:00",
+      "end": "2026-10-22T20:58:36.933482+00:00",
+      "rc": 0
+    },
+    {
+      "label": "browser-admission",
+      "command": [
+        "node",
+        "view-service/renderer-model-admission-regression.js"
+      ],
+      "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+      "start": "2026-10-22T20:58:36.934065+00:00",
+      "end": "2026-10-22T20:58:37.999867+00:00",
+      "rc": 0
+    },
+    {
+      "label": "browser-mention",
+      "command": [
+        "node",
+        "view-service/renderer-mention-reply-regression.js"
+      ],
+      "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+      "start": "2026-10-22T20:58:38.000142+00:00",
+      "end": "2026-10-22T20:58:39.667085+00:00",
+      "rc": 0
+    },
+    {
+      "label": "browser-backfill",
+      "command": [
+        "node",
+        "view-service/stale-thread-backfill-browser-regression.js"
+      ],
+      "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+      "start": "2026-10-22T20:58:39.667373+00:00",
+      "end": "2026-10-22T20:58:40.883289+00:00",
+      "rc": 0
+    }
+  ],
+  "passed": false
+}

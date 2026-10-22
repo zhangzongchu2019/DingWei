@@ -1,0 +1,18 @@
+{
+  "label": "withdrawals",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python",
+    "-B",
+    "tests/private-control-endpoint/check.py",
+    "/data/ai-dev-data/private-control-endpoint-impl/docs/reviews/coder-private-endpoint-phase1-20261022/final-b4fe950/withdrawals"
+  ],
+  "source": "b4fe9504e41e3d38a6b3a3e109655cac60269823",
+  "start": "2026-10-22T21:05:14.452770+00:00",
+  "end": "2026-10-22T21:05:53.089817+00:00",
+  "rc": 0,
+  "isolated_profile": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h4",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/4",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h4/.cache"
+  }
+}

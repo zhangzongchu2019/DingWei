@@ -1,0 +1,57 @@
+{
+  "go-full": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h0",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/0",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h0/.cache"
+  },
+  "vet": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h1",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/1",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h1/.cache"
+  },
+  "helper": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h2",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/2",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h2/.cache"
+  },
+  "canonical": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h3",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/3",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h3/.cache"
+  },
+  "withdrawals": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h4",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/4",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h4/.cache"
+  },
+  "native-0161": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h5",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/5",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h5/.cache"
+  },
+  "native-0163": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h6",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/6",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h6/.cache"
+  },
+  "browser-admission": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h7",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/7",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h7/.cache"
+  },
+  "browser-mention": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h8",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/8",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h8/.cache"
+  },
+  "browser-backfill": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h9",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/9",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h9/.cache"
+  },
+  "pg-prewarm": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h0",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/0",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h0/.cache"
+  }
+}

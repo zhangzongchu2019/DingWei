@@ -1,0 +1,84 @@
+{
+  "version": "0.163.0",
+  "binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215",
+  "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+  "start": "2026-10-22T20:46:28.493417+00:00",
+  "scope": "ISOLATED_NATIVE_OWNER_AND_CONTROLLED_PTY",
+  "passed": true,
+  "fixture_producer_reaped": true,
+  "fixture_local_turns": 1,
+  "thread_id": "01a1655d-7f38-74f0-86dd-a818469894c4",
+  "double_start_single_owner_single_child": true,
+  "owner_pid": 3281422,
+  "helper_fresh_process_reuses_owner": true,
+  "child_exit_same_id_resumed": true,
+  "initial": {
+    "ok": true,
+    "state": "ready",
+    "child": {
+      "pid": 3281424,
+      "starttime": 49288791
+    },
+    "generation": 1,
+    "endpoint": {
+      "kind": "native_alias",
+      "alias": [
+        64,
+        11140306
+      ],
+      "target": [
+        64,
+        3674112
+      ],
+      "directory": [
+        64,
+        3018524
+      ]
+    },
+    "boot": "43ea650f628818c3d6dca4bc7d16531b",
+    "challenge": "4b302dc88b7055fd1fabb48bd0204de3"
+  },
+  "replacement": {
+    "ok": true,
+    "state": "ready",
+    "child": {
+      "pid": 3281559,
+      "starttime": 49288838
+    },
+    "generation": 2,
+    "endpoint": {
+      "kind": "native_alias",
+      "alias": [
+        64,
+        11146313
+      ],
+      "target": [
+        64,
+        3674107
+      ],
+      "directory": [
+        64,
+        3018524
+      ]
+    },
+    "boot": "43ea650f628818c3d6dca4bc7d16531b",
+    "challenge": "b698fbc2dbc603cccf25ff051fe88a75"
+  },
+  "controlled_resume_command": [
+    "/tmp/coder-stale-official-followup/0.163.0/codex",
+    "--remote",
+    "unix:///tmp/codex-daemon-1001/3291c4af7a0f08223e9ad697ee970001f55ab90667ee6fb97bf34824822941b1",
+    "resume",
+    "01a1655d-7f38-74f0-86dd-a818469894c4"
+  ],
+  "controlled_real_pty_resume_same_id": true,
+  "pty_exitstatus": 0,
+  "stop": {
+    "ok": true,
+    "state": "stopped",
+    "boot": "43ea650f628818c3d6dca4bc7d16531b",
+    "challenge": "dda7cc5814ba0a6b76c0cc9921320196"
+  },
+  "owner_clean_stop": true,
+  "end": "2026-10-22T20:46:31.392335+00:00"
+}

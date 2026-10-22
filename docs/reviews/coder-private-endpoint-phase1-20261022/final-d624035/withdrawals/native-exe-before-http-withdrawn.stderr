@@ -1,0 +1,14 @@
+test_wrong_app_executable_receives_no_handshake_bytes (test_private_endpoint.Paths.test_wrong_app_executable_receives_no_handshake_bytes) ... FAIL
+
+======================================================================
+FAIL: test_wrong_app_executable_receives_no_handshake_bytes (test_private_endpoint.Paths.test_wrong_app_executable_receives_no_handshake_bytes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-9nk_w0fa/t/dwpe-check-svbr86sn/helper/tests/test_private_endpoint.py", line 154, in test_wrong_app_executable_receives_no_handshake_bytes
+    self.assertTrue(all(not x for x in peer.bytes), 'WRONG_NATIVE_EXE_RECEIVED_BYTES')
+AssertionError: False is not true : WRONG_NATIVE_EXE_RECEIVED_BYTES
+
+----------------------------------------------------------------------
+Ran 1 test in 0.124s
+
+FAILED (failures=1)

@@ -1,0 +1,16 @@
+test_stop_exclusion_blocks_new_model_admission (test_private_endpoint.Control.test_stop_exclusion_blocks_new_model_admission) ... FAIL
+
+======================================================================
+FAIL: test_stop_exclusion_blocks_new_model_admission (test_private_endpoint.Control.test_stop_exclusion_blocks_new_model_admission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-yy_jhuqf/t/4/dwpe-check-eqrxfbk4/helper/tests/test_private_endpoint.py", line 415, in test_stop_exclusion_blocks_new_model_admission
+    self.reject('busy', lambda: self.client.admission(peer).__enter__())
+  File "/tmp/dwpe-g-yy_jhuqf/t/4/dwpe-check-eqrxfbk4/helper/tests/test_private_endpoint.py", line 38, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_busy
+
+----------------------------------------------------------------------
+Ran 1 test in 0.061s
+
+FAILED (failures=1)

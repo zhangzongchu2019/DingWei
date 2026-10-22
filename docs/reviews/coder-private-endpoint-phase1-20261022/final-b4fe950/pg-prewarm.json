@@ -1,0 +1,21 @@
+{
+  "label": "pg-prewarm",
+  "command": [
+    "go",
+    "test",
+    "./internal/store/pgtest",
+    "-run",
+    "^TestPool_RoundTrip$",
+    "-count=1",
+    "-timeout=5m"
+  ],
+  "source": "b4fe9504e41e3d38a6b3a3e109655cac60269823",
+  "start": "2026-10-22T21:03:34.335760+00:00",
+  "end": "2026-10-22T21:03:38.656644+00:00",
+  "rc": 0,
+  "isolated_profile": {
+    "HOME": "/tmp/dwpe-g-yy_jhuqf/h0",
+    "TMPDIR": "/tmp/dwpe-g-yy_jhuqf/t/0",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-yy_jhuqf/h0/.cache"
+  }
+}

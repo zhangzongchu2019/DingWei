@@ -1,0 +1,6 @@
+test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused (test_private_endpoint.Control.test_replayed_challenge_wrong_boot_and_nonboolean_ok_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.070s
+
+OK

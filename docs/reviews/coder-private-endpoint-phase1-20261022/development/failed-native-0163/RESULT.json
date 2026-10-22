@@ -1,0 +1,38 @@
+{
+  "scope": "NATIVE_CAPABILITY_ONLY_NOT_PRODUCT_GATE",
+  "version": "0.163.0",
+  "binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215",
+  "turn_start_calls": 0,
+  "thread_id": "01a1652c-d53d-74f2-9b2b-e177ad878dca",
+  "owned_pid": 3262355,
+  "loaded_before": {
+    "data": [
+      "01a1652c-d53d-74f2-9b2b-e177ad878dca"
+    ],
+    "nextCursor": null
+  },
+  "read_before": {
+    "type": "idle"
+  },
+  "pty_ready_marker": true,
+  "tui_alive_before_close": false,
+  "read_during": {
+    "type": "idle"
+  },
+  "tui_exitstatus": 1,
+  "tui_signalstatus": null,
+  "same_native_peer_after": true,
+  "read_after": {
+    "type": "idle"
+  },
+  "loaded_after": {
+    "data": [
+      "01a1652c-d53d-74f2-9b2b-e177ad878dca"
+    ],
+    "nextCursor": null
+  },
+  "pty_contains_same_resume_id": true,
+  "child_reaped": true,
+  "passed": false,
+  "reason": "empty thread had no rollout; initial prompt alone is not ready proof"
+}

@@ -1,0 +1,31 @@
+----------------------------------------------------------------------
+Ran 9 tests in 0.330s
+
+OK
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/dwpe-g-9nk_w0fa/t/tmpmqqg4dxz/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+======================================================================
+ERROR: test_actual_hung_candidate_deadline_is_independent (tools.sessionhelper.tests.test_update_release_core.GuardTests.test_actual_hung_candidate_deadline_is_independent)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/private-control-endpoint-impl/tools/sessionhelper/tests/test_update_release_core.py", line 175, in test_actual_hung_candidate_deadline_is_independent
+    self.assertEqual(marker.read_text(), 'SYNTHETIC_HUNG_CANDIDATE')
+                     ^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/dwpe-g-9nk_w0fa/t/tmp2j2whrb3/hung-candidate-executed'
+
+----------------------------------------------------------------------
+Ran 19 tests in 3.109s
+
+FAILED (errors=1)

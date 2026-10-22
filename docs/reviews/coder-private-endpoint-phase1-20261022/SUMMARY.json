@@ -1,0 +1,23 @@
+{
+  "source": "7cfcd9927c5d18048aeb30ee0ab8c27bfb1cff45",
+  "source_tree": "8a7a67519a57b777eb2d12a18b9f8fb90207f7d8",
+  "source_inputs": 1893,
+  "helper_tests": 891,
+  "canonical": {
+    "python": 60,
+    "shell": 2
+  },
+  "withdrawals": 49,
+  "withdrawal_commands": 100,
+  "go_test_packages": 53,
+  "go_no_test_packages": 13,
+  "conditional_skips": 30,
+  "native_versions": [
+    "0.161.0",
+    "0.163.0"
+  ],
+  "gates": 11,
+  "selfcheck": "all frozen gates rc0",
+  "deployment": false,
+  "activation_blocker": "S-PCE-UPDATER-RETAIN"
+}

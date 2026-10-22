@@ -1,0 +1,16 @@
+test_helper_admission_lock_prevents_owner_stop (test_private_endpoint.Lifecycle.test_helper_admission_lock_prevents_owner_stop) ... FAIL
+
+======================================================================
+FAIL: test_helper_admission_lock_prevents_owner_stop (test_private_endpoint.Lifecycle.test_helper_admission_lock_prevents_owner_stop)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-yy_jhuqf/t/4/dwpe-check-eqrxfbk4/helper/tests/test_private_endpoint.py", line 495, in test_helper_admission_lock_prevents_owner_stop
+    self.reject('busy', lambda: self.owner.stop_idle(True))
+  File "/tmp/dwpe-g-yy_jhuqf/t/4/dwpe-check-eqrxfbk4/helper/tests/test_private_endpoint.py", line 38, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_busy
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)

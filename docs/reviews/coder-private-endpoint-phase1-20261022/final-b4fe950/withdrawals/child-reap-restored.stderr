@@ -1,0 +1,6 @@
+test_child_exit_reaps_actual_handle_before_one_replacement (test_private_endpoint.Lifecycle.test_child_exit_reaps_actual_handle_before_one_replacement) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+OK

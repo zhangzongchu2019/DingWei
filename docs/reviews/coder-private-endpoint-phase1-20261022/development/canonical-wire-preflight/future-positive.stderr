@@ -1,0 +1,6 @@
+test_update_modules_and_canonical_counts_are_wired (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_update_modules_and_canonical_counts_are_wired) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

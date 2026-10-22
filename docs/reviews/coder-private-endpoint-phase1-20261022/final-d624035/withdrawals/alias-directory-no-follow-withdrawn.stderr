@@ -1,0 +1,16 @@
+test_native_directory_symlink_is_not_followed (test_private_endpoint.NativeAlias.test_native_directory_symlink_is_not_followed) ... FAIL
+
+======================================================================
+FAIL: test_native_directory_symlink_is_not_followed (test_private_endpoint.NativeAlias.test_native_directory_symlink_is_not_followed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-9nk_w0fa/t/dwpe-check-svbr86sn/helper/tests/test_private_endpoint.py", line 245, in test_native_directory_symlink_is_not_followed
+    self.reject('path', self.connect)
+  File "/tmp/dwpe-g-9nk_w0fa/t/dwpe-check-svbr86sn/helper/tests/test_private_endpoint.py", line 38, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_path
+
+----------------------------------------------------------------------
+Ran 1 test in 0.104s
+
+FAILED (failures=1)

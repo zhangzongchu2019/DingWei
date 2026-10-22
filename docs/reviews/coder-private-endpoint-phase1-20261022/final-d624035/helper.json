@@ -1,0 +1,17 @@
+{
+  "label": "helper",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/sessionhelper/tests",
+    "-v"
+  ],
+  "source": "d6240358c5a3a7d22ef170b2f1f7e3e0f382679c",
+  "start": "2026-10-22T20:46:21.508410+00:00",
+  "end": "2026-10-22T20:53:30.497337+00:00",
+  "rc": 1
+}
