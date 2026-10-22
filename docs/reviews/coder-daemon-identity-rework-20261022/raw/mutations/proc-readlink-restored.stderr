@@ -1,0 +1,6 @@
+test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

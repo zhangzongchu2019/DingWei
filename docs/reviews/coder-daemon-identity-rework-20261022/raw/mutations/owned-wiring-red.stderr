@@ -1,0 +1,14 @@
+test_owned_binding_wired_and_foreign_instance_rejected (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_owned_binding_wired_and_foreign_instance_rejected) ... FAIL
+
+======================================================================
+FAIL: test_owned_binding_wired_and_foreign_instance_rejected (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_owned_binding_wired_and_foreign_instance_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 228, in test_owned_binding_wired_and_foreign_instance_rejected
+    with self.assertRaises(identity.DaemonIdentityError, msg='OWNED_BINDING_NOT_WIRED'):
+AssertionError: DaemonIdentityError not raised : OWNED_BINDING_NOT_WIRED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.184s
+
+FAILED (failures=1)

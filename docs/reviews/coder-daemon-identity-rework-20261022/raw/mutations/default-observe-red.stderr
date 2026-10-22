@@ -1,0 +1,17 @@
+test_env_three_modes_and_invalid_snapshot (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_env_three_modes_and_invalid_snapshot) ... FAIL
+
+======================================================================
+FAIL: test_env_three_modes_and_invalid_snapshot (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_env_three_modes_and_invalid_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 310, in test_env_three_modes_and_invalid_snapshot
+    self.assertEqual(drv._daemon_identity_check, 'observe', 'IDENTITY_DEFAULT_NOT_OBSERVE')
+AssertionError: 'enforce' != 'observe'
+- enforce
++ observe
+ : IDENTITY_DEFAULT_NOT_OBSERVE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.105s
+
+FAILED (failures=1)

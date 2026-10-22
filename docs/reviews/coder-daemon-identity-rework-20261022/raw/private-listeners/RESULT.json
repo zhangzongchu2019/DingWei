@@ -1,0 +1,39 @@
+{
+  "source": "39985004f56f28100510ba79b98f1443d93a6070",
+  "script_sha256": "91f54ba609565d9ddfd587d25559a66cc28717e17f9f1cd53c371e1e692da754",
+  "utc": "2026-10-22T18:50:30.537232+00:00",
+  "rows": [
+    {
+      "version": "0.161.0",
+      "result": "PASS",
+      "binary_sha256": "9a820c17865fa825d04db416818679a9d63bd72e50835c396f496e5684626c9c",
+      "same_HOME": true,
+      "same_CODEX_HOME": true,
+      "private_dirs_mode": "0700",
+      "distinct_socket_paths": true,
+      "distinct_peer_pids": true,
+      "owned_peer_binding": true,
+      "initialize_each": 1,
+      "model_turns": 0,
+      "thread_methods": 0,
+      "live_credentials_read": false,
+      "daemon_start_tested": false
+    },
+    {
+      "version": "0.163.0",
+      "result": "PASS",
+      "binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215",
+      "same_HOME": true,
+      "same_CODEX_HOME": true,
+      "private_dirs_mode": "0700",
+      "distinct_socket_paths": true,
+      "distinct_peer_pids": true,
+      "owned_peer_binding": true,
+      "initialize_each": 1,
+      "model_turns": 0,
+      "thread_methods": 0,
+      "live_credentials_read": false,
+      "daemon_start_tested": false
+    }
+  ]
+}

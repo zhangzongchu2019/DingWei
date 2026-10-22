@@ -1,0 +1,14 @@
+test_rejected_fd_is_explicitly_closed_without_gc (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_fd_is_explicitly_closed_without_gc) ... FAIL
+
+======================================================================
+FAIL: test_rejected_fd_is_explicitly_closed_without_gc (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_fd_is_explicitly_closed_without_gc)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 253, in test_rejected_fd_is_explicitly_closed_without_gc
+    self.assertEqual(retained[0].fileno(), -1, 'REJECTED_FD_OPEN')
+AssertionError: 4 != -1 : REJECTED_FD_OPEN
+
+----------------------------------------------------------------------
+Ran 1 test in 0.111s
+
+FAILED (failures=1)

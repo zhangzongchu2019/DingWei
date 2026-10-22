@@ -1,0 +1,6 @@
+test_enforce_real_kernel_then_initialize_and_reconnect (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_enforce_real_kernel_then_initialize_and_reconnect) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.117s
+
+OK

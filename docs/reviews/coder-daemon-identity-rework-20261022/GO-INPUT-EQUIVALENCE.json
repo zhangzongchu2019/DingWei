@@ -1,0 +1,20 @@
+{
+  "actual_gate_source": "57a9d9563479d0e163d4f95427afbdcfaf0cc303",
+  "candidate_source": "39985004f56f28100510ba79b98f1443d93a6070",
+  "all_changed_paths": [
+    "tests/daemon-identity/check.py",
+    "tools/sessionhelper/tests/test_daemon_identity.py"
+  ],
+  "identical_paths": [
+    "cmd",
+    "internal",
+    "view-service",
+    "go.mod",
+    "go.sum",
+    "tools/sessionhelper/sessionhelper",
+    "tools/sessionhelper/update_launcher",
+    "VERSION",
+    "internal/version"
+  ],
+  "assertion": "All Go/runtime/helper implementation inputs identical; differences are withdrawal runner quoting and warning assertion in new unittest only. Full Go readout remains actual 57a9d956, not relabelled."
+}

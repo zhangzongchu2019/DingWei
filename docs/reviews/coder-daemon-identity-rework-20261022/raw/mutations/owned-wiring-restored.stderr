@@ -1,0 +1,16 @@
+test_owned_binding_wired_and_foreign_instance_rejected (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_owned_binding_wired_and_foreign_instance_rejected) ... Exception in thread Thread-2 (handle):
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.12/threading.py", line 1010, in run
+    self._target(*self._args, **self._kwargs)
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 123, in handle
+    conn.settimeout(2); received = bytearray(); self.bytes.append(received)
+    ^^^^^^^^^^^^^^^^^^
+OSError: [Errno 9] Bad file descriptor
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.055s
+
+OK

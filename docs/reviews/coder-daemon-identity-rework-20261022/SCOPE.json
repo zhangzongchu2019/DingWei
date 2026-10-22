@@ -1,0 +1,21 @@
+{
+  "source": "39985004f56f28100510ba79b98f1443d93a6070",
+  "base": "bef62da0a4a2076a4d837827fb75470c8a8ce384",
+  "changed_non_docs": [
+    "tests/daemon-identity/check.py",
+    "tests/daemon-identity/real_protocol.py",
+    "tools/sessionhelper/sessionhelper/codexDriver.py",
+    "tools/sessionhelper/tests/test_daemon_identity.py"
+  ],
+  "unchanged_paths": [
+    "cmd",
+    "internal",
+    "view-service",
+    "VERSION",
+    "go.mod",
+    "go.sum",
+    "tools/sessionhelper/requirements-runtime.lock",
+    "tools/sessionhelper/sessionhelper/daemon_identity.py"
+  ],
+  "deployment": false
+}

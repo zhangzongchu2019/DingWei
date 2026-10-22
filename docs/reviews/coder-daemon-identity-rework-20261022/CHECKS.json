@@ -1,0 +1,16 @@
+{
+  "source": "39985004f56f28100510ba79b98f1443d93a6070",
+  "helper_tests": 828,
+  "canonical_python": 58,
+  "canonical_shell": 2,
+  "mutations": 25,
+  "mutation_commands": 52,
+  "native_versions": [
+    "0.161.0",
+    "0.163.0"
+  ],
+  "native_cases_each": 5,
+  "private_listeners_each": 2,
+  "go_summary": "GO-SUMMARY.json",
+  "deployment": false
+}

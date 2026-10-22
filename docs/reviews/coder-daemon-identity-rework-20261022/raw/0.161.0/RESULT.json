@@ -1,0 +1,66 @@
+{
+  "version": "0.161.0",
+  "rows": [
+    {
+      "case": "owned-and-reconnect",
+      "result": "PASS",
+      "peer_pid": 3230880,
+      "peer_uid": 1001,
+      "peer_starttime": 48595901,
+      "identity_scope": "owned_pid_starttime",
+      "initialized_connections": 2,
+      "new_thread": false
+    },
+    {
+      "case": "uid-exe-only",
+      "result": "PASS",
+      "peer_pid": 3230880,
+      "peer_uid": 1001,
+      "peer_starttime": 48595901,
+      "identity_scope": "uid_exe_only",
+      "new_thread": false
+    },
+    {
+      "case": "wrong-exe",
+      "result": "PASS",
+      "reason": "exe_mismatch",
+      "rpc_methods": [],
+      "new_thread": false,
+      "detail": "session_unavailable: error_class=daemon_identity_exe_mismatch; method=local; rpc_code=none"
+    },
+    {
+      "case": "wrong-starttime",
+      "result": "PASS",
+      "reason": "owned_starttime_mismatch",
+      "rpc_methods": [],
+      "new_thread": false,
+      "detail": "session_unavailable: error_class=daemon_identity_owned_starttime_mismatch; method=local; rpc_code=none"
+    },
+    {
+      "case": "replacement-daemon",
+      "result": "PASS",
+      "reason": "owned_pid_mismatch",
+      "rpc_methods": [],
+      "new_thread": false,
+      "detail": "session_unavailable: error_class=daemon_identity_owned_pid_mismatch; method=local; rpc_code=none"
+    }
+  ],
+  "cleanup": [
+    {
+      "label": "first",
+      "pid": 3230880,
+      "reaped": true
+    },
+    {
+      "label": "second",
+      "pid": 3230958,
+      "reaped": true
+    }
+  ],
+  "uid": 1001,
+  "isolated_HOME_CODEX_HOME": true,
+  "external_credentials_inherited": false,
+  "model_turns": 0,
+  "listener_launcher": "owned foreground app-server --listen unix://PATH, not daemon-start ownership proof",
+  "end": "2026-10-22T18:51:00.133724+00:00"
+}

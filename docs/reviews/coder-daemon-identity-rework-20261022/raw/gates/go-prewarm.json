@@ -1,0 +1,20 @@
+{
+  "source": "57a9d9563479d0e163d4f95427afbdcfaf0cc303",
+  "command": [
+    "go",
+    "test",
+    "./internal/nodegate",
+    "-run",
+    "^TestGateOnConnectFires$",
+    "-count=1"
+  ],
+  "start": "2026-10-22T18:47:57.260379+00:00",
+  "end": "2026-10-22T18:48:03.084974+00:00",
+  "rc": 0,
+  "env_i": true,
+  "isolated_HOME": true,
+  "strict_pg": true,
+  "skip_ok": false,
+  "dsn_set": false,
+  "locked_venv": "/tmp/coder-0232-locked-venv/bin/python"
+}

@@ -1,0 +1,6 @@
+test_starttime_missing_and_process_change_rejected (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_starttime_missing_and_process_change_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

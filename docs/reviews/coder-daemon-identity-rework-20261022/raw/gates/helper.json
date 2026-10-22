@@ -1,0 +1,22 @@
+{
+  "source": "39985004f56f28100510ba79b98f1443d93a6070",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/sessionhelper/tests",
+    "-v"
+  ],
+  "start": "2026-10-22T18:49:47.374852+00:00",
+  "end": "2026-10-22T18:56:49.768563+00:00",
+  "rc": 0,
+  "env_i": true,
+  "isolated_HOME": true,
+  "strict_pg": true,
+  "skip_ok": false,
+  "dsn_set": false,
+  "locked_venv": "/tmp/coder-0232-locked-venv/bin/python"
+}
