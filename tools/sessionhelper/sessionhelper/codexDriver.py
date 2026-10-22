@@ -731,6 +731,7 @@ class CodexProtocolDriver(Driver):
                             self._workdir, _CODEX_BIN, self._daemon_expected_exe)
                         self._private_endpoint = PrivateEndpointClient(spec)
                     live = self._private_endpoint.ensure()
+                    self._private_endpoint.take_writer()
                     child = live['child']
                     self._owned_daemon_identity = OwnedDaemonIdentity(child['pid'], child['starttime'])
                     socket_path = str(self._private_endpoint.spec.root / 'app.sock')
@@ -758,6 +759,8 @@ class CodexProtocolDriver(Driver):
                         data={'change': 'daemon_identity_verified',
                               'identity_mode': self._daemon_identity_check, **peer.metadata()}))
             except Exception as exc:
+                if self._private_endpoint is not None:
+                    self._private_endpoint.release_writer()
                 if self._rpc is not None:
                     self._rpc.stop()
                 self._rpc = None
@@ -808,6 +811,8 @@ class CodexProtocolDriver(Driver):
         if self._rpc is not None:
             self._rpc.stop()
             self._rpc = None
+        if self._private_endpoint is not None:
+            self._private_endpoint.release_writer()
         self._initialized = False
 
     def health(self) -> bool:

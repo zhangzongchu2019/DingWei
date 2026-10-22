@@ -318,6 +318,25 @@ class Client:
     def __init__(self, spec):
         self.spec = spec
         self._launchers = []
+        self._writer = None
+
+    def take_writer(self):
+        """One helper writer for this endpoint, held until helper stop/crash."""
+        if self._writer is not None:
+            return
+        with root_fd(self.spec) as fd:
+            writer = open_file(fd, 'writer.lock', create=True)
+            try:
+                fcntl.flock(writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                unchanged_root(self.spec, fd)
+            except Exception:
+                os.close(writer)
+                fail('busy')
+            self._writer = writer
+
+    def release_writer(self):
+        if self._writer is not None:
+            os.close(self._writer); self._writer = None
 
     def _query(self, op='status', *, human_disconnected=False):
         with root_fd(self.spec) as fd:
@@ -415,6 +434,8 @@ class Client:
 
     @contextmanager
     def admission(self, peer):
+        if self._writer is None:
+            fail('binding')
         with root_fd(self.spec) as fd:
             guard = open_file(fd, 'admission.lock', create=True)
             try:

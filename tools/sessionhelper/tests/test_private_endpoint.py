@@ -176,6 +176,7 @@ class Control(Fixture):
         super().setUp()
         self.owner = ControlFixture(self.spec); self.addCleanup(self.owner.close)
         self.client = ep.Client(self.spec)
+        self.client.take_writer(); self.addCleanup(self.client.release_writer)
 
     def rewrite(self, **fields):
         with self.root() as fd:
@@ -223,6 +224,15 @@ class Control(Fixture):
             pass
         peer.starttime += 1
         self.reject('binding', lambda: self.client.admission(peer).__enter__())
+
+    def test_duplicate_helper_cannot_take_writer_but_restart_can(self):
+        other = ep.Client(self.spec)
+        self.addCleanup(other.release_writer)
+        self.reject('busy', other.take_writer)
+        self.client.release_writer()
+        other.take_writer()
+        self.reject('binding', lambda: self.client.admission(None).__enter__())
+        self.assertEqual(other.status()['child'], self.client.status()['child'], 'WRITER_CHANGED_OWNER')
 
     def test_stop_exclusion_blocks_new_model_admission(self):
         peer = types.SimpleNamespace(uid=os.getuid(), pid=os.getpid(),
