@@ -1,0 +1,24 @@
+{
+  "utc_collected": "2026-10-22T01:42:32.703662+00:00",
+  "approved_candidate": "13af901d62e83642e840968028fc877f8e42d6d6",
+  "frozen_source": "70358a01e2002ff05e001ce5ff702c238c80f984",
+  "source_tree": "108467778b59d5ba6eec23872cdee93b2a1851d1",
+  "versions": [
+    "0.161.0",
+    "0.163.0"
+  ],
+  "source_worktree": "/tmp/coder-stale-fix-frozen-20261022",
+  "commands": [
+    "python3 docs/reviews/coder-helper-stale-thread-followup-20261022/REAL_PROTOCOL.py /tmp/coder-stale-official-followup/0.161.0/codex /tmp/coder-stale-official-followup/probe-0.161.0 0.161.0 /tmp/coder-stale-fix-frozen-20261022",
+    "python3 docs/reviews/coder-helper-stale-thread-followup-20261022/REAL_PROTOCOL.py /tmp/coder-stale-official-followup/0.163.0/codex /tmp/coder-stale-official-followup/probe-0.163.0 0.163.0 /tmp/coder-stale-fix-frozen-20261022"
+  ],
+  "test_window_utc": "2026-10-22T01:41Z",
+  "python": "Python 3.12.3",
+  "uid": 1001,
+  "host": "VM-4-12-ubuntu",
+  "private_processes_total": 8,
+  "runtime_source_changed": false,
+  "binary_archives_committed": false,
+  "home_and_ledger_committed": false,
+  "no_production_connections": true
+}

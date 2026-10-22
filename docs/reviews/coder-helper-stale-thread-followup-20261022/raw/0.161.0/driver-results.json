@@ -1,0 +1,22 @@
+[
+  {
+    "case": "persisted",
+    "state": "processing",
+    "detail": "turn=01a16145-4e32-7103-b1f2-eed2824021d9 status=inProgress",
+    "methods": [
+      "thread/read",
+      "thread/resume",
+      "thread/turns/list",
+      "turn/start"
+    ]
+  },
+  {
+    "case": "missing",
+    "state": "failed",
+    "detail": "session_unavailable: error_class=missing_thread; method=thread/resume; rpc_code=-32600",
+    "methods": [
+      "thread/read",
+      "thread/resume"
+    ]
+  }
+]

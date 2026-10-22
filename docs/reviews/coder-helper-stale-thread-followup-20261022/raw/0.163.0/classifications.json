@@ -1,0 +1,56 @@
+[
+  {
+    "method": "thread/read",
+    "thread_id": "01a16145-4d31-7f01-b861-b26ab569c330",
+    "error": {
+      "code": -32600,
+      "message": "thread not loaded: 01a16145-4d31-7f01-b861-b26ab569c330"
+    },
+    "classify": "thread_not_loaded"
+  },
+  {
+    "method": "thread/resume",
+    "thread_id": "01a16145-4d31-7f01-b861-b26ab569c330",
+    "error": {
+      "code": -32600,
+      "message": "no rollout found for thread id 01a16145-4d31-7f01-b861-b26ab569c330"
+    },
+    "classify": "missing_thread"
+  },
+  {
+    "method": "turn/start",
+    "thread_id": "01a16145-4d31-7f01-b861-b26ab569c330",
+    "error": {
+      "code": -32600,
+      "message": "thread not found: 01a16145-4d31-7f01-b861-b26ab569c330"
+    },
+    "classify": "missing_thread"
+  },
+  {
+    "method": "thread/read",
+    "thread_id": "00000000-0000-4000-8000-000000000000",
+    "error": {
+      "code": -32600,
+      "message": "thread not loaded: 00000000-0000-4000-8000-000000000000"
+    },
+    "classify": "thread_not_loaded"
+  },
+  {
+    "method": "thread/resume",
+    "thread_id": "00000000-0000-4000-8000-000000000000",
+    "error": {
+      "code": -32600,
+      "message": "no rollout found for thread id 00000000-0000-4000-8000-000000000000"
+    },
+    "classify": "missing_thread"
+  },
+  {
+    "method": "turn/start",
+    "thread_id": "00000000-0000-4000-8000-000000000000",
+    "error": {
+      "code": -32600,
+      "message": "thread not found: 00000000-0000-4000-8000-000000000000"
+    },
+    "classify": "missing_thread"
+  }
+]

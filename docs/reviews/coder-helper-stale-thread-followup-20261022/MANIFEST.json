@@ -1,0 +1,154 @@
+{
+  "files": [
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/DOWNLOAD.py",
+      "bytes": 1671,
+      "sha256": "c51234a71c3d12f41250b52741d3d7f6a6d00594a2218f79e6cfa41b6579785c"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/ENVIRONMENT.json",
+      "bytes": 1139,
+      "sha256": "67ef5cc8e4cf94606cb2341a98782f80768c1bc177fa8f2458c49de722a71ba5"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/REAL_PROTOCOL.py",
+      "bytes": 9583,
+      "sha256": "fdd2054986f0a7c75b487a0e82be432dd108018646319e8e175ff8c37ffc963a"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/REPORT.md",
+      "bytes": 5587,
+      "sha256": "ae3014533f3346b7bbd0859b255ba00c95a53400c83fffeaab910478858f6fbc"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/VERIFY.py",
+      "bytes": 1577,
+      "sha256": "dae952335a92e4f8c350e85b0ef27e5d556468f330cba2ccc4d5a2150971d571"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/PROVENANCE.json",
+      "bytes": 1326,
+      "sha256": "4feec23b44b698ebae64304a27c869cb35fd19966ce1844380d8e5a8e2ab03ed"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/RESULT.json",
+      "bytes": 482,
+      "sha256": "e3016b97f84dfed77c37c02a10ad9ac681e6e61ee4a614aea98516b91a95ab01"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/classifications.json",
+      "bytes": 1515,
+      "sha256": "d7486a3ef87b7072cde3007ff7b80270598f97c510c807d3dfd94954c5f71692"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/driver-results.json",
+      "bytes": 479,
+      "sha256": "d11d3d93b1a2b317ea4025bccdeac27e6a63cbf29535a708c1783466cc40a63d"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/first.stderr",
+      "bytes": 554,
+      "sha256": "79dbecfd7c5354dfe3cab21afbd8e54d571f20516e652f5f890ed88debdefe2b"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/metadata.json",
+      "bytes": 4204,
+      "sha256": "fe446111c5cd046b625b0d956cd95e4f7a89d31df0770efb43d007416fc27c09"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/probe.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/probe.stderr",
+      "bytes": 222,
+      "sha256": "0aee02f3d67a62d689e40ebc6c1b93e16d6cde63f4eed9180a69accaf0b81540"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/probe.stdout",
+      "bytes": 456,
+      "sha256": "0a8634fa9c87adbfd2303a20562f7e9f0d6e56aded8a0a496c865a09f9bed65a"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/restarted.stderr",
+      "bytes": 554,
+      "sha256": "b5f6b5ecd25f4f2f422090c6e698ff736faa19af750b285839fb2544aa102b20"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/transcript-first.json",
+      "bytes": 14137,
+      "sha256": "d8c6e713a569e1a98d04970b0e4d1eb44e6d21b3ebb931a6d2f1865524de4e67"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.161.0/transcript.json",
+      "bytes": 25433,
+      "sha256": "e0bb9eec89ff41dd4392fb0771d1430d47b266deacbad732aaa5918615852d62"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/PROVENANCE.json",
+      "bytes": 1326,
+      "sha256": "a69201f056927369475a5db8ea9d46cfd4ee510b2c0295a2567450aefaf0253b"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/RESULT.json",
+      "bytes": 482,
+      "sha256": "382e79ebab1bcde4dd3f1fbb6052fbb2c08b6aa57e8b485c6ad4269c2280241d"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/classifications.json",
+      "bytes": 1515,
+      "sha256": "b06767bcb0e61df9d1f6e2362e97cf95eb0286165f302497c84c01c27ac66b61"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/driver-results.json",
+      "bytes": 479,
+      "sha256": "bd6125d2bbfb0243ca67457d1130e9ebdac5032884460be8ef3c9cf2b7840672"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/first.stderr",
+      "bytes": 554,
+      "sha256": "8516d8b6f579e16eeaecf304fa0cd498038a7b2dd9ee9283193c2fee6547a9cc"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/metadata.json",
+      "bytes": 4205,
+      "sha256": "7ef6178f48fa53a51207d8a21475da6451337929f2267608b30ba76fd921d822"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/probe.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/probe.stderr",
+      "bytes": 222,
+      "sha256": "8924feff9dbeb05a6761a36963b35532967310d933b66895d8ea602f741a7b1c"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/probe.stdout",
+      "bytes": 456,
+      "sha256": "ed37c84120975bb0455569181d078627aa682697e152d7ed6fa3f6b6c4d664d4"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/restarted.stderr",
+      "bytes": 554,
+      "sha256": "8bb5838b24eb0f0f5e6ada055d7331f8d8f21df3d7f683049a4e44d11d53a968"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/transcript-first.json",
+      "bytes": 14292,
+      "sha256": "df971fa5f2d681abf7402b4e89ecbbbf29bbfba8183ad137776283bb6661ea3c"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/transcript.json",
+      "bytes": 25793,
+      "sha256": "b698b61a609973da3fac371b143a6e109737a4c4f5ed6327b3db83a479d7e0e1"
+    },
+    {
+      "path": "docs/designs/S-HELPER-STALE-THREAD-FIX.md",
+      "bytes": 6617,
+      "sha256": "59545e1b24b713efba6f8f2c9de4affad962a688dc9f708f2fc5e9bcaf53f8d1"
+    }
+  ]
+}

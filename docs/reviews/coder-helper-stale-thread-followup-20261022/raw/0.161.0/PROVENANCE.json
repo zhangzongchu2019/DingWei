@@ -1,0 +1,38 @@
+{
+  "version": "0.161.0",
+  "registry_metadata_url": "https://registry.npmjs.org/@openai%2fcodex/0.161.0-linux-x64",
+  "tarball_url": "https://registry.npmjs.org/@openai/codex/-/codex-0.161.0-linux-x64.tgz",
+  "archive_sha256": "d50e02c2755be551b576527b2b13c6b6a4af3340149afdf792d5491e5d899978",
+  "archive_bytes": 164668500,
+  "sha1_matches": true,
+  "sha512_integrity_matches": true,
+  "binary_member": "package/vendor/x86_64-unknown-linux-musl/bin/codex",
+  "binary_sha256": "9a820c17865fa825d04db416818679a9d63bd72e50835c396f496e5684626c9c",
+  "binary_bytes": 292309256,
+  "package_json": {
+    "name": "@openai/codex",
+    "version": "0.161.0-linux-x64",
+    "license": "Apache-2.0",
+    "os": [
+      "linux"
+    ],
+    "cpu": [
+      "x64"
+    ],
+    "files": [
+      "vendor"
+    ],
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/openai/codex.git",
+      "directory": "codex-cli"
+    },
+    "engines": {
+      "node": ">=16"
+    },
+    "packageManager": "pnpm@10.34.5+sha512.a4ee05f2f73658255bd6a89859c065a45c28a57daefae2c893a168ee2b73168c37b91e83e57ea67654ad03f03031746430e8bce38e362e042605fb8abc80192e"
+  },
+  "utc": "2026-10-22T01:41:08.406595+00:00",
+  "not_from_PATH": true,
+  "signature_verification": "Registry signatures recorded, not independently cryptographically verified"
+}

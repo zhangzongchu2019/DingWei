@@ -1,0 +1,881 @@
+[
+  {
+    "phase": "first",
+    "request": {
+      "id": 1,
+      "method": "initialize",
+      "params": {
+        "clientInfo": {
+          "name": "stale-thread-local-probe",
+          "version": "0"
+        },
+        "capabilities": {
+          "experimentalApi": true
+        }
+      }
+    },
+    "response": {
+      "id": 1,
+      "result": {
+        "userAgent": "stale-thread-local-probe/0.163.0 (Ubuntu 24.4.0; x86_64) unknown (stale-thread-local-probe; 0)",
+        "codexHome": "/tmp/coder-stale-official-followup/probe-0.163.0/home/codex",
+        "platformFamily": "unix",
+        "platformOs": "linux"
+      }
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "configWarning",
+      "params": {
+        "summary": "Codex could not find bubblewrap on PATH. Install bubblewrap with your OS package manager. See the sandbox prerequisites: https://developers.openai.com/codex/concepts/sandboxing#prerequisites. Codex will use the bundled bubblewrap in the meantime.",
+        "details": null
+      },
+      "emittedAtMs": 1792633294088
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "remoteControl/status/changed",
+      "params": {
+        "status": "disabled",
+        "serverName": "VM-4-12-ubuntu",
+        "installationId": "6ca0fd89-03c6-405e-badd-a819038b3650",
+        "environmentId": null
+      },
+      "emittedAtMs": 1792633294088
+    }
+  },
+  {
+    "phase": "first",
+    "request": {
+      "id": 2,
+      "method": "thread/start",
+      "params": {
+        "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+        "ephemeral": false,
+        "sandbox": "read-only",
+        "approvalPolicy": "never"
+      }
+    },
+    "response": {
+      "id": 2,
+      "result": {
+        "thread": {
+          "id": "01a16145-4d0b-78b0-a475-a444a42390b2",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+              "runtimeWorkspaceRoots": [
+                "/tmp/coder-stale-official-followup/probe-0.163.0/home"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1792633294,
+          "updatedAt": 1792633294,
+          "recencyAt": 1792633294,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/coder-stale-official-followup/probe-0.163.0/home/codex/sessions/2026/10/22/rollout-2026-10-22T01-41-34-01a16145-4d0b-78b0-a475-a444a42390b2.jsonl",
+          "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+          "cliVersion": "0.163.0",
+          "originator": "stale-thread-local-probe",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "model": "probe-no-inference",
+        "modelProvider": "local_probe",
+        "serviceTier": null,
+        "disabledPluginIds": [],
+        "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+        "runtimeWorkspaceRoots": [
+          "/tmp/coder-stale-official-followup/probe-0.163.0/home"
+        ],
+        "instructionSources": [],
+        "approvalPolicy": "never",
+        "approvalsReviewer": "user",
+        "sandbox": {
+          "type": "readOnly",
+          "networkAccess": false
+        },
+        "activePermissionProfile": null,
+        "reasoningEffort": null,
+        "multiAgentMode": "explicitRequestOnly"
+      }
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "thread/started",
+      "params": {
+        "thread": {
+          "id": "01a16145-4d0b-78b0-a475-a444a42390b2",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+              "runtimeWorkspaceRoots": [
+                "/tmp/coder-stale-official-followup/probe-0.163.0/home"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1792633294,
+          "updatedAt": 1792633294,
+          "recencyAt": 1792633294,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/coder-stale-official-followup/probe-0.163.0/home/codex/sessions/2026/10/22/rollout-2026-10-22T01-41-34-01a16145-4d0b-78b0-a475-a444a42390b2.jsonl",
+          "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+          "cliVersion": "0.163.0",
+          "originator": "stale-thread-local-probe",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        }
+      },
+      "emittedAtMs": 1792633294102
+    }
+  },
+  {
+    "phase": "first",
+    "request": {
+      "id": 3,
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+        "includeTurns": false
+      }
+    },
+    "response": {
+      "id": 3,
+      "result": {
+        "thread": {
+          "id": "01a16145-4d0b-78b0-a475-a444a42390b2",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+              "runtimeWorkspaceRoots": [
+                "/tmp/coder-stale-official-followup/probe-0.163.0/home"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1792633294,
+          "updatedAt": 1792633294,
+          "recencyAt": 1792633294,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/coder-stale-official-followup/probe-0.163.0/home/codex/sessions/2026/10/22/rollout-2026-10-22T01-41-34-01a16145-4d0b-78b0-a475-a444a42390b2.jsonl",
+          "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+          "cliVersion": "0.163.0",
+          "originator": "stale-thread-local-probe",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "readState": null
+      }
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "warning",
+      "params": {
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+        "message": "Model metadata for `probe-no-inference` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."
+      },
+      "emittedAtMs": 1792633294106
+    }
+  },
+  {
+    "phase": "first",
+    "request": {
+      "id": 4,
+      "method": "turn/start",
+      "params": {
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+        "input": [
+          {
+            "type": "text",
+            "text": "LOCAL_PROTOCOL_TEST_ONLY"
+          }
+        ]
+      }
+    },
+    "response": {
+      "id": 4,
+      "result": {
+        "turn": {
+          "id": "01a16145-4d19-7e20-93e6-90f00067d166",
+          "rootTurnId": "01a16145-4d19-7e20-93e6-90f00067d166",
+          "items": [],
+          "itemsView": "notLoaded",
+          "status": "inProgress",
+          "error": null,
+          "startedAt": null,
+          "completedAt": null,
+          "durationMs": null
+        }
+      }
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "thread/status/changed",
+      "params": {
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+        "status": {
+          "type": "active",
+          "activeFlags": []
+        }
+      },
+      "emittedAtMs": 1792633294127
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "turn/started",
+      "params": {
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+        "turn": {
+          "id": "01a16145-4d19-7e20-93e6-90f00067d166",
+          "rootTurnId": "01a16145-4d19-7e20-93e6-90f00067d166",
+          "items": [],
+          "itemsView": "notLoaded",
+          "status": "inProgress",
+          "error": null,
+          "startedAt": 1792633294,
+          "completedAt": null,
+          "durationMs": null
+        }
+      },
+      "emittedAtMs": 1792633294127
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "item/started",
+      "params": {
+        "item": {
+          "type": "userMessage",
+          "id": "01a16145-4d35-75e1-a19b-e4e7f6d14345",
+          "clientId": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "LOCAL_PROTOCOL_TEST_ONLY",
+              "text_elements": []
+            }
+          ]
+        },
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+        "turnId": "01a16145-4d19-7e20-93e6-90f00067d166",
+        "startedAtMs": 1792633294133
+      },
+      "emittedAtMs": 1792633294133
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "item/completed",
+      "params": {
+        "item": {
+          "type": "userMessage",
+          "id": "01a16145-4d35-75e1-a19b-e4e7f6d14345",
+          "clientId": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "LOCAL_PROTOCOL_TEST_ONLY",
+              "text_elements": []
+            }
+          ]
+        },
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+        "turnId": "01a16145-4d19-7e20-93e6-90f00067d166",
+        "completedAtMs": 1792633294133
+      },
+      "emittedAtMs": 1792633294135
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "error",
+      "params": {
+        "error": {
+          "message": "Reconnecting... waiting for network",
+          "codexErrorInfo": {
+            "responseStreamDisconnected": {
+              "httpStatusCode": null
+            }
+          },
+          "additionalDetails": "Connection failed: error sending request",
+          "misalignment": null
+        },
+        "willRetry": true,
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+        "turnId": "01a16145-4d19-7e20-93e6-90f00067d166"
+      },
+      "emittedAtMs": 1792633294147
+    }
+  },
+  {
+    "phase": "first",
+    "request": {
+      "id": 5,
+      "method": "thread/start",
+      "params": {
+        "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+        "ephemeral": true,
+        "sandbox": "read-only",
+        "approvalPolicy": "never"
+      }
+    },
+    "response": {
+      "id": 5,
+      "result": {
+        "thread": {
+          "id": "01a16145-4d31-7f01-b861-b26ab569c330",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+              "runtimeWorkspaceRoots": [
+                "/tmp/coder-stale-official-followup/probe-0.163.0/home"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a16145-4d31-7f01-b861-b26ab569c330",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": true,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1792633294,
+          "updatedAt": 1792633294,
+          "recencyAt": 1792633294,
+          "status": {
+            "type": "idle"
+          },
+          "path": null,
+          "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+          "cliVersion": "0.163.0",
+          "originator": "stale-thread-local-probe",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "model": "probe-no-inference",
+        "modelProvider": "local_probe",
+        "serviceTier": null,
+        "disabledPluginIds": [],
+        "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+        "runtimeWorkspaceRoots": [
+          "/tmp/coder-stale-official-followup/probe-0.163.0/home"
+        ],
+        "instructionSources": [],
+        "approvalPolicy": "never",
+        "approvalsReviewer": "user",
+        "sandbox": {
+          "type": "readOnly",
+          "networkAccess": false
+        },
+        "activePermissionProfile": null,
+        "reasoningEffort": null,
+        "multiAgentMode": "explicitRequestOnly"
+      }
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": {
+      "id": 1,
+      "method": "initialize",
+      "params": {
+        "clientInfo": {
+          "name": "stale-thread-local-probe",
+          "version": "0"
+        },
+        "capabilities": {
+          "experimentalApi": true
+        }
+      }
+    },
+    "response": {
+      "id": 1,
+      "result": {
+        "userAgent": "stale-thread-local-probe/0.163.0 (Ubuntu 24.4.0; x86_64) unknown (stale-thread-local-probe; 0)",
+        "codexHome": "/tmp/coder-stale-official-followup/probe-0.163.0/home/codex",
+        "platformFamily": "unix",
+        "platformOs": "linux"
+      }
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": null,
+    "response": {
+      "method": "configWarning",
+      "params": {
+        "summary": "Codex could not find bubblewrap on PATH. Install bubblewrap with your OS package manager. See the sandbox prerequisites: https://developers.openai.com/codex/concepts/sandboxing#prerequisites. Codex will use the bundled bubblewrap in the meantime.",
+        "details": null
+      },
+      "emittedAtMs": 1792633294195
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": null,
+    "response": {
+      "method": "remoteControl/status/changed",
+      "params": {
+        "status": "disabled",
+        "serverName": "VM-4-12-ubuntu",
+        "installationId": "6ca0fd89-03c6-405e-badd-a819038b3650",
+        "environmentId": null
+      },
+      "emittedAtMs": 1792633294195
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": {
+      "id": 2,
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+        "includeTurns": false
+      }
+    },
+    "response": {
+      "id": 2,
+      "result": {
+        "thread": {
+          "id": "01a16145-4d0b-78b0-a475-a444a42390b2",
+          "environments": null,
+          "extra": null,
+          "sessionId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "LOCAL_PROTOCOL_TEST_ONLY",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1792633294,
+          "updatedAt": 1792633294,
+          "recencyAt": 1792633294,
+          "status": {
+            "type": "notLoaded"
+          },
+          "path": "/tmp/coder-stale-official-followup/probe-0.163.0/home/codex/sessions/2026/10/22/rollout-2026-10-22T01-41-34-01a16145-4d0b-78b0-a475-a444a42390b2.jsonl",
+          "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+          "cliVersion": "0.163.0",
+          "originator": "stale-thread-local-probe",
+          "source": "vscode",
+          "canAcceptDirectInput": null,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "readState": {
+          "firstUnread": null,
+          "revision": "initial:01a16145-4d0b-78b0-a475-a444a42390b2"
+        }
+      }
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": null,
+    "response": {
+      "method": "thread/status/changed",
+      "params": {
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+        "status": {
+          "type": "idle"
+        }
+      },
+      "emittedAtMs": 1792633294224
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": {
+      "id": 3,
+      "method": "thread/resume",
+      "params": {
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+        "excludeTurns": true
+      }
+    },
+    "response": {
+      "id": 3,
+      "result": {
+        "thread": {
+          "id": "01a16145-4d0b-78b0-a475-a444a42390b2",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+              "runtimeWorkspaceRoots": [
+                "/tmp/coder-stale-official-followup/probe-0.163.0/home"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "LOCAL_PROTOCOL_TEST_ONLY",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1792633294,
+          "updatedAt": 1792633294,
+          "recencyAt": 1792633294,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/coder-stale-official-followup/probe-0.163.0/home/codex/sessions/2026/10/22/rollout-2026-10-22T01-41-34-01a16145-4d0b-78b0-a475-a444a42390b2.jsonl",
+          "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+          "cliVersion": "0.163.0",
+          "originator": "stale-thread-local-probe",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "model": "probe-no-inference",
+        "modelProvider": "local_probe",
+        "serviceTier": null,
+        "disabledPluginIds": [],
+        "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+        "runtimeWorkspaceRoots": [
+          "/tmp/coder-stale-official-followup/probe-0.163.0/home"
+        ],
+        "instructionSources": [],
+        "approvalPolicy": "never",
+        "approvalsReviewer": "user",
+        "sandbox": {
+          "type": "readOnly",
+          "networkAccess": false
+        },
+        "activePermissionProfile": null,
+        "reasoningEffort": null,
+        "collaborationMode": {
+          "mode": "default",
+          "settings": {
+            "model": "probe-no-inference",
+            "reasoning_effort": null,
+            "developer_instructions": null
+          }
+        },
+        "multiAgentMode": "explicitRequestOnly",
+        "initialTurnsPage": null,
+        "turnsBackwardsCursor": "{\"requestedThreadId\":\"01a16145-4d0b-78b0-a475-a444a42390b2\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}",
+        "itemsBackwardsCursor": "{\"requestedThreadId\":\"01a16145-4d0b-78b0-a475-a444a42390b2\",\"rolloutOrdinal\":8,\"includeAnchor\":true,\"scope\":{\"kind\":\"itemsByCreatedAtOrdinal\"}}"
+      }
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": null,
+    "response": {
+      "method": "thread/goal/cleared",
+      "params": {
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2"
+      },
+      "emittedAtMs": 1792633294226
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": {
+      "id": 4,
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+        "includeTurns": false
+      }
+    },
+    "response": {
+      "id": 4,
+      "result": {
+        "thread": {
+          "id": "01a16145-4d0b-78b0-a475-a444a42390b2",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+              "runtimeWorkspaceRoots": [
+                "/tmp/coder-stale-official-followup/probe-0.163.0/home"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a16145-4d0b-78b0-a475-a444a42390b2",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "LOCAL_PROTOCOL_TEST_ONLY",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1792633294,
+          "updatedAt": 1792633294,
+          "recencyAt": 1792633294,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/coder-stale-official-followup/probe-0.163.0/home/codex/sessions/2026/10/22/rollout-2026-10-22T01-41-34-01a16145-4d0b-78b0-a475-a444a42390b2.jsonl",
+          "cwd": "/tmp/coder-stale-official-followup/probe-0.163.0/home",
+          "cliVersion": "0.163.0",
+          "originator": "stale-thread-local-probe",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "readState": {
+          "firstUnread": null,
+          "revision": "initial:01a16145-4d0b-78b0-a475-a444a42390b2"
+        }
+      }
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": {
+      "id": 5,
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a16145-4d31-7f01-b861-b26ab569c330"
+      }
+    },
+    "response": {
+      "error": {
+        "code": -32600,
+        "message": "thread not loaded: 01a16145-4d31-7f01-b861-b26ab569c330"
+      },
+      "id": 5
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": {
+      "id": 6,
+      "method": "thread/resume",
+      "params": {
+        "threadId": "01a16145-4d31-7f01-b861-b26ab569c330"
+      }
+    },
+    "response": {
+      "error": {
+        "code": -32600,
+        "message": "no rollout found for thread id 01a16145-4d31-7f01-b861-b26ab569c330"
+      },
+      "id": 6
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": {
+      "id": 7,
+      "method": "turn/start",
+      "params": {
+        "threadId": "01a16145-4d31-7f01-b861-b26ab569c330",
+        "input": [
+          {
+            "type": "text",
+            "text": "MUST_NOT_BE_ADMITTED"
+          }
+        ]
+      }
+    },
+    "response": {
+      "error": {
+        "code": -32600,
+        "message": "thread not found: 01a16145-4d31-7f01-b861-b26ab569c330"
+      },
+      "id": 7
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": {
+      "id": 8,
+      "method": "thread/read",
+      "params": {
+        "threadId": "00000000-0000-4000-8000-000000000000"
+      }
+    },
+    "response": {
+      "error": {
+        "code": -32600,
+        "message": "thread not loaded: 00000000-0000-4000-8000-000000000000"
+      },
+      "id": 8
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": {
+      "id": 9,
+      "method": "thread/resume",
+      "params": {
+        "threadId": "00000000-0000-4000-8000-000000000000"
+      }
+    },
+    "response": {
+      "error": {
+        "code": -32600,
+        "message": "no rollout found for thread id 00000000-0000-4000-8000-000000000000"
+      },
+      "id": 9
+    }
+  },
+  {
+    "phase": "restarted",
+    "request": {
+      "id": 10,
+      "method": "turn/start",
+      "params": {
+        "threadId": "00000000-0000-4000-8000-000000000000",
+        "input": [
+          {
+            "type": "text",
+            "text": "MUST_NOT_BE_ADMITTED"
+          }
+        ]
+      }
+    },
+    "response": {
+      "error": {
+        "code": -32600,
+        "message": "thread not found: 00000000-0000-4000-8000-000000000000"
+      },
+      "id": 10
+    }
+  }
+]

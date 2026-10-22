@@ -1,0 +1,143 @@
+{
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "bugs": {
+    "url": "https://github.com/openai/codex/issues"
+  },
+  "dist": {
+    "shasum": "eec1729c338c92b27ef4b3f3d5759dd0017fc1ab",
+    "tarball": "https://registry.npmjs.org/@openai/codex/-/codex-0.161.0-linux-x64.tgz",
+    "fileCount": 46,
+    "integrity": "sha512-AVkNzeJWyCHHPyg5vxD8UE6aFsYaOwq0/x6mtmkOKy6LdjvsyxLr7Q7UULlk+Ma3+PnrN8uIxG2/XGPQ936hgA==",
+    "signatures": [
+      {
+        "sig": "MEQCIDU6qzQv6TwQ+UBqhpdXDsEPHDr8Hy3L96g5jUII/hJ4AiBtjlebYWXUnRSrYvWvZSFPhUBZ/JeSUTltjMvUEMsjWw==",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "sig": "MEQCIC8d6p711Wj+zPggD38Wt2jcch6pfSS+DxBK1cLbLHRJAiBRaIcNNmtdhccSxVfz7uIP6rWV4E7DUqf7uHagirRNXQ==",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/@openai%2fcodex@0.161.0-linux-x64",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 450401234
+  },
+  "name": "@openai/codex",
+  "_from": "file:/home/runner/work/codex/codex/dist/npm/codex-npm-linux-x64-0.161.0.tgz",
+  "engines": {
+    "node": ">=16"
+  },
+  "license": "Apache-2.0",
+  "_npmUser": {
+    "name": "GitHub Actions",
+    "email": "npm-oidc-no-reply@github.com",
+    "trustedPublisher": {
+      "id": "github",
+      "oidcConfigId": "7b089346-43ee-4dab-b3b6-5427a1537a49"
+    }
+  },
+  "homepage": "https://github.com/openai/codex#readme",
+  "_resolved": "/home/runner/work/codex/codex/dist/npm/codex-npm-linux-x64-0.161.0.tgz",
+  "_integrity": "sha512-AVkNzeJWyCHHPyg5vxD8UE6aFsYaOwq0/x6mtmkOKy6LdjvsyxLr7Q7UULlk+Ma3+PnrN8uIxG2/XGPQ936hgA==",
+  "repository": {
+    "url": "git+https://github.com/openai/codex.git",
+    "type": "git",
+    "directory": "codex-cli"
+  },
+  "_npmVersion": "11.19.0",
+  "description": "<p align=\"center\"><strong>Codex CLI</strong> is a coding agent from OpenAI that runs locally on your computer. <p align=\"center\">   <img src=\"https://github.com/openai/codex/blob/main/.github/codex-cli-splash.png\" alt=\"Codex CLI splash\" width=\"80%\" /> </p",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "openai-publisher",
+      "email": "oai-package-publish-npm@openai.com"
+    },
+    {
+      "name": "tino-openai",
+      "email": "tino@openai.com"
+    },
+    {
+      "name": "dylan-hurd-openai",
+      "email": "dylan.hurd@openai.com"
+    },
+    {
+      "name": "moustafa-openai",
+      "email": "moustafa@openai.com"
+    },
+    {
+      "name": "tylersmith-openai",
+      "email": "tylersmith@openai.com"
+    },
+    {
+      "name": "mdangelo-openai",
+      "email": "mdangelo@openai.com"
+    },
+    {
+      "name": "victor-openai",
+      "email": "victor@openai.com"
+    },
+    {
+      "name": "jbeckwith-oai",
+      "email": "jbeckwith@openai.com"
+    },
+    {
+      "name": "wadih-openai",
+      "email": "wadih@openai.com"
+    },
+    {
+      "name": "atty-openai",
+      "email": "atty@openai.com"
+    },
+    {
+      "name": "tibo-openai",
+      "email": "tibo@openai.com"
+    },
+    {
+      "name": "dkundel-openai",
+      "email": "dkundel@openai.com"
+    },
+    {
+      "name": "mbolin-openai",
+      "email": "mbolin@openai.com"
+    },
+    {
+      "name": "fouad-openai",
+      "email": "fouad@openai.com"
+    },
+    {
+      "name": "easong-openai",
+      "email": "easong@openai.com"
+    },
+    {
+      "name": "aibrahim-openai",
+      "email": "ahmedibrhm32@gmail.com"
+    },
+    {
+      "name": "apcha-oai",
+      "email": "apcha@openai.com"
+    },
+    {
+      "name": "seratch-openai",
+      "email": "seratch@openai.com"
+    }
+  ],
+  "_nodeVersion": "24.21.0",
+  "_hasShrinkwrap": false,
+  "packageManager": "pnpm@10.34.5+sha512.a4ee05f2f73658255bd6a89859c065a45c28a57daefae2c893a168ee2b73168c37b91e83e57ea67654ad03f03031746430e8bce38e362e042605fb8abc80192e",
+  "readmeFilename": "README.md",
+  "_npmOperationalInternal": {
+    "tmp": "tmp/codex_0.161.0-linux-x64_1791389794049_0.6361351976479519",
+    "host": "s3://npm-registry-packages-npm-production"
+  },
+  "_id": "@openai/codex@0.161.0-linux-x64",
+  "version": "0.161.0-linux-x64"
+}

@@ -1,0 +1,14 @@
+{
+  "version": "codex-cli 0.163.0",
+  "binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215",
+  "result": "LOCAL_REAL_PROTOCOL_PASS",
+  "credential_env": false,
+  "managed_daemon_commands": false,
+  "real_inference_endpoint": false,
+  "four_private_processes": true,
+  "real_helper_admission_cases": 2,
+  "persisted_resume_same_id": true,
+  "missing_error_code": -32600,
+  "classifier_cases": 6,
+  "source": "70358a01e2002ff05e001ce5ff702c238c80f984"
+}
