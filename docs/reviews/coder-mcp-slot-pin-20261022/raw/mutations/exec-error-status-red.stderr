@@ -1,0 +1,14 @@
+test_exec_failure_is_visible_without_retries (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_exec_failure_is_visible_without_retries) ... FAIL
+
+======================================================================
+FAIL: test_exec_failure_is_visible_without_retries (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_exec_failure_is_visible_without_retries)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 318, in test_exec_failure_is_visible_without_retries
+    self.assertEqual(entry.main(), 78, 'EXEC_FAILURE_HIDDEN')
+AssertionError: 0 != 78 : EXEC_FAILURE_HIDDEN
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=1)

@@ -571,6 +571,7 @@ class CodexProtocolDriver(Driver):
         approval_policy: str | None = "never",
         ephemeral: bool = False,
         stall_timeout: float = ACCEPTED_STALL_TIMEOUT,
+        view_item_backfill: bool = False,
         daemon_identity_check: str | None = None,
         daemon_expected_exe: str | None = None,
         owned_daemon_identity: OwnedDaemonIdentity | None = None,
@@ -605,6 +606,11 @@ class CodexProtocolDriver(Driver):
         self._approval_policy = approval_policy
         self._ephemeral = ephemeral
         self._stall_timeout = stall_timeout
+        # Backfill can only be enabled with a View renderer that understands
+        # item-key replacement. Legacy Hub/View deployments stay unchanged.
+        self._view_item_backfill = view_item_backfill is True
+        self._backfill_pending = False
+        self._backfill_lock = threading.Lock()
         self._absolute_timeout = ABSOLUTE_TURN_TIMEOUT
         self._store = _DeliveryStore(store_path)
 
@@ -706,6 +712,10 @@ class CodexProtocolDriver(Driver):
         with lock:
             if self._rpc is not None and self._rpc.healthy():
                 return
+            # A few lifecycle tests construct the driver with __new__ to
+            # exercise start() without running __init__. Treat that as a
+            # never-connected instance, matching the initialized value.
+            had_connection = getattr(self, "_connection_generation", 0) > 0
             if self._rpc is not None:
                 # 重连前先停掉旧的不健康连接（读线程死而进程仍在时不留孤儿进程）。
                 try:
@@ -713,6 +723,8 @@ class CodexProtocolDriver(Driver):
                 except Exception:
                     pass
             self._start_locked()
+            if had_connection and self._view_item_backfill and self._thread_id:
+                self._backfill_pending = True
         self._notify_activity()
 
     def _start_locked(self) -> None:
@@ -1005,6 +1017,11 @@ class CodexProtocolDriver(Driver):
             self._consumers.append(consumer_q)
         replayed: dict[int, SessionEvent] = {}
         try:
+            # Subscribe first: notifications received while the bounded history
+            # snapshot is read remain queued and are merged by stable item_id in
+            # the View. The snapshot itself is read-only and never starts a turn.
+            for ev in self._take_completed_item_backfill():
+                self._emit_event(ev)
             with self._event_log_lock:
                 for ev in self._event_log:
                     replayed[id(ev)] = ev
@@ -1027,6 +1044,74 @@ class CodexProtocolDriver(Driver):
             with self._consumers_lock:
                 if consumer_q in self._consumers:
                     self._consumers.remove(consumer_q)
+
+    def _take_completed_item_backfill(self) -> list[SessionEvent]:
+        if not self._view_item_backfill or not self._thread_id:
+            return []
+        with self._backfill_lock:
+            if not self._backfill_pending:
+                return []
+            # Consume this reconnect attempt once. Failure is observable and
+            # intentionally not retried as a new model turn or delivery.
+            self._backfill_pending = False
+        try:
+            self._validate_bound_thread()
+            turns = self._request(
+                "thread/turns/list",
+                {"threadId": self._thread_id, "limit": 20, "itemsView": "full", "sortDirection": "desc"},
+                timeout=20,
+            ).get("data", [])
+            if not isinstance(turns, list):
+                raise ValueError("turn history is not a list")
+        except Exception as exc:
+            log.warning("[view-backfill] history unavailable thread=%s error=%s", self._thread_id, type(exc).__name__)
+            return []
+
+        events: list[SessionEvent] = []
+        for turn in reversed(turns):
+            if not isinstance(turn, dict):
+                continue
+            turn_id = turn.get("id")
+            if not isinstance(turn_id, str) or not turn_id:
+                continue
+            # A completed turn guarantees its contained agentMessage items are
+            # final when the protocol omits item.status. Explicit non-completed
+            # item statuses are never backfilled.
+            turn_status = turn.get("status")
+            turn_completed = turn_status == "completed" or (isinstance(turn_status, dict) and turn_status.get("type") == "completed")
+            delivery_id = self._turn_to_envelope.get(turn_id, "")
+            items = turn.get("items", [])
+            if not isinstance(items, list):
+                continue
+            if not delivery_id:
+                delivery_id = next((item.get("clientId", "") for item in items
+                                    if isinstance(item, dict) and item.get("type") == "userMessage"
+                                    and isinstance(item.get("clientId"), str)), "")
+            for item_index, item in enumerate(items, start=1):
+                if not isinstance(item, dict) or item.get("type") != "agentMessage":
+                    continue
+                item_id, text = item.get("id"), item.get("text")
+                if not isinstance(item_id, str) or not item_id or not isinstance(text, str) or not text:
+                    continue
+                item_status = item.get("status")
+                if item_status not in (None, "completed") and not (
+                    isinstance(item_status, dict) and item_status.get("type") == "completed"
+                ):
+                    continue
+                if item_status is None and not turn_completed:
+                    continue
+                events.append(SessionEvent(
+                    kind="assistant_text",
+                    text=text,
+                    data={"thread_id": self._thread_id, "item_id": item_id,
+                          "backfill": True, "replay": True,
+                          "raw_method": "history/completed_item"},
+                    session_id=self._thread_id,
+                    cursor=self._turn_item_cursor(turn_id, item_index),
+                    delivery_id=delivery_id,
+                    turn_id=turn_id,
+                ))
+        return events
 
     def interrupt(self) -> bool:
         self._sync_thread_alias()
@@ -1325,6 +1410,9 @@ class CodexProtocolDriver(Driver):
             delivery_id = self._turn_to_envelope.get(turn_id, "")
             item_id = params.get("itemId", "")
             cursor = self._item_cursor_by_id.get(item_id, cursor)
+            if isinstance(item_id, str) and item_id:
+                data["item_id"] = item_id
+                data["thread_id"] = thread_id
             if delivery_id and params.get("delta", ""):
                 self._delivery_last_event_at[delivery_id] = time.monotonic()
             return SessionEvent(kind="assistant_text", text=params.get("delta", ""), data=data, session_id=thread_id, cursor=cursor, delivery_id=delivery_id, turn_id=turn_id)

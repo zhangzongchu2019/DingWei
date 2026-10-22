@@ -1,0 +1,6 @@
+capability_gate	rc=1	expected_red=1
+thread_binding	rc=1	expected_red=1
+completed_only	rc=1	expected_red=1
+subscribe_before_snapshot	rc=1	expected_red=1
+no_receipt_side_effect	rc=1	expected_red=1
+renderer_item_replacement	rc=1	expected_red=1

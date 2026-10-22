@@ -1,0 +1,73 @@
+{
+  "source": "8084f76ab3e4a153fc6e0420040d7c591d5a46bb",
+  "base": "c78c66c2fe1ccf2ce25ecca40de3819ef7d22800",
+  "env_i": true,
+  "isolated_HOME": true,
+  "strict_pg": true,
+  "skip_ok": false,
+  "dsn_set": false,
+  "go_version": "go version go1.22.2 linux/amd64",
+  "rows": [
+    {
+      "name": "target-green",
+      "command": [
+        "go",
+        "test",
+        "./cmd/workpulse",
+        "-json",
+        "-count=1",
+        "-timeout=10m",
+        "-run",
+        "^TestAdminAccountRoutes$"
+      ],
+      "start": "2026-10-22T17:57:31.502887+00:00",
+      "end": "2026-10-22T17:57:41.586944+00:00",
+      "rc": 0,
+      "expected_red": false,
+      "named_red": false,
+      "test_pass_count": 1,
+      "skips": []
+    },
+    {
+      "name": "withdrawal-red",
+      "command": [
+        "go",
+        "test",
+        "./cmd/workpulse",
+        "-json",
+        "-count=1",
+        "-timeout=10m",
+        "-run",
+        "^TestAdminAccountRoutes$"
+      ],
+      "start": "2026-10-22T17:57:41.589699+00:00",
+      "end": "2026-10-22T17:57:46.364826+00:00",
+      "rc": 1,
+      "expected_red": true,
+      "named_red": true,
+      "test_pass_count": 0,
+      "skips": []
+    },
+    {
+      "name": "package-restored-green",
+      "command": [
+        "go",
+        "test",
+        "./cmd/workpulse",
+        "-json",
+        "-count=1",
+        "-timeout=10m"
+      ],
+      "start": "2026-10-22T17:57:46.367463+00:00",
+      "end": "2026-10-22T18:00:31.489256+00:00",
+      "rc": 0,
+      "expected_red": false,
+      "named_red": false,
+      "test_pass_count": 189,
+      "skips": [
+        "TestUpgradeRotationKeepsNewCredentialOnSharedWork",
+        "TestR31OldBinarySchemaReadCompatibility"
+      ]
+    }
+  ]
+}

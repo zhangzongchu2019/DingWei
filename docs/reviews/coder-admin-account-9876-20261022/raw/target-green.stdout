@@ -1,0 +1,8 @@
+{"Time":"2026-10-22T17:57:36.739083188Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse"}
+{"Time":"2026-10-22T17:57:36.743721425Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Test":"TestAdminAccountRoutes"}
+{"Time":"2026-10-22T17:57:36.743742633Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Test":"TestAdminAccountRoutes","Output":"=== RUN   TestAdminAccountRoutes\n"}
+{"Time":"2026-10-22T17:57:41.551706172Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Test":"TestAdminAccountRoutes","Output":"--- PASS: TestAdminAccountRoutes (4.81s)\n"}
+{"Time":"2026-10-22T17:57:41.551748578Z","Action":"pass","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Test":"TestAdminAccountRoutes","Elapsed":4.81}
+{"Time":"2026-10-22T17:57:41.551757637Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Output":"PASS\n"}
+{"Time":"2026-10-22T17:57:41.552766448Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Output":"ok  \tgithub.com/zhangzongchu2019/dingwei/cmd/workpulse\t4.813s\n"}
+{"Time":"2026-10-22T17:57:41.552788946Z","Action":"pass","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Elapsed":4.814}

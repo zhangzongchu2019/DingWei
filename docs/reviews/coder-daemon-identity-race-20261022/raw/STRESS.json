@@ -1,0 +1,407 @@
+{
+  "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+  "waves": 5,
+  "workers": 4,
+  "rows": [
+    {
+      "name": "wave-1-worker-1",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:01.440226+00:00",
+      "end": "2026-10-22T19:19:02.504843+00:00",
+      "start_ns": 487640550032055,
+      "end_ns": 487641614652995,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-1-worker-2",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:01.440278+00:00",
+      "end": "2026-10-22T19:19:02.509165+00:00",
+      "start_ns": 487640550084090,
+      "end_ns": 487641618977572,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-1-worker-3",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:01.440175+00:00",
+      "end": "2026-10-22T19:19:02.503848+00:00",
+      "start_ns": 487640549986369,
+      "end_ns": 487641613663871,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-1-worker-4",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:01.440251+00:00",
+      "end": "2026-10-22T19:19:02.509581+00:00",
+      "start_ns": 487640550057873,
+      "end_ns": 487641619387092,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-2-worker-1",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:02.511072+00:00",
+      "end": "2026-10-22T19:19:03.575489+00:00",
+      "start_ns": 487641620877576,
+      "end_ns": 487642685295775,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-2-worker-2",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:02.511125+00:00",
+      "end": "2026-10-22T19:19:03.571597+00:00",
+      "start_ns": 487641620930281,
+      "end_ns": 487642681406405,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-2-worker-3",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:02.511099+00:00",
+      "end": "2026-10-22T19:19:03.573374+00:00",
+      "start_ns": 487641620904714,
+      "end_ns": 487642683180532,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-2-worker-4",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:02.511042+00:00",
+      "end": "2026-10-22T19:19:03.570263+00:00",
+      "start_ns": 487641620848539,
+      "end_ns": 487642680077925,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-3-worker-1",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:03.577036+00:00",
+      "end": "2026-10-22T19:19:04.612621+00:00",
+      "start_ns": 487642686842154,
+      "end_ns": 487643722435739,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-3-worker-2",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:03.577060+00:00",
+      "end": "2026-10-22T19:19:04.624367+00:00",
+      "start_ns": 487642686865652,
+      "end_ns": 487643734183212,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-3-worker-3",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:03.577084+00:00",
+      "end": "2026-10-22T19:19:04.625278+00:00",
+      "start_ns": 487642686889939,
+      "end_ns": 487643735083404,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-3-worker-4",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:03.577008+00:00",
+      "end": "2026-10-22T19:19:04.618110+00:00",
+      "start_ns": 487642686813507,
+      "end_ns": 487643727923763,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-4-worker-1",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:04.626854+00:00",
+      "end": "2026-10-22T19:19:05.680010+00:00",
+      "start_ns": 487643736659560,
+      "end_ns": 487644789817939,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-4-worker-2",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:04.626877+00:00",
+      "end": "2026-10-22T19:19:05.677680+00:00",
+      "start_ns": 487643736683378,
+      "end_ns": 487644787495586,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-4-worker-3",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:04.626904+00:00",
+      "end": "2026-10-22T19:19:05.666314+00:00",
+      "start_ns": 487643736709215,
+      "end_ns": 487644776129597,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-4-worker-4",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:04.626824+00:00",
+      "end": "2026-10-22T19:19:05.666731+00:00",
+      "start_ns": 487643736629663,
+      "end_ns": 487644776538866,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-5-worker-1",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:05.681638+00:00",
+      "end": "2026-10-22T19:19:06.745412+00:00",
+      "start_ns": 487644791443900,
+      "end_ns": 487645855227191,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-5-worker-2",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:05.681662+00:00",
+      "end": "2026-10-22T19:19:06.757498+00:00",
+      "start_ns": 487644791467378,
+      "end_ns": 487645867312721,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-5-worker-3",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:05.681686+00:00",
+      "end": "2026-10-22T19:19:06.748654+00:00",
+      "start_ns": 487644791492525,
+      "end_ns": 487645858468505,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    },
+    {
+      "name": "wave-5-worker-4",
+      "source": "ee8025ef9ef9757f1af5bf90e5009a77715ba795",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T19:19:05.681607+00:00",
+      "end": "2026-10-22T19:19:06.745540+00:00",
+      "start_ns": 487644791413313,
+      "end_ns": 487645855347610,
+      "rc": 0,
+      "isolated_HOME": true,
+      "isolated_TMPDIR": true,
+      "interpreter": "/tmp/coder-0232-locked-venv/bin/python"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+test_special_journals_nonblocking (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_special_journals_nonblocking) ... 
+  test_special_journals_nonblocking (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_special_journals_nonblocking) (kind='fifo') ... FAIL
+
+======================================================================
+FAIL: test_special_journals_nonblocking (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_special_journals_nonblocking) (kind='fifo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 147, in test_special_journals_nonblocking
+    try: result = self.run_entry(timeout=2)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 101, in run_entry
+    return subprocess.run([sys.executable, '-B', str(installed),
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 550, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 1209, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 2116, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+  File "/usr/lib/python3.12/subprocess.py", line 1253, in _check_timeout
+    raise TimeoutExpired(
+subprocess.TimeoutExpired: Command '['/tmp/coder-0232-locked-venv/bin/python', '-B', '/tmp/mcp-mut-y6l_6e40/tmpe4_699_6/state/mcp-entry/forwarder.py', '--state-dir', '/tmp/mcp-mut-y6l_6e40/tmpe4_699_6/state', '--factory-root', '/tmp/mcp-mut-y6l_6e40/tmpe4_699_6/mount/factory']' timed out after 2 seconds
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 148, in test_special_journals_nonblocking
+    except subprocess.TimeoutExpired: self.fail('JOURNAL_NONBLOCK_TIMEOUT')
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: JOURNAL_NONBLOCK_TIMEOUT
+
+----------------------------------------------------------------------
+Ran 1 test in 2.146s
+
+FAILED (failures=1)

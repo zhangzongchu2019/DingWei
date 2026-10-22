@@ -1,0 +1,19 @@
+test_actual_shim_uses_only_supplied_fake_ipc (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_actual_shim_uses_only_supplied_fake_ipc) ... ok
+test_atomic_journal_replacements_keep_whole_snapshot (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_atomic_journal_replacements_keep_whole_snapshot) ... ok
+test_confirmed_only_and_readonly_without_guard_or_locks (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_confirmed_only_and_readonly_without_guard_or_locks) ... ok
+test_exec_failure_is_visible_without_retries (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_exec_failure_is_visible_without_retries) ... ok
+test_invalid_journal_shapes_fall_back (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_invalid_journal_shapes_fall_back) ... ok
+test_no_valid_factory_visible_failure (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_no_valid_factory_visible_failure) ... ok
+test_old_factory_real_stdio_reports_its_actual_version (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_old_factory_real_stdio_reports_its_actual_version) ... ok
+test_path_and_permission_guards (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards) ... ok
+test_process_keeps_snapshot_until_next_start (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_process_keeps_snapshot_until_next_start) ... ok
+test_real_legacy_verifier_and_guard_confirm_rollback (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_real_legacy_verifier_and_guard_confirm_rollback) ... ok
+test_real_stdio_current_factory_versions_and_ipc_failure (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_real_stdio_current_factory_versions_and_ipc_failure) ... ok
+test_selected_shim_failure_never_reexecutes_factory (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_selected_shim_failure_never_reexecutes_factory) ... ok
+test_slot_symlinks_incomplete_and_special_files_fall_back (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_slot_symlinks_incomplete_and_special_files_fall_back) ... ok
+test_special_journals_nonblocking (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_special_journals_nonblocking) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.819s
+
+OK

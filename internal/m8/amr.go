@@ -163,6 +163,7 @@ type amrStats struct {
 	failed                  uint64
 	eventsRejected          uint64
 	missingIdentityOrReplay uint64 // S-AMR-LOG-HYGIENE:见 ingest 第一道门
+	viewBackfillDropped     uint64 // View-only completed-item snapshots must never enter AMR.
 	closedNonCandidate      uint64
 	closedCandidateRejected uint64
 	closedCandidateReady    uint64
@@ -335,6 +336,15 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 	}
 	p.mu.Lock()
 	p.stats.eventsObserved++
+	if metaBool(ev.Data, "backfill") {
+		// A completed-item snapshot exists only to repair the View transcript.
+		// Drop it before identity checks or turn creation so Hub restart/expiry
+		// cannot reopen an old AMR turn or trigger mention/reply routing.
+		p.stats.eventsRejected++
+		p.stats.viewBackfillDropped++
+		p.mu.Unlock()
+		return
+	}
 	p.mu.Unlock()
 	if ev.DeliveryID == "" || ev.TurnID == "" || amrEventReplay(ev.Data) {
 		// S-AMR-LOG-HYGIENE:这一支是预期内的常态(多数会话事件本就不带回合标识)。
@@ -867,10 +877,10 @@ func (p *amrProcessor) logStatsLocked() {
 	active := uint64(len(p.turns))
 	topOK := p.stats.opened == active+p.stats.queued+p.stats.closed+p.stats.incomplete+p.stats.failed
 	closedOK := p.stats.closed == p.stats.closedNonCandidate+p.stats.closedCandidateRejected+p.stats.closedCandidateReady+p.stats.closedDispatched
-	log.Printf("amr heartbeat events=%d opened=%d active=%d queued=%d closed=%d incomplete=%d failed=%d non_candidate=%d candidate_rejected=%d candidate_ready=%d dispatched=%d fragment_append=%d fragment_snapshot=%d fragment_dup=%d late_after_terminal=%d legacy_dropped=%d targets_attempted=%d targets_dispatched=%d targets_failed=%d queue_underflow=%d notifications_sent=%d notifications_suppressed=%d reply_origin_routed=%d reply_origin_skipped=%d reply_origin_unavailable=%d terminal_unknown=%v structured_failure_min_version=%s rejected_events=%d missing_identity_or_replay=%d top_invariant=%t closed_invariant=%t",
+	log.Printf("amr heartbeat events=%d opened=%d active=%d queued=%d closed=%d incomplete=%d failed=%d non_candidate=%d candidate_rejected=%d candidate_ready=%d dispatched=%d fragment_append=%d fragment_snapshot=%d fragment_dup=%d late_after_terminal=%d legacy_dropped=%d view_backfill_dropped=%d targets_attempted=%d targets_dispatched=%d targets_failed=%d queue_underflow=%d notifications_sent=%d notifications_suppressed=%d reply_origin_routed=%d reply_origin_skipped=%d reply_origin_unavailable=%d terminal_unknown=%v structured_failure_min_version=%s rejected_events=%d missing_identity_or_replay=%d top_invariant=%t closed_invariant=%t",
 		p.stats.eventsObserved, p.stats.opened, active, p.stats.queued, p.stats.closed, p.stats.incomplete, p.stats.failed,
 		p.stats.closedNonCandidate, p.stats.closedCandidateRejected, p.stats.closedCandidateReady, p.stats.closedDispatched,
-		p.stats.fragmentAppend, p.stats.fragmentSnapshot, p.stats.fragmentDuplicate, p.stats.lateAfterTerminal, p.stats.legacyRouteDropped,
+		p.stats.fragmentAppend, p.stats.fragmentSnapshot, p.stats.fragmentDuplicate, p.stats.lateAfterTerminal, p.stats.legacyRouteDropped, p.stats.viewBackfillDropped,
 		p.stats.targetsAttempted, p.stats.targetsDispatched, p.stats.targetsFailed, p.stats.queueUnderflow,
 		p.stats.notificationsSent, p.stats.notificationsSuppressed,
 		p.stats.replyOriginRouted, p.stats.replyOriginSkipped, p.stats.replyOriginUnavailable,

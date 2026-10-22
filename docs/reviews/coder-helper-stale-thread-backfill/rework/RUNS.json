@@ -1,0 +1,35 @@
+{
+  "base_commit": "1ad6b349d9bd41e73f648df53c0738dd02229332",
+  "base_tree": "1c44b624adab3086496d25b6cbe0fd1c4fbf1e8f",
+  "scope": [
+    "internal/m8/amr.go",
+    "internal/m8/amr_test.go"
+  ],
+  "focused_backfill_test": {
+    "command": "go test ./internal/m8 -run '^TestAMRBackfillAfterHubRestartIsDroppedBeforeAccumulator$' -count=1",
+    "rc": 0,
+    "result": "ok"
+  },
+  "withdrawal": {
+    "change": "removed the data.backfill early-drop guard",
+    "expected_red": "AMR_BACKFILL_REOPENED_TURN: turns=0 completed=1",
+    "rc": 1,
+    "evidence": "amr-backfill-guard-removed.log"
+  },
+  "full_go": {
+    "command": "go test ./... -count=1 -timeout=30m",
+    "rc": 0,
+    "test_packages_passed": 53,
+    "packages_without_tests": 13,
+    "evidence": "raw/go-full.log"
+  },
+  "canonical": {
+    "command": "env -i HOME=/tmp/tg60-stale-backfill-canonical-home-rework PATH=/tmp/tg60-stale-backfill-venv/bin:/usr/bin:/bin bash scripts/run-build-tests.sh",
+    "result": "BUILD_TESTS_OK python=57 shell=2",
+    "rc": 0,
+    "home_isolated": true,
+    "venv": "/tmp/tg60-stale-backfill-venv",
+    "evidence": "raw/canonical.log"
+  },
+  "no_production_actions": true
+}

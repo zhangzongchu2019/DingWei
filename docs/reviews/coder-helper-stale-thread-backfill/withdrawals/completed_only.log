@@ -1,0 +1,27 @@
+test_incomplete_agent_item_is_not_backfilled (test_codex_item_backfill.CodexItemBackfill.test_incomplete_agent_item_is_not_backfilled) ... FAIL
+
+======================================================================
+FAIL: test_incomplete_agent_item_is_not_backfilled (test_codex_item_backfill.CodexItemBackfill.test_incomplete_agent_item_is_not_backfilled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/work/dw-docs/tools/sessionhelper/tests/test_codex_item_backfill.py", line 172, in test_incomplete_agent_item_is_not_backfilled
+    self.assertEqual([(ev.data["item_id"], ev.text) for ev in recovered], [("item-done", "complete")],
+AssertionError: Lists differ: [('it[16 chars]ete'), ('item-open', 'partial'), ('item-unknow[14 chars]ed')] != [('it[16 chars]ete')]
+
+First list contains 2 additional elements.
+First extra element 1:
+('item-open', 'partial')
+
+- [('item-done', 'complete'),
+?                           ^
+
++ [('item-done', 'complete')]
+?                           ^
+
+-  ('item-open', 'partial'),
+-  ('item-unknown', 'unconfirmed')] : BACKFILL_INCOMPLETE_ITEM_LEAKED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)

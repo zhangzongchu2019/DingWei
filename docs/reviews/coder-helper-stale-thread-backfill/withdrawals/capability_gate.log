@@ -1,0 +1,14 @@
+test_capability_defaults_off_and_nonmatching_value_does_not_read_history (test_codex_item_backfill.CodexItemBackfill.test_capability_defaults_off_and_nonmatching_value_does_not_read_history) ... FAIL
+
+======================================================================
+FAIL: test_capability_defaults_off_and_nonmatching_value_does_not_read_history (test_codex_item_backfill.CodexItemBackfill.test_capability_defaults_off_and_nonmatching_value_does_not_read_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/work/dw-docs/tools/sessionhelper/tests/test_codex_item_backfill.py", line 125, in test_capability_defaults_off_and_nonmatching_value_does_not_read_history
+    self.assertFalse(disabled._view_item_backfill)
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 1 test in 0.012s
+
+FAILED (failures=1)

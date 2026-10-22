@@ -1,0 +1,549 @@
+{
+  "source": "3e3019e35d8f0e4dda860eb10be7d1e740a41b79",
+  "rows": [
+    {
+      "name": "baseline",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests"
+      ],
+      "start": "2026-10-22T17:43:01.639319+00:00",
+      "end": "2026-10-22T17:43:02.648129+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "pending-not-current-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_confirmed_only_and_readonly_without_guard_or_locks"
+      ],
+      "start": "2026-10-22T17:43:02.648356+00:00",
+      "end": "2026-10-22T17:43:02.740219+00:00",
+      "rc": 1,
+      "marker": "CURRENT_NOT_SELECTED",
+      "assertion_red": true
+    },
+    {
+      "name": "pending-not-current-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_confirmed_only_and_readonly_without_guard_or_locks"
+      ],
+      "start": "2026-10-22T17:43:02.740457+00:00",
+      "end": "2026-10-22T17:43:02.830938+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "previous-not-current-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_confirmed_only_and_readonly_without_guard_or_locks"
+      ],
+      "start": "2026-10-22T17:43:02.831182+00:00",
+      "end": "2026-10-22T17:43:02.928978+00:00",
+      "rc": 1,
+      "marker": "CURRENT_NOT_SELECTED",
+      "assertion_red": true
+    },
+    {
+      "name": "previous-not-current-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_confirmed_only_and_readonly_without_guard_or_locks"
+      ],
+      "start": "2026-10-22T17:43:02.929223+00:00",
+      "end": "2026-10-22T17:43:03.031150+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "journal-format-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_invalid_journal_shapes_fall_back"
+      ],
+      "start": "2026-10-22T17:43:03.031400+00:00",
+      "end": "2026-10-22T17:43:03.130620+00:00",
+      "rc": 1,
+      "marker": "INVALID_JOURNAL_ACCEPTED",
+      "assertion_red": true
+    },
+    {
+      "name": "journal-format-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_invalid_journal_shapes_fall_back"
+      ],
+      "start": "2026-10-22T17:43:03.130863+00:00",
+      "end": "2026-10-22T17:43:03.243309+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "sha-shape-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_invalid_journal_shapes_fall_back"
+      ],
+      "start": "2026-10-22T17:43:03.243571+00:00",
+      "end": "2026-10-22T17:43:03.352976+00:00",
+      "rc": 1,
+      "marker": "INVALID_SHA_ACCEPTED",
+      "assertion_red": true
+    },
+    {
+      "name": "sha-shape-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_invalid_journal_shapes_fall_back"
+      ],
+      "start": "2026-10-22T17:43:03.353392+00:00",
+      "end": "2026-10-22T17:43:03.459570+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "journal-nofollow-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards"
+      ],
+      "start": "2026-10-22T17:43:03.460003+00:00",
+      "end": "2026-10-22T17:43:03.556545+00:00",
+      "rc": 1,
+      "marker": "JOURNAL_SYMLINK_ACCEPTED",
+      "assertion_red": true
+    },
+    {
+      "name": "journal-nofollow-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards"
+      ],
+      "start": "2026-10-22T17:43:03.556974+00:00",
+      "end": "2026-10-22T17:43:03.649978+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "journal-nonblock-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_special_journals_nonblocking"
+      ],
+      "start": "2026-10-22T17:43:03.650429+00:00",
+      "end": "2026-10-22T17:43:05.881697+00:00",
+      "rc": 1,
+      "marker": "JOURNAL_NONBLOCK_TIMEOUT",
+      "assertion_red": true
+    },
+    {
+      "name": "journal-nonblock-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_special_journals_nonblocking"
+      ],
+      "start": "2026-10-22T17:43:05.882683+00:00",
+      "end": "2026-10-22T17:43:06.137355+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "journal-size-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_invalid_journal_shapes_fall_back"
+      ],
+      "start": "2026-10-22T17:43:06.138126+00:00",
+      "end": "2026-10-22T17:43:06.236707+00:00",
+      "rc": 1,
+      "marker": "INVALID_JOURNAL_ACCEPTED",
+      "assertion_red": true
+    },
+    {
+      "name": "journal-size-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_invalid_journal_shapes_fall_back"
+      ],
+      "start": "2026-10-22T17:43:06.237005+00:00",
+      "end": "2026-10-22T17:43:06.335282+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "private-mode-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards"
+      ],
+      "start": "2026-10-22T17:43:06.335620+00:00",
+      "end": "2026-10-22T17:43:06.425608+00:00",
+      "rc": 1,
+      "marker": "UNSAFE_MODE_ACCEPTED",
+      "assertion_red": true
+    },
+    {
+      "name": "private-mode-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards"
+      ],
+      "start": "2026-10-22T17:43:06.425913+00:00",
+      "end": "2026-10-22T17:43:06.515189+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "directory-owner-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards"
+      ],
+      "start": "2026-10-22T17:43:06.515558+00:00",
+      "end": "2026-10-22T17:43:06.607893+00:00",
+      "rc": 1,
+      "marker": "FOREIGN_DIRECTORY_OWNER_ACCEPTED",
+      "assertion_red": true
+    },
+    {
+      "name": "directory-owner-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards"
+      ],
+      "start": "2026-10-22T17:43:06.608253+00:00",
+      "end": "2026-10-22T17:43:06.702271+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "canonical-parent-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards"
+      ],
+      "start": "2026-10-22T17:43:06.702634+00:00",
+      "end": "2026-10-22T17:43:06.797746+00:00",
+      "rc": 1,
+      "marker": "PARENT_ALIAS_ACCEPTED",
+      "assertion_red": true
+    },
+    {
+      "name": "canonical-parent-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards"
+      ],
+      "start": "2026-10-22T17:43:06.798090+00:00",
+      "end": "2026-10-22T17:43:06.886552+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "payload-regular-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_slot_symlinks_incomplete_and_special_files_fall_back"
+      ],
+      "start": "2026-10-22T17:43:06.886907+00:00",
+      "end": "2026-10-22T17:43:06.975970+00:00",
+      "rc": 1,
+      "marker": "PAYLOAD_SYMLINK_ACCEPTED",
+      "assertion_red": true
+    },
+    {
+      "name": "payload-regular-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_slot_symlinks_incomplete_and_special_files_fall_back"
+      ],
+      "start": "2026-10-22T17:43:06.976358+00:00",
+      "end": "2026-10-22T17:43:07.069169+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "complete-package-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_no_valid_factory_visible_failure"
+      ],
+      "start": "2026-10-22T17:43:07.069561+00:00",
+      "end": "2026-10-22T17:43:07.199677+00:00",
+      "rc": 1,
+      "marker": "INVALID_FACTORY_EXECUTED",
+      "assertion_red": true
+    },
+    {
+      "name": "complete-package-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_no_valid_factory_visible_failure"
+      ],
+      "start": "2026-10-22T17:43:07.200571+00:00",
+      "end": "2026-10-22T17:43:07.316083+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "factory-validation-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_no_valid_factory_visible_failure"
+      ],
+      "start": "2026-10-22T17:43:07.317058+00:00",
+      "end": "2026-10-22T17:43:07.446011+00:00",
+      "rc": 1,
+      "marker": "INVALID_FACTORY_EXECUTED",
+      "assertion_red": true
+    },
+    {
+      "name": "factory-validation-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_no_valid_factory_visible_failure"
+      ],
+      "start": "2026-10-22T17:43:07.447087+00:00",
+      "end": "2026-10-22T17:43:07.564445+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "import-precedence-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_real_stdio_current_factory_versions_and_ipc_failure"
+      ],
+      "start": "2026-10-22T17:43:07.565657+00:00",
+      "end": "2026-10-22T17:43:07.714194+00:00",
+      "rc": 1,
+      "marker": "CWD_OR_PYTHONPATH_SHADOWED_SLOT",
+      "assertion_red": true
+    },
+    {
+      "name": "import-precedence-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_real_stdio_current_factory_versions_and_ipc_failure"
+      ],
+      "start": "2026-10-22T17:43:07.715134+00:00",
+      "end": "2026-10-22T17:43:07.899183+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "ipc-environment-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_actual_shim_uses_only_supplied_fake_ipc"
+      ],
+      "start": "2026-10-22T17:43:07.900350+00:00",
+      "end": "2026-10-22T17:43:10.999758+00:00",
+      "rc": 1,
+      "marker": "FAKE_IPC_FAILED",
+      "assertion_red": true
+    },
+    {
+      "name": "ipc-environment-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_actual_shim_uses_only_supplied_fake_ipc"
+      ],
+      "start": "2026-10-22T17:43:11.001803+00:00",
+      "end": "2026-10-22T17:43:11.168021+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "exec-error-status-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_exec_failure_is_visible_without_retries"
+      ],
+      "start": "2026-10-22T17:43:11.168554+00:00",
+      "end": "2026-10-22T17:43:11.256424+00:00",
+      "rc": 1,
+      "marker": "EXEC_FAILURE_HIDDEN",
+      "assertion_red": true
+    },
+    {
+      "name": "exec-error-status-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_exec_failure_is_visible_without_retries"
+      ],
+      "start": "2026-10-22T17:43:11.256876+00:00",
+      "end": "2026-10-22T17:43:11.343107+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "final-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests"
+      ],
+      "start": "2026-10-22T17:43:11.343522+00:00",
+      "end": "2026-10-22T17:43:12.245395+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    }
+  ]
+}

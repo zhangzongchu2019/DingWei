@@ -2482,6 +2482,14 @@
       return String(a.cursor ?? '').localeCompare(String(b.cursor ?? ''), undefined, { numeric: true, sensitivity: 'base' });
     }
 
+    function stableAssistantItemKey(ev) {
+      const itemId = ev?.data?.item_id ?? ev?.data?.params?.itemId ?? ev?.data?.item?.id;
+      const threadId = ev?.data?.thread_id ?? ev?.session_id ?? ev?.data?.params?.threadId ?? '';
+      const turnId = ev?.turn_id ?? ev?.data?.params?.turnId ?? '';
+      if (![threadId, turnId, itemId].every(v => typeof v === 'string' && v)) return '';
+      return `${threadId}\u0000${turnId}\u0000${itemId}`;
+    }
+
     function eventTypeLabel(ev) {
       // 精简:flag 开,input_posted 与 user_input 一律隐类型标(有源图标表意,无则素净;治「人/👤 双标」)
       if (provFlagOn() && (ev.kind === 'input_posted' || ev.kind === 'user_input')) return '';
@@ -3198,9 +3206,13 @@
         const prev = merged[merged.length - 1];
         // 同 delivery 才合并（复核要求：不同投递的文本各留归属，delivery_id 另有用途如 ext- 判定）
         // turn_id 为空的不参与合并（这类事件本就各自成卡；组长 R-V2-0105-MERGE-EMPTY-TURN）
+        const prevItemKey = stableAssistantItemKey(prev);
+        const itemKey = stableAssistantItemKey(ev);
+        const sameItemBoundary = (prevItemKey || itemKey) ? Boolean(prevItemKey && itemKey && prevItemKey === itemKey) : true;
         if (prev && prev.kind === 'assistant_text' && ev.kind === 'assistant_text'
             && prev.turn_id && ev.turn_id
-            && (prev.delivery_id || '') === (ev.delivery_id || '')) {
+            && (prev.delivery_id || '') === (ev.delivery_id || '')
+            && sameItemBoundary) {
           merged[merged.length - 1] = { ...prev, text: (prev.text || '') + (ev.text || '') };
         } else {
           merged.push(ev);
@@ -3225,10 +3237,26 @@
         node.dataset.turnKey = turnKey;
         node.setAttribute('aria-label', `Turn ${turnKey}`);
         timeline.appendChild(node);
-        group = { node, events: [], kind: 'turn', dirty: false, sorted: true, lastRender: 0, detached: false };
+        group = { node, events: [], completedItemIds: new Set(), kind: 'turn', dirty: false, sorted: true, lastRender: 0, detached: false };
         turnGroups.set(turnKey, group);
       }
       if (group.overCap) return;   // R-V2-0105 件一：已到硬上限并已提示
+      const itemKey = ev.kind === 'assistant_text' ? stableAssistantItemKey(ev) : '';
+      const isBackfill = ev.kind === 'assistant_text' && ev.data?.backfill === true;
+      if (isBackfill) {
+        // Backfill is a complete item replacement, never an append. Require the
+        // stable item identity so malformed/legacy envelopes cannot duplicate text.
+        if (!itemKey) return;
+        group.completedItemIds ||= new Set();
+        const before = group.events.length;
+        group.events = group.events.filter(old => !(old.kind === 'assistant_text' && stableAssistantItemKey(old) === itemKey));
+        group.completedItemIds.add(itemKey);
+        if (group.events.length !== before) group.sorted = false;
+      } else if (itemKey && group.completedItemIds?.has(itemKey)) {
+        // The reconnect snapshot can be followed by buffered/live deltas for the
+        // same item. Once replaced by its complete body, those chunks are stale.
+        return;
+      }
       const prevEv = group.events[group.events.length - 1];
       group.events.push(ev);   // 不做 cursor 去重:同一 item 的多片 delta 共用 cursor,去重会吞正文
       // R-V2-0105 件一压力格：按 cursor 顺序到达（常态）不置乱序，重渲与合并就不必每次全量重排；

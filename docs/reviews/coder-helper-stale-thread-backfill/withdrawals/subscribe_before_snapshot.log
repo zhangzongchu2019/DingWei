@@ -1,0 +1,21 @@
+test_reconnect_backfill_subscribes_first_and_replaces_completed_item (test_codex_item_backfill.CodexItemBackfill.test_reconnect_backfill_subscribes_first_and_replaces_completed_item) ... FAIL
+
+======================================================================
+FAIL: test_reconnect_backfill_subscribes_first_and_replaces_completed_item (test_codex_item_backfill.CodexItemBackfill.test_reconnect_backfill_subscribes_first_and_replaces_completed_item)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/work/dw-docs/tools/sessionhelper/tests/test_codex_item_backfill.py", line 103, in test_reconnect_backfill_subscribes_first_and_replaces_completed_item
+    self.assertEqual(seen_subscribed, [True], "BACKFILL_SUBSCRIBE_AFTER_SNAPSHOT")
+AssertionError: Lists differ: [False] != [True]
+
+First differing element 0:
+False
+True
+
+- [False]
++ [True] : BACKFILL_SUBSCRIBE_AFTER_SNAPSHOT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+FAILED (failures=1)

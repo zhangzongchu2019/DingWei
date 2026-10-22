@@ -1,0 +1,14 @@
+test_no_valid_factory_visible_failure (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_no_valid_factory_visible_failure) ... FAIL
+
+======================================================================
+FAIL: test_no_valid_factory_visible_failure (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_no_valid_factory_visible_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 197, in test_no_valid_factory_visible_failure
+    self.assertEqual(result.returncode, 78, 'INVALID_FACTORY_EXECUTED')
+AssertionError: 1 != 78 : INVALID_FACTORY_EXECUTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.047s
+
+FAILED (failures=1)
