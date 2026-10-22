@@ -348,6 +348,13 @@ class Control(Fixture):
             ep.write_json(fd, ep.REGISTRY, {**self.owner.record, **fields})
 
     def test_live_kernel_binding_challenge_and_reuse_without_launch(self):
+        with mock.patch.dict(os.environ, {'SH_UPDATE_LAUNCHER': str(Path(__file__).resolve().parents[1] / 'update_launcher/guard.py')}):
+            module, retention = ep.retention_kernel(self.spec)
+            pin, handles = retention.register(ep.package_root(), self.spec.fingerprint())
+        self.addCleanup(lambda: [os.close(handle) for handle in handles])
+        self.owner.reply['pin'] = pin['id']
+        launcher = mock.patch.dict(os.environ, {'SH_UPDATE_LAUNCHER': str(Path(__file__).resolve().parents[1] / 'update_launcher/guard.py')})
+        launcher.start(); self.addCleanup(launcher.stop)
         with mock.patch.object(ep.subprocess, 'Popen') as launch:
             first = self.client.ensure(); second = ep.Client(self.spec).ensure()
         launch.assert_not_called()
@@ -635,6 +642,8 @@ class DriverWiring(Fixture):
 class RealOwnerProcess(Fixture):
     def setUp(self):
         super().setUp()
+        retained_launcher = mock.patch.dict(os.environ, {'SH_UPDATE_LAUNCHER': str(Path(__file__).resolve().parents[1] / 'update_launcher/guard.py')})
+        retained_launcher.start(); self.addCleanup(retained_launcher.stop)
         fixture = Path(__file__).with_name('private_endpoint_fake_native.py').resolve()
         wrapper = self.base / 'fake-codex'
         wrapper.write_text('#!' + sys.executable + '\nimport runpy\nrunpy.run_path(' + repr(str(fixture)) + ", run_name='__main__')\n")
@@ -679,6 +688,10 @@ class RealOwnerProcess(Fixture):
         self.assertFalse(errors, 'OWNER_DOUBLE_START_FAILED ' + repr(errors))
         self.assertEqual(len(rows), 2, 'OWNER_DOUBLE_START_INCOMPLETE')
         self.assertEqual(rows[0]['child'], rows[1]['child'], 'DOUBLE_START_CREATED_TWO_CHILDREN')
+        module, retained = ep.retention_kernel(self.spec)
+        pin_id = rows[0]['pin']
+        with retained.transaction() as retained_fd:
+            self.assertEqual(retained.records(retained_fd)[0]['state'], 'active', 'OWNER_PIN_NOT_ACTIVE')
         initial = rows[0]['child']
         trace = self.spec.root / 'fixture-starts.jsonl'
         self.assertEqual(len(trace.read_text().splitlines()), 1, 'DOUBLE_START_CREATED_TWO_CHILDREN')
@@ -733,6 +746,10 @@ class RealOwnerProcess(Fixture):
         self.assertEqual(self.clients[0].status()['child'], replacement['child'], 'BUSY_STOP_KILLED_CHILD')
         ep.native_call(self.spec, binding, lambda request: request('fixture/idle', {}))
         self.assertEqual(self.clients[0].stop_owner(human_disconnected=True)['state'], 'stopped')
+        with retained.transaction() as retained_fd:
+            pin = next(p for p in retained.records(retained_fd) if p['id'] == pin_id)
+            self.assertEqual(pin['state'], 'stopped', 'AUTHENTICATED_STOP_PIN_NOT_CERTIFIED')
+            self.assertEqual(pin['stop']['state'], 'stopped', 'AUTHENTICATED_STOP_PIN_NOT_CERTIFIED')
         for client in self.clients:
             for proc in client._launchers:
                 self.assertEqual(proc.wait(timeout=5), 0, 'OWNER_CLEAN_STOP_FAILED')

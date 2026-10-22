@@ -10,6 +10,7 @@ import argparse
 from contextlib import contextmanager, ExitStack
 from dataclasses import asdict, dataclass
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -43,7 +44,7 @@ class PrivateEndpointError(DaemonIdentityError):
         'endpoint_config', 'endpoint_path', 'endpoint_permissions', 'endpoint_file',
         'endpoint_registry', 'endpoint_owner', 'endpoint_protocol', 'endpoint_timeout',
         'endpoint_unavailable', 'endpoint_dirty', 'endpoint_stopped', 'endpoint_busy',
-        'endpoint_binding', 'endpoint_child', 'endpoint_human_confirmation',
+        'endpoint_binding', 'endpoint_child', 'endpoint_human_confirmation', 'endpoint_retention',
     })
 
 
@@ -53,6 +54,29 @@ def fail(reason):
 
 def implementation_hash():
     return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
+
+def retention_kernel(spec):
+    path = Path(env_get('SH_UPDATE_LAUNCHER', ''))
+    try:
+        if not path.is_absolute() or path.resolve(strict=True) != path or path.is_symlink():
+            fail('retention')
+        info = path.stat()
+        if not stat.S_ISREG(info.st_mode) or info.st_uid not in (0, os.getuid()) or info.st_mode & 0o022:
+            fail('retention')
+        loader = importlib.util.spec_from_file_location('_dw_private_retention', path)
+        module = importlib.util.module_from_spec(loader); loader.loader.exec_module(module)
+        if getattr(module, 'RETENTION_API', None) != 1:
+            fail('retention')
+        return module, module.Retention(Path(spec.state_dir) / 'update')
+    except PrivateEndpointError:
+        raise
+    except Exception:
+        fail('retention')
+
+
+def package_root():
+    return str(Path(__file__).resolve().parent.parent)
 
 
 def executable(path):
@@ -538,6 +562,18 @@ class Client:
                         fail('protocol')
                     raise PrivateEndpointError(reason)
                 if op == 'stop':
+                    if record.get('pin'):
+                        if reply.get('pin') != record['pin'] or reply.get('pin_nonce') != record.get('pin_nonce'):
+                            fail('retention')
+                        deadline = time.monotonic() + CONTROL_TIMEOUT
+                        while lock_is_held(fd):
+                            if time.monotonic() >= deadline: fail('retention')
+                            time.sleep(.01)
+                        module, retention = retention_kernel(self.spec)
+                        try:
+                            retention.finish(record['pin'], record['pin_nonce'],
+                                {k: reply[k] for k in ('pin','boot','challenge','state')})
+                        except Exception: fail('retention')
                     return reply
                 child = reply.get('child')
                 if (reply.get('state') != 'ready' or type(child) is not dict
@@ -585,22 +621,34 @@ class Client:
                 if not lock_is_held(fd):
                     if any(exists(fd, n) for n in (REGISTRY, CONTROL, APP)):
                         fail('dirty')
-                    env = env_snapshot()
-                    env['CODEX_HOME'] = self.spec.codex_home
-                    package_root = str(Path(__file__).resolve().parent.parent)
-                    env['PYTHONPATH'] = package_root
-                    proc = subprocess.Popen([sys.executable, '-B', '-m', 'sessionhelper.private_endpoint', '--owner'],
-                        stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                        env=env, cwd=self.spec.workdir, start_new_session=True, close_fds=True)
-                    self._launchers.append(proc)
+                    module, retention = retention_kernel(self.spec)
+                    try: pin, handles = retention.register(package_root(), self.spec.fingerprint())
+                    except Exception: fail('retention')
                     try:
-                        proc.stdin.write(json.dumps(asdict(self.spec)).encode() + b'\n'); proc.stdin.close()
-                    except (BrokenPipeError, OSError):
-                        pass
+                        env = env_snapshot()
+                        env['CODEX_HOME'] = self.spec.codex_home
+                        env['PYTHONPATH'] = package_root()
+                        proc = subprocess.Popen([sys.executable, '-B', '-m', 'sessionhelper.private_endpoint', '--owner'],
+                            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            env=env, cwd=self.spec.workdir, start_new_session=True, close_fds=True,
+                            pass_fds=tuple(handles))
+                        self._launchers.append(proc)
+                        request = {'spec': asdict(self.spec), 'retention': {'id': pin['id'], 'fds': handles}}
+                        try:
+                            proc.stdin.write(json.dumps(request).encode() + b'\n'); proc.stdin.close()
+                        except (BrokenPipeError, OSError): pass
+                    finally:
+                        # The owner must retain the inherited descriptions. A
+                        # failed handoff leaves its durable pin, never frees it.
+                        for handle in handles: os.close(handle)
                 last = None
                 while time.monotonic() < deadline:
                     try:
-                        return self.status()
+                        live = self.status()
+                        module, retention = retention_kernel(self.spec)
+                        try: retention.active(live.get('pin'), package_root(), self.spec.fingerprint())
+                        except Exception: fail('retention')
+                        return live
                     except (PrivateEndpointError, DaemonIdentityError) as exc:
                         last = exc
                         time.sleep(.03)
@@ -675,8 +723,9 @@ class Client:
 
 
 class Owner:
-    def __init__(self, spec, fd):
+    def __init__(self, spec, fd, pin=None):
         self.spec = spec; self.fd = fd
+        self.pin = pin
         self.boot = secrets.token_hex(16); self.child = None; self.child_start = None
         self.generation = 0; self.restarts = 0; self.state = 'starting'
         self.app_identity = None; self.control_identity = None
@@ -684,6 +733,8 @@ class Owner:
         self.record = {'format': 1, 'owner_pid': os.getpid(), 'owner_starttime': process_starttime(os.getpid()),
                        'python': executable(sys.executable)[0], 'config': spec.fingerprint(),
                        'implementation': implementation_hash(), 'boot': self.boot}
+        if pin is not None:
+            self.record.update(pin=pin['id'], pin_nonce=pin['nonce'])
 
     def publish(self):
         write_json(self.fd, REGISTRY, {**self.record, 'state': self.state, 'generation': self.generation,
@@ -849,12 +900,13 @@ class Owner:
                             fail('protocol')
                         if request['op'] == 'stop':
                             self.stop_idle(request['human_disconnected'])
-                            reply = {'ok': True, 'state': 'stopped'}
+                            reply = {'ok': True, 'state': 'stopped',
+                                     'pin': self.record.get('pin'), 'pin_nonce': self.record.get('pin_nonce')}
                         elif request['op'] == 'status':
                             if self.state != 'ready':
                                 raise PrivateEndpointError(self.record.get('last_error', 'endpoint_child'))
                             reply = {'ok': True, 'state': self.state, 'child': self.binding(), 'generation': self.generation,
-                                     'endpoint': self.app_identity.to_dict()}
+                                     'endpoint': self.app_identity.to_dict(), 'pin': self.record.get('pin')}
                         else:
                             fail('protocol')
                     except DaemonIdentityError as exc:
@@ -879,7 +931,7 @@ class Owner:
                 os.close(control_anchor); self.close_app_anchors()
 
 
-def run_owner(spec):
+def run_owner(spec, pin=None, handles=None):
     os.umask(0o077)  # This entry is a dedicated process, never the helper thread.
     with root_fd(spec) as fd:
         lock = open_file(fd, 'owner.lock', create=True)
@@ -890,9 +942,13 @@ def run_owner(spec):
                 return 73
             if any(exists(fd, n) for n in (REGISTRY, CONTROL, APP, 'stopped.json')):
                 fail('dirty')
-            Owner(spec, fd).serve()
+            Owner(spec, fd, pin).serve()
             return 0
         finally:
+            # Release inherited leases before owner.lock so an authenticated
+            # stop observer cannot certify while a dying owner still holds them.
+            if handles is not None:
+                while handles: os.close(handles.pop())
             os.close(lock)
 
 
@@ -910,10 +966,24 @@ def main(argv=None):
             raw = sys.stdin.buffer.readline(LIMIT + 1)
             if len(raw) > LIMIT or not raw.endswith(b'\n'):
                 fail('config')
-            return run_owner(Spec(**json.loads(raw)))
+            value = json.loads(raw)
+            spec = Spec(**value['spec']); meta = value['retention']; handles = meta['fds']
+            if (type(handles) is not list or len(handles) != 3
+                    or any(type(f) is not int or f < 3 for f in handles) or len(set(handles)) != len(handles)):
+                fail('retention')
+            try:
+                module, retention = retention_kernel(spec)
+                try: pin = retention.accept(meta['id'], handles, package_root(), spec.fingerprint())
+                except Exception: fail('retention')
+                return run_owner(spec, pin, handles)
+            finally:
+                for handle in handles: os.close(handle)
         spec = Spec(args.state_dir, args.seat, args.codex_home, args.workdir, args.command, args.expected_exe)
         client = Client(spec)
         if args.action == 'resume':
+            module, retention = retention_kernel(spec)
+            try: retention.active(client.status().get('pin'), package_root(), spec.fingerprint())
+            except Exception: fail('retention')
             command = client.resume_command(args.thread_id)
             env = env_snapshot(); env['CODEX_HOME'] = spec.codex_home
             os.chdir(spec.workdir); os.execve(command[0], command, env)

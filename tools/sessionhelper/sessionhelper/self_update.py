@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from contextlib import contextmanager
 import hashlib
 import fcntl
 import importlib.metadata
@@ -183,6 +184,20 @@ class SelfUpdater:
         finally:
             os.close(fd)
 
+    @contextmanager
+    def retention_transaction(self):
+        if getattr(self.guard, 'RETENTION_API', None) != 1:
+            if os.path.lexists(self.state.root / 'retain'):
+                raise UpdateRejected('manual_required')
+            yield None, None
+            return
+        retention = self.guard.Retention(self.state.root)
+        try:
+            with retention.transaction(create=True) as fd:
+                yield retention, fd
+        except self.guard.UpdateError as exc:
+            raise UpdateRejected(str(exc)) from None
+
     def _prepare(self, env):
         meta = self.validate_offer(env)
         data = self.state.read()
@@ -205,61 +220,69 @@ class SelfUpdater:
             return tuple((list(map(int, v.split('.'))) + [0] * 4)[:4])
         if numbers(meta['version']) <= numbers(__version__):
             raise UpdateRejected('version_not_new')
-        # Candidate slot write is serialized independently from the guard's short state transactions.
-        with self.state.locked():
-            data = self.state.read()
-            if data['pending']:
-                raise UpdateRejected('update_busy')
-            work = Path(tempfile.mkdtemp(prefix='.incoming-', dir=self.state.root))
+        # Download stays outside retain/state locks; prepare.lock still serializes offers.
+        work = Path(tempfile.mkdtemp(prefix='.incoming-', dir=self.state.root))
+        try:
+            artifact = work / 'source.tgz'
+            self.download(meta, artifact)
             try:
-                artifact = work / 'source.tgz'
-                self.download(meta, artifact)
-                try:
-                    manifest, files = self.package.verify(artifact, meta['sha256'])
-                except (ValueError, OSError):
-                    raise UpdateRejected('package_invalid') from None
-                if manifest['version'] != meta['version'] or manifest['platform'] != meta['platform']:
-                    raise UpdateRejected('release_mismatch')
-                if manifest['lock_sha256'] != meta['lock_sha256']:
-                    raise UpdateRejected('lock_changed')
-                slot = work / 'payload'; slot.mkdir(mode=0o700)
-                for name, content in files.items():
-                    if name.startswith('factory/'):
-                        target = slot / name[len('factory/'):]
-                        target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-                        with target.open('xb') as out:
-                            out.write(content); out.flush(); os.fsync(out.fileno())
-                # Preserve the already-verified job/lock binding beside candidate
-                # code; the stable guard's six-field journal stays unchanged.
-                with (slot / '.helper-update-binding.json').open('xb') as out:
-                    out.write(json.dumps({k: meta[k] for k in (*FIELDS, 'lock_sha256')}, sort_keys=True).encode())
-                    out.flush(); os.fsync(out.fileno())
-                for directory in sorted((p for p in slot.rglob('*') if p.is_dir()), reverse=True):
-                    fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
-                    try: os.fsync(fd)
-                    finally: os.close(fd)
-                slots = self.state.root / 'slots'; slots.mkdir(mode=0o700, exist_ok=True)
-                if slots.is_symlink() or slots.resolve() != slots:
-                    raise UpdateRejected('state_invalid')
-                destination = slots / meta['sha256']
-                if destination.exists():
-                    # Recover a crash after rename but before arming, never remove confirmed code.
-                    retained = [data.get('current'), data.get('previous')]
-                    if destination.is_symlink() or any(v and v['sha256'] == meta['sha256'] for v in retained):
-                        raise UpdateRejected('slot_exists')
-                    shutil.rmtree(destination)
-                os.replace(slot, destination)
-                directory = os.open(slots, os.O_RDONLY | os.O_DIRECTORY)
-                try:
-                    os.fsync(directory)
-                finally:
-                    os.close(directory)
-            finally:
-                shutil.rmtree(work, ignore_errors=True)
+                manifest, files = self.package.verify(artifact, meta['sha256'])
+            except (ValueError, OSError):
+                raise UpdateRejected('package_invalid') from None
+            if manifest['version'] != meta['version'] or manifest['platform'] != meta['platform']:
+                raise UpdateRejected('release_mismatch')
+            if manifest['lock_sha256'] != meta['lock_sha256']:
+                raise UpdateRejected('lock_changed')
+            slot = work / 'payload'; slot.mkdir(mode=0o700)
+            for name, content in files.items():
+                if name.startswith('factory/'):
+                    target = slot / name[len('factory/'):]
+                    target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+                    with target.open('xb') as out:
+                        out.write(content); out.flush(); os.fsync(out.fileno())
+            # Preserve the already-verified job/lock binding beside candidate
+            # code; the stable guard's six-field journal stays unchanged.
+            with (slot / '.helper-update-binding.json').open('xb') as out:
+                out.write(json.dumps({k: meta[k] for k in (*FIELDS, 'lock_sha256')}, sort_keys=True).encode())
+                out.flush(); os.fsync(out.fileno())
+            for directory in sorted((p for p in slot.rglob('*') if p.is_dir()), reverse=True):
+                fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
+                try: os.fsync(fd)
+                finally: os.close(fd)
+            with self.retention_transaction() as (retention, retain_fd):
+                with self.state.locked():
+                    data = self.state.read()
+                    if data['pending']:
+                        raise UpdateRejected('update_busy')
+                    if retention is not None:
+                        retention.check_locked(retain_fd, slot)
+                    slots = self.state.root / 'slots'; slots.mkdir(mode=0o700, exist_ok=True)
+                    if slots.is_symlink() or slots.resolve() != slots:
+                        raise UpdateRejected('state_invalid')
+                    destination = slots / meta['sha256']
+                    if destination.exists():
+                        # Recover a crash after rename but before arming, never remove confirmed code.
+                        if retention is not None:
+                            retention.check_locked(retain_fd, replacing=destination)
+                        retained = [data.get('current'), data.get('previous')]
+                        if destination.is_symlink() or any(v and v['sha256'] == meta['sha256'] for v in retained):
+                            raise UpdateRejected('slot_exists')
+                        shutil.rmtree(destination)
+                    os.replace(slot, destination)
+                    directory = os.open(slots, os.O_RDONLY | os.O_DIRECTORY)
+                    try:
+                        os.fsync(directory)
+                    finally:
+                        os.close(directory)
+        finally:
+            shutil.rmtree(work, ignore_errors=True)
         # Download may outlast a nearly expired offer. Recheck all gates before arming.
         self.validate_offer(env)
         # Arm after full verified slot creation; guard's transaction rechecks pending/terminal.
-        self.state.arm(meta)
+        try:
+            self.state.arm(meta)
+        except self.guard.UpdateError as exc:
+            raise UpdateRejected(str(exc)) from None
         return meta, 'installed', True
 
     def mark_restart_requested(self, meta):

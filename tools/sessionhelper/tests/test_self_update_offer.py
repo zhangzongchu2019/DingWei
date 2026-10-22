@@ -82,6 +82,32 @@ class OfferTests(unittest.TestCase):
             'url':'http://127.0.0.1:'+str(self.server.server_port)+'/source.tgz','platform':'linux',
             'expires_at':(datetime.now(timezone.utc)+timedelta(minutes=29)).isoformat()}}
 
+    def test_pce_pinned_collision_and_incompatible_candidate_refused(self):
+        meta, _, _ = self.updater.prepare(self.env)
+        slot = self.updater.state.slot(meta)
+        retention = self.updater.guard.Retention(self.updater.state.root)
+        pin, handles = retention.register(slot, 'fixture-endpoint')
+        self.addCleanup(lambda: [os.close(f) for f in handles])
+        before = slot.stat().st_ino
+        self.updater.state.fail(meta, 'fixture release pending')
+        second = copy.deepcopy(self.env); second['meta']['job_id'] = 'second-job'
+        reason = None
+        try: self.updater.prepare(second)
+        except UpdateRejected as error: reason = str(error)
+        self.assertEqual(slot.stat().st_ino, before, 'PINNED_COLLISION_RMTREE')
+        self.assertEqual(reason, 'retain_pinned', 'PINNED_COLLISION_RMTREE')
+        # A changed candidate must be refused before arm, independently of the
+        # collision guard. Build it from a new immutable local fixture commit.
+        (self.fixture.base/'sessionhelper/__main__.py').write_text('print("changed-owner-closure")\n')
+        commit = self.fixture.commit()
+        self.artifact = Path(self.fixture.tmp.name)/'changed-pce.tgz'
+        release = package_release.build(self.fixture.repo, commit, self.artifact)
+        second['meta'].update(job_id='changed-job', sha256=release['sha256'])
+        with self.assertRaisesRegex(UpdateRejected, '^manual_required$', msg='OWNER_UPDATE_CLOSURE_CHANGED'):
+            self.updater.prepare(second)
+        self.assertIsNone(self.updater.state.read()['pending'], 'OWNER_UPDATE_CLOSURE_CHANGED')
+        self.assertFalse((self.updater.state.root/'slots'/release['sha256']).exists(), 'OWNER_UPDATE_CLOSURE_CHANGED')
+
     def test_mcp_module_and_factory_script_after_actual_self_update(self):
         from test_mcp_forwarder import assert_tools, probe, snapshot
         # The downloaded release contains the real shim, not a tools/list mock.

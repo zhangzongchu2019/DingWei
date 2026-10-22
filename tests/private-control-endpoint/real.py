@@ -55,6 +55,7 @@ stream_max_retries=0
 '''+ '\n[projects.'+json.dumps(str(root))+']\ntrust_level="trusted"\n')
     env={'HOME':str(home),'CODEX_HOME':str(ch),'PATH':str(Path(sys.executable).parent)+':/usr/bin:/bin',
          'PYTHONPATH':str(ROOT/'tools/sessionhelper'),'PYTHONDONTWRITEBYTECODE':'1',
+         'SH_UPDATE_LAUNCHER':str(ROOT/'tools/sessionhelper/update_launcher/guard.py'),
          'LANG':'C.UTF-8','TERM':'xterm-256color','RUST_LOG':'error','OTEL_SDK_DISABLED':'true'}
     result={'version':version,'binary_sha256':sha,'source':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
             'start':datetime.now(timezone.utc).isoformat(),'scope':'ISOLATED_NATIVE_OWNER_AND_CONTROLLED_PTY','passed':False}
