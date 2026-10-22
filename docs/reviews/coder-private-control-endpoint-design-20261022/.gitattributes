@@ -1,0 +1,2 @@
+# Preserve exact Codex --help bytes; raw output includes indentation-only lines.
+raw/** -whitespace

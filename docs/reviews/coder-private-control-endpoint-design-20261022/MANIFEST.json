@@ -1,0 +1,118 @@
+{
+  "base": "ce58c1bfd0a49e3d12161df6b1dffcea38cfb945",
+  "design_only": true,
+  "no_online_changes": true,
+  "raw_help_commands": 6,
+  "files": [
+    {
+      "path": "docs/designs/S-HELPER-PRIVATE-CONTROL-ENDPOINT.md",
+      "bytes": 4895,
+      "sha256": "541afd330b07456cb4289db1fdd9c6fdeb7f1bd62af0b055620ef7783d41e10a"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/REVIEW-INPUTS.md",
+      "bytes": 2038,
+      "sha256": "a76f3f5c1f400c3e9af31f4db59edc994015c028ecf4ef7cbcc097a6a08bd9c5"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.161.0-cli.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.161.0-cli.stderr",
+      "bytes": 190,
+      "sha256": "ceb60fa4d7ba5800023a81b025a98d35812347b8650e9f133a0f0912c5f35742"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.161.0-cli.stdout",
+      "bytes": 5769,
+      "sha256": "75c90681ba095160666d9884d1eccce391be95c80da27641a3c8e1481bb02fac"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.161.0-proxy.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.161.0-proxy.stderr",
+      "bytes": 190,
+      "sha256": "ceb60fa4d7ba5800023a81b025a98d35812347b8650e9f133a0f0912c5f35742"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.161.0-proxy.stdout",
+      "bytes": 955,
+      "sha256": "5059c3cd5cbcf876b0e545048ec22fa134db8cf70c1646ef7917b4b4506a37a1"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.161.0-resume.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.161.0-resume.stderr",
+      "bytes": 190,
+      "sha256": "ceb60fa4d7ba5800023a81b025a98d35812347b8650e9f133a0f0912c5f35742"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.161.0-resume.stdout",
+      "bytes": 4289,
+      "sha256": "a69d53b274c25b7ca50fad2c5ed62bd538097033fa4092dc0b2587e8f0a50edb"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.163.0-cli.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.163.0-cli.stderr",
+      "bytes": 190,
+      "sha256": "ceb60fa4d7ba5800023a81b025a98d35812347b8650e9f133a0f0912c5f35742"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.163.0-cli.stdout",
+      "bytes": 5769,
+      "sha256": "75c90681ba095160666d9884d1eccce391be95c80da27641a3c8e1481bb02fac"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.163.0-proxy.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.163.0-proxy.stderr",
+      "bytes": 190,
+      "sha256": "ceb60fa4d7ba5800023a81b025a98d35812347b8650e9f133a0f0912c5f35742"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.163.0-proxy.stdout",
+      "bytes": 955,
+      "sha256": "5059c3cd5cbcf876b0e545048ec22fa134db8cf70c1646ef7917b4b4506a37a1"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.163.0-resume.rc",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.163.0-resume.stderr",
+      "bytes": 190,
+      "sha256": "ceb60fa4d7ba5800023a81b025a98d35812347b8650e9f133a0f0912c5f35742"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/0.163.0-resume.stdout",
+      "bytes": 4289,
+      "sha256": "a69d53b274c25b7ca50fad2c5ed62bd538097033fa4092dc0b2587e8f0a50edb"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/raw/CHECKS.json",
+      "bytes": 1764,
+      "sha256": "7938533594a838219b6ea984ec738bfe54ab13a0c5bce8dfed56a698855d1fc2"
+    },
+    {
+      "path": "docs/reviews/coder-private-control-endpoint-design-20261022/.gitattributes",
+      "bytes": 100,
+      "sha256": "dff67fe36b82f3239d087a2a03ff1f4a641087ad3f34fe5d05d10ff15573ea1c"
+    }
+  ]
+}

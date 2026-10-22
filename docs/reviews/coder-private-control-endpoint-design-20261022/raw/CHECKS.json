@@ -1,0 +1,68 @@
+{
+  "utc": "2026-10-22T19:05:08.238821+00:00",
+  "rows": [
+    {
+      "version": "0.161.0",
+      "command": [
+        "/tmp/coder-stale-official-followup/0.161.0/codex",
+        "--help"
+      ],
+      "rc": 0,
+      "binary_sha256": "9a820c17865fa825d04db416818679a9d63bd72e50835c396f496e5684626c9c"
+    },
+    {
+      "version": "0.161.0",
+      "command": [
+        "/tmp/coder-stale-official-followup/0.161.0/codex",
+        "resume",
+        "--help"
+      ],
+      "rc": 0,
+      "binary_sha256": "9a820c17865fa825d04db416818679a9d63bd72e50835c396f496e5684626c9c"
+    },
+    {
+      "version": "0.161.0",
+      "command": [
+        "/tmp/coder-stale-official-followup/0.161.0/codex",
+        "app-server",
+        "proxy",
+        "--help"
+      ],
+      "rc": 0,
+      "binary_sha256": "9a820c17865fa825d04db416818679a9d63bd72e50835c396f496e5684626c9c"
+    },
+    {
+      "version": "0.163.0",
+      "command": [
+        "/tmp/coder-stale-official-followup/0.163.0/codex",
+        "--help"
+      ],
+      "rc": 0,
+      "binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215"
+    },
+    {
+      "version": "0.163.0",
+      "command": [
+        "/tmp/coder-stale-official-followup/0.163.0/codex",
+        "resume",
+        "--help"
+      ],
+      "rc": 0,
+      "binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215"
+    },
+    {
+      "version": "0.163.0",
+      "command": [
+        "/tmp/coder-stale-official-followup/0.163.0/codex",
+        "app-server",
+        "proxy",
+        "--help"
+      ],
+      "rc": 0,
+      "binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215"
+    }
+  ],
+  "isolated_HOME": true,
+  "model_turns": 0,
+  "process_start_commands": false
+}
