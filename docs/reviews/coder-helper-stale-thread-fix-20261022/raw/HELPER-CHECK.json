@@ -1,0 +1,9 @@
+{
+  "source": "548278686ee93014ccf981bc842ef6e3af403efa",
+  "start_utc": "2026-10-22T01:09:58.164135+00:00",
+  "env_i": true,
+  "home_isolated": true,
+  "venv": "/tmp/coder-0232-locked-venv",
+  "rc": 0,
+  "end_utc": "2026-10-22T01:17:01.102530+00:00"
+}

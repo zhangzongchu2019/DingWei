@@ -1,0 +1,49 @@
+{
+  "utc": "2026-10-22T01:19:45.744108+00:00",
+  "source": "70358a01e2002ff05e001ce5ff702c238c80f984",
+  "tree": "108467778b59d5ba6eec23872cdee93b2a1851d1",
+  "base": "c61866cd60ac196cc45f0d3c004e0c5e436a2f9d",
+  "uid": 1001,
+  "gid": 1001,
+  "host": "VM-4-12-ubuntu",
+  "cpu_count": 16,
+  "go_version": "go version go1.22.2 linux/amd64",
+  "helper_python": "Python 3.12.3",
+  "browser_node": "v18.19.1",
+  "runtime_websockets": "15.0.1",
+  "runtime_lock_blob": "27c77f43077e18019dd42575b6beb2f5815e27d8",
+  "runtime_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "go": {
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "strict_pg": true,
+    "skip_ok": false,
+    "dsn_unset": true,
+    "tmpdir": "private0700 short path under /tmp"
+  },
+  "helper": {
+    "env_i": true,
+    "HOME": "isolated private temporary directory",
+    "PATH": "locked venv:/usr/bin:/bin"
+  },
+  "browser": {
+    "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+    "PW_CHANNEL": "chrome",
+    "real_browser_suites": 4,
+    "static_view_checks": 2
+  },
+  "codex": {
+    "version": "0.159.2",
+    "archive_sha256": "84a6b35fb45bdcb94cef9fcb329438045a8911f53876cc9a9a7e6f9bb1382eba",
+    "archive_bytes": 162475310,
+    "binary_sha256": "1748767b230ebfc3d4ab7e4e254920d0c0ad9691fd8c11f190e7d44511a4a92e",
+    "isolated_HOME_CODEX_HOME": true,
+    "credential_env_inherited": false,
+    "model_provider_endpoint": "127.0.0.1:9",
+    "production_connection": false
+  },
+  "deployment_or_seat_change": false,
+  "source_tag": "evidence/coder/helper-stale-thread-fix-10846777",
+  "hosted_pg_skip_note": "Final Go JSON preserves conditionally skipped tests; no claim of skip=0 outside helper/new targeted tests."
+}

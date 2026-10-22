@@ -1,0 +1,23 @@
+{
+  "helper_first": {
+    "rc": 1,
+    "tests": 806,
+    "failures": 2,
+    "causes": [
+      "raw-error assertion expected FAKE_START_BAD after public errors became sanitized",
+      "guide fake RPC lacked the new thread/read response and timeout keyword"
+    ],
+    "scope": "non-frozen preliminary, not final gate"
+  },
+  "protocol_first": {
+    "rc": 1,
+    "cause": "probe incorrectly waited for a failed model turn to complete; changed probe to wait for generated rollout persistence before restarting private server",
+    "full_transcript_retained": false,
+    "stderr_retained": true
+  },
+  "withdrawal_first": {
+    "rc": 1,
+    "cause": "checker captured addFailure but not subTest assertion failures; fixed checker, retained original result where specified_assertion_red=false"
+  },
+  "working_tree_intermediate_runs": "raw/ logs are intermediate; only raw/final/ counts as final gate"
+}

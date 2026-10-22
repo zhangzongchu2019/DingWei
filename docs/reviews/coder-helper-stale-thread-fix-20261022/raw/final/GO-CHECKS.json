@@ -1,0 +1,35 @@
+[
+  {
+    "name": "go-vet",
+    "source": "70358a01e2002ff05e001ce5ff702c238c80f984",
+    "argv": [
+      "go",
+      "vet",
+      "./..."
+    ],
+    "start_utc": "2026-10-22T01:17:57.621179+00:00",
+    "env_i": true,
+    "dsn_unset": true,
+    "strict_pg": true,
+    "rc": 0,
+    "end_utc": "2026-10-22T01:18:00.893098+00:00"
+  },
+  {
+    "name": "go-full",
+    "source": "70358a01e2002ff05e001ce5ff702c238c80f984",
+    "argv": [
+      "go",
+      "test",
+      "./...",
+      "-json",
+      "-count=1",
+      "-timeout=30m"
+    ],
+    "start_utc": "2026-10-22T01:18:00.894785+00:00",
+    "env_i": true,
+    "dsn_unset": true,
+    "strict_pg": true,
+    "rc": 0,
+    "end_utc": "2026-10-22T01:29:42.286780+00:00"
+  }
+]

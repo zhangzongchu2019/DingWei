@@ -1,0 +1,38 @@
+[
+  {
+    "name": "renderer-model-admission-regression.js",
+    "start_utc": "2026-10-22T01:14:20.432656+00:00",
+    "rc": 0,
+    "end_utc": "2026-10-22T01:14:21.554855+00:00"
+  },
+  {
+    "name": "renderer-failcard-regression.js",
+    "start_utc": "2026-10-22T01:14:21.555187+00:00",
+    "rc": 0,
+    "end_utc": "2026-10-22T01:14:23.123996+00:00"
+  },
+  {
+    "name": "renderer-t074-delivery-id-regression.js",
+    "start_utc": "2026-10-22T01:14:23.124308+00:00",
+    "rc": 0,
+    "end_utc": "2026-10-22T01:14:24.614974+00:00"
+  },
+  {
+    "name": "renderer-t086-deferred-clear-regression.js",
+    "start_utc": "2026-10-22T01:14:24.615288+00:00",
+    "rc": 1,
+    "end_utc": "2026-10-22T01:14:24.708706+00:00"
+  },
+  {
+    "name": "renderer-replay-seq-regression.js",
+    "start_utc": "2026-10-22T01:14:24.709041+00:00",
+    "rc": 0,
+    "end_utc": "2026-10-22T01:15:32.369216+00:00"
+  },
+  {
+    "name": "renderer-waiting-stage-regression.cjs",
+    "start_utc": "2026-10-22T01:15:32.369530+00:00",
+    "rc": 0,
+    "end_utc": "2026-10-22T01:15:32.493909+00:00"
+  }
+]

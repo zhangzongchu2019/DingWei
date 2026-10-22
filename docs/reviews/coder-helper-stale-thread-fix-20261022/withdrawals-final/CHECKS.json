@@ -1,0 +1,411 @@
+{
+  "source": "70358a01e2002ff05e001ce5ff702c238c80f984",
+  "rows": [
+    {
+      "name": "baseline-unit",
+      "test": "",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:52.592390+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:53.096315+00:00"
+    },
+    {
+      "name": "baseline-browser",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:53.098228+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:54.136579+00:00"
+    },
+    {
+      "name": "no-validation-withdrawn",
+      "test": "CodexStaleThread.test_loaded_thread_validated_before_admission",
+      "marker": "THREAD_ADMISSION_UNVALIDATED",
+      "start_utc": "2026-10-22T01:13:54.141300+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:54.277612+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "no-validation-restored",
+      "test": "CodexStaleThread.test_loaded_thread_validated_before_admission",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:54.281576+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:54.416060+00:00"
+    },
+    {
+      "name": "no-resume-withdrawn",
+      "test": "CodexStaleThread.test_reconnect_restores_exact_persisted_thread_before_turn",
+      "marker": "THREAD_RESUME_NOT_PERFORMED",
+      "start_utc": "2026-10-22T01:13:54.416939+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:54.552019+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "no-resume-restored",
+      "test": "CodexStaleThread.test_reconnect_restores_exact_persisted_thread_before_turn",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:54.553649+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:54.686384+00:00"
+    },
+    {
+      "name": "bad-binding-accepted-withdrawn",
+      "test": "CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict",
+      "marker": "INVALID_BINDING_ADMITTED",
+      "start_utc": "2026-10-22T01:13:54.687220+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:54.875103+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "bad-binding-accepted-restored",
+      "test": "CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:54.879526+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:55.042111+00:00"
+    },
+    {
+      "name": "missing-thread-replaced-withdrawn",
+      "test": "CodexStaleThread.test_missing_thread_never_creates_or_replays_and_retains_ledger",
+      "marker": "MISSING_THREAD_REPLACED",
+      "start_utc": "2026-10-22T01:13:55.044693+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:55.176397+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "missing-thread-replaced-restored",
+      "test": "CodexStaleThread.test_missing_thread_never_creates_or_replays_and_retains_ledger",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:55.178315+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:55.308224+00:00"
+    },
+    {
+      "name": "historical-rebind-withdrawn",
+      "test": "CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread",
+      "marker": "HISTORICAL_RECEIPT_REBOUND_ACTIVE",
+      "start_utc": "2026-10-22T01:13:55.309157+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:55.442404+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "historical-rebind-restored",
+      "test": "CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:55.443058+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:55.586371+00:00"
+    },
+    {
+      "name": "historical-poll-current-withdrawn",
+      "test": "CodexStaleThread.test_historical_poll_and_state_update_use_record_thread",
+      "marker": "HISTORICAL_POLL_WRONG_THREAD",
+      "start_utc": "2026-10-22T01:13:55.587613+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:55.724565+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "historical-poll-current-restored",
+      "test": "CodexStaleThread.test_historical_poll_and_state_update_use_record_thread",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:55.725183+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:55.856927+00:00"
+    },
+    {
+      "name": "historical-write-current-withdrawn",
+      "test": "CodexStaleThread.test_historical_poll_and_state_update_use_record_thread",
+      "marker": "HISTORICAL_UPDATE_WRONG_THREAD",
+      "start_utc": "2026-10-22T01:13:55.857872+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:55.990539+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "historical-write-current-restored",
+      "test": "CodexStaleThread.test_historical_poll_and_state_update_use_record_thread",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:55.992225+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:56.123048+00:00"
+    },
+    {
+      "name": "uncertain-marked-failed-withdrawn",
+      "test": "CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart",
+      "marker": "UNCERTAIN_ADMISSION_NOT_DURABLE",
+      "start_utc": "2026-10-22T01:13:56.124428+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:56.275613+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "uncertain-marked-failed-restored",
+      "test": "CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:56.276768+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:56.420336+00:00"
+    },
+    {
+      "name": "no-predispatch-journal-withdrawn",
+      "test": "CodexStaleThread.test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain",
+      "marker": "DISPATCH_NOT_DURABLE",
+      "start_utc": "2026-10-22T01:13:56.421247+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:56.552620+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "no-predispatch-journal-restored",
+      "test": "CodexStaleThread.test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:56.554985+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:56.688921+00:00"
+    },
+    {
+      "name": "uncertain-replayed-withdrawn",
+      "test": "CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart",
+      "marker": "UNCERTAIN_ADMISSION_REPLAYED",
+      "start_utc": "2026-10-22T01:13:56.689919+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:56.860029+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "uncertain-replayed-restored",
+      "test": "CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:56.861211+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:57.004274+00:00"
+    },
+    {
+      "name": "accepted-failed-replayed-withdrawn",
+      "test": "CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread",
+      "marker": "HISTORICAL_ACCEPTED_REPLAYED",
+      "start_utc": "2026-10-22T01:13:57.005244+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:57.153929+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "accepted-failed-replayed-restored",
+      "test": "CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:57.155068+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:57.289495+00:00"
+    },
+    {
+      "name": "unknown-rpc-marked-rejected-withdrawn",
+      "test": "CodexStaleThread.test_unclassified_turn_error_is_uncertain_and_never_replayed",
+      "marker": "RPC_ERROR_AMBIGUITY_LOST",
+      "start_utc": "2026-10-22T01:13:57.291118+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:57.434052+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "unknown-rpc-marked-rejected-restored",
+      "test": "CodexStaleThread.test_unclassified_turn_error_is_uncertain_and_never_replayed",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:57.434929+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:57.573361+00:00"
+    },
+    {
+      "name": "rpc-shape-discarded-withdrawn",
+      "test": "RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string",
+      "marker": "RPC_ERROR_SHAPE_DISCARDED",
+      "start_utc": "2026-10-22T01:13:57.574836+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:57.695794+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "rpc-shape-discarded-restored",
+      "test": "RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:57.697391+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:57.812337+00:00"
+    },
+    {
+      "name": "missing-classification-discarded-withdrawn",
+      "test": "RPCErrorShapes.test_missing_thread_requires_exact_method_code_and_id",
+      "marker": "MISSING_ERROR_NOT_RECOGNIZED",
+      "start_utc": "2026-10-22T01:13:57.813917+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:57.931119+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "missing-classification-discarded-restored",
+      "test": "RPCErrorShapes.test_missing_thread_requires_exact_method_code_and_id",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:57.932330+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:58.067506+00:00"
+    },
+    {
+      "name": "eof-not-signalled-withdrawn",
+      "test": "RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned",
+      "marker": "EOF_MISCLASSIFIED_AS_TIMEOUT",
+      "start_utc": "2026-10-22T01:13:58.068551+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:58.289987+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "eof-not-signalled-restored",
+      "test": "RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:58.290847+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:58.407815+00:00"
+    },
+    {
+      "name": "raw-rpc-error-exposed-withdrawn",
+      "test": "RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string",
+      "marker": "RAW_RPC_ERROR_EXPOSED",
+      "start_utc": "2026-10-22T01:13:58.408876+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:58.526829+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "raw-rpc-error-exposed-restored",
+      "test": "RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:58.527594+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:58.647230+00:00"
+    },
+    {
+      "name": "unknown-event-hidden-withdrawn",
+      "test": "CodexStaleThread.test_adapter_uncertain_admission_is_visible_and_not_a_success",
+      "marker": "ADMISSION_FAILURE_EVENT_NOT_VISIBLE",
+      "start_utc": "2026-10-22T01:13:58.649104+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:58.781376+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "unknown-event-hidden-restored",
+      "test": "CodexStaleThread.test_adapter_uncertain_admission_is_visible_and_not_a_success",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:58.782680+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:58.913862+00:00"
+    },
+    {
+      "name": "injected-ack-removed-withdrawn",
+      "test": "CodexStaleThread.test_adapter_preserves_injected_ack_and_publishes_correlated_failure",
+      "marker": "INJECTED_ACK_SEMANTICS_CHANGED",
+      "start_utc": "2026-10-22T01:13:58.915366+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:13:59.039111+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "injected-ack-removed-restored",
+      "test": "CodexStaleThread.test_adapter_preserves_injected_ack_and_publishes_correlated_failure",
+      "marker": "",
+      "start_utc": "2026-10-22T01:13:59.041550+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:13:59.169115+00:00"
+    },
+    {
+      "name": "view-failure-hidden-withdrawn",
+      "test": "browser",
+      "marker": "VISIBLE_SESSION_UNAVAILABLE",
+      "start_utc": "2026-10-22T01:13:59.172595+00:00",
+      "rc": 2,
+      "end_utc": "2026-10-22T01:14:00.151864+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "view-failure-hidden-restored",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:14:00.153313+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:14:01.165973+00:00"
+    },
+    {
+      "name": "view-late-input-not-annotated-withdrawn",
+      "test": "browser",
+      "marker": "FAILURE_BEFORE_INPUT_VISIBLE",
+      "start_utc": "2026-10-22T01:14:01.170646+00:00",
+      "rc": 2,
+      "end_utc": "2026-10-22T01:14:02.193726+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "view-late-input-not-annotated-restored",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:14:02.195245+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:14:03.184450+00:00"
+    },
+    {
+      "name": "view-delivery-stage-overwritten-withdrawn",
+      "test": "browser",
+      "marker": "ACK_STAGE_UNCHANGED",
+      "start_utc": "2026-10-22T01:14:03.187450+00:00",
+      "rc": 2,
+      "end_utc": "2026-10-22T01:14:04.186051+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "view-delivery-stage-overwritten-restored",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:14:04.187905+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:14:05.178049+00:00"
+    },
+    {
+      "name": "view-pending-unbounded-withdrawn",
+      "test": "browser",
+      "marker": "PENDING_BOUNDED",
+      "start_utc": "2026-10-22T01:14:05.181333+00:00",
+      "rc": 2,
+      "end_utc": "2026-10-22T01:14:06.209987+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "view-pending-unbounded-restored",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:14:06.211273+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:14:07.205766+00:00"
+    },
+    {
+      "name": "final-unit",
+      "test": "",
+      "marker": "",
+      "start_utc": "2026-10-22T01:14:07.206437+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:14:07.763514+00:00"
+    },
+    {
+      "name": "final-browser",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:14:07.764392+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:14:08.773550+00:00"
+    }
+  ]
+}

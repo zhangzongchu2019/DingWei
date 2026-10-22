@@ -1,0 +1,8 @@
+{
+  "name": "renderer-t086-deferred-clear-regression.js",
+  "cwd": "frozen/view-service",
+  "reason": "original runner used repository cwd; script reads a cwd-relative renderer file",
+  "start_utc": "2026-10-22T01:15:59.502256+00:00",
+  "rc": 0,
+  "end_utc": "2026-10-22T01:16:00.199370+00:00"
+}

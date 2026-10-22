@@ -1,0 +1,64 @@
+{
+  "source": "9527b0eb39103749c45b87eb2e0d4b715dbabcdb",
+  "rows": [
+    {
+      "name": "baseline-unit",
+      "test": "",
+      "marker": "",
+      "start_utc": "2026-10-22T01:08:57.975411+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:08:58.584321+00:00"
+    },
+    {
+      "name": "baseline-browser",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:08:58.585280+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:08:59.765729+00:00"
+    },
+    {
+      "name": "no-validation-withdrawn",
+      "test": "CodexStaleThread.test_loaded_thread_validated_before_admission",
+      "marker": "THREAD_ADMISSION_UNVALIDATED",
+      "start_utc": "2026-10-22T01:08:59.770812+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:08:59.924145+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "no-validation-restored",
+      "test": "CodexStaleThread.test_loaded_thread_validated_before_admission",
+      "marker": "",
+      "start_utc": "2026-10-22T01:08:59.926357+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:00.069337+00:00"
+    },
+    {
+      "name": "no-resume-withdrawn",
+      "test": "CodexStaleThread.test_reconnect_restores_exact_persisted_thread_before_turn",
+      "marker": "THREAD_RESUME_NOT_PERFORMED",
+      "start_utc": "2026-10-22T01:09:00.073336+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:00.218025+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "no-resume-restored",
+      "test": "CodexStaleThread.test_reconnect_restores_exact_persisted_thread_before_turn",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:00.218618+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:00.352572+00:00"
+    },
+    {
+      "name": "bad-binding-accepted-withdrawn",
+      "test": "CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict",
+      "marker": "INVALID_BINDING_ADMITTED",
+      "start_utc": "2026-10-22T01:09:00.353402+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:00.543251+00:00",
+      "specified_assertion_red": false
+    }
+  ]
+}

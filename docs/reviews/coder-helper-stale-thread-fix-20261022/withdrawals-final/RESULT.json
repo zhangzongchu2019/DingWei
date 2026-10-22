@@ -1,0 +1,9 @@
+{
+  "source": "70358a01e2002ff05e001ce5ff702c238c80f984",
+  "regression_tests": 23,
+  "browser_checks": 15,
+  "mutations": 22,
+  "all_specified_assertion_red": true,
+  "all_restored_green": true,
+  "scope": "LOCAL_INERT_PASS_NOT_SEAT_ACCEPTANCE"
+}

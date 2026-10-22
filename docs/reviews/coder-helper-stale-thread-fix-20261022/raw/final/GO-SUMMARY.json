@@ -1,0 +1,351 @@
+{
+  "package_pass": 53,
+  "packages_without_tests": 13,
+  "package_fail": 0,
+  "test_fail_events": 0,
+  "test_skip_events": 38,
+  "skipped_tests": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGAssignFull",
+      "output": [
+        "=== RUN   TestPGAssignFull",
+        "    assignment_pg_integration_test.go:103: DATAD_TEST_PG_DSN \u672a\u8bbe:PG \u96c6\u6210\u5019\u771f PG(\u6838\u5fc3\u903b\u8f91 Mem \u540c\u5957\u5df2\u76d6;\u771f\u5e76\u53d1/ACL/GC \u4ec5\u6b64\u5904\u8bc1)",
+        "--- SKIP: TestPGAssignFull (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGA2ConcurrentUnique",
+      "output": [
+        "=== RUN   TestPGA2ConcurrentUnique",
+        "    assignment_pg_integration_test.go:234: DATAD_TEST_PG_DSN \u672a\u8bbe:PG \u96c6\u6210\u5019\u771f PG(\u6838\u5fc3\u903b\u8f91 Mem \u540c\u5957\u5df2\u76d6;\u771f\u5e76\u53d1/ACL/GC \u4ec5\u6b64\u5904\u8bc1)",
+        "--- SKIP: TestPGA2ConcurrentUnique (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGACLThreeRoles",
+      "output": [
+        "=== RUN   TestPGACLThreeRoles",
+        "    assignment_pg_integration_test.go:298: DATAD_TEST_PG_DSN \u672a\u8bbe:PG \u96c6\u6210\u5019\u771f PG(\u6838\u5fc3\u903b\u8f91 Mem \u540c\u5957\u5df2\u76d6;\u771f\u5e76\u53d1/ACL/GC \u4ec5\u6b64\u5904\u8bc1)",
+        "--- SKIP: TestPGACLThreeRoles (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGRoleNoLeak",
+      "output": [
+        "=== RUN   TestPGRoleNoLeak",
+        "    assignment_pg_integration_test.go:342: DATAD_TEST_PG_DSN \u672a\u8bbe:PG \u96c6\u6210\u5019\u771f PG(\u6838\u5fc3\u903b\u8f91 Mem \u540c\u5957\u5df2\u76d6;\u771f\u5e76\u53d1/ACL/GC \u4ec5\u6b64\u5904\u8bc1)",
+        "--- SKIP: TestPGRoleNoLeak (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGGCFirstResults",
+      "output": [
+        "=== RUN   TestPGGCFirstResults",
+        "    assignment_pg_integration_test.go:376: DATAD_TEST_PG_DSN \u672a\u8bbe:PG \u96c6\u6210\u5019\u771f PG(\u6838\u5fc3\u903b\u8f91 Mem \u540c\u5957\u5df2\u76d6;\u771f\u5e76\u53d1/ACL/GC \u4ec5\u6b64\u5904\u8bc1)",
+        "--- SKIP: TestPGGCFirstResults (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGMigrateOnly",
+      "output": [
+        "=== RUN   TestPGMigrateOnly",
+        "    assignment_pg_integration_test.go:425: DATAD_TEST_PG_DSN \u672a\u8bbe",
+        "--- SKIP: TestPGMigrateOnly (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB3CrossTask",
+      "output": [
+        "=== RUN   TestPGB3CrossTask",
+        "    assignment_pg_integration_test.go:436: DATAD_TEST_PG_DSN \u672a\u8bbe:PG \u96c6\u6210\u5019\u771f PG(\u6838\u5fc3\u903b\u8f91 Mem \u540c\u5957\u5df2\u76d6;\u771f\u5e76\u53d1/ACL/GC \u4ec5\u6b64\u5904\u8bc1)",
+        "--- SKIP: TestPGB3CrossTask (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB4PutAssignInterleave",
+      "output": [
+        "=== RUN   TestPGB4PutAssignInterleave",
+        "    assignment_pg_integration_test.go:471: DATAD_TEST_PG_DSN \u672a\u8bbe:PG \u96c6\u6210\u5019\u771f PG(\u6838\u5fc3\u903b\u8f91 Mem \u540c\u5957\u5df2\u76d6;\u771f\u5e76\u53d1/ACL/GC \u4ec5\u6b64\u5904\u8bc1)",
+        "--- SKIP: TestPGB4PutAssignInterleave (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1CrossTaskConcurrentSameRID",
+      "output": [
+        "=== RUN   TestPGC1CrossTaskConcurrentSameRID",
+        "    assignment_pg_integration_test.go:542: DATAD_TEST_PG_DSN \u672a\u8bbe:PG \u96c6\u6210\u5019\u771f PG(\u6838\u5fc3\u903b\u8f91 Mem \u540c\u5957\u5df2\u76d6;\u771f\u5e76\u53d1/ACL/GC \u4ec5\u6b64\u5904\u8bc1)",
+        "--- SKIP: TestPGC1CrossTaskConcurrentSameRID (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1ResponseLossRetry",
+      "output": [
+        "=== RUN   TestPGC1ResponseLossRetry",
+        "    assignment_pg_integration_test.go:605: DATAD_TEST_PG_DSN \u672a\u8bbe:PG \u96c6\u6210\u5019\u771f PG(\u6838\u5fc3\u903b\u8f91 Mem \u540c\u5957\u5df2\u76d6;\u771f\u5e76\u53d1/ACL/GC \u4ec5\u6b64\u5904\u8bc1)",
+        "--- SKIP: TestPGC1ResponseLossRetry (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1LockOrderNoDeadlock",
+      "output": [
+        "=== RUN   TestPGC1LockOrderNoDeadlock",
+        "    assignment_pg_integration_test.go:637: DATAD_TEST_PG_DSN \u672a\u8bbe:PG \u96c6\u6210\u5019\u771f PG(\u6838\u5fc3\u903b\u8f91 Mem \u540c\u5957\u5df2\u76d6;\u771f\u5e76\u53d1/ACL/GC \u4ec5\u6b64\u5904\u8bc1)",
+        "--- SKIP: TestPGC1LockOrderNoDeadlock (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGIntegration",
+      "output": [
+        "=== RUN   TestPGIntegration",
+        "    pg_integration_test.go:21: DATAD_TEST_PG_DSN \u672a\u8bbe:PG \u96c6\u6210\u5019 prodops \u5b9e\u4f8b(D4c),\u6838\u5fc3\u903b\u8f91\u5df2\u7531 MemStore \u540c\u5957\u7528\u4f8b\u76d6",
+        "--- SKIP: TestPGIntegration (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+      "test": "TestGateDumpDoorABaseline",
+      "output": [
+        "=== RUN   TestGateDumpDoorABaseline",
+        "    gate_baseline_dump_test.go:41: \u8bbe DW_ADMIN_BASELINE_OUT \u624d\u8dd1(\u8de8\u6784\u5efa\u57fa\u7ebf\u5b57\u8282\u5bf9\u7167\u7528)",
+        "--- SKIP: TestGateDumpDoorABaseline (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestTCN5b_SameRidDifferentPayloadConflict",
+      "output": [
+        "=== RUN   TestTCN5b_SameRidDifferentPayloadConflict",
+        "    m2neg_cases_test.go:136: N5b digest \u51b2\u7a81\u68c0\u6d4b\u672a\u5b9e\u73b0:\u57fa\u7ebf Send \u65e0 payload/digest \u53c2\u6570(O1=board vNext \u57df),\u5951\u7ea6\u951a \u00a71.3@28f09dae,vNext \u843d\u5730\u540e\u542f\u7528\u672c\u5224\u636e(\u671f\u671b idempotency_conflict+\u51b2\u7a81\u4e8b\u4ef6)",
+        "--- SKIP: TestTCN5b_SameRidDifferentPayloadConflict (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestConformance_GAP_SLATimeoutAnnotate",
+      "output": [
+        "=== RUN   TestConformance_GAP_SLATimeoutAnnotate",
+        "    conformance_test.go:385: \u8986\u76d6\u7f3a\u53e3\uff08\u6709\u610f\u767b\u8bb0\uff0c\u975e\u9057\u6f0f\uff09\uff1a\u5bfc\u51fa\u9762\u65e0 SLA \u8bbe\u7f6e\u5165\u53e3\uff0c\u65e2\u6709 TestSweep_TimeoutAnnotateThenTerminalClears \u4f9d\u8d56\u88f8 SQL \u9020\u524d\u7f6e\uff0c\u6545\u8be5\u8bed\u4e49\u6682\u65e0\u6cd5\u7528\u5916\u90e8\u5305 conformance \u56fa\u5316\u3002\u987b\u5148\u6269\u5bfc\u51fa\u9762\uff08\u5951\u7ea6\u53d8\u66f4\uff0c\u5f52\u95e8\u65b9\u5224\uff09\u3002",
+        "--- SKIP: TestConformance_GAP_SLATimeoutAnnotate (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+      "test": "TestMonitorPageInRealChrome",
+      "output": [
+        "=== RUN   TestMonitorPageInRealChrome",
+        "    page_browser_test.go:26: set OBS_PUPPETEER to an installed puppeteer-core directory for the real Chrome page check",
+        "--- SKIP: TestMonitorPageInRealChrome (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+      "output": [
+        "=== RUN   TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+        "    console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision",
+        "--- SKIP: TestConsoleTaskLegacyDODMigrationPendingProductionCount (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+      "output": [
+        "=== RUN   TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+        "    console_task_lineage_test.go:139: future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed",
+        "--- SKIP: TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeviceClaimAcrossActualClientAndHub",
+      "output": [
+        "=== RUN   TestDeviceClaimAcrossActualClientAndHub",
+        "    claim_client_integration_test.go:33: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment",
+        "--- SKIP: TestDeviceClaimAcrossActualClientAndHub (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeviceClaimAcrossActualClientAndPostgres",
+      "output": [
+        "=== RUN   TestDeviceClaimAcrossActualClientAndPostgres",
+        "    claim_client_integration_test.go:45: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime PostgreSQL enrollment",
+        "--- SKIP: TestDeviceClaimAcrossActualClientAndPostgres (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestMuxProductHTTP1EightSeats",
+      "output": [
+        "=== RUN   TestMuxProductHTTP1EightSeats",
+        "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration",
+        "--- SKIP: TestMuxProductHTTP1EightSeats (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsolePlatformPayloadDump",
+      "output": [
+        "=== RUN   TestConsolePlatformPayloadDump",
+        "    console_platform_agentgroups_test.go:133: \u4ec5\u5728\u6d4f\u89c8\u5668\u95f8\u53d6\u771f\u8f7d\u8377\u65f6\u8fd0\u884c(\u8bbe DW_CONSOLE_PLATFORM_PAYLOAD_OUT)",
+        "--- SKIP: TestConsolePlatformPayloadDump (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "output": [
+        "=== RUN   TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+        "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically",
+        "--- SKIP: TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDesktopMCPRoundTripAcrossRealHub",
+      "output": [
+        "=== RUN   TestDesktopMCPRoundTripAcrossRealHub",
+        "    desktop_mcp_roundtrip_test.go:25: run scripts/test-desktop-hub-roundtrip.sh for the cross-runtime gate",
+        "--- SKIP: TestDesktopMCPRoundTripAcrossRealHub (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestFailureNoticeDriverTurnEndToEnd",
+      "output": [
+        "=== RUN   TestFailureNoticeDriverTurnEndToEnd",
+        "    failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime",
+        "--- SKIP: TestFailureNoticeDriverTurnEndToEnd (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestGroupReplyMCP",
+      "output": [
+        "=== RUN   TestGroupReplyMCP",
+        "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON",
+        "--- SKIP: TestGroupReplyMCP (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+      "output": [
+        "=== RUN   TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "--- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+      "output": [
+        "=== RUN   TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "--- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "output": [
+        "=== RUN   TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "--- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelper0232MixedVersionEndToEnd",
+      "output": [
+        "=== RUN   TestHelper0232MixedVersionEndToEnd",
+        "    helper_update_e2e_test.go:55: explicit immutable release pins required",
+        "--- SKIP: TestHelper0232MixedVersionEndToEnd (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHostedBodySendAcrossRealHub",
+      "output": [
+        "=== RUN   TestHostedBodySendAcrossRealHub",
+        "    hosted_body_send_test.go:23: set explicit isolated integration interpreter",
+        "--- SKIP: TestHostedBodySendAcrossRealHub (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestEnvelopeReadTimeoutEnvironmentChild",
+      "output": [
+        "=== RUN   TestEnvelopeReadTimeoutEnvironmentChild",
+        "    hub_timeout_contract_test.go:50: subprocess probe only",
+        "--- SKIP: TestEnvelopeReadTimeoutEnvironmentChild (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+      "output": [
+        "=== RUN   TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+        "    pilot_question_roundtrip_test.go:17: set locked helper Python; canonical runs this local integration",
+        "--- SKIP: TestPilotQuestionAcrossRealHTTPHelperIPCMCP (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+      "output": [
+        "=== RUN   TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+        "    pilot_template_roundtrip_test.go:17: set locked helper Python; canonical runs loopback integration",
+        "--- SKIP: TestPilotTemplateAcrossRealHTTPHelperIPCMCP (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+      "output": [
+        "=== RUN   TestProjectContextAcrossRealHTTPHelperIPCMCP",
+        "    project_context_roundtrip_test.go:17: set DW_DESKTOP_INTEGRATION_PYTHON to the locked helper test venv; canonical shell gate runs the cross-runtime set",
+        "--- SKIP: TestProjectContextAcrossRealHTTPHelperIPCMCP (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSpecMCPEndToEnd",
+      "output": [
+        "=== RUN   TestSpecMCPEndToEnd",
+        "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses",
+        "--- SKIP: TestSpecMCPEndToEnd (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestBlockerAcrossRealHTTPHelperIPCMCP",
+      "output": [
+        "=== RUN   TestBlockerAcrossRealHTTPHelperIPCMCP",
+        "    task_blocker_roundtrip_test.go:17: set locked helper Python; canonical runs this local integration",
+        "--- SKIP: TestBlockerAcrossRealHTTPHelperIPCMCP (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestR31OldBinarySchemaReadCompatibility",
+      "output": [
+        "=== RUN   TestR31OldBinarySchemaReadCompatibility",
+        "    r31_rollback_compat_test.go:23: requires independently built R30 binary via R31_R30_BINARY",
+        "--- SKIP: TestR31OldBinarySchemaReadCompatibility (0.00s)"
+      ]
+    }
+  ]
+}

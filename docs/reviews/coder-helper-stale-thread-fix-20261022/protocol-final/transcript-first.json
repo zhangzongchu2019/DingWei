@@ -1,0 +1,456 @@
+[
+  {
+    "phase": "first",
+    "request": {
+      "id": 1,
+      "method": "initialize",
+      "params": {
+        "clientInfo": {
+          "name": "stale-thread-local-probe",
+          "version": "0"
+        },
+        "capabilities": {
+          "experimentalApi": true
+        }
+      }
+    },
+    "response": {
+      "id": 1,
+      "result": {
+        "userAgent": "stale-thread-local-probe/0.159.2 (Ubuntu 24.4.0; x86_64) unknown (stale-thread-local-probe; 0)",
+        "codexHome": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home/codex",
+        "platformFamily": "unix",
+        "platformOs": "linux"
+      }
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "configWarning",
+      "params": {
+        "summary": "Codex could not find bubblewrap on PATH. Install bubblewrap with your OS package manager. See the sandbox prerequisites: https://developers.openai.com/codex/concepts/sandboxing#prerequisites. Codex will use the bundled bubblewrap in the meantime.",
+        "details": null
+      },
+      "emittedAtMs": 1792631733003
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "remoteControl/status/changed",
+      "params": {
+        "status": "disabled",
+        "serverName": "VM-4-12-ubuntu",
+        "installationId": "10d105c6-ff6e-4587-96d5-d4f1667fbf82",
+        "environmentId": null
+      },
+      "emittedAtMs": 1792631733004
+    }
+  },
+  {
+    "phase": "first",
+    "request": {
+      "id": 2,
+      "method": "thread/start",
+      "params": {
+        "cwd": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home",
+        "ephemeral": false,
+        "sandbox": "read-only",
+        "approvalPolicy": "never"
+      }
+    },
+    "response": {
+      "id": 2,
+      "result": {
+        "thread": {
+          "id": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home",
+              "runtimeWorkspaceRoots": [
+                "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1792631733,
+          "updatedAt": 1792631733,
+          "recencyAt": 1792631733,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home/codex/sessions/2026/10/22/rollout-2026-10-22T01-15-33-01a1612d-7b0d-7f33-b6c4-5a958a9154a7.jsonl",
+          "cwd": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home",
+          "cliVersion": "0.159.2",
+          "originator": "stale-thread-local-probe",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "model": "probe-no-inference",
+        "modelProvider": "local_probe",
+        "serviceTier": null,
+        "disabledPluginIds": [],
+        "cwd": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home",
+        "runtimeWorkspaceRoots": [
+          "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home"
+        ],
+        "instructionSources": [],
+        "approvalPolicy": "never",
+        "approvalsReviewer": "user",
+        "sandbox": {
+          "type": "readOnly",
+          "networkAccess": false
+        },
+        "activePermissionProfile": null,
+        "reasoningEffort": null,
+        "multiAgentMode": "explicitRequestOnly"
+      }
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "thread/started",
+      "params": {
+        "thread": {
+          "id": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home",
+              "runtimeWorkspaceRoots": [
+                "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1792631733,
+          "updatedAt": 1792631733,
+          "recencyAt": 1792631733,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home/codex/sessions/2026/10/22/rollout-2026-10-22T01-15-33-01a1612d-7b0d-7f33-b6c4-5a958a9154a7.jsonl",
+          "cwd": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home",
+          "cliVersion": "0.159.2",
+          "originator": "stale-thread-local-probe",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        }
+      },
+      "emittedAtMs": 1792631733015
+    }
+  },
+  {
+    "phase": "first",
+    "request": {
+      "id": 3,
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+        "includeTurns": false
+      }
+    },
+    "response": {
+      "id": 3,
+      "result": {
+        "thread": {
+          "id": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home",
+              "runtimeWorkspaceRoots": [
+                "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1792631733,
+          "updatedAt": 1792631733,
+          "recencyAt": 1792631733,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home/codex/sessions/2026/10/22/rollout-2026-10-22T01-15-33-01a1612d-7b0d-7f33-b6c4-5a958a9154a7.jsonl",
+          "cwd": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home",
+          "cliVersion": "0.159.2",
+          "originator": "stale-thread-local-probe",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        }
+      }
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "warning",
+      "params": {
+        "threadId": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+        "message": "Model metadata for `probe-no-inference` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."
+      },
+      "emittedAtMs": 1792631733018
+    }
+  },
+  {
+    "phase": "first",
+    "request": {
+      "id": 4,
+      "method": "turn/start",
+      "params": {
+        "threadId": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+        "input": [
+          {
+            "type": "text",
+            "text": "LOCAL_PROTOCOL_TEST_ONLY"
+          }
+        ]
+      }
+    },
+    "response": {
+      "id": 4,
+      "result": {
+        "turn": {
+          "id": "01a1612d-7b19-7b62-8648-83615d46e61c",
+          "items": [],
+          "itemsView": "notLoaded",
+          "status": "inProgress",
+          "error": null,
+          "startedAt": null,
+          "completedAt": null,
+          "durationMs": null
+        }
+      }
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "thread/status/changed",
+      "params": {
+        "threadId": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+        "status": {
+          "type": "active",
+          "activeFlags": []
+        }
+      },
+      "emittedAtMs": 1792631733050
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "turn/started",
+      "params": {
+        "threadId": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+        "turn": {
+          "id": "01a1612d-7b19-7b62-8648-83615d46e61c",
+          "items": [],
+          "itemsView": "notLoaded",
+          "status": "inProgress",
+          "error": null,
+          "startedAt": 1792631733,
+          "completedAt": null,
+          "durationMs": null
+        }
+      },
+      "emittedAtMs": 1792631733050
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "item/started",
+      "params": {
+        "item": {
+          "type": "userMessage",
+          "id": "01a1612d-7b44-7f72-97fa-f8489dff8dfb",
+          "clientId": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "LOCAL_PROTOCOL_TEST_ONLY",
+              "text_elements": []
+            }
+          ]
+        },
+        "threadId": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+        "turnId": "01a1612d-7b19-7b62-8648-83615d46e61c",
+        "startedAtMs": 1792631733060
+      },
+      "emittedAtMs": 1792631733061
+    }
+  },
+  {
+    "phase": "first",
+    "request": null,
+    "response": {
+      "method": "item/completed",
+      "params": {
+        "item": {
+          "type": "userMessage",
+          "id": "01a1612d-7b44-7f72-97fa-f8489dff8dfb",
+          "clientId": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "LOCAL_PROTOCOL_TEST_ONLY",
+              "text_elements": []
+            }
+          ]
+        },
+        "threadId": "01a1612d-7b0d-7f33-b6c4-5a958a9154a7",
+        "turnId": "01a1612d-7b19-7b62-8648-83615d46e61c",
+        "completedAtMs": 1792631733060
+      },
+      "emittedAtMs": 1792631733063
+    }
+  },
+  {
+    "phase": "first",
+    "request": {
+      "id": 5,
+      "method": "thread/start",
+      "params": {
+        "cwd": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home",
+        "ephemeral": true,
+        "sandbox": "read-only",
+        "approvalPolicy": "never"
+      }
+    },
+    "response": {
+      "id": 5,
+      "result": {
+        "thread": {
+          "id": "01a1612d-7b34-7e02-a312-43c12fabd91b",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home",
+              "runtimeWorkspaceRoots": [
+                "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a1612d-7b34-7e02-a312-43c12fabd91b",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": true,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1792631733,
+          "updatedAt": 1792631733,
+          "recencyAt": 1792631733,
+          "status": {
+            "type": "idle"
+          },
+          "path": null,
+          "cwd": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home",
+          "cliVersion": "0.159.2",
+          "originator": "stale-thread-local-probe",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "model": "probe-no-inference",
+        "modelProvider": "local_probe",
+        "serviceTier": null,
+        "disabledPluginIds": [],
+        "cwd": "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home",
+        "runtimeWorkspaceRoots": [
+          "/tmp/coder-stale-protocol-01592/probe-final-70358a0/home"
+        ],
+        "instructionSources": [],
+        "approvalPolicy": "never",
+        "approvalsReviewer": "user",
+        "sandbox": {
+          "type": "readOnly",
+          "networkAccess": false
+        },
+        "activePermissionProfile": null,
+        "reasoningEffort": null,
+        "multiAgentMode": "explicitRequestOnly"
+      }
+    }
+  }
+]

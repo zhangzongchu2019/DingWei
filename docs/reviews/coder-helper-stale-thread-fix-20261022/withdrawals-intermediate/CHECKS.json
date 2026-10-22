@@ -1,0 +1,394 @@
+{
+  "source": "548278686ee93014ccf981bc842ef6e3af403efa",
+  "rows": [
+    {
+      "name": "baseline-unit",
+      "test": "",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:32.082750+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:32.872058+00:00"
+    },
+    {
+      "name": "baseline-browser",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:32.872485+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:33.937995+00:00"
+    },
+    {
+      "name": "no-validation-withdrawn",
+      "test": "CodexStaleThread.test_loaded_thread_validated_before_admission",
+      "marker": "THREAD_ADMISSION_UNVALIDATED",
+      "start_utc": "2026-10-22T01:09:33.939567+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:34.080164+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "no-validation-restored",
+      "test": "CodexStaleThread.test_loaded_thread_validated_before_admission",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:34.083828+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:34.223643+00:00"
+    },
+    {
+      "name": "no-resume-withdrawn",
+      "test": "CodexStaleThread.test_reconnect_restores_exact_persisted_thread_before_turn",
+      "marker": "THREAD_RESUME_NOT_PERFORMED",
+      "start_utc": "2026-10-22T01:09:34.224485+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:34.355441+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "no-resume-restored",
+      "test": "CodexStaleThread.test_reconnect_restores_exact_persisted_thread_before_turn",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:34.356029+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:34.494414+00:00"
+    },
+    {
+      "name": "bad-binding-accepted-withdrawn",
+      "test": "CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict",
+      "marker": "INVALID_BINDING_ADMITTED",
+      "start_utc": "2026-10-22T01:09:34.495257+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:34.699953+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "bad-binding-accepted-restored",
+      "test": "CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:34.704832+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:34.874703+00:00"
+    },
+    {
+      "name": "missing-thread-replaced-withdrawn",
+      "test": "CodexStaleThread.test_missing_thread_never_creates_or_replays_and_retains_ledger",
+      "marker": "MISSING_THREAD_REPLACED",
+      "start_utc": "2026-10-22T01:09:34.875557+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:35.003670+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "missing-thread-replaced-restored",
+      "test": "CodexStaleThread.test_missing_thread_never_creates_or_replays_and_retains_ledger",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:35.004666+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:35.134022+00:00"
+    },
+    {
+      "name": "historical-rebind-withdrawn",
+      "test": "CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread",
+      "marker": "HISTORICAL_RECEIPT_REBOUND_ACTIVE",
+      "start_utc": "2026-10-22T01:09:35.134780+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:35.274996+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "historical-rebind-restored",
+      "test": "CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:35.275640+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:35.423588+00:00"
+    },
+    {
+      "name": "historical-poll-current-withdrawn",
+      "test": "CodexStaleThread.test_historical_poll_and_state_update_use_record_thread",
+      "marker": "HISTORICAL_POLL_WRONG_THREAD",
+      "start_utc": "2026-10-22T01:09:35.426345+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:35.561729+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "historical-poll-current-restored",
+      "test": "CodexStaleThread.test_historical_poll_and_state_update_use_record_thread",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:35.564589+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:35.699689+00:00"
+    },
+    {
+      "name": "historical-write-current-withdrawn",
+      "test": "CodexStaleThread.test_historical_poll_and_state_update_use_record_thread",
+      "marker": "HISTORICAL_UPDATE_WRONG_THREAD",
+      "start_utc": "2026-10-22T01:09:35.700974+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:35.830189+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "historical-write-current-restored",
+      "test": "CodexStaleThread.test_historical_poll_and_state_update_use_record_thread",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:35.831623+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:35.968511+00:00"
+    },
+    {
+      "name": "uncertain-marked-failed-withdrawn",
+      "test": "CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart",
+      "marker": "UNCERTAIN_ADMISSION_NOT_DURABLE",
+      "start_utc": "2026-10-22T01:09:35.969353+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:36.111755+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "uncertain-marked-failed-restored",
+      "test": "CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:36.112452+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:36.258659+00:00"
+    },
+    {
+      "name": "no-predispatch-journal-withdrawn",
+      "test": "CodexStaleThread.test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain",
+      "marker": "DISPATCH_NOT_DURABLE",
+      "start_utc": "2026-10-22T01:09:36.259792+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:36.389466+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "no-predispatch-journal-restored",
+      "test": "CodexStaleThread.test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:36.390173+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:36.527129+00:00"
+    },
+    {
+      "name": "uncertain-replayed-withdrawn",
+      "test": "CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart",
+      "marker": "UNCERTAIN_ADMISSION_REPLAYED",
+      "start_utc": "2026-10-22T01:09:36.528736+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:36.692659+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "uncertain-replayed-restored",
+      "test": "CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:36.693732+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:36.828645+00:00"
+    },
+    {
+      "name": "accepted-failed-replayed-withdrawn",
+      "test": "CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread",
+      "marker": "HISTORICAL_ACCEPTED_REPLAYED",
+      "start_utc": "2026-10-22T01:09:36.829554+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:36.976373+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "accepted-failed-replayed-restored",
+      "test": "CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:36.977048+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:37.117725+00:00"
+    },
+    {
+      "name": "rpc-shape-discarded-withdrawn",
+      "test": "RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string",
+      "marker": "RPC_ERROR_SHAPE_DISCARDED",
+      "start_utc": "2026-10-22T01:09:37.118796+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:37.241018+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "rpc-shape-discarded-restored",
+      "test": "RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:37.241784+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:37.363746+00:00"
+    },
+    {
+      "name": "missing-classification-discarded-withdrawn",
+      "test": "RPCErrorShapes.test_missing_thread_requires_exact_method_code_and_id",
+      "marker": "MISSING_ERROR_NOT_RECOGNIZED",
+      "start_utc": "2026-10-22T01:09:37.364787+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:37.484527+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "missing-classification-discarded-restored",
+      "test": "RPCErrorShapes.test_missing_thread_requires_exact_method_code_and_id",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:37.485744+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:37.605818+00:00"
+    },
+    {
+      "name": "eof-not-signalled-withdrawn",
+      "test": "RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned",
+      "marker": "EOF_MISCLASSIFIED_AS_TIMEOUT",
+      "start_utc": "2026-10-22T01:09:37.606729+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:37.832781+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "eof-not-signalled-restored",
+      "test": "RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:37.834138+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:37.951792+00:00"
+    },
+    {
+      "name": "raw-rpc-error-exposed-withdrawn",
+      "test": "RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string",
+      "marker": "RAW_RPC_ERROR_EXPOSED",
+      "start_utc": "2026-10-22T01:09:37.953195+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:38.072383+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "raw-rpc-error-exposed-restored",
+      "test": "RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:38.074646+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:38.192060+00:00"
+    },
+    {
+      "name": "unknown-event-hidden-withdrawn",
+      "test": "CodexStaleThread.test_adapter_uncertain_admission_is_visible_and_not_a_success",
+      "marker": "ADMISSION_FAILURE_EVENT_NOT_VISIBLE",
+      "start_utc": "2026-10-22T01:09:38.192959+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:38.332843+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "unknown-event-hidden-restored",
+      "test": "CodexStaleThread.test_adapter_uncertain_admission_is_visible_and_not_a_success",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:38.333546+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:38.468058+00:00"
+    },
+    {
+      "name": "injected-ack-removed-withdrawn",
+      "test": "CodexStaleThread.test_adapter_preserves_injected_ack_and_publishes_correlated_failure",
+      "marker": "INJECTED_ACK_SEMANTICS_CHANGED",
+      "start_utc": "2026-10-22T01:09:38.468911+00:00",
+      "rc": 1,
+      "end_utc": "2026-10-22T01:09:38.593443+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "injected-ack-removed-restored",
+      "test": "CodexStaleThread.test_adapter_preserves_injected_ack_and_publishes_correlated_failure",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:38.594300+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:38.726554+00:00"
+    },
+    {
+      "name": "view-failure-hidden-withdrawn",
+      "test": "browser",
+      "marker": "VISIBLE_SESSION_UNAVAILABLE",
+      "start_utc": "2026-10-22T01:09:38.730079+00:00",
+      "rc": 2,
+      "end_utc": "2026-10-22T01:09:39.763439+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "view-failure-hidden-restored",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:39.764739+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:40.800435+00:00"
+    },
+    {
+      "name": "view-late-input-not-annotated-withdrawn",
+      "test": "browser",
+      "marker": "FAILURE_BEFORE_INPUT_VISIBLE",
+      "start_utc": "2026-10-22T01:09:40.803645+00:00",
+      "rc": 2,
+      "end_utc": "2026-10-22T01:09:41.798096+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "view-late-input-not-annotated-restored",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:41.799975+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:42.822969+00:00"
+    },
+    {
+      "name": "view-delivery-stage-overwritten-withdrawn",
+      "test": "browser",
+      "marker": "ACK_STAGE_UNCHANGED",
+      "start_utc": "2026-10-22T01:09:42.826816+00:00",
+      "rc": 2,
+      "end_utc": "2026-10-22T01:09:43.854018+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "view-delivery-stage-overwritten-restored",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:43.855935+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:44.866450+00:00"
+    },
+    {
+      "name": "view-pending-unbounded-withdrawn",
+      "test": "browser",
+      "marker": "PENDING_BOUNDED",
+      "start_utc": "2026-10-22T01:09:44.870391+00:00",
+      "rc": 2,
+      "end_utc": "2026-10-22T01:09:45.878105+00:00",
+      "specified_assertion_red": true
+    },
+    {
+      "name": "view-pending-unbounded-restored",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:45.879717+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:46.885447+00:00"
+    },
+    {
+      "name": "final-unit",
+      "test": "",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:46.886065+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:47.425037+00:00"
+    },
+    {
+      "name": "final-browser",
+      "test": "browser",
+      "marker": "",
+      "start_utc": "2026-10-22T01:09:47.425711+00:00",
+      "rc": 0,
+      "end_utc": "2026-10-22T01:09:48.470286+00:00"
+    }
+  ]
+}
