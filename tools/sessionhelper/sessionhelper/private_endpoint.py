@@ -7,7 +7,7 @@ kernel peer binding and a fresh challenge. No credential/environment persistence
 from __future__ import annotations
 
 import argparse
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 from dataclasses import asdict, dataclass
 import hashlib
 import json
@@ -238,6 +238,164 @@ def thread_identifier(value):
         fail('binding')
 
 
+@dataclass(frozen=True)
+class AppRef:
+    """An authenticated live-owner descriptor, never a configurable path."""
+    kind: str
+    alias: tuple
+    target: tuple
+    directory: tuple | None
+
+    def to_dict(self):
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, value):
+        if type(value) is not dict or set(value) != {'kind', 'alias', 'target', 'directory'}:
+            fail('binding')
+        def pair(value):
+            if (type(value) not in (list, tuple) or len(value) != 2
+                    or type(value[0]) is not int or value[0] < 0 or not positive(value[1])):
+                fail('binding')
+            return tuple(value)
+        if value['kind'] not in ('native_alias', 'direct'):
+            fail('binding')
+        directory = pair(value['directory']) if value['kind'] == 'native_alias' else None
+        if value['kind'] == 'direct' and value['directory'] is not None:
+            fail('binding')
+        return cls(value['kind'], pair(value['alias']), pair(value['target']), directory)
+
+
+def inode(info):
+    return info.st_dev, info.st_ino
+
+
+def native_location(spec):
+    # Locked native Codex contract: canonical parent + un-resolved filename.
+    # It explicitly ignores HOME, TMPDIR and CODEX_HOME. No configurable root.
+    requested = spec.root.resolve(strict=True) / APP
+    parent = Path('/tmp').resolve(strict=True) / ('codex-daemon-' + str(os.getuid()))
+    name = hashlib.sha256(os.fsencode(requested)).hexdigest()
+    return parent, name
+
+
+def native_parent(fd, parent):
+    info = os.fstat(fd)
+    current = os.stat(parent, follow_symlinks=False)
+    for item in (info, current):
+        if (not stat.S_ISDIR(item.st_mode) or item.st_uid != os.getuid()
+                or stat.S_IMODE(item.st_mode) != 0o700):
+            fail('permissions')
+    if inode(current) != inode(info):
+        fail('path')
+    return inode(info)
+
+
+def app_socket(spec, binding, *, endpoint=None, allow_new_alias=False, retain_anchors=None):
+    """Resolve only the self-spawned native alias, then connect its fixed target.
+
+    readlink occurs once at owner startup. Later connections use the live
+    owner's immutable inode descriptor and recompute the fixed target; they
+    never follow/read the alias again. Anchors prevent inode reuse mid-check.
+    """
+    sock = None
+    retained_start = len(retain_anchors) if retain_anchors is not None else 0
+    try:
+        with ExitStack() as stack:
+            fd = stack.enter_context(root_fd(spec))
+            anchor = os.open(APP, os.O_PATH | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=fd)
+            stack.callback(os.close, anchor)
+            alias = os.fstat(anchor)
+            if alias.st_uid != os.getuid():
+                fail('permissions')
+            target_fd = None; parent_fd = None
+            if stat.S_ISLNK(alias.st_mode):
+                if endpoint is None and not allow_new_alias:
+                    fail('binding')
+                parent, name = native_location(spec)
+                destination = parent / name
+                if endpoint is None:
+                    value = os.readlink(APP, dir_fd=fd)  # exactly once; no recursion
+                    if not os.path.isabs(value) or os.fsencode(value) != os.fsencode(destination):
+                        fail('path')
+                parent_fd = os.open(parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+                stack.callback(os.close, parent_fd)
+                directory = native_parent(parent_fd, parent)
+                target_fd = os.open(name, os.O_PATH | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=parent_fd)
+                stack.callback(os.close, target_fd)
+                target = os.fstat(target_fd)
+                if (not stat.S_ISSOCK(target.st_mode) or target.st_uid != os.getuid()
+                        or stat.S_IMODE(target.st_mode) != 0o600):
+                    fail('permissions')
+                current = AppRef('native_alias', inode(alias), inode(target), directory)
+            elif stat.S_ISSOCK(alias.st_mode) and stat.S_IMODE(alias.st_mode) == 0o600:
+                destination = spec.root / APP
+                current = AppRef('direct', inode(alias), inode(alias), None)
+            else:
+                fail('permissions')
+            if endpoint is not None and current != endpoint:
+                fail('path')
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            sock.settimeout(CONTROL_TIMEOUT)
+            sock.connect(str(destination))  # Never connect via a native alias.
+            verify_peer(sock, spec.expected_exe, binding)
+            unchanged_root(spec, fd)
+            if inode(os.stat(APP, dir_fd=fd, follow_symlinks=False)) != inode(alias):
+                fail('path')
+            if parent_fd is not None:
+                if native_parent(parent_fd, parent) != current.directory:
+                    fail('path')
+                if socket_identity(parent_fd, name) != current.target:
+                    fail('path')
+            elif socket_identity(fd, APP) != current.target:
+                fail('path')
+            if retain_anchors is not None:
+                # Keep old filesystem inodes allocated for the child's whole
+                # lifetime; a recreated path cannot recycle the cached inode.
+                for anchor_fd in (anchor, target_fd, parent_fd):
+                    if anchor_fd is not None:
+                        retain_anchors.append(os.dup(anchor_fd))
+            return sock, current
+    except DaemonIdentityError:
+        if sock is not None:
+            sock.close()
+        if retain_anchors is not None:
+            while len(retain_anchors) > retained_start:
+                os.close(retain_anchors.pop())
+        raise
+    except (OSError, ValueError, RuntimeError):
+        if sock is not None:
+            sock.close()
+        if retain_anchors is not None:
+            while len(retain_anchors) > retained_start:
+                os.close(retain_anchors.pop())
+        fail('path')
+
+
+def cleanup_app(spec, fd, endpoint):
+    """Only the recorded own alias and exact own target inode; no directory scan."""
+    if exists(fd, APP):
+        info = os.stat(APP, dir_fd=fd, follow_symlinks=False)
+        if info.st_uid != os.getuid() or inode(info) != endpoint.alias:
+            fail('path')
+        os.unlink(APP, dir_fd=fd)
+    if endpoint.kind == 'native_alias':
+        parent, name = native_location(spec)
+        try:
+            target_fd = os.open(parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        except FileNotFoundError:
+            return
+        try:
+            if native_parent(target_fd, parent) != endpoint.directory:
+                fail('path')
+            if exists(target_fd, name):
+                if socket_identity(target_fd, name) != endpoint.target:
+                    fail('path')
+                os.unlink(name, dir_fd=target_fd)
+        finally:
+            os.close(target_fd)
+
+
 def packet(sock):
     raw = bytearray()
     while b'\n' not in raw:
@@ -276,19 +434,12 @@ def lock_is_held(fd):
         os.close(f)
 
 
-def native_call(spec, binding, operation):
+def native_call(spec, binding, operation, *, endpoint=None):
     """Bounded readonly native calls after same-FD owned verification."""
     from websockets.sync.client import unix_connect
-    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    sock.settimeout(CONTROL_TIMEOUT)
+    sock = None
     try:
-        with root_fd(spec) as fd:
-            before = socket_identity(fd, APP)
-            sock.connect(str(spec.root / APP))
-            verify_peer(sock, spec.expected_exe, binding)
-            unchanged_root(spec, fd)
-            if socket_identity(fd, APP) != before:
-                fail('path')
+        sock, _ = app_socket(spec, binding, endpoint=endpoint)
         with unix_connect(sock=sock, uri='ws://localhost/', open_timeout=CONTROL_TIMEOUT,
                           close_timeout=.2, max_size=65536, max_queue=4, compression=None) as ws:
             counter = 0
@@ -320,7 +471,8 @@ def native_call(spec, binding, operation):
     except Exception:
         fail('child')
     finally:
-        sock.close()
+        if sock is not None:
+            sock.close()
 
 
 class Client:
@@ -392,6 +544,7 @@ class Client:
                         or not positive(child.get('pid')) or not positive(child.get('starttime'))
                         or not positive(reply.get('generation'))):
                     fail('child')
+                AppRef.from_dict(reply.get('endpoint'))
                 return reply
             except (OSError, ValueError, UnicodeError):
                 fail('unavailable')
@@ -400,6 +553,19 @@ class Client:
 
     def status(self):
         return self._query()
+
+    def open_app(self, live):
+        fresh = self.status()
+        if any(fresh.get(key) != live.get(key) for key in ('boot', 'child', 'generation', 'endpoint')):
+            fail('binding')
+        binding = OwnedDaemonIdentity(**fresh['child'])
+        sock, _ = app_socket(self.spec, binding, endpoint=AppRef.from_dict(fresh['endpoint']))
+        return sock
+
+    def native(self, operation):
+        live = self.status()
+        return native_call(self.spec, OwnedDaemonIdentity(**live['child']), operation,
+                           endpoint=AppRef.from_dict(live['endpoint']))
 
     def ensure(self):
         with root_fd(self.spec, create=True) as fd:
@@ -501,9 +667,11 @@ class Client:
             fail('config')
         if self.bound_thread(require_writer=False) != thread_id:
             fail('binding')
-        current = self.status()['child']
-        native_call(self.spec, OwnedDaemonIdentity(current['pid'], current['starttime']), lambda request: None)
-        return [self.spec.command, '--remote', 'unix://' + str(self.spec.root / APP), 'resume', thread_id]
+        live = self.status()
+        endpoint = AppRef.from_dict(live['endpoint'])
+        native_call(self.spec, OwnedDaemonIdentity(**live['child']), lambda request: None, endpoint=endpoint)
+        target = native_location(self.spec)[0] / native_location(self.spec)[1] if endpoint.kind == 'native_alias' else self.spec.root / APP
+        return [self.spec.command, '--remote', 'unix://' + str(target), 'resume', thread_id]
 
 
 class Owner:
@@ -512,13 +680,15 @@ class Owner:
         self.boot = secrets.token_hex(16); self.child = None; self.child_start = None
         self.generation = 0; self.restarts = 0; self.state = 'starting'
         self.app_identity = None; self.control_identity = None
+        self.app_anchors = []
         self.record = {'format': 1, 'owner_pid': os.getpid(), 'owner_starttime': process_starttime(os.getpid()),
                        'python': executable(sys.executable)[0], 'config': spec.fingerprint(),
                        'implementation': implementation_hash(), 'boot': self.boot}
 
     def publish(self):
         write_json(self.fd, REGISTRY, {**self.record, 'state': self.state, 'generation': self.generation,
-                                      'child': self.binding() if self.state == 'ready' else None})
+                                      'child': self.binding() if self.state == 'ready' else None,
+                                      'endpoint': self.app_identity.to_dict() if self.app_identity is not None else None})
 
     def binding(self):
         if (self.child is None or self.child.poll() is not None or self.child_start is None
@@ -540,30 +710,12 @@ class Owner:
             if self.child.poll() is not None:
                 fail('child')
             if exists(self.fd, APP):
-                # A new local endpoint is not trusted merely because our
-                # process was started. Prove the same FD and stable inode.
-                # Native alias support is pending an explicit design ruling.
-                info = os.stat(APP, dir_fd=self.fd, follow_symlinks=False)
-                if (not stat.S_ISSOCK(info.st_mode) or info.st_uid != os.getuid()
-                        or stat.S_IMODE(info.st_mode) != 0o600):
-                    fail('permissions')
-                candidate_identity = info.st_dev, info.st_ino
-                probe = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                probe.settimeout(CONTROL_TIMEOUT)
-                try:
-                    probe.connect(str(self.spec.root / APP))
-                    verify_peer(probe, self.spec.expected_exe, OwnedDaemonIdentity(self.child.pid, self.child_start))
-                    unchanged_root(self.spec, self.fd)
-                    current = os.stat(APP, dir_fd=self.fd, follow_symlinks=False)
-                    if (current.st_dev, current.st_ino) != candidate_identity:
-                        fail('path')
-                    self.app_identity = socket_identity(self.fd, APP)
-                finally:
-                    probe.close()
-                native_call(self.spec, OwnedDaemonIdentity(self.child.pid, self.child_start), lambda request: None)
-                if socket_identity(self.fd, APP) != candidate_identity:
-                    fail('path')
-                self.app_identity = candidate_identity
+                binding = OwnedDaemonIdentity(self.child.pid, self.child_start)
+                probe, endpoint = app_socket(self.spec, binding, allow_new_alias=True,
+                                            retain_anchors=self.app_anchors)
+                probe.close()
+                self.app_identity = endpoint
+                native_call(self.spec, binding, lambda request: None, endpoint=endpoint)
                 self.generation += 1; self.state = 'ready'; self.publish()
                 return
             time.sleep(.02)
@@ -580,17 +732,30 @@ class Owner:
                     self.publish(); return
             self.child.wait(); self.child = None; self.child_start = None
         if self.app_identity is not None:
-            unlink_socket(self.fd, APP, self.app_identity); self.app_identity = None
+            cleanup_app(self.spec, self.fd, self.app_identity); self.app_identity = None
+            self.close_app_anchors()
         self.publish()
+
+    def close_app_anchors(self):
+        while self.app_anchors:
+            os.close(self.app_anchors.pop())
 
     def refresh(self):
         if self.child is None or self.child.poll() is None:
             return
         self.child.wait()
         if self.app_identity is not None:
-            unlink_socket(self.fd, APP, self.app_identity)
+            try:
+                cleanup_app(self.spec, self.fd, self.app_identity)
+            except DaemonIdentityError as exc:
+                self.child = None; self.child_start = None; self.state = 'failed'
+                self.record['last_error'] = exc.reason; self.publish()
+                return
             self.app_identity = None
+            self.close_app_anchors()
         self.child = None; self.child_start = None; self.state = 'failed'; self.publish()
+        if self.record.get('stop_requested') is True:
+            return
         if self.restarts >= len(RESTART_DELAYS):
             return
         delay = RESTART_DELAYS[self.restarts]; self.restarts += 1
@@ -614,7 +779,8 @@ class Owner:
                 if type(thread) is not dict or thread.get('id') != thread_id or thread.get('status', {}).get('type') != 'idle':
                     fail('busy')
             return True
-        return native_call(self.spec, OwnedDaemonIdentity(child['pid'], child['starttime']), check)
+        return native_call(self.spec, OwnedDaemonIdentity(child['pid'], child['starttime']), check,
+                           endpoint=self.app_identity)
 
     def stop_idle(self, human_disconnected):
         if human_disconnected is not True:
@@ -628,12 +794,22 @@ class Owner:
             if self.child is not None and self.child.poll() is None:
                 if not self.idle():
                     fail('busy')
+                self.record['stop_requested'] = True
+                self.state = 'stopping'
                 # Only the actual still-held Popen; never kill a registry PID.
                 self.child.terminate()
                 try:
                     self.child.wait(timeout=5)
                 except subprocess.TimeoutExpired:
                     fail('busy')  # no blind SIGKILL / no fabricated clean stop
+            if self.app_identity is not None:
+                try:
+                    cleanup_app(self.spec, self.fd, self.app_identity)
+                except DaemonIdentityError as exc:
+                    self.child = None; self.child_start = None; self.state = 'failed'
+                    self.record['last_error'] = exc.reason; self.publish()
+                    raise
+                self.app_identity = None; self.close_app_anchors()
             write_json(self.fd, 'stopped.json', {'format': 1, 'boot': self.boot})
             self.state = 'stopped'
         finally:
@@ -644,6 +820,7 @@ class Owner:
         listener.bind(str(self.spec.root / CONTROL)); listener.listen(8); listener.settimeout(.1)
         os.chmod(CONTROL, 0o600, dir_fd=self.fd, follow_symlinks=False)
         self.control_identity = socket_identity(self.fd, CONTROL)
+        control_anchor = os.open(CONTROL, os.O_PATH | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=self.fd)
         try:
             try:
                 self.spawn()
@@ -676,7 +853,8 @@ class Owner:
                         elif request['op'] == 'status':
                             if self.state != 'ready':
                                 raise PrivateEndpointError(self.record.get('last_error', 'endpoint_child'))
-                            reply = {'ok': True, 'state': self.state, 'child': self.binding(), 'generation': self.generation}
+                            reply = {'ok': True, 'state': self.state, 'child': self.binding(), 'generation': self.generation,
+                                     'endpoint': self.app_identity.to_dict()}
                         else:
                             fail('protocol')
                     except DaemonIdentityError as exc:
@@ -691,11 +869,14 @@ class Owner:
             listener.close()
             # On unexpected owner failure retain all locator evidence and never
             # pretend to have recovered/killed the possible orphan child.
-            if self.state == 'stopped':
-                if self.app_identity is not None:
-                    unlink_socket(self.fd, APP, self.app_identity)
-                unlink_socket(self.fd, CONTROL, self.control_identity)
-                os.unlink(REGISTRY, dir_fd=self.fd); os.fsync(self.fd)
+            try:
+                if self.state == 'stopped':
+                    if self.app_identity is not None:
+                        cleanup_app(self.spec, self.fd, self.app_identity)
+                    unlink_socket(self.fd, CONTROL, self.control_identity)
+                    os.unlink(REGISTRY, dir_fd=self.fd); os.fsync(self.fd)
+            finally:
+                os.close(control_anchor); self.close_app_anchors()
 
 
 def run_owner(spec):

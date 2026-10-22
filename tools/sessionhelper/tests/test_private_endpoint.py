@@ -2,6 +2,7 @@
 from contextlib import contextmanager
 from dataclasses import asdict
 import json
+import hashlib
 import os
 from pathlib import Path
 import socket
@@ -153,6 +154,128 @@ class Paths(Fixture):
         self.assertEqual(caught.exception.reason, 'exe_mismatch')
 
 
+class NativeAlias(Fixture):
+    def setUp(self):
+        super().setUp()
+        self.cm = ep.root_fd(self.spec, create=True); self.fd = self.cm.__enter__()
+        self.addCleanup(self.cm.__exit__, None, None, None)
+        self.parent = self.base / 'native'; self.parent.mkdir(mode=0o700)
+        self.name = '1' * 64; self.target = self.parent / self.name
+        self.peer = LocalPeer(self.target, str(self.base)); self.addCleanup(self.peer.close)
+        self.target.chmod(0o600)
+        self.alias = self.spec.root / ep.APP; self.alias.symlink_to(self.target)
+        patch = mock.patch.object(ep, 'native_location', return_value=(self.parent, self.name))
+        patch.start(); self.addCleanup(patch.stop)
+        self.binding = OwnedDaemonIdentity(os.getpid(), process_starttime(os.getpid()))
+
+    def connect(self, **kwargs):
+        sock, ref = ep.app_socket(self.spec, self.binding, allow_new_alias=True, **kwargs)
+        sock.close()
+        return ref
+
+    def test_native_location_uses_canonical_request_bytes_and_fixed_uid_root(self):
+        # Test the unpatched implementation, independently of the safe fake dir.
+        with mock.patch.object(ep, 'native_location', wraps=_NATIVE_LOCATION):
+            parent, name = ep.native_location(self.spec)
+        expected = hashlib.sha256(os.fsencode(self.spec.root.resolve() / ep.APP)).hexdigest()
+        self.assertEqual(parent, Path('/tmp').resolve() / ('codex-daemon-' + str(os.getuid())), 'NATIVE_LOCATION_ROOT_DRIFT')
+        self.assertEqual(name, expected, 'NATIVE_LOCATION_HASH_DRIFT')
+
+    def test_readlink_once_and_connects_only_calculated_target(self):
+        seen, connected = [], []
+        original = os.readlink; socket_type = socket.socket
+        def readlink(name, *args, **kwargs):
+            if name == ep.APP:
+                seen.append(name)
+            return original(name, *args, **kwargs)
+        class Tracked(socket_type):
+            def connect(self, path):
+                connected.append(path)
+                return super().connect(path)
+        with mock.patch.object(ep.os, 'readlink', side_effect=readlink), mock.patch.object(ep.socket, 'socket', Tracked):
+            ref = self.connect()
+            self.connect(endpoint=ref)
+        self.assertEqual(seen, [ep.APP], 'NATIVE_ALIAS_READ_AGAIN')
+        self.assertEqual(connected, [str(self.target), str(self.target)], 'ALIAS_REUSED_FOR_CONNECT')
+
+    def test_preexisting_alias_stops_before_popen_and_unbound_alias_cannot_connect(self):
+        owner = ep.Owner(self.spec, self.fd)
+        with mock.patch.object(ep.subprocess, 'Popen', side_effect=AssertionError('PREEXISTING_ALIAS_SPAWNED')) as launch:
+            self.reject('dirty', owner.spawn)
+        launch.assert_not_called()
+        self.reject('binding', lambda: ep.app_socket(self.spec, self.binding))
+
+    def test_outside_relative_and_wrong_digest_alias_are_refused(self):
+        for value in (self.base / 'outside', self.parent / ('2' * 64), Path('relative-socket')):
+            self.alias.unlink(); self.alias.symlink_to(value)
+            self.reject('path', self.connect)
+        self.assertEqual(self.peer.bytes, [], 'OUTSIDE_ALIAS_RECEIVED_BYTES')
+
+    def test_target_and_native_directory_permissions_are_hard_gates(self):
+        self.target.chmod(0o666)
+        self.reject('permissions', self.connect)
+        self.target.chmod(0o600)
+        self.parent.chmod(0o755)
+        self.reject('permissions', self.connect)
+        self.parent.chmod(0o700)
+        original = os.fstat; target_inode = self.target.stat().st_ino
+        def foreign(fd):
+            info = original(fd)
+            if info.st_ino == target_inode:
+                fields = list(info); fields[4] = os.getuid() + 1
+                return os.stat_result(fields)
+            return info
+        with mock.patch.object(ep.os, 'fstat', side_effect=foreign):
+            self.reject('permissions', self.connect)
+        self.assertEqual(self.peer.bytes, [], 'UNSAFE_TARGET_RECEIVED_BYTES')
+
+    def test_native_directory_symlink_is_not_followed(self):
+        moved = self.parent.with_name('moved-native')
+        self.parent.rename(moved); self.parent.symlink_to(moved, target_is_directory=True)
+        self.reject('path', self.connect)
+
+    def test_wrong_peer_pid_or_starttime_is_rejected_before_http(self):
+        for owned, reason in ((OwnedDaemonIdentity(os.getpid() + 1, self.binding.starttime), 'owned_pid_mismatch'),
+                              (OwnedDaemonIdentity(os.getpid(), self.binding.starttime + 1), 'owned_starttime_mismatch')):
+            with self.assertRaises(ep.DaemonIdentityError, msg='ALIAS_WRONG_PEER_ACCEPTED') as caught:
+                ep.app_socket(self.spec, owned, allow_new_alias=True)
+            self.assertEqual(caught.exception.reason, reason, 'ALIAS_IDENTITY_REASON_LOST')
+        self.assertTrue(self.peer.received_done.wait(5), 'ALIAS_REJECTED_FD_NOT_CLOSED')
+        self.assertTrue(all(not value for value in self.peer.bytes), 'ALIAS_UNVERIFIED_HTTP_SENT')
+
+    def test_alias_replaced_after_resolution_is_refused(self):
+        original = ep.verify_peer
+        def replace(sock, exe, owned):
+            result = original(sock, exe, owned)
+            self.alias.unlink(); self.alias.symlink_to(self.target)
+            return result
+        with mock.patch.object(ep, 'verify_peer', side_effect=replace):
+            self.reject('path', self.connect)
+
+    def test_target_replaced_after_resolution_is_refused_and_not_unlinked(self):
+        original = ep.verify_peer; replacement = socket.socket(socket.AF_UNIX)
+        self.addCleanup(replacement.close)
+        def replace(sock, exe, owned):
+            result = original(sock, exe, owned)
+            self.target.rename(self.parent / 'old-target')
+            replacement.bind(str(self.target)); self.target.chmod(0o600)
+            return result
+        with mock.patch.object(ep, 'verify_peer', side_effect=replace):
+            self.reject('path', self.connect)
+        self.assertTrue(self.target.exists(), 'REPLACEMENT_TARGET_WAS_DELETED')
+
+    def test_cleanup_cannot_remove_replaced_alias(self):
+        anchors = []
+        ref = self.connect(retain_anchors=anchors)
+        self.addCleanup(lambda: [os.close(fd) for fd in anchors])
+        self.alias.unlink(); self.alias.symlink_to(self.base / 'other')
+        self.reject('path', lambda: ep.cleanup_app(self.spec, self.fd, ref))
+        self.assertTrue(self.alias.is_symlink(), 'FOREIGN_ALIAS_REMOVED')
+
+
+_NATIVE_LOCATION = ep.native_location
+
+
 class ControlFixture:
     """Real control socket and held lock, owned by this local test process."""
     def __init__(self, spec):
@@ -169,7 +292,8 @@ class ControlFixture:
         self.listener.bind(str(spec.root / ep.CONTROL)); self.listener.listen(8)
         (spec.root / ep.CONTROL).chmod(0o600); self.listener.settimeout(.05)
         self.reply = {'ok': True, 'state': 'ready', 'generation': 1,
-                      'child': {'pid': os.getpid(), 'starttime': process_starttime(os.getpid())}}
+                      'child': {'pid': os.getpid(), 'starttime': process_starttime(os.getpid())},
+                      'endpoint': {'kind': 'direct', 'alias': [1, 1], 'target': [1, 1], 'directory': None}}
         self.override = {}
         self.thread = threading.Thread(target=self.run, daemon=True); self.thread.start()
 
@@ -319,7 +443,7 @@ class Lifecycle(Fixture):
         self.owner.child = self.child; self.owner.child_start = process_starttime(os.getpid())
 
     def native(self, loaded=None, status='idle', next_cursor=None):
-        def call(spec, binding, operation):
+        def call(spec, binding, operation, **kwargs):
             def request(method, params):
                 if method == 'thread/loaded/list':
                     return {'data': [] if loaded is None else loaded, 'nextCursor': next_cursor}
@@ -389,6 +513,17 @@ class Lifecycle(Fixture):
         self.assertIsNone(record['child'], 'FAILED_CHILD_RETAINED_AS_READY')
         self.assertEqual(record['last_error'], 'endpoint_permissions')
 
+    def test_late_exit_after_stop_timeout_never_auto_restarts(self):
+        import subprocess
+        self.child.wait.side_effect = subprocess.TimeoutExpired('owned fixture', 5)
+        with self.native():
+            self.reject('busy', lambda: self.owner.stop_idle(True))
+        self.child.poll.return_value = 1; self.child.wait.side_effect = None
+        with mock.patch.object(self.owner, 'spawn') as spawn:
+            self.owner.refresh()
+        spawn.assert_not_called()
+        self.assertEqual(self.owner.state, 'failed', 'STOP_TIMEOUT_RESTARTED_CHILD')
+
 
 class DriverWiring(Fixture):
     def test_stop_during_partial_frame_uses_captured_socket_or_oserror(self):
@@ -435,6 +570,11 @@ class DriverWiring(Fixture):
         fake = mock.Mock(); fake.ensure.return_value = {'child': binding}
         fake.bound_thread.return_value = ''
         fake.spec.root = self.base
+        def connect(_live):
+            sock = socket.socket(socket.AF_UNIX)
+            sock.connect(str(path))
+            return sock
+        fake.open_app.side_effect = connect
         @contextmanager
         def admission(identity):
             self.assertEqual(identity.scope, 'owned_pid_starttime', 'PRIVATE_PEER_NOT_OWNED')
@@ -511,6 +651,9 @@ class RealOwnerProcess(Fixture):
                 daemon_expected_exe=sys.executable, store_path=str(self.base / 'real-owner-ledger.db'))
             self.addCleanup(driver.stop)
             driver.start(); driver._ensure_thread(); original_thread = driver._thread_id
+            self.assertIsNone(driver._rpc._sock.gettimeout(), 'PRIVATE_RPC_IDLE_TIMEOUT')
+            time.sleep(ep.CONTROL_TIMEOUT + .1)
+            self.assertTrue(driver.health(), 'QUIET_PRIVATE_RPC_DROPPED')
             driver.stop()
             self.assertEqual(self.clients[0].status()['child'], initial, 'HELPER_STOP_KILLED_OWNER_CHILD')
             driver.start(); driver._validate_bound_thread()

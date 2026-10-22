@@ -344,11 +344,12 @@ class UnixWebSocketJsonRpc:
 
     def __init__(self, socket_path: str, *, identity_check: str = "observe",
                  expected_exe: str | None = None,
-                 owned_identity: OwnedDaemonIdentity | None = None):
+                 owned_identity: OwnedDaemonIdentity | None = None, connector=None):
         self._socket_path = socket_path
         self._identity_check = identity_check
         self._expected_exe = expected_exe if expected_exe is not None else _CODEX_BIN
         self._owned_identity = owned_identity
+        self._connector = connector
         self.peer_identity = None
         self.identity_warning = None
         self._sock: socket.socket | None = None
@@ -362,11 +363,15 @@ class UnixWebSocketJsonRpc:
     def start(self) -> None:
         self._stop.clear()
         self._reader_dead.clear()
-        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self._sock = None
         self.peer_identity = None
         self.identity_warning = None
         try:
-            self._sock.connect(self._socket_path)
+            if self._connector is None:
+                self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                self._sock.connect(self._socket_path)
+            else:
+                self._sock = self._connector()
             if self._identity_check not in ('observe', 'enforce', 'off'):
                 raise DaemonIdentityError('invalid_switch')
             if self._identity_check != 'off':
@@ -398,13 +403,17 @@ class UnixWebSocketJsonRpc:
                 response += chunk
             if b" 101 " not in response.split(b"\r\n", 1)[0]:
                 raise RuntimeError(f"websocket handshake failed: {response[:300]!r}")
+            # A private connector bounds its verification/handshake. The live
+            # notification stream must not expire merely because it is quiet.
+            self._sock.settimeout(None)
             threading.Thread(target=self._read_loop, daemon=True).start()
 
         except Exception:
             # No WS close message on a connection that failed admission.
             self._stop.set()
             self._reader_dead.set()
-            self._sock.close()
+            if self._sock is not None:
+                self._sock.close()
             self._sock = None
             raise
 
@@ -760,7 +769,8 @@ class CodexProtocolDriver(Driver):
                 self._rpc = UnixWebSocketJsonRpc(socket_path,
                     identity_check=self._daemon_identity_check,
                     expected_exe=self._daemon_expected_exe,
-                    owned_identity=self._owned_daemon_identity)
+                    owned_identity=self._owned_daemon_identity,
+                    connector=(lambda: self._private_endpoint.open_app(live)) if self._private_endpoint is not None else None)
                 self._rpc.start()
                 self._initialize()
                 if self._private_endpoint is not None and not self._thread_id:
