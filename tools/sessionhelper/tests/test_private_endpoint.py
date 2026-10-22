@@ -160,7 +160,11 @@ class NativeAlias(Fixture):
         super().setUp()
         self.cm = ep.root_fd(self.spec, create=True); self.fd = self.cm.__enter__()
         self.addCleanup(self.cm.__exit__, None, None, None)
-        self.parent = self.base / 'native'; self.parent.mkdir(mode=0o700)
+        # Native's real target lives in fixed /tmp, independent of TMPDIR.
+        # Keep this fake target short as well; the full 64-byte name is retained.
+        native_tmp = tempfile.TemporaryDirectory(prefix='pe-n-', dir='/tmp')
+        self.addCleanup(native_tmp.cleanup)
+        self.parent = Path(native_tmp.name) / 'n'; self.parent.mkdir(mode=0o700)
         self.name = '1' * 64; self.target = self.parent / self.name
         self.peer = LocalPeer(self.target, str(self.base)); self.addCleanup(self.peer.close)
         self.target.chmod(0o600)
