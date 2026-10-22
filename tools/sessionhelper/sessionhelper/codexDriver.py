@@ -341,7 +341,7 @@ class StdioJsonRpc:
 class UnixWebSocketJsonRpc:
     """JSON-RPC over a WebSocket carried by the daemon's Unix control socket."""
 
-    def __init__(self, socket_path: str, *, identity_check: bool = True,
+    def __init__(self, socket_path: str, *, identity_check: str = "observe",
                  expected_exe: str | None = None,
                  owned_identity: OwnedDaemonIdentity | None = None):
         self._socket_path = socket_path
@@ -349,6 +349,7 @@ class UnixWebSocketJsonRpc:
         self._expected_exe = expected_exe if expected_exe is not None else _CODEX_BIN
         self._owned_identity = owned_identity
         self.peer_identity = None
+        self.identity_warning = None
         self._sock: socket.socket | None = None
         self._next_id = 1
         self._write_lock = threading.Lock()
@@ -362,12 +363,19 @@ class UnixWebSocketJsonRpc:
         self._reader_dead.clear()
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.peer_identity = None
+        self.identity_warning = None
         try:
             self._sock.connect(self._socket_path)
-            if type(self._identity_check) is not bool:
+            if self._identity_check not in ('observe', 'enforce', 'off'):
                 raise DaemonIdentityError('invalid_switch')
-            if self._identity_check:
-                self.peer_identity = verify_peer(self._sock, self._expected_exe, self._owned_identity)
+            if self._identity_check != 'off':
+                try:
+                    self.peer_identity = verify_peer(self._sock, self._expected_exe, self._owned_identity)
+                except DaemonIdentityError as exc:
+                    if self._identity_check == 'enforce':
+                        raise
+                    self.identity_warning = exc.reason
+                    log.warning('codex_daemon_identity_observe warning=daemon_identity_%s identity_scope=unverified', exc.reason)
             else:
                 log.warning('codex_daemon_identity_disabled identity_scope=unchecked')
             key = base64.b64encode(os.urandom(16)).decode("ascii")
@@ -558,7 +566,7 @@ class CodexProtocolDriver(Driver):
         approval_policy: str | None = "never",
         ephemeral: bool = False,
         stall_timeout: float = ACCEPTED_STALL_TIMEOUT,
-        daemon_identity_check: bool | None = None,
+        daemon_identity_check: str | None = None,
         daemon_expected_exe: str | None = None,
         owned_daemon_identity: OwnedDaemonIdentity | None = None,
     ):
@@ -572,13 +580,9 @@ class CodexProtocolDriver(Driver):
             replay_verified=replay_verified,
         )
         self._manage_daemon = manage_daemon
-        if daemon_identity_check is None:
-            switch = env_get('SH_CODEX_DAEMON_IDENTITY_CHECK', '1')
-        elif type(daemon_identity_check) is bool:
-            switch = '1' if daemon_identity_check else '0'
-        else:
-            switch = ''
-        self._daemon_identity_check = True if switch == '1' else False if switch == '0' else None
+        switch = (env_get('SH_CODEX_DAEMON_IDENTITY_CHECK', 'observe')
+                  if daemon_identity_check is None else daemon_identity_check)
+        self._daemon_identity_check = switch if type(switch) is str else ''
         self._daemon_expected_exe = daemon_expected_exe if daemon_expected_exe is not None else (env_get('SH_CODEX_DAEMON_EXE') or _CODEX_BIN)
         # This is a trusted launcher API, never a PID guessed from process lists
         # or supplied by an unverified pidfile/environment variable.
@@ -717,9 +721,16 @@ class CodexProtocolDriver(Driver):
                 self._rpc.start()
                 self._initialize()
                 peer = self._rpc.peer_identity
+                if self._rpc.identity_warning is not None:
+                    self._emit_event(SessionEvent(kind='state_change',
+                        text='daemon_identity_' + self._rpc.identity_warning,
+                        data={'change': 'daemon_identity_observed',
+                              'identity_mode': 'observe', 'identity_scope': 'unverified',
+                              'error_class': 'daemon_identity_' + self._rpc.identity_warning}))
                 if peer is not None:
                     self._emit_event(SessionEvent(kind='state_change',
-                        data={'change': 'daemon_identity_verified', **peer.metadata()}))
+                        data={'change': 'daemon_identity_verified',
+                              'identity_mode': self._daemon_identity_check, **peer.metadata()}))
             except Exception as exc:
                 if self._rpc is not None:
                     self._rpc.stop()

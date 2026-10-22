@@ -11,14 +11,16 @@ ROOT = Path(__file__).resolve().parents[2]
 IDENTITY = 'tools/sessionhelper/sessionhelper/daemon_identity.py'
 DRIVER = 'tools/sessionhelper/sessionhelper/codexDriver.py'
 SUITE = 'tools.sessionhelper.tests.test_daemon_identity'
-GATE = '''            if type(self._identity_check) is not bool:
-                raise DaemonIdentityError('invalid_switch')
-            if self._identity_check:
-                self.peer_identity = verify_peer(self._sock, self._expected_exe, self._owned_identity)
-            else:
-                log.warning('codex_daemon_identity_disabled identity_scope=unchecked')
-'''
+GATE = "            if self._identity_check not in ('observe', 'enforce', 'off'):\n                raise DaemonIdentityError('invalid_switch')\n            if self._identity_check != 'off':\n                try:\n                    self.peer_identity = verify_peer(self._sock, self._expected_exe, self._owned_identity)\n                except DaemonIdentityError as exc:\n                    if self._identity_check == 'enforce':\n                        raise\n                    self.identity_warning = exc.reason\n                    log.warning('codex_daemon_identity_observe warning=daemon_identity_%s identity_scope=unverified', exc.reason)\n            else:\n                log.warning('codex_daemon_identity_disabled identity_scope=unchecked')\n"
 MUTATIONS = [
+ ('observe-continues', DRIVER, [("if self._identity_check == 'enforce':", 'if True:')],
+  'DaemonWiring.test_default_observe_wrong_exe_warns_and_connects', 'OBSERVE_REJECTED_CONNECTION'),
+ ('observe-warning', DRIVER, [("log.warning('codex_daemon_identity_observe warning=daemon_identity_%s identity_scope=unverified', exc.reason)", 'pass')],
+  'DaemonWiring.test_default_observe_wrong_exe_warns_and_connects', 'OBSERVE_WARNING_MISSING'),
+ ('observe-event', DRIVER, [("if self._rpc.identity_warning is not None:", 'if False:')],
+  'DaemonWiring.test_default_observe_wrong_exe_warns_and_connects', 'OBSERVE_EVENT_MISSING'),
+ ('enforce-rejects', DRIVER, [("if self._identity_check == 'enforce':", 'if False:')],
+  'DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc', 'WRONG_EXE_CONNECTED'),
  ('uid', IDENTITY, [('if uid != os.getuid():', 'if False:')],
   'PeerChecks.test_foreign_uid_rejected', 'IDENTITY_ACCEPTED_uid_mismatch'),
  ('exe-inode', IDENTITY, [('if (actual.st_dev, actual.st_ino) != (expected.st_dev, expected.st_ino):', 'if False:')],
@@ -47,11 +49,11 @@ MUTATIONS = [
   'DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc', 'REJECTED_RPC_RETAINED'),
  ('owned-wiring', DRIVER, [('owned_identity=self._owned_daemon_identity)', 'owned_identity=None)')],
   'DaemonWiring.test_owned_binding_wired_and_foreign_instance_rejected', 'OWNED_BINDING_NOT_WIRED'),
- ('reconnect', DRIVER, [('identity_check=self._daemon_identity_check,', 'identity_check=self._daemon_identity_check and self._connection_generation == 0,')],
-  'DaemonWiring.test_default_enabled_real_kernel_then_initialize_and_reconnect', 'RECONNECT_IDENTITY_NOT_RECHECKED'),
- ('default-on', DRIVER, [("env_get('SH_CODEX_DAEMON_IDENTITY_CHECK', '1')", "env_get('SH_CODEX_DAEMON_IDENTITY_CHECK', '0')")],
-  'DaemonWiring.test_env_default_one_zero_and_invalid_snapshot', 'IDENTITY_DEFAULT_NOT_ON'),
- ('invalid-switch', DRIVER, [('if type(self._identity_check) is not bool:', 'if False:')],
+ ('reconnect', DRIVER, [('identity_check=self._daemon_identity_check,', 'identity_check=self._daemon_identity_check if self._connection_generation == 0 else 'off',')],
+  'DaemonWiring.test_enforce_real_kernel_then_initialize_and_reconnect', 'RECONNECT_IDENTITY_NOT_RECHECKED'),
+ ('default-observe', DRIVER, [("env_get('SH_CODEX_DAEMON_IDENTITY_CHECK', 'observe')", "env_get('SH_CODEX_DAEMON_IDENTITY_CHECK', 'enforce')")],
+  'DaemonWiring.test_env_three_modes_and_invalid_snapshot', 'IDENTITY_DEFAULT_NOT_OBSERVE'),
+ ('invalid-switch', DRIVER, [("if self._identity_check not in ('observe', 'enforce', 'off'):", 'if False:')],
   'DaemonWiring.test_explicit_off_is_visible_and_invalid_setting_refused', 'INVALID_SWITCH_CONNECTED'),
  ('session-classification', DRIVER, [('                except DaemonIdentityError as exc:\n                    return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)', '                except DaemonIdentityError as exc:\n                    return self._admission_failure(envelope_id, body_hash, exc, uncertain=True)')],
   'DaemonWiring.test_rejected_delivery_persists_and_never_starts_thread_or_turn', 'IDENTITY_NOT_SESSION_UNAVAILABLE'),

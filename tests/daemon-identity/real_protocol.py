@@ -67,7 +67,7 @@ def main(version, binary, output):
                 path.unlink()
         def driver(label, owned=None, expected=None):
             d = CodexProtocolDriver(workdir=str(base), manage_daemon=False,
-                daemon_identity_check=True, daemon_expected_exe=str(expected or binary),
+                daemon_identity_check='enforce', daemon_expected_exe=str(expected or binary),
                 owned_daemon_identity=owned, store_path=str(base / (label + '.sqlite3')))
             d._daemon_socket_path = lambda: str(path)
             return d

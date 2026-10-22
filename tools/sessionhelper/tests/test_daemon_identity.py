@@ -174,11 +174,11 @@ class DaemonWiring(unittest.TestCase):
         self.path = Path(self.tmp.name) / 'control.sock'
         self.peer = LocalPeer(self.path, self.tmp.name); self.addCleanup(self.peer.close)
         self.driver = CodexProtocolDriver(workdir=self.tmp.name, manage_daemon=False,
-            daemon_expected_exe=sys.executable, store_path=str(Path(self.tmp.name) / 'ledger.db'))
+            daemon_identity_check='enforce', daemon_expected_exe=sys.executable, store_path=str(Path(self.tmp.name) / 'ledger.db'))
         self.driver._daemon_socket_path = lambda: str(self.path)
         self.addCleanup(self.driver.stop)
 
-    def test_default_enabled_real_kernel_then_initialize_and_reconnect(self):
+    def test_enforce_real_kernel_then_initialize_and_reconnect(self):
         with mock.patch('sessionhelper.codexDriver.verify_peer', wraps=identity.verify_peer) as check:
             self.driver.start(); self.assertTrue(self.driver.health())
             self.driver._rpc.stop(); self.driver.start()
@@ -230,13 +230,14 @@ class DaemonWiring(unittest.TestCase):
         self.assertEqual(self.peer.methods, [])
 
     def test_explicit_off_is_visible_and_invalid_setting_refused(self):
-        self.driver._daemon_identity_check = False
+        self.driver._daemon_identity_check = 'off'
         self.driver._daemon_expected_exe = '/bin/true'
         with self.assertLogs('sessionhelper.codexDriver', level='WARNING') as logs:
             self.driver.start()
         self.assertTrue(self.driver.health())
         self.assertIn('identity_scope=unchecked', '\n'.join(logs.output), 'DISABLED_GATE_SILENT')
-        self.driver.stop(); self.driver._daemon_identity_check = None
+        self.driver.stop(); self.driver._daemon_identity_check = 'invalid'
+        self.driver._daemon_expected_exe = sys.executable
         with self.assertRaises(identity.DaemonIdentityError, msg='INVALID_SWITCH_CONNECTED'):
             self.driver.start()
 
@@ -244,7 +245,7 @@ class DaemonWiring(unittest.TestCase):
         real_socket = socket.socket; retained = []
         def create(*args, **kwargs):
             sock = real_socket(*args, **kwargs); retained.append(sock); return sock
-        rpc = UnixWebSocketJsonRpc(str(self.path), expected_exe='/bin/true')
+        rpc = UnixWebSocketJsonRpc(str(self.path), identity_check='enforce', expected_exe='/bin/true')
         with mock.patch('sessionhelper.codexDriver.socket.socket', side_effect=create):
             with self.assertRaises(identity.DaemonIdentityError): rpc.start()
         self.addCleanup(rpc.stop)
@@ -268,14 +269,48 @@ class DaemonWiring(unittest.TestCase):
                 self.assertTrue(constructor.called)
             finally: d.stop()
 
-    def test_env_default_one_zero_and_invalid_snapshot(self):
-        for raw, expected in [('1', True), ('0', False), ('true', None), ('', None)]:
+    def test_default_observe_wrong_exe_warns_and_connects(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            driver = CodexProtocolDriver(workdir=self.tmp.name, manage_daemon=False,
+                daemon_expected_exe='/bin/true', store_path=str(Path(self.tmp.name) / 'observe.db'))
+        self.addCleanup(driver.stop)
+        driver._daemon_socket_path = lambda: str(self.path)
+        with self.assertLogs('sessionhelper.codexDriver', level='WARNING') as logs:
+            try:
+                driver.start()
+            except identity.DaemonIdentityError:
+                self.fail('OBSERVE_REJECTED_CONNECTION')
+        self.assertTrue(driver.health(), 'OBSERVE_REJECTED_CONNECTION')
+        self.assertEqual(self.peer.methods, ['initialize', 'initialized'], 'OBSERVE_REJECTED_CONNECTION')
+        self.assertIn('warning=daemon_identity_exe_mismatch', '\n'.join(logs.output), 'OBSERVE_WARNING_MISSING')
+        events = [e for e in driver._event_log if e.data.get('change') == 'daemon_identity_observed']
+        self.assertTrue(events, 'OBSERVE_EVENT_MISSING')
+        self.assertEqual(events[-1].data['identity_scope'], 'unverified')
+        self.assertFalse(any(e.data.get('change') == 'daemon_identity_verified' for e in driver._event_log))
+
+    def test_observe_unverifiable_proc_warns_and_rechecks(self):
+        self.driver._daemon_identity_check = 'observe'
+        with mock.patch('sessionhelper.codexDriver.verify_peer', side_effect=identity.DaemonIdentityError('exe_unverifiable')) as check:
+            with self.assertLogs('sessionhelper.codexDriver', level='WARNING'):
+                self.driver.start(); self.driver._rpc.stop(); self.driver.start()
+        self.assertEqual(check.call_count, 2, 'OBSERVE_RECONNECT_SKIPPED')
+        self.assertTrue(self.driver.health(), 'OBSERVE_REJECTED_CONNECTION')
+        self.assertEqual(len([e for e in self.driver._event_log if e.data.get('change') == 'daemon_identity_observed']), 2)
+
+    def test_env_three_modes_and_invalid_snapshot(self):
+        for raw, expected in [('observe', 'observe'), ('enforce', 'enforce'), ('off', 'off'),
+                              ('1', '1'), ('0', '0'), ('true', 'true'), ('', '')]:
             with mock.patch.dict(os.environ, {'SH_CODEX_DAEMON_IDENTITY_CHECK': raw}):
                 drv = CodexProtocolDriver(store_path=str(Path(self.tmp.name) / ('ledger-' + str(raw) + '.db')))
-                self.assertIs(drv._daemon_identity_check, expected, 'IDENTITY_SWITCH_PARSE_WRONG')
+                self.assertEqual(drv._daemon_identity_check, expected, 'IDENTITY_SWITCH_PARSE_WRONG')
         with mock.patch.dict(os.environ, {}, clear=True):
             drv = CodexProtocolDriver(store_path=str(Path(self.tmp.name) / 'default.db'))
-            self.assertIs(drv._daemon_identity_check, True, 'IDENTITY_DEFAULT_NOT_ON')
+            self.assertEqual(drv._daemon_identity_check, 'observe', 'IDENTITY_DEFAULT_NOT_OBSERVE')
+        for raw in ('1', '0', 'true', '', None, False):
+            rpc = UnixWebSocketJsonRpc(str(self.path), identity_check=raw, expected_exe=sys.executable)
+            self.addCleanup(rpc.stop)
+            with self.assertRaises(identity.DaemonIdentityError, msg='INVALID_SWITCH_CONNECTED'):
+                rpc.start()
 
 
 if __name__ == '__main__':
