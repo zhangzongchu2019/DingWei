@@ -275,14 +275,16 @@ class DaemonWiring(unittest.TestCase):
                 daemon_expected_exe='/bin/true', store_path=str(Path(self.tmp.name) / 'observe.db'))
         self.addCleanup(driver.stop)
         driver._daemon_socket_path = lambda: str(self.path)
-        with self.assertLogs('sessionhelper.codexDriver', level='WARNING') as logs:
+        with mock.patch('sessionhelper.codexDriver.log.warning') as warning:
             try:
                 driver.start()
             except identity.DaemonIdentityError:
                 self.fail('OBSERVE_REJECTED_CONNECTION')
         self.assertTrue(driver.health(), 'OBSERVE_REJECTED_CONNECTION')
         self.assertEqual(self.peer.methods, ['initialize', 'initialized'], 'OBSERVE_REJECTED_CONNECTION')
-        self.assertIn('warning=daemon_identity_exe_mismatch', '\n'.join(logs.output), 'OBSERVE_WARNING_MISSING')
+        self.assertTrue(warning.called, 'OBSERVE_WARNING_MISSING')
+        messages = [c.args[0] % c.args[1:] for c in warning.call_args_list]
+        self.assertIn('warning=daemon_identity_exe_mismatch', '\n'.join(messages), 'OBSERVE_WARNING_MISSING')
         events = [e for e in driver._event_log if e.data.get('change') == 'daemon_identity_observed']
         self.assertTrue(events, 'OBSERVE_EVENT_MISSING')
         self.assertEqual(events[-1].data['identity_scope'], 'unverified')
