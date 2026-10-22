@@ -9,3 +9,7 @@
 锁定venv、隔离HOME、最小环境下 `python -m unittest test_codex_stale_thread -v` rc0，23格通过。完整原始stdout／stderr／rc在raw，检查摘要与摘要清单同目录。此次仅版本位与现有断言同步，完整全仓及发布门由组长集成时跑；此前冻结源码manifest仍验证其原受审锚，不将它用于声称本版本号改动未发生。
 
 已知限域S-HELPER-DAEMON-IDENTITY保持后续待派工，不在此版本位提交中实现。Hub、renderer、四席helper实际升级范围与时序等待组长及业主最终批准。
+
+## 复现路径小项订正
+
+按prodops交叉核意见，追加docs-only修正：DOWNLOAD.py 从 `raw/<version>/metadata.json` 读取已入Git的元数据。用订正后的完整脚本在临时目录运行，两版都通过；为避免重复联网下载，URL读取替换为先前已核官方归档的本地字节流，其余实际解包、双integrity校验、SHA和包版本检查均执行。两版产出的归档／二进制SHA与前序证据完全一致，记录在raw/download-path-repro.json；不冒称重新联网取包。无产品、测试源码、版本位或运行时锁变更。前序followup VERIFY的源码不变断言适用于57784f11，0.2.3.9版本位后继使用本目录摘要清单核验。

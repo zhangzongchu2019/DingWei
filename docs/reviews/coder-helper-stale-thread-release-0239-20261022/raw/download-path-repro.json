@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-22T01:48:50.349230+00:00",
+  "rc": 0,
+  "mode": "Execute corrected DOWNLOAD.py unchanged in temporary directory, URL fetch replaced by existing verified official archive streams",
+  "network_fetch": false,
+  "generated_artifacts_in_git": false,
+  "cases": [
+    {
+      "version": "0.161.0",
+      "metadata_path": "raw/0.161.0/metadata.json",
+      "archive_sha256": "d50e02c2755be551b576527b2b13c6b6a4af3340149afdf792d5491e5d899978",
+      "binary_sha256": "9a820c17865fa825d04db416818679a9d63bd72e50835c396f496e5684626c9c",
+      "result": "PASS"
+    },
+    {
+      "version": "0.163.0",
+      "metadata_path": "raw/0.163.0/metadata.json",
+      "archive_sha256": "30efc97738b975940d78b59a9bea115fa34040b732807d54ec35ae6b7528de94",
+      "binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215",
+      "result": "PASS"
+    }
+  ]
+}

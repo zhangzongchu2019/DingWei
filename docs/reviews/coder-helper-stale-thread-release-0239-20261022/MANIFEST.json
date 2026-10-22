@@ -32,8 +32,8 @@
     },
     {
       "path": "docs/reviews/coder-helper-stale-thread-release-0239-20261022/REPORT.md",
-      "bytes": 1468,
-      "sha256": "7f4e17edfcbf82fb9f5c91e354576cd093ae358496b2e05212f28ae2b552612c"
+      "bytes": 2180,
+      "sha256": "535dfb84a6d43409f9a7a7429068f5b878b8df61ef1d8441da076d7569080de3"
     },
     {
       "path": "docs/reviews/coder-helper-stale-thread-release-0239-20261022/raw/go.rc",
@@ -64,6 +64,11 @@
       "path": "docs/reviews/coder-helper-stale-thread-release-0239-20261022/raw/helper.stdout",
       "bytes": 430,
       "sha256": "b7dcd231946d24bf1f2035a840d5131afc85eb113b4fcb4083f0b715f29a73f5"
+    },
+    {
+      "path": "docs/reviews/coder-helper-stale-thread-release-0239-20261022/raw/download-path-repro.json",
+      "bytes": 881,
+      "sha256": "3391b9668deb00d20ef2a4f79d404a2aa4fca0bddfae4e677ba86db10be6aa6e"
     }
   ]
 }

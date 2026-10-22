@@ -2,7 +2,7 @@ import urllib.request,json,pathlib,hashlib,base64,tarfile,concurrent.futures,dat
 r=pathlib.Path(__file__).parent
 
 def run(v):
- d=json.loads((r/(v+'-metadata.json')).read_text()); a=r/(v+'.tgz')
+ d=json.loads((r/'raw'/v/'metadata.json').read_text()); a=r/(v+'.tgz')
  with urllib.request.urlopen(d['dist']['tarball'],timeout=90) as f,a.open('wb') as o:
   while b:=f.read(1024*1024):o.write(b)
  data=a.read_bytes();assert hashlib.sha1(data).hexdigest()==d['dist']['shasum'];assert 'sha512-'+base64.b64encode(hashlib.sha512(data).digest()).decode()==d['dist']['integrity']
