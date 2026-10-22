@@ -18,6 +18,7 @@ from unittest import mock
 from sessionhelper import private_endpoint as ep
 from sessionhelper.daemon_identity import OwnedDaemonIdentity, process_starttime
 from sessionhelper.codexDriver import CodexProtocolDriver, UnixWebSocketJsonRpc
+from sessionhelper.config import Config, load_config
 try:  # unittest discovery and canonical path invocation use different roots.
     from test_daemon_identity import LocalPeer
 except ImportError:
@@ -542,6 +543,27 @@ class Lifecycle(Fixture):
 
 
 class DriverWiring(Fixture):
+    def test_unset_endpoint_mode_load_config_remains_legacy(self):
+        env = {'SH_SESSION_NAME': 'fixture-seat-1234',
+               'SH_KEY_ID': 'fixture-key', 'SH_SECRET': 'fixture-secret'}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.assertNotIn('SH_CODEX_ENDPOINT_MODE', os.environ)
+            self.assertEqual(Config(session_name=env['SH_SESSION_NAME'],
+                                    key_id=env['SH_KEY_ID'], secret=env['SH_SECRET']).codex_endpoint_mode,
+                             'legacy', 'CONFIG_DATACLASS_DEFAULT_PRIVATE')
+            self.assertEqual(load_config().codex_endpoint_mode, 'legacy',
+                             'CONFIG_UNSET_ENDPOINT_DEFAULT_PRIVATE')
+
+    def test_unset_endpoint_mode_driver_remains_legacy(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertNotIn('SH_CODEX_ENDPOINT_MODE', os.environ)
+            driver = CodexProtocolDriver(workdir=str(self.base),
+                store_path=str(self.base / 'default-ledger.db'))
+            self.addCleanup(driver.stop)
+            self.assertEqual(driver._endpoint_mode, 'legacy',
+                             'DRIVER_UNSET_ENDPOINT_DEFAULT_PRIVATE')
+            self.assertIsNone(driver._private_endpoint)
+
     def test_stop_during_partial_frame_uses_captured_socket_or_oserror(self):
         rpc = UnixWebSocketJsonRpc('unused-fixture')
         for read in (lambda: rpc._recv_exact(1), rpc._recv_text):
