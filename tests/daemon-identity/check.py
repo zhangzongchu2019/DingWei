@@ -49,7 +49,7 @@ MUTATIONS = [
   'DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc', 'REJECTED_RPC_RETAINED'),
  ('owned-wiring', DRIVER, [('owned_identity=self._owned_daemon_identity)', 'owned_identity=None)')],
   'DaemonWiring.test_owned_binding_wired_and_foreign_instance_rejected', 'OWNED_BINDING_NOT_WIRED'),
- ('reconnect', DRIVER, [('identity_check=self._daemon_identity_check,', 'identity_check=self._daemon_identity_check if self._connection_generation == 0 else 'off',')],
+ ('reconnect', DRIVER, [('identity_check=self._daemon_identity_check,', "identity_check=self._daemon_identity_check if self._connection_generation == 0 else 'off',")],
   'DaemonWiring.test_enforce_real_kernel_then_initialize_and_reconnect', 'RECONNECT_IDENTITY_NOT_RECHECKED'),
  ('default-observe', DRIVER, [("env_get('SH_CODEX_DAEMON_IDENTITY_CHECK', 'observe')", "env_get('SH_CODEX_DAEMON_IDENTITY_CHECK', 'enforce')")],
   'DaemonWiring.test_env_three_modes_and_invalid_snapshot', 'IDENTITY_DEFAULT_NOT_OBSERVE'),
