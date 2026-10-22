@@ -1,0 +1,15 @@
+test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) ... 
+  test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) (fault='mode') ... FAIL
+
+======================================================================
+FAIL: test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) (fault='mode')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cwd-withdraw-ssyyqy1t/helper/tests/test_cwd_import.py", line 146, in test_bad_root_missing_package_symlink_and_mode_fail_closed_visible
+    self.assertEqual(p.returncode,78,'BAD_BOOTSTRAP_FELL_THROUGH_'+fault)
+AssertionError: 0 != 78 : BAD_BOOTSTRAP_FELL_THROUGH_mode
+
+----------------------------------------------------------------------
+Ran 1 test in 0.081s
+
+FAILED (failures=1)

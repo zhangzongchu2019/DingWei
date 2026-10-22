@@ -1,0 +1,14 @@
+test_exec_error_exits_instead_of_site_swallowing_exception (test_cwd_import.CwdImportTests.test_exec_error_exits_instead_of_site_swallowing_exception) ... FAIL
+
+======================================================================
+FAIL: test_exec_error_exits_instead_of_site_swallowing_exception (test_cwd_import.CwdImportTests.test_exec_error_exits_instead_of_site_swallowing_exception)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cwd-withdraw-06cx3zgm/helper/tests/test_cwd_import.py", line 154, in test_exec_error_exits_instead_of_site_swallowing_exception
+    self.assertEqual(p.returncode,78,'EXEC_FAILURE_FELL_THROUGH')
+AssertionError: 0 != 78 : EXEC_FAILURE_FELL_THROUGH
+
+----------------------------------------------------------------------
+Ran 1 test in 0.024s
+
+FAILED (failures=1)

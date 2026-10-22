@@ -1,0 +1,42 @@
+test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) ... 
+  test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) (fault='missing') ... FAIL
+  test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) (fault='symlink') ... FAIL
+  test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) (fault='mode') ... FAIL
+  test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) (fault='interpreter') ... FAIL
+
+======================================================================
+FAIL: test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) (fault='missing')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cwd-withdraw-06cx3zgm/helper/tests/test_cwd_import.py", line 147, in test_bad_root_missing_package_symlink_and_mode_fail_closed_visible
+    self.assertIn('HELPER_CWD_IMPORT_ERROR startup_refused',p.stderr,'BOOTSTRAP_FAILURE_NOT_VISIBLE')
+AssertionError: 'HELPER_CWD_IMPORT_ERROR startup_refused' not found in '' : BOOTSTRAP_FAILURE_NOT_VISIBLE
+
+======================================================================
+FAIL: test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) (fault='symlink')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cwd-withdraw-06cx3zgm/helper/tests/test_cwd_import.py", line 147, in test_bad_root_missing_package_symlink_and_mode_fail_closed_visible
+    self.assertIn('HELPER_CWD_IMPORT_ERROR startup_refused',p.stderr,'BOOTSTRAP_FAILURE_NOT_VISIBLE')
+AssertionError: 'HELPER_CWD_IMPORT_ERROR startup_refused' not found in '' : BOOTSTRAP_FAILURE_NOT_VISIBLE
+
+======================================================================
+FAIL: test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) (fault='mode')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cwd-withdraw-06cx3zgm/helper/tests/test_cwd_import.py", line 147, in test_bad_root_missing_package_symlink_and_mode_fail_closed_visible
+    self.assertIn('HELPER_CWD_IMPORT_ERROR startup_refused',p.stderr,'BOOTSTRAP_FAILURE_NOT_VISIBLE')
+AssertionError: 'HELPER_CWD_IMPORT_ERROR startup_refused' not found in '' : BOOTSTRAP_FAILURE_NOT_VISIBLE
+
+======================================================================
+FAIL: test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) (fault='interpreter')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cwd-withdraw-06cx3zgm/helper/tests/test_cwd_import.py", line 147, in test_bad_root_missing_package_symlink_and_mode_fail_closed_visible
+    self.assertIn('HELPER_CWD_IMPORT_ERROR startup_refused',p.stderr,'BOOTSTRAP_FAILURE_NOT_VISIBLE')
+AssertionError: 'HELPER_CWD_IMPORT_ERROR startup_refused' not found in '' : BOOTSTRAP_FAILURE_NOT_VISIBLE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.049s
+
+FAILED (failures=4)

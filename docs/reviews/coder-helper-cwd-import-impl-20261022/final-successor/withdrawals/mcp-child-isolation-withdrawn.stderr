@@ -1,0 +1,14 @@
+test_mcp_forwarder_child_excludes_cwd_standard_library_shadow (test_cwd_import.CwdImportTests.test_mcp_forwarder_child_excludes_cwd_standard_library_shadow) ... FAIL
+
+======================================================================
+FAIL: test_mcp_forwarder_child_excludes_cwd_standard_library_shadow (test_cwd_import.CwdImportTests.test_mcp_forwarder_child_excludes_cwd_standard_library_shadow)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cwd-withdraw-ssyyqy1t/helper/tests/test_cwd_import.py", line 182, in test_mcp_forwarder_child_excludes_cwd_standard_library_shadow
+    self.assertFalse(marker.exists(),'MCP_CHILD_CWD_JSON_EXECUTED')
+AssertionError: True is not false : MCP_CHILD_CWD_JSON_EXECUTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.059s
+
+FAILED (failures=1)

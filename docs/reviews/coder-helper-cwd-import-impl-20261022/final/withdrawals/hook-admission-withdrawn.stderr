@@ -1,0 +1,14 @@
+test_cwd_fake_package_cannot_execute (test_cwd_import.CwdImportTests.test_cwd_fake_package_cannot_execute) ... FAIL
+
+======================================================================
+FAIL: test_cwd_fake_package_cannot_execute (test_cwd_import.CwdImportTests.test_cwd_fake_package_cannot_execute)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cwd-withdraw-06cx3zgm/helper/tests/test_cwd_import.py", line 70, in test_cwd_fake_package_cannot_execute
+    self.assertFalse(marker.exists(), 'CWD_PACKAGE_EXECUTED')
+AssertionError: True is not false : CWD_PACKAGE_EXECUTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.029s
+
+FAILED (failures=1)

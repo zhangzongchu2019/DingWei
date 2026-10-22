@@ -1,0 +1,14 @@
+test_guard_child_excludes_cwd_standard_library_shadow (test_cwd_import.CwdImportTests.test_guard_child_excludes_cwd_standard_library_shadow) ... FAIL
+
+======================================================================
+FAIL: test_guard_child_excludes_cwd_standard_library_shadow (test_cwd_import.CwdImportTests.test_guard_child_excludes_cwd_standard_library_shadow)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cwd-withdraw-06cx3zgm/helper/tests/test_cwd_import.py", line 172, in test_guard_child_excludes_cwd_standard_library_shadow
+    self.assertFalse(marker.exists(),'GUARD_CHILD_CWD_JSON_EXECUTED')
+AssertionError: True is not false : GUARD_CHILD_CWD_JSON_EXECUTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.096s
+
+FAILED (failures=1)

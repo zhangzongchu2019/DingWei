@@ -1,0 +1,27 @@
+test_same_venv_nonhelper_script_c_and_module_unaffected (test_cwd_import.CwdImportTests.test_same_venv_nonhelper_script_c_and_module_unaffected) ... 
+  test_same_venv_nonhelper_script_c_and_module_unaffected (test_cwd_import.CwdImportTests.test_same_venv_nonhelper_script_c_and_module_unaffected) (args=('-m', 'unrelated_module')) ... FAIL
+
+======================================================================
+FAIL: test_same_venv_nonhelper_script_c_and_module_unaffected (test_cwd_import.CwdImportTests.test_same_venv_nonhelper_script_c_and_module_unaffected) (args=('-m', 'unrelated_module'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cwd-withdraw-ssyyqy1t/helper/tests/test_cwd_import.py", line 108, in test_same_venv_nonhelper_script_c_and_module_unaffected
+    p=self.run_python(*args);self.assertEqual((p.returncode,p.stdout.strip()),(0,'0'),'NONHELPER_BEHAVIOR_CHANGED')
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (1, '') != (0, '0')
+
+First differing element 0:
+1
+0
+
+- (1, '')
+?  ^
+
++ (0, '0')
+?  ^   +
+ : NONHELPER_BEHAVIOR_CHANGED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.075s
+
+FAILED (failures=1)

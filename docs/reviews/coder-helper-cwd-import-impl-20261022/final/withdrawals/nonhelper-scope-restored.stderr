@@ -1,0 +1,6 @@
+test_same_venv_nonhelper_script_c_and_module_unaffected (test_cwd_import.CwdImportTests.test_same_venv_nonhelper_script_c_and_module_unaffected) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.061s
+
+OK

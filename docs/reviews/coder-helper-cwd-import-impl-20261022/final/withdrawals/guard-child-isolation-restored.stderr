@@ -1,0 +1,6 @@
+test_guard_child_excludes_cwd_standard_library_shadow (test_cwd_import.CwdImportTests.test_guard_child_excludes_cwd_standard_library_shadow) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.097s
+
+OK
