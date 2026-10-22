@@ -1,0 +1,14 @@
+test_default_observe_wrong_exe_warns_and_connects (delayed_identity_fixture.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects) ... FAIL
+
+======================================================================
+FAIL: test_default_observe_wrong_exe_warns_and_connects (delayed_identity_fixture.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/did-race-copy-w1ji8b8o/test_daemon_identity.py", line 292, in test_default_observe_wrong_exe_warns_and_connects
+    self.assertEqual(self.peer.methods, ['initialize', 'initialized'], 'OBSERVE_REJECTED_CONNECTION')
+AssertionError: ['initialize'] != ['initialize', 'initialized'] : OBSERVE_REJECTED_CONNECTION
+
+----------------------------------------------------------------------
+Ran 1 test in 5.016s
+
+FAILED (failures=1)
