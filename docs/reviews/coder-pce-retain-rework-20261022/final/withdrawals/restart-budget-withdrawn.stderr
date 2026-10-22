@@ -1,0 +1,24 @@
+test_child_binding_rechecks_starttime_and_restart_budget_is_finite (test_private_endpoint.Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite) ... FAIL
+
+======================================================================
+FAIL: test_child_binding_rechecks_starttime_and_restart_budget_is_finite (test_private_endpoint.Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-fyylx7fz/t/4/dwpe-check-99ykjrtm/helper/tests/test_private_endpoint.py", line 528, in test_child_binding_rechecks_starttime_and_restart_budget_is_finite
+    self.owner.refresh()
+  File "/tmp/dwpe-g-fyylx7fz/t/4/dwpe-check-99ykjrtm/helper/sessionhelper/private_endpoint.py", line 817, in refresh
+    delay = RESTART_DELAYS[self.restarts]; self.restarts += 1
+            ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+IndexError: tuple index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-fyylx7fz/t/4/dwpe-check-99ykjrtm/helper/tests/test_private_endpoint.py", line 530, in test_child_binding_rechecks_starttime_and_restart_budget_is_finite
+    self.fail('RESTART_BUDGET_RAISED ' + type(exc).__name__)
+AssertionError: RESTART_BUDGET_RAISED IndexError
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)

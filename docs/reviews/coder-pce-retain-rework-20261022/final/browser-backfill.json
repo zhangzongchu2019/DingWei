@@ -1,0 +1,16 @@
+{
+  "label": "browser-backfill",
+  "command": [
+    "node",
+    "view-service/stale-thread-backfill-browser-regression.js"
+  ],
+  "source": "f3cc2b1f0136a4d698165f673fd42f33cdfc9191",
+  "start": "2026-10-22T23:15:15.855579+00:00",
+  "end": "2026-10-22T23:15:17.171716+00:00",
+  "rc": 0,
+  "isolated_profile": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h10",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/10",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h10/.cache"
+  }
+}

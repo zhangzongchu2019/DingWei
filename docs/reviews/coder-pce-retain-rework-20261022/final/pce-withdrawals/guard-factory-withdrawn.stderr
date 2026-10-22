@@ -1,0 +1,16 @@
+test_guard_arm_select_and_fallback_refuse_incompatible_runtime (test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime) ... FAIL
+
+======================================================================
+FAIL: test_guard_arm_select_and_fallback_refuse_incompatible_runtime (test_pce_retention.RetainTests.test_guard_arm_select_and_fallback_refuse_incompatible_runtime)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-fyylx7fz/t/5/dwpe-check-saz7sbfk/helper/tests/test_pce_retention.py", line 217, in test_guard_arm_select_and_fallback_refuse_incompatible_runtime
+    self.denied('INCOMPATIBLE_FACTORY_SELECTED',lambda:self.state.select(),'manual_required')
+  File "/tmp/dwpe-g-fyylx7fz/t/5/dwpe-check-saz7sbfk/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : INCOMPATIBLE_FACTORY_SELECTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (failures=1)

@@ -1,0 +1,14 @@
+test_pce_pinned_collision_and_incompatible_candidate_refused (test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused) ... FAIL
+
+======================================================================
+FAIL: test_pce_pinned_collision_and_incompatible_candidate_refused (test_self_update_offer.OfferTests.test_pce_pinned_collision_and_incompatible_candidate_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-fyylx7fz/t/5/dwpe-check-saz7sbfk/helper/tests/test_self_update_offer.py", line 125, in test_pce_pinned_collision_and_incompatible_candidate_refused
+    self.assertFalse((self.updater.state.root/'slots'/release['sha256']).exists(), 'OWNER_UPDATE_CLOSURE_CHANGED')
+AssertionError: True is not false : OWNER_UPDATE_CLOSURE_CHANGED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.744s
+
+FAILED (failures=1)

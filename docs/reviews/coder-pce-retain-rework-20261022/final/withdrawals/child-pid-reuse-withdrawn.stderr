@@ -1,0 +1,16 @@
+test_child_binding_rechecks_starttime_and_restart_budget_is_finite (test_private_endpoint.Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite) ... FAIL
+
+======================================================================
+FAIL: test_child_binding_rechecks_starttime_and_restart_budget_is_finite (test_private_endpoint.Lifecycle.test_child_binding_rechecks_starttime_and_restart_budget_is_finite)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-fyylx7fz/t/4/dwpe-check-99ykjrtm/helper/tests/test_private_endpoint.py", line 522, in test_child_binding_rechecks_starttime_and_restart_budget_is_finite
+    self.reject('child', self.owner.binding)
+  File "/tmp/dwpe-g-fyylx7fz/t/4/dwpe-check-99ykjrtm/helper/tests/test_private_endpoint.py", line 39, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_child
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=1)

@@ -1,0 +1,14 @@
+test_registry_is_locator_not_authority (test_private_endpoint.Control.test_registry_is_locator_not_authority) ... FAIL
+
+======================================================================
+FAIL: test_registry_is_locator_not_authority (test_private_endpoint.Control.test_registry_is_locator_not_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-fyylx7fz/t/4/dwpe-check-99ykjrtm/helper/tests/test_private_endpoint.py", line 373, in test_registry_is_locator_not_authority
+    with self.assertRaises(DaemonIdentityError, msg='REGISTRY_AUTHORIZED_FOREIGN_OWNER') as caught:
+AssertionError: DaemonIdentityError not raised : REGISTRY_AUTHORIZED_FOREIGN_OWNER
+
+----------------------------------------------------------------------
+Ran 1 test in 0.066s
+
+FAILED (failures=1)

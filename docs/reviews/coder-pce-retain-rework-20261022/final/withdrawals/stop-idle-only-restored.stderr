@@ -1,0 +1,6 @@
+test_stop_requires_human_confirmation_and_idle_native_proof (test_private_endpoint.Lifecycle.test_stop_requires_human_confirmation_and_idle_native_proof) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+OK

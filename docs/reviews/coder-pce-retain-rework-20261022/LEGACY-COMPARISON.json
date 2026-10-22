@@ -1,0 +1,30 @@
+{
+  "utc": "2026-10-22T23:03:28.120830+00:00",
+  "baseline": "29e63f9963dedcc32010ca89265d78ba12664bf2",
+  "rows": [
+    {
+      "mode": "group-writable-parent",
+      "source": "r37",
+      "selected": "factory",
+      "retain_created": false
+    },
+    {
+      "mode": "group-writable-parent",
+      "source": "rework",
+      "selected": "factory",
+      "retain_created": false
+    },
+    {
+      "mode": "busy-unused-retain-lock",
+      "source": "r37",
+      "selected": "factory",
+      "retain_created": false
+    },
+    {
+      "mode": "busy-unused-retain-lock",
+      "source": "rework",
+      "selected": "factory",
+      "retain_created": false
+    }
+  ]
+}

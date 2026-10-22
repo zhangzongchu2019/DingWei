@@ -1,0 +1,17 @@
+{
+  "label": "vet",
+  "command": [
+    "go",
+    "vet",
+    "./..."
+  ],
+  "source": "f3cc2b1f0136a4d698165f673fd42f33cdfc9191",
+  "start": "2026-10-22T23:03:35.620413+00:00",
+  "end": "2026-10-22T23:03:37.543123+00:00",
+  "rc": 0,
+  "isolated_profile": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h1",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/1",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h1/.cache"
+  }
+}

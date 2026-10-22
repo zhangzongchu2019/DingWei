@@ -1,0 +1,62 @@
+{
+  "go-full": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h0",
+    "TMPDIR": "/tmp/gt5u7kid1",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h0/.cache"
+  },
+  "vet": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h1",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/1",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h1/.cache"
+  },
+  "helper": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h2",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/2",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h2/.cache"
+  },
+  "canonical": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h3",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/3",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h3/.cache"
+  },
+  "withdrawals": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h4",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/4",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h4/.cache"
+  },
+  "pce-withdrawals": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h5",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/5",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h5/.cache"
+  },
+  "native-0161": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h6",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/6",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h6/.cache"
+  },
+  "native-0163": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h7",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/7",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h7/.cache"
+  },
+  "browser-admission": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h8",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/8",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h8/.cache"
+  },
+  "browser-mention": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h9",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/9",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h9/.cache"
+  },
+  "browser-backfill": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h10",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/10",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h10/.cache"
+  },
+  "pg-prewarm": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h0",
+    "TMPDIR": "/tmp/gt5u7kid1",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h0/.cache"
+  }
+}

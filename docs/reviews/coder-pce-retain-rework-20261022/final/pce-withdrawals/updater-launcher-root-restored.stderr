@@ -1,0 +1,6 @@
+test_updater_root_must_match_launcher_update_root_if_bound (test_self_update_offer.OfferTests.test_updater_root_must_match_launcher_update_root_if_bound) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.569s
+
+OK

@@ -1,0 +1,16 @@
+test_bad_pin_symlink_permissions_and_storage_failure_fail_closed (test_pce_retention.RetainTests.test_bad_pin_symlink_permissions_and_storage_failure_fail_closed) ... FAIL
+
+======================================================================
+FAIL: test_bad_pin_symlink_permissions_and_storage_failure_fail_closed (test_pce_retention.RetainTests.test_bad_pin_symlink_permissions_and_storage_failure_fail_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-fyylx7fz/t/5/dwpe-check-saz7sbfk/helper/tests/test_pce_retention.py", line 200, in test_bad_pin_symlink_permissions_and_storage_failure_fail_closed
+    self.denied('PUBLIC_PIN_IGNORED',lambda:self.ret.check(self.factory),'retain_invalid')
+  File "/tmp/dwpe-g-fyylx7fz/t/5/dwpe-check-saz7sbfk/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : PUBLIC_PIN_IGNORED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.012s
+
+FAILED (failures=1)

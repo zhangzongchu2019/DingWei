@@ -1,0 +1,6 @@
+test_replacing_pinned_slot_rejected_without_inspecting_pid (test_pce_retention.RetainTests.test_replacing_pinned_slot_rejected_without_inspecting_pid) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+OK

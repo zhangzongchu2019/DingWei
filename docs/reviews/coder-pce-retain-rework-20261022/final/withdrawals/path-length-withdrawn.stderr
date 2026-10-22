@@ -1,0 +1,16 @@
+test_long_path_and_parent_traversal_refused (test_private_endpoint.Paths.test_long_path_and_parent_traversal_refused) ... FAIL
+
+======================================================================
+FAIL: test_long_path_and_parent_traversal_refused (test_private_endpoint.Paths.test_long_path_and_parent_traversal_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-fyylx7fz/t/4/dwpe-check-99ykjrtm/helper/tests/test_private_endpoint.py", line 67, in test_long_path_and_parent_traversal_refused
+    self.reject('path', lambda: ep.Spec(state, 'seat', str(self.home), str(self.base),
+  File "/tmp/dwpe-g-fyylx7fz/t/4/dwpe-check-99ykjrtm/helper/tests/test_private_endpoint.py", line 39, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_path
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)

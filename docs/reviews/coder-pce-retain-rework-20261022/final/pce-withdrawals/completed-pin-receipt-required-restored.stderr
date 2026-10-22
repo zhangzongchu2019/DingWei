@@ -1,0 +1,6 @@
+test_bad_completed_pin_state_cannot_disable_update_protection (test_pce_retention.RetainTests.test_bad_completed_pin_state_cannot_disable_update_protection) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+OK

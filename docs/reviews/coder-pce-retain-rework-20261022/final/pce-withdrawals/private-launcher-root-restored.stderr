@@ -1,0 +1,6 @@
+test_private_root_must_match_launcher_update_root_if_bound (test_pce_retention.RetainTests.test_private_root_must_match_launcher_update_root_if_bound) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+OK

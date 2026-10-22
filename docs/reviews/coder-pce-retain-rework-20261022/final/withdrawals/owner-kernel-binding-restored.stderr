@@ -1,0 +1,6 @@
+test_registry_is_locator_not_authority (test_private_endpoint.Control.test_registry_is_locator_not_authority) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.079s
+
+OK

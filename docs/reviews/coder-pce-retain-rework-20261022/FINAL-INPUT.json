@@ -1,0 +1,10 @@
+{
+  "task": "S-PCE-UPDATER-RETAIN legacy compatibility rework",
+  "base_commit": "01c9c777c9e17e2ff8355e9be9ca28f11206ec48",
+  "source_commit": "f3cc2b1f0136a4d698165f673fd42f33cdfc9191",
+  "source_tree": "b733a6fda31d745a131aab17f3040a6fa387f078",
+  "source_tag": "evidence/coder/pce-retain-legacy-b733a6fd",
+  "gate_directory": "final",
+  "new_mutations": 40,
+  "deployment": false
+}

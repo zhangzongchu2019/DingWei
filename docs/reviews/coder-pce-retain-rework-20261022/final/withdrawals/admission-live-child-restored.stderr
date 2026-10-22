@@ -1,0 +1,6 @@
+test_model_admission_compares_live_child_not_stale_rpc (test_private_endpoint.Control.test_model_admission_compares_live_child_not_stale_rpc) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.062s
+
+OK

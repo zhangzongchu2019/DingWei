@@ -1,0 +1,22 @@
+{
+  "label": "helper",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/sessionhelper/tests",
+    "-v"
+  ],
+  "source": "f3cc2b1f0136a4d698165f673fd42f33cdfc9191",
+  "start": "2026-10-22T23:03:35.620884+00:00",
+  "end": "2026-10-22T23:10:49.009438+00:00",
+  "rc": 0,
+  "isolated_profile": {
+    "HOME": "/tmp/dwpe-g-fyylx7fz/h2",
+    "TMPDIR": "/tmp/dwpe-g-fyylx7fz/t/2",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-fyylx7fz/h2/.cache"
+  }
+}

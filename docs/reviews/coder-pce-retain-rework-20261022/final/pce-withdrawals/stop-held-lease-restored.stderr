@@ -1,0 +1,6 @@
+test_stop_receipt_nonce_and_held_lock_required (test_pce_retention.RetainTests.test_stop_receipt_nonce_and_held_lock_required) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.014s
+
+OK

@@ -1,0 +1,6 @@
+test_pin_limit_refuses_before_registering_new_owner (test_pce_retention.RetainTests.test_pin_limit_refuses_before_registering_new_owner) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+OK
