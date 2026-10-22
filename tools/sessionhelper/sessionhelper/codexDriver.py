@@ -751,6 +751,11 @@ class CodexProtocolDriver(Driver):
                     owned_identity=self._owned_daemon_identity)
                 self._rpc.start()
                 self._initialize()
+                if self._private_endpoint is not None and not self._thread_id:
+                    # Persisted current binding is a hint, not admission.
+                    # The next new delivery still read/resumes this exact ID.
+                    self._thread_id = self._private_endpoint.bound_thread()
+                    self._session_id = self._thread_id
                 peer = self._rpc.peer_identity
                 if self._rpc.identity_warning is not None:
                     self._emit_event(SessionEvent(kind='state_change',
@@ -1131,6 +1136,8 @@ class CodexProtocolDriver(Driver):
         thread = result.get("thread", {})
         self._thread_id = thread["id"]
         self._session_id = self._thread_id
+        if self._private_endpoint is not None:
+            self._private_endpoint.save_thread(self._thread_id)
         self._verified_binding = self._binding_key()
 
     def _binding_key(self):

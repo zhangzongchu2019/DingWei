@@ -229,6 +229,15 @@ def positive(value):
     return type(value) is int and value > 0
 
 
+def thread_identifier(value):
+    try:
+        if type(value) is not str or str(uuid.UUID(value)) != value:
+            fail('binding')
+        return value
+    except (ValueError, AttributeError):
+        fail('binding')
+
+
 def packet(sock):
     raw = bytearray()
     while b'\n' not in raw:
@@ -457,12 +466,41 @@ class Client:
     def stop_owner(self, *, human_disconnected=False):
         return self._query('stop', human_disconnected=human_disconnected)
 
+    def bound_thread(self, *, require_writer=True):
+        """Hint for current binding only; the driver must still read/resume it.
+
+        Never derive a binding from a historical delivery or a loaded-list.
+        """
+        if require_writer and self._writer is None:
+            fail('binding')
+        current = self.status()
+        with root_fd(self.spec) as fd:
+            if not exists(fd, 'binding.json'):
+                return ''
+            value = read_json(fd, 'binding.json')
+            if (type(value.get('format')) is not int or value['format'] != 1
+                    or value.get('config') != self.spec.fingerprint() or value.get('boot') != current['boot']):
+                fail('binding')
+            return thread_identifier(value.get('thread_id'))
+
+    def save_thread(self, thread_id):
+        thread_identifier(thread_id)
+        previous = self.bound_thread()
+        if previous and previous != thread_id:
+            fail('binding')
+        current = self.status()
+        with root_fd(self.spec) as fd:
+            write_json(fd, 'binding.json', {'format': 1, 'config': self.spec.fingerprint(),
+                                         'boot': current['boot'], 'thread_id': thread_id})
+
     def resume_command(self, thread_id):
         try:
             if type(thread_id) is not str or str(uuid.UUID(thread_id)) != thread_id:
                 fail('config')
         except (ValueError, AttributeError):
             fail('config')
+        if self.bound_thread(require_writer=False) != thread_id:
+            fail('binding')
         current = self.status()['child']
         native_call(self.spec, OwnedDaemonIdentity(current['pid'], current['starttime']), lambda request: None)
         return [self.spec.command, '--remote', 'unix://' + str(self.spec.root / APP), 'resume', thread_id]

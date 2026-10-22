@@ -87,7 +87,10 @@ class Paths(Fixture):
             os.link(target, self.spec.root / 'link')
             self.reject('file', lambda: ep.read_json(fd, ep.REGISTRY))
             (self.spec.root / 'link').unlink()
-            target.write_bytes(b'x' * (ep.LIMIT + 1))
+            # Valid JSON exactly one byte over the limit: parsing must not
+            # provide an accidental second reason to reject this mutation.
+            padding = ep.LIMIT + 1 - len(json.dumps({'payload': ''}))
+            target.write_bytes(json.dumps({'payload': 'x' * padding}).encode())
             self.reject('registry', lambda: ep.read_json(fd, ep.REGISTRY))
             target.unlink(); target.symlink_to(self.home / 'absent')
             self.reject('file', lambda: ep.read_json(fd, ep.REGISTRY))
@@ -257,7 +260,9 @@ class Control(Fixture):
         self.reject('busy', other.take_writer)
         self.client.release_writer()
         other.take_writer()
-        self.reject('binding', lambda: self.client.admission(None).__enter__())
+        peer = types.SimpleNamespace(uid=os.getuid(), pid=os.getpid(),
+                                     starttime=process_starttime(os.getpid()), scope='owned_pid_starttime')
+        self.reject('binding', lambda: self.client.admission(peer).__enter__())
         self.assertEqual(other.status()['child'], self.client.status()['child'], 'WRITER_CHANGED_OWNER')
 
     def test_stop_exclusion_blocks_new_model_admission(self):
@@ -272,13 +277,35 @@ class Control(Fixture):
                 os.close(guard)
 
     def test_human_resume_is_explicit_id_and_live_owner_only(self):
+        self.client.save_thread('12345678-1234-1234-1234-123456789abc')
         with mock.patch.object(ep, 'native_call', return_value=None) as native:
-            cmd = self.client.resume_command('12345678-1234-1234-1234-123456789abc')
+            human = ep.Client(self.spec)  # Reads current hint, never takes helper writer.
+            cmd = human.resume_command('12345678-1234-1234-1234-123456789abc')
             self.assertEqual(cmd, [self.spec.command, '--remote', 'unix://' + str(self.spec.root / ep.APP),
                                    'resume', '12345678-1234-1234-1234-123456789abc'])
             native.assert_called_once()
             for invalid in ('--last', '', None, 'NOT-A-THREAD'):
                 self.reject('config', lambda: self.client.resume_command(invalid))
+            self.reject('binding', lambda: human.resume_command('12345678-1234-1234-1234-123456789abd'))
+
+    def test_current_thread_hint_survives_writer_restart_but_is_not_reassigned(self):
+        thread_id = '12345678-1234-1234-1234-123456789abc'
+        self.assertEqual(self.client.bound_thread(), '')
+        self.client.save_thread(thread_id)
+        self.client.release_writer()
+        other = ep.Client(self.spec); other.take_writer(); self.addCleanup(other.release_writer)
+        self.assertEqual(other.bound_thread(), thread_id, 'HELPER_RESTART_LOST_CURRENT_THREAD')
+        self.reject('binding', lambda: other.save_thread('12345678-1234-1234-1234-123456789abd'))
+        self.assertEqual(other.bound_thread(), thread_id, 'CURRENT_THREAD_HINT_REASSIGNED')
+
+    def test_old_owner_or_config_cannot_supply_current_thread_hint(self):
+        thread_id = '12345678-1234-1234-1234-123456789abc'
+        for field, value in (('boot', 'b' * 32), ('config', '0' * 64), ('thread_id', '--last'), ('format', True)):
+            with self.root() as fd:
+                ep.write_json(fd, 'binding.json', {'format': 1, 'boot': self.owner.record['boot'],
+                                                 'config': self.spec.fingerprint(), 'thread_id': thread_id,
+                                                 field: value})
+            self.reject('binding', self.client.bound_thread)
 
 
 class Lifecycle(Fixture):
@@ -347,7 +374,10 @@ class Lifecycle(Fixture):
         self.child.poll.return_value = 1
         self.owner.restarts = len(ep.RESTART_DELAYS)
         with mock.patch.object(self.owner, 'spawn') as spawn, mock.patch.object(ep.time, 'sleep') as sleep:
-            self.owner.refresh()
+            try:
+                self.owner.refresh()
+            except Exception as exc:
+                self.fail('RESTART_BUDGET_RAISED ' + type(exc).__name__)
         spawn.assert_not_called(); sleep.assert_not_called()
         self.assertEqual(ep.read_json(self.fd, ep.REGISTRY)['state'], 'failed')
 
@@ -403,6 +433,7 @@ class DriverWiring(Fixture):
         peer = LocalPeer(path, str(self.base)); self.addCleanup(peer.close)
         binding = {'pid': os.getpid(), 'starttime': process_starttime(os.getpid())}
         fake = mock.Mock(); fake.ensure.return_value = {'child': binding}
+        fake.bound_thread.return_value = ''
         fake.spec.root = self.base
         @contextmanager
         def admission(identity):
@@ -484,6 +515,16 @@ class RealOwnerProcess(Fixture):
             self.assertEqual(self.clients[0].status()['child'], initial, 'HELPER_STOP_KILLED_OWNER_CHILD')
             driver.start(); driver._validate_bound_thread()
             self.assertEqual(driver._thread_id, original_thread, 'HELPER_RESTART_CHANGED_THREAD')
+            driver.stop()
+            # A fresh instance models a helper process upgrade, rather than
+            # relying only on Python object memory surviving stop/start.
+            driver = CodexProtocolDriver(workdir=self.spec.workdir, endpoint_mode='private',
+                endpoint_state_dir=self.spec.state_dir, endpoint_seat=self.spec.seat,
+                endpoint_codex_home=self.spec.codex_home, daemon_identity_check='enforce',
+                daemon_expected_exe=sys.executable, store_path=str(self.base / 'real-owner-ledger.db'))
+            self.addCleanup(driver.stop)
+            driver.start(); driver._validate_bound_thread()
+            self.assertEqual(driver._thread_id, original_thread, 'FRESH_HELPER_LOST_CURRENT_BINDING')
             driver.stop()
         # Kill only this test-created child after live control and same-FD
         # owned verification. No PID file alone authorizes this test action.
