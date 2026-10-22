@@ -405,7 +405,8 @@ class UnixWebSocketJsonRpc:
                 raise RuntimeError(f"websocket handshake failed: {response[:300]!r}")
             # A private connector bounds its verification/handshake. The live
             # notification stream must not expire merely because it is quiet.
-            self._sock.settimeout(None)
+            if self._connector is not None:
+                self._sock.settimeout(None)
             threading.Thread(target=self._read_loop, daemon=True).start()
 
         except Exception:

@@ -50,7 +50,8 @@ def main(expected,output):
     labels=('go-full','vet','helper','canonical','withdrawals','native-0161','native-0163','browser-admission','browser-mention','browser-backfill')
     for index,label in enumerate(labels):
         own_home=scratch/('h'+str(index));own_home.mkdir(mode=0o700)
-        own_tmp=tmp/str(index);own_tmp.mkdir(mode=0o700)
+        own_tmp=Path(tempfile.mkdtemp(prefix='g',dir='/tmp')) if label=='go-full' else tmp/str(index)
+        own_tmp.mkdir(mode=0o700,exist_ok=True)
         if label in ('go-full','canonical'):
             cache=own_home/'.embedded-postgres-go';cache.mkdir(mode=0o700)
             shutil.copy2(archive,cache/archive.name)
