@@ -1,0 +1,1 @@
+冻结95becaa的首次gates入口在源清单阶段即失败：git ls-tree默认将中文docs路径引号转义，过滤docs前缀失败后read_bytes遇到不存在的转义文件名（FileNotFoundError）。尚未执行PG预热、Go、helper或任何实际门；该轮不是PASS。后继仅修gates清单解析为NUL分隔，产品和测试输入不改；正式记录在后继源锚目录。

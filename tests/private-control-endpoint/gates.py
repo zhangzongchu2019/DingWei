@@ -14,15 +14,16 @@ def main(expected,output):
     out=Path(output).resolve();out.mkdir(parents=True,exist_ok=False)
     def source_manifest():
         result=[]
-        for line in subprocess.check_output(['git','ls-tree','-r',expected],cwd=ROOT,text=True).splitlines():
-            header,path=line.split('\t',1);mode,kind,blob=header.split()
+        entries=subprocess.check_output(['git','ls-tree','-r','-z',expected],cwd=ROOT).split(b'\0')
+        for line in filter(None,entries):
+            header,raw_path=line.split(b'\t',1);mode,kind,blob=header.decode().split();path=os.fsdecode(raw_path)
             if kind!='blob' or path.startswith('docs/'):continue
             target=ROOT/path
             raw=os.fsencode(os.readlink(target)) if mode=='120000' else target.read_bytes()
             assert subprocess.check_output(['git','cat-file','blob',blob],cwd=ROOT)==raw,'SOURCE_BLOB_MISMATCH '+path
             result.append({'path':path,'mode':mode,'blob':blob,'size':len(raw),'sha256':hashlib.sha256(raw).hexdigest()})
-        dirty=subprocess.check_output(['git','diff','--name-only',expected],cwd=ROOT,text=True).splitlines()
-        untracked=subprocess.check_output(['git','ls-files','--others','--exclude-standard'],cwd=ROOT,text=True).splitlines()
+        dirty=[os.fsdecode(v) for v in subprocess.check_output(['git','diff','--name-only','-z',expected],cwd=ROOT).split(b'\0') if v]
+        untracked=[os.fsdecode(v) for v in subprocess.check_output(['git','ls-files','--others','--exclude-standard','-z'],cwd=ROOT).split(b'\0') if v]
         assert not [name for name in dirty+untracked if not name.startswith('docs/')],'NON_DOC_DIRTY'
         return result
     manifest=source_manifest()
