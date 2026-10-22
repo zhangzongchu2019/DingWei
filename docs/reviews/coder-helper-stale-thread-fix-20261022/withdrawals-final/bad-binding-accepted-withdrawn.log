@@ -1,0 +1,91 @@
+test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) ... 
+  test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='id', value='other') ... FAIL
+  test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='cwd', value='/other') ... FAIL
+  test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='cwd', value=None) ... FAIL
+  test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='status', value={'type': 'systemError'}) ... FAIL
+  test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='canAcceptDirectInput', value=False) ... FAIL
+  test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='canAcceptDirectInput', value=1) ... FAIL
+  test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='canAcceptDirectInput', value=None) ... FAIL
+
+======================================================================
+FAIL: test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='id', value='other')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 138, in test_binding_result_identity_directory_and_admission_are_strict
+    self.assertEqual(receipt.state, 'failed', 'INVALID_BINDING_ADMITTED')
+AssertionError: 'processing' != 'failed'
+- processing
++ failed
+ : INVALID_BINDING_ADMITTED
+
+======================================================================
+FAIL: test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='cwd', value='/other')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 138, in test_binding_result_identity_directory_and_admission_are_strict
+    self.assertEqual(receipt.state, 'failed', 'INVALID_BINDING_ADMITTED')
+AssertionError: 'processing' != 'failed'
+- processing
++ failed
+ : INVALID_BINDING_ADMITTED
+
+======================================================================
+FAIL: test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='cwd', value=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 138, in test_binding_result_identity_directory_and_admission_are_strict
+    self.assertEqual(receipt.state, 'failed', 'INVALID_BINDING_ADMITTED')
+AssertionError: 'processing' != 'failed'
+- processing
++ failed
+ : INVALID_BINDING_ADMITTED
+
+======================================================================
+FAIL: test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='status', value={'type': 'systemError'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 138, in test_binding_result_identity_directory_and_admission_are_strict
+    self.assertEqual(receipt.state, 'failed', 'INVALID_BINDING_ADMITTED')
+AssertionError: 'processing' != 'failed'
+- processing
++ failed
+ : INVALID_BINDING_ADMITTED
+
+======================================================================
+FAIL: test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='canAcceptDirectInput', value=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 138, in test_binding_result_identity_directory_and_admission_are_strict
+    self.assertEqual(receipt.state, 'failed', 'INVALID_BINDING_ADMITTED')
+AssertionError: 'processing' != 'failed'
+- processing
++ failed
+ : INVALID_BINDING_ADMITTED
+
+======================================================================
+FAIL: test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='canAcceptDirectInput', value=1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 138, in test_binding_result_identity_directory_and_admission_are_strict
+    self.assertEqual(receipt.state, 'failed', 'INVALID_BINDING_ADMITTED')
+AssertionError: 'processing' != 'failed'
+- processing
++ failed
+ : INVALID_BINDING_ADMITTED
+
+======================================================================
+FAIL: test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) (field='canAcceptDirectInput', value=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 138, in test_binding_result_identity_directory_and_admission_are_strict
+    self.assertEqual(receipt.state, 'failed', 'INVALID_BINDING_ADMITTED')
+AssertionError: 'processing' != 'failed'
+- processing
++ failed
+ : INVALID_BINDING_ADMITTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.068s
+
+FAILED (failures=7)
+SEMANTIC_ASSERTION_HITS=["test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict (field='id', value='other')", "test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict (field='cwd', value='/other')", "test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict (field='cwd', value=None)", "test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict (field='status', value={'type': 'systemError'})", "test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict (field='canAcceptDirectInput', value=False)", "test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict (field='canAcceptDirectInput', value=1)", "test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict (field='canAcceptDirectInput', value=None)"]

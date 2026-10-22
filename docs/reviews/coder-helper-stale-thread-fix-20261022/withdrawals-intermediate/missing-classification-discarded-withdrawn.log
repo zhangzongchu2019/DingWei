@@ -1,0 +1,18 @@
+test_missing_thread_requires_exact_method_code_and_id (test_codex_stale_thread.RPCErrorShapes.test_missing_thread_requires_exact_method_code_and_id) ... FAIL
+
+======================================================================
+FAIL: test_missing_thread_requires_exact_method_code_and_id (test_codex_stale_thread.RPCErrorShapes.test_missing_thread_requires_exact_method_code_and_id)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 345, in test_missing_thread_requires_exact_method_code_and_id
+    self.assertEqual(JsonRpcError(method, {'code': code, 'message': message}).classify('bound-thread'), 'missing_thread', 'MISSING_ERROR_NOT_RECOGNIZED')
+AssertionError: 'rpc_error' != 'missing_thread'
+- rpc_error
++ missing_thread
+ : MISSING_ERROR_NOT_RECOGNIZED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (failures=1)
+SEMANTIC_ASSERTION_HITS=["test_codex_stale_thread.RPCErrorShapes.test_missing_thread_requires_exact_method_code_and_id"]

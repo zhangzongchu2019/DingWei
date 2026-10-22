@@ -1,5 +1,4 @@
 {
-  "generated_utc": "2026-10-22T01:30:41.791628+00:00",
   "files": [
     {
       "path": "ENVIRONMENT.json",
@@ -8,23 +7,28 @@
     },
     {
       "path": "REPORT.md",
-      "bytes": 9353,
-      "sha256": "b07bc52d6157e93de860b5936354f7e59497af2d3374cac698864422c58d8b04"
+      "bytes": 9578,
+      "sha256": "5a255f054bd80d819f06c4ca984c490acea8f6c98e6fe6a54a5f9631386c4b4e"
     },
     {
       "path": "SOURCE-MANIFEST.json",
-      "bytes": 456941,
-      "sha256": "10a11793772e29552fcc5599c6de1be70b0303bcaca2ba5ff796fdf82c166732"
+      "bytes": 446083,
+      "sha256": "e7780c78589a6cfa85b63f137494cfada0244649d3a41775add7bbe972c17c48"
     },
     {
       "path": "VERIFY.py",
-      "bytes": 2319,
-      "sha256": "ea0963cb28437ae4823ff9b9ef8b119de9e3d80ac765b89de6d24cb7ef0c8f3f"
+      "bytes": 2330,
+      "sha256": "ecc322f31be9ba19c48e78fe991eb0f3365eda98f7f7d0f9903b62e1486d955c"
     },
     {
       "path": "preliminary/ATTEMPTS.json",
       "bytes": 899,
       "sha256": "1ebc2eebed793f7de8ddd08ce44ba5e6d7918306dcabec48fb3cf375903368fb"
+    },
+    {
+      "path": "preliminary/VERIFY-FIRST-ATTEMPT.json",
+      "bytes": 294,
+      "sha256": "6c92bf4e62f694541b02faa9b70a0a3386d55ba54fde3128765e44d59263e95c"
     },
     {
       "path": "preliminary/helper.log",

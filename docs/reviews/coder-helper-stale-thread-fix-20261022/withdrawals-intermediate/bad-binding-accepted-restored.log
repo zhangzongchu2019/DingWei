@@ -1,0 +1,7 @@
+test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.048s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

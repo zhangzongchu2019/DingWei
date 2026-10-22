@@ -1,0 +1,7 @@
+test_historical_poll_and_state_update_use_record_thread (test_codex_stale_thread.CodexStaleThread.test_historical_poll_and_state_update_use_record_thread) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

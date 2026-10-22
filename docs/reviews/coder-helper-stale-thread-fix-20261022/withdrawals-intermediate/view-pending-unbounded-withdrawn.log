@@ -1,0 +1,25 @@
+  PASS VISIBLE_SESSION_UNAVAILABLE
+  PASS ACK_STAGE_UNCHANGED
+  PASS NO_INVENTED_REPLY_OR_CARD
+  PASS NO_PRIVATE_ERROR_PAYLOAD
+  PASS REPLAY_ONE_ANNOTATION
+  PASS WRONG_DELIVERY_NO_CROSS_BINDING
+  PASS FAILURE_BEFORE_INPUT_VISIBLE
+  PASS PENDING_CONSUMED
+  PASS UNKNOWN_DISTINCT_FROM_NOT_ADMITTED
+  PASS IGNORE_success
+  PASS IGNORE_other-reason
+  PASS IGNORE_other-change
+  PASS RESET_CLEARS_PENDING
+  FAIL PENDING_BOUNDED: Expected values to be strictly equal:
+
+1100 !== 1000
+
+  PASS NO_PAGE_ERRORS
+Error: 1 regression check(s) failed
+PENDING_BOUNDED: Expected values to be strictly equal:
+
+1100 !== 1000
+
+    at Object.finish (/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/view-service/renderer-regression-selfhost.js:20:34)
+    at /tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/view-service/renderer-model-admission-regression.js:55:12

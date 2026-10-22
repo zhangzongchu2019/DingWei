@@ -1,0 +1,7 @@
+test_missing_thread_requires_exact_method_code_and_id (test_codex_stale_thread.RPCErrorShapes.test_missing_thread_requires_exact_method_code_and_id) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

@@ -1,0 +1,25 @@
+test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart (test_codex_stale_thread.CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart) ... 
+  test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart (test_codex_stale_thread.CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart) (error='TimeoutError') ... FAIL
+  test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart (test_codex_stale_thread.CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart) (error='ConnectionError') ... FAIL
+
+======================================================================
+FAIL: test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart (test_codex_stale_thread.CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart) (error='TimeoutError')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 179, in test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart
+    self.assertEqual(len([m for m in self.methods() if m == 'turn/start']), before, 'UNCERTAIN_ADMISSION_REPLAYED')
+AssertionError: 2 != 1 : UNCERTAIN_ADMISSION_REPLAYED
+
+======================================================================
+FAIL: test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart (test_codex_stale_thread.CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart) (error='ConnectionError')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 179, in test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart
+    self.assertEqual(len([m for m in self.methods() if m == 'turn/start']), before, 'UNCERTAIN_ADMISSION_REPLAYED')
+AssertionError: 4 != 3 : UNCERTAIN_ADMISSION_REPLAYED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.043s
+
+FAILED (failures=2)
+SEMANTIC_ASSERTION_HITS=["test_codex_stale_thread.CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart (error='TimeoutError')", "test_codex_stale_thread.CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart (error='ConnectionError')"]

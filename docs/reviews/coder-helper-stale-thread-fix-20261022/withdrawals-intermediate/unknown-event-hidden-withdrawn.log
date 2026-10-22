@@ -1,0 +1,19 @@
+test_adapter_uncertain_admission_is_visible_and_not_a_success (test_codex_stale_thread.CodexStaleThread.test_adapter_uncertain_admission_is_visible_and_not_a_success) ... [driver-adapter] deliver id=dw-one -> failed (model_admission_unknown: error_class=timeout; method=local; )
+[delivery] failed id=dw-one source=protocol (model_admission_unknown: error_class=timeout; method=local; )
+FAIL
+
+======================================================================
+FAIL: test_adapter_uncertain_admission_is_visible_and_not_a_success (test_codex_stale_thread.CodexStaleThread.test_adapter_uncertain_admission_is_visible_and_not_a_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 313, in test_adapter_uncertain_admission_is_visible_and_not_a_success
+    self._adapter_failure('model_admission_unknown')
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 300, in _adapter_failure
+    self.assertEqual(len(failed), 1, 'ADMISSION_FAILURE_EVENT_NOT_VISIBLE')
+AssertionError: 0 != 1 : ADMISSION_FAILURE_EVENT_NOT_VISIBLE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.016s
+
+FAILED (failures=1)
+SEMANTIC_ASSERTION_HITS=["test_codex_stale_thread.CodexStaleThread.test_adapter_uncertain_admission_is_visible_and_not_a_success"]

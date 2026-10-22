@@ -1,0 +1,7 @@
+test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned (test_codex_stale_thread.RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

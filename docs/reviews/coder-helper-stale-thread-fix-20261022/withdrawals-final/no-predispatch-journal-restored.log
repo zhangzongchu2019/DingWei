@@ -1,0 +1,7 @@
+test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain (test_codex_stale_thread.CodexStaleThread.test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.017s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

@@ -1,0 +1,22 @@
+test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain (test_codex_stale_thread.CodexStaleThread.test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain) ... FAIL
+
+======================================================================
+FAIL: test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain (test_codex_stale_thread.CodexStaleThread.test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 198, in test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain
+    self.assertEqual(observed, ['unknown'], 'DISPATCH_NOT_DURABLE')
+AssertionError: Lists differ: [None] != ['unknown']
+
+First differing element 0:
+None
+'unknown'
+
+- [None]
++ ['unknown'] : DISPATCH_NOT_DURABLE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+FAILED (failures=1)
+SEMANTIC_ASSERTION_HITS=["test_codex_stale_thread.CodexStaleThread.test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain"]

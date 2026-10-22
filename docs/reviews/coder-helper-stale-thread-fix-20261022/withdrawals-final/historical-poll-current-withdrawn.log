@@ -1,0 +1,22 @@
+test_historical_poll_and_state_update_use_record_thread (test_codex_stale_thread.CodexStaleThread.test_historical_poll_and_state_update_use_record_thread) ... FAIL
+
+======================================================================
+FAIL: test_historical_poll_and_state_update_use_record_thread (test_codex_stale_thread.CodexStaleThread.test_historical_poll_and_state_update_use_record_thread)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 235, in test_historical_poll_and_state_update_use_record_thread
+    self.assertEqual(calls, [('old-turn', {'thread_id': 'historical-thread'})], 'HISTORICAL_POLL_WRONG_THREAD')
+AssertionError: Lists differ: [('old-turn', {})] != [('old-turn', {'thread_id': 'historical-thread'})]
+
+First differing element 0:
+('old-turn', {})
+('old-turn', {'thread_id': 'historical-thread'})
+
+- [('old-turn', {})]
++ [('old-turn', {'thread_id': 'historical-thread'})] : HISTORICAL_POLL_WRONG_THREAD
+
+----------------------------------------------------------------------
+Ran 1 test in 0.014s
+
+FAILED (failures=1)
+SEMANTIC_ASSERTION_HITS=["test_codex_stale_thread.CodexStaleThread.test_historical_poll_and_state_update_use_record_thread"]

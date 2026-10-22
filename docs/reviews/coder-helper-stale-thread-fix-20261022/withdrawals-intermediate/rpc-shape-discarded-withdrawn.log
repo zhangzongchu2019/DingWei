@@ -1,0 +1,25 @@
+test_both_transports_preserve_rpc_error_without_private_payload_in_string (test_codex_stale_thread.RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string) ... 
+  test_both_transports_preserve_rpc_error_without_private_payload_in_string (test_codex_stale_thread.RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string) (transport='StdioJsonRpc') ... FAIL
+  test_both_transports_preserve_rpc_error_without_private_payload_in_string (test_codex_stale_thread.RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string) (transport='UnixWebSocketJsonRpc') ... FAIL
+
+======================================================================
+FAIL: test_both_transports_preserve_rpc_error_without_private_payload_in_string (test_codex_stale_thread.RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string) (transport='StdioJsonRpc')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 391, in test_both_transports_preserve_rpc_error_without_private_payload_in_string
+    self.assertIsInstance(caught, JsonRpcError, 'RPC_ERROR_SHAPE_DISCARDED')
+AssertionError: RuntimeError('withdrawn structured error') is not an instance of <class 'sessionhelper.codexDriver.JsonRpcError'> : RPC_ERROR_SHAPE_DISCARDED
+
+======================================================================
+FAIL: test_both_transports_preserve_rpc_error_without_private_payload_in_string (test_codex_stale_thread.RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string) (transport='UnixWebSocketJsonRpc')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 391, in test_both_transports_preserve_rpc_error_without_private_payload_in_string
+    self.assertIsInstance(caught, JsonRpcError, 'RPC_ERROR_SHAPE_DISCARDED')
+AssertionError: RuntimeError('withdrawn structured error') is not an instance of <class 'sessionhelper.codexDriver.JsonRpcError'> : RPC_ERROR_SHAPE_DISCARDED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=2)
+SEMANTIC_ASSERTION_HITS=["test_codex_stale_thread.RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string (transport='StdioJsonRpc')", "test_codex_stale_thread.RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string (transport='UnixWebSocketJsonRpc')"]

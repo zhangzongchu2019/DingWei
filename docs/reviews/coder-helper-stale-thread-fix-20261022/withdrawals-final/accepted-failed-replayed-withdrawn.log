@@ -1,0 +1,23 @@
+test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) ... 
+  test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) (state='failed') ... FAIL
+
+======================================================================
+FAIL: test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) (state='failed')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 221, in test_historical_receipts_do_not_change_active_binding_or_create_thread
+    self.assertEqual(self.methods(), [], 'HISTORICAL_ACCEPTED_REPLAYED')
+AssertionError: Lists differ: ['thread/turns/list', 'turn/start'] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+'thread/turns/list'
+
+- ['thread/turns/list', 'turn/start']
++ [] : HISTORICAL_ACCEPTED_REPLAYED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.028s
+
+FAILED (failures=1)
+SEMANTIC_ASSERTION_HITS=["test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread (state='failed')"]

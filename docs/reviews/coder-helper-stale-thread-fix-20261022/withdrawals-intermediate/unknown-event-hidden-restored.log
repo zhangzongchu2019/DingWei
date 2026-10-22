@@ -1,0 +1,9 @@
+test_adapter_uncertain_admission_is_visible_and_not_a_success (test_codex_stale_thread.CodexStaleThread.test_adapter_uncertain_admission_is_visible_and_not_a_success) ... [driver-adapter] deliver id=dw-one -> failed (model_admission_unknown: error_class=timeout; method=local; )
+[delivery] failed id=dw-one source=protocol (model_admission_unknown: error_class=timeout; method=local; )
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.018s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

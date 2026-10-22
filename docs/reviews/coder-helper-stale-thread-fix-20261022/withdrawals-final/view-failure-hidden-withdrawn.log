@@ -1,0 +1,64 @@
+  FAIL VISIBLE_SESSION_UNAVAILABLE: Expected values to be strictly equal:
++ actual - expected
+
++ ''
+- '模型未接收：会话不可用'
+  PASS ACK_STAGE_UNCHANGED
+  FAIL NO_INVENTED_REPLY_OR_CARD: Expected values to be strictly equal:
+
+2 !== 1
+
+  PASS NO_PRIVATE_ERROR_PAYLOAD
+  FAIL REPLAY_ONE_ANNOTATION: Expected values to be strictly equal:
+
+0 !== 1
+
+  FAIL WRONG_DELIVERY_NO_CROSS_BINDING: Expected values to be strictly equal:
+
+0 !== 1
+
+  FAIL FAILURE_BEFORE_INPUT_VISIBLE: Expected values to be strictly equal:
+
+0 !== 1
+
+  PASS PENDING_CONSUMED
+  FAIL UNKNOWN_DISTINCT_FROM_NOT_ADMITTED: Expected values to be strictly equal:
++ actual - expected
+
++ ''
+- '模型接收结果未知，请核实后再处理'
+  PASS IGNORE_success
+  PASS IGNORE_other-reason
+  PASS IGNORE_other-change
+  PASS RESET_CLEARS_PENDING
+  PASS PENDING_BOUNDED
+  PASS NO_PAGE_ERRORS
+Error: 6 regression check(s) failed
+VISIBLE_SESSION_UNAVAILABLE: Expected values to be strictly equal:
++ actual - expected
+
++ ''
+- '模型未接收：会话不可用'
+NO_INVENTED_REPLY_OR_CARD: Expected values to be strictly equal:
+
+2 !== 1
+
+REPLAY_ONE_ANNOTATION: Expected values to be strictly equal:
+
+0 !== 1
+
+WRONG_DELIVERY_NO_CROSS_BINDING: Expected values to be strictly equal:
+
+0 !== 1
+
+FAILURE_BEFORE_INPUT_VISIBLE: Expected values to be strictly equal:
+
+0 !== 1
+
+UNKNOWN_DISTINCT_FROM_NOT_ADMITTED: Expected values to be strictly equal:
++ actual - expected
+
++ ''
+- '模型接收结果未知，请核实后再处理'
+    at Object.finish (/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/view-service/renderer-regression-selfhost.js:20:34)
+    at /tmp/coder-stale-fix-withdrawals-final-20261022/worktree/view-service/renderer-model-admission-regression.js:55:12

@@ -1,0 +1,20 @@
+LATE_LOWER: label/index retained; no false progress heartbeat
+FORWARD: generated -> hub -> helper; stage/index synchronized; still waiting
+SAME_STAGE: no invented progress or re-render
+UNKNOWN_STAGE: no replacement of confirmed C1 stage
+CANONICAL_FALSE: metadata merged, button removed; no injection or forced move
+LATE_TRUE: lower stage cannot restore cancel or overwrite newer reason
+SAME_TRUE: denial remains for same delivery
+NULL_AND_IDENTITY: absent/null preserve metadata; update cannot replace input body/source/identity/role
+SAME_LEGAL_METADATA: explicit fixed reason updated without stage invention
+INVALID_METADATA: nonboolean/unknown-status/nonstring-reason ignored
+LEGACY_METADATA: no canonical grant/metadata merge
+WRONG_DELIVERY: no merge into existing waiting row
+EXISTING_MOVE: helper_received/cancelled
+EXISTING_MOVE: helper_received/failed
+EXISTING_MOVE: cli_injected/NONE
+EXISTING_MOVE: pty_write/NONE
+EXISTING_MOVE: expired/NONE
+EXISTING_MOVE: helper_received/dead
+EXISTING_MOVE: helper_received/dropped
+COMPLETE: 19 targeted observations; original renderer functions, synthetic DOM only

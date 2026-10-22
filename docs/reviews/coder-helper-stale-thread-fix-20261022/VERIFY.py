@@ -28,14 +28,14 @@ for item in source['files']:
     assert git('rev-parse', source['source'] + ':' + item['path']).decode().strip() == item['blob'], item['path']
     assert blob(candidate, item['path']) == data, ('candidate source drift', item['path'])
 source_paths = {item['path'] for item in source['files']}
-current_paths = {p for p in git('ls-tree', '-r', '--name-only', candidate).decode().splitlines() if not p.startswith('docs/')}
+current_paths = {p for p in git('ls-tree', '-rz', '--name-only', candidate).decode().split('\0') if p and not p.startswith('docs/')}
 assert source_paths == current_paths, 'candidate source file set drift'
 for item in evidence['files']:
     data = blob(candidate, HERE + '/' + item['path'])
     assert len(data) == item['bytes'], item['path']
     assert hashlib.sha256(data).hexdigest() == item['sha256'], item['path']
 evidence_paths = {item['path'] for item in evidence['files']}
-present_evidence = {p[len(HERE)+1:] for p in git('ls-tree', '-r', '--name-only', candidate, '--', HERE).decode().splitlines()}
+present_evidence = {p[len(HERE)+1:] for p in git('ls-tree', '-rz', '--name-only', candidate, '--', HERE).decode().split('\0') if p}
 assert evidence_paths == present_evidence - {'EVIDENCE-MANIFEST.json'}, 'evidence file set drift'
 # Evidence cannot claim a different runtime lock or release version.
 for path in ['VERSION', 'tools/sessionhelper/requirements-runtime.lock', 'tools/sessionhelper/sessionhelper/__init__.py']:

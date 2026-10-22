@@ -1,0 +1,7 @@
+test_missing_thread_never_creates_or_replays_and_retains_ledger (test_codex_stale_thread.CodexStaleThread.test_missing_thread_never_creates_or_replays_and_retains_ledger) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

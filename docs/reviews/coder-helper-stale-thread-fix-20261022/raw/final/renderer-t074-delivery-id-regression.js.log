@@ -1,0 +1,6 @@
+  PASS ① 两种写法收敛同一合卡键
+  PASS ② 出站寻址使用 dw- 形式且与合卡键不同
+  PASS ③ 对称 message_id 只产一张卡
+  PASS ④ 两边均无 message_id 只产一张卡
+  PASS ⑤ 非对称 message_id 线上形态只产一张卡
+T-074 delivery-id regression: ALL PASS

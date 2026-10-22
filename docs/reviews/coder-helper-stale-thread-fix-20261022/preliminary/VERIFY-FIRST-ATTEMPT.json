@@ -1,0 +1,6 @@
+{
+  "candidate": "a9365308fdc932b29856fff4d31f9e7ac8dcadb2",
+  "rc": 1,
+  "cause": "Git quotePath produced escaped Chinese paths in source manifest; parser now uses NUL-delimited ls-tree. Raw logs also required explicit force-add because *.log is ignored.",
+  "product_source_changed": false
+}

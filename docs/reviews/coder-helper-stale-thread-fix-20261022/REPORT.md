@@ -77,4 +77,6 @@
 - 新的 unknown／无turn账本项用于防重。旧helper可读同一表，但不具备完整新语义；回退前须冻结投递并核清 unknown，不能删账本或把未知项自动回放。代码不提供自动切线程／恢复上下文操作。
 - 历史正文补读、跨helper进程持久化活动thread选择、oaagent现场复现均不在本件；不从历史envelope擅自接管活动线程。没有扩大权限、修改席位或部署。
 
+交件前 VERIFY 首轮因 Git 默认转义中文路径未过；改用 NUL 分隔读取。仓库默认忽略 .log，已显式纳入原始日志；原轮记录在 preliminary/VERIFY-FIRST-ATTEMPT.json，不计最终通过。
+
 SOURCE-MANIFEST.json 记录冻结源非docs文件的Git blob、字节与SHA256；EVIDENCE-MANIFEST.json记录本目录证据。VERIFY.py 从Git对象独取复核，可对任意候选提交运行，不依赖工作区文件。二进制包、私有HOME、账本、凭据均不入Git。

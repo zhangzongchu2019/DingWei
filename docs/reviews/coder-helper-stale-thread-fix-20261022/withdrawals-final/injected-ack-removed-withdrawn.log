@@ -1,0 +1,24 @@
+test_adapter_preserves_injected_ack_and_publishes_correlated_failure (test_codex_stale_thread.CodexStaleThread.test_adapter_preserves_injected_ack_and_publishes_correlated_failure) ... FAIL
+
+======================================================================
+FAIL: test_adapter_preserves_injected_ack_and_publishes_correlated_failure (test_codex_stale_thread.CodexStaleThread.test_adapter_preserves_injected_ack_and_publishes_correlated_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 319, in test_adapter_preserves_injected_ack_and_publishes_correlated_failure
+    self._adapter_failure('session_unavailable')
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 302, in _adapter_failure
+    self.assertEqual(injected, [True], 'INJECTED_ACK_SEMANTICS_CHANGED')
+AssertionError: Lists differ: [] != [True]
+
+Second list contains 1 additional elements.
+First extra element 0:
+True
+
+- []
++ [True] : INJECTED_ACK_SEMANTICS_CHANGED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+FAILED (failures=1)
+SEMANTIC_ASSERTION_HITS=["test_codex_stale_thread.CodexStaleThread.test_adapter_preserves_injected_ack_and_publishes_correlated_failure"]

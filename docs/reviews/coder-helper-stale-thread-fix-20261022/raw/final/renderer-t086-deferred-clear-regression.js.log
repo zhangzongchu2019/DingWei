@@ -1,0 +1,21 @@
+node:internal/fs/utils:351
+    throw err;
+    ^
+
+Error: ENOENT: no such file or directory, open 'renderer-canary-sse.html'
+    at Object.openSync (node:fs:596:3)
+    at Object.readFileSync (node:fs:464:35)
+    at Object.<anonymous> (/tmp/coder-stale-fix-frozen-20261022/view-service/renderer-t086-deferred-clear-regression.js:4:16)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
+    at node:internal/main/run_main_module:28:49 {
+  errno: -2,
+  syscall: 'open',
+  code: 'ENOENT',
+  path: 'renderer-canary-sse.html'
+}
+
+Node.js v18.19.1

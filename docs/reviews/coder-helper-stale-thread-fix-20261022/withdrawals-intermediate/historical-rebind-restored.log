@@ -1,0 +1,7 @@
+test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.024s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

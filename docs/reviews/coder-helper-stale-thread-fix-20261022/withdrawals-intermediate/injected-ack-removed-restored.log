@@ -1,0 +1,9 @@
+test_adapter_preserves_injected_ack_and_publishes_correlated_failure (test_codex_stale_thread.CodexStaleThread.test_adapter_preserves_injected_ack_and_publishes_correlated_failure) ... [driver-adapter] deliver id=dw-one -> failed (session_unavailable: error_class=missing_thread; method=thre)
+[delivery] failed id=dw-one source=protocol (session_unavailable: error_class=missing_thread; method=thre)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.010s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

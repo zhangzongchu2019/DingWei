@@ -1,0 +1,7 @@
+test_both_transports_preserve_rpc_error_without_private_payload_in_string (test_codex_stale_thread.RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

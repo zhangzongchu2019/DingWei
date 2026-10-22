@@ -1,0 +1,7 @@
+test_reconnect_restores_exact_persisted_thread_before_turn (test_codex_stale_thread.CodexStaleThread.test_reconnect_restores_exact_persisted_thread_before_turn) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.014s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

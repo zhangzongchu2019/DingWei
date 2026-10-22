@@ -1,0 +1,63 @@
+test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned (test_codex_stale_thread.RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned) ... 
+  test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned (test_codex_stale_thread.RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned) (transport='StdioJsonRpc') ... FAIL
+  test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned (test_codex_stale_thread.RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned) (transport='UnixWebSocketJsonRpc') ... FAIL
+
+======================================================================
+FAIL: test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned (test_codex_stale_thread.RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned) (transport='StdioJsonRpc')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/sessionhelper/codexDriver.py", line 282, in request
+    response = response_q.get(timeout=timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/queue.py", line 179, in get
+    raise Empty
+_queue.Empty
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 361, in test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned
+    rpc.request('turn/start', {}, timeout=0.05)
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/sessionhelper/codexDriver.py", line 284, in request
+    raise TimeoutError(f"JSON-RPC request timed out: {method}") from exc
+TimeoutError: JSON-RPC request timed out: turn/start
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 363, in test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned
+    self.assertIsInstance(error, ConnectionError, 'EOF_MISCLASSIFIED_AS_TIMEOUT')
+AssertionError: TimeoutError('JSON-RPC request timed out: turn/start') is not an instance of <class 'ConnectionError'> : EOF_MISCLASSIFIED_AS_TIMEOUT
+
+======================================================================
+FAIL: test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned (test_codex_stale_thread.RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned) (transport='UnixWebSocketJsonRpc')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/sessionhelper/codexDriver.py", line 403, in request
+    response = response_q.get(timeout=timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/queue.py", line 179, in get
+    raise Empty
+_queue.Empty
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 361, in test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned
+    rpc.request('turn/start', {}, timeout=0.05)
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/sessionhelper/codexDriver.py", line 405, in request
+    raise TimeoutError(f"JSON-RPC request timed out: {method}") from exc
+TimeoutError: JSON-RPC request timed out: turn/start
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-v2-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 363, in test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned
+    self.assertIsInstance(error, ConnectionError, 'EOF_MISCLASSIFIED_AS_TIMEOUT')
+AssertionError: TimeoutError('JSON-RPC request timed out: turn/start') is not an instance of <class 'ConnectionError'> : EOF_MISCLASSIFIED_AS_TIMEOUT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.103s
+
+FAILED (failures=2)
+SEMANTIC_ASSERTION_HITS=["test_codex_stale_thread.RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned (transport='StdioJsonRpc')", "test_codex_stale_thread.RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned (transport='UnixWebSocketJsonRpc')"]

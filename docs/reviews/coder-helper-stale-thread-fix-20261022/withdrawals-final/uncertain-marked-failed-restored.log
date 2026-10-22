@@ -1,0 +1,7 @@
+test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart (test_codex_stale_thread.CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.024s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

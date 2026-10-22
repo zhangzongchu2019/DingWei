@@ -1,0 +1,15 @@
+test_unclassified_turn_error_is_uncertain_and_never_replayed (test_codex_stale_thread.CodexStaleThread.test_unclassified_turn_error_is_uncertain_and_never_replayed) ... FAIL
+
+======================================================================
+FAIL: test_unclassified_turn_error_is_uncertain_and_never_replayed (test_codex_stale_thread.CodexStaleThread.test_unclassified_turn_error_is_uncertain_and_never_replayed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 190, in test_unclassified_turn_error_is_uncertain_and_never_replayed
+    self.assertTrue(receipt.detail.startswith('model_admission_unknown:'), 'RPC_ERROR_AMBIGUITY_LOST')
+AssertionError: False is not true : RPC_ERROR_AMBIGUITY_LOST
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+FAILED (failures=1)
+SEMANTIC_ASSERTION_HITS=["test_codex_stale_thread.CodexStaleThread.test_unclassified_turn_error_is_uncertain_and_never_replayed"]

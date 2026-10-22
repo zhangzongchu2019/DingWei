@@ -1,0 +1,7 @@
+test_loaded_thread_validated_before_admission (test_codex_stale_thread.CodexStaleThread.test_loaded_thread_validated_before_admission) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+OK
+SEMANTIC_ASSERTION_HITS=[]

@@ -1,0 +1,66 @@
+test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) ... 
+  test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) (state='processing') ... FAIL
+  test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) (state='done') ... FAIL
+  test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) (state='failed') ... FAIL
+test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) ... FAIL
+
+======================================================================
+FAIL: test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) (state='processing')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 219, in test_historical_receipts_do_not_change_active_binding_or_create_thread
+    self.assertEqual((self.driver._thread_id, self.driver._session_id), ('bound-thread', 'bound-thread'), 'HISTORICAL_RECEIPT_REBOUND_ACTIVE')
+AssertionError: Tuples differ: ('historical-thread', 'historical-thread') != ('bound-thread', 'bound-thread')
+
+First differing element 0:
+'historical-thread'
+'bound-thread'
+
+- ('historical-thread', 'historical-thread')
++ ('bound-thread', 'bound-thread') : HISTORICAL_RECEIPT_REBOUND_ACTIVE
+
+======================================================================
+FAIL: test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) (state='done')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 219, in test_historical_receipts_do_not_change_active_binding_or_create_thread
+    self.assertEqual((self.driver._thread_id, self.driver._session_id), ('bound-thread', 'bound-thread'), 'HISTORICAL_RECEIPT_REBOUND_ACTIVE')
+AssertionError: Tuples differ: ('historical-thread', 'historical-thread') != ('bound-thread', 'bound-thread')
+
+First differing element 0:
+'historical-thread'
+'bound-thread'
+
+- ('historical-thread', 'historical-thread')
++ ('bound-thread', 'bound-thread') : HISTORICAL_RECEIPT_REBOUND_ACTIVE
+
+======================================================================
+FAIL: test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) (state='failed')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 219, in test_historical_receipts_do_not_change_active_binding_or_create_thread
+    self.assertEqual((self.driver._thread_id, self.driver._session_id), ('bound-thread', 'bound-thread'), 'HISTORICAL_RECEIPT_REBOUND_ACTIVE')
+AssertionError: Tuples differ: ('historical-thread', 'historical-thread') != ('bound-thread', 'bound-thread')
+
+First differing element 0:
+'historical-thread'
+'bound-thread'
+
+- ('historical-thread', 'historical-thread')
++ ('bound-thread', 'bound-thread') : HISTORICAL_RECEIPT_REBOUND_ACTIVE
+
+======================================================================
+FAIL: test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-stale-fix-withdrawals-final-20261022/worktree/tools/sessionhelper/tests/test_codex_stale_thread.py", line 225, in test_historical_receipts_do_not_change_active_binding_or_create_thread
+    self.assertEqual(self.driver._thread_id, '', 'HISTORICAL_RECEIPT_CREATED_THREAD')
+AssertionError: 'historical-thread' != ''
+- historical-thread
+ : HISTORICAL_RECEIPT_CREATED_THREAD
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=4)
+SEMANTIC_ASSERTION_HITS=["test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread (state='processing')", "test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread (state='done')", "test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread (state='failed')"]
