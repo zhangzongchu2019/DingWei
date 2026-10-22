@@ -9,6 +9,7 @@ import struct
 import sys
 import tempfile
 import threading
+import time
 import unittest
 from unittest import mock
 
@@ -198,7 +199,7 @@ class DaemonWiring(unittest.TestCase):
         self.assertFalse(self.driver.health(), 'REJECTED_RPC_HEALTHY')
         self.assertIsNone(self.driver._rpc, 'REJECTED_RPC_RETAINED')
         self.assertFalse(self.driver._initialized)
-        self.assertTrue(self.peer.received_done.wait(1), 'REJECTED_PEER_NOT_CLOSED')
+        self.assertTrue(self.peer.received_done.wait(5), 'REJECTED_PEER_NOT_CLOSED')
         self.assertTrue(all(not b for b in self.peer.bytes), 'UNVERIFIED_PEER_RECEIVED_BYTES')
         bad = [e for e in self.driver._event_log if e.kind == 'error' and e.data.get('change') == 'daemon_identity_rejected']
         self.assertTrue(bad, 'REJECTION_EVENT_MISSING')
@@ -217,6 +218,7 @@ class DaemonWiring(unittest.TestCase):
         self.assertIn('daemon_identity_exe_mismatch', first.detail)
         self.assertEqual(second.detail, first.detail, 'IDENTITY_FAILURE_RETRIED')
         self.assertEqual(self.driver._thread_id, '')
+        self.assertTrue(self.peer.received_done.wait(5), 'UNVERIFIED_PEER_RPC_SENT')
         self.assertEqual(self.peer.methods, [], 'UNVERIFIED_PEER_RPC_SENT')
         self.assertNotIn('PRIVATE', first.detail)
         record = self.driver._store.get_by_envelope('fixture-envelope')
@@ -227,6 +229,7 @@ class DaemonWiring(unittest.TestCase):
         self.driver._owned_daemon_identity = identity.OwnedDaemonIdentity(os.getpid() + 1, 1)
         with self.assertRaises(identity.DaemonIdentityError, msg='OWNED_BINDING_NOT_WIRED'):
             self.driver.start()
+        self.assertTrue(self.peer.received_done.wait(5), 'OWNED_BINDING_NOT_WIRED')
         self.assertEqual(self.peer.methods, [])
 
     def test_explicit_off_is_visible_and_invalid_setting_refused(self):
@@ -281,6 +284,11 @@ class DaemonWiring(unittest.TestCase):
             except identity.DaemonIdentityError:
                 self.fail('OBSERVE_REJECTED_CONNECTION')
         self.assertTrue(driver.health(), 'OBSERVE_REJECTED_CONNECTION')
+        # initialized is a notification: start() need not wait for the fake
+        # peer's worker to record it, unlike initialize's synchronous reply.
+        deadline = time.monotonic() + 5
+        while 'initialized' not in self.peer.methods and time.monotonic() < deadline:
+            time.sleep(.01)
         self.assertEqual(self.peer.methods, ['initialize', 'initialized'], 'OBSERVE_REJECTED_CONNECTION')
         self.assertTrue(warning.called, 'OBSERVE_WARNING_MISSING')
         messages = [c.args[0] % c.args[1:] for c in warning.call_args_list]
