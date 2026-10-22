@@ -252,8 +252,10 @@ func TestAccountRegisterValidationOverHTTP(t *testing.T) {
 // 管理停用受引用守卫；普通用户调管理路由 403 forbidden_role。
 func TestAdminAccountRoutes(t *testing.T) {
 	r := mkAcctRig(t)
-	// api_key 不在本装配的联动表里——直接走服务层以属主 bob 登记（HTTP 登记的联动校验另有 P7）
-	if _, err := r.pool.RegisterOwned(context.Background(), "bob", "bob-api", "api_key", "codex", "gpt", "sk-adminview-9876"); err != nil {
+	const adminViewSecret = "sk-adminview-9876"
+	// api_key 不在本装配的联动表里——直接走服务层以属主 bob 登记（HTTP 登记的联动校验另有 P7）。
+	// 合法元数据也可含 9876（这里固定在名称里，账号 ID 仍可随机），不能扫描裸后四位判泄漏。
+	if _, err := r.pool.RegisterOwned(context.Background(), "bob", "bob-api-9876", "api_key", "codex", "gpt", adminViewSecret); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 	lst := r.list("admin", "/api/console/admin/llm-accounts")
@@ -262,7 +264,7 @@ func TestAdminAccountRoutes(t *testing.T) {
 	}
 	for _, it := range lst {
 		raw, _ := json.Marshal(it)
-		if _, has := it["last4"]; has || bytes.Contains(raw, []byte("9876")) || bytes.Contains(raw, []byte("sk-")) {
+		if _, has := it["last4"]; has || bytes.Contains(raw, []byte(adminViewSecret)) || bytes.Contains(raw, []byte("sk-")) {
 			t.Fatalf("管理列表不得含 last4／密钥片段: %s", raw)
 		}
 		if it["owner"] == nil || it["state"] == nil || it["in_use"] == nil {
