@@ -1,0 +1,16 @@
+test_resource_lock_and_receipt_are_independent_reclaim_gates (test_pce_retention.RetainTests.test_resource_lock_and_receipt_are_independent_reclaim_gates) ... FAIL
+
+======================================================================
+FAIL: test_resource_lock_and_receipt_are_independent_reclaim_gates (test_pce_retention.RetainTests.test_resource_lock_and_receipt_are_independent_reclaim_gates)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_pce_retention.py", line 277, in test_resource_lock_and_receipt_are_independent_reclaim_gates
+    self.denied('SHARED_RESOURCE_LOCK_IGNORED',lambda:self.ret.reclaim(pin['id'],self.state),'retain_busy')
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : SHARED_RESOURCE_LOCK_IGNORED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.022s
+
+FAILED (failures=1)

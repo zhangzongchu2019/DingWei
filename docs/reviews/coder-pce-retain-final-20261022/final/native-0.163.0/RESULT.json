@@ -1,0 +1,88 @@
+{
+  "version": "0.163.0",
+  "binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215",
+  "source": "0407342abd31daa7ef8bc06e46c89fba26fbbc08",
+  "start": "2026-10-22T23:26:11.051705+00:00",
+  "scope": "ISOLATED_NATIVE_OWNER_AND_CONTROLLED_PTY",
+  "passed": true,
+  "fixture_producer_reaped": true,
+  "fixture_local_turns": 1,
+  "thread_id": "01a165ef-b74d-7823-a2ed-34fadf19a347",
+  "double_start_single_owner_single_child": true,
+  "owner_pid": 3601525,
+  "helper_fresh_process_reuses_owner": true,
+  "child_exit_same_id_resumed": true,
+  "initial": {
+    "ok": true,
+    "state": "ready",
+    "child": {
+      "pid": 3601535,
+      "starttime": 50247059
+    },
+    "generation": 1,
+    "endpoint": {
+      "kind": "native_alias",
+      "alias": [
+        64,
+        11511983
+      ],
+      "target": [
+        64,
+        3674152
+      ],
+      "directory": [
+        64,
+        3018524
+      ]
+    },
+    "pin": "bdd8cd6e2e84414d05b2d9d5f6aeae50",
+    "boot": "d618c27fbcabe364fd3bae4518929f79",
+    "challenge": "02debb7def2d8ee25cde4021615a7069"
+  },
+  "replacement": {
+    "ok": true,
+    "state": "ready",
+    "child": {
+      "pid": 3601664,
+      "starttime": 50247110
+    },
+    "generation": 2,
+    "endpoint": {
+      "kind": "native_alias",
+      "alias": [
+        64,
+        11511983
+      ],
+      "target": [
+        64,
+        3674152
+      ],
+      "directory": [
+        64,
+        3018524
+      ]
+    },
+    "pin": "bdd8cd6e2e84414d05b2d9d5f6aeae50",
+    "boot": "d618c27fbcabe364fd3bae4518929f79",
+    "challenge": "c9e7c31353a946266e5b7f10567dd8b9"
+  },
+  "controlled_resume_command": [
+    "/tmp/coder-stale-official-followup/0.163.0/codex",
+    "--remote",
+    "unix:///tmp/codex-daemon-1001/7b691423a7a99d3f15d10f696cde5ef49ef0e68dc52cfe1e5685c274be4c2527",
+    "resume",
+    "01a165ef-b74d-7823-a2ed-34fadf19a347"
+  ],
+  "controlled_real_pty_resume_same_id": true,
+  "pty_exitstatus": 0,
+  "stop": {
+    "ok": true,
+    "state": "stopped",
+    "pin": "bdd8cd6e2e84414d05b2d9d5f6aeae50",
+    "pin_nonce": "ee8d3376337ec08c4f0942d178c65c2c",
+    "boot": "d618c27fbcabe364fd3bae4518929f79",
+    "challenge": "6151adf5b8b14c191b54213b1e96d9ef"
+  },
+  "owner_clean_stop": true,
+  "end": "2026-10-22T23:26:14.175640+00:00"
+}

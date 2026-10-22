@@ -1,0 +1,16 @@
+test_any_package_or_runtime_change_requires_manual (test_pce_retention.RetainTests.test_any_package_or_runtime_change_requires_manual) ... FAIL
+
+======================================================================
+FAIL: test_any_package_or_runtime_change_requires_manual (test_pce_retention.RetainTests.test_any_package_or_runtime_change_requires_manual)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_pce_retention.py", line 137, in test_any_package_or_runtime_change_requires_manual
+    self.denied('OWNER_CLOSURE_CHANGED',lambda:self.ret.check(candidate),'manual_required')
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : OWNER_CLOSURE_CHANGED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+FAILED (failures=1)

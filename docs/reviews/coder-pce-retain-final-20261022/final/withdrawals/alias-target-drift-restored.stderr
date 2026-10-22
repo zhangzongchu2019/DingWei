@@ -1,0 +1,6 @@
+test_target_replaced_after_resolution_is_refused_and_not_unlinked (test_private_endpoint.NativeAlias.test_target_replaced_after_resolution_is_refused_and_not_unlinked) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.104s
+
+OK

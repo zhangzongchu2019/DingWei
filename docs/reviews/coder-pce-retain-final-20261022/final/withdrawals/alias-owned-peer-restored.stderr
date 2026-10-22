@@ -1,0 +1,6 @@
+test_wrong_peer_pid_or_starttime_is_rejected_before_http (test_private_endpoint.NativeAlias.test_wrong_peer_pid_or_starttime_is_rejected_before_http) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.105s
+
+OK

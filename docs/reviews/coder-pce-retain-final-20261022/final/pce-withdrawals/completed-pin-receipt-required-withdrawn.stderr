@@ -1,0 +1,16 @@
+test_bad_completed_pin_state_cannot_disable_update_protection (test_pce_retention.RetainTests.test_bad_completed_pin_state_cannot_disable_update_protection) ... FAIL
+
+======================================================================
+FAIL: test_bad_completed_pin_state_cannot_disable_update_protection (test_pce_retention.RetainTests.test_bad_completed_pin_state_cannot_disable_update_protection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_pce_retention.py", line 301, in test_bad_completed_pin_state_cannot_disable_update_protection
+    self.denied('BAD_COMPLETED_PIN_ALLOWED_UPDATE',lambda:self.ret.check(self.factory),'retain_stop')
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_pce_retention.py", line 47, in denied
+    with self.assertRaises(guard.UpdateError,msg=marker) as error:fn()
+AssertionError: UpdateError not raised : BAD_COMPLETED_PIN_ALLOWED_UPDATE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.017s
+
+FAILED (failures=1)

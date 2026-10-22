@@ -1,0 +1,17 @@
+test_wrong_peer_pid_or_starttime_is_rejected_before_http (test_private_endpoint.NativeAlias.test_wrong_peer_pid_or_starttime_is_rejected_before_http) ... /tmp/dwpe-g-399kzqqk/t/4/dwpe-check-efyelesx/helper/tests/test_private_endpoint.py:258: ResourceWarning: unclosed <socket.socket fd=9, family=1, type=1, proto=0, raddr=/tmp/pe-n-crs2f9ik/n/1111111111111111111111111111111111111111111111111111111111111111>
+  ep.app_socket(self.spec, owned, allow_new_alias=True)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+FAIL
+
+======================================================================
+FAIL: test_wrong_peer_pid_or_starttime_is_rejected_before_http (test_private_endpoint.NativeAlias.test_wrong_peer_pid_or_starttime_is_rejected_before_http)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-399kzqqk/t/4/dwpe-check-efyelesx/helper/tests/test_private_endpoint.py", line 257, in test_wrong_peer_pid_or_starttime_is_rejected_before_http
+    with self.assertRaises(ep.DaemonIdentityError, msg='ALIAS_WRONG_PEER_ACCEPTED') as caught:
+AssertionError: DaemonIdentityError not raised : ALIAS_WRONG_PEER_ACCEPTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.105s
+
+FAILED (failures=1)

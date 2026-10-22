@@ -1,0 +1,6 @@
+test_new_guard_no_pin_prepare_ignores_busy_transaction_lock (test_self_update_offer.OfferTests.test_new_guard_no_pin_prepare_ignores_busy_transaction_lock) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.598s
+
+OK

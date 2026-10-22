@@ -1,0 +1,6 @@
+test_stopped_pin_collision_requires_explicit_reclaim_first (test_pce_retention.RetainTests.test_stopped_pin_collision_requires_explicit_reclaim_first) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.024s
+
+OK

@@ -1,0 +1,11 @@
+{
+  "task": "S-PCE-UPDATER-RETAIN final legacy rework",
+  "base_commit": "d74f92ddd22eefdcebad7a0e7b01ca89d229d5b7",
+  "source_commit": "0407342abd31daa7ef8bc06e46c89fba26fbbc08",
+  "source_tree": "6d26cfdf35382579492a35e1c2bdc7d9186695e2",
+  "source_tag": "evidence/coder/pce-retain-final-6d26cfdf",
+  "gate_directory": "final",
+  "new_mutations": 42,
+  "deployment": false,
+  "private_enabled": false
+}

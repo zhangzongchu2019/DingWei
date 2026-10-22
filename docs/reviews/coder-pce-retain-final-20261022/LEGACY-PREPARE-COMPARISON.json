@@ -1,0 +1,40 @@
+{
+  "utc": "2026-10-22T23:27:06.115208+00:00",
+  "baseline": "29e63f9963dedcc32010ca89265d78ba12664bf2",
+  "successor": "0407342abd31daa7ef8bc06e46c89fba26fbbc08",
+  "scope": "actual prepare/download/verify/stage/arm with loopback HTTP and synthetic credentials; not Hub or online seat",
+  "rows": [
+    {
+      "case": "group-writable-parent",
+      "source": "r37",
+      "stage": "installed",
+      "restart": true,
+      "retain_created": false,
+      "pending": "job-synthetic"
+    },
+    {
+      "case": "group-writable-parent",
+      "source": "successor",
+      "stage": "installed",
+      "restart": true,
+      "retain_created": false,
+      "pending": "job-synthetic"
+    },
+    {
+      "case": "busy-unused-retain-lock",
+      "source": "r37",
+      "stage": "installed",
+      "restart": true,
+      "retain_created": false,
+      "pending": "job-synthetic"
+    },
+    {
+      "case": "busy-unused-retain-lock",
+      "source": "successor",
+      "stage": "installed",
+      "restart": true,
+      "retain_created": false,
+      "pending": "job-synthetic"
+    }
+  ]
+}

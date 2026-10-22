@@ -1,0 +1,16 @@
+test_duplicate_helper_cannot_take_writer_but_restart_can (test_private_endpoint.Control.test_duplicate_helper_cannot_take_writer_but_restart_can) ... FAIL
+
+======================================================================
+FAIL: test_duplicate_helper_cannot_take_writer_but_restart_can (test_private_endpoint.Control.test_duplicate_helper_cannot_take_writer_but_restart_can)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-399kzqqk/t/4/dwpe-check-efyelesx/helper/tests/test_private_endpoint.py", line 415, in test_duplicate_helper_cannot_take_writer_but_restart_can
+    self.reject('binding', lambda: self.client.admission(peer).__enter__())
+  File "/tmp/dwpe-g-399kzqqk/t/4/dwpe-check-efyelesx/helper/tests/test_private_endpoint.py", line 39, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_binding
+
+----------------------------------------------------------------------
+Ran 1 test in 0.060s
+
+FAILED (failures=1)

@@ -1,0 +1,31 @@
+test_legacy_no_retain_group_writable_parent_unchanged (test_pce_retention.RetainTests.test_legacy_no_retain_group_writable_parent_unchanged) ... FAIL
+
+======================================================================
+FAIL: test_legacy_no_retain_group_writable_parent_unchanged (test_pce_retention.RetainTests.test_legacy_no_retain_group_writable_parent_unchanged)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_pce_retention.py", line 53, in legacy_selection_and_arm
+    self.assertEqual(self.state.select(), (self.factory, None), marker)
+                     ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/update_launcher/guard.py", line 478, in select
+    with retention.transaction(if_present=True) as retain_fd:
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/update_launcher/guard.py", line 177, in locked
+    raise UpdateError('retain_invalid')
+update_launcher.guard.UpdateError: retain_invalid
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_pce_retention.py", line 62, in test_legacy_no_retain_group_writable_parent_unchanged
+    self.legacy_selection_and_arm('LEGACY_GROUP_PARENT_REJECTED')
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_pce_retention.py", line 57, in legacy_selection_and_arm
+    self.fail(marker + ': ' + str(exc))
+AssertionError: LEGACY_GROUP_PARENT_REJECTED: retain_invalid
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

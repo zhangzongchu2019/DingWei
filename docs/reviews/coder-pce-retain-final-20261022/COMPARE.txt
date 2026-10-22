@@ -1,0 +1,31 @@
+from pathlib import Path
+import sys,types,subprocess,os,fcntl,json
+from datetime import datetime,timezone
+sys.path[:0]=[str(Path.cwd()/'tools/sessionhelper'),str(Path.cwd()/'tools/sessionhelper/tests')]
+import test_self_update_offer as tests
+baseline='29e63f9963dedcc32010ca89265d78ba12664bf2'
+rows=[]
+for case in ('group-writable-parent','busy-unused-retain-lock'):
+ for source in ('r37','successor'):
+  fixture=tests.OfferTests(methodName='runTest');fixture.setUp();fd=None
+  try:
+   updater=fixture.updater
+   if source=='r37':
+    (fixture.mount/'helper_update_guard.py').write_bytes(subprocess.check_output(['git','show',baseline+':tools/sessionhelper/update_launcher/guard.py']))
+    mod=types.ModuleType('sessionhelper._baseline_updater');mod.__package__='sessionhelper'
+    raw=subprocess.check_output(['git','show',baseline+':tools/sessionhelper/sessionhelper/self_update.py'])
+    exec(compile(raw,'<git:r37:self_update.py>','exec'),mod.__dict__);mod.__version__='0.2.3.1'
+    updater=mod.SelfUpdater(fixture.cfg,fixture.provisioner.validate_source,'agent.owner',launcher=str(fixture.mount/'helper_update_guard.py'),allow_loopback=True)
+   if case.startswith('group'):Path(fixture.fixture.tmp.name).chmod(0o775)
+   else:
+    fd=os.open(updater.state.root/'retain.txn.lock',os.O_CREAT|os.O_RDWR,0o600);fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+   _,stage,restart=updater.prepare(fixture.env)
+   row=dict(case=case,source=source,stage=stage,restart=restart,retain_created=os.path.lexists(updater.state.root/'retain'),pending=updater.state.read()['pending']['job_id'])
+   assert row['stage']=='installed' and row['restart'] is True and not row['retain_created']
+   rows.append(row)
+  finally:
+   if fd is not None:os.close(fd)
+   fixture.doCleanups()
+result=dict(utc=datetime.now(timezone.utc).isoformat(),baseline=baseline,successor='0407342abd31daa7ef8bc06e46c89fba26fbbc08',scope='actual prepare/download/verify/stage/arm with loopback HTTP and synthetic credentials; not Hub or online seat',rows=rows)
+p=Path('docs/reviews/coder-pce-retain-final-20261022/LEGACY-PREPARE-COMPARISON.json');p.write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps(rows))

@@ -1,0 +1,14 @@
+test_updater_root_must_match_launcher_update_root_if_bound (test_self_update_offer.OfferTests.test_updater_root_must_match_launcher_update_root_if_bound) ... FAIL
+
+======================================================================
+FAIL: test_updater_root_must_match_launcher_update_root_if_bound (test_self_update_offer.OfferTests.test_updater_root_must_match_launcher_update_root_if_bound)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_self_update_offer.py", line 87, in test_updater_root_must_match_launcher_update_root_if_bound
+    with self.assertRaisesRegex(UpdateRejected,'^manual_required$',msg='UPDATER_RETAIN_ROOT_MISMATCH_ACCEPTED'):
+AssertionError: UpdateRejected not raised : UPDATER_RETAIN_ROOT_MISMATCH_ACCEPTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.563s
+
+FAILED (failures=1)

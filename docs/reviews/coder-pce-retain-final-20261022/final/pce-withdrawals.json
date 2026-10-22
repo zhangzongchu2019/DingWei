@@ -1,0 +1,18 @@
+{
+  "label": "pce-withdrawals",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python",
+    "-B",
+    "tests/pce-retention/check.py",
+    "/data/ai-dev-data/pce-updater-retain-impl/docs/reviews/coder-pce-retain-final-20261022/final/pce-withdrawals"
+  ],
+  "source": "0407342abd31daa7ef8bc06e46c89fba26fbbc08",
+  "start": "2026-10-22T23:24:04.035915+00:00",
+  "end": "2026-10-22T23:26:07.242791+00:00",
+  "rc": 0,
+  "isolated_profile": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h5",
+    "TMPDIR": "/tmp/dwpe-g-399kzqqk/t/5",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h5/.cache"
+  }
+}

@@ -1,0 +1,34 @@
+test_new_guard_no_pin_prepare_ignores_busy_transaction_lock (test_self_update_offer.OfferTests.test_new_guard_no_pin_prepare_ignores_busy_transaction_lock) ... FAIL
+
+======================================================================
+FAIL: test_new_guard_no_pin_prepare_ignores_busy_transaction_lock (test_self_update_offer.OfferTests.test_new_guard_no_pin_prepare_ignores_busy_transaction_lock)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_self_update_offer.py", line 93, in legacy_prepare_without_retain
+    _, stage, restart = self.updater.prepare(self.env)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/sessionhelper/self_update.py", line 187, in prepare
+    return self._prepare(env)
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/sessionhelper/self_update.py", line 268, in _prepare
+    with self.retention_transaction() as (retention, retain_fd):
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/sessionhelper/self_update.py", line 215, in retention_transaction
+    raise UpdateRejected(str(exc)) from None
+sessionhelper.self_update.UpdateRejected: retain_busy
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_self_update_offer.py", line 110, in test_new_guard_no_pin_prepare_ignores_busy_transaction_lock
+    self.legacy_prepare_without_retain('LEGACY_PREPARE_WAITED_FOR_UNUSED_LOCK')
+  File "/tmp/dwpe-g-399kzqqk/t/5/dwpe-check-46nck4r7/helper/tests/test_self_update_offer.py", line 95, in legacy_prepare_without_retain
+    self.fail(marker + ': ' + str(exc))
+AssertionError: LEGACY_PREPARE_WAITED_FOR_UNUSED_LOCK: retain_busy
+
+----------------------------------------------------------------------
+Ran 1 test in 3.599s
+
+FAILED (failures=1)

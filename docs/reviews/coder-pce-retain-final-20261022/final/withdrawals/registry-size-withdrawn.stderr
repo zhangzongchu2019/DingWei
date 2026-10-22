@@ -1,0 +1,16 @@
+test_registry_permissions_symlink_hardlink_and_size_refused (test_private_endpoint.Paths.test_registry_permissions_symlink_hardlink_and_size_refused) ... FAIL
+
+======================================================================
+FAIL: test_registry_permissions_symlink_hardlink_and_size_refused (test_private_endpoint.Paths.test_registry_permissions_symlink_hardlink_and_size_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/dwpe-g-399kzqqk/t/4/dwpe-check-efyelesx/helper/tests/test_private_endpoint.py", line 97, in test_registry_permissions_symlink_hardlink_and_size_refused
+    self.reject('registry', lambda: ep.read_json(fd, ep.REGISTRY))
+  File "/tmp/dwpe-g-399kzqqk/t/4/dwpe-check-efyelesx/helper/tests/test_private_endpoint.py", line 39, in reject
+    with self.assertRaises(ep.PrivateEndpointError, msg='PRIVATE_ACCEPTED_' + reason) as caught:
+AssertionError: PrivateEndpointError not raised : PRIVATE_ACCEPTED_registry
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+FAILED (failures=1)

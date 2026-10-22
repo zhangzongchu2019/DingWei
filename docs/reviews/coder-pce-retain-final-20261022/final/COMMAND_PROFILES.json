@@ -1,0 +1,62 @@
+{
+  "go-full": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h0",
+    "TMPDIR": "/tmp/gdc0lsd5h",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h0/.cache"
+  },
+  "vet": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h1",
+    "TMPDIR": "/tmp/dwpe-g-399kzqqk/t/1",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h1/.cache"
+  },
+  "helper": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h2",
+    "TMPDIR": "/tmp/dwpe-g-399kzqqk/t/2",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h2/.cache"
+  },
+  "canonical": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h3",
+    "TMPDIR": "/tmp/dwpe-g-399kzqqk/t/3",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h3/.cache"
+  },
+  "withdrawals": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h4",
+    "TMPDIR": "/tmp/dwpe-g-399kzqqk/t/4",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h4/.cache"
+  },
+  "pce-withdrawals": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h5",
+    "TMPDIR": "/tmp/dwpe-g-399kzqqk/t/5",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h5/.cache"
+  },
+  "native-0161": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h6",
+    "TMPDIR": "/tmp/dwpe-g-399kzqqk/t/6",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h6/.cache"
+  },
+  "native-0163": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h7",
+    "TMPDIR": "/tmp/dwpe-g-399kzqqk/t/7",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h7/.cache"
+  },
+  "browser-admission": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h8",
+    "TMPDIR": "/tmp/dwpe-g-399kzqqk/t/8",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h8/.cache"
+  },
+  "browser-mention": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h9",
+    "TMPDIR": "/tmp/dwpe-g-399kzqqk/t/9",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h9/.cache"
+  },
+  "browser-backfill": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h10",
+    "TMPDIR": "/tmp/dwpe-g-399kzqqk/t/10",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h10/.cache"
+  },
+  "pg-prewarm": {
+    "HOME": "/tmp/dwpe-g-399kzqqk/h0",
+    "TMPDIR": "/tmp/gdc0lsd5h",
+    "XDG_CACHE_HOME": "/tmp/dwpe-g-399kzqqk/h0/.cache"
+  }
+}
