@@ -1,0 +1,16 @@
+{
+  "recognized_keys": {
+    "HUB_TEST_PG_STRICT": "unset",
+    "HUB_TEST_PG_SKIP_OK": "unset",
+    "HUB_TEST_PG_EMBEDDED": "unset",
+    "HUB_TEST_PG_DSN": "unset"
+  },
+  "irrelevant_runner_keys": {
+    "DW_TEST_EMBEDDED_PG_STRICT": "1",
+    "DW_TEST_PG_SKIP_OK": "0"
+  },
+  "effective_behavior": "embedded allowed and environment failure fails closed by repository defaults; not claiming explicit HUB_TEST_PG_STRICT=1",
+  "source": "39985004f56f28100510ba79b98f1443d93a6070",
+  "path": "internal/store/pgtest/pgtest.go",
+  "sha256": "0d84556d8b92c3027c09424d037617032dac89b39134e4fde02fac444ed46e37"
+}

@@ -1,0 +1,6 @@
+test_foreign_uid_rejected (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_foreign_uid_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

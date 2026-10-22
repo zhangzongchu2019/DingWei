@@ -1,0 +1,14 @@
+test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc) ... FAIL
+
+======================================================================
+FAIL: test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 204, in test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc
+    self.assertTrue(bad, 'REJECTION_EVENT_MISSING')
+AssertionError: [] is not true : REJECTION_EVENT_MISSING
+
+----------------------------------------------------------------------
+Ran 1 test in 0.110s
+
+FAILED (failures=1)

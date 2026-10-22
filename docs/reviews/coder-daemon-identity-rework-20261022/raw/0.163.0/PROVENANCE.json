@@ -1,0 +1,14 @@
+{
+  "version": "0.163.0",
+  "binary_sha256": "399ff69c431c066e40de318fba45c2b07f45a76b19939d247ee4828fc70c4215",
+  "binary_bytes": 296865480,
+  "prior_provenance": "docs/reviews/coder-helper-stale-thread-followup-20261022/raw/0.163.0/PROVENANCE.json",
+  "not_from_PATH": true,
+  "source": "39985004f56f28100510ba79b98f1443d93a6070",
+  "inputs": {
+    "tools/sessionhelper/sessionhelper/daemon_identity.py": "da048060f727aeaef9b343be5f183985bc5dab07e2e828b68d3d0f66d8feb539",
+    "tools/sessionhelper/sessionhelper/codexDriver.py": "7ff86b8761b4d156037ceba5a2a2642b18202b3fd2b6f51d00a46c95c30fde39",
+    "tests/daemon-identity/real_protocol.py": "7d2d68064974547e592258bc1fe3a5a4d7db2e8b95a3c22b6b693df1e3b7d284"
+  },
+  "start": "2026-10-22T18:51:00.581602+00:00"
+}

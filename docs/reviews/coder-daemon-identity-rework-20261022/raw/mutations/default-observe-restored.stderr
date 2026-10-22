@@ -1,0 +1,6 @@
+test_env_three_modes_and_invalid_snapshot (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_env_three_modes_and_invalid_snapshot) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.191s
+
+OK

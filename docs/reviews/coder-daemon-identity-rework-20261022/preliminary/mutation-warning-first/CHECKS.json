@@ -1,0 +1,69 @@
+{
+  "source": "442e3d3ae8e399084f7e485d3ef5595a97c4627d",
+  "rows": [
+    {
+      "name": "baseline",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T18:48:22.080621+00:00",
+      "end": "2026-10-22T18:48:23.193747+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "observe-continues-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects"
+      ],
+      "start": "2026-10-22T18:48:23.195389+00:00",
+      "end": "2026-10-22T18:48:23.482429+00:00",
+      "rc": 1,
+      "marker": "OBSERVE_REJECTED_CONNECTION",
+      "assertion_red": true
+    },
+    {
+      "name": "observe-continues-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects"
+      ],
+      "start": "2026-10-22T18:48:23.483614+00:00",
+      "end": "2026-10-22T18:48:23.774011+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "observe-warning-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects"
+      ],
+      "start": "2026-10-22T18:48:23.776394+00:00",
+      "end": "2026-10-22T18:48:24.056368+00:00",
+      "rc": 1,
+      "marker": "OBSERVE_WARNING_MISSING",
+      "assertion_red": false
+    }
+  ]
+}

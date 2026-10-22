@@ -1,0 +1,16 @@
+{
+  "source": "57a9d9563479d0e163d4f95427afbdcfaf0cc303",
+  "command": [
+    "sh",
+    "scripts/run-build-tests.sh"
+  ],
+  "start": "2026-10-22T18:47:57.260452+00:00",
+  "end": "2026-10-22T18:50:48.843627+00:00",
+  "rc": 0,
+  "env_i": true,
+  "isolated_HOME": true,
+  "strict_pg": true,
+  "skip_ok": false,
+  "dsn_set": false,
+  "locked_venv": "/tmp/coder-0232-locked-venv/bin/python"
+}

@@ -1,0 +1,837 @@
+{
+  "source": "39985004f56f28100510ba79b98f1443d93a6070",
+  "rows": [
+    {
+      "name": "baseline",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T18:49:10.029181+00:00",
+      "end": "2026-10-22T18:49:11.072111+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "observe-continues-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects"
+      ],
+      "start": "2026-10-22T18:49:11.076658+00:00",
+      "end": "2026-10-22T18:49:11.316563+00:00",
+      "rc": 1,
+      "marker": "OBSERVE_REJECTED_CONNECTION",
+      "assertion_red": true
+    },
+    {
+      "name": "observe-continues-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects"
+      ],
+      "start": "2026-10-22T18:49:11.318138+00:00",
+      "end": "2026-10-22T18:49:11.567031+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "observe-warning-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects"
+      ],
+      "start": "2026-10-22T18:49:11.567903+00:00",
+      "end": "2026-10-22T18:49:11.813800+00:00",
+      "rc": 1,
+      "marker": "OBSERVE_WARNING_MISSING",
+      "assertion_red": true
+    },
+    {
+      "name": "observe-warning-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects"
+      ],
+      "start": "2026-10-22T18:49:11.814085+00:00",
+      "end": "2026-10-22T18:49:12.063463+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "observe-event-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects"
+      ],
+      "start": "2026-10-22T18:49:12.066463+00:00",
+      "end": "2026-10-22T18:49:12.498259+00:00",
+      "rc": 1,
+      "marker": "OBSERVE_EVENT_MISSING",
+      "assertion_red": true
+    },
+    {
+      "name": "observe-event-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects"
+      ],
+      "start": "2026-10-22T18:49:12.501017+00:00",
+      "end": "2026-10-22T18:49:12.744781+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "enforce-rejects-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc"
+      ],
+      "start": "2026-10-22T18:49:12.746719+00:00",
+      "end": "2026-10-22T18:49:12.977645+00:00",
+      "rc": 1,
+      "marker": "WRONG_EXE_CONNECTED",
+      "assertion_red": true
+    },
+    {
+      "name": "enforce-rejects-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc"
+      ],
+      "start": "2026-10-22T18:49:12.979349+00:00",
+      "end": "2026-10-22T18:49:13.216150+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "uid-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_foreign_uid_rejected"
+      ],
+      "start": "2026-10-22T18:49:13.216666+00:00",
+      "end": "2026-10-22T18:49:13.347241+00:00",
+      "rc": 1,
+      "marker": "IDENTITY_ACCEPTED_uid_mismatch",
+      "assertion_red": true
+    },
+    {
+      "name": "uid-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_foreign_uid_rejected"
+      ],
+      "start": "2026-10-22T18:49:13.349395+00:00",
+      "end": "2026-10-22T18:49:13.469505+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "exe-inode-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_wrong_executable_and_missing_expected_file"
+      ],
+      "start": "2026-10-22T18:49:13.470796+00:00",
+      "end": "2026-10-22T18:49:13.593976+00:00",
+      "rc": 1,
+      "marker": "IDENTITY_ACCEPTED_exe_mismatch",
+      "assertion_red": true
+    },
+    {
+      "name": "exe-inode-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_wrong_executable_and_missing_expected_file"
+      ],
+      "start": "2026-10-22T18:49:13.594376+00:00",
+      "end": "2026-10-22T18:49:13.712838+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "proc-readlink-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable"
+      ],
+      "start": "2026-10-22T18:49:13.713715+00:00",
+      "end": "2026-10-22T18:49:13.833878+00:00",
+      "rc": 1,
+      "marker": "IDENTITY_ACCEPTED_exe_unverifiable",
+      "assertion_red": true
+    },
+    {
+      "name": "proc-readlink-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable"
+      ],
+      "start": "2026-10-22T18:49:13.836338+00:00",
+      "end": "2026-10-22T18:49:13.964029+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "deleted-exe-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable"
+      ],
+      "start": "2026-10-22T18:49:13.964450+00:00",
+      "end": "2026-10-22T18:49:14.087844+00:00",
+      "rc": 1,
+      "marker": "IDENTITY_ACCEPTED_exe_unverifiable",
+      "assertion_red": true
+    },
+    {
+      "name": "deleted-exe-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable"
+      ],
+      "start": "2026-10-22T18:49:14.088178+00:00",
+      "end": "2026-10-22T18:49:14.221283+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "starttime-stability-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_starttime_missing_and_process_change_rejected"
+      ],
+      "start": "2026-10-22T18:49:14.221845+00:00",
+      "end": "2026-10-22T18:49:14.343330+00:00",
+      "rc": 1,
+      "marker": "IDENTITY_ACCEPTED_process_changed",
+      "assertion_red": true
+    },
+    {
+      "name": "starttime-stability-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_starttime_missing_and_process_change_rejected"
+      ],
+      "start": "2026-10-22T18:49:14.343676+00:00",
+      "end": "2026-10-22T18:49:14.464607+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "owned-pid-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_owned_pid_starttime_and_types_are_strict"
+      ],
+      "start": "2026-10-22T18:49:14.465013+00:00",
+      "end": "2026-10-22T18:49:14.590414+00:00",
+      "rc": 1,
+      "marker": "IDENTITY_ACCEPTED_owned_pid_mismatch",
+      "assertion_red": true
+    },
+    {
+      "name": "owned-pid-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_owned_pid_starttime_and_types_are_strict"
+      ],
+      "start": "2026-10-22T18:49:14.591721+00:00",
+      "end": "2026-10-22T18:49:14.709293+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "owned-starttime-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_owned_pid_starttime_and_types_are_strict"
+      ],
+      "start": "2026-10-22T18:49:14.710176+00:00",
+      "end": "2026-10-22T18:49:14.837308+00:00",
+      "rc": 1,
+      "marker": "IDENTITY_ACCEPTED_owned_starttime_mismatch",
+      "assertion_red": true
+    },
+    {
+      "name": "owned-starttime-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_owned_pid_starttime_and_types_are_strict"
+      ],
+      "start": "2026-10-22T18:49:14.838541+00:00",
+      "end": "2026-10-22T18:49:14.967311+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "platform-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_unverifiable_peer_and_unsupported_platform"
+      ],
+      "start": "2026-10-22T18:49:14.968160+00:00",
+      "end": "2026-10-22T18:49:15.147716+00:00",
+      "rc": 1,
+      "marker": "IDENTITY_ACCEPTED_unsupported",
+      "assertion_red": true
+    },
+    {
+      "name": "platform-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_unverifiable_peer_and_unsupported_platform"
+      ],
+      "start": "2026-10-22T18:49:15.148282+00:00",
+      "end": "2026-10-22T18:49:15.315382+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "stat-parser-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_stat_parser_handles_parentheses_and_fails_closed"
+      ],
+      "start": "2026-10-22T18:49:15.315881+00:00",
+      "end": "2026-10-22T18:49:15.443789+00:00",
+      "rc": 1,
+      "marker": "BAD_PROC_STAT_ACCEPTED",
+      "assertion_red": true
+    },
+    {
+      "name": "stat-parser-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_stat_parser_handles_parentheses_and_fails_closed"
+      ],
+      "start": "2026-10-22T18:49:15.444266+00:00",
+      "end": "2026-10-22T18:49:15.567422+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "gate-call-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc"
+      ],
+      "start": "2026-10-22T18:49:15.569014+00:00",
+      "end": "2026-10-22T18:49:15.807895+00:00",
+      "rc": 1,
+      "marker": "WRONG_EXE_CONNECTED",
+      "assertion_red": true
+    },
+    {
+      "name": "gate-call-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc"
+      ],
+      "start": "2026-10-22T18:49:15.809765+00:00",
+      "end": "2026-10-22T18:49:16.057216+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "pre-handshake-order-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc"
+      ],
+      "start": "2026-10-22T18:49:16.058770+00:00",
+      "end": "2026-10-22T18:49:16.314486+00:00",
+      "rc": 1,
+      "marker": "UNVERIFIED_PEER_RECEIVED_BYTES",
+      "assertion_red": true
+    },
+    {
+      "name": "pre-handshake-order-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc"
+      ],
+      "start": "2026-10-22T18:49:16.315365+00:00",
+      "end": "2026-10-22T18:49:16.561447+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "raw-fd-close-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_fd_is_explicitly_closed_without_gc"
+      ],
+      "start": "2026-10-22T18:49:16.562898+00:00",
+      "end": "2026-10-22T18:49:16.827863+00:00",
+      "rc": 1,
+      "marker": "REJECTED_FD_OPEN",
+      "assertion_red": true
+    },
+    {
+      "name": "raw-fd-close-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_fd_is_explicitly_closed_without_gc"
+      ],
+      "start": "2026-10-22T18:49:16.828848+00:00",
+      "end": "2026-10-22T18:49:17.065672+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "rpc-reset-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc"
+      ],
+      "start": "2026-10-22T18:49:17.068041+00:00",
+      "end": "2026-10-22T18:49:17.310468+00:00",
+      "rc": 1,
+      "marker": "REJECTED_RPC_RETAINED",
+      "assertion_red": true
+    },
+    {
+      "name": "rpc-reset-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc"
+      ],
+      "start": "2026-10-22T18:49:17.311766+00:00",
+      "end": "2026-10-22T18:49:17.554670+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "owned-wiring-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_owned_binding_wired_and_foreign_instance_rejected"
+      ],
+      "start": "2026-10-22T18:49:17.556603+00:00",
+      "end": "2026-10-22T18:49:17.896942+00:00",
+      "rc": 1,
+      "marker": "OWNED_BINDING_NOT_WIRED",
+      "assertion_red": true
+    },
+    {
+      "name": "owned-wiring-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_owned_binding_wired_and_foreign_instance_rejected"
+      ],
+      "start": "2026-10-22T18:49:17.912882+00:00",
+      "end": "2026-10-22T18:49:18.104781+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "reconnect-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_enforce_real_kernel_then_initialize_and_reconnect"
+      ],
+      "start": "2026-10-22T18:49:18.105831+00:00",
+      "end": "2026-10-22T18:49:18.350441+00:00",
+      "rc": 1,
+      "marker": "RECONNECT_IDENTITY_NOT_RECHECKED",
+      "assertion_red": true
+    },
+    {
+      "name": "reconnect-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_enforce_real_kernel_then_initialize_and_reconnect"
+      ],
+      "start": "2026-10-22T18:49:18.351381+00:00",
+      "end": "2026-10-22T18:49:18.600358+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "default-observe-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_env_three_modes_and_invalid_snapshot"
+      ],
+      "start": "2026-10-22T18:49:18.603247+00:00",
+      "end": "2026-10-22T18:49:18.852325+00:00",
+      "rc": 1,
+      "marker": "IDENTITY_DEFAULT_NOT_OBSERVE",
+      "assertion_red": true
+    },
+    {
+      "name": "default-observe-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_env_three_modes_and_invalid_snapshot"
+      ],
+      "start": "2026-10-22T18:49:18.854011+00:00",
+      "end": "2026-10-22T18:49:19.181478+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "invalid-switch-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_explicit_off_is_visible_and_invalid_setting_refused"
+      ],
+      "start": "2026-10-22T18:49:19.184455+00:00",
+      "end": "2026-10-22T18:49:19.424281+00:00",
+      "rc": 1,
+      "marker": "INVALID_SWITCH_CONNECTED",
+      "assertion_red": true
+    },
+    {
+      "name": "invalid-switch-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_explicit_off_is_visible_and_invalid_setting_refused"
+      ],
+      "start": "2026-10-22T18:49:19.425789+00:00",
+      "end": "2026-10-22T18:49:19.582307+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "session-classification-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_delivery_persists_and_never_starts_thread_or_turn"
+      ],
+      "start": "2026-10-22T18:49:19.584275+00:00",
+      "end": "2026-10-22T18:49:19.825350+00:00",
+      "rc": 1,
+      "marker": "IDENTITY_NOT_SESSION_UNAVAILABLE",
+      "assertion_red": true
+    },
+    {
+      "name": "session-classification-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_delivery_persists_and_never_starts_thread_or_turn"
+      ],
+      "start": "2026-10-22T18:49:19.825998+00:00",
+      "end": "2026-10-22T18:49:20.068876+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "observable-error-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc"
+      ],
+      "start": "2026-10-22T18:49:20.070565+00:00",
+      "end": "2026-10-22T18:49:20.325950+00:00",
+      "rc": 1,
+      "marker": "REJECTION_EVENT_MISSING",
+      "assertion_red": true
+    },
+    {
+      "name": "observable-error-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc"
+      ],
+      "start": "2026-10-22T18:49:20.326701+00:00",
+      "end": "2026-10-22T18:49:20.568810+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "durable-failure-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_delivery_persists_and_never_starts_thread_or_turn"
+      ],
+      "start": "2026-10-22T18:49:20.570396+00:00",
+      "end": "2026-10-22T18:49:20.808793+00:00",
+      "rc": 1,
+      "marker": "IDENTITY_FAILURE_NOT_DURABLE",
+      "assertion_red": true
+    },
+    {
+      "name": "durable-failure-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_delivery_persists_and_never_starts_thread_or_turn"
+      ],
+      "start": "2026-10-22T18:49:20.810409+00:00",
+      "end": "2026-10-22T18:49:21.043896+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "no-replay-red",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_delivery_persists_and_never_starts_thread_or_turn"
+      ],
+      "start": "2026-10-22T18:49:21.045671+00:00",
+      "end": "2026-10-22T18:49:21.288293+00:00",
+      "rc": 1,
+      "marker": "IDENTITY_FAILURE_RETRIED",
+      "assertion_red": true
+    },
+    {
+      "name": "no-replay-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_delivery_persists_and_never_starts_thread_or_turn"
+      ],
+      "start": "2026-10-22T18:49:21.289536+00:00",
+      "end": "2026-10-22T18:49:21.531286+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    },
+    {
+      "name": "final-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "tools.sessionhelper.tests.test_daemon_identity"
+      ],
+      "start": "2026-10-22T18:49:21.532732+00:00",
+      "end": "2026-10-22T18:49:22.544456+00:00",
+      "rc": 0,
+      "marker": "",
+      "assertion_red": false
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "executable": "/tmp/coder-0232-locked-venv/bin/python",
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "packages": {
+    "websockets": "15.0.1",
+    "pexpect": "4.9.0",
+    "ptyprocess": "0.7.0",
+    "certifi": "2026.7.22"
+  },
+  "source": "b58f4e990237e6a53c26ef80518d035afd2bc458",
+  "uid": 1001,
+  "gid": 1001,
+  "host": "VM-4-12-ubuntu",
+  "cpu_count": 16,
+  "utc": "2026-10-22T18:32:43.396664+00:00",
+  "deployment": false,
+  "runtime_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+}

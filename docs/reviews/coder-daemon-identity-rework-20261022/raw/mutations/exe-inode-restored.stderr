@@ -1,0 +1,6 @@
+test_wrong_executable_and_missing_expected_file (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_wrong_executable_and_missing_expected_file) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

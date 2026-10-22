@@ -1,0 +1,33 @@
+{
+  "source": "b58f4e990237e6a53c26ef80518d035afd2bc458",
+  "base": "c78c66c2fe1ccf2ce25ecca40de3819ef7d22800",
+  "changed_non_docs": [
+    "deploy/test_build_entrypoints.py",
+    "scripts/run-build-tests.sh",
+    "tests/daemon-identity/check.py",
+    "tests/daemon-identity/real_protocol.py",
+    "tools/sessionhelper/sessionhelper/codexDriver.py",
+    "tools/sessionhelper/sessionhelper/daemon_identity.py",
+    "tools/sessionhelper/tests/test_daemon_identity.py"
+  ],
+  "unchanged_paths": [
+    "cmd",
+    "internal",
+    "view-service",
+    "VERSION",
+    "internal/version",
+    "go.mod",
+    "go.sum",
+    "tools/sessionhelper/update_launcher",
+    "tools/sessionhelper/requirements-runtime.lock",
+    "tools/sessionhelper/sessionhelper/mcp_shim.py",
+    "tools/sessionhelper/package_release.py",
+    "tools/sessionhelper/bootstrap.py"
+  ],
+  "version_unchanged": true,
+  "runtime_products": [
+    "tools/sessionhelper/sessionhelper/codexDriver.py",
+    "tools/sessionhelper/sessionhelper/daemon_identity.py"
+  ],
+  "deployment": false
+}

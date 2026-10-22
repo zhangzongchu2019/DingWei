@@ -1,0 +1,16 @@
+test_foreign_uid_rejected (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_foreign_uid_rejected) ... FAIL
+
+======================================================================
+FAIL: test_foreign_uid_rejected (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_foreign_uid_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-mutations-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 43, in test_foreign_uid_rejected
+    self.reject('uid_mismatch', sock=peer)
+  File "/tmp/coder-daemon-identity-mutations-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 28, in reject
+    with self.assertRaises(identity.DaemonIdentityError, msg='IDENTITY_ACCEPTED_' + reason) as caught:
+AssertionError: DaemonIdentityError not raised : IDENTITY_ACCEPTED_uid_mismatch
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)

@@ -1,0 +1,14 @@
+test_rejected_delivery_persists_and_never_starts_thread_or_turn (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_delivery_persists_and_never_starts_thread_or_turn) ... FAIL
+
+======================================================================
+FAIL: test_rejected_delivery_persists_and_never_starts_thread_or_turn (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_rejected_delivery_persists_and_never_starts_thread_or_turn)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-mutations-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 212, in test_rejected_delivery_persists_and_never_starts_thread_or_turn
+    self.assertIsNotNone(persisted, 'IDENTITY_FAILURE_NOT_DURABLE')
+AssertionError: unexpectedly None : IDENTITY_FAILURE_NOT_DURABLE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.106s
+
+FAILED (failures=1)

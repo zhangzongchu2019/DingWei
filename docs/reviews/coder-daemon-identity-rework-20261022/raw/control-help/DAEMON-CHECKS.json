@@ -1,0 +1,44 @@
+[
+  {
+    "version": "0.161.0",
+    "command": [
+      "/tmp/coder-stale-official-followup/0.161.0/codex",
+      "app-server",
+      "daemon",
+      "--help"
+    ],
+    "rc": 0
+  },
+  {
+    "version": "0.161.0",
+    "command": [
+      "/tmp/coder-stale-official-followup/0.161.0/codex",
+      "app-server",
+      "daemon",
+      "start",
+      "--help"
+    ],
+    "rc": 0
+  },
+  {
+    "version": "0.163.0",
+    "command": [
+      "/tmp/coder-stale-official-followup/0.163.0/codex",
+      "app-server",
+      "daemon",
+      "--help"
+    ],
+    "rc": 0
+  },
+  {
+    "version": "0.163.0",
+    "command": [
+      "/tmp/coder-stale-official-followup/0.163.0/codex",
+      "app-server",
+      "daemon",
+      "start",
+      "--help"
+    ],
+    "rc": 0
+  }
+]

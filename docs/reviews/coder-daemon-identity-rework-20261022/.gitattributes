@@ -1,0 +1,3 @@
+# Preserve raw command output bytes, including unittest progress whitespace.
+raw/** -whitespace
+preliminary/** -whitespace

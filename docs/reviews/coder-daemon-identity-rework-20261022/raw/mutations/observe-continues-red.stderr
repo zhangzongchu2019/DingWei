@@ -1,0 +1,30 @@
+test_default_observe_wrong_exe_warns_and_connects (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects) ... FAIL
+
+======================================================================
+FAIL: test_default_observe_wrong_exe_warns_and_connects (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_default_observe_wrong_exe_warns_and_connects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 280, in test_default_observe_wrong_exe_warns_and_connects
+    driver.start()
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/sessionhelper/codexDriver.py", line 703, in start
+    self._start_locked()
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/sessionhelper/codexDriver.py", line 721, in _start_locked
+    self._rpc.start()
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/sessionhelper/codexDriver.py", line 373, in start
+    self.peer_identity = verify_peer(self._sock, self._expected_exe, self._owned_identity)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/sessionhelper/daemon_identity.py", line 116, in verify_peer
+    raise DaemonIdentityError('exe_mismatch')
+sessionhelper.daemon_identity.DaemonIdentityError: daemon_identity_exe_mismatch
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 282, in test_default_observe_wrong_exe_warns_and_connects
+    self.fail('OBSERVE_REJECTED_CONNECTION')
+AssertionError: OBSERVE_REJECTED_CONNECTION
+
+----------------------------------------------------------------------
+Ran 1 test in 0.119s
+
+FAILED (failures=1)

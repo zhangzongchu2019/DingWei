@@ -1,0 +1,14 @@
+test_stat_parser_handles_parentheses_and_fails_closed (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_stat_parser_handles_parentheses_and_fails_closed) ... FAIL
+
+======================================================================
+FAIL: test_stat_parser_handles_parentheses_and_fails_closed (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_stat_parser_handles_parentheses_and_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 101, in test_stat_parser_handles_parentheses_and_fails_closed
+    with self.assertRaises(identity.DaemonIdentityError, msg='BAD_PROC_STAT_ACCEPTED'):
+AssertionError: DaemonIdentityError not raised : BAD_PROC_STAT_ACCEPTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)

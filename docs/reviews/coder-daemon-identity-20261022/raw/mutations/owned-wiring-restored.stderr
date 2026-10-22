@@ -1,0 +1,9 @@
+test_owned_binding_wired_and_foreign_instance_rejected (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_owned_binding_wired_and_foreign_instance_rejected) ... Exception in thread Thread-2 (handle):
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+OK

@@ -1,0 +1,14 @@
+test_env_default_one_zero_and_invalid_snapshot (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_env_default_one_zero_and_invalid_snapshot) ... FAIL
+
+======================================================================
+FAIL: test_env_default_one_zero_and_invalid_snapshot (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_env_default_one_zero_and_invalid_snapshot)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-mutations-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 278, in test_env_default_one_zero_and_invalid_snapshot
+    self.assertIs(drv._daemon_identity_check, True, 'IDENTITY_DEFAULT_NOT_ON')
+AssertionError: False is not True : IDENTITY_DEFAULT_NOT_ON
+
+----------------------------------------------------------------------
+Ran 1 test in 0.101s
+
+FAILED (failures=1)

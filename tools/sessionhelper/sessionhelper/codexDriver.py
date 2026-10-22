@@ -26,6 +26,7 @@ from typing import Iterator, Optional
 
 from .sqlite_utils import connection as sqlite_connection
 from .config import env_get
+from .daemon_identity import DaemonIdentityError, OwnedDaemonIdentity, verify_peer
 from .contract import (
     Capabilities,
     DeliveryReceipt,
@@ -77,6 +78,8 @@ class ThreadUnavailable(RuntimeError):
 
 
 def _error_class(exc: Exception, thread_id: str = "") -> str:
+    if isinstance(exc, DaemonIdentityError):
+        return "daemon_identity_" + exc.reason
     if isinstance(exc, JsonRpcError):
         return exc.classify(thread_id)
     if isinstance(exc, TimeoutError):
@@ -338,8 +341,15 @@ class StdioJsonRpc:
 class UnixWebSocketJsonRpc:
     """JSON-RPC over a WebSocket carried by the daemon's Unix control socket."""
 
-    def __init__(self, socket_path: str):
+    def __init__(self, socket_path: str, *, identity_check: str = "observe",
+                 expected_exe: str | None = None,
+                 owned_identity: OwnedDaemonIdentity | None = None):
         self._socket_path = socket_path
+        self._identity_check = identity_check
+        self._expected_exe = expected_exe if expected_exe is not None else _CODEX_BIN
+        self._owned_identity = owned_identity
+        self.peer_identity = None
+        self.identity_warning = None
         self._sock: socket.socket | None = None
         self._next_id = 1
         self._write_lock = threading.Lock()
@@ -352,27 +362,50 @@ class UnixWebSocketJsonRpc:
         self._stop.clear()
         self._reader_dead.clear()
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self._sock.connect(self._socket_path)
-        key = base64.b64encode(os.urandom(16)).decode("ascii")
-        request = (
-            "GET / HTTP/1.1\r\n"
-            "Host: localhost\r\n"
-            "Upgrade: websocket\r\n"
-            "Connection: Upgrade\r\n"
-            f"Sec-WebSocket-Key: {key}\r\n"
-            "Sec-WebSocket-Version: 13\r\n"
-            "\r\n"
-        ).encode("ascii")
-        self._sock.sendall(request)
-        response = b""
-        while b"\r\n\r\n" not in response:
-            chunk = self._sock.recv(4096)
-            if not chunk:
-                raise RuntimeError("websocket handshake closed before response")
-            response += chunk
-        if b" 101 " not in response.split(b"\r\n", 1)[0]:
-            raise RuntimeError(f"websocket handshake failed: {response[:300]!r}")
-        threading.Thread(target=self._read_loop, daemon=True).start()
+        self.peer_identity = None
+        self.identity_warning = None
+        try:
+            self._sock.connect(self._socket_path)
+            if self._identity_check not in ('observe', 'enforce', 'off'):
+                raise DaemonIdentityError('invalid_switch')
+            if self._identity_check != 'off':
+                try:
+                    self.peer_identity = verify_peer(self._sock, self._expected_exe, self._owned_identity)
+                except DaemonIdentityError as exc:
+                    if self._identity_check == 'enforce':
+                        raise
+                    self.identity_warning = exc.reason
+                    log.warning('codex_daemon_identity_observe warning=daemon_identity_%s identity_scope=unverified', exc.reason)
+            else:
+                log.warning('codex_daemon_identity_disabled identity_scope=unchecked')
+            key = base64.b64encode(os.urandom(16)).decode("ascii")
+            request = (
+                "GET / HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                f"Sec-WebSocket-Key: {key}\r\n"
+                "Sec-WebSocket-Version: 13\r\n"
+                "\r\n"
+            ).encode("ascii")
+            self._sock.sendall(request)
+            response = b""
+            while b"\r\n\r\n" not in response:
+                chunk = self._sock.recv(4096)
+                if not chunk:
+                    raise RuntimeError("websocket handshake closed before response")
+                response += chunk
+            if b" 101 " not in response.split(b"\r\n", 1)[0]:
+                raise RuntimeError(f"websocket handshake failed: {response[:300]!r}")
+            threading.Thread(target=self._read_loop, daemon=True).start()
+
+        except Exception:
+            # No WS close message on a connection that failed admission.
+            self._stop.set()
+            self._reader_dead.set()
+            self._sock.close()
+            self._sock = None
+            raise
 
     def stop(self) -> None:
         self._stop.set()
@@ -534,6 +567,9 @@ class CodexProtocolDriver(Driver):
         ephemeral: bool = False,
         stall_timeout: float = ACCEPTED_STALL_TIMEOUT,
         view_item_backfill: bool = False,
+        daemon_identity_check: str | None = None,
+        daemon_expected_exe: str | None = None,
+        owned_daemon_identity: OwnedDaemonIdentity | None = None,
     ):
         self._workdir = workdir
         self._transport_mode = transport_mode
@@ -545,6 +581,13 @@ class CodexProtocolDriver(Driver):
             replay_verified=replay_verified,
         )
         self._manage_daemon = manage_daemon
+        switch = (env_get('SH_CODEX_DAEMON_IDENTITY_CHECK', 'observe')
+                  if daemon_identity_check is None else daemon_identity_check)
+        self._daemon_identity_check = switch if type(switch) is str else ''
+        self._daemon_expected_exe = daemon_expected_exe if daemon_expected_exe is not None else (env_get('SH_CODEX_DAEMON_EXE') or _CODEX_BIN)
+        # This is a trusted launcher API, never a PID guessed from process lists
+        # or supplied by an unverified pidfile/environment variable.
+        self._owned_daemon_identity = owned_daemon_identity
         self._model = model
         self._model_provider = model_provider
         self._sandbox = sandbox
@@ -674,12 +717,45 @@ class CodexProtocolDriver(Driver):
 
     def _start_locked(self) -> None:
         if self._transport_mode == "daemon_ws":
-            if self._manage_daemon:
-                self._start_daemon()
-            socket_path = self._daemon_socket_path()
-            self._rpc = UnixWebSocketJsonRpc(socket_path)
-            self._rpc.start()
-            self._initialize()
+            self._initialized = False
+            self._verified_binding = None
+            self._rpc = None
+            try:
+                if self._manage_daemon:
+                    # Current CLI returns no verifiable daemon PID contract.
+                    # Do not confuse its short-lived start command with daemon.
+                    self._start_daemon()
+                socket_path = self._daemon_socket_path()
+                self._rpc = UnixWebSocketJsonRpc(socket_path,
+                    identity_check=self._daemon_identity_check,
+                    expected_exe=self._daemon_expected_exe,
+                    owned_identity=self._owned_daemon_identity)
+                self._rpc.start()
+                self._initialize()
+                peer = self._rpc.peer_identity
+                if self._rpc.identity_warning is not None:
+                    self._emit_event(SessionEvent(kind='state_change',
+                        text='daemon_identity_' + self._rpc.identity_warning,
+                        data={'change': 'daemon_identity_observed',
+                              'identity_mode': 'observe', 'identity_scope': 'unverified',
+                              'error_class': 'daemon_identity_' + self._rpc.identity_warning}))
+                if peer is not None:
+                    self._emit_event(SessionEvent(kind='state_change',
+                        data={'change': 'daemon_identity_verified',
+                              'identity_mode': self._daemon_identity_check, **peer.metadata()}))
+            except Exception as exc:
+                if self._rpc is not None:
+                    self._rpc.stop()
+                self._rpc = None
+                self._initialized = False
+                self._verified_binding = None
+                if isinstance(exc, DaemonIdentityError):
+                    detail = _failure_detail('session_unavailable', exc)
+                    self._emit_event(SessionEvent(kind='error', text=detail,
+                        data={'reason': 'session_unavailable',
+                              'change': 'daemon_identity_rejected',
+                              'error_class': 'daemon_identity_' + exc.reason}))
+                raise
             self._stop_event.clear()
             self._event_thread = threading.Thread(target=self._pump_notifications, daemon=True)
             self._event_thread.start()
@@ -737,7 +813,10 @@ class CodexProtocolDriver(Driver):
                     detail=existing.detail or f"persistent idempotency hit: turn={existing.turn_id}",
                 )
             if not self.health():
-                self.start()
+                try:
+                    self.start()
+                except DaemonIdentityError as exc:
+                    return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
             # Do not replace the connection between validation and turn/start.
             with self._start_lock:
                 if not self._thread_id:

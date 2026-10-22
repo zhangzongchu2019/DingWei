@@ -1,0 +1,16 @@
+test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable) ... FAIL
+
+======================================================================
+FAIL: test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-mutations-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 74, in test_proc_exe_missing_deleted_or_stat_denied_is_unverifiable
+    self.reject('exe_unverifiable')
+  File "/tmp/coder-daemon-identity-mutations-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 28, in reject
+    with self.assertRaises(identity.DaemonIdentityError, msg='IDENTITY_ACCEPTED_' + reason) as caught:
+AssertionError: DaemonIdentityError not raised : IDENTITY_ACCEPTED_exe_unverifiable
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)

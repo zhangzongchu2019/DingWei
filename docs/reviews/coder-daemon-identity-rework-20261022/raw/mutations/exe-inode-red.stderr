@@ -1,0 +1,16 @@
+test_wrong_executable_and_missing_expected_file (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_wrong_executable_and_missing_expected_file) ... FAIL
+
+======================================================================
+FAIL: test_wrong_executable_and_missing_expected_file (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_wrong_executable_and_missing_expected_file)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 55, in test_wrong_executable_and_missing_expected_file
+    self.reject('exe_mismatch', expected_exe='/bin/true')
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 28, in reject
+    with self.assertRaises(identity.DaemonIdentityError, msg='IDENTITY_ACCEPTED_' + reason) as caught:
+AssertionError: DaemonIdentityError not raised : IDENTITY_ACCEPTED_exe_mismatch
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)

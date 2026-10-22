@@ -1,0 +1,15 @@
+test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc) ... codex_daemon_identity_observe warning=daemon_identity_exe_mismatch identity_scope=unverified
+FAIL
+
+======================================================================
+FAIL: test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 196, in test_wrong_exe_has_zero_handshake_bytes_and_unhealthy_closed_rpc
+    with self.assertRaises(identity.DaemonIdentityError, msg='WRONG_EXE_CONNECTED'):
+AssertionError: DaemonIdentityError not raised : WRONG_EXE_CONNECTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.108s
+
+FAILED (failures=1)

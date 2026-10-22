@@ -1,0 +1,27 @@
+{
+  "executable": "/tmp/coder-0232-locked-venv/bin/python",
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "packages": {
+    "websockets": "15.0.1",
+    "pexpect": "4.9.0",
+    "ptyprocess": "0.7.0",
+    "certifi": "2026.7.22"
+  },
+  "source": "39985004f56f28100510ba79b98f1443d93a6070",
+  "uid": 1001,
+  "gid": 1001,
+  "host": "VM-4-12-ubuntu",
+  "cpu_count": 16,
+  "utc": "2026-10-22T18:51:45.285165+00:00",
+  "deployment": false,
+  "runtime_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "go_version": "go version go1.22.2 linux/amd64",
+  "kernel": "7.0.0-30-generic",
+  "pg_env_receipt": "PG-ENVIRONMENT.json",
+  "modes": [
+    "observe",
+    "enforce",
+    "off"
+  ],
+  "default_mode": "observe"
+}

@@ -1,0 +1,15 @@
+test_enforce_real_kernel_then_initialize_and_reconnect (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_enforce_real_kernel_then_initialize_and_reconnect) ... codex_daemon_identity_disabled identity_scope=unchecked
+FAIL
+
+======================================================================
+FAIL: test_enforce_real_kernel_then_initialize_and_reconnect (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_enforce_real_kernel_then_initialize_and_reconnect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 185, in test_enforce_real_kernel_then_initialize_and_reconnect
+    self.assertEqual(check.call_count, 2, 'RECONNECT_IDENTITY_NOT_RECHECKED')
+AssertionError: 1 != 2 : RECONNECT_IDENTITY_NOT_RECHECKED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.113s
+
+FAILED (failures=1)

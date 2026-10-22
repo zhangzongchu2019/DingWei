@@ -1,0 +1,3 @@
+# Preserve raw unittest output, including its trailing spaces.
+raw/** -whitespace
+preliminary/** -whitespace

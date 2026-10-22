@@ -1,0 +1,14 @@
+test_explicit_off_is_visible_and_invalid_setting_refused (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_explicit_off_is_visible_and_invalid_setting_refused) ... FAIL
+
+======================================================================
+FAIL: test_explicit_off_is_visible_and_invalid_setting_refused (tools.sessionhelper.tests.test_daemon_identity.DaemonWiring.test_explicit_off_is_visible_and_invalid_setting_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 241, in test_explicit_off_is_visible_and_invalid_setting_refused
+    with self.assertRaises(identity.DaemonIdentityError, msg='INVALID_SWITCH_CONNECTED'):
+AssertionError: DaemonIdentityError not raised : INVALID_SWITCH_CONNECTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.115s
+
+FAILED (failures=1)

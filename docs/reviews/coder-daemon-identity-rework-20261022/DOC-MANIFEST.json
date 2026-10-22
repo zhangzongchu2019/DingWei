@@ -1,0 +1,12 @@
+[
+  {
+    "path": "docs/designs/S-HELPER-DAEMON-IDENTITY.md",
+    "sha256": "caa32bcbd5ca7c50ede2b44017bc6121a2f6801150a98a6f95ba9f1a1b0178b8",
+    "bytes": 3480
+  },
+  {
+    "path": "docs/runbooks/helper-daemon-identity.md",
+    "sha256": "4d068de82ce6a2759de8e3010b2bfc912872856f42f0129deb95a282f7f3071b",
+    "bytes": 4622
+  }
+]

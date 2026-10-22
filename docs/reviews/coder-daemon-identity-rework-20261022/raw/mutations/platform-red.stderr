@@ -1,0 +1,16 @@
+test_unverifiable_peer_and_unsupported_platform (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_unverifiable_peer_and_unsupported_platform) ... FAIL
+
+======================================================================
+FAIL: test_unverifiable_peer_and_unsupported_platform (tools.sessionhelper.tests.test_daemon_identity.PeerChecks.test_unverifiable_peer_and_unsupported_platform)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 52, in test_unverifiable_peer_and_unsupported_platform
+    self.reject('unsupported')
+  File "/tmp/coder-daemon-identity-rework-mutations-v2-20261022/worktree/tools/sessionhelper/tests/test_daemon_identity.py", line 28, in reject
+    with self.assertRaises(identity.DaemonIdentityError, msg='IDENTITY_ACCEPTED_' + reason) as caught:
+AssertionError: DaemonIdentityError not raised : IDENTITY_ACCEPTED_unsupported
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)

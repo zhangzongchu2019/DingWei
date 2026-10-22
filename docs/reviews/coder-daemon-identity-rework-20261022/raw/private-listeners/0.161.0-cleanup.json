@@ -1,0 +1,12 @@
+[
+  {
+    "label": "helper-a",
+    "pid": 3228558,
+    "reaped": true
+  },
+  {
+    "label": "helper-b",
+    "pid": 3228628,
+    "reaped": true
+  }
+]

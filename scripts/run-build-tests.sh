@@ -16,6 +16,7 @@ tools/sessionhelper/tests/test_update_release_core.py
 tools/sessionhelper/tests/test_legacy_mcp_entry.py
 tools/sessionhelper/tests/test_sqlite_connection_lifetime.py
 tools/sessionhelper/tests/test_codex_stale_thread.py
+tools/sessionhelper/tests/test_daemon_identity.py
 tools/sessionhelper/tests/test_mcp_shim_transport_errors.py
 tools/sessionhelper/tests/test_update_core_review_regressions.py
 tools/sessionhelper/tests/test_self_update_offer.py
@@ -86,4 +87,4 @@ printf '%s\n' "$SHELL_TESTS" | while IFS= read -r test_file; do
   echo "TEST shell $test_file"
   bash "$test_file"
 done
-echo 'BUILD_TESTS_OK python=58 shell=2'
+echo 'BUILD_TESTS_OK python=59 shell=2'
