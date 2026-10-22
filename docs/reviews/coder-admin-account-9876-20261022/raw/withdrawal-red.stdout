@@ -1,0 +1,9 @@
+{"Time":"2026-10-22T17:57:43.751136963Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse"}
+{"Time":"2026-10-22T17:57:43.756121736Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Test":"TestAdminAccountRoutes"}
+{"Time":"2026-10-22T17:57:43.756149153Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Test":"TestAdminAccountRoutes","Output":"=== RUN   TestAdminAccountRoutes\n"}
+{"Time":"2026-10-22T17:57:45.689762126Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Test":"TestAdminAccountRoutes","Output":"    hosted_accounts_test.go:268: 管理列表不得含 last4／密钥片段: {\"cli\":\"codex\",\"created_at\":\"2026-10-22T17:57:45Z\",\"id\":\"acct_ae7381f27294929b\",\"in_use\":0,\"kind\":\"api_key\",\"llm\":\"gpt\",\"method\":\"api_key\",\"name\":\"bob-api-9876\",\"owner\":\"bob\",\"state\":\"available\"}\n"}
+{"Time":"2026-10-22T17:57:46.313717521Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Test":"TestAdminAccountRoutes","Output":"--- FAIL: TestAdminAccountRoutes (2.56s)\n"}
+{"Time":"2026-10-22T17:57:46.313757217Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Test":"TestAdminAccountRoutes","Elapsed":2.56}
+{"Time":"2026-10-22T17:57:46.313768486Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Output":"FAIL\n"}
+{"Time":"2026-10-22T17:57:46.314732692Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/cmd/workpulse\t2.563s\n"}
+{"Time":"2026-10-22T17:57:46.31475294Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/cmd/workpulse","Elapsed":2.564}

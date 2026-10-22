@@ -1,0 +1,11 @@
+{
+  "utc": "2026-10-22T18:00:22.393357+00:00",
+  "uid": 1001,
+  "gid": 1001,
+  "host": "VM-4-12-ubuntu",
+  "source": "8084f76ab3e4a153fc6e0420040d7c591d5a46bb",
+  "base": "c78c66c2fe1ccf2ce25ecca40de3819ef7d22800",
+  "go": "1.22.2",
+  "test_scope": "cmd/workpulse only; isolated HOME/TMPDIR; embedded PG strict; no external DSN",
+  "production_change": false
+}
