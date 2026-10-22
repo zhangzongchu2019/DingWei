@@ -21,3 +21,11 @@ func (m *MultiGateway) ReplyApplication(issuer string) (string, bool) {
 	}
 	return g.ReplyApplication(issuer)
 }
+
+// BotChannelIDs enumerates configured native issuers without exposing secrets.
+func (g *LarkGateway) BotChannelIDs() []string {
+	if g == nil || g.botChannelID == "" {
+		return nil
+	}
+	return []string{g.botChannelID}
+}

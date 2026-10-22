@@ -113,6 +113,7 @@ type FeishuReplyMetadata struct {
 	RootID        string `json:"root_id"`
 	MessageType   string `json:"message_type"`
 	Tenant        string `json:"tenant"`
+	SenderTenant  string `json:"sender_tenant,omitempty"`
 	AppID         string `json:"app_id"`
 	ChatID        string `json:"chat_id"`
 	SenderType    string `json:"sender_type"`

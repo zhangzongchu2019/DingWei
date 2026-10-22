@@ -54,3 +54,42 @@ func TestClarificationReplyRequiresPinnedTenantAndNativeCapability(t *testing.T)
 		}
 	}
 }
+
+func TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping(t *testing.T) {
+	for _, mapping := range []string{"", `{"native":"tenant-one"}`} {
+		t.Run(mapping, func(t *testing.T) {
+			t.Setenv("DW_SPEC_CLARIFICATION_FEISHU_TENANTS_JSON", mapping)
+			native, err := feishu.NewLarkGateway("native", "app-one", "SYNTHETIC-ONLY", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			other, err := feishu.NewLarkGateway("other", "app-two", "SYNTHETIC-ONLY", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, gateway := range []feishu.Gateway{native, feishu.NewMultiGateway(native, other)} {
+				h := &m8.Hub{SpecClarificationFeishuReplyEnabled: true}
+				if err = configureClarificationReplyAuthority(h, gateway); err != nil {
+					t.Fatal(err)
+				}
+				expected := ""
+				if mapping != "" {
+					expected = "tenant-one"
+				}
+				if a, ok := h.ClarificationReplyAuthorities["native"]; !ok || a.AppID != "app-one" || a.Tenant != expected || h.ClarificationReceiptSender == nil {
+					t.Fatal("SINGLE_TENANT_NATIVE_STARTUP_UNAVAILABLE", h.ClarificationReplyAuthorities)
+				}
+				if _, multi := gateway.(*feishu.MultiGateway); multi {
+					if a, ok := h.ClarificationReplyAuthorities["other"]; !ok || a.AppID != "app-two" || a.Tenant != "" {
+						t.Fatal("SINGLE_TENANT_PER_ISSUER_FALLBACK_LOST")
+					}
+				}
+			}
+		})
+	}
+	t.Setenv("DW_SPEC_CLARIFICATION_FEISHU_TENANTS_JSON", "")
+	h := &m8.Hub{SpecClarificationFeishuReplyEnabled: true}
+	if err := configureClarificationReplyAuthority(h, feishu.Stub{}); err != nil || len(h.ClarificationReplyAuthorities) != 0 || h.ClarificationReceiptSender != nil {
+		t.Fatal("SINGLE_TENANT_UNVERIFIED_FALLBACK_ENABLED")
+	}
+}

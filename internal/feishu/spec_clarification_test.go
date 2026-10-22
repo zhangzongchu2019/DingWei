@@ -61,3 +61,11 @@ func TestClarificationWebhookNeverClaimsReplyAuthority(t *testing.T) {
 		}
 	}
 }
+
+func TestSingleTenantSDKPreservesSenderTenantForAudit(t *testing.T) {
+	g := &LarkGateway{botChannelID: "bot-one", appID: "app-one"}
+	m, err := g.messageFromEvent(clarificationEvent())
+	if err != nil || m.FeishuReply == nil || m.FeishuReply.SenderTenant != "tenant-one" || m.FeishuReply.Tenant != "tenant-one" {
+		t.Fatal("SINGLE_TENANT_SDK_SENDER_EVIDENCE_LOST", err)
+	}
+}

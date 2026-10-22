@@ -38,6 +38,27 @@ func clarificationBinding(id identity.Identity, authority ClarificationReplyAuth
 	return store.ClarificationBinding{Issuer: id.Issuer, Subject: id.Subject, AppID: authority.AppID, Tenant: authority.Tenant, BindingSHA: fmt.Sprintf("%x", sha256.Sum256(raw))}
 }
 
+// Resolve tenant only from authenticated native metadata and this issuer's
+// configured application. A nonempty operator pin always remains mandatory.
+func (h *Hub) clarificationReplyAuthority(msg model.Message) (ClarificationReplyAuthority, bool) {
+	authority, ready := h.ClarificationReplyAuthorities[msg.BotChannelID]
+	r := msg.FeishuReply
+	if !ready || r == nil || !r.Authenticated || msg.IngressProvenance != model.IngressFeishuWSAuthenticated || authority.AppID == "" || r.AppID != authority.AppID || strings.TrimSpace(r.Tenant) != r.Tenant || len(r.Tenant) > 256 || strings.ContainsAny(r.Tenant, "\x00\r\n") {
+		return ClarificationReplyAuthority{}, false
+	}
+	if authority.Tenant != "" {
+		if r.Tenant != authority.Tenant {
+			return ClarificationReplyAuthority{}, false
+		}
+	} else {
+		if r.Tenant == "" || r.SenderTenant != r.Tenant {
+			return ClarificationReplyAuthority{}, false
+		}
+		authority.Tenant = r.Tenant
+	}
+	return authority, true
+}
+
 var clarificationCorrection = regexp.MustCompile(`^更正(?:第)?[ \t]*([1-9][0-9]{0,17})(?:条)?[：: \n]+([\s\S]+)$`)
 
 func parseClarificationReply(text string) (store.ClarificationUpdate, error) {
@@ -97,8 +118,8 @@ func (h *Hub) dispatchClarificationReply(ctx context.Context, msg model.Message,
 		return model.PrefixDispatchResult{}, false, nil
 	}
 	matched := model.PrefixDispatchResult{Matched: true}
-	authority, ready := h.ClarificationReplyAuthorities[msg.BotChannelID]
-	if !ready || !r.Authenticated || msg.IngressProvenance != model.IngressFeishuWSAuthenticated || r.Tenant != authority.Tenant || r.AppID != authority.AppID {
+	_, ready := h.clarificationReplyAuthority(msg)
+	if !ready {
 		return matched, true, nil
 	}
 	in, err := repo.StageClarificationInbound(ctx, msg, text, h.now())
@@ -158,8 +179,8 @@ func (h *Hub) recordClarificationInbound(ctx context.Context, repo clarification
 		h.sendClarificationReceipt(ctx, repo, in, "未入帖：当前身份、通知或条目已变化，请登录 Console 核对。")
 		return nil
 	}
-	authority, ready := h.ClarificationReplyAuthorities[in.Message.BotChannelID]
-	if !h.SpecClarificationEnabled || !h.SpecClarificationFeishuReplyEnabled || !ready || !r.Authenticated || r.Tenant != authority.Tenant || r.AppID != authority.AppID {
+	authority, ready := h.clarificationReplyAuthority(in.Message)
+	if !h.SpecClarificationEnabled || !h.SpecClarificationFeishuReplyEnabled || !ready {
 		return reject("reply_disabled_or_authority_changed")
 	}
 	if h.Identity == nil {

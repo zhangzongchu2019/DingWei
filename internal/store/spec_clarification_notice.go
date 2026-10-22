@@ -24,7 +24,7 @@ type ClarificationNotice struct {
 
 func (s *SQLite) PrepareClarificationNotice(ctx context.Context, expected QuestionContext, n QuestionNotice, b ClarificationBinding, check func() error, now time.Time) (ClarificationNotice, error) {
 	var out ClarificationNotice
-	if check == nil || b.Issuer == "" || b.Tenant == "" || b.AppID == "" || b.Subject == "" || len(b.BindingSHA) != 64 || n.Kind == "remind_60m" {
+	if check == nil || b.Issuer == "" || b.AppID == "" || b.Subject == "" || len(b.BindingSHA) != 64 || n.Kind == "remind_60m" {
 		return out, ErrTaskFlowInvalid
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -97,7 +97,35 @@ func scanClarificationNotice(row rowScanner) (ClarificationNotice, error) {
 // Exact parent is the ONLY positive lookup. The weaker known-parent/root
 // lookup below is exclusively a consume/reject guard, never an authorization.
 func (s *SQLite) ClarificationNoticeByParent(ctx context.Context, issuer, tenant, parent string) (ClarificationNotice, error) {
-	return scanClarificationNotice(s.db.QueryRowContext(ctx, `SELECT `+clarificationNoticeCols+` FROM spec_clarification_notice WHERE issuer=? AND tenant=? AND provider_message_id=? AND provider_message_id<>''`, issuer, tenant, parent))
+	// Empty tenant is an app-bound notice prepared before a verified SDK event
+	// revealed its tenant. Exact parent remains mandatory; ambiguity fails closed.
+	if tenant == "" || parent == "" {
+		return ClarificationNotice{}, ErrTaskFlowInvalid
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT `+clarificationNoticeCols+` FROM spec_clarification_notice WHERE issuer=? AND (tenant=? OR tenant='') AND provider_message_id=? AND provider_message_id<>'' LIMIT 2`, issuer, tenant, parent)
+	if err != nil {
+		return ClarificationNotice{}, err
+	}
+	defer rows.Close()
+	var found ClarificationNotice
+	count := 0
+	for rows.Next() {
+		found, err = scanClarificationNotice(rows)
+		if err != nil {
+			return ClarificationNotice{}, err
+		}
+		count++
+	}
+	if err = rows.Err(); err != nil {
+		return ClarificationNotice{}, err
+	}
+	if count == 0 {
+		return ClarificationNotice{}, sql.ErrNoRows
+	}
+	if count != 1 {
+		return ClarificationNotice{}, ErrTaskFlowConflict
+	}
+	return found, nil
 }
 func (s *SQLite) IsKnownClarificationReply(ctx context.Context, issuer, parent, root string) (bool, error) {
 	var n int

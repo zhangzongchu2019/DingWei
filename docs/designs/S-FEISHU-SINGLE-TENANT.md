@@ -1,0 +1,13 @@
+# S-FEISHU-SINGLE-TENANT（第95条，Hub-only）
+
+基r34 c61866cd。不改变helper、VERSION、运行时锁、三开关默认值或SDK验签入口；只使用已认证原生SDK路径，Fake／Stub／FCS代理不新增权限。
+
+启动时从原生gateway枚举本机当前配置的issuer，以ReplyApplication确认对应AppID。映射存在则仍保存严格Tenant pin，空值／坏配置仍启动失败；未配置该issuer时保存AppID＋空Tenant，表示仅允许由可信原生事件提供tenant。回复处理和延迟对账均重核：原生认证与provenance、当前issuer AppID、非空合法header tenant、与SDK sender tenant完全相等。明确映射绝不被事件值覆盖；已配置路径兼容r34旧持久化metadata没有sender字段的记录。
+
+现有通知也依赖tenant，故必须同步解开前置：未知tenant时仍为已核PM身份／binding SHA／当前应用／政策与修订／条目创建通知快照，Tenant暂为空。回信只匹配该issuer的准确parent，不能凭root猜测；查询可匹配同tenant或尚未绑定tenant的通知，多条候选即冲突拒绝。入帖事务只在原快照Tenant为空时用已核事件tenant补全比较值，其他绑定字段与PG锁、PM本人、政策／修订／有效期、双ID去重、D2唤醒限额全部保留。通知快照不被修改为隐式租户配置，也不凭首次事件为全issuer自动设pin。
+
+审计沿用0062已存在的spec_clarification_inbound.tenant与metadata_json；新增SDK sender tenant字段自动随可信metadata落库，message.feishu_reply_json也按原持久化逻辑保留。无新迁移、无PG表变更。tenant是审计标识，不是凭据；真实值不写开发夹具或报告。普通客户端JSON不能构造FeishuReply（外层json:"-"），未认证webhook不能提供此权限。
+
+验收含无映射通知→PM回信→追加／重放、空tenant／不等sender／错AppID、明确映射不符、sender空、空白／超长／控制字符、原生issuer接线、非原生关闭、延迟回信时AppID／pin改变、SQLite审计重读、歧义parent拒绝及既有全部clarification门；每个新增判定有指定撤修红和恢复绿。全仓Go、vet、canonical按本地隔离证据交付；现网验收仍由组长／prodops只在现有dw123和DingWei本组安排，不占dataConnector。
+
+回滚：schema不变，旧Hub可读新增JSON字段（忽略未知字段）。旧版无法处理空tenant通知；回退前关闭相关试点出入站、冻结新增clarification写入并对账在途项，不能承诺旧版继续处理这些通知，也不能清去重账本后重放。已入帖与tenant审计保留；如未来采用严格映射，从审计中由管理员核对后填写并重启，不自动把审计值变为授权配置。新字段会参与新事件摘要，跨版本重复投递若摘要不同将失败关闭，不据此新建帖子。未配置映射的历史pending记录若缺sender证据，不猜补可信字段，须保留明确pin或重新收到可信SDK事件后按冲突／对账流程处理。

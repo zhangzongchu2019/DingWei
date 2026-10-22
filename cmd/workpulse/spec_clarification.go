@@ -29,15 +29,28 @@ func configureClarificationReplyAuthority(h *m8.Hub, gateway feishu.Gateway) err
 		}
 	}
 	capable, ok := gateway.(interface{ ReplyApplication(string) (string, bool) })
+	issuers := map[string]bool{}
 	for issuer, tenant := range tenants {
 		if issuer == "" || len(issuer) > 256 || tenant == "" || len(tenant) > 256 || strings.TrimSpace(issuer) != issuer || strings.TrimSpace(tenant) != tenant || strings.ContainsAny(issuer+tenant, "\x00\r\n") {
 			return errors.New("invalid clarification authority identity")
 		}
+		issuers[issuer] = true
+	}
+	// Missing mapping is supported only for configured native SDK issuers.
+	// FCS/proxy/Fake/Stub cannot manufacture this verified capability.
+	if native, listed := gateway.(interface{ BotChannelIDs() []string }); ok && listed {
+		for _, issuer := range native.BotChannelIDs() {
+			if issuer != "" && len(issuer) <= 256 && strings.TrimSpace(issuer) == issuer && !strings.ContainsAny(issuer, "\x00\r\n") {
+				issuers[issuer] = true
+			}
+		}
+	}
+	for issuer := range issuers {
 		if !ok {
 			continue
-		} // No verified reply capability: no authority, no fallback.
+		}
 		if app, ready := capable.ReplyApplication(issuer); ready && app != "" && len(app) <= 256 && strings.TrimSpace(app) == app && !strings.ContainsAny(app, "\x00\r\n") {
-			h.ClarificationReplyAuthorities[issuer] = m8.ClarificationReplyAuthority{AppID: app, Tenant: tenant}
+			h.ClarificationReplyAuthorities[issuer] = m8.ClarificationReplyAuthority{AppID: app, Tenant: tenants[issuer]}
 		}
 	}
 	if !ok || !h.SpecClarificationFeishuReplyEnabled {
