@@ -46,11 +46,11 @@ def main(expected,output):
     from update_launcher.cwd_import import render_hook
     artifact=scratch/'candidate.tgz';pin=package_release.build(ROOT,expected,artifact)
     old=types.ModuleType('old_verifier')
-    old_source=subprocess.check_output(['git','show','b5faf73c:tools/sessionhelper/package_release.py'],cwd=ROOT)
-    exec(compile(old_source,'<git:b5faf73c>','exec'),old.__dict__)
+    old_source=subprocess.check_output(['git','show','29e63f99:tools/sessionhelper/package_release.py'],cwd=ROOT)
+    exec(compile(old_source,'<git:29e63f99>','exec'),old.__dict__)
     manifest,files=old.verify(artifact)
     assert not any(name.endswith('.pth') for name in files),'HOOK_LEAKED_IN_UPGRADE_ARCHIVE'
-    (out/'PACKAGE.json').write_text(json.dumps(dict(pin=pin,old_verifier='b5faf73c',members=sorted(files),
+    (out/'PACKAGE.json').write_text(json.dumps(dict(pin=pin,baseline_verifier='29e63f99',members=sorted(files),
         lock_sha256=hashlib.sha256(lock.read_bytes()).hexdigest(),hook_outside_archive=True),indent=2)+'\n')
     hook=render_hook('/opt/dingwei/sessionhelper-src','/opt/dingwei/sessionhelper-venv/bin/python')
     (out/'EXAMPLE-HOOK.pth').write_bytes(hook)
