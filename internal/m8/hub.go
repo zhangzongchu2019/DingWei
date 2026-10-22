@@ -75,6 +75,7 @@ type Hub struct {
 	L2Config                 L2Config
 	ViewPageUnlocker         ViewPageUnlocker
 	consoleAuthEnabled       bool
+	pmSpecFlowEnabled        bool
 	// consoleHostedEnabled 只在服务端实际挂载托管路由后置 true；页面据此决定是否渲染托管区。
 	// 未挂路由时保持 false，避免回滚/降级部署向用户暴露一个必然 404 的坏入口。
 	consoleHostedEnabled bool
@@ -246,6 +247,7 @@ type sessionClient struct {
 	blockerNoticeV1 bool
 	blockerWakeV1   bool
 	specReviewV1    bool
+	pmSpecFlowV1    bool
 	helperUpdateV1  bool // authenticated helper explicitly supports update_self v1
 	desktopInboxV1  bool
 	helperReady     bool
@@ -379,6 +381,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 		onboardInterval:               envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
 		newSessionNotice:              true,
 		consoleAuthEnabled:            consoleAuthMode.Enabled(),
+		pmSpecFlowEnabled:             strings.TrimSpace(os.Getenv("DW_PM_SPEC_FLOW_ENABLED")) == "1",
 		L2Config: L2Config{
 			Workers:             4,
 			PollInterval:        200 * time.Millisecond,
@@ -1349,6 +1352,10 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		delete(env.Meta, "source_session_name")
 		delete(env.Meta, hubIngressMetaKey)
 		env.Meta[hubIngressMetaKey] = hubIngressAgent
+		if metaString(env.Meta, "type") == "console_spec_pm_assist_result" {
+			h.handlePMSpecAssistResult(r.Context(), metaString(env.Meta, "request_id"), c, env.Body)
+			continue
+		}
 		if h.handleSpecAgentReviewResult(r.Context(), c, env) {
 			continue
 		}
@@ -4351,6 +4358,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	c.blockerNoticeV1 = metaBool(env.Meta, "blocker_notice_v1")
 	c.blockerWakeV1 = metaBool(env.Meta, "blocker_wake_v1")
 	c.specReviewV1 = metaBool(env.Meta, "spec_review_v1")
+	c.pmSpecFlowV1 = metaBool(env.Meta, "pm_spec_flow_v1")
 	c.helperUpdateV1 = metaBool(env.Meta, "helper_update_v1")
 	c.desktopInboxV1 = metaBool(env.Meta, "desktop_inbox_v1") && metaString(env.Meta, "processed_semantics") == "saved_to_desktop_inbox"
 	c.stateMu.Unlock()

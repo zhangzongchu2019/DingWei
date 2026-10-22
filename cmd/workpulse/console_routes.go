@@ -60,6 +60,30 @@ var _ httpapi.Mux = (*http.ServeMux)(nil)
 
 // registerSpecTaskRoutes specs 与 task-board 两组功能的全部路由（页面、console 接口、Agent capability 接口、共享链接）。新旧平台都注册。
 func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
+	// PM spec flow is deliberately dark unless DW_PM_SPEC_FLOW_ENABLED=1.
+	mux.HandleFunc("GET /console/pm-specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandlePMSpecFlowPage)))
+	mux.HandleFunc("GET /api/console/pm-spec-flow/drafts", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandlePMSpecWorkingDraft)))
+	mux.HandleFunc("GET /api/console/pm-spec-flow/drafts/{specID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandlePMSpecWorkingDraft)))
+	mux.HandleFunc("POST /api/console/pm-spec-flow/drafts", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandlePMSpecWorkingDraft)))
+	mux.HandleFunc("POST /api/console/pm-spec-flow/drafts/{specID}/freeze", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandlePMSpecFlowFreeze)))
+	mux.HandleFunc("POST /api/console/pm-spec-flow/drafts/{specID}/assist", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", func(w http.ResponseWriter, r *http.Request) {
+		r.SetPathValue("action", "start")
+		prefixHub.HandlePMSpecAssistAction(w, r)
+	})))
+	mux.HandleFunc("GET /api/console/pm-spec-flow/drafts/{specID}/assist/{requestID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", func(w http.ResponseWriter, r *http.Request) {
+		r.SetPathValue("action", "get")
+		prefixHub.HandlePMSpecAssistAction(w, r)
+	})))
+	mux.HandleFunc("POST /api/console/pm-spec-flow/drafts/{specID}/assist/{requestID}/decisions", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", func(w http.ResponseWriter, r *http.Request) {
+		r.SetPathValue("action", "decide")
+		prefixHub.HandlePMSpecAssistAction(w, r)
+	})))
+	mux.HandleFunc("POST /api/agent/console/pm-spec-assist-requests/{requestID}/result", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentPMSpecAssistResult))
+	mux.HandleFunc("GET /api/agent/console/pm-spec-assist-requests/{requestID}", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentPMSpecAssistRequest))
+	mux.HandleFunc("POST /api/console/pm-spec-flow/drafts/{specID}/return", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", func(w http.ResponseWriter, r *http.Request) {
+		r.SetPathValue("action", "return")
+		prefixHub.HandlePMSpecAssistAction(w, r)
+	})))
 	mux.HandleFunc("GET /console/specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleSpecsPage)))
 	// The task board lives in the Console workspace. Keep the old page URL only
 	// as a non-cached compatibility entrance; do not retain a parallel nav page.

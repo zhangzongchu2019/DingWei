@@ -39,7 +39,7 @@ func specReviewEnvelopeType(env model.Envelope) string {
 	return metaString(env.Meta, "type")
 }
 func specReviewType(t string) bool {
-	return t == "console_spec_review_request" || t == "console_spec_criteria_request"
+	return t == "console_spec_review_request" || t == "console_spec_criteria_request" || t == "console_spec_pm_assist_request"
 }
 func specAgentError(w http.ResponseWriter, e error) {
 	status := 503
@@ -400,6 +400,9 @@ func (h *Hub) HandleAgentSpecReview(w http.ResponseWriter, r *http.Request) {
 }
 func (h *Hub) handleSpecAgentReviewResult(ctx context.Context, c *sessionClient, env model.Envelope) bool {
 	typ := metaString(env.Meta, "type")
+	if typ == "console_spec_pm_assist_result" {
+		return h.handlePMSpecAssistResult(ctx, metaString(env.Meta, "request_id"), c, env.Body)
+	}
 	if typ != "console_spec_review_result" && typ != "console_spec_criteria_result" {
 		return false
 	}

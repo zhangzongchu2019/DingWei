@@ -1660,13 +1660,14 @@ func (h *Hub) HandleConsoleAgents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	type item struct {
+		ID      string `json:"id"`
 		Session string `json:"session"`
 		Online  bool   `json:"online"`
 	}
 	out := make([]item, 0, len(agents))
 	h.mu.Lock()
 	for _, a := range agents {
-		out = append(out, item{a.SessionName, h.sessionClients[a.KeyID] != nil && h.sessionClients[a.KeyID][a.SessionName] != nil})
+		out = append(out, item{ID: a.ID, Session: a.SessionName, Online: h.sessionClients[a.KeyID] != nil && h.sessionClients[a.KeyID][a.SessionName] != nil})
 	}
 	h.mu.Unlock()
 	w.Header().Set("Content-Type", "application/json")
