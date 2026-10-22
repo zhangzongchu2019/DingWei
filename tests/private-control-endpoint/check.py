@@ -51,6 +51,25 @@ MUTATIONS = [
     ('stop-idle-only', PRIVATE, "or thread.get('status', {}).get('type') != 'idle'", 'or False', 'Lifecycle.test_stop_requires_human_confirmation_and_idle_native_proof', 'PRIVATE_ACCEPTED_busy'),
     ('private-enforce-only', DRIVER, "if self._daemon_identity_check != 'enforce' or self._manage_daemon is not True:", 'if self._manage_daemon is not True:', 'DriverWiring.test_private_observe_cannot_reach_transport_even_with_valid_peer', 'PRIVATE_ACCEPTED_config'),
     ('stop-reader-partial-frame', DRIVER, 'chunk = sock.recv(n - len(chunks))', 'chunk = self._sock.recv(n - len(chunks))', 'DriverWiring.test_stop_during_partial_frame_uses_captured_socket_or_oserror', "has no attribute 'recv'"),
+    ('alias-before-popen', PRIVATE, "if exists(self.fd, APP):\n            fail('dirty')", "if False:\n            fail('dirty')", 'NativeAlias.test_preexisting_alias_stops_before_popen_and_unbound_alias_cannot_connect', 'PREEXISTING_ALIAS_SPAWNED'),
+    ('alias-exact-target', PRIVATE, 'if not os.path.isabs(value) or os.fsencode(value) != os.fsencode(destination):', 'if False:', 'NativeAlias.test_outside_relative_and_wrong_digest_alias_are_refused', 'PRIVATE_ACCEPTED_path'),
+    ('alias-target-uid', PRIVATE, 'or target.st_uid != os.getuid()', 'or False', 'NativeAlias.test_target_and_native_directory_permissions_are_hard_gates', 'PRIVATE_ACCEPTED_permissions'),
+    ('alias-target-mode', PRIVATE, ('or stat.S_IMODE(target.st_mode) != 0o600', 'or stat.S_IMODE(info.st_mode) != 0o600):'), ('or False', 'or False):'), 'NativeAlias.test_target_and_native_directory_permissions_are_hard_gates', 'PRIVATE_ACCEPTED_permissions'),
+    ('alias-directory-mode', PRIVATE, 'or stat.S_IMODE(item.st_mode) != 0o700', 'or False', 'NativeAlias.test_target_and_native_directory_permissions_are_hard_gates', 'PRIVATE_ACCEPTED_permissions'),
+    ('alias-directory-uid', PRIVATE, 'or item.st_uid != os.getuid()', 'or False', 'NativeAlias.test_target_and_native_directory_permissions_are_hard_gates', 'PRIVATE_ACCEPTED_permissions'),
+    ('alias-derived-hash', PRIVATE, 'name = hashlib.sha256(os.fsencode(requested)).hexdigest()', "name = '0' * 64", 'NativeAlias.test_native_location_uses_canonical_request_bytes_and_fixed_uid_root', 'NATIVE_LOCATION_HASH_DRIFT'),
+    ('alias-directory-no-follow', PRIVATE, ('parent_fd = os.open(parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)', 'current = os.stat(parent, follow_symlinks=False)'), ('parent_fd = os.open(parent, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC)', 'current = os.stat(parent, follow_symlinks=True)'), 'NativeAlias.test_native_directory_symlink_is_not_followed', 'PRIVATE_ACCEPTED_path'),
+    ('alias-owned-peer', PRIVATE, 'verify_peer(sock, spec.expected_exe, binding)', 'pass', 'NativeAlias.test_wrong_peer_pid_or_starttime_is_rejected_before_http', 'ALIAS_WRONG_PEER_ACCEPTED'),
+    ('alias-inode-drift', PRIVATE, 'if inode(os.stat(APP, dir_fd=fd, follow_symlinks=False)) != inode(alias):', 'if False:', 'NativeAlias.test_alias_replaced_after_resolution_is_refused', 'PRIVATE_ACCEPTED_path'),
+    ('alias-target-drift', PRIVATE, 'if socket_identity(parent_fd, name) != current.target:', 'if False:', 'NativeAlias.test_target_replaced_after_resolution_is_refused_and_not_unlinked', 'PRIVATE_ACCEPTED_path'),
+    ('alias-owned-anchors', PRIVATE, 'retain_anchors.append(os.dup(anchor_fd))', 'pass', 'NativeAlias.test_cleanup_cannot_remove_replaced_alias', 'ALIAS_ANCHORS_NOT_RETAINED'),
+    ('alias-connect-target', PRIVATE, 'sock.connect(str(destination))', 'sock.connect(str(spec.root / APP))', 'NativeAlias.test_readlink_once_and_connects_only_calculated_target', 'ALIAS_REUSED_FOR_CONNECT'),
+    ('current-binding-owner-boot', PRIVATE, "or value.get('boot') != current['boot']", 'or False', 'Control.test_old_owner_or_config_cannot_supply_current_thread_hint', 'PRIVATE_ACCEPTED_binding'),
+    ('current-binding-config', PRIVATE, "value.get('config') != self.spec.fingerprint()", 'False', 'Control.test_old_owner_or_config_cannot_supply_current_thread_hint', 'PRIVATE_ACCEPTED_binding'),
+    ('current-binding-no-reassign', PRIVATE, 'if previous and previous != thread_id:', 'if False:', 'Control.test_current_thread_hint_survives_writer_restart_but_is_not_reassigned', 'PRIVATE_ACCEPTED_binding'),
+    ('human-only-current-binding', PRIVATE, 'if self.bound_thread(require_writer=False) != thread_id:', 'if False:', 'Control.test_human_resume_is_explicit_id_and_live_owner_only', 'PRIVATE_ACCEPTED_binding'),
+    ('private-quiet-stream', DRIVER, 'self._sock.settimeout(None)', 'pass', 'RealOwnerProcess.test_double_start_helper_restart_child_exit_and_idle_stop', 'PRIVATE_RPC_IDLE_TIMEOUT'),
+    ('stop-intent-no-restart', PRIVATE, "if self.record.get('stop_requested') is True:", 'if False:', 'Lifecycle.test_late_exit_after_stop_timeout_never_auto_restarts', 'STOP_TIMEOUT_RESTARTED_CHILD'),
 ]
 
 
@@ -83,9 +102,13 @@ def run(output):
         assert row['rc'] == 0, 'CHECKER_BASELINE_FAILED'
         for name, file, old, new, case, marker in MUTATIONS:
             target = package / file; original = target.read_text()
-            assert original.count(old) == 1, 'MUTATION_TARGET_DRIFT_' + name
+            changes = list(zip(old, new)) if type(old) is tuple else [(old, new)]
+            mutated = original
+            for before, after in changes:
+                assert mutated.count(before) == 1, 'MUTATION_TARGET_DRIFT_' + name
+                mutated = mutated.replace(before, after, 1)
             try:
-                target.write_text(original.replace(old, new, 1))
+                target.write_text(mutated)
                 row, text = test(name + '-withdrawn', case)
                 red = row['rc'] != 0 and marker in text and ('FAIL:' in text or 'ERROR:' in text)
                 row['required_marker'] = marker; row['designated_red'] = red

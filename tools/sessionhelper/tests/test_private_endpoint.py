@@ -24,6 +24,7 @@ except ImportError:
     from tools.sessionhelper.tests.test_daemon_identity import LocalPeer
 
 
+@unittest.skipUnless(sys.platform == 'linux' and ep.fcntl is not None, 'private endpoint is Linux-only; legacy remains portable')
 class Fixture(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix='dwpe-')
@@ -227,6 +228,15 @@ class NativeAlias(Fixture):
             return info
         with mock.patch.object(ep.os, 'fstat', side_effect=foreign):
             self.reject('permissions', self.connect)
+        parent_inode = self.parent.stat().st_ino
+        def foreign_parent(fd):
+            info = original(fd)
+            if info.st_ino == parent_inode:
+                fields = list(info); fields[4] = os.getuid() + 1
+                return os.stat_result(fields)
+            return info
+        with mock.patch.object(ep.os, 'fstat', side_effect=foreign_parent):
+            self.reject('permissions', self.connect)
         self.assertEqual(self.peer.bytes, [], 'UNSAFE_TARGET_RECEIVED_BYTES')
 
     def test_native_directory_symlink_is_not_followed(self):
@@ -268,6 +278,8 @@ class NativeAlias(Fixture):
         anchors = []
         ref = self.connect(retain_anchors=anchors)
         self.addCleanup(lambda: [os.close(fd) for fd in anchors])
+        self.assertEqual(len(anchors), 3, 'ALIAS_ANCHORS_NOT_RETAINED')
+        self.assertEqual(ep.inode(os.fstat(anchors[0])), ref.alias, 'ALIAS_ANCHOR_WRONG_OBJECT')
         self.alias.unlink(); self.alias.symlink_to(self.base / 'other')
         self.reject('path', lambda: ep.cleanup_app(self.spec, self.fd, ref))
         self.assertTrue(self.alias.is_symlink(), 'FOREIGN_ALIAS_REMOVED')
@@ -521,7 +533,7 @@ class Lifecycle(Fixture):
         self.child.poll.return_value = 1; self.child.wait.side_effect = None
         with mock.patch.object(self.owner, 'spawn') as spawn:
             self.owner.refresh()
-        spawn.assert_not_called()
+        self.assertFalse(spawn.called, 'STOP_TIMEOUT_RESTARTED_CHILD')
         self.assertEqual(self.owner.state, 'failed', 'STOP_TIMEOUT_RESTARTED_CHILD')
 
 
