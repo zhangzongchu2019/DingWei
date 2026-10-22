@@ -66,6 +66,9 @@ MUTATIONS = [
  ('legacy-retain-no-lock',GUARD,'if if_present and not os.path.lexists(self.path):','if False:','test_pce_retention.RetainTests.test_legacy_no_retain_ignores_busy_transaction_lock','LEGACY_WAITED_FOR_UNUSED_RETAIN_LOCK'),
  ('legacy-first-registration-race',GUARD,"if os.path.lexists(self.path):\n                raise UpdateError('retain_busy')",'if False:\n                raise UpdateError(\'retain_busy\')','test_pce_retention.RetainTests.test_first_registration_drift_after_legacy_snapshot_refused','LEGACY_SNAPSHOT_IGNORED_FIRST_REGISTRATION'),
 
+ ('legacy-prepare-no-retain',UPDATE,'with retention.transaction(if_present=True) as fd:','with retention.transaction(create=True) as fd:','test_self_update_offer.OfferTests.test_new_guard_no_pin_prepare_allows_group_writable_parent','LEGACY_PREPARE_GROUP_PARENT_REJECTED'),
+ ('legacy-prepare-no-lock',UPDATE,'with retention.transaction(if_present=True) as fd:','with retention.transaction(create=True) as fd:','test_self_update_offer.OfferTests.test_new_guard_no_pin_prepare_ignores_busy_transaction_lock','LEGACY_PREPARE_WAITED_FOR_UNUSED_LOCK'),
+
 ]
 
 

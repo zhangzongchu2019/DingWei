@@ -88,6 +88,28 @@ class OfferTests(unittest.TestCase):
                 SelfUpdater(self.cfg,self.provisioner.validate_source,'agent.owner',
                             launcher=str(self.mount/'helper_update_guard.py'),allow_loopback=True)
 
+    def legacy_prepare_without_retain(self, marker):
+        try:
+            _, stage, restart = self.updater.prepare(self.env)
+        except UpdateRejected as exc:
+            self.fail(marker + ': ' + str(exc))
+        self.assertEqual((stage,restart),('installed',True),marker)
+        self.assertFalse(os.path.lexists(self.updater.state.root/'retain'),marker)
+        self.assertIsNotNone(self.updater.state.read()['pending'],marker)
+
+    def test_new_guard_no_pin_prepare_allows_group_writable_parent(self):
+        Path(self.fixture.tmp.name).chmod(0o775)
+        self.legacy_prepare_without_retain('LEGACY_PREPARE_GROUP_PARENT_REJECTED')
+        self.assertFalse((self.updater.state.root/'retain.txn.lock').exists(),'LEGACY_PREPARE_CREATED_RETAIN_LOCK')
+
+    def test_new_guard_no_pin_prepare_ignores_busy_transaction_lock(self):
+        import fcntl
+        fd=os.open(self.updater.state.root/'retain.txn.lock',os.O_CREAT|os.O_RDWR,0o600)
+        try:
+            fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+            self.legacy_prepare_without_retain('LEGACY_PREPARE_WAITED_FOR_UNUSED_LOCK')
+        finally:os.close(fd)
+
     def test_old_guard_legacy_empty_retain_allowed_but_any_entry_refused(self):
         retained=self.updater.state.root/'retain'
         with patch.object(self.updater.guard,'RETENTION_API',0):

@@ -209,7 +209,7 @@ class SelfUpdater:
             return
         retention = self.guard.Retention(self.state.root)
         try:
-            with retention.transaction(create=True) as fd:
+            with retention.transaction(if_present=True) as fd:
                 yield retention, fd
         except self.guard.UpdateError as exc:
             raise UpdateRejected(str(exc)) from None
