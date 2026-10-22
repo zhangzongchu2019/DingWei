@@ -1,0 +1,6 @@
+test_path_and_permission_guards (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+OK

@@ -1,0 +1,22 @@
+test_confirmed_only_and_readonly_without_guard_or_locks (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_confirmed_only_and_readonly_without_guard_or_locks) ... FAIL
+
+======================================================================
+FAIL: test_confirmed_only_and_readonly_without_guard_or_locks (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_confirmed_only_and_readonly_without_guard_or_locks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 108, in test_confirmed_only_and_readonly_without_guard_or_locks
+    self.assertEqual(self.selected(), (self.a, False), 'CURRENT_NOT_SELECTED')
+AssertionError: Tuples differ: (Posi[55 chars]lots/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb[28 chars]alse) != (Posi[55 chars]lots/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa[28 chars]alse)
+
+First differing element 0:
+Posix[54 chars]lots/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb[20 chars]bbb')
+Posix[54 chars]lots/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa[20 chars]aaa')
+
+- (PosixPath('/tmp/mcp-mut-y6l_6e40/tmpfzw9r23x/state/update/slots/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
++ (PosixPath('/tmp/mcp-mut-y6l_6e40/tmpfzw9r23x/state/update/slots/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
+   False) : CURRENT_NOT_SELECTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.013s
+
+FAILED (failures=1)

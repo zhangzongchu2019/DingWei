@@ -1,0 +1,14 @@
+test_path_and_permission_guards (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards) ... FAIL
+
+======================================================================
+FAIL: test_path_and_permission_guards (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_path_and_permission_guards)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 176, in test_path_and_permission_guards
+    self.assertFalse(entry.safe_directory(self.state, private=True), 'FOREIGN_DIRECTORY_OWNER_ACCEPTED')
+AssertionError: True is not false : FOREIGN_DIRECTORY_OWNER_ACCEPTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+FAILED (failures=1)

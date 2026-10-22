@@ -1,0 +1,14 @@
+test_real_stdio_current_factory_versions_and_ipc_failure (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_real_stdio_current_factory_versions_and_ipc_failure) ... FAIL
+
+======================================================================
+FAIL: test_real_stdio_current_factory_versions_and_ipc_failure (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_real_stdio_current_factory_versions_and_ipc_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 211, in test_real_stdio_current_factory_versions_and_ipc_failure
+    self.assertTrue(result.stdout.startswith('{'), 'CWD_OR_PYTHONPATH_SHADOWED_SLOT')
+AssertionError: False is not true : CWD_OR_PYTHONPATH_SHADOWED_SLOT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.064s
+
+FAILED (failures=1)

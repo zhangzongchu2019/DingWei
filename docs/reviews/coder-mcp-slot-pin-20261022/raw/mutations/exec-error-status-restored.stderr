@@ -1,0 +1,6 @@
+test_exec_failure_is_visible_without_retries (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_exec_failure_is_visible_without_retries) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+OK

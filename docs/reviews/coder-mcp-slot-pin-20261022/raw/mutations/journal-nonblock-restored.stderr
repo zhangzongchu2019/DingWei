@@ -1,0 +1,6 @@
+test_special_journals_nonblocking (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_special_journals_nonblocking) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.168s
+
+OK

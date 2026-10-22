@@ -1,0 +1,22 @@
+test_invalid_journal_shapes_fall_back (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_invalid_journal_shapes_fall_back) ... FAIL
+
+======================================================================
+FAIL: test_invalid_journal_shapes_fall_back (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_invalid_journal_shapes_fall_back)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/coder-mcp-slot-pin-mutations-20261022/worktree/tools/sessionhelper/tests/test_legacy_mcp_entry.py", line 126, in test_invalid_journal_shapes_fall_back
+    self.assertEqual(self.selected(), (self.factory, True), 'INVALID_JOURNAL_ACCEPTED')
+AssertionError: Tuples differ: (Posi[36 chars]ytqr/state/update/slots/aaaaaaaaaaaaaaaaaaaaaa[47 chars]alse) != (Posi[36 chars]ytqr/mount/factory'), True)
+
+First differing element 0:
+Posix[35 chars]ytqr/state/update/slots/aaaaaaaaaaaaaaaaaaaaaa[39 chars]aaa')
+Posix[35 chars]ytqr/mount/factory')
+
++ (PosixPath('/tmp/mcp-mut-y6l_6e40/tmpymhjytqr/mount/factory'), True)
+- (PosixPath('/tmp/mcp-mut-y6l_6e40/tmpymhjytqr/state/update/slots/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
+-  False) : INVALID_JOURNAL_ACCEPTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=1)

@@ -1,0 +1,13 @@
+# S-OAAGENT-MCP-SLOT-PIN（一页设计，待审）
+
+基线 `integration/spec5ff-r35`＝`9e73ff1ff5769c2bf6f0098f5a843d90c232a39c`；分支 `review/coder/mcp-slot-pin`。仅设计；不改席位、配置、helper、包格式或版本号，不部署。本件解决具体槽位路径随升级失效；不迁移旧布局、不追加工具可见性授权。
+
+**最小方案。** 在席位私有可写状态目录安装稳定、stdlib-only 的独立入口 `<state>/mcp-entry/forwarder.py`（目录0700、文件0600、同UID、经审SHA）；Codex MCP command 一次性指实际锁定venv Python，args 指此入口并固定 `--state-dir <绝对路径>`、`--factory-root <原安装根/factory>`。路径由迁移前只读核实，不猜 `/opt` 布局；既有env、IPC socket、权限与超时字段保持不变。入口不放 `update/slots`，因此普通升级不覆盖它；源码经Git取，独立受控安装，不塞进旧白名单包。参照 `tools/sessionhelper/update_launcher/mcp_forwarder.py:selected_root/main`，但不照搬其由 `__file__` 推断新布局mount的方式。
+
+**选择合同。** 每次MCP进程启动仅取一次 `state/update/journal.json` 快照，format=1，只认可已确认current的64位小写SHA；不选pending/previous、不调用guard/State.select、不导入或构造SessionHelper、不创建状态或锁、不绑定IPC、不联网。journal用O_NOFOLLOW＋O_NONBLOCK打开，只读常规文件且≤1MiB；校验私有状态属主／模式、受控路径无逃逸，槽位与包关键文件无软链且完整（`__init__.py`、`__main__.py`、`mcp_shim.py`）；不存在、损坏、FIFO／socket／目录、过大或非法指针均即时回落原可信factory。factory也须完整且来自迁移前核定安装根；无有效factory则固定去敏错误退出，stdout留给MCP，不等待锁、不重试。选定后新解释器 `-B`、插入唯一选中包根并以module执行shim，覆盖PYTHONPATH防cwd/旧已导入包抢占，保留业务IPC环境；选中shim开始执行后出错不再自动换另一份shim，以免重放工具请求。此为本地常规文件非阻塞选择，不承诺故障文件系统的硬实时界限。
+
+**生效与兼容边界。** 旧 `b5faf73c` 的guard与r35同为format=1；`guard.py:State.confirm`原子更新current，试运行／失败回滚未确认时current不变，入口无须改旧guard/verifier。确认成功后新MCP自动选新槽；已有长驻MCP不会热换Python模块，必须重新连接MCP（客户端无单独重连能力时由执行单安排重开对应Codex会话），此后不再逐次改配置；不自动杀进程或声称“升级即热生效”。并发确认允许本次快照旧current、下次启动新current，不在一次MCP生命周期混版本。helper回退只在真实journal.current改变后由新MCP跟随；不据helper在线版本猜指针。factory回落可能是0.2.3.1，工具集更旧且IPC错误可退出，必须显示真实initialize版本并拒绝把回落记作升级成功；不补工具、不改helper协议或venv锁。
+
+**一次迁移／回滚（另批执行）。** ①只读核实际venv、旧MCP配置仅该段的command/args、state/journal与factory/current SHA、文件属主模式、既有IPC键，环境值不入证据；有pending升级或事实不明即停。②root私有或席位0700目录备份完整配置并记SHA（含秘密的备份绝不入Git）；原子安装经审入口，离线隔离测试通过后，仅改指定MCP段command/args，保持env和其他段逐字不变，原子替换并校验TOML。③在获批窗口重连该席MCP，核initialize真实版本、tools/list、一次只读dw_inbox status及授权的本组send_message往返，核helper连接与socket未变化；不发新WS探测。④失败恢复原配置与原command/args，重连对应MCP；入口保留备查，不改journal、不卸载helper、不删槽位。成功后升级流程增加“确认current→重连MCP→版本/工具/IPC验收”门；后续无重复配置编辑。
+
+**本组验证与验收。** 首选coder56solzzc：本席只读目录核实为`/opt/dingwei/sessionhelper-src`源码布局（无factory/guard），不能冒充旧布局实席。因此先在本席隔离HOME／state与锁定venv搭建b5faf73c旧布局夹具，真实旧verifier接旧格式包，演练安装→pending不切→confirmed切槽→回退／factory回落；用本地假IPC，完全不动在线helper／Codex。需真实本组席验证时另报组长批准，在本组经preflight证实的旧布局席或本组隔离测试席安装；目前未确认可用旧布局实席，不点名借用oaagent/dataConnector，不把夹具当线上验收。最少格：两次已确认槽切换、pending/previous忽略、坏SHA/路径逃逸/软链/属主模式/不完整包/坏JSON/超大/FIFO/无factory、并发原子替换、cwd与PYTHONPATH污染、旧factory工具集、shim失败不重投、stdio纯净、journal/锁/预算/IPC零写；各关键门撤修必红。实现交件含helper隔离HOME全套、canonical及受影响门；纯helper候选的全仓Go沿用须附输入blob等价证明。审查由组长＋prodops，部署与验证窗口另批。

@@ -1,0 +1,6 @@
+test_actual_shim_uses_only_supplied_fake_ipc (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_actual_shim_uses_only_supplied_fake_ipc) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.083s
+
+OK

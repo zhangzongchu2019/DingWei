@@ -1,0 +1,6 @@
+test_confirmed_only_and_readonly_without_guard_or_locks (tools.sessionhelper.tests.test_legacy_mcp_entry.LegacyEntryTests.test_confirmed_only_and_readonly_without_guard_or_locks) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.012s
+
+OK

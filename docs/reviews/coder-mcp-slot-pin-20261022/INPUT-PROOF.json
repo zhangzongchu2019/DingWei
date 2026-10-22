@@ -1,0 +1,58 @@
+{
+  "base": "9e73ff1ff5769c2bf6f0098f5a843d90c232a39c",
+  "source": "3e3019e35d8f0e4dda860eb10be7d1e740a41b79",
+  "only_non_docs_changes": [
+    "deploy/test_build_entrypoints.py",
+    "scripts/run-build-tests.sh",
+    "tests/mcp-slot-pin/check.py",
+    "tools/sessionhelper/legacy_mcp_entry.py",
+    "tools/sessionhelper/tests/test_legacy_mcp_entry.py"
+  ],
+  "unchanged_paths": [
+    "cmd",
+    "internal",
+    "view-service",
+    "go.mod",
+    "go.sum",
+    "VERSION",
+    "tools/sessionhelper/sessionhelper",
+    "tools/sessionhelper/update_launcher",
+    "tools/sessionhelper/package_release.py",
+    "tools/sessionhelper/bootstrap.py",
+    "tools/sessionhelper/requirements-runtime.lock",
+    "build.sh",
+    "Makefile"
+  ],
+  "go_gate": "not rerun; r35 previously accepted Go gate reused for unchanged Go and embedded inputs; changed canonical entry executed separately",
+  "legacy_anchor": "b5faf73c8fe4d5c71720daf4eed5b133b8d45dbd",
+  "legacy_inputs": [
+    {
+      "path": "tools/sessionhelper/package_release.py",
+      "blob": "d8fe3aae184a656aa89e76c532c34e8b70f00c21",
+      "sha256": "d8163e3ee5249f2548932ec944631a16c4a74e2e130b9ce990b880d813ba9e26",
+      "bytes": 8276
+    },
+    {
+      "path": "tools/sessionhelper/update_launcher/guard.py",
+      "blob": "1c3e2db03a33b04c5d37f0a2376e08ad8c49847e",
+      "sha256": "4f32800140484a2fd783f9a8579d17eb7ad7fb340901810912ab67ad85143cd0",
+      "bytes": 11044
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/mcp_shim.py",
+      "blob": "3b8e277da1d7c1ae15340fbb942a8a335ec4f689",
+      "sha256": "1554fe0f731921a6bdefa0a40f37bddc5e526b1fbec122f67d776e20c657857d",
+      "bytes": 25138
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/__init__.py",
+      "blob": "42d6784851da3f0e593d69f3edb7624a8a310dc9",
+      "sha256": "935e00760b51fea94fc552287a4c3af183d6eb9e5a6295875202c310a49d398c",
+      "bytes": 54
+    }
+  ],
+  "limits": [
+    "test fixture archive uses inert payload, not a release candidate",
+    "no live seat, old helper process or Codex reconnection exercised"
+  ]
+}
