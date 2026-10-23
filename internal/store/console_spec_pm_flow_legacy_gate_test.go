@@ -62,6 +62,38 @@ func TestPMSpecPresplitGateIsOptInAndRequiresFinalReviewedRevision(t *testing.T)
 	}
 }
 
+func TestPMSpecPresplitRejectsUnregisteredLegacyFinalSpecOnlyWhenEnabled(t *testing.T) {
+	ctx := context.Background()
+	db := newConsoleSpecStore(t)
+	now := time.Date(2026, 10, 23, 1, 0, 0, 0, time.UTC)
+	spec := "legacy-final-no-flow"
+	makeFinalSplittingSpec(t, db, spec, now)
+	agent := model.ConsoleAgent{ID: "legacy-split-agent", KeyID: "legacy-split-key", SessionName: "legacy-split", OwnerPrincipal: "owner-a", Active: true}
+	if err := db.UpsertConsoleAgent(ctx, agent); err != nil {
+		t.Fatal(err)
+	}
+	req := model.ConsoleSpecPresplitRequest{ID: "legacy-no-flow-request", SpecID: spec, AgentID: agent.ID, DeadlineAt: now.Add(time.Minute), CreatedAt: now}
+	if _, _, err := db.StartConsoleSpecPresplitWithPMSpecFlow(ctx, req, "owner-a", true); !errors.Is(err, ErrPMSpecFlowDenied) {
+		t.Fatalf("enabled presplit accepted unregistered legacy final spec: %v", err)
+	}
+	var n int
+	if err := db.db.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_presplit_request WHERE spec_id=?`, spec).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("denied legacy presplit created requests=%d err=%v", n, err)
+	}
+	// Use the same spec and request to prove denial left no conflicting row and
+	// that the explicit feature-off path still supports existing final specs.
+	revision, selected, err := db.StartConsoleSpecPresplitWithPMSpecFlow(ctx, req, "owner-a", false)
+	if err != nil {
+		t.Fatalf("feature-off legacy presplit changed: %v", err)
+	}
+	if revision == nil || revision.SpecID != spec || selected == nil || selected.ID != agent.ID {
+		t.Fatalf("feature-off legacy presplit returned wrong inputs: revision=%+v agent=%+v", revision, selected)
+	}
+	if err := db.db.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_presplit_request WHERE spec_id=?`, spec).Scan(&n); err != nil || n != 1 {
+		t.Fatalf("feature-off legacy presplit requests=%d err=%v", n, err)
+	}
+}
+
 func createCandidateForPMSpecTest(t *testing.T, db *SQLite, id, flowState string, now time.Time) (string, []ConsoleSpecPresplitTask, string) {
 	t.Helper()
 	ctx := context.Background()
@@ -82,8 +114,60 @@ func createCandidateForPMSpecTest(t *testing.T, db *SQLite, id, flowState string
 	if _, err = db.db.ExecContext(ctx, `INSERT INTO console_task_candidate(request_id,tasks_json,version) VALUES(?,?,1)`, "request-"+id, string(raw)); err != nil {
 		t.Fatal(err)
 	}
-	insertPMSpecFlowStateForTest(t, db, id, flowState, 1, sha, now)
+	// Empty flowState represents a legacy spec that was never enrolled.
+	if flowState != "" {
+		insertPMSpecFlowStateForTest(t, db, id, flowState, 1, sha, now)
+	}
 	return "request-" + id, tasks, sha
+}
+
+func TestPMSpecCandidateConfirmRejectsUnregisteredLegacyFinalSpecOnlyWhenEnabled(t *testing.T) {
+	ctx := context.Background()
+	db := newConsoleSpecStore(t)
+	now := time.Date(2026, 10, 23, 1, 1, 0, 0, time.UTC)
+	spec := "legacy-candidate-no-flow"
+	request, tasks, _ := createCandidateForPMSpecTest(t, db, spec, "", now)
+	rechecks := 0
+	recheck := func() error { rechecks++; return nil }
+	if err := db.ConfirmConsoleTaskCandidatesWithPMSpecFlow(ctx, request, "owner-a", 1, 1, tasks, recheck, now, true); !errors.Is(err, ErrPMSpecFlowDenied) {
+		t.Fatalf("enabled candidate confirmation accepted unregistered legacy final spec: %v", err)
+	}
+	var n int
+	if err := db.db.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_task WHERE spec_id=?`, spec).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("denied legacy confirmation created tasks=%d err=%v", n, err)
+	}
+	var confirmed bool
+	if err := db.db.QueryRowContext(ctx, `SELECT confirmed_at IS NOT NULL FROM console_task_candidate WHERE request_id=?`, request).Scan(&confirmed); err != nil || confirmed || rechecks != 0 {
+		t.Fatalf("denied legacy confirmation mutated candidate=%v rechecks=%d err=%v", confirmed, rechecks, err)
+	}
+	// The same candidate remains confirmable when the feature is disabled.
+	if err := db.ConfirmConsoleTaskCandidatesWithPMSpecFlow(ctx, request, "owner-a", 1, 1, tasks, recheck, now, false); err != nil {
+		t.Fatalf("feature-off legacy confirmation changed: %v", err)
+	}
+	if err := db.db.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_task WHERE spec_id=?`, spec).Scan(&n); err != nil || n != len(tasks) {
+		t.Fatalf("feature-off legacy confirmation tasks=%d err=%v", n, err)
+	}
+	if err := db.db.QueryRowContext(ctx, `SELECT confirmed_at IS NOT NULL FROM console_task_candidate WHERE request_id=?`, request).Scan(&confirmed); err != nil || !confirmed || rechecks != 1 {
+		t.Fatalf("feature-off legacy confirmation candidate=%v rechecks=%d err=%v", confirmed, rechecks, err)
+	}
+}
+
+func TestPMSpecSplitGateWithoutMigrationTableKeepsLegacyBehavior(t *testing.T) {
+	ctx := context.Background()
+	db := newConsoleSpecStore(t)
+	if _, err := db.db.ExecContext(ctx, `ALTER TABLE console_spec_flow RENAME TO console_spec_flow_not_migrated`); err != nil {
+		t.Fatal(err)
+	}
+	tx, err := db.db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	for _, enabled := range []bool{false, true} {
+		if err := requireFinalizedPMSpecForSplit(ctx, tx, enabled, "legacy-no-migration", 1); err != nil {
+			t.Fatalf("missing migration table changed legacy behavior enabled=%v: %v", enabled, err)
+		}
+	}
 }
 
 func TestPMSpecCandidateConfirmUsesSameOptInFinalizationGate(t *testing.T) {

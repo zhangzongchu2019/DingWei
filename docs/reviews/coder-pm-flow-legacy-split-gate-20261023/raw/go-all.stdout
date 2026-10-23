@@ -1,0 +1,281 @@
+?   	github.com/zhangzongchu2019/dingwei/cmd/dingwei-datad	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/cmd/fcs	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/cmd/mcs-demo	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/cmd/mcsd	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/internal/identity/identitytest	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/internal/model	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/specs/tools/handle-escape	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/specs/tools/legacy-name	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/specs/tools/pending-debt	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/tests/r32-task-flow/compat-probe	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/view-service	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/view-service/console-hosted-page-fixture	[no test files]
+?   	github.com/zhangzongchu2019/dingwei/view-service/p1seed	[no test files]
+ok  	github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout	28.705s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/file-service	0.074s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/nodeagent	0.006s
+2026/10/23 03:10:37 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:10:37 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:10:44 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+2026/10/23 03:11:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:12 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:11:13 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+2026/10/23 03:11:15 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:15 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:15 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:11:16 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:16 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:20 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:11:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:23 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:11:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:23 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:11:24 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:24 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:24 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:11:25 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:25 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:25 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:11:25 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:25 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:25 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:11:26 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:26 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:26 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:11:26 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:26 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:26 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:11:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:27 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:11:33 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:33 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:33 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:33 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:33 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:33 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:37 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:11:37 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:11:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:49 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+2026/10/23 03:11:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:11:54 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+2026/10/23 03:11:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:11:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:12:00 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+2026/10/23 03:12:04 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:04 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:15 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:15 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:16 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:16 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:16 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:16 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:23 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:23 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:23 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:23 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:24 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:24 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:25 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:25 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:25 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:25 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:26 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:26 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:26 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:26 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:27 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:27 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:27 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:27 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:33 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:37 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+2026/10/23 03:12:37 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:37 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:38 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+2026/10/23 03:12:40 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+2026/10/23 03:12:45 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:45 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:51 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:51 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:56 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:12:56 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:12:58 hosted: internal error: pq: connection refused at 10.0.0.1
+2026/10/23 03:13:04 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:04 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:10 hosted: internal error: ERROR: injected seat insert failure (SQLSTATE P0001)
+2026/10/23 03:13:10 hosted: internal error: ERROR: injected seat insert failure (SQLSTATE P0001)
+--- FAIL: TestNotifySocketStopCannotDeleteNewListenerAtSamePath (0.00s)
+    internal_notify_test.go:196: listen unix /data/ai-dev-data/tmp-coder-tb/TestNotifySocketStopCannotDeleteNewListenerAtSamePath938376214/001/notify.sock: bind: invalid argument
+--- FAIL: TestNotifySocketFirstStopPreservesNewListenerAtReboundPath (0.00s)
+    internal_notify_test.go:214: listen unix /data/ai-dev-data/tmp-coder-tb/TestNotifySocketFirstStopPreservesNewListenerAtReboundPath1890272140/001/notify.sock: bind: invalid argument
+2026/10/23 03:13:13 [Info] [client ready]
+2026/10/23 03:13:13 [Info] [client ready]
+2026/10/23 03:13:13 [Info] [client ready]
+2026/10/23 03:13:14 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+2026/10/23 03:13:15 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:15 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:16 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+2026/10/23 03:13:16 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:16 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:16 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:16 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:13:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:13:17 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+2026/10/23 03:13:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:13:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:13:18 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:13:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:13:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:13:18 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:13:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:13:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:13:18 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:13:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:13:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:13:18 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/10/23 03:13:18 newplat login page not built into this binary: GET /console/login not registered
+2026/10/23 03:13:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:13:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:13:20 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+2026/10/23 03:13:21 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:13:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:13:21 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+2026/10/23 03:13:22 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:13:22 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:13:22 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+2026/10/23 03:13:23 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:23 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:23 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:23 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:24 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:13:24 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:13:24 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+2026/10/23 03:13:24 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:24 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:25 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:25 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:25 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:13:25 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:13:25 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+2026/10/23 03:13:25 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:25 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:26 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:26 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:26 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:26 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:27 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:27 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:27 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/10/23 03:13:27 delivery expiry sweep failed: sql: database is closed
+2026/10/23 03:13:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:13:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:13:27 [Info] [client ready]
+2026/10/23 03:13:27 [Info] [client ready]
+2026/10/23 03:13:27 [Info] [client ready]
+2026/10/23 03:13:27 [Info] [client ready]
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	179.808s
+ok  	github.com/zhangzongchu2019/dingwei/internal/admin	36.464s
+ok  	github.com/zhangzongchu2019/dingwei/internal/agentmetrics	0.005s
+ok  	github.com/zhangzongchu2019/dingwei/internal/bridge	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/bus	4.098s
+ok  	github.com/zhangzongchu2019/dingwei/internal/clarificationimage	0.004s
+ok  	github.com/zhangzongchu2019/dingwei/internal/clock	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/config	0.002s
+--- FAIL: TestBudgetRealPGDeadlineAndCapacity (6.01s)
+    budget_evidence_test.go:70: id=19 query_end=612.174µs execution_release=614.903µs admission_release=618.313µs call_return=619.153µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000009119s query_end_relative=612.174µs return_release_relative=619.153µs
+    budget_evidence_test.go:70: id=63 query_end=162.367µs execution_release=163.238µs admission_release=163.947µs call_return=164.607µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000221s query_end_relative=162.367µs return_release_relative=164.607µs
+    budget_evidence_test.go:70: id=25 query_end=789.516µs execution_release=790.356µs admission_release=791.586µs call_return=792.126µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000297s query_end_relative=789.516µs return_release_relative=792.126µs
+    budget_evidence_test.go:70: id=39 query_end=1.582918ms execution_release=1.583738ms admission_release=1.584778ms call_return=1.585238ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000012089s query_end_relative=1.582918ms return_release_relative=1.585238ms
+    budget_evidence_test.go:70: id=20 query_end=1.619655ms execution_release=1.620595ms admission_release=1.621375ms call_return=1.621715ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000325s query_end_relative=1.619655ms return_release_relative=1.621715ms
+    budget_evidence_test.go:70: id=21 query_end=1.555341ms execution_release=1.556071ms admission_release=1.556791ms call_return=1.557211ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000404s query_end_relative=1.555341ms return_release_relative=1.557211ms
+    budget_evidence_test.go:70: id=22 query_end=1.535493ms execution_release=1.536123ms admission_release=1.536993ms call_return=1.537423ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000002579s query_end_relative=1.535493ms return_release_relative=1.537423ms
+    budget_evidence_test.go:70: id=23 query_end=1.503396ms execution_release=1.504136ms admission_release=1.505206ms call_return=1.505606ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000298s query_end_relative=1.503396ms return_release_relative=1.505606ms
+    budget_evidence_test.go:70: id=4 query_end=1.540763ms execution_release=1.541303ms admission_release=1.542283ms call_return=1.542713ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000005509s query_end_relative=1.540763ms return_release_relative=1.542713ms
+    budget_evidence_test.go:70: id=50 query_end=1.672219ms execution_release=1.672919ms admission_release=1.673849ms call_return=1.674399ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000193s query_end_relative=1.672219ms return_release_relative=1.674399ms
+    budget_evidence_test.go:70: id=41 query_end=2.482671ms execution_release=2.4835ms admission_release=2.48448ms call_return=2.48492ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000294s query_end_relative=2.482671ms return_release_relative=2.48492ms
+    budget_evidence_test.go:70: id=43 query_end=3.234658ms execution_release=3.235577ms admission_release=3.237027ms call_return=3.237557ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000247s query_end_relative=3.234658ms return_release_relative=3.237557ms
+    budget_evidence_test.go:70: id=44 query_end=3.20331ms execution_release=3.20417ms admission_release=3.20485ms call_return=3.20521ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000004329s query_end_relative=3.20331ms return_release_relative=3.20521ms
+    budget_evidence_test.go:70: id=47 query_end=3.124648ms execution_release=3.125298ms admission_release=3.125948ms call_return=3.126268ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000002199s query_end_relative=3.124648ms return_release_relative=3.126268ms
+    budget_evidence_test.go:70: id=5 query_end=3.649867ms execution_release=3.650497ms admission_release=3.651457ms call_return=3.651897ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000003979s query_end_relative=3.649867ms return_release_relative=3.651897ms
+    budget_evidence_test.go:70: id=9 query_end=4.219232ms execution_release=4.220111ms admission_release=4.221441ms call_return=4.221881ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000016708s query_end_relative=4.219232ms return_release_relative=4.221881ms
+    budget_evidence_test.go:70: id=0 query_end=4.051417ms execution_release=4.052117ms admission_release=4.052647ms call_return=4.053017ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000505s query_end_relative=4.051417ms return_release_relative=4.053017ms
+    budget_evidence_test.go:125: background SQL remains: active=5 err=<nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/consolemux	10.715s
+ok  	github.com/zhangzongchu2019/dingwei/internal/coordination	0.398s
+ok  	github.com/zhangzongchu2019/dingwei/internal/datad	1.763s
+ok  	github.com/zhangzongchu2019/dingwei/internal/evidence	4.067s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fanout	114.250s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fcs	4.068s
+ok  	github.com/zhangzongchu2019/dingwei/internal/feishu	0.010s
+ok  	github.com/zhangzongchu2019/dingwei/internal/filepolicy	0.006s
+ok  	github.com/zhangzongchu2019/dingwei/internal/fileservice	15.384s
+ok  	github.com/zhangzongchu2019/dingwei/internal/hosted	375.402s
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity	139.310s
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity/httpapi	3.136s
+ok  	github.com/zhangzongchu2019/dingwei/internal/jcs	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/llm	0.004s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m5	2.814s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	221.189s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/board	0.690s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/dea	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/demo	0.893s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/dispatch	0.034s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver	0.042s
+--- FAIL: TestE1_RestartTakeoverContinues (0.61s)
+    daemon_test.go:137: mcs/board: PRAGMA journal_mode=WAL: database is locked (5) (SQLITE_BUSY)
+--- FAIL: TestTCN1a_TransientLostAckRedeliverSameWorker (0.00s)
+    m2neg_daemon_test.go:19: listen unix /data/ai-dev-data/tmp-coder-tb/TestTCN1a_TransientLostAckRedeliverSameWorker4274286520/001/mcsd-56cd4081.sock: bind: invalid argument
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd	24.849s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/pool	0.153s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/rotation	0.108s
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/route	0.004s
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	38.561s
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodegate	41.140s
+ok  	github.com/zhangzongchu2019/dingwei/internal/obs	0.689s
+ok  	github.com/zhangzongchu2019/dingwei/internal/portal	1.422s
+ok  	github.com/zhangzongchu2019/dingwei/internal/redact	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/reminder	1.760s
+ok  	github.com/zhangzongchu2019/dingwei/internal/repo	6.415s
+ok  	github.com/zhangzongchu2019/dingwei/internal/router	0.001s
+ok  	github.com/zhangzongchu2019/dingwei/internal/schedule	3.985s
+ok  	github.com/zhangzongchu2019/dingwei/internal/scheduler	9.971s
+ok  	github.com/zhangzongchu2019/dingwei/internal/seatcapacity	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/secretbox	0.002s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	116.326s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/migrate	101.385s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store/pgtest	19.479s
+ok  	github.com/zhangzongchu2019/dingwei/internal/version	0.024s
+ok  	github.com/zhangzongchu2019/dingwei/internal/worker	11.293s
+FAIL

@@ -1,0 +1,6 @@
+=== RUN   TestPMSpecCandidateConfirmRejectsUnregisteredLegacyFinalSpecOnlyWhenEnabled
+    console_spec_pm_flow_legacy_gate_test.go:133: enabled candidate confirmation accepted unregistered legacy final spec: <nil>
+--- FAIL: TestPMSpecCandidateConfirmRejectsUnregisteredLegacyFinalSpecOnlyWhenEnabled (0.44s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.442s
+FAIL

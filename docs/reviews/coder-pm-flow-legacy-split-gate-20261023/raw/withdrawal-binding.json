@@ -1,0 +1,6 @@
+{
+  "mutation": "only replace sql.ErrNoRows ErrPMSpecFlowDenied with nil",
+  "source_sha256": "dcb67252f5dc0511c4086f2418aa74b2423cadce19e0d1ad6e0ca154ede1185b",
+  "mutant_sha256": "9029526b40d8bccd48cc6986df284405d538d6e1c1b460584cb33ee4a373e3cf",
+  "target_file": "/data/ai-dev-data/pm-flow-legacy-split-gate/internal/store/console_spec_pm_flow.go"
+}

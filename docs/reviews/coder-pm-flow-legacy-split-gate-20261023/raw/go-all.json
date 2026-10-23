@@ -1,0 +1,30 @@
+{
+  "name": "go-all",
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-count=1",
+    "-timeout=30m"
+  ],
+  "environment": {
+    "HOME": "/home/dev",
+    "PATH": "/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/tmp-coder-tb",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "HUB_TEST_PG_EMBEDDED": "1",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC"
+  },
+  "start_utc": "2026-10-23T03:10:20.673288+00:00",
+  "end_utc": "2026-10-23T03:16:45.493120+00:00",
+  "elapsed_seconds": 384.82,
+  "rc": 1,
+  "source_commit": "1d7b06fec69e9d7aedbb7939eba81b05df35a0bb",
+  "source_sha256": {
+    "internal/store/console_spec_pm_flow.go": "dcb67252f5dc0511c4086f2418aa74b2423cadce19e0d1ad6e0ca154ede1185b",
+    "internal/store/console_spec_pm_flow_legacy_gate_test.go": "e617c7a22fe4bda6fbdd0783d174a38c8d36301eefaba90ebde9f9850e5474fa"
+  }
+}

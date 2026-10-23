@@ -1,0 +1,67 @@
+=== RUN   TestLegacyR8StartIsDeniedForPMSpecReviewerRecipient
+--- PASS: TestLegacyR8StartIsDeniedForPMSpecReviewerRecipient (0.10s)
+=== RUN   TestLegacyR8CriteriaConfirmationIsDeniedForPMSpecFlow
+--- PASS: TestLegacyR8CriteriaConfirmationIsDeniedForPMSpecFlow (0.11s)
+=== RUN   TestLegacyR8CancelTransferIsDeniedForPMSpecFlow
+--- PASS: TestLegacyR8CancelTransferIsDeniedForPMSpecFlow (0.10s)
+=== RUN   TestPMSpecPresplitGateIsOptInAndRequiresFinalReviewedRevision
+--- PASS: TestPMSpecPresplitGateIsOptInAndRequiresFinalReviewedRevision (0.10s)
+=== RUN   TestPMSpecPresplitRejectsUnregisteredLegacyFinalSpecOnlyWhenEnabled
+--- PASS: TestPMSpecPresplitRejectsUnregisteredLegacyFinalSpecOnlyWhenEnabled (0.10s)
+=== RUN   TestPMSpecCandidateConfirmRejectsUnregisteredLegacyFinalSpecOnlyWhenEnabled
+--- PASS: TestPMSpecCandidateConfirmRejectsUnregisteredLegacyFinalSpecOnlyWhenEnabled (0.10s)
+=== RUN   TestPMSpecSplitGateWithoutMigrationTableKeepsLegacyBehavior
+--- PASS: TestPMSpecSplitGateWithoutMigrationTableKeepsLegacyBehavior (0.10s)
+=== RUN   TestPMSpecCandidateConfirmUsesSameOptInFinalizationGate
+--- PASS: TestPMSpecCandidateConfirmUsesSameOptInFinalizationGate (0.11s)
+=== RUN   TestPMSpecFinalizeRejectsTransferredFlowBeforeReviewCompletion
+--- PASS: TestPMSpecFinalizeRejectsTransferredFlowBeforeReviewCompletion (0.10s)
+=== RUN   TestPMSpecWorkingDraftCASPreservesBothConflictPayloadsAndCreatesNoRevision
+--- PASS: TestPMSpecWorkingDraftCASPreservesBothConflictPayloadsAndCreatesNoRevision (0.10s)
+=== RUN   TestPMSpecTransferFreezesDraftAtomicallyAndBlocksLegacyWritesAndFinalize
+--- PASS: TestPMSpecTransferFreezesDraftAtomicallyAndBlocksLegacyWritesAndFinalize (0.10s)
+=== RUN   TestPMSpecFreezeOnlyAllowsThreeExplicitActions
+--- PASS: TestPMSpecFreezeOnlyAllowsThreeExplicitActions (0.10s)
+=== RUN   TestPMSpecReviewCompletionRequiresFreshAssistAndEveryDecisionThenExistingFinalGateRemains
+--- PASS: TestPMSpecReviewCompletionRequiresFreshAssistAndEveryDecisionThenExistingFinalGateRemains (0.10s)
+=== RUN   TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads
+=== RUN   TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads/acceptance_missing_text
+=== RUN   TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads/source_missing_uri
+=== RUN   TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads/source_relative_uri
+=== RUN   TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads/norm_missing_section
+=== RUN   TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads/payload_not_object
+--- PASS: TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads (0.00s)
+    --- PASS: TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads/acceptance_missing_text (0.00s)
+    --- PASS: TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads/source_missing_uri (0.00s)
+    --- PASS: TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads/source_relative_uri (0.00s)
+    --- PASS: TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads/norm_missing_section (0.00s)
+    --- PASS: TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads/payload_not_object (0.00s)
+=== RUN   TestPMSpecAcceptSuggestionsAppliesSelectedStructureAndFreezesOnce
+--- PASS: TestPMSpecAcceptSuggestionsAppliesSelectedStructureAndFreezesOnce (0.12s)
+=== RUN   TestPMSpecAssistResultStalesAfterWorkingDraftEdit
+--- PASS: TestPMSpecAssistResultStalesAfterWorkingDraftEdit (0.14s)
+=== RUN   TestPMSpecReviewCompletionBlocksIncompleteAcceptanceBeforeFreeze
+--- PASS: TestPMSpecReviewCompletionBlocksIncompleteAcceptanceBeforeFreeze (0.10s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	1.679s
+=== RUN   TestPMSpecFlowDefaultOffAndCASConflictIsHTTP409
+2026/10/22 20:09:15 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 20:09:15 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestPMSpecFlowDefaultOffAndCASConflictIsHTTP409 (0.11s)
+=== RUN   TestPMSpecFlowPageIsFeatureGatedAndBindsAuthenticatedPrincipal
+2026/10/22 20:09:15 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 20:09:15 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestPMSpecFlowPageIsFeatureGatedAndBindsAuthenticatedPrincipal (0.10s)
+=== RUN   TestPMSpecAssistUsesNegotiatedHelperCapabilityAndAuthenticatedHTTPReply
+2026/10/22 20:09:15 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/22 20:09:15 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/22 20:09:15 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/22 20:09:15 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+2026/10/22 20:09:15 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_070859edb92b73906ca99844dc554249 source_message_id=pmspecassist_9b0dd1f5fe4b737dedf61a1944ea4ff6
+2026/10/22 20:09:15 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=1
+2026/10/22 20:09:15 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=false
+--- PASS: TestPMSpecAssistUsesNegotiatedHelperCapabilityAndAuthenticatedHTTPReply (0.10s)
+=== RUN   TestPMSpecAssistQueuedDeliveryRechecksCurrentAgentAuthorization
+--- PASS: TestPMSpecAssistQueuedDeliveryRechecksCurrentAgentAuthorization (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.316s
