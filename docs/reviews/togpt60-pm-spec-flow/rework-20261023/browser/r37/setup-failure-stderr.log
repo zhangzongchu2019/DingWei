@@ -1,0 +1,1 @@
+ENVIRONMENT_UNAVAILABLE: cannot launch Playwright bundled chromium: browserType.launch: ENOENT: no such file or directory, mkdtemp '/tmp/tg60pmbr/playwright-artifacts-1VFQU8'

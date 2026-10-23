@@ -1,0 +1,37 @@
+AssertionError [ERR_ASSERTION]: iframes not found
+    at runScenario (/tmp/tg60-pm-r37-browser-base/view-service/renderer-flood-stress-regression.js:227:12)
+    at async /tmp/tg60-pm-r37-browser-base/view-service/renderer-flood-stress-regression.js:364:17 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+locator.scrollIntoViewIfNeeded: Timeout 2500ms exceeded.
+Call log:
+[2m  - waiting for locator('#spec-rendered img.md-img[alt="missing"]')[22m
+
+    at main (/tmp/tg60-pm-r37-browser-base/view-service/console-specs-browser-regression.js:938:68) {
+  log: [
+    `  - waiting for locator('#spec-rendered img.md-img[alt="missing"]')`
+  ],
+  name: 'TimeoutError'
+}
+test_broken_marker_hard_fails_not_silently_skips (__main__.DriftGateHasTeethTest.test_broken_marker_hard_fails_not_silently_skips) ... ok
+test_clean_pair_is_in_sync (__main__.DriftGateHasTeethTest.test_clean_pair_is_in_sync) ... ok
+test_drift_in_core_is_detected_and_named (__main__.DriftGateHasTeethTest.test_drift_in_core_is_detected_and_named) ... ok
+test_drift_in_renderer_copy_is_detected_and_named (__main__.DriftGateHasTeethTest.test_drift_in_renderer_copy_is_detected_and_named) ... ok
+test_write_mode_repairs_the_copy (__main__.DriftGateHasTeethTest.test_write_mode_repairs_the_copy) ... ok
+test_core_has_exactly_one_iife_and_it_is_the_export_hook (__main__.ExportSurfaceTest.test_core_has_exactly_one_iife_and_it_is_the_export_hook) ... ok
+test_export_hook_lists_exactly_the_declared_symbols (__main__.ExportSurfaceTest.test_export_hook_lists_exactly_the_declared_symbols) ... ok
+test_unique_image_tokens_appear_once_per_file (__main__.ExportSurfaceTest.test_unique_image_tokens_appear_once_per_file) ... ok
+test_no_unregistered_section_names_anywhere (__main__.MarkerStructureTest.test_no_unregistered_section_names_anywhere) ... ok
+test_sections_are_non_empty_and_match_between_files (__main__.MarkerStructureTest.test_sections_are_non_empty_and_match_between_files) ... ok
+test_six_sections_exactly_once_in_contract_order (__main__.MarkerStructureTest.test_six_sections_exactly_once_in_contract_order) ... ok
+test_core_loads_standalone_in_node (__main__.NodeLoadableTest.test_core_loads_standalone_in_node) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.321s
+
+OK
