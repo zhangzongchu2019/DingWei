@@ -22,7 +22,7 @@ class CwdImportTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.base = Path(self.tmp.name); self.base.chmod(0o700)
         self.venv = self.base/'venv'
-        venv.EnvBuilder(with_pip=False).create(self.venv)
+        venv.EnvBuilder(with_pip=False, symlinks=True).create(self.venv)
         self.python = str(self.venv/'bin/python')
         self.site = next((self.venv/'lib').glob('python*/site-packages'))
         self.stable = self.base/'stable'; self.stable.mkdir(mode=0o755)
