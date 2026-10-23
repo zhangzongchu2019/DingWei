@@ -1,0 +1,4 @@
+=== RUN   TestSoftLoginMeasurementOwnershipAndRestart
+--- PASS: TestSoftLoginMeasurementOwnershipAndRestart (0.05s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.050s

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -283,12 +284,26 @@ func TestSoftLoginMeasurementOwnershipAndRestart(t *testing.T) {
 		t.Fatal(err)
 	}
 	key := "login-" + lfID
+	// Empty directories may use zero blocks on tmpfs. Measure a real payload
+	// against its own metadata, without assuming a directory allocation size.
+	payload := filepath.Join(l.dir(lfID), "measurement-payload")
+	if err := os.WriteFile(payload, []byte(strings.Repeat("login measurement\n", 1024)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var payloadStat syscall.Stat_t
+	if err := syscall.Stat(payload, &payloadStat); err != nil {
+		t.Fatal(err)
+	}
+	allocated := payloadStat.Blocks * 512
+	if allocated <= 0 {
+		t.Fatal("measurement payload has no allocated blocks")
+	}
 	q.measure(context.Background())
 	q.mu.Lock()
 	first := q.state.Seats[key].Usage
 	q.mu.Unlock()
-	if first.Allocated <= 0 {
-		t.Fatal("login metadata measurement absent")
+	if first.Allocated < allocated || first.Apparent < payloadStat.Size {
+		t.Fatalf("login measurement %+v omits payload: allocated=%d apparent=%d", first, allocated, payloadStat.Size)
 	}
 	// A wrong-node object must never be stopped, even with a tracked CID.
 	f.mu.Lock()

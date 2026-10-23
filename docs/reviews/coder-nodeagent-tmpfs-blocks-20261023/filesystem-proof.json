@@ -1,0 +1,18 @@
+[
+  {
+    "parent": "/dev/shm/coder-tb",
+    "filesystem": "tmpfs",
+    "empty_dir_blocks": 0,
+    "payload_size": 18432,
+    "payload_blocks": 40,
+    "stat_fs_label": "tmpfs"
+  },
+  {
+    "parent": "/data/ai-dev-data/tmp-coder-tb",
+    "filesystem": "ext4",
+    "empty_dir_blocks": 8,
+    "payload_size": 18432,
+    "payload_blocks": 40,
+    "stat_fs_label": "ext2/ext3"
+  }
+]

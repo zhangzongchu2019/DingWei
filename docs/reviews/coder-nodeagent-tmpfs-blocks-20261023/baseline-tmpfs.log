@@ -1,0 +1,6 @@
+=== RUN   TestSoftLoginMeasurementOwnershipAndRestart
+    softquota_login_test.go:291: login metadata measurement absent
+--- FAIL: TestSoftLoginMeasurementOwnershipAndRestart (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/nodeagent	0.007s
+FAIL
