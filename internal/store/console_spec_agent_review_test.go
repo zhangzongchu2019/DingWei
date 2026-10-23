@@ -50,17 +50,16 @@ func r8Result(q *SpecAgentRequest) SpecAgentResult {
 	return r
 }
 
-func TestLegacyR8MutationsAreDeniedForPMSpecFlowIncludingReviewerRecipient(t *testing.T) {
+func TestLegacyR8StartIsDeniedForPMSpecReviewerRecipient(t *testing.T) {
 	ctx := context.Background()
 	db := newConsoleSpecStore(t)
 	now := time.Date(2026, 10, 22, 13, 45, 0, 0, time.UTC)
-	if err := db.UpsertConsoleAgent(ctx, model.ConsoleAgent{ID: "r8-flow-agent", KeyID: "r8-flow-key", SessionName: "r8-flow-agent", OwnerPrincipal: "owner-a", Active: true}); err != nil {
-		t.Fatal(err)
-	}
-
 	// The current PM review recipient must not use the legacy R8 start route.
 	draft, err := db.SavePMSpecWorkingDraft(ctx, "owner-a", pmDraftFixture("pm-r8-recipient", "body", 0, ""), now)
 	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertConsoleAgent(ctx, model.ConsoleAgent{ID: "r8-flow-agent", KeyID: "r8-flow-key", SessionName: "r8-flow-agent", OwnerPrincipal: "owner-b", Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = db.FreezePMSpecWorkingDraft(ctx, draft.SpecID, "owner-a", PMSpecFreezeInput{OperationID: "transfer-to-reviewer", ExpectedVersion: draft.Version, ExpectedSHA256: draft.ContentSHA256, Action: PMSpecTransferReview, TargetPrincipal: "owner-b"}, now.Add(time.Second)); err != nil {
@@ -69,26 +68,21 @@ func TestLegacyR8MutationsAreDeniedForPMSpecFlowIncludingReviewerRecipient(t *te
 	if _, err = db.StartSpecAgentRequest(ctx, SpecAgentRequest{ID: "pm-r8-start", ClientID: "pm-r8-start", SpecID: draft.SpecID, Actor: "owner-b", AgentID: "r8-flow-agent", Kind: "review", Revision: 1, SHA: draft.ContentSHA256, Boot: "boot"}, nil, now.Add(2*time.Second)); !errors.Is(err, ErrPMSpecFlowDenied) {
 		t.Fatalf("legacy R8 start accepted for PM reviewer recipient: %v", err)
 	}
+}
 
-	// A pre-existing legacy request must not let confirm or transfer-cancel
-	// mutate an enrolled flow spec (including status/idempotency branches).
-	createSpec(t, db, "legacy-before-flow", "body", now)
-	rev, err := db.ConsoleSpecRevision(ctx, "owner-a", "legacy-before-flow", 1, false)
-	if err != nil || rev == nil {
-		t.Fatalf("legacy revision=%+v err=%v", rev, err)
+func TestLegacyR8CriteriaConfirmationIsDeniedForPMSpecFlow(t *testing.T) {
+	db, now, q, _ := r8Fixture(t, "criteria")
+	insertPMSpecFlowStateForTest(t, db, "s", "editing", 1, q.SHA, now)
+	if _, err := db.ConfirmSpecAgentCriteria(context.Background(), q.ID, "owner-a", 1, q.SHA, nil, now); !errors.Is(err, ErrPMSpecFlowDenied) {
+		t.Fatalf("legacy R8 criteria confirmation accepted for PM flow spec: %v", err)
 	}
-	q, err := db.StartSpecAgentRequest(ctx, SpecAgentRequest{ID: "legacy-r8-request", ClientID: "legacy-r8-client", SpecID: "legacy-before-flow", Actor: "owner-a", AgentID: "r8-flow-agent", Kind: "criteria", Revision: 1, SHA: rev.ContentSHA256, Boot: "boot"}, nil, now)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err = db.db.ExecContext(ctx, `INSERT INTO console_spec_flow(spec_id,original_editor_id,state,created_at,updated_at) VALUES(?,?,?,?,?)`, "legacy-before-flow", "owner-a", "editing", now.Format(time.RFC3339Nano), now.Format(time.RFC3339Nano)); err != nil {
-		t.Fatal(err)
-	}
-	if _, err = db.ConfirmSpecAgentCriteria(ctx, q.ID, "owner-a", 1, q.SHA, nil, now); !errors.Is(err, ErrPMSpecFlowDenied) {
-		t.Fatalf("legacy R8 criteria confirmation accepted for flow spec: %v", err)
-	}
-	if err = db.CancelTransferSpecAgent(ctx, "legacy-before-flow", "owner-a", "乙", "editing", q.ID, 1, q.SHA, now); !errors.Is(err, ErrPMSpecFlowDenied) {
-		t.Fatalf("legacy R8 cancel-transfer accepted for flow spec: %v", err)
+}
+
+func TestLegacyR8CancelTransferIsDeniedForPMSpecFlow(t *testing.T) {
+	db, now, q, _ := r8Fixture(t, "criteria")
+	insertPMSpecFlowStateForTest(t, db, "s", "editing", 1, q.SHA, now)
+	if err := db.CancelTransferSpecAgent(context.Background(), "s", "owner-a", "乙", "editing", q.ID, 1, q.SHA, now); !errors.Is(err, ErrPMSpecFlowDenied) {
+		t.Fatalf("legacy R8 cancel-transfer accepted for PM flow spec: %v", err)
 	}
 }
 func TestR8PendingLockCoversAllStoreWrites(t *testing.T) {
