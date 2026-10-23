@@ -755,7 +755,7 @@ func (h *Hub) HandleConsoleSpecWorkflow(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if err != nil {
-		if errors.Is(err, store.ErrConsoleSpecPermission) {
+		if errors.Is(err, store.ErrConsoleSpecPermission) || errors.Is(err, store.ErrPMSpecFlowDenied) {
 			http.Error(w, err.Error(), http.StatusForbidden)
 		} else {
 			http.Error(w, err.Error(), http.StatusConflict)

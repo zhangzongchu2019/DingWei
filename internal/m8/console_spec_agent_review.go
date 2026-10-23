@@ -45,7 +45,7 @@ func specAgentError(w http.ResponseWriter, e error) {
 	status := 503
 	code := "spec_review_unavailable"
 	switch {
-	case errors.Is(e, store.ErrConsoleSpecPermission), errors.Is(e, identity.ErrForbidden), errors.Is(e, identity.ErrNotFound):
+	case errors.Is(e, store.ErrConsoleSpecPermission), errors.Is(e, store.ErrPMSpecFlowDenied), errors.Is(e, identity.ErrForbidden), errors.Is(e, identity.ErrNotFound):
 		status = 403
 		code = "spec_review_access_denied"
 	case errors.Is(e, store.ErrSpecAgentInvalid):

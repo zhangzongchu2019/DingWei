@@ -30,6 +30,10 @@ func (h *Hub) effectiveSpecPresplitTimeout() time.Duration {
 	return defaultSpecPresplitTimeout
 }
 
+type pmSpecFlowPresplitRepository interface {
+	StartConsoleSpecPresplitWithPMSpecFlow(context.Context, model.ConsoleSpecPresplitRequest, string, bool) (*model.ConsoleSpecRevision, *model.ConsoleAgent, error)
+}
+
 func (h *Hub) HandleConsoleSpecPresplit(w http.ResponseWriter, r *http.Request) {
 	repo, ok := h.consoleSpecs()
 	if !ok {
@@ -79,10 +83,22 @@ func (h *Hub) HandleConsoleSpecPresplit(w http.ResponseWriter, r *http.Request) 
 	now := h.now()
 	req := model.ConsoleSpecPresplitRequest{ID: "presplit:" + randomHex(16), SpecID: r.PathValue("specID"), AgentID: body.AgentID,
 		Status: "pending", CreatedAt: now, DeadlineAt: now.Add(h.effectiveSpecPresplitTimeout())}
-	revision, agent, err := repo.StartConsoleSpecPresplit(r.Context(), req, principal)
+	var revision *model.ConsoleSpecRevision
+	var agent *model.ConsoleAgent
+	var err error
+	if h.pmSpecFlowEnabled {
+		guarded, ok := h.Repo.(pmSpecFlowPresplitRepository)
+		if !ok {
+			http.Error(w, "PM spec flow presplit gate unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		revision, agent, err = guarded.StartConsoleSpecPresplitWithPMSpecFlow(r.Context(), req, principal, true)
+	} else {
+		revision, agent, err = repo.StartConsoleSpecPresplit(r.Context(), req, principal)
+	}
 	if err != nil {
 		code := http.StatusConflict
-		if errors.Is(err, store.ErrConsoleSpecPermission) {
+		if errors.Is(err, store.ErrConsoleSpecPermission) || errors.Is(err, store.ErrPMSpecFlowDenied) {
 			code = http.StatusForbidden
 		}
 		http.Error(w, err.Error(), code)

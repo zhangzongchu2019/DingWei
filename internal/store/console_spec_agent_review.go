@@ -123,6 +123,9 @@ func (s *SQLite) StartSpecAgentRequest(ctx context.Context, q SpecAgentRequest, 
 		return nil, e
 	}
 	defer tx.Rollback()
+	if e = denyLegacySpecAgentReview(ctx, tx, q.SpecID); e != nil {
+		return nil, e
+	}
 	if e = expireSpecAgent(ctx, tx, now); e != nil {
 		return nil, e
 	}
@@ -427,6 +430,9 @@ func (s *SQLite) ConfirmSpecAgentCriteria(ctx context.Context, id, actor string,
 	if e != nil {
 		return 0, e
 	}
+	if e = denyLegacySpecAgentReview(ctx, tx, q.SpecID); e != nil {
+		return 0, e
+	}
 	if q.Actor != actor || q.Kind != "criteria" || q.Revision != revision || q.SHA != sha {
 		return 0, ErrConsoleSpecPermission
 	}
@@ -537,6 +543,9 @@ func (s *SQLite) CancelTransferSpecAgent(ctx context.Context, spec, actor, targe
 	}
 	q, e := scanSpecAgent(tx.QueryRowContext(ctx, `SELECT `+specAgentCols+` FROM console_spec_agent_request WHERE id=?`, id))
 	if e != nil {
+		return e
+	}
+	if e = denyLegacySpecAgentReview(ctx, tx, q.SpecID); e != nil {
 		return e
 	}
 	if q.SpecID != spec || q.Actor != actor || q.Revision != revision || q.SHA != sha || (q.Status != "pending" && q.Status != "awaiting_confirmation") {

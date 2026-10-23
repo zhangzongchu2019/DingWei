@@ -23,6 +23,55 @@ var (
 	ErrPMSpecFlowStale    = errors.New("PM spec assist result is stale")
 )
 
+// denyLegacySpecAgentReview rejects legacy R8 mutations for specs enrolled in
+// the PM flow. Keep this in the caller's transaction so an idempotent replay
+// cannot bypass the flow boundary.
+func denyLegacySpecAgentReview(ctx context.Context, tx *sql.Tx, specID string) error {
+	table, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil || !table {
+		return err
+	}
+	var n int
+	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&n); err != nil {
+		return err
+	}
+	if n != 0 {
+		return ErrPMSpecFlowDenied
+	}
+	return nil
+}
+
+// requireFinalizedPMSpecForSplit is opt-in: with the capability disabled,
+// legacy presplit behavior is unchanged. When enabled, an enrolled PM-flow
+// spec may enter splitting only through its finalized reviewed revision.
+func requireFinalizedPMSpecForSplit(ctx context.Context, tx *sql.Tx, enabled bool, specID string, revision int) error {
+	if !enabled {
+		return nil
+	}
+	table, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil || !table {
+		return err
+	}
+	var state, frozenSHA string
+	var frozenRevision int
+	err = tx.QueryRowContext(ctx, `SELECT state,frozen_revision,frozen_sha256 FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&state, &frozenRevision, &frozenSHA)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	var currentRevision int
+	var currentSHA string
+	if err = tx.QueryRowContext(ctx, `SELECT s.current_revision,r.content_sha256 FROM console_spec s JOIN console_spec_revision r ON r.spec_id=s.id AND r.revision=s.current_revision WHERE s.id=? AND s.archived=0`, specID).Scan(&currentRevision, &currentSHA); err != nil {
+		return ErrPMSpecFlowDenied
+	}
+	if state != "final" || frozenRevision != revision || currentRevision != revision || frozenSHA == "" || currentSHA != frozenSHA {
+		return ErrPMSpecFlowDenied
+	}
+	return nil
+}
+
 type PMSpecWorkingDraft struct {
 	SpecID           string `json:"spec_id"`
 	PrincipalID      string `json:"principal_id"`
