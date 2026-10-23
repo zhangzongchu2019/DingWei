@@ -43,7 +43,7 @@ class IPCStartupIsolationTests(unittest.IsolatedAsyncioTestCase):
                     session_capabilities_envelope=lambda _: {"type": "synthetic-capabilities"},
                     _make_vsapi_handler=lambda: None,
                 )
-                for name in ("_make_send_handler", "_make_file_handler", "_make_desktop_inbox_handler", "_make_spec_write_handler"):
+                for name in ("_make_send_handler", "_make_file_handler", "_make_desktop_inbox_handler", "_make_spec_write_handler", "_make_delivery_status_handler"):
                     setattr(helper, name, lambda ws: None)
 
                 helper._make_task_flow_handler = lambda: None
@@ -69,7 +69,7 @@ class IPCStartupIsolationTests(unittest.IsolatedAsyncioTestCase):
                 helper._ipc_server, helper.recv_loop = optional_ipc, business
                 for name in ("online_list_heartbeat_loop", "delivery_worker_loop", "pending_drain_loop",
                              "file_inbound_worker_loop", "terminal_loop", "session_event_loop",
-                             "agent_disk_metrics_loop", "outbox_loop", "mirror_loop"):
+                             "agent_disk_metrics_loop", "inbox_progress_loop", "outbox_loop", "mirror_loop"):
                     setattr(helper, name, idle)
                 error_log = io.StringIO()
                 async def failed_listener(*args, **kwargs):

@@ -18,6 +18,7 @@ import time
 import weakref
 
 from .contract import SessionEvent
+from .inbox_progress import observe
 from .unified_queue import EnqueueResult, QueuedCommand, UnifiedCommandQueue
 from .config import env_get
 
@@ -159,6 +160,7 @@ class DriverAdapter:
     def handle_delivery(self, env: dict, on_injected=None, on_admitted=None, on_admission_failed=None) -> str:
         body = str(env.get("body") or "")
         if not body:
+            observe(getattr(self, "delivery_progress", None), str((env.get("meta") or {}).get("delivery_id") or env.get("id") or ""), "unknown")
             return ""
         if not self._started:
             self.start()
@@ -172,6 +174,8 @@ class DriverAdapter:
         # public enqueue_envelope here would set _work_available first, allowing
         # a fast fake/local driver to admit before the callback is installed.
         result = self._commands.enqueue(env)
+        if result.state == "queued":
+            observe(getattr(self, "delivery_progress", None), result.command.delivery_id, "adapter_queued")
         self._publish_queue_event(result.event)
         if result.state == "rejected":
             if on_admission_failed is not None:
@@ -275,6 +279,9 @@ class DriverAdapter:
     def _deliver_command(self, command: QueuedCommand) -> None:
         if (command.envelope.get('meta') or {}).get('kind')!='task_blocker_ready':
             return self._deliver_regular_command(command)
+        def finish(outcome):
+            self._commands.finish(command.delivery_id, outcome)
+            observe(getattr(self, "delivery_progress", None), command.delivery_id, "unknown")
         journal=None;signal=(command.envelope.get('meta') or {}).get('signal_id')
         try:
             journal=self._blocker_journal()
@@ -283,12 +290,12 @@ class DriverAdapter:
             current=journal.stage(command.envelope)['state']
             if current=='pending':
                 if self.blocker_prepare is None:
-                    journal.finish(signal,'unknown','preflight_unavailable');self._commands.finish(command.delivery_id,'failed');return
+                    journal.finish(signal,'unknown','preflight_unavailable');finish('failed');return
                 safe,reason=self.blocker_prepare(command.envelope)
                 if safe is None:
                     if reason=='current_authorization_or_read_failed':
                         self._commands.defer_current(command.delivery_id);self._bridge_sleep(0.5);return
-                    journal.finish(signal,'cancelled',reason);self._commands.finish(command.delivery_id,'interrupted');return
+                    journal.finish(signal,'cancelled',reason);finish('interrupted');return
                 command.envelope=safe;command.text=safe['body']
             previous=journal.start(signal)
             if previous=='pending':
@@ -296,9 +303,9 @@ class DriverAdapter:
             elif previous in ('dispatching','admitted'):
                 receipt=self.driver.poll_receipt(command.delivery_id)
             else:
-                self._commands.finish(command.delivery_id,'completed');return
+                finish('completed');return
             if receipt.state not in ('accepted','processing','done','failed'):
-                journal.finish(signal,'unknown','protocol_receipt_unknown_no_replay');self._commands.finish(command.delivery_id,'failed');self._publish_terminal_failure(command,'blocker_wake_outcome_unknown','Inspect receipt; do not retry the execution');return
+                journal.finish(signal,'unknown','protocol_receipt_unknown_no_replay');finish('failed');self._publish_terminal_failure(command,'blocker_wake_outcome_unknown','Inspect receipt; do not retry the execution');return
             journal.finish(signal,'admitted','protocol_receipt_observed')
             self._settle_command(command,receipt)
             journal.finish(signal,'done' if command.state=='completed' else 'failed',command.state)
@@ -308,10 +315,11 @@ class DriverAdapter:
             if journal is not None:
                 try:journal.finish(signal,'unknown','dispatch_exception_no_replay')
                 except Exception:pass
-            self._commands.finish(command.delivery_id,'failed')
+            finish('failed')
             self._publish_terminal_failure(command,'blocker_wake_outcome_unknown','Inspect receipt; do not retry the execution')
 
     def _deliver_regular_command(self, command: QueuedCommand) -> None:
+        observe(getattr(self, "delivery_progress", None), command.delivery_id, "dispatching")
         try:
             receipt = self.driver.deliver(command.delivery_id, command.text)
             print(
@@ -325,12 +333,16 @@ class DriverAdapter:
             self._publish_terminal_failure(command, "deliver_failed", str(exc))
             self._fail_admission(command.delivery_id)
             self._commands.finish(command.delivery_id, "failed")
+            observe(getattr(self, "delivery_progress", None), command.delivery_id, "unknown")
 
     def _settle_command(self, command: QueuedCommand, receipt) -> None:
         admitted = False
+        progress_admitted = False
         while True:
             if not admitted:
                 admitted = self._admit_from_receipt(command, receipt)
+            if not progress_admitted:
+                progress_admitted = self._observe_model_admission(command, receipt)
             if receipt.state in ("done", "failed"):
                 if not admitted:
                     self._fail_admission(command.delivery_id)
@@ -351,6 +363,7 @@ class DriverAdapter:
                     else "failed"
                 )
                 self._commands.finish(command.delivery_id, outcome)
+                observe(getattr(self, "delivery_progress", None), command.delivery_id, "terminal" if progress_admitted else "unknown")
                 self._interrupt_confirmed.discard(key)
                 self._turn_progress.pop((command.delivery_id, command.turn_id), None)
                 print(
@@ -367,6 +380,7 @@ class DriverAdapter:
                     self._publish_terminal_failure(command, "terminal_timeout", "driver emitted no terminal event")
                     self._timed_out_turns.add(key)
                     self._commands.finish(command.delivery_id, "failed")
+                    observe(getattr(self, "delivery_progress", None), command.delivery_id, "terminal" if progress_admitted else "unknown")
                     self._turn_progress.pop(key, None)
                     print(f"[delivery][TIMEOUT] id={command.delivery_id} turn={command.turn_id}", flush=True)
                     return
@@ -397,6 +411,20 @@ class DriverAdapter:
             if field.startswith("turn="):
                 return field.removeprefix("turn=").rstrip(",")
         return ""
+
+    def _observe_model_admission(self, command: QueuedCommand, receipt) -> bool:
+        """Stronger observational evidence, without changing existing ACK/dispatch.
+
+        Claude's processing/submitted receipt may precede isReplay. Keep counting
+        that delivery until the actual ACK or result, including subsequent polls.
+        These receipt forms are pinned by the real Claude parser regression.
+        """
+        if receipt.state not in ("accepted", "processing", "done") or not command.turn_id:
+            return False
+        if self._which == "claude" and receipt.state == "processing" and not str(receipt.detail).startswith("accepted,"):
+            return False
+        observe(getattr(self, "delivery_progress", None), command.delivery_id, "model_admitted")
+        return True
 
     def _admit_from_receipt(self, command: QueuedCommand, receipt) -> bool:
         if receipt.state not in ("accepted", "processing", "done"):

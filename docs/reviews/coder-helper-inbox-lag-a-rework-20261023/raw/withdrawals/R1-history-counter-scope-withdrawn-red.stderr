@@ -1,0 +1,24 @@
+test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) ... 
+  test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) (previous_candidate=False) ... FAIL
+  test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) (previous_candidate=True) ... FAIL
+
+======================================================================
+FAIL: test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) (previous_candidate=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper/tests/test_inbox_progress.py", line 111, in test_1500_processed_history_rows_do_not_pollute_current_unknown_count
+    self.assertEqual(snap['dispatch_unknown_count'], 0)
+AssertionError: 1500 != 0
+
+======================================================================
+FAIL: test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) (previous_candidate=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper/tests/test_inbox_progress.py", line 111, in test_1500_processed_history_rows_do_not_pollute_current_unknown_count
+    self.assertEqual(snap['dispatch_unknown_count'], 0)
+AssertionError: 1500 != 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.152s
+
+FAILED (failures=2)

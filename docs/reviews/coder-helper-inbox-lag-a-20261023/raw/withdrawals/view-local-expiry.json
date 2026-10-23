@@ -1,0 +1,55 @@
+{
+  "name": "view-local-expiry",
+  "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+  "file": "view-service/renderer-canary-sse.html",
+  "original_sha256": "a1b61f3ec7426feeefdb2f76119b6635f450ae6a0a752aeec8615a615ca61041",
+  "mutant_sha256": "373e292bb2259035c13802ec813ec33ed6b50550af61499bda69974970d61804",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python3",
+    "-B",
+    "-m",
+    "unittest",
+    "-v",
+    "view-service/test_inbox_lag_resource.py"
+  ],
+  "environment": {
+    "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+    "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC"
+  },
+  "runs": [
+    {
+      "phase": "green-before",
+      "start_utc": "2026-10-23T04:57:11.719696+00:00",
+      "end_utc": "2026-10-23T04:57:12.194907+00:00",
+      "elapsed_seconds": 0.475,
+      "rc": 0,
+      "semantic_assertion_failure": false
+    },
+    {
+      "phase": "withdrawn-red",
+      "start_utc": "2026-10-23T04:57:12.195081+00:00",
+      "end_utc": "2026-10-23T04:57:12.648418+00:00",
+      "elapsed_seconds": 0.453,
+      "rc": 1,
+      "semantic_assertion_failure": true
+    },
+    {
+      "phase": "restored-green",
+      "start_utc": "2026-10-23T04:57:12.648584+00:00",
+      "end_utc": "2026-10-23T04:57:13.129714+00:00",
+      "elapsed_seconds": 0.481,
+      "rc": 0,
+      "semantic_assertion_failure": false
+    }
+  ],
+  "restored_sha256": "a1b61f3ec7426feeefdb2f76119b6635f450ae6a0a752aeec8615a615ca61041",
+  "result": "GREEN_RED_GREEN"
+}

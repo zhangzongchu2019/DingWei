@@ -1,0 +1,14 @@
+test_restart_and_historical_processed_are_unknown_without_replay (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_restart_and_historical_processed_are_unknown_without_replay) ... FAIL
+
+======================================================================
+FAIL: test_restart_and_historical_processed_are_unknown_without_replay (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_restart_and_historical_processed_are_unknown_without_replay)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_inbox_progress.py", line 82, in test_restart_and_historical_processed_are_unknown_without_replay
+    self.assertEqual(snapshot['disk_not_admitted_count'], 0)
+AssertionError: 1 != 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.083s
+
+FAILED (failures=1)

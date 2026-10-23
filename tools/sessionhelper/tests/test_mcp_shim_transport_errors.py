@@ -25,6 +25,7 @@ def request(request_id, tool='send_message', upload_path=''):
         'heartbeat_report': {'status': 'active'},
         'project_context': {'scope': 'config'},
         'dw_inbox': {'operation': 'status'},
+        'dw_delivery_status': {'delivery_id': 'dw-dlv_'+'a'*32},
         'dw_spec_review_requests': {'request_id':'specreview_fixture'},
         'dw_spec_review_reply': {'request_id':'specreview_fixture','kind':'review','revision':1,'content_sha256':'a'*64,'issues':[]},
         'dw_task_blocker_list': {'task_id':'fixture'},

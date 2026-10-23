@@ -1,0 +1,24 @@
+test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) ... 
+  test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) (previous_candidate=False) ... FAIL
+  test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) (previous_candidate=True) ... FAIL
+
+======================================================================
+FAIL: test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) (previous_candidate=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper/tests/test_inbox_progress.py", line 121, in test_1500_processed_history_rows_do_not_pollute_current_unknown_count
+    self.assertEqual(upgraded.progress.snapshot()['dispatch_unknown_count'], 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) (previous_candidate=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper/tests/test_inbox_progress.py", line 121, in test_1500_processed_history_rows_do_not_pollute_current_unknown_count
+    self.assertEqual(upgraded.progress.snapshot()['dispatch_unknown_count'], 1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.194s
+
+FAILED (failures=2)

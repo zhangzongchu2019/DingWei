@@ -1,0 +1,535 @@
+............................................/usr/lib/python3.12/pty.py:95: DeprecationWarning: This process (pid=99774) is multi-threaded, use of forkpty() may lead to deadlocks in the child.
+  pid, fd = os.forkpty()
+.......................................[view-backfill] history unavailable thread=thread-bound error=TimeoutError
+....[view-backfill] history unavailable thread=thread-bound error=RuntimeError
+.............................................................................................E....................................................................../data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_durable_agent_delivery_injects_cli.py:131: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/h/sh-durable-cli-ybiod5wl/cli.log' mode='r' encoding='UTF-8'>
+  self._wait(lambda: os.path.exists(self.cli_log) and body in open(self.cli_log).read(), 20,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_durable_agent_delivery_injects_cli.py", line 63, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+......................................................../usr/lib/python3.12/asyncio/base_events.py:726: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+............{"boot_marker":"ef226b7d5c059b8b7b938b2d5be4b03b","isolated":0,"pid":99774,"sessionhelper_file":"/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/sessionhelper/__init__.py","starttime":52088345,"type":"helper_boot_origin"}
+......[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001000
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001550
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002108
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002678
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002679
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002680
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002681
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003092
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004093
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004650
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005217
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005774
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005775
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005776
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005777
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005778
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005779
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005780
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005781
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005782
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005783
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005784
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005785
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005786
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:001000
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002001
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002002
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002003
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002004
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002005
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002006
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002007
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002008
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002009
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002010
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002011
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002012
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002013
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002014
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002015
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002016
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002017
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002018
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002019
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002020
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002021
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002022
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002023
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002024
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002025
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002026
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002027
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002028
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002029
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002030
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002031
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002032
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002033
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002034
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002035
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002036
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002037
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002038
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002039
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002040
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002041
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002042
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002043
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002044
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002045
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002046
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002047
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002048
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002049
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002050
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002051
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002052
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002053
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002054
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002055
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002594
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003000
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003995
+...............................................................................................................................................................connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_ipc_socket_path_isolation.py", line 26, in hub
+    exchanged.append(await ws.recv())
+                     ^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedOK: received 1000 (OK); then sent 1000 (OK)
+Econnection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_ipc_socket_path_isolation.py", line 26, in hub
+    exchanged.append(await ws.recv())
+                     ^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedOK: received 1000 (OK); then sent 1000 (OK)
+E........................FFFFFFFFFFFFFFFFFF..................E...connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+./usr/lib/python3.12/asyncio/base_events.py:726: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+............................................F...F..................................................................connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+..................................................F.............................../usr/lib/python3.12/pty.py:95: DeprecationWarning: This process (pid=99774) is multi-threaded, use of forkpty() may lead to deadlocks in the child.
+  pid, fd = os.forkpty()
+...................[delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions session=home targets=['home', 'zzc-home-2642'] to=['tester#FB-2642']
+[delivery][legacy_inbox] imported 2/2 pending deliveries from /data/ai-dev-data/h/tmpvcl0b1aw/sessionhelper_inbox.db into /data/ai-dev-data/h/tmpvcl0b1aw/sessionhelper_inbox-home.db session=home
+.........................................................................................................../usr/lib/python3.12/asyncio/base_events.py:726: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.................................[delivery][STALLED] id=env-c-idle idle_elapsed=91s no progress event; turn appears hung
+.[delivery][STALLED] id=env-c-tool idle_elapsed=91s no progress event; turn appears hung
+.[delivery][ABSOLUTE_TIMEOUT] id=env-c total_elapsed=901s; turn exceeded hard limit
+....[delivery][STALLED] envelope=env-x idle stalled: no progress event for 91s
+[delivery][ABSOLUTE_TIMEOUT] envelope=env-x absolute turn timeout: total runtime 901s exceeded 900s limit
+.[delivery][STALLED] envelope=env-x idle stalled: no progress event for 91s
+...[delivery][STALLED] envelope=env-o no progress event for 91s — model may be misconfigured or session stalled. Protocol receipt guarantees admission, not processing.
+[delivery][ABSOLUTE_TIMEOUT] envelope=env-o absolute turn timeout: total runtime 901s exceeded 900s limit
+.[delivery][STALLED] envelope=env-o no progress event for 91s — model may be misconfigured or session stalled. Protocol receipt guarantees admission, not processing.
+.......................................................Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/data/ai-dev-data/h/tmp_142w0c8/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+..........
+======================================================================
+ERROR: test_existing_helper_write_receipt_is_not_delivery_confirmation (test_desktop_dispatch.DispatchTest.test_existing_helper_write_receipt_is_not_delivery_confirmation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_desktop_dispatch.py", line 192, in test_existing_helper_write_receipt_is_not_delivery_confirmation
+    self.engine.flush_reply(sender)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/sessionhelper/desktop_dispatch.py", line 157, in flush_reply
+    result = sender(payload)
+             ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_desktop_dispatch.py", line 190, in sender
+    return asyncio.run(transport_send(payload['to'], payload['body'], payload['meta']))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/sessionhelper/app.py", line 383, in _send
+    if self.outbound_receipts.connection is ws and self.outbound_receipts.negotiated:
+       ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SessionHelper' object has no attribute 'outbound_receipts'
+
+======================================================================
+ERROR: test_long_path_messages_and_reconnect_continue_with_one_error (test_ipc_socket_path_isolation.IPCStartupIsolationTests.test_long_path_messages_and_reconnect_continue_with_one_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_ipc_socket_path_isolation.py", line 98, in test_long_path_messages_and_reconnect_continue_with_one_error
+    await self.scenario()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_ipc_socket_path_isolation.py", line 82, in scenario
+    await asyncio.wait_for(SessionHelper._run_once(helper), 3)
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/sessionhelper/app.py", line 781, in _run_once
+    self.inbox_progress_loop(ws),
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'types.SimpleNamespace' object has no attribute 'inbox_progress_loop'
+
+======================================================================
+ERROR: test_unexpected_ipc_task_error_is_consumed_during_cleanup (test_ipc_socket_path_isolation.IPCStartupIsolationTests.test_unexpected_ipc_task_error_is_consumed_during_cleanup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_ipc_socket_path_isolation.py", line 101, in test_unexpected_ipc_task_error_is_consumed_during_cleanup
+    await self.scenario(unexpected_failure=True)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_ipc_socket_path_isolation.py", line 82, in scenario
+    await asyncio.wait_for(SessionHelper._run_once(helper), 3)
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/sessionhelper/app.py", line 781, in _run_once
+    self.inbox_progress_loop(ws),
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'types.SimpleNamespace' object has no attribute 'inbox_progress_loop'
+
+======================================================================
+ERROR: test_all_registered_tools_return_sanitized_execution_errors (test_mcp_shim_transport_errors.ShimTransportTests.test_all_registered_tools_return_sanitized_execution_errors) (tool='dw_delivery_status')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 240, in test_all_registered_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'project_context_unsupported' if tool=='project_context' else 'blocker_unsupported_upgrade_helper' if tool.startswith('dw_task_blocker_') else 'question_unsupported_upgrade_helper' if tool.startswith('dw_task_question_') else 'template_unsupported_upgrade_helper' if tool=='dw_spec_template' else 'clarification_unsupported_upgrade_helper' if tool=='dw_spec_clarifications' else 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 178, in exercise
+    child.send(request(1, tool, upload))
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 23, in request
+    args = {
+           ^
+KeyError: 'dw_delivery_status'
+
+======================================================================
+FAIL: test_bootstrap_all_three_shapes_and_no_state_creation (test_mcp_forwarder.ForwarderTests.test_bootstrap_all_three_shapes_and_no_state_creation) (shape='module')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 101, in test_bootstrap_all_three_shapes_and_no_state_creation
+    self.check_readonly(shape=shape, cwd=self.base)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_bootstrap_all_three_shapes_and_no_state_creation (test_mcp_forwarder.ForwarderTests.test_bootstrap_all_three_shapes_and_no_state_creation) (shape='factory-script')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 101, in test_bootstrap_all_three_shapes_and_no_state_creation
+    self.check_readonly(shape=shape, cwd=self.base)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_bootstrap_all_three_shapes_and_no_state_creation (test_mcp_forwarder.ForwarderTests.test_bootstrap_all_three_shapes_and_no_state_creation) (shape='factory-module')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 101, in test_bootstrap_all_three_shapes_and_no_state_creation
+    self.check_readonly(shape=shape, cwd=self.base)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_bootstrap_all_three_shapes_and_no_state_creation (test_mcp_forwarder.ForwarderTests.test_bootstrap_all_three_shapes_and_no_state_creation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 102, in test_bootstrap_all_three_shapes_and_no_state_creation
+    self.check_readonly()  # also handle cwd == mount
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_current_selected_pending_previous_ignored_and_budget_unchanged (test_mcp_forwarder.ForwarderTests.test_current_selected_pending_previous_ignored_and_budget_unchanged)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 118, in test_current_selected_pending_previous_ignored_and_budget_unchanged
+    self.check_readonly('0.2.3.2')
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_directory_journal_falls_back_within_timeout (test_mcp_forwarder.ForwarderTests.test_directory_journal_falls_back_within_timeout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 165, in test_directory_journal_falls_back_within_timeout
+    self.check_special_journal()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 150, in check_special_journal
+    assert_tools(self, probe(self.mount, self.state, timeout=2), '0.2.3.1')
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_fifo_journal_without_writer_falls_back_within_timeout (test_mcp_forwarder.ForwarderTests.test_fifo_journal_without_writer_falls_back_within_timeout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 161, in test_fifo_journal_without_writer_falls_back_within_timeout
+    self.check_special_journal()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 150, in check_special_journal
+    assert_tools(self, probe(self.mount, self.state, timeout=2), '0.2.3.1')
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 127, in test_invalid_journals_and_current_slots_fall_back
+    self.check_readonly()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 127, in test_invalid_journals_and_current_slots_fall_back
+    self.check_readonly()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 127, in test_invalid_journals_and_current_slots_fall_back
+    self.check_readonly()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value={'format': 2})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 127, in test_invalid_journals_and_current_slots_fall_back
+    self.check_readonly()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value={'format': 1, 'current': None})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 127, in test_invalid_journals_and_current_slots_fall_back
+    self.check_readonly()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value={'format': 1, 'current': []})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 127, in test_invalid_journals_and_current_slots_fall_back
+    self.check_readonly()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value={'format': 1, 'current': {'sha256': '../outside'}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 127, in test_invalid_journals_and_current_slots_fall_back
+    self.check_readonly()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back) (value={'format': 1, 'current': {'sha256': 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 127, in test_invalid_journals_and_current_slots_fall_back
+    self.check_readonly()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_invalid_journals_and_current_slots_fall_back (test_mcp_forwarder.ForwarderTests.test_invalid_journals_and_current_slots_fall_back)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 131, in test_invalid_journals_and_current_slots_fall_back
+    self.check_readonly()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 94, in check_readonly
+    assert_tools(self, probe(self.mount, self.state, shape, cwd), version)
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_oversized_journal_falls_back_within_timeout (test_mcp_forwarder.ForwarderTests.test_oversized_journal_falls_back_within_timeout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 175, in test_oversized_journal_falls_back_within_timeout
+    self.check_special_journal()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 150, in check_special_journal
+    assert_tools(self, probe(self.mount, self.state, timeout=2), '0.2.3.1')
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_socket_journal_falls_back_within_timeout (test_mcp_forwarder.ForwarderTests.test_socket_journal_falls_back_within_timeout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 170, in test_socket_journal_falls_back_within_timeout
+    self.check_special_journal()
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 150, in check_special_journal
+    assert_tools(self, probe(self.mount, self.state, timeout=2), '0.2.3.1')
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_three_tools_visible_and_no_pm_write_tool (test_pilot_question.PilotQuestionTest.test_three_tools_visible_and_no_pm_write_tool)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_pilot_question.py", line 86, in test_three_tools_visible_and_no_pm_write_tool
+    self.assertEqual(len(names),24)
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_one_new_visible_tool (test_pilot_template.PilotTemplateTest.test_one_new_visible_tool)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_pilot_template.py", line 32, in test_one_new_visible_tool
+    names={x['name'] for x in r.result['tools']};self.assertEqual(len(names),24);self.assertIn('dw_spec_template',names,'TEMPLATE_MCP_UNREGISTERED')
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 25 != 24
+
+======================================================================
+FAIL: test_mcp_module_and_factory_script_after_actual_self_update (test_self_update_offer.OfferTests.test_mcp_module_and_factory_script_after_actual_self_update)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_self_update_offer.py", line 163, in test_mcp_module_and_factory_script_after_actual_self_update
+    assert_tools(self, probe(self.mount, state), '0.2.3.1')
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_forwarder.py", line 57, in assert_tools
+    test.assertEqual(len(tools), 24)
+AssertionError: 25 != 24
+
+----------------------------------------------------------------------
+Ran 972 tests in 430.926s
+
+FAILED (failures=21, errors=4)

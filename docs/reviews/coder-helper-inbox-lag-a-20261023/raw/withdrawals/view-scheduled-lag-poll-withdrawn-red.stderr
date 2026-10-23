@@ -1,0 +1,11 @@
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert(lagPolls>=1)
+
+    at /data/ai-dev-data/helper-inbox-lag-a/view-service/inbox-lag-regression.js:31:4 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '=='
+}

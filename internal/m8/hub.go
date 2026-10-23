@@ -221,6 +221,10 @@ type client struct {
 }
 
 type sessionClient struct {
+	inboxLag         *inboxLagCache // Observational, bound to this authenticated connection.
+	lastInboxAttempt time.Time
+	lastInboxQuery   time.Time
+
 	metricsAgentID     string // Set only by dedicated credential admission, never helper JSON.
 	metricsGeneration  string
 	diskMetrics        *agentmetrics.Cache // Access to the pointer is under h.mu.
@@ -1330,6 +1334,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		}
 		// R-V2-AGENT-FILE-UPLOAD：取文件票原先只在带 target_bot 的连接上分派（见上）；托管席与多数自备 helper 不带 target_bot，
 		// 取票信封会落进普通路由。这里对其余已认证会话同样就地应答（票绑定本连接的 owner／会话，信封自报的身份一律不看）。
+		if h.handleInboxLagControl(r.Context(), c, env) {
+			continue
+		}
 		if h.handleAgentDiskMetrics(r.Context(), c, env) {
 			continue
 		}
@@ -4154,7 +4161,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		}
 		capabilityAdmission = h.capabilityPendingAdmissions[terminalKey(keyID, sessionName)]
 	}()
-	wantReceipt := outboundReceiptRequested(env)
+	wantReceipt := outboundReceiptRequested(env) || inboxReceiptRequested(env)
 	receiptNonce := metaString(env.Meta, outboundReceiptNonceKey)
 	reliable := reliablePrimaryEnvelope(env)
 	deliveryACK := c != nil && h.sessionSupportsDeliveryACK(c)
@@ -4191,7 +4198,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			defer capabilityAdmission.mu.Unlock()
 		}
 	}
-	if wantReceipt && !(reliable && (deliveryACK || capabilityPending) && h.Repo != nil) {
+	if outboundReceiptRequested(env) && !(reliable && (deliveryACK || capabilityPending) && h.Repo != nil) {
 		h.unclaimEnvelope(env.ID, sig)
 		return errors.New("confirmed outbound requires a durable target")
 	}
@@ -4233,7 +4240,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			// Receipt control flag belongs to the sender/Hub only.
 			cleanMeta := make(map[string]any, len(env.Meta))
 			for k, v := range env.Meta {
-				if k != outboundReceiptRequestKey && k != outboundReceiptNonceKey {
+				if k != outboundReceiptRequestKey && k != outboundReceiptNonceKey && k != inboxReceiptRequestKey {
 					cleanMeta[k] = v
 				}
 			}
@@ -4281,6 +4288,15 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			}
 		}
 		return nil
+	}
+	if inboxReceiptRequested(env) {
+		cleanMeta := make(map[string]any, len(env.Meta))
+		for k, v := range env.Meta {
+			if k != inboxReceiptRequestKey && k != outboundReceiptNonceKey {
+				cleanMeta[k] = v
+			}
+		}
+		env.Meta = cleanMeta
 	}
 	if err := c.write(ctx, sessionClientEnvelope(env)); err != nil {
 		log.Printf("session route decision=direct_write_failed key_id=%s session=%s client_present=true conn_seq=%d source_message_id=%s reason=%q",

@@ -181,6 +181,8 @@ class DispatchTest(unittest.TestCase):
         self.prepare_reply()
         helper = SessionHelper.__new__(SessionHelper)
         helper.book = SimpleNamespace(key_id='fixture-owner', self_addr='fixture-helper#LOCAL')
+        from sessionhelper.outbound_receipt import OutboundReceiptBroker
+        helper.outbound_receipts = OutboundReceiptBroker(['fixture-helper'])
         class SyntheticWS:
             def __init__(self): self.frames = []
             async def send(self, frame): self.frames.append(frame)

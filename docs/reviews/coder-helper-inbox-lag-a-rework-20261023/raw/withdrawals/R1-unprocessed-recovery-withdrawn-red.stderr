@@ -1,0 +1,27 @@
+test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero) ... 
+  test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero) (had_progress=False) ... FAIL
+  test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero) (had_progress=True) ... FAIL
+
+======================================================================
+FAIL: test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero) (had_progress=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper/tests/test_inbox_progress.py", line 150, in test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero
+    self.assertEqual(scope, restarted.progress.instance)
+AssertionError: None != '7c1fb5b10752406aba45b93aee44d530'
+
+======================================================================
+FAIL: test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero) (had_progress=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper/tests/test_inbox_progress.py", line 150, in test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero
+    self.assertEqual(scope, restarted.progress.instance)
+AssertionError: '20314562ffb9499fbd81fcc4c16a1658' != '23c0bf64c2954324bc34be523ee78bf9'
+- 20314562ffb9499fbd81fcc4c16a1658
++ 23c0bf64c2954324bc34be523ee78bf9
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.068s
+
+FAILED (failures=2)

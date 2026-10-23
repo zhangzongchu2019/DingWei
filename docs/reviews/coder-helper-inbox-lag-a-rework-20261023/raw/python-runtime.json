@@ -1,0 +1,12 @@
+{
+  "executable": "/tmp/coder-0232-locked-venv/bin/python3",
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "runtime": {
+    "websockets": "15.0.1",
+    "pexpect": "4.9.0",
+    "ptyprocess": "0.7.0",
+    "certifi": "2026.7.22"
+  },
+  "requirements_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "installed_or_updated_dependencies": false
+}

@@ -1,0 +1,17 @@
+# S-HELPER-INBOX-LAG A — leader rework checkpoint
+
+Base candidate: `b541400596aa7754aaa81ab345e5d6e56400d2d8` (execution source `6a297ec4320a2e0224437849ba77206880aeccb3`). Append on `review/coder/helper-inbox-lag-a`; no deployment or runtime configuration changes.
+
+R1 uses the expressly permitted **current helper instance** counter scope. The helper progress table gains a nullable local `unknown_instance` column, migrated from the six-column candidate schema. Historical processed/failed/cancelled backfills and previously completed unknown records keep their honest per-delivery unknown phase but do not become current live uncertainty. A new unknown observation is tagged with this instance; queued/dispatching work discovered at recovery, plus still-unprocessed inbox uncertainty, is tagged as observed by this instance. The count is `stage=unknown AND unknown_instance=current`; a confirmed later stage removes the tag. Current-instance repeated observations are deduplicated by the existing per-delivery primary key. Nothing turns legacy processed into admitted or changes inbox claim, ACK, retry or replay behavior.
+
+View now states 本次启动另有 N 条注入状态未知. Zero in this scoped count never proves historical unknown deliveries were model-admitted; per-delivery status remains unknown without actual evidence. Regression fixtures cover 1500 processed rows for both pre-A and already-backfilled old-candidate databases, current unknown transitions, previous-instance exclusion, and still-unprocessed recovery. The previous mixed-history test now expects one current recovery unknown, not two including legacy processed; both phases still remain unknown.
+
+R2 removes target connection_generation and sample_instance only from sender query/receipt aggregates, after internal phase/sample correlation. Subject-bound View resources retain their own fields for freshness/order checks. Tests check both redaction and preserved View fields.
+
+R3 directly checks stale ingress does not perform identity I/O, charge old connection state or write a cache. A deterministic identity-store wrapper replaces the current connection between initial admission and cache write, and asserts the old cache itself stays untouched. No production test hook or sleep is added. Both current checks receive separate semantic withdrawal tests.
+
+Registered, deliberately unchanged: with a negotiated receipt-capable Hub and a target lacking durable ACK capability, observation-only send_message still writes once and normally consumes the full two-second receipt budget before unknown. Ordinary desktop IPC mcp_send shares that path; the separate strict desktop confirmation entry remains unchanged. Avoiding this wait would require a new explicitly correlated non-durable result, deferred from this small rework rather than silently changing routing or receipt semantics. No resend occurs on timeout.
+
+Registered follow-up: delivery_progress retention/compaction and snapshot scan/sort costs grow with database history. Instance scoping fixes the live count, not storage growth; uncertainty can still accumulate during one long-lived instance. Historical rows are not deleted in this rework. No Hub migration, new permission, urgent/steer/hook or deployment is introduced. Canonical remains Python 66 / shell 2 because regressions extend existing test files.
+
+Checkpoint tests: 27 Python focused cases, Hub inbox-lag focused Go, and real browser 20 assertions pass. Final full gates and exact-source withdrawal evidence follow with the review candidate.

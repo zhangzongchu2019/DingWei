@@ -1,0 +1,28 @@
+{
+  "base_candidate": "b541400596aa7754aaa81ab345e5d6e56400d2d8",
+  "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+  "source_tree": "4f13a04800e4ba5426613adcb7350f1075fe3318",
+  "changed_file_sha256": {
+    "docs/reviews/coder-helper-inbox-lag-a-rework-20261023/CHECKPOINT.md": "8dbbd1d85de31ec64884a0fd485915583f71236b7ddfe0286b0a3bddadcb4684",
+    "internal/m8/inbox_lag.go": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "internal/m8/inbox_lag_test.go": "924a6577fb5f253cb558897264c987e07a26a139920914d37c906f6ef31bef1e",
+    "tools/sessionhelper/sessionhelper/inbox_progress.py": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+    "tools/sessionhelper/tests/test_inbox_progress.py": "f0b39827dda5c4e76f788cf9793da713cc87a28dcb079a9080e9fa184d2719e0",
+    "view-service/inbox-lag-regression.js": "e8faf04341e3092fd8e74d0be0771b26861bee71e26c327a452598c88aaaf2b0",
+    "view-service/renderer-canary-sse.html": "22d04e485b64d4f0b6bf2ee796928589b851dd2e59c7b0d00679bc779e04cd84",
+    "view-service/test_inbox_lag_resource.py": "7e2464db1c5adc249bfcc64ddaca510eadf5c5e1be51d82b0f95e880b3ef4d8f"
+  },
+  "withdrawal_file_sha256": {
+    "tools/sessionhelper/sessionhelper/driver_adapter.py": "0414306f600d3ee6318a94bfc544484593fd8c13ca6d6999f629dd690efd8def",
+    "tools/sessionhelper/sessionhelper/inbox_progress.py": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+    "internal/m8/inbox_lag.go": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "view-service/renderer-canary-sse.html": "22d04e485b64d4f0b6bf2ee796928589b851dd2e59c7b0d00679bc779e04cd84",
+    "tools/sessionhelper/sessionhelper/outbound_receipt.py": "1551bff5a7bb83ae9afe9c697334a8013b70de6f24197bdf011cc5c1248b1b5f",
+    "tools/sessionhelper/sessionhelper/ipc_listener.py": "b8d4f29e93976d60dd9368f53f1ab28173df848237b72b8bec6f0a0a913f28bc",
+    "internal/m8/hub.go": "c56e819b77dab9a63742f05c5ca9eecc0f9aa8ef9aa1a26b368c0ca36a0d853b"
+  },
+  "version_lock_and_Hub_migrations_unchanged": true,
+  "branch": "review/coder/helper-inbox-lag-a",
+  "old_129_evidence_directory_unchanged": true,
+  "updated_utc": "2026-10-23T11:38:55.045992+00:00"
+}

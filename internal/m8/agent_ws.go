@@ -117,6 +117,7 @@ func (h *Hub) HandleAgentWS(w http.ResponseWriter, r *http.Request) {
 	// Optional control stream capability: old Hubs do not consume this subtype.
 	if ag.Origin == identity.OriginSelfhost {
 		w.Header().Set("X-DW-Agent-Metrics", "agent-disk/v1")
+		w.Header().Set("X-DW-Inbox-Progress", "inbox-progress/v1")
 	}
 	h.serveSession(w, r, adm)
 }

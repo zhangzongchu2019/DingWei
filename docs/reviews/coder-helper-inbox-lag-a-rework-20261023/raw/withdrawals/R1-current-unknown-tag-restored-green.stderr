@@ -1,0 +1,6 @@
+test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.224s
+
+OK

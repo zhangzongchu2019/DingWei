@@ -11,7 +11,9 @@ from .protocol import envelope
 
 
 class OutboundReceiptError(Exception):
-    pass
+    def __init__(self, message, *, source_message_id=""):
+        super().__init__(message)
+        self.source_message_id = source_message_id
 
 
 class OutboundRejected(OutboundReceiptError):
@@ -21,7 +23,9 @@ class OutboundRejected(OutboundReceiptError):
 class OutboundReceiptBroker:
     def __init__(self, session_names):
         self.session_names = frozenset(name for name in session_names if name)
+        self.source_address = next((name for name in session_names if name), "") + "#enrolled"
         self.pending = {}
+        self.status_pending = {}
         self.connection = None
         self.cap_nonce = ""
         self.negotiated = False
@@ -39,7 +43,7 @@ class OutboundReceiptBroker:
         return (len(source)==2 and len(target)==2 and source[0]=='workpulse' and
                 target[0] in self.session_names and bool(source[1]) and source[1]==target[1])
 
-    async def send(self, ws, to, body, from_addr, meta=None, *, timeout=10):
+    async def send(self, ws, to, body, from_addr, meta=None, *, timeout=10, observational=False):
         if self.connection is not ws or not self.negotiated:
             raise OutboundReceiptError("Hub durable receipt capability not negotiated")
         if not isinstance(body, str) or len(body.encode('utf-8')) > 65536:
@@ -50,7 +54,7 @@ class OutboundReceiptBroker:
             raise ValueError('receipt wait limit')
         nonce = secrets.token_hex(16)
         metadata = dict(meta or {})
-        metadata['outbound_receipt_v1'] = True
+        metadata['inbox_receipt_v1' if observational else 'outbound_receipt_v1'] = True
         metadata['outbound_receipt_nonce'] = nonce
         env = envelope(to, body, from_addr, metadata)
         future = asyncio.get_running_loop().create_future()
@@ -59,10 +63,11 @@ class OutboundReceiptBroker:
             async with asyncio.timeout(timeout):
                 await ws.send(json.dumps(env, ensure_ascii=False))
                 return await future
-        except OutboundReceiptError:
+        except OutboundReceiptError as exc:
+            exc.source_message_id = env['id']
             raise
         except Exception:
-            raise OutboundReceiptError('outbound outcome uncertain') from None
+            raise OutboundReceiptError('outbound outcome uncertain', source_message_id=env['id']) from None
         finally:
             self.pending.pop(env['id'], None)
             if not future.done():
@@ -78,6 +83,16 @@ class OutboundReceiptBroker:
                     meta.get('nonce') == self.cap_nonce and type(meta.get('version')) is int and
                     meta['version']==1 and meta.get('durable_agent_queue') is True):
                 self.negotiated = True
+            return True
+        if meta.get('type') == 'delivery_status_result_v1':
+            pending = self.status_pending.get(meta.get('nonce')) if isinstance(meta.get('nonce'), str) else None
+            if pending is not None:
+                connection, delivery_id, future = pending
+                result = meta.get('result')
+                if (connection is ws and self.valid_hub_address(env) and not future.done()
+                        and meta.get('delivery_id') == delivery_id and isinstance(result, dict)):
+                    if result.get('ok') is False or result.get('delivery_id') == delivery_id:
+                        future.set_result(result)
             return True
         if meta.get('type') != 'outbound_receipt': return False
         # Control receipts never become inbox/AI input, even when malformed.
@@ -99,7 +114,35 @@ class OutboundReceiptBroker:
             future.set_exception(OutboundRejected('Hub rejected outbound request'))
         return True
 
+    async def query_status(self, ws, delivery_id, *, timeout=2):
+        if (self.connection is not ws or not self.negotiated
+                or not isinstance(delivery_id, str) or not re.fullmatch(r'dw-dlv_[0-9a-f]{32}', delivery_id)
+                or len(self.status_pending) >= 32):
+            return {'ok': False, 'status': 'unknown'}
+        nonce = secrets.token_hex(16)
+        future = asyncio.get_running_loop().create_future()
+        self.status_pending[nonce] = (ws, delivery_id, future)
+        try:
+            # Actual sender identity is rewritten/bound by Hub credential admission.
+            control = envelope('workpulse#enrolled', '', self.source_address,
+                               {'type': 'delivery_status_query_v1', 'delivery_id': delivery_id,
+                                'nonce': nonce, 'no_mirror': True})
+            async with asyncio.timeout(timeout):
+                await ws.send(json.dumps(control))
+                return await future
+        except Exception:
+            # A status transport failure cannot undo a sent body or cause replay.
+            # CancelledError remains cancellation (BaseException), with cleanup below.
+            return {'ok': False, 'status': 'unknown'}
+        finally:
+            self.status_pending.pop(nonce, None)
+            if not future.done(): future.cancel()
+            elif not future.cancelled(): future.exception()
+
     def abort(self, ws):
+        for connection, _, future in list(self.status_pending.values()):
+            if connection is ws and not future.done():
+                future.set_exception(OutboundReceiptError("connection closed"))
         if self.connection is ws:
             self.connection = None
             self.cap_nonce = ""

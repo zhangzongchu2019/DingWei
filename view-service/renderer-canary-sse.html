@@ -1136,6 +1136,7 @@
         <span class="status-sep sb-res"></span>
         <span class="status-item sb-res">内存 <strong id="memStat">--</strong></span>
         <span class="status-item sb-res">Agent 磁盘 <strong id="diskStat">未知</strong></span>
+        <span class="status-item" id="inboxLagStat">注入状态未知</span>
         <span class="status-item sb-res" id="resourceFreshness" role="status">资源待更新</span>
       </div>
       <!-- 业主 2026-09-18 验收第 1 条：「选择文件上传时，没有任何提示，这个很容易认为是出问题了」
@@ -1587,6 +1588,7 @@
     }
     function updateLocalTime() {
       if (typeof refreshAgentDiskLabel === 'function') refreshAgentDiskLabel();
+      if (typeof refreshInboxLagLabel === 'function') refreshInboxLagLabel();
       // RED 断线态下这一栏显示的是「断线重连中 · 第 N 次」——
       //    时钟每秒刷新一次,不挡住的话会把断线提示**一秒内覆盖掉**,
       //    于是"断线可见"这件事在页面上只存在一瞬 —— 那等于不可见。
@@ -1665,6 +1667,48 @@
       return new AgentDiskState();
           })();
     // A6 authenticated Agent disk display gate END
+    // INBOX_LAG_STATE_BEGIN: authenticated aggregate only; no message bodies or IDs.
+    const inboxLagState = new (class {
+      constructor(){this.clear();}
+      clear(){this.record=null;this.last=null;this.state='unknown';}
+      apply(sample,agent,start,now){
+        const integer=n=>Number.isSafeInteger(n)&&n>=0;
+        const hex=x=>typeof x==='string'&&/^[0-9a-f]{32}$/.test(x);
+        if(!sample||sample.status!=='ok') {this.record=null;this.state=sample&&sample.status==='stale'?'stale':'unknown';return false;}
+        if(!agent||sample.agent_id!==agent||sample.source!=='helper_self_report'||
+           !integer(sample.disk_not_admitted_count)||sample.disk_not_admitted_count>1e9||
+           !integer(sample.dispatch_unknown_count)||sample.dispatch_unknown_count>1e9||
+           !integer(sample.connection_seq)||!hex(sample.connection_generation)||!hex(sample.sample_instance)||
+           !integer(sample.sample_seq)||sample.sample_seq<1||
+           !Number.isFinite(start)||!Number.isFinite(now)||start>now||
+           !integer(sample.remaining_fresh_ms)||sample.remaining_fresh_ms<1||sample.remaining_fresh_ms>10000||
+           (sample.disk_not_admitted_count===0?sample.oldest_wait_ms!==null:!integer(sample.oldest_wait_ms))) {
+          this.record=null;this.state='unknown';return false;
+        }
+        const old=this.last;
+        if(old&&old.agent===agent&&(sample.connection_seq<old.connection||
+           (sample.connection_seq===old.connection&&(sample.connection_generation!==old.generation||
+            sample.sample_instance!==old.instance||sample.sample_seq<=old.seq)))) return false;
+        this.last={agent,connection:sample.connection_seq,generation:sample.connection_generation,instance:sample.sample_instance,seq:sample.sample_seq};
+        this.record={count:sample.disk_not_admitted_count,unknown:sample.dispatch_unknown_count,
+          age:sample.oldest_wait_ms,received:now,deadline:start+sample.remaining_fresh_ms,clockUncertain:sample.clock_uncertain===true};
+        this.state='fresh';return true;
+      }
+      display(now){
+        if(this.state==='fresh'&&(!Number.isFinite(now)||now>=this.record.deadline)){this.record=null;this.state='stale';}
+        if(this.state!=='fresh')return this.state==='stale'?'排队采样已过期':'注入状态未知';
+        const r=this.record;
+        let text='已到盘未注入 '+r.count+' 条';
+        if(r.count)text+='，最老等待 '+Math.floor((r.age+Math.max(0,now-r.received))/60000)+' 分钟'+(r.clockUncertain?'（估计）':'');
+        if(r.unknown)text+='；本次启动另有 '+r.unknown+' 条注入状态未知';
+        return text;
+      }
+    })();
+    // INBOX_LAG_STATE_END
+    function refreshInboxLagLabel(){
+      const el=document.getElementById('inboxLagStat');
+      if(el){el.textContent=inboxLagState.display(performance.now());el.title='helper 上报的模型接收阶段；processed 不等于模型已接收；不代表业务已执行';}
+    }
     function formatDisk(disk) {
       return agentDiskState.display(performance.now()).text;
     }
@@ -4538,6 +4582,8 @@
 
     // Resource snapshots never authorize writes or describe Agent/model liveness.
     const VIEW_REFRESH_MS = 300000;
+    const INBOX_LAG_REFRESH_MS = 5000;
+    let inboxLagTimer = null, inboxLagPending = null;
     const viewRefreshParams = new URLSearchParams(location.search);
     const viewRefreshInstance = viewRefreshParams.get('view_refresh_instance') || '';
     const viewRefreshEmbedded = parent !== window && /^[0-9a-f]{32}$/.test(viewRefreshInstance);
@@ -4563,6 +4609,7 @@
     }
     function failViewAuthorization() {
       agentDiskState.clear();
+      inboxLagState.clear();
       resetConsoleCapability();
       stats.readonly = true; stats.access = '只读'; updateMetrics();
     }
@@ -4572,6 +4619,8 @@
       // No raw scope/identity/time fields can substitute for a reviewed authenticated metric binding.
       stats.disk = null;
       agentDiskState.apply(data.agent_disk, stats.agentID, requestStartedAt, performance.now());
+      inboxLagState.apply(data.agent_disk && data.agent_disk.inbox_lag, stats.agentID, requestStartedAt, performance.now());
+      refreshInboxLagLabel();
       if (Number.isFinite(data.datetime_epoch_ms) && data.datetime_epoch_ms > 0) {
         stats.statusDatetimeMs = data.datetime_epoch_ms; stats.statusDatetimeText = '';
         stats.statusDatetimeReceivedAt = Date.now(); stats.statusMonotonicAt = performance.now();
@@ -4620,6 +4669,24 @@
       resourcePending = pending;
       try { await pending; } finally { if (resourcePending === pending) resourcePending = null; }
     }
+    async function refreshInboxLag() {
+      if (!viewIsVisible() || !stats.agentID) return;
+      if (inboxLagPending) return inboxLagPending;
+      const generation = viewResourceGeneration, started = performance.now();
+      const pending = (async () => {
+        try {
+          const {body} = await viewRequestJSON(apiEp('status') + '?inbox_lag_only=1');
+          if (viewRefreshClosed || generation !== viewResourceGeneration) return;
+          inboxLagState.apply(body.agent_id === stats.agentID ? body.inbox_lag : null, stats.agentID, started, performance.now());
+          refreshInboxLagLabel();
+        } catch (error) {
+          if (!viewRefreshClosed && generation === viewResourceGeneration && (error.code === 401 || error.code === 403)) failViewAuthorization();
+          // A failed poll never renews the last sample; local expiry remains active.
+        }
+      })();
+      inboxLagPending = pending;
+      try { await pending; } finally { if (inboxLagPending === pending) inboxLagPending = null; }
+    }
     async function refreshViewAuthorization() {
       if (!viewIsVisible() || stats.authMode !== 'view_page_v2') return;
       if (authPending) return authPending;
@@ -4640,10 +4707,10 @@
     }
     function closeViewRefresh() {
       viewRefreshClosed = true; viewAuthGeneration++; viewResourceGeneration++;
-      clearInterval(standaloneResourceTimer); clearInterval(authTimer); failViewAuthorization();
+      clearInterval(standaloneResourceTimer); clearInterval(authTimer); clearInterval(inboxLagTimer); failViewAuthorization();
     }
     function startViewRefresh() {
-      clearInterval(standaloneResourceTimer); clearInterval(authTimer);
+      clearInterval(standaloneResourceTimer); clearInterval(authTimer); clearInterval(inboxLagTimer);
       if (viewRefreshEmbedded && !viewRefreshBound) {
         window.addEventListener('message', event => {
           const d = event.data;
@@ -4662,6 +4729,7 @@
       } else {
         standaloneResourceTimer = setInterval(() => { if (!document.hidden) refreshStatus(); }, VIEW_REFRESH_MS);
       }
+      inboxLagTimer = setInterval(refreshInboxLag, INBOX_LAG_REFRESH_MS);
       authTimer = setInterval(() => {
         if (stats.authMode === 'view_page_v2') refreshViewAuthorization();
         else if (viewIsVisible()) refreshLegacyAuthorization();

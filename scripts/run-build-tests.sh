@@ -44,6 +44,8 @@ tools/sessionhelper/tests/test_spec_review_r32.py
 tools/sessionhelper/tests/test_desktop_dispatch.py
 tools/sessionhelper/tests/test_desktop_endpoint.py
 tools/sessionhelper/tests/test_outbound_receipt.py
+tools/sessionhelper/tests/test_inbox_progress.py
+tools/sessionhelper/tests/test_delivery_status.py
 tools/sessionhelper/tests/test_desktop_host.py
 tools/sessionhelper/tests/test_desktop_pilot.py
 tools/sessionhelper/tests/test_desktop_wait.py
@@ -68,6 +70,7 @@ view-service/test_renderer_iter2.py
 view-service/test_view_page_store.py
 view-service/test_view_service.py
 view-service/test_agent_disk_resource.py
+view-service/test_inbox_lag_resource.py
 view-service/test_view_refresh.py
 view-service/test_mux_projection.py
 view-service/test_mux_projection_failure.py
@@ -91,4 +94,4 @@ printf '%s\n' "$SHELL_TESTS" | while IFS= read -r test_file; do
   echo "TEST shell $test_file"
   bash "$test_file"
 done
-echo 'BUILD_TESTS_OK python=63 shell=2'
+echo 'BUILD_TESTS_OK python=66 shell=2'

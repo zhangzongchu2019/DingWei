@@ -1,0 +1,603 @@
+[
+  {
+    "name": "stage-admission-write",
+    "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+    "file": "tools/sessionhelper/sessionhelper/driver_adapter.py",
+    "original_sha256": "0414306f600d3ee6318a94bfc544484593fd8c13ca6d6999f629dd690efd8def",
+    "mutant_sha256": "0ac971232d85c2158fb28c748356f5a13cd5c7fc28d23c6ccdb2fd5d6175e1f7",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_real_claude_submitted_receipt_is_not_admitted_before_replay_ack"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T04:56:32.515005+00:00",
+        "end_utc": "2026-10-23T04:56:32.687168+00:00",
+        "elapsed_seconds": 0.172,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T04:56:32.687282+00:00",
+        "end_utc": "2026-10-23T04:56:32.839088+00:00",
+        "elapsed_seconds": 0.152,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T04:56:32.839216+00:00",
+        "end_utc": "2026-10-23T04:56:32.996603+00:00",
+        "elapsed_seconds": 0.157,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "0414306f600d3ee6318a94bfc544484593fd8c13ca6d6999f629dd690efd8def",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "claude-weak-processing",
+    "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+    "file": "tools/sessionhelper/sessionhelper/driver_adapter.py",
+    "original_sha256": "0414306f600d3ee6318a94bfc544484593fd8c13ca6d6999f629dd690efd8def",
+    "mutant_sha256": "5bcba25bedf93640fe81cba8bf5a5794950ce68f9d05506d5e2c349f58583572",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_real_claude_submitted_receipt_is_not_admitted_before_replay_ack"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T04:56:32.998561+00:00",
+        "end_utc": "2026-10-23T04:56:33.160237+00:00",
+        "elapsed_seconds": 0.162,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T04:56:33.160344+00:00",
+        "end_utc": "2026-10-23T04:56:33.319535+00:00",
+        "elapsed_seconds": 0.159,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T04:56:33.319643+00:00",
+        "end_utc": "2026-10-23T04:56:33.486807+00:00",
+        "elapsed_seconds": 0.167,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "0414306f600d3ee6318a94bfc544484593fd8c13ca6d6999f629dd690efd8def",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "restart-unknown",
+    "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+    "file": "tools/sessionhelper/sessionhelper/inbox_progress.py",
+    "original_sha256": "4e21233e6ea6becfaf555c927b56f2048161a18a42d0c025c164178bf084ac43",
+    "mutant_sha256": "53d63fbb89033cbcdd35a8c13610dfbcf5b895749bac5987310a396c5129e06a",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_restart_and_historical_processed_are_unknown_without_replay"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T04:56:33.489511+00:00",
+        "end_utc": "2026-10-23T04:56:33.670575+00:00",
+        "elapsed_seconds": 0.181,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T04:56:33.670663+00:00",
+        "end_utc": "2026-10-23T04:56:33.857275+00:00",
+        "elapsed_seconds": 0.187,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T04:56:33.857370+00:00",
+        "end_utc": "2026-10-23T04:56:34.028815+00:00",
+        "elapsed_seconds": 0.171,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "4e21233e6ea6becfaf555c927b56f2048161a18a42d0c025c164178bf084ac43",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "hub-sender-ownership",
+    "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+    "file": "internal/m8/inbox_lag.go",
+    "original_sha256": "9e645d3c0205d2cbe4e4edc4f42a134ddd16753e3b2f629cb420de7a74297de9",
+    "mutant_sha256": "1ec4491c05c7f786f645d25dbeac9ba0a2375486d90866e35c1c62ca9c05108e",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagSenderOwnDeliveryAndCurrentACL$",
+      "-count=1"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T04:56:34.030628+00:00",
+        "end_utc": "2026-10-23T04:56:41.903397+00:00",
+        "elapsed_seconds": 7.873,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T04:56:41.903496+00:00",
+        "end_utc": "2026-10-23T04:56:49.842822+00:00",
+        "elapsed_seconds": 7.939,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T04:56:49.842909+00:00",
+        "end_utc": "2026-10-23T04:56:51.058260+00:00",
+        "elapsed_seconds": 1.215,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "9e645d3c0205d2cbe4e4edc4f42a134ddd16753e3b2f629cb420de7a74297de9",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "hub-current-group-acl",
+    "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+    "file": "internal/m8/inbox_lag.go",
+    "original_sha256": "9e645d3c0205d2cbe4e4edc4f42a134ddd16753e3b2f629cb420de7a74297de9",
+    "mutant_sha256": "e842f17f5781dff756846eae6cac13302fc2f435895dc1122a4281807a7185ba",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagSenderOwnDeliveryAndCurrentACL$",
+      "-count=1"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T04:56:51.060148+00:00",
+        "end_utc": "2026-10-23T04:56:52.260730+00:00",
+        "elapsed_seconds": 1.201,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T04:56:52.260811+00:00",
+        "end_utc": "2026-10-23T04:57:00.163689+00:00",
+        "elapsed_seconds": 7.903,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T04:57:00.163774+00:00",
+        "end_utc": "2026-10-23T04:57:01.387042+00:00",
+        "elapsed_seconds": 1.223,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "9e645d3c0205d2cbe4e4edc4f42a134ddd16753e3b2f629cb420de7a74297de9",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "hub-freshness",
+    "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+    "file": "internal/m8/inbox_lag.go",
+    "original_sha256": "9e645d3c0205d2cbe4e4edc4f42a134ddd16753e3b2f629cb420de7a74297de9",
+    "mutant_sha256": "610a854d384f39fe32c78f7c30a75563b5dc73bdbff71478af335f550d5e2783",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagFreshnessAndEpoch$",
+      "-count=1"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T04:57:01.388750+00:00",
+        "end_utc": "2026-10-23T04:57:02.604044+00:00",
+        "elapsed_seconds": 1.215,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T04:57:02.604135+00:00",
+        "end_utc": "2026-10-23T04:57:10.511016+00:00",
+        "elapsed_seconds": 7.907,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T04:57:10.512012+00:00",
+        "end_utc": "2026-10-23T04:57:11.715511+00:00",
+        "elapsed_seconds": 1.204,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "9e645d3c0205d2cbe4e4edc4f42a134ddd16753e3b2f629cb420de7a74297de9",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "view-local-expiry",
+    "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+    "file": "view-service/renderer-canary-sse.html",
+    "original_sha256": "a1b61f3ec7426feeefdb2f76119b6635f450ae6a0a752aeec8615a615ca61041",
+    "mutant_sha256": "373e292bb2259035c13802ec813ec33ed6b50550af61499bda69974970d61804",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "view-service/test_inbox_lag_resource.py"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T04:57:11.719696+00:00",
+        "end_utc": "2026-10-23T04:57:12.194907+00:00",
+        "elapsed_seconds": 0.475,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T04:57:12.195081+00:00",
+        "end_utc": "2026-10-23T04:57:12.648418+00:00",
+        "elapsed_seconds": 0.453,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T04:57:12.648584+00:00",
+        "end_utc": "2026-10-23T04:57:13.129714+00:00",
+        "elapsed_seconds": 0.481,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "a1b61f3ec7426feeefdb2f76119b6635f450ae6a0a752aeec8615a615ca61041",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "query-connection-binding",
+    "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+    "file": "tools/sessionhelper/sessionhelper/outbound_receipt.py",
+    "original_sha256": "1551bff5a7bb83ae9afe9c697334a8013b70de6f24197bdf011cc5c1248b1b5f",
+    "mutant_sha256": "99f43c235f681d045420ca5d0623d21a95c94e9aac3d4a11a0b3b536dfd9dae2",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_delivery_status.DeliveryStatusTest.test_wrong_nonce_connection_sender_or_delivery_cannot_resolve"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T04:57:13.132058+00:00",
+        "end_utc": "2026-10-23T04:57:13.292998+00:00",
+        "elapsed_seconds": 0.161,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T04:57:13.293094+00:00",
+        "end_utc": "2026-10-23T04:57:13.435612+00:00",
+        "elapsed_seconds": 0.143,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T04:57:13.435689+00:00",
+        "end_utc": "2026-10-23T04:57:13.605297+00:00",
+        "elapsed_seconds": 0.17,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "1551bff5a7bb83ae9afe9c697334a8013b70de6f24197bdf011cc5c1248b1b5f",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "ipc-restricted-mode",
+    "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+    "file": "tools/sessionhelper/sessionhelper/ipc_listener.py",
+    "original_sha256": "b8d4f29e93976d60dd9368f53f1ab28173df848237b72b8bec6f0a0a913f28bc",
+    "mutant_sha256": "21f1a5c88c416d8d091df82eff3ad953f5971c8b1fcfe4757ff8c53ce07a870e",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_delivery_status.DeliveryStatusTest.test_real_ipc_shim_roundtrip_and_restricted_modes"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T04:57:13.607272+00:00",
+        "end_utc": "2026-10-23T04:57:13.766462+00:00",
+        "elapsed_seconds": 0.159,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T04:57:13.766555+00:00",
+        "end_utc": "2026-10-23T04:57:13.922279+00:00",
+        "elapsed_seconds": 0.156,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T04:57:13.922388+00:00",
+        "end_utc": "2026-10-23T04:57:14.081140+00:00",
+        "elapsed_seconds": 0.159,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "b8d4f29e93976d60dd9368f53f1ab28173df848237b72b8bec6f0a0a913f28bc",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "legacy-direct-default",
+    "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+    "file": "internal/m8/hub.go",
+    "original_sha256": "c56e819b77dab9a63742f05c5ca9eecc0f9aa8ef9aa1a26b368c0ca36a0d853b",
+    "mutant_sha256": "a20aa4d8d6521b5f75e6801653d48ea6a14818afd6dea87a636cdf568d5dae39",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagObservationalReceiptPreservesLegacyDirectDelivery$",
+      "-count=1"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T04:57:14.085500+00:00",
+        "end_utc": "2026-10-23T04:57:15.475974+00:00",
+        "elapsed_seconds": 1.39,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T04:57:15.476143+00:00",
+        "end_utc": "2026-10-23T04:57:25.462302+00:00",
+        "elapsed_seconds": 9.986,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T04:57:25.462473+00:00",
+        "end_utc": "2026-10-23T04:57:26.670001+00:00",
+        "elapsed_seconds": 1.208,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "c56e819b77dab9a63742f05c5ca9eecc0f9aa8ef9aa1a26b368c0ca36a0d853b",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "view-scheduled-lag-poll",
+    "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+    "file": "view-service/renderer-canary-sse.html",
+    "original_sha256": "a1b61f3ec7426feeefdb2f76119b6635f450ae6a0a752aeec8615a615ca61041",
+    "mutant_sha256": "40b9ffd33341caadfab5f5ce00904f08273d71a98dcdab5fd6496bbd81956544",
+    "command": [
+      "node",
+      "view-service/inbox-lag-regression.js"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T04:57:26.674549+00:00",
+        "end_utc": "2026-10-23T04:57:28.084884+00:00",
+        "elapsed_seconds": 1.41,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T04:57:28.085059+00:00",
+        "end_utc": "2026-10-23T04:57:29.018030+00:00",
+        "elapsed_seconds": 0.933,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T04:57:29.018236+00:00",
+        "end_utc": "2026-10-23T04:57:30.326386+00:00",
+        "elapsed_seconds": 1.308,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "a1b61f3ec7426feeefdb2f76119b6635f450ae6a0a752aeec8615a615ca61041",
+    "result": "GREEN_RED_GREEN"
+  }
+]

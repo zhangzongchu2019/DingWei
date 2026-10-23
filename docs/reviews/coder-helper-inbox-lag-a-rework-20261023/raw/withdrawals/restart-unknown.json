@@ -1,0 +1,55 @@
+{
+  "name": "restart-unknown",
+  "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+  "file": "tools/sessionhelper/sessionhelper/inbox_progress.py",
+  "original_sha256": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+  "mutant_sha256": "f267384eec1e1a29c70f4d26ca5934c7d53882aa10369c4bc152baa35a61554c",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python3",
+    "-B",
+    "-m",
+    "unittest",
+    "-v",
+    "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_restart_counts_recovered_unknown_not_historical_processed_without_replay"
+  ],
+  "environment": {
+    "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+    "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC"
+  },
+  "runs": [
+    {
+      "phase": "green-before",
+      "start_utc": "2026-10-23T11:34:28.209406+00:00",
+      "end_utc": "2026-10-23T11:34:28.450343+00:00",
+      "elapsed_seconds": 0.241,
+      "rc": 0,
+      "semantic_assertion_failure": false
+    },
+    {
+      "phase": "withdrawn-red",
+      "start_utc": "2026-10-23T11:34:28.450418+00:00",
+      "end_utc": "2026-10-23T11:34:28.653169+00:00",
+      "elapsed_seconds": 0.203,
+      "rc": 1,
+      "semantic_assertion_failure": true
+    },
+    {
+      "phase": "restored-green",
+      "start_utc": "2026-10-23T11:34:28.653268+00:00",
+      "end_utc": "2026-10-23T11:34:28.848738+00:00",
+      "elapsed_seconds": 0.195,
+      "rc": 0,
+      "semantic_assertion_failure": false
+    }
+  ],
+  "restored_sha256": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+  "result": "GREEN_RED_GREEN"
+}
