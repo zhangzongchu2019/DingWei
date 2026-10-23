@@ -1,0 +1,5 @@
+--- FAIL: TestPMSpecTransferFreezesDraftAtomicallyAndBlocksLegacyWritesAndFinalize (0.12s)
+    console_spec_pm_flow_test.go:74: legacy revision write err=<nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.126s
+FAIL

@@ -75,6 +75,7 @@ type Hub struct {
 	L2Config                 L2Config
 	ViewPageUnlocker         ViewPageUnlocker
 	consoleAuthEnabled       bool
+	pmSpecFlowEnabled        bool
 	// consoleHostedEnabled 只在服务端实际挂载托管路由后置 true；页面据此决定是否渲染托管区。
 	// 未挂路由时保持 false，避免回滚/降级部署向用户暴露一个必然 404 的坏入口。
 	consoleHostedEnabled bool
@@ -246,6 +247,7 @@ type sessionClient struct {
 	blockerNoticeV1 bool
 	blockerWakeV1   bool
 	specReviewV1    bool
+	pmSpecFlowV1    bool
 	helperUpdateV1  bool // authenticated helper explicitly supports update_self v1
 	desktopInboxV1  bool
 	helperReady     bool
@@ -379,6 +381,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 		onboardInterval:               envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
 		newSessionNotice:              true,
 		consoleAuthEnabled:            consoleAuthMode.Enabled(),
+		pmSpecFlowEnabled:             strings.TrimSpace(os.Getenv("DW_PM_SPEC_FLOW_ENABLED")) == "1",
 		L2Config: L2Config{
 			Workers:             4,
 			PollInterval:        200 * time.Millisecond,
@@ -1349,6 +1352,10 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		delete(env.Meta, "source_session_name")
 		delete(env.Meta, hubIngressMetaKey)
 		env.Meta[hubIngressMetaKey] = hubIngressAgent
+		if metaString(env.Meta, "type") == "console_spec_pm_assist_result" {
+			h.handlePMSpecAssistResult(r.Context(), metaString(env.Meta, "request_id"), c, env.Body)
+			continue
+		}
 		if h.handleSpecAgentReviewResult(r.Context(), c, env) {
 			continue
 		}
@@ -4262,7 +4269,16 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		log.Printf("session route decision=%s key_id=%s session=%s client_present=%t conn_seq=%d delivery_id=%s source_message_id=%s",
 			decision, keyID, sessionName, c != nil, connSeq, deliveryID, env.ID)
 		if c != nil {
-			h.drainSessionDeliveries(ctx, c)
+			// PM assist dispatch is invoked inside withSpecAgent's current-owner
+			// authorization transaction. Revalidation in the drain must not be
+			// re-entered synchronously from that callback (the in-memory test store
+			// serializes the authorization lock); the durable queue is safe to wake
+			// just after the dispatch transaction returns.
+			if specReviewEnvelopeType(env) == "console_spec_pm_assist_request" {
+				h.scheduleSessionDeliveryDrain(c, 10*time.Millisecond)
+			} else {
+				h.drainSessionDeliveries(ctx, c)
+			}
 		}
 		return nil
 	}
@@ -4351,6 +4367,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	c.blockerNoticeV1 = metaBool(env.Meta, "blocker_notice_v1")
 	c.blockerWakeV1 = metaBool(env.Meta, "blocker_wake_v1")
 	c.specReviewV1 = metaBool(env.Meta, "spec_review_v1")
+	c.pmSpecFlowV1 = metaBool(env.Meta, "pm_spec_flow_v1")
 	c.helperUpdateV1 = metaBool(env.Meta, "helper_update_v1")
 	c.desktopInboxV1 = metaBool(env.Meta, "desktop_inbox_v1") && metaString(env.Meta, "processed_semantics") == "saved_to_desktop_inbox"
 	c.stateMu.Unlock()
@@ -4594,14 +4611,28 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 			continue
 		}
 		if specReviewType(specReviewEnvelopeType(env)) {
+			reviewType := specReviewEnvelopeType(env)
 			c.stateMu.Lock()
 			capable := c.specReviewV1 && c.deliveryACKV1
+			if reviewType == "console_spec_pm_assist_request" {
+				capable = capable && c.pmSpecFlowV1
+			}
 			c.stateMu.Unlock()
-			sr, ok := h.Repo.(specAgentRepository)
 			valid := false
-			if ok && capable {
-				q, e := sr.SpecAgentRequest(ctx, metaString(env.Meta, "request_id"))
-				valid = e == nil && q.Status == "pending" && q.Deadline > h.now().Unix() && q.Boot == h.specAgentBoot()
+			if capable {
+				if reviewType == "console_spec_pm_assist_request" {
+					if h.pmSpecFlowEnabled {
+						if pm, ok := h.pmSpecFlowStore(); ok {
+							q, e := pm.PMSpecAssistRequest(ctx, metaString(env.Meta, "request_id"))
+							if e == nil && q != nil && q.Status == "pending" && q.Deadline > h.now().Unix() && q.HubBoot == h.specAgentBoot() {
+								valid = h.pmSpecAssistDeliveryAuthorized(ctx, q, c)
+							}
+						}
+					}
+				} else if sr, ok := h.Repo.(specAgentRepository); ok {
+					q, e := sr.SpecAgentRequest(ctx, metaString(env.Meta, "request_id"))
+					valid = e == nil && q.Status == "pending" && q.Deadline > h.now().Unix() && q.Boot == h.specAgentBoot()
+				}
 			}
 			if !valid {
 				if h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", "spec_review_expired_or_unsupported", time.Now().UTC()) != nil {
@@ -4623,6 +4654,23 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 		h.scheduleSessionDeliveryDrain(c, delay)
 		return
 	}
+}
+
+// Revalidate the persisted Agent owner and active state at actual delivery time.
+// A queued PM envelope contains spec content, so authorization at enqueue time
+// is insufficient if the Agent is suspended or reassigned while offline.
+func (h *Hub) pmSpecAssistDeliveryAuthorized(ctx context.Context, q *store.PMSpecAssistRequest, c *sessionClient) bool {
+	if q == nil || c == nil || !h.pmSpecFlowEnabled {
+		return false
+	}
+	specReq := store.SpecAgentRequest{Actor: q.ActorID, AgentID: q.AgentID, KeyID: c.keyID, SessionName: c.sessionName}
+	err := h.withSpecAgent(ctx, &specReq, func(a model.ConsoleAgent, check func() error) error {
+		if a.ID != q.AgentID || a.KeyID != c.keyID || a.SessionName != c.sessionName {
+			return identity.ErrForbidden
+		}
+		return check()
+	})
+	return err == nil
 }
 
 func (h *Hub) scheduleSessionDeliveryDrain(c *sessionClient, delay time.Duration) {

@@ -39,13 +39,13 @@ func specReviewEnvelopeType(env model.Envelope) string {
 	return metaString(env.Meta, "type")
 }
 func specReviewType(t string) bool {
-	return t == "console_spec_review_request" || t == "console_spec_criteria_request"
+	return t == "console_spec_review_request" || t == "console_spec_criteria_request" || t == "console_spec_pm_assist_request"
 }
 func specAgentError(w http.ResponseWriter, e error) {
 	status := 503
 	code := "spec_review_unavailable"
 	switch {
-	case errors.Is(e, store.ErrConsoleSpecPermission), errors.Is(e, identity.ErrForbidden), errors.Is(e, identity.ErrNotFound):
+	case errors.Is(e, store.ErrConsoleSpecPermission), errors.Is(e, store.ErrPMSpecFlowDenied), errors.Is(e, identity.ErrForbidden), errors.Is(e, identity.ErrNotFound):
 		status = 403
 		code = "spec_review_access_denied"
 	case errors.Is(e, store.ErrSpecAgentInvalid):
@@ -400,6 +400,9 @@ func (h *Hub) HandleAgentSpecReview(w http.ResponseWriter, r *http.Request) {
 }
 func (h *Hub) handleSpecAgentReviewResult(ctx context.Context, c *sessionClient, env model.Envelope) bool {
 	typ := metaString(env.Meta, "type")
+	if typ == "console_spec_pm_assist_result" {
+		return h.handlePMSpecAssistResult(ctx, metaString(env.Meta, "request_id"), c, env.Body)
+	}
 	if typ != "console_spec_review_result" && typ != "console_spec_criteria_result" {
 		return false
 	}

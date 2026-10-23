@@ -49,6 +49,42 @@ func r8Result(q *SpecAgentRequest) SpecAgentResult {
 	}
 	return r
 }
+
+func TestLegacyR8StartIsDeniedForPMSpecReviewerRecipient(t *testing.T) {
+	ctx := context.Background()
+	db := newConsoleSpecStore(t)
+	now := time.Date(2026, 10, 22, 13, 45, 0, 0, time.UTC)
+	// The current PM review recipient must not use the legacy R8 start route.
+	draft, err := db.SavePMSpecWorkingDraft(ctx, "owner-a", pmDraftFixture("pm-r8-recipient", "body", 0, ""), now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertConsoleAgent(ctx, model.ConsoleAgent{ID: "r8-flow-agent", KeyID: "r8-flow-key", SessionName: "r8-flow-agent", OwnerPrincipal: "owner-b", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.FreezePMSpecWorkingDraft(ctx, draft.SpecID, "owner-a", PMSpecFreezeInput{OperationID: "transfer-to-reviewer", ExpectedVersion: draft.Version, ExpectedSHA256: draft.ContentSHA256, Action: PMSpecTransferReview, TargetPrincipal: "owner-b"}, now.Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.StartSpecAgentRequest(ctx, SpecAgentRequest{ID: "pm-r8-start", ClientID: "pm-r8-start", SpecID: draft.SpecID, Actor: "owner-b", AgentID: "r8-flow-agent", Kind: "review", Revision: 1, SHA: draft.ContentSHA256, Boot: "boot"}, nil, now.Add(2*time.Second)); !errors.Is(err, ErrPMSpecFlowDenied) {
+		t.Fatalf("legacy R8 start accepted for PM reviewer recipient: %v", err)
+	}
+}
+
+func TestLegacyR8CriteriaConfirmationIsDeniedForPMSpecFlow(t *testing.T) {
+	db, now, q, _ := r8Fixture(t, "criteria")
+	insertPMSpecFlowStateForTest(t, db, "s", "editing", 1, q.SHA, now)
+	if _, err := db.ConfirmSpecAgentCriteria(context.Background(), q.ID, "owner-a", 1, q.SHA, nil, now); !errors.Is(err, ErrPMSpecFlowDenied) {
+		t.Fatalf("legacy R8 criteria confirmation accepted for PM flow spec: %v", err)
+	}
+}
+
+func TestLegacyR8CancelTransferIsDeniedForPMSpecFlow(t *testing.T) {
+	db, now, q, _ := r8Fixture(t, "criteria")
+	insertPMSpecFlowStateForTest(t, db, "s", "editing", 1, q.SHA, now)
+	if err := db.CancelTransferSpecAgent(context.Background(), "s", "owner-a", "乙", "editing", q.ID, 1, q.SHA, now); !errors.Is(err, ErrPMSpecFlowDenied) {
+		t.Fatalf("legacy R8 cancel-transfer accepted for PM flow spec: %v", err)
+	}
+}
 func TestR8PendingLockCoversAllStoreWrites(t *testing.T) {
 	db, now, q, _ := r8Fixture(t, "review")
 	ctx := context.Background()

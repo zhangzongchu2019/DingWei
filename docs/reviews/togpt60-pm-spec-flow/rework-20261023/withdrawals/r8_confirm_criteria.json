@@ -1,0 +1,25 @@
+{
+  "name": "r8_confirm_criteria",
+  "file": "internal/store/console_spec_pm_flow.go",
+  "command": [
+    "go",
+    "test",
+    "./internal/store",
+    "-run",
+    "^TestLegacyR8CriteriaConfirmationIsDeniedForPMSpecFlow$",
+    "-count=1",
+    "-timeout=3m"
+  ],
+  "expected_red_marker": "legacy R8 criteria confirmation accepted for PM flow spec",
+  "baseline_started_utc": "2026-10-23T02:21:50.554277Z",
+  "baseline_rc": 0,
+  "baseline_ended_utc": "2026-10-23T02:21:51.025178Z",
+  "mutated_started_utc": "2026-10-23T02:21:51.025520Z",
+  "mutated_rc": 1,
+  "mutated_ended_utc": "2026-10-23T02:21:51.483426Z",
+  "marker_present": true,
+  "restored_started_utc": "2026-10-23T02:21:51.483731Z",
+  "restored_rc": 0,
+  "restored_ended_utc": "2026-10-23T02:21:51.938768Z",
+  "pass": true
+}

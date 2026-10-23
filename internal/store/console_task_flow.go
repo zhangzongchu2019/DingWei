@@ -470,6 +470,16 @@ func (s *SQLite) ConsoleTaskCandidates(ctx context.Context, spec, owner string) 
 }
 
 func (s *SQLite) ConfirmConsoleTaskCandidates(ctx context.Context, request, owner string, revision, version int, tasks []ConsoleSpecPresplitTask, recheck func() error, at time.Time) error {
+	return s.confirmConsoleTaskCandidates(ctx, request, owner, revision, version, tasks, recheck, at, false)
+}
+
+// ConfirmConsoleTaskCandidatesWithPMSpecFlow preserves legacy behavior when
+// disabled and requires a reviewed, finalized flow revision when enabled.
+func (s *SQLite) ConfirmConsoleTaskCandidatesWithPMSpecFlow(ctx context.Context, request, owner string, revision, version int, tasks []ConsoleSpecPresplitTask, recheck func() error, at time.Time, enabled bool) error {
+	return s.confirmConsoleTaskCandidates(ctx, request, owner, revision, version, tasks, recheck, at, enabled)
+}
+
+func (s *SQLite) confirmConsoleTaskCandidates(ctx context.Context, request, owner string, revision, version int, tasks []ConsoleSpecPresplitTask, recheck func() error, at time.Time, pmFlowEnabled bool) error {
 	if err := validateTaskCandidates(tasks); err != nil {
 		return err
 	}
@@ -484,6 +494,9 @@ func (s *SQLite) ConfirmConsoleTaskCandidates(ctx context.Context, request, owne
 	err = tx.QueryRowContext(ctx, `SELECT r.spec_id,s.current_revision,v.content_sha256,v.acceptance_json,v.input_anchors_json,c.tasks_json,c.version,c.confirmed_at IS NOT NULL FROM console_task_candidate c JOIN console_spec_presplit_request r ON r.id=c.request_id JOIN console_spec s ON s.id=r.spec_id JOIN console_spec_revision v ON v.spec_id=s.id AND v.revision=r.revision WHERE c.request_id=? AND s.principal_id=? AND s.state='final' AND s.task_state='splitting' AND s.archived=0 AND r.status='completed' AND r.revision=?`, request, owner, revision).Scan(&spec, &currentRevision, &hash, &acceptance, &anchors, &original, &currentVersion, &confirmed)
 	if err != nil {
 		return ErrTaskFlowPermission
+	}
+	if err = requireFinalizedPMSpecForSplit(ctx, tx, pmFlowEnabled, spec, revision); err != nil {
+		return err
 	}
 	if revision != currentRevision || version != currentVersion {
 		return ErrTaskFlowConflict

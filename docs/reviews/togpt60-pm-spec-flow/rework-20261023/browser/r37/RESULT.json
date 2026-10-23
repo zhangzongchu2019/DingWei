@@ -1,0 +1,10 @@
+{
+  "source": "29e63f9963dedcc32010ca89265d78ba12664bf2",
+  "started_utc": "2026-10-23T02:22:16.117188+00:00",
+  "ended_utc": "2026-10-23T02:29:10.183489+00:00",
+  "rc": 2,
+  "node_path": "/tmp/dw-filecard-playwright/node_modules",
+  "tmpdir": "/tmp/tg60pmbr",
+  "stdout": "stdout-second.log",
+  "stderr": "stderr-second.log"
+}

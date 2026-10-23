@@ -422,6 +422,8 @@ type ConsoleSpecRevision struct {
 	ContentMarkdown  string    `json:"content_markdown"`
 	AcceptanceJSON   string    `json:"acceptance_json"`
 	InputAnchorsJSON string    `json:"input_anchors_json"`
+	SourceRefsJSON   string    `json:"source_refs_json,omitempty"`
+	NormAnchorsJSON  string    `json:"norm_anchors_json,omitempty"`
 	ContentSHA256    string    `json:"content_sha256"`
 	CreatedBy        string    `json:"-"`
 	CreatedByKind    string    `json:"created_by_kind"`

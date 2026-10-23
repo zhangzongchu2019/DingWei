@@ -1,0 +1,339 @@
+{
+  "schema": "pm-spec-flow-rework-verify-v1",
+  "source_commit": "3ffc121d20de8a2f3ecc39042fec5075dc3fe891",
+  "source_tree": "3241cb1337b82a6c0203b3d40e48907ef74bd946",
+  "review_base": "40f74e2f00f0ebe4f5785e8d4a5b4379dc12fa52",
+  "rework_items": [
+    {
+      "item": "Finalize requires review_complete even when frozen revision and content match",
+      "test": "TestPMSpecFinalizeRejectsTransferredFlowBeforeReviewCompletion"
+    },
+    {
+      "item": "R8 StartSpecAgentRequest rejects PM flow specs including reviewer recipient",
+      "test": "TestLegacyR8StartIsDeniedForPMSpecReviewerRecipient"
+    },
+    {
+      "item": "R8 ConfirmSpecAgentCriteria rejects PM flow specs",
+      "test": "TestLegacyR8CriteriaConfirmationIsDeniedForPMSpecFlow"
+    },
+    {
+      "item": "R8 CancelTransferSpecAgent rejects PM flow specs",
+      "test": "TestLegacyR8CancelTransferIsDeniedForPMSpecFlow"
+    },
+    {
+      "item": "Presplit gate is opt-in and requires reviewed final current revision",
+      "test": "TestPMSpecPresplitGateIsOptInAndRequiresFinalReviewedRevision"
+    },
+    {
+      "item": "Candidate confirmation uses same opt-in finalization gate",
+      "test": "TestPMSpecCandidateConfirmUsesSameOptInFinalizationGate"
+    }
+  ],
+  "targeted_test": {
+    "source": "3ffc121d20de8a2f3ecc39042fec5075dc3fe891",
+    "argv": [
+      "go",
+      "test",
+      "./internal/store",
+      "./internal/m8",
+      "-run",
+      "TestPMSpec|TestLegacyR8",
+      "-count=1",
+      "-timeout=5m"
+    ],
+    "started_utc": "2026-10-23T02:51:57.651941+00:00",
+    "ended_utc": "2026-10-23T02:51:59.410437+00:00",
+    "rc": 0
+  },
+  "gates": [
+    {
+      "name": "go_test_all",
+      "argv": [
+        "go",
+        "test",
+        "./...",
+        "-count=1",
+        "-timeout=30m"
+      ],
+      "started_utc": "2026-10-23T02:36:32.995078+00:00",
+      "ended_utc": "2026-10-23T02:48:21.937597+00:00",
+      "rc": 0,
+      "stdout": "go_test_all.stdout.log",
+      "stderr": "go_test_all.stderr.log"
+    },
+    {
+      "name": "go_vet_all",
+      "argv": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "started_utc": "2026-10-23T02:48:21.937856+00:00",
+      "ended_utc": "2026-10-23T02:48:23.483489+00:00",
+      "rc": 0,
+      "stdout": "go_vet_all.stdout.log",
+      "stderr": "go_vet_all.stderr.log"
+    },
+    {
+      "name": "canonical",
+      "argv": [
+        "env",
+        "-i",
+        "HOME=/tmp/tg60pmcanon-home",
+        "PATH=/tmp/dw-filecard-build-venv/bin:/usr/bin:/bin",
+        "TMPDIR=/tmp/tg60pmcanon-tmp",
+        "/bin/bash",
+        "./scripts/run-build-tests.sh"
+      ],
+      "started_utc": "2026-10-23T02:48:23.483801+00:00",
+      "ended_utc": "2026-10-23T02:51:38.333171+00:00",
+      "rc": 0,
+      "stdout": "canonical.stdout.log",
+      "stderr": "canonical.stderr.log"
+    }
+  ],
+  "package_counts": {
+    "total": 66,
+    "with_tests_passed": 53,
+    "without_tests": 13
+  },
+  "canonical_result": "BUILD_TESTS_OK python=59 shell=2",
+  "helper_reuse": {
+    "result": "PASS, 851 tests, isolated HOME",
+    "source_commit": "40f74e2f00f0ebe4f5785e8d4a5b4379dc12fa52",
+    "raw_evidence": "../evidence/helper.log",
+    "reason": "tools/sessionhelper subtree is byte-identical between 40f74e2f and 3ffc121d; no helper files changed in the REWORK diff"
+  },
+  "browser": {
+    "r37_commit": "29e63f9963dedcc32010ca89265d78ba12664bf2",
+    "r37_rc": 2,
+    "candidate_commit": "3ffc121d20de8a2f3ecc39042fec5075dc3fe891",
+    "candidate_rc": 2,
+    "r37_suites": {
+      "renderer_0206_file_render": 1,
+      "console_browser": 0,
+      "renderer_in_console_iframe": 0,
+      "renderer_sse_reconnect": 0,
+      "renderer_failcard": 0,
+      "renderer_t054_errorboard": 0,
+      "renderer_t074_delivery_id": 0,
+      "renderer_provenance_icon": 0,
+      "renderer_storage_denied": 0,
+      "terminal_storage_denied": 0,
+      "renderer_t086_empty_ring_e2e": 0,
+      "renderer_replay_seq": 0,
+      "renderer_upload_ticket_timeout": 0,
+      "renderer_flood_stress": 2,
+      "renderer_c2": 1,
+      "console_specs_browser": 1,
+      "console_spec_workflow": 0,
+      "console_task_flow_r32": 0,
+      "md_render_core_sync": 0,
+      "md_render_core_parity": 0,
+      "renderer_markdown_image": 0,
+      "renderer_markdown_injection": 0,
+      "renderer_failure_dock_embedded": 0,
+      "renderer_failure_dock": 0
+    },
+    "candidate_suites": {
+      "renderer_0206_file_render": 1,
+      "console_browser": 0,
+      "renderer_in_console_iframe": 0,
+      "renderer_sse_reconnect": 0,
+      "renderer_failcard": 0,
+      "renderer_t054_errorboard": 0,
+      "renderer_t074_delivery_id": 0,
+      "renderer_provenance_icon": 0,
+      "renderer_storage_denied": 0,
+      "terminal_storage_denied": 0,
+      "renderer_t086_empty_ring_e2e": 0,
+      "renderer_replay_seq": 0,
+      "renderer_upload_ticket_timeout": 0,
+      "renderer_flood_stress": 2,
+      "renderer_c2": 1,
+      "console_specs_browser": 1,
+      "console_spec_workflow": 0,
+      "console_task_flow_r32": 0,
+      "pm_spec_flow": 0,
+      "md_render_core_sync": 0,
+      "md_render_core_parity": 0,
+      "renderer_markdown_image": 0,
+      "renderer_markdown_injection": 0,
+      "renderer_failure_dock_embedded": 0,
+      "renderer_failure_dock": 0
+    },
+    "suite_status_differences": {
+      "pm_spec_flow": {
+        "r37": null,
+        "candidate": 0
+      }
+    },
+    "candidate_pm_spec_flow": {
+      "rc": 0,
+      "passed": 15,
+      "failed": 0,
+      "viewports": [
+        390,
+        820
+      ]
+    },
+    "same_four_non_pm_failures": true
+  },
+  "withdrawals": {
+    "count": 6,
+    "all_baseline_green_mutation_red_restored_green": true,
+    "source_withdrawal_results": [
+      {
+        "name": "finalize_review_complete",
+        "file": "internal/store/console_specs.go",
+        "command": [
+          "go",
+          "test",
+          "./internal/store",
+          "-run",
+          "^TestPMSpecFinalizeRejectsTransferredFlowBeforeReviewCompletion$",
+          "-count=1",
+          "-timeout=3m"
+        ],
+        "expected_red_marker": "matching frozen revision finalized before PM review completion",
+        "baseline_started_utc": "2026-10-23T02:21:43.333729Z",
+        "baseline_rc": 0,
+        "baseline_ended_utc": "2026-10-23T02:21:45.268390Z",
+        "mutated_started_utc": "2026-10-23T02:21:45.268983Z",
+        "mutated_rc": 1,
+        "mutated_ended_utc": "2026-10-23T02:21:47.217968Z",
+        "marker_present": true,
+        "restored_started_utc": "2026-10-23T02:21:47.218377Z",
+        "restored_rc": 0,
+        "restored_ended_utc": "2026-10-23T02:21:47.678274Z",
+        "pass": true
+      },
+      {
+        "name": "r8_start_reviewer",
+        "file": "internal/store/console_spec_pm_flow.go",
+        "command": [
+          "go",
+          "test",
+          "./internal/store",
+          "-run",
+          "^TestLegacyR8StartIsDeniedForPMSpecReviewerRecipient$",
+          "-count=1",
+          "-timeout=3m"
+        ],
+        "expected_red_marker": "legacy R8 start accepted for PM reviewer recipient",
+        "baseline_started_utc": "2026-10-23T02:21:47.678713Z",
+        "baseline_rc": 0,
+        "baseline_ended_utc": "2026-10-23T02:21:48.131413Z",
+        "mutated_started_utc": "2026-10-23T02:21:48.131742Z",
+        "mutated_rc": 1,
+        "mutated_ended_utc": "2026-10-23T02:21:50.089403Z",
+        "marker_present": true,
+        "restored_started_utc": "2026-10-23T02:21:50.089726Z",
+        "restored_rc": 0,
+        "restored_ended_utc": "2026-10-23T02:21:50.553790Z",
+        "pass": true
+      },
+      {
+        "name": "r8_confirm_criteria",
+        "file": "internal/store/console_spec_pm_flow.go",
+        "command": [
+          "go",
+          "test",
+          "./internal/store",
+          "-run",
+          "^TestLegacyR8CriteriaConfirmationIsDeniedForPMSpecFlow$",
+          "-count=1",
+          "-timeout=3m"
+        ],
+        "expected_red_marker": "legacy R8 criteria confirmation accepted for PM flow spec",
+        "baseline_started_utc": "2026-10-23T02:21:50.554277Z",
+        "baseline_rc": 0,
+        "baseline_ended_utc": "2026-10-23T02:21:51.025178Z",
+        "mutated_started_utc": "2026-10-23T02:21:51.025520Z",
+        "mutated_rc": 1,
+        "mutated_ended_utc": "2026-10-23T02:21:51.483426Z",
+        "marker_present": true,
+        "restored_started_utc": "2026-10-23T02:21:51.483731Z",
+        "restored_rc": 0,
+        "restored_ended_utc": "2026-10-23T02:21:51.938768Z",
+        "pass": true
+      },
+      {
+        "name": "r8_cancel_transfer",
+        "file": "internal/store/console_spec_pm_flow.go",
+        "command": [
+          "go",
+          "test",
+          "./internal/store",
+          "-run",
+          "^TestLegacyR8CancelTransferIsDeniedForPMSpecFlow$",
+          "-count=1",
+          "-timeout=3m"
+        ],
+        "expected_red_marker": "legacy R8 cancel-transfer accepted for PM flow spec",
+        "baseline_started_utc": "2026-10-23T02:21:51.939216Z",
+        "baseline_rc": 0,
+        "baseline_ended_utc": "2026-10-23T02:21:52.409863Z",
+        "mutated_started_utc": "2026-10-23T02:21:52.410235Z",
+        "mutated_rc": 1,
+        "mutated_ended_utc": "2026-10-23T02:21:52.867597Z",
+        "marker_present": true,
+        "restored_started_utc": "2026-10-23T02:21:52.867925Z",
+        "restored_rc": 0,
+        "restored_ended_utc": "2026-10-23T02:21:53.333136Z",
+        "pass": true
+      },
+      {
+        "name": "split_presplit",
+        "file": "internal/store/console_spec_pm_flow.go",
+        "command": [
+          "go",
+          "test",
+          "./internal/store",
+          "-run",
+          "^TestPMSpecPresplitGateIsOptInAndRequiresFinalReviewedRevision$",
+          "-count=1",
+          "-timeout=3m"
+        ],
+        "expected_red_marker": "enabled presplit accepted non-final PM flow",
+        "baseline_started_utc": "2026-10-23T02:21:53.333555Z",
+        "baseline_rc": 0,
+        "baseline_ended_utc": "2026-10-23T02:21:53.798687Z",
+        "mutated_started_utc": "2026-10-23T02:21:53.798987Z",
+        "mutated_rc": 1,
+        "mutated_ended_utc": "2026-10-23T02:21:55.756566Z",
+        "marker_present": true,
+        "restored_started_utc": "2026-10-23T02:21:55.756877Z",
+        "restored_rc": 0,
+        "restored_ended_utc": "2026-10-23T02:21:56.192365Z",
+        "pass": true
+      },
+      {
+        "name": "split_confirm_candidates",
+        "file": "internal/store/console_spec_pm_flow.go",
+        "command": [
+          "go",
+          "test",
+          "./internal/store",
+          "-run",
+          "^TestPMSpecCandidateConfirmUsesSameOptInFinalizationGate$",
+          "-count=1",
+          "-timeout=3m"
+        ],
+        "expected_red_marker": "enabled candidate confirmation accepted non-final PM flow",
+        "baseline_started_utc": "2026-10-23T02:21:56.192764Z",
+        "baseline_rc": 0,
+        "baseline_ended_utc": "2026-10-23T02:21:56.657966Z",
+        "mutated_started_utc": "2026-10-23T02:21:56.658294Z",
+        "mutated_rc": 1,
+        "mutated_ended_utc": "2026-10-23T02:21:57.114581Z",
+        "marker_present": true,
+        "restored_started_utc": "2026-10-23T02:21:57.114929Z",
+        "restored_rc": 0,
+        "restored_ended_utc": "2026-10-23T02:21:57.573801Z",
+        "pass": true
+      }
+    ]
+  },
+  "production_changes": false
+}

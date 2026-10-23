@@ -755,7 +755,7 @@ func (h *Hub) HandleConsoleSpecWorkflow(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if err != nil {
-		if errors.Is(err, store.ErrConsoleSpecPermission) {
+		if errors.Is(err, store.ErrConsoleSpecPermission) || errors.Is(err, store.ErrPMSpecFlowDenied) {
 			http.Error(w, err.Error(), http.StatusForbidden)
 		} else {
 			http.Error(w, err.Error(), http.StatusConflict)
@@ -799,7 +799,7 @@ func consoleSpecEditorItem(p model.ConsolePrincipal) (map[string]string, bool) {
 	if display == "" {
 		return nil, false
 	}
-	return map[string]string{"short_name": strings.TrimSpace(p.ShortName), "display_name": display, "value": display}, true
+	return map[string]string{"id": p.ID, "short_name": strings.TrimSpace(p.ShortName), "display_name": display, "value": display}, true
 }
 
 func (h *Hub) HandleConsoleSpecNewVersion(w http.ResponseWriter, r *http.Request) {

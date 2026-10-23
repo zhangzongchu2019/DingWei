@@ -29,6 +29,10 @@ type taskFlowRepository interface {
 	SupersedeConsoleTaskNotification(context.Context, string, time.Time) error
 }
 
+type pmSpecFlowTaskCandidateRepository interface {
+	ConfirmConsoleTaskCandidatesWithPMSpecFlow(context.Context, string, string, int, int, []store.ConsoleSpecPresplitTask, func() error, time.Time, bool) error
+}
+
 func (h *Hub) taskFlowRepo() (taskFlowRepository, bool) {
 	r, ok := h.Repo.(taskFlowRepository)
 	return r, ok
@@ -70,7 +74,7 @@ func taskError(w http.ResponseWriter, err error) {
 	case errors.Is(err, store.ErrBlockerRateLimited):
 		taskJSON(w, 429, map[string]any{"error": "blocker_reply_rate_limited"})
 		return
-	case errors.Is(err, store.ErrTaskFlowPermission), errors.Is(err, store.ErrConsoleSpecPermission), errors.Is(err, store.ErrConsoleTaskCasePermission), errors.Is(err, identity.ErrForbidden), errors.Is(err, identity.ErrNotFound), errors.Is(err, identity.ErrGroupNotFound):
+	case errors.Is(err, store.ErrTaskFlowPermission), errors.Is(err, store.ErrConsoleSpecPermission), errors.Is(err, store.ErrConsoleTaskCasePermission), errors.Is(err, store.ErrPMSpecFlowDenied), errors.Is(err, identity.ErrForbidden), errors.Is(err, identity.ErrNotFound), errors.Is(err, identity.ErrGroupNotFound):
 		status = 403
 		code = "task_access_denied"
 	case errors.Is(err, store.ErrTaskFlowInvalid), errors.Is(err, store.ErrConsoleTaskCaseUnknown):
@@ -310,6 +314,13 @@ func (h *Hub) HandleConsoleTaskCandidateConfirm(w http.ResponseWriter, r *http.R
 		body.Tasks = c.Tasks
 	}
 	err = h.withTaskCandidates(r.Context(), owner, body.GroupCode, body.Tasks, func(tasks []store.ConsoleSpecPresplitTask, check func() error) error {
+		if h.pmSpecFlowEnabled {
+			guarded, ok := h.Repo.(pmSpecFlowTaskCandidateRepository)
+			if !ok {
+				return errors.New("PM spec flow candidate gate unavailable")
+			}
+			return guarded.ConfirmConsoleTaskCandidatesWithPMSpecFlow(r.Context(), c.RequestID, owner, body.ExpectedRevision, body.ExpectedVersion, tasks, check, h.now(), true)
+		}
 		return repo.ConfirmConsoleTaskCandidates(r.Context(), c.RequestID, owner, body.ExpectedRevision, body.ExpectedVersion, tasks, check, h.now())
 	})
 	if err != nil {

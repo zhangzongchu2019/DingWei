@@ -1,0 +1,5 @@
+--- FAIL: TestPMSpecReviewCompletionRequiresFreshAssistAndEveryDecisionThenExistingFinalGateRemains (0.11s)
+    console_spec_pm_flow_test.go:155: completion without decision err=<nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.118s
+FAIL

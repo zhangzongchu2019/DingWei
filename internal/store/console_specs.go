@@ -176,6 +176,20 @@ func (s *SQLite) TransferConsoleSpec(ctx context.Context, specID, actor, targetS
 		return err
 	}
 	defer tx.Rollback()
+	flowTable, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil {
+		return err
+	}
+	var flow int
+	if flowTable {
+		err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flow)
+	}
+	if err != nil {
+		return err
+	}
+	if flow != 0 {
+		return ErrPMSpecFlowDenied
+	}
 	target, err := resolveOwnerPrincipalByShortName(ctx, tx, targetShort)
 	if err != nil {
 		return err
@@ -204,6 +218,20 @@ func (s *SQLite) SubmitConsoleSpecReview(ctx context.Context, specID, actor stri
 		return err
 	}
 	defer tx.Rollback()
+	flowTable, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil {
+		return err
+	}
+	var flow int
+	if flowTable {
+		err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flow)
+	}
+	if err != nil {
+		return err
+	}
+	if flow != 0 {
+		return ErrPMSpecFlowDenied
+	}
 	var rev int
 	if err = tx.QueryRowContext(ctx, `SELECT current_revision FROM console_spec WHERE id=? AND current_editor_id=? AND state='editing' AND archived=0`, specID, actor).Scan(&rev); err != nil {
 		return ErrConsoleSpecPermission
@@ -300,6 +328,20 @@ func (s *SQLite) SaveConsoleSpecGateReview(ctx context.Context, specID, actor st
 		return err
 	}
 	defer tx.Rollback()
+	flowTable, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil {
+		return err
+	}
+	var flow int
+	if flowTable {
+		err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flow)
+	}
+	if err != nil {
+		return err
+	}
+	if flow != 0 {
+		return ErrPMSpecFlowDenied
+	}
 	var revision int
 	if err = tx.QueryRowContext(ctx, `SELECT current_revision FROM console_spec WHERE id=? AND current_editor_id=? AND state='review' AND archived=0`, specID, actor).Scan(&revision); err != nil {
 		return ErrConsoleSpecPermission
@@ -376,6 +418,31 @@ func (s *SQLite) FinalizeConsoleSpec(ctx context.Context, specID, actor string, 
 	if err = tx.QueryRowContext(ctx, `SELECT s.current_revision,r.acceptance_json FROM console_spec s JOIN console_spec_revision r ON r.spec_id=s.id AND r.revision=s.current_revision WHERE s.id=? AND s.current_editor_id=? AND s.state='review' AND s.archived=0`, specID, actor).Scan(&revision, &acceptance); err != nil {
 		return ErrConsoleSpecPermission
 	}
+	var flowState, flowSHA string
+	var frozenRevision int
+	flowTable, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil {
+		return err
+	}
+	var flowErr error = sql.ErrNoRows
+	if flowTable {
+		flowErr = tx.QueryRowContext(ctx, `SELECT state,frozen_revision,frozen_sha256 FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flowState, &frozenRevision, &flowSHA)
+	}
+	if flowErr != nil && !errors.Is(flowErr, sql.ErrNoRows) {
+		return flowErr
+	}
+	if flowErr == nil {
+		var currentSHA string
+		if flowState != "review_complete" || frozenRevision != revision {
+			return ErrConsoleSpecGate
+		}
+		if err = tx.QueryRowContext(ctx, `SELECT content_sha256 FROM console_spec_revision WHERE spec_id=? AND revision=?`, specID, revision).Scan(&currentSHA); err != nil {
+			return err
+		}
+		if currentSHA != flowSHA {
+			return ErrConsoleSpecGate
+		}
+	}
 	if err = templateSpecGate(ctx, tx, specID, revision, now); err != nil {
 		return err
 	}
@@ -408,6 +475,14 @@ func (s *SQLite) FinalizeConsoleSpec(ctx context.Context, specID, actor string, 
 	n, _ := res.RowsAffected()
 	if n != 1 {
 		return ErrConsoleSpecPermission
+	}
+	if flowErr == nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE console_spec_flow SET state='final',updated_at=? WHERE spec_id=? AND state='review_complete'`, now.UTC().Format(time.RFC3339Nano), specID); err != nil {
+			return err
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE console_spec_working_draft SET state='final',updated_at=? WHERE spec_id=? AND state='review_complete'`, now.UTC().Format(time.RFC3339Nano), specID); err != nil {
+			return err
+		}
 	}
 	return tx.Commit()
 }
@@ -462,9 +537,15 @@ func insertConsoleSpecRevision(ctx context.Context, tx *sql.Tx, revision model.C
 	if via == "" {
 		via = "principal"
 	}
-	_, err := tx.ExecContext(ctx, `INSERT INTO console_spec_revision(spec_id,revision,content_markdown,acceptance_json,input_anchors_json,content_sha256,created_by,created_by_kind,created_via,supersedes_revision,created_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?)`, revision.SpecID, revision.Revision, revision.ContentMarkdown, revision.AcceptanceJSON,
-		revision.InputAnchorsJSON, revision.ContentSHA256, revision.CreatedBy, revision.CreatedByKind, via, nullInt(revision.Supersedes), at.UTC().Format(time.RFC3339Nano))
+	if revision.SourceRefsJSON == "" {
+		revision.SourceRefsJSON = `[]`
+	}
+	if revision.NormAnchorsJSON == "" {
+		revision.NormAnchorsJSON = `[]`
+	}
+	_, err := tx.ExecContext(ctx, `INSERT INTO console_spec_revision(spec_id,revision,content_markdown,acceptance_json,input_anchors_json,source_refs_json,norm_anchors_json,content_sha256,created_by,created_by_kind,created_via,supersedes_revision,created_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, revision.SpecID, revision.Revision, revision.ContentMarkdown, revision.AcceptanceJSON,
+		revision.InputAnchorsJSON, revision.SourceRefsJSON, revision.NormAnchorsJSON, revision.ContentSHA256, revision.CreatedBy, revision.CreatedByKind, via, nullInt(revision.Supersedes), at.UTC().Format(time.RFC3339Nano))
 	return err
 }
 
@@ -677,11 +758,11 @@ func deriveConsoleSpecTx(ctx context.Context, tx *sql.Tx, principalID, sourceID 
 }
 
 func (s *SQLite) ConsoleSpecRevision(ctx context.Context, principalID, specID string, revision int, management bool) (*model.ConsoleSpecRevision, error) {
-	query := `SELECT r.spec_id,r.revision,r.content_markdown,r.acceptance_json,r.input_anchors_json,r.content_sha256,r.created_by,r.created_by_kind,r.created_via,COALESCE(r.supersedes_revision,0),r.created_at
+	query := `SELECT r.spec_id,r.revision,r.content_markdown,r.acceptance_json,r.input_anchors_json,r.source_refs_json,r.norm_anchors_json,r.content_sha256,r.created_by,r.created_by_kind,r.created_via,COALESCE(r.supersedes_revision,0),r.created_at
 		FROM console_spec_revision r JOIN console_spec s ON s.id=r.spec_id WHERE r.spec_id=? AND r.revision=?`
 	var r model.ConsoleSpecRevision
 	var created string
-	err := s.db.QueryRowContext(ctx, query, specID, revision).Scan(&r.SpecID, &r.Revision, &r.ContentMarkdown, &r.AcceptanceJSON, &r.InputAnchorsJSON, &r.ContentSHA256, &r.CreatedBy, &r.CreatedByKind, &r.CreatedVia, &r.Supersedes, &created)
+	err := s.db.QueryRowContext(ctx, query, specID, revision).Scan(&r.SpecID, &r.Revision, &r.ContentMarkdown, &r.AcceptanceJSON, &r.InputAnchorsJSON, &r.SourceRefsJSON, &r.NormAnchorsJSON, &r.ContentSHA256, &r.CreatedBy, &r.CreatedByKind, &r.CreatedVia, &r.Supersedes, &created)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -729,6 +810,20 @@ func appendConsoleSpecRevisionTx(ctx context.Context, tx *sql.Tx, principalID, s
 	err = tx.QueryRowContext(ctx, `SELECT current_revision,state,current_editor_id,archived,editing_closed FROM console_spec WHERE id=?`, specID).Scan(&current, &state, &editor, &archived, &editingClosed)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, ErrConsoleSpecNotFound
+	}
+	flowTable, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil {
+		return 0, err
+	}
+	var flow int
+	if flowTable {
+		err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flow)
+	}
+	if err != nil {
+		return 0, err
+	}
+	if flow != 0 {
+		return 0, ErrPMSpecFlowDenied
 	}
 	if err != nil {
 		return 0, err
@@ -798,6 +893,18 @@ func appendConsoleSpecRevisionTx(ctx context.Context, tx *sql.Tx, principalID, s
 	return next, nil
 }
 
+// pmSpecFlowTableExists keeps legacy migration tests and rollback inspection
+// usable before migration 0064 creates the PM flow tables. Production applies
+// migrations before serving requests, so an absent table means the new flow
+// is unavailable and legacy spec behavior remains unchanged.
+func pmSpecFlowTableExists(ctx context.Context, tx *sql.Tx) (bool, error) {
+	var n int
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='console_spec_flow'`).Scan(&n); err != nil {
+		return false, err
+	}
+	return n != 0, nil
+}
+
 // AppendConsoleSpecRevisionWithCapability writes through a shared edit link.
 // Authorization, closed-state check and revision CAS happen in one transaction.
 func (s *SQLite) AppendConsoleSpecRevisionWithCapability(ctx context.Context, specID string, expected int, capabilityHash string, revision model.ConsoleSpecRevision, now time.Time) (int, error) {
@@ -813,8 +920,15 @@ func (s *SQLite) appendConsoleSpecRevisionWithCapability(ctx context.Context, sp
 }
 
 func (s *SQLite) CloseConsoleSpecEditing(ctx context.Context, principalID, specID string, now time.Time) error {
-	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET editing_closed=1,updated_at=? WHERE id=? AND principal_id=? AND editing_closed=0`,
-		now.UTC().Format(time.RFC3339Nano), specID, principalID)
+	query := `UPDATE console_spec SET editing_closed=1,updated_at=? WHERE id=? AND principal_id=? AND editing_closed=0`
+	hasFlow, err := s.objectExists(ctx, "table", "console_spec_flow")
+	if err != nil {
+		return err
+	}
+	if hasFlow {
+		query += ` AND NOT EXISTS (SELECT 1 FROM console_spec_flow f WHERE f.spec_id=console_spec.id)`
+	}
+	res, err := s.db.ExecContext(ctx, query, now.UTC().Format(time.RFC3339Nano), specID, principalID)
 	if err != nil {
 		return err
 	}
@@ -826,8 +940,15 @@ func (s *SQLite) CloseConsoleSpecEditing(ctx context.Context, principalID, specI
 }
 
 func (s *SQLite) ReopenConsoleSpecEditing(ctx context.Context, principalID, specID string, now time.Time) error {
-	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET editing_closed=0,updated_at=? WHERE id=? AND principal_id=? AND editing_closed=1`,
-		now.UTC().Format(time.RFC3339Nano), specID, principalID)
+	query := `UPDATE console_spec SET editing_closed=0,updated_at=? WHERE id=? AND principal_id=? AND editing_closed=1`
+	hasFlow, err := s.objectExists(ctx, "table", "console_spec_flow")
+	if err != nil {
+		return err
+	}
+	if hasFlow {
+		query += ` AND NOT EXISTS (SELECT 1 FROM console_spec_flow f WHERE f.spec_id=console_spec.id)`
+	}
+	res, err := s.db.ExecContext(ctx, query, now.UTC().Format(time.RFC3339Nano), specID, principalID)
 	if err != nil {
 		return err
 	}
@@ -1048,6 +1169,21 @@ func (s *SQLite) CreateConsoleTaskProposal(ctx context.Context, proposal model.C
 		return err
 	}
 	defer tx.Rollback()
+	var flowState string
+	flowTable, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil {
+		return err
+	}
+	var flowErr error = sql.ErrNoRows
+	if flowTable {
+		flowErr = tx.QueryRowContext(ctx, `SELECT state FROM console_spec_flow WHERE spec_id=?`, proposal.SpecID).Scan(&flowState)
+	}
+	if flowErr != nil && !errors.Is(flowErr, sql.ErrNoRows) {
+		return flowErr
+	}
+	if flowErr == nil && flowState != "review_complete" && flowState != "final" {
+		return ErrConsoleSpecGate
+	}
 	var title, contentHash, anchors string
 	if err = tx.QueryRowContext(ctx, `SELECT s.title,r.content_sha256,r.input_anchors_json
 		FROM console_spec s JOIN console_spec_revision r ON r.spec_id=s.id AND r.revision=s.current_revision

@@ -34,6 +34,8 @@ def request(request_id, tool='send_message', upload_path=''):
         'dw_task_question_list': {},
         'dw_spec_template': {'action':'list'},
         'dw_spec_clarifications': {'action':'list','question_id':'q_fixture'},
+        'dw_pm_spec_assist_request': {'request_id':'pmspecassist_fixture'},
+        'dw_pm_spec_assist_reply': {'request_id':'pmspecassist_fixture','suggestions':[],'review_questions':[]},
         'dw_task_question_create': {'task_id':'fixture','request_id':'stable','expected_version':1,'kind':'technical','title':'question','observed_fact':'fact','question':'which','expected_answer':'evidence','entry_refs':['A1']},
         'dw_task_question_input': {'question_id':'q_fixture','request_id':'stable','expected_version':1,'event_id':'answer','body':'technical material','evidence_ref':'git:ref'},
         'dw_task_list': {'limit': 10},

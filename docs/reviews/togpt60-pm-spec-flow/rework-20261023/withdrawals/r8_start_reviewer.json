@@ -1,0 +1,25 @@
+{
+  "name": "r8_start_reviewer",
+  "file": "internal/store/console_spec_pm_flow.go",
+  "command": [
+    "go",
+    "test",
+    "./internal/store",
+    "-run",
+    "^TestLegacyR8StartIsDeniedForPMSpecReviewerRecipient$",
+    "-count=1",
+    "-timeout=3m"
+  ],
+  "expected_red_marker": "legacy R8 start accepted for PM reviewer recipient",
+  "baseline_started_utc": "2026-10-23T02:21:47.678713Z",
+  "baseline_rc": 0,
+  "baseline_ended_utc": "2026-10-23T02:21:48.131413Z",
+  "mutated_started_utc": "2026-10-23T02:21:48.131742Z",
+  "mutated_rc": 1,
+  "mutated_ended_utc": "2026-10-23T02:21:50.089403Z",
+  "marker_present": true,
+  "restored_started_utc": "2026-10-23T02:21:50.089726Z",
+  "restored_rc": 0,
+  "restored_ended_utc": "2026-10-23T02:21:50.553790Z",
+  "pass": true
+}
