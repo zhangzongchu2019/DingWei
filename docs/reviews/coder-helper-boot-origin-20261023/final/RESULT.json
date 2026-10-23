@@ -1,0 +1,86 @@
+{
+  "source": "a7d797b69b88b78ab269edd7465f632cdc0f61db",
+  "rows": [
+    {
+      "label": "withdrawals",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "tests/helper-boot-origin/check.py",
+        "/data/ai-dev-data/helper-boot-origin/docs/reviews/coder-helper-boot-origin-20261023/final/withdrawals"
+      ],
+      "rc": 0,
+      "start": "2026-10-22T23:48:34.249885+00:00",
+      "end": "2026-10-22T23:48:37.969761+00:00",
+      "env_i": true,
+      "env_keys": [
+        "DW_DESKTOP_INTEGRATION_PYTHON",
+        "GOCACHE",
+        "GOMODCACHE",
+        "GOPATH",
+        "GOTOOLCHAIN",
+        "HOME",
+        "LANG",
+        "PATH",
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONPATH"
+      ],
+      "isolated_HOME": "/tmp/boot-origin-final-w4dy5ml0/withdrawals"
+    },
+    {
+      "label": "canonical",
+      "command": [
+        "sh",
+        "scripts/run-build-tests.sh"
+      ],
+      "rc": 0,
+      "start": "2026-10-22T23:48:34.249668+00:00",
+      "end": "2026-10-22T23:50:54.074808+00:00",
+      "env_i": true,
+      "env_keys": [
+        "DW_DESKTOP_INTEGRATION_PYTHON",
+        "GOCACHE",
+        "GOMODCACHE",
+        "GOPATH",
+        "GOTOOLCHAIN",
+        "HOME",
+        "LANG",
+        "PATH",
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONPATH"
+      ],
+      "isolated_HOME": "/tmp/boot-origin-final-w4dy5ml0/canonical"
+    },
+    {
+      "label": "helper",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests",
+        "-v"
+      ],
+      "rc": 0,
+      "start": "2026-10-22T23:48:34.249459+00:00",
+      "end": "2026-10-22T23:55:43.848697+00:00",
+      "env_i": true,
+      "env_keys": [
+        "DW_DESKTOP_INTEGRATION_PYTHON",
+        "GOCACHE",
+        "GOMODCACHE",
+        "GOPATH",
+        "GOTOOLCHAIN",
+        "HOME",
+        "LANG",
+        "PATH",
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONPATH"
+      ],
+      "isolated_HOME": "/tmp/boot-origin-final-w4dy5ml0/helper"
+    }
+  ],
+  "passed": true
+}

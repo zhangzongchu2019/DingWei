@@ -1,0 +1,16 @@
+test_actual_pid_starttime_and_resolved_package_origin (test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin) ... FAIL
+
+======================================================================
+FAIL: test_actual_pid_starttime_and_resolved_package_origin (test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/boot-origin-withdraw-bhlopkhx/helper/tests/test_boot_origin.py", line 41, in test_actual_pid_starttime_and_resolved_package_origin
+    self.assertEqual(self.stderr.getvalue(), (self.root / origin.RECORD_NAME).read_text(), 'BOOT_STDERR_MISMATCH')
+AssertionError: '' != '{"boot_marker":"9ccbce589b35f1a9fb61c6fc3[174 chars]"}\n'
++ {"boot_marker":"9ccbce589b35f1a9fb61c6fc3fdefe88","isolated":0,"pid":3644752,"sessionhelper_file":"/tmp/boot-origin-withdraw-bhlopkhx/helper/sessionhelper/__init__.py","starttime":50381495,"type":"helper_boot_origin"}
+ : BOOT_STDERR_MISMATCH
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=1)

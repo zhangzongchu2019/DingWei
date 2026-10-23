@@ -1,0 +1,14 @@
+test_replace_failure_preserves_old_and_cleans_temporary (test_boot_origin.BootOriginTests.test_replace_failure_preserves_old_and_cleans_temporary) ... FAIL
+
+======================================================================
+FAIL: test_replace_failure_preserves_old_and_cleans_temporary (test_boot_origin.BootOriginTests.test_replace_failure_preserves_old_and_cleans_temporary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/boot-origin-withdraw-bhlopkhx/helper/tests/test_boot_origin.py", line 99, in test_replace_failure_preserves_old_and_cleans_temporary
+    self.assertTrue(target.exists(), 'BOOT_NOT_ATOMIC')
+AssertionError: False is not true : BOOT_NOT_ATOMIC
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=1)

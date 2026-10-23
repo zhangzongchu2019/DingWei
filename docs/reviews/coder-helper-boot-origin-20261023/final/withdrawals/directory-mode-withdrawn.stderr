@@ -1,0 +1,24 @@
+test_unprotected_or_symlink_state_directory_refused (test_boot_origin.BootOriginTests.test_unprotected_or_symlink_state_directory_refused) ... 
+  test_unprotected_or_symlink_state_directory_refused (test_boot_origin.BootOriginTests.test_unprotected_or_symlink_state_directory_refused) (kind='writable') ... FAIL
+test_unprotected_or_symlink_state_directory_refused (test_boot_origin.BootOriginTests.test_unprotected_or_symlink_state_directory_refused) ... FAIL
+
+======================================================================
+FAIL: test_unprotected_or_symlink_state_directory_refused (test_boot_origin.BootOriginTests.test_unprotected_or_symlink_state_directory_refused) (kind='writable')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/boot-origin-withdraw-bhlopkhx/helper/tests/test_boot_origin.py", line 126, in test_unprotected_or_symlink_state_directory_refused
+    self.assertFalse((directory / origin.RECORD_NAME).exists(), 'BOOT_UNSAFE_DIRECTORY_WRITTEN')
+AssertionError: True is not false : BOOT_UNSAFE_DIRECTORY_WRITTEN
+
+======================================================================
+FAIL: test_unprotected_or_symlink_state_directory_refused (test_boot_origin.BootOriginTests.test_unprotected_or_symlink_state_directory_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/boot-origin-withdraw-bhlopkhx/helper/tests/test_boot_origin.py", line 127, in test_unprotected_or_symlink_state_directory_refused
+    self.assertEqual(self.stderr.getvalue().count('record_write_failed'), 2)
+AssertionError: 1 != 2
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=2)

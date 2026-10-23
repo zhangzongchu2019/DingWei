@@ -1,0 +1,14 @@
+test_actual_pid_starttime_and_resolved_package_origin (test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin) ... FAIL
+
+======================================================================
+FAIL: test_actual_pid_starttime_and_resolved_package_origin (test_boot_origin.BootOriginTests.test_actual_pid_starttime_and_resolved_package_origin)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/boot-origin-withdraw-bhlopkhx/helper/tests/test_boot_origin.py", line 40, in test_actual_pid_starttime_and_resolved_package_origin
+    self.assertRegex(data['boot_marker'], r'^[0-9a-f]{32}$', 'BOOT_MARKER_MISSING')
+AssertionError: Regex didn't match: '^[0-9a-f]{32}$' not found in '' : BOOT_MARKER_MISSING
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=1)

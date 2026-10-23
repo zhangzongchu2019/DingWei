@@ -1,0 +1,17 @@
+test_source_symlink_resolves (test_boot_origin.BootOriginTests.test_source_symlink_resolves) ... FAIL
+
+======================================================================
+FAIL: test_source_symlink_resolves (test_boot_origin.BootOriginTests.test_source_symlink_resolves)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/boot-origin-withdraw-bhlopkhx/helper/tests/test_boot_origin.py", line 64, in test_source_symlink_resolves
+    self.assertEqual(self.record()['sessionhelper_file'], str(linked.resolve()), 'BOOT_SOURCE_NOT_RESOLVED')
+AssertionError: '/tmp/tmpr48bmcp7/package-link.py' != '/tmp/boot-origin-withdraw-bhlopkhx/helper/sessionhelper/__init__.py'
+- /tmp/tmpr48bmcp7/package-link.py
++ /tmp/boot-origin-withdraw-bhlopkhx/helper/sessionhelper/__init__.py
+ : BOOT_SOURCE_NOT_RESOLVED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=1)

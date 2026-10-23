@@ -1,0 +1,6 @@
+test_once_per_process_not_per_call (test_boot_origin.BootOriginTests.test_once_per_process_not_per_call) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+OK

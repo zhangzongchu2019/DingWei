@@ -1,0 +1,14 @@
+test_failure_warns_sanitized_and_remains_nonblocking (test_boot_origin.BootOriginTests.test_failure_warns_sanitized_and_remains_nonblocking) ... FAIL
+
+======================================================================
+FAIL: test_failure_warns_sanitized_and_remains_nonblocking (test_boot_origin.BootOriginTests.test_failure_warns_sanitized_and_remains_nonblocking)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/boot-origin-withdraw-bhlopkhx/helper/tests/test_boot_origin.py", line 77, in test_failure_warns_sanitized_and_remains_nonblocking
+    self.assertIn('HELPER_BOOT_ORIGIN_WARNING record_write_failed', text, 'BOOT_FAILURE_SILENT')
+AssertionError: 'HELPER_BOOT_ORIGIN_WARNING record_write_failed' not found in '{"boot_marker":"0d631696e3c050cd77a279013f5f68b3","isolated":0,"pid":3644770,"sessionhelper_file":"/tmp/boot-origin-withdraw-bhlopkhx/helper/sessionhelper/__init__.py","starttime":50381541,"type":"helper_boot_origin"}\n' : BOOT_FAILURE_SILENT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)

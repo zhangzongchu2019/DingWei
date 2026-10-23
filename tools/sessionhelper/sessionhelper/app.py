@@ -19,6 +19,7 @@ from typing import Protocol
 
 from . import __version__
 from . import enroll
+from .boot_origin import record_boot_origin
 from .config import Config, load_config
 from .llm import LLMProvider
 from .config import env_get
@@ -1894,6 +1895,7 @@ def main() -> None:
             print(f"[sessionHelper] enroll stopped: {exc}", flush=True)
             raise SystemExit(2)
     cfg = load_config(env) if env else load_config()
+    record_boot_origin(cfg.state_dir)
     helper = SessionHelper(cfg)
     helper.enroll_credential, helper.enroll_state_dir = credential, state_dir
     try:
