@@ -1,0 +1,67 @@
+----------------------------------------------------------------------
+Ran 9 tests in 0.323s
+
+OK
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/data/ai-dev-data/c/tmp_65857i1/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+----------------------------------------------------------------------
+Ran 19 tests in 1.259s
+
+OK
+----------------------------------------------------------------------
+Ran 18 tests in 1.015s
+
+OK
+----------------------------------------------------------------------
+Ran 15 tests in 0.157s
+
+OK
+----------------------------------------------------------------------
+Ran 14 tests in 0.803s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 18.263s
+
+OK
+----------------------------------------------------------------------
+Ran 23 tests in 0.385s
+
+OK
+----------------------------------------------------------------------
+Ran 18 tests in 0.910s
+
+OK
+----------------------------------------------------------------------
+Ran 45 tests in 5.886s
+
+OK
+----------------------------------------------------------------------
+Ran 27 tests in 0.668s
+
+OK
+======================================================================
+ERROR: test_all_registered_tools_return_sanitized_execution_errors (tools.sessionhelper.tests.test_mcp_shim_transport_errors.ShimTransportTests.test_all_registered_tools_return_sanitized_execution_errors) (tool='dw_delivery_status')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 240, in test_all_registered_tools_return_sanitized_execution_errors
+    with self.subTest(tool=tool): self.exercise('rejected', 'project_context_unsupported' if tool=='project_context' else 'blocker_unsupported_upgrade_helper' if tool.startswith('dw_task_blocker_') else 'question_unsupported_upgrade_helper' if tool.startswith('dw_task_question_') else 'template_unsupported_upgrade_helper' if tool=='dw_spec_template' else 'clarification_unsupported_upgrade_helper' if tool=='dw_spec_clarifications' else 'helper_rejected', tool)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 178, in exercise
+    child.send(request(1, tool, upload))
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper/tests/test_mcp_shim_transport_errors.py", line 23, in request
+    args = {
+           ^
+KeyError: 'dw_delivery_status'
+
+----------------------------------------------------------------------
+Ran 4 tests in 3.945s
+
+FAILED (errors=1)

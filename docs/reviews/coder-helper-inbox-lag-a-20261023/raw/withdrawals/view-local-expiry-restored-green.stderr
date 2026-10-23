@@ -1,0 +1,13 @@
+test_actual_state_40minute_queue_then_stale_unknown_and_epoch (view-service.test_inbox_lag_resource.InboxLagRenderer.test_actual_state_40minute_queue_then_stale_unknown_and_epoch) ... ok
+test_console_controls_and_manual_lock_preserved (view-service.test_inbox_lag_resource.InboxLagResource.test_console_controls_and_manual_lock_preserved) ... ok
+test_full_paused_compatible_active_fail_closed (view-service.test_inbox_lag_resource.InboxLagResource.test_full_paused_compatible_active_fail_closed) ... ok
+test_lag_only_poll_is_subject_bound_and_does_not_sample_resources_or_cost (view-service.test_inbox_lag_resource.InboxLagResource.test_lag_only_poll_is_subject_bound_and_does_not_sample_resources_or_cost) ... ok
+test_lag_resource_subject_binding_and_existing_view_acl (view-service.test_inbox_lag_resource.InboxLagResource.test_lag_resource_subject_binding_and_existing_view_acl) ... ok
+test_legacy_auth_heartbeat_excludes_resources (view-service.test_inbox_lag_resource.InboxLagResource.test_legacy_auth_heartbeat_excludes_resources) ... ok
+test_real_signer_preserves_signed_address_contract (view-service.test_inbox_lag_resource.InboxLagResource.test_real_signer_preserves_signed_address_contract) ... ok
+test_resource_only_modes_subject_and_no_cost (view-service.test_inbox_lag_resource.InboxLagResource.test_resource_only_modes_subject_and_no_cost) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.384s
+
+OK

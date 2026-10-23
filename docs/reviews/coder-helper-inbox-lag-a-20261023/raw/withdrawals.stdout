@@ -1,0 +1,11 @@
+stage-admission-write GREEN_RED_GREEN
+claude-weak-processing GREEN_RED_GREEN
+restart-unknown GREEN_RED_GREEN
+hub-sender-ownership GREEN_RED_GREEN
+hub-current-group-acl GREEN_RED_GREEN
+hub-freshness GREEN_RED_GREEN
+view-local-expiry GREEN_RED_GREEN
+query-connection-binding GREEN_RED_GREEN
+ipc-restricted-mode GREEN_RED_GREEN
+legacy-direct-default GREEN_RED_GREEN
+view-scheduled-lag-poll GREEN_RED_GREEN

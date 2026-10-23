@@ -1,0 +1,49 @@
+{
+  "name": "canonical",
+  "command": [
+    "sh",
+    "scripts/run-build-tests.sh"
+  ],
+  "environment": {
+    "HOME": "/data/ai-dev-data/helper-inbox-lag-a-evidence/canonical-home",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/c",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "HUB_TEST_PG_EMBEDDED": "1",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3"
+  },
+  "start_utc": "2026-10-23T04:33:04.348507+00:00",
+  "end_utc": "2026-10-23T04:33:38.974708+00:00",
+  "elapsed_seconds": 34.626,
+  "rc": 1,
+  "source_commit": "d161043369310e86798385bb94499343920aee8c",
+  "source_sha256": {
+    "deploy/test_build_entrypoints.py": "6757c270a69883680d5073fdebcfdd807fe43d5299dc5cd73e06e5828ca3c6c9",
+    "docs/reviews/coder-helper-inbox-lag-a-20261023/CHECKPOINT.md": "3194558634a4ec4ed5785dbfe595b7fa7c12d024167f888375a50aa1283fb55b",
+    "internal/m8/agent_disk_metrics.go": "e7f5b5e639b8f1600bd7c000ff0abe6f35165914135b84faa72718d2f3c37577",
+    "internal/m8/agent_ws.go": "4e7bc8fbd178601ab6ee33749b1a2349aa62cd78b87e2cd2fccea1b8da5683ef",
+    "internal/m8/hub.go": "c56e819b77dab9a63742f05c5ca9eecc0f9aa8ef9aa1a26b368c0ca36a0d853b",
+    "internal/m8/inbox_lag.go": "ac3575b9f5ec26abf56ca5801dda38fad448394be080fdd93aa0ab06c3ede9be",
+    "internal/m8/inbox_lag_test.go": "74c1bf30b8a108f4e12b94d6be131297ac97c44c1648a5c9773954e4923446fe",
+    "internal/m8/outbound_receipt.go": "433aafc00bd92febdc5739f550cffda31a8f3458a412d763fc53416feee3545b",
+    "scripts/run-build-tests.sh": "4ec1ec8125fb0826bfa1e702a5f39fd641db7690d8ac71e15f332a808f9d9ac9",
+    "tools/sessionhelper/sessionhelper/app.py": "862c9a992eb67e111bb097a479c9f100f913b1c51e0dfe595c363932d03a6d76",
+    "tools/sessionhelper/sessionhelper/driver_adapter.py": "11eb1388103332bd4e8b0e2cb101d7a1faac93026ad56a4af96694c81ac24294",
+    "tools/sessionhelper/sessionhelper/inbox.py": "2a85f16d44ca2c9c9502183dbd15ed48b00a88374d5af70788f6df6e1de2aae4",
+    "tools/sessionhelper/sessionhelper/inbox_progress.py": "6135fe14019c8ba6ef2131bf75befe9824400cf9dd7ec4198277560842853a46",
+    "tools/sessionhelper/sessionhelper/ipc_listener.py": "b8d4f29e93976d60dd9368f53f1ab28173df848237b72b8bec6f0a0a913f28bc",
+    "tools/sessionhelper/sessionhelper/mcp_shim.py": "5181ff4f891991bfc5065a48c842748fa0aac3b72eb2215d1d32dc9893de8150",
+    "tools/sessionhelper/sessionhelper/outbound_receipt.py": "ea51e082a35473eb5502c06dca6ea26f33d231e51fc23e14df988c118d60773a",
+    "tools/sessionhelper/tests/test_delivery_status.py": "819990c2add3fd2571dbee76d17af3518bdb8475db7f4f0fba0f327e5630a6ba",
+    "tools/sessionhelper/tests/test_inbox_progress.py": "50b6288dd6d04f52f597f9ac61ffe9ec462a1e07c1dfd35f022c8041d8420188",
+    "view-service/renderer-canary-sse.html": "b9c9aa94a697f58e26a9cef6bbee0fd8dcef8a7f6e9f9f7138984b29e3474559",
+    "view-service/test_inbox_lag_resource.py": "a7447813b4a8688b984167b5ec6796cc2d3ca7734d27aed414aba268db49cbfd",
+    "view-service/view_service.py": "796d08ffd556737896ec3cf960211cf002fd098e6a028432fdb958d2b992d1c1"
+  }
+}

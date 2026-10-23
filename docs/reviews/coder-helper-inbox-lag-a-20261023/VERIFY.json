@@ -1,0 +1,67 @@
+{
+  "task": "S-HELPER-INBOX-LAG A",
+  "base_commit": "30463142e6b0696763934b3f3d9377194e55922c",
+  "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+  "source_tree": "5385779d6f4ec750df083316490755e44c857b06",
+  "branch": "review/coder/helper-inbox-lag-a",
+  "verified_utc": "2026-10-23T05:04:47.501684+00:00",
+  "gates": {
+    "canonical": {
+      "rc": 0,
+      "elapsed_seconds": 152.247,
+      "start_utc": "2026-10-23T04:53:11.534726+00:00",
+      "end_utc": "2026-10-23T04:55:43.781384+00:00",
+      "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3"
+    },
+    "helper-full": {
+      "rc": 0,
+      "elapsed_seconds": 434.576,
+      "start_utc": "2026-10-23T04:53:11.534726+00:00",
+      "end_utc": "2026-10-23T05:00:26.110399+00:00",
+      "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3"
+    },
+    "go-full": {
+      "rc": 0,
+      "elapsed_seconds": 649.365,
+      "start_utc": "2026-10-23T04:53:11.534727+00:00",
+      "end_utc": "2026-10-23T05:04:00.899819+00:00",
+      "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3"
+    },
+    "vet": {
+      "rc": 0,
+      "elapsed_seconds": 2.027,
+      "start_utc": "2026-10-23T04:54:00.138280+00:00",
+      "end_utc": "2026-10-23T04:54:02.165094+00:00",
+      "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3"
+    },
+    "race-targeted": {
+      "rc": 0,
+      "elapsed_seconds": 26.221,
+      "start_utc": "2026-10-23T04:54:00.138611+00:00",
+      "end_utc": "2026-10-23T04:54:26.359173+00:00",
+      "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3"
+    },
+    "browser-inbox-lag": {
+      "rc": 0,
+      "elapsed_seconds": 1.367,
+      "start_utc": "2026-10-23T04:53:11.534728+00:00",
+      "end_utc": "2026-10-23T04:53:12.901646+00:00",
+      "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3"
+    }
+  },
+  "counts": {
+    "canonical_python_files": 66,
+    "canonical_shell_files": 2,
+    "helper_unit_tests": 977,
+    "go_packages_tested": 53,
+    "go_packages_without_tests": 13,
+    "browser_assertions": 20,
+    "withdrawal_green_red_green_cases": 11
+  },
+  "same_source_hashes_all_gates": true,
+  "all_withdrawals_restored": true,
+  "version_and_runtime_lock_unchanged": true,
+  "urgent_B": false,
+  "deployed": false,
+  "review": "pending leader and prodops"
+}

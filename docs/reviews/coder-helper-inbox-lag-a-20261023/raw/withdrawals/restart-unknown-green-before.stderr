@@ -1,0 +1,6 @@
+test_restart_and_historical_processed_are_unknown_without_replay (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_restart_and_historical_processed_are_unknown_without_replay) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.081s
+
+OK

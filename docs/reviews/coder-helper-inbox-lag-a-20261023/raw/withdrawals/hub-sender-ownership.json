@@ -1,0 +1,55 @@
+{
+  "name": "hub-sender-ownership",
+  "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+  "file": "internal/m8/inbox_lag.go",
+  "original_sha256": "9e645d3c0205d2cbe4e4edc4f42a134ddd16753e3b2f629cb420de7a74297de9",
+  "mutant_sha256": "1ec4491c05c7f786f645d25dbeac9ba0a2375486d90866e35c1c62ca9c05108e",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "^TestInboxLagSenderOwnDeliveryAndCurrentACL$",
+    "-count=1"
+  ],
+  "environment": {
+    "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+    "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC"
+  },
+  "runs": [
+    {
+      "phase": "green-before",
+      "start_utc": "2026-10-23T04:56:34.030628+00:00",
+      "end_utc": "2026-10-23T04:56:41.903397+00:00",
+      "elapsed_seconds": 7.873,
+      "rc": 0,
+      "semantic_assertion_failure": false
+    },
+    {
+      "phase": "withdrawn-red",
+      "start_utc": "2026-10-23T04:56:41.903496+00:00",
+      "end_utc": "2026-10-23T04:56:49.842822+00:00",
+      "elapsed_seconds": 7.939,
+      "rc": 1,
+      "semantic_assertion_failure": true
+    },
+    {
+      "phase": "restored-green",
+      "start_utc": "2026-10-23T04:56:49.842909+00:00",
+      "end_utc": "2026-10-23T04:56:51.058260+00:00",
+      "elapsed_seconds": 1.215,
+      "rc": 0,
+      "semantic_assertion_failure": false
+    }
+  ],
+  "restored_sha256": "9e645d3c0205d2cbe4e4edc4f42a134ddd16753e3b2f629cb420de7a74297de9",
+  "result": "GREEN_RED_GREEN"
+}

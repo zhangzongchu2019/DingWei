@@ -1,0 +1,55 @@
+{
+  "name": "restart-unknown",
+  "source_commit": "6a297ec4320a2e0224437849ba77206880aeccb3",
+  "file": "tools/sessionhelper/sessionhelper/inbox_progress.py",
+  "original_sha256": "4e21233e6ea6becfaf555c927b56f2048161a18a42d0c025c164178bf084ac43",
+  "mutant_sha256": "53d63fbb89033cbcdd35a8c13610dfbcf5b895749bac5987310a396c5129e06a",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python3",
+    "-B",
+    "-m",
+    "unittest",
+    "-v",
+    "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_restart_and_historical_processed_are_unknown_without_replay"
+  ],
+  "environment": {
+    "HOME": "/data/ai-dev-data/helper-inbox-lag-a-final-evidence/withdrawals/home",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a/view-service",
+    "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC"
+  },
+  "runs": [
+    {
+      "phase": "green-before",
+      "start_utc": "2026-10-23T04:56:33.489511+00:00",
+      "end_utc": "2026-10-23T04:56:33.670575+00:00",
+      "elapsed_seconds": 0.181,
+      "rc": 0,
+      "semantic_assertion_failure": false
+    },
+    {
+      "phase": "withdrawn-red",
+      "start_utc": "2026-10-23T04:56:33.670663+00:00",
+      "end_utc": "2026-10-23T04:56:33.857275+00:00",
+      "elapsed_seconds": 0.187,
+      "rc": 1,
+      "semantic_assertion_failure": true
+    },
+    {
+      "phase": "restored-green",
+      "start_utc": "2026-10-23T04:56:33.857370+00:00",
+      "end_utc": "2026-10-23T04:56:34.028815+00:00",
+      "elapsed_seconds": 0.171,
+      "rc": 0,
+      "semantic_assertion_failure": false
+    }
+  ],
+  "restored_sha256": "4e21233e6ea6becfaf555c927b56f2048161a18a42d0c025c164178bf084ac43",
+  "result": "GREEN_RED_GREEN"
+}

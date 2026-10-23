@@ -1,0 +1,6 @@
+test_real_ipc_shim_roundtrip_and_restricted_modes (tools.sessionhelper.tests.test_delivery_status.DeliveryStatusTest.test_real_ipc_shim_roundtrip_and_restricted_modes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.017s
+
+OK
