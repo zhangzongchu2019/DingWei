@@ -1,0 +1,41 @@
+{
+  "name": "go-full",
+  "command": [
+    "go",
+    "test",
+    "-p",
+    "1",
+    "./...",
+    "-count=1",
+    "-timeout=30m"
+  ],
+  "environment": {
+    "HOME": "/home/dev",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "HUB_TEST_PG_EMBEDDED": "1",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3"
+  },
+  "start_utc": "2026-10-23T11:32:10.388649+00:00",
+  "end_utc": "2026-10-23T11:43:08.511676+00:00",
+  "elapsed_seconds": 658.123,
+  "rc": 0,
+  "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+  "source_sha256": {
+    "docs/reviews/coder-helper-inbox-lag-a-rework-20261023/CHECKPOINT.md": "8dbbd1d85de31ec64884a0fd485915583f71236b7ddfe0286b0a3bddadcb4684",
+    "internal/m8/inbox_lag.go": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "internal/m8/inbox_lag_test.go": "924a6577fb5f253cb558897264c987e07a26a139920914d37c906f6ef31bef1e",
+    "tools/sessionhelper/sessionhelper/inbox_progress.py": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+    "tools/sessionhelper/tests/test_inbox_progress.py": "f0b39827dda5c4e76f788cf9793da713cc87a28dcb079a9080e9fa184d2719e0",
+    "view-service/inbox-lag-regression.js": "e8faf04341e3092fd8e74d0be0771b26861bee71e26c327a452598c88aaaf2b0",
+    "view-service/renderer-canary-sse.html": "22d04e485b64d4f0b6bf2ee796928589b851dd2e59c7b0d00679bc779e04cd84",
+    "view-service/test_inbox_lag_resource.py": "7e2464db1c5adc249bfcc64ddaca510eadf5c5e1be51d82b0f95e880b3ef4d8f"
+  }
+}

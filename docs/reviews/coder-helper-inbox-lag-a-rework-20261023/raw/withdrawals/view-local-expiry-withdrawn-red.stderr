@@ -1,0 +1,42 @@
+test_actual_state_40minute_queue_then_stale_unknown_and_epoch (view-service.test_inbox_lag_resource.InboxLagRenderer.test_actual_state_40minute_queue_then_stale_unknown_and_epoch) ... FAIL
+test_console_controls_and_manual_lock_preserved (view-service.test_inbox_lag_resource.InboxLagResource.test_console_controls_and_manual_lock_preserved) ... ok
+test_full_paused_compatible_active_fail_closed (view-service.test_inbox_lag_resource.InboxLagResource.test_full_paused_compatible_active_fail_closed) ... ok
+test_lag_only_poll_is_subject_bound_and_does_not_sample_resources_or_cost (view-service.test_inbox_lag_resource.InboxLagResource.test_lag_only_poll_is_subject_bound_and_does_not_sample_resources_or_cost) ... ok
+test_lag_resource_subject_binding_and_existing_view_acl (view-service.test_inbox_lag_resource.InboxLagResource.test_lag_resource_subject_binding_and_existing_view_acl) ... ok
+test_legacy_auth_heartbeat_excludes_resources (view-service.test_inbox_lag_resource.InboxLagResource.test_legacy_auth_heartbeat_excludes_resources) ... ok
+test_real_signer_preserves_signed_address_contract (view-service.test_inbox_lag_resource.InboxLagResource.test_real_signer_preserves_signed_address_contract) ... ok
+test_resource_only_modes_subject_and_no_cost (view-service.test_inbox_lag_resource.InboxLagResource.test_resource_only_modes_subject_and_no_cost) ... ok
+
+======================================================================
+FAIL: test_actual_state_40minute_queue_then_stale_unknown_and_epoch (view-service.test_inbox_lag_resource.InboxLagRenderer.test_actual_state_40minute_queue_then_stale_unknown_and_epoch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service/test_inbox_lag_resource.py", line 56, in test_actual_state_40minute_queue_then_stale_unknown_and_epoch
+    self.assertEqual(result.returncode,0,result.stderr)
+AssertionError: 1 != 0 : node:assert:125
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: '已到盘未注入 2 条，最老等待 40 分钟；本次启动另有 1 条注入状态未知' == '排队采样已过期'
+    at [eval]:43:8
+    at Script.runInThisContext (node:vm:122:12)
+    at Object.runInThisContext (node:vm:298:38)
+    at node:internal/process/execution:82:21
+    at [eval]-wrapper:6:24
+    at runScript (node:internal/process/execution:81:62)
+    at evalScript (node:internal/process/execution:103:10)
+    at node:internal/main/eval_string:30:3 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: '已到盘未注入 2 条，最老等待 40 分钟；本次启动另有 1 条注入状态未知',
+  expected: '排队采样已过期',
+  operator: '=='
+}
+
+Node.js v18.19.1
+
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.396s
+
+FAILED (failures=1)

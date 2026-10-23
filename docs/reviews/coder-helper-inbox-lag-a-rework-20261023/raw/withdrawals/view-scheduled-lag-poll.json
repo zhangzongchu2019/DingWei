@@ -1,0 +1,51 @@
+{
+  "name": "view-scheduled-lag-poll",
+  "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+  "file": "view-service/renderer-canary-sse.html",
+  "original_sha256": "22d04e485b64d4f0b6bf2ee796928589b851dd2e59c7b0d00679bc779e04cd84",
+  "mutant_sha256": "5ccf748f0fd4e7d9461ad8e04c07ba5e7c8019ed8092f97c1d763f03e7137156",
+  "command": [
+    "node",
+    "view-service/inbox-lag-regression.js"
+  ],
+  "environment": {
+    "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+    "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC"
+  },
+  "runs": [
+    {
+      "phase": "green-before",
+      "start_utc": "2026-10-23T11:35:22.070580+00:00",
+      "end_utc": "2026-10-23T11:35:23.481567+00:00",
+      "elapsed_seconds": 1.411,
+      "rc": 0,
+      "semantic_assertion_failure": false
+    },
+    {
+      "phase": "withdrawn-red",
+      "start_utc": "2026-10-23T11:35:23.481740+00:00",
+      "end_utc": "2026-10-23T11:35:24.388309+00:00",
+      "elapsed_seconds": 0.907,
+      "rc": 1,
+      "semantic_assertion_failure": true
+    },
+    {
+      "phase": "restored-green",
+      "start_utc": "2026-10-23T11:35:24.388475+00:00",
+      "end_utc": "2026-10-23T11:35:25.680499+00:00",
+      "elapsed_seconds": 1.292,
+      "rc": 0,
+      "semantic_assertion_failure": false
+    }
+  ],
+  "restored_sha256": "22d04e485b64d4f0b6bf2ee796928589b851dd2e59c7b0d00679bc779e04cd84",
+  "result": "GREEN_RED_GREEN"
+}

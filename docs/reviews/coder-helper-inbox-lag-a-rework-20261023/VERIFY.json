@@ -1,0 +1,83 @@
+{
+  "task": "S-HELPER-INBOX-LAG A rework R1 R2 R3",
+  "base_candidate": "b541400596aa7754aaa81ab345e5d6e56400d2d8",
+  "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+  "source_tree": "4f13a04800e4ba5426613adcb7350f1075fe3318",
+  "branch": "review/coder/helper-inbox-lag-a",
+  "verified_utc": "2026-10-23T11:44:56.969021+00:00",
+  "counts": {
+    "canonical_python_files": 66,
+    "canonical_shell_files": 2,
+    "helper_unit_tests": 980,
+    "go_packages_tested": 53,
+    "go_packages_without_tests": 13,
+    "browser_assertions": 20,
+    "withdrawal_green_red_green_cases": 18,
+    "new_rework_withdrawals": 7,
+    "original_manifest_items_verified": 129
+  },
+  "gates": {
+    "canonical": {
+      "rc": 0,
+      "elapsed_seconds": 147.381,
+      "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+      "start_utc": "2026-10-23T11:32:10.388648+00:00",
+      "end_utc": "2026-10-23T11:34:37.770085+00:00"
+    },
+    "helper-full": {
+      "rc": 0,
+      "elapsed_seconds": 436.697,
+      "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+      "start_utc": "2026-10-23T11:32:10.388471+00:00",
+      "end_utc": "2026-10-23T11:39:27.085937+00:00"
+    },
+    "go-full": {
+      "rc": 0,
+      "elapsed_seconds": 658.123,
+      "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+      "start_utc": "2026-10-23T11:32:10.388649+00:00",
+      "end_utc": "2026-10-23T11:43:08.511676+00:00"
+    },
+    "vet": {
+      "rc": 0,
+      "elapsed_seconds": 2.024,
+      "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+      "start_utc": "2026-10-23T11:32:36.943929+00:00",
+      "end_utc": "2026-10-23T11:32:38.968006+00:00"
+    },
+    "race-targeted": {
+      "rc": 0,
+      "elapsed_seconds": 49.662,
+      "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+      "start_utc": "2026-10-23T11:32:36.943663+00:00",
+      "end_utc": "2026-10-23T11:33:26.606031+00:00"
+    },
+    "browser-inbox-lag": {
+      "rc": 0,
+      "elapsed_seconds": 1.366,
+      "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+      "start_utc": "2026-10-23T11:32:10.389286+00:00",
+      "end_utc": "2026-10-23T11:32:11.755283+00:00"
+    },
+    "old129-manifest": {
+      "rc": 0,
+      "elapsed_seconds": 0.008,
+      "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+      "start_utc": "2026-10-23T11:38:54.946234+00:00",
+      "end_utc": "2026-10-23T11:38:54.953826+00:00"
+    }
+  },
+  "same_source_hashes_all_gates": true,
+  "all_withdrawals_restored": true,
+  "old129_evidence_unchanged": true,
+  "version_lock_and_Hub_migrations_unchanged": true,
+  "new_helper_local_column": "delivery_progress.unknown_instance nullable",
+  "unknown_count_scope": "current helper instance observation/recovery; per-delivery historical unknown preserved",
+  "registered_followups": {
+    "legacy_no_ack_sender_wait": "unchanged, normally full 2-second budget; ordinary desktop IPC shares path",
+    "retention_and_scan_cost": "deferred; rows retained, instance lifetime uncertainty can accumulate"
+  },
+  "deployed": false,
+  "B_urgent": false,
+  "review": "pending leader rereview and prodops differential cross-check"
+}

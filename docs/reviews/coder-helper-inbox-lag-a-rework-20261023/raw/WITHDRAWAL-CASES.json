@@ -1,0 +1,250 @@
+[
+  [
+    "stage-admission-write",
+    "tools/sessionhelper/sessionhelper/driver_adapter.py",
+    "        observe(getattr(self, \"delivery_progress\", None), command.delivery_id, \"model_admitted\")",
+    "        pass # withdrawn admission observation",
+    [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_real_claude_submitted_receipt_is_not_admitted_before_replay_ack"
+    ]
+  ],
+  [
+    "claude-weak-processing",
+    "tools/sessionhelper/sessionhelper/driver_adapter.py",
+    "if self._which == \"claude\" and receipt.state == \"processing\" and not str(receipt.detail).startswith(\"accepted,\"):",
+    "if False:",
+    [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_real_claude_submitted_receipt_is_not_admitted_before_replay_ack"
+    ]
+  ],
+  [
+    "restart-unknown",
+    "tools/sessionhelper/sessionhelper/inbox_progress.py",
+    "db.execute(\"UPDATE delivery_progress SET stage='unknown',unknown_instance=? WHERE session_name=? AND stage IN ('adapter_queued','dispatching')\", (self.instance, session))",
+    "pass # withdrawn restart uncertainty",
+    [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_restart_counts_recovered_unknown_not_historical_processed_without_replay"
+    ]
+  ],
+  [
+    "hub-sender-ownership",
+    "internal/m8/inbox_lag.go",
+    "json.Unmarshal([]byte(delivery.Envelope), &original) != nil || original.From != sessionAddress(c.sessionName, c.keyID)",
+    "json.Unmarshal([]byte(delivery.Envelope), &original) != nil",
+    [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagSenderOwnDeliveryAndCurrentACL$",
+      "-count=1"
+    ]
+  ],
+  [
+    "hub-current-group-acl",
+    "internal/m8/inbox_lag.go",
+    "if err != nil || !allowed {",
+    "if err != nil || (!allowed && false) {",
+    [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagSenderOwnDeliveryAndCurrentACL$",
+      "-count=1"
+    ]
+  ],
+  [
+    "hub-freshness",
+    "internal/m8/inbox_lag.go",
+    "if age < 0 || age >= 10*time.Second {",
+    "if age < 0 {",
+    [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagFreshnessAndEpoch$",
+      "-count=1"
+    ]
+  ],
+  [
+    "view-local-expiry",
+    "view-service/renderer-canary-sse.html",
+    "if(this.state==='fresh'&&(!Number.isFinite(now)||now>=this.record.deadline))",
+    "if(false&&this.state==='fresh'&&(!Number.isFinite(now)||now>=this.record.deadline))",
+    [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "view-service/test_inbox_lag_resource.py"
+    ]
+  ],
+  [
+    "query-connection-binding",
+    "tools/sessionhelper/sessionhelper/outbound_receipt.py",
+    "if (connection is ws and self.valid_hub_address(env) and not future.done()",
+    "if (self.valid_hub_address(env) and not future.done()",
+    [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_delivery_status.DeliveryStatusTest.test_wrong_nonce_connection_sender_or_delivery_cannot_resolve"
+    ]
+  ],
+  [
+    "ipc-restricted-mode",
+    "tools/sessionhelper/sessionhelper/ipc_listener.py",
+    "    if send_body_only:\n",
+    "    if send_body_only and msg_type != 'delivery_status_v1':\n",
+    [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_delivery_status.DeliveryStatusTest.test_real_ipc_shim_roundtrip_and_restricted_modes"
+    ]
+  ],
+  [
+    "legacy-direct-default",
+    "internal/m8/hub.go",
+    "if outboundReceiptRequested(env) && !(reliable && (deliveryACK || capabilityPending) && h.Repo != nil) {",
+    "if wantReceipt && !(reliable && (deliveryACK || capabilityPending) && h.Repo != nil) {",
+    [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagObservationalReceiptPreservesLegacyDirectDelivery$",
+      "-count=1"
+    ]
+  ],
+  [
+    "view-scheduled-lag-poll",
+    "view-service/renderer-canary-sse.html",
+    "inboxLagTimer = setInterval(refreshInboxLag, INBOX_LAG_REFRESH_MS);",
+    "inboxLagTimer = setInterval(() => {}, INBOX_LAG_REFRESH_MS);",
+    [
+      "node",
+      "view-service/inbox-lag-regression.js"
+    ]
+  ],
+  [
+    "R1-history-counter-scope",
+    "tools/sessionhelper/sessionhelper/inbox_progress.py",
+    "unknown = db.execute(\"SELECT count(*) FROM delivery_progress WHERE session_name=? AND stage='unknown' AND unknown_instance=?\", (self.session, self.instance)).fetchone()[0]",
+    "unknown = db.execute(\"SELECT count(*) FROM delivery_progress WHERE session_name=? AND stage='unknown'\", (self.session,)).fetchone()[0]",
+    [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count"
+    ]
+  ],
+  [
+    "R1-current-unknown-tag",
+    "tools/sessionhelper/sessionhelper/inbox_progress.py",
+    "self.instance if stage == 'unknown' else None",
+    "None",
+    [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count"
+    ]
+  ],
+  [
+    "R1-unprocessed-recovery",
+    "tools/sessionhelper/sessionhelper/inbox_progress.py",
+    "db.execute('''UPDATE delivery_progress SET unknown_instance=?\n                WHERE session_name=? AND stage='unknown' AND delivery_id IN (\n                    SELECT delivery_id FROM delivery_inbox WHERE session_name=?\n                    AND state IN ('received','processing'))''', (self.instance, session, session))",
+    "pass # withdrawn live inbox uncertainty recovery",
+    [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero"
+    ]
+  ],
+  [
+    "R2-connection-generation",
+    "internal/m8/inbox_lag.go",
+    "delete(aggregate, \"connection_generation\")",
+    "// withdrawn target connection generation redaction",
+    [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagSenderOwnDeliveryAndCurrentACL$",
+      "-count=1"
+    ]
+  ],
+  [
+    "R2-sample-instance",
+    "internal/m8/inbox_lag.go",
+    "delete(aggregate, \"sample_instance\")",
+    "// withdrawn target sample instance redaction",
+    [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagSenderOwnDeliveryAndCurrentACL$",
+      "-count=1"
+    ]
+  ],
+  [
+    "R3-entry-current-check",
+    "internal/m8/inbox_lag.go",
+    "if !current ||",
+    "if (!current && false) ||",
+    [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagRejectsOldConnectionBeforeIdentityRead$",
+      "-count=1"
+    ]
+  ],
+  [
+    "R3-prewrite-current-check",
+    "internal/m8/inbox_lag.go",
+    "if h.sessionClients[c.keyID][c.sessionName] != c {\n\t\treturn true\n\t}",
+    "if false && h.sessionClients[c.keyID][c.sessionName] != c {\n\t\treturn true\n\t}",
+    [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagRejectsReplacementDuringIdentityRead$",
+      "-count=1"
+    ]
+  ]
+]

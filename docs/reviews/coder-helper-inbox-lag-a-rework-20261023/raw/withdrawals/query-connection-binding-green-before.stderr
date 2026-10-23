@@ -1,0 +1,6 @@
+test_wrong_nonce_connection_sender_or_delivery_cannot_resolve (tools.sessionhelper.tests.test_delivery_status.DeliveryStatusTest.test_wrong_nonce_connection_sender_or_delivery_cannot_resolve) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.023s
+
+OK

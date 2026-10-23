@@ -1,0 +1,6 @@
+test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.067s
+
+OK

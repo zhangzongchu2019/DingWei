@@ -1,0 +1,6 @@
+test_real_claude_submitted_receipt_is_not_admitted_before_replay_ack (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_real_claude_submitted_receipt_is_not_admitted_before_replay_ack) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.086s
+
+OK

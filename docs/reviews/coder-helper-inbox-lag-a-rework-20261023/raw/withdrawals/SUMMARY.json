@@ -1,0 +1,988 @@
+[
+  {
+    "name": "stage-admission-write",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "tools/sessionhelper/sessionhelper/driver_adapter.py",
+    "original_sha256": "0414306f600d3ee6318a94bfc544484593fd8c13ca6d6999f629dd690efd8def",
+    "mutant_sha256": "0ac971232d85c2158fb28c748356f5a13cd5c7fc28d23c6ccdb2fd5d6175e1f7",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_real_claude_submitted_receipt_is_not_admitted_before_replay_ack"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:34:27.056307+00:00",
+        "end_utc": "2026-10-23T11:34:27.259520+00:00",
+        "elapsed_seconds": 0.203,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:34:27.259801+00:00",
+        "end_utc": "2026-10-23T11:34:27.432318+00:00",
+        "elapsed_seconds": 0.173,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:34:27.432432+00:00",
+        "end_utc": "2026-10-23T11:34:27.622856+00:00",
+        "elapsed_seconds": 0.19,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "0414306f600d3ee6318a94bfc544484593fd8c13ca6d6999f629dd690efd8def",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "claude-weak-processing",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "tools/sessionhelper/sessionhelper/driver_adapter.py",
+    "original_sha256": "0414306f600d3ee6318a94bfc544484593fd8c13ca6d6999f629dd690efd8def",
+    "mutant_sha256": "5bcba25bedf93640fe81cba8bf5a5794950ce68f9d05506d5e2c349f58583572",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_real_claude_submitted_receipt_is_not_admitted_before_replay_ack"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:34:27.625729+00:00",
+        "end_utc": "2026-10-23T11:34:27.813299+00:00",
+        "elapsed_seconds": 0.188,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:34:27.813439+00:00",
+        "end_utc": "2026-10-23T11:34:28.018141+00:00",
+        "elapsed_seconds": 0.205,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:34:28.018253+00:00",
+        "end_utc": "2026-10-23T11:34:28.207612+00:00",
+        "elapsed_seconds": 0.189,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "0414306f600d3ee6318a94bfc544484593fd8c13ca6d6999f629dd690efd8def",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "restart-unknown",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "tools/sessionhelper/sessionhelper/inbox_progress.py",
+    "original_sha256": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+    "mutant_sha256": "f267384eec1e1a29c70f4d26ca5934c7d53882aa10369c4bc152baa35a61554c",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_restart_counts_recovered_unknown_not_historical_processed_without_replay"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:34:28.209406+00:00",
+        "end_utc": "2026-10-23T11:34:28.450343+00:00",
+        "elapsed_seconds": 0.241,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:34:28.450418+00:00",
+        "end_utc": "2026-10-23T11:34:28.653169+00:00",
+        "elapsed_seconds": 0.203,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:34:28.653268+00:00",
+        "end_utc": "2026-10-23T11:34:28.848738+00:00",
+        "elapsed_seconds": 0.195,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "hub-sender-ownership",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "internal/m8/inbox_lag.go",
+    "original_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "mutant_sha256": "5006a955323f0e906a3d07822d69baf3d3e1d7a31fa3408473981d4b1b2fce0f",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagSenderOwnDeliveryAndCurrentACL$",
+      "-count=1"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:34:28.850484+00:00",
+        "end_utc": "2026-10-23T11:34:37.913315+00:00",
+        "elapsed_seconds": 9.063,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:34:37.914151+00:00",
+        "end_utc": "2026-10-23T11:34:45.712493+00:00",
+        "elapsed_seconds": 7.798,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:34:45.712583+00:00",
+        "end_utc": "2026-10-23T11:34:46.909046+00:00",
+        "elapsed_seconds": 1.196,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "hub-current-group-acl",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "internal/m8/inbox_lag.go",
+    "original_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "mutant_sha256": "772366a26bd2065f678bfc9b32fe693142ef20ed11322b7531bffd66e3f28774",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagSenderOwnDeliveryAndCurrentACL$",
+      "-count=1"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:34:46.910797+00:00",
+        "end_utc": "2026-10-23T11:34:48.102013+00:00",
+        "elapsed_seconds": 1.191,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:34:48.102098+00:00",
+        "end_utc": "2026-10-23T11:34:55.794692+00:00",
+        "elapsed_seconds": 7.693,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:34:55.794785+00:00",
+        "end_utc": "2026-10-23T11:34:56.985650+00:00",
+        "elapsed_seconds": 1.191,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "hub-freshness",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "internal/m8/inbox_lag.go",
+    "original_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "mutant_sha256": "9ec7f6c7e480a79f03915f0c608c190b6fe8e8895743d74014b53e7d7d4bd8c2",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagFreshnessAndEpoch$",
+      "-count=1"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:34:56.987366+00:00",
+        "end_utc": "2026-10-23T11:34:58.194734+00:00",
+        "elapsed_seconds": 1.207,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:34:58.194825+00:00",
+        "end_utc": "2026-10-23T11:35:05.982362+00:00",
+        "elapsed_seconds": 7.788,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:35:05.982452+00:00",
+        "end_utc": "2026-10-23T11:35:07.186067+00:00",
+        "elapsed_seconds": 1.204,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "view-local-expiry",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "view-service/renderer-canary-sse.html",
+    "original_sha256": "22d04e485b64d4f0b6bf2ee796928589b851dd2e59c7b0d00679bc779e04cd84",
+    "mutant_sha256": "2ee27987c64cb3218e9629b692af016dc09bb5dfd3b8eb4a52a6035650b07e8a",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "view-service/test_inbox_lag_resource.py"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:35:07.190363+00:00",
+        "end_utc": "2026-10-23T11:35:07.696577+00:00",
+        "elapsed_seconds": 0.506,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:35:07.696725+00:00",
+        "end_utc": "2026-10-23T11:35:08.201707+00:00",
+        "elapsed_seconds": 0.505,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:35:08.201878+00:00",
+        "end_utc": "2026-10-23T11:35:08.707195+00:00",
+        "elapsed_seconds": 0.505,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "22d04e485b64d4f0b6bf2ee796928589b851dd2e59c7b0d00679bc779e04cd84",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "query-connection-binding",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "tools/sessionhelper/sessionhelper/outbound_receipt.py",
+    "original_sha256": "1551bff5a7bb83ae9afe9c697334a8013b70de6f24197bdf011cc5c1248b1b5f",
+    "mutant_sha256": "99f43c235f681d045420ca5d0623d21a95c94e9aac3d4a11a0b3b536dfd9dae2",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_delivery_status.DeliveryStatusTest.test_wrong_nonce_connection_sender_or_delivery_cannot_resolve"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:35:08.709765+00:00",
+        "end_utc": "2026-10-23T11:35:08.899947+00:00",
+        "elapsed_seconds": 0.19,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:35:08.900041+00:00",
+        "end_utc": "2026-10-23T11:35:09.074983+00:00",
+        "elapsed_seconds": 0.175,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:35:09.075082+00:00",
+        "end_utc": "2026-10-23T11:35:09.267148+00:00",
+        "elapsed_seconds": 0.192,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "1551bff5a7bb83ae9afe9c697334a8013b70de6f24197bdf011cc5c1248b1b5f",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "ipc-restricted-mode",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "tools/sessionhelper/sessionhelper/ipc_listener.py",
+    "original_sha256": "b8d4f29e93976d60dd9368f53f1ab28173df848237b72b8bec6f0a0a913f28bc",
+    "mutant_sha256": "21f1a5c88c416d8d091df82eff3ad953f5971c8b1fcfe4757ff8c53ce07a870e",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_delivery_status.DeliveryStatusTest.test_real_ipc_shim_roundtrip_and_restricted_modes"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:35:09.269057+00:00",
+        "end_utc": "2026-10-23T11:35:09.454701+00:00",
+        "elapsed_seconds": 0.186,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:35:09.483854+00:00",
+        "end_utc": "2026-10-23T11:35:09.684024+00:00",
+        "elapsed_seconds": 0.2,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:35:09.684116+00:00",
+        "end_utc": "2026-10-23T11:35:09.870926+00:00",
+        "elapsed_seconds": 0.187,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "b8d4f29e93976d60dd9368f53f1ab28173df848237b72b8bec6f0a0a913f28bc",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "legacy-direct-default",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "internal/m8/hub.go",
+    "original_sha256": "c56e819b77dab9a63742f05c5ca9eecc0f9aa8ef9aa1a26b368c0ca36a0d853b",
+    "mutant_sha256": "a20aa4d8d6521b5f75e6801653d48ea6a14818afd6dea87a636cdf568d5dae39",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagObservationalReceiptPreservesLegacyDirectDelivery$",
+      "-count=1"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:35:09.874457+00:00",
+        "end_utc": "2026-10-23T11:35:11.086024+00:00",
+        "elapsed_seconds": 1.212,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:35:11.086174+00:00",
+        "end_utc": "2026-10-23T11:35:20.871789+00:00",
+        "elapsed_seconds": 9.786,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:35:20.871925+00:00",
+        "end_utc": "2026-10-23T11:35:22.066663+00:00",
+        "elapsed_seconds": 1.195,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "c56e819b77dab9a63742f05c5ca9eecc0f9aa8ef9aa1a26b368c0ca36a0d853b",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "view-scheduled-lag-poll",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "view-service/renderer-canary-sse.html",
+    "original_sha256": "22d04e485b64d4f0b6bf2ee796928589b851dd2e59c7b0d00679bc779e04cd84",
+    "mutant_sha256": "5ccf748f0fd4e7d9461ad8e04c07ba5e7c8019ed8092f97c1d763f03e7137156",
+    "command": [
+      "node",
+      "view-service/inbox-lag-regression.js"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:35:22.070580+00:00",
+        "end_utc": "2026-10-23T11:35:23.481567+00:00",
+        "elapsed_seconds": 1.411,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:35:23.481740+00:00",
+        "end_utc": "2026-10-23T11:35:24.388309+00:00",
+        "elapsed_seconds": 0.907,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:35:24.388475+00:00",
+        "end_utc": "2026-10-23T11:35:25.680499+00:00",
+        "elapsed_seconds": 1.292,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "22d04e485b64d4f0b6bf2ee796928589b851dd2e59c7b0d00679bc779e04cd84",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "R1-history-counter-scope",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "tools/sessionhelper/sessionhelper/inbox_progress.py",
+    "original_sha256": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+    "mutant_sha256": "16634c9d6db6673f7196353e1c52362991d662870c8b5c7e674589926b76e462",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:35:25.682852+00:00",
+        "end_utc": "2026-10-23T11:35:26.012440+00:00",
+        "elapsed_seconds": 0.33,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:35:26.012529+00:00",
+        "end_utc": "2026-10-23T11:35:26.273623+00:00",
+        "elapsed_seconds": 0.261,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:35:26.273730+00:00",
+        "end_utc": "2026-10-23T11:35:26.598436+00:00",
+        "elapsed_seconds": 0.325,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "R1-current-unknown-tag",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "tools/sessionhelper/sessionhelper/inbox_progress.py",
+    "original_sha256": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+    "mutant_sha256": "ee3ea95cd49bca9d1f366bbabc2fa29836c10cae100f2456bae81a1cbc68cd54",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:35:26.600187+00:00",
+        "end_utc": "2026-10-23T11:35:26.925061+00:00",
+        "elapsed_seconds": 0.325,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:35:26.925140+00:00",
+        "end_utc": "2026-10-23T11:35:27.228512+00:00",
+        "elapsed_seconds": 0.303,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:35:27.228605+00:00",
+        "end_utc": "2026-10-23T11:35:27.562995+00:00",
+        "elapsed_seconds": 0.334,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "R1-unprocessed-recovery",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "tools/sessionhelper/sessionhelper/inbox_progress.py",
+    "original_sha256": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+    "mutant_sha256": "95e9f27dfc479680dacde3e7d8192da77fda211c8e2d3989b153f67ff00e5237",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:35:27.564602+00:00",
+        "end_utc": "2026-10-23T11:35:27.743236+00:00",
+        "elapsed_seconds": 0.179,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:35:27.743326+00:00",
+        "end_utc": "2026-10-23T11:35:27.927383+00:00",
+        "elapsed_seconds": 0.184,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:35:27.927471+00:00",
+        "end_utc": "2026-10-23T11:35:28.103706+00:00",
+        "elapsed_seconds": 0.176,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "R2-connection-generation",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "internal/m8/inbox_lag.go",
+    "original_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "mutant_sha256": "30fe101a737a4869289dd7cae37bb8521b66c3a2a42e4faa2698359d4bd5929f",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagSenderOwnDeliveryAndCurrentACL$",
+      "-count=1"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:35:28.105471+00:00",
+        "end_utc": "2026-10-23T11:35:29.315561+00:00",
+        "elapsed_seconds": 1.21,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:35:29.315647+00:00",
+        "end_utc": "2026-10-23T11:35:37.166180+00:00",
+        "elapsed_seconds": 7.851,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:35:37.166293+00:00",
+        "end_utc": "2026-10-23T11:35:38.385999+00:00",
+        "elapsed_seconds": 1.22,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "R2-sample-instance",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "internal/m8/inbox_lag.go",
+    "original_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "mutant_sha256": "18579defcd5d7f2c151b67b08daf7d1edad5b3d6a9571c7700e376027e9f45f1",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagSenderOwnDeliveryAndCurrentACL$",
+      "-count=1"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:35:38.387768+00:00",
+        "end_utc": "2026-10-23T11:35:39.616774+00:00",
+        "elapsed_seconds": 1.229,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:35:39.616857+00:00",
+        "end_utc": "2026-10-23T11:35:47.615362+00:00",
+        "elapsed_seconds": 7.999,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:35:47.615479+00:00",
+        "end_utc": "2026-10-23T11:35:48.839674+00:00",
+        "elapsed_seconds": 1.224,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "R3-entry-current-check",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "internal/m8/inbox_lag.go",
+    "original_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "mutant_sha256": "333e0440dd37e33f4feb6809d203ce1a6fba9ecf5dca4d69758ebbb9511c233a",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagRejectsOldConnectionBeforeIdentityRead$",
+      "-count=1"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:35:48.841410+00:00",
+        "end_utc": "2026-10-23T11:35:50.095075+00:00",
+        "elapsed_seconds": 1.254,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:35:50.095169+00:00",
+        "end_utc": "2026-10-23T11:35:58.151127+00:00",
+        "elapsed_seconds": 8.056,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:35:58.151247+00:00",
+        "end_utc": "2026-10-23T11:35:59.384133+00:00",
+        "elapsed_seconds": 1.233,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "result": "GREEN_RED_GREEN"
+  },
+  {
+    "name": "R3-prewrite-current-check",
+    "source_commit": "dd7794d55bdb022a0c7918fafd24c6b0ed846231",
+    "file": "internal/m8/inbox_lag.go",
+    "original_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "mutant_sha256": "4606b75d484021829573876a8a1acbd10a4425004079b1e09a2411733fff7d45",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestInboxLagRejectsReplacementDuringIdentityRead$",
+      "-count=1"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/helper-inbox-lag-a-rework-evidence/withdrawals/home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "PYTHONPATH": "/data/ai-dev-data/helper-inbox-lag-a-rework-checks/tools/sessionhelper:/data/ai-dev-data/helper-inbox-lag-a-rework-checks/view-service",
+      "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "runs": [
+      {
+        "phase": "green-before",
+        "start_utc": "2026-10-23T11:35:59.385901+00:00",
+        "end_utc": "2026-10-23T11:36:00.626759+00:00",
+        "elapsed_seconds": 1.241,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      },
+      {
+        "phase": "withdrawn-red",
+        "start_utc": "2026-10-23T11:36:00.626840+00:00",
+        "end_utc": "2026-10-23T11:36:09.039647+00:00",
+        "elapsed_seconds": 8.413,
+        "rc": 1,
+        "semantic_assertion_failure": true
+      },
+      {
+        "phase": "restored-green",
+        "start_utc": "2026-10-23T11:36:09.039763+00:00",
+        "end_utc": "2026-10-23T11:36:10.307604+00:00",
+        "elapsed_seconds": 1.268,
+        "rc": 0,
+        "semantic_assertion_failure": false
+      }
+    ],
+    "restored_sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "result": "GREEN_RED_GREEN"
+  }
+]
