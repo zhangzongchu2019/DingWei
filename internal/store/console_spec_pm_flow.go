@@ -42,8 +42,9 @@ func denyLegacySpecAgentReview(ctx context.Context, tx *sql.Tx, specID string) e
 }
 
 // requireFinalizedPMSpecForSplit is opt-in: with the capability disabled,
-// legacy presplit behavior is unchanged. When enabled, an enrolled PM-flow
-// spec may enter splitting only through its finalized reviewed revision.
+// legacy presplit behavior is unchanged. When enabled, splitting requires an
+// enrolled PM-flow spec at its finalized reviewed revision; unregistered legacy
+// specs must derive a new revision and complete that flow first.
 func requireFinalizedPMSpecForSplit(ctx context.Context, tx *sql.Tx, enabled bool, specID string, revision int) error {
 	if !enabled {
 		return nil
@@ -56,7 +57,7 @@ func requireFinalizedPMSpecForSplit(ctx context.Context, tx *sql.Tx, enabled boo
 	var frozenRevision int
 	err = tx.QueryRowContext(ctx, `SELECT state,frozen_revision,frozen_sha256 FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&state, &frozenRevision, &frozenSHA)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil
+		return ErrPMSpecFlowDenied
 	}
 	if err != nil {
 		return err
