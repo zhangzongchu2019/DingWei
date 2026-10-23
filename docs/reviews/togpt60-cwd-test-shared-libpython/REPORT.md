@@ -13,11 +13,11 @@ The host's `/usr/bin/python3.12` is built without a `libpython` dependency, so a
 - Before fix: private-layout run of `test_cwd_import.py` returned rc 1; **18 tests, 24 assertion failures**. Child interpreters returned **127** with `libprivatepy3.so.1.0: cannot open shared object file`.
 - After fix: same private shared-library layout with the pinned test venv returned rc 0; **18 tests passed**.
 - Normal pinned Python 3.12 test venv after fix: rc 0; **18 tests passed**.
-- Two independent withdrawal copies changed only the new `symlinks=True` argument back to `False`. Each selected existing test failed rc 1 because the child interpreter returned 127 with the private shared library missing (`raw/withdraw-cut-1.log`, `raw/withdraw-cut-2.log`).
+- Two independent withdrawal copies changed only the new `symlinks=True` argument back to `False`. Each selected existing test failed rc 1 because the child interpreter returned 127 with the private shared library missing (`raw/withdraw-cut-1.log.gz`, `raw/withdraw-cut-2.log.gz`).
 
 ## Required gates
 
-- Canonical `scripts/run-build-tests.sh`, isolated HOME/TMPDIR and lock-matched venv: rc 0, **`BUILD_TESTS_OK python=63 shell=2`**. The script's final marker is at completion; full output is in `raw/canonical.log`.
+- Canonical `scripts/run-build-tests.sh`, isolated HOME/TMPDIR and lock-matched venv: rc 0, **`BUILD_TESTS_OK python=63 shell=2`**. The script's final marker is at completion; full output is in `raw/canonical.log.gz`.
 - Helper suite, isolated HOME/TMPDIR and the same locked venv: rc 0, **961 tests in 424.251s**.
 - Targeted changed test file under the locked venv: 18/18 passed on both normal Python and the private shared-library fixture.
 - `git diff --check`: clean.
