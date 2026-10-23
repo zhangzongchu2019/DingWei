@@ -1,0 +1,40 @@
+{
+  "name": "console-mcp-version",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "Version|TestProjectContextAcrossRealHTTPHelperIPCMCP",
+    "-count=1",
+    "-v"
+  ],
+  "environment": {
+    "HOME": "/home/dev",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "HUB_TEST_PG_EMBEDDED": "1",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3"
+  },
+  "start_utc": "2026-10-23T03:48:58.026326+00:00",
+  "end_utc": "2026-10-23T03:49:09.114807+00:00",
+  "elapsed_seconds": 11.088,
+  "rc": 0,
+  "source_commit": "a84c1a08e02a042b04a0f64e074c009ae8bb5ab5",
+  "source_sha256": {
+    "VERSION": "e242a914e3530cff52701d7691d0ec1fa7e0a517add9191ed6718bb52c6bc16d",
+    "internal/version/helper_0233_test.go": "ec058c2f35976c9885903cef13eef63de376dfd91af6f57524d6dd7705d8226b",
+    "internal/version/version.go": "21dede117bbbe4adcae860a940c4364bb6d0f842d4a50ceeebc35377f222a4e7",
+    "tests/pilot-project-context/local_context_roundtrip.py": "60def69e3c2636f5088cdb5c5087b7ea054f1710dfbde2ed6a131962e4679535",
+    "tools/sessionhelper/sessionhelper/__init__.py": "bb5bbc51aa5d77b246c107211d9aa451fbfd128ec1850281102d937225ccf246",
+    "tools/sessionhelper/tests/test_legacy_mcp_entry.py": "cf96c73ce84db1b83bd257f414ee622aaa2104e45899d41eb2d9182c9837dc41",
+    "view-service/console-helper-update-regression.js": "062899feb2b5735b4ed5562a10eac726dc31e3b15a3d7432178b3267228474a1"
+  }
+}

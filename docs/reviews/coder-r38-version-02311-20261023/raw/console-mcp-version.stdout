@@ -1,0 +1,75 @@
+=== RUN   TestDeliveryFailureEnvelopeUsesClientVersionTier
+--- PASS: TestDeliveryFailureEnvelopeUsesClientVersionTier (0.00s)
+=== RUN   TestConsoleHelperUpdaterVersionAndEligibility
+2026/10/23 03:49:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:49:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:49:07 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestConsoleHelperUpdaterVersionAndEligibility (0.14s)
+=== RUN   TestConsolePageVersionFollowsProductVersionConstant
+--- PASS: TestConsolePageVersionFollowsProductVersionConstant (0.00s)
+=== RUN   TestConsolePageSourceCarriesNoVersionLiteral
+--- PASS: TestConsolePageSourceCarriesNoVersionLiteral (0.00s)
+=== RUN   TestConsolePageHandlerServesProductVersion
+2026/10/23 03:49:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:49:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsolePageHandlerServesProductVersion (0.11s)
+=== RUN   TestNoDisplayNoticeVersionGate
+2026/10/23 03:49:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:49:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:49:07 restart window signal event=delivery_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+2026/10/23 03:49:07 restart window signal event=delivery_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+2026/10/23 03:49:07 delivery failure notification=suppressed reason=client_without_no_display_support session=gate-old client_version="0.1.9.9" min=0.2.0.0 dock_event=published
+2026/10/23 03:49:07 restart window signal event=delivery_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+--- PASS: TestNoDisplayNoticeVersionGate (0.50s)
+=== RUN   TestHelper0232MixedVersionEndToEnd
+    helper_update_e2e_test.go:55: explicit immutable release pins required
+--- SKIP: TestHelper0232MixedVersionEndToEnd (0.00s)
+=== RUN   TestSessionEndpointWarnModeAllowsMissingVersionAndMarksDirectory
+2026/10/23 03:49:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:49:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:49:07 session name warning key_id=FB-person-20261023-993df355 owner= session=developer: 无法确认该 key 绑定成员 owner_key
+2026/10/23 03:49:07 session version warning key_id=FB-person-20261023-993df355 owner= session=developer version="" required=0.2.3.11: 未上报版本,要求 0.2.3.11
+2026/10/23 03:49:07 session handshake timing key_id=FB-person-20261023-993df355 session=developer total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestSessionEndpointWarnModeAllowsMissingVersionAndMarksDirectory (0.11s)
+=== RUN   TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch
+=== RUN   TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch/missing
+2026/10/23 03:49:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:49:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:49:08 session name warning key_id=FB-person-20261023-cd69a5e9 owner= session=developer: 无法确认该 key 绑定成员 owner_key
+=== RUN   TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch/invalid
+2026/10/23 03:49:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:49:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:49:08 session name warning key_id=FB-person-20261023-df7f1feb owner= session=developer: 无法确认该 key 绑定成员 owner_key
+=== RUN   TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch/a_mismatch
+2026/10/23 03:49:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:49:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:49:08 session name warning key_id=FB-person-20261023-bcd7de80 owner= session=developer: 无法确认该 key 绑定成员 owner_key
+=== RUN   TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch/b_mismatch
+2026/10/23 03:49:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:49:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:49:08 session name warning key_id=FB-person-20261023-69bd290b owner= session=developer: 无法确认该 key 绑定成员 owner_key
+--- PASS: TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch (0.42s)
+    --- PASS: TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch/missing (0.10s)
+    --- PASS: TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch/invalid (0.10s)
+    --- PASS: TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch/a_mismatch (0.11s)
+    --- PASS: TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch/b_mismatch (0.11s)
+=== RUN   TestSessionEndpointVersionEnforceAllowsCDDrift
+2026/10/23 03:49:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:49:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:49:08 session name warning key_id=FB-person-20261023-9dbf047d owner= session=developer: 无法确认该 key 绑定成员 owner_key
+2026/10/23 03:49:08 session handshake timing key_id=FB-person-20261023-9dbf047d session=developer total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestSessionEndpointVersionEnforceAllowsCDDrift (0.10s)
+=== RUN   TestProvisionAckRecordsConfirmedVersionOnlyOnSuccess
+2026/10/23 03:49:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:49:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/23 03:49:08 session name warning key_id=FB-main-20261023-03aaf9ca owner= session=developer: 无法确认该 key 绑定成员 owner_key
+2026/10/23 03:49:08 session version warning key_id=FB-main-20261023-03aaf9ca owner= session=developer version="" required=0.2.3.11: 未上报版本,要求 0.2.3.11
+2026/10/23 03:49:08 session handshake timing key_id=FB-main-20261023-03aaf9ca session=developer total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestProvisionAckRecordsConfirmedVersionOnlyOnSuccess (0.23s)
+=== RUN   TestProjectContextAcrossRealHTTPHelperIPCMCP
+2026/10/23 03:49:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/23 03:49:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    project_context_roundtrip_test.go:40: real local Go Hub HTTP, SessionHelper constructor/IPC, actual shim stdio, dedicated credential and bounded projection: PASS; no live Hub or AI
+--- PASS: TestProjectContextAcrossRealHTTPHelperIPCMCP (0.39s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	2.013s

@@ -1,0 +1,80 @@
+{
+  "task": "r38 version 0.2.3.11",
+  "base": "dd3d84e33ce53314ade2d0eb1b817cb89a5863ad",
+  "base_tree": "0a77267995bb0928ba32b427f89a3dc2ee3c4c52",
+  "source_commit": "a84c1a08e02a042b04a0f64e074c009ae8bb5ab5",
+  "source_tree": "18f813c43b78449e0d2f610b2dd4381e74455784",
+  "changed_paths_match_reference": true,
+  "reference": "01f87ac2b457d3e2386eba1c699ae351496c4ece",
+  "runtime_lock_unchanged_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "capability_floors_unchanged": true,
+  "source_files": {
+    "VERSION": {
+      "sha256": "e242a914e3530cff52701d7691d0ec1fa7e0a517add9191ed6718bb52c6bc16d",
+      "blob": "b60eb6454ed5ae88ed0652b15bed0796cd7aee78"
+    },
+    "internal/version/helper_0233_test.go": {
+      "sha256": "ec058c2f35976c9885903cef13eef63de376dfd91af6f57524d6dd7705d8226b",
+      "blob": "819dac182ab2b4ee3c59d26fbe4bb5b117b4a875"
+    },
+    "internal/version/version.go": {
+      "sha256": "21dede117bbbe4adcae860a940c4364bb6d0f842d4a50ceeebc35377f222a4e7",
+      "blob": "9c42cf6378bbf4e002cb47d09a0e066ea8657d33"
+    },
+    "tests/pilot-project-context/local_context_roundtrip.py": {
+      "sha256": "60def69e3c2636f5088cdb5c5087b7ea054f1710dfbde2ed6a131962e4679535",
+      "blob": "f317e41111b8da10cabcd8a2545c0c42bcccd4a0"
+    },
+    "tools/sessionhelper/sessionhelper/__init__.py": {
+      "sha256": "bb5bbc51aa5d77b246c107211d9aa451fbfd128ec1850281102d937225ccf246",
+      "blob": "8fc3ffa17e421487186905e4577d55c0f29dd727"
+    },
+    "tools/sessionhelper/tests/test_legacy_mcp_entry.py": {
+      "sha256": "cf96c73ce84db1b83bd257f414ee622aaa2104e45899d41eb2d9182c9837dc41",
+      "blob": "684171b7ffbe2d9206d6a11b511cb0a19f2f59ff"
+    },
+    "view-service/console-helper-update-regression.js": {
+      "sha256": "062899feb2b5735b4ed5562a10eac726dc31e3b15a3d7432178b3267228474a1",
+      "blob": "5fc1f76aa2ce9a5e349b31dced649b7aee012261"
+    }
+  },
+  "gates": {
+    "version-packages": {
+      "rc": 0,
+      "elapsed_seconds": 0.264,
+      "record": "raw/version-packages.json"
+    },
+    "console-mcp-version": {
+      "rc": 0,
+      "elapsed_seconds": 11.088,
+      "record": "raw/console-mcp-version.json"
+    },
+    "browser-version-pin": {
+      "rc": 0,
+      "elapsed_seconds": 4.372,
+      "record": "raw/browser-version-pin.json"
+    },
+    "canonical": {
+      "rc": 0,
+      "elapsed_seconds": 135.698,
+      "record": "raw/canonical.json"
+    },
+    "helper-full": {
+      "rc": 0,
+      "elapsed_seconds": 427.787,
+      "record": "raw/helper-full.json"
+    }
+  },
+  "counts": {
+    "version_package": 4,
+    "console_mcp_version": 11,
+    "browser": 14,
+    "canonical_python_files": 63,
+    "canonical_shell_files": 2,
+    "helper_suite_tests": 961,
+    "helper_unittest_seconds": 426.881
+  },
+  "helper_diagnostics": "raw stderr retains background fixture thread OSError/connection-close traceback, ResourceWarning and negative-fixture diagnostics; unittest summary is 961 tests OK rc0, not a claim of empty stderr",
+  "release_artifact_or_deployment": false,
+  "saved_utc": "2026-10-23T03:58:20.629044+00:00"
+}

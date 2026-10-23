@@ -1,0 +1,8 @@
+{
+  "python": "3.12.3",
+  "packages": {
+    "websockets": "15.0.1",
+    "pexpect": "4.9.0",
+    "certifi": "2026.7.22"
+  }
+}
