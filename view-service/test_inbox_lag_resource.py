@@ -37,7 +37,7 @@ class InboxLagRenderer(unittest.TestCase):
 const assert=require('assert');
 const s={status:'ok',agent_id:'seat',source:'helper_self_report',disk_not_admitted_count:2,dispatch_unknown_count:1,connection_seq:73,connection_generation:'c'.repeat(32),sample_instance:'a'.repeat(32),sample_seq:1,remaining_fresh_ms:10000,oldest_wait_ms:2400000};
 assert(inboxLagState.apply(s,'seat',0,100));
-assert.equal(inboxLagState.display(100),'已到盘未注入 2 条，最老等待 40 分钟；另有 1 条注入状态未知');
+assert.equal(inboxLagState.display(100),'已到盘未注入 2 条，最老等待 40 分钟；本次启动另有 1 条注入状态未知');
 assert(!inboxLagState.apply(s,'seat',9000,9000));
 assert.equal(inboxLagState.display(10000),'排队采样已过期');
 assert(!inboxLagState.apply({...s,connection_seq:72,sample_seq:99},'seat',10001,10001));

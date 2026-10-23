@@ -11,7 +11,7 @@ const html = fs.readFileSync(path.join(__dirname,'renderer-canary-sse.html'),'ut
   for(const width of [1280,390]) {
    const page=await browser.newPage({viewport:{width,height:900}});await page.clock.install();let lagPolls=0;const errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.addInitScript(()=>{window.EventSource=class{static CONNECTING=0;static OPEN=1;static CLOSED=2;constructor(){this.readyState=1;}addEventListener(){}close(){this.readyState=2;}};});
-   let sample={status:'ok',source:'helper_self_report',agent_id:'fixture',connection_seq:73,connection_generation:'c'.repeat(32),sample_instance:'a'.repeat(32),sample_seq:1,disk_not_admitted_count:2,dispatch_unknown_count:0,oldest_wait_ms:2400000,remaining_fresh_ms:10000,clock_uncertain:false};
+   let sample={status:'ok',source:'helper_self_report',agent_id:'fixture',connection_seq:73,connection_generation:'c'.repeat(32),sample_instance:'a'.repeat(32),sample_seq:1,disk_not_admitted_count:2,dispatch_unknown_count:1,oldest_wait_ms:2400000,remaining_fresh_ms:10000,clock_uncertain:false};
    await page.route('https://fixture.invalid/**',async route=>{
     const url=new URL(route.request().url());
     if(url.pathname==='/view/seat/')return route.fulfill({contentType:'text/html',body:html});
@@ -22,13 +22,13 @@ const html = fs.readFileSync(path.join(__dirname,'renderer-canary-sse.html'),'ut
    await page.goto('https://fixture.invalid/view/seat/');
    const strip=page.locator('#inboxLagStat');
    await strip.waitFor({state:'visible'});
-   await page.waitForFunction(()=>document.getElementById('inboxLagStat').textContent==='已到盘未注入 2 条，最老等待 40 分钟');checks++;
+   await page.waitForFunction(()=>document.getElementById('inboxLagStat').textContent==='已到盘未注入 2 条，最老等待 40 分钟；本次启动另有 1 条注入状态未知');checks++;
    assert.deepEqual(errors,[]);checks++;
    // Run the actual scheduled five-second poll, then let duplicate samples
    // expire via the scheduled local clock callback without changing deadlines.
    sample={...sample,sample_seq:2,disk_not_admitted_count:3,oldest_wait_ms:720000};
    await page.clock.runFor(5000);await page.evaluate(()=>inboxLagPending);
-   assert(lagPolls>=1);assert.equal(await strip.textContent(),'已到盘未注入 3 条，最老等待 12 分钟');checks++;
+   assert(lagPolls>=1);assert.equal(await strip.textContent(),'已到盘未注入 3 条，最老等待 12 分钟；本次启动另有 1 条注入状态未知');checks++;
    await page.clock.runFor(10000);await page.evaluate(()=>inboxLagPending);
    assert.equal(await strip.textContent(),'排队采样已过期');checks++;
    sample={status:'unknown'};await page.evaluate(()=>refreshStatus());

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
@@ -83,6 +84,58 @@ func TestInboxLagInvalidAndUnavailableAreUnknown(t *testing.T) {
 		})
 	}
 }
+
+// Interpose only identity reads, so a connection replacement between the two
+// ingress checks is deterministic and needs no production hook or test sleep.
+type inboxLagIdentityReads struct {
+	identity.Store
+	calls      int
+	onGetAgent func()
+}
+
+func (s *inboxLagIdentityReads) GetAgent(ctx context.Context, id string) (*identity.Agent, error) {
+	s.calls++
+	if fn := s.onGetAgent; fn != nil {
+		s.onGetAgent = nil
+		fn()
+	}
+	return s.Store.GetAgent(ctx, id)
+}
+
+func TestInboxLagRejectsOldConnectionBeforeIdentityRead(t *testing.T) {
+	h, old, _ := diskEnv(t)
+	replacement := &sessionClient{keyID: old.keyID, sessionName: old.sessionName, metricsAgentID: old.metricsAgentID, metricsGeneration: strings.Repeat("d", 32), connSeq: old.connSeq + 1}
+	h.sessionClients[old.keyID][old.sessionName] = replacement
+	reads := &inboxLagIdentityReads{Store: h.Identity.Store}
+	h.Identity.Store = reads
+	if !h.handleInboxLagControl(context.Background(), old, lagEnvelope("dw-dlv_"+strings.Repeat("a", 32), 1)) {
+		t.Fatal("reserved frame was not consumed")
+	}
+	if reads.calls != 0 || !old.lastInboxAttempt.IsZero() || old.inboxLag != nil || replacement.inboxLag != nil {
+		t.Fatal("old ingress performed identity I/O, charged state or wrote a cache", reads.calls, old.lastInboxAttempt)
+	}
+}
+
+func TestInboxLagRejectsReplacementDuringIdentityRead(t *testing.T) {
+	h, old, _ := diskEnv(t)
+	replacement := &sessionClient{keyID: old.keyID, sessionName: old.sessionName, metricsAgentID: old.metricsAgentID, metricsGeneration: strings.Repeat("d", 32), connSeq: old.connSeq + 1}
+	reads := &inboxLagIdentityReads{Store: h.Identity.Store, onGetAgent: func() {
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		h.sessionClients[old.keyID][old.sessionName] = replacement
+	}}
+	h.Identity.Store = reads
+	env := lagEnvelope("dw-dlv_"+strings.Repeat("a", 32), 1)
+	h.handleInboxLagControl(context.Background(), old, env)
+	if reads.calls != 1 || old.inboxLag != nil || replacement.inboxLag != nil {
+		t.Fatal("retired connection wrote a cache after identity recheck", reads.calls)
+	}
+	h.handleInboxLagControl(context.Background(), replacement, env)
+	if replacement.inboxLag == nil {
+		t.Fatal("replacement could not publish its own valid sample")
+	}
+}
+
 func TestInboxLagSenderOwnDeliveryAndCurrentACL(t *testing.T) {
 	h, target, mem := diskEnv(t)
 	ctx := context.Background()
@@ -109,6 +162,15 @@ func TestInboxLagSenderOwnDeliveryAndCurrentACL(t *testing.T) {
 	got := h.deliveryStatusForSender(ctx, source, id)
 	if got["ok"] != true || got["phase"] != "adapter_queued" {
 		t.Fatal(got)
+	}
+	aggregate := got["inbox_lag"].(map[string]any)
+	for _, field := range []string{"connection_generation", "sample_instance"} {
+		if _, leaked := aggregate[field]; leaked {
+			t.Fatal("sender query leaked target private epoch", field)
+		}
+		if h.inboxLagForClient(ctx, target)[field] == nil {
+			t.Fatal("View lost its own epoch field", field)
+		}
 	}
 	encoded, _ := json.Marshal(got)
 	if strings.Contains(string(encoded), "private body") {

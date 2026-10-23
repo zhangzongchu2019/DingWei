@@ -1700,7 +1700,7 @@
         const r=this.record;
         let text='已到盘未注入 '+r.count+' 条';
         if(r.count)text+='，最老等待 '+Math.floor((r.age+Math.max(0,now-r.received))/60000)+' 分钟'+(r.clockUncertain?'（估计）':'');
-        if(r.unknown)text+='；另有 '+r.unknown+' 条注入状态未知';
+        if(r.unknown)text+='；本次启动另有 '+r.unknown+' 条注入状态未知';
         return text;
       }
     })();

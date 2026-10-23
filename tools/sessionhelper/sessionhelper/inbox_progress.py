@@ -22,19 +22,31 @@ class InboxProgress:
             db.execute('''CREATE TABLE IF NOT EXISTS delivery_progress (
                 session_name TEXT NOT NULL, delivery_id TEXT NOT NULL,
                 stage TEXT NOT NULL, received_at REAL NOT NULL, updated_at REAL NOT NULL,
+                unknown_instance TEXT,
                 PRIMARY KEY(session_name,delivery_id))''')
+            if 'unknown_instance' not in {row[1] for row in db.execute('PRAGMA table_info(delivery_progress)')}:
+                db.execute('ALTER TABLE delivery_progress ADD COLUMN unknown_instance TEXT')
             db.execute('CREATE INDEX IF NOT EXISTS delivery_progress_updated ON delivery_progress(session_name,updated_at DESC,delivery_id)')
             db.execute('CREATE INDEX IF NOT EXISTS delivery_progress_stage ON delivery_progress(session_name,stage,received_at)')
             # An old processed ACK is not model admission. Lost in-memory queue
             # and dispatch state cannot be reconstructed as an actionable input.
-            db.execute("UPDATE delivery_progress SET stage='unknown' WHERE session_name=? AND stage IN ('adapter_queued','dispatching')", (session,))
+            # Only uncertainty observed/recovered by this instance contributes
+            # to its live counter. Prior uncertainty remains available per ID.
+            db.execute("UPDATE delivery_progress SET stage='unknown',unknown_instance=? WHERE session_name=? AND stage IN ('adapter_queued','dispatching')", (self.instance, session))
             db.execute('''INSERT OR IGNORE INTO delivery_progress
+                (session_name,delivery_id,stage,received_at,updated_at)
                 SELECT session_name,delivery_id,'unknown',received_at,updated_at
                 FROM delivery_inbox WHERE session_name=?''', (session,))
+            # Existing unprocessed inbox work is a recovery observation now,
+            # unlike historical processed/failed/cancelled uncertainty.
+            db.execute('''UPDATE delivery_progress SET unknown_instance=?
+                WHERE session_name=? AND stage='unknown' AND delivery_id IN (
+                    SELECT delivery_id FROM delivery_inbox WHERE session_name=?
+                    AND state IN ('received','processing'))''', (self.instance, session, session))
 
     def accepted(self, db, delivery_id, received_at):
         # Caller owns the inbox transaction: disk receipt and progress are atomic.
-        db.execute("INSERT OR IGNORE INTO delivery_progress VALUES(?,?,'disk_received',?,?)",
+        db.execute("INSERT OR IGNORE INTO delivery_progress (session_name,delivery_id,stage,received_at,updated_at) VALUES(?,?,'disk_received',?,?)",
                    (self.session, delivery_id, received_at, received_at))
         with self.lock:
             self.arrivals.setdefault(delivery_id, self.monotonic())
@@ -57,8 +69,8 @@ class InboxProgress:
                 return
             if old == 'unknown' and stage in STAGES[:3]:
                 return
-            db.execute('UPDATE delivery_progress SET stage=?,updated_at=? WHERE session_name=? AND delivery_id=?',
-                       (stage, self.clock(), self.session, delivery_id))
+            db.execute('UPDATE delivery_progress SET stage=?,updated_at=?,unknown_instance=? WHERE session_name=? AND delivery_id=?',
+                       (stage, self.clock(), self.instance if stage == 'unknown' else None, self.session, delivery_id))
             self.changed.set()
             if stage not in STAGES[:3]:
                 self.arrivals.pop(delivery_id, None)
@@ -67,7 +79,7 @@ class InboxProgress:
         with self.lock, connection(self.path) as db:
             pending = db.execute("SELECT delivery_id,received_at FROM delivery_progress WHERE session_name=? AND stage IN ('disk_received','adapter_queued','dispatching')", (self.session,)).fetchall()
             count = len(pending)
-            unknown = db.execute("SELECT count(*) FROM delivery_progress WHERE session_name=? AND stage='unknown'", (self.session,)).fetchone()[0]
+            unknown = db.execute("SELECT count(*) FROM delivery_progress WHERE session_name=? AND stage='unknown' AND unknown_instance=?", (self.session, self.instance)).fetchone()[0]
             rows = db.execute("SELECT delivery_id,stage FROM delivery_progress WHERE session_name=? ORDER BY CASE WHEN stage IN ('disk_received','adapter_queued','dispatching') THEN 0 ELSE 1 END,updated_at DESC,delivery_id LIMIT 256", (self.session,)).fetchall()
             uncertain = False
             age = None

@@ -224,5 +224,8 @@ func (h *Hub) deliveryStatusForSender(ctx context.Context, c *sessionClient, id 
 		h.mu.Unlock()
 	}
 	// Legacy processed is intentionally not used as model admission evidence.
+	// Sender receipts expose aggregate health, not the target's private epochs.
+	delete(aggregate, "connection_generation")
+	delete(aggregate, "sample_instance")
 	return map[string]any{"ok": true, "status": "ok", "delivery_id": id, "source_message_id": delivery.SourceMessageID, "phase": phase, "inbox_lag": aggregate}
 }

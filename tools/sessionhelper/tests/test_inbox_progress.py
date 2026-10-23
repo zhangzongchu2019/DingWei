@@ -68,7 +68,7 @@ class InboxProgressTest(unittest.TestCase):
         self.assertEqual(self.journal.snapshot()['disk_not_admitted_count'], 0)
         self.assertIsNone(self.journal.snapshot()['oldest_wait_ms'])
 
-    def test_restart_and_historical_processed_are_unknown_without_replay(self):
+    def test_restart_counts_recovered_unknown_not_historical_processed_without_replay(self):
         a, _ = self.accept('a')
         self.inbox.claim_next(); self.inbox.finish(a)
         self.journal.mark(a, 'dispatching')
@@ -80,10 +80,76 @@ class InboxProgressTest(unittest.TestCase):
         restarted = DeliveryInbox(self.inbox.path, session_name='seat')
         snapshot = restarted.progress.snapshot()
         self.assertEqual(snapshot['disk_not_admitted_count'], 0)
-        self.assertEqual(snapshot['dispatch_unknown_count'], 2)
+        self.assertEqual(snapshot['dispatch_unknown_count'], 1)
         self.assertEqual(snapshot['deliveries'][a], 'unknown')
         self.assertEqual(snapshot['deliveries'][b], 'unknown')
         self.assertIsNone(restarted.claim_next())
+
+    def test_1500_processed_history_rows_do_not_pollute_current_unknown_count(self):
+        for previous_candidate in (False, True):
+            with self.subTest(previous_candidate=previous_candidate), tempfile.TemporaryDirectory() as root:
+                path = str(Path(root) / 'inbox.db')
+                old = DeliveryInbox(path, session_name='seat')
+                # Reproduce both pre-A history and the reviewed A candidate's
+                # already-backfilled unscoped unknown rows / six-column schema.
+                with old._connect() as db:
+                    db.executemany('''INSERT INTO delivery_inbox
+                        (session_name,delivery_id,envelope_json,state,received_at,updated_at)
+                        VALUES('seat',?,'{}','processed',1,1)''',
+                        [('dw-dlv_' + format(n, '032x'),) for n in range(1500)])
+                    db.execute('DROP TABLE delivery_progress')
+                    db.execute('''CREATE TABLE delivery_progress (
+                        session_name TEXT NOT NULL, delivery_id TEXT NOT NULL,
+                        stage TEXT NOT NULL, received_at REAL NOT NULL, updated_at REAL NOT NULL,
+                        PRIMARY KEY(session_name,delivery_id))''')
+                    if previous_candidate:
+                        db.execute('''INSERT INTO delivery_progress
+                            SELECT session_name,delivery_id,'unknown',received_at,updated_at FROM delivery_inbox''')
+                upgraded = DeliveryInbox(path, session_name='seat')
+                snap = upgraded.progress.snapshot()
+                self.assertEqual(snap['disk_not_admitted_count'], 0)
+                self.assertEqual(snap['dispatch_unknown_count'], 0)
+                self.assertTrue(all(stage == 'unknown' for stage in snap['deliveries'].values()))
+                self.assertIsNone(upgraded.claim_next())
+                with upgraded._connect() as db:
+                    self.assertEqual(db.execute("SELECT count(*) FROM delivery_inbox WHERE state='processed'").fetchone()[0], 1500)
+                    self.assertEqual(db.execute('SELECT count(*) FROM delivery_progress WHERE unknown_instance IS NULL').fetchone()[0], 1500)
+                did = 'dw-dlv_' + 'a' * 32
+                upgraded.accept(did, {'body': 'synthetic'})
+                upgraded.progress.mark(did, 'unknown')
+                upgraded.progress.mark(did, 'unknown')
+                self.assertEqual(upgraded.progress.snapshot()['dispatch_unknown_count'], 1)
+                upgraded.progress.mark(did, 'model_admitted')
+                self.assertEqual(upgraded.progress.snapshot()['dispatch_unknown_count'], 0)
+
+    def test_previous_instance_unknown_keeps_phase_without_becoming_new_live_count(self):
+        did, _ = self.accept('a')
+        self.inbox.claim_next(); self.inbox.finish(did)
+        self.journal.mark(did, 'unknown')
+        self.assertEqual(self.journal.snapshot()['dispatch_unknown_count'], 1)
+        restarted = DeliveryInbox(self.inbox.path, session_name='seat')
+        self.assertNotEqual(restarted.progress.instance, self.journal.instance)
+        snap = restarted.progress.snapshot()
+        self.assertEqual(snap['dispatch_unknown_count'], 0)
+        self.assertEqual(snap['deliveries'][did], 'unknown')
+        self.assertIsNone(restarted.claim_next())
+
+    def test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero(self):
+        for had_progress in (False, True):
+            with self.subTest(had_progress=had_progress):
+                did, _ = self.accept('b' if had_progress else 'a')
+                if had_progress:
+                    self.journal.mark(did, 'unknown')
+                else:
+                    with self.inbox._connect() as db:
+                        db.execute('DELETE FROM delivery_progress WHERE delivery_id=?', (did,))
+                restarted = DeliveryInbox(self.inbox.path, session_name='seat')
+                self.assertEqual(restarted.progress.snapshot()['deliveries'][did], 'unknown')
+                with restarted._connect() as db:
+                    scope = db.execute('SELECT unknown_instance FROM delivery_progress WHERE delivery_id=?', (did,)).fetchone()[0]
+                    self.assertEqual(scope, restarted.progress.instance)
+                    self.assertEqual(db.execute('SELECT state FROM delivery_inbox WHERE delivery_id=?', (did,)).fetchone()[0], 'received')
+                self.assertGreaterEqual(restarted.progress.snapshot()['dispatch_unknown_count'], 1)
 
     def test_failed_observation_cannot_publish_old_numbers_as_fresh(self):
         did, _ = self.accept('a')
