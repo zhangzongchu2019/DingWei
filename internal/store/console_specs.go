@@ -176,8 +176,15 @@ func (s *SQLite) TransferConsoleSpec(ctx context.Context, specID, actor, targetS
 		return err
 	}
 	defer tx.Rollback()
+	flowTable, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil {
+		return err
+	}
 	var flow int
-	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flow); err != nil {
+	if flowTable {
+		err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flow)
+	}
+	if err != nil {
 		return err
 	}
 	if flow != 0 {
@@ -211,8 +218,15 @@ func (s *SQLite) SubmitConsoleSpecReview(ctx context.Context, specID, actor stri
 		return err
 	}
 	defer tx.Rollback()
+	flowTable, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil {
+		return err
+	}
 	var flow int
-	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flow); err != nil {
+	if flowTable {
+		err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flow)
+	}
+	if err != nil {
 		return err
 	}
 	if flow != 0 {
@@ -314,8 +328,15 @@ func (s *SQLite) SaveConsoleSpecGateReview(ctx context.Context, specID, actor st
 		return err
 	}
 	defer tx.Rollback()
+	flowTable, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil {
+		return err
+	}
 	var flow int
-	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flow); err != nil {
+	if flowTable {
+		err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flow)
+	}
+	if err != nil {
 		return err
 	}
 	if flow != 0 {
@@ -399,7 +420,14 @@ func (s *SQLite) FinalizeConsoleSpec(ctx context.Context, specID, actor string, 
 	}
 	var flowState, flowSHA string
 	var frozenRevision int
-	flowErr := tx.QueryRowContext(ctx, `SELECT state,frozen_revision,frozen_sha256 FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flowState, &frozenRevision, &flowSHA)
+	flowTable, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil {
+		return err
+	}
+	var flowErr error = sql.ErrNoRows
+	if flowTable {
+		flowErr = tx.QueryRowContext(ctx, `SELECT state,frozen_revision,frozen_sha256 FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flowState, &frozenRevision, &flowSHA)
+	}
 	if flowErr != nil && !errors.Is(flowErr, sql.ErrNoRows) {
 		return flowErr
 	}
@@ -783,8 +811,15 @@ func appendConsoleSpecRevisionTx(ctx context.Context, tx *sql.Tx, principalID, s
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, ErrConsoleSpecNotFound
 	}
+	flowTable, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil {
+		return 0, err
+	}
 	var flow int
-	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flow); err != nil {
+	if flowTable {
+		err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow WHERE spec_id=?`, specID).Scan(&flow)
+	}
+	if err != nil {
 		return 0, err
 	}
 	if flow != 0 {
@@ -858,6 +893,18 @@ func appendConsoleSpecRevisionTx(ctx context.Context, tx *sql.Tx, principalID, s
 	return next, nil
 }
 
+// pmSpecFlowTableExists keeps legacy migration tests and rollback inspection
+// usable before migration 0064 creates the PM flow tables. Production applies
+// migrations before serving requests, so an absent table means the new flow
+// is unavailable and legacy spec behavior remains unchanged.
+func pmSpecFlowTableExists(ctx context.Context, tx *sql.Tx) (bool, error) {
+	var n int
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='console_spec_flow'`).Scan(&n); err != nil {
+		return false, err
+	}
+	return n != 0, nil
+}
+
 // AppendConsoleSpecRevisionWithCapability writes through a shared edit link.
 // Authorization, closed-state check and revision CAS happen in one transaction.
 func (s *SQLite) AppendConsoleSpecRevisionWithCapability(ctx context.Context, specID string, expected int, capabilityHash string, revision model.ConsoleSpecRevision, now time.Time) (int, error) {
@@ -873,8 +920,15 @@ func (s *SQLite) appendConsoleSpecRevisionWithCapability(ctx context.Context, sp
 }
 
 func (s *SQLite) CloseConsoleSpecEditing(ctx context.Context, principalID, specID string, now time.Time) error {
-	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET editing_closed=1,updated_at=? WHERE id=? AND principal_id=? AND editing_closed=0 AND NOT EXISTS (SELECT 1 FROM console_spec_flow f WHERE f.spec_id=console_spec.id)`,
-		now.UTC().Format(time.RFC3339Nano), specID, principalID)
+	query := `UPDATE console_spec SET editing_closed=1,updated_at=? WHERE id=? AND principal_id=? AND editing_closed=0`
+	hasFlow, err := s.objectExists(ctx, "table", "console_spec_flow")
+	if err != nil {
+		return err
+	}
+	if hasFlow {
+		query += ` AND NOT EXISTS (SELECT 1 FROM console_spec_flow f WHERE f.spec_id=console_spec.id)`
+	}
+	res, err := s.db.ExecContext(ctx, query, now.UTC().Format(time.RFC3339Nano), specID, principalID)
 	if err != nil {
 		return err
 	}
@@ -886,8 +940,15 @@ func (s *SQLite) CloseConsoleSpecEditing(ctx context.Context, principalID, specI
 }
 
 func (s *SQLite) ReopenConsoleSpecEditing(ctx context.Context, principalID, specID string, now time.Time) error {
-	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET editing_closed=0,updated_at=? WHERE id=? AND principal_id=? AND editing_closed=1 AND NOT EXISTS (SELECT 1 FROM console_spec_flow f WHERE f.spec_id=console_spec.id)`,
-		now.UTC().Format(time.RFC3339Nano), specID, principalID)
+	query := `UPDATE console_spec SET editing_closed=0,updated_at=? WHERE id=? AND principal_id=? AND editing_closed=1`
+	hasFlow, err := s.objectExists(ctx, "table", "console_spec_flow")
+	if err != nil {
+		return err
+	}
+	if hasFlow {
+		query += ` AND NOT EXISTS (SELECT 1 FROM console_spec_flow f WHERE f.spec_id=console_spec.id)`
+	}
+	res, err := s.db.ExecContext(ctx, query, now.UTC().Format(time.RFC3339Nano), specID, principalID)
 	if err != nil {
 		return err
 	}
@@ -1109,7 +1170,14 @@ func (s *SQLite) CreateConsoleTaskProposal(ctx context.Context, proposal model.C
 	}
 	defer tx.Rollback()
 	var flowState string
-	flowErr := tx.QueryRowContext(ctx, `SELECT state FROM console_spec_flow WHERE spec_id=?`, proposal.SpecID).Scan(&flowState)
+	flowTable, err := pmSpecFlowTableExists(ctx, tx)
+	if err != nil {
+		return err
+	}
+	var flowErr error = sql.ErrNoRows
+	if flowTable {
+		flowErr = tx.QueryRowContext(ctx, `SELECT state FROM console_spec_flow WHERE spec_id=?`, proposal.SpecID).Scan(&flowState)
+	}
 	if flowErr != nil && !errors.Is(flowErr, sql.ErrNoRows) {
 		return flowErr
 	}

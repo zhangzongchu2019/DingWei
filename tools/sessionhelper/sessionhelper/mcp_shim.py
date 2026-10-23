@@ -558,6 +558,24 @@ def _dw_spec_review_reply(args):
         raise ValueError('missing spec reply fields')
     return _ipc_request({'type':'spec_review_v1','action':'reply','body':args},timeout=_SPEC_IPC_TIMEOUT)
 
+_PM_SPEC_SUGGESTION={"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":128},"kind":{"type":"string","enum":["acceptance","source_ref","norm_anchor"]},"payload":{"type":"object"}},"required":["id","kind","payload"],"additionalProperties":False}
+_PM_SPEC_QUESTION={"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":128},"question":{"type":"string","minLength":1,"maxLength":4096}},"required":["id","question"],"additionalProperties":False}
+@register("dw_pm_spec_assist_request","读取与当前工作草稿版本及 SHA 绑定、且仍有效的 PM Spec 协助请求；只读。",{
+ "type":"object","properties":{"request_id":{"type":"string","minLength":1,"maxLength":128}},"required":["request_id"],"additionalProperties":False})
+def _dw_pm_spec_assist_request(args):
+    if not isinstance(args,dict) or set(args)!={'request_id'} or not isinstance(args['request_id'],str) or not args['request_id'].startswith('pmspecassist_'):
+        raise ValueError('invalid PM spec assist request')
+    return _ipc_request({'type':'spec_review_v1','action':'pm_get','body':args},timeout=_SPEC_IPC_TIMEOUT)
+
+@register("dw_pm_spec_assist_reply","提交结构化建议与审查问题；仅记录 Agent 候选，不改 Spec 或作人类决定。",{
+ "type":"object","properties":{"request_id":{"type":"string","minLength":1,"maxLength":128},"suggestions":{"type":"array","maxItems":100,"items":_PM_SPEC_SUGGESTION},"review_questions":{"type":"array","maxItems":100,"items":_PM_SPEC_QUESTION}},"required":["request_id","suggestions","review_questions"],"additionalProperties":False})
+def _dw_pm_spec_assist_reply(args):
+    if not isinstance(args,dict) or set(args)!={'request_id','suggestions','review_questions'} or not isinstance(args['request_id'],str) or not args['request_id'].startswith('pmspecassist_'):
+        raise ValueError('invalid PM spec assist reply')
+    if not isinstance(args['suggestions'],list) or not isinstance(args['review_questions'],list):
+        raise ValueError('invalid PM spec assist arrays')
+    return _ipc_request({'type':'spec_review_v1','action':'pm_reply','body':args},timeout=_SPEC_IPC_TIMEOUT)
+
 # ── MCP tool: upload_file (R-V2-AGENT-FILE-UPLOAD) ────────────────────
 # Same wire contract as dingwei_file.upload_file; duplicated because this file is a
 # self-contained entry point (no package imports). The shim is a child of the CLI, so the

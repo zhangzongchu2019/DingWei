@@ -58,16 +58,18 @@ var newPlatformSpecTaskExempt = map[string]string{
 	"GET /api/agent/console/spec-templates/{draftID}":  "专属Agent凭据；当前单模板邀请，不授任务权限",
 	"POST /api/agent/console/spec-templates/{draftID}": "专属Agent凭据；仅本人执行或审查责任接受/撤回，不授业务签收",
 
-	"GET /api/agent/console/tasks/{taskID}/blockers":                  "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
-	"GET /api/agent/console/tasks/{taskID}/blockers/{blockerID}":      "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
-	"POST /api/agent/console/tasks/{taskID}/blockers":                 "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
-	"POST /api/agent/console/tasks/{taskID}/blockers/{blockerID}":     "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
-	"GET /api/agent/console/project-context":                          "专属 Agent bearer 与事务内当前角色／编组重核，只读",
-	"GET /api/agent/console/spec-review-requests":                     "专属Agent bearer；仅当前请求Agent读取",
-	"POST /api/agent/console/spec-review-requests/{requestID}/result": "专属Agent bearer；仅本人绑定请求回信",
-	"GET /api/agent/console/tasks":                                    "专属Agent bearer；拒人类cookie，不依赖人签capability",
-	"PATCH /api/agent/console/tasks/{taskID}":                         "专属Agent bearer与当前指派／组成员事务重核",
-	"POST /api/agent/console/tasks/{taskID}/cases/{caseAction}":       "专属Agent bearer与开发／审查角色校验",
+	"GET /api/agent/console/tasks/{taskID}/blockers":                     "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
+	"GET /api/agent/console/tasks/{taskID}/blockers/{blockerID}":         "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
+	"POST /api/agent/console/tasks/{taskID}/blockers":                    "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
+	"POST /api/agent/console/tasks/{taskID}/blockers/{blockerID}":        "专属Agent凭据，当前任务和单卡答复授权重核，不授恢复执行",
+	"GET /api/agent/console/project-context":                             "专属 Agent bearer 与事务内当前角色／编组重核，只读",
+	"GET /api/agent/console/spec-review-requests":                        "专属Agent bearer；仅当前请求Agent读取",
+	"POST /api/agent/console/spec-review-requests/{requestID}/result":    "专属Agent bearer；仅本人绑定请求回信",
+	"GET /api/agent/console/pm-spec-assist-requests/{requestID}":         "专属Agent bearer与当前工作草稿／request绑定重核，只读",
+	"POST /api/agent/console/pm-spec-assist-requests/{requestID}/result": "专属Agent bearer与当前工作草稿／request绑定重核，仅提交候选",
+	"GET /api/agent/console/tasks":                                       "专属Agent bearer；拒人类cookie，不依赖人签capability",
+	"PATCH /api/agent/console/tasks/{taskID}":                            "专属Agent bearer与当前指派／组成员事务重核",
+	"POST /api/agent/console/tasks/{taskID}/cases/{caseAction}":          "专属Agent bearer与开发／审查角色校验",
 
 	"GET /console/specs/{specID}":                                        "共享 spec 页（公开页，095 同）",
 	"GET /console/spec-assets/{name}":                                    "spec 页静态资源（公开，095 同）",
@@ -160,8 +162,8 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 			nSpecTask++
 		}
 	}
-	if nSpecTask != len(oldRec.patterns) || nSpecTask != 98 {
-		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 98: prior84 plus14 clarification routes)", nSpecTask, len(oldRec.patterns))
+	if nSpecTask != len(oldRec.patterns) || nSpecTask != 109 {
+		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 109: prior98 plus11 PM spec-flow routes)", nSpecTask, len(oldRec.patterns))
 	}
 	for p := range newPlatformSpecTaskExempt {
 		if !seen[p] {
@@ -326,4 +328,4 @@ func TestConsoleTasksCompatibilityRoute(t *testing.T) {
 }
 
 // specTaskRoute specs 与 task-board 两组功能的路由形状（页面、console 接口、Agent capability 接口、共享链接）。
-var specTaskRoute = regexp.MustCompile(`/(console/spec-clarifications|console/clarification-return|console/specs|console/tasks|console/questions|console/spec-templates|console/spec-assets|api/console/specs|api/console/task-|api/console/questions|api/console/spec-template|api/console/tasks|api/console/spec-editors|api/agent/console/|api/specs/shared)`)
+var specTaskRoute = regexp.MustCompile(`/(console/spec-clarifications|console/clarification-return|console/pm-specs|console/specs|console/tasks|console/questions|console/spec-templates|console/spec-assets|api/console/pm-spec-flow|api/console/specs|api/console/task-|api/console/questions|api/console/spec-template|api/console/tasks|api/console/spec-editors|api/agent/console/|api/specs/shared)`)
