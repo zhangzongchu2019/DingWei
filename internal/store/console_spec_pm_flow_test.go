@@ -95,12 +95,37 @@ func TestPMSpecFreezeOnlyAllowsThreeExplicitActions(t *testing.T) {
 	db := newConsoleSpecStore(t)
 	ctx := context.Background()
 	now := time.Date(2026, 10, 22, 14, 0, 0, 0, time.UTC)
+	if err := db.UpsertConsoleAgent(ctx, model.ConsoleAgent{ID: "pm-action-agent", KeyID: "pm-action-key", SessionName: "pm-action-agent", OwnerPrincipal: "owner-a", Active: true}); err != nil {
+		t.Fatal(err)
+	}
 	draft, err := db.SavePMSpecWorkingDraft(ctx, "owner-a", pmDraftFixture("pm-actions", "body", 0, ""), now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.FreezePMSpecWorkingDraft(ctx, draft.SpecID, "owner-a", PMSpecFreezeInput{ExpectedVersion: draft.Version, ExpectedSHA256: draft.ContentSHA256, Action: "arbitrary"}, now); !errors.Is(err, ErrPMSpecFlowDenied) {
+	if err = db.StartPMSpecAssist(ctx, draft.SpecID, "owner-a", "pm-action-agent", "valid-empty-run", "boot-actions", draft.Version, draft.ContentSHA256, now.Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.CompletePMSpecAssist(ctx, "valid-empty-run", "pm-action-agent", json.RawMessage(`{"suggestions":[],"review_questions":[]}`), now.Add(2*time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.FreezePMSpecWorkingDraft(ctx, draft.SpecID, "owner-a", PMSpecFreezeInput{OperationID: "arbitrary-with-valid-assist", ExpectedVersion: draft.Version, ExpectedSHA256: draft.ContentSHA256, Action: "arbitrary", AssistRequestID: "valid-empty-run"}, now.Add(3*time.Second)); !errors.Is(err, ErrPMSpecFlowDenied) {
 		t.Fatalf("arbitrary freeze action err=%v", err)
+	}
+	var revisions, eventsBefore, eventsAfter int
+	if err = db.db.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_revision WHERE spec_id=?`, draft.SpecID).Scan(&revisions); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.db.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow_event WHERE spec_id=?`, draft.SpecID).Scan(&eventsBefore); err != nil {
+		t.Fatal(err)
+	}
+	if revisions != 0 {
+		t.Fatalf("rejected action created immutable revision: revisions=%d", revisions)
+	}
+	if err = db.db.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_flow_event WHERE spec_id=?`, draft.SpecID).Scan(&eventsAfter); err != nil {
+		t.Fatal(err)
+	}
+	if eventsAfter != eventsBefore {
+		t.Fatalf("rejected action appended workflow event: before=%d after=%d", eventsBefore, eventsAfter)
 	}
 	if _, err = db.FreezePMSpecWorkingDraft(ctx, draft.SpecID, "owner-a", PMSpecFreezeInput{OperationID: "stale", ExpectedVersion: draft.Version + 1, ExpectedSHA256: draft.ContentSHA256, Action: PMSpecAcceptSuggestions}, now); !errors.Is(err, ErrPMSpecFlowConflict) {
 		t.Fatalf("stale freeze err=%v", err)
