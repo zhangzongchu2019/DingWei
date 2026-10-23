@@ -1,0 +1,45 @@
+{
+  "name": "console-mcp-version",
+  "command": [
+    "/usr/bin/go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "Version|TestProjectContextAcrossRealHTTPHelperIPCMCP",
+    "-count=1",
+    "-v"
+  ],
+  "environment": {
+    "HOME": "/data/ai-dev-data/r39-version-02312-evidence/console-mcp-version-home",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "HUB_TEST_PG_EMBEDDED": "1",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3",
+    "PYTHONPATH": "/data/ai-dev-data/r39-version-02312/tools/sessionhelper:/data/ai-dev-data/r39-version-02312/view-service"
+  },
+  "start_utc": "2026-10-23T14:14:53.289415+00:00",
+  "end_utc": "2026-10-23T14:15:04.376740+00:00",
+  "elapsed_seconds": 11.087,
+  "rc": 0,
+  "source_commit": "ee494bf7ab978e8991f61a2b26a4aa98284df83c",
+  "source_sha256": {
+    "VERSION": "e1a6c2bf0b183e2de58f47ab604ab1fa3df055833e1be61cd1f5bfbf5f5f2d05",
+    "internal/version/helper_0233_test.go": "81d4e1ae64f833747baf67b7570daf29c759465673908cc4fe0f4306934037d4",
+    "internal/version/version.go": "4819e17497e458aa677c8f1ba330a716a393cf2d041d7260e1b795200d12a33e",
+    "tests/pilot-project-context/local_context_roundtrip.py": "c22f89a767785265dabb3ae308f85fdc47bfeb8652a219798af2ef074770fd90",
+    "tools/sessionhelper/sessionhelper/__init__.py": "1d8b2c9c6fdac224efc5ad6355d1882e30f2e534ddd7261a8953cbf1b13e98bf",
+    "tools/sessionhelper/tests/test_legacy_mcp_entry.py": "fb3ea57940ff8dd1d2d3a3df3baa5120c9bc1d822dec5c3eaeca6b5e8537d48d",
+    "view-service/console-helper-update-regression.js": "2e5251c5dc7ff43132bb8e65db27d18dd0d2f0b5e7aa52197be1da03a5246fa9",
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "scripts/run-build-tests.sh": "4ec1ec8125fb0826bfa1e702a5f39fd641db7690d8ac71e15f332a808f9d9ac9"
+  }
+}

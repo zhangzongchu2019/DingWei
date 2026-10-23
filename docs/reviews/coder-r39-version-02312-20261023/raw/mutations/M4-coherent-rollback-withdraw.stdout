@@ -1,0 +1,12 @@
+=== RUN   TestHelper02312ReleasePins
+    helper_0233_test.go:26: 0.2.3.12 r39 release requires root/Go/helper pins; 0.2.3.11 is the prior release
+--- FAIL: TestHelper02312ReleasePins (0.00s)
+=== RUN   TestVersionMatchesRepositoryVersionFile
+--- PASS: TestVersionMatchesRepositoryVersionFile (0.00s)
+=== RUN   TestVersionIsAheadOfLastReleasedVersion
+--- PASS: TestVersionIsAheadOfLastReleasedVersion (0.00s)
+=== RUN   TestHelperVersionMatchesGoVersion
+--- PASS: TestHelperVersionMatchesGoVersion (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/version	0.001s
+FAIL

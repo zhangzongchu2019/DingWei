@@ -1,0 +1,96 @@
+{
+  "name": "M5-runtime-lock",
+  "source_commit": "ee494bf7ab978e8991f61a2b26a4aa98284df83c",
+  "original_sha256": {
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+  },
+  "phases": [
+    {
+      "phase": "before",
+      "rc": 0,
+      "start_utc": "2026-10-23T14:15:43.396063+00:00",
+      "end_utc": "2026-10-23T14:15:43.528973+00:00",
+      "elapsed_seconds": 0.13291226408910006,
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "./internal/version",
+        "-count=1",
+        "-v"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/r39-version-02312-evidence/mutations/M5-runtime-lock-before-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+        "GOCACHE": "/home/dev/.cache/go-build",
+        "GOMODCACHE": "/home/dev/go/pkg/mod",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "sha256": {
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "phase": "withdraw",
+      "rc": 1,
+      "start_utc": "2026-10-23T14:15:43.529168+00:00",
+      "end_utc": "2026-10-23T14:15:43.660544+00:00",
+      "elapsed_seconds": 0.13138757192064077,
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "./internal/version",
+        "-count=1",
+        "-v"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/r39-version-02312-evidence/mutations/M5-runtime-lock-withdraw-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+        "GOCACHE": "/home/dev/.cache/go-build",
+        "GOMODCACHE": "/home/dev/go/pkg/mod",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "sha256": {
+        "tools/sessionhelper/requirements-runtime.lock": "74b43c210f767b4b0e089a473e328b2621072607ffe54520722c5d78cf069042"
+      }
+    },
+    {
+      "phase": "restore",
+      "rc": 0,
+      "start_utc": "2026-10-23T14:15:43.660723+00:00",
+      "end_utc": "2026-10-23T14:15:43.797238+00:00",
+      "elapsed_seconds": 0.1365228610811755,
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "./internal/version",
+        "-count=1",
+        "-v"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/r39-version-02312-evidence/mutations/M5-runtime-lock-restore-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+        "GOCACHE": "/home/dev/.cache/go-build",
+        "GOMODCACHE": "/home/dev/go/pkg/mod",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "sha256": {
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    }
+  ],
+  "restored_sha256": {
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+  }
+}

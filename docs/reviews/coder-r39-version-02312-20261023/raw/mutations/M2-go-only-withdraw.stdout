@@ -1,0 +1,14 @@
+=== RUN   TestHelper02312ReleasePins
+    helper_0233_test.go:26: 0.2.3.12 r39 release requires root/Go/helper pins; 0.2.3.11 is the prior release
+--- FAIL: TestHelper02312ReleasePins (0.00s)
+=== RUN   TestVersionMatchesRepositoryVersionFile
+    version_test.go:18: version constant="0.2.3.11" VERSION="0.2.3.12"
+--- FAIL: TestVersionMatchesRepositoryVersionFile (0.00s)
+=== RUN   TestVersionIsAheadOfLastReleasedVersion
+--- PASS: TestVersionIsAheadOfLastReleasedVersion (0.00s)
+=== RUN   TestHelperVersionMatchesGoVersion
+    version_test.go:74: helper __version__="0.2.3.12" 与 Go const Version="0.2.3.11" 不一致 —— 装上去会自报错误版本
+--- FAIL: TestHelperVersionMatchesGoVersion (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/version	0.001s
+FAIL

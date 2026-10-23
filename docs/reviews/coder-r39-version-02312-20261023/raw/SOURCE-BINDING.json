@@ -1,0 +1,52 @@
+{
+  "base": "20cdb2e5095c4a5217fb724e3b971a484ba5fb41",
+  "base_tree": "ec24422d071f5a373d89d874d1ea385d8a26298a",
+  "source": "ee494bf7ab978e8991f61a2b26a4aa98284df83c",
+  "source_tree": "bf43a8d68d1e9f031cf1f320f2987848acaee270",
+  "parent": "20cdb2e5095c4a5217fb724e3b971a484ba5fb41",
+  "source_files": {
+    "VERSION": {
+      "sha256": "e1a6c2bf0b183e2de58f47ab604ab1fa3df055833e1be61cd1f5bfbf5f5f2d05",
+      "blob": "e72699c38bdf78539a1297ce7c2700a9b8906719"
+    },
+    "internal/version/helper_0233_test.go": {
+      "sha256": "81d4e1ae64f833747baf67b7570daf29c759465673908cc4fe0f4306934037d4",
+      "blob": "520b11e0636372dcb66261d6cc2fdaf8dc63600a"
+    },
+    "internal/version/version.go": {
+      "sha256": "4819e17497e458aa677c8f1ba330a716a393cf2d041d7260e1b795200d12a33e",
+      "blob": "9f509039c3db9e34f8d58283c2d6d9b824f6d69c"
+    },
+    "tests/pilot-project-context/local_context_roundtrip.py": {
+      "sha256": "c22f89a767785265dabb3ae308f85fdc47bfeb8652a219798af2ef074770fd90",
+      "blob": "a1447b61c008074553f6086f372ad9cfe05a0cd4"
+    },
+    "tools/sessionhelper/sessionhelper/__init__.py": {
+      "sha256": "1d8b2c9c6fdac224efc5ad6355d1882e30f2e534ddd7261a8953cbf1b13e98bf",
+      "blob": "97bbf4aeb01e5037a993a1731786753881c337b7"
+    },
+    "tools/sessionhelper/tests/test_legacy_mcp_entry.py": {
+      "sha256": "fb3ea57940ff8dd1d2d3a3df3baa5120c9bc1d822dec5c3eaeca6b5e8537d48d",
+      "blob": "46cdc8460d759a43d86c3fbda3a47893c017756e"
+    },
+    "view-service/console-helper-update-regression.js": {
+      "sha256": "2e5251c5dc7ff43132bb8e65db27d18dd0d2f0b5e7aa52197be1da03a5246fa9",
+      "blob": "67c810fa13cb38399fdbc6558e3549e59a2999b0"
+    }
+  },
+  "reference_paths_equal": true,
+  "reference_commits": [
+    "01f87ac2b457d3e2386eba1c699ae351496c4ece",
+    "a84c1a08e02a042b04a0f64e074c009ae8bb5ab5"
+  ],
+  "unchanged": {
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "scripts/run-build-tests.sh": "4ec1ec8125fb0826bfa1e702a5f39fd641db7690d8ac71e15f332a808f9d9ac9",
+    "internal/version/version_test.go": "95f4598f787504df4003e53fcc54281a37fe1bfc4a1c82322c0d05d7c4f3efc4",
+    "internal/m8/amr.go": "be0e7b812e6ecddb8229b9094673e58ad4457318014a5d94f6902afabdfa39cd",
+    "internal/m8/inbox_lag.go": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+    "tools/sessionhelper/sessionhelper/inbox_progress.py": "b71e39f49673911dbdadb8f5905bada73708612d6e4d0e80ba464061110228de"
+  },
+  "capability_floors": "unchanged; AMR 0.1.3.0 / no-display 0.2.1.100; INBOX progress schema/availability retained; lastReleased test historical0.2.3.2 unchanged",
+  "utc": "2026-10-23T14:17:29.651739+00:00"
+}

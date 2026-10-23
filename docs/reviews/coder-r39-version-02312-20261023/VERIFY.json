@@ -1,0 +1,53 @@
+{
+  "verified_utc": "2026-10-23T14:26:10.907467+00:00",
+  "source": "ee494bf7ab978e8991f61a2b26a4aa98284df83c",
+  "base": "20cdb2e5095c4a5217fb724e3b971a484ba5fb41",
+  "source_files": 7,
+  "reference_paths_equal": true,
+  "dependency_lock_unchanged": true,
+  "capability_files_unchanged": true,
+  "gates": {
+    "version-packages": {
+      "rc": 0,
+      "elapsed_seconds": 0.767
+    },
+    "console-mcp-version": {
+      "rc": 0,
+      "elapsed_seconds": 11.087
+    },
+    "browser-version-pin": {
+      "rc": 0,
+      "elapsed_seconds": 9.234
+    },
+    "canonical": {
+      "rc": 0,
+      "elapsed_seconds": 171.897
+    },
+    "helper-full": {
+      "rc": 0,
+      "elapsed_seconds": 438.742
+    },
+    "go-all": {
+      "rc": 0,
+      "elapsed_seconds": 687.856
+    },
+    "vet": {
+      "rc": 0,
+      "elapsed_seconds": 12.049
+    }
+  },
+  "version_tests": 4,
+  "console_top_level_pass": 11,
+  "console_subtests_pass": 4,
+  "historical_mixed_release_skipped": 1,
+  "browser_checks": 14,
+  "canonical_python": 66,
+  "canonical_shell": 2,
+  "helper_tests": 982,
+  "go_tested_packages": 53,
+  "go_no_tests": 13,
+  "withdrawals": 5,
+  "withdrawal_rc": "all 0 -> 1 -> 0",
+  "restored_sha": "all equal original/current",
+  "result": "PASS"
+}

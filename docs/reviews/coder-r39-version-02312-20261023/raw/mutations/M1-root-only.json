@@ -1,0 +1,96 @@
+{
+  "name": "M1-root-only",
+  "source_commit": "ee494bf7ab978e8991f61a2b26a4aa98284df83c",
+  "original_sha256": {
+    "VERSION": "e1a6c2bf0b183e2de58f47ab604ab1fa3df055833e1be61cd1f5bfbf5f5f2d05"
+  },
+  "phases": [
+    {
+      "phase": "before",
+      "rc": 0,
+      "start_utc": "2026-10-23T14:15:41.725833+00:00",
+      "end_utc": "2026-10-23T14:15:41.891326+00:00",
+      "elapsed_seconds": 0.1654926899354905,
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "./internal/version",
+        "-count=1",
+        "-v"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/r39-version-02312-evidence/mutations/M1-root-only-before-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+        "GOCACHE": "/home/dev/.cache/go-build",
+        "GOMODCACHE": "/home/dev/go/pkg/mod",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "sha256": {
+        "VERSION": "e1a6c2bf0b183e2de58f47ab604ab1fa3df055833e1be61cd1f5bfbf5f5f2d05"
+      }
+    },
+    {
+      "phase": "withdraw",
+      "rc": 1,
+      "start_utc": "2026-10-23T14:15:41.891507+00:00",
+      "end_utc": "2026-10-23T14:15:42.016722+00:00",
+      "elapsed_seconds": 0.1252263649366796,
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "./internal/version",
+        "-count=1",
+        "-v"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/r39-version-02312-evidence/mutations/M1-root-only-withdraw-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+        "GOCACHE": "/home/dev/.cache/go-build",
+        "GOMODCACHE": "/home/dev/go/pkg/mod",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "sha256": {
+        "VERSION": "e242a914e3530cff52701d7691d0ec1fa7e0a517add9191ed6718bb52c6bc16d"
+      }
+    },
+    {
+      "phase": "restore",
+      "rc": 0,
+      "start_utc": "2026-10-23T14:15:42.018236+00:00",
+      "end_utc": "2026-10-23T14:15:42.147386+00:00",
+      "elapsed_seconds": 0.12915665993932635,
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "./internal/version",
+        "-count=1",
+        "-v"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/r39-version-02312-evidence/mutations/M1-root-only-restore-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+        "GOCACHE": "/home/dev/.cache/go-build",
+        "GOMODCACHE": "/home/dev/go/pkg/mod",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "sha256": {
+        "VERSION": "e1a6c2bf0b183e2de58f47ab604ab1fa3df055833e1be61cd1f5bfbf5f5f2d05"
+      }
+    }
+  ],
+  "restored_sha256": {
+    "VERSION": "e1a6c2bf0b183e2de58f47ab604ab1fa3df055833e1be61cd1f5bfbf5f5f2d05"
+  }
+}
