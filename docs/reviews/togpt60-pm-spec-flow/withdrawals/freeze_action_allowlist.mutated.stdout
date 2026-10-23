@@ -1,0 +1,5 @@
+--- FAIL: TestPMSpecFreezeOnlyAllowsThreeExplicitActions (0.12s)
+    console_spec_pm_flow_test.go:112: arbitrary freeze action err=<nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.119s
+FAIL

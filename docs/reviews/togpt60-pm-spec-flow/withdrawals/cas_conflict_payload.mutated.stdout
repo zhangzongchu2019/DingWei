@@ -1,0 +1,5 @@
+--- FAIL: TestPMSpecWorkingDraftCASPreservesBothConflictPayloadsAndCreatesNoRevision (0.12s)
+    console_spec_pm_flow_test.go:39: sql: no rows in result set
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.128s
+FAIL

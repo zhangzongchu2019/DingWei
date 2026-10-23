@@ -1,0 +1,5 @@
+--- FAIL: TestPMSpecAssistResultStalesAfterWorkingDraftEdit (0.12s)
+    console_spec_pm_flow_test.go:286: assist result for old working draft was not rejected as stale: <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.124s
+FAIL

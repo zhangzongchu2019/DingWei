@@ -1,0 +1,24 @@
+{
+  "name": "default_off",
+  "file": "internal/m8/console_spec_pm_flow.go",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "^TestPMSpecFlowDefaultOffAndCASConflictIsHTTP409$",
+    "-count=1",
+    "-timeout=3m"
+  ],
+  "baseline_started_utc": "2026-10-23T01:28:49.155091+00:00",
+  "baseline_rc": 0,
+  "baseline_ended_utc": "2026-10-23T01:28:58.499892+00:00",
+  "mutated_started_utc": "2026-10-23T01:29:06.519654+00:00",
+  "mutated_rc": 1,
+  "mutated_ended_utc": "2026-10-23T01:29:06.519672+00:00",
+  "expected_red_marker": "default-off status",
+  "marker_present": true,
+  "restored_rc": 0,
+  "restored_ended_utc": "2026-10-23T01:29:07.789681+00:00",
+  "pass": true
+}

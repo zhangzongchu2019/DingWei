@@ -1,0 +1,104 @@
+{
+  "schema": "pm-spec-flow-verify-v1",
+  "source": {
+    "commit": "40f74e2f00f0ebe4f5785e8d4a5b4379dc12fa52",
+    "tree": "b9c3941388cf7409183a2c1937bf4ed433429205",
+    "base": "29e63f99",
+    "migration": {
+      "file": "internal/store/migrations/0064_console_spec_flow_pm.sql",
+      "sha256": "0e9559487b8bd3a58ecf684ab60e8311a3e1655d38c935a9482a6097fb71f53d",
+      "previous_max": "0063_spec_clarification_images.sql"
+    },
+    "sha256": {
+      "internal/store/console_spec_pm_flow.go": "459c03516fd26e2ccedbf1dfef223c550c84162402050843ec8e81e95b540c0d",
+      "internal/store/console_spec_pm_flow_test.go": "8042b3a898916ff5efb05d5d75d2a6d9baa6a9b86329d54942cc8b2580451294"
+    }
+  },
+  "gates": [
+    {
+      "name": "go_test_all",
+      "command": "TMPDIR=/tmp/tg60pmfinal4 go test ./... -count=1 -timeout=30m",
+      "started_utc": "2026-10-23T01:29:13Z",
+      "ended_utc": "2026-10-23T01:40:58Z",
+      "rc": 0,
+      "packages_total": 66,
+      "packages_with_tests_passed": 53,
+      "packages_without_tests": 13,
+      "notable_package_seconds": {
+        "internal/hosted": 702.605,
+        "internal/identity": 119.345,
+        "internal/m8": 166.475,
+        "internal/store/migrate": 77.187
+      },
+      "raw_log": "evidence/go-test.log"
+    },
+    {
+      "name": "go_vet_all",
+      "command": "TMPDIR=/tmp/tg60pmfinal5 go vet ./...",
+      "started_utc": "2026-10-23T01:41:06Z",
+      "ended_utc": "2026-10-23T01:41:07Z",
+      "rc": 0,
+      "raw_log": "evidence/vet.log"
+    },
+    {
+      "name": "canonical",
+      "command": "env -i HOME=/tmp/tg60pmcanon2-home PATH=/tmp/dw-filecard-build-venv/bin:/usr/bin:/bin TMPDIR=/tmp/tg60pmcanon2 ./scripts/run-build-tests.sh",
+      "started_utc": "2026-10-23T01:41:06Z",
+      "ended_utc": "2026-10-23T01:44:17Z",
+      "rc": 0,
+      "result": "BUILD_TESTS_OK python=59 shell=2",
+      "python_venv": "/tmp/dw-filecard-build-venv",
+      "raw_log": "evidence/canonical.log"
+    },
+    {
+      "name": "sessionhelper_full_suite",
+      "command": "env -i HOME=/tmp/tg60pm-home-helper TMPDIR=/tmp/tg60pm-helper-tmp PATH=/tmp/tg60-stale-backfill-venv/bin:/usr/bin:/bin PYTHONPATH=/tmp/tg60-pm-spec-flow-impl/tools/sessionhelper /tmp/tg60-stale-backfill-venv/bin/python -B -m unittest discover -s tools/sessionhelper/tests",
+      "started_utc": "2026-10-23T01:17:41Z",
+      "ended_utc": "2026-10-23T01:24:36Z",
+      "rc": 0,
+      "tests_passed": 851,
+      "python": "3.12.3",
+      "venv": "/tmp/tg60-stale-backfill-venv",
+      "home_isolated": true,
+      "raw_log": "evidence/helper.log"
+    },
+    {
+      "name": "browser_full_runner",
+      "command": "NODE_PATH=/tmp/dw-filecard-playwright/node_modules python3 tools/run-browser-regressions.py",
+      "started_utc": "2026-10-23T01:44:19Z",
+      "ended_utc": "2026-10-23T01:51:27Z",
+      "rc": 2,
+      "browser": "Playwright Chromium headless shell 1248",
+      "pm_spec_flow": {"rc": 0, "passed": 15, "failed": 0, "viewports": [390, 820]},
+      "console_spec_workflow": {"rc": 0, "passed": 12, "failed": 0},
+      "console_task_flow_r32": {"rc": 0, "passed": 11, "failed": 0},
+      "other_failed_suites": {
+        "renderer_0206_file_render": 1,
+        "renderer_flood_stress": 2,
+        "renderer_c2": 1,
+        "console_specs_browser": 1
+      },
+      "note": "Broad runner is not all-green; PM Spec Flow and related workflow suites passed. Failures are preserved in the raw log and are outside the new PM Spec Flow suite.",
+      "raw_log": "evidence/browser.log"
+    }
+  ],
+  "withdrawals": {
+    "result_file": "withdrawals/RESULTS.json",
+    "cases": 6,
+    "all_green_red_green": true,
+    "raw_stdout_stderr_retained": true
+  },
+  "implementation_scope": {
+    "feature_default_off": true,
+    "mutable_working_draft_cas": true,
+    "only_three_freeze_actions": ["accept_suggestions", "transfer_for_review", "complete_review"],
+    "assist_binds_version_and_sha": true,
+    "stale_after_edit": true,
+    "self_review_requires_fresh_assist_and_all_decisions": true,
+    "review_recipient_read_only_and_cannot_finalize": true,
+    "finalization_reuses_existing_final_and_splitting_gate": true,
+    "production_deployed": false,
+    "live_environment_changed": false
+  },
+  "evidence_checksums": "evidence/SHA256SUMS"
+}

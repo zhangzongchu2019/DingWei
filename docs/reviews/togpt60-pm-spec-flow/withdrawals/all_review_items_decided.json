@@ -1,0 +1,24 @@
+{
+  "name": "all_review_items_decided",
+  "file": "internal/store/console_spec_pm_flow.go",
+  "command": [
+    "go",
+    "test",
+    "./internal/store",
+    "-run",
+    "^TestPMSpecReviewCompletionRequiresFreshAssistAndEveryDecisionThenExistingFinalGateRemains$",
+    "-count=1",
+    "-timeout=3m"
+  ],
+  "baseline_started_utc": "2026-10-23T01:28:43.026622+00:00",
+  "baseline_rc": 0,
+  "baseline_ended_utc": "2026-10-23T01:28:43.525769+00:00",
+  "mutated_started_utc": "2026-10-23T01:28:45.623060+00:00",
+  "mutated_rc": 1,
+  "mutated_ended_utc": "2026-10-23T01:28:45.623078+00:00",
+  "expected_red_marker": "completion without decision err",
+  "marker_present": true,
+  "restored_rc": 0,
+  "restored_ended_utc": "2026-10-23T01:28:46.110288+00:00",
+  "pass": true
+}

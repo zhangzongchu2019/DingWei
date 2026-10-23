@@ -1,0 +1,24 @@
+{
+  "name": "freeze_action_allowlist",
+  "file": "internal/store/console_spec_pm_flow.go",
+  "command": [
+    "go",
+    "test",
+    "./internal/store",
+    "-run",
+    "^TestPMSpecFreezeOnlyAllowsThreeExplicitActions$",
+    "-count=1",
+    "-timeout=3m"
+  ],
+  "baseline_started_utc": "2026-10-23T01:28:40.001842+00:00",
+  "baseline_rc": 0,
+  "baseline_ended_utc": "2026-10-23T01:28:40.505248+00:00",
+  "mutated_started_utc": "2026-10-23T01:28:41.004787+00:00",
+  "mutated_rc": 1,
+  "mutated_ended_utc": "2026-10-23T01:28:41.004804+00:00",
+  "expected_red_marker": "arbitrary freeze action err",
+  "marker_present": true,
+  "restored_rc": 0,
+  "restored_ended_utc": "2026-10-23T01:28:41.496418+00:00",
+  "pass": true
+}
