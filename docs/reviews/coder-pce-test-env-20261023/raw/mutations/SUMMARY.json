@@ -1,0 +1,426 @@
+[
+  {
+    "name": "M1-no-optional-api",
+    "file": "tools/sessionhelper/tests/pce_retention_crash_fixture.py",
+    "source_commit": "6139e4bca7650697682d89c85fa217c0459ca890",
+    "original_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39",
+    "old": "getattr(os,'pidfd_open',None)",
+    "new": "os.pidfd_open",
+    "phases": [
+      {
+        "phase": "before",
+        "rc": 0,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/missing_api_probe.py",
+          "tools/sessionhelper/tests/pce_retention_crash_fixture.py"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M1-no-optional-api-before-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:01.305122+00:00",
+        "elapsed_seconds": 0.40504022501409054,
+        "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+      },
+      {
+        "phase": "withdraw",
+        "rc": 1,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/missing_api_probe.py",
+          "tools/sessionhelper/tests/pce_retention_crash_fixture.py"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M1-no-optional-api-withdraw-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:01.710367+00:00",
+        "elapsed_seconds": 0.3609316140646115,
+        "sha256": "b8ad4a0d5d4579dacd6e9926c523f2b9fa3d6ba473ddba087d1aa406d959e85c"
+      },
+      {
+        "phase": "restore",
+        "rc": 0,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/missing_api_probe.py",
+          "tools/sessionhelper/tests/pce_retention_crash_fixture.py"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M1-no-optional-api-restore-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:02.071470+00:00",
+        "elapsed_seconds": 0.41267089906614274,
+        "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+      }
+    ],
+    "restored_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+  },
+  {
+    "name": "M2-no-fallback-reap",
+    "file": "tools/sessionhelper/tests/pce_retention_crash_fixture.py",
+    "source_commit": "6139e4bca7650697682d89c85fa217c0459ca890",
+    "original_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39",
+    "old": "            elif child is not None:\n                reap_owned_child(child,child_starttime);child_reaped=True\n",
+    "new": "",
+    "phases": [
+      {
+        "phase": "before",
+        "rc": 0,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "-B",
+          "tools/sessionhelper/tests/test_pce_retention.py",
+          "RetainTests.test_actual_owner_crash_without_python_pidfd_api"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M2-no-fallback-reap-before-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:02.485796+00:00",
+        "elapsed_seconds": 0.5205530290259048,
+        "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+      },
+      {
+        "phase": "withdraw",
+        "rc": 1,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "-B",
+          "tools/sessionhelper/tests/test_pce_retention.py",
+          "RetainTests.test_actual_owner_crash_without_python_pidfd_api"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M2-no-fallback-reap-withdraw-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:03.006524+00:00",
+        "elapsed_seconds": 0.5269480929709971,
+        "sha256": "440eb449f9dbd823d117f4948fb5ed8724c8b0cc5859d2f30999de64dfa085fb"
+      },
+      {
+        "phase": "restore",
+        "rc": 0,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "-B",
+          "tools/sessionhelper/tests/test_pce_retention.py",
+          "RetainTests.test_actual_owner_crash_without_python_pidfd_api"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M2-no-fallback-reap-restore-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:03.533647+00:00",
+        "elapsed_seconds": 0.5330458380049095,
+        "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+      }
+    ],
+    "restored_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+  },
+  {
+    "name": "M3-ignore-unowned",
+    "file": "tools/sessionhelper/tests/pce_retention_crash_fixture.py",
+    "source_commit": "6139e4bca7650697682d89c85fa217c0459ca890",
+    "original_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39",
+    "old": "    done,_=os.waitpid(pid,os.WNOHANG)\n    if done==pid:return\n",
+    "new": "    try:done,_=os.waitpid(pid,os.WNOHANG)\n    except ChildProcessError:return\n    if done==pid:return\n",
+    "phases": [
+      {
+        "phase": "before",
+        "rc": 0,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "-B",
+          "tools/sessionhelper/tests/test_pce_retention.py",
+          "RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M3-ignore-unowned-before-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:48.382284+00:00",
+        "elapsed_seconds": 0.15033365203998983,
+        "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+      },
+      {
+        "phase": "withdraw",
+        "rc": 1,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "-B",
+          "tools/sessionhelper/tests/test_pce_retention.py",
+          "RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M3-ignore-unowned-withdraw-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:48.532815+00:00",
+        "elapsed_seconds": 0.15022190299350768,
+        "sha256": "79758d001614e3cbbe4d8ab3cf2491758650056af7b60faf3984f07f42c9f54e"
+      },
+      {
+        "phase": "restore",
+        "rc": 0,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "-B",
+          "tools/sessionhelper/tests/test_pce_retention.py",
+          "RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M3-ignore-unowned-restore-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:48.683189+00:00",
+        "elapsed_seconds": 0.15657226205803454,
+        "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+      }
+    ],
+    "restored_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+  },
+  {
+    "name": "M4-no-starttime",
+    "file": "tools/sessionhelper/tests/pce_retention_crash_fixture.py",
+    "source_commit": "6139e4bca7650697682d89c85fa217c0459ca890",
+    "original_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39",
+    "old": "    assert process_starttime(pid)==starttime,'OWNER_CRASH_CHILD_CHANGED'\n",
+    "new": "",
+    "phases": [
+      {
+        "phase": "before",
+        "rc": 0,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "-B",
+          "tools/sessionhelper/tests/test_pce_retention.py",
+          "RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M4-no-starttime-before-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:48.843839+00:00",
+        "elapsed_seconds": 0.16185976495034993,
+        "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+      },
+      {
+        "phase": "withdraw",
+        "rc": 1,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "-B",
+          "tools/sessionhelper/tests/test_pce_retention.py",
+          "RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M4-no-starttime-withdraw-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:49.005897+00:00",
+        "elapsed_seconds": 5.159596592071466,
+        "sha256": "1a62b7a915d3b10f9eb6dcc90da58264daca783d92f04aa088147f06f68c9658"
+      },
+      {
+        "phase": "restore",
+        "rc": 0,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "-B",
+          "tools/sessionhelper/tests/test_pce_retention.py",
+          "RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M4-no-starttime-restore-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:54.165680+00:00",
+        "elapsed_seconds": 0.14552038197871298,
+        "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+      }
+    ],
+    "restored_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+  },
+  {
+    "name": "M5-no-original-stop-proof",
+    "file": "tools/sessionhelper/update_launcher/guard.py",
+    "source_commit": "6139e4bca7650697682d89c85fa217c0459ca890",
+    "original_sha256": "87d6429cb809bbc707a11ddae70c7868fdeaacfba061485e897a24cce114c230",
+    "old": "                if not pin or pin['state'] != 'stopped' or type(pin.get('stop')) is not dict:\n                    raise UpdateError('retain_stop')\n                if not self.valid_stop(pin):\n                    raise UpdateError('retain_stop')\n",
+    "new": "",
+    "phases": [
+      {
+        "phase": "before",
+        "rc": 0,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "-B",
+          "tools/sessionhelper/tests/test_pce_retention.py",
+          "RetainTests.test_actual_owner_crash_does_not_reclaim_live_child",
+          "RetainTests.test_actual_owner_crash_without_python_pidfd_api"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M5-no-original-stop-proof-before-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:54.313085+00:00",
+        "elapsed_seconds": 0.8623591710347682,
+        "sha256": "87d6429cb809bbc707a11ddae70c7868fdeaacfba061485e897a24cce114c230"
+      },
+      {
+        "phase": "withdraw",
+        "rc": 1,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "-B",
+          "tools/sessionhelper/tests/test_pce_retention.py",
+          "RetainTests.test_actual_owner_crash_does_not_reclaim_live_child",
+          "RetainTests.test_actual_owner_crash_without_python_pidfd_api"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M5-no-original-stop-proof-withdraw-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:55.175690+00:00",
+        "elapsed_seconds": 0.859929438913241,
+        "sha256": "62d7392ea24731bbe23f53c5d9f7884c4fa558eaa34e6bfcd054ff88a9a0eaf7"
+      },
+      {
+        "phase": "restore",
+        "rc": 0,
+        "command": [
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+          "/tmp/coder-0232-locked-venv/bin/python3",
+          "-B",
+          "tools/sessionhelper/tests/test_pce_retention.py",
+          "RetainTests.test_actual_owner_crash_does_not_reclaim_live_child",
+          "RetainTests.test_actual_owner_crash_without_python_pidfd_api"
+        ],
+        "environment": {
+          "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M5-no-original-stop-proof-restore-home",
+          "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+          "TMPDIR": "/data/ai-dev-data/t",
+          "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+          "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+          "LANG": "C.UTF-8",
+          "TZ": "UTC",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "utc": "2026-10-23T12:44:56.035838+00:00",
+        "elapsed_seconds": 0.8581503530731425,
+        "sha256": "87d6429cb809bbc707a11ddae70c7868fdeaacfba061485e897a24cce114c230"
+      }
+    ],
+    "restored_sha256": "87d6429cb809bbc707a11ddae70c7868fdeaacfba061485e897a24cce114c230"
+  }
+]

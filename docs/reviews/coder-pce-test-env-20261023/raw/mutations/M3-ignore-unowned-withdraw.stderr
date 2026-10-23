@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_crash_fixture_refuses_to_signal_unowned_or_changed_pid (__main__.RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/test_pce_retention.py", line 327, in test_crash_fixture_refuses_to_signal_unowned_or_changed_pid
+    with self.assertRaises(ChildProcessError):reap(123,456)
+AssertionError: ChildProcessError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=1)
+{"test_rc": 1, "rescued_fixture_children": 0}

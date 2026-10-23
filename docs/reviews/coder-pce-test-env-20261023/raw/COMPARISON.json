@@ -1,0 +1,44 @@
+[
+  {
+    "phase": "before",
+    "source_commit": "f1aabc6cbe3edbe887760f65e53a76a7b4062252",
+    "fixture_sha256_before": "db8fe9af06348f35d562d222463a86ac58413051a624c09d49bc9094e8ffd403",
+    "fixture_sha256_after": "db8fe9af06348f35d562d222463a86ac58413051a624c09d49bc9094e8ffd403",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "/data/ai-dev-data/pce-test-env-evidence/missing_api_probe.py",
+      "/data/ai-dev-data/pce-test-env-before/tools/sessionhelper/tests/pce_retention_crash_fixture.py"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/pce-test-env-evidence/comparison-before-home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "start_utc": "2026-10-23T12:49:11.869865+00:00",
+    "end_utc": "2026-10-23T12:49:12.212541+00:00",
+    "rc": 1
+  },
+  {
+    "phase": "after",
+    "source_commit": "6139e4bca7650697682d89c85fa217c0459ca890",
+    "fixture_sha256_before": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39",
+    "fixture_sha256_after": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "/data/ai-dev-data/pce-test-env-evidence/missing_api_probe.py",
+      "/data/ai-dev-data/pce-test-env/tools/sessionhelper/tests/pce_retention_crash_fixture.py"
+    ],
+    "environment": {
+      "HOME": "/data/ai-dev-data/pce-test-env-evidence/comparison-after-home",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+      "TMPDIR": "/data/ai-dev-data/t",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC"
+    },
+    "start_utc": "2026-10-23T12:49:12.212665+00:00",
+    "end_utc": "2026-10-23T12:49:12.560005+00:00",
+    "rc": 0
+  }
+]

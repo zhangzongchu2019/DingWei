@@ -1,0 +1,22 @@
+{
+  "base": "f1aabc6cbe3edbe887760f65e53a76a7b4062252",
+  "base_tree": "e225acf9ba4856ed0e62e4ef93479f011dd3468e",
+  "source": "6139e4bca7650697682d89c85fa217c0459ca890",
+  "source_tree": "bc16bc5d46d3a665d70dd26227aed5f7b334e025",
+  "source_parent": "f1aabc6cbe3edbe887760f65e53a76a7b4062252",
+  "changed_source_files": {
+    "tools/sessionhelper/tests/pce_retention_crash_fixture.py": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39",
+    "tools/sessionhelper/tests/test_pce_retention.py": "80edfb2294b3bbb76fc23ecea23d6376ed4423ead7f569218653adf08d5f1235"
+  },
+  "unchanged_files": {
+    "tools/sessionhelper/sessionhelper/private_endpoint.py": "ae9649835e7fc336313510d57111f6a93b356e980ea154c9b4668b65d7556dc4",
+    "tools/sessionhelper/sessionhelper/daemon_identity.py": "da048060f727aeaef9b343be5f183985bc5dab07e2e828b68d3d0f66d8feb539",
+    "tools/sessionhelper/update_launcher/guard.py": "87d6429cb809bbc707a11ddae70c7868fdeaacfba061485e897a24cce114c230",
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "scripts/run-build-tests.sh": "0e78c53ca8dcc1b8c1952ee65db4e0264c3499a402636a74e79d3ea3ea9cba92",
+    "VERSION": "e242a914e3530cff52701d7691d0ec1fa7e0a517add9191ed6718bb52c6bc16d"
+  },
+  "mutation_count": 5,
+  "mutation_results": "all 0 -> 1 -> 0; original = restored = current SHA256",
+  "production_changes": false
+}

@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/pce_retention_crash_fixture.py", line 62, in <module>
+    if __name__=='__main__':run()
+                            ^^^^^
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/pce_retention_crash_fixture.py", line 38, in run
+    pidfd_open=os.pidfd_open
+               ^^^^^^^^^^^^^
+AttributeError: module 'os' has no attribute 'pidfd_open'
+{"fixture_rc": 1, "rescued_fixture_children": 0}

@@ -1,0 +1,37 @@
+{
+  "name": "go-all-valid",
+  "command": [
+    "/usr/bin/go",
+    "test",
+    "-p",
+    "1",
+    "-count=1",
+    "./..."
+  ],
+  "environment": {
+    "HOME": "/data/ai-dev-data/pce-test-env-evidence/go-all-valid-home",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "HUB_TEST_PG_EMBEDDED": "1",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3",
+    "PYTHONPATH": "/data/ai-dev-data/pce-test-env/tools/sessionhelper:/data/ai-dev-data/pce-test-env/view-service"
+  },
+  "start_utc": "2026-10-23T12:42:42.395571+00:00",
+  "end_utc": "2026-10-23T12:53:24.834520+00:00",
+  "elapsed_seconds": 642.439,
+  "rc": 0,
+  "source_commit": "6139e4bca7650697682d89c85fa217c0459ca890",
+  "source_sha256": {
+    "tools/sessionhelper/tests/pce_retention_crash_fixture.py": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39",
+    "tools/sessionhelper/tests/test_pce_retention.py": "80edfb2294b3bbb76fc23ecea23d6376ed4423ead7f569218653adf08d5f1235",
+    "tools/sessionhelper/sessionhelper/private_endpoint.py": "ae9649835e7fc336313510d57111f6a93b356e980ea154c9b4668b65d7556dc4",
+    "tools/sessionhelper/update_launcher/guard.py": "87d6429cb809bbc707a11ddae70c7868fdeaacfba061485e897a24cce114c230"
+  }
+}

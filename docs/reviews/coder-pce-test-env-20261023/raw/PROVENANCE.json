@@ -1,0 +1,19 @@
+{
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "executable": "/tmp/coder-0232-locked-venv/bin/python3",
+  "real_executable": "/usr/bin/python3.12",
+  "uid": 1001,
+  "executable_uid": 0,
+  "executable_mode": "0o755",
+  "pidfd_open_available": true,
+  "subreaper_in_evidence_parent": 0,
+  "runtime_lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "packages": {
+    "websockets": "15.0.1",
+    "pexpect": "4.9.0",
+    "ptyprocess": "0.7.0",
+    "certifi": "2026.7.22"
+  },
+  "go_version": "go version go1.22.2 linux/amd64",
+  "source_commit": "6139e4bca7650697682d89c85fa217c0459ca890"
+}

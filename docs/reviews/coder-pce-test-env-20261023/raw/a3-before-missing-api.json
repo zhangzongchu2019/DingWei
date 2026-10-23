@@ -1,0 +1,32 @@
+{
+  "name": "a3-before-missing-api",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python3",
+    "/data/ai-dev-data/pce-test-env-evidence/missing_api_probe.py",
+    "tools/sessionhelper/tests/pce_retention_crash_fixture.py"
+  ],
+  "environment": {
+    "HOME": "/data/ai-dev-data/pce-test-env-evidence/a3-before-missing-api-home",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "HUB_TEST_PG_EMBEDDED": "1",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3",
+    "PYTHONPATH": "/data/ai-dev-data/pce-test-env/tools/sessionhelper:/data/ai-dev-data/pce-test-env/view-service"
+  },
+  "start_utc": "2026-10-23T12:40:53.498500+00:00",
+  "end_utc": "2026-10-23T12:40:53.862691+00:00",
+  "elapsed_seconds": 0.364,
+  "rc": 1,
+  "source_commit": "f1aabc6cbe3edbe887760f65e53a76a7b4062252",
+  "source_sha256": {
+    "tools/sessionhelper/tests/test_private_endpoint.py": "f9706ac65742e9b65236b48b635fe494ca828b08428b5a65f81b0a06530632b4",
+    "tools/sessionhelper/sessionhelper/private_endpoint.py": "ae9649835e7fc336313510d57111f6a93b356e980ea154c9b4668b65d7556dc4"
+  }
+}

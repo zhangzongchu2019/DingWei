@@ -1,0 +1,66 @@
+FF
+======================================================================
+FAIL: test_actual_owner_crash_does_not_reclaim_live_child (__main__.RetainTests.test_actual_owner_crash_does_not_reclaim_live_child)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/test_pce_retention.py", line 304, in test_actual_owner_crash_does_not_reclaim_live_child
+    self.actual_owner_crash(False)
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/test_pce_retention.py", line 317, in actual_owner_crash
+    self.assertEqual(result.returncode,0,'OWNER_CRASH_RECLAIMED_RUNTIME '+result.stderr.decode(errors='replace'))
+AssertionError: 1 != 0 : OWNER_CRASH_RECLAIMED_RUNTIME Traceback (most recent call last):
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/pce_retention_crash_fixture.py", line 45, in run
+    try:retention.reclaim(current['pin'],module.State(retention.root,Path(ep.package_root())))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py", line 371, in reclaim
+    raise UpdateError('retain_invalid')
+_dw_private_retention.UpdateError: retain_invalid
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/pce_retention_crash_fixture.py", line 62, in <module>
+    if __name__=='__main__':run()
+                            ^^^^^
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/pce_retention_crash_fixture.py", line 46, in run
+    except module.UpdateError as exc:assert str(exc)=='retain_stop'
+                                            ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+
+
+======================================================================
+FAIL: test_actual_owner_crash_without_python_pidfd_api (__main__.RetainTests.test_actual_owner_crash_without_python_pidfd_api)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/test_pce_retention.py", line 307, in test_actual_owner_crash_without_python_pidfd_api
+    self.actual_owner_crash(True)
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/test_pce_retention.py", line 317, in actual_owner_crash
+    self.assertEqual(result.returncode,0,'OWNER_CRASH_RECLAIMED_RUNTIME '+result.stderr.decode(errors='replace'))
+AssertionError: 1 != 0 : OWNER_CRASH_RECLAIMED_RUNTIME Traceback (most recent call last):
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/pce_retention_crash_fixture.py", line 45, in run
+    try:retention.reclaim(current['pin'],module.State(retention.root,Path(ep.package_root())))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py", line 371, in reclaim
+    raise UpdateError('retain_invalid')
+_dw_private_retention.UpdateError: retain_invalid
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/pce_retention_crash_fixture.py", line 62, in <module>
+    if __name__=='__main__':run()
+                            ^^^^^
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/pce_retention_crash_fixture.py", line 46, in run
+    except module.UpdateError as exc:assert str(exc)=='retain_stop'
+                                            ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.719s
+
+FAILED (failures=2)
+{"test_rc": 1, "rescued_fixture_children": 0}

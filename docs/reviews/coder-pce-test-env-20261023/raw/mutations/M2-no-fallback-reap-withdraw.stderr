@@ -1,0 +1,16 @@
+F
+======================================================================
+FAIL: test_actual_owner_crash_without_python_pidfd_api (__main__.RetainTests.test_actual_owner_crash_without_python_pidfd_api)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/test_pce_retention.py", line 307, in test_actual_owner_crash_without_python_pidfd_api
+    self.actual_owner_crash(True)
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/test_pce_retention.py", line 321, in actual_owner_crash
+    self.assertTrue(data['child_reaped'],'OWNER_CRASH_FIXTURE_LEAKED')
+AssertionError: False is not true : OWNER_CRASH_FIXTURE_LEAKED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.380s
+
+FAILED (failures=1)
+{"test_rc": 1, "rescued_fixture_children": 1}

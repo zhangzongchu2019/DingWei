@@ -1,0 +1,86 @@
+{
+  "name": "M4-no-starttime",
+  "file": "tools/sessionhelper/tests/pce_retention_crash_fixture.py",
+  "source_commit": "6139e4bca7650697682d89c85fa217c0459ca890",
+  "original_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39",
+  "old": "    assert process_starttime(pid)==starttime,'OWNER_CRASH_CHILD_CHANGED'\n",
+  "new": "",
+  "phases": [
+    {
+      "phase": "before",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "tools/sessionhelper/tests/test_pce_retention.py",
+        "RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M4-no-starttime-before-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+        "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "utc": "2026-10-23T12:44:48.843839+00:00",
+      "elapsed_seconds": 0.16185976495034993,
+      "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+    },
+    {
+      "phase": "withdraw",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "tools/sessionhelper/tests/test_pce_retention.py",
+        "RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M4-no-starttime-withdraw-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+        "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "utc": "2026-10-23T12:44:49.005897+00:00",
+      "elapsed_seconds": 5.159596592071466,
+      "sha256": "1a62b7a915d3b10f9eb6dcc90da58264daca783d92f04aa088147f06f68c9658"
+    },
+    {
+      "phase": "restore",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "tools/sessionhelper/tests/test_pce_retention.py",
+        "RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M4-no-starttime-restore-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+        "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "utc": "2026-10-23T12:44:54.165680+00:00",
+      "elapsed_seconds": 0.14552038197871298,
+      "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+    }
+  ],
+  "restored_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+}

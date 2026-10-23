@@ -1,0 +1,86 @@
+{
+  "name": "M2-no-fallback-reap",
+  "file": "tools/sessionhelper/tests/pce_retention_crash_fixture.py",
+  "source_commit": "6139e4bca7650697682d89c85fa217c0459ca890",
+  "original_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39",
+  "old": "            elif child is not None:\n                reap_owned_child(child,child_starttime);child_reaped=True\n",
+  "new": "",
+  "phases": [
+    {
+      "phase": "before",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "tools/sessionhelper/tests/test_pce_retention.py",
+        "RetainTests.test_actual_owner_crash_without_python_pidfd_api"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M2-no-fallback-reap-before-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+        "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "utc": "2026-10-23T12:44:02.485796+00:00",
+      "elapsed_seconds": 0.5205530290259048,
+      "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+    },
+    {
+      "phase": "withdraw",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "tools/sessionhelper/tests/test_pce_retention.py",
+        "RetainTests.test_actual_owner_crash_without_python_pidfd_api"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M2-no-fallback-reap-withdraw-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+        "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "utc": "2026-10-23T12:44:03.006524+00:00",
+      "elapsed_seconds": 0.5269480929709971,
+      "sha256": "440eb449f9dbd823d117f4948fb5ed8724c8b0cc5859d2f30999de64dfa085fb"
+    },
+    {
+      "phase": "restore",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "tools/sessionhelper/tests/test_pce_retention.py",
+        "RetainTests.test_actual_owner_crash_without_python_pidfd_api"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M2-no-fallback-reap-restore-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+        "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "utc": "2026-10-23T12:44:03.533647+00:00",
+      "elapsed_seconds": 0.5330458380049095,
+      "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+    }
+  ],
+  "restored_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+}

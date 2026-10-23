@@ -1,0 +1,6 @@
+{
+  "initial_go_launch": "Attempted /usr/local/go/bin/go, absent on this container. No Go test started. Corrected to /usr/bin/go; complete result in go-all-valid.*.",
+  "mutation_harness_setup": "Initial M3 replacement selector matched twice; no M3 mutation executed in that attempt. Made selector unique, resumed after recorded M1/M2, then all five finished 0/1/0.",
+  "pre_fix_probe_cleanup": "Original missing-API fixture leaked its own native child; dedicated outer subreaper adopted and reaped exactly one. Fixed fixture and restored mutation runs need no rescue.",
+  "A2_scope": "Closed environment precondition issue; no A2 fix included."
+}

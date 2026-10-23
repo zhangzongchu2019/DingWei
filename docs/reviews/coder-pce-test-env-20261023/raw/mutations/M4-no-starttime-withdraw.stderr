@@ -1,0 +1,18 @@
+F
+======================================================================
+FAIL: test_crash_fixture_refuses_to_signal_unowned_or_changed_pid (__main__.RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid)
+----------------------------------------------------------------------
+AssertionError: OWNER_CRASH_FIXTURE_LEAKED
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/tests/test_pce_retention.py", line 330, in test_crash_fixture_refuses_to_signal_unowned_or_changed_pid
+    with self.assertRaisesRegex(AssertionError,'OWNER_CRASH_CHILD_CHANGED'):reap(123,456)
+AssertionError: "OWNER_CRASH_CHILD_CHANGED" does not match "OWNER_CRASH_FIXTURE_LEAKED"
+
+----------------------------------------------------------------------
+Ran 1 test in 5.013s
+
+FAILED (failures=1)
+{"test_rc": 1, "rescued_fixture_children": 0}

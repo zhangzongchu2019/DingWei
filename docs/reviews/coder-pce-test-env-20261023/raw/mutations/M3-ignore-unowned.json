@@ -1,0 +1,86 @@
+{
+  "name": "M3-ignore-unowned",
+  "file": "tools/sessionhelper/tests/pce_retention_crash_fixture.py",
+  "source_commit": "6139e4bca7650697682d89c85fa217c0459ca890",
+  "original_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39",
+  "old": "    done,_=os.waitpid(pid,os.WNOHANG)\n    if done==pid:return\n",
+  "new": "    try:done,_=os.waitpid(pid,os.WNOHANG)\n    except ChildProcessError:return\n    if done==pid:return\n",
+  "phases": [
+    {
+      "phase": "before",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "tools/sessionhelper/tests/test_pce_retention.py",
+        "RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M3-ignore-unowned-before-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+        "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "utc": "2026-10-23T12:44:48.382284+00:00",
+      "elapsed_seconds": 0.15033365203998983,
+      "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+    },
+    {
+      "phase": "withdraw",
+      "rc": 1,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "tools/sessionhelper/tests/test_pce_retention.py",
+        "RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M3-ignore-unowned-withdraw-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+        "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "utc": "2026-10-23T12:44:48.532815+00:00",
+      "elapsed_seconds": 0.15022190299350768,
+      "sha256": "79758d001614e3cbbe4d8ab3cf2491758650056af7b60faf3984f07f42c9f54e"
+    },
+    {
+      "phase": "restore",
+      "rc": 0,
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "/data/ai-dev-data/pce-test-env-evidence/owned_process_runner.py",
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "tools/sessionhelper/tests/test_pce_retention.py",
+        "RetainTests.test_crash_fixture_refuses_to_signal_unowned_or_changed_pid"
+      ],
+      "environment": {
+        "HOME": "/data/ai-dev-data/pce-test-env-evidence/mutations/M3-ignore-unowned-restore-home",
+        "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+        "TMPDIR": "/data/ai-dev-data/t",
+        "PYTHONPATH": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper",
+        "SH_UPDATE_LAUNCHER": "/data/ai-dev-data/pce-test-env-mutation/tools/sessionhelper/update_launcher/guard.py",
+        "LANG": "C.UTF-8",
+        "TZ": "UTC",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "utc": "2026-10-23T12:44:48.683189+00:00",
+      "elapsed_seconds": 0.15657226205803454,
+      "sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+    }
+  ],
+  "restored_sha256": "f4503ee35561caea7b6793ccbfa5527c7e10ddaa4f5669cacbdf2989a8666d39"
+}
