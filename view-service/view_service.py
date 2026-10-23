@@ -1128,6 +1128,12 @@ class _Handler(BaseHTTPRequestHandler):
                 subject = self._mux_subject()
             except ValueError:
                 return self.send_error(401)
+        if query.get("inbox_lag_only") == ["1"]:
+            if not VIEW_UNLOCK_V2 or subject is None:
+                return self.send_error(401)
+            disk = _agent_disk_from_hub(session, subject)
+            return self._json_response(200, {"agent_id": subject["agent_id"],
+                "inbox_lag": disk.get("inbox_lag", {"status": "unknown"})})
         if resources_only:
             if VIEW_UNLOCK_V2 and subject is None:
                 return self.send_error(401)

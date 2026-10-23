@@ -216,7 +216,7 @@ func (h *Hub) deliveryStatusForSender(ctx context.Context, c *sessionClient, id 
 	phase := "unknown"
 	if aggregate["status"] == "ok" {
 		h.mu.Lock()
-		if targetClient != nil && targetClient.inboxLag != nil && h.sessionClients[delivery.KeyID][delivery.SessionName] == targetClient {
+		if targetClient != nil && targetClient.inboxLag != nil && h.sessionClients[delivery.KeyID][delivery.SessionName] == targetClient && targetClient.inboxLag.sample.Seq == aggregate["sample_seq"] && targetClient.inboxLag.sample.Instance == aggregate["sample_instance"] {
 			if s := targetClient.inboxLag.sample.Deliveries[id]; s != "" {
 				phase = s
 			}

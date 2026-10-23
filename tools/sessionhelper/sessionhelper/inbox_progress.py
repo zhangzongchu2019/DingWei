@@ -65,18 +65,21 @@ class InboxProgress:
 
     def snapshot(self):
         with self.lock, connection(self.path) as db:
-            count, oldest = db.execute("SELECT count(*),min(received_at) FROM delivery_progress WHERE session_name=? AND stage IN ('disk_received','adapter_queued','dispatching')", (self.session,)).fetchone()
+            pending = db.execute("SELECT delivery_id,received_at FROM delivery_progress WHERE session_name=? AND stage IN ('disk_received','adapter_queued','dispatching')", (self.session,)).fetchall()
+            count = len(pending)
             unknown = db.execute("SELECT count(*) FROM delivery_progress WHERE session_name=? AND stage='unknown'", (self.session,)).fetchone()[0]
-            rows = db.execute('SELECT delivery_id,stage FROM delivery_progress WHERE session_name=? ORDER BY updated_at DESC,delivery_id LIMIT 256', (self.session,)).fetchall()
-            first = db.execute("SELECT delivery_id FROM delivery_progress WHERE session_name=? AND stage IN ('disk_received','adapter_queued','dispatching') ORDER BY received_at,delivery_id LIMIT 1", (self.session,)).fetchone()
+            rows = db.execute("SELECT delivery_id,stage FROM delivery_progress WHERE session_name=? ORDER BY CASE WHEN stage IN ('disk_received','adapter_queued','dispatching') THEN 0 ELSE 1 END,updated_at DESC,delivery_id LIMIT 256", (self.session,)).fetchall()
             uncertain = False
             age = None
-            if first:
-                mono = self.arrivals.get(first[0])
-                uncertain = mono is None
-                elapsed = self.clock() - oldest if mono is None else self.monotonic() - mono
-                uncertain |= elapsed < 0 or elapsed > 30 * 86400
-                age = int(min(30 * 86400, max(0, elapsed)) * 1000)
+            now, mono_now = self.clock(), self.monotonic()
+            for delivery_id, received_at in pending:
+                mono = self.arrivals.get(delivery_id)
+                # Choose the greatest elapsed wait, not the smallest wall stamp:
+                # a later arrival after a clock rollback must not replace oldest.
+                elapsed = now - received_at if mono is None else mono_now - mono
+                uncertain |= mono is None or elapsed < 0 or elapsed > 30 * 86400
+                wait = int(min(30 * 86400, max(0, elapsed)) * 1000)
+                age = wait if age is None else max(age, wait)
             self.seq += 1
             return {'available': not self.unavailable, 'schema': 'inbox-progress/v1', 'instance': self.instance, 'seq': self.seq,
                     'disk_not_admitted_count': count, 'dispatch_unknown_count': unknown,

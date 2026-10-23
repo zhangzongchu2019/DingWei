@@ -4582,6 +4582,8 @@
 
     // Resource snapshots never authorize writes or describe Agent/model liveness.
     const VIEW_REFRESH_MS = 300000;
+    const INBOX_LAG_REFRESH_MS = 5000;
+    let inboxLagTimer = null, inboxLagPending = null;
     const viewRefreshParams = new URLSearchParams(location.search);
     const viewRefreshInstance = viewRefreshParams.get('view_refresh_instance') || '';
     const viewRefreshEmbedded = parent !== window && /^[0-9a-f]{32}$/.test(viewRefreshInstance);
@@ -4667,6 +4669,24 @@
       resourcePending = pending;
       try { await pending; } finally { if (resourcePending === pending) resourcePending = null; }
     }
+    async function refreshInboxLag() {
+      if (!viewIsVisible() || !stats.agentID) return;
+      if (inboxLagPending) return inboxLagPending;
+      const generation = viewResourceGeneration, started = performance.now();
+      const pending = (async () => {
+        try {
+          const {body} = await viewRequestJSON(apiEp('status') + '?inbox_lag_only=1');
+          if (viewRefreshClosed || generation !== viewResourceGeneration) return;
+          inboxLagState.apply(body.agent_id === stats.agentID ? body.inbox_lag : null, stats.agentID, started, performance.now());
+          refreshInboxLagLabel();
+        } catch (error) {
+          if (!viewRefreshClosed && generation === viewResourceGeneration && (error.code === 401 || error.code === 403)) failViewAuthorization();
+          // A failed poll never renews the last sample; local expiry remains active.
+        }
+      })();
+      inboxLagPending = pending;
+      try { await pending; } finally { if (inboxLagPending === pending) inboxLagPending = null; }
+    }
     async function refreshViewAuthorization() {
       if (!viewIsVisible() || stats.authMode !== 'view_page_v2') return;
       if (authPending) return authPending;
@@ -4687,10 +4707,10 @@
     }
     function closeViewRefresh() {
       viewRefreshClosed = true; viewAuthGeneration++; viewResourceGeneration++;
-      clearInterval(standaloneResourceTimer); clearInterval(authTimer); failViewAuthorization();
+      clearInterval(standaloneResourceTimer); clearInterval(authTimer); clearInterval(inboxLagTimer); failViewAuthorization();
     }
     function startViewRefresh() {
-      clearInterval(standaloneResourceTimer); clearInterval(authTimer);
+      clearInterval(standaloneResourceTimer); clearInterval(authTimer); clearInterval(inboxLagTimer);
       if (viewRefreshEmbedded && !viewRefreshBound) {
         window.addEventListener('message', event => {
           const d = event.data;
@@ -4709,6 +4729,7 @@
       } else {
         standaloneResourceTimer = setInterval(() => { if (!document.hidden) refreshStatus(); }, VIEW_REFRESH_MS);
       }
+      inboxLagTimer = setInterval(refreshInboxLag, INBOX_LAG_REFRESH_MS);
       authTimer = setInterval(() => {
         if (stats.authMode === 'view_page_v2') refreshViewAuthorization();
         else if (viewIsVisible()) refreshLegacyAuthorization();

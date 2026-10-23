@@ -18,6 +18,17 @@ class InboxLagResource(fixtures.ViewRefreshRecorderTest):
             h=fixtures.Recorder('/status?resources_only=1',None);h._serve_status();self.assertEqual(h.code,401);fetch.assert_not_called()
             h=fixtures.Recorder('/status?resources_only=1',self.signed());h._serve_status();self.assertEqual(h.result()['agent_disk']['inbox_lag'],lag)
 
+    def test_lag_only_poll_is_subject_bound_and_does_not_sample_resources_or_cost(self):
+        lag={'agent_id':'stable','status':'ok','disk_not_admitted_count':1}
+        with patch.object(vs,'_agent_disk_from_hub',return_value={'inbox_lag':lag}) as fetch, patch.object(vs,'_read_mem',side_effect=AssertionError('unneeded resource sampling')), patch.object(vs,'_read_disk',side_effect=AssertionError('unneeded resource sampling')), patch.object(vs,'_cost_projection',side_effect=AssertionError('cost touched')):
+            for headers in (None,self.signed(True)):
+                h=fixtures.Recorder('/status?inbox_lag_only=1',headers);h._serve_status();self.assertEqual(h.code,401)
+            fetch.assert_not_called()
+            h=fixtures.Recorder('/status?inbox_lag_only=1',self.signed());h._serve_status()
+            self.assertEqual(h.result(),{'agent_id':'stable','inbox_lag':lag})
+            fetch.assert_called_once_with('agent.owner',{'agent_id':'stable','full_name':'agent.owner'})
+        self.assertEqual(fixtures.snapshot(self.cost),self.before)
+
 class InboxLagRenderer(unittest.TestCase):
     def test_actual_state_40minute_queue_then_stale_unknown_and_epoch(self):
         html=Path(__file__).with_name('renderer-canary-sse.html').read_text()

@@ -337,9 +337,12 @@ class DriverAdapter:
 
     def _settle_command(self, command: QueuedCommand, receipt) -> None:
         admitted = False
+        progress_admitted = False
         while True:
             if not admitted:
                 admitted = self._admit_from_receipt(command, receipt)
+            if not progress_admitted:
+                progress_admitted = self._observe_model_admission(command, receipt)
             if receipt.state in ("done", "failed"):
                 if not admitted:
                     self._fail_admission(command.delivery_id)
@@ -360,7 +363,7 @@ class DriverAdapter:
                     else "failed"
                 )
                 self._commands.finish(command.delivery_id, outcome)
-                observe(getattr(self, "delivery_progress", None), command.delivery_id, "terminal" if admitted else "unknown")
+                observe(getattr(self, "delivery_progress", None), command.delivery_id, "terminal" if progress_admitted else "unknown")
                 self._interrupt_confirmed.discard(key)
                 self._turn_progress.pop((command.delivery_id, command.turn_id), None)
                 print(
@@ -377,7 +380,7 @@ class DriverAdapter:
                     self._publish_terminal_failure(command, "terminal_timeout", "driver emitted no terminal event")
                     self._timed_out_turns.add(key)
                     self._commands.finish(command.delivery_id, "failed")
-                    observe(getattr(self, "delivery_progress", None), command.delivery_id, "terminal")
+                    observe(getattr(self, "delivery_progress", None), command.delivery_id, "terminal" if progress_admitted else "unknown")
                     self._turn_progress.pop(key, None)
                     print(f"[delivery][TIMEOUT] id={command.delivery_id} turn={command.turn_id}", flush=True)
                     return
@@ -409,6 +412,20 @@ class DriverAdapter:
                 return field.removeprefix("turn=").rstrip(",")
         return ""
 
+    def _observe_model_admission(self, command: QueuedCommand, receipt) -> bool:
+        """Stronger observational evidence, without changing existing ACK/dispatch.
+
+        Claude's processing/submitted receipt may precede isReplay. Keep counting
+        that delivery until the actual ACK or result, including subsequent polls.
+        These receipt forms are pinned by the real Claude parser regression.
+        """
+        if receipt.state not in ("accepted", "processing", "done") or not command.turn_id:
+            return False
+        if self._which == "claude" and receipt.state == "processing" and not str(receipt.detail).startswith("accepted,"):
+            return False
+        observe(getattr(self, "delivery_progress", None), command.delivery_id, "model_admitted")
+        return True
+
     def _admit_from_receipt(self, command: QueuedCommand, receipt) -> bool:
         if receipt.state not in ("accepted", "processing", "done"):
             return False
@@ -418,7 +435,6 @@ class DriverAdapter:
         event = self._commands.admit(command.delivery_id, turn_id)
         if event is None:
             return command.turn_id == turn_id and command.state == "admitted"
-        observe(getattr(self, "delivery_progress", None), command.delivery_id, "model_admitted")
         self._turn_progress[(command.delivery_id, turn_id)] = time.monotonic()
         self._publish_queue_event(event)
         callback, _ = self._admission_callbacks.pop(command.delivery_id, (None, None))

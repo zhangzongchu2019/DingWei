@@ -72,6 +72,31 @@ class DeliveryStatusTest(unittest.IsolatedAsyncioTestCase):
         got=await helper._make_send_handler(self.ws)('peer','synthetic',{})
         self.assertEqual(got['phase'],'unknown');self.assertTrue(got['sent']);self.assertEqual(len(self.frames),1)
 
+    async def test_real_ipc_shim_roundtrip_and_restricted_modes(self):
+        import tempfile
+        from pathlib import Path
+        from sessionhelper.ipc_listener import serve_ipc
+        calls=[]
+        async def status(args):calls.append(args);return {'ok':True,'delivery_id':DID,'phase':'adapter_queued'}
+        async def send(*args):raise AssertionError('read-only query invoked sender')
+        with tempfile.TemporaryDirectory(prefix='lag-ipc-') as root:
+            sock=str(Path(root)/'ipc.sock')
+            for mode in ('normal','upload_only','send_body_only'):
+                bound=asyncio.Event();task=asyncio.create_task(serve_ipc(sock,send,bound=bound,delivery_status_handler=status,upload_only=mode=='upload_only',send_body_only=mode=='send_body_only'))
+                try:
+                    await asyncio.wait_for(bound.wait(),2)
+                    with patch.object(mcp_shim,'_IPC_SOCK',sock):
+                        if mode=='normal':
+                            got=await asyncio.to_thread(mcp_shim._delivery_status,{'delivery_id':DID})
+                            self.assertEqual(got['phase'],'adapter_queued')
+                        else:
+                            with self.assertRaises(mcp_shim._IPCFailure):await asyncio.to_thread(mcp_shim._delivery_status,{'delivery_id':DID})
+                finally:
+                    task.cancel()
+                    try:await task
+                    except asyncio.CancelledError:pass
+        self.assertEqual(len(calls),1)
+
 class StatusToolTest(unittest.TestCase):
     def test_strict_readonly_query_no_extra_priority_or_cross_agent_selector(self):
         with patch.object(mcp_shim,'_ipc_request',return_value={'ok':True}) as ipc:
