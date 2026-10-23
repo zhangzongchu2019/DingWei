@@ -9,6 +9,16 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
+const inboxReceiptRequestKey = "inbox_receipt_v1"
+
+// Observation requests never require or change a target delivery mode.
+func inboxReceiptRequested(env model.Envelope) bool {
+	requested, ok := env.Meta[inboxReceiptRequestKey].(bool)
+	nonce := metaString(env.Meta, outboundReceiptNonceKey)
+	_, err := hex.DecodeString(nonce)
+	return ok && requested && len(nonce) == 32 && err == nil
+}
+
 const outboundReceiptRequestKey = "outbound_receipt_v1"
 const outboundReceiptNonceKey = "outbound_receipt_nonce"
 

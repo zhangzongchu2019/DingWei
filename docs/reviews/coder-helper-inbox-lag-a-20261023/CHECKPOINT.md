@@ -1,0 +1,17 @@
+# S-HELPER-INBOX-LAG A — implementation checkpoint
+
+Base: r38 `30463142e6b0696763934b3f3d9377194e55922c`. Approved design: `fec9e63d3c3ec13c490d312dd13edf63e3d6efd1:docs/design/helper-inbox-lag.md`. Branch: `review/coder/helper-inbox-lag-a`. This checkpoint is not a release or deployment approval.
+
+The helper journals disk receipt and adapter/driver stages independently of legacy processed/injected ACKs. Model admission advances only at the existing correlated driver receipt hook. Existing FIFO, ACKs, retries and model dispatch remain unchanged. Recovery labels lost in-memory queue/dispatch evidence unknown and never replays from this journal. Pending count and oldest wait are complete; per-delivery wire detail is bounded to the latest 256 entries, with omitted details reported unknown.
+
+Dedicated authenticated helper connections publish aggregate/progress snapshots, at changes and five-second heartbeats. Hub caches are connection-bound and rebuilt by the durable helper after reconnect; duplicate/old-instance/old-connection samples cannot refresh the cache. Ten seconds without a new sample yields stale without live numeric values. Missing old-helper telemetry is unsupported/unknown, never zero. Current-process wait uses monotonic time; cross-restart wall-clock estimates are bounded and marked uncertain.
+
+View reuses the existing signed, subject-bound resources endpoint and existing View authorization. Its status strip shows 已到盘未注入 N 条，最老等待 X 分钟, and independently reports unknown observations. The browser expires the numeric display locally even if polling stops. The nested resource field is agent_disk.inbox_lag to reuse the existing single authenticated resource fetch; the Hub internal resource envelope supplies a separate inbox_lag aggregate. This does not derive counts from disk metrics.
+
+send_message retains sent and gains a bounded Hub queue receipt plus read-only per-delivery phase query. The new observation-only receipt flag does not require a durable target; legacy direct delivery still occurs once and the receipt remains unknown if unprovable. The pre-existing strict desktop confirmation mode is unchanged. Status queries verify durable sender provenance and current target relationship, including membership removal and leader-only policy. They reveal only the caller's phase and aggregate target health, never other delivery IDs or message bodies. Restricted hosted MCP/IPC modes do not gain this tool. Status timeout/cancellation never resends a message.
+
+Urgent B is not implemented: no new priority input, steering, scheduling, hooks or interrupt behavior. Existing timeout cleanup remains existing behavior.
+
+Initial focused checks pass: helper progress 5 tests; status/query/tool 6; existing outbound receipt 12; View new module 7 (including inherited existing ACL fixture tests); canonical entrypoint contract 10; Hub new journal/control/ACL/socket/legacy cases plus existing confirmed outbound and disk cases. Two real authenticated sockets verify disk-stage receipt, legacy injected ACK separation and later model_admitted query. Codex/Claude adapter coverage uses controlled protocol receipts through the real common adapter hooks; it is not a native CLI urgent capability claim.
+
+Canonical adds three test files and synchronizes both count assertions: Python 66, shell 2. Full canonical, full isolated-HOME locked-venv helper, full Go and mutation red/green remain required before candidate delivery. No deployment, restart, configuration change or runtime helper command has been performed.

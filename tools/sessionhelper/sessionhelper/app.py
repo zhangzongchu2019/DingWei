@@ -247,6 +247,8 @@ class SessionHelper:
         if not env_get("SH_UPDATE_LAUNCHER", ""):
             self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
         self.adapter = self._build_adapter()
+        if self.cfg.mode == "driver":
+            self.adapter.delivery_progress = self.delivery_inbox.progress
         if self.cfg.mode=="driver" and hasattr(self.adapter,"blocker_prepare"):
             self.adapter.blocker_prepare=self._prepare_blocker_driver_wake
         from .agent_disk_metrics import BoundedDiskPublisher
@@ -378,10 +380,30 @@ class SessionHelper:
             # ⚠️ 返回值里的 sent 只表示"已写入已认证连接",**不代表 Hub 接受** ——
             # 调用方不得据此判断送达。Hub 的裁决走投递失败通知,异步回来。
             dest = to if "#" in to else session_addr(to, self.book.key_id)
+            if self.outbound_receipts.connection is ws and self.outbound_receipts.negotiated:
+                from .outbound_receipt import OutboundRejected, OutboundReceiptError
+                self.outbound_receipts.source_address = self.book.self_addr
+                began = asyncio.get_running_loop().time()
+                try:
+                    receipt = await self.outbound_receipts.send(ws, dest, body, self.book.self_addr, meta, timeout=2, observational=True)
+                except OutboundRejected:
+                    return {'sent': False, 'to': dest, 'phase': 'rejected', 'retryable': False}
+                except OutboundReceiptError:
+                    return {'sent': True, 'to': dest, 'phase': 'unknown', 'accepted_by': 'unknown', 'retryable': False}
+                result = {'sent': True, 'to': dest, 'accepted_by': 'hub',
+                          'phase': 'hub_durable_queued', **receipt,
+                          'status_ref': receipt['delivery_id']}
+                remaining = 2 - (asyncio.get_running_loop().time() - began)
+                if remaining > 0:
+                    status = await self.outbound_receipts.query_status(ws, receipt['delivery_id'], timeout=remaining)
+                    if status.get('ok'):
+                        result.update(status)
+                return result
             env = envelope(dest, body, self.book.self_addr, meta or None)
             await ws.send(json.dumps(env, ensure_ascii=False))
             print(f"[ipc_send] to={dest} bytes={len(body)}", flush=True)
-            return {"sent": True, "to": dest}
+            return {"sent": True, "to": dest, "source_message_id": env["id"],
+                    "phase": "unknown", "accepted_by": "local_helper", "retryable": False}
 
         return _send
 
@@ -725,7 +747,7 @@ class SessionHelper:
             # M2 protocol admission. This raises the bar above one-shot clients
             # such as send.py, but is not cryptographic helper identity: a
             # holder of the shared API secret can imitate this JSON message.
-            outbound_caps = self.outbound_receipts.prepare(ws) if self.cfg.mode == "desktop" else None
+            outbound_caps = self.outbound_receipts.prepare(ws) if (self.cfg.mode == "desktop" or response_headers.get("X-DW-Inbox-Progress") == "inbox-progress/v1") else None
             await ws.send(json.dumps(self.session_capabilities_envelope(outbound_caps), ensure_ascii=False))
             if self.cfg.producer:
                 recv_task = asyncio.create_task(self.recv_control_loop(ws))
@@ -756,6 +778,7 @@ class SessionHelper:
                         self.terminal_loop(ws),
                         self.session_event_loop(ws),
                         self.agent_disk_metrics_loop(ws),
+                        self.inbox_progress_loop(ws),
                         update_status_loop(self, ws),
                         self.outbox_loop(ws),
                         self.mirror_loop(ws),
@@ -1435,7 +1458,8 @@ class SessionHelper:
                             upload_handler=self._make_upload_handler(ws) if self.upload_policy.enabled else None,
                             bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only,
                             send_body_only=getattr(self.cfg, "ipc_send_body_only", False),
-                            inbox_handler=self._make_desktop_inbox_handler(ws), spec_handler=self._make_spec_write_handler(ws), task_handler=self._make_task_flow_handler(), project_context_handler=self._make_project_context_handler())
+                            inbox_handler=self._make_desktop_inbox_handler(ws), spec_handler=self._make_spec_write_handler(ws), task_handler=self._make_task_flow_handler(), project_context_handler=self._make_project_context_handler(),
+                            delivery_status_handler=self._make_delivery_status_handler(ws))
         except IPCSocketPathError:
             self._ipc_rejected_socket_path = self.cfg.mcp_ipc_sock
             # The listener already logged only the byte counts and cleared
@@ -1846,6 +1870,35 @@ class SessionHelper:
                 start_task.cancel()
                 await asyncio.gather(start_task, return_exceptions=True)
             # Cancelling to_thread's awaiter does not stop the underlying thread.
+
+    def _make_delivery_status_handler(self, ws):
+        async def status(args):
+            self.outbound_receipts.source_address = self.book.self_addr
+            return await self.outbound_receipts.query_status(ws, args['delivery_id'])
+        return status
+
+    async def inbox_progress_loop(self, ws):
+        headers = getattr(getattr(ws, 'response', None), 'headers', {})
+        if self.cfg.mode != 'driver' or headers.get('X-DW-Inbox-Progress') != 'inbox-progress/v1':
+            await asyncio.Future()
+        journal = self.delivery_inbox.progress
+        last = 0
+        while True:
+            if journal.changed.is_set() or time.monotonic() - last >= 5:
+                journal.changed.clear()
+                try:
+                    payload = await asyncio.to_thread(journal.snapshot)
+                    payload['deliveries'] = {k: v for k, v in payload['deliveries'].items()
+                                             if re.fullmatch(r'dw-dlv_[0-9a-f]{32}', k)}
+                except Exception:
+                    # A failed read cannot refresh a former good snapshot as zero.
+                    await asyncio.sleep(1)
+                    continue
+                await ws.send(json.dumps(envelope(session_addr('workpulse', self.cfg.key_id),
+                    json.dumps(payload), self.book.self_addr,
+                    {'type': 'inbox_progress_v1', 'no_mirror': True}), ensure_ascii=False))
+                last = time.monotonic()
+            await asyncio.sleep(1)
 
     async def agent_disk_metrics_loop(self, ws) -> None:
         # This is control metadata on the existing authenticated connection;

@@ -238,6 +238,17 @@ _SEND_TOOL_SCHEMA = {
 }
 
 
+@register("dw_delivery_status", "只读本人发送消息的注入阶段与对端排队摘要；当前权限撤销后拒绝，未知不代表零。", {
+    "type": "object", "properties": {"delivery_id": {"type": "string", "pattern": "^dw-dlv_[0-9a-f]{32}$"}},
+    "required": ["delivery_id"], "additionalProperties": False})
+def _delivery_status(args):
+    import re
+    if (not isinstance(args, dict) or set(args) != {'delivery_id'} or
+            not isinstance(args['delivery_id'], str) or not re.fullmatch(r'dw-dlv_[0-9a-f]{32}', args['delivery_id'])):
+        raise ValueError('invalid delivery status request')
+    return _ipc_request({'type': 'delivery_status_v1', 'delivery_id': args['delivery_id']})
+
+
 @register("send_message", "经 DingWei hub 向队友发送消息", _SEND_TOOL_SCHEMA)
 def _send_message(args: dict[str, Any]) -> dict[str, Any]:
     """Validate and forward."""

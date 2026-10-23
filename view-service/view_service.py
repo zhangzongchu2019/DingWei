@@ -286,6 +286,8 @@ def _agent_disk_from_hub(session: str, subject) -> dict:
     disk = result.get("agent_disk")
     if not isinstance(disk, dict) or disk.get("agent_id") != agent or disk.get("source") != "helper_self_report":
         return unavailable
+    if isinstance(result.get('inbox_lag'), dict):
+        disk = dict(disk, inbox_lag=result['inbox_lag'])
     return disk
 
 

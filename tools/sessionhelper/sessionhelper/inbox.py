@@ -33,6 +33,8 @@ class DeliveryInbox:
         os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
         self._initialize()
         self._import_legacy_shared_inbox()
+        from .inbox_progress import InboxProgress
+        self.progress = InboxProgress(self.path, self.session_name)
 
     def _connect(self) -> AbstractContextManager[sqlite3.Connection]:
         return sqlite_connection(self.path, timeout=5, row_factory=sqlite3.Row)
@@ -285,7 +287,7 @@ class DeliveryInbox:
         """Persist a delivery and return (ack_state, queue_position, queue_depth)."""
         now = time.time()
         payload = json.dumps(env, ensure_ascii=False, separators=(",", ":"))
-        with self._lock, self._connect() as db:
+        with self._lock, self.progress.lock, self._connect() as db:
             row = db.execute(
                 "SELECT state,received_at FROM delivery_inbox WHERE delivery_id=? AND session_name=?",
                 (delivery_id, self.session_name),
@@ -301,6 +303,7 @@ class DeliveryInbox:
                     "INSERT INTO delivery_inbox(delivery_id,session_name,envelope_json,state,received_at,updated_at) VALUES(?,?,?,'received',?,?)",
                     (delivery_id, self.session_name, payload, now, now),
                 )
+                self.progress.accepted(db, delivery_id, now)
                 received_at = now
                 state = "received"
             else:
@@ -358,6 +361,10 @@ class DeliveryInbox:
                 (state, error or None, time.time(), delivery_id, self.session_name),
             )
 
+        if error:
+            from .inbox_progress import observe
+            observe(self.progress, delivery_id, "unknown")
+
     def release(self, delivery_id: str) -> None:
         with self._lock, self._connect() as db:
             db.execute(
@@ -382,7 +389,7 @@ class DeliveryInbox:
         helper 侧不据 message_id 二次判定(delivery_id 已唯一)。竞态:'received' 被
         claim_next 抢占后本次 UPDATE 影响 0 行 → 视为 not_cancelable(已进注入)。"""
         now = time.time()
-        with self._lock, self._connect() as db:
+        with self._lock, self.progress.lock, self._connect() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute(
                 "SELECT state FROM delivery_inbox WHERE delivery_id=? AND session_name=?",
@@ -403,6 +410,10 @@ class DeliveryInbox:
                    WHERE delivery_id=? AND session_name=? AND state='received'""",
                 (now, delivery_id, self.session_name),
             ).rowcount
+            if changed == 1:
+                db.execute("UPDATE delivery_progress SET stage='cancelled',updated_at=? WHERE session_name=? AND delivery_id=?", (now, self.session_name, delivery_id))
+                self.progress.arrivals.pop(delivery_id, None)
+                self.progress.changed.set()
             db.commit()
             if changed != 1:  # 竞态:received 已被 claim_next 抢占 → 已进注入
                 return {"result": "not_cancelable", "state": "processing"}
