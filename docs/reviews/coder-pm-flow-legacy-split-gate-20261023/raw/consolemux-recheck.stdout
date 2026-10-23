@@ -1,0 +1,65 @@
+=== RUN   TestBudgetIndependent16Execute64WaitBoundary
+    budget_components_test.go:48: component=16exec+64wait, total=80, 81st rejected, production=16exec+48wait total64 remains distinct
+--- PASS: TestBudgetIndependent16Execute64WaitBoundary (0.00s)
+=== RUN   TestBudgetExpiredAbsoluteDeadlineNeverStartsWork
+--- PASS: TestBudgetExpiredAbsoluteDeadlineNeverStartsWork (0.00s)
+=== RUN   TestBudgetCleanupOverrunFailsNewAdmissionWithoutReleasingWorker
+    budget_components_test.go:92: cleanup>50ms: budget fenced; old SQL/worker still charged; no replacement worker; no new admission
+--- PASS: TestBudgetCleanupOverrunFailsNewAdmissionWithoutReleasingWorker (0.15s)
+=== RUN   TestBudgetRealPGDeadlineAndCapacity
+    budget_evidence_test.go:70: id=30 query_end=994.956µs execution_release=996.496µs admission_release=997.156µs call_return=997.486µs relative_to_work_deadline
+    budget_evidence_test.go:70: id=3 query_end=822.053µs execution_release=823.133µs admission_release=825.003µs call_return=825.663µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000003169s query_end_relative=822.053µs return_release_relative=825.663µs
+    budget_evidence_test.go:76: work_deadline=1.00000235s query_end_relative=994.956µs return_release_relative=997.486µs
+    budget_evidence_test.go:70: id=63 query_end=951.561µs execution_release=952.871µs admission_release=953.46µs call_return=953.771µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000003289s query_end_relative=951.561µs return_release_relative=953.771µs
+    budget_evidence_test.go:70: id=50 query_end=856.279µs execution_release=857.229µs admission_release=858.069µs call_return=858.449µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000248s query_end_relative=856.279µs return_release_relative=858.449µs
+    budget_evidence_test.go:70: id=26 query_end=1.134032ms execution_release=1.134652ms admission_release=1.135252ms call_return=1.135562ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000018339s query_end_relative=1.134032ms return_release_relative=1.135562ms
+    budget_evidence_test.go:70: id=23 query_end=1.079608ms execution_release=1.080678ms admission_release=1.081658ms call_return=1.082398ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000004059s query_end_relative=1.079608ms return_release_relative=1.082398ms
+    budget_evidence_test.go:70: id=69 query_end=863.699µs execution_release=864.379µs admission_release=864.969µs call_return=865.279µs relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000381s query_end_relative=863.699µs return_release_relative=865.279µs
+    budget_evidence_test.go:70: id=4 query_end=1.025303ms execution_release=1.026263ms admission_release=1.027183ms call_return=1.027713ms relative_to_work_deadline
+    budget_evidence_test.go:70: id=20 query_end=1.15908ms execution_release=1.16042ms admission_release=1.16168ms call_return=1.16241ms relative_to_work_deadline
+    budget_evidence_test.go:70: id=19 query_end=1.204145ms execution_release=1.204805ms admission_release=1.206935ms call_return=1.207495ms relative_to_work_deadline
+    budget_evidence_test.go:70: id=29 query_end=1.222714ms execution_release=1.223044ms admission_release=1.223564ms call_return=1.224984ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000000179s query_end_relative=1.222714ms return_release_relative=1.224984ms
+    budget_evidence_test.go:70: id=34 query_end=1.044911ms execution_release=1.045921ms admission_release=1.046881ms call_return=1.047251ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000187s query_end_relative=1.044911ms return_release_relative=1.047251ms
+    budget_evidence_test.go:70: id=7 query_end=1.165619ms execution_release=1.166389ms admission_release=1.167189ms call_return=1.167649ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000018s query_end_relative=1.165619ms return_release_relative=1.167649ms
+    budget_evidence_test.go:70: id=68 query_end=1.208196ms execution_release=1.208956ms admission_release=1.209855ms call_return=1.210205ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000003829s query_end_relative=1.208196ms return_release_relative=1.210205ms
+    budget_evidence_test.go:76: work_deadline=1.000010319s query_end_relative=1.025303ms return_release_relative=1.027713ms
+    budget_evidence_test.go:76: work_deadline=1.000040116s query_end_relative=1.15908ms return_release_relative=1.16241ms
+    budget_evidence_test.go:70: id=60 query_end=1.024083ms execution_release=1.025043ms admission_release=1.025473ms call_return=1.025873ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.00000447s query_end_relative=1.024083ms return_release_relative=1.025873ms
+    budget_evidence_test.go:76: work_deadline=1.00000022s query_end_relative=1.204145ms return_release_relative=1.207495ms
+    budget_evidence_test.go:70: id=5 query_end=1.15924ms execution_release=1.15978ms admission_release=1.16057ms call_return=1.16093ms relative_to_work_deadline
+    budget_evidence_test.go:76: work_deadline=1.000005829s query_end_relative=1.15924ms return_release_relative=1.16093ms
+    budget_evidence_test.go:135: cancelled_primary_sql_remaining=0 pool_reusable=true cleanup_deadline=50ms
+    budget_evidence_test.go:138: primary_pg concurrent=80 executing_peak=16 admitted_peak=64 waiting_cap=48 rejected=16 cancelled=64 max_return=1.001383058s cancellation_deadline=1s leases_not_extended=true
+--- PASS: TestBudgetRealPGDeadlineAndCapacity (1.97s)
+=== RUN   TestGateThreePhaseOutputCutoff
+=== RUN   TestGateThreePhaseOutputCutoff/before_check
+    cutoff_evidence_test.go:34: phase=before_check revoke_to_denied=2.33µs physical_writes=0
+=== RUN   TestGateThreePhaseOutputCutoff/after_check_before_write
+    cutoff_evidence_test.go:34: phase=after_check_before_write revoke_to_denied=1.009µs physical_writes=0
+=== RUN   TestGateThreePhaseOutputCutoff/in_physical_write
+    cutoff_evidence_test.go:79: phase=in_physical_write revoke_gate_wait=199.421685ms deadline=250ms
+--- PASS: TestGateThreePhaseOutputCutoff (0.26s)
+    --- PASS: TestGateThreePhaseOutputCutoff/before_check (0.00s)
+    --- PASS: TestGateThreePhaseOutputCutoff/after_check_before_write (0.00s)
+    --- PASS: TestGateThreePhaseOutputCutoff/in_physical_write (0.26s)
+=== RUN   TestGateRealHTTP1SlowPeerHasExecutableCutoff
+--- PASS: TestGateRealHTTP1SlowPeerHasExecutableCutoff (0.25s)
+=== RUN   TestGateDoesNotExtendSlowCheckOrResurrectRevokedScope
+--- PASS: TestGateDoesNotExtendSlowCheckOrResurrectRevokedScope (0.00s)
+=== RUN   TestGateRejectsExpiredSlotAndUnsupportedWriter
+--- PASS: TestGateRejectsExpiredSlotAndUnsupportedWriter (0.00s)
+=== RUN   TestPGAuthorityConcurrentOccupancyAndStaleCleanup
+--- PASS: TestPGAuthorityConcurrentOccupancyAndStaleCleanup (0.84s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/consolemux	3.479s
