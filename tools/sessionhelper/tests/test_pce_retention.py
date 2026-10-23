@@ -1,7 +1,7 @@
 """Retain real file descriptions and durable pins; never inspect online seats."""
 import copy
 from contextlib import contextmanager
-import hashlib,json,os,shutil,subprocess,sys,tempfile,threading,time,unittest
+import hashlib,json,os,runpy,shutil,subprocess,sys,tempfile,threading,time,unittest
 from pathlib import Path
 from unittest import mock
 
@@ -301,14 +301,34 @@ sys.stdin.read(1)
         self.denied('BAD_COMPLETED_PIN_ALLOWED_UPDATE',lambda:self.ret.check(self.factory),'retain_stop')
 
     def test_actual_owner_crash_does_not_reclaim_live_child(self):
+        self.actual_owner_crash(False)
+
+    def test_actual_owner_crash_without_python_pidfd_api(self):
+        self.actual_owner_crash(True)
+
+    def actual_owner_crash(self,without_pidfd):
         script = ROOT/'tests/pce_retention_crash_fixture.py'
         env={**os.environ,'PYTHONPATH':str(ROOT),'SH_UPDATE_LAUNCHER':str(ROOT/'update_launcher/guard.py')}
-        result=subprocess.run([sys.executable,'-B',str(script)],env=env,capture_output=True,timeout=30)
+        command=[sys.executable,'-B',str(script)]
+        if without_pidfd:
+            bootstrap="import os,runpy,sys; os.__dict__.pop('pidfd_open',None); runpy.run_path(sys.argv[1],run_name='__main__')"
+            command=[sys.executable,'-B','-c',bootstrap,str(script)]
+        result=subprocess.run(command,env=env,capture_output=True,timeout=30)
         self.assertEqual(result.returncode,0,'OWNER_CRASH_RECLAIMED_RUNTIME '+result.stderr.decode(errors='replace'))
         data=json.loads(result.stdout)
         self.assertTrue(data['native_survived_owner'],'OWNER_CRASH_RECLAIMED_RUNTIME')
         self.assertTrue(data['pin_retained'],'OWNER_CRASH_RECLAIMED_RUNTIME')
         self.assertTrue(data['child_reaped'],'OWNER_CRASH_FIXTURE_LEAKED')
+
+    def test_crash_fixture_refuses_to_signal_unowned_or_changed_pid(self):
+        fixture=runpy.run_path(str(ROOT/'tests/pce_retention_crash_fixture.py'))
+        reap=fixture['reap_owned_child']
+        with mock.patch.object(os,'waitpid',side_effect=ChildProcessError),mock.patch.object(os,'kill') as kill:
+            with self.assertRaises(ChildProcessError):reap(123,456)
+            kill.assert_not_called()
+        with mock.patch.object(os,'waitpid',return_value=(0,0)),mock.patch.dict(reap.__globals__,process_starttime=lambda pid:789),mock.patch.object(os,'kill') as kill:
+            with self.assertRaisesRegex(AssertionError,'OWNER_CRASH_CHILD_CHANGED'):reap(123,456)
+            kill.assert_not_called()
 
     def test_no_pins_legacy_contract_unchanged(self):
         self.assertEqual(self.state.select(),(self.factory,None),'LEGACY_WITHOUT_PIN_CHANGED')
