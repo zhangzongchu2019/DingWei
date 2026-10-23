@@ -331,7 +331,7 @@ class LegacyEntryTests(unittest.TestCase):
             files[name] = b'# inert fixture\n'
         files['requirements-runtime.lock'] = b'# inert fixture lock\n'
         pins = {k: {'bytes': len(v), 'sha256': verifier.digest(v)} for k, v in files.items()}
-        manifest = {'format': 1, 'version': '0.2.3.10', 'files': pins,
+        manifest = {'format': 1, 'version': '0.2.3.11', 'files': pins,
                     'lock_sha256': verifier.digest(files['requirements-runtime.lock'])}
         artifact = self.base / 'legacy.tgz'
         def pack(values):
@@ -341,7 +341,7 @@ class LegacyEntryTests(unittest.TestCase):
                     archive.addfile(info, io.BytesIO(data))
         pack({**files, 'MANIFEST.json': json.dumps(manifest).encode()})
         meta, payload = verifier.verify(artifact, hashlib.sha256(artifact.read_bytes()).hexdigest())
-        self.assertEqual(meta['version'], '0.2.3.10')
+        self.assertEqual(meta['version'], '0.2.3.11')
         self.assertEqual(set(payload), set(files))
         # Even a pinned root MCP forwarder is still rejected by the old whitelist.
         files['sessionhelper/mcp_shim.py'] = b'# not allowed in old layout\n'
@@ -354,7 +354,7 @@ class LegacyEntryTests(unittest.TestCase):
         state = guard.State(self.update, self.factory)
         def item(slot):
             return dict(job_id='job-' + slot.name[0], release_id='release', agent_id='agent',
-                        owner_id='owner', version='0.2.3.10', sha256=slot.name)
+                        owner_id='owner', version='0.2.3.11', sha256=slot.name)
         state.arm(item(self.a)); state.select()
         self.assertEqual(self.selected(), (self.factory, True), 'TRIAL_SELECTED')
         state.confirm(item(self.a))
