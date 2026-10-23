@@ -79,5 +79,7 @@
   },
   "deployed": false,
   "B_urgent": false,
-  "review": "pending leader rereview and prodops differential cross-check"
+  "review": "pending leader rereview and prodops differential cross-check",
+  "implementation_whitespace_check_rc": 0,
+  "raw_unittest_whitespace_preserved_files": 3
 }

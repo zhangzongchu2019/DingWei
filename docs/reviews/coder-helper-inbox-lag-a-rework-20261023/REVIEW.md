@@ -41,3 +41,5 @@ R1 三刀分别撤掉计数 scope、当前 unknown 标签、未处理历史恢�
 | 原129 SHA 全 OK | rc0 | 0.008 |
 
 新的七刀逐项为 R1-history-counter-scope、R1-current-unknown-tag、R1-unprocessed-recovery、R2-connection-generation、R2-sample-instance、R3-entry-current-check、R3-prewrite-current-check；全部 0→1→0，且源码恢复 SHA 与新执行源一致。完整记录见 raw/withdrawals。
+
+原始日志空白检查说明：实现差集 git diff b5414005 dd7794d --check 为 rc0。三个 unittest -v 子测试撤修红 stderr 的首行由 unittest 产生行尾空格，证据空白检查因此非零；保留原始字节，不作修剪，也不把日志空白检查报绿。命令、rc 与原输出以 JSON 转义保存于 raw/WHITESPACE-CHECK.json。

@@ -1,0 +1,28 @@
+{
+  "utc": "2026-10-23T11:47:29.091666+00:00",
+  "implementation_check": {
+    "command": [
+      "git",
+      "diff",
+      "b5414005",
+      "dd7794d",
+      "--check"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "raw_evidence_check": {
+    "command": [
+      "git",
+      "diff",
+      "dd7794d",
+      "f565c587e386218fb79a6b3c2aa29b35b8f3e31b",
+      "--check"
+    ],
+    "rc": 2,
+    "stdout": "docs/reviews/coder-helper-inbox-lag-a-rework-20261023/raw/withdrawals/R1-current-unknown-tag-withdrawn-red.stderr:1: trailing whitespace.\n+test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) ... \ndocs/reviews/coder-helper-inbox-lag-a-rework-20261023/raw/withdrawals/R1-history-counter-scope-withdrawn-red.stderr:1: trailing whitespace.\n+test_1500_processed_history_rows_do_not_pollute_current_unknown_count (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_1500_processed_history_rows_do_not_pollute_current_unknown_count) ... \ndocs/reviews/coder-helper-inbox-lag-a-rework-20261023/raw/withdrawals/R1-unprocessed-recovery-withdrawn-red.stderr:1: trailing whitespace.\n+test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero (tools.sessionhelper.tests.test_inbox_progress.InboxProgressTest.test_unprocessed_history_is_current_recovery_uncertainty_not_silently_zero) ... \n",
+    "stderr": ""
+  },
+  "disposition": "Preserve the original bytes in three verbose unittest subtest red stderr logs; not a source formatting failure. No claim that the raw logs pass whitespace checks."
+}
