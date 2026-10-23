@@ -47,6 +47,13 @@ class DeliveryStatusTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await self.broker.query_status(self.ws,DID,timeout=.02),{'ok':False,'status':'unknown'})
         self.assertEqual(len(self.frames),1);self.assertEqual(self.broker.status_pending,{})
 
+    async def test_status_connection_close_is_unknown_and_not_resent(self):
+        from websockets.exceptions import ConnectionClosedError
+        def closed(ws,env):raise ConnectionClosedError(None,None)
+        self.on_send=closed
+        self.assertEqual(await self.broker.query_status(self.ws,DID),{'ok':False,'status':'unknown'})
+        self.assertEqual(len(self.frames),1);self.assertEqual(self.broker.status_pending,{})
+
     async def test_cancellation_and_reconnect_never_resend(self):
         task=asyncio.create_task(self.broker.query_status(self.ws,DID));await asyncio.sleep(0);task.cancel()
         with self.assertRaises(asyncio.CancelledError):await task

@@ -388,8 +388,9 @@ class SessionHelper:
                     receipt = await self.outbound_receipts.send(ws, dest, body, self.book.self_addr, meta, timeout=2, observational=True)
                 except OutboundRejected:
                     return {'sent': False, 'to': dest, 'phase': 'rejected', 'retryable': False}
-                except OutboundReceiptError:
-                    return {'sent': True, 'to': dest, 'phase': 'unknown', 'accepted_by': 'unknown', 'retryable': False}
+                except OutboundReceiptError as exc:
+                    return {'sent': True, 'to': dest, 'source_message_id': exc.source_message_id,
+                            'phase': 'unknown', 'accepted_by': 'unknown', 'retryable': False}
                 result = {'sent': True, 'to': dest, 'accepted_by': 'hub',
                           'phase': 'hub_durable_queued', **receipt,
                           'status_ref': receipt['delivery_id']}

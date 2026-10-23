@@ -11,7 +11,9 @@ from .protocol import envelope
 
 
 class OutboundReceiptError(Exception):
-    pass
+    def __init__(self, message, *, source_message_id=""):
+        super().__init__(message)
+        self.source_message_id = source_message_id
 
 
 class OutboundRejected(OutboundReceiptError):
@@ -61,10 +63,11 @@ class OutboundReceiptBroker:
             async with asyncio.timeout(timeout):
                 await ws.send(json.dumps(env, ensure_ascii=False))
                 return await future
-        except OutboundReceiptError:
+        except OutboundReceiptError as exc:
+            exc.source_message_id = env['id']
             raise
         except Exception:
-            raise OutboundReceiptError('outbound outcome uncertain') from None
+            raise OutboundReceiptError('outbound outcome uncertain', source_message_id=env['id']) from None
         finally:
             self.pending.pop(env['id'], None)
             if not future.done():
@@ -127,7 +130,9 @@ class OutboundReceiptBroker:
             async with asyncio.timeout(timeout):
                 await ws.send(json.dumps(control))
                 return await future
-        except (TimeoutError, OSError, OutboundReceiptError):
+        except Exception:
+            # A status transport failure cannot undo a sent body or cause replay.
+            # CancelledError remains cancellation (BaseException), with cleanup below.
             return {'ok': False, 'status': 'unknown'}
         finally:
             self.status_pending.pop(nonce, None)
