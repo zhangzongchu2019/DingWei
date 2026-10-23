@@ -257,6 +257,40 @@ func TestPMSpecAcceptSuggestionsAppliesSelectedStructureAndFreezesOnce(t *testin
 	}
 }
 
+func TestPMSpecAssistResultStalesAfterWorkingDraftEdit(t *testing.T) {
+	db := newConsoleSpecStore(t)
+	ctx := context.Background()
+	now := time.Date(2026, 10, 22, 17, 0, 0, 0, time.UTC)
+	if err := db.UpsertConsoleAgent(ctx, model.ConsoleAgent{ID: "pm-stale-agent", KeyID: "pm-stale-key", SessionName: "pm-stale-agent", OwnerPrincipal: "owner-a", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	draft, err := db.SavePMSpecWorkingDraft(ctx, "owner-a", pmDraftFixture("pm-stale-assist", "original", 0, ""), now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = db.StartPMSpecAssist(ctx, draft.SpecID, "owner-a", "pm-stale-agent", "stale-run", "boot-stale", draft.Version, draft.ContentSHA256, now.Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.CompletePMSpecAssist(ctx, "stale-run", "pm-stale-agent", json.RawMessage(`{"suggestions":[{"id":"S1","kind":"acceptance","payload":{"text":"must validate"}}],"review_questions":[]}`), now.Add(2*time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.DecidePMSpecAssist(ctx, "stale-run", "owner-a", []PMSpecFlowDecision{{ItemID: "S1", Outcome: "accept"}}, now.Add(3*time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	updated, err := db.SavePMSpecWorkingDraft(ctx, "owner-a", pmDraftFixture(draft.SpecID, "edited after assist", draft.Version, draft.ContentSHA256), now.Add(4*time.Second))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.FreezePMSpecWorkingDraft(ctx, draft.SpecID, "owner-a", PMSpecFreezeInput{OperationID: "stale-freeze", ExpectedVersion: updated.Version, ExpectedSHA256: updated.ContentSHA256, Action: PMSpecAcceptSuggestions, AssistRequestID: "stale-run"}, now.Add(5*time.Second))
+	if !errors.Is(err, ErrPMSpecFlowStale) {
+		t.Fatalf("assist result for old working draft was not rejected as stale: %v", err)
+	}
+	var revisions int
+	if queryErr := db.db.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_revision WHERE spec_id=?`, draft.SpecID).Scan(&revisions); queryErr != nil || revisions != 0 {
+		t.Fatalf("stale assist created revision count=%d err=%v", revisions, queryErr)
+	}
+}
+
 func TestPMSpecReviewCompletionBlocksIncompleteAcceptanceBeforeFreeze(t *testing.T) {
 	db := newConsoleSpecStore(t)
 	ctx := context.Background()
