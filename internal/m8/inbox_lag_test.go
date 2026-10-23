@@ -45,12 +45,11 @@ func TestInboxLagFreshnessAndEpoch(t *testing.T) {
 	if h.inboxLagForClient(ctx, c)["status"] != "ok" {
 		t.Fatal("fresh sequence rejected")
 	}
-	replacement := *c
-	replacement.inboxLag = nil
-	h.sessionClients[c.keyID][c.sessionName] = &replacement
+	replacement := &sessionClient{keyID: c.keyID, sessionName: c.sessionName, metricsAgentID: c.metricsAgentID, metricsGeneration: strings.Repeat("d", 32), connSeq: c.connSeq + 1}
+	h.sessionClients[c.keyID][c.sessionName] = replacement
 	now = now.Add(time.Second)
 	h.handleInboxLagControl(ctx, c, lagEnvelope(id, 3))
-	if got := h.inboxLagForClient(ctx, &replacement); got["status"] != "unsupported" {
+	if got := h.inboxLagForClient(ctx, replacement); got["status"] != "unsupported" {
 		t.Fatal("old connection repopulated cache", got)
 	}
 }
