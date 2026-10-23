@@ -1,0 +1,15 @@
+test_cwd_fake_package_cannot_execute (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_cwd_fake_package_cannot_execute) ... FAIL
+
+======================================================================
+FAIL: test_cwd_fake_package_cannot_execute (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_cwd_fake_package_cannot_execute)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cwd-withdraw-1/tools/sessionhelper/tests/test_cwd_import.py", line 71, in test_cwd_fake_package_cannot_execute
+    self.assertEqual(p.returncode,0,p.stderr)
+AssertionError: 127 != 0 : /tmp/dw-cwd-y94cm88y/venv/bin/python: error while loading shared libraries: libprivatepy3.so.1.0: cannot open shared object file: No such file or directory
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=1)

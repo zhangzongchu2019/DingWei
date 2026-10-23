@@ -1,0 +1,23 @@
+test_already_isolated_and_internal_marker_are_idempotent (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_already_isolated_and_internal_marker_are_idempotent) ... ok
+test_bad_root_missing_package_symlink_and_mode_fail_closed_visible (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_bad_root_missing_package_symlink_and_mode_fail_closed_visible) ... ok
+test_cwd_fake_json_cannot_execute (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_cwd_fake_json_cannot_execute) ... ok
+test_cwd_fake_package_cannot_execute (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_cwd_fake_package_cannot_execute) ... ok
+test_cwd_fake_runpy_cannot_execute (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_cwd_fake_runpy_cannot_execute) ... ok
+test_cwd_fake_sitecustomize_cannot_execute (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_cwd_fake_sitecustomize_cannot_execute) ... ok
+test_environment_marker_cannot_bypass_isolation (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_environment_marker_cannot_bypass_isolation) ... ok
+test_exec_error_exits_instead_of_site_swallowing_exception (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_exec_error_exits_instead_of_site_swallowing_exception) ... ok
+test_guard_child_excludes_cwd_standard_library_shadow (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_guard_child_excludes_cwd_standard_library_shadow) ... ok
+test_hook_is_not_a_runtime_lock_or_distribution_change (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_hook_is_not_a_runtime_lock_or_distribution_change) ... ok
+test_hook_is_one_deterministic_file_and_rejects_relative_paths (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_hook_is_one_deterministic_file_and_rejects_relative_paths) ... ok
+test_install_remove_changes_only_the_hook_file (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_install_remove_changes_only_the_hook_file) ... ok
+test_legacy_mcp_entry_child_excludes_cwd_standard_library_shadow (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_legacy_mcp_entry_child_excludes_cwd_standard_library_shadow) ... ok
+test_mcp_forwarder_child_excludes_cwd_standard_library_shadow (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_mcp_forwarder_child_excludes_cwd_standard_library_shadow) ... ok
+test_mcp_module_and_supported_python_switches_isolated (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_mcp_module_and_supported_python_switches_isolated) ... ok
+test_preserves_venv_arguments_workdir_and_nonpython_environment (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_preserves_venv_arguments_workdir_and_nonpython_environment) ... ok
+test_rollback_delete_restores_original_entry_behavior (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_rollback_delete_restores_original_entry_behavior) ... ok
+test_same_venv_nonhelper_script_c_and_module_unaffected (tools.sessionhelper.tests.test_cwd_import.CwdImportTests.test_same_venv_nonhelper_script_c_and_module_unaffected) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.922s
+
+OK
