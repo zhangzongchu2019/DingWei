@@ -1,0 +1,51 @@
+{
+  "source": "3ffc121d20de8a2f3ecc39042fec5075dc3fe891",
+  "tmpdir": "/tmp/tg60pmgo",
+  "gates": [
+    {
+      "name": "go_test_all",
+      "argv": [
+        "go",
+        "test",
+        "./...",
+        "-count=1",
+        "-timeout=30m"
+      ],
+      "started_utc": "2026-10-23T02:36:32.995078+00:00",
+      "ended_utc": "2026-10-23T02:48:21.937597+00:00",
+      "rc": 0,
+      "stdout": "go_test_all.stdout.log",
+      "stderr": "go_test_all.stderr.log"
+    },
+    {
+      "name": "go_vet_all",
+      "argv": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "started_utc": "2026-10-23T02:48:21.937856+00:00",
+      "ended_utc": "2026-10-23T02:48:23.483489+00:00",
+      "rc": 0,
+      "stdout": "go_vet_all.stdout.log",
+      "stderr": "go_vet_all.stderr.log"
+    },
+    {
+      "name": "canonical",
+      "argv": [
+        "env",
+        "-i",
+        "HOME=/tmp/tg60pmcanon-home",
+        "PATH=/tmp/dw-filecard-build-venv/bin:/usr/bin:/bin",
+        "TMPDIR=/tmp/tg60pmcanon-tmp",
+        "/bin/bash",
+        "./scripts/run-build-tests.sh"
+      ],
+      "started_utc": "2026-10-23T02:48:23.483801+00:00",
+      "ended_utc": "2026-10-23T02:51:38.333171+00:00",
+      "rc": 0,
+      "stdout": "canonical.stdout.log",
+      "stderr": "canonical.stderr.log"
+    }
+  ]
+}

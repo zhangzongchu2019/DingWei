@@ -1,0 +1,16 @@
+{
+  "source": "3ffc121d20de8a2f3ecc39042fec5075dc3fe891",
+  "argv": [
+    "go",
+    "test",
+    "./internal/store",
+    "./internal/m8",
+    "-run",
+    "TestPMSpec|TestLegacyR8",
+    "-count=1",
+    "-timeout=5m"
+  ],
+  "started_utc": "2026-10-23T02:51:57.651941+00:00",
+  "ended_utc": "2026-10-23T02:51:59.410437+00:00",
+  "rc": 0
+}

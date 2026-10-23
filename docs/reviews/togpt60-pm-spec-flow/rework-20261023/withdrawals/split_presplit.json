@@ -1,0 +1,25 @@
+{
+  "name": "split_presplit",
+  "file": "internal/store/console_spec_pm_flow.go",
+  "command": [
+    "go",
+    "test",
+    "./internal/store",
+    "-run",
+    "^TestPMSpecPresplitGateIsOptInAndRequiresFinalReviewedRevision$",
+    "-count=1",
+    "-timeout=3m"
+  ],
+  "expected_red_marker": "enabled presplit accepted non-final PM flow",
+  "baseline_started_utc": "2026-10-23T02:21:53.333555Z",
+  "baseline_rc": 0,
+  "baseline_ended_utc": "2026-10-23T02:21:53.798687Z",
+  "mutated_started_utc": "2026-10-23T02:21:53.798987Z",
+  "mutated_rc": 1,
+  "mutated_ended_utc": "2026-10-23T02:21:55.756566Z",
+  "marker_present": true,
+  "restored_started_utc": "2026-10-23T02:21:55.756877Z",
+  "restored_rc": 0,
+  "restored_ended_utc": "2026-10-23T02:21:56.192365Z",
+  "pass": true
+}

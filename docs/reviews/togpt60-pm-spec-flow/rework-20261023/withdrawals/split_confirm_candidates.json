@@ -1,0 +1,25 @@
+{
+  "name": "split_confirm_candidates",
+  "file": "internal/store/console_spec_pm_flow.go",
+  "command": [
+    "go",
+    "test",
+    "./internal/store",
+    "-run",
+    "^TestPMSpecCandidateConfirmUsesSameOptInFinalizationGate$",
+    "-count=1",
+    "-timeout=3m"
+  ],
+  "expected_red_marker": "enabled candidate confirmation accepted non-final PM flow",
+  "baseline_started_utc": "2026-10-23T02:21:56.192764Z",
+  "baseline_rc": 0,
+  "baseline_ended_utc": "2026-10-23T02:21:56.657966Z",
+  "mutated_started_utc": "2026-10-23T02:21:56.658294Z",
+  "mutated_rc": 1,
+  "mutated_ended_utc": "2026-10-23T02:21:57.114581Z",
+  "marker_present": true,
+  "restored_started_utc": "2026-10-23T02:21:57.114929Z",
+  "restored_rc": 0,
+  "restored_ended_utc": "2026-10-23T02:21:57.573801Z",
+  "pass": true
+}

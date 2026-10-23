@@ -1,0 +1,25 @@
+{
+  "name": "finalize_review_complete",
+  "file": "internal/store/console_specs.go",
+  "command": [
+    "go",
+    "test",
+    "./internal/store",
+    "-run",
+    "^TestPMSpecFinalizeRejectsTransferredFlowBeforeReviewCompletion$",
+    "-count=1",
+    "-timeout=3m"
+  ],
+  "expected_red_marker": "matching frozen revision finalized before PM review completion",
+  "baseline_started_utc": "2026-10-23T02:21:43.333729Z",
+  "baseline_rc": 0,
+  "baseline_ended_utc": "2026-10-23T02:21:45.268390Z",
+  "mutated_started_utc": "2026-10-23T02:21:45.268983Z",
+  "mutated_rc": 1,
+  "mutated_ended_utc": "2026-10-23T02:21:47.217968Z",
+  "marker_present": true,
+  "restored_started_utc": "2026-10-23T02:21:47.218377Z",
+  "restored_rc": 0,
+  "restored_ended_utc": "2026-10-23T02:21:47.678274Z",
+  "pass": true
+}

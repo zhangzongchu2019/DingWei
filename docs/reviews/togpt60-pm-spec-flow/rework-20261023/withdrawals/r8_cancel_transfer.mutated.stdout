@@ -1,0 +1,5 @@
+--- FAIL: TestLegacyR8CancelTransferIsDeniedForPMSpecFlow (0.10s)
+    console_spec_agent_review_test.go:85: legacy R8 cancel-transfer accepted for PM flow spec: <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.105s
+FAIL
