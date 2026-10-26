@@ -1,0 +1,19 @@
+{
+  "name": "withdraw-trusted-header",
+  "command": [
+    "/usr/bin/go",
+    "test",
+    "-p",
+    "1",
+    "-count=1",
+    "./internal/m8",
+    "-run",
+    "^TestAgentWSAdvertisesTrustedHelperUpdateSource$",
+    "-v"
+  ],
+  "start_utc": "2026-10-26T00:23:57.036601+00:00",
+  "end_utc": "2026-10-26T00:24:04.316038+00:00",
+  "rc": 1,
+  "app_sha256": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+  "hub_sha256": "162d193c4a1dee8174a0b9d44348005f6e1d05fd3f940947d2d40546483f713e"
+}

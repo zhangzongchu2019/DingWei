@@ -1,0 +1,312 @@
+----------------------------------------------------------------------
+Ran 9 tests in 0.341s
+
+OK
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/data/ai-dev-data/t/tmpws313z8l/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+----------------------------------------------------------------------
+Ran 19 tests in 1.455s
+
+OK
+----------------------------------------------------------------------
+Ran 18 tests in 0.988s
+
+OK
+----------------------------------------------------------------------
+Ran 15 tests in 0.140s
+
+OK
+----------------------------------------------------------------------
+Ran 14 tests in 0.873s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 20.205s
+
+OK
+----------------------------------------------------------------------
+Ran 23 tests in 0.389s
+
+OK
+----------------------------------------------------------------------
+Ran 18 tests in 0.930s
+
+OK
+----------------------------------------------------------------------
+Ran 45 tests in 5.922s
+
+OK
+----------------------------------------------------------------------
+Ran 29 tests in 1.063s
+
+OK
+----------------------------------------------------------------------
+Ran 4 tests in 4.464s
+
+OK
+----------------------------------------------------------------------
+Ran 10 tests in 1.128s
+
+OK
+----------------------------------------------------------------------
+Ran 27 tests in 15.783s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.031s
+
+OK
+----------------------------------------------------------------------
+Ran 5 tests in 0.116s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.071s
+
+OK
+----------------------------------------------------------------------
+Ran 5 tests in 0.292s
+
+OK
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK
+----------------------------------------------------------------------
+Ran 19 tests in 0.077s
+
+OK
+----------------------------------------------------------------------
+Ran 25 tests in 0.315s
+
+OK
+----------------------------------------------------------------------
+Ran 4 tests in 0.230s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 0.124s
+
+OK
+----------------------------------------------------------------------
+Ran 4 tests in 0.054s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.634s
+
+OK
+----------------------------------------------------------------------
+Ran 12 tests in 29.637s
+
+OK
+----------------------------------------------------------------------
+Ran 16 tests in 1.465s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.656s
+
+OK
+----------------------------------------------------------------------
+Ran 7 tests in 0.661s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.035s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 0.581s
+
+OK
+----------------------------------------------------------------------
+Ran 18 tests in 0.945s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.018s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 0.121s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 1.221s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.046s
+
+OK
+----------------------------------------------------------------------
+Ran 7 tests in 0.007s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.139s
+
+OK
+----------------------------------------------------------------------
+Ran 13 tests in 1.851s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.546s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.077s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.180s
+
+OK
+----------------------------------------------------------------------
+Ran 15 tests in 0.793s
+
+OK
+----------------------------------------------------------------------
+Ran 20 tests in 1.235s
+
+OK
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+----------------------------------------------------------------------
+Ran 18 tests in 0.301s
+
+OK
+hosted-claude-start: invalid or missing SH_CRED_FILE
+hosted-claude-start: invalid or missing SH_CLI
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+----------------------------------------------------------------------
+Ran 34 tests in 7.864s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 0.007s
+
+OK
+----------------------------------------------------------------------
+Ran 10 tests in 0.002s
+
+OK
+/data/ai-dev-data/d2-wake-agent-id-20261026/deploy/test_generate_console_seed.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmp_57k8ggt/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/d2-wake-agent-id-20261026/deploy/test_generate_console_seed.py:116: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmpxfhaneci/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/d2-wake-agent-id-20261026/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmp5121322n/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/d2-wake-agent-id-20261026/deploy/test_generate_console_seed.py:72: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmpzsax2zjb/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/d2-wake-agent-id-20261026/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmpzsax2zjb/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/d2-wake-agent-id-20261026/deploy/test_generate_console_seed.py:100: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmpp9wczqrs/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/d2-wake-agent-id-20261026/deploy/test_generate_console_seed.py:161: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmpckdhchnl/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 14 tests in 0.649s
+
+OK
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.021s
+
+OK
+/data/ai-dev-data/d2-wake-agent-id-20261026/deploy/test_preview_console.py:78: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/d2-wake-agent-id-20261026/internal/store/console_auth.go' mode='r' encoding='utf-8'>
+  go = open(PROD_GO, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/d2-wake-agent-id-20261026/deploy/test_preview_console.py:83: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/d2-wake-agent-id-20261026/deploy/preview_console_for_principal.py' mode='r' encoding='utf-8'>
+  tool = open(TOOL, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 9 tests in 0.394s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 0.301s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+----------------------------------------------------------------------
+Ran 12 tests in 0.395s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.646s
+
+OK
+----------------------------------------------------------------------
+Ran 7 tests in 0.012s
+
+OK
+----------------------------------------------------------------------
+Ran 13 tests in 1.906s
+
+OK
+----------------------------------------------------------------------
+Ran 40 tests in 0.029s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 0.321s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.436s
+
+OK
+----------------------------------------------------------------------
+Ran 5 tests in 0.222s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 0.094s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 1.576s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 7.057s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 0.313s
+
+OK
+----------------------------------------------------------------------
+Ran 1 test in 1.076s
+
+OK

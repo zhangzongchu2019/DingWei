@@ -1,0 +1,19 @@
+{
+  "name": "withdraw-hub-before",
+  "command": [
+    "/usr/bin/go",
+    "test",
+    "-p",
+    "1",
+    "-count=1",
+    "./internal/m8",
+    "-run",
+    "^TestAgentWSAdvertisesTrustedHelperUpdateSource$",
+    "-v"
+  ],
+  "start_utc": "2026-10-26T00:23:33.083159+00:00",
+  "end_utc": "2026-10-26T00:23:43.276097+00:00",
+  "rc": 0,
+  "app_sha256": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+  "hub_sha256": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+}

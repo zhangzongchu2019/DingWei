@@ -1,0 +1,16 @@
+{
+  "name": "withdraw-python-before",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python3",
+    "-B",
+    "-m",
+    "unittest",
+    "tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest",
+    "-v"
+  ],
+  "start_utc": "2026-10-26T00:23:32.267457+00:00",
+  "end_utc": "2026-10-26T00:23:33.082707+00:00",
+  "rc": 0,
+  "app_sha256": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+  "hub_sha256": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+}

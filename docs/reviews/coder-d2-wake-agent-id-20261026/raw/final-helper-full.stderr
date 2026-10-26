@@ -1,0 +1,171 @@
+............................................/usr/lib/python3.12/pty.py:95: DeprecationWarning: This process (pid=61151) is multi-threaded, use of forkpty() may lead to deadlocks in the child.
+  pid, fd = os.forkpty()
+.......................................[view-backfill] history unavailable thread=thread-bound error=TimeoutError
+....[view-backfill] history unavailable thread=thread-bound error=RuntimeError
+....................................................................................................................................................................../data/ai-dev-data/d2-wake-agent-id-20261026/tools/sessionhelper/tests/test_durable_agent_delivery_injects_cli.py:131: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/sh-durable-cli-gatvvwnr/cli.log' mode='r' encoding='UTF-8'>
+  self._wait(lambda: os.path.exists(self.cli_log) and body in open(self.cli_log).read(), 20,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/d2-wake-agent-id-20261026/tools/sessionhelper/tests/test_durable_agent_delivery_injects_cli.py", line 63, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+................................................................/usr/lib/python3.12/asyncio/base_events.py:726: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+....{"boot_marker":"51d348d42f754aae5b9365b003b5f8f0","isolated":0,"pid":61151,"sessionhelper_file":"/data/ai-dev-data/d2-wake-agent-id-20261026/tools/sessionhelper/sessionhelper/__init__.py","starttime":76559061,"type":"helper_boot_origin"}
+......[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001000
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:001559
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002124
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002125
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:002656
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:003657
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004220
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:004800
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=a:005368
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:001000
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:001545
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002030
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002031
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002582
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002583
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002584
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002585
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002586
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002587
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002588
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002589
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002590
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:002591
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003141
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003142
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003143
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003144
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003145
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003146
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003147
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003148
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003149
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003150
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003151
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003152
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003153
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003154
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003155
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003156
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003157
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003158
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003159
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003160
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003161
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003162
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003163
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003164
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003165
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003166
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003167
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003168
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003169
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003170
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003171
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003172
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003173
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003174
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003175
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003176
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003177
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003178
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003179
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003180
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003181
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003182
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003183
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003184
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003185
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003186
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003187
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003188
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003189
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003190
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003191
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003192
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003193
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003194
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003195
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003196
+[events][CONSUMER_SLOW] dropping event for slow consumer cursor=b:003197
+............................................................................................................................................................................................................................connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/d2-wake-agent-id-20261026/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/d2-wake-agent-id-20261026/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+./usr/lib/python3.12/asyncio/base_events.py:726: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.....................................................................................................................connection handler failed
+Traceback (most recent call last):
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/data/ai-dev-data/d2-wake-agent-id-20261026/tools/sessionhelper/tests/test_reliable_delivery_reply.py", line 164, in handler
+    async for raw in ws:
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/coder-0232-locked-venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+................................................................................../usr/lib/python3.12/pty.py:95: DeprecationWarning: This process (pid=61151) is multi-threaded, use of forkpty() may lead to deadlocks in the child.
+  pid, fd = os.forkpty()
+...................[delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions session=home targets=['home', 'zzc-home-2642'] to=['tester#FB-2642']
+[delivery][legacy_inbox] imported 2/2 pending deliveries from /data/ai-dev-data/t/tmp5dm4cr7b/sessionhelper_inbox.db into /data/ai-dev-data/t/tmp5dm4cr7b/sessionhelper_inbox-home.db session=home
+.........................................................................................................../usr/lib/python3.12/asyncio/base_events.py:726: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.................................[delivery][STALLED] id=env-c-idle idle_elapsed=91s no progress event; turn appears hung
+.[delivery][STALLED] id=env-c-tool idle_elapsed=91s no progress event; turn appears hung
+.[delivery][ABSOLUTE_TIMEOUT] id=env-c total_elapsed=901s; turn exceeded hard limit
+....[delivery][STALLED] envelope=env-x idle stalled: no progress event for 91s
+[delivery][ABSOLUTE_TIMEOUT] envelope=env-x absolute turn timeout: total runtime 901s exceeded 900s limit
+.[delivery][STALLED] envelope=env-x idle stalled: no progress event for 91s
+...[delivery][STALLED] envelope=env-o no progress event for 91s — model may be misconfigured or session stalled. Protocol receipt guarantees admission, not processing.
+[delivery][ABSOLUTE_TIMEOUT] envelope=env-o absolute turn timeout: total runtime 901s exceeded 900s limit
+.[delivery][STALLED] envelope=env-o no progress event for 91s — model may be misconfigured or session stalled. Protocol receipt guarantees admission, not processing.
+..............................................................Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/data/ai-dev-data/t/tmp3vsiffcs/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+..........
+----------------------------------------------------------------------
+Ran 989 tests in 434.137s
+
+OK

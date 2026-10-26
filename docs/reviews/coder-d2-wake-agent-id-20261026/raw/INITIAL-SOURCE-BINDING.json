@@ -1,0 +1,15 @@
+{
+  "repository": "git.code.tencent.com:wego-ai/dingwei",
+  "branch": "review/coder/d2-wake-agent-id-20261026",
+  "base": "4546d26300fc6dd9e66a4e2fd3feccc74430a9f8",
+  "source_commit": "a42c6626b1c545a4e366ca7801c94585dc3e59aa",
+  "source_tree": "66ab1f6b216d75dd274e0b91b3979aecf9b95b8f",
+  "sha256": {
+    "internal/m8/agent_ws.go": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a",
+    "internal/m8/agent_ws_test.go": "782028a877feff278a2fb109a9e52767e25bdf559582654deacead181be3f266",
+    "tools/sessionhelper/sessionhelper/app.py": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+    "tools/sessionhelper/tests/test_task_blocker.py": "37647bed6ec1cd3d52760509bc76d21a46dc5ee7ca2ba2fd234f0ea6406b309a",
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "scripts/run-build-tests.sh": "4ec1ec8125fb0826bfa1e702a5f39fd641db7690d8ac71e15f332a808f9d9ac9"
+  }
+}

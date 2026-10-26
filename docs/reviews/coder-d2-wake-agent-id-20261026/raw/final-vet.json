@@ -1,0 +1,41 @@
+{
+  "name": "final-vet",
+  "command": [
+    "/usr/bin/go",
+    "vet",
+    "-p",
+    "1",
+    "./..."
+  ],
+  "environment": {
+    "HOME": "/data/ai-dev-data/d2-wake-agent-id-20261026-evidence/final-vet-home",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "HUB_TEST_PG_EMBEDDED": "1",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3",
+    "PYTHONPATH": "/data/ai-dev-data/d2-wake-agent-id-20261026/tools/sessionhelper:/data/ai-dev-data/d2-wake-agent-id-20261026/view-service"
+  },
+  "start_utc": "2026-10-26T00:31:31.501502+00:00",
+  "end_utc": "2026-10-26T00:31:35.679808+00:00",
+  "elapsed_seconds": 4.178,
+  "rc": 0,
+  "source_commit": "152ecfa6094a6a1c6fba09090693e49a8ba202fb",
+  "source_sha256": {
+    "internal/m8/agent_ws.go": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a",
+    "internal/m8/agent_ws_test.go": "782028a877feff278a2fb109a9e52767e25bdf559582654deacead181be3f266",
+    "tools/sessionhelper/sessionhelper/app.py": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+    "tools/sessionhelper/tests/test_ipc_socket_path_isolation.py": "0b77df37ce0efac19605e1528baa153cbea4cc8bb3a00a6f806eb11b923dd674",
+    "tools/sessionhelper/tests/test_task_blocker.py": "37647bed6ec1cd3d52760509bc76d21a46dc5ee7ca2ba2fd234f0ea6406b309a",
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "scripts/run-build-tests.sh": "4ec1ec8125fb0826bfa1e702a5f39fd641db7690d8ac71e15f332a808f9d9ac9"
+  }
+}

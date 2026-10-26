@@ -1,0 +1,16 @@
+{
+  "name": "withdraw-missing-identity-guard",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python3",
+    "-B",
+    "-m",
+    "unittest",
+    "tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest",
+    "-v"
+  ],
+  "start_utc": "2026-10-26T00:23:46.490591+00:00",
+  "end_utc": "2026-10-26T00:23:56.270555+00:00",
+  "rc": 1,
+  "app_sha256": "571879d5b9cefb6b51470c9cda9f2844e3a94ce83d886ff4cc959d477a0182e6",
+  "hub_sha256": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+}

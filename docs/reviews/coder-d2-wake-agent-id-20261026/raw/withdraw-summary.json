@@ -1,0 +1,174 @@
+{
+  "records": [
+    {
+      "name": "withdraw-python-before",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest",
+        "-v"
+      ],
+      "start_utc": "2026-10-26T00:23:32.267457+00:00",
+      "end_utc": "2026-10-26T00:23:33.082707+00:00",
+      "rc": 0,
+      "app_sha256": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+      "hub_sha256": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+    },
+    {
+      "name": "withdraw-hub-before",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/m8",
+        "-run",
+        "^TestAgentWSAdvertisesTrustedHelperUpdateSource$",
+        "-v"
+      ],
+      "start_utc": "2026-10-26T00:23:33.083159+00:00",
+      "end_utc": "2026-10-26T00:23:43.276097+00:00",
+      "rc": 0,
+      "app_sha256": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+      "hub_sha256": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+    },
+    {
+      "name": "withdraw-worker-credential-agent-id",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest",
+        "-v"
+      ],
+      "start_utc": "2026-10-26T00:23:43.277270+00:00",
+      "end_utc": "2026-10-26T00:23:44.092377+00:00",
+      "rc": 1,
+      "app_sha256": "5f72e135f9acc4d1a32b1fce5300271a65f3765394a1392a3bf2bc902932f9a6",
+      "hub_sha256": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+    },
+    {
+      "name": "withdraw-worker-credential-agent-id-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest",
+        "-v"
+      ],
+      "start_utc": "2026-10-26T00:23:44.092964+00:00",
+      "end_utc": "2026-10-26T00:23:44.857936+00:00",
+      "rc": 0,
+      "app_sha256": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+      "hub_sha256": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+    },
+    {
+      "name": "withdraw-driver-credential-agent-id",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest",
+        "-v"
+      ],
+      "start_utc": "2026-10-26T00:23:44.858840+00:00",
+      "end_utc": "2026-10-26T00:23:45.674042+00:00",
+      "rc": 1,
+      "app_sha256": "90e050fe475547e06b38af91baf9dbb700513b39961e124591801f8f63e9b6e6",
+      "hub_sha256": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+    },
+    {
+      "name": "withdraw-driver-credential-agent-id-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest",
+        "-v"
+      ],
+      "start_utc": "2026-10-26T00:23:45.674649+00:00",
+      "end_utc": "2026-10-26T00:23:46.489708+00:00",
+      "rc": 0,
+      "app_sha256": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+      "hub_sha256": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+    },
+    {
+      "name": "withdraw-missing-identity-guard",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest",
+        "-v"
+      ],
+      "start_utc": "2026-10-26T00:23:46.490591+00:00",
+      "end_utc": "2026-10-26T00:23:56.270555+00:00",
+      "rc": 1,
+      "app_sha256": "571879d5b9cefb6b51470c9cda9f2844e3a94ce83d886ff4cc959d477a0182e6",
+      "hub_sha256": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+    },
+    {
+      "name": "withdraw-missing-identity-guard-restored",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest",
+        "-v"
+      ],
+      "start_utc": "2026-10-26T00:23:56.271283+00:00",
+      "end_utc": "2026-10-26T00:23:57.036134+00:00",
+      "rc": 0,
+      "app_sha256": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+      "hub_sha256": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+    },
+    {
+      "name": "withdraw-trusted-header",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/m8",
+        "-run",
+        "^TestAgentWSAdvertisesTrustedHelperUpdateSource$",
+        "-v"
+      ],
+      "start_utc": "2026-10-26T00:23:57.036601+00:00",
+      "end_utc": "2026-10-26T00:24:04.316038+00:00",
+      "rc": 1,
+      "app_sha256": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+      "hub_sha256": "162d193c4a1dee8174a0b9d44348005f6e1d05fd3f940947d2d40546483f713e"
+    },
+    {
+      "name": "withdraw-trusted-header-restored",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/m8",
+        "-run",
+        "^TestAgentWSAdvertisesTrustedHelperUpdateSource$",
+        "-v"
+      ],
+      "start_utc": "2026-10-26T00:24:04.316517+00:00",
+      "end_utc": "2026-10-26T00:24:06.333886+00:00",
+      "rc": 0,
+      "app_sha256": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+      "hub_sha256": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+    }
+  ],
+  "restored": true
+}

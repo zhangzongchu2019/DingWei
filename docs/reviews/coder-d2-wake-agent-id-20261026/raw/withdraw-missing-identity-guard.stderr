@@ -1,0 +1,113 @@
+test_driver_dispatch_missing_identity_never_uses_forged_envelope (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_driver_dispatch_missing_identity_never_uses_forged_envelope) ... FAIL
+test_driver_dispatch_preflight_uses_real_credential_and_bound_identity (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_driver_dispatch_preflight_uses_real_credential_and_bound_identity) ... ok
+test_missing_or_invalid_handshake_identity_is_logged_notice_only (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_missing_or_invalid_handshake_identity_is_logged_notice_only) ... 
+  test_missing_or_invalid_handshake_identity_is_logged_notice_only (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_missing_or_invalid_handshake_identity_is_logged_notice_only) (headers={}) ... ERROR
+  test_missing_or_invalid_handshake_identity_is_logged_notice_only (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_missing_or_invalid_handshake_identity_is_logged_notice_only) (headers={'X-DW-Agent-ID': ''}) ... ERROR
+  test_missing_or_invalid_handshake_identity_is_logged_notice_only (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_missing_or_invalid_handshake_identity_is_logged_notice_only) (headers={'X-DW-Agent-ID': 'bad\nidentity'}) ... ERROR
+test_non_enrolled_identity_cannot_be_bound_by_header (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_non_enrolled_identity_cannot_be_bound_by_header) ... ok
+test_real_credential_cannot_inject_other_developers_wake (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_real_credential_cannot_inject_other_developers_wake) ... ok
+test_real_credential_durable_worker_injects_fixed_wake (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_real_credential_durable_worker_injects_fixed_wake) ... ok
+test_real_credential_handshake_binds_and_disconnect_clears_identity (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_real_credential_handshake_binds_and_disconnect_clears_identity) ... ok
+
+======================================================================
+ERROR: test_missing_or_invalid_handshake_identity_is_logged_notice_only (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_missing_or_invalid_handshake_identity_is_logged_notice_only) (headers={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/data/ai-dev-data/d2-wake-agent-id-20261026-withdraw/tools/sessionhelper/tests/test_task_blocker.py", line 246, in test_missing_or_invalid_handshake_identity_is_logged_notice_only
+    acks = await self.worker_delivery(h, env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/d2-wake-agent-id-20261026-withdraw/tools/sessionhelper/tests/test_task_blocker.py", line 215, in worker_delivery
+    await asyncio.wait_for(done.wait(), 3)
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+  File "/usr/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+======================================================================
+ERROR: test_missing_or_invalid_handshake_identity_is_logged_notice_only (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_missing_or_invalid_handshake_identity_is_logged_notice_only) (headers={'X-DW-Agent-ID': ''})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/data/ai-dev-data/d2-wake-agent-id-20261026-withdraw/tools/sessionhelper/tests/test_task_blocker.py", line 246, in test_missing_or_invalid_handshake_identity_is_logged_notice_only
+    acks = await self.worker_delivery(h, env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/d2-wake-agent-id-20261026-withdraw/tools/sessionhelper/tests/test_task_blocker.py", line 215, in worker_delivery
+    await asyncio.wait_for(done.wait(), 3)
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+  File "/usr/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+======================================================================
+ERROR: test_missing_or_invalid_handshake_identity_is_logged_notice_only (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_missing_or_invalid_handshake_identity_is_logged_notice_only) (headers={'X-DW-Agent-ID': 'bad\nidentity'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/data/ai-dev-data/d2-wake-agent-id-20261026-withdraw/tools/sessionhelper/tests/test_task_blocker.py", line 246, in test_missing_or_invalid_handshake_identity_is_logged_notice_only
+    acks = await self.worker_delivery(h, env)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/d2-wake-agent-id-20261026-withdraw/tools/sessionhelper/tests/test_task_blocker.py", line 215, in worker_delivery
+    await asyncio.wait_for(done.wait(), 3)
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+  File "/usr/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+======================================================================
+FAIL: test_driver_dispatch_missing_identity_never_uses_forged_envelope (tools.sessionhelper.tests.test_task_blocker.BlockerCredentialIdentityTest.test_driver_dispatch_missing_identity_never_uses_forged_envelope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/d2-wake-agent-id-20261026-withdraw/tools/sessionhelper/tests/test_task_blocker.py", line 280, in test_driver_dispatch_missing_identity_never_uses_forged_envelope
+    self.assertEqual(reason, 'current_agent_identity_unavailable')
+AssertionError: 'current_authorization_or_read_failed' != 'current_agent_identity_unavailable'
+- current_authorization_or_read_failed
++ current_agent_identity_unavailable
+
+
+----------------------------------------------------------------------
+Ran 7 tests in 9.629s
+
+FAILED (failures=1, errors=3)
