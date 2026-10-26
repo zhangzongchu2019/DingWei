@@ -1,0 +1,33 @@
+r39.1 集成候选：D2 唤醒修复，版本 0.2.3.13（只备不部署）
+
+目标与追溯
+仓库 git.code.tencent.com:wego-ai/dingwei；分支 integration/spec5ff-r39-1-wip。
+从 integration/spec5ff-r39 精确基线 4546d26300fc6dd9e66a4e2fd3feccc74430a9f8 创建独立工作树，再 fast-forward 到定稿 D2 db0908c04eac24ad60e60fda30ce470344f80da9。原 a42c6626 产品/测试、152ecfa6 IPC 夹具、98819272 证据、dda25402 R1/R2测试、39a8307c R1/R2证据、db0908c0 已知限制提交全部按原顺序保留为祖先，没有重写或压掉原提交。
+集成版本执行源 9f0c84d1204a78443cf2f29d3c4d3a799a79846e，tree ace0e93671104db42961cadcc5dfb72506c2fd1d。其相对定稿 D2 只改下面七个版本/夹具文件；D2 的 Hub agent_ws.go 与 helper app.py 产品字节完全一致。
+
+版本位判断
+应升 0.2.3.13：相对 r39 的 0.2.3.12 候选，helper 产品字节因已定稿 D2 修复发生改变，需以新候选号区分不可变源码/制品身份。仍是同一兼容范围内的 D 位提升；不抬协议能力最低版本、不改依赖锁、不改变旧版本/授权策略。0.2.3.12 只称上一个候选，不宣称已上线。
+版本钉同步七处：VERSION、internal/version/version.go、tools/sessionhelper/sessionhelper/__init__.py；internal/version/helper_0233_test.go 独立 TestHelper02313ReleasePins；tools/sessionhelper/tests/test_legacy_mcp_entry.py 的源包/校验/升级夹具；tests/pilot-project-context/local_context_roundtrip.py 的真实 MCP initialize 版本；view-service/console-helper-update-regression.js 的迟到/重开快照版本。
+历史 lastReleased=0.2.3.2 单调断言按既有规则保留；新增候选的独立 0.2.3.13 release pin 防三处一起退回 0.2.3.12 仍被放行。M4 撤修实际证明普通同号/单调门均绿而独立 release pin 红。
+requirements-runtime.lock SHA256 仍为 5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0；canonical 清单字节未改。
+
+上线前置（本次不执行）
+必须先上提供 X-DW-Agent-ID 的 Hub，并核验合法已认证 WS 握手确实返回该可信身份头；然后再逐席升级 helper。合并/定稿/全门通过均不是上线授权，上线仍须业主另令。本席未运行 build.sh、未部署/重启/升级任何线上 helper，未改收件库、未回放历史消息。
+
+已知限制：S-HUB-PROCESSED-AS-INJECTED
+缺少可信握手身份时，新 helper 只记录明确日志并完成 notice-only processed ACK；不向 CLI 另发提示，不产生模型轮次，Hub 不按该 reason 自动补投。若顺序错误先升 helper、Hub 仍不返身份头，该轮 D2 会被降级终结，不能当自动唤醒成功。
+现有 Hub 对此前未 injected 的非 desktop processed ACK 仍发布 cli_injected 视图事件。因此身份不可得的降级在 View 看似已注入，监控不得据此判 D2 入模；需实际 CLI/模型侧证据。该 Hub 分支按组长令本轮不改，由后续项处理。
+
+验证方法
+所有门绑定同一冻结执行源、白名单环境与独立 HOME，使用锁定 venv、短 ext4 TMPDIR。Go 以 HUB_TEST_PG_STRICT=1 / SKIP_OK=0 / EMBEDDED=1 执行。canonical 即直接执行 scripts/run-build-tests.sh（原清单 python66/shell2），不为同一门重复记账。版本 fixture 的浏览器 14 格另跑，HTTP 全拦截。原始日志、UTC/命令/rc、源 SHA 见 raw；未过滤预期负例 traceback 和警告。
+五刀版本撤修使用独立 worktree：仅 VERSION 回退、仅 Go 回退、仅 helper 回退、三处齐退至 0.2.3.12、依赖锁加一字节，均须原绿→撤修红→恢复绿，并核恢复 SHA。原 D2 四项以及 R1/R2 两项撤修证据保持在原定稿目录，不冒称在本轮重新运行。
+
+最终门结果（全部绑定上述同一冻结源）
+version: rc=0, 0.214s; 2026-10-26T00:58:35.476552+00:00 -> 2026-10-26T00:58:35.690677+00:00
+helper-root: rc=0, 0.465s; 2026-10-26T00:58:35.479932+00:00 -> 2026-10-26T00:58:35.944557+00:00
+helper-full: rc=0, 434.927s; 2026-10-26T00:58:35.476630+00:00 -> 2026-10-26T01:05:50.403790+00:00
+canonical: rc=0, 156.007s; 2026-10-26T00:58:35.479833+00:00 -> 2026-10-26T01:01:11.486898+00:00
+go-all: rc=0, 654.15s; 2026-10-26T00:58:35.483866+00:00 -> 2026-10-26T01:09:29.633991+00:00
+vet: rc=0, 12.607s; 2026-10-26T00:58:35.480359+00:00 -> 2026-10-26T00:58:48.087388+00:00
+browser-version-pin: rc=0, 6.636s; 2026-10-26T00:58:35.484990+00:00 -> 2026-10-26T00:58:42.120506+00:00
+版本4项、helper989＋根目录9、canonical python66/shell2、浏览器14格、Go53测试包＋13无测试包、vet全部通过。五项版本撤修分别0→1→0，恢复后的版本/依赖锁SHA均一致。

@@ -1,0 +1,335 @@
+{
+  "records": [
+    {
+      "name": "M1-root-only-before",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 0,
+      "start_utc": "2026-10-26T00:59:27.101561+00:00",
+      "end_utc": "2026-10-26T00:59:27.315635+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M1-root-only-withdrawn",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 1,
+      "start_utc": "2026-10-26T00:59:27.316288+00:00",
+      "end_utc": "2026-10-26T00:59:27.480261+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "e1a6c2bf0b183e2de58f47ab604ab1fa3df055833e1be61cd1f5bfbf5f5f2d05",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M1-root-only-restored",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 0,
+      "start_utc": "2026-10-26T00:59:27.480847+00:00",
+      "end_utc": "2026-10-26T00:59:27.644837+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M2-go-only-before",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 0,
+      "start_utc": "2026-10-26T00:59:27.645363+00:00",
+      "end_utc": "2026-10-26T00:59:27.809350+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M2-go-only-withdrawn",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 1,
+      "start_utc": "2026-10-26T00:59:27.810079+00:00",
+      "end_utc": "2026-10-26T00:59:28.024169+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "4819e17497e458aa677c8f1ba330a716a393cf2d041d7260e1b795200d12a33e",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M2-go-only-restored",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 0,
+      "start_utc": "2026-10-26T00:59:28.024767+00:00",
+      "end_utc": "2026-10-26T00:59:28.188699+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M3-helper-only-before",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 0,
+      "start_utc": "2026-10-26T00:59:28.189322+00:00",
+      "end_utc": "2026-10-26T00:59:28.353250+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M3-helper-only-withdrawn",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 1,
+      "start_utc": "2026-10-26T00:59:28.353800+00:00",
+      "end_utc": "2026-10-26T00:59:28.517718+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "1d8b2c9c6fdac224efc5ad6355d1882e30f2e534ddd7261a8953cbf1b13e98bf",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M3-helper-only-restored",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 0,
+      "start_utc": "2026-10-26T00:59:28.518322+00:00",
+      "end_utc": "2026-10-26T00:59:28.682295+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M4-coherent-rollback-before",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 0,
+      "start_utc": "2026-10-26T00:59:28.682783+00:00",
+      "end_utc": "2026-10-26T00:59:28.846765+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M4-coherent-rollback-withdrawn",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 1,
+      "start_utc": "2026-10-26T00:59:28.847428+00:00",
+      "end_utc": "2026-10-26T00:59:29.011397+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "e1a6c2bf0b183e2de58f47ab604ab1fa3df055833e1be61cd1f5bfbf5f5f2d05",
+        "internal/version/version.go": "4819e17497e458aa677c8f1ba330a716a393cf2d041d7260e1b795200d12a33e",
+        "tools/sessionhelper/sessionhelper/__init__.py": "1d8b2c9c6fdac224efc5ad6355d1882e30f2e534ddd7261a8953cbf1b13e98bf",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M4-coherent-rollback-restored",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 0,
+      "start_utc": "2026-10-26T00:59:29.012020+00:00",
+      "end_utc": "2026-10-26T00:59:29.175934+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M5-lock-byte-change-before",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 0,
+      "start_utc": "2026-10-26T00:59:29.176462+00:00",
+      "end_utc": "2026-10-26T00:59:29.340356+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    },
+    {
+      "name": "M5-lock-byte-change-withdrawn",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 1,
+      "start_utc": "2026-10-26T00:59:29.340904+00:00",
+      "end_utc": "2026-10-26T00:59:29.504829+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "d1f023cdcaa5dd1bbf180e5efa068f5c9fd6d5f38f58155630daf5ac4f3f1094"
+      }
+    },
+    {
+      "name": "M5-lock-byte-change-restored",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "rc": 0,
+      "start_utc": "2026-10-26T00:59:29.505411+00:00",
+      "end_utc": "2026-10-26T00:59:29.669366+00:00",
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+      "sha256": {
+        "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+        "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+        "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+        "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+      }
+    }
+  ],
+  "restored": true
+}

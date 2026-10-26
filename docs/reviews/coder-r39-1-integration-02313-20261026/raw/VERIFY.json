@@ -1,0 +1,146 @@
+{
+  "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+  "source_tree": "ace0e93671104db42961cadcc5dfb72506c2fd1d",
+  "version": "0.2.3.13",
+  "base": "4546d26300fc6dd9e66a4e2fd3feccc74430a9f8",
+  "approved_d2_tip": "db0908c04eac24ad60e60fda30ce470344f80da9",
+  "original_d2_history_preserved": true,
+  "d2_product_implementation_unchanged": true,
+  "all_gate_rc_zero": true,
+  "helper_tests": 989,
+  "helper_root_tests": 9,
+  "version_tests": 4,
+  "browser_checks": 14,
+  "canonical_python": 66,
+  "canonical_shell": 2,
+  "go_packages": {
+    "tested": 53,
+    "no_tests": 13
+  },
+  "vet_rc": 0,
+  "version_withdrawals": 5,
+  "withdrawal_rcs": [
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0
+  ],
+  "source_sha_after_gates_unchanged": true,
+  "deployed": false,
+  "mandatory_rollout_order": "Hub first; verify authenticated X-DW-Agent-ID; then helper seat by seat",
+  "known_limitations": [
+    "S-HUB-PROCESSED-AS-INJECTED: missing identity processed ACK is not model admission despite View cli_injected event"
+  ],
+  "gates": {
+    "version": {
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./internal/version",
+        "-v"
+      ],
+      "start_utc": "2026-10-26T00:58:35.476552+00:00",
+      "end_utc": "2026-10-26T00:58:35.690677+00:00",
+      "elapsed_seconds": 0.214,
+      "rc": 0,
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e"
+    },
+    "helper-root": {
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper"
+      ],
+      "start_utc": "2026-10-26T00:58:35.479932+00:00",
+      "end_utc": "2026-10-26T00:58:35.944557+00:00",
+      "elapsed_seconds": 0.465,
+      "rc": 0,
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e"
+    },
+    "helper-full": {
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sessionhelper/tests"
+      ],
+      "start_utc": "2026-10-26T00:58:35.476630+00:00",
+      "end_utc": "2026-10-26T01:05:50.403790+00:00",
+      "elapsed_seconds": 434.927,
+      "rc": 0,
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e"
+    },
+    "canonical": {
+      "command": [
+        "/bin/bash",
+        "scripts/run-build-tests.sh"
+      ],
+      "start_utc": "2026-10-26T00:58:35.479833+00:00",
+      "end_utc": "2026-10-26T01:01:11.486898+00:00",
+      "elapsed_seconds": 156.007,
+      "rc": 0,
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e"
+    },
+    "go-all": {
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-p",
+        "1",
+        "-count=1",
+        "./..."
+      ],
+      "start_utc": "2026-10-26T00:58:35.483866+00:00",
+      "end_utc": "2026-10-26T01:09:29.633991+00:00",
+      "elapsed_seconds": 654.15,
+      "rc": 0,
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e"
+    },
+    "vet": {
+      "command": [
+        "/usr/bin/go",
+        "vet",
+        "-p",
+        "1",
+        "./..."
+      ],
+      "start_utc": "2026-10-26T00:58:35.480359+00:00",
+      "end_utc": "2026-10-26T00:58:48.087388+00:00",
+      "elapsed_seconds": 12.607,
+      "rc": 0,
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e"
+    },
+    "browser-version-pin": {
+      "command": [
+        "/usr/bin/node",
+        "view-service/console-helper-update-regression.js"
+      ],
+      "start_utc": "2026-10-26T00:58:35.484990+00:00",
+      "end_utc": "2026-10-26T00:58:42.120506+00:00",
+      "elapsed_seconds": 6.636,
+      "rc": 0,
+      "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e"
+    }
+  }
+}

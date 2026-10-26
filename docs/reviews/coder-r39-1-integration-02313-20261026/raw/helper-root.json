@@ -1,0 +1,52 @@
+{
+  "name": "helper-root",
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python3",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/sessionhelper"
+  ],
+  "environment": {
+    "HOME": "/data/ai-dev-data/r39-1-integration-02313-evidence/helper-root-home",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "HUB_TEST_PG_EMBEDDED": "1",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3",
+    "PYTHONPATH": "/data/ai-dev-data/r39-1-integration-02313/tools/sessionhelper:/data/ai-dev-data/r39-1-integration-02313/view-service"
+  },
+  "start_utc": "2026-10-26T00:58:35.479932+00:00",
+  "end_utc": "2026-10-26T00:58:35.944557+00:00",
+  "elapsed_seconds": 0.465,
+  "rc": 0,
+  "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+  "source_sha256": {
+    "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+    "internal/m8/agent_ws.go": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a",
+    "internal/m8/agent_ws_test.go": "30a7805bc3a9e0e556dbf482f04f8b50e16d888757e145e3239d320f88f75073",
+    "internal/m8/task_blocker_roundtrip_test.go": "19c56b8e6da10185b6f11660bf8ad0e203df177c599a92506f2cc256242d5ea3",
+    "internal/version/helper_0233_test.go": "269ac0f8e233462bf926882e6d70fbf00a7abd8a659bb386c05771ea8b24204b",
+    "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+    "tests/pilot-blocker-wake/missing_identity_ack.py": "7b5eed35b3d96baec00e27f0b5e1954954aec56d3a06a854b861e732a1e40102",
+    "tests/pilot-project-context/local_context_roundtrip.py": "a0503881b1a8ac88180fe089370577dbea9ff8932883e3b0bc8bcbaa3a924051",
+    "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+    "tools/sessionhelper/sessionhelper/app.py": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+    "tools/sessionhelper/tests/test_ipc_socket_path_isolation.py": "0b77df37ce0efac19605e1528baa153cbea4cc8bb3a00a6f806eb11b923dd674",
+    "tools/sessionhelper/tests/test_legacy_mcp_entry.py": "362e3382fd0d32e262e64c5bbed616e05c9227a19bc6e6784e3d40aa96089bef",
+    "tools/sessionhelper/tests/test_task_blocker.py": "37647bed6ec1cd3d52760509bc76d21a46dc5ee7ca2ba2fd234f0ea6406b309a",
+    "view-service/console-helper-update-regression.js": "3c722ad51f21e8f65959e9128872fd43f29a18c857c467a1f8f9f262c00e73fd",
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "scripts/run-build-tests.sh": "4ec1ec8125fb0826bfa1e702a5f39fd641db7690d8ac71e15f332a808f9d9ac9"
+  }
+}

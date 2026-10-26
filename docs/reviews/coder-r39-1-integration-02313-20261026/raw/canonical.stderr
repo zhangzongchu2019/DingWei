@@ -1,0 +1,313 @@
+----------------------------------------------------------------------
+Ran 9 tests in 0.333s
+
+OK
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/data/ai-dev-data/t/tmpju0kpuqi/state/slots/6161616161616161616161616161616161616161616161616161616161616161/sessionhelper/__main__.py", line 1, in <module>
+    raise RuntimeError("synthetic import failure")
+RuntimeError: synthetic import failure
+----------------------------------------------------------------------
+Ran 19 tests in 1.467s
+
+OK
+----------------------------------------------------------------------
+Ran 18 tests in 1.139s
+
+OK
+----------------------------------------------------------------------
+Ran 15 tests in 0.237s
+
+OK
+----------------------------------------------------------------------
+Ran 14 tests in 1.045s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 20.418s
+
+OK
+----------------------------------------------------------------------
+Ran 23 tests in 0.392s
+
+OK
+----------------------------------------------------------------------
+Ran 18 tests in 0.930s
+
+OK
+----------------------------------------------------------------------
+Ran 45 tests in 5.942s
+
+OK
+----------------------------------------------------------------------
+Ran 29 tests in 1.052s
+
+OK
+----------------------------------------------------------------------
+Ran 4 tests in 4.434s
+
+OK
+----------------------------------------------------------------------
+Ran 10 tests in 1.110s
+
+OK
+Executing <Task finished name='Task-11' coro=<AppDispatchTests.asyncSetUp() done, defined at /data/ai-dev-data/r39-1-integration-02313/tools/sessionhelper/tests/test_self_update_offer.py:335> result=None created at /usr/lib/python3.12/asyncio/runners.py:100> took 0.504 seconds
+----------------------------------------------------------------------
+Ran 27 tests in 16.064s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.031s
+
+OK
+----------------------------------------------------------------------
+Ran 5 tests in 0.118s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.073s
+
+OK
+----------------------------------------------------------------------
+Ran 5 tests in 0.292s
+
+OK
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK
+----------------------------------------------------------------------
+Ran 19 tests in 0.129s
+
+OK
+----------------------------------------------------------------------
+Ran 25 tests in 0.355s
+
+OK
+----------------------------------------------------------------------
+Ran 4 tests in 0.226s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 0.120s
+
+OK
+----------------------------------------------------------------------
+Ran 4 tests in 0.053s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.654s
+
+OK
+----------------------------------------------------------------------
+Ran 12 tests in 29.636s
+
+OK
+----------------------------------------------------------------------
+Ran 16 tests in 1.501s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.646s
+
+OK
+----------------------------------------------------------------------
+Ran 7 tests in 0.664s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.035s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 0.574s
+
+OK
+----------------------------------------------------------------------
+Ran 18 tests in 0.870s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.016s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 0.114s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 1.146s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.047s
+
+OK
+----------------------------------------------------------------------
+Ran 7 tests in 0.007s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.141s
+
+OK
+----------------------------------------------------------------------
+Ran 13 tests in 1.834s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.547s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.076s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.179s
+
+OK
+----------------------------------------------------------------------
+Ran 15 tests in 0.794s
+
+OK
+----------------------------------------------------------------------
+Ran 20 tests in 1.184s
+
+OK
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+----------------------------------------------------------------------
+Ran 18 tests in 0.283s
+
+OK
+hosted-claude-start: invalid or missing SH_CRED_FILE
+hosted-claude-start: invalid or missing SH_CLI
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+----------------------------------------------------------------------
+Ran 34 tests in 7.485s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 0.004s
+
+OK
+----------------------------------------------------------------------
+Ran 10 tests in 0.002s
+
+OK
+/data/ai-dev-data/r39-1-integration-02313/deploy/test_generate_console_seed.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmpbc8c62xe/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r39-1-integration-02313/deploy/test_generate_console_seed.py:116: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmpdihxkdoh/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r39-1-integration-02313/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmppmqxd0af/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r39-1-integration-02313/deploy/test_generate_console_seed.py:72: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmpq_269auv/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r39-1-integration-02313/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmpq_269auv/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r39-1-integration-02313/deploy/test_generate_console_seed.py:100: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmpddbu_cti/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r39-1-integration-02313/deploy/test_generate_console_seed.py:161: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/t/tmp12zl1s0j/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 14 tests in 0.621s
+
+OK
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+----------------------------------------------------------------------
+Ran 6 tests in 0.021s
+
+OK
+/data/ai-dev-data/r39-1-integration-02313/deploy/test_preview_console.py:78: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/r39-1-integration-02313/internal/store/console_auth.go' mode='r' encoding='utf-8'>
+  go = open(PROD_GO, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r39-1-integration-02313/deploy/test_preview_console.py:83: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/r39-1-integration-02313/deploy/preview_console_for_principal.py' mode='r' encoding='utf-8'>
+  tool = open(TOOL, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 9 tests in 0.379s
+
+OK
+----------------------------------------------------------------------
+Ran 11 tests in 0.296s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+----------------------------------------------------------------------
+Ran 12 tests in 0.411s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.641s
+
+OK
+----------------------------------------------------------------------
+Ran 7 tests in 0.012s
+
+OK
+----------------------------------------------------------------------
+Ran 13 tests in 1.904s
+
+OK
+----------------------------------------------------------------------
+Ran 40 tests in 0.037s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 0.323s
+
+OK
+----------------------------------------------------------------------
+Ran 8 tests in 0.388s
+
+OK
+----------------------------------------------------------------------
+Ran 5 tests in 0.190s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 0.112s
+
+OK
+----------------------------------------------------------------------
+Ran 3 tests in 1.595s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 7.013s
+
+OK
+----------------------------------------------------------------------
+Ran 9 tests in 0.306s
+
+OK
+----------------------------------------------------------------------
+Ran 1 test in 1.077s
+
+OK

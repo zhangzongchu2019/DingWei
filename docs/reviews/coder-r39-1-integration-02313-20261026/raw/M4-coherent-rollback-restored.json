@@ -1,0 +1,22 @@
+{
+  "name": "M4-coherent-rollback-restored",
+  "command": [
+    "/usr/bin/go",
+    "test",
+    "-p",
+    "1",
+    "-count=1",
+    "./internal/version",
+    "-v"
+  ],
+  "rc": 0,
+  "start_utc": "2026-10-26T00:59:29.012020+00:00",
+  "end_utc": "2026-10-26T00:59:29.175934+00:00",
+  "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+  "sha256": {
+    "VERSION": "07d82ded23cdf2bb3091db7f8ce8fbcb296e30a867131f87414d41e1b72270f1",
+    "internal/version/version.go": "c0cdf826e07308a339076ae14b279cd319fb200456d06f15f592ac541523e2a9",
+    "tools/sessionhelper/sessionhelper/__init__.py": "c5410556666884b9f5f05941b94f6e222c6b8c752fc1eb8029ad0cd464b85312",
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+  }
+}

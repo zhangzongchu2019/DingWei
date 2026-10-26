@@ -1,0 +1,22 @@
+{
+  "name": "M4-coherent-rollback-withdrawn",
+  "command": [
+    "/usr/bin/go",
+    "test",
+    "-p",
+    "1",
+    "-count=1",
+    "./internal/version",
+    "-v"
+  ],
+  "rc": 1,
+  "start_utc": "2026-10-26T00:59:28.847428+00:00",
+  "end_utc": "2026-10-26T00:59:29.011397+00:00",
+  "source_commit": "9f0c84d1204a78443cf2f29d3c4d3a799a79846e",
+  "sha256": {
+    "VERSION": "e1a6c2bf0b183e2de58f47ab604ab1fa3df055833e1be61cd1f5bfbf5f5f2d05",
+    "internal/version/version.go": "4819e17497e458aa677c8f1ba330a716a393cf2d041d7260e1b795200d12a33e",
+    "tools/sessionhelper/sessionhelper/__init__.py": "1d8b2c9c6fdac224efc5ad6355d1882e30f2e534ddd7261a8953cbf1b13e98bf",
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+  }
+}
