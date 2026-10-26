@@ -178,6 +178,57 @@ func TestAgentWS_HandshakeErrors(t *testing.T) {
 	}
 }
 
+func TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity(t *testing.T) {
+	for _, state := range []string{"missing", "malformed", "unknown", "revoked", "suspended"} {
+		t.Run(state, func(t *testing.T) {
+			e := newAgentEnv(t)
+			auth := "Bearer " + e.cred
+			switch state {
+			case "missing":
+				auth = ""
+			case "malformed":
+				auth = "Basic synthetic"
+			case "unknown":
+				auth = "Bearer dwa_" + strings.Repeat("0", 64)
+			case "revoked":
+				if _, err := e.svc.Revoke(e.ctx, "zzc", e.agID); err != nil {
+					t.Fatal(err)
+				}
+			case "suspended":
+				hi, err := e.svc.IssueHostedAgentWithNewGroup(e.ctx, "zzc", "Paused", tg(), "zzc")
+				if err != nil {
+					t.Fatal(err)
+				}
+				p, err := e.svc.Poll(e.ctx, hi.Token.ApplicationID, hi.Token.PollToken)
+				if err != nil || p.Credential == "" {
+					t.Fatal("hosted fixture credential unavailable", err)
+				}
+				if _, err = e.svc.SuspendHostedAgent(e.ctx, hi.Agent.ID, "zzc"); err != nil {
+					t.Fatal(err)
+				}
+				auth = "Bearer " + p.Credential
+			}
+			headers := http.Header{"X-DW-Agent-ID": []string{"forged"}}
+			if auth != "" {
+				headers.Set("Authorization", auth)
+			}
+			conn, resp, err := websocket.Dial(e.ctx, e.wsURL("agent_id=forged"), &websocket.DialOptions{HTTPHeader: headers})
+			if conn != nil {
+				conn.CloseNow()
+			}
+			if resp != nil && resp.Body != nil {
+				defer resp.Body.Close()
+			}
+			if err == nil || resp == nil || resp.StatusCode != http.StatusUnauthorized {
+				t.Fatalf("rejected handshake: err=%v response=%v", err, resp)
+			}
+			if values := resp.Header.Values("X-DW-Agent-ID"); len(values) != 0 {
+				t.Fatalf("unauthenticated identity header present: %v", values)
+			}
+		})
+	}
+}
+
 // V1 A5：另一个连接拿同一凭据连入 ⇒ 被拒，已在线的不掉线。
 func TestAgentWS_SecondConnectionRejectedWhileAlive(t *testing.T) {
 	e := newAgentEnv(t)
