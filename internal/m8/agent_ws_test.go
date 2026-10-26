@@ -150,13 +150,16 @@ func TestAgentWS_IdentityFromCredentialNotFromURL(t *testing.T) {
 
 func TestAgentWSAdvertisesTrustedHelperUpdateSource(t *testing.T) {
 	e := newAgentEnv(t)
-	conn, headers := e.dialWithHeaders(e.cred, "version=0.2.3.1")
+	conn, headers := e.dialWithHeaders(e.cred, "version=0.2.3.1&agent_id=forged")
 	defer conn.Close(websocket.StatusNormalClosure, "done")
 	if got, want := headers.Get("X-DW-Helper-Update"), "helper-update/v1"; got != want {
 		t.Fatalf("update capability header=%q want %q", got, want)
 	}
 	if got, want := headers.Get("X-DW-Helper-Update-Source"), "workpulse#u_zzc"; got != want {
 		t.Fatalf("update source header=%q want %q", got, want)
+	}
+	if got := headers.Get("X-DW-Agent-ID"); got != e.agID {
+		t.Fatalf("authenticated agent header=%q want %q", got, e.agID)
 	}
 }
 

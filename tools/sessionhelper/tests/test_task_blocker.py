@@ -1,5 +1,7 @@
 import asyncio
 import copy
+import contextlib
+import io
 import json
 import os
 from pathlib import Path
@@ -167,5 +169,166 @@ class BlockerNotificationModesTest(unittest.TestCase):
                     self.assertIsNotNone(claim,'BLOCKER_DRIVER_WAKE_NOT_DURABLE')
         for values in [('cli',True,False),('desktop',True,False),('driver',False,False),('driver',True,True),('driver',True,False)]:
             with self.subTest(mode=values):asyncio.run(run(*values))
+
+
+class BlockerCredentialIdentityTest(unittest.IsolatedAsyncioTestCase):
+    def helper(self, home):
+        from sessionhelper.app import SessionHelper
+        from sessionhelper.enroll import Credential
+        from sessionhelper.inbox import DeliveryInbox
+        from sessionhelper.protocol import AddressBook
+        h = SessionHelper.__new__(SessionHelper)
+        h.cfg = types.SimpleNamespace(mode='driver', ipc_upload_only=False,
+                                      ipc_send_body_only=False, ws_base='ws://127.0.0.1',
+                                      tool='codex', os_name='linux')
+        # Production credential deliberately has no agent_id. A namespace
+        # carrying that attribute hid both broken call sites in earlier tests.
+        h.enroll_credential = Credential('fixture', 'SYNTHETIC-ONLY')
+        self.assertFalse(hasattr(h.enroll_credential, 'agent_id'))
+        h.book = AddressBook('fixture', 'enrolled', '')
+        h.delivery_inbox = DeliveryInbox(str(Path(home) / 'inbox.sqlite'), session_name='fixture')
+        h.delivery_busy_acked = set()
+        h.adapter_handle_lock = asyncio.Lock()
+        h.injected = []
+
+        def inject(env, on_injected):
+            h.injected.append(env)
+            on_injected()
+            return ''
+
+        h.adapter = types.SimpleNamespace(handle_delivery=inject)
+        return h
+
+    async def worker_delivery(self, h, env):
+        sent, done = [], asyncio.Event()
+
+        async def send(text):
+            ack = json.loads(text)
+            sent.append(ack)
+            if ack['meta'].get('state') in ('processed', 'failed'):
+                done.set()
+
+        ws = types.SimpleNamespace(send=send)
+        await h.accept_delivery(ws, env)
+        worker = asyncio.create_task(h.delivery_worker_loop(ws))
+        try:
+            await asyncio.wait_for(done.wait(), 3)
+        finally:
+            worker.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await worker
+        return [x['meta'] for x in sent]
+
+    async def test_real_credential_durable_worker_injects_fixed_wake(self):
+        with tempfile.TemporaryDirectory() as home:
+            h = self.helper(home)
+            h._bind_connection_agent_identity({'X-DW-Agent-ID': 'dev'})
+            env = signal()
+            env['meta']['agent_id'] = 'forged'
+            with patch.object(api, 'blocker_request', return_value=authorized()):
+                acks = await self.worker_delivery(h, env)
+            self.assertEqual([a['state'] for a in acks], ['delivered', 'injected', 'processed'])
+            self.assertEqual(len(h.injected), 1)
+            self.assertIn('恢复条件重核', h.injected[0]['body'])
+            self.assertNotIn('UNTRUSTED_REPLY', h.injected[0]['body'])
+            self.assertNotIn('agent_id', h.injected[0]['meta'])
+
+    async def test_missing_or_invalid_handshake_identity_is_logged_notice_only(self):
+        for headers in ({}, {'X-DW-Agent-ID': ''}, {'X-DW-Agent-ID': 'bad\nidentity'}):
+            with self.subTest(headers=headers), tempfile.TemporaryDirectory() as home:
+                h = self.helper(home)
+                h._connection_agent_id = 'stale-other-connection'
+                output = io.StringIO()
+                env = signal()
+                env['meta']['agent_id'] = 'dev'
+                with contextlib.redirect_stdout(output), patch.object(api, 'blocker_request') as http:
+                    h._bind_connection_agent_identity(headers)
+                    acks = await self.worker_delivery(h, env)
+                self.assertEqual(h._connection_agent_id, '')
+                self.assertEqual(h.injected, [])
+                self.assertEqual(acks[-1]['state'], 'processed')
+                self.assertEqual(acks[-1]['reason'], 'current_agent_identity_unavailable')
+                self.assertNotIn('failed', [a['state'] for a in acks])
+                self.assertIn('notice-only downgrade', output.getvalue())
+                self.assertNotIn('SYNTHETIC-ONLY', output.getvalue())
+                http.assert_not_called()
+
+    async def test_driver_dispatch_preflight_uses_real_credential_and_bound_identity(self):
+        with tempfile.TemporaryDirectory() as home:
+            h = self.helper(home)
+            h._bind_connection_agent_identity({'X-DW-Agent-ID': 'dev'})
+            a = BlockerHelperTest().adapter(str(Path(home) / 'driver.sqlite'),
+                DeliveryReceipt(id='delivery', state='done', source='protocol', detail='fixture'))
+            a.blocker_prepare = h._prepare_blocker_driver_wake
+            BlockerJournal(a.cfg.inbox_db, 'seat').stage(signal())
+            a._restore_blocker_commands()
+            with patch.object(api, 'blocker_request', return_value=authorized()):
+                a._deliver_command(a._commands.start_next())
+            self.assertEqual(a.calls, ['deliver'])
+
+    async def test_driver_dispatch_missing_identity_never_uses_forged_envelope(self):
+        with tempfile.TemporaryDirectory() as home:
+            h = self.helper(home)
+            with contextlib.redirect_stdout(io.StringIO()):
+                h._bind_connection_agent_identity({})
+                env = signal()
+                env['agent_id'] = 'dev'
+                env['meta']['agent_id'] = 'dev'
+                with patch.object(api, 'blocker_request') as http:
+                    safe, reason = h._prepare_blocker_driver_wake(env)
+            self.assertIsNone(safe)
+            self.assertEqual(reason, 'current_agent_identity_unavailable')
+            http.assert_not_called()
+
+    async def test_non_enrolled_identity_cannot_be_bound_by_header(self):
+        with tempfile.TemporaryDirectory() as home:
+            h = self.helper(home)
+            h.enroll_credential = None
+            h._connection_agent_id = 'stale'
+            h._bind_connection_agent_identity({'X-DW-Agent-ID': 'dev'})
+            self.assertEqual(h._connection_agent_id, '')
+
+    async def test_real_credential_handshake_binds_and_disconnect_clears_identity(self):
+        for headers, expected in [({'X-DW-Agent-ID': 'dev'}, 'dev'), ({}, '')]:
+            with self.subTest(headers=headers), tempfile.TemporaryDirectory() as home:
+                h = self.helper(home)
+                h.cfg.proxy, h.cfg.debug, h.cfg.open_timeout, h.cfg.producer = '', False, 1, True
+                h._connection_agent_id = 'stale-before-connect'
+                h.provisioner = types.SimpleNamespace(confirm_update_connected=lambda: None)
+                h.session_capabilities_envelope = lambda _: {}
+                bound = []
+
+                async def produce(ws):
+                    bound.append(h._connection_agent_id)
+
+                async def receive(ws):
+                    await asyncio.Future()
+
+                h.producer_stdin_loop, h.recv_control_loop = produce, receive
+
+                class Connection:
+                    async def __aenter__(self):
+                        return types.SimpleNamespace(response=types.SimpleNamespace(headers=headers),
+                                                     send=self.send)
+
+                    async def send(self, text):
+                        pass
+
+                    async def __aexit__(self, *args):
+                        pass
+
+                with patch('websockets.connect', return_value=Connection()), contextlib.redirect_stdout(io.StringIO()):
+                    await h._run_once()
+                self.assertEqual(bound, [expected])
+                self.assertEqual(h._connection_agent_id, '')
+
+    async def test_real_credential_cannot_inject_other_developers_wake(self):
+        with tempfile.TemporaryDirectory() as home:
+            h = self.helper(home)
+            h._bind_connection_agent_identity({'X-DW-Agent-ID': 'other'})
+            with patch.object(api, 'blocker_request', return_value=authorized()):
+                safe, reason = h._prepare_blocker_driver_wake(signal())
+            self.assertIsNone(safe)
+            self.assertEqual(reason, 'superseded_or_already_rechecked')
 
 if __name__=='__main__':unittest.main()

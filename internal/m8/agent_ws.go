@@ -76,6 +76,9 @@ func (h *Hub) HandleAgentWS(w http.ResponseWriter, r *http.Request) {
 	// derive an owner key from a display name or accept a broad workpulse suffix.
 	w.Header().Set("X-DW-Helper-Update", "helper-update/v1")
 	w.Header().Set("X-DW-Helper-Update-Source", sessionAddress("workpulse", keyID))
+	// Bind helper-side wake checks to the authenticated Agent, never a message's
+	// claimed identity or a request header/query supplied by the client.
+	w.Header().Set("X-DW-Agent-ID", ag.ID)
 
 	// 同一凭据已在线（V1 A5：不顶掉在线者）：先探活旧连接；活着就拒新连接，死了才让 serveSession 换掉它。
 	h.mu.Lock()

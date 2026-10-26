@@ -209,6 +209,7 @@ class SessionHelper:
     def __init__(self, cfg: Config):
         self.cfg = cfg
         self.enroll_credential: "enroll.Credential | None" = None  # set by main() under SH_ENROLL=1
+        self._connection_agent_id = ""  # authenticated WS response, connection-scoped
         self.enroll_state_dir = ""
         self.book = AddressBook(cfg.session_name, cfg.key_id, cfg.bot_name)
         self.mirror = MirrorState(bool(cfg.mirror_to), cfg.mirror_to)
@@ -594,13 +595,27 @@ class SessionHelper:
             waiter.set_result({key: meta.get(key) for key in
                                ("ok", "token", "expires_at", "public_base_url", "session", "error")})
 
+    def _bind_connection_agent_identity(self, response_headers):
+        self._connection_agent_id = ""
+        if getattr(self, "enroll_credential", None) is None:
+            return
+        agent_id = response_headers.get("X-DW-Agent-ID", "")
+        if isinstance(agent_id, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,255}", agent_id):
+            self._connection_agent_id = agent_id
+        else:
+            print("[blocker-wake] current_agent_identity_unavailable; notice-only downgrade", flush=True)
+
     def _prepare_blocker_driver_wake(self,env):
         from .task_blocker import prepare_wake
         credential=getattr(self,"enroll_credential",None)
         if self.cfg.mode!="driver" or getattr(self.cfg,"ipc_upload_only",False) or getattr(self.cfg,"ipc_send_body_only",False):return None,"current_authorization_denied"
         if credential is None:return None,"current_authorization_or_read_failed"
+        agent_id = getattr(self, "_connection_agent_id", "")
+        if not agent_id:
+            print("[blocker-wake] current_agent_identity_unavailable; notice-only downgrade", flush=True)
+            return None, "current_agent_identity_unavailable"
         ws_url,headers=self._connection()
-        return prepare_wake(ws_url,headers,credential.agent_id,env)
+        return prepare_wake(ws_url,headers,agent_id,env)
 
     def _make_task_flow_handler(self):
         async def handle(args):
@@ -702,6 +717,7 @@ class SessionHelper:
     async def _run_once(self) -> None:
         import websockets, time
 
+        self._connection_agent_id = ""
         ws_url, headers = self._connection()
         print(f"[sessionHelper] connect {ws_url} mode={self.cfg.mode}", flush=True)
         # 代理(SH_PROXY):off/none/direct=强制直连(另清掉HTTPS_PROXY等环境变量);URL=用该代理;空=也直连——以 proxy=None 传给 websockets.connect,15.0 起 None 即不用代理、不读 HTTPS_PROXY(proxy 参数 15.0 才有,故依赖须 websockets>=15)
@@ -736,6 +752,7 @@ class SessionHelper:
             # Dedicated Agent clients use a placeholder key locally; pin the actual
             # server system address from authenticated WS response, never offer text.
             response_headers = getattr(getattr(ws, "response", None), "headers", {})
+            self._bind_connection_agent_identity(response_headers)
             self.provisioner.trusted_update_source = None
             if (getattr(self, "enroll_credential", None) is not None and
                     response_headers.get("X-DW-Helper-Update") == "helper-update/v1"):
@@ -756,6 +773,7 @@ class SessionHelper:
                     await self.producer_stdin_loop(ws)
                     await asyncio.sleep(0.1)
                 finally:
+                    self._connection_agent_id = ""
                     recv_task.cancel()
                     try:
                         await recv_task
@@ -785,6 +803,7 @@ class SessionHelper:
                         self.mirror_loop(ws),
                     ])
                 finally:
+                    self._connection_agent_id = ""
                     self.outbound_receipts.abort(ws)
                     hb.cancel()
                     if ipc_task is not None:
@@ -1296,13 +1315,11 @@ class SessionHelper:
                         asyncio.run_coroutine_threadsafe(coro, loop).result(timeout=5)
 
                 if (env.get("meta") or {}).get("kind")=="task_blocker_ready":
-                    from .task_blocker import prepare_wake
                     credential=getattr(self,"enroll_credential",None)
                     if self.cfg.mode!="driver" or credential is None:
                         safe,reason=None,"blocker_notice_only"
                     else:
-                        ws_url,headers=self._connection()
-                        safe,reason=await asyncio.to_thread(prepare_wake,ws_url,headers,credential.agent_id,env)
+                        safe,reason=await asyncio.to_thread(self._prepare_blocker_driver_wake,env)
                     if safe is None:
                         if reason=="current_authorization_or_read_failed":
                             await asyncio.to_thread(self.delivery_inbox.release,delivery_id)
