@@ -1,0 +1,39 @@
+{
+  "name": "r1r2-canonical",
+  "command": [
+    "/bin/bash",
+    "scripts/run-build-tests.sh"
+  ],
+  "environment": {
+    "HOME": "/data/ai-dev-data/d2-wake-agent-id-20261026-r1r2-evidence/r1r2-canonical-home",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/bin:/bin",
+    "TMPDIR": "/data/ai-dev-data/t",
+    "GOTMPDIR": "/data/ai-dev-data/tmp-coder-go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "HUB_TEST_PG_STRICT": "1",
+    "HUB_TEST_PG_SKIP_OK": "0",
+    "HUB_TEST_PG_EMBEDDED": "1",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3",
+    "PYTHONPATH": "/data/ai-dev-data/d2-wake-agent-id-20261026/tools/sessionhelper:/data/ai-dev-data/d2-wake-agent-id-20261026/view-service"
+  },
+  "start_utc": "2026-10-26T00:49:49.721104+00:00",
+  "end_utc": "2026-10-26T00:52:17.555584+00:00",
+  "elapsed_seconds": 147.834,
+  "rc": 0,
+  "source_commit": "dda2540227f18864debeb1a98bb834205d24ad78",
+  "source_sha256": {
+    "internal/m8/agent_ws_test.go": "30a7805bc3a9e0e556dbf482f04f8b50e16d888757e145e3239d320f88f75073",
+    "internal/m8/task_blocker_roundtrip_test.go": "19c56b8e6da10185b6f11660bf8ad0e203df177c599a92506f2cc256242d5ea3",
+    "tests/pilot-blocker-wake/missing_identity_ack.py": "7b5eed35b3d96baec00e27f0b5e1954954aec56d3a06a854b861e732a1e40102",
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "scripts/run-build-tests.sh": "4ec1ec8125fb0826bfa1e702a5f39fd641db7690d8ac71e15f332a808f9d9ac9",
+    "tools/sessionhelper/sessionhelper/app.py": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+    "tools/sessionhelper/sessionhelper/enroll.py": "3634d8cc7fb63c0a5d44592eb3485a5fa64305203abd7c6cfe438c5f00186c43",
+    "internal/m8/agent_ws.go": "ae33b7f79eeefedb81417bcc6035b6308072b6ae3981ce7687e5c3980319280a"
+  }
+}

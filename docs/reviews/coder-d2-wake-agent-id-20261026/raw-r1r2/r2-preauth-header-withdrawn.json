@@ -1,0 +1,20 @@
+{
+  "name": "r2-preauth-header-withdrawn",
+  "command": [
+    "/usr/bin/go",
+    "test",
+    "-p",
+    "1",
+    "-count=1",
+    "./internal/m8",
+    "-run",
+    "^TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity$",
+    "-v"
+  ],
+  "rc": 1,
+  "start_utc": "2026-10-26T00:51:04.212947+00:00",
+  "end_utc": "2026-10-26T00:51:11.894406+00:00",
+  "app_sha256": "d38da11a60743c5d6de9d1cd1e67f9475605e66ee81a166edb6f6cd0e568d8d5",
+  "hub_sha256": "a90b2129f2b84f37105d64b1ab9801a7b5e1ea8b0dc53c48fa20dc2af92601f0",
+  "source_commit": "dda2540227f18864debeb1a98bb834205d24ad78"
+}

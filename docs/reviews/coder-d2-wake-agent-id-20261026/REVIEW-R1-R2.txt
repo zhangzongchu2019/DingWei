@@ -1,0 +1,34 @@
+S-D2-WAKE-HELPER-FAILED：R1 / R2 追加回应
+
+交付坐标
+基于已交证据 tip 98819272328cb62302bb154e608914ee2ae03441，只追加提交，不改写历史。
+冻结追加执行源 dda2540227f18864debeb1a98bb834205d24ad78，tree b563816dcc6ca1ce8af6776ac0347cc5018491db。
+仅改 internal/m8/agent_ws_test.go、internal/m8/task_blocker_roundtrip_test.go，新增 tests/pilot-blocker-wake/missing_identity_ack.py。Hub/helper 产品代码与已交 98819272 字节不变。
+
+R1：选择 b，明确“未注入且没有后续替代送达”
+Hub 的 internal/m8/hub.go::handleSessionDeliveryAck 在 processed 分支不按 reason 生成另一条通知、不重发此投递；UpdateSessionDelivery 的 last_error 参数为空，落为 processed 并结束本次持久投递。该 reason 不保存到 last_error。非 desktop 且之前未收到 injected ACK 时，现有视图还会发布 cli_injected；该事件不能证明发生了真实模型注入。本次不修改这些既有 Hub 状态机语义。
+helper 缺少身份时只打印明确的 current_agent_identity_unavailable / notice-only downgrade 日志，持久收件箱完成并发送 processed ACK；不向 CLI 注入普通提示，也不产生 AI 轮次。这里“notice-only”只指本地记录和 ACK，并不表示向 Agent 会话另送了提示。日志和 processed 都不能当作自动唤醒 PASS。
+
+必须遵守的未来上线顺序
+必须先上线能在已认证 WS 握手返回 X-DW-Agent-ID 的 Hub，并确认合法握手确实携带可信身份头；之后才升级本修复 helper。若先升 helper、仍连接不返回身份头的旧 Hub，新 D2 会被上述降级终结，Agent 会话收不到，不会自动补投旧通知。必须在按序升级后用另行授权的新唤醒验证真实注入。本文只说明发布依赖，不授予部署或重投权限；本席未部署、未升级、未回放任何投递。
+
+R1 回归证据
+原 canonical 已选中的 TestBlockerAcrossRealHTTPHelperIPCMCP 新增 missing_identity_ack_returns_to_hub 子例，因此不改 canonical 清单也会执行。
+本地 Go Hub 产生真实 blocker 唤醒，Python 使用真实 enroll.Credential（明确无 agent_id）、真实 DeliveryInbox、accept_delivery / delivery_worker_loop 和 WebSocket。夹具故意不绑定可选身份头，模拟旧 Hub 的缺头条件，不冒称跑过旧生产 Hub。helper 实际 ACK 经 WS 回到 Hub；断言 ACK 的 type=delivery_ack、state=processed、reason=current_agent_identity_unavailable，adapter 未被调用，只有 delivered/processed 两条 ACK，无 injected ACK。Go 侧核实际 DB processed/processed_at，last_error 为空、持久投递仅一条，无第二条通知。这同时说明发送 ACK 与真实入模的边界。
+撤掉实际 helper processed ACK 的 reason，新增回环测试红；恢复后绿，0→1→0。
+
+R2：失败握手不返回身份头
+新增真实 HTTP/WebSocket 负例五格：无凭据、错误认证格式、未知凭据、已吊销、已停用。每次都带伪造的请求 X-DW-Agent-ID 和 URL agent_id，仍须 HTTP 401 且响应 Header.Values(X-DW-Agent-ID) 长度为 0（不只是值为空）。原成功握手校验仍保留，身份由认证结果取得。
+撤修把身份头写入移至认证前，五格均红；恢复后绿，0→1→0。
+
+受影响门与继承关系
+本追加仅增加测试，产品代码、helper 单测文件、版本、依赖锁和 canonical 清单均未变。原 152ecfa6 冻结源上的 helper989＋根目录9、Go全仓53测试包＋13无测试包等全门证据保留在原报告，不冒称这些是本次新跑。
+本轮重跑新增定向、受影响的 Go m8 全包（-count=1）、canonical 原清单（python66/shell2，含新子例）与全仓 vet，全部 rc0。逐门命令、UTC、源 SHA、返回码在 raw-r1r2。独立撤修树已恢复原字节。线上服务、helper、收件库均未改。
+
+r1r2-focused: rc=0, 3.875s, 2026-10-26T00:49:49.721119+00:00 -> 2026-10-26T00:49:53.595811+00:00
+
+r1r2-m8-full: rc=0, 156.549s, 2026-10-26T00:49:49.721218+00:00 -> 2026-10-26T00:52:26.270400+00:00
+
+r1r2-canonical: rc=0, 147.834s, 2026-10-26T00:49:49.721104+00:00 -> 2026-10-26T00:52:17.555584+00:00
+
+r1r2-vet: rc=0, 4.127s, 2026-10-26T00:49:49.721112+00:00 -> 2026-10-26T00:49:53.848155+00:00
