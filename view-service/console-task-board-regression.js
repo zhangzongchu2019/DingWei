@@ -25,7 +25,7 @@ const allowedMutations = new Set([
   'k10-include-offline', 'k10-drop-online-options',
   'k11-clear-offline', 'k11-drop-offline-dot',
   'k-status-invent-value', 'k-status-drop-empty-call',
-  'theme-drop-receiver',
+  'theme-drop-receiver', 'clarify-drop-retention',
 ]);
 if (!allowedMutations.has(mutation)) throw new Error(`unknown mutation: ${mutation}`);
 
@@ -62,6 +62,7 @@ const boardMutations = new Map([
   ['k-status-invent-value', ["String(task.passed_cases||0)+'/'+String(task.total_cases||1)", "'0/0'"]],
   ['k-status-drop-empty-call', ["String(task.passed_cases||0)+'/'+String(task.total_cases||1)", "''"]],
   ['theme-drop-receiver', ['dwTaskInitTheme();', '']],
+  ['clarify-drop-retention', ['clarificationSummaries.set(box.dataset.clarificationKey,box)', 'void box']],
 ]);
 for (const [name, [needle]] of boardMutations) assert.ok(board.includes(needle), `stale mutation probe ${name}`);
 if (boardMutations.has(mutation)) {
@@ -71,7 +72,7 @@ if (boardMutations.has(mutation)) {
 
 const specs = Array.from({ length: 9 }, (_, i) => ({ id: `spec-${i + 1}`, title: `Spec ${i + 1}`, state: 'final' }));
 const tasks = Array.from({ length: 21 }, (_, i) => ({
-  proposal_id: `task-${i + 1}`, title: `Task ${i + 1}`, content: `Task text ${i + 1}`,
+  proposal_id: `task-${i + 1}`, spec_id: 'spec-1', revision: 1, title: `Task ${i + 1}`, content: `Task text ${i + 1}`,
   acceptance_json: JSON.stringify([{ id: `A${i + 1}`, text: `Acceptance ${i + 1}` }]), status: 'planned', review_id: `manual:task-${i + 1}`,
 }));
 Object.assign(tasks[0], { status: 'in_progress', started_at: '2026-10-14T01:02:03Z', planned_finish_at: '2026-10-15T04:05:06Z', blocker: 'blocked-by-db', resource_coordination: 'need-test-pg' });
@@ -82,6 +83,7 @@ const agents = [
   { id: 'agent-offline', session_name: 'offline-session' },
 ];
 let developerOnline = true;
+const reads = { board: 0, questions: 0, clarifications: 0 };
 
 async function requestBody(req) {
   const chunks = [];
@@ -104,6 +106,19 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/console/agents') { sendJSON(res, { agents: [] }); return; }
   if (url.pathname === '/api/console/agent-groups') { sendJSON(res, { owned_agents: [], groups: [] }); return; }
   if (url.pathname === '/fixture/developer-offline' && req.method === 'POST') { developerOnline = false; res.writeHead(204); res.end(); return; }
+  if (url.pathname === '/api/console/questions') {
+    reads.questions += 1;
+    const taskID = url.searchParams.get('task_id');
+    sendJSON(res, { questions: [{ id: 'question-' + taskID, title: '解释 ' + taskID }] }); return;
+  }
+  if (url.pathname.match(/^\/api\/console\/questions\/question-task-\d+\/clarifications$/)) {
+    reads.clarifications += 1;
+    const taskID = url.pathname.split('/')[4].slice('question-'.length);
+    const task = tasks.find((item) => item.proposal_id === taskID);
+    sendJSON(res, { context: { revision: task.revision }, posts: [{ floor: 1, role: 'pm', kind: 'explanation', body: '可持续阅读的解释正文 ' + taskID + ' 修订 ' + task.revision }] }); return;
+  }
+  if (url.pathname === '/fixture/other-task-status' && req.method === 'POST') { tasks[1].status = 'done'; res.writeHead(204); res.end(); return; }
+  if (url.pathname === '/fixture/next-revision' && req.method === 'POST') { tasks[0].revision += 1; res.writeHead(204); res.end(); return; }
   const assignment = url.pathname.match(/^\/api\/console\/task-board\/tasks\/(task-\d+)$/);
   if (assignment && req.method === 'PATCH') {
     const body = await requestBody(req), task = tasks.find((item) => item.proposal_id === assignment[1]);
@@ -120,6 +135,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204); res.end(); return;
   }
   if (url.pathname === '/api/console/task-board') {
+    reads.board += 1;
     const specPage = Number(url.searchParams.get('spec_page') || 1);
     const taskPage = Number(url.searchParams.get('task_page') || 1);
     const selected = url.searchParams.get('spec_id') || '';
@@ -140,7 +156,7 @@ const server = http.createServer(async (req, res) => {
     }) : [];
     sendJSON(res, {
       specs: specs.slice((specPage - 1) * 8, specPage * 8), spec_page: specPage, spec_page_size: 8, spec_total_pages: 2,
-      tasks: visibleTasks, active_tasks: tasks.filter((task) => task.status === 'in_progress' || task.status === 'blocked'), agents: onlineAgents, viewer_key: 'fixture-owner', updated_at: '2026-10-14T00:00:00Z', task_page: taskPage, task_page_size: 20, task_total_pages: selected ? 2 : 1,
+      questions_available: true, tasks: visibleTasks, active_tasks: tasks.filter((task) => task.status === 'in_progress' || task.status === 'blocked'), agents: onlineAgents, viewer_key: 'fixture-owner', updated_at: '2026-10-14T00:00:00Z', task_page: taskPage, task_page_size: 20, task_total_pages: selected ? 2 : 1,
     }); return;
   }
   res.writeHead(404); res.end('not found');
@@ -184,6 +200,37 @@ async function main() {
   assert.deepStrictEqual(await frame.locator('#active-task-list tr').first().locator('td').allTextContents(), ['Task text 1','in_progress','2026-10-14T01:02:03Z','未填写/未知','未填写/未知','2026-10-15T04:05:06Z','blocked-by-db','need-test-pg'], 'A7 active row retains all eight source fields');
   assert.deepStrictEqual(await frame.locator('#active-task-list tr').nth(1).locator('td').allTextContents(), ['Task text 2','blocked','未填写/未知','未填写/未知','未填写/未知','未填写/未知','未填写/未知','未填写/未知'], 'A7 active row renders every absent field as unknown');
   assert.strictEqual((await frame.locator('#task-list').innerText()).includes('未知'), false, 'K5 no invented unknown placeholder in the task breakdown');
+  // Exercise the real five-second scheduler without freezing board updates.
+  const clarification = frame.locator('#task-list tr').first().locator('details');
+  await clarification.locator('summary').click();
+  await clarification.locator('article p').waitFor();
+  const clarificationText = await clarification.locator('div').textContent();
+  const beforeRefresh = { ...reads };
+  await page.request.post(base + '/fixture/other-task-status');
+  await page.waitForTimeout(11000);
+  assert.ok(reads.board >= beforeRefresh.board + 2, '解释区展开期间必须完成至少两个自动刷新周期');
+  assert.strictEqual(await clarification.evaluate((node) => node.open), true, '解释区展开后两个自动刷新周期仍须保持 open');
+  assert.strictEqual(await clarification.locator('div').textContent(), clarificationText, '解释区两个自动刷新周期后内容节点文本不变');
+  assert.strictEqual(reads.questions, beforeRefresh.questions, '解释区恢复不得重复请求 questions');
+  assert.strictEqual(reads.clarifications, beforeRefresh.clarifications, '解释区恢复不得重复请求 clarifications');
+  assert.match(await frame.locator('#task-list tr').nth(1).locator('td').nth(3).textContent(), /^done/, '解释区展开时其他任务行状态仍须自动刷新');
+  await clarification.locator('summary').click();
+  const beforeClosedRefresh = { ...reads };
+  await page.waitForTimeout(5500);
+  assert.ok(reads.board > beforeClosedRefresh.board, '解释区收起后仍须自动刷新任务列表');
+  assert.strictEqual(await clarification.evaluate((node) => node.open), false, '解释区收起后自动刷新仍须保持收起');
+  assert.strictEqual(await clarification.locator('div').textContent(), clarificationText, '解释区收起后刷新仍保留已载内容');
+  assert.strictEqual(reads.clarifications, beforeClosedRefresh.clarifications, '解释区收起后刷新不得重复请求 clarifications');
+  // A different revision or proposal must never inherit another explanation.
+  await page.request.post(base + '/fixture/next-revision');
+  await frame.locator('#refresh-tasks').click();
+  await clarification.locator('article').waitFor({ state: 'detached' });
+  assert.strictEqual(await clarification.evaluate((node) => node.open), false, '解释区新 revision 默认收起');
+  assert.strictEqual(await clarification.locator('div').textContent(), '', '解释区新 revision 不沿用旧内容');
+  await clarification.locator('summary').click();
+  await clarification.locator('article p').waitFor();
+  assert.match(await clarification.locator('div').innerText(), /task-1 修订 2/, '解释区新 revision 按当前修订加载');
+  assert.strictEqual(await frame.locator('#task-list tr').nth(1).locator('details div').textContent(), '', '解释区不同 proposal 不共享内容');
   await frame.locator('#edit-tasks').click();
   const firstDeveloper = frame.locator('#task-list tr').first().locator('select.developer-agent');
   assert.strictEqual(await firstDeveloper.locator('option[value="agent-dev"]').count(), 1, 'K10 online Agent appears in new assignment options');

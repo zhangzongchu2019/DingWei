@@ -1,0 +1,45 @@
+Recorded UTC: 2026-10-26T06:35:49Z
+
+S-TASKBOARD-CLARIFY-COLLAPSE
+Problem: automatic task-list refresh rebuilt each explanation details node,
+closing it and discarding loaded content while the owner was reading.
+
+Repository: git.code.tencent.com:wego-ai/dingwei
+Branch: review/coder/taskboard-clarify-keep-open-20261026
+Base: 6782e33e78e94e2713812b402ff9ddcc600dd356
+
+Change: renderTasks retains only the currently rendered explanation details
+nodes in a per-render map keyed by JSON [proposal_id, revision].
+addClarificationSummary reattaches the matching node rather than constructing
+another one, preserving open/closed state, content and any pending request.
+Rows removed by the next board response, changed revisions, and unavailable
+questions do not retain explanation nodes. No cross-page persistent cache.
+The five-second refresh and all authorization checks are unchanged.
+No page version literal added; no other product page changed.
+
+Validation:
+- go build ./... : rc 0.
+- HUB_TEST_PG_STRICT=1 HUB_TEST_PG_SKIP_OK=0 HUB_TEST_PG_EMBEDDED=1
+  go test -p 1 -count=1 ./internal/m8
+  -run 'TestConsole(TaskBoard|Tasks)|Test.*Clarification' -v : rc 0.
+  22 PASS, 1 existing K13 deferred SKIP; package 5.932s.
+- NODE_PATH=/tmp/coder-a3-playwright/node_modules
+  node view-service/console-task-board-regression.js : rc 0.
+  console task board: assertions=63 floor=44 failed=0 (K13 deferred)
+  Assertion count is emitted by the suite's live assert proxy counter.
+  The test opens a real details element, waits 11000ms (> two five-second
+  refresh periods), verifies at least two board reads, open state and exact
+  content text, and unchanged questions/clarifications request counters.
+  Another task's changed status must appear during that time.
+  It then closes the explanation, waits 5500ms and verifies continued board
+  refresh, closed state, retained text and no clarification refetch.
+  A revision change must create an empty closed summary and load the new
+  revision on user open; another proposal must not share the first content.
+- Same suite --mutate=clarify-drop-retention : expected rc 1.
+  Mutation removes the per-render node retention operation only.
+  AssertionError [ERR_ASSERTION]: 解释区展开后两个自动刷新周期仍须保持 open
+  false !== true
+  The mutation changes only the served fixture HTML, not the source file.
+
+No deployment, helper restart, sessionhelper subcommand or live DB write.
+D2 remains a separate higher-priority owner/leader-coordinated live gate.
