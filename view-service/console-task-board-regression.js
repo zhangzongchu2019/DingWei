@@ -7,7 +7,7 @@ const assert = new Proxy(assertModule, {
     return typeof value === 'function' ? (...args) => { assertionCount += 1; return value.apply(target, args); } : value;
   },
 });
-const MIN_ASSERTIONS = 44;
+const MIN_ASSERTIONS = 63;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
