@@ -5,7 +5,7 @@ import io
 import json
 import os
 import tempfile
-from types import SimpleNamespace
+from types import MethodType, SimpleNamespace
 import unittest
 from unittest import mock
 
@@ -48,6 +48,8 @@ class IPCStartupIsolationTests(unittest.IsolatedAsyncioTestCase):
 
                 helper._make_task_flow_handler = lambda: None
                 helper._make_project_context_handler = lambda: None
+                helper._bind_connection_agent_identity = MethodType(
+                    SessionHelper._bind_connection_agent_identity, helper)
 
                 async def optional_ipc(ws):
                     try:
