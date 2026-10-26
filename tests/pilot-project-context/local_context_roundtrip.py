@@ -36,7 +36,7 @@ async def main():
                      input=''.join(json.dumps(r)+'\n' for r in requests),env=env,cwd=root,text=True,capture_output=True,timeout=15)
             assert p.returncode==0 and not p.stderr, 'PC_REAL_MCP_PROCESS_FAILED'
             responses={r['id']:r for r in map(json.loads,p.stdout.splitlines()) if 'id' in r}
-            assert responses[1]['result']['serverInfo']['version']=='0.2.3.12','PC_REAL_MCP_VERSION_DRIFT'
+            assert responses[1]['result']['serverInfo']['version']=='0.2.3.13','PC_REAL_MCP_VERSION_DRIFT'
             assert any(t['name']=='project_context' for t in responses[2]['result']['tools']),'PC_REAL_MCP_TOOL_UNWIRED'
             result=responses[3]['result']
             assert not result.get('isError'), 'PC_REAL_MCP_TOOL_ERROR'
