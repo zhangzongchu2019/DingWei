@@ -12,6 +12,9 @@ helper 缺少身份时只打印明确的 current_agent_identity_unavailable / no
 必须遵守的未来上线顺序
 必须先上线能在已认证 WS 握手返回 X-DW-Agent-ID 的 Hub，并确认合法握手确实携带可信身份头；之后才升级本修复 helper。若先升 helper、仍连接不返回身份头的旧 Hub，新 D2 会被上述降级终结，Agent 会话收不到，不会自动补投旧通知。必须在按序升级后用另行授权的新唤醒验证真实注入。本文只说明发布依赖，不授予部署或重投权限；本席未部署、未升级、未回放任何投递。
 
+已知限制（S-HUB-PROCESSED-AS-INJECTED）
+身份不可得的降级 ACK 虽未注入任何提示或 AI 轮次，仍会在 View 上表现为“已注入”：Hub 在此前未 injected 的非 desktop processed 路径发布 cli_injected 视图事件。监控不可据此判定 D2 入模，必须另有实际 CLI／模型侧入模证据；本轮不改此 Hub processed 分支，也不把降级 ACK 算自动唤醒 PASS。组长已登记 S-HUB-PROCESSED-AS-INJECTED 后续处理，本次不扩大修复范围。
+
 R1 回归证据
 原 canonical 已选中的 TestBlockerAcrossRealHTTPHelperIPCMCP 新增 missing_identity_ack_returns_to_hub 子例，因此不改 canonical 清单也会执行。
 本地 Go Hub 产生真实 blocker 唤醒，Python 使用真实 enroll.Credential（明确无 agent_id）、真实 DeliveryInbox、accept_delivery / delivery_worker_loop 和 WebSocket。夹具故意不绑定可选身份头，模拟旧 Hub 的缺头条件，不冒称跑过旧生产 Hub。helper 实际 ACK 经 WS 回到 Hub；断言 ACK 的 type=delivery_ack、state=processed、reason=current_agent_identity_unavailable，adapter 未被调用，只有 delivered/processed 两条 ACK，无 injected ACK。Go 侧核实际 DB processed/processed_at，last_error 为空、持久投递仅一条，无第二条通知。这同时说明发送 ACK 与真实入模的边界。
