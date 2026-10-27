@@ -21,13 +21,24 @@ class SuiteIsolationTests(unittest.TestCase):
     def test_seat_environment_is_removed_without_reading_values(self):
         dirty = {'SH_SECRET': 'fixture', 'SH_OWNER': 'fixture',
                  'DINGWEI_REPLY_CONTEXT': 'fixture', 'PATH': '/fixture',
-                 'CODEX_HOME': '/outside-native-config'}
+                 'CODEX_HOME': '/outside-native-config',
+                 'CODEX_FUTURE_SETTING': 'fixture',
+                 'CLAUDE_FUTURE_SETTING': 'fixture',
+                 'XDG_FUTURE_SETTING': 'fixture'}
         self.assertEqual(clean_environment(dirty), {'PATH': '/fixture'})
         with mock.patch.dict(os.environ, dirty):
             with isolated_environment('codex') as directory:
                 assert_isolated(directory, 'codex')
                 self.assertEqual(os.environ['SH_DRIVER'], 'codex')
-                self.assertNotIn('SH_SECRET', os.environ)
+                for key in ('SH_SECRET', 'CODEX_FUTURE_SETTING',
+                            'CLAUDE_FUTURE_SETTING', 'XDG_FUTURE_SETTING'):
+                    self.assertNotIn(key, os.environ)
+                # The guard must reject a newly inherited prefixed variable too,
+                # while allowing only the generated native HOME keys.
+                for prefix in ('CODEX_', 'CLAUDE_', 'XDG_'):
+                    with mock.patch.dict(os.environ, {prefix + 'FUTURE_SETTING': 'fixture'}):
+                        with self.assertRaisesRegex(AssertionError, 'inherited seat environment'):
+                            assert_isolated(directory, 'codex')
                 home = Path(os.environ['HOME'])
                 (home / 'sentinel').write_text('fixture')
                 self.assertFalse(Path(os.environ['SH_MCP_IPC_SOCK']).exists())

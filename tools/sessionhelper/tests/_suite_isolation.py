@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 from unittest import mock
 
-PREFIXES = ('SH_', 'DW_', 'DINGWEI_', 'DATAD_')
+PREFIXES = ('SH_', 'DW_', 'DINGWEI_', 'DATAD_', 'CODEX_', 'CLAUDE_', 'XDG_')
 HOME_KEYS = ('CODEX_HOME', 'CLAUDE_CONFIG_DIR', 'XDG_CONFIG_HOME',
              'XDG_STATE_HOME', 'XDG_CACHE_HOME', 'XDG_DATA_HOME', 'PYTHONUSERBASE')
 
@@ -40,6 +40,9 @@ def assert_isolated(directory, driver='unset'):
         path = Path(os.environ.get(key, '/')).resolve()
         assert path != root and root in path.parents, f'isolation boundary: {key}'
     allowed = {'SH_MCP_IPC_SOCK', 'DINGWEI_MCP_IPC_SOCK', 'SH_PROVISION_NO_EXIT'}
+    # These native paths are generated above and checked to remain under root;
+    # no other inherited value sharing their prefix may survive.
+    allowed.update(HOME_KEYS)
     if driver != 'unset':
         allowed.add('SH_DRIVER')
     assert not {k for k in os.environ if k.startswith(PREFIXES)} - allowed, 'isolation boundary: inherited seat environment'
