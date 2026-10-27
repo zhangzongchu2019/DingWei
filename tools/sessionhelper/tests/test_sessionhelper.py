@@ -235,7 +235,7 @@ class SessionHelperTest(unittest.TestCase):
             self.assertEqual(home_delivery_id, "dlv_same")
             self.assertEqual(home_env["body"], "home same")
 
-    def test_delivery_inbox_migrates_legacy_db_and_recovers_processing(self):
+    def test_delivery_inbox_migrates_legacy_db_and_isolates_unknown_processing(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = str(Path(tmp) / "legacy.db")
             with sqlite3.connect(path) as db:
@@ -263,11 +263,10 @@ class SessionHelperTest(unittest.TestCase):
                 row = db.execute(
                     "SELECT session_name,state FROM delivery_inbox WHERE delivery_id='dlv_legacy'"
                 ).fetchone()
-                self.assertEqual(row, ("home", "received"))
-
-            delivery_id, env = inbox.claim_next()
-            self.assertEqual(delivery_id, "dlv_legacy")
-            self.assertEqual(env["body"], "legacy")
+                self.assertEqual(row, ("home", "admission_unknown"))
+                payload = db.execute("SELECT envelope_json FROM delivery_inbox WHERE delivery_id='dlv_legacy'").fetchone()[0]
+                self.assertEqual(json.loads(payload)["body"], "legacy")
+            self.assertIsNone(inbox.claim_next())
 
     def test_delivery_inbox_imports_matching_pending_rows_from_old_shared_db(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -309,10 +308,11 @@ class SessionHelperTest(unittest.TestCase):
             self.assertIn("[delivery][legacy_inbox] imported 1/1 pending deliveries", stderr.getvalue())
             self.assertIn("[delivery][legacy_inbox][WARN] skipped 1 pending deliveries without parseable target", stderr.getvalue())
             self.assertIn("[delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions", stderr.getvalue())
-            delivery_id, env = inbox.claim_next()
-            self.assertEqual(delivery_id, "dlv_home_full")
-            self.assertEqual(env["body"], "home full")
             self.assertIsNone(inbox.claim_next())
+            with sqlite3.connect(target_path) as db:
+                state, payload = db.execute("SELECT state,envelope_json FROM delivery_inbox WHERE delivery_id='dlv_home_full'").fetchone()
+                self.assertEqual(state, "admission_unknown")
+                self.assertEqual(json.loads(payload)["body"], "home full")
 
     def test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db(self):
         with tempfile.TemporaryDirectory() as tmp:

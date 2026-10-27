@@ -11,6 +11,7 @@ import threading
 import time
 
 from .sqlite_utils import connection as sqlite_connection
+from .inbox_lifecycle import migrate_lifecycle, delivery_protocol
 
 
 class DeliveryInbox:
@@ -42,6 +43,7 @@ class DeliveryInbox:
     def _initialize(self) -> None:
         with self._lock, self._connect() as db:
             db.execute("PRAGMA journal_mode=WAL")
+            db.execute("BEGIN IMMEDIATE")
             db.execute(
                 """CREATE TABLE IF NOT EXISTS delivery_inbox (
                     delivery_id TEXT NOT NULL,
@@ -57,6 +59,7 @@ class DeliveryInbox:
             )
             self._migrate_schema(db)
             self._migrate_state_check(db)
+            migrate_lifecycle(db)
             db.execute("""CREATE TABLE IF NOT EXISTS delivery_inbox_read (
                 session_name TEXT NOT NULL, delivery_id TEXT NOT NULL, read_at REAL NOT NULL,
                 PRIMARY KEY(session_name,delivery_id))""")
@@ -64,7 +67,10 @@ class DeliveryInbox:
                 "CREATE INDEX IF NOT EXISTS idx_delivery_inbox_fifo ON delivery_inbox(session_name,state,received_at)"
             )
             db.execute(
-                "UPDATE delivery_inbox SET state='received', updated_at=? WHERE session_name=? AND state='processing'",
+                """UPDATE delivery_inbox SET
+                    state=CASE WHEN dispatch_intent_at IS NULL AND ack_protocol IS NOT NULL
+                               THEN 'received' ELSE 'admission_unknown' END,
+                    updated_at=? WHERE session_name=? AND state='processing'""",
                 (time.time(), self.session_name),
             )
 
@@ -163,7 +169,7 @@ class DeliveryInbox:
                             row["delivery_id"],
                             self.session_name,
                             row["envelope_json"],
-                            "received",
+                            "admission_unknown" if row["state"] == "processing" else "received",
                             row["attempts"],
                             row["error"],
                             row["received_at"],
@@ -287,9 +293,10 @@ class DeliveryInbox:
         """Persist a delivery and return (ack_state, queue_position, queue_depth)."""
         now = time.time()
         payload = json.dumps(env, ensure_ascii=False, separators=(",", ":"))
+        protocol, mode, generation = delivery_protocol(env)
         with self._lock, self.progress.lock, self._connect() as db:
             row = db.execute(
-                "SELECT state,received_at FROM delivery_inbox WHERE delivery_id=? AND session_name=?",
+                "SELECT state,received_at,ack_protocol,processing_mode,ack_generation,dispatch_intent_at FROM delivery_inbox WHERE delivery_id=? AND session_name=?",
                 (delivery_id, self.session_name),
             ).fetchone()
             if row is None:
@@ -300,15 +307,20 @@ class DeliveryInbox:
                 if depth >= self.capacity:
                     raise OverflowError("queue_full")
                 db.execute(
-                    "INSERT INTO delivery_inbox(delivery_id,session_name,envelope_json,state,received_at,updated_at) VALUES(?,?,?,'received',?,?)",
-                    (delivery_id, self.session_name, payload, now, now),
+                    """INSERT INTO delivery_inbox(delivery_id,session_name,envelope_json,state,received_at,updated_at,
+                        ack_protocol,processing_mode,ack_generation) VALUES(?,?,?,'received',?,?,?,?,?)""",
+                    (delivery_id, self.session_name, payload, now, now, protocol, mode, generation),
                 )
                 self.progress.accepted(db, delivery_id, now)
                 received_at = now
                 state = "received"
             else:
                 state, received_at = row["state"], row["received_at"]
-                if state == "failed" and retry_failed:
+                # The first persisted protocol owns duplicates, including after
+                # helper upgrades. Never relabel historical rows from new wire.
+                if row['ack_protocol'] is not None and (row['ack_protocol'], row['processing_mode'], row['ack_generation']) != (protocol, mode, generation):
+                    raise ValueError('delivery ACK provenance changed')
+                if state == "failed" and retry_failed and row['dispatch_intent_at'] is None:
                     db.execute(
                         """UPDATE delivery_inbox
                            SET envelope_json=?,state='received',error=NULL,updated_at=?
@@ -370,7 +382,7 @@ class DeliveryInbox:
             db.execute(
                 """UPDATE delivery_inbox
                    SET state='received',updated_at=?
-                   WHERE delivery_id=? AND session_name=? AND state='processing'""",
+                   WHERE delivery_id=? AND session_name=? AND state='processing' AND dispatch_intent_at IS NULL""",
                 (time.time(), delivery_id, self.session_name),
             )
 
