@@ -1,0 +1,18 @@
+HELPER_SUITE python=/tmp/coder-0232-locked-venv/bin/python3 version=3.12.3 driver=claude pattern=test_suite_isolation.py
+test_each_case_gets_distinct_home_and_socket_and_restores_environment (test_suite_isolation.SuiteIsolationTests.test_each_case_gets_distinct_home_and_socket_and_restores_environment) ... ok
+test_removed_isolation_fails_at_boundary_before_helper_execution (test_suite_isolation.SuiteIsolationTests.test_removed_isolation_fails_at_boundary_before_helper_execution) ... ok
+test_runner_installs_case_isolation_before_setup (test_suite_isolation.SuiteIsolationTests.test_runner_installs_case_isolation_before_setup) ... FAIL
+test_seat_environment_is_removed_without_reading_values (test_suite_isolation.SuiteIsolationTests.test_seat_environment_is_removed_without_reading_values) ... ok
+
+======================================================================
+FAIL: test_runner_installs_case_isolation_before_setup (test_suite_isolation.SuiteIsolationTests.test_runner_installs_case_isolation_before_setup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r41-helper-test-isolation/tools/sessionhelper/tests/test_suite_isolation.py", line 16, in test_runner_installs_case_isolation_before_setup
+    self.assertNotEqual(os.environ.get('HOME'), IMPORT_HOME,
+AssertionError: '/tmp/ht-nupzcwqe/home' == '/tmp/ht-nupzcwqe/home' : isolation boundary: case HOME must differ from discovery HOME
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.009s
+
+FAILED (failures=1)
