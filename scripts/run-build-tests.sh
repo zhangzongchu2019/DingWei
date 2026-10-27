@@ -10,51 +10,10 @@ cd "$ROOT"
 PYTHONPATH="$ROOT/tools/sessionhelper:$ROOT/view-service${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHONPATH
 
+# The helper gate validates its complete inventory before importing any tests.
+python3 scripts/run-helper-build-tests.py
+
 PYTHON_TESTS='
-tools/sessionhelper/test_supervise_connection_loops.py
-tools/sessionhelper/tests/test_update_release_core.py
-tools/sessionhelper/tests/test_cwd_import.py
-tools/sessionhelper/tests/test_boot_origin.py
-tools/sessionhelper/tests/test_legacy_mcp_entry.py
-tools/sessionhelper/tests/test_sqlite_connection_lifetime.py
-tools/sessionhelper/tests/test_codex_stale_thread.py
-tools/sessionhelper/tests/test_daemon_identity.py
-tools/sessionhelper/tests/test_private_endpoint.py
-tools/sessionhelper/tests/test_pce_retention.py
-tools/sessionhelper/tests/test_mcp_shim_transport_errors.py
-tools/sessionhelper/tests/test_update_core_review_regressions.py
-tools/sessionhelper/tests/test_self_update_offer.py
-tools/sessionhelper/tests/test_connection_receive_quiescence.py
-tools/sessionhelper/tests/test_connection_reconnect_backoff.py
-tools/sessionhelper/tests/test_connection_claim_cancellation.py
-tools/sessionhelper/tests/test_terminal_start_observation.py
-tools/sessionhelper/tests/test_claude_launch_contract.py
-tools/sessionhelper/tests/test_unified_queue.py
-tools/sessionhelper/tests/test_dispatch_lifecycle.py
-tools/sessionhelper/tests/test_roster_snapshot.py
-tools/sessionhelper/tests/test_agent_disk_metrics.py
-tools/sessionhelper/tests/test_setup.py
-tools/sessionhelper/tests/test_env_read_single_entry.py
-tools/sessionhelper/tests/test_claim_enroll.py
-tools/sessionhelper/tests/test_desktop.py
-tools/sessionhelper/tests/test_task_flow_r32.py
-tools/sessionhelper/tests/test_project_context.py
-tools/sessionhelper/tests/test_task_blocker.py
-tools/sessionhelper/tests/test_pilot_question.py
-tools/sessionhelper/tests/test_spec_clarification.py
-tools/sessionhelper/tests/test_pilot_template.py
-tools/sessionhelper/tests/test_spec_review_r32.py
-tools/sessionhelper/tests/test_desktop_dispatch.py
-tools/sessionhelper/tests/test_desktop_endpoint.py
-tools/sessionhelper/tests/test_outbound_receipt.py
-tools/sessionhelper/tests/test_inbox_progress.py
-tools/sessionhelper/tests/test_delivery_status.py
-tools/sessionhelper/tests/test_desktop_host.py
-tools/sessionhelper/tests/test_desktop_pilot.py
-tools/sessionhelper/tests/test_desktop_wait.py
-tools/sessionhelper/tests/test_desktop_stop_hook.py
-tools/sessionhelper/tests/test_source_kit.py
-tools/sessionhelper/tests/test_macos_build.py
 deploy/image/supervisord/test_verify_supervisor_template.py
 deploy/ops/hosted-image/test_start.py
 deploy/ops/hosted-image/test_build_definition.py
@@ -97,4 +56,4 @@ printf '%s\n' "$SHELL_TESTS" | while IFS= read -r test_file; do
   echo "TEST shell $test_file"
   bash "$test_file"
 done
-echo 'BUILD_TESTS_OK python=69 shell=2'
+echo 'BUILD_TESTS_OK helper_profiles=2 python=25 shell=2'

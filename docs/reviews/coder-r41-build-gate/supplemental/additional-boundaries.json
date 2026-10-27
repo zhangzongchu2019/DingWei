@@ -1,0 +1,66 @@
+[
+  {
+    "boundary": "silent_success",
+    "expected_rc": 1,
+    "report": {
+      "profile": "codex",
+      "rc": 1,
+      "files": 87,
+      "expected": 10,
+      "actual": 1,
+      "groups": [
+        0,
+        1
+      ]
+    },
+    "synthetic_environment_checked": true
+  },
+  {
+    "boundary": "omitted_cases",
+    "expected_rc": 1,
+    "report": {
+      "profile": "codex",
+      "rc": 1,
+      "files": 87,
+      "expected": 10,
+      "actual": 9,
+      "groups": [
+        8,
+        1
+      ]
+    },
+    "synthetic_environment_checked": true
+  },
+  {
+    "boundary": "suite_failure",
+    "expected_rc": 1,
+    "report": {
+      "profile": "codex",
+      "rc": 1,
+      "files": 87,
+      "expected": 10,
+      "actual": 10,
+      "groups": [
+        9,
+        1
+      ]
+    },
+    "synthetic_environment_checked": true
+  },
+  {
+    "boundary": "complete",
+    "expected_rc": 0,
+    "report": {
+      "profile": "codex",
+      "rc": 0,
+      "files": 87,
+      "expected": 10,
+      "actual": 10,
+      "groups": [
+        9,
+        1
+      ]
+    },
+    "synthetic_environment_checked": true
+  }
+]

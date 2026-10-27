@@ -1,3 +1,4 @@
+import importlib.util
 import pathlib
 import os
 import shutil
@@ -124,7 +125,7 @@ exit 1
                 self.assertEqual(runner.count(test_file), 1, f"测试未接线或重复接线: {test_file}")
 
     def test_ts3_helper_regressions_are_wired_once(self):
-        runner = self.read("scripts/run-build-tests.sh")
+        runner = self.read("scripts/helper-test-files.txt")
         for test_file in (
             "tools/sessionhelper/test_supervise_connection_loops.py",
             "tools/sessionhelper/tests/test_connection_receive_quiescence.py",
@@ -139,14 +140,72 @@ exit 1
 
     def test_update_modules_and_canonical_counts_are_wired(self):
         runner = self.read("scripts/run-build-tests.sh")
+        helper_inventory = self.read("scripts/helper-test-files.txt")
         for name in ("test_update_release_core.py", "test_cwd_import.py", "test_boot_origin.py", "test_update_core_review_regressions.py", "test_self_update_offer.py",
                      "test_sqlite_connection_lifetime.py", "test_private_endpoint.py", "test_pce_retention.py", "test_codex_stale_thread.py", "test_mcp_shim_transport_errors.py", "test_spec_review_r32.py", "test_project_context.py", "test_task_blocker.py", "test_pilot_question.py", "test_pilot_template.py", "test_spec_clarification.py", "test_claude_launch_contract.py", "test_unified_queue.py", "test_dispatch_lifecycle.py"):
-            self.assertEqual(runner.count("tools/sessionhelper/tests/" + name), 1)
+            self.assertEqual(helper_inventory.splitlines().count("tools/sessionhelper/tests/" + name), 1)
         python_files = runner.split("PYTHON_TESTS='", 1)[1].split("'", 1)[0].split()
         shell_files = runner.split("SHELL_TESTS='", 1)[1].split("'", 1)[0].split()
-        self.assertEqual(len(python_files), 69)
+        self.assertEqual(len(python_files), 25)
         self.assertEqual(len(shell_files), 2)
-        self.assertIn("BUILD_TESTS_OK python=69 shell=2", runner)
+        self.assertIn("BUILD_TESTS_OK helper_profiles=2 python=25 shell=2", runner)
+        self.assertEqual(runner.count('python3 scripts/run-helper-build-tests.py'), 1)
+        actual = {p.relative_to(ROOT).as_posix() for p in (ROOT/'tools/sessionhelper').rglob('test*.py')}
+        self.assertEqual(set(helper_inventory.splitlines()), actual)
+        self.assertEqual(len(helper_inventory.splitlines()), len(actual))
+
+    def test_missing_helper_file_rejected_before_import_or_execution(self):
+        import runpy
+        inventory = runpy.run_path(str(ROOT/'scripts/run-helper-build-tests.py'))['inventory']
+        files = ['tools/sessionhelper/tests/test_ack_outbox.py',
+                 'tools/sessionhelper/tests/test_sessionhelper.py',
+                 'tools/sessionhelper/tests/test_update_release_core.py']
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root/'scripts').mkdir()
+            (root/'scripts/helper-test-files.txt').write_text('\n'.join(files)+'\n')
+            for name in files:
+                path=root/name;path.parent.mkdir(parents=True,exist_ok=True)
+                path.write_text('raise AssertionError("must not import during inventory check")')
+            self.assertEqual(inventory(root), files)
+            for name in files:
+                path=root/name;content=path.read_text();path.unlink()
+                with self.subTest(file=name), self.assertRaisesRegex(ValueError, 'helper inventory mismatch: missing='):
+                    inventory(root)
+                path.write_text(content)
+
+    def test_helper_inventory_rejects_each_missing_file_and_manifest_entry(self):
+        spec = importlib.util.spec_from_file_location(
+            "helper_build_gate", ROOT / "scripts/run-helper-build-tests.py")
+        gate = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gate)
+        files = gate.inventory(ROOT)
+        self.assertEqual(len(files), 87)  # 86 under tests/ plus the top-level regression.
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "scripts").mkdir()
+            manifest = root / "scripts/helper-test-files.txt"
+            manifest.write_text("\n".join(files) + "\n")
+            for name in files:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.touch()
+            self.assertEqual(gate.inventory(root), files)
+            for name in files:
+                with self.subTest(missing_file=name):
+                    path = root / name
+                    path.unlink()
+                    with self.assertRaisesRegex(ValueError, "inventory mismatch"):
+                        gate.inventory(root)
+                    path.touch()
+                with self.subTest(missing_entry=name):
+                    manifest.write_text("\n".join(f for f in files if f != name) + "\n")
+                    with self.assertRaisesRegex(ValueError, "inventory mismatch"):
+                        gate.inventory(root)
+                    manifest.write_text("\n".join(files) + "\n")
+            manifest.write_text("\n".join(files + files[:1]) + "\n")
+            with self.assertRaisesRegex(ValueError, "inventory mismatch"):
+                gate.inventory(root)
 
     def test_build_make_and_ci_share_the_canonical_test_entrypoint(self):
         self.assertIn("./scripts/run-build-tests.sh", self.read("build.sh"))

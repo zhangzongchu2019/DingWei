@@ -1,0 +1,110 @@
+[
+  {
+    "file": "deploy/image/supervisord/test_verify_supervisor_template.py",
+    "rc": 0
+  },
+  {
+    "file": "deploy/ops/hosted-image/test_start.py",
+    "rc": 0
+  },
+  {
+    "file": "deploy/ops/hosted-image/test_build_definition.py",
+    "rc": 0
+  },
+  {
+    "file": "deploy/ops/hosted-claude-image/test_claude_start.py",
+    "rc": 0
+  },
+  {
+    "file": "deploy/test_build_entrypoints.py",
+    "rc": 0
+  },
+  {
+    "file": "deploy/test_file_service_deploy.py",
+    "rc": 0
+  },
+  {
+    "file": "deploy/test_generate_console_seed.py",
+    "rc": 0
+  },
+  {
+    "file": "deploy/test_invariants_alert_route.py",
+    "rc": 0
+  },
+  {
+    "file": "deploy/test_invariants_expected_hashes.py",
+    "rc": 0
+  },
+  {
+    "file": "deploy/test_preview_console.py",
+    "rc": 0
+  },
+  {
+    "file": "deploy/test_validate_console_seed.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_check_public_view_deploy.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_md_render_core.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_provenance_flag_injection.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_renderer_iter2.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_view_page_store.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_view_service.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_agent_disk_resource.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_inbox_lag_resource.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_view_refresh.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_mux_projection.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_mux_projection_failure.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_cost_paused.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_mux_cost_seed.py",
+    "rc": 0
+  },
+  {
+    "file": "view-service/test_view_unlock_v2_integration.py",
+    "rc": 0
+  },
+  {
+    "file": "deploy/test-view-service-release.sh",
+    "rc": 0
+  },
+  {
+    "file": "scripts/test-desktop-hub-roundtrip.sh",
+    "rc": 1
+  }
+]
