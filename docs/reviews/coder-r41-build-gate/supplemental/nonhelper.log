@@ -1,0 +1,185 @@
+RUN deploy/image/supervisord/test_verify_supervisor_template.py
+----------------------------------------------------------------------
+Ran 15 tests in 0.787s
+
+OK
+RUN deploy/ops/hosted-image/test_start.py
+----------------------------------------------------------------------
+Ran 20 tests in 1.074s
+
+OK
+RUN deploy/ops/hosted-image/test_build_definition.py
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+----------------------------------------------------------------------
+Ran 18 tests in 0.288s
+
+OK
+RUN deploy/ops/hosted-claude-image/test_claude_start.py
+hosted-claude-start: invalid or missing SH_CRED_FILE
+hosted-claude-start: invalid or missing SH_CLI
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+----------------------------------------------------------------------
+Ran 34 tests in 7.599s
+
+OK
+RUN deploy/test_build_entrypoints.py
+----------------------------------------------------------------------
+Ran 16 tests in 0.618s
+
+OK
+RUN deploy/test_file_service_deploy.py
+----------------------------------------------------------------------
+Ran 10 tests in 0.004s
+
+OK
+RUN deploy/test_generate_console_seed.py
+/data/ai-dev-data/r41-build-gate-helper-coverage/deploy/test_generate_console_seed.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmphfbv8pw8/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r41-build-gate-helper-coverage/deploy/test_generate_console_seed.py:116: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpvba75_hw/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r41-build-gate-helper-coverage/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmp9qebcwuq/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r41-build-gate-helper-coverage/deploy/test_generate_console_seed.py:72: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmp74ad478i/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r41-build-gate-helper-coverage/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmp74ad478i/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r41-build-gate-helper-coverage/deploy/test_generate_console_seed.py:100: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpdw6q01dm/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r41-build-gate-helper-coverage/deploy/test_generate_console_seed.py:161: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpl7cmzze6/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 14 tests in 0.565s
+
+OK
+RUN deploy/test_invariants_alert_route.py
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK
+RUN deploy/test_invariants_expected_hashes.py
+----------------------------------------------------------------------
+Ran 6 tests in 0.023s
+
+OK
+RUN deploy/test_preview_console.py
+/data/ai-dev-data/r41-build-gate-helper-coverage/deploy/test_preview_console.py:78: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/r41-build-gate-helper-coverage/internal/store/console_auth.go' mode='r' encoding='utf-8'>
+  go = open(PROD_GO, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r41-build-gate-helper-coverage/deploy/test_preview_console.py:83: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/r41-build-gate-helper-coverage/deploy/preview_console_for_principal.py' mode='r' encoding='utf-8'>
+  tool = open(TOOL, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 9 tests in 0.322s
+
+OK
+RUN deploy/test_validate_console_seed.py
+----------------------------------------------------------------------
+Ran 11 tests in 0.292s
+
+OK
+RUN view-service/test_check_public_view_deploy.py
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+RUN view-service/test_md_render_core.py
+----------------------------------------------------------------------
+Ran 12 tests in 0.314s
+
+OK
+RUN view-service/test_provenance_flag_injection.py
+----------------------------------------------------------------------
+Ran 8 tests in 0.578s
+
+OK
+RUN view-service/test_renderer_iter2.py
+----------------------------------------------------------------------
+Ran 7 tests in 0.011s
+
+OK
+RUN view-service/test_view_page_store.py
+----------------------------------------------------------------------
+Ran 13 tests in 1.830s
+
+OK
+RUN view-service/test_view_service.py
+----------------------------------------------------------------------
+Ran 40 tests in 0.029s
+
+OK
+RUN view-service/test_agent_disk_resource.py
+----------------------------------------------------------------------
+Ran 9 tests in 0.270s
+
+OK
+RUN view-service/test_inbox_lag_resource.py
+----------------------------------------------------------------------
+Ran 8 tests in 0.252s
+
+OK
+RUN view-service/test_view_refresh.py
+----------------------------------------------------------------------
+Ran 5 tests in 0.156s
+
+OK
+RUN view-service/test_mux_projection.py
+----------------------------------------------------------------------
+Ran 3 tests in 0.073s
+
+OK
+RUN view-service/test_mux_projection_failure.py
+----------------------------------------------------------------------
+Ran 3 tests in 1.556s
+
+OK
+RUN view-service/test_cost_paused.py
+ENTRYPOINT_BOUNDARY {"entry": "unsafe", "actual_rc": 1, "costdir_unchanged": false, "module_cache_in_costdir": true}
+ENTRYPOINT_BOUNDARY {"entry": "flag", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+ENTRYPOINT_BOUNDARY {"entry": "environment", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+ENTRYPOINT_BOUNDARY {"entry": "outside", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+----------------------------------------------------------------------
+Ran 9 tests in 6.862s
+
+OK
+RUN view-service/test_mux_cost_seed.py
+----------------------------------------------------------------------
+Ran 9 tests in 0.177s
+
+OK
+RUN view-service/test_view_unlock_v2_integration.py
+----------------------------------------------------------------------
+Ran 1 test in 1.061s
+
+OK
+RUN deploy/test-view-service-release.sh
+PACKAGED commit=bc03f57fd6a2bc57891a7df39790a58b2c172141 files=3 output=/tmp/tmp.28i4Jzbjt8/pkg
+VERIFIED files=3 expected_commit=bc03f57fd6a2bc57891a7df39790a58b2c172141
+PACKAGED commit=fca348f4d2df28a6376aff3dc1bd0a61e97aa59b files=3 output=/tmp/tmp.28i4Jzbjt8/old
+PACKAGED commit=bc03f57fd6a2bc57891a7df39790a58b2c172141 files=3 output=/tmp/tmp.28i4Jzbjt8/install-pkg
+PACKAGED commit=8fc44495aca3dbebb05cf375c5ef56e2b99917b5 files=3 output=/tmp/tmp.28i4Jzbjt8/static-pkg
+PACKAGED commit=55fcc812e0084e52be7ada9307ac41a68222f876 files=3 output=/tmp/tmp.28i4Jzbjt8/two-pkg
+PACKAGED commit=3eef03d84834b9a30152445d01b92a3b6e319dfd files=3 output=/tmp/tmp.28i4Jzbjt8/all-pkg
+PACKAGED commit=fa8673ad9ea0b82c0e6bc6ecf2c638b94b3efc41 files=3 output=/tmp/tmp.28i4Jzbjt8/fail-pkg
+PACKAGED commit=173c47a0517abe3d8cb96b8c97d54646569bb4fc files=3 output=/tmp/tmp.28i4Jzbjt8/unhealthy-pkg
+PASS view-service release core
+RUN scripts/test-desktop-hub-roundtrip.sh
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'websockets'
+NONHELPER_RESULTS=[{"file": "deploy/image/supervisord/test_verify_supervisor_template.py", "rc": 0}, {"file": "deploy/ops/hosted-image/test_start.py", "rc": 0}, {"file": "deploy/ops/hosted-image/test_build_definition.py", "rc": 0}, {"file": "deploy/ops/hosted-claude-image/test_claude_start.py", "rc": 0}, {"file": "deploy/test_build_entrypoints.py", "rc": 0}, {"file": "deploy/test_file_service_deploy.py", "rc": 0}, {"file": "deploy/test_generate_console_seed.py", "rc": 0}, {"file": "deploy/test_invariants_alert_route.py", "rc": 0}, {"file": "deploy/test_invariants_expected_hashes.py", "rc": 0}, {"file": "deploy/test_preview_console.py", "rc": 0}, {"file": "deploy/test_validate_console_seed.py", "rc": 0}, {"file": "view-service/test_check_public_view_deploy.py", "rc": 0}, {"file": "view-service/test_md_render_core.py", "rc": 0}, {"file": "view-service/test_provenance_flag_injection.py", "rc": 0}, {"file": "view-service/test_renderer_iter2.py", "rc": 0}, {"file": "view-service/test_view_page_store.py", "rc": 0}, {"file": "view-service/test_view_service.py", "rc": 0}, {"file": "view-service/test_agent_disk_resource.py", "rc": 0}, {"file": "view-service/test_inbox_lag_resource.py", "rc": 0}, {"file": "view-service/test_view_refresh.py", "rc": 0}, {"file": "view-service/test_mux_projection.py", "rc": 0}, {"file": "view-service/test_mux_projection_failure.py", "rc": 0}, {"file": "view-service/test_cost_paused.py", "rc": 0}, {"file": "view-service/test_mux_cost_seed.py", "rc": 0}, {"file": "view-service/test_view_unlock_v2_integration.py", "rc": 0}, {"file": "deploy/test-view-service-release.sh", "rc": 0}, {"file": "scripts/test-desktop-hub-roundtrip.sh", "rc": 1}]
