@@ -11,3 +11,7 @@
 - 新的 `delivery-ack-v2-browser-regression.js` 覆盖 v2 等待、单调时钟、原位终态、legacy 和 desktop 语义；与上述既有失败分开报告，不以新门通过抵消旧套件失败。
 
 原始本机日志保存在任务 evidence 目录，最终交付附 SHA-256 与实际退出码。该目录不经对象存储交换。
+
+## 追加闭合验证中的 Codex 第二回合超时
+
+2026-10-27T10:24Z起，候选59b5479干净完整门与单格复跑在B接纳判据3超时；修复前锚7ab9460本轮对照通过。未定因，不并入本次Claude修法；当前完整门rc1，详见 [CLAUDE-ARGV-CLOSURE.md](CLAUDE-ARGV-CLOSURE.md)。

@@ -1,5 +1,7 @@
 # r40b 交付证据
 
+本页保留原7ab9460交付的受测代码与读数。后续Claude显式命令闭合及**当前完整Go门rc1、Codex接纳超时未定因**，以 [CLAUDE-ARGV-CLOSURE.md](CLAUDE-ARGV-CLOSURE.md) 为准；不得把本页历史rc0作为当前上线结论。
+
 取证截止：`2026-10-27T06:58:35Z`。受测代码锚 `f0d2c87c6fcc95916a852cb76d0ff19629a277e8`，tree `b2af68adf11dd821f202946745f5eaa131006418`；最后追加的本报告提交只含文档。
 
 范围单 `04e6b6bf423588e71ecddfedbe6eeea4c3ca0942`；④设计 `7af11ba96aac10cbd1d0ce1b78fde819fc1e1f29`；批准计划 `153e366eb233f2078027d54516ff72b0ae0bef05`。本批只实现③④及其验收；⑥未出修法。仓库 `git@git.code.tencent.com:wego-ai/dingwei.git`。基线 r40a `a738d47f303441c410bf09fb0adcb7fe1119f862`，分支 `integration/spec5ff-r40b-wip`，逐笔追加。
