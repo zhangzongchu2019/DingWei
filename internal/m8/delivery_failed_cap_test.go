@@ -101,9 +101,9 @@ func TestRetryableFailedDeliveryCapsAndNotifiesSender(t *testing.T) {
 		Meta: map[string]any{"type": "delivery_ack", "delivery_id": newID, "state": "processed"}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, "恢复后的新投递 processed", func() bool {
+	waitFor(t, time.Second, "恢复后的新投递仅确认 legacy receipt", func() bool {
 		d, _ := db.GetSessionDelivery(ctx, newID)
-		return d != nil && d.State == "processed"
+		return d != nil && d.State == "legacy_received" && d.InjectedAt == nil && d.ProcessedAt == nil
 	})
 }
 

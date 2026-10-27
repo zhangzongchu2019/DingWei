@@ -119,7 +119,7 @@ func (s *SQLite) SweepSessionDeliveryFailures(ctx context.Context, now time.Time
 	cutoff := now.Add(-30 * time.Minute).UTC().Format(time.RFC3339Nano)
 	rows, err := collectFailureRows(ctx, tx, `UPDATE session_delivery SET state='dead',lease_until=NULL,updated_at=?,
  last_error=CASE WHEN state='capability_pending' AND provenance='capability_pending_ack_v1' THEN 'delivery_capability_unconfirmed_expired' ELSE 'delivery_expired' END
- WHERE id IN (SELECT id FROM session_delivery WHERE state NOT IN ('processed','dead','cancelled') AND (attempts>=12 OR created_at<=?) ORDER BY created_at,id LIMIT 1000)
+ WHERE id IN (SELECT id FROM session_delivery WHERE COALESCE(ack_protocol,0)<>2 AND state NOT IN ('processed','dead','cancelled','legacy_received') AND (attempts>=12 OR created_at<=?) ORDER BY created_at,id LIMIT 1000)
  RETURNING `+sessionDeliveryColumns, stamp, cutoff)
 	if err != nil {
 		return nil, err

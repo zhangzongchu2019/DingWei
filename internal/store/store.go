@@ -69,6 +69,8 @@ type Repository interface {
 	FailSessionDeliveryRetryable(ctx context.Context, id, reason string, now time.Time, base, maxDelay time.Duration, maxFailed int) (dead bool, failed int, next time.Time, err error)
 	ReleaseSessionDeliveryLeases(ctx context.Context, keyID, sessionName, reason string, now time.Time) (int64, error)
 	GetSessionDelivery(ctx context.Context, id string) (*model.SessionDelivery, error)
+	BindSessionDeliveryACK(ctx context.Context, id, keyID, sessionName string, protocol int, mode string) (*model.SessionDelivery, error)
+	ApplySessionDeliveryACK(ctx context.Context, ack model.SessionDeliveryACK, now time.Time) (*model.SessionDelivery, bool, error)
 	CancelPendingSessionDelivery(ctx context.Context, messageID, deliveryID, keyID, sessionName string) (bool, error)
 	ConfirmSessionDeliveryCancelled(ctx context.Context, messageID, deliveryID, keyID, sessionName string) (bool, error)
 

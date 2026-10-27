@@ -247,6 +247,7 @@ type sessionClient struct {
 	skillInstalled  bool
 	skillCancel     context.CancelFunc
 	deliveryACKV1   bool
+	deliveryACKV2   bool
 	taskFlowV1      bool
 	blockerNoticeV1 bool
 	blockerWakeV1   bool
@@ -4386,6 +4387,8 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	c.pmSpecFlowV1 = metaBool(env.Meta, "pm_spec_flow_v1")
 	c.helperUpdateV1 = metaBool(env.Meta, "helper_update_v1")
 	c.desktopInboxV1 = metaBool(env.Meta, "desktop_inbox_v1") && metaString(env.Meta, "processed_semantics") == "saved_to_desktop_inbox"
+	c.deliveryACKV2 = metaBool(env.Meta, "delivery_ack_v2") && metaString(env.Meta, "processing_mode") == "driver" && !c.desktopInboxV1
+	c.deliveryACKV1 = c.deliveryACKV1 || c.deliveryACKV2
 	c.stateMu.Unlock()
 	h.writeOutboundCapabilities(c, env)
 	if metaBool(env.Meta, "file_upload_v1") {
@@ -4485,6 +4488,15 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 		if err != nil || d == nil || d.KeyID != c.keyID || d.SessionName != c.sessionName || d.State == "dead" || d.State == "cancelled" {
 			return true
 		}
+		if d.AckProtocol == 2 {
+			protocol, mode := deliveryACKConnectionProtocol(c)
+			h.mu.Lock()
+			current := h.sessionClients[c.keyID][c.sessionName]
+			h.mu.Unlock()
+			if protocol != 2 || mode != d.ProcessingMode || (c.conn != nil && current != c) || metaInt(env.Meta, "ack_protocol") != 2 || metaString(env.Meta, "processing_mode") != d.ProcessingMode || metaInt(env.Meta, "ack_generation") != d.AckGeneration {
+				return true
+			}
+		}
 		messageID := metaString(env.Meta, "message_id")
 		if metaString(env.Meta, "result") == "cancelled" && messageID != "" && messageID == d.SourceMessageID {
 			if cancelled, err := h.Repo.ConfirmSessionDeliveryCancelled(ctx, messageID, id, c.keyID, c.sessionName); err == nil && cancelled {
@@ -4495,14 +4507,25 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 		return true
 	}
 	state := metaString(env.Meta, "state")
-	if id == "" || (state != "delivered" && state != "injected" && state != "processed" && state != "failed" && state != "busy") {
+	if id == "" || (state != "delivered" && state != "queued" && state != "admission_unknown" && state != "injected" && state != "processed" && state != "failed" && state != "busy") {
 		return true
 	}
 	d, err := h.Repo.GetSessionDelivery(ctx, id)
 	if err != nil || d == nil {
 		return true
 	}
-	if d.KeyID != c.keyID || d.SessionName != c.sessionName || d.State == "dead" || d.State == "cancelled" {
+	if d.KeyID != c.keyID || d.SessionName != c.sessionName {
+		return true
+	}
+	if d.AckProtocol == 2 {
+		return h.handleDeliveryACKV2(ctx, c, env, d)
+	}
+	if metaInt(env.Meta, "ack_protocol") == 2 || state == "queued" || state == "admission_unknown" || d.State == "dead" || d.State == "cancelled" {
+		return true
+	}
+	// Historical terminal receipts are transport-only and cannot be regressed by
+	// a delayed delivered/busy/failed frame from the same legacy helper.
+	if d.State == "legacy_received" || d.State == "processed" {
 		return true
 	}
 	c.stateMu.Lock()
@@ -4512,14 +4535,18 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	if state == "injected" && desktopInbox {
 		return true
 	}
-	if state == "injected" {
-		_ = h.Repo.UpdateSessionDelivery(ctx, id, "injected", "", time.Now().UTC())
-		h.publishDeliveryUpdateForDelivery(*d, "injected", "cli_injected", "", "")
+	if !desktopInbox && (state == "injected" || state == "processed") {
+		if err := h.Repo.UpdateSessionDelivery(ctx, id, "legacy_received", "", h.now().UTC()); err != nil {
+			return true
+		}
+		h.publishDeliveryUpdateForDelivery(*d, "legacy_received", "helper_received", "", "legacy_injection_unknown")
 		if d.SourceMessageID != "" {
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
 		}
 		go h.drainSessionDeliveries(context.Background(), c)
-	} else if state == "processed" {
+		return true
+	}
+	if state == "processed" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "processed", "", time.Now().UTC())
 		if d.State != "injected" {
 			if desktopInbox {
@@ -4574,7 +4601,19 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 }
 
 func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, deliveryState, stage, status, reason string) {
-	h.publishDeliveryUpdate(d.KeyID, d.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason)
+	metadata := map[string]any{"ack_protocol": d.AckProtocol, "processing_mode": d.ProcessingMode, "ack_generation": d.AckGeneration}
+	if d.DeliveredAt != nil {
+		metadata["queued_at"] = d.DeliveredAt.UTC().Format(time.RFC3339Nano)
+	}
+	if d.InjectedAt != nil {
+		metadata["occurred_at"] = d.InjectedAt.UTC().Format(time.RFC3339Nano)
+		metadata["turn_id"] = d.TurnID
+	}
+	if d.AckProtocol == 2 && deliveryState == "processed" && d.ProcessedAt != nil {
+		metadata["occurred_at"] = d.ProcessedAt.UTC().Format(time.RFC3339Nano)
+		metadata["turn_outcome"] = d.TurnOutcome
+	}
+	h.publishDeliveryUpdateWithMetadata(d.KeyID, d.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason, metadata)
 	if deliveryState == "dead" {
 		h.mentionMirror.deliveryDead(d, reason) // R-V2-0103：view 提及转来的那封终未处理 ⇒ 发起页一行状态
 	}
@@ -4584,7 +4623,7 @@ func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, delivery
 	}
 	from, err := parseAddress(original.From)
 	if err == nil && from.Kind == addressSession && from.SessionName != "" && from.SessionName != "workpulse" {
-		h.publishDeliveryUpdate(from.KeyID, from.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason)
+		h.publishDeliveryUpdateWithMetadata(from.KeyID, from.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason, metadata)
 	}
 }
 
@@ -4657,6 +4696,18 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 				continue
 			}
 		}
+		protocol, mode := deliveryACKConnectionProtocol(c)
+		d, err = h.Repo.BindSessionDeliveryACK(ctx, d.ID, c.keyID, c.sessionName, protocol, mode)
+		if err != nil || d == nil || (d.AckProtocol == 2 && protocol != 2) {
+			// Never downgrade an already-dispatched v2 item to an older helper.
+			return
+		}
+		if env.Meta == nil {
+			env.Meta = make(map[string]any)
+		}
+		env.Meta["delivery_ack_protocol"] = d.AckProtocol
+		env.Meta["processing_mode"] = d.ProcessingMode
+		env.Meta["ack_generation"] = d.AckGeneration
 		if err := c.write(ctx, env); err != nil {
 			_ = h.Repo.UpdateSessionDelivery(ctx, d.ID, "queued", err.Error(), time.Now().UTC().Add(5*time.Second))
 			log.Printf("session delivery write failed decision=requeue key_id=%s session=%s conn_seq=%d delivery_id=%s reason=%q retry_after=5s",

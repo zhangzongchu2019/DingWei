@@ -148,6 +148,21 @@ type SessionDelivery struct {
 	TurnOutcome    string
 }
 
+// SessionDeliveryACK is one immutable lifecycle observation, not permission to
+// execute a task. Generation is logical delivery identity, not a WS retry count.
+type SessionDeliveryACK struct {
+	DeliveryID     string
+	KeyID          string
+	SessionName    string
+	Protocol       int
+	ProcessingMode string
+	Generation     int
+	Phase          string
+	OccurredAt     time.Time
+	TurnID         string
+	TurnOutcome    string
+}
+
 // MessageFilter 最近消息只读筛选条件。
 type MessageFilter struct {
 	BotChannelID string

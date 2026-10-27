@@ -5340,9 +5340,9 @@ func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
 		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "processed"}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, "投递记录 deliveryID 进入 processed", func() bool {
+	waitFor(t, time.Second, "投递记录 deliveryID 进入 legacy_received", func() bool {
 		record, _ = db.GetSessionDelivery(ctx, deliveryID)
-		return record != nil && record.State == "processed"
+		return record != nil && record.State == "legacy_received"
 	})
 	next, err := db.ClaimNextMessage(ctx, model.DirectionIn)
 	if err != nil || next != nil {
@@ -5410,9 +5410,9 @@ func TestReliableSessionDeliveryQueuesWhileDisconnectedAndDrainsOnceAfterReconne
 		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "processed"}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, "投递记录 deliveryID processed 且 attempts=1", func() bool {
+	waitFor(t, time.Second, "投递记录 deliveryID legacy_received 且 attempts=1", func() bool {
 		record, _ := db.GetSessionDelivery(ctx, deliveryID)
-		return record != nil && record.State == "processed" && record.Attempts == 1
+		return record != nil && record.State == "legacy_received" && record.Attempts == 1
 	})
 
 	readCtx, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
@@ -5514,11 +5514,11 @@ func TestDeliveredLeaseIsReleasedOnDisconnectAndFIFOResumesAfterReconnect(t *tes
 		Meta: map[string]any{"type": "delivery_ack", "delivery_id": secondID, "state": "processed"}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, "两条投递都 processed 且 attempts 各为 1", func() bool {
+	waitFor(t, time.Second, "两条 legacy 投递都仅收件 且 attempts 各为 1", func() bool {
 		firstRecord, _ := db.GetSessionDelivery(ctx, firstID)
 		secondRecord, _ := db.GetSessionDelivery(ctx, secondID)
-		return firstRecord != nil && firstRecord.State == "processed" && firstRecord.Attempts == 1 &&
-			secondRecord != nil && secondRecord.State == "processed" && secondRecord.Attempts == 1
+		return firstRecord != nil && firstRecord.State == "legacy_received" && firstRecord.Attempts == 1 &&
+			secondRecord != nil && secondRecord.State == "legacy_received" && secondRecord.Attempts == 1
 	})
 }
 
@@ -5558,7 +5558,7 @@ func TestReliableSessionDeliveryInjectedAckPublishesBeforeProcessedWithoutDuplic
 	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
 	defer home.Close(websocket.StatusNormalClosure, "done")
 	if err := writeEnvelope(ctx, home, model.Envelope{ID: "caps", To: "workpulse#" + key.ID,
-		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true, "delivery_ack_v2": true, "processing_mode": "driver"}}); err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, time.Second, "会话 home 在线且支持 delivery_ack", func() bool {
@@ -5576,15 +5576,15 @@ func TestReliableSessionDeliveryInjectedAckPublishesBeforeProcessedWithoutDuplic
 	delivery := readEnvelope(t, ctx, home)
 	deliveryID := metaString(delivery.Meta, "delivery_id")
 	<-events // input_posted
-	for _, state := range []string{"delivered", "injected", "processed"} {
+	for _, state := range []string{"queued", "injected", "processed"} {
 		if err := writeEnvelope(ctx, home, model.Envelope{ID: "ack-" + state, To: "workpulse#" + key.ID,
-			Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": state}}); err != nil {
+			Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": state, "ack_protocol": 2, "processing_mode": "driver", "ack_generation": 1, "occurred_at": time.Now().UTC().Format(time.RFC3339Nano), "turn_id": ackTestTurn(state), "turn_outcome": ackTestOutcome(state)}}); err != nil {
 			t.Fatal(err)
 		}
 	}
-	updates := make([]string, 0, 2)
+	updates := make([]string, 0, 3)
 	deadline := time.After(time.Second)
-	for len(updates) < 2 {
+	for len(updates) < 3 {
 		select {
 		case raw := <-events:
 			updates = append(updates, raw)
@@ -5592,8 +5592,9 @@ func TestReliableSessionDeliveryInjectedAckPublishesBeforeProcessedWithoutDuplic
 			t.Fatalf("delivery updates=%v", updates)
 		}
 	}
-	if !strings.Contains(updates[0], `"delivery_stage":"helper_received"`) ||
-		!strings.Contains(updates[1], `"delivery_stage":"cli_injected"`) {
+	if !strings.Contains(updates[0], `"delivery_stage":"helper_queued"`) ||
+		!strings.Contains(updates[1], `"delivery_stage":"cli_injected"`) ||
+		!strings.Contains(updates[2], `"delivery_stage":"turn_processed"`) {
 		t.Fatalf("delivery updates=%v", updates)
 	}
 	select {
@@ -5625,7 +5626,7 @@ func TestSessionToSessionReliableAdmissionPublishesBothEventRings(t *testing.T) 
 	target := dialSession(t, ctx, srv.URL, "target", key.ID, secret)
 	defer target.Close(websocket.StatusNormalClosure, "done")
 	if err := writeEnvelope(ctx, target, model.Envelope{ID: "caps", To: "workpulse#" + key.ID,
-		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true, "delivery_ack_v2": true, "processing_mode": "driver"}}); err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, time.Second, "会话 target 在线且支持 delivery_ack", func() bool {
@@ -5672,13 +5673,13 @@ func TestSessionToSessionReliableAdmissionPublishesBothEventRings(t *testing.T) 
 	assertInput(sourceEvents, "copy")
 
 	if err := writeEnvelope(ctx, target, model.Envelope{ID: "delivered", To: "workpulse#" + key.ID,
-		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "delivered"}}); err != nil {
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "queued", "ack_protocol": 2, "processing_mode": "driver", "ack_generation": 1, "occurred_at": time.Now().UTC().Format(time.RFC3339Nano)}}); err != nil {
 		t.Fatal(err)
 	}
 	for name, ch := range map[string]<-chan string{"target": targetEvents, "source": sourceEvents} {
 		select {
 		case raw := <-ch:
-			if !strings.Contains(raw, `"kind":"delivery_update"`) || !strings.Contains(raw, `"delivery_stage":"helper_received"`) ||
+			if !strings.Contains(raw, `"kind":"delivery_update"`) || !strings.Contains(raw, `"delivery_stage":"helper_queued"`) ||
 				!strings.Contains(raw, `"cancellable":true`) || strings.Contains(raw, `"cancelable"`) || strings.Contains(raw, `"delivery_status"`) {
 				t.Fatalf("%s delivered update=%s", name, raw)
 			}
@@ -5687,7 +5688,7 @@ func TestSessionToSessionReliableAdmissionPublishesBothEventRings(t *testing.T) 
 		}
 	}
 	if err := writeEnvelope(ctx, target, model.Envelope{ID: "processed", To: "workpulse#" + key.ID,
-		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "processed"}}); err != nil {
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "injected", "ack_protocol": 2, "processing_mode": "driver", "ack_generation": 1, "occurred_at": time.Now().UTC().Format(time.RFC3339Nano), "turn_id": "ring-turn"}}); err != nil {
 		t.Fatal(err)
 	}
 	for name, ch := range map[string]<-chan string{"target": targetEvents, "source": sourceEvents} {

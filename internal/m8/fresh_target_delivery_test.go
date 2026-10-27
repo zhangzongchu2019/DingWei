@@ -75,9 +75,9 @@ func TestFreshTargetAdmissionQueuesBeforeCapabilityAndPromotesExactlyOnce(t *tes
 		t.Fatal(err)
 	}
 	deliveryID := metaString(got.Meta, "delivery_id")
-	waitFor(t, time.Second, "fresh target delivery processed once", func() bool {
+	waitFor(t, time.Second, "fresh target legacy delivery received once without model evidence", func() bool {
 		d, _ := db.GetSessionDelivery(ctx, deliveryID)
-		return d != nil && d.State == "processed" && d.Attempts == 1
+		return d != nil && d.State == "legacy_received" && d.Attempts == 1 && d.InjectedAt == nil && d.ProcessedAt == nil
 	})
 }
 

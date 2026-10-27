@@ -2099,7 +2099,7 @@ func (s *SQLite) ExpireSessionDeliveries(ctx context.Context, keyID, sessionName
 	nowText := now.UTC().Format(time.RFC3339Nano)
 	rows, err := tx.QueryContext(ctx, `UPDATE session_delivery
 		SET state='dead',last_error='delivery_expired',lease_until=NULL,updated_at=?
-		WHERE key_id=? AND session_name=? AND state NOT IN ('processed','dead','cancelled') AND (attempts>=12 OR created_at<=?)
+		WHERE key_id=? AND session_name=? AND COALESCE(ack_protocol,0)<>2 AND state NOT IN ('processed','dead','cancelled','legacy_received') AND (attempts>=12 OR created_at<=?)
 		RETURNING `+sessionDeliveryColumns,
 		nowText, keyID, sessionName, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
 	if err != nil {
@@ -2236,8 +2236,8 @@ func (s *SQLite) ClaimSessionDelivery(ctx context.Context, keyID, sessionName st
 	nowText := now.UTC().Format(time.RFC3339Nano)
 	var id string
 	err = tx.QueryRowContext(ctx, `SELECT id FROM session_delivery d
-		WHERE key_id=? AND session_name=? AND state IN ('queued','sent','delivered') AND next_attempt_at<=?
-		AND NOT EXISTS (SELECT 1 FROM session_delivery active WHERE active.key_id=d.key_id AND active.session_name=d.session_name AND active.state IN ('sent','delivered') AND active.next_attempt_at>?)
+		WHERE key_id=? AND session_name=? AND state IN ('queued','sent','delivered') AND (state<>'delivered' OR COALESCE(ack_protocol,0)<>2) AND next_attempt_at<=?
+		AND NOT EXISTS (SELECT 1 FROM session_delivery active WHERE active.key_id=d.key_id AND active.session_name=d.session_name AND active.state IN ('sent','delivered') AND (active.state<>'delivered' OR COALESCE(active.ack_protocol,0)<>2) AND active.next_attempt_at>?)
 		ORDER BY CASE WHEN state='queued' AND attempts=0 THEN 0 ELSE 1 END,created_at,id LIMIT 1`, keyID, sessionName, nowText, nowText).Scan(&id)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -2279,7 +2279,7 @@ func (s *SQLite) UpdateSessionDelivery(ctx context.Context, id, state, errText s
 			return err
 		}
 		defer tx.Rollback()
-		result, err := tx.ExecContext(ctx, `UPDATE session_delivery SET state='dead',last_error=?,next_attempt_at=?,lease_until=NULL,updated_at=? WHERE id=? AND state NOT IN ('processed','dead','cancelled')`, errText, nextAttemptAt.UTC().Format(time.RFC3339Nano), now.Format(time.RFC3339Nano), id)
+		result, err := tx.ExecContext(ctx, `UPDATE session_delivery SET state='dead',last_error=?,next_attempt_at=?,lease_until=NULL,updated_at=? WHERE id=? AND state NOT IN ('processed','dead','cancelled','legacy_received')`, errText, nextAttemptAt.UTC().Format(time.RFC3339Nano), now.Format(time.RFC3339Nano), id)
 		if err != nil {
 			return err
 		}
@@ -2305,7 +2305,7 @@ func (s *SQLite) UpdateSessionDelivery(ctx context.Context, id, state, errText s
 	_, err := s.db.ExecContext(ctx, `UPDATE session_delivery SET state=?,last_error=?,next_attempt_at=?,lease_until=NULL,updated_at=?,
 		delivered_at=CASE WHEN ?='delivered' THEN COALESCE(delivered_at,?) ELSE delivered_at END,
 		processed_at=CASE WHEN ?='processed' THEN COALESCE(processed_at,?) ELSE processed_at END,
-		failed_count=CASE WHEN ? IN ('injected','processed') THEN 0 ELSE failed_count END WHERE id=? AND state NOT IN ('processed','dead','cancelled')`,
+		failed_count=CASE WHEN ? IN ('injected','processed') THEN 0 ELSE failed_count END WHERE id=? AND state NOT IN ('processed','dead','cancelled','legacy_received')`,
 		state, errText, nextAttemptAt.UTC().Format(time.RFC3339Nano), now, state, now, state, now, state, id)
 	return err
 }
@@ -2317,7 +2317,7 @@ func (s *SQLite) FailSessionDeliveryRetryable(ctx context.Context, id, reason st
 	}
 	defer tx.Rollback()
 	var failed int
-	err = tx.QueryRowContext(ctx, `SELECT failed_count FROM session_delivery WHERE id=? AND state NOT IN ('processed','dead','cancelled')`, id).Scan(&failed)
+	err = tx.QueryRowContext(ctx, `SELECT failed_count FROM session_delivery WHERE id=? AND state NOT IN ('processed','dead','cancelled','legacy_received')`, id).Scan(&failed)
 	if err == sql.ErrNoRows {
 		return false, 0, time.Time{}, nil // 已终态：不动
 	}
@@ -2363,7 +2363,7 @@ func (s *SQLite) UpdateSessionDeliveryBusy(ctx context.Context, id, errText stri
 	_, err := s.db.ExecContext(ctx, `UPDATE session_delivery
 		SET state='queued',last_error=?,next_attempt_at=?,lease_until=NULL,updated_at=?,
 		    attempts=CASE WHEN attempts>0 THEN attempts-1 ELSE attempts END
-		WHERE id=? AND state NOT IN ('processed','dead','cancelled')`,
+		WHERE id=? AND state NOT IN ('processed','dead','cancelled','legacy_received')`,
 		errText, nextAttemptAt.UTC().Format(time.RFC3339Nano), now, id)
 	return err
 }
@@ -2379,7 +2379,7 @@ func (s *SQLite) ReleaseSessionDeliveryLeases(ctx context.Context, keyID, sessio
 	result, err := s.db.ExecContext(ctx, `UPDATE session_delivery
 		SET state='queued',last_error=?,next_attempt_at=?,lease_until=NULL,updated_at=?,
 		    attempts=CASE WHEN attempts>0 THEN attempts-1 ELSE attempts END
-		WHERE key_id=? AND session_name=? AND state IN ('sent','delivered')`,
+		WHERE key_id=? AND session_name=? AND state IN ('sent','delivered') AND (state<>'delivered' OR COALESCE(ack_protocol,0)<>2)`,
 		reason, nowText, nowText, keyID, sessionName)
 	if err != nil {
 		return 0, err

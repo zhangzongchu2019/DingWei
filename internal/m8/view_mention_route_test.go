@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -23,7 +24,17 @@ import (
 // R-V2-0102-VIEW-MENTION-ROUTE（要点板 runbooks/PLAN-R-V2-0102-VIEW-MENTION-ROUTE-opus50tc2k.md 第四节＋第七至九节）：
 // view 页提及同组 Agent ⇒ 当前会话照收原文，被提及方另收一封；只认结构化 mentions。
 
-type vmFrames struct{ ch chan model.Envelope }
+type vmFrames struct {
+	ch            chan model.Envelope
+	ackMu         sync.Mutex
+	manualACKBody string
+}
+
+func (f *vmFrames) manualACK(body string) {
+	f.ackMu.Lock()
+	defer f.ackMu.Unlock()
+	f.manualACKBody = body
+}
 
 // collect 后台持续读，避免带超时的 Read 在超时时把连接关掉（coder/websocket 语义）。
 // 持久投递（带 delivery_id）照真 helper 回 processed 回执，免得租约到期重投、干扰「不得再收到」类断言。
@@ -40,7 +51,10 @@ func vmCollect(conn *websocket.Conn) *vmFrames {
 			if json.Unmarshal(data, &env) != nil || metaString(env.Meta, "type") == agentNetworkSkillPushType {
 				continue
 			}
-			if dlv := metaString(env.Meta, "delivery_id"); dlv != "" {
+			f.ackMu.Lock()
+			manual := f.manualACKBody != "" && strings.HasPrefix(env.Body, f.manualACKBody)
+			f.ackMu.Unlock()
+			if dlv := metaString(env.Meta, "delivery_id"); dlv != "" && !manual {
 				_ = writeEnvelope(context.Background(), conn, model.Envelope{ID: "ack-" + dlv, To: env.From,
 					Meta: map[string]any{"type": "delivery_ack", "delivery_id": dlv, "state": "processed"}})
 			}

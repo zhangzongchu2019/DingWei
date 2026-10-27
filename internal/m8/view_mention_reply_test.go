@@ -211,6 +211,10 @@ func TestMentionReplyMirror(t *testing.T) {
 	// 格 8：派生信封终未处理（不可重试的 failed ⇒ dead）⇒ A 页一行「未能处理这条转发」。
 	t.Run("a dead mention delivery shows a status line", func(t *testing.T) {
 		before := len(e.aReplies(t))
+		// This case rejects before receipt. The shared collector must not
+		// first acknowledge the same delivery as legacy processed.
+		e.x.manualACK("回流八")
+		defer e.x.manualACK("")
 		dlv := e.mentionBeta(t, "a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8", "回流八")
 		if err := writeEnvelope(ctx, e.xConn, model.Envelope{ID: "ack-fail-" + dlv, To: "workpulse#" + AgentKeyID("zzc"),
 			Meta: map[string]any{"type": "delivery_ack", "delivery_id": dlv, "state": "failed", "reason": "cli_unavailable", "retryable": false}}); err != nil {

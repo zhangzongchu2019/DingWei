@@ -123,7 +123,10 @@ func TestOfflineFailureNoticeActualSourceReconnectAndLostACK(t *testing.T) {
 	if err := writeEnvelope(ctx, third, model.Envelope{ID: "notice-processed", To: sessionAddress("workpulse", key.ID), Meta: map[string]any{"type": "delivery_ack", "delivery_id": noticeID, "state": "processed"}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, "notice processed ACK", func() bool { n, _ := db.GetSessionDelivery(ctx, noticeID); return n != nil && n.State == "processed" })
+	waitFor(t, time.Second, "legacy notice receipt ACK is transport-only", func() bool {
+		n, _ := db.GetSessionDelivery(ctx, noticeID)
+		return n != nil && n.State == "legacy_received" && n.InjectedAt == nil && n.ProcessedAt == nil
+	})
 }
 
 func TestFailureNoticeRetryExhaustionCannotNotifyAgain(t *testing.T) {

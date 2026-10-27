@@ -754,10 +754,17 @@ func sessionClientEnvelope(env model.Envelope) model.Envelope {
 }
 
 func (h *Hub) publishDeliveryUpdate(keyID, sessionName, messageID, deliveryID, deliveryState, stage, status, reason string) {
+	h.publishDeliveryUpdateWithMetadata(keyID, sessionName, messageID, deliveryID, deliveryState, stage, status, reason, nil)
+}
+
+func (h *Hub) publishDeliveryUpdateWithMetadata(keyID, sessionName, messageID, deliveryID, deliveryState, stage, status, reason string, metadata map[string]any) {
 	if keyID == "" || sessionName == "" || messageID == "" || deliveryID == "" {
 		return
 	}
-	event := deliveryUpdateEvent(messageID, deliveryID, deliveryState, stage, status, reason, time.Now().UTC())
+	event := deliveryUpdateEvent(messageID, deliveryID, deliveryState, stage, status, reason, h.now().UTC())
+	for k, v := range metadata {
+		event[k] = v
+	}
 	raw, _ := json.Marshal(event)
 	h.publishSessionEvent(keyID, sessionName, string(raw))
 }
