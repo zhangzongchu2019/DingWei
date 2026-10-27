@@ -44,6 +44,8 @@ class DriverAdapter:
         self._work_available = threading.Event()
         self._turn_progress: dict[tuple[str, str], float] = {}
         self._admission_callbacks: dict[str, tuple[object | None, object | None]] = {}
+        self._injected_callbacks = {}
+        self.delivery_lifecycle = None
         self._timed_out_turns: set[tuple[str, str]] = set()
         # R-V2-0105 件二：事件桥已处理（已入 _event_q，或有意不发）的事件对象，按 id 记、值为对象本身。
         # 驱动无游标重订阅时会把缓冲里的【同一批对象】整份重放；见过的直接跳过，不再发给 Hub。
@@ -168,7 +170,6 @@ class DriverAdapter:
             staged=self._blocker_journal().stage(env)
             env=json.loads(staged['envelope_json'])
             if staged['state'] in ('done','failed','cancelled','unknown'):
-                if on_injected is not None:on_injected()
                 return ""
         # Register admission callbacks before waking the worker.  Calling the
         # public enqueue_envelope here would set _work_available first, allowing
@@ -182,20 +183,17 @@ class DriverAdapter:
                 on_admission_failed()
             raise OverflowError(result.reason or "queue_full")
         if result.state == "duplicate":
-            # Preserve main's ACK semantics: a Hub redelivery may mean the
-            # previous injected ACK was lost, so acknowledge the duplicate
-            # again even though it creates no new model admission.
-            if on_injected is not None:
-                on_injected()
+            # Existing durable lifecycle/outbox owns replay. A duplicate is
+            # never evidence of a new admission.
             if on_admission_failed is not None:
                 on_admission_failed()
             return ""
         if result.state == "queued" and (on_admitted is not None or on_admission_failed is not None):
             self._admission_callbacks[result.command.delivery_id] = (on_admitted, on_admission_failed)
         if result.state == "queued":
-            self._work_available.set()
             if on_injected is not None:
-                on_injected()
+                self._injected_callbacks[result.command.delivery_id] = on_injected
+            self._work_available.set()
         return ""
 
     def enqueue_envelope(self, env: dict) -> EnqueueResult:
@@ -244,6 +242,14 @@ class DriverAdapter:
 
     def _command_worker(self) -> None:
         while True:
+            try:
+                self._restore_delivery_commands()
+            except Exception:
+                if not getattr(self, '_lifecycle_restore_warned', False):
+                    print('[delivery] lifecycle recovery unavailable; dispatch paused', flush=True)
+                    self._lifecycle_restore_warned = True
+                self._bridge_sleep(0.5)
+                continue
             try:self._restore_blocker_commands()
             except Exception:
                 if not getattr(self,'_blocker_restore_warned',False):
@@ -258,6 +264,21 @@ class DriverAdapter:
                 self._work_available.wait(0.5)
                 continue
             self._deliver_command(command)
+
+    def _restore_delivery_commands(self):
+        ledger = getattr(self, "delivery_lifecycle", None)
+        if ledger is None or getattr(self, "_lifecycles_restored", False):
+            return
+        for row in ledger.recoverable_lifecycles():
+            env = json.loads(row['envelope_json'])
+            if (env.get('meta') or {}).get('kind') == 'task_blocker_ready':
+                continue  # The blocker journal owns its authorization preflight.
+            result = self._commands.enqueue(env)
+            if result.state == 'rejected':
+                return  # Retry restoration after queue capacity is available.
+            if result.state == 'queued':
+                self._publish_queue_event(result.event)
+        self._lifecycles_restored = True
 
     def _blocker_path(self):
         return getattr(self.cfg,'inbox_db','') or os.path.join(getattr(self.cfg,'state_dir','') or os.path.expanduser('~'),'.blocker-wake.sqlite3')
@@ -299,7 +320,11 @@ class DriverAdapter:
                 command.envelope=safe;command.text=safe['body']
             previous=journal.start(signal)
             if previous=='pending':
-                receipt=self.driver.deliver(command.delivery_id,command.text)
+                ledger = getattr(self, "delivery_lifecycle", None)
+                if ledger is not None and ledger.lifecycle(command.delivery_id) is not None and not ledger.begin_dispatch(command.delivery_id):
+                    receipt=self.driver.poll_receipt(command.delivery_id)
+                else:
+                    receipt=self.driver.deliver(command.delivery_id,command.text)
             elif previous in ('dispatching','admitted'):
                 receipt=self.driver.poll_receipt(command.delivery_id)
             else:
@@ -320,8 +345,17 @@ class DriverAdapter:
 
     def _deliver_regular_command(self, command: QueuedCommand) -> None:
         observe(getattr(self, "delivery_progress", None), command.delivery_id, "dispatching")
+        ledger = getattr(self, "delivery_lifecycle", None)
         try:
-            receipt = self.driver.deliver(command.delivery_id, command.text)
+            if ledger is not None and ledger.lifecycle(command.delivery_id) is not None:
+                if ledger.begin_dispatch(command.delivery_id):
+                    receipt = self.driver.deliver(command.delivery_id, command.text)
+                else:
+                    # Intent was persisted before a previous RPC. Query only;
+                    # an absent/unknown receipt is never proof of nonadmission.
+                    receipt = self.driver.poll_receipt(command.delivery_id)
+            else:
+                receipt = self.driver.deliver(command.delivery_id, command.text)
             print(
                 f"[driver-adapter] deliver id={command.delivery_id} -> "
                 f"{receipt.state} ({str(receipt.detail)[:60]})",
@@ -329,6 +363,8 @@ class DriverAdapter:
             )
             self._settle_command(command, receipt)
         except Exception as exc:
+            if ledger is not None:
+                ledger.record_admission_unknown(command.delivery_id)
             print(f"[driver-adapter][FAILED] id={command.delivery_id} deliver raised: {exc}", flush=True)
             self._publish_terminal_failure(command, "deliver_failed", str(exc))
             self._fail_admission(command.delivery_id)
@@ -341,6 +377,15 @@ class DriverAdapter:
         while True:
             if not admitted:
                 admitted = self._admit_from_receipt(command, receipt)
+            ledger = getattr(self, "delivery_lifecycle", None)
+            if ledger is not None and ledger.lifecycle(command.delivery_id) is None:
+                ledger = None  # Human/non-durable input has no Hub lifecycle row.
+            if not admitted and receipt.state == "unknown":
+                if ledger is not None:
+                    ledger.record_admission_unknown(command.delivery_id)
+                self._fail_admission(command.delivery_id)
+                self._commands.finish(command.delivery_id, "failed")
+                return
             if not progress_admitted:
                 progress_admitted = self._observe_model_admission(command, receipt)
             if receipt.state in ("done", "failed"):
@@ -362,6 +407,17 @@ class DriverAdapter:
                     else "interrupted" if key in self._interrupt_confirmed
                     else "failed"
                 )
+                if ledger is not None:
+                    if admitted and receipt.state == "done":
+                        persisted = ledger.lifecycle(command.delivery_id)
+                        if persisted is not None and persisted['state'] != 'processed':
+                            ledger.record_completed(command.delivery_id, command.turn_id, "completed")
+                    elif not admitted and str(receipt.detail).startswith("session_unavailable:"):
+                        ledger.record_rejected(command.delivery_id)
+                    elif not admitted:
+                        ledger.record_admission_unknown(command.delivery_id)
+                    # A watchdog/failed poll alone is not a model terminal.
+                    # Native turn_completed events persist failed/interrupted.
                 self._commands.finish(command.delivery_id, outcome)
                 observe(getattr(self, "delivery_progress", None), command.delivery_id, "terminal" if progress_admitted else "unknown")
                 self._interrupt_confirmed.discard(key)
@@ -429,20 +485,67 @@ class DriverAdapter:
     def _admit_from_receipt(self, command: QueuedCommand, receipt) -> bool:
         if receipt.state not in ("accepted", "processing", "done"):
             return False
-        turn_id = self._receipt_turn_id(receipt)
+        # Claude generates a local turn UUID before writing stdin. Only the
+        # isReplay acknowledgement or a true result proves model admission.
+        if self._which == "claude" and receipt.state == "processing" and not str(receipt.detail).startswith("accepted,"):
+            return False
+        turn_id = self._receipt_turn_id(receipt) or command.turn_id
+        if not turn_id:
+            if self._which == "claude":
+                store = getattr(self.driver, "_store", None)
+                record = store.get(command.delivery_id) if store is not None else None
+                turn_id = record.turn_id if record else ""
+            elif self._which == "codex":
+                store = getattr(self.driver, "_store", None)
+                record = store.get_by_envelope(command.delivery_id) if store is not None else None
+                turn_id = record.turn_id if record else ""
         if not turn_id:
             return False
+        ledger = getattr(self, "delivery_lifecycle", None)
+        if ledger is not None and ledger.lifecycle(command.delivery_id) is not None:
+            ledger.record_admitted(command.delivery_id, turn_id)
         event = self._commands.admit(command.delivery_id, turn_id)
         if event is None:
             return command.turn_id == turn_id and command.state == "admitted"
         self._turn_progress[(command.delivery_id, turn_id)] = time.monotonic()
         self._publish_queue_event(event)
+        injected = getattr(self, "_injected_callbacks", {}).pop(command.delivery_id, None)
+        if callable(injected):
+            injected()
         callback, _ = self._admission_callbacks.pop(command.delivery_id, (None, None))
         if callable(callback):
             callback()
         return True
 
+    def _record_event_lifecycle(self, ev):
+        ledger = getattr(self, "delivery_lifecycle", None)
+        if ledger is None or not ev.delivery_id or not ev.turn_id or ev.kind != "state_change" or ev.data.get("change") != "turn_completed":
+            return
+        row = ledger.lifecycle(ev.delivery_id)
+        if row is None or row['dispatch_intent_at'] is None:
+            return
+        data = ev.data
+        status = data.get('status')
+        if isinstance(status, dict):
+            status = status.get('type')
+        subtype = data.get('subtype')
+        if status in ('interrupted','cancelled') or subtype == 'error_during_execution':
+            outcome = 'interrupted'
+        elif status == 'failed' or data.get('is_error') or (isinstance(subtype, str) and subtype.startswith('error_')):
+            outcome = 'failed'
+        elif status == 'completed' or subtype == 'success':
+            outcome = 'completed'
+        else:
+            return
+        # A native terminal implies admission even when receipt delivery raced
+        # ahead of the adapter. Both observations commit before any ACK send.
+        ledger.record_admitted(ev.delivery_id, ev.turn_id)
+        ledger.record_completed(ev.delivery_id, ev.turn_id, outcome)
+        observe(getattr(self, "delivery_progress", None), ev.delivery_id, "model_admitted")
+        observe(getattr(self, "delivery_progress", None), ev.delivery_id, "terminal")
+
     def _fail_admission(self, delivery_id: str) -> None:
+        getattr(self, "_injected_callbacks", {}).pop(delivery_id, None)
         _, callback = self._admission_callbacks.pop(delivery_id, (None, None))
         if callable(callback):
             callback()
@@ -504,6 +607,7 @@ class DriverAdapter:
                     if self._bridged.get(id(ev)) is ev:
                         skipped += 1  # 重订阅重放的已处理对象：不再发（R-V2-0105 件二）
                         continue
+                    self._record_event_lifecycle(ev)
                     event_key = (ev.delivery_id, ev.turn_id)
                     if (
                         event_key in self._timed_out_turns

@@ -221,9 +221,9 @@ class HubDeliveryPathTest(unittest.TestCase):
     并在格内钉死 Hub 可见终态的事实口径：
     - 面 2（start 失败）：handle_delivery 抛出（adapter 不吞）⇒ app delivery_worker_loop
       的 except 兜住 ⇒ Hub 收 failed ACK（reason=cli_injection_failed）——既有路径，不经我方 catch。
-    - 面 1b/3（start 成功、turn 阶段失败）：handle_delivery 正常返回（入队即 injected ACK），
+    - 面 1b/3（start 成功、turn 阶段失败）：handle_delivery 正常返回（只入队，不确认模型 admission），
       之后的失败只走 session_event（turn_completed outcome=failed 带 reason）——
-      Hub 投递态是 injected/processed，失败对 Hub 的投递面不可见（仅事件面）。"""
+      未取得 admission 时不得发 injected；失败仍在事件面关联原投递。"""
 
     def _mk(self, td, behavior):
         rig = DriverFailureFacesTest()
@@ -237,14 +237,14 @@ class HubDeliveryPathTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             adapter = self._mk(td, "turnauthfail")
             injected = []
-            # handle_delivery 正常返回（不抛）＋on_injected 被调（⇒ Hub 先收 injected ACK）
+            # handle_delivery 返回只表示入队；turn 鉴权失败不构成 admission。
             out = adapter.handle_delivery(
                 {"body": "ping", "meta": {"source_kind": "user"}},
                 on_injected=lambda: injected.append(True),
             )
             self.assertEqual(out, "")
-            self.assertTrue(injected, "入队成功 ⇒ injected ACK（Hub 先见 injected）")
-            # worker 随后判 failed：队列终态＋事件面带原因；Hub 投递态停 injected/processed
+            self.assertFalse(injected, "入队成功不能合成模型 admission ACK")
+            # worker 随后判 failed：队列终态＋事件面带原因，不伪造 injected。
             deadline = time.monotonic() + 15
             state = ""
             while time.monotonic() < deadline:

@@ -1,0 +1,145 @@
+"""Unit fixtures for persistence windows; these do not replace real CLI E2E."""
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from sessionhelper.inbox import DeliveryInbox
+from sessionhelper.driver_adapter import DriverAdapter
+from sessionhelper.contract import DeliveryReceipt, SessionEvent
+
+
+class DispatchLifecycleTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
+        self.path = str(Path(self.tmp.name)/'inbox.sqlite')
+        self.inbox = DeliveryInbox(self.path, session_name='seat')
+        self.env = {'id':'source','body':'fixture','meta':{'delivery_id':'dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','delivery_ack_protocol':2,'processing_mode':'driver','ack_generation':1}}
+        self.inbox.accept('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', self.env); self.inbox.claim_next()
+
+    def adapter(self, driver, which='codex'):
+        cfg = SimpleNamespace(busy_buffer_max=10, turn_terminal_timeout_seconds=10)
+        with patch.object(DriverAdapter, '_build_driver', return_value=driver):
+            adapter = DriverAdapter(cfg)
+        adapter._which=which;adapter._started=True;adapter.delivery_lifecycle=self.inbox
+        return adapter
+
+    def test_intent_precedes_rpc_and_exception_never_replays(self):
+        calls=[]
+        def deliver(did,body):
+            row=self.inbox.lifecycle(did)
+            self.assertEqual(row['request_id'],did)
+            self.assertIsNotNone(row['dispatch_intent_at'])
+            calls.append(did)
+            raise OSError('connection lost after request')
+        driver=SimpleNamespace(deliver=deliver,poll_receipt=lambda did: DeliveryReceipt(did,'unknown','protocol','no evidence'))
+        adapter=self.adapter(driver)
+        adapter.handle_delivery(self.env)
+        adapter._deliver_regular_command(adapter._commands.start_next())
+        self.assertEqual(self.inbox.lifecycle('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')['state'],'admission_unknown')
+        reopened=DeliveryInbox(self.path,session_name='seat')
+        self.assertIsNone(reopened.claim_next())
+        adapter=self.adapter(driver)
+        adapter.handle_delivery(self.env)
+        adapter._deliver_regular_command(adapter._commands.start_next())
+        self.assertEqual(calls,['dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'])
+
+    def test_enqueue_and_duplicate_never_fire_admission_callback(self):
+        driver=SimpleNamespace()
+        adapter=self.adapter(driver);seen=[]
+        adapter.handle_delivery(self.env,lambda: seen.append('injected'),lambda:seen.append('admitted'))
+        adapter.handle_delivery(self.env,lambda: seen.append('duplicate'))
+        self.assertEqual(seen,[])
+        self.assertIsNone(self.inbox.lifecycle('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')['admitted_at'])
+
+    def test_claude_submitted_local_uuid_is_not_admission(self):
+        driver=SimpleNamespace()
+        adapter=self.adapter(driver,'claude')
+        adapter.handle_delivery(self.env);command=adapter._commands.start_next()
+        self.inbox.begin_dispatch('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        self.assertFalse(adapter._admit_from_receipt(command,DeliveryReceipt('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','processing','pipe','submitted, awaiting ack, turn=local')))
+        self.assertIsNone(self.inbox.lifecycle('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')['admitted_at'])
+        self.assertTrue(adapter._admit_from_receipt(command,DeliveryReceipt('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','accepted','pipe','isReplay ack, turn=local')))
+        self.assertEqual(self.inbox.lifecycle('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')['turn_id'],'local')
+
+    def test_native_terminal_preserves_turn_and_original_times(self):
+        adapter=self.adapter(SimpleNamespace())
+        self.inbox.begin_dispatch('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        self.inbox.record_admitted('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','turn',100)
+        event=SessionEvent(kind='state_change',delivery_id='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',turn_id='turn',data={'change':'turn_completed','status':'completed'})
+        adapter._record_event_lifecycle(event)
+        first=self.inbox.lifecycle('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        adapter._record_event_lifecycle(event)
+        after=self.inbox.lifecycle('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        self.assertEqual(after,first)
+        self.assertEqual(after['admitted_at'],100)
+        self.assertEqual(after['turn_outcome'],'completed')
+        self.assertIsNotNone(after['processed_at'])
+        with self.assertRaises(ValueError):self.inbox.record_admitted('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','other')
+
+    def test_watchdog_event_does_not_fabricate_turn_terminal(self):
+        adapter=self.adapter(SimpleNamespace())
+        self.inbox.begin_dispatch('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');self.inbox.record_admitted('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','turn')
+        event=SessionEvent(kind='state_change',delivery_id='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',turn_id='turn',data={'change':'turn_completed','reason':'terminal_timeout','outcome':'failed'})
+        adapter._record_event_lifecycle(event)
+        self.assertEqual(self.inbox.lifecycle('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')['state'],'admitted')
+        self.assertIsNone(self.inbox.lifecycle('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')['processed_at'])
+
+    def test_cancel_and_dispatch_have_single_atomic_winner(self):
+        import threading
+        for n in range(20):
+            did=f'race-{n}'
+            self.inbox.accept(did,self.env)
+            barrier=threading.Barrier(2);result={}
+            def cancel():
+                barrier.wait();result['cancel']=self.inbox.cancel('source',did)
+            def dispatch():
+                barrier.wait();claim=self.inbox.claim_next()
+                result['intent']=bool(claim and self.inbox.begin_dispatch(claim[0]))
+            a=threading.Thread(target=cancel);b=threading.Thread(target=dispatch)
+            a.start();b.start();a.join();b.join()
+            row=self.inbox.lifecycle(did)
+            if result['cancel']['result']=='cancelled':
+                self.assertIsNone(row['dispatch_intent_at'])
+                self.assertFalse(result['intent'])
+            else:
+                self.assertTrue(result['intent'])
+                self.assertEqual(row['state'],'processing')
+            if row['state']=='processing':self.inbox.record_admission_unknown(did)
+
+    def test_recovery_query_does_not_dispatch_admitted_or_uncertain_rows(self):
+        self.inbox.begin_dispatch('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');self.inbox.record_admitted('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','original')
+        reopened=DeliveryInbox(self.path,session_name='seat')
+        recovered=reopened.recoverable_lifecycles()
+        self.assertEqual(len(recovered),1)
+        self.assertEqual(recovered[0]['turn_id'],'original')
+        self.assertFalse(reopened.begin_dispatch('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'))
+        self.assertIsNone(reopened.claim_next())
+
+    def test_restore_only_queries_bound_request_and_never_calls_deliver(self):
+        self.inbox.begin_dispatch('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        self.inbox.record_admission_unknown('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        calls=[]
+        driver=SimpleNamespace(deliver=lambda *args: self.fail('recovery dispatched again'),
+            poll_receipt=lambda did: calls.append(did) or DeliveryReceipt(did,'unknown','protocol','no remote proof'))
+        adapter=self.adapter(driver)
+        adapter._restore_delivery_commands()
+        command=adapter._commands.start_next()
+        self.assertIsNotNone(command)
+        adapter._deliver_regular_command(command)
+        self.assertEqual(calls,['dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'])
+        self.assertIsNone(self.inbox.lifecycle(calls[0])['admitted_at'])
+
+    def test_non_durable_human_command_does_not_require_hub_ledger(self):
+        driver=SimpleNamespace(deliver=lambda did,body: DeliveryReceipt(did,'done','protocol','turn=human-turn'))
+        adapter=self.adapter(driver)
+        adapter.handle_delivery({'id':'human','body':'local input'})
+        command=adapter._commands.start_next()
+        adapter._deliver_regular_command(command)
+        self.assertEqual(command.state,'completed')
+        self.assertIsNone(self.inbox.lifecycle(command.delivery_id))
+
+
+if __name__=='__main__':unittest.main()

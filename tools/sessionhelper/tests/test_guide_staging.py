@@ -332,7 +332,7 @@ class DriverAdmissionCallbackTest(unittest.TestCase):
         self.assertTrue(failed.wait(1))
         self.assertFalse(admitted.is_set())
 
-    def test_slow_protocol_admission_preserves_injected_before_processed(self):
+    def test_slow_protocol_admission_does_not_inject_on_enqueue_return(self):
         driver = FakeProtocolDriver(delay=0.3)
         adapter = self.make_adapter(driver)
         order = []
@@ -343,12 +343,12 @@ class DriverAdmissionCallbackTest(unittest.TestCase):
             admitted.set()
 
         adapter.handle_delivery(business_env("WORK"), lambda: order.append("injected"), on_admitted)
-        order.append("processed")  # delivery_worker_loop sends this after handle_delivery returns
-        self.assertEqual(order, ["injected", "processed"])
+        order.append("enqueue_returned")
+        self.assertEqual(order, ["enqueue_returned"])
         self.assertTrue(admitted.wait(1))
-        self.assertEqual(order, ["injected", "processed", "admitted"])
+        self.assertEqual(order, ["enqueue_returned", "injected", "admitted"])
 
-    def test_duplicate_reacks_injected_and_releases_unadmitted_claim(self):
+    def test_duplicate_has_no_new_injection_and_releases_unadmitted_claim(self):
         driver = FakeProtocolDriver()
         adapter = self.make_adapter(driver)
         first_injected = threading.Event()
@@ -361,7 +361,7 @@ class DriverAdmissionCallbackTest(unittest.TestCase):
             lambda: duplicate_calls.append("admitted"),
             lambda: duplicate_calls.append("admission_failed"),
         )
-        self.assertEqual(duplicate_calls, ["injected", "admission_failed"])
+        self.assertEqual(duplicate_calls, ["admission_failed"])
 
 
 class GuideRealAdapterBoundaryTest(unittest.TestCase):
@@ -426,8 +426,8 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
                 FakeWS(), business_env("DUP", eid="same"),
                 on_injected=lambda: injected.append("same-2"),
             ))
-            self.assertEqual(injected, ["same-1", "same-2"],
-                             "same delivery id must re-ACK injected exactly like main")
+            self.assertEqual(injected, ["same-1"],
+                             "duplicate must replay durable ACKs without synthesizing admission")
             self.assertIsNone(helper.guide_store._claimed)
             asyncio.run(helper.process_inbound_message(
                 FakeWS(), business_env("THIRD", eid="third"),
@@ -437,7 +437,7 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
             self.assertIn("GUIDE", driver.calls[1])
             self.assertTrue(driver.calls[1].endswith("THIRD"))
             self.assertEqual(driver.calls[1].count("GUIDE"), 1)
-            self.assertEqual(injected, ["same-1", "same-2", "third"])
+            self.assertEqual(injected, ["same-1", "third"])
             self.assertEqual(helper.guide_store.state()["state"], "consumed")
             self.wait_for(lambda: adapter._commands.depth == 0)
 

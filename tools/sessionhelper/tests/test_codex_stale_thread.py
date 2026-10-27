@@ -299,7 +299,7 @@ class CodexStaleThread(unittest.TestCase):
         injected, admitted = [], []
         adapter.handle_delivery({'id': 'one', 'body': 'input', 'meta': {}},
                                 on_injected=lambda: injected.append(True), on_admitted=lambda: admitted.append(True))
-        self.assertEqual(injected, [True], 'INJECTED_ACK_SEMANTICS_CHANGED')
+        self.assertEqual(injected, [], 'ENQUEUE_IS_NOT_MODEL_ADMISSION')
         command = next(iter(adapter._commands._by_delivery.values()))
         adapter._deliver_regular_command(command)
         events = []
@@ -311,11 +311,11 @@ class CodexStaleThread(unittest.TestCase):
         self.assertEqual(failed[0]['data']['outcome'], 'failed')
         self.assertEqual(failed[0]['kind'], 'state_change')
         self.assertEqual(admitted, [])
-        self.assertEqual(injected, [True])
+        self.assertEqual(injected, [])
         self.assertFalse(any(x.get('kind') == 'assistant_text' for x in events))
         self.assertTrue(adapter._term_q.empty())
 
-    def test_adapter_preserves_injected_ack_and_publishes_correlated_failure(self):
+    def test_adapter_rejected_admission_has_no_injected_ack_and_publishes_failure(self):
         self._adapter_failure('session_unavailable')
 
     def test_adapter_uncertain_admission_is_visible_and_not_a_success(self):

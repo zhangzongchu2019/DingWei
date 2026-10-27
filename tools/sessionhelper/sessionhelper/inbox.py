@@ -11,10 +11,10 @@ import threading
 import time
 
 from .sqlite_utils import connection as sqlite_connection
-from .inbox_lifecycle import migrate_lifecycle, delivery_protocol
+from .inbox_lifecycle import migrate_lifecycle, delivery_protocol, DeliveryLifecycle
 
 
-class DeliveryInbox:
+class DeliveryInbox(DeliveryLifecycle):
     def __init__(
         self,
         path: str,

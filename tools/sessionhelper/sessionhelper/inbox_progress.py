@@ -42,7 +42,7 @@ class InboxProgress:
             db.execute('''UPDATE delivery_progress SET unknown_instance=?
                 WHERE session_name=? AND stage='unknown' AND delivery_id IN (
                     SELECT delivery_id FROM delivery_inbox WHERE session_name=?
-                    AND state IN ('received','processing'))''', (self.instance, session, session))
+                    AND state IN ('received','processing','admission_unknown'))''', (self.instance, session, session))
 
     def accepted(self, db, delivery_id, received_at):
         # Caller owns the inbox transaction: disk receipt and progress are atomic.

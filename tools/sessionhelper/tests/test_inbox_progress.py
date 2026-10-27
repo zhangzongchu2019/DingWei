@@ -202,11 +202,12 @@ class InboxProgressTest(unittest.TestCase):
         with patch.object(driver,'health',return_value=True), patch('sessionhelper.claudeDriver.TURN_ACCEPT_TIMEOUT',0):
             receipt=driver.deliver(did,'synthetic')
         self.assertEqual(receipt.state,'processing');self.assertIn('awaiting ack',receipt.detail)
-        self.assertTrue(adapter._admit_from_receipt(command,receipt)) # Preserve old behavior.
+        self.assertFalse(adapter._admit_from_receipt(command,receipt)) # submitted is not admission.
         self.assertFalse(adapter._observe_model_admission(command,receipt))
         self.assertEqual(self.journal.snapshot()['disk_not_admitted_count'],1)
         self.assertFalse(adapter._observe_model_admission(command,driver.poll_receipt(did)))
         driver._handle_frame({'type':'user','isReplay':True})
+        self.assertTrue(adapter._admit_from_receipt(command,driver.poll_receipt(did)))
         self.assertTrue(adapter._observe_model_admission(command,driver.poll_receipt(did)))
         self.assertEqual(self.journal.snapshot()['deliveries'][did],'model_admitted')
         self.assertEqual(self.journal.snapshot()['disk_not_admitted_count'],0)

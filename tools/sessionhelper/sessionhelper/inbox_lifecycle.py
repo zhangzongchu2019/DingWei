@@ -63,3 +63,90 @@ def delivery_protocol(env: dict) -> tuple[int, str, int]:
         raise ValueError('invalid delivery ACK processing mode')
     return protocol, mode, generation
 
+
+
+class DeliveryLifecycle:
+    """Lifecycle transitions share the inbox lock/transaction with cancellation."""
+
+    def lifecycle(self, delivery_id):
+        with self._lock, self._connect() as db:
+            row = db.execute('SELECT * FROM delivery_inbox WHERE session_name=? AND delivery_id=?',
+                             (self.session_name, delivery_id)).fetchone()
+            return dict(row) if row else None
+
+    def recoverable_lifecycles(self):
+        with self._lock, self._connect() as db:
+            return [dict(row) for row in db.execute("""SELECT * FROM delivery_inbox
+                WHERE session_name=? AND state IN ('admitted','admission_unknown')
+                AND dispatch_intent_at IS NOT NULL ORDER BY received_at,delivery_id""", (self.session_name,))]
+
+    def begin_dispatch(self, delivery_id):
+        import time
+        with self._lock, self._connect() as db:
+            changed = db.execute("""UPDATE delivery_inbox SET dispatch_intent_at=?,request_id=delivery_id,updated_at=?
+                WHERE session_name=? AND delivery_id=? AND state='processing' AND dispatch_intent_at IS NULL""",
+                (time.time(), time.time(), self.session_name, delivery_id)).rowcount
+            return changed == 1
+
+    def record_admitted(self, delivery_id, turn_id, occurred_at=None):
+        import time
+        if not turn_id:
+            raise ValueError('admission requires a turn ID')
+        now = time.time() if occurred_at is None else occurred_at
+        with self._lock, self._connect() as db:
+            row = db.execute('SELECT * FROM delivery_inbox WHERE session_name=? AND delivery_id=?',
+                             (self.session_name, delivery_id)).fetchone()
+            if row is None or row['dispatch_intent_at'] is None or row['state'] in ('cancelled','failed'):
+                raise ValueError('admission lacks dispatch intent')
+            if row['admitted_at'] is not None:
+                if row['turn_id'] != turn_id:
+                    raise ValueError('admission cannot replace the original turn')
+                return
+            if row['state'] not in ('processing','admission_unknown'):
+                raise ValueError('invalid admission predecessor')
+            db.execute("""UPDATE delivery_inbox SET state='admitted',turn_id=?,admitted_at=?,error=NULL,updated_at=?
+                WHERE session_name=? AND delivery_id=?""", (turn_id, now, now, self.session_name, delivery_id))
+            self._lifecycle_ack(db, delivery_id, 'injected')
+
+    def record_completed(self, delivery_id, turn_id, outcome, occurred_at=None):
+        import time
+        if outcome not in ('completed','interrupted','failed'):
+            raise ValueError('invalid turn outcome')
+        now = time.time() if occurred_at is None else occurred_at
+        with self._lock, self._connect() as db:
+            row = db.execute('SELECT * FROM delivery_inbox WHERE session_name=? AND delivery_id=?',
+                             (self.session_name, delivery_id)).fetchone()
+            if row is None or row['admitted_at'] is None or row['turn_id'] != turn_id or now < row['admitted_at']:
+                raise ValueError('terminal requires the original admitted turn')
+            if row['state'] == 'processed':
+                if row['turn_outcome'] != outcome:
+                    raise ValueError('terminal cannot replace original outcome')
+                return
+            if row['state'] != 'admitted':
+                raise ValueError('invalid terminal predecessor')
+            db.execute("""UPDATE delivery_inbox SET state='processed',processed_at=?,turn_outcome=?,updated_at=?
+                WHERE session_name=? AND delivery_id=?""", (now, outcome, now, self.session_name, delivery_id))
+            self._lifecycle_ack(db, delivery_id, 'processed')
+
+    def record_admission_unknown(self, delivery_id, reason='model_admission_unknown'):
+        import time
+        with self._lock, self._connect() as db:
+            changed = db.execute("""UPDATE delivery_inbox SET state='admission_unknown',error=?,updated_at=?
+                WHERE session_name=? AND delivery_id=? AND state='processing' AND dispatch_intent_at IS NOT NULL
+                AND admitted_at IS NULL""", (reason, time.time(), self.session_name, delivery_id)).rowcount
+            if changed:
+                self._lifecycle_ack(db, delivery_id, 'admission_unknown')
+
+    def record_rejected(self, delivery_id):
+        """Only a driver proof of nonadmission may use this path."""
+        import time
+        with self._lock, self._connect() as db:
+            changed = db.execute("""UPDATE delivery_inbox SET state='failed',error='session_unavailable',updated_at=?
+                WHERE session_name=? AND delivery_id=? AND state IN ('processing','admission_unknown')
+                AND admitted_at IS NULL AND dispatch_intent_at IS NOT NULL""", (time.time(), self.session_name, delivery_id)).rowcount
+            if changed:
+                self._lifecycle_ack(db, delivery_id, 'failed')
+
+    def _lifecycle_ack(self, db, delivery_id, phase):
+        # Durable outbox integration is supplied by the ACK transport step.
+        pass
