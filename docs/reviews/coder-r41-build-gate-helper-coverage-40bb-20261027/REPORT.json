@@ -1,0 +1,207 @@
+{
+  "utc": "2026-10-27T17:24:00.318461+00:00",
+  "item": "2 S-BUILD-GATE-HELPER-COVERAGE",
+  "branch": "coder56solzzc/r41-build-gate-helper-coverage",
+  "repo": "git@git.code.tencent.com:wego-ai/dingwei.git",
+  "base": "549f64e280f2c5496bffb506c709c1bf0a1c504d",
+  "source": "40bbd27fe69767ccc74edcf8015800b2c538174c",
+  "tree": "0104dc9a424749cea8ccdf1e99ca43c8c227dc83",
+  "inventory": "86 test-directory files plus existing top-level supervisor file; exact reviewed manifest87; changed inventory rejects before import; collector requires a collected module for every file",
+  "profiles": [
+    {
+      "actual": 1056,
+      "expected": 1056,
+      "files": 87,
+      "groups": [
+        1047,
+        9
+      ],
+      "profile": "claude",
+      "rc": 1
+    },
+    {
+      "actual": 1056,
+      "expected": 1056,
+      "files": 87,
+      "groups": [
+        1047,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "full_gate_rc": 1,
+  "skips": [],
+  "remaining_reds": [
+    "GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command: item7 timing fix pending",
+    "DriverAdapterUnifiedQueueTest.test_terminal_watchdog_fails_current_and_advances: explicit fixture environment already fixed in independent item9 source2d31ced; intentionally not merged into this baseline branch"
+  ],
+  "negative_gates": {
+    "source": "40bbd27fe69767ccc74edcf8015800b2c538174c",
+    "utc": "2026-10-27T17:16:00.832131+00:00",
+    "cores": 16,
+    "load": [
+      1.29931640625,
+      1.4326171875,
+      1.44140625
+    ],
+    "cuts": [
+      {
+        "file": "tools/sessionhelper/tests/test_ack_outbox.py",
+        "rc": 1,
+        "criterion": "helper inventory mismatch: missing"
+      },
+      {
+        "file": "tools/sessionhelper/tests/test_sessionhelper.py",
+        "rc": 1,
+        "criterion": "helper inventory mismatch: missing"
+      },
+      {
+        "file": "tools/sessionhelper/tests/test_update_release_core.py",
+        "rc": 1,
+        "criterion": "helper inventory mismatch: missing"
+      }
+    ]
+  },
+  "contracts": "16 unittest cases PASS; includes exhaustive deletion of each87 file and each87 manifest entry plus duplicate manifest rejection",
+  "nonhelper": {
+    "utc": "2026-10-27T17:20:55.512915+00:00",
+    "source": "40bbd27fe69767ccc74edcf8015800b2c538174c",
+    "python_files": 25,
+    "shell_files": 2,
+    "results": [
+      {
+        "file": "deploy/image/supervisord/test_verify_supervisor_template.py",
+        "rc": 0
+      },
+      {
+        "file": "deploy/ops/hosted-image/test_start.py",
+        "rc": 0
+      },
+      {
+        "file": "deploy/ops/hosted-image/test_build_definition.py",
+        "rc": 0
+      },
+      {
+        "file": "deploy/ops/hosted-claude-image/test_claude_start.py",
+        "rc": 0
+      },
+      {
+        "file": "deploy/test_build_entrypoints.py",
+        "rc": 0
+      },
+      {
+        "file": "deploy/test_file_service_deploy.py",
+        "rc": 0
+      },
+      {
+        "file": "deploy/test_generate_console_seed.py",
+        "rc": 0
+      },
+      {
+        "file": "deploy/test_invariants_alert_route.py",
+        "rc": 0
+      },
+      {
+        "file": "deploy/test_invariants_expected_hashes.py",
+        "rc": 0
+      },
+      {
+        "file": "deploy/test_preview_console.py",
+        "rc": 0
+      },
+      {
+        "file": "deploy/test_validate_console_seed.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_check_public_view_deploy.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_md_render_core.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_provenance_flag_injection.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_renderer_iter2.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_view_page_store.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_view_service.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_agent_disk_resource.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_inbox_lag_resource.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_view_refresh.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_mux_projection.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_mux_projection_failure.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_cost_paused.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_mux_cost_seed.py",
+        "rc": 0
+      },
+      {
+        "file": "view-service/test_view_unlock_v2_integration.py",
+        "rc": 0
+      },
+      {
+        "file": "deploy/test-view-service-release.sh",
+        "rc": 0
+      },
+      {
+        "file": "scripts/test-desktop-hub-roundtrip.sh",
+        "rc": 0
+      }
+    ]
+  },
+  "environment": {
+    "python": "3.12.3 /tmp/coder-0232-locked-venv/bin/python3",
+    "go": "go1.22.2 linux/amd64",
+    "cores": 16,
+    "time_tzname": [
+      "PST",
+      "PDT"
+    ],
+    "prefix_policy": "SH/DW/DINGWEI/DATAD removed; each profile private HOME/IPC/native config paths; explicit selected profile retained through module isolation"
+  },
+  "integration_note": "Independent branch from549 as ordered. Integrating item9 must append tools/sessionhelper/tests/test_suite_isolation.py to reviewed manifest and update the inventory contract count87 to88; then rerun combined full gate after item7 fix. No complete green build claimed here.",
+  "scope": "test/build tooling only; no deployment, version update, production source change or seat stop/start",
+  "sha256": {
+    "raw/test_ack_outbox-missing.log": "46653a2289dfcda10f55b3d4b40d9ca069eee6062fb2d97ac80a08e59d6658db",
+    "raw/entrypoints.log": "e4b785685476ae85421ea40dd5df58ef1c3e9fced30b66c8d884aa069a4358d7",
+    "raw/CUTS.json": "a23d2ef75e177c2a83f2b06cecaadfc5d08e3cb42667ba21eab64102d0ff99c1",
+    "raw/nonhelper.log": "879a1f9543fef0fc9e9cc15a094d05e24bc25e05c150da1bae4c1544c60f8cab",
+    "raw/NONHELPER.json": "10ee9fc56ad14c8a6d916f61000930e64407c5fdff0565c7289a8ba26110f641",
+    "raw/test_sessionhelper-missing.log": "35b0c36757edd76852ae93f3429e6f3d6d9525290816d56eb26030a1dee59904",
+    "raw/canonical.rc": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "raw/canonical.log": "05ae2bcdd7951df5af524b908e5f46c01079267a8620aeced11d44aba284202e",
+    "raw/test_update_release_core-missing.log": "2d7fc260bb95b520ff255bd1b11c0f78e58412c6966c1f3f181ee2bac5c6bbcc"
+  }
+}
