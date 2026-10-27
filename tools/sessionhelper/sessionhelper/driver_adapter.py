@@ -505,7 +505,7 @@ class DriverAdapter:
         self._timed_out_turns.add(key)
         observe(getattr(self, 'delivery_progress', None), command.delivery_id, 'unknown')
         self._turn_progress.pop(key, None)
-        print(f'[delivery][ALERT] id={command.delivery_id} {reason}; admission/terminal not assumed; no automatic replay', flush=True)
+        print(f'[delivery][ALERT][TIMEOUT] id={command.delivery_id} {reason}; admission/terminal not assumed; no automatic replay', flush=True)
         if recover:
             self._recover_transport(command)
         self._commands.finish(command.delivery_id, 'failed')
