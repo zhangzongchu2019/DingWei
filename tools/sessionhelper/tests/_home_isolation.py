@@ -49,6 +49,10 @@ class HomeIsolation:
         # SH_PROVISION_NO_EXIT 兜底：任何路径走到 request_restart 都不许真的 os._exit 掉测试进程。
         clean = {k:v for k,v in os.environ.items() if not k.startswith(("SH_", "DW_", "DINGWEI_", "DATAD_"))}
         clean.update(HOME=self._tmp, SH_PROVISION_NO_EXIT="1")
+        # The build gate selects this profile after discarding seat settings.
+        profile = os.environ.get('HELPER_TEST_DRIVER')
+        if profile in ('claude', 'codex'):
+            clean['SH_DRIVER'] = profile
         self._patcher = mock.patch.dict(os.environ, clean, clear=True)
         self._patcher.start()
 

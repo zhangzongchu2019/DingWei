@@ -33,6 +33,7 @@ def run_profile(root, profile, files):
                                      'XDG_STATE_HOME', 'XDG_DATA_HOME', 'XDG_CACHE_HOME')}
         environment.update(HOME=tmp, CODEX_HOME=tmp + '/codex',
                            CLAUDE_CONFIG_DIR=tmp + '/claude',
+                           HELPER_TEST_DRIVER=profile,
                            XDG_CONFIG_HOME=tmp + '/config', XDG_STATE_HOME=tmp + '/state',
                            XDG_DATA_HOME=tmp + '/data', XDG_CACHE_HOME=tmp + '/cache',
                            SH_DRIVER=profile, SH_PROVISION_NO_EXIT='1',
