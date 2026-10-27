@@ -12,7 +12,7 @@ SOURCE='tools/sessionhelper/sessionhelper/driver_adapter.py'
 MUTANTS={
  'reuse-terminal-deadline':(
   "if not admitted and time.monotonic() - self._dispatch_clock(command) >= getattr(self, '_admission_timeout', 60.0):",
-  'if not admitted and time.monotonic() - self._dispatch_clock(command) >= self._terminal_timeout:',2,
+  'if not admitted and time.monotonic() - self._dispatch_clock(command) >= self._terminal_timeout:',3,
   'test_missing_accepted_uses_admission_deadline_and_recovers','独立admission截止必须越过阻塞deliver'),
  'sync-deliver':(
   'receipt = self._bounded_deliver(command)','receipt = self.driver.deliver(command.delivery_id, command.text)',2,
