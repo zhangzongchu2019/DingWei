@@ -1,0 +1,39 @@
+HELPER_SUITE python=/tmp/coder-0232-locked-venv/bin/python3 version=3.12.3 driver=codex pattern=test_suite_isolation.py
+test_each_case_gets_distinct_home_and_socket_and_restores_environment (test_suite_isolation.SuiteIsolationTests.test_each_case_gets_distinct_home_and_socket_and_restores_environment) ... ok
+test_native_configuration_child_reads_and_writes_only_case_paths (test_suite_isolation.SuiteIsolationTests.test_native_configuration_child_reads_and_writes_only_case_paths) ... FAIL
+test_removed_isolation_fails_at_boundary_before_helper_execution (test_suite_isolation.SuiteIsolationTests.test_removed_isolation_fails_at_boundary_before_helper_execution) ... ok
+test_runner_installs_case_isolation_before_setup (test_suite_isolation.SuiteIsolationTests.test_runner_installs_case_isolation_before_setup) ... ok
+test_seat_environment_is_removed_without_reading_values (test_suite_isolation.SuiteIsolationTests.test_seat_environment_is_removed_without_reading_values) ... FAIL
+
+======================================================================
+FAIL: test_native_configuration_child_reads_and_writes_only_case_paths (test_suite_isolation.SuiteIsolationTests.test_native_configuration_child_reads_and_writes_only_case_paths)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r41-helper-test-isolation/tools/sessionhelper/tests/test_suite_isolation.py", line 66, in test_native_configuration_child_reads_and_writes_only_case_paths
+    self.assertFalse(key in os.environ, 'inherited native variable: ' + key)
+AssertionError: True is not false : inherited native variable: CLAUDE_FOO
+
+======================================================================
+FAIL: test_seat_environment_is_removed_without_reading_values (test_suite_isolation.SuiteIsolationTests.test_seat_environment_is_removed_without_reading_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r41-helper-test-isolation/tools/sessionhelper/tests/test_suite_isolation.py", line 33, in test_seat_environment_is_removed_without_reading_values
+    self.assertEqual(clean_environment(dirty), {'PATH': '/fixture'})
+AssertionError: {'PATH': '/fixture', 'CODEX_FUTURE_SETTING': 'fixture', 'CLA[134 chars]ure'} != {'PATH': '/fixture'}
+- {'ANTHROPIC_FUTURE_SETTING': 'fixture',
+-  'CLAUDE_FUTURE_SETTING': 'fixture',
+-  'CODEX_FUTURE_SETTING': 'fixture',
+-  'OPENAI_FUTURE_SETTING': 'fixture',
+-  'PATH': '/fixture',
+? ^                  ^
+
++ {'PATH': '/fixture'}
+? ^                  ^
+
+-  'XDG_FUTURE_SETTING': 'fixture'}
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.024s
+
+FAILED (failures=2)
+{"driver": "codex", "reverse": true, "child_rc": 1, "sentinel_unchanged": true, "sentinel_before": {".": [16384, 1793124776546877394], "settings.json": [32768, 1793124776547864822]}, "sentinel_after": {".": [16384, 1793124776546877394], "settings.json": [32768, 1793124776547864822]}, "sentinel_metadata_sha256": "032a6ac4351a24f8b4b39c5102a974f38b26a4c0ac6dc01b131ca1ff30e94b57", "negative_assertion_seen": true, "expected_result": true}

@@ -1,0 +1,71 @@
+{
+  "source": "c207496f455c4e8e37bdb454da7373ed794ac21c",
+  "started_utc": "2026-10-27T18:13:28.758829+00:00",
+  "cores": 16,
+  "initial_load": [
+    1.5341796875,
+    2.00732421875,
+    2.58203125
+  ],
+  "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "real_HOME_mtime": "not a gate per leader2026-10-27T17:48:42Z; independent reviewer owns strace write attribution",
+  "results": [
+    {
+      "label": "seat-claude",
+      "rc": 1,
+      "count": 1052,
+      "seconds": 450.75,
+      "failures": [
+        "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+      ],
+      "errors": [],
+      "skipped": 0,
+      "finished_utc": "2026-10-27T18:21:00.787981+00:00"
+    },
+    {
+      "label": "seat-codex",
+      "rc": 1,
+      "count": 1052,
+      "seconds": 451.565,
+      "failures": [
+        "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+      ],
+      "errors": [],
+      "skipped": 0,
+      "finished_utc": "2026-10-27T18:21:00.792347+00:00"
+    },
+    {
+      "label": "env-i-codex",
+      "rc": 0,
+      "count": 1052,
+      "seconds": 449.743,
+      "failures": [],
+      "errors": [],
+      "skipped": 0,
+      "finished_utc": "2026-10-27T18:21:00.796078+00:00"
+    },
+    {
+      "label": "env-i-claude",
+      "rc": 1,
+      "count": 1052,
+      "seconds": 451.862,
+      "failures": [
+        "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+      ],
+      "errors": [],
+      "skipped": 0,
+      "finished_utc": "2026-10-27T18:21:02.800220+00:00"
+    }
+  ],
+  "finished_utc": "2026-10-27T18:21:04.800354+00:00",
+  "load_min": [
+    1.36376953125,
+    1.953125,
+    2.45068359375
+  ],
+  "load_max": [
+    5.67919921875,
+    2.90380859375,
+    2.83740234375
+  ]
+}

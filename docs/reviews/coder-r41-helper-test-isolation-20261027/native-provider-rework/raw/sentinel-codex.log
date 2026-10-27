@@ -1,0 +1,12 @@
+HELPER_SUITE python=/tmp/coder-0232-locked-venv/bin/python3 version=3.12.3 driver=codex pattern=test_suite_isolation.py
+test_each_case_gets_distinct_home_and_socket_and_restores_environment (test_suite_isolation.SuiteIsolationTests.test_each_case_gets_distinct_home_and_socket_and_restores_environment) ... ok
+test_native_configuration_child_reads_and_writes_only_case_paths (test_suite_isolation.SuiteIsolationTests.test_native_configuration_child_reads_and_writes_only_case_paths) ... ok
+test_removed_isolation_fails_at_boundary_before_helper_execution (test_suite_isolation.SuiteIsolationTests.test_removed_isolation_fails_at_boundary_before_helper_execution) ... ok
+test_runner_installs_case_isolation_before_setup (test_suite_isolation.SuiteIsolationTests.test_runner_installs_case_isolation_before_setup) ... ok
+test_seat_environment_is_removed_without_reading_values (test_suite_isolation.SuiteIsolationTests.test_seat_environment_is_removed_without_reading_values) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.050s
+
+OK
+{"driver": "codex", "reverse": false, "child_rc": 0, "sentinel_unchanged": true, "sentinel_before": {".": [16384, 1793124776378229207], "settings.json": [32768, 1793124776378930028]}, "sentinel_after": {".": [16384, 1793124776378229207], "settings.json": [32768, 1793124776378930028]}, "sentinel_metadata_sha256": "05edd98c917eeb97c6de09ee7e1794466c54426bd62be3ecd4d8b223581f438e", "negative_assertion_seen": false, "expected_result": true}
