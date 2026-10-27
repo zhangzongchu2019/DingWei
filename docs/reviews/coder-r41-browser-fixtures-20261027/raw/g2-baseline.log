@@ -1,0 +1,12 @@
+AssertionError [ERR_ASSERTION]: expected at least six real status refreshes, got 1
+    at /data/ai-dev-data/r41-browser-fixtures/view-service/renderer-canary-g2-regression.js:99:12
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processImmediate (node:internal/timers:452:9)
+    at process.callbackTrampoline (node:internal/async_hooks:130:17) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

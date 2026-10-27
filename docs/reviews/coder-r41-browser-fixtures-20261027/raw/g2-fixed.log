@@ -1,0 +1,16 @@
+G2 focus PASS: sha256=fcaf683ba398d6e2f6df9e2b7e7b1710f405f9c4d2c5abde7b53b0661778f5e3 statusRefreshes=2 identityRefreshes=7 lockedResponses=3 exactChars=160
+G2 UI 403 PASS: inputRequests=1 toastError=POST /input failed: HTTP 403 history=retained dock=collapsed
+G2 running UI PASS: running=visible idle=hidden
+AssertionError [ERR_ASSERTION]: locked second tab accepted browser input
+    at async /data/ai-dev-data/r41-browser-fixtures/view-service/renderer-canary-g2-regression.js:219:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: page.evaluate: Error: 当前页面尚未获得输入授权
+      at prepareViewWrite (http://renderer-isolation.test/renderer:4842:33)
+      at async submitInput (http://renderer-isolation.test/renderer:5028:9)
+      at async <anonymous>:316:30
+      at /data/ai-dev-data/r41-browser-fixtures/view-service/renderer-canary-g2-regression.js:220:17,
+  expected: /当前页面尚未解锁/,
+  operator: 'rejects',
+  diff: 'simple'
+}

@@ -1,0 +1,74 @@
+[PASS] C2.1a cancellable 条目带删除按钮;非 cancellable 不带
+[PASS] C2.G-ADDR canonical 原样出站;存量 bare 单独归一为 canonical
+[PASS] C2.1b /control 不可达(404)→明说"取消未发出"+按钮恢复+条目不消失(不本地静默删)
+[PASS] C2.1d[legacy] 真接线:默认 transport 真打 VS /control、字段逐字 {kind,message_id,delivery_id}→"取消已请求"
+[FAIL] C2.1d-v2[V2] 同一动作在 V2 下字段逐字 {kind,message_id,delivery_id,page_id,page_token,request_id} — page.waitForFunction: Timeout 8000ms exceeded.
+[FAIL] C2.1e VS 受理但 ok=false(已注入/终态)→"取消未生效"+按钮恢复(不谎报已请求) — page.waitForFunction: Timeout 8000ms exceeded.
+[PASS] C2.1c mock transport 在场→"取消已请求,待确认"+条目仍在;cancelled 事件才移除(单一事实源)
+[PASS] C2.1f 无 status 的 delivery_update(如 helper_received 阶段推进)不摘条目(防误摘)
+[PASS] C2.1g canonical failed 终态→摘条目(failed/cancelled 正反之正)
+[PASS] C2.1h input_posted role=copy(源会话出站副本)→显示但不进 waiting(grammar 冻结)
+[PASS] C2.4a primary hub_received→进 waiting
+[PASS] C2.4b copy route_observation→显示但绝不 waiting
+[PASS] C2.4c delivery_update cli_injected(无 status)→摘 waiting+建时间线卡
+[PASS] C2.4d 三来源徽标不丢(feishu/view/agent)
+[PASS] T-087 出站 copy 显示全部目标，入站 primary 保持简洁
+[PASS] C2.4e helper_received 无 status→只推进不摘
+[PASS] C2.4f v2 缺 message_id→schema_conflict fail-closed
+[PASS] C2.4g 同形去 schema_version→legacy 无 v2 conflict
+[FAIL] C2.3 F1 /dingwei 前缀+尾斜杠:真点击删除→POST /dingwei/view/sess-1/control+六端点同算法 — tasks 全局端点不 scoped
++ actual - expected
+
++ undefined
+- '/tasks'
+
+[FAIL] C2.3 F2 /dingwei 前缀无尾斜杠:真点击删除→POST /dingwei/view/sess-1/control+六端点同算法 — tasks 全局端点不 scoped
++ actual - expected
+
++ undefined
+- '/tasks'
+
+[FAIL] C2.3 F3 /dingwei 前缀带页名:真点击删除→POST /dingwei/view/sess-1/control+六端点同算法 — tasks 全局端点不 scoped
++ actual - expected
+
++ undefined
+- '/tasks'
+
+[FAIL] C2.3 F4 裸 /view:真点击删除→POST /view/sess-1/control+六端点同算法 — tasks 全局端点不 scoped
++ actual - expected
+
++ undefined
+- '/tasks'
+
+[PASS] C2.3 F5 根直出回退:base=根相对,control 404→诚实"取消未发出"(G-HONEST 不破)
+[KNOWN-DEFECT T-166 仍在] C2.2a[legacy] 点中断→立即"已请求中断";无 transport 时回退 legacy /interrupt(POST 200≠已发出) — page.waitForFunction: Timeout 5000ms exceeded.
+[FAIL] C2.2f[V2] 本地拦下(无运行中 turn)→只报未发出,不得再报"未确认",且不锁死后续点击 — page.waitForFunction: Timeout 5000ms exceeded.
+[KNOWN-DEFECT T-166 仍在] C2.2b 流上 control 事件→升级"中断已发出"+pending 清空 — page.waitForFunction: Timeout 5000ms exceeded.
+[KNOWN-DEFECT T-166 仍在] C2.2c[legacy] 超时无回执→"中断未确认(无回执)"(永不谎报已发出) — page.waitForFunction: Timeout 5000ms exceeded.
+[KNOWN-DEFECT T-166 仍在] C2.2d 重复点击不重复发起(防重) — 只有一条已请求
+
+0 !== 1
+
+[PASS] C2.2e mock transport 在场→中断走 transport(kind=interrupt)不回退 legacy
+============================================================
+FAILED 7: C2.1d-v2[V2] 同一动作在 V2 下字段逐字 {kind,message_id,delivery_id,page_id,page_token,request_id}: page.waitForFunction: Timeout 8000ms exceeded.,C2.1e VS 受理但 ok=false(已注入/终态)→"取消未生效"+按钮恢复(不谎报已请求): page.waitForFunction: Timeout 8000ms exceeded.,C2.3 F1 /dingwei 前缀+尾斜杠:真点击删除→POST /dingwei/view/sess-1/control+六端点同算法: tasks 全局端点不 scoped
++ actual - expected
+
++ undefined
+- '/tasks'
+,C2.3 F2 /dingwei 前缀无尾斜杠:真点击删除→POST /dingwei/view/sess-1/control+六端点同算法: tasks 全局端点不 scoped
++ actual - expected
+
++ undefined
+- '/tasks'
+,C2.3 F3 /dingwei 前缀带页名:真点击删除→POST /dingwei/view/sess-1/control+六端点同算法: tasks 全局端点不 scoped
++ actual - expected
+
++ undefined
+- '/tasks'
+,C2.3 F4 裸 /view:真点击删除→POST /view/sess-1/control+六端点同算法: tasks 全局端点不 scoped
++ actual - expected
+
++ undefined
+- '/tasks'
+,C2.2f[V2] 本地拦下(无运行中 turn)→只报未发出,不得再报"未确认",且不锁死后续点击: page.waitForFunction: Timeout 5000ms exceeded.

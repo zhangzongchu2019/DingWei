@@ -1,0 +1,15 @@
+AssertionError [ERR_ASSERTION]: typing must not cause legacy five-second resource polling
+
+7 !== 1
+
+    at /data/ai-dev-data/r41-browser-fixtures/view-service/renderer-canary-g2-regression.js:102:12
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processImmediate (node:internal/timers:452:9)
+    at process.callbackTrampoline (node:internal/async_hooks:130:17) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 7,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
