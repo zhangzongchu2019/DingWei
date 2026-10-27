@@ -1,0 +1,7 @@
+=== RUN   TestTenantTaskUpdateIgnoredAtRealDispatcher
+2026/10/27 17:50:48 [Info] [event-dispatch is ready]
+    task_event_test.go:34: ignore records=5
+--- FAIL: TestTenantTaskUpdateIgnoredAtRealDispatcher (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishu	0.003s
+FAIL

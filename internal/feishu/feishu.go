@@ -22,6 +22,7 @@ import (
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
 	larkcontact "github.com/larksuite/oapi-sdk-go/v3/service/contact/v3"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
+	larktask "github.com/larksuite/oapi-sdk-go/v3/service/task/v1"
 	larkws "github.com/larksuite/oapi-sdk-go/v3/ws"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
@@ -97,16 +98,17 @@ type LarkGateway struct {
 }
 
 type feishuIngressCounters struct {
-	eventReceived  atomic.Uint64
-	normalized     atomic.Uint64
-	rejected       atomic.Uint64
-	enqueued       atomic.Uint64
-	enqueueError   atomic.Uint64
-	wsReady        atomic.Uint64
-	wsReconnecting atomic.Uint64
-	wsReconnected  atomic.Uint64
-	wsDisconnected atomic.Uint64
-	wsError        atomic.Uint64
+	taskUpdateIgnored atomic.Uint64
+	eventReceived     atomic.Uint64
+	normalized        atomic.Uint64
+	rejected          atomic.Uint64
+	enqueued          atomic.Uint64
+	enqueueError      atomic.Uint64
+	wsReady           atomic.Uint64
+	wsReconnecting    atomic.Uint64
+	wsReconnected     atomic.Uint64
+	wsDisconnected    atomic.Uint64
+	wsError           atomic.Uint64
 }
 
 // MultiGateway dispatches calls to per-bot gateways by bot_channel_id.
@@ -308,11 +310,7 @@ func (g *LarkGateway) Start(ctx context.Context, onInbound func(ctx context.Cont
 	if onInbound == nil {
 		return errors.New("missing inbound callback")
 	}
-	disp := dispatcher.NewEventDispatcher("", "").OnP2MessageReadV1(func(ctx context.Context, ev *larkim.P2MessageReadV1) error {
-		return nil // 已读回执无需处理，注册空 handler 避免 SDK 报 "not found handler" 刷错误日志
-	}).OnP2MessageReceiveV1(func(ctx context.Context, ev *larkim.P2MessageReceiveV1) error {
-		return g.observeInboundEvent(ctx, ev, onInbound)
-	})
+	disp := g.eventDispatcher(onInbound)
 	wsClient := larkws.NewClient(g.appID, g.appSecret,
 		larkws.WithEventHandler(disp),
 		larkws.WithLogLevel(larkcore.LogLevelError),
@@ -333,6 +331,24 @@ func (g *LarkGateway) Start(ctx context.Context, onInbound func(ctx context.Cont
 		}),
 	)
 	return wsClient.Start(ctx)
+}
+
+// eventDispatcher is shared by the real WebSocket client and raw-event tests.
+func (g *LarkGateway) eventDispatcher(onInbound func(context.Context, model.Message) error) *dispatcher.EventDispatcher {
+	return dispatcher.NewEventDispatcher("", "").OnP2MessageReadV1(func(ctx context.Context, ev *larkim.P2MessageReadV1) error {
+		return nil // 已读回执无需处理，注册空 handler 避免 SDK 报 "not found handler" 刷错误日志
+	}).OnP2MessageReceiveV1(func(ctx context.Context, ev *larkim.P2MessageReceiveV1) error {
+		return g.observeInboundEvent(ctx, ev, onInbound)
+	}).OnP2TaskUpdateTenantV1(func(_ context.Context, _ *larktask.P2TaskUpdateTenantV1) error {
+		// Tenant task updates are subscribed externally; they are not Hub messages.
+		count := g.ingress.taskUpdateIgnored.Add(1)
+		// Keep cumulative observability without one log line per ignored event.
+		if count != 0 && count&(count-1) == 0 {
+			g.log().Info("feishu ingress event_ignored", "bot_channel", g.botChannelID,
+				"event_type", "task.task.update_tenant_v1", "reason", "unsupported_task_event", "count", count)
+		}
+		return nil
+	})
 }
 
 func (g *LarkGateway) observeInboundEvent(
