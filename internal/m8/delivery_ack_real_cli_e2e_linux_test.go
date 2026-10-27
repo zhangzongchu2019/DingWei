@@ -366,10 +366,11 @@ func (v *realACKView) snapshot(id string) realACKViewSnapshot {
 }
 
 func TestDeliveryACKActualCLIQueuedAdmissionAndTerminal(t *testing.T) {
-	for _, kind := range []string{"claude", "codex"} {
-		t.Run(kind, func(t *testing.T) {
+	for _, variant := range []string{"claude", "codex", "claude_explicit"} {
+		kind := strings.TrimSuffix(variant, "_explicit")
+		t.Run(variant, func(t *testing.T) {
 			e := newAgentEnv(t)
-			p := startRealACKProbe(t, e, kind, "")
+			p := startRealACKProbe(t, e, kind, "", map[string]any{"explicit_claude": variant == "claude_explicit"})
 			view := startRealACKView(t, p)
 			a, b := "dw-dlv-r40-A", "dw-dlv-r40-B"
 			p.enqueue(a, "R40_ACK_A")

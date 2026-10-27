@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
 import threading
 import time
@@ -35,8 +36,10 @@ async def main():
         native_env={'CLAUDE_CONFIG_DIR':str(root/'claude-config'),'ANTHROPIC_BASE_URL':f'http://127.0.0.1:{model.server.server_port}',
             'ANTHROPIC_API_KEY':'r40-controlled-synthetic-only','ANTHROPIC_AUTH_TOKEN':'','CLAUDE_CODE_OAUTH_TOKEN':'',
             'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC':'1','DISABLE_TELEMETRY':'1','DISABLE_ERROR_REPORTING':'1','NO_PROXY':'127.0.0.1,localhost'}
-        cmd=[*DEFAULT_CMD,'--setting-sources','','--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--settings','{"disableAllHooks":true}','--no-session-persistence','--tools','']
+        base_command=['env','IS_SANDBOX=1',shutil.which('claude'),'--model','opus','--dangerously-skip-permissions'] if boot.get('explicit_claude') else list(DEFAULT_CMD)
+        cmd=[*base_command,'--setting-sources','','--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--settings','{"disableAllHooks":true}','--no-session-persistence','--tools','']
         driver=ClaudeProtocolDriver(store_path=str(root/'native-ledger.db'),cwd=str(root),cmd=cmd,env=native_env)
+        atomic_json(root,'native-launch.json',{'argv':driver._cmd})
     else:
         import sessionhelper.codexDriver as module
         os.environ['R40_CONTROLLED_API_KEY']='r40-controlled-synthetic-only'

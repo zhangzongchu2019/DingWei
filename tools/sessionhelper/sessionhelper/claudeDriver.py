@@ -58,6 +58,86 @@ DEFAULT_CMD = [
     "--dangerously-skip-permissions",
     "--verbose",
 ]
+def claude_command(command=None):
+    """Resolve and normalize the Claude protocol argv; never alter caller/env data.
+
+    The pipe driver requires stream-json in both directions. Explicit conflicting
+    formats are rejected before Popen instead of silently rewriting user intent.
+    Non-Claude executables (including test protocol fixtures) are left untouched.
+    """
+    import shlex
+    if command is None:
+        explicit = env_get("SH_CLI_CMD")
+        if explicit:
+            command = shlex.split(explicit)
+        else:
+            command = list(DEFAULT_CMD)
+            command[0] = env_get("SH_CLI_BIN") or env_get("SH_CLAUDE_BIN") or _CLAUDE_BIN
+    argv = list(command)
+    if not argv:
+        raise ValueError("Claude command is empty")
+    executable = 0
+    basename = lambda value: value.replace("\\", "/").rsplit("/", 1)[-1].lower()
+    if basename(argv[0]) in ("env", "env.exe"):
+        executable = 1
+        while executable < len(argv):
+            word = argv[executable]
+            if word == "--":
+                executable += 1
+                break
+            if word in ("-i", "--ignore-environment") or ("=" in word and not word.startswith("-")):
+                executable += 1
+                continue
+            break
+    if executable >= len(argv):
+        raise ValueError("Claude env command has no executable")
+    if basename(argv[executable]) in ("codex", "codex.exe", "opencode", "opencode.exe", "python", "python3"):
+        return argv
+    known = {value for value in (env_get("SH_CLI_BIN"), env_get("SH_CLAUDE_BIN"), _CLAUDE_BIN) if value}
+    if basename(argv[executable]) not in ("claude", "claude.exe") and argv[executable] not in known:
+        return argv
+    prefix, options = argv[:executable + 1], argv[executable + 1:]
+    # A '--' suffix is positional data, never a source of protocol flags.
+    stop = options.index("--") if "--" in options else len(options)
+    positional, options = options[stop:], options[:stop]
+    booleans = {"--include-partial-messages", "--replay-user-messages", "--verbose"}
+    formats = {"--input-format", "--output-format"}
+    # Preserve option values even when their literal text resembles a protocol
+    # flag (e.g. a system prompt containing exactly '--verbose').
+    value_options = {"--model", "--settings", "--setting-sources", "--mcp-config",
+                     "--system-prompt", "--append-system-prompt", "--agent", "--agents",
+                     "--permission-mode", "--max-budget-usd", "--session-id", "--tools",
+                     "--allowedTools", "--allowed-tools", "--disallowedTools", "--disallowed-tools",
+                     "--output-schema", "--json-schema", "--fallback-model", "--debug-file"}
+    normalized = []
+    index = 0
+    while index < len(options):
+        option = options[index]
+        name, equal, value = option.partition("=")
+        if name in value_options:
+            normalized.append(option)
+            if not equal and index + 1 < len(options):
+                index += 1
+                normalized.append(options[index])
+        elif name in formats:
+            if not equal:
+                index += 1
+                value = options[index] if index < len(options) else ""
+            if value != "stream-json":
+                raise ValueError(f"Claude pipe requires {name} stream-json; refusing non-stream command")
+        elif name in booleans:
+            if equal:
+                raise ValueError(f"Claude pipe requires standalone {name}; refusing conflicting option")
+        else:
+            normalized.append(option)
+        index += 1
+    if "-p" not in normalized and "--print" not in normalized:
+        normalized.append("-p")
+    normalized.extend(["--input-format", "stream-json", "--output-format", "stream-json",
+                       "--replay-user-messages", "--verbose", "--include-partial-messages"])
+    return prefix + normalized + positional
+
+
 DEFAULT_STORE = "/home/ai-dev/transport-v2/.claude-driver-delivery.sqlite3"
 EVENT_DRAIN_TIMEOUT = 5.0        # 协议 done 后等终结事件排空的上限（契约 v3）
 TURN_ACCEPT_TIMEOUT = 30.0       # 投递后等 isReplay ACK 的上限
@@ -169,7 +249,7 @@ class ClaudeProtocolDriver(Driver):
         env: dict[str, str] | None = None,
         store_path: str = DEFAULT_STORE,
     ):
-        self._cmd = cmd or DEFAULT_CMD
+        self._cmd = claude_command(cmd)
         self._cwd = cwd
         self._env = env
         self._store = _DeliveryStore(store_path)

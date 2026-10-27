@@ -75,8 +75,10 @@ class DriverAdapter:
                  else os.path.join(os.path.expanduser("~"), f".dw-{which}-ledger.sqlite3"))
         model = getattr(self.cfg, "model", "")
         if which == "claude":
-            from .claudeDriver import ClaudeProtocolDriver, DEFAULT_CMD
-            cmd = [*DEFAULT_CMD, "--model", model] if model else None
+            from .claudeDriver import ClaudeProtocolDriver, claude_command
+            cmd = claude_command(getattr(self.cfg, "cli_cmd", None) or None)
+            if model and not any(arg == "--model" or arg.startswith("--model=") for arg in cmd):
+                cmd.extend(["--model", model])
             return ClaudeProtocolDriver(store_path=store, cwd=cwd, cmd=cmd)
         if which == "opencode":
             from .openCodeDriver import OpenCodeProtocolDriver

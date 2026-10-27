@@ -28,6 +28,7 @@ tools/sessionhelper/tests/test_connection_receive_quiescence.py
 tools/sessionhelper/tests/test_connection_reconnect_backoff.py
 tools/sessionhelper/tests/test_connection_claim_cancellation.py
 tools/sessionhelper/tests/test_terminal_start_observation.py
+tools/sessionhelper/tests/test_claude_launch_contract.py
 tools/sessionhelper/tests/test_roster_snapshot.py
 tools/sessionhelper/tests/test_agent_disk_metrics.py
 tools/sessionhelper/tests/test_setup.py
@@ -94,4 +95,4 @@ printf '%s\n' "$SHELL_TESTS" | while IFS= read -r test_file; do
   echo "TEST shell $test_file"
   bash "$test_file"
 done
-echo 'BUILD_TESTS_OK python=66 shell=2'
+echo 'BUILD_TESTS_OK python=67 shell=2'
