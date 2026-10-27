@@ -1,3 +1,4 @@
+import importlib.util
 import pathlib
 import os
 import shutil
@@ -172,6 +173,39 @@ exit 1
                 with self.subTest(file=name), self.assertRaisesRegex(ValueError, 'helper inventory mismatch: missing='):
                     inventory(root)
                 path.write_text(content)
+
+    def test_helper_inventory_rejects_each_missing_file_and_manifest_entry(self):
+        spec = importlib.util.spec_from_file_location(
+            "helper_build_gate", ROOT / "scripts/run-helper-build-tests.py")
+        gate = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gate)
+        files = gate.inventory(ROOT)
+        self.assertEqual(len(files), 87)  # 86 under tests/ plus the top-level regression.
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "scripts").mkdir()
+            manifest = root / "scripts/helper-test-files.txt"
+            manifest.write_text("\n".join(files) + "\n")
+            for name in files:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.touch()
+            self.assertEqual(gate.inventory(root), files)
+            for name in files:
+                with self.subTest(missing_file=name):
+                    path = root / name
+                    path.unlink()
+                    with self.assertRaisesRegex(ValueError, "inventory mismatch"):
+                        gate.inventory(root)
+                    path.touch()
+                with self.subTest(missing_entry=name):
+                    manifest.write_text("\n".join(f for f in files if f != name) + "\n")
+                    with self.assertRaisesRegex(ValueError, "inventory mismatch"):
+                        gate.inventory(root)
+                    manifest.write_text("\n".join(files) + "\n")
+            manifest.write_text("\n".join(files + files[:1]) + "\n")
+            with self.assertRaisesRegex(ValueError, "inventory mismatch"):
+                gate.inventory(root)
 
     def test_build_make_and_ci_share_the_canonical_test_entrypoint(self):
         self.assertIn("./scripts/run-build-tests.sh", self.read("build.sh"))
