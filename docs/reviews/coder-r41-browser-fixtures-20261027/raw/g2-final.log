@@ -1,0 +1,6 @@
+G2 focus PASS: sha256=fcaf683ba398d6e2f6df9e2b7e7b1710f405f9c4d2c5abde7b53b0661778f5e3 statusRefreshes=2 identityRefreshes=7 lockedResponses=3 exactChars=160
+G2 UI 403 PASS: inputRequests=1 toastError=POST /input failed: HTTP 403 history=retained dock=collapsed
+G2 running UI PASS: running=visible idle=hidden
+G2 #3 renderer-half PASS: distinct id/token, A unlocked+writable, B locked+rejected
+G2 #4 renderer-half PASS: same owner pages independently unlocked and simultaneously writable
+G2 #11 renderer-half PASS: cloned id/token split, exactly one grant and one accepted input

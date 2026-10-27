@@ -34,6 +34,7 @@ const PIN_RENDERER_SHA256 = process.env.EXPECTED_RENDERER_SHA256 || '';
     let resumeRequests = 0;
     let lockedResumeResponses = 0;
     let inputRequests = 0;
+    let alternateLockResponses = true;
     await context.route('http://renderer-g2.test/**', async route => {
       const request = route.request();
       const path = new URL(request.url()).pathname;
@@ -50,7 +51,7 @@ const PIN_RENDERER_SHA256 = process.env.EXPECTED_RENDERER_SHA256 || '';
       }
       if (path === '/page/resume') {
         resumeRequests += 1;
-        const canWrite = !(resumeRequests > 1 && resumeRequests % 2 === 0);
+        const canWrite = !alternateLockResponses || !(resumeRequests > 1 && resumeRequests % 2 === 0);
         if (!canWrite) lockedResumeResponses += 1;
         return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
           page_id: identity.page_id, code: identity.code,
@@ -96,7 +97,9 @@ const PIN_RENDERER_SHA256 = process.env.EXPECTED_RENDERER_SHA256 || '';
       disabledTransitions: window.__disabledTransitions,
       lockBadgeTransitions: window.__lockBadgeTransitions,
     }));
-    assert.ok(statusRequests >= 6, `expected at least six real status refreshes, got ${statusRequests}`);
+    // Resources refresh every five minutes; page authorization still refreshes
+    // every five seconds. A 32-second typing run must not restore old polling.
+    assert.strictEqual(statusRequests, 1, 'typing must not cause legacy five-second resource polling');
     assert.ok(resumeRequests >= 6, `expected at least six page identity refreshes, got ${resumeRequests}`);
     assert.ok(lockedResumeResponses >= 3,
       `expected at least three locked identity responses, got ${lockedResumeResponses}`);
@@ -112,8 +115,17 @@ const PIN_RENDERER_SHA256 = process.env.EXPECTED_RENDERER_SHA256 || '';
     assert.strictEqual(focus.focusLosses, 0, 'input blurred during status refresh');
     assert.deepStrictEqual(focus.disabledTransitions.filter(item => item.disabled), [],
       'input became disabled during continuous typing');
+    await page.evaluate(() => refreshStatus());
+    assert.strictEqual(statusRequests, 2, 'explicit resource refresh did not reach the real fetch path');
+    assert.strictEqual(await page.locator('#humanInput').inputValue(), expected, 'explicit resource refresh changed the draft');
+    assert.strictEqual(await page.locator('#humanInput').evaluate(input => document.activeElement === input), true, 'explicit resource refresh stole focus');
     console.log(`G2 focus PASS: sha256=${rendererSha} statusRefreshes=${statusRequests} identityRefreshes=${resumeRequests} lockedResponses=${lockedResumeResponses} exactChars=${expected.length}`);
 
+    // End the lock-alternation phase through the same HTTP resume contract,
+    // so the intentional input-403 leg cannot race a scheduled lock response.
+    alternateLockResponses = false;
+    await page.evaluate(() => ensurePageIdentityOnce());
+    await page.waitForFunction(() => stats.readonly === false);
     await page.locator('#sendBtn').click();
     await page.locator('#toastRegion .toast').filter({ hasText: 'POST /input failed: HTTP 403' }).waitFor();
     assert.strictEqual(await page.locator('#activityList > .activity-card.error').count(), 1,
@@ -212,7 +224,7 @@ const PIN_RENDERER_SHA256 = process.env.EXPECTED_RENDERER_SHA256 || '';
     await isolatedA.evaluate(() => submitInput('g2-browser-isolation-a'));
     await assert.rejects(
       isolatedB.evaluate(() => submitInput('g2-browser-isolation-b-must-reject')),
-      /当前页面尚未解锁/,
+      /当前页面尚未获得输入授权/,
       'locked second tab accepted browser input',
     );
     assert.strictEqual(isolationInputs, 1, 'unlocking one tab changed the other tab write authority');

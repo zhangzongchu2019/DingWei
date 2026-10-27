@@ -1,0 +1,30 @@
+{
+  "utc": "2026-10-27T17:50:10.620437+00:00",
+  "item": 6,
+  "base": "549f64e280f2c5496bffb506c709c1bf0a1c504d",
+  "source": "d05082a33b16f0248a35b414c5b37dc97472dfdc",
+  "branch": "coder56solzzc/r41-browser-fixtures",
+  "product_renderer_sha256": "fcaf683ba398d6e2f6df9e2b7e7b1710f405f9c4d2c5abde7b53b0661778f5e3",
+  "environment": "NODE_PATH=/tmp/coder-a3-playwright/node_modules node -r /tmp/r40b-chrome-preload.cjs; preloader only adds channel chrome to chromium.launch; installed Chrome, unchanged renderer served via actual Playwright request routes",
+  "cause": [
+    "C2 writable fixture created locked pages; current prepareViewWrite rejects. Resume also gave inconsistent locked/can_write=true.",
+    "C2 scoped endpoints still asserted removed global API.tasks; renderer has six scoped endpoints and no global tasks request.",
+    "G2 expected six resource requests in32sec although product resources are5min and authorization5sec. Also locked-tab error wording evolved to current authorization message."
+  ],
+  "changes": [
+    "Create/resume C2 fixture explicitly unlocked; keep full cancel/control address fields and honest failure assertions. Assert absence of retired API.tasks plus actual request absence.",
+    "G2 assert initial resource request stays1 during160chars typing; authorization refresh>=6 and locked responses>=3 preserved. Explicit real resource refresh through product refreshStatus then verify focused draft still intact.",
+    "End alternating-lock phase via mock HTTP resume before intentional input403 leg; retain cross-tab grant separation/clone rejection; align exact current locked-tab rejection wording."
+  ],
+  "positive": "C2 rc0 HARD PASS25, four pre-existing T-166 known defects unchanged/knownChanged0. G2 rc0 all six sections passed (focus160chars, input403, runningUI, page isolation, independently-unlocked pages, clone split). No claim four T-166 defects fixed.",
+  "negative": "Original C2 baseline rc1 seven hard failures, G2 baseline rc1 at old resource>=6 assertion got1. Product-only temporary renderer VIEW_REFRESH_MS300000->5000 mutant rc1 at actual statusRequests=7 vs expected1; repository product untouched.",
+  "scope": "only two JS test fixtures plus report; product, VERSION, deployment, live services unchanged",
+  "sha256": {
+    "raw/c2-baseline.log": "9e07b2645b35223dd0d42e7d38d500f23646e71d37807a85053d7db1a94fbfe5",
+    "raw/g2-baseline.log": "a6ec58d77309974985cda3a76832ff41fed18c255c1b8ee33b7b6039eb34fa2e",
+    "raw/c2-fixed.log": "c0b06399ca503781bb7f9c04520de8153bc22bddfa6555122b0cba02d24f1dbc",
+    "raw/g2-final.log": "36aab0417e4460607aa84b82ed1f3b3e3898cc76e898b76b260936cdde395142",
+    "raw/g2-fixed.log": "a80e3f10c04c4ad329a6872a92dc7adc622df6f05f33c907eadd1640a6ab397d",
+    "raw/g2-resource-poll-mutant.log": "cfec3d86f859aa3f904be594385c2258fa15ac9985407404f42f31de802c47b1"
+  }
+}
