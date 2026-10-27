@@ -25,15 +25,17 @@ func (h *Hub) questionLink(qid string) (string, bool) {
 }
 func questionMessage(q store.PilotQuestion, kind, link string) string {
 	lead := "研发问题有新待办。"
+	replyHint := "直接回复此消息不会回写问题。"
 	if kind == "remind_60m" {
 		lead = "研发问题登记已超过60分钟，仍缺实质答复；请组长协调。"
+		replyHint = "请在原通知下回复；请勿直接回复本提醒。"
 	} else if kind == "assignment" {
 		lead = "有研发问题已明确转派，请登录核对所需答复。"
 	}
 	names := map[string]string{"requirement_unclear": "需求不清", "change": "变更", "technical": "技术受阻", "resource": "缺资源"}
 	// No fact/body, spec text, evidence/attachment, bearer or personal contact ID
 	// leaves the platform. The recipient still logs in to the authorized object.
-	return lead + "\n类型：" + names[q.Kind] + "\n请打开待答清单并登录平台：" + link + "\n直接回复此消息不会回写问题。答复到件仍须重核，不是业务签收或执行授权。"
+	return lead + "\n类型：" + names[q.Kind] + "\n请打开待答清单并登录平台：" + link + "\n" + replyHint + "答复到件仍须重核，不是业务签收或执行授权。"
 }
 func (h *Hub) processQuestions(parent context.Context) {
 	if !h.questionDispatchMu.TryLock() {

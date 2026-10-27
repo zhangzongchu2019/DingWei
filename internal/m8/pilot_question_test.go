@@ -191,3 +191,17 @@ func TestPilotQuestionRevokedResponsibleDoesNotTrapOwnerCleanup(t *testing.T) {
 		t.Fatal("QUESTION_OWNER_CANNOT_CANCEL_REVOKED_RESPONSIBLE", out.Code, out.Body)
 	}
 }
+
+func TestPilotQuestionReminderExplicitlyDirectsReplyToOriginalNotice(t *testing.T) {
+	q := store.PilotQuestion{ID: "question", Kind: "technical", ObservedFact: "PRIVATE_FACT", Question: "PRIVATE_BODY"}
+	reminder := questionMessage(q, "remind_60m", "https://console.fixture.invalid/console/questions?question_id=question")
+	if !strings.Contains(reminder, "请在原通知下回复") || !strings.Contains(reminder, "请勿直接回复本提醒") || !strings.Contains(reminder, "答复到件仍须重核") || strings.Contains(reminder, "PRIVATE_") {
+		t.Fatalf("提醒必须明确指回原通知，不泄露正文或改变到件边界: %s", reminder)
+	}
+	for _, kind := range []string{"question", "assignment"} {
+		body := questionMessage(q, kind, "https://console.fixture.invalid/console/questions")
+		if !strings.Contains(body, "直接回复此消息不会回写问题") || strings.Contains(body, "请在原通知下回复") {
+			t.Fatalf("既有非提醒通知文案回归: %s", body)
+		}
+	}
+}

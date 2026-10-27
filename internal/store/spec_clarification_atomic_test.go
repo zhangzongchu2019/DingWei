@@ -159,3 +159,19 @@ func TestClarificationFreshGenerationPinsCurrentDeputyPolicy(t *testing.T) {
 		t.Fatal("CLARIFICATION_NEW_GENERATION_STALE_POLICY", result.Question.PolicyVersion, policy.Version)
 	}
 }
+
+func TestClarificationReminderDoesNotAcquireReplyAnchor(t *testing.T) {
+	db, now, c, _, notice, snapshot := clarificationNoticeFixture(t)
+	ctx := context.Background()
+	var before, after int
+	if err := db.db.QueryRow("SELECT COUNT(*) FROM spec_clarification_notice").Scan(&before); err != nil {
+		t.Fatal(err)
+	}
+	notice.Kind = "remind_60m"
+	if _, err := db.PrepareClarificationNotice(ctx, c, notice, snapshot.Binding, func() error { return nil }, now); !errors.Is(err, ErrTaskFlowInvalid) {
+		t.Fatalf("提醒不得新增答复回写授权: %v", err)
+	}
+	if err := db.db.QueryRow("SELECT COUNT(*) FROM spec_clarification_notice").Scan(&after); err != nil || before != after {
+		t.Fatalf("提醒改变回复锚: before=%d after=%d err=%v", before, after, err)
+	}
+}
