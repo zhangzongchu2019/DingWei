@@ -1,0 +1,46 @@
+{
+  "utc": "2026-10-27T17:46:22.851385+00:00",
+  "role": "independent fixed-tip verification in this execution stream; preserves parallel implementation",
+  "tested_tip": "bb4bb09765739f69a3bc0b46eba06d4f2fbf2a47",
+  "tested_source": "978be1416af088e4a0a320f3b939791a4bbd52d3",
+  "positive": {
+    "source": "bb4bb09765739f69a3bc0b46eba06d4f2fbf2a47",
+    "started_utc": "2026-10-27T17:41:42.545993+00:00",
+    "cores": 16,
+    "load": [
+      3.076171875,
+      4.2333984375,
+      3.41796875
+    ],
+    "rounds": 50,
+    "go": "go1.22.2",
+    "rc": 0,
+    "pass_count": 50,
+    "fail_count": 0,
+    "finished_utc": "2026-10-27T17:42:00.118220+00:00"
+  },
+  "additional_natural_baseline": {
+    "source": "549f64e280f2c5496bffb506c709c1bf0a1c504d",
+    "rounds": 60,
+    "pass": 53,
+    "fail": 7,
+    "symptom": "cross_group_denied followed by original target read context deadline",
+    "log": "raw/root-baseline60.log"
+  },
+  "existing_raw_hashes": {
+    "raw/baseline60.jsonl": true,
+    "raw/controlled-before10.jsonl": true,
+    "raw/fixed50.jsonl": true,
+    "raw/reverse10.jsonl": true,
+    "raw/module.jsonl": true
+  },
+  "readonly_product_analysis_checked": "WS-PUBLISH-RACE-READONLY.md at27fdb76; helper first capabilities frame precedes IPC loops; own connection read after publication; other live senders can target unpublished peer; shortname/fullname and persisted ACK/fresh admission durable paths must be distinguished; code reachability, not production frequency proof",
+  "skips": [],
+  "excluded": "controlled-before-fix.log from mutable shared worktree mixed own hook with concurrently added ready wait; INVALID evidence, not included in conclusions",
+  "scope": "docs/logs only; no product edits, deployment, restart or production probing",
+  "sha256": {
+    "raw/root-baseline60.log": "8404c9824c2c81ea2696c87a51b87961af7cad2aae685e993b51873978342090",
+    "raw/root-fixed50-independent.log": "9cb2c10c3f2f8d1750307a4ad01005a92c91a8b7fadc07b02b7358b850c31954",
+    "raw/root-RESULT.json": "64d33697aa2f01f9ad7766bae716eccf8485c01edc9c2c308bc6336aa464fb9d"
+  }
+}
