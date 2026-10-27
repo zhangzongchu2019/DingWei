@@ -1,0 +1,119 @@
+{
+  "utc": "2026-10-27T18:38:03.944704+00:00",
+  "request": "leader2026-10-27T17:58:56Z confirms this flow as sole item9 writer and current-source fourfulls",
+  "scope": "Only item9 evidence appended; no source changes during matrix; six other item branches frozen",
+  "source": "ba4ed6e168549bf5a4dceac1948997c30c3e7650",
+  "tree": "949249cacac14b237031183b4453f36c67458ff0",
+  "runtime_matrix": {
+    "source": "ba4ed6e168549bf5a4dceac1948997c30c3e7650",
+    "tree": "949249cacac14b237031183b4453f36c67458ff0",
+    "started_utc": "2026-10-27T18:29:44.232693+00:00",
+    "cores": 16,
+    "initial_load": [
+      0.63330078125,
+      1.46240234375,
+      2.05419921875
+    ],
+    "runtime": "/tmp/coder-0232-locked-venv/bin/python3",
+    "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "real_home_mtime": "Existing observations preserved; not acceptance gate per leader; independent reviewer owns strace attribution",
+    "results": [
+      {
+        "label": "env-i-claude",
+        "rc": 1,
+        "count": 1055,
+        "seconds": 450.258,
+        "failures": [
+          "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+        ],
+        "errors": [],
+        "skip_count": 0,
+        "profile_receipt": [
+          "HELPER_PROFILE selected=claude actual_SH_DRIVER=claude"
+        ],
+        "finished_utc": "2026-10-27T18:37:14.498879+00:00",
+        "isolation_specific_pass_count": 8
+      },
+      {
+        "label": "env-i-codex",
+        "rc": 1,
+        "count": 1055,
+        "seconds": 448.442,
+        "failures": [],
+        "errors": [
+          "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+        ],
+        "skip_count": 0,
+        "profile_receipt": [
+          "HELPER_PROFILE selected=codex actual_SH_DRIVER=codex"
+        ],
+        "finished_utc": "2026-10-27T18:37:12.680947+00:00",
+        "isolation_specific_pass_count": 8
+      },
+      {
+        "label": "seat-claude",
+        "rc": 1,
+        "count": 1055,
+        "seconds": 450.906,
+        "failures": [
+          "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+        ],
+        "errors": [],
+        "skip_count": 0,
+        "profile_receipt": [
+          "HELPER_PROFILE selected=claude actual_SH_DRIVER=claude"
+        ],
+        "finished_utc": "2026-10-27T18:37:15.145095+00:00",
+        "isolation_specific_pass_count": 8
+      },
+      {
+        "label": "seat-codex",
+        "rc": 0,
+        "count": 1055,
+        "seconds": 450.711,
+        "failures": [],
+        "errors": [],
+        "skip_count": 0,
+        "profile_receipt": [
+          "HELPER_PROFILE selected=codex actual_SH_DRIVER=codex"
+        ],
+        "finished_utc": "2026-10-27T18:37:14.950673+00:00",
+        "isolation_specific_pass_count": 8
+      }
+    ],
+    "finished_utc": "2026-10-27T18:37:15.145536+00:00",
+    "final_load": [
+      2.4912109375,
+      1.6552734375,
+      1.865234375
+    ]
+  },
+  "status": "Completed4x1055, SKIP0; only seat/codex fullPASS, twoClaudeFAIL1each, env-i/codexERROR1. All32 isolation-specific casesPASS. Not4xPASS, notERROR0.",
+  "requirements": {
+    "provider_prefixes": "Current source strips arbitrary CODEX_/CLAUDE_/ANTHROPIC_/OPENAI_/XDG_ values. Only checked regenerated native HOME keys allowed. Independent ANTHROPIC/OPENAI removal cuts and guard assertions in four-point-closeout evidence.",
+    "five_xdg_paths": "CONFIG_HOME/DATA_HOME/STATE_HOME/CACHE_HOME/RUNTIME_DIR all under eachcase tmp HOME; runtime0700; arbitrary otherXDG stripped.",
+    "sentinel": "Current-source16subsetPASS with external real prepopulated sentinel; no new path ormtimechange. Native-prefix removal cutrc1; read/write7settings.json child uses generatedpaths. Evidence four-point-closeout/raw/sentinel*.log.",
+    "profile": "ValidHELPER_TEST_DRIVER first, then ambientSH_DRIVER, thenunset for automatic module selection. Explicit case/runnerdriver stays explicit. Current four cell actualdriver print/assert match. Prioritycutrc1 evidence retained.",
+    "four_cells": "This run4x1055 is exactcurrentba4ed6e source; prior1052fulls and prior1063combination not reused.",
+    "go_baseline": "Read-only explanation remains four-point-closeout/raw/go-baseline-summary.json and go-baseline-timeout-excerpt.log: internal/hosted default600s package timeout; activeTestOptionsModelsUnionOnlineOnly2s waitingPGREADY, no test-levelfail event; deeper environment/flake/product classification not established."
+  },
+  "new_error_analysis": {
+    "profile": "env-i-codex",
+    "test": "test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command",
+    "primary_assertion": "line440 injected list onlysame-1, expected same-1,third. Driver.calls was observed before asynchronous admission callback.",
+    "cleanup_exception": "While unwinding TemporaryDirectory atline415, shutil.rmtree raisesOSError39 Directory not empty. Reported as unittestERROR instead of primaryFAIL.",
+    "background_exception": "Concurrent adapter command-worker accesses deleted/recreated temporary ledger and gets sqlite3.OperationalError no such tabledelivery_inbox. Observed in same case log; no inferred writes outside tmp.",
+    "source_comparison": "Frozen item7 8f489531 modifies this exactcase to await first/third admissionEvents, then queue-depth0 before reading consumedstate or deletingtmp. This matrix intentionally does not include that independent branch.",
+    "causal_boundary": "Traceback establishes callback assertion followed by cleanup failure; concurrent worker trace explains additional observation. No separate controlled causality experiment performed here; no independent classification as product regression or proof of host write leak. Do not suppress newERROR or patch frozen item7."
+  },
+  "acceptance": "RealHOME-mtime readings in originalprefix report remain untouched. Perleader criterionwithdrawn; independent reviewer owns strace attribution. No attempt to restore live timestamps, stophelper, or exclude selected readings.",
+  "next": "Independent reviewer evaluates current evidence; item7 combination remains integration responsibility. No changes to frozen branches, no production orphase2 actions.",
+  "sha256": {
+    "RESULT.json": "707a774043f0227afab7fb54cefd42adda10acdbc54459992ad87fed2df9c451",
+    "START.json": "b31014d62a632f256ed7c81ad40d78cb3ca849b471d26214bb2260274ffeef6c",
+    "env-i-claude.log": "24d46a211f7be7772173696860505aa230eb519a2515bf95fbc8afc2c2ef469c",
+    "env-i-codex.log": "e49c9a4bf5ab726a086cb439d96817080b608ea901b5c5586f230891ed3c127f",
+    "seat-claude.log": "c72e9cfb9d0a1e2916ab3b31efc57b503eb13b8d578edc2483f3d5c260ac37a2",
+    "seat-codex.log": "066459b8fb705612b2374ee54ffc6b4a213dc7a516f1e079ff7d54657cf7295b"
+  }
+}

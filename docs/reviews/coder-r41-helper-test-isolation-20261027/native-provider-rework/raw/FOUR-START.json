@@ -1,0 +1,13 @@
+{
+  "source": "c207496f455c4e8e37bdb454da7373ed794ac21c",
+  "started_utc": "2026-10-27T18:13:28.758829+00:00",
+  "cores": 16,
+  "initial_load": [
+    1.5341796875,
+    2.00732421875,
+    2.58203125
+  ],
+  "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "real_HOME_mtime": "not a gate per leader2026-10-27T17:48:42Z; independent reviewer owns strace write attribution",
+  "results": []
+}

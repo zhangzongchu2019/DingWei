@@ -1,0 +1,202 @@
+{
+  "source": "644022d784344b4d0b8cd06a7ec4259ae5097570",
+  "started_utc": "2026-10-27T18:00:41.914614+00:00",
+  "cores": 16,
+  "load": [
+    3.0703125,
+    3.96533203125,
+    3.5361328125
+  ],
+  "real_home": "/home/dev",
+  "ipc_inode_before": 3672935,
+  "results": [
+    {
+      "label": "env-i-codex",
+      "rc": 0,
+      "count": 1051,
+      "seconds": 450.142,
+      "failures": [],
+      "errors": [],
+      "application_lines_containing_skipped": [
+        "\u79bb\u7ebf\u8865\u53d1\u8def\u5f84\u5fc5\u987b\u8df3\u8fc7\u4e09\u7c7b\u7cfb\u7edf\u6d88\u606f\u5e76\u56de processed ACK\uff0c\u4e0d\u5f97\u5165 inbox \u6ce8\u5165 CLI\u3002 ... [roster] delivery list written; skipped cli injection delivery_id=dlv_roster",
+        "[onboarding] skipped delivery cli injection delivery_id=dlv_onboarding",
+        "test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db (test_sessionhelper.SessionHelperTest.test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db) ... [delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions session=home targets=['home', 'zzc-home-2642'] to=['tester#FB-2642']"
+      ],
+      "skip_count": 0
+    },
+    {
+      "label": "env-i-claude",
+      "rc": 1,
+      "count": 1051,
+      "seconds": 451.304,
+      "failures": [
+        "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+      ],
+      "errors": [],
+      "application_lines_containing_skipped": [
+        "\u79bb\u7ebf\u8865\u53d1\u8def\u5f84\u5fc5\u987b\u8df3\u8fc7\u4e09\u7c7b\u7cfb\u7edf\u6d88\u606f\u5e76\u56de processed ACK\uff0c\u4e0d\u5f97\u5165 inbox \u6ce8\u5165 CLI\u3002 ... [roster] delivery list written; skipped cli injection delivery_id=dlv_roster",
+        "[onboarding] skipped delivery cli injection delivery_id=dlv_onboarding",
+        "test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db (test_sessionhelper.SessionHelperTest.test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db) ... [delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions session=home targets=['home', 'zzc-home-2642'] to=['tester#FB-2642']"
+      ],
+      "skip_count": 0
+    },
+    {
+      "label": "seat-codex",
+      "rc": 1,
+      "count": 1051,
+      "seconds": 452.556,
+      "failures": [
+        "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+      ],
+      "errors": [],
+      "application_lines_containing_skipped": [
+        "\u79bb\u7ebf\u8865\u53d1\u8def\u5f84\u5fc5\u987b\u8df3\u8fc7\u4e09\u7c7b\u7cfb\u7edf\u6d88\u606f\u5e76\u56de processed ACK\uff0c\u4e0d\u5f97\u5165 inbox \u6ce8\u5165 CLI\u3002 ... [roster] delivery list written; skipped cli injection delivery_id=dlv_roster",
+        "[onboarding] skipped delivery cli injection delivery_id=dlv_onboarding",
+        "test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db (test_sessionhelper.SessionHelperTest.test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db) ... [delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions session=home targets=['home', 'zzc-home-2642'] to=['tester#FB-2642']"
+      ],
+      "skip_count": 0
+    },
+    {
+      "label": "seat-claude",
+      "rc": 1,
+      "count": 1051,
+      "seconds": 452.682,
+      "failures": [
+        "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+      ],
+      "errors": [],
+      "application_lines_containing_skipped": [
+        "\u79bb\u7ebf\u8865\u53d1\u8def\u5f84\u5fc5\u987b\u8df3\u8fc7\u4e09\u7c7b\u7cfb\u7edf\u6d88\u606f\u5e76\u56de processed ACK\uff0c\u4e0d\u5f97\u5165 inbox \u6ce8\u5165 CLI\u3002 ... [roster] delivery list written; skipped cli injection delivery_id=dlv_roster",
+        "[onboarding] skipped delivery cli injection delivery_id=dlv_onboarding",
+        "test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db (test_sessionhelper.SessionHelperTest.test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db) ... [delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions session=home targets=['home', 'zzc-home-2642'] to=['tester#FB-2642']"
+      ],
+      "skip_count": 0
+    }
+  ],
+  "finished_utc": "2026-10-27T18:08:19.401102+00:00",
+  "ipc_inode_after": 3672935,
+  "real_tree_metadata_changes": {
+    "dingwei": {
+      "before_count": 9,
+      "after_count": 9,
+      "added": [],
+      "removed": [],
+      "mtime_or_type_changed": [
+        ".",
+        "coder56solzzc.DingWeiOnlineSessions.list",
+        "sessionhelper_inbox-coder56solzzc.db"
+      ]
+    },
+    "codex": {
+      "before_count": 8955,
+      "after_count": 8955,
+      "added": [
+        "tmp/arg0-linux/codex-arg0AIiSyl",
+        "tmp/arg0-linux/codex-arg0AIiSyl/.lock",
+        "tmp/arg0-linux/codex-arg0AIiSyl/apply_patch",
+        "tmp/arg0-linux/codex-arg0AIiSyl/applypatch",
+        "tmp/arg0-linux/codex-arg0AIiSyl/codex-linux-sandbox"
+      ],
+      "removed": [
+        "tmp/arg0-linux/codex-arg0Ds1Hs3",
+        "tmp/arg0-linux/codex-arg0Ds1Hs3/.lock",
+        "tmp/arg0-linux/codex-arg0Ds1Hs3/apply_patch",
+        "tmp/arg0-linux/codex-arg0Ds1Hs3/applypatch",
+        "tmp/arg0-linux/codex-arg0Ds1Hs3/codex-linux-sandbox"
+      ],
+      "mtime_or_type_changed": [
+        "app-server-daemon/app-server-updater.stderr.log",
+        "logs_2.sqlite",
+        "logs_2.sqlite-shm",
+        "logs_2.sqlite-wal",
+        "models_cache.json",
+        "packages/standalone",
+        "packages/standalone/auto-update-version",
+        "packages/standalone/install.lock",
+        "sessions/2026/10/27/rollout-2026-10-27T09-02-31-01a17e19-52a7-77c0-bcf6-9d0412aa4c7a.jsonl",
+        "sessions/2026/10/27/rollout-2026-10-27T10-32-53-01a17e6c-1123-7bd1-b146-be50192f5089.jsonl",
+        "state_5.sqlite",
+        "state_5.sqlite-shm",
+        "state_5.sqlite-wal",
+        "thread_history_1.sqlite",
+        "thread_history_1.sqlite-shm",
+        "thread_history_1.sqlite-wal",
+        "tmp/arg0-linux"
+      ]
+    },
+    "claude": {
+      "before_count": 0,
+      "after_count": 0,
+      "added": [],
+      "removed": [],
+      "mtime_or_type_changed": []
+    },
+    "xdg_config": {
+      "before_count": 8,
+      "after_count": 8,
+      "added": [],
+      "removed": [],
+      "mtime_or_type_changed": []
+    },
+    "xdg_data": {
+      "before_count": 8,
+      "after_count": 8,
+      "added": [],
+      "removed": [],
+      "mtime_or_type_changed": []
+    },
+    "xdg_state": {
+      "before_count": 0,
+      "after_count": 0,
+      "added": [],
+      "removed": [],
+      "mtime_or_type_changed": []
+    },
+    "xdg_cache": {
+      "before_count": 30007,
+      "after_count": 30007,
+      "added": [],
+      "removed": [],
+      "mtime_or_type_changed": []
+    },
+    "CODEX_HOME": {
+      "before_count": 8955,
+      "after_count": 8955,
+      "added": [
+        "tmp/arg0-linux/codex-arg0AIiSyl",
+        "tmp/arg0-linux/codex-arg0AIiSyl/.lock",
+        "tmp/arg0-linux/codex-arg0AIiSyl/apply_patch",
+        "tmp/arg0-linux/codex-arg0AIiSyl/applypatch",
+        "tmp/arg0-linux/codex-arg0AIiSyl/codex-linux-sandbox"
+      ],
+      "removed": [
+        "tmp/arg0-linux/codex-arg0Ds1Hs3",
+        "tmp/arg0-linux/codex-arg0Ds1Hs3/.lock",
+        "tmp/arg0-linux/codex-arg0Ds1Hs3/apply_patch",
+        "tmp/arg0-linux/codex-arg0Ds1Hs3/applypatch",
+        "tmp/arg0-linux/codex-arg0Ds1Hs3/codex-linux-sandbox"
+      ],
+      "mtime_or_type_changed": [
+        "app-server-daemon/app-server-updater.stderr.log",
+        "logs_2.sqlite",
+        "logs_2.sqlite-shm",
+        "logs_2.sqlite-wal",
+        "models_cache.json",
+        "packages/standalone",
+        "packages/standalone/auto-update-version",
+        "packages/standalone/install.lock",
+        "sessions/2026/10/27/rollout-2026-10-27T09-02-31-01a17e19-52a7-77c0-bcf6-9d0412aa4c7a.jsonl",
+        "sessions/2026/10/27/rollout-2026-10-27T10-32-53-01a17e6c-1123-7bd1-b146-be50192f5089.jsonl",
+        "state_5.sqlite",
+        "state_5.sqlite-shm",
+        "state_5.sqlite-wal",
+        "thread_history_1.sqlite",
+        "thread_history_1.sqlite-shm",
+        "thread_history_1.sqlite-wal",
+        "tmp/arg0-linux"
+      ]
+    }
+  },
+  "strict_metadata_unchanged": false,
+  "metadata_attribution": "Changes are un-attributed concurrent observations; no live helper/app-server was stopped. Do not label strict invariant PASS if false."
+}

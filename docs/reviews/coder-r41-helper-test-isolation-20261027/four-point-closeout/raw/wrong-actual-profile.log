@@ -1,0 +1,24 @@
+HELPER_SUITE python=/tmp/coder-0232-locked-venv/bin/python3 version=3.12.3 driver=claude pattern=test_suite_isolation.py
+HELPER_PROFILE selected=claude actual_SH_DRIVER=claude
+Traceback (most recent call last):
+  File "/tmp/profile-negative-fwt0gdxx/scripts/test-helper-suite.py", line 45, in <module>
+    if __name__=='__main__':raise SystemExit(main())
+                                             ^^^^^^
+  File "/tmp/profile-negative-fwt0gdxx/scripts/test-helper-suite.py", line 35, in main
+    assert_isolated(directory, args.driver)
+  File "/tmp/profile-negative-fwt0gdxx/tools/sessionhelper/tests/_suite_isolation.py", line 47, in assert_isolated
+    assert actual == driver, f'isolation profile: selected={driver} actual_SH_DRIVER={actual}'
+           ^^^^^^^^^^^^^^^^
+AssertionError: isolation profile: selected=claude actual_SH_DRIVER=unset
+HELPER_SUITE python=/tmp/coder-0232-locked-venv/bin/python3 version=3.12.3 driver=codex pattern=test_suite_isolation.py
+HELPER_PROFILE selected=codex actual_SH_DRIVER=codex
+Traceback (most recent call last):
+  File "/tmp/profile-negative-fwt0gdxx/scripts/test-helper-suite.py", line 45, in <module>
+    if __name__=='__main__':raise SystemExit(main())
+                                             ^^^^^^
+  File "/tmp/profile-negative-fwt0gdxx/scripts/test-helper-suite.py", line 35, in main
+    assert_isolated(directory, args.driver)
+  File "/tmp/profile-negative-fwt0gdxx/tools/sessionhelper/tests/_suite_isolation.py", line 47, in assert_isolated
+    assert actual == driver, f'isolation profile: selected={driver} actual_SH_DRIVER={actual}'
+           ^^^^^^^^^^^^^^^^
+AssertionError: isolation profile: selected=codex actual_SH_DRIVER=unset

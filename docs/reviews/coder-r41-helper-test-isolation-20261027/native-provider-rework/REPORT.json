@@ -1,0 +1,199 @@
+{
+  "utc": "2026-10-27T18:21:49.331595+00:00",
+  "request": "leader2026-10-27T17:48:42Z item9 rework: full CODEX/CLAUDE/ANTHROPIC/OPENAI prefixes, all XDG except5generated paths; external sentinel subset; negative; four fulls",
+  "source": "c207496f455c4e8e37bdb454da7373ed794ac21c",
+  "parent_tip": "82d65aea6a6ac84990bd7b64223424ce5cf5bd0c",
+  "branch": "coder56solzzc/r41-helper-test-isolation",
+  "changes": [
+    "Inherited CODEX_*,CLAUDE_*,ANTHROPIC_*,OPENAI_* all removed. XDG_* removed except regenerated CONFIG_HOME/DATA_HOME/STATE_HOME/CACHE_HOME/RUNTIME_DIR beneath each case temporary HOME. Runtime directory is created0700.",
+    "Guard only allows those regenerated native HOME_KEYS after path bounds checks; unknown prefixed variables forbidden.",
+    "New native configuration child case uses real helper load_config for CODEX_HOME then child writes and reads7settings.json under generated native paths. Assert caller arbitrary provider/XDG variables absent and runtime mode0700.",
+    "Versioned scripts/reproduce-native-env-isolation.py supplies external CLAUDE_CONFIG_DIR/CODEX_HOME/XDG_CONFIG_HOME and other native paths pointing at a prefilled sentinel directory plus CLAUDE_FOO/CODEX_BAR/provider/XDG synthetic vars. Exact sentinel type/path/mtime_ns snapshot remains unchanged. Negative strips native-prefix exclusions only, keeping HOME_KEYS rebasing, fails actual new configuration case because CLAUDE_FOO is visible. No real provider values are included in negative environment."
+  ],
+  "targeted": {
+    "sentinel-claude.log": {
+      "driver": "claude",
+      "reverse": false,
+      "child_rc": 0,
+      "sentinel_unchanged": true,
+      "sentinel_before": {
+        ".": [
+          16384,
+          1793124776207881588
+        ],
+        "settings.json": [
+          32768,
+          1793124776208435317
+        ]
+      },
+      "sentinel_after": {
+        ".": [
+          16384,
+          1793124776207881588
+        ],
+        "settings.json": [
+          32768,
+          1793124776208435317
+        ]
+      },
+      "sentinel_metadata_sha256": "e683bb9f6f99a27b4a85c31dabaeac7bf1bccb4375b4a360e3ae321a7afdd12c",
+      "negative_assertion_seen": false,
+      "expected_result": true
+    },
+    "sentinel-codex.log": {
+      "driver": "codex",
+      "reverse": false,
+      "child_rc": 0,
+      "sentinel_unchanged": true,
+      "sentinel_before": {
+        ".": [
+          16384,
+          1793124776378229207
+        ],
+        "settings.json": [
+          32768,
+          1793124776378930028
+        ]
+      },
+      "sentinel_after": {
+        ".": [
+          16384,
+          1793124776378229207
+        ],
+        "settings.json": [
+          32768,
+          1793124776378930028
+        ]
+      },
+      "sentinel_metadata_sha256": "05edd98c917eeb97c6de09ee7e1794466c54426bd62be3ecd4d8b223581f438e",
+      "negative_assertion_seen": false,
+      "expected_result": true
+    },
+    "sentinel-reverse.log": {
+      "driver": "codex",
+      "reverse": true,
+      "child_rc": 1,
+      "sentinel_unchanged": true,
+      "sentinel_before": {
+        ".": [
+          16384,
+          1793124776546877394
+        ],
+        "settings.json": [
+          32768,
+          1793124776547864822
+        ]
+      },
+      "sentinel_after": {
+        ".": [
+          16384,
+          1793124776546877394
+        ],
+        "settings.json": [
+          32768,
+          1793124776547864822
+        ]
+      },
+      "sentinel_metadata_sha256": "032a6ac4351a24f8b4b39c5102a974f38b26a4c0ac6dc01b131ca1ff30e94b57",
+      "negative_assertion_seen": true,
+      "expected_result": true
+    }
+  },
+  "matrix": {
+    "source": "c207496f455c4e8e37bdb454da7373ed794ac21c",
+    "started_utc": "2026-10-27T18:13:28.758829+00:00",
+    "cores": 16,
+    "initial_load": [
+      1.5341796875,
+      2.00732421875,
+      2.58203125
+    ],
+    "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "real_HOME_mtime": "not a gate per leader2026-10-27T17:48:42Z; independent reviewer owns strace write attribution",
+    "results": [
+      {
+        "label": "seat-claude",
+        "rc": 1,
+        "count": 1052,
+        "seconds": 450.75,
+        "failures": [
+          "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+        ],
+        "errors": [],
+        "skipped": 0,
+        "finished_utc": "2026-10-27T18:21:00.787981+00:00"
+      },
+      {
+        "label": "seat-codex",
+        "rc": 1,
+        "count": 1052,
+        "seconds": 451.565,
+        "failures": [
+          "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+        ],
+        "errors": [],
+        "skipped": 0,
+        "finished_utc": "2026-10-27T18:21:00.792347+00:00"
+      },
+      {
+        "label": "env-i-codex",
+        "rc": 0,
+        "count": 1052,
+        "seconds": 449.743,
+        "failures": [],
+        "errors": [],
+        "skipped": 0,
+        "finished_utc": "2026-10-27T18:21:00.796078+00:00"
+      },
+      {
+        "label": "env-i-claude",
+        "rc": 1,
+        "count": 1052,
+        "seconds": 451.862,
+        "failures": [
+          "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+        ],
+        "errors": [],
+        "skipped": 0,
+        "finished_utc": "2026-10-27T18:21:02.800220+00:00"
+      }
+    ],
+    "finished_utc": "2026-10-27T18:21:04.800354+00:00",
+    "load_min": [
+      1.36376953125,
+      1.953125,
+      2.45068359375
+    ],
+    "load_max": [
+      5.67919921875,
+      2.90380859375,
+      2.83740234375
+    ]
+  },
+  "runtime": "Python3.12.3; websockets15.0.1 pexpect4.9 ptyprocess0.7 certifi2026.7.22; same requirements-runtime.lock SHA in matrix",
+  "commands": [
+    "/tmp/coder-0232-locked-venv/bin/python3 scripts/reproduce-native-env-isolation.py --driver claude",
+    "same --driver codex",
+    "same --driver codex --reverse (expectedrc1; JSON expected_result=true)",
+    "seat and env-i PATH-only each: locked Python scripts/test-helper-suite.py --driver claude/codex --pattern test_*.py"
+  ],
+  "count_change": "test_suite_isolation.py now5 cases vs4: helper discovery1052 vs1051; file inventory unchanged. Item2 integration count contract must reconcile the additional case.",
+  "acceptance_boundary": [
+    "The earlier strict realHOME-mtime FAIL conclusion in prefix-rework report is superseded by leader17:48:42Z: live native mtime is not this seat gate; write attribution belongs to independent reviewer strace. No exclusion was retroactively applied to earlier raw observations.",
+    "Current sentinel invariance is exact and deterministic, not an exclusion of live background files. Both profiles5/5 subsetPASS. Negative run has2FAIL including explicit new native-config assertion; noERROR, actual expected criterion recorded.",
+    "All four full suites execute1052, ERROR/SKIP0. env-i/codexPASS; other3 fail only registered Guide duplicate flaky. Do not call this4xPASS or claim all environment outcomes equal. Guide repair remains independent item7, not merged here.",
+    "Development supplemental requirements implemented and evidence delivered; independent review/strace pending, no self independentPASS. No build/CI integration claim: old build gate not changed; item2 integration remains responsible.",
+    "No product changes, deployment, real provider calls, helper restart or realHOME metadata scanning in this latest run."
+  ],
+  "sha256": {
+    "raw/sentinel-claude.log": "85c088076c9e699232a5be9fe4960a3019cea5f847947c1678ee808712b8e0fb",
+    "raw/sentinel-codex.log": "887ef82aaf1e43bde3066f4f67c5149b076455871e42b4175d7759d14e7ff259",
+    "raw/sentinel-reverse.log": "d442cd544b0bf28ba0c3134000aeb98ca68f23f7bb32711d6644d56f89bb112f",
+    "raw/FOUR-START.json": "e60233b004eb7f06d2ec478115b2656f48a9908f70c1be7ce615feffd19b2626",
+    "raw/FOUR-RESULT.json": "513ad469a1da05164b28b031326dd811d12f3e5dd6d66ab54399a1bbcc58f034",
+    "raw/seat-claude.log": "edd67d3e7e8e459ddff61d876e8e60a934820f4f49e9449204ed541febd294bb",
+    "raw/seat-codex.log": "27fe0b5605874fe74a4cf9e7028d1f06bf49cc8072b88041f398ff91caf44468",
+    "raw/env-i-claude.log": "7d3363d478f613be94766200a35f9f889aa6a36410f7d4f1a440625d9a69dafd",
+    "raw/env-i-codex.log": "5ac28714a33a065ed9a75c687e05b236e14941d4085c29a46d5ea81e16a20442"
+  }
+}

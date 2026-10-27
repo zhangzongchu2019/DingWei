@@ -1,0 +1,17 @@
+[
+  {
+    "removed_prefix": "CODEX_",
+    "rc": 1,
+    "criterion": "actual synthetic prefix-clean assertion failed"
+  },
+  {
+    "removed_prefix": "CLAUDE_",
+    "rc": 1,
+    "criterion": "actual synthetic prefix-clean assertion failed"
+  },
+  {
+    "removed_prefix": "XDG_",
+    "rc": 1,
+    "criterion": "actual synthetic prefix-clean assertion failed"
+  }
+]

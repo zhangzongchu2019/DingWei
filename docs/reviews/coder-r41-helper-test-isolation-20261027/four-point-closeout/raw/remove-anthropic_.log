@@ -1,0 +1,50 @@
+HELPER_SUITE python=/tmp/coder-0232-locked-venv/bin/python3 version=3.12.3 driver=claude pattern=test_suite_isolation.py
+HELPER_PROFILE selected=claude actual_SH_DRIVER=claude
+test_each_case_gets_distinct_home_and_socket_and_restores_environment (test_suite_isolation.SuiteIsolationTests.test_each_case_gets_distinct_home_and_socket_and_restores_environment) ... ok
+test_module_profile_falls_back_to_outer_driver_then_unset (test_suite_isolation.SuiteIsolationTests.test_module_profile_falls_back_to_outer_driver_then_unset) ... ok
+test_module_profile_uses_gate_selection_in_stripped_environment (test_suite_isolation.SuiteIsolationTests.test_module_profile_uses_gate_selection_in_stripped_environment) ... ok
+test_native_configuration_child_reads_and_writes_only_case_paths (test_suite_isolation.SuiteIsolationTests.test_native_configuration_child_reads_and_writes_only_case_paths) ... ok
+test_profile_guard_rejects_silent_driver_substitution (test_suite_isolation.SuiteIsolationTests.test_profile_guard_rejects_silent_driver_substitution) ... ok
+test_removed_isolation_fails_at_boundary_before_helper_execution (test_suite_isolation.SuiteIsolationTests.test_removed_isolation_fails_at_boundary_before_helper_execution) ... ok
+test_runner_installs_case_isolation_before_setup (test_suite_isolation.SuiteIsolationTests.test_runner_installs_case_isolation_before_setup) ... ok
+test_seat_environment_is_removed_without_reading_values (test_suite_isolation.SuiteIsolationTests.test_seat_environment_is_removed_without_reading_values) ... FAIL
+
+======================================================================
+FAIL: test_seat_environment_is_removed_without_reading_values (test_suite_isolation.SuiteIsolationTests.test_seat_environment_is_removed_without_reading_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/profile-negative-qt4ja9q0/tools/sessionhelper/tests/test_suite_isolation.py", line 71, in test_seat_environment_is_removed_without_reading_values
+    self.assertEqual(clean_environment(dirty), {'PATH': '/fixture'})
+AssertionError: {'PATH': '/fixture', 'ANTHROPIC_FUTURE_SETTING': 'fixture'} != {'PATH': '/fixture'}
+- {'ANTHROPIC_FUTURE_SETTING': 'fixture', 'PATH': '/fixture'}
++ {'PATH': '/fixture'}
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.063s
+
+FAILED (failures=1)
+HELPER_SUITE python=/tmp/coder-0232-locked-venv/bin/python3 version=3.12.3 driver=codex pattern=test_suite_isolation.py
+HELPER_PROFILE selected=codex actual_SH_DRIVER=codex
+test_each_case_gets_distinct_home_and_socket_and_restores_environment (test_suite_isolation.SuiteIsolationTests.test_each_case_gets_distinct_home_and_socket_and_restores_environment) ... ok
+test_module_profile_falls_back_to_outer_driver_then_unset (test_suite_isolation.SuiteIsolationTests.test_module_profile_falls_back_to_outer_driver_then_unset) ... ok
+test_module_profile_uses_gate_selection_in_stripped_environment (test_suite_isolation.SuiteIsolationTests.test_module_profile_uses_gate_selection_in_stripped_environment) ... ok
+test_native_configuration_child_reads_and_writes_only_case_paths (test_suite_isolation.SuiteIsolationTests.test_native_configuration_child_reads_and_writes_only_case_paths) ... ok
+test_profile_guard_rejects_silent_driver_substitution (test_suite_isolation.SuiteIsolationTests.test_profile_guard_rejects_silent_driver_substitution) ... ok
+test_removed_isolation_fails_at_boundary_before_helper_execution (test_suite_isolation.SuiteIsolationTests.test_removed_isolation_fails_at_boundary_before_helper_execution) ... ok
+test_runner_installs_case_isolation_before_setup (test_suite_isolation.SuiteIsolationTests.test_runner_installs_case_isolation_before_setup) ... ok
+test_seat_environment_is_removed_without_reading_values (test_suite_isolation.SuiteIsolationTests.test_seat_environment_is_removed_without_reading_values) ... FAIL
+
+======================================================================
+FAIL: test_seat_environment_is_removed_without_reading_values (test_suite_isolation.SuiteIsolationTests.test_seat_environment_is_removed_without_reading_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/profile-negative-qt4ja9q0/tools/sessionhelper/tests/test_suite_isolation.py", line 71, in test_seat_environment_is_removed_without_reading_values
+    self.assertEqual(clean_environment(dirty), {'PATH': '/fixture'})
+AssertionError: {'PATH': '/fixture', 'ANTHROPIC_FUTURE_SETTING': 'fixture'} != {'PATH': '/fixture'}
+- {'ANTHROPIC_FUTURE_SETTING': 'fixture', 'PATH': '/fixture'}
++ {'PATH': '/fixture'}
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.060s
+
+FAILED (failures=1)

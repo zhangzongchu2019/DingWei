@@ -1,0 +1,9 @@
+HELPER_SUITE python=/tmp/coder-0232-locked-venv/bin/python3 version=3.12.3 driver=claude pattern=test_suite_isolation.py
+Traceback (most recent call last):
+  File "<string>", line 6, in <module>
+  File "/data/ai-dev-data/r41-helper-test-isolation/scripts/test-helper-suite.py", line 32, in main
+    assert_isolated(directory, args.driver)
+  File "/data/ai-dev-data/r41-helper-test-isolation/tools/sessionhelper/tests/_suite_isolation.py", line 41, in assert_isolated
+    assert path != root and root in path.parents, f'isolation boundary: {key}'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: isolation boundary: HOME

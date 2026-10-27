@@ -1,0 +1,80 @@
+{
+  "source": "ba4ed6e168549bf5a4dceac1948997c30c3e7650",
+  "tree": "949249cacac14b237031183b4453f36c67458ff0",
+  "started_utc": "2026-10-27T18:29:44.232693+00:00",
+  "cores": 16,
+  "initial_load": [
+    0.63330078125,
+    1.46240234375,
+    2.05419921875
+  ],
+  "runtime": "/tmp/coder-0232-locked-venv/bin/python3",
+  "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "real_home_mtime": "Existing observations preserved; not acceptance gate per leader; independent reviewer owns strace attribution",
+  "results": [
+    {
+      "label": "env-i-claude",
+      "rc": 1,
+      "count": 1055,
+      "seconds": 450.258,
+      "failures": [
+        "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+      ],
+      "errors": [],
+      "skip_count": 0,
+      "profile_receipt": [
+        "HELPER_PROFILE selected=claude actual_SH_DRIVER=claude"
+      ],
+      "finished_utc": "2026-10-27T18:37:14.498879+00:00"
+    },
+    {
+      "label": "env-i-codex",
+      "rc": 1,
+      "count": 1055,
+      "seconds": 448.442,
+      "failures": [],
+      "errors": [
+        "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+      ],
+      "skip_count": 0,
+      "profile_receipt": [
+        "HELPER_PROFILE selected=codex actual_SH_DRIVER=codex"
+      ],
+      "finished_utc": "2026-10-27T18:37:12.680947+00:00"
+    },
+    {
+      "label": "seat-claude",
+      "rc": 1,
+      "count": 1055,
+      "seconds": 450.906,
+      "failures": [
+        "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+      ],
+      "errors": [],
+      "skip_count": 0,
+      "profile_receipt": [
+        "HELPER_PROFILE selected=claude actual_SH_DRIVER=claude"
+      ],
+      "finished_utc": "2026-10-27T18:37:15.145095+00:00"
+    },
+    {
+      "label": "seat-codex",
+      "rc": 0,
+      "count": 1055,
+      "seconds": 450.711,
+      "failures": [],
+      "errors": [],
+      "skip_count": 0,
+      "profile_receipt": [
+        "HELPER_PROFILE selected=codex actual_SH_DRIVER=codex"
+      ],
+      "finished_utc": "2026-10-27T18:37:14.950673+00:00"
+    }
+  ],
+  "finished_utc": "2026-10-27T18:37:15.145536+00:00",
+  "final_load": [
+    2.4912109375,
+    1.6552734375,
+    1.865234375
+  ]
+}

@@ -195,7 +195,11 @@ class DriverAdapterUnifiedQueueTest(unittest.TestCase):
             "SH_TURN_TERMINAL_TIMEOUT_SECONDS": "1",
             **env,
         }
-        with mock.patch.object(DriverAdapter, "_build_driver", return_value=driver):
+        # DriverAdapter reads SH_DRIVER from the process environment, while
+        # load_config consumes the explicit mapping. Apply fixture overrides
+        # to both so a codex-specific case also works in the claude profile.
+        with mock.patch.dict('os.environ', values), \
+                mock.patch.object(DriverAdapter, "_build_driver", return_value=driver):
             adapter = DriverAdapter(load_config(values))
         adapter.start()
         return adapter

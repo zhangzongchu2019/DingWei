@@ -1,0 +1,12 @@
+{
+  "source": "96f4597eb4e26904148e8303b96db1ae75f5fcb0",
+  "started_utc": "2026-10-27T16:59:57.943389+00:00",
+  "cpu_count": 16,
+  "load": [
+    0.88232421875,
+    0.845703125,
+    0.6728515625
+  ],
+  "python": "/tmp/coder-0232-locked-venv/bin/python3",
+  "superseded": "Earlier runs stopped before completion or used runtime venv; not acceptance evidence."
+}

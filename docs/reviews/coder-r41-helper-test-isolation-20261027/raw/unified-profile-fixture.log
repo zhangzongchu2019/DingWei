@@ -1,0 +1,84 @@
+HELPER_SUITE python=/tmp/coder-0232-locked-venv/bin/python3 version=3.12.3 driver=claude pattern=test_unified_queue.py
+test_blocking_deliver_does_not_block_enqueue (test_unified_queue.DriverAdapterUnifiedQueueTest.test_blocking_deliver_does_not_block_enqueue) ... [driver-adapter] started, driver=claude
+ok
+[driver-adapter] deliver id=dw-view-0c13eace5da94072a3cd02a6bd615557 -> processing (turn=turn-1)
+test_same_turn_events_carry_canonical_origin_with_real_id_shape (test_unified_queue.DriverAdapterUnifiedQueueTest.test_same_turn_events_carry_canonical_origin_with_real_id_shape) ... [driver-adapter] started, driver=claude
+ok
+[driver-adapter] deliver id=dw-dlv_X -> processing (turn=turn-1)
+test_sessionhelper_driver_mode_routes_directly_to_unified_queue (test_unified_queue.DriverAdapterUnifiedQueueTest.test_sessionhelper_driver_mode_routes_directly_to_unified_queue) ... ok
+test_terminal_watchdog_fails_current_and_advances (test_unified_queue.DriverAdapterUnifiedQueueTest.test_terminal_watchdog_fails_current_and_advances) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-673b337621584600ad17237ee25b0584 -> processing (turn=turn-1)
+[delivery] done id=dw-view-0c13eace5da94072a3cd02a6bd615557 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-two -> processing (turn=turn-2)
+[delivery] done id=dw-dlv_X source=fixture (turn=turn-1)
+[delivery] done id=dw-two source=fixture (turn=turn-2)
+[delivery][ALERT][TIMEOUT] id=dw-view-673b337621584600ad17237ee25b0584 terminal_timeout; admission/terminal not assumed; no automatic replay
+[driver-adapter] deliver id=dw-two -> processing (turn=turn-2)
+ok
+test_three_sources_use_one_adapter_fifo (test_unified_queue.DriverAdapterUnifiedQueueTest.test_three_sources_use_one_adapter_fifo) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-view-e4a9dfad9fa8476f8944b2001b4974ef -> processing (turn=turn-1)
+[delivery] done id=dw-view-e4a9dfad9fa8476f8944b2001b4974ef source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-agent -> processing (turn=turn-2)
+[delivery][ALERT][TIMEOUT] id=dw-two terminal_timeout; admission/terminal not assumed; no automatic replay
+[delivery] done id=dw-agent source=fixture (turn=turn-2)
+[driver-adapter] deliver id=dw-feishu -> processing (turn=turn-3)
+[delivery] done id=dw-feishu source=fixture (turn=turn-3)ok
+
+test_view_path_emits_one_queued_admitted_pair_and_one_delivery (test_unified_queue.DriverAdapterUnifiedQueueTest.test_view_path_emits_one_queued_admitted_pair_and_one_delivery) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-view-ac5dc1a8fa9b4b568919f66b7314a86c -> processing (turn=turn-1)
+[delivery] done id=dw-view-ac5dc1a8fa9b4b568919f66b7314a86c source=fixture (turn=turn-1)ok
+
+test_canonical_delivery_origin_is_preserved_without_rewriting (test_unified_queue.UnifiedCommandQueueTest.test_canonical_delivery_origin_is_preserved_without_rewriting) ... ok
+test_lifecycle_is_idempotent (test_unified_queue.UnifiedCommandQueueTest.test_lifecycle_is_idempotent) ... ok
+test_only_current_head_can_be_admitted_or_finished (test_unified_queue.UnifiedCommandQueueTest.test_only_current_head_can_be_admitted_or_finished) ... ok
+test_rejects_new_without_dropping_visible_fifo (test_unified_queue.UnifiedCommandQueueTest.test_rejects_new_without_dropping_visible_fifo) ... ok
+test_system_notification_marker_is_preserved_in_lifecycle_events (test_unified_queue.UnifiedCommandQueueTest.test_system_notification_marker_is_preserved_in_lifecycle_events) ... ok
+test_three_sources_share_fifo_and_schema (test_unified_queue.UnifiedCommandQueueTest.test_three_sources_share_fifo_and_schema) ... ok
+test_unmarked_message_does_not_claim_system_notification (test_unified_queue.UnifiedCommandQueueTest.test_unmarked_message_does_not_claim_system_notification) ... ok
+test_untrusted_or_legacy_envelopes_do_not_claim_origin (test_unified_queue.UnifiedCommandQueueTest.test_untrusted_or_legacy_envelopes_do_not_claim_origin) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.656s
+
+OK
+HELPER_SUITE python=/tmp/coder-0232-locked-venv/bin/python3 version=3.12.3 driver=codex pattern=test_unified_queue.py
+test_blocking_deliver_does_not_block_enqueue (test_unified_queue.DriverAdapterUnifiedQueueTest.test_blocking_deliver_does_not_block_enqueue) ... [driver-adapter] started, driver=codex
+ok
+[driver-adapter] deliver id=dw-view-cc338c59fe664490bebad332b758a3a8 -> processing (turn=turn-1)
+test_same_turn_events_carry_canonical_origin_with_real_id_shape (test_unified_queue.DriverAdapterUnifiedQueueTest.test_same_turn_events_carry_canonical_origin_with_real_id_shape) ... [driver-adapter] started, driver=codex
+ok
+[driver-adapter] deliver id=dw-dlv_X -> processing (turn=turn-1)
+test_sessionhelper_driver_mode_routes_directly_to_unified_queue (test_unified_queue.DriverAdapterUnifiedQueueTest.test_sessionhelper_driver_mode_routes_directly_to_unified_queue) ... ok
+test_terminal_watchdog_fails_current_and_advances (test_unified_queue.DriverAdapterUnifiedQueueTest.test_terminal_watchdog_fails_current_and_advances) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-0a97b4051e744d928297b580e93ef36c -> processing (turn=turn-1)
+[delivery] done id=dw-view-cc338c59fe664490bebad332b758a3a8 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-two -> processing (turn=turn-2)
+[delivery] done id=dw-dlv_X source=fixture (turn=turn-1)
+[delivery] done id=dw-two source=fixture (turn=turn-2)
+[delivery][ALERT][TIMEOUT] id=dw-view-0a97b4051e744d928297b580e93ef36c terminal_timeout; admission/terminal not assumed; no automatic replay
+[driver-adapter] deliver id=dw-two -> processing (turn=turn-2)
+ok
+test_three_sources_use_one_adapter_fifo (test_unified_queue.DriverAdapterUnifiedQueueTest.test_three_sources_use_one_adapter_fifo) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-7345479aeddc4509ab19799c17ef596d -> processing (turn=turn-1)
+[delivery] done id=dw-view-7345479aeddc4509ab19799c17ef596d source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-agent -> processing (turn=turn-2)
+[delivery][ALERT][TIMEOUT] id=dw-two terminal_timeout; admission/terminal not assumed; no automatic replay
+[delivery] done id=dw-agent source=fixture (turn=turn-2)
+[driver-adapter] deliver id=dw-feishu -> processing (turn=turn-3)
+ok
+test_view_path_emits_one_queued_admitted_pair_and_one_delivery (test_unified_queue.DriverAdapterUnifiedQueueTest.test_view_path_emits_one_queued_admitted_pair_and_one_delivery) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-5696d7c463d24728abf04a903655fa7a -> processing (turn=turn-1)
+ok
+test_canonical_delivery_origin_is_preserved_without_rewriting (test_unified_queue.UnifiedCommandQueueTest.test_canonical_delivery_origin_is_preserved_without_rewriting) ... ok
+test_lifecycle_is_idempotent (test_unified_queue.UnifiedCommandQueueTest.test_lifecycle_is_idempotent) ... ok
+test_only_current_head_can_be_admitted_or_finished (test_unified_queue.UnifiedCommandQueueTest.test_only_current_head_can_be_admitted_or_finished) ... ok
+test_rejects_new_without_dropping_visible_fifo (test_unified_queue.UnifiedCommandQueueTest.test_rejects_new_without_dropping_visible_fifo) ... ok
+test_system_notification_marker_is_preserved_in_lifecycle_events (test_unified_queue.UnifiedCommandQueueTest.test_system_notification_marker_is_preserved_in_lifecycle_events) ... ok
+test_three_sources_share_fifo_and_schema (test_unified_queue.UnifiedCommandQueueTest.test_three_sources_share_fifo_and_schema) ... ok
+test_unmarked_message_does_not_claim_system_notification (test_unified_queue.UnifiedCommandQueueTest.test_unmarked_message_does_not_claim_system_notification) ... ok
+test_untrusted_or_legacy_envelopes_do_not_claim_origin (test_unified_queue.UnifiedCommandQueueTest.test_untrusted_or_legacy_envelopes_do_not_claim_origin) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.466s
+
+OK
