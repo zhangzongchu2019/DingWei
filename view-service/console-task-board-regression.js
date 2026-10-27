@@ -7,7 +7,7 @@ const assert = new Proxy(assertModule, {
     return typeof value === 'function' ? (...args) => { assertionCount += 1; return value.apply(target, args); } : value;
   },
 });
-const MIN_ASSERTIONS = 69;
+const MIN_ASSERTIONS = 85;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -224,6 +224,27 @@ async function main() {
   await cancelButton.waitFor({ state: 'detached' });
   assert.strictEqual(blockerWrites.length, writesBeforeCancel + 1, '填证据取消只发送一次请求');
   assert.match(await frame.locator('#blocker-list').textContent(), /已取消/, '填证据取消后卡显示已取消');
+  const stateLabels = {
+    waiting: '等新输入', needs_owner: '待分派', ready_to_recheck: '到件重核',
+    rechecking: '重核中', resolved: '重核通过（未自动恢复）',
+    cancelled: '已取消', needs_reassignment: '指派已变，待转交',
+  };
+  const stateCards = Object.entries(stateLabels).map(([state], index) => ({
+    ...blocker, id: 'blk:' + String(index + 1).padStart(8, '0') + 'abcdef00', state,
+  }));
+  await frame.locator('#blocker-list').evaluate((_, cards) => renderBlockers(cards), stateCards);
+  const renderedLabels = [];
+  for (const card of stateCards) {
+    const section = frame.locator('#blocker-list section[data-blocker-id="' + card.id + '"]');
+    assert.strictEqual(await section.locator('h3').textContent(), '编号 ' + card.id.slice(4, 12) + ' · ' + card.where, '阻塞卡短编号按每张真实ID前八位显示：' + card.state);
+    const stateText = await section.locator('p').first().textContent();
+    const label = stateText.split('；')[0];
+    renderedLabels.push(label);
+    assert.strictEqual(label, '状态：' + stateLabels[card.state], '阻塞卡中文状态逐值匹配：' + card.state);
+  }
+  assert.strictEqual(new Set(renderedLabels).size, stateCards.length, '阻塞卡各状态中文映射必须互不相同');
+  await frame.locator('#blocker-list').evaluate((_, card) => renderBlockers([card]), { ...blocker, id: 'qblk:abcdef0123456789' });
+  assert.strictEqual(await frame.locator('#blocker-list h3').textContent(), '编号 abcdef01 · ' + blocker.where, '问题关联阻塞卡短编号也须去掉类型前缀');
   await frame.locator('#blocker-close').click();
   // Exercise the real five-second scheduler without freezing board updates.
   const clarification = frame.locator('#task-list tr').first().locator('details');
