@@ -1,0 +1,62 @@
+{
+  "utc": "2026-10-27T17:37:57.767026+00:00",
+  "item": 8,
+  "repo": "git@git.code.tencent.com:wego-ai/dingwei.git",
+  "branch": "coder56solzzc/r41-inbox-lag-legacy-flaky",
+  "base": "549f64e280f2c5496bffb506c709c1bf0a1c504d",
+  "source": "978be1416af088e4a0a320f3b939791a4bbd52d3",
+  "tree": "fb2664141816abfb5114f88d102a58099582079c",
+  "go": "go1.22.2 linux/amd64",
+  "fix": "Wait for target publication, expected identity, connected socket and legacy no-deliveryACK capability under h.mu before writing authenticated source. 10sec upper bound; preserve original message body and private receipt fields assertions.",
+  "cause": "HTTP101 precedes sessionClients publication; baseline sends to absent legacy target, no durable delivery fallback; endpoint lookup rejects with generic group error despite correct memberships.",
+  "scope": "test fixture and reproducer only; no product/version changes; no deploy/restart/live DB writes",
+  "results": {
+    "baseline60.jsonl": {
+      "pass": 54,
+      "fail": 6
+    },
+    "controlled-before10.jsonl": {
+      "fail": 10,
+      "verified_summary": {
+        "rounds": 10,
+        "reverse": true,
+        "go_rc": 1,
+        "pass": 0,
+        "fail": 10,
+        "expected_result": true
+      }
+    },
+    "fixed50.jsonl": {
+      "pass": 50,
+      "verified_summary": {
+        "rounds": 50,
+        "reverse": false,
+        "go_rc": 0,
+        "pass": 50,
+        "fail": 0,
+        "expected_result": true
+      }
+    },
+    "reverse10.jsonl": {
+      "fail": 10,
+      "verified_summary": {
+        "rounds": 10,
+        "reverse": true,
+        "go_rc": 1,
+        "pass": 0,
+        "fail": 10,
+        "expected_result": true
+      }
+    },
+    "module.jsonl": {
+      "pass": 13
+    }
+  },
+  "sha256": {
+    "raw/baseline60.jsonl": "cc81db92e0c0bd715eb5ef03b6e36b9b25425b8db23a4b18c1d7e899f1bd1adf",
+    "raw/controlled-before10.jsonl": "77acf5a07b559806967abcc015768d34c94f4ce788b3ad5948c9c2e631afdb50",
+    "raw/fixed50.jsonl": "d3bd74fec42758a03dabb74ea457a65f48d22b06b33501468639dae93fb596da",
+    "raw/reverse10.jsonl": "c717537ffdea02ead3dce8f1cb5132a5513919c64cdd5b64bdc15bf48bcbbdec",
+    "raw/module.jsonl": "4a2b7b613de54669b0310c306d6dace211fbc8064cbce413edc414f6801bc599"
+  }
+}

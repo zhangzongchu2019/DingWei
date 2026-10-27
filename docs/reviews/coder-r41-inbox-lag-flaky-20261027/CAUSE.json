@@ -1,0 +1,18 @@
+{
+  "utc": "2026-10-27T17:37:00.762147+00:00",
+  "item": 8,
+  "baseline": "549f64e280f2c5496bffb506c709c1bf0a1c504d",
+  "natural_baseline": {
+    "pass": 54,
+    "fail": 6
+  },
+  "cause": "WebSocket HTTP101 returns before serveSession publishes sessionClient. Non-ACK legacy target has no durable offline delivery fallback; send before publication rejects during online endpoint resolution (generic cross_group_denied notice); target read times out. Group memberships are already correct.",
+  "evidence_lines": [
+    "hub.go:1107 Accept",
+    "hub.go:1158 sessionBeforePublishHook",
+    "hub.go:1179 publish client",
+    "hub.go:3274 online fast path",
+    "hub.go:3329 unresolved endpoint group error"
+  ],
+  "plan": "Wait for actual target session publication with mutex, expected identity and legacy no-ACK, 10sec upper bound. Keep real authenticated socket and receipt-field stripping checks. Controlled baseline/negative via existing publish hook and exact original method overlay; no product hook changes."
+}
