@@ -26,7 +26,11 @@ MUTANTS={
  'return-as-terminal':(
   '            ledger.record_admitted(command.delivery_id, turn_id)',
   '''            ledger.record_admitted(command.delivery_id, turn_id)
-            ledger.record_completed(command.delivery_id, turn_id, 'completed')''',
+            # Keep the first settled command as the native setup barrier. The
+            # negative control removes terminal association for subsequent work,
+            # without hardcoding any delivery ID or weakening criterion 4.
+            if any(prior.state in ('completed', 'interrupted') for prior in self._commands._by_delivery.values()):
+                ledger.record_completed(command.delivery_id, turn_id, 'completed')''',
   '^TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude$',
   '判据4：B真实终态前不得因函数返回标 processed'),
  'drop-recovery-reconciliation':(
