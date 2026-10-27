@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -190,5 +191,28 @@ func TestDeliveryACKV2RejectedDispatchIsNotAModelTerminal(t *testing.T) {
 	}
 	if _, changed, err := db.ApplySessionDeliveryACK(ctx, a, now.Add(time.Hour)); err != nil || changed {
 		t.Fatalf("rejected dispatch ACK not idempotent: changed=%v err=%v", changed, err)
+	}
+}
+
+// Binding capability alone does not prove that the helper durably owns a delivery.
+// Preserve the original undelivered transport TTL until the queued ACK commits.
+func TestDeliveryACKV2UnreceivedStillUsesTransportExpiry(t *testing.T) {
+	for _, released := range []bool{false, true} {
+		t.Run(fmt.Sprintf("released=%v", released), func(t *testing.T) {
+			db, ctx, a, now := v2DeliveryFixture(t)
+			if released {
+				if _, err := db.ReleaseSessionDeliveryLeases(ctx, a.KeyID, a.SessionName, "disconnect", now); err != nil {
+					t.Fatal(err)
+				}
+			}
+			expired, err := db.ExpireSessionDeliveries(ctx, a.KeyID, a.SessionName, now.Add(31*time.Minute))
+			if err != nil || len(expired) != 1 || expired[0].ID != a.DeliveryID {
+				t.Fatalf("unreceived v2 transport must still expire: %+v %v", expired, err)
+			}
+			d, err := db.GetSessionDelivery(ctx, a.DeliveryID)
+			if err != nil || d.State != "dead" || d.LastError != "delivery_expired" || d.DeliveredAt != nil || d.InjectedAt != nil || d.ProcessedAt != nil {
+				t.Fatalf("transport expiry must not invent helper/model evidence: %+v %v", d, err)
+			}
+		})
 	}
 }

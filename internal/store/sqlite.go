@@ -2107,7 +2107,7 @@ func (s *SQLite) ExpireSessionDeliveries(ctx context.Context, keyID, sessionName
 	nowText := now.UTC().Format(time.RFC3339Nano)
 	rows, err := tx.QueryContext(ctx, `UPDATE session_delivery
 		SET state='dead',last_error='delivery_expired',lease_until=NULL,updated_at=?
-		WHERE key_id=? AND session_name=? AND COALESCE(ack_protocol,0)<>2 AND state NOT IN ('processed','dead','cancelled','legacy_received') AND (attempts>=12 OR created_at<=?)
+		WHERE key_id=? AND session_name=? AND NOT (COALESCE(ack_protocol,0)=2 AND state IN ('delivered','injected','admission_unknown')) AND state NOT IN ('processed','dead','cancelled','legacy_received') AND (attempts>=12 OR created_at<=?)
 		RETURNING `+sessionDeliveryColumns,
 		nowText, keyID, sessionName, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
 	if err != nil {
