@@ -139,7 +139,8 @@ class ACKOutboxTest(unittest.TestCase):
 
     def test_confirm_control_uses_authenticated_connection_identity_and_never_injects(self):
         helper=object.__new__(SessionHelper);helper.book=AddressBook('seat','enrolled','bot');helper.delivery_inbox=self.inbox
-        helper._connection_agent_id='u_fixture'
+        helper._connection_agent_id='ag_fixture'
+        helper._connection_delivery_ack_source='workpulse#u_fixture'
         meta=dict(type='delivery_ack_confirm',delivery_id=self.did,ack_protocol=2,processing_mode='driver',ack_generation=1,state='queued')
         class WS:
             def __aiter__(inner):

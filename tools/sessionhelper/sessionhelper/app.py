@@ -210,6 +210,7 @@ class SessionHelper:
         self.cfg = cfg
         self.enroll_credential: "enroll.Credential | None" = None  # set by main() under SH_ENROLL=1
         self._connection_agent_id = ""  # authenticated WS response, connection-scoped
+        self._connection_delivery_ack_source = ""
         self.enroll_state_dir = ""
         self.book = AddressBook(cfg.session_name, cfg.key_id, cfg.bot_name)
         self.mirror = MirrorState(bool(cfg.mirror_to), cfg.mirror_to)
@@ -721,6 +722,7 @@ class SessionHelper:
         import websockets, time
 
         self._connection_agent_id = ""
+        self._connection_delivery_ack_source = ""
         ws_url, headers = self._connection()
         print(f"[sessionHelper] connect {ws_url} mode={self.cfg.mode}", flush=True)
         # 代理(SH_PROXY):off/none/direct=强制直连(另清掉HTTPS_PROXY等环境变量);URL=用该代理;空=也直连——以 proxy=None 传给 websockets.connect,15.0 起 None 即不用代理、不读 HTTPS_PROXY(proxy 参数 15.0 才有,故依赖须 websockets>=15)
@@ -756,6 +758,14 @@ class SessionHelper:
             # server system address from authenticated WS response, never offer text.
             response_headers = getattr(getattr(ws, "response", None), "headers", {})
             self._bind_connection_agent_identity(response_headers)
+            if getattr(self, "enroll_credential", None) is None:
+                self._connection_delivery_ack_source = session_addr('workpulse', self.book.key_id)
+            else:
+                # Agent-ID is not the owner routing key. Pin the exact system
+                # address advertised by this authenticated Hub handshake.
+                ack_source = response_headers.get('X-DW-Helper-Update-Source', '')
+                if re.fullmatch(r"workpulse#[A-Za-z0-9_.-]{1,128}", ack_source):
+                    self._connection_delivery_ack_source = ack_source
             self.provisioner.trusted_update_source = None
             if (getattr(self, "enroll_credential", None) is not None and
                     response_headers.get("X-DW-Helper-Update") == "helper-update/v1"):
@@ -841,7 +851,7 @@ class SessionHelper:
             except Exception:
                 continue
             if (env.get('meta') or {}).get('type') == 'delivery_ack_confirm':
-                if env.get('from') == session_addr('workpulse', getattr(self, '_connection_agent_id', '') or self.book.key_id):
+                if env.get('from') == getattr(self, '_connection_delivery_ack_source', session_addr('workpulse', self.book.key_id)):
                     await asyncio.to_thread(self.delivery_inbox.confirm_delivery_ack, env['meta'])
                 continue
             if self.outbound_receipts.receive(ws, env):

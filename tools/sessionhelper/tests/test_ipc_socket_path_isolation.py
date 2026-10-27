@@ -35,7 +35,7 @@ class IPCStartupIsolationTests(unittest.IsolatedAsyncioTestCase):
                     cfg=SimpleNamespace(proxy="", debug=False, open_timeout=2,
                                         mode="driver", producer=False,
                                         mcp_ipc_sock=path, ipc_upload_only=False),
-                    book=SimpleNamespace(self_addr="synthetic-helper"),
+                    book=SimpleNamespace(self_addr="synthetic-helper", key_id="fixture"),
                     provisioner=SimpleNamespace(confirm_update_connected=lambda: None),
                     outbound_receipts=SimpleNamespace(abort=lambda ws: None),
                     upload_policy=SimpleNamespace(enabled=False), ipc_bound=asyncio.Event(),

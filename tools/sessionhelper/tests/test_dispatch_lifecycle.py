@@ -141,5 +141,38 @@ class DispatchLifecycleTest(unittest.TestCase):
         self.assertEqual(command.state,'completed')
         self.assertIsNone(self.inbox.lifecycle(command.delivery_id))
 
+    def test_lost_claude_pipe_recovery_isolates_without_blocking_fifo(self):
+        did='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        self.inbox.begin_dispatch(did)
+        self.inbox=DeliveryInbox(self.path,session_name='seat')
+        driver=SimpleNamespace(_active=None,poll_receipt=lambda ident: DeliveryReceipt(ident,'processing','pipe','sent'))
+        adapter=self.adapter(driver,'claude');adapter._restore_delivery_commands()
+        command=adapter._commands.start_next();adapter._deliver_regular_command(command)
+        self.assertEqual(self.inbox.lifecycle(did)['state'],'admission_unknown')
+        self.assertIsNone(self.inbox.lifecycle(did)['admitted_at'])
+        self.assertIsNone(adapter._commands.current)
+
+    def test_positive_native_failure_receipt_can_recover_original_turn(self):
+        did='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        self.inbox.begin_dispatch(did)
+        self.inbox=DeliveryInbox(self.path,session_name='seat')
+        store=SimpleNamespace(get=lambda ident:SimpleNamespace(turn_id='original'))
+        driver=SimpleNamespace(_active=None,_store=store,poll_receipt=lambda ident:DeliveryReceipt(ident,'failed','pipe','result failed: error_max_turns'))
+        adapter=self.adapter(driver,'claude');adapter._restore_delivery_commands()
+        command=adapter._commands.start_next();adapter._deliver_regular_command(command)
+        row=self.inbox.lifecycle(did)
+        self.assertEqual((row['state'],row['turn_id'],row['turn_outcome']),('processed','original','failed'))
+
+    def test_claude_error_result_cannot_be_persisted_as_successful_done(self):
+        from sessionhelper.claudeDriver import ClaudeProtocolDriver, _TurnState
+        did='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        driver=ClaudeProtocolDriver(store_path=str(Path(self.tmp.name)/'claude.db'))
+        driver._store.upsert(did,'original','hash','accepted','isReplay ack')
+        driver._active=_TurnState(envelope_id=did,turn_id='original',accepted=__import__('threading').Event(),terminal_seen=__import__('threading').Event())
+        driver._handle_frame({'type':'result','subtype':'error_max_turns','is_error':True})
+        receipt=driver.poll_receipt(did)
+        self.assertEqual(receipt.state,'failed')
+        self.assertTrue(receipt.detail.startswith('result failed:'))
+
 
 if __name__=='__main__':unittest.main()

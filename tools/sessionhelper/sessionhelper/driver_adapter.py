@@ -354,6 +354,16 @@ class DriverAdapter:
                     # Intent was persisted before a previous RPC. Query only;
                     # an absent/unknown receipt is never proof of nonadmission.
                     receipt = self.driver.poll_receipt(command.delivery_id)
+                    if self._which == 'claude' and getattr(self.driver, '_active', None) is None and self._receipt_terminal_outcome(receipt) is None:
+                        # A new Claude process cannot query its predecessor's
+                        # pipe. Preserve any positive admission, isolate other
+                        # intents, and do not occupy the live FIFO indefinitely.
+                        known = self._admit_from_receipt(command, receipt)
+                        if not known:
+                            ledger.record_admission_unknown(command.delivery_id)
+                            self._fail_admission(command.delivery_id)
+                        self._commands.finish(command.delivery_id, 'failed')
+                        return
             else:
                 receipt = self.driver.deliver(command.delivery_id, command.text)
             print(
@@ -404,14 +414,15 @@ class DriverAdapter:
                 key = (command.delivery_id, command.turn_id)
                 outcome = (
                     "completed" if receipt.state == "done"
-                    else "interrupted" if key in self._interrupt_confirmed
+                    else "interrupted" if key in self._interrupt_confirmed or self._receipt_terminal_outcome(receipt) == 'interrupted'
                     else "failed"
                 )
                 if ledger is not None:
-                    if admitted and receipt.state == "done":
+                    terminal_outcome = self._receipt_terminal_outcome(receipt)
+                    if admitted and terminal_outcome is not None:
                         persisted = ledger.lifecycle(command.delivery_id)
                         if persisted is not None and persisted['state'] != 'processed':
-                            ledger.record_completed(command.delivery_id, command.turn_id, "completed")
+                            ledger.record_completed(command.delivery_id, command.turn_id, terminal_outcome)
                     elif not admitted and str(receipt.detail).startswith("session_unavailable:"):
                         ledger.record_rejected(command.delivery_id)
                     elif not admitted:
@@ -482,8 +493,21 @@ class DriverAdapter:
         observe(getattr(self, "delivery_progress", None), command.delivery_id, "model_admitted")
         return True
 
+    @staticmethod
+    def _receipt_terminal_outcome(receipt):
+        detail = str(receipt.detail or '')
+        if receipt.state == 'done':
+            return 'completed'
+        if receipt.state != 'failed':
+            return None
+        if detail in ('turn status=interrupted', 'turn interrupted', 'interrupted') or detail.startswith('interrupted (error_during_execution)'):
+            return 'interrupted'
+        if detail.startswith(('turn failed:', 'result failed:')) or detail == 'turn status=failed':
+            return 'failed'
+        return None  # Transport/watchdog errors do not prove model completion.
+
     def _admit_from_receipt(self, command: QueuedCommand, receipt) -> bool:
-        if receipt.state not in ("accepted", "processing", "done"):
+        if receipt.state not in ("accepted", "processing", "done") and self._receipt_terminal_outcome(receipt) is None:
             return False
         # Claude generates a local turn UUID before writing stdin. Only the
         # isReplay acknowledgement or a true result proves model admission.

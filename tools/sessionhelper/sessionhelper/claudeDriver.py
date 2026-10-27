@@ -543,6 +543,9 @@ class ClaudeProtocolDriver(Driver):
                     active.interrupted = True
                     active.state = "failed"
                     self._store.update_state(active.envelope_id, "failed", "interrupted (error_during_execution)")
+                elif d.get("is_error"):
+                    active.state = "failed"
+                    self._store.update_state(active.envelope_id, "failed", "result failed: " + str(d.get("subtype") or "error"))
                 else:
                     active.state = "done"
                     self._store.update_state(active.envelope_id, "done", "result frame")
