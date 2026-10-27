@@ -372,7 +372,9 @@ class AdmissionDeadlineTest(unittest.TestCase):
 
     def test_clock_includes_time_since_persisted_dispatch_intent(self):
         import time
-        driver=SimpleNamespace(deliver=lambda *args:self.fail('过期dispatch intent不得再派发'),abort_transport=lambda:None,stop=lambda:None,start=lambda:None)
+        calls=[]
+        driver=SimpleNamespace(deliver=lambda did,body:calls.append(did) or DeliveryReceipt(did,'processing','fixture','submitted'),
+            poll_receipt=lambda did:DeliveryReceipt(did,'processing','fixture','submitted'),abort_transport=lambda:None,stop=lambda:None,start=lambda:None)
         adapter=self.adapter(driver,'claude');adapter._admission_timeout=.1;adapter._build_driver=lambda which:driver
         original=self.inbox.begin_dispatch
         def slow_intent(did):
@@ -382,6 +384,7 @@ class AdmissionDeadlineTest(unittest.TestCase):
         started=time.monotonic()
         adapter._deliver_regular_command(adapter._commands.start_next())
         self.assertLess(time.monotonic()-started,.23,'admission截止须自intent落盘起计，不能在deliver返回后重新起计')
+        self.assertEqual(calls,[],'admission截止已过的intent不得再派发')
         self.assertEqual(self.inbox.lifecycle(self.env['meta']['delivery_id'])['state'],'admission_unknown','admission截止须自intent落盘起计')
         self.assertTrue(adapter._transport_recovery.wait(1))
 
