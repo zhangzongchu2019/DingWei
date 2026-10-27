@@ -1,0 +1,73 @@
+{
+  "utc": "2026-10-27T17:30:59.484519+00:00",
+  "item": "7 S-GUIDE-STAGING-DUPLICATE-FLAKY",
+  "repo": "git@git.code.tencent.com:wego-ai/dingwei.git",
+  "branch": "coder56solzzc/r41-guide-staging-flaky",
+  "base": "549f64e280f2c5496bffb506c709c1bf0a1c504d",
+  "cause_commit": "5c76024",
+  "source": "d1543b14171a81537a59e2ec1c0a9bf0f9f560b9",
+  "tree": "97290f4710f51a69397d04098e09d7cdc4c8742c",
+  "cause": "timing/assertion observes calls.append before asynchronous receipt/admission callbacks, confirmed isolated controlled original-body10/10 before fix; not shared state",
+  "fix": "await actual first/third callback Events; await queue quiescence before consumed assertion and tempfile cleanup; original duplicate/oneGUIDE/no-new-injection assertions retained",
+  "positive": "foreground subprocesses -v, fresh tmp HOME/IPC each round; claude50/50 and codex50/50 rc0; SKIP0",
+  "reverse": "restore only the method body from immutable549 baseline; hold receipt after calls.append until cleanup; each profile10/10 rc1 at original missing same-1 assertion; no additional errors; no probabilistic sleep schedule",
+  "module": "25/25 PASS rc0 SKIP0 2.802s",
+  "environment": {
+    "source": "d1543b14171a81537a59e2ec1c0a9bf0f9f560b9",
+    "started_utc": "2026-10-27T17:29:43.759170+00:00",
+    "cores": 16,
+    "load": [
+      1.806640625,
+      2.3935546875,
+      2.08642578125
+    ],
+    "results": [
+      {
+        "label": "claude-50",
+        "rc": 0,
+        "expected_rc": 0,
+        "rounds": 50
+      },
+      {
+        "label": "claude-reverse",
+        "rc": 1,
+        "expected_rc": 1,
+        "rounds": 10
+      },
+      {
+        "label": "codex-50",
+        "rc": 0,
+        "expected_rc": 0,
+        "rounds": 50
+      },
+      {
+        "label": "codex-reverse",
+        "rc": 1,
+        "expected_rc": 1,
+        "rounds": 10
+      }
+    ],
+    "finished_utc": "2026-10-27T17:30:06.166595+00:00"
+  },
+  "positive_load_min": [
+    1.806640625,
+    2.3935546875,
+    2.08642578125
+  ],
+  "positive_load_max": [
+    2.0625,
+    2.43701171875,
+    2.1025390625
+  ],
+  "python": "3.12.3 /tmp/coder-0232-locked-venv/bin/python3; runtime lock unchanged",
+  "scope": "test fixture and deterministic reproducer only; no product or version edits, deployment or seat restart",
+  "sha256": {
+    "raw/codex-reverse.log": "e7e36252b159913e8bb69006efc4de4598c52cc2d4a31ad2567b4ec1c5be1333",
+    "raw/claude-reverse.log": "c6c9b0e7217c7ddaff9998380bcb19de52c03ebb25bdec77ac1a55a4b0aa2ce7",
+    "raw/codex-50.log": "54ee3d11c439de778c4b36c91040297be0099569bd496898c5ad4380990318d5",
+    "raw/claude-50.log": "d578a791450cf2f598399400a8efe1dc0c32a66ecfbaa6c1894ff640916b5181",
+    "raw/module.log": "6df057e69c1ed2146a9dabfe4180b7dde435a8edd469a8971e9c0ee3080283b8",
+    "raw/REPEATS.json": "d9c83666b97097b9890f02d887de0b82551d2812b38770353b92c34429b35a1f",
+    "raw/baseline-controlled.log": "d68b95222af0e7681bc36777df372e54a84cfd363c1d865e531e19dac2f49c8a"
+  }
+}
