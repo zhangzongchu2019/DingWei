@@ -20,6 +20,10 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
+try:
+    from _suite_isolation import isolated_environment
+except ImportError:
+    from tests._suite_isolation import isolated_environment
 
 # 在 import 时（HOME 还没被改）记下真实 ~/.dingwei。
 REAL_DINGWEI = Path.home() / ".dingwei"
@@ -45,16 +49,12 @@ class HomeIsolation:
 
     def start(self):
         self._before = snapshot_real_dingwei()
-        self._tmp = tempfile.mkdtemp(prefix="sessionhelper-home-")
         # SH_PROVISION_NO_EXIT 兜底：任何路径走到 request_restart 都不许真的 os._exit 掉测试进程。
-        clean = {k:v for k,v in os.environ.items() if not k.startswith(("SH_", "DW_", "DINGWEI_", "DATAD_"))}
-        clean.update(HOME=self._tmp, SH_PROVISION_NO_EXIT="1")
-        self._patcher = mock.patch.dict(os.environ, clean, clear=True)
-        self._patcher.start()
+        self._patcher = isolated_environment(os.environ.get('SH_DRIVER', 'unset'))
+        self._patcher.__enter__()
 
     def finish(self):
-        self._patcher.stop()
-        shutil.rmtree(self._tmp, ignore_errors=True)
+        self._patcher.__exit__(None, None, None)
         after = snapshot_real_dingwei()
         changed = sorted(k for k in set(after) | set(self._before) if after.get(k) != self._before.get(k))
         assert not changed, f"测试泄漏到真实 ~/.dingwei: {changed}"
