@@ -217,6 +217,20 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         while not adapter._event_q.empty():events.append(json.loads(adapter._event_q.get_nowait()))
         self.assertFalse(any(event.get('data',{}).get('reason')=='terminal_timeout' for event in events))
 
+    def test_persisted_terminal_consumes_admission_callback_before_release(self):
+        did='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';callbacks=[]
+        driver=SimpleNamespace(poll_receipt=lambda identifier:DeliveryReceipt(did,'processing','fixture','submitted, awaiting ack, turn=native-turn'))
+        adapter=self.adapter(driver,'claude')
+        adapter._commands.enqueue(self.env)
+        command=adapter._commands.start_next()
+        self.inbox.begin_dispatch(did)
+        adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=did,turn_id='native-turn',data={'change':'turn_completed','status':'completed'}))
+        adapter._admission_callbacks[did]=(lambda:callbacks.append(adapter._commands.current.delivery_id),None)
+        adapter._settle_command(command,DeliveryReceipt(did,'processing','fixture','submitted, awaiting ack, turn=native-turn'))
+        self.assertEqual(callbacks,[did],'持久原生证据推进前须完成admission回调')
+        self.assertNotIn(did,adapter._admission_callbacks)
+        self.assertIsNone(adapter._commands.current)
+
     def test_historical_processed_is_not_native_terminal_evidence(self):
         did='legacy-processed'
         row={'state':'processed','turn_id':'','admitted_at':None,'processed_at':None,'turn_outcome':None}

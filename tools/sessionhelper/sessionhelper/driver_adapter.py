@@ -401,8 +401,10 @@ class DriverAdapter:
                     and persisted['processed_at'] is not None
                     and persisted['turn_outcome'] in ('completed', 'interrupted', 'failed')
                     and (not command.turn_id or persisted['turn_id'] == command.turn_id)):
-                self._commands.finish(command.delivery_id, persisted['turn_outcome'])
+                if not admitted:
+                    self._admit_known_turn(command, persisted['turn_id'])
                 self._turn_progress.pop((command.delivery_id, command.turn_id), None)
+                self._commands.finish(command.delivery_id, persisted['turn_outcome'])
                 return
             if not admitted and receipt.state == "unknown":
                 if ledger is not None:
@@ -443,7 +445,6 @@ class DriverAdapter:
                         ledger.record_admission_unknown(command.delivery_id)
                     # A watchdog/failed poll alone is not a model terminal.
                     # Native turn_completed events persist failed/interrupted.
-                self._commands.finish(command.delivery_id, outcome)
                 observe(getattr(self, "delivery_progress", None), command.delivery_id, "terminal" if progress_admitted else "unknown")
                 self._interrupt_confirmed.discard(key)
                 self._turn_progress.pop((command.delivery_id, command.turn_id), None)
@@ -452,6 +453,7 @@ class DriverAdapter:
                     f"source={receipt.source} ({str(receipt.detail)[:60]})",
                     flush=True,
                 )
+                self._commands.finish(command.delivery_id, outcome)
                 return
             key = (command.delivery_id, command.turn_id or self._receipt_turn_id(receipt))
             last_progress = self._turn_progress.get(key, settle_started)
@@ -469,10 +471,10 @@ class DriverAdapter:
                              "outcome": "unknown", "reason": "terminal_timeout"},
                 })
                 self._timed_out_turns.add(key)
-                self._commands.finish(command.delivery_id, "failed")
                 observe(getattr(self, "delivery_progress", None), command.delivery_id, "unknown")
                 self._turn_progress.pop(key, None)
                 print(f"[delivery][TIMEOUT] id={command.delivery_id} turn={command.turn_id}", flush=True)
+                self._commands.finish(command.delivery_id, "failed")
                 return
             time.sleep(0.1)
             receipt = self.driver.poll_receipt(command.delivery_id)
@@ -551,6 +553,10 @@ class DriverAdapter:
         ledger = getattr(self, "delivery_lifecycle", None)
         if ledger is not None and ledger.lifecycle(command.delivery_id) is not None:
             ledger.record_admitted(command.delivery_id, turn_id)
+        return self._admit_known_turn(command, turn_id)
+
+    def _admit_known_turn(self, command, turn_id):
+        """Publish/callback admission only after a receipt or persisted native proof."""
         event = self._commands.admit(command.delivery_id, turn_id)
         if event is None:
             return command.turn_id == turn_id and command.state == "admitted"
