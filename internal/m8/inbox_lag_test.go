@@ -303,7 +303,7 @@ func TestInboxLagAuthenticatedWireReceiptAndQuery(t *testing.T) {
 
 func TestInboxLagObservationalReceiptPreservesLegacyDirectDelivery(t *testing.T) {
 	e := newAgentEnv(t)
-	ctx, cancel := context.WithTimeout(e.ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(e.ctx, 10*time.Second)
 	defer cancel()
 	cred, id := e.enroll("lag-legacy", "LagLegacy")
 	group, err := e.svc.CreateGroup(ctx, "zzc", e.agID, "laglegacy")
@@ -317,6 +317,14 @@ func TestInboxLagObservationalReceiptPreservesLegacyDirectDelivery(t *testing.T)
 	defer source.CloseNow()
 	target, _, _ := e.dial(cred, "")
 	defer target.CloseNow()
+	// HTTP 101 precedes publication in sessionClients. A legacy target cannot
+	// accept an offline durable delivery; send only after its actual admission.
+	waitFor(t, 10*time.Second, "legacy target published without delivery ACK", func() bool {
+		e.hub.mu.Lock()
+		defer e.hub.mu.Unlock()
+		c := e.hub.sessionClients[AgentKeyID("zzc")]["laglegacy"]
+		return c != nil && c.conn != nil && c.metricsAgentID == id && !e.hub.sessionSupportsDeliveryACK(c)
+	})
 	if err = writeEnvelope(ctx, source, model.Envelope{ID: "lag-legacy-observed", From: "opus50ts#enrolled", To: "laglegacy#" + AgentKeyID("zzc"), Body: "legacy must still receive once", Meta: map[string]any{inboxReceiptRequestKey: true, outboundReceiptNonceKey: strings.Repeat("a", 32)}}); err != nil {
 		t.Fatal(err)
 	}
