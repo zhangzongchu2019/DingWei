@@ -1,0 +1,240 @@
+{
+  "utc": "2026-10-27T18:08:54.191985+00:00",
+  "reviewed_old_tip": "75431e7ab5ae975b359c9a62878c56d145d6953c",
+  "source": "644022d784344b4d0b8cd06a7ec4259ae5097570",
+  "branch": "coder56solzzc/r41-helper-test-isolation",
+  "overall_status": "Strict item9 remains FAIL/pending combination and evidence-condition resolution; prefix defect fixed, do not replace reviewer verdict with PASS.",
+  "change": "Extend PREFIXES with CODEX_,CLAUDE_,XDG_ for arbitrary variable names; guard allows only regenerated HOME_KEYS after all paths checked under temporary root. No helper product/runtime edits.",
+  "targeted": "both profiles existing isolation4/4PASS (8total); remove each native prefix separately3/3 actual clean-environment assertion rc1; generated native paths still checked under case HOME. Existing test count1051 unchanged.",
+  "matrix": {
+    "source": "644022d784344b4d0b8cd06a7ec4259ae5097570",
+    "started_utc": "2026-10-27T18:00:41.914614+00:00",
+    "cores": 16,
+    "load": [
+      3.0703125,
+      3.96533203125,
+      3.5361328125
+    ],
+    "real_home": "/home/dev",
+    "ipc_inode_before": 3672935,
+    "results": [
+      {
+        "label": "env-i-codex",
+        "rc": 0,
+        "count": 1051,
+        "seconds": 450.142,
+        "failures": [],
+        "errors": [],
+        "application_lines_containing_skipped": [
+          "\u79bb\u7ebf\u8865\u53d1\u8def\u5f84\u5fc5\u987b\u8df3\u8fc7\u4e09\u7c7b\u7cfb\u7edf\u6d88\u606f\u5e76\u56de processed ACK\uff0c\u4e0d\u5f97\u5165 inbox \u6ce8\u5165 CLI\u3002 ... [roster] delivery list written; skipped cli injection delivery_id=dlv_roster",
+          "[onboarding] skipped delivery cli injection delivery_id=dlv_onboarding",
+          "test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db (test_sessionhelper.SessionHelperTest.test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db) ... [delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions session=home targets=['home', 'zzc-home-2642'] to=['tester#FB-2642']"
+        ],
+        "skip_count": 0
+      },
+      {
+        "label": "env-i-claude",
+        "rc": 1,
+        "count": 1051,
+        "seconds": 451.304,
+        "failures": [
+          "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+        ],
+        "errors": [],
+        "application_lines_containing_skipped": [
+          "\u79bb\u7ebf\u8865\u53d1\u8def\u5f84\u5fc5\u987b\u8df3\u8fc7\u4e09\u7c7b\u7cfb\u7edf\u6d88\u606f\u5e76\u56de processed ACK\uff0c\u4e0d\u5f97\u5165 inbox \u6ce8\u5165 CLI\u3002 ... [roster] delivery list written; skipped cli injection delivery_id=dlv_roster",
+          "[onboarding] skipped delivery cli injection delivery_id=dlv_onboarding",
+          "test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db (test_sessionhelper.SessionHelperTest.test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db) ... [delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions session=home targets=['home', 'zzc-home-2642'] to=['tester#FB-2642']"
+        ],
+        "skip_count": 0
+      },
+      {
+        "label": "seat-codex",
+        "rc": 1,
+        "count": 1051,
+        "seconds": 452.556,
+        "failures": [
+          "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+        ],
+        "errors": [],
+        "application_lines_containing_skipped": [
+          "\u79bb\u7ebf\u8865\u53d1\u8def\u5f84\u5fc5\u987b\u8df3\u8fc7\u4e09\u7c7b\u7cfb\u7edf\u6d88\u606f\u5e76\u56de processed ACK\uff0c\u4e0d\u5f97\u5165 inbox \u6ce8\u5165 CLI\u3002 ... [roster] delivery list written; skipped cli injection delivery_id=dlv_roster",
+          "[onboarding] skipped delivery cli injection delivery_id=dlv_onboarding",
+          "test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db (test_sessionhelper.SessionHelperTest.test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db) ... [delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions session=home targets=['home', 'zzc-home-2642'] to=['tester#FB-2642']"
+        ],
+        "skip_count": 0
+      },
+      {
+        "label": "seat-claude",
+        "rc": 1,
+        "count": 1051,
+        "seconds": 452.682,
+        "failures": [
+          "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+        ],
+        "errors": [],
+        "application_lines_containing_skipped": [
+          "\u79bb\u7ebf\u8865\u53d1\u8def\u5f84\u5fc5\u987b\u8df3\u8fc7\u4e09\u7c7b\u7cfb\u7edf\u6d88\u606f\u5e76\u56de processed ACK\uff0c\u4e0d\u5f97\u5165 inbox \u6ce8\u5165 CLI\u3002 ... [roster] delivery list written; skipped cli injection delivery_id=dlv_roster",
+          "[onboarding] skipped delivery cli injection delivery_id=dlv_onboarding",
+          "test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db (test_sessionhelper.SessionHelperTest.test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db) ... [delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions session=home targets=['home', 'zzc-home-2642'] to=['tester#FB-2642']"
+        ],
+        "skip_count": 0
+      }
+    ],
+    "finished_utc": "2026-10-27T18:08:19.401102+00:00",
+    "ipc_inode_after": 3672935,
+    "real_tree_metadata_changes": {
+      "dingwei": {
+        "before_count": 9,
+        "after_count": 9,
+        "added": [],
+        "removed": [],
+        "mtime_or_type_changed": [
+          ".",
+          "coder56solzzc.DingWeiOnlineSessions.list",
+          "sessionhelper_inbox-coder56solzzc.db"
+        ]
+      },
+      "codex": {
+        "before_count": 8955,
+        "after_count": 8955,
+        "added": [
+          "tmp/arg0-linux/codex-arg0AIiSyl",
+          "tmp/arg0-linux/codex-arg0AIiSyl/.lock",
+          "tmp/arg0-linux/codex-arg0AIiSyl/apply_patch",
+          "tmp/arg0-linux/codex-arg0AIiSyl/applypatch",
+          "tmp/arg0-linux/codex-arg0AIiSyl/codex-linux-sandbox"
+        ],
+        "removed": [
+          "tmp/arg0-linux/codex-arg0Ds1Hs3",
+          "tmp/arg0-linux/codex-arg0Ds1Hs3/.lock",
+          "tmp/arg0-linux/codex-arg0Ds1Hs3/apply_patch",
+          "tmp/arg0-linux/codex-arg0Ds1Hs3/applypatch",
+          "tmp/arg0-linux/codex-arg0Ds1Hs3/codex-linux-sandbox"
+        ],
+        "mtime_or_type_changed": [
+          "app-server-daemon/app-server-updater.stderr.log",
+          "logs_2.sqlite",
+          "logs_2.sqlite-shm",
+          "logs_2.sqlite-wal",
+          "models_cache.json",
+          "packages/standalone",
+          "packages/standalone/auto-update-version",
+          "packages/standalone/install.lock",
+          "sessions/2026/10/27/rollout-2026-10-27T09-02-31-01a17e19-52a7-77c0-bcf6-9d0412aa4c7a.jsonl",
+          "sessions/2026/10/27/rollout-2026-10-27T10-32-53-01a17e6c-1123-7bd1-b146-be50192f5089.jsonl",
+          "state_5.sqlite",
+          "state_5.sqlite-shm",
+          "state_5.sqlite-wal",
+          "thread_history_1.sqlite",
+          "thread_history_1.sqlite-shm",
+          "thread_history_1.sqlite-wal",
+          "tmp/arg0-linux"
+        ]
+      },
+      "claude": {
+        "before_count": 0,
+        "after_count": 0,
+        "added": [],
+        "removed": [],
+        "mtime_or_type_changed": []
+      },
+      "xdg_config": {
+        "before_count": 8,
+        "after_count": 8,
+        "added": [],
+        "removed": [],
+        "mtime_or_type_changed": []
+      },
+      "xdg_data": {
+        "before_count": 8,
+        "after_count": 8,
+        "added": [],
+        "removed": [],
+        "mtime_or_type_changed": []
+      },
+      "xdg_state": {
+        "before_count": 0,
+        "after_count": 0,
+        "added": [],
+        "removed": [],
+        "mtime_or_type_changed": []
+      },
+      "xdg_cache": {
+        "before_count": 30007,
+        "after_count": 30007,
+        "added": [],
+        "removed": [],
+        "mtime_or_type_changed": []
+      },
+      "CODEX_HOME": {
+        "before_count": 8955,
+        "after_count": 8955,
+        "added": [
+          "tmp/arg0-linux/codex-arg0AIiSyl",
+          "tmp/arg0-linux/codex-arg0AIiSyl/.lock",
+          "tmp/arg0-linux/codex-arg0AIiSyl/apply_patch",
+          "tmp/arg0-linux/codex-arg0AIiSyl/applypatch",
+          "tmp/arg0-linux/codex-arg0AIiSyl/codex-linux-sandbox"
+        ],
+        "removed": [
+          "tmp/arg0-linux/codex-arg0Ds1Hs3",
+          "tmp/arg0-linux/codex-arg0Ds1Hs3/.lock",
+          "tmp/arg0-linux/codex-arg0Ds1Hs3/apply_patch",
+          "tmp/arg0-linux/codex-arg0Ds1Hs3/applypatch",
+          "tmp/arg0-linux/codex-arg0Ds1Hs3/codex-linux-sandbox"
+        ],
+        "mtime_or_type_changed": [
+          "app-server-daemon/app-server-updater.stderr.log",
+          "logs_2.sqlite",
+          "logs_2.sqlite-shm",
+          "logs_2.sqlite-wal",
+          "models_cache.json",
+          "packages/standalone",
+          "packages/standalone/auto-update-version",
+          "packages/standalone/install.lock",
+          "sessions/2026/10/27/rollout-2026-10-27T09-02-31-01a17e19-52a7-77c0-bcf6-9d0412aa4c7a.jsonl",
+          "sessions/2026/10/27/rollout-2026-10-27T10-32-53-01a17e6c-1123-7bd1-b146-be50192f5089.jsonl",
+          "state_5.sqlite",
+          "state_5.sqlite-shm",
+          "state_5.sqlite-wal",
+          "thread_history_1.sqlite",
+          "thread_history_1.sqlite-shm",
+          "thread_history_1.sqlite-wal",
+          "tmp/arg0-linux"
+        ]
+      }
+    },
+    "strict_metadata_unchanged": false,
+    "metadata_attribution": "Changes are un-attributed concurrent observations; no live helper/app-server was stopped. Do not label strict invariant PASS if false."
+  },
+  "runtime": {
+    "python": "3.12.3",
+    "packages": {
+      "websockets": "15.0.1",
+      "pexpect": "4.9.0",
+      "ptyprocess": "0.7.0",
+      "certifi": "2026.7.22"
+    },
+    "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+  },
+  "acceptance_limits": [
+    "3of4 fulls fail only registered Guide duplicate flaky. Item7 fix remains independent branch8f489531; not merged or waived here. New isolated full run is not 4xPASS or exact failure parity across all environments.",
+    "No exclusions applied to metadata invariant: live .dingwei/.codex type/path/mtime observations changed. Cannot attribute those concurrent changes to tests or conclusively exclude test causation from snapshots alone. No background app-server/helper was stopped, no state/timestamps restored to force PASS.",
+    "IPC inode equal before/after. .claude and observed XDG trees unchanged. Both are observations, not substitutes for failed strict metadata condition.",
+    "Isolation runner itself does not wire the old build gate; item2 integration must retain its build coverage and count gate, add isolation runner hooks, and validate combined item7+9 source. No independent PASS for CI integration claimed."
+  ],
+  "sha256": {
+    "raw/targeted.log": "0e4e7c3399e08e1520f64f674757474949ff0a07dd2694134c7b3f7d553ed410",
+    "raw/remove-codex_.log": "0bc1deb4541ea569cde6a6d250cad4a2458c218d52c385bc9e12caf29a58da38",
+    "raw/remove-claude_.log": "54079ba0e12298d76f4487b1cddc7c89791f5941b77aad988b645e8ae7bb7442",
+    "raw/remove-xdg_.log": "15b8cacc5fe6a43f1c4879838fb001eb4589e6bea03ee77b4d059d078b01bb00",
+    "raw/NEGATIVES.json": "ee39fbe50532edcaaaaba724ad9b4be2c5620c9f7e6d75331ca1a1fc54314cd6",
+    "raw/FOUR-START.json": "7cf6e9dc7f693e40351a729b68b842cb1037f1568031a0dc22fab6f22b8c8e21",
+    "raw/FOUR-RESULT.json": "68bc681a9569eb322a8317d0fd42423a03e66e7f9f3f3b35235d156d05b1b921",
+    "raw/seat-claude.log": "e2b8b3ae83a780591fc76341772efee8c97bd0da412dceb2db3ce7a7b477574f",
+    "raw/seat-codex.log": "4628c621a76cb05886e3111290b5cc5291fce78b6a82301e39b5b1bb98c2ba62",
+    "raw/env-i-claude.log": "4f0b81eec6eb7717457135abfeabda2eef0076654237f7d35c5751369ee3d130",
+    "raw/env-i-codex.log": "d1b4cf5e8c91de794ff10372bbbb536fff891d41e82fa0d2f1433de87014e53d"
+  }
+}
