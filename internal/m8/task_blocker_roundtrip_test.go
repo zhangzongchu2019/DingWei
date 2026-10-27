@@ -104,9 +104,9 @@ func testBlockerMissingIdentityACKRoundtrip(t *testing.T) {
 		t.Fatalf("actual helper ACK reason lost: %+v", ack.Meta)
 	}
 	id := metaString(ack.Meta, "delivery_id")
-	waitFor(t, time.Second, "Hub consumed actual processed ACK", func() bool {
+	waitFor(t, time.Second, "Hub consumed actual legacy receipt ACK", func() bool {
 		d, _ := e.db.GetSessionDelivery(e.ctx, id)
-		return d != nil && d.State == "processed" && d.ProcessedAt != nil
+		return d != nil && d.State == "legacy_received" && d.ProcessedAt == nil && d.InjectedAt == nil && d.AckProtocol == 1
 	})
 	d, _ := e.db.GetSessionDelivery(e.ctx, id)
 	if d.LastError != "" {
@@ -117,5 +117,5 @@ func testBlockerMissingIdentityACKRoundtrip(t *testing.T) {
 	if len(record.ids) != 1 {
 		t.Fatalf("notice-only ACK caused another delivery: %v", record.ids)
 	}
-	t.Log("actual helper -> WS -> Hub: reason arrives, processed terminal, no extra delivery; not model admission")
+	t.Log("actual helper -> WS -> Hub: reason arrives, legacy receipt only, no model timestamps or extra delivery")
 }

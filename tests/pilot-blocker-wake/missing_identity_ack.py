@@ -60,15 +60,25 @@ async def main():
 
             transport = SimpleNamespace(send=send)
             await h.accept_delivery(transport, env)
+            outbox = asyncio.create_task(h.delivery_ack_outbox_loop(transport))
+            # Like the production worker startup: flush queued before claim.
+            while not acknowledgements:
+                await asyncio.sleep(.01)
             worker = asyncio.create_task(h.delivery_worker_loop(transport))
             try:
                 await asyncio.wait_for(done.wait(), 3)
             finally:
                 worker.cancel()
+                outbox.cancel()
+                await asyncio.gather(outbox, return_exceptions=True)
                 with contextlib.suppress(asyncio.CancelledError):
                     await worker
             assert not injected, 'missing identity unexpectedly injected a model turn'
-            assert [x['meta']['state'] for x in acknowledgements] == ['delivered', 'processed']
+            states = [x['meta']['state'] for x in acknowledgements]
+            # Durable legacy outbox may replay the same truthful receipt.
+            assert states[0] == 'delivered' and states[-1] == 'processed', states
+            assert set(states) == {'delivered', 'processed'}, states
+            assert states == sorted(states, key={'delivered': 0, 'processed': 1}.__getitem__), states
             ack = acknowledgements[-1]
             assert ack['meta']['reason'] == 'current_agent_identity_unavailable'
             print('ACK_RESULT ' + json.dumps(ack), flush=True)

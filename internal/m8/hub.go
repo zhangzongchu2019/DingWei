@@ -4601,6 +4601,15 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 }
 
 func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, deliveryState, stage, status, reason string) {
+	if deliveryState == "legacy_received" {
+		// An old native CLI can reset its View stream after the original input
+		// observation. Re-anchor this receipt to its persisted original input;
+		// no model admission/terminal is inferred or sent to the driver.
+		var original model.Envelope
+		if json.Unmarshal([]byte(d.Envelope), &original) == nil {
+			h.publishInputObservation(d.KeyID, d.SessionName, original, d.ID, "helper_received", "primary", false)
+		}
+	}
 	metadata := map[string]any{"ack_protocol": d.AckProtocol, "processing_mode": d.ProcessingMode, "ack_generation": d.AckGeneration}
 	if d.DeliveredAt != nil {
 		metadata["queued_at"] = d.DeliveredAt.UTC().Format(time.RFC3339Nano)
