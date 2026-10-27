@@ -78,6 +78,7 @@ tools/sessionhelper/tests/test_spec_ipc_timeout.py
 tools/sessionhelper/tests/test_spec_mcp.py
 tools/sessionhelper/tests/test_spec_review_r32.py
 tools/sessionhelper/tests/test_sqlite_connection_lifetime.py
+tools/sessionhelper/tests/test_suite_isolation.py
 tools/sessionhelper/tests/test_t094_idle_stall.py
 tools/sessionhelper/tests/test_task_blocker.py
 tools/sessionhelper/tests/test_task_flow_r32.py

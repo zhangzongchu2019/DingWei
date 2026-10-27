@@ -30,6 +30,7 @@ def main():
     # helper module can capture a HOME or socket path at import time.
     with isolated_environment(args.driver) as directory:
         assert_isolated(directory, args.driver)
+        print(f'HELPER_SUITE_PROFILE selected={args.driver} actual_SH_DRIVER={os.environ.get("SH_DRIVER", "unset")}', flush=True)
         sys.path[:0] = [str(root/'tools/sessionhelper'), str(root/'view-service')]
         os.environ['PYTHONPATH'] = os.pathsep.join(sys.path[:2])
         os.chdir(root)

@@ -44,7 +44,10 @@ def run_profile(root, profile, files):
                                                      str(root / 'view-service')]))
         # Independent discovery count prevents a successful early exit or an
         # accidentally narrowed runner from silently shortening the build gate.
-        count_code = '''import unittest
+        count_code = '''import unittest, os
+selected=os.environ['HELPER_TEST_DRIVER'];actual=os.environ.get('SH_DRIVER','unset')
+print(f'HELPER_GATE_PROFILE selected={selected} actual_SH_DRIVER={actual}',flush=True)
+assert actual==selected, f'helper gate profile mismatch: selected={selected} actual_SH_DRIVER={actual}'
 from pathlib import Path
 root=Path.cwd();loader=unittest.TestLoader()
 suite=loader.discover(str(root/'tools/sessionhelper/tests'))
@@ -64,11 +67,14 @@ print('HELPER_EXPECTED_CASES='+str(suite.countTestCases()+extra.countTestCases()
         if discovered.returncode or not match:
             return {'profile': profile, 'rc': 1, 'error': 'helper case discovery failed'}, discovered.stdout + discovered.stderr
         expected = int(match.group(1))
+        profile_line = f'HELPER_GATE_PROFILE selected={profile} actual_SH_DRIVER={profile}'
+        if profile_line not in discovered.stdout.splitlines():
+            return {'profile': profile, 'rc': 1, 'error': 'actual helper profile missing or mismatched'}, discovered.stdout + discovered.stderr
         commands = [
             [sys.executable, 'scripts/test-helper-suite.py', '--driver', profile],
             [sys.executable, '-m', 'unittest', '-v', 'tools/sessionhelper/test_supervise_connection_loops.py'],
         ]
-        counts, logs, failed = [], [], False
+        counts, logs, failed = [], [discovered.stdout], False
         for command in commands:
             result = subprocess.run(command, cwd=root, env=environment, text=True,
                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -79,7 +85,8 @@ print('HELPER_EXPECTED_CASES='+str(suite.countTestCases()+extra.countTestCases()
         total = sum(counts)
         failed |= total != expected
         return {'profile': profile, 'rc': int(failed), 'files': len(files),
-                'expected': expected, 'actual': total, 'groups': counts}, ''.join(logs)
+                'expected': expected, 'actual': total, 'groups': counts,
+                'actual_SH_DRIVER': profile}, ''.join(logs)
 
 
 def main():
