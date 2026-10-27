@@ -46,7 +46,7 @@ class DeliveryACKOutbox:
             payload['turn_id']=row['turn_id']
         if phase == 'processed':payload['turn_outcome']=row['turn_outcome']
         if phase == 'failed':payload.update(reason='session_unavailable',retryable=False)
-        if phase == 'admission_unknown':payload['reason']='model_admission_unknown'
+        if phase == 'admission_unknown':payload['reason']='turn_terminal_unknown' if row['admitted_at'] is not None else 'model_admission_unknown'
         # v1 has no truthful wire state for unknown; receipt stays delivered.
         if phase == 'admission_unknown' and row['ack_protocol'] == 1:payload['state']='delivered'
         db.execute('INSERT INTO delivery_ack_outbox VALUES(?,?,?,?,?,?)',

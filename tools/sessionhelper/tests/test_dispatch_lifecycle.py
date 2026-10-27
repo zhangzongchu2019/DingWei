@@ -189,4 +189,63 @@ class DispatchLifecycleTest(unittest.TestCase):
         self.assertEqual(driver._history,[])
 
 
+
+
+class WatchdogQueueReleaseTest(unittest.TestCase):
+    setUp = DispatchLifecycleTest.setUp
+    adapter = DispatchLifecycleTest.adapter
+    # Exercise real inbox/outbox transitions with the queue worker body; only
+    # the never-terminal driver is a unit fixture.
+    def test_unproven_claude_admission_times_out_and_advances(self):
+        self.check_watchdog_release('claude', False)
+
+    def test_admitted_turn_times_out_without_model_terminal_and_advances(self):
+        self.check_watchdog_release('codex', True)
+
+    def test_persisted_native_terminal_advances_despite_stale_poll(self):
+        did='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        def poll(identifier):
+            adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=did,turn_id='native-turn',data={'change':'turn_completed','status':'completed'}))
+            return DeliveryReceipt(did,'processing','fixture','turn=native-turn')
+        driver=SimpleNamespace(deliver=lambda identifier,body:DeliveryReceipt(did,'processing','fixture','turn=native-turn'),poll_receipt=poll)
+        adapter=self.adapter(driver)
+        adapter._commands.enqueue(self.env)
+        adapter._deliver_regular_command(adapter._commands.start_next())
+        self.assertIsNone(adapter._commands.current,'原生终态已持久化时不得因旧poll阻塞队列')
+        self.assertEqual(self.inbox.lifecycle(did)['state'],'processed')
+        events=[]
+        while not adapter._event_q.empty():events.append(json.loads(adapter._event_q.get_nowait()))
+        self.assertFalse(any(event.get('data',{}).get('reason')=='terminal_timeout' for event in events))
+
+    def check_watchdog_release(self, which, admitted):
+        first='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'; second='dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+        second_env={'id':'next','body':'next','meta':dict(self.env['meta'],delivery_id=second)}
+        self.inbox.accept(second,second_env)
+        calls=[]
+        def deliver(did,body):
+            calls.append(did)
+            return DeliveryReceipt(did,'processing' if did==first else 'done','fixture','turn=turn-first' if did==first else 'turn=turn-second')
+        driver=SimpleNamespace(deliver=deliver,poll_receipt=lambda did:DeliveryReceipt(did,'processing','fixture','turn=turn-first'))
+        adapter=self.adapter(driver,which);adapter._terminal_timeout=.01
+        adapter._commands.enqueue(self.env);adapter._commands.enqueue(second_env)
+        adapter._deliver_regular_command(adapter._commands.start_next())
+        self.assertIsNone(adapter._commands.current,'watchdog未知离场必须释放当前件')
+        row=self.inbox.lifecycle(first)
+        self.assertIsNone(row['processed_at'],'watchdog不得造模型终态')
+        self.assertEqual(row['state'],'admitted' if admitted else 'admission_unknown')
+        self.assertEqual(bool(row['admitted_at']),admitted)
+        saved_admission=row['admitted_at']
+        chain=[item for item in self.inbox.delivery_ack_chain() if item['delivery_id']==first]
+        self.assertEqual(chain[-1]['phase'],'admission_unknown')
+        self.assertEqual(chain[-1]['payload']['reason'],'turn_terminal_unknown' if admitted else 'model_admission_unknown')
+        self.assertFalse(any(item['phase']=='processed' for item in chain))
+        self.assertEqual(self.inbox.claim_next()[0],second)
+        adapter._deliver_regular_command(adapter._commands.start_next())
+        self.assertEqual(calls,[first,second],'watchdog未知离场必须推进下一件')
+        self.assertEqual(self.inbox.lifecycle(second)['state'],'processed')
+        adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=first,turn_id='turn-first',data={'change':'turn_completed','status':'completed'}))
+        after=self.inbox.lifecycle(first)
+        self.assertEqual(after['state'],'processed','迟到真实终态仍须补记原件')
+        if admitted:self.assertEqual(after['admitted_at'],saved_admission)
+
 if __name__=='__main__':unittest.main()

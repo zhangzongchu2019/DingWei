@@ -1951,6 +1951,7 @@
       injection_unconfirmed: '已写入终端(注入未确认)',
       model_admission_unknown: '可能已进入会话／暂停自动重投／需核原回合',
       legacy_injection_unknown: '旧版 helper 已收／状态无法确认',
+      turn_terminal_unknown: '回合终态未知／投递队列已释放／暂停自动重投',
       // A0 §7-amend-1(冻结 @ 6a33540/4fbd4d61):非法 UTF-8=ingress fail-closed 拒收,诚实态文案;code=invalid_utf8 已经理核 §7 冻结文本逐字确认
       invalid_utf8: '乱码无法识别',
     };
@@ -2203,6 +2204,7 @@
     function stageFooterText(norm) {
       if (norm.reason === 'desktop_inbox_saved') return '已保存到桌面收件箱';
       if (norm.reason === 'model_admission_unknown') return C1_REASON_TEXT.model_admission_unknown;
+      if (norm.reason === 'turn_terminal_unknown') return C1_REASON_TEXT.turn_terminal_unknown;
       if (norm.reason === 'legacy_injection_unknown') return C1_REASON_TEXT.legacy_injection_unknown;
       if (norm.stage === 'turn_processed') {
         const outcome = {completed: '完成', interrupted: '中断', failed: '失败'}[norm.turnOutcome] || '状态未知';

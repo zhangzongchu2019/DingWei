@@ -139,6 +139,19 @@ class DeliveryLifecycle(DeliveryACKOutbox):
             if changed:
                 self._lifecycle_ack(db, delivery_id, 'admission_unknown')
 
+    def record_transport_unknown(self, delivery_id):
+        """Release transport work without inventing or clearing model evidence."""
+        import time
+        with self._lock, self._connect() as db:
+            changed = db.execute("""UPDATE delivery_inbox SET
+                state=CASE WHEN admitted_at IS NULL THEN 'admission_unknown' ELSE state END,
+                error=CASE WHEN admitted_at IS NULL THEN 'model_admission_unknown' ELSE 'turn_terminal_unknown' END,
+                updated_at=? WHERE session_name=? AND delivery_id=?
+                AND state IN ('processing','admitted') AND dispatch_intent_at IS NOT NULL""",
+                (time.time(), self.session_name, delivery_id)).rowcount
+            if changed:
+                self._lifecycle_ack(db, delivery_id, 'admission_unknown')
+
     def record_rejected(self, delivery_id):
         """Only a driver proof of nonadmission may use this path."""
         import time

@@ -130,6 +130,13 @@ func (s *SQLite) ApplySessionDeliveryACK(ctx context.Context, a model.SessionDel
 				return nil, false, err
 			}
 			changed = true
+		} else if d.State == "injected" && d.LastError != "turn_terminal_unknown" {
+			// Transport watchdogs cannot erase a proven admission or invent a
+			// model terminal. Keep the stage and expose only the uncertainty.
+			if _, err := tx.ExecContext(ctx, `UPDATE session_delivery SET last_error='turn_terminal_unknown',updated_at=? WHERE id=?`, stamp, d.ID); err != nil {
+				return nil, false, err
+			}
+			changed = true
 		} else if d.State != "admission_unknown" && d.InjectedAt == nil {
 			return nil, false, ErrDeliveryACKTransition
 		}

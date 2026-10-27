@@ -386,12 +386,20 @@ class DriverAdapter:
     def _settle_command(self, command: QueuedCommand, receipt) -> None:
         admitted = False
         progress_admitted = False
+        settle_started = time.monotonic()
         while True:
             if not admitted:
                 admitted = self._admit_from_receipt(command, receipt)
             ledger = getattr(self, "delivery_lifecycle", None)
             if ledger is not None and ledger.lifecycle(command.delivery_id) is None:
                 ledger = None  # Human/non-durable input has no Hub lifecycle row.
+            # A persisted native terminal is stronger than a stale driver poll.
+            # It belongs to this delivery/turn, and never comes from a watchdog.
+            persisted = ledger.lifecycle(command.delivery_id) if ledger is not None else None
+            if persisted and persisted['state'] == 'processed' and (not command.turn_id or persisted['turn_id'] == command.turn_id):
+                self._commands.finish(command.delivery_id, persisted['turn_outcome'])
+                self._turn_progress.pop((command.delivery_id, command.turn_id), None)
+                return
             if not admitted and receipt.state == "unknown":
                 if ledger is not None:
                     ledger.record_admission_unknown(command.delivery_id)
@@ -441,18 +449,27 @@ class DriverAdapter:
                     flush=True,
                 )
                 return
-            if admitted:
-                key = (command.delivery_id, command.turn_id)
-                last_progress = self._turn_progress.get(key, time.monotonic())
-                if time.monotonic() - last_progress >= self._terminal_timeout:
-                    self._best_effort_timeout_interrupt(command)
-                    self._publish_terminal_failure(command, "terminal_timeout", "driver emitted no terminal event")
-                    self._timed_out_turns.add(key)
-                    self._commands.finish(command.delivery_id, "failed")
-                    observe(getattr(self, "delivery_progress", None), command.delivery_id, "terminal" if progress_admitted else "unknown")
-                    self._turn_progress.pop(key, None)
-                    print(f"[delivery][TIMEOUT] id={command.delivery_id} turn={command.turn_id}", flush=True)
-                    return
+            key = (command.delivery_id, command.turn_id or self._receipt_turn_id(receipt))
+            last_progress = self._turn_progress.get(key, settle_started)
+            if time.monotonic() - last_progress >= self._terminal_timeout:
+                self._best_effort_timeout_interrupt(command)
+                if ledger is not None:
+                    ledger.record_transport_unknown(command.delivery_id)
+                if not admitted:
+                    self._fail_admission(command.delivery_id)
+                self._publish_queue_event({
+                    "kind": "state_change", "text": "", "session_id": "",
+                    "cursor": f"queue:{command.queue_seq:020d}:transport_unknown",
+                    "delivery_id": command.delivery_id, "turn_id": command.turn_id,
+                    "data": {"change": "delivery_transport_unknown", "scope": "delivery_transport",
+                             "outcome": "unknown", "reason": "terminal_timeout"},
+                })
+                self._timed_out_turns.add(key)
+                self._commands.finish(command.delivery_id, "failed")
+                observe(getattr(self, "delivery_progress", None), command.delivery_id, "unknown")
+                self._turn_progress.pop(key, None)
+                print(f"[delivery][TIMEOUT] id={command.delivery_id} turn={command.turn_id}", flush=True)
+                return
             time.sleep(0.1)
             receipt = self.driver.poll_receipt(command.delivery_id)
 
@@ -644,8 +661,9 @@ class DriverAdapter:
                             f"[delivery][LATE_TERMINAL] id={ev.delivery_id} turn={ev.turn_id}",
                             flush=True,
                         )
-                        self._bridged[id(ev)] = ev  # 有意不发，也算已处理（重放时不再重复记日志）
-                        continue
+                        self._timed_out_turns.discard(event_key)
+                        # Queue release was not a model terminal. Forward the
+                        # later real terminal instead of hiding its evidence.
                     is_backfill = ev.data.get("backfill") is True
                     if ev.delivery_id and ev.turn_id and not is_backfill:
                         self._turn_progress[event_key] = time.monotonic()

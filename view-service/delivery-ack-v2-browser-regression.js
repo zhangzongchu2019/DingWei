@@ -69,6 +69,11 @@ function check(value, message) { assertions++; assert.ok(value, message); }
       check(text.includes('可能已进入会话／暂停自动重投／需核原回合'), 'admission unknown 必须明确隔离和核原回合');
       check(!text.includes('尚未注入会话'), 'admission unknown 不能被30秒提示误报为仍在排队');
       check(await page.locator('#waitingList .waiting-cancel-btn').count()===0, '不确定派发不可显示可取消动作');
+      await page.evaluate(() => { ackInput('dw-dlv-W'); ackUpdate('dw-dlv-W','cli_injected',{turn_id:'original-watchdog-turn'}); ackUpdate('dw-dlv-W','cli_injected',{turn_id:'original-watchdog-turn',reason:'turn_terminal_unknown'}); });
+      const watchdogStage = await page.evaluate(() => c1InputCards.get(c1DeliveryCards.get(deliveryMergeKey('dw-dlv-W'))).stageEl.textContent);
+      check(watchdogStage.includes('回合终态未知') && !watchdogStage.includes('回合已结束'), 'watchdog 只显示终态未知，不冒称模型完成');
+      await page.evaluate(() => ackUpdate('dw-dlv-W','turn_processed',{turn_id:'original-watchdog-turn',turn_outcome:'completed',reason:''}));
+      check((await page.evaluate(() => c1InputCards.get(c1DeliveryCards.get(deliveryMergeKey('dw-dlv-W'))).stageEl.textContent)).includes('回合已结束（完成）'), 'watchdog 后迟到真实终态仍可原位更新');
       await page.evaluate(() => { ackInput('dw-dlv-L'); ackUpdate('dw-dlv-L','helper_received',{ack_protocol:1,processing_mode:'legacy',reason:'legacy_injection_unknown',cancellable:false}); });
       timeline = await page.locator('#timeline').innerText();
       check(timeline.includes('旧版 helper 已收／状态无法确认'), 'legacy 收件必须保留状态未知');

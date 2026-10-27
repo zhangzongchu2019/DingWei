@@ -216,3 +216,24 @@ func TestDeliveryACKV2UnreceivedStillUsesTransportExpiry(t *testing.T) {
 		})
 	}
 }
+
+func TestDeliveryACKV2TransportUnknownKeepsAdmissionAndAcceptsLateTerminal(t *testing.T) {
+	db, ctx, a, now := v2DeliveryFixture(t)
+	mustApplyACK(t, db, ctx, a, now)
+	a.Phase, a.TurnID = "injected", "original-turn"
+	admitted := mustApplyACK(t, db, ctx, a, now)
+	a.Phase, a.TurnID = "admission_unknown", ""
+	uncertain := mustApplyACK(t, db, ctx, a, now.Add(time.Second))
+	if uncertain.State != "injected" || uncertain.LastError != "turn_terminal_unknown" || uncertain.ProcessedAt != nil || uncertain.TurnID != admitted.TurnID || !uncertain.InjectedAt.Equal(*admitted.InjectedAt) {
+		t.Fatalf("watchdog must preserve admission and expose transport uncertainty: %+v", uncertain)
+	}
+	repeated, changed, err := db.ApplySessionDeliveryACK(ctx, a, now.Add(2*time.Second))
+	if err != nil || changed || !reflect.DeepEqual(repeated, uncertain) {
+		t.Fatalf("repeated unknown must not rewrite evidence: %+v %v", repeated, err)
+	}
+	a.Phase, a.TurnID, a.TurnOutcome, a.OccurredAt = "processed", "original-turn", "completed", now.Add(3*time.Second)
+	terminal := mustApplyACK(t, db, ctx, a, now.Add(4*time.Second))
+	if terminal.State != "processed" || terminal.LastError != "" || terminal.TurnOutcome != "completed" {
+		t.Fatalf("late true terminal must finish original turn: %+v", terminal)
+	}
+}

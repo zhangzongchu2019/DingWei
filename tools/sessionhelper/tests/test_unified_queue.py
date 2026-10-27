@@ -313,8 +313,11 @@ class DriverAdapterUnifiedQueueTest(unittest.TestCase):
             and event["delivery_id"] == first.delivery_id
         ]
         self.assertEqual(len(timeout_events), 1)
-        self.assertEqual(timeout_events[0]["data"]["outcome"], "failed")
-        self.assertEqual([text for _, text in driver.deliveries][:2], ["one", "two"])
+        # The watchdog ends transport ownership, not the model turn.
+        self.assertEqual(timeout_events[0]["data"]["outcome"], "unknown")
+        self.assertEqual(timeout_events[0]["data"]["change"], "delivery_transport_unknown")
+        self.assertFalse(any(e.get("data", {}).get("change") == "turn_completed" for e in events))
+        self.assertEqual([text for _, text in driver.deliveries][:2], ["one", "two"], "watchdog未知离场必须推进下一件")
 
     def test_sessionhelper_driver_mode_routes_directly_to_unified_queue(self):
         class FakeAdapter:

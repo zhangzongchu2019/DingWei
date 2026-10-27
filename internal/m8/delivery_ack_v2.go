@@ -64,7 +64,11 @@ func (h *Hub) handleDeliveryACKV2(ctx context.Context, c *sessionClient, env mod
 	case "delivered":
 		h.publishDeliveryUpdateForDelivery(*result, "delivered", "helper_queued", "", "")
 	case "injected":
-		h.publishDeliveryUpdateForDelivery(*result, "injected", "cli_injected", "", "")
+		reason := ""
+		if result.LastError == "turn_terminal_unknown" {
+			reason = result.LastError
+		}
+		h.publishDeliveryUpdateForDelivery(*result, "injected", "cli_injected", "", reason)
 	case "processed":
 		h.publishDeliveryUpdateForDelivery(*result, "processed", "turn_processed", "", "")
 	case "admission_unknown":
