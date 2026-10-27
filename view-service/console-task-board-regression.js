@@ -7,7 +7,7 @@ const assert = new Proxy(assertModule, {
     return typeof value === 'function' ? (...args) => { assertionCount += 1; return value.apply(target, args); } : value;
   },
 });
-const MIN_ASSERTIONS = 63;
+const MIN_ASSERTIONS = 69;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -25,7 +25,7 @@ const allowedMutations = new Set([
   'k10-include-offline', 'k10-drop-online-options',
   'k11-clear-offline', 'k11-drop-offline-dot',
   'k-status-invent-value', 'k-status-drop-empty-call',
-  'theme-drop-receiver', 'clarify-drop-retention',
+  'theme-drop-receiver', 'clarify-drop-retention', 'cancel-drop-hint',
 ]);
 if (!allowedMutations.has(mutation)) throw new Error(`unknown mutation: ${mutation}`);
 
@@ -62,6 +62,7 @@ const boardMutations = new Map([
   ['k-status-invent-value', ["String(task.passed_cases||0)+'/'+String(task.total_cases||1)", "'0/0'"]],
   ['k-status-drop-empty-call', ["String(task.passed_cases||0)+'/'+String(task.total_cases||1)", "''"]],
   ['theme-drop-receiver', ['dwTaskInitTheme();', '']],
+  ['cancel-drop-hint', ["document.getElementById('blocker-status').textContent='取消阻塞前请填写真实证据引用（Git坐标、材料或授权记录）'", 'void 0']],
   ['clarify-drop-retention', ['clarificationSummaries.set(box.dataset.clarificationKey,box)', 'void box']],
 ]);
 for (const [name, [needle]] of boardMutations) assert.ok(board.includes(needle), `stale mutation probe ${name}`);
@@ -84,6 +85,8 @@ const agents = [
 ];
 let developerOnline = true;
 const reads = { board: 0, questions: 0, clarifications: 0 };
+const blocker = { id: 'blk:12345678abcdef00', where: '测试阻塞', state: 'waiting', mode: 'light', version: 1, expected_input: '真实材料', resume_recheck: [] };
+const blockerWrites = [];
 
 async function requestBody(req) {
   const chunks = [];
@@ -119,6 +122,14 @@ const server = http.createServer(async (req, res) => {
   }
   if (url.pathname === '/fixture/other-task-status' && req.method === 'POST') { tasks[1].status = 'done'; res.writeHead(204); res.end(); return; }
   if (url.pathname === '/fixture/next-revision' && req.method === 'POST') { tasks[0].revision += 1; res.writeHead(204); res.end(); return; }
+  if (url.pathname === '/api/console/tasks/task-1/blockers') {
+    sendJSON(res, { blockers: [blocker], task_version: 1 }); return;
+  }
+  if (url.pathname === '/api/console/tasks/task-1/blockers/' + encodeURIComponent(blocker.id) && req.method === 'POST') {
+    const body = await requestBody(req); blockerWrites.push(body);
+    if (body.operation === 'cancel' && body.evidence_ref.trim()) { blocker.state = 'cancelled'; blocker.version += 1; }
+    sendJSON(res, { ok: true }); return;
+  }
   const assignment = url.pathname.match(/^\/api\/console\/task-board\/tasks\/(task-\d+)$/);
   if (assignment && req.method === 'PATCH') {
     const body = await requestBody(req), task = tasks.find((item) => item.proposal_id === assignment[1]);
@@ -200,6 +211,20 @@ async function main() {
   assert.deepStrictEqual(await frame.locator('#active-task-list tr').first().locator('td').allTextContents(), ['Task text 1','in_progress','2026-10-14T01:02:03Z','未填写/未知','未填写/未知','2026-10-15T04:05:06Z','blocked-by-db','need-test-pg'], 'A7 active row retains all eight source fields');
   assert.deepStrictEqual(await frame.locator('#active-task-list tr').nth(1).locator('td').allTextContents(), ['Task text 2','blocked','未填写/未知','未填写/未知','未填写/未知','未填写/未知','未填写/未知','未填写/未知'], 'A7 active row renders every absent field as unknown');
   assert.strictEqual((await frame.locator('#task-list').innerText()).includes('未知'), false, 'K5 no invented unknown placeholder in the task breakdown');
+  await frame.locator('#task-list tr').first().getByRole('button', { name: '阻塞卡', exact: true }).click();
+  const cancelButton = frame.getByRole('button', { name: '按记录取消此阻塞', exact: true });
+  await cancelButton.waitFor();
+  const writesBeforeCancel = blockerWrites.length;
+  await cancelButton.click();
+  assert.strictEqual(await frame.locator('#blocker-status').isVisible(), true, '空证据取消必须显示页面提示');
+  assert.strictEqual(await frame.locator('#blocker-status').textContent(), '取消阻塞前请填写真实证据引用（Git坐标、材料或授权记录）', '空证据取消必须提示填写真实证据引用');
+  assert.strictEqual(blockerWrites.length, writesBeforeCancel, '空证据取消不得发送请求');
+  await frame.locator('#blocker-list input').first().fill('review/fixture/cancel evidence-1');
+  await cancelButton.click();
+  await cancelButton.waitFor({ state: 'detached' });
+  assert.strictEqual(blockerWrites.length, writesBeforeCancel + 1, '填证据取消只发送一次请求');
+  assert.match(await frame.locator('#blocker-list').textContent(), /已取消/, '填证据取消后卡显示已取消');
+  await frame.locator('#blocker-close').click();
   // Exercise the real five-second scheduler without freezing board updates.
   const clarification = frame.locator('#task-list tr').first().locator('details');
   await clarification.locator('summary').click();
