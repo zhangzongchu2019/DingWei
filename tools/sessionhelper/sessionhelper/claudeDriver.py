@@ -52,6 +52,9 @@ DEFAULT_CMD = [
     "--input-format", "stream-json",
     "--output-format", "stream-json",
     "--replay-user-messages",
+    # Flush the replay ACK while the model is running, not with its final
+    # assistant message (verified with the actual CLI and a held model SSE).
+    "--include-partial-messages",
     "--dangerously-skip-permissions",
     "--verbose",
 ]
@@ -501,6 +504,14 @@ class ClaudeProtocolDriver(Driver):
                         active.pending_tool_ids.discard(tool_use_id)
                     active.last_event_at = time.monotonic()
                     active.stalled_logged = False
+            return
+
+        if t == "stream_event":
+            # Partial chunks provide progress only. They never synthesize an
+            # admission/terminal receipt or duplicate the final assistant text.
+            if active is not None and (d.get("event") or {}).get("type") in ("message_start", "content_block_start", "content_block_delta", "content_block_stop", "message_delta", "message_stop"):
+                active.last_event_at = time.monotonic()
+                active.stalled_logged = False
             return
 
         if t == "assistant":

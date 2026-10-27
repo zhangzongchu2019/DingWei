@@ -174,5 +174,19 @@ class DispatchLifecycleTest(unittest.TestCase):
         self.assertEqual(receipt.state,'failed')
         self.assertTrue(receipt.detail.startswith('result failed:'))
 
+    def test_claude_partial_stream_only_refreshes_progress_without_admission_or_output(self):
+        from sessionhelper.claudeDriver import ClaudeProtocolDriver, _TurnState, DEFAULT_CMD
+        import threading
+        self.assertIn('--include-partial-messages',DEFAULT_CMD)
+        driver=ClaudeProtocolDriver(store_path=str(Path(self.tmp.name)/'claude-partial.db'))
+        active=_TurnState(envelope_id='input',turn_id='turn',accepted=threading.Event(),terminal_seen=threading.Event())
+        driver._active=active
+        before=active.last_event_at
+        driver._handle_frame({'type':'stream_event','event':{'type':'content_block_delta','delta':{'type':'text_delta','text':'partial'}}})
+        self.assertGreater(active.last_event_at,before)
+        self.assertFalse(active.accepted.is_set())
+        self.assertFalse(active.terminal_seen.is_set())
+        self.assertEqual(driver._history,[])
+
 
 if __name__=='__main__':unittest.main()
