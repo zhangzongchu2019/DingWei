@@ -416,11 +416,23 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
             driver = FakeProtocolDriver()
             helper, adapter = self.make_driver_helper(tmp, driver)
             injected = []
+            first_injected = threading.Event()
+            third_injected = threading.Event()
+
+            def first_callback():
+                injected.append("same-1")
+                first_injected.set()
+
+            def third_callback():
+                injected.append("third")
+                third_injected.set()
+
             asyncio.run(helper.process_inbound_message(
                 FakeWS(), business_env("BEFORE", eid="same"),
-                on_injected=lambda: injected.append("same-1"),
+                on_injected=first_callback,
             ))
-            self.wait_for(lambda: len(driver.calls) == 1)
+            self.assertTrue(first_injected.wait(2), "first admission callback did not run")
+            self.assertEqual(len(driver.calls), 1)
             asyncio.run(helper.inject_agent_network_skill(guide_env()))
             asyncio.run(helper.process_inbound_message(
                 FakeWS(), business_env("DUP", eid="same"),
@@ -431,15 +443,18 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
             self.assertIsNone(helper.guide_store._claimed)
             asyncio.run(helper.process_inbound_message(
                 FakeWS(), business_env("THIRD", eid="third"),
-                on_injected=lambda: injected.append("third"),
+                on_injected=third_callback,
             ))
-            self.wait_for(lambda: len(driver.calls) == 2)
+            self.assertTrue(third_injected.wait(2), "third admission callback did not run")
+            self.assertEqual(len(driver.calls), 2)
             self.assertIn("GUIDE", driver.calls[1])
             self.assertTrue(driver.calls[1].endswith("THIRD"))
             self.assertEqual(driver.calls[1].count("GUIDE"), 1)
             self.assertEqual(injected, ["same-1", "third"])
-            self.assertEqual(helper.guide_store.state()["state"], "consumed")
+            # Injection precedes the separate guide consumption callback.
+            # Quiesce the worker before reading its ledger or deleting tmp.
             self.wait_for(lambda: adapter._commands.depth == 0)
+            self.assertEqual(helper.guide_store.state()["state"], "consumed")
 
     def test_driver_deliver_exception_releases_claim_for_next_command(self):
         class RaiseOnceDriver(FakeProtocolDriver):
