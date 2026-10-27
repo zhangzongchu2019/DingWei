@@ -20,25 +20,26 @@ func TestTenantTaskUpdateIgnoredAtRealDispatcher(t *testing.T) {
 		messages = append(messages, m)
 		return nil
 	})
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 5; i++ {
 		raw := []byte(fmt.Sprintf(`{"schema":"2.0","header":{"event_type":"task.task.update_tenant_v1","event_id":"synthetic-%d"},"event":{"open_id":"PRIVATE_TASK_USER","task_id":"PRIVATE_TASK_CONTENT"}}`, i))
 		if _, err := disp.Do(context.Background(), raw); err != nil {
 			t.Fatalf("tenant task event must be acknowledged without SDK missing-handler error: %v", err)
 		}
 	}
-	if len(messages) != 0 || g.ingress.eventReceived.Load() != 0 || g.ingress.enqueued.Load() != 0 || g.ingress.taskUpdateIgnored.Load() != 3 {
+	if len(messages) != 0 || g.ingress.eventReceived.Load() != 0 || g.ingress.enqueued.Load() != 0 || g.ingress.taskUpdateIgnored.Load() != 5 {
 		t.Fatalf("task events entered business path or lost ignored count: messages=%d received=%d enqueued=%d ignored=%d", len(messages), g.ingress.eventReceived.Load(), g.ingress.enqueued.Load(), g.ingress.taskUpdateIgnored.Load())
 	}
 	lines := strings.Split(strings.TrimSpace(logs.String()), "\n")
 	if len(lines) != 3 {
 		t.Fatalf("ignore records=%d", len(lines))
 	}
+	expectedCounts := []float64{1, 2, 4}
 	for i, line := range lines {
 		var fields map[string]any
 		if err := json.Unmarshal([]byte(line), &fields); err != nil {
 			t.Fatal(err)
 		}
-		if fields["msg"] != "feishu ingress event_ignored" || fields["event_type"] != "task.task.update_tenant_v1" || fields["reason"] != "unsupported_task_event" || fields["bot_channel"] != g.botChannelID || fields["count"] != float64(i+1) || fields["level"] != "INFO" {
+		if fields["msg"] != "feishu ingress event_ignored" || fields["event_type"] != "task.task.update_tenant_v1" || fields["reason"] != "unsupported_task_event" || fields["bot_channel"] != g.botChannelID || fields["count"] != expectedCounts[i] || fields["level"] != "INFO" {
 			t.Fatalf("missing bounded ignore metadata: %s", line)
 		}
 	}
@@ -56,7 +57,7 @@ func TestTenantTaskUpdateIgnoredAtRealDispatcher(t *testing.T) {
 	if _, err := disp.Do(context.Background(), message); err != nil {
 		t.Fatal(err)
 	}
-	if len(messages) != 1 || messages[0].FeishuMsgID != "om_synthetic" || g.ingress.enqueued.Load() != 1 || g.ingress.taskUpdateIgnored.Load() != 3 {
+	if len(messages) != 1 || messages[0].FeishuMsgID != "om_synthetic" || g.ingress.enqueued.Load() != 1 || g.ingress.taskUpdateIgnored.Load() != 5 {
 		t.Fatal("ordinary message path changed")
 	}
 	// Counters remain per bot, not a process-global reset on reconnect.

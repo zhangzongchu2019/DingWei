@@ -342,8 +342,11 @@ func (g *LarkGateway) eventDispatcher(onInbound func(context.Context, model.Mess
 	}).OnP2TaskUpdateTenantV1(func(_ context.Context, _ *larktask.P2TaskUpdateTenantV1) error {
 		// Tenant task updates are subscribed externally; they are not Hub messages.
 		count := g.ingress.taskUpdateIgnored.Add(1)
-		g.log().Info("feishu ingress event_ignored", "bot_channel", g.botChannelID,
-			"event_type", "task.task.update_tenant_v1", "reason", "unsupported_task_event", "count", count)
+		// Keep cumulative observability without one log line per ignored event.
+		if count != 0 && count&(count-1) == 0 {
+			g.log().Info("feishu ingress event_ignored", "bot_channel", g.botChannelID,
+				"event_type", "task.task.update_tenant_v1", "reason", "unsupported_task_event", "count", count)
+		}
 		return nil
 	})
 }
