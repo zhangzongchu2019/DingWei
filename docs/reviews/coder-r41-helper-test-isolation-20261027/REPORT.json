@@ -1,0 +1,82 @@
+{
+  "utc": "2026-10-27T17:09:35.196241+00:00",
+  "item": "9 S-HELPER-TEST-REALHOME-ISOLATION",
+  "branch": "coder56solzzc/r41-helper-test-isolation",
+  "base": "549f64e280f2c5496bffb506c709c1bf0a1c504d",
+  "source": "2d31cedf1db1ffcbab7765c0f15d15be9fd03ce4",
+  "full_suite_source": "96f4597eb4e26904148e8303b96db1ae75f5fcb0",
+  "full_suites": {
+    "seat-claude": {
+      "count": 1051,
+      "seconds": 455.37,
+      "failures": [
+        "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)",
+        "test_terminal_watchdog_fails_current_and_advances (test_unified_queue.DriverAdapterUnifiedQueueTest.test_terminal_watchdog_fails_current_and_advances)"
+      ],
+      "errors": [],
+      "skips": []
+    },
+    "seat-codex": {
+      "count": 1051,
+      "seconds": 452.871,
+      "failures": [],
+      "errors": [],
+      "skips": []
+    },
+    "clean-claude": {
+      "count": 1051,
+      "seconds": 455.423,
+      "failures": [
+        "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)",
+        "test_terminal_watchdog_fails_current_and_advances (test_unified_queue.DriverAdapterUnifiedQueueTest.test_terminal_watchdog_fails_current_and_advances)"
+      ],
+      "errors": [],
+      "skips": []
+    },
+    "clean-codex": {
+      "count": 1051,
+      "seconds": 451.972,
+      "failures": [
+        "test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)"
+      ],
+      "errors": [],
+      "skips": []
+    }
+  },
+  "count_acceptance": "all four full runs exactly1051; SKIP0; native and seat environment isolated before import and for every case through async cleanup",
+  "negative_mutations": {
+    "remove_outer_isolation": "rc1 at isolation boundary: HOME before helper import",
+    "remove_case_isolation": "rc1 at case HOME must differ from discovery HOME"
+  },
+  "followup_source_delta": "source adds only explicit environment mapping to UnifiedQueue fixture; affected full module14 cases each profile PASS; no case count changed",
+  "remaining": "NOT full-suite PASS. Guide staging duplicate fixture races in three runs; assigned item7 owns that fix. Earlier claude watchdog fixture errors fixed by explicit mapping (targeted14 per profile PASS). No failure waived or hidden. Final combined validation required after independent item7 delivery.",
+  "environment": {
+    "source": "96f4597eb4e26904148e8303b96db1ae75f5fcb0",
+    "started_utc": "2026-10-27T16:59:57.943389+00:00",
+    "cpu_count": 16,
+    "load": [
+      0.88232421875,
+      0.845703125,
+      0.6728515625
+    ],
+    "python": "/tmp/coder-0232-locked-venv/bin/python3",
+    "superseded": "Earlier runs stopped before completion or used runtime venv; not acceptance evidence."
+  },
+  "peak_observed_load": [
+    8.87890625,
+    3.51171875,
+    1.6474609375
+  ],
+  "scope": "test tooling/fixtures only; no deployment, restart, version change or live IPC connection",
+  "sha256": {
+    "raw/unified-profile-fixture.log": "3dfdd8ec7610c2750ae9afd62695a5d5ea4abd5bf6c1b5c763588b25e44c8b34",
+    "raw/clean-claude.log": "b45a61cf1343e1120d743f350ecbaeb21fac28164c5ffb5b5d86769327671f48",
+    "raw/remove-isolation.log": "7ff0eadc1ad20b689eaff82a9daf47013ac0c9d3fb383e777662f82234832e11",
+    "raw/clean-codex.log": "f9373124aaca634a7fca398698c881c98bca67a948c3174898ba0ffd25978eca",
+    "raw/seat-codex.log": "d60566f9931b2d834dbcba3df2b59907243d926e7d167dd7fcb374d7dc4ec534",
+    "raw/remove-case-isolation.log": "647bab630de45b1251032c9ce290dce2f3f27e832a927d4e4f0a759fdbec5f1a",
+    "raw/RUNS.json": "e90462b1d2bc1fae700dbf9bcf50d0749d127750f7249069c7a521f9040ef0b5",
+    "raw/seat-claude.log": "adc210f819c3ab767938074f32250dcf9dc63b2e8d877b339075c463f51ead1f",
+    "raw/SOURCE.json": "8cc3cd84143728f31d0b0f1d747ff74601d7ef73e54071d64c20a15d8ec85ae5"
+  }
+}
