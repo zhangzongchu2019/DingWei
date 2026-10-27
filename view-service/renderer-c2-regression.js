@@ -22,7 +22,7 @@ async function bootContext(browser, rendererBody, { interruptRouteHits, initScri
   if (initScript) await context.addInitScript(initScript);
   await context.route('http://renderer.test/**', async route => {
     const path = new URL(route.request().url()).pathname;
-    if (apiRequestUrls && /\/(events|input|interrupt|control|status|page)$/.test(path)) apiRequestUrls.push(path);
+    if (apiRequestUrls) apiRequestUrls.push(path);
     if (path === servePath) return route.fulfill({ contentType: 'text/html', body: rendererBody });
     if (path === '/status' || path.endsWith('/status')) {
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
@@ -42,12 +42,12 @@ async function bootContext(browser, rendererBody, { interruptRouteHits, initScri
     }
     if (path === '/page' || path.endsWith('/page')) {
       return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({
-        page_id: 'p1', page_token: 't1', code: 'c1', state: 'locked',
+        page_id: 'p1', page_token: 't1', code: 'c1', state: 'unlocked',
       }) });
     }
     if (path === '/page/resume' || path.endsWith('/page/resume')) {
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
-        page_id: 'p1', code: 'c1', state: 'locked', can_write: true,
+        page_id: 'p1', code: 'c1', state: 'unlocked', can_write: true,
       }) });
     }
     return route.fulfill({ status: 404, body: 'nf' });
@@ -373,14 +373,15 @@ async function main() {
   ];
   for (const [name, servePath, expectControl] of SCOPED_FIXTURES) {
     await T(`C2.3 ${name}:真点击删除→POST ${expectControl}+六端点同算法`, async () => {
-      const hits = [];
-      const { context, page } = await bootContext(browser, rendererBody, { servePath, controlRouteHits: hits, controlReply: { ok: true } });
+      const hits = [], urls = [];
+      const { context, page } = await bootContext(browser, rendererBody, { servePath, apiRequestUrls: urls, controlRouteHits: hits, controlReply: { ok: true } });
       const api = await page.evaluate(() => API);
       const base = servePath.replace(/\/(renderer)?$/, '');
       for (const ep of ['events', 'input', 'interrupt', 'control', 'status', 'page']) {
         assert.strictEqual(api[ep], `${base}/${ep}`, `${name} API.${ep} 同算法`);
       }
-      assert.strictEqual(api.tasks, '/tasks', 'tasks 全局端点不 scoped');
+      assert.ok(!Object.hasOwn(api, 'tasks'), 'renderer no longer owns the global tasks endpoint');
+      assert.ok(!urls.some(url => url.endsWith('/tasks')), 'renderer must not request the retired tasks endpoint');
       await emit(page, inputPosted('m1', '要删的那条'));
       await page.locator('.waiting-cancel-btn').click();
       await waitNote(page, '取消已请求');
