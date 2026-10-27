@@ -88,14 +88,14 @@ class ControlledModel:
             temporary.write_text(json.dumps(self.data))
             temporary.replace(self.root / 'model-observations.json')
 
-    def observe_admission(self, delivery_id, turn_id):
+    def observe_admission(self, delivery_id, turn_id, observed_at=None):
         with self.lock:
-            self.data['admissions'].setdefault(delivery_id, {'turn_id':turn_id,'at':time.time()})
+            self.data['admissions'].setdefault(delivery_id, {'turn_id':turn_id,'at':time.time() if observed_at is None else observed_at})
             self.save()
 
-    def observe_terminal(self, delivery_id, turn_id):
+    def observe_terminal(self, delivery_id, turn_id, observed_at=None):
         with self.lock:
-            self.data['terminals'].setdefault(delivery_id, {'turn_id':turn_id,'at':time.time()})
+            self.data['terminals'].setdefault(delivery_id, {'turn_id':turn_id,'at':time.time() if observed_at is None else observed_at})
             self.save()
 
     def release(self, label):

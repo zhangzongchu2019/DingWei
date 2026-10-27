@@ -116,21 +116,48 @@ async def main():
         queries.append(identifier);atomic_json(root,'recovery-queries.json',queries)
         return original_poll(identifier)
     driver.poll_receipt=poll
+    # Independent clocks at raw native ingress, before production parsing or
+    # ACK persistence. Never copy timestamps from the product's evidence fields.
+    current_dispatch={};native_bindings={}
     original_deliver=driver.deliver
     def deliver(identifier,body):
-        receipt=original_deliver(identifier,body)
-        if receipt.state in ('accepted','processing','done') and (kind!='claude' or receipt.state!='processing' or str(receipt.detail).startswith('accepted,')):
-            turn=helper.adapter._receipt_turn_id(receipt)
-            if turn:model.observe_admission(identifier,turn)
-        return receipt
+        current_dispatch['id']=identifier
+        return original_deliver(identifier,body)
     driver.deliver=deliver
-    emit_name='_emit' if kind=='claude' else '_emit_event'
-    original_emit=getattr(driver,emit_name)
-    def event(ev):
-        if ev.kind=='state_change' and ev.data.get('change')=='turn_completed' and ev.delivery_id and ev.turn_id:
-            model.observe_terminal(ev.delivery_id,ev.turn_id)
-        return original_emit(ev)
-    setattr(driver,emit_name,event)
+    if kind=='claude':
+        original_frame=driver._handle_frame
+        def frame(packet):
+            observed=time.time();active=driver._active
+            if active is not None:
+                if packet.get('type')=='user' and packet.get('isReplay'):
+                    model.observe_admission(active.envelope_id,active.turn_id,observed)
+                if packet.get('type')=='result':
+                    model.observe_terminal(active.envelope_id,active.turn_id,observed)
+            return original_frame(packet)
+        driver._handle_frame=frame
+    else:
+        original_request=driver._request
+        def request(method,params=None,*args,**kwargs):
+            result=original_request(method,params,*args,**kwargs)
+            observed=time.time()
+            if method=='turn/start':
+                turn=(result.get('turn') or {}).get('id');identifier=(params or {}).get('clientUserMessageId')
+                if turn and identifier:
+                    native_bindings[turn]=identifier
+                    model.observe_admission(identifier,turn,observed)
+            return result
+        driver._request=request
+        original_notification=driver._map_notification
+        def notification(packet):
+            observed=time.time();method=packet.get('method');turn=((packet.get('params') or {}).get('turn') or {}).get('id')
+            identifier=native_bindings.get(turn) or current_dispatch.get('id')
+            if turn and identifier:
+                if method=='turn/started':
+                    native_bindings[turn]=identifier
+                    model.observe_admission(identifier,turn,observed)
+                elif method=='turn/completed':model.observe_terminal(identifier,turn,observed)
+            return original_notification(packet)
+        driver._map_notification=notification
     faults={'drop_injected':False,'drop_injected_confirm':False,'drop_legacy_acks':bool(boot.get('drop_legacy_acks')),'pause_claim':False,'pause_dispatch':False}
     dispatch_gate=threading.Event();dispatch_gate.set()
     if hasattr(helper.delivery_inbox,'confirm_delivery_ack'):
