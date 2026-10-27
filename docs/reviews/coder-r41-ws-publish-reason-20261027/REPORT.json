@@ -1,0 +1,39 @@
+{
+  "utc": "2026-10-27T17:54:51.280080+00:00",
+  "item": 12,
+  "issue": "S-HUB-WS-PUBLISH-RACE phase1 internal reason only",
+  "scope": "8dc1a02889068122b22ac305fa217892ff2e2905",
+  "repo": "git@git.code.tencent.com:wego-ai/dingwei.git",
+  "branch": "coder56solzzc/r41-ws-publish-reason",
+  "base": "549f64e280f2c5496bffb506c709c1bf0a1c504d",
+  "source": "46239b32d7f4d158cfc344d447d5356240721da6",
+  "tree": "91beb72440ebe34e54167e78d0af11a9fed1f8ae",
+  "change": "Only writeDeliveryFailure internal logger now calls deliveryFailureLogReason. Existing typed grouping rejections retain real reason. Bare group-not-found plus existing exact-address capabilityPendingAdmission and absent published client -> target_not_published; absent marker/published/unknown alias -> target_offline_or_unresolved. Public groupingRejectionReason/notice/dock/returned error remains unchanged.",
+  "limits": [
+    "Diagnostic snapshot is read at logging time, not a new causal/connection history guarantee. target_not_published means current client absent plus existing admission marker, including any withdrawal/cleanup interval; it is not proof of first publication never happening.",
+    "No pre101 marker creation, no wait, no new identity/database lookup, no queue/retry/lease change, no change to legacy delivery semantics. Existing maps read briefly under h.mu only after prior locks released.",
+    "Existing admission covers fresh endpoints, not all historical no-ACK reconnects; no exact marker (including aliases/key placeholders) stays offline_or_unresolved rather than falsely claiming ACL or confirmed race.",
+    "Internal helper only used by structured server log. No new external reason, JSON metadata, metric label or field leaks; ordinary typed ACL reasons remain unchanged.",
+    "Phase2 bounded waits/pre101 admission still r42 design, no r41 implementation or deployment."
+  ],
+  "tests": {
+    "final-targeted.jsonl": {
+      "pass": 21
+    },
+    "reverse.jsonl": {
+      "fail": 1
+    }
+  },
+  "sha256": {
+    "raw/final-targeted.jsonl": "bd16dcd543aa9e0922c148d898646f96e3a4e3dc7a2778846a0477964ec21ea2",
+    "raw/reverse.jsonl": "a31e90b485826b126d7cf3cf23faa6c3549cc650a03793181ed40eac16cf9389"
+  },
+  "reverse_recipe": "Overlay only hub.go replacing the one logger h.deliveryFailureLogReason(routeErr,target) call with original groupingRejectionReason(routeErr), then go test -json -count=1 -overlay=<map> -run=^TestPublicationDiagnosticAuthenticatedRoutingAndWireNotice$ ./internal/m8. rc1 must contain actual reject logger missed target_not_published.",
+  "public_bytes": "Real WS notices are encoded and compared to baseline public construction with exactly same source ID/body/address/version/timestamp. Generated envelope ID is copied for equality; only unrelated restart-window metadata removed. Body and all remaining JSON metadata bytes must match; separately versions empty/0.1.2.0/0.2.3.14 compare public construction. Original public reason stays cross_group_denied intentionally for anti-enumeration.",
+  "routing": "Held authenticated fresh target still rejected at short-name lookup; separate-group active target still rejected by real identity ACL; no route admission change. Actual writeDeliveryFailure log and wire path exercised. Published/marker-absent/other typed reason controls included.",
+  "commands": [
+    "TZ=UTC go test -json -count=1 -run 'TestPublicationDiagnostic|Test.*Grouping|TestEveryFeishuDispatch|TestFeishuDispatchRejected' ./internal/m8",
+    "negative overlay recipe above; runtime go1.22.2"
+  ],
+  "not_claimed": "No whole-Go-suite PASS, live prod diagnosis, deployment, restart or actual hourly error rate; targeted own gates only, independent review pending."
+}

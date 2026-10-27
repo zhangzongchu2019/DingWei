@@ -3629,7 +3629,7 @@ func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, origin
 	h.mu.Unlock()
 	env := deliveryFailureEnvelopeWithOriginal(c, original.ID, target, routeErr.Error(), original.Body, now)
 	if errors.Is(routeErr, errGroupAgentNotFound) {
-		logFeishuDispatchRejected(groupingRejectionReason(routeErr), "", target, "")
+		logFeishuDispatchRejected(h.deliveryFailureLogReason(routeErr, target), "", target, "")
 		env.Body = strings.Replace(env.Body, routeErr.Error(), deliveryFailureNoticeReason(routeErr), 1)
 	}
 	// ㈡ 错误看板(业主 09-28「这类消息可以发到错误消息栏」/ 09-29「传到 view 页错误提示区」)。
