@@ -69,7 +69,7 @@ class IPCStartupIsolationTests(unittest.IsolatedAsyncioTestCase):
                     await asyncio.Future()
 
                 helper._ipc_server, helper.recv_loop = optional_ipc, business
-                for name in ("online_list_heartbeat_loop", "delivery_worker_loop", "pending_drain_loop",
+                for name in ("online_list_heartbeat_loop", "delivery_worker_loop", "delivery_ack_outbox_loop", "pending_drain_loop",
                              "file_inbound_worker_loop", "terminal_loop", "session_event_loop",
                              "agent_disk_metrics_loop", "inbox_progress_loop", "outbox_loop", "mirror_loop"):
                     setattr(helper, name, idle)
