@@ -1,0 +1,57 @@
+{
+  "utc": "2026-10-27T18:25:59.570524+00:00",
+  "request": "leader2026-10-27T18:12:48Z four supplemental requirements on same item9 branch; append only",
+  "branch": "coder56solzzc/r41-helper-test-isolation",
+  "source_commit": "6480d29bb21599db1d81c38e1938c85dc73eacce",
+  "source_tree": "7424b0ed28ef1998336dad1ed107fa27b9f48872",
+  "ancestor_reviewed": "82d65aea6a6ac84990bd7b64223424ce5cf5bd0c",
+  "items": {
+    "1": "c207496 includes ANTHROPIC_/OPENAI_ stripping plus explicit rejection tests. Current per-prefix removal cuts bothrc1 ERROR0.",
+    "2": "scripts/reproduce-native-env-isolation.py presets real external sentinel paths, child writes/reads7settings.json under private paths. Current8tests/profilePASS, exact sentinel type/path/mtime_ns unchanged both profiles. Native-prefix removal cutrc1 ERROR0 at configuration-I/O regression.",
+    "3": "6480d29 adds automatic profile selection: validHELPER_TEST_DRIVER first, outerSH_DRIVER second, unset fallback. HomeIsolation uses automatic selection. Explicit runner/case profiles remain explicit. Stripped HELPER-onlyclaude/codex and opposite outer values covered. Priority deletion/oldHomecall restoration bothrc1 ERROR0. Actual SH_DRIVER printed and asserted before execution.",
+    "4": {
+      "base": "549f64e280f2c5496bffb506c709c1bf0a1c504d",
+      "command": "go test -json -count=1 ./...",
+      "cwd": "/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z",
+      "start_utc": "2026-10-27T17:34:05.709317+00:00",
+      "finish_utc": "2026-10-27T17:44:14.873310+00:00",
+      "rc": 1,
+      "fail_events": [
+        {
+          "Time": "2026-10-27T10:44:14.815807632-07:00",
+          "Action": "fail",
+          "Package": "github.com/zhangzongchu2019/dingwei/internal/hosted",
+          "Elapsed": 600.008
+        }
+      ],
+      "failing_test_event_names": [],
+      "active_test_at_package_timeout": "TestOptionsModelsUnionOnlineOnly",
+      "active_test_duration_at_alarm": "2s",
+      "package_timeout": "10m0s; package fail Elapsed600.008",
+      "hosted_passed_tests_before_timeout": 229,
+      "hosted_passed_test_elapsed_sum": 865.91,
+      "observed_block": "readapi_test.go:255 -> mkOrch -> mkPoolSvc -> pgtest.Pool/acquire/start -> protocol.await waits READY=1",
+      "causal_limit": "Observed immediate cause is package-wide default10m timeout, not an assertion failure in TestOptionsModelsUnionOnlineOnly. Its2s age at alarm does not demonstrate its own readiness timeout, deadlock or product defect. Why aggregate package runtime exceeded600s needs profiling/PG process evidence; no unsupported root cause asserted.",
+      "provenance": "Reflog records worktree HEAD549f64e2 at17:32:28 until17:37:00; source changes to item8 occurred later in same mutable worktree. No immutable snapshot for entire Go run was recorded. internal/hosted and internal/store/pgtest have zero diff from549f64e2 through this item9 source. Do not describe entire mutable run as a sealed exact-tree baseline.",
+      "original_jsonl_sha256": "e4c26dac3228ff93f11f0a086f6ca49458114f5492040fbfff28ea9d88cc2736",
+      "original_jsonl_bytes": 4609870
+    }
+  },
+  "targeted": "sentinel subset8/profile=16PASS, profile/provider cuts5/5 expectedrc1, native sentinel cutrc1; ERROR/SKIP0",
+  "full_suite_boundary": "Existing c207496 four full runs1052each remain native-provider-rework/REPORT.json, threeGuideflaky failures andenv-i/codexPASS. Current6480d29 adds3profile tests, full discovery expected1055; no claim that earlier fulls tested this new source. Independent item7 integration full previously passed1063/profile at a different source; not reused as current-source result.",
+  "mtime_acceptance": "Leader withdrew realHOME live-mtime as too strict. Earlier raw before/after readings in prefix-rework remain unchanged historical observations, no longer this itemFAIL. Independent reviewer owns strace write attribution.",
+  "source_scope": "No product edits; no changes to other frozen item branches. Local combination branches never pushed.",
+  "sha256": {
+    "go-baseline-summary.json": "8c2387d535daf7c55e0e89c8ac2a1980ca305f2e2dfe3824fa18a86586f4977c",
+    "go-baseline-timeout-excerpt.log": "b0bef1b0c0e43c66d5ca8cee367dd080dfe582b4197030c06df374a9a7d92dc6",
+    "mutations.json": "ff64a3990cc67c6c5c5dc1e0b5599b508cdd5f18d0fa95093dff352fb10878fd",
+    "remove-anthropic_.log": "ef9419fb833bebcba636a5c4b3a8d808d53f4d8369198377ee56ed9c0f134dc7",
+    "remove-openai_.log": "e14705f4db2ceab5af72788e422a337fec7f2b78fe4e0fd58c45e28a85d268be",
+    "remove-profile-priority.log": "662464b73c457f1e2c0d70bbd8ef77cf9c4fd299b9eaadb148e96df28a849b39",
+    "restore-old-home-call.log": "cf73217190460bdf61c7d51dad97c1f2f144c8a0bb0f7c685dd0037f89055840",
+    "sentinel-claude.log": "a803309570caaccc1b9edfbc800ebaae5bc185d98280b4017691cfed40a6a82c",
+    "sentinel-codex.log": "22d6bd2dc8217ca3b94e5d96e6fedf527aed64a116abeda8b88a77bded986d7d",
+    "sentinel-reverse.log": "a653a017659fe7f2fe4a96721e1f986efb9c0c7bc282111817375186405182ed",
+    "wrong-actual-profile.log": "c24258925197ccddacce06e06825d9a9cfd672eb024f2d49ed91bd25f5fa02cb"
+  }
+}

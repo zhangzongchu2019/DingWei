@@ -1,0 +1,27 @@
+{
+  "base": "549f64e280f2c5496bffb506c709c1bf0a1c504d",
+  "command": "go test -json -count=1 ./...",
+  "cwd": "/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z",
+  "start_utc": "2026-10-27T17:34:05.709317+00:00",
+  "finish_utc": "2026-10-27T17:44:14.873310+00:00",
+  "rc": 1,
+  "fail_events": [
+    {
+      "Time": "2026-10-27T10:44:14.815807632-07:00",
+      "Action": "fail",
+      "Package": "github.com/zhangzongchu2019/dingwei/internal/hosted",
+      "Elapsed": 600.008
+    }
+  ],
+  "failing_test_event_names": [],
+  "active_test_at_package_timeout": "TestOptionsModelsUnionOnlineOnly",
+  "active_test_duration_at_alarm": "2s",
+  "package_timeout": "10m0s; package fail Elapsed600.008",
+  "hosted_passed_tests_before_timeout": 229,
+  "hosted_passed_test_elapsed_sum": 865.91,
+  "observed_block": "readapi_test.go:255 -> mkOrch -> mkPoolSvc -> pgtest.Pool/acquire/start -> protocol.await waits READY=1",
+  "causal_limit": "Observed immediate cause is package-wide default10m timeout, not an assertion failure in TestOptionsModelsUnionOnlineOnly. Its2s age at alarm does not demonstrate its own readiness timeout, deadlock or product defect. Why aggregate package runtime exceeded600s needs profiling/PG process evidence; no unsupported root cause asserted.",
+  "provenance": "Reflog records worktree HEAD549f64e2 at17:32:28 until17:37:00; source changes to item8 occurred later in same mutable worktree. No immutable snapshot for entire Go run was recorded. internal/hosted and internal/store/pgtest have zero diff from549f64e2 through this item9 source. Do not describe entire mutable run as a sealed exact-tree baseline.",
+  "original_jsonl_sha256": "e4c26dac3228ff93f11f0a086f6ca49458114f5492040fbfff28ea9d88cc2736",
+  "original_jsonl_bytes": 4609870
+}

@@ -1,0 +1,99 @@
+=== RUN   TestOptionsModelsUnionOnlineOnly
+panic: test timed out after 10m0s
+running tests:
+	TestOptionsModelsUnionOnlineOnly (2s)
+
+goroutine 8122 [running]:
+testing.(*M).startAlarm.func1()
+	/usr/lib/go-1.22/src/testing/testing.go:2366 +0x385
+created by time.goFunc
+	/usr/lib/go-1.22/src/time/sleep.go:177 +0x2d
+
+goroutine 1 [chan receive]:
+testing.(*T).Run(0xc0000fe680, {0xc8db33?, 0x0?}, 0xce4608)
+	/usr/lib/go-1.22/src/testing/testing.go:1750 +0x3ab
+testing.runTests.func1(0xc0000fe680)
+	/usr/lib/go-1.22/src/testing/testing.go:2161 +0x37
+testing.tRunner(0xc0000fe680, 0xc00019fc70)
+	/usr/lib/go-1.22/src/testing/testing.go:1689 +0xfb
+testing.runTests(0xc000012120, {0x12c5400, 0xb9, 0xb9}, {0x1?, 0x4eb72e?, 0x12c8e40?})
+	/usr/lib/go-1.22/src/testing/testing.go:2159 +0x445
+testing.(*M).Run(0xc0000c9900)
+	/usr/lib/go-1.22/src/testing/testing.go:2027 +0x68b
+main.main()
+	_testmain.go:415 +0x16c
+
+goroutine 8247 [select]:
+github.com/zhangzongchu2019/dingwei/internal/store/pgtest.(*protocol).await(0xdad1c0?, 0x53d1ac1000)
+	/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z/internal/store/pgtest/pgtest.go:395 +0x7c
+github.com/zhangzongchu2019/dingwei/internal/store/pgtest.start(0xc0000fe340, {0xc0004a6240, 0x37})
+	/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z/internal/store/pgtest/pgtest.go:275 +0x2b5
+github.com/zhangzongchu2019/dingwei/internal/store/pgtest.acquire(0xc0000fe340)
+	/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z/internal/store/pgtest/pgtest.go:167 +0x1f0
+github.com/zhangzongchu2019/dingwei/internal/store/pgtest.Pool(0xc0000fe340)
+	/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z/internal/store/pgtest/pgtest.go:94 +0x39
+github.com/zhangzongchu2019/dingwei/internal/hosted.testpool(0xc0000fe340)
+	/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z/internal/hosted/store_test.go:19 +0x25
+github.com/zhangzongchu2019/dingwei/internal/hosted.mkPoolSvc(0xc0000fe340)
+	/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z/internal/hosted/poolsvc_test.go:41 +0x36
+github.com/zhangzongchu2019/dingwei/internal/hosted.mkOrch(0xc0000fe340)
+	/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z/internal/hosted/orchestrator_test.go:97 +0x39
+github.com/zhangzongchu2019/dingwei/internal/hosted.TestOptionsModelsUnionOnlineOnly(0xc0000fe340)
+	/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z/internal/hosted/readapi_test.go:255 +0x27
+testing.tRunner(0xc0000fe340, 0xce4608)
+	/usr/lib/go-1.22/src/testing/testing.go:1689 +0xfb
+created by testing.(*T).Run in goroutine 1
+	/usr/lib/go-1.22/src/testing/testing.go:1742 +0x390
+
+goroutine 8175 [IO wait]:
+internal/poll.runtime_pollWait(0x735ae6c32830, 0x72)
+	/usr/lib/go-1.22/src/runtime/netpoll.go:345 +0x85
+internal/poll.(*pollDesc).wait(0xc000525320?, 0xc00025c09f?, 0x1)
+	/usr/lib/go-1.22/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/lib/go-1.22/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0xc000525320, {0xc00025c09f, 0xff61, 0xff61})
+	/usr/lib/go-1.22/src/internal/poll/fd_unix.go:164 +0x27a
+os.(*File).read(...)
+	/usr/lib/go-1.22/src/os/file_posix.go:29
+os.(*File).Read(0xc00007c180, {0xc00025c09f?, 0xc000289660?, 0x4e7fb3?})
+	/usr/lib/go-1.22/src/os/file.go:118 +0x52
+bufio.(*Scanner).Scan(0xc0002896f0)
+	/usr/lib/go-1.22/src/bufio/scan.go:219 +0x81e
+github.com/zhangzongchu2019/dingwei/internal/store/pgtest.(*protocol).run(0xc00052c0c0, {0xdad1c0?, 0xc00007c180?})
+	/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z/internal/store/pgtest/pgtest.go:370 +0x113
+created by github.com/zhangzongchu2019/dingwei/internal/store/pgtest.newProtocol in goroutine 8247
+	/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z/internal/store/pgtest/pgtest.go:361 +0x11a
+
+goroutine 8174 [IO wait]:
+internal/poll.runtime_pollWait(0x735ae6c32d08, 0x72)
+	/usr/lib/go-1.22/src/runtime/netpoll.go:345 +0x85
+internal/poll.(*pollDesc).wait(0xc000525440?, 0xc000236000?, 0x1)
+	/usr/lib/go-1.22/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/lib/go-1.22/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0xc000525440, {0xc000236000, 0x8000, 0x8000})
+	/usr/lib/go-1.22/src/internal/poll/fd_unix.go:164 +0x27a
+os.(*File).read(...)
+	/usr/lib/go-1.22/src/os/file_posix.go:29
+os.(*File).Read(0xc00007c190, {0xc000236000?, 0x650?, 0xc0000f8000?})
+	/usr/lib/go-1.22/src/os/file.go:118 +0x52
+io.copyBuffer({0xdad220, 0xc00052c060}, {0xdad160, 0xc0003de000}, {0x0, 0x0, 0x0})
+	/usr/lib/go-1.22/src/io/io.go:429 +0x191
+io.Copy(...)
+	/usr/lib/go-1.22/src/io/io.go:388
+os.genericWriteTo(0xc00007c190?, {0xdad220, 0xc00052c060})
+	/usr/lib/go-1.22/src/os/file.go:269 +0x58
+os.(*File).WriteTo(0xc00007c190, {0xdad220, 0xc00052c060})
+	/usr/lib/go-1.22/src/os/file.go:247 +0x9c
+io.copyBuffer({0xdad220, 0xc00052c060}, {0xdad1c0, 0xc00007c190}, {0x0, 0x0, 0x0})
+	/usr/lib/go-1.22/src/io/io.go:411 +0x9d
+io.Copy(...)
+	/usr/lib/go-1.22/src/io/io.go:388
+os/exec.(*Cmd).writerDescriptor.func1()
+	/usr/lib/go-1.22/src/os/exec/exec.go:577 +0x34
+os/exec.(*Cmd).Start.func2(0xc000220500?)
+	/usr/lib/go-1.22/src/os/exec/exec.go:724 +0x2c
+created by os/exec.(*Cmd).Start in goroutine 8247
+	/usr/lib/go-1.22/src/os/exec/exec.go:723 +0x9ab
+FAIL	github.com/zhangzongchu2019/dingwei/internal/hosted	600.008s

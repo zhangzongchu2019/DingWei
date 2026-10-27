@@ -1,0 +1,32 @@
+[
+  {
+    "mutation": "remove-profile-priority",
+    "rc": 1,
+    "expected_failure_verified": true,
+    "errors": 0
+  },
+  {
+    "mutation": "restore-old-home-call",
+    "rc": 1,
+    "expected_failure_verified": true,
+    "errors": 0
+  },
+  {
+    "mutation": "wrong-actual-profile",
+    "rc": 1,
+    "expected_failure_verified": true,
+    "errors": 0
+  },
+  {
+    "mutation": "remove-anthropic_",
+    "rc": 1,
+    "expected_failure_verified": true,
+    "errors": 0
+  },
+  {
+    "mutation": "remove-openai_",
+    "rc": 1,
+    "expected_failure_verified": true,
+    "errors": 0
+  }
+]
