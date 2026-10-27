@@ -1,0 +1,32 @@
+{
+  "utc": "2026-10-27T18:40:36.358367+00:00",
+  "request": "leader2026-10-27T18:13:32Z d2bdf1f75071: four requirements together on published item9 branch; combination gateactualprofile print/check belongs to r41-integration",
+  "branch": "coder56solzzc/r41-helper-test-isolation",
+  "source_commit": "00ff34dff309b80de145acdeff7201175ee92530",
+  "source_tree": "ced12200716fdb667ec8c7c836f2b209f47ee761",
+  "change": "Remove only added2-line actualprofile printer from isolation runner; runner and build-gate scripts now identical to accepted item9tip75431e7a. No combination gate implementation or inventory changes introduced in item9. Environment isolation helpers retain profile behavioral assertions and required priority.",
+  "gate_paths_checked_identical_to_75431e7a": [
+    "scripts/test-helper-suite.py",
+    "scripts/run-helper-build-tests.py",
+    "scripts/run-build-tests.sh",
+    "scripts/helper-test-files.txt",
+    "deploy/test_build_entrypoints.py"
+  ],
+  "four_requirements": {
+    "ANTHROPIC_OPENAI": "Implemented c207496; current helper prefixes/unknown-variable rejection checks retained. Independent removal cuts in four-point-closeout/raw/remove-anthropic_.log and remove-openai_.log bothrc1 ERROR0.",
+    "sentinel_configuration_io": "Implementedc207496. External real prepopulated directory supplies CLAUDE_CONFIG_DIR/CODEX_HOME/XDG paths; child really writes/reads7settings.json under generated private paths. Exact external no-newpath/type/mtime invariance positive; prefix removalrc1. Current-source evidence four-point-closeout/raw/sentinel*.log, helpers unchanged sinceba4ed6e.",
+    "HELPER_TEST_DRIVER_priority": "Implemented6480d29; automatic environment uses validclaude/codex HELPER_TEST_DRIVER first, outerSH_DRIVER next, absentunset. StrippedHELPER-onlybothprofiles and conflict tests remain. Prioritycutrc1 evidence preserved.",
+    "Go_baseline_rc1": "four-point-closeout/raw/go-baseline-summary.json plus timeout excerpt. internal/hosted600s package timeout; activeTestOptionsModelsUnionOnlineOnly2s waitingPGREADY; no individualtestfail event. Deep environment/flake/product rootcause remainsINCONCLUSIVE; mutable whole-runcwd not represented as immutable baseline."
+  },
+  "current_validation": "Locked Python3.12.3 runner subset8/profile=16PASS after printer removal. NoERROR/SKIP.",
+  "full_four_source_and_results": "Actual fulls executedba4ed6e/tree949249ca,4x1055,32isolationcasesPASS,SKIP0. seatcodexPASS;twoClaudeGuide duplicateFAIL1each;env-i/codexsameGuidecaseERROR1 after callbackassertion thenOSError39tempcleanup. Complete logs in current-source-four. This sourceonly removeslogging; no fullrepeat and no claim fulls executed00ff34d.",
+  "preserved_limits": "No old evidence rewritten; noERROR0/4xPASS claim. RealHOME readings retained perleader overstrict criterionwithdrawal; independentreviewerstrace attribution remains. Six frozen branches unchanged. No deployment/restart/phase2.",
+  "sha256": {
+    "raw/targeted.log": "ea45401691d659ef27f5d6f55b04c4d6240af45d13ebc3706bc3321c0f06b89e"
+  },
+  "helper_blob_ids": {
+    "tools/sessionhelper/tests/_suite_isolation.py": "eb6680ad7ed5b76b39ca3faab652d29fae7fe41b",
+    "tools/sessionhelper/tests/_home_isolation.py": "a5a97db0ebce030d1e7b8fbb374bcbd632233919",
+    "tools/sessionhelper/tests/test_suite_isolation.py": "4bc76cff2a72ddc2046682b1fb91fa55df9ff366"
+  }
+}
