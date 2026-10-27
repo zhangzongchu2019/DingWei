@@ -15,6 +15,44 @@ IMPORT_SOCKET = os.environ.get('SH_MCP_IPC_SOCK')
 
 
 class SuiteIsolationTests(unittest.TestCase):
+    def test_module_profile_uses_gate_selection_in_stripped_environment(self):
+        from _home_isolation import HomeIsolation
+        for profile in ('claude', 'codex'):
+            for outer in (None, 'codex' if profile == 'claude' else 'claude'):
+                with self.subTest(profile=profile, outer=outer):
+                    environment = {'HELPER_TEST_DRIVER': profile}
+                    if outer is not None:
+                        environment['SH_DRIVER'] = outer
+                    with mock.patch.dict(os.environ, environment, clear=True):
+                        fixture = HomeIsolation()
+                        fixture.start()
+                        try:
+                            self.assertEqual(os.environ.get('SH_DRIVER'), profile)
+                        finally:
+                            fixture.finish()
+                        self.assertEqual(dict(os.environ), environment)
+
+    def test_module_profile_falls_back_to_outer_driver_then_unset(self):
+        for environment, expected in (({}, 'unset'), ({'SH_DRIVER': 'claude'}, 'claude'),
+                                      ({'SH_DRIVER': 'codex'}, 'codex'),
+                                      ({'HELPER_TEST_DRIVER': 'invalid', 'SH_DRIVER': 'claude'}, 'claude')):
+            with self.subTest(environment=environment):
+                with mock.patch.dict(os.environ, environment, clear=True):
+                    with isolated_environment() as directory:
+                        assert_isolated(directory, expected)
+                        self.assertEqual(os.environ.get('SH_DRIVER', 'unset'), expected)
+
+    def test_profile_guard_rejects_silent_driver_substitution(self):
+        with isolated_environment('claude') as directory:
+            for actual in ('codex', 'unset'):
+                with mock.patch.dict(os.environ):
+                    if actual == 'unset':
+                        os.environ.pop('SH_DRIVER')
+                    else:
+                        os.environ['SH_DRIVER'] = actual
+                    with self.assertRaisesRegex(AssertionError, 'isolation profile: selected=claude actual_SH_DRIVER='):
+                        assert_isolated(directory, 'claude')
+
     def test_runner_installs_case_isolation_before_setup(self):
         self.assertNotEqual(os.environ.get('HOME'), IMPORT_HOME,
                             'isolation boundary: case HOME must differ from discovery HOME')
@@ -131,7 +169,7 @@ print(json.dumps({'configurations_written_and_read': len(keys)}))
         self.assertEqual(dict(os.environ), before)
 
     def test_removed_isolation_fails_at_boundary_before_helper_execution(self):
-        with isolated_environment() as outer:
+        with isolated_environment('unset') as outer:
             with mock.patch.dict(os.environ, HOME=str(outer.parent / 'outside')):
                 with self.assertRaisesRegex(AssertionError, 'isolation boundary: HOME'):
                     assert_isolated(outer)

@@ -18,7 +18,12 @@ def clean_environment(environment):
 
 
 @contextmanager
-def isolated_environment(driver='unset'):
+def isolated_environment(driver=None):
+    # Module fixtures must retain the build gate's profile even when a caller
+    # has cleared or changed SH_DRIVER. Explicit case profiles stay explicit.
+    if driver is None:
+        selected = os.environ.get('HELPER_TEST_DRIVER')
+        driver = selected if selected in ('claude', 'codex') else os.environ.get('SH_DRIVER', 'unset')
     # Short Unix socket paths also work on platforms with a 104-byte limit.
     with tempfile.TemporaryDirectory(prefix='ht-', dir='/tmp') as directory:
         home = Path(directory) / 'home'
@@ -38,6 +43,8 @@ def isolated_environment(driver='unset'):
 def assert_isolated(directory, driver='unset'):
     """Fail before importing or executing helper code if isolation is removed."""
     root = Path(directory).resolve()
+    actual = os.environ.get('SH_DRIVER', 'unset')
+    assert actual == driver, f'isolation profile: selected={driver} actual_SH_DRIVER={actual}'
     for key in ('HOME', 'SH_MCP_IPC_SOCK', 'DINGWEI_MCP_IPC_SOCK') + HOME_KEYS:
         path = Path(os.environ.get(key, '/')).resolve()
         assert path != root and root in path.parents, f'isolation boundary: {key}'

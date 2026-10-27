@@ -1,0 +1,17 @@
+[
+  {
+    "mutation": "remove-priority",
+    "rc": 1,
+    "expected_failure_verified": true
+  },
+  {
+    "mutation": "restore-old-home-call",
+    "rc": 1,
+    "expected_failure_verified": true
+  },
+  {
+    "mutation": "wrong-actual-profile",
+    "rc": 1,
+    "expected_failure_verified": true
+  }
+]

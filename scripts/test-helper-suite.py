@@ -29,6 +29,8 @@ def main():
     # Discovery/imports and module/class fixtures are isolated too, before any
     # helper module can capture a HOME or socket path at import time.
     with isolated_environment(args.driver) as directory:
+        actual = os.environ.get('SH_DRIVER', 'unset')
+        print(f'HELPER_PROFILE selected={args.driver} actual_SH_DRIVER={actual}', flush=True)
         assert_isolated(directory, args.driver)
         sys.path[:0] = [str(root/'tools/sessionhelper'), str(root/'view-service')]
         os.environ['PYTHONPATH'] = os.pathsep.join(sys.path[:2])

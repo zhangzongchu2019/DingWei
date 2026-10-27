@@ -50,7 +50,7 @@ class HomeIsolation:
     def start(self):
         self._before = snapshot_real_dingwei()
         # SH_PROVISION_NO_EXIT 兜底：任何路径走到 request_restart 都不许真的 os._exit 掉测试进程。
-        self._patcher = isolated_environment(os.environ.get('SH_DRIVER', 'unset'))
+        self._patcher = isolated_environment()
         self._patcher.__enter__()
 
     def finish(self):
