@@ -1,0 +1,14 @@
+{
+  "source": "ba4ed6e168549bf5a4dceac1948997c30c3e7650",
+  "tree": "949249cacac14b237031183b4453f36c67458ff0",
+  "started_utc": "2026-10-27T18:29:44.232693+00:00",
+  "cores": 16,
+  "initial_load": [
+    0.63330078125,
+    1.46240234375,
+    2.05419921875
+  ],
+  "runtime": "/tmp/coder-0232-locked-venv/bin/python3",
+  "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+  "real_home_mtime": "Existing observations preserved; not acceptance gate per leader; independent reviewer owns strace attribution"
+}
