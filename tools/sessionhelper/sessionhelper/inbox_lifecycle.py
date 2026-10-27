@@ -126,7 +126,7 @@ class DeliveryLifecycle(DeliveryACKOutbox):
                 return
             if row['state'] != 'admitted':
                 raise ValueError('invalid terminal predecessor')
-            db.execute("""UPDATE delivery_inbox SET state='processed',processed_at=?,turn_outcome=?,updated_at=?
+            db.execute("""UPDATE delivery_inbox SET state='processed',processed_at=?,turn_outcome=?,error=NULL,updated_at=?
                 WHERE session_name=? AND delivery_id=?""", (now, outcome, now, self.session_name, delivery_id))
             self._lifecycle_ack(db, delivery_id, 'processed')
 

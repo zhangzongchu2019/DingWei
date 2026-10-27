@@ -246,6 +246,7 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=first,turn_id='turn-first',data={'change':'turn_completed','status':'completed'}))
         after=self.inbox.lifecycle(first)
         self.assertEqual(after['state'],'processed','迟到真实终态仍须补记原件')
+        self.assertIsNone(after['error'],'真实终态须清除旧transport unknown诊断')
         if admitted:self.assertEqual(after['admitted_at'],saved_admission)
 
 if __name__=='__main__':unittest.main()
