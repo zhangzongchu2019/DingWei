@@ -34,7 +34,7 @@
 | 第 8 项那样的短名、无持久 ACK，且没有命中公开全名分支 | 在线快路径失败、短名在线解析无匹配，`hub.go:3329` 返回裸组错误；**在调用 routeToSession/EnqueueSessionDelivery 之前已拒绝，无目标 durable 行，无自动补投** |
 | 同真实 key 的精确地址，端点已持久 ACK=true，且为可靠业务信封 | `hub.go:3283-3290` 可走离线 durable；`routeToSession:4170-4178,4216,4255-4265` 持久化，不因这段发布窗口必然丢失 |
 | 有效公开全名 `name.owner` | `newplat_session_name.go:22-35` 从身份权威解析；`hub.go:3306-3311` 可绕过短名在线枚举，继续到 routeToSession，但能否接受仍取决于下面能力条件 |
-| 全名已解析、新端点 admission 已建立、可靠信封、仓储支持 pending | `hub.go:1130-1132,4178,4255-4265` 可落 **capability_pending durable**；不是本项短名失败那条路径。后续 ACK=true 才转入可靠投递；ACK=false 会终结并发失败通知（`hub.go:4404-4418`、`fresh_target_delivery.go:178-195`） |
+| 全名已解析、新端点 admission 已建立、可靠信封、仓储支持 pending | `hub.go:1130-1132,4178,4255-4265` 可落 **capability_pending durable**；不是本项短名失败那条路径。后续 ACK=true 才转入可靠投递；ACK=false 会终结并发失败通知；一直不报能力的旧客户端则等待 pending 到期，由清理器处理（`hub.go:4404-4418`、`fresh_target_delivery.go:178-195`） |
 | 全名已解析，但目标是历史 no-ACK 重连 | `hub.go:1072-1077` 明确不建 fresh admission；无旧 client 时 `:4206-4214` offline_rejected，不能凭 101 推定可可靠投递 |
 | 新端点，极早的 Accept 返回至 beginCapabilityPendingAdmission 之间 | 标记也在 101 **之后**建立，`hub.go:1130-1132`；若另一发送方此时已解析全名，且无持久 ACK/旧 client，`:4178` 不满足，仍可能 offline_rejected。这是源码推导，现有第 8 项受控证据没有单独覆盖这个更早切点 |
 
