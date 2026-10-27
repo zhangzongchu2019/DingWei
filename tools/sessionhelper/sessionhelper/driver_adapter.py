@@ -17,7 +17,7 @@ import threading
 import time
 import weakref
 
-from .contract import SessionEvent
+from .contract import SessionEvent, DeliveryReceipt
 from .inbox_progress import observe
 from .unified_queue import EnqueueResult, QueuedCommand, UnifiedCommandQueue
 from .config import env_get
@@ -62,6 +62,8 @@ class DriverAdapter:
         except Exception:
             pass
         self._interrupt_confirmed: set[tuple[str, str]] = set()
+        self._admission_timeout = max(0.1, float(getattr(cfg, "admission_timeout_seconds", 60)))
+        self._transport_recovery = None
         self._terminal_timeout = max(0.1, float(cfg.turn_terminal_timeout_seconds))
         self._input_buf = ""          # view 输入的行缓冲
         self._cost_total = 0.0        # 会话累计成本(状态栏用)
@@ -265,6 +267,12 @@ class DriverAdapter:
                     continue
                 self._work_available.wait(0.5)
                 continue
+            if self._transport_recovery is not None:
+                if not self._transport_recovery.is_set():
+                    self._commands.defer_current(command.delivery_id)
+                    self._bridge_sleep(0.1)
+                    continue
+                self._transport_recovery = None
             self._deliver_command(command)
 
     def _restore_delivery_commands(self):
@@ -326,11 +334,13 @@ class DriverAdapter:
                 if ledger is not None and ledger.lifecycle(command.delivery_id) is not None and not ledger.begin_dispatch(command.delivery_id):
                     receipt=self.driver.poll_receipt(command.delivery_id)
                 else:
-                    receipt=self.driver.deliver(command.delivery_id,command.text)
+                    receipt=self._bounded_deliver(command)
             elif previous in ('dispatching','admitted'):
                 receipt=self.driver.poll_receipt(command.delivery_id)
             else:
                 finish('completed');return
+            if receipt is None:
+                journal.finish(signal,'unknown','admission_timeout');return
             if receipt.state not in ('accepted','processing','done','failed'):
                 journal.finish(signal,'unknown','protocol_receipt_unknown_no_replay');finish('failed');self._publish_terminal_failure(command,'blocker_wake_outcome_unknown','Inspect receipt; do not retry the execution');return
             journal.finish(signal,'admitted','protocol_receipt_observed')
@@ -346,12 +356,17 @@ class DriverAdapter:
             self._publish_terminal_failure(command,'blocker_wake_outcome_unknown','Inspect receipt; do not retry the execution')
 
     def _deliver_regular_command(self, command: QueuedCommand) -> None:
+        if self._transport_recovery is not None:
+            if not self._transport_recovery.is_set():
+                self._commands.defer_current(command.delivery_id)
+                return
+            self._transport_recovery = None
         observe(getattr(self, "delivery_progress", None), command.delivery_id, "dispatching")
         ledger = getattr(self, "delivery_lifecycle", None)
         try:
             if ledger is not None and ledger.lifecycle(command.delivery_id) is not None:
                 if ledger.begin_dispatch(command.delivery_id):
-                    receipt = self.driver.deliver(command.delivery_id, command.text)
+                    receipt = self._bounded_deliver(command)
                 else:
                     # Intent was persisted before a previous RPC. Query only;
                     # an absent/unknown receipt is never proof of nonadmission.
@@ -367,7 +382,9 @@ class DriverAdapter:
                         self._commands.finish(command.delivery_id, 'failed')
                         return
             else:
-                receipt = self.driver.deliver(command.delivery_id, command.text)
+                receipt = self._bounded_deliver(command)
+            if receipt is None:
+                return
             print(
                 f"[driver-adapter] deliver id={command.delivery_id} -> "
                 f"{receipt.state} ({str(receipt.detail)[:60]})",
@@ -383,8 +400,111 @@ class DriverAdapter:
             self._commands.finish(command.delivery_id, "failed")
             observe(getattr(self, "delivery_progress", None), command.delivery_id, "unknown")
 
-    def _settle_command(self, command: QueuedCommand, receipt) -> None:
+    def _dispatch_clock(self, command):
+        if not hasattr(command, '_dispatch_started'):
+            ledger = getattr(self, 'delivery_lifecycle', None)
+            row = ledger.lifecycle(command.delivery_id) if ledger is not None else None
+            intent = row['dispatch_intent_at'] if row is not None else None
+            command._dispatch_started = time.monotonic() - max(0, time.time() - intent) if intent is not None else time.monotonic()
+        return command._dispatch_started
+
+    def _bounded_deliver(self, command):
+        """Never let a synchronous stdin/RPC call own the FIFO beyond admission.
+
+        The worker is bound to the old driver instance. Recovery must stop that
+        transport and join this worker before any later command can dispatch.
+        """
+        self._dispatch_clock(command)
+        if time.monotonic() - self._dispatch_clock(command) >= self._admission_timeout:
+            self._transport_unknown(command, 'admission_timeout', recover=True)
+            return None
+        old_driver = self.driver
+        done = threading.Event()
+        result = []
+        def run():
+            try:
+                result.append(old_driver.deliver(command.delivery_id, command.text))
+            except Exception as exc:
+                result.append(exc)
+            finally:
+                done.set()
+        threading.Thread(target=run, daemon=True, name='delivery-admission').start()
         admitted = False
+        while not done.wait(0.02):
+            # poll_receipt is a local ledger lookup in the supported drivers.
+            # Its evidence can precede return from deliver (e.g. Claude isReplay).
+            try:
+                receipt = old_driver.poll_receipt(command.delivery_id)
+            except Exception:
+                receipt = DeliveryReceipt(command.delivery_id, 'processing', 'transport', 'awaiting receipt')
+            admitted = admitted or self._admit_from_receipt(command, receipt)
+            if admitted:
+                # Real admission switches to the terminal watchdog, even if the
+                # delivery call itself is still waiting for its return frame.
+                command._delivery_worker = done
+                return receipt
+            if time.monotonic() - self._dispatch_clock(command) >= self._admission_timeout:
+                command._delivery_worker = done
+                self._transport_unknown(command, 'admission_timeout', recover=True)
+                return None
+        if isinstance(result[0], Exception):
+            raise result[0]
+        return result[0]
+
+    def _recover_transport(self, command):
+        old = self.driver
+        recovery = threading.Event()
+        self._transport_recovery = recovery
+        worker = getattr(command, '_delivery_worker', None)
+        def run():
+            try:
+                abort = getattr(old, 'abort_transport', None)
+                if not callable(abort):
+                    raise RuntimeError('driver has no safe transport abort')
+                abort()
+                if worker is not None and not worker.wait(5):
+                    raise RuntimeError('delivery writer did not stop after transport abort')
+                old.stop()
+                replacement = self._build_driver(self._which)
+                replacement.start()
+                replacement.on_activity = self._bridge_wake.set
+                self.driver = replacement
+                recovery.set()
+                self._bridge_wake.set()
+                self._work_available.set()
+                print('[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed', flush=True)
+            except Exception as exc:
+                # Remain quarantined. Current item is already durably unknown;
+                # following items stay queued, never write the blocked pipe.
+                print(f'[delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: {type(exc).__name__}: {exc}', flush=True)
+        threading.Thread(target=run, daemon=True, name='delivery-transport-recovery').start()
+
+    def _transport_unknown(self, command, reason, *, recover=False):
+        ledger = getattr(self, 'delivery_lifecycle', None)
+        row = ledger.lifecycle(command.delivery_id) if ledger is not None else None
+        if row is not None:
+            ledger.record_transport_unknown(command.delivery_id)
+        if not command.turn_id:
+            self._fail_admission(command.delivery_id)
+        self._publish_queue_event({
+            'kind':'state_change', 'text':'', 'session_id':'',
+            'cursor':f'queue:{command.queue_seq:020d}:transport_unknown',
+            'delivery_id':command.delivery_id, 'turn_id':command.turn_id,
+            'data':{'change':'delivery_transport_unknown', 'scope':'delivery_transport',
+                    'outcome':'unknown', 'reason':reason},
+        })
+        key=(command.delivery_id, command.turn_id)
+        self._timed_out_turns.add(key)
+        observe(getattr(self, 'delivery_progress', None), command.delivery_id, 'unknown')
+        self._turn_progress.pop(key, None)
+        print(f'[delivery][ALERT] id={command.delivery_id} {reason}; admission/terminal not assumed; no automatic replay', flush=True)
+        if recover:
+            self._recover_transport(command)
+        self._commands.finish(command.delivery_id, 'failed')
+
+    def _settle_command(self, command: QueuedCommand, receipt) -> None:
+        admitted = command.state == "admitted"
+        self._dispatch_clock(command)
         progress_admitted = False
         settle_started = time.monotonic()
         while True:
@@ -457,24 +577,12 @@ class DriverAdapter:
                 return
             key = (command.delivery_id, command.turn_id or self._receipt_turn_id(receipt))
             last_progress = self._turn_progress.get(key, settle_started)
-            if time.monotonic() - last_progress >= self._terminal_timeout:
+            if not admitted and time.monotonic() - self._dispatch_clock(command) >= self._admission_timeout:
+                self._transport_unknown(command, 'admission_timeout', recover=True)
+                return
+            if admitted and time.monotonic() - last_progress >= self._terminal_timeout:
                 self._best_effort_timeout_interrupt(command)
-                if ledger is not None:
-                    ledger.record_transport_unknown(command.delivery_id)
-                if not admitted:
-                    self._fail_admission(command.delivery_id)
-                self._publish_queue_event({
-                    "kind": "state_change", "text": "", "session_id": "",
-                    "cursor": f"queue:{command.queue_seq:020d}:transport_unknown",
-                    "delivery_id": command.delivery_id, "turn_id": command.turn_id,
-                    "data": {"change": "delivery_transport_unknown", "scope": "delivery_transport",
-                             "outcome": "unknown", "reason": "terminal_timeout"},
-                })
-                self._timed_out_turns.add(key)
-                observe(getattr(self, "delivery_progress", None), command.delivery_id, "unknown")
-                self._turn_progress.pop(key, None)
-                print(f"[delivery][TIMEOUT] id={command.delivery_id} turn={command.turn_id}", flush=True)
-                self._commands.finish(command.delivery_id, "failed")
+                self._transport_unknown(command, 'terminal_timeout', recover=hasattr(command, '_delivery_worker') and not command._delivery_worker.is_set())
                 return
             time.sleep(0.1)
             receipt = self.driver.poll_receipt(command.delivery_id)
@@ -699,6 +807,9 @@ class DriverAdapter:
             if forwarded:
                 reconnect_attempt = 0
             probe = getattr(self.driver, "healthy", None)
+            if self._transport_recovery is not None:
+                self._bridge_sleep(0.1)
+                continue
             if callable(probe) and not probe():
                 healthy_since = None
                 if reconnect_attempt == 0:

@@ -70,7 +70,11 @@ func (h *Hub) handleDeliveryACKV2(ctx context.Context, c *sessionClient, env mod
 		}
 		h.publishDeliveryUpdateForDelivery(*result, "injected", "cli_injected", "", reason)
 	case "processed":
-		h.publishDeliveryUpdateForDelivery(*result, "processed", "turn_processed", "", "")
+		reason := ""
+		if env.Meta["late_confirmation"] == true {
+			reason = "late_native_confirmation"
+		}
+		h.publishDeliveryUpdateForDelivery(*result, "processed", "turn_processed", "", reason)
 	case "admission_unknown":
 		h.publishDeliveryUpdateForDelivery(*result, "admission_unknown", "helper_queued", "", "model_admission_unknown")
 	case "dead":

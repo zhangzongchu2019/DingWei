@@ -47,7 +47,9 @@ class HomeIsolation:
         self._before = snapshot_real_dingwei()
         self._tmp = tempfile.mkdtemp(prefix="sessionhelper-home-")
         # SH_PROVISION_NO_EXIT 兜底：任何路径走到 request_restart 都不许真的 os._exit 掉测试进程。
-        self._patcher = mock.patch.dict(os.environ, {"HOME": self._tmp, "SH_PROVISION_NO_EXIT": "1"})
+        clean = {k:v for k,v in os.environ.items() if not k.startswith(("SH_", "DW_", "DINGWEI_", "DATAD_"))}
+        clean.update(HOME=self._tmp, SH_PROVISION_NO_EXIT="1")
+        self._patcher = mock.patch.dict(os.environ, clean, clear=True)
         self._patcher.start()
 
     def finish(self):

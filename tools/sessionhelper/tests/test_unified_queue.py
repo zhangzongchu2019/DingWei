@@ -303,7 +303,7 @@ class DriverAdapterUnifiedQueueTest(unittest.TestCase):
 
     def test_terminal_watchdog_fails_current_and_advances(self):
         driver = FakeDriver(never_terminal=True)
-        adapter = self.make_adapter(driver, SH_TURN_TERMINAL_TIMEOUT_SECONDS="0.15")
+        adapter = self.make_adapter(driver, SH_DRIVER="codex", SH_TURN_TERMINAL_TIMEOUT_SECONDS="0.15")
         first = adapter.enqueue_human("one").command
         adapter.enqueue_envelope({"id": "two", "from": "manager#FB-2642", "body": "two", "meta": {}})
         events = self.events_until(adapter, 5, timeout=2)

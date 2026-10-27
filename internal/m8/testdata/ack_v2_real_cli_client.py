@@ -97,6 +97,11 @@ async def main():
         turn_terminal_timeout_seconds=120,provision_audit_db=str(root/'provision.sqlite'),provision_versions_file=str(root/'versions.json'),
         provision_update_state_file=str(root/'update.json'))
     helper=IsolatedHelper(cfg);DriverAdapter._build_driver=original_build
+    if boot.get('late_terminal_test'):
+        helper.adapter._terminal_timeout=.3
+        # Fault: delay terminal beyond transport watchdog without issuing an
+        # interrupt. The actual CLI/model stream remains live for late evidence.
+        helper.adapter._best_effort_timeout_interrupt=lambda command:None
     helper.enroll_credential=Credential('Opus50TS',boot['secret'])
     if boot.get('fault_window') == 'receipt_before_admitted_persist':
         native_admitted=helper.delivery_inbox.record_admitted

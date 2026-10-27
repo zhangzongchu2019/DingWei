@@ -2208,7 +2208,7 @@
       if (norm.reason === 'legacy_injection_unknown') return C1_REASON_TEXT.legacy_injection_unknown;
       if (norm.stage === 'turn_processed') {
         const outcome = {completed: '完成', interrupted: '中断', failed: '失败'}[norm.turnOutcome] || '状态未知';
-        return `回合已结束（${outcome}）`;
+        return `回合已结束（${outcome}）${norm.reason === 'late_native_confirmation' ? '／迟到确认' : ''}`;
       }
       if (norm.stage === 'cli_injected' && norm.ackProtocol === 2) return '已注入执行';
       if (norm.stage === 'failed') {

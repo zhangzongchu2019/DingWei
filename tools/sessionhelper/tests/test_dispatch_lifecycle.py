@@ -13,6 +13,9 @@ from sessionhelper.contract import DeliveryReceipt, SessionEvent
 
 class DispatchLifecycleTest(unittest.TestCase):
     def setUp(self):
+        import os
+        clean={k:v for k,v in os.environ.items() if not k.startswith(("SH_","DW_","DINGWEI_","DATAD_"))}
+        self.env_patch=patch.dict(os.environ,clean,clear=True);self.env_patch.start();self.addCleanup(self.env_patch.stop)
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
         self.path = str(Path(self.tmp.name)/'inbox.sqlite')
         self.inbox = DeliveryInbox(self.path, session_name='seat')
@@ -233,11 +236,11 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
 
     def test_historical_processed_is_not_native_terminal_evidence(self):
         did='legacy-processed'
-        row={'state':'processed','turn_id':'','admitted_at':None,'processed_at':None,'turn_outcome':None}
+        row={'dispatch_intent_at':None,'state':'processed','turn_id':'','admitted_at':None,'processed_at':None,'turn_outcome':None}
         calls=[]
         adapter=self.adapter(SimpleNamespace(poll_receipt=lambda identifier:DeliveryReceipt(did,'processing','fixture','submitted, awaiting ack, turn=local')),'claude')
         adapter.delivery_lifecycle=SimpleNamespace(lifecycle=lambda identifier:row,record_transport_unknown=lambda identifier:calls.append(identifier))
-        adapter._terminal_timeout=.01
+        adapter._terminal_timeout=.01;adapter._admission_timeout=.01
         adapter._commands.enqueue({'id':did,'body':'fixture'})
         command=adapter._commands.start_next()
         adapter._settle_command(command,DeliveryReceipt(command.delivery_id,'processing','fixture','submitted, awaiting ack, turn=local'))
@@ -253,7 +256,9 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
             calls.append(did)
             return DeliveryReceipt(did,'processing' if did==first else 'done','fixture','turn=turn-first' if did==first else 'turn=turn-second')
         driver=SimpleNamespace(deliver=deliver,poll_receipt=lambda did:DeliveryReceipt(did,'processing','fixture','turn=turn-first'))
-        adapter=self.adapter(driver,which);adapter._terminal_timeout=.01
+        driver.abort_transport=lambda:None;driver.stop=lambda:None;driver.start=lambda:None
+        adapter=self.adapter(driver,which);adapter._build_driver=lambda which:driver
+        adapter._terminal_timeout=.01;adapter._admission_timeout=.01
         adapter._commands.enqueue(self.env);adapter._commands.enqueue(second_env)
         adapter._deliver_regular_command(adapter._commands.start_next())
         self.assertIsNone(adapter._commands.current,'watchdog未知离场必须释放当前件')
@@ -266,6 +271,7 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         self.assertEqual(chain[-1]['phase'],'admission_unknown')
         self.assertEqual(chain[-1]['payload']['reason'],'turn_terminal_unknown' if admitted else 'model_admission_unknown')
         self.assertFalse(any(item['phase']=='processed' for item in chain))
+        if adapter._transport_recovery is not None:self.assertTrue(adapter._transport_recovery.wait(1))
         self.assertEqual(self.inbox.claim_next()[0],second)
         adapter._deliver_regular_command(adapter._commands.start_next())
         self.assertEqual(calls,[first,second],'watchdog未知离场必须推进下一件')
@@ -275,5 +281,98 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         self.assertEqual(after['state'],'processed','迟到真实终态仍须补记原件')
         self.assertIsNone(after['error'],'真实终态须清除旧transport unknown诊断')
         if admitted:self.assertEqual(after['admitted_at'],saved_admission)
+
+class AdmissionDeadlineTest(unittest.TestCase):
+    setUp = DispatchLifecycleTest.setUp
+    adapter = DispatchLifecycleTest.adapter
+
+    def test_default_and_independent_environment_configuration(self):
+        from sessionhelper.config import load_config
+        base={'SH_SESSION_NAME':'test','SH_OWNER':'zzc','SH_KEY_ID':'fixture','SH_SECRET':'fixture'}
+        self.assertEqual(load_config(base).admission_timeout_seconds,60)
+        cfg=load_config(dict(base,SH_ADMISSION_TIMEOUT_SECONDS='7',SH_TURN_TERMINAL_TIMEOUT_SECONDS='900'))
+        self.assertEqual((cfg.admission_timeout_seconds,cfg.turn_terminal_timeout_seconds),(7,900))
+
+    def exercise(self, blocking):
+        import threading,time
+        first=self.env['meta']['delivery_id'];second='dw-dlv_deadline-next'
+        next_env={'id':'next','body':'next','meta':dict(self.env['meta'],delivery_id=second)}
+        self.inbox.accept(second,next_env)
+        stopped=threading.Event();entered=threading.Event();calls=[];callbacks=[]
+        def deliver(did,body):
+            calls.append(('old',did));entered.set()
+            if blocking:stopped.wait(5)
+            return DeliveryReceipt(did,'processing','fixture','submitted, awaiting ack, turn=old-turn')
+        old=SimpleNamespace(deliver=deliver,poll_receipt=lambda did:DeliveryReceipt(did,'processing','fixture','submitted'),
+                            abort_transport=stopped.set,stop=lambda:None)
+        new=SimpleNamespace(start=lambda:callbacks.append('restart'),deliver=lambda did,body:calls.append(('new',did)) or DeliveryReceipt(did,'done','fixture','turn=new-turn'))
+        adapter=self.adapter(old,'claude');adapter._build_driver=lambda which:new
+        adapter._admission_timeout=.1;adapter._terminal_timeout=90
+        adapter.handle_delivery(self.env,on_admitted=lambda:callbacks.append('admitted'))
+        adapter._commands.enqueue(next_env)
+        started=time.monotonic();adapter._deliver_regular_command(adapter._commands.start_next())
+        self.assertLess(time.monotonic()-started,1,'独立admission截止必须越过阻塞deliver')
+        self.assertTrue(entered.is_set())
+        row=self.inbox.lifecycle(first)
+        self.assertEqual(row['state'],'admission_unknown','未接纳截止必须持久化unknown')
+        self.assertIsNone(row['admitted_at']);self.assertIsNone(row['processed_at'])
+        self.assertTrue(adapter._transport_recovery.wait(1),'下一件派发前必须恢复CLI')
+        self.assertNotIn('admitted',callbacks)
+        self.inbox.claim_next()
+        adapter._deliver_regular_command(adapter._commands.start_next())
+        self.assertEqual(calls,[('old',first),('new',second)],'恢复后推进下一件且不得重派原件')
+        self.assertEqual(self.inbox.lifecycle(second)['state'],'processed')
+
+    def test_missing_accepted_uses_admission_deadline_and_recovers(self):self.exercise(False)
+    def test_blocked_deliver_is_aborted_before_next_dispatch(self):self.exercise(True)
+
+    def test_real_blocked_stdin_killed_before_buffered_close_and_next_dispatch(self):
+        import sys,time
+        from sessionhelper.claudeDriver import ClaudeProtocolDriver
+        did=self.env['meta']['delivery_id']
+        self.env['body']='x'*(2*1024*1024)
+        driver=ClaudeProtocolDriver(store_path=str(Path(self.tmp.name)/'blocked-native.db'),cwd=self.tmp.name,
+                                   cmd=[sys.executable,'-c','import time;time.sleep(20)'])
+        self.addCleanup(driver.stop)
+        next_calls=[]
+        replacement=SimpleNamespace(start=lambda:None,deliver=lambda ident,text:next_calls.append(ident) or DeliveryReceipt(ident,'done','fixture','turn=next'))
+        adapter=self.adapter(driver,'claude');adapter._build_driver=lambda which:replacement;adapter._admission_timeout=.15
+        adapter._commands.enqueue(self.env)
+        start=time.monotonic();adapter._deliver_regular_command(adapter._commands.start_next())
+        self.assertLess(time.monotonic()-start,1,'真实阻塞stdin必须能越过admission截止')
+        self.assertEqual(self.inbox.lifecycle(did)['state'],'admission_unknown')
+        self.assertTrue(adapter._transport_recovery.wait(3),'须kill旧进程、写线程退出后再启动新CLI')
+        self.assertIsNotNone(driver._proc.poll())
+        adapter._commands.enqueue({'id':'next','body':'next'})
+        adapter._deliver_regular_command(adapter._commands.start_next())
+        self.assertEqual(next_calls,['dw-next'])
+
+    def test_clock_includes_time_since_persisted_dispatch_intent(self):
+        import time
+        driver=SimpleNamespace(deliver=lambda *args:self.fail('过期dispatch intent不得再派发'),abort_transport=lambda:None,stop=lambda:None,start=lambda:None)
+        adapter=self.adapter(driver,'claude');adapter._admission_timeout=.1;adapter._build_driver=lambda which:driver
+        original=self.inbox.begin_dispatch
+        def slow_intent(did):
+            won=original(did);time.sleep(.15);return won
+        self.inbox.begin_dispatch=slow_intent
+        adapter._commands.enqueue(self.env)
+        started=time.monotonic()
+        adapter._deliver_regular_command(adapter._commands.start_next())
+        self.assertLess(time.monotonic()-started,.23,'admission截止须自intent落盘起计，不能在deliver返回后重新起计')
+        self.assertEqual(self.inbox.lifecycle(self.env['meta']['delivery_id'])['state'],'admission_unknown','admission截止须自intent落盘起计')
+        self.assertTrue(adapter._transport_recovery.wait(1))
+
+    def test_failed_recovery_quarantines_following_pipe_writes(self):
+        import time
+        did=self.env['meta']['delivery_id'];calls=[]
+        driver=SimpleNamespace(deliver=lambda *args:calls.append(args) or DeliveryReceipt(did,'processing','fixture','submitted'),poll_receipt=lambda did:DeliveryReceipt(did,'processing','fixture','submitted'))
+        adapter=self.adapter(driver,'claude');adapter._admission_timeout=.01
+        adapter._commands.enqueue(self.env);adapter._commands.enqueue({'id':'next','body':'next'})
+        adapter._deliver_regular_command(adapter._commands.start_next())
+        adapter._deliver_regular_command(adapter._commands.start_next())
+        self.assertEqual(len(calls),1,'CLI未恢复时不得复用旧stdin')
+        self.assertEqual(len(adapter._commands.pending),1)
+        self.assertIsNone(adapter._commands.current)
+
 
 if __name__=='__main__':unittest.main()

@@ -44,7 +44,12 @@ class DeliveryACKOutbox:
                    'occurred_at':utc_stamp(stamp),'no_mirror':True}
         if phase in ('injected','processed'):
             payload['turn_id']=row['turn_id']
-        if phase == 'processed':payload['turn_outcome']=row['turn_outcome']
+        if phase == 'processed':
+            payload['turn_outcome']=row['turn_outcome']
+            had_unknown = bool(cursor and 'admission_unknown' in json.loads(cursor[1])) or bool(db.execute(
+                "SELECT 1 FROM delivery_ack_outbox WHERE session_name=? AND delivery_id=? AND phase='admission_unknown'",
+                (self.session_name,delivery_id)).fetchone())
+            if had_unknown:payload['late_confirmation']=True
         if phase == 'failed':payload.update(reason='session_unavailable',retryable=False)
         if phase == 'admission_unknown':payload['reason']='turn_terminal_unknown' if row['admitted_at'] is not None else 'model_admission_unknown'
         # v1 has no truthful wire state for unknown; receipt stays delivered.

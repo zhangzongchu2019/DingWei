@@ -311,6 +311,20 @@ class ClaudeProtocolDriver(Driver):
         self._reader_thread = threading.Thread(target=self._read_loop, daemon=True)
         self._reader_thread.start()
 
+    def abort_transport(self) -> None:
+        """Kill before closing buffered stdin: close can wait on a stuck writer."""
+        self._stop.set()
+        proc = self._proc
+        if proc is not None:
+            if proc.poll() is None:
+                proc.kill()
+            proc.wait(timeout=2)
+        reader = self._reader_thread
+        if reader is not None and reader is not threading.current_thread():
+            reader.join(timeout=2)
+            if reader.is_alive():
+                raise RuntimeError('Claude reader did not exit after process termination')
+
     def stop(self) -> None:
         self._stop.set()
         if self._proc is not None:
@@ -391,7 +405,12 @@ class ClaudeProtocolDriver(Driver):
                 return DeliveryReceipt(id=envelope_id, state="failed", source="pipe", detail=str(exc))
 
             # 等 isReplay ACK（协议级送达确认）
-            if ts.accepted.wait(TURN_ACCEPT_TIMEOUT):
+            accept_deadline = time.monotonic() + TURN_ACCEPT_TIMEOUT
+            while not ts.accepted.is_set() and not self._stop.is_set() and time.monotonic() < accept_deadline:
+                ts.accepted.wait(min(0.05, max(0, accept_deadline - time.monotonic())))
+            if self._stop.is_set():
+                return DeliveryReceipt(id=envelope_id, state="unknown", source="pipe", detail="transport aborted; admission unknown")
+            if ts.accepted.is_set():
                 self._store.update_state(envelope_id, "accepted", "isReplay ack")
                 return DeliveryReceipt(
                     id=envelope_id, state="accepted", source="pipe",

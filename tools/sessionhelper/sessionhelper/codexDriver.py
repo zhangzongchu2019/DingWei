@@ -832,6 +832,24 @@ class CodexProtocolDriver(Driver):
         self._event_thread = threading.Thread(target=self._pump_notifications, daemon=True)
         self._event_thread.start()
 
+    def abort_transport(self) -> None:
+        """Abort only this connection; never kill a shared daemon."""
+        rpc = self._rpc
+        if rpc is None:
+            return
+        proc = getattr(rpc, '_proc', None)
+        if proc is not None:
+            if proc.poll() is None:
+                proc.kill()
+            proc.wait(timeout=2)
+        else:
+            # Local websocket shutdown bypasses the potentially held write lock.
+            sock = getattr(rpc, '_sock', None)
+            if sock is not None:
+                import socket
+                sock.shutdown(socket.SHUT_RDWR)
+                sock.close()
+
     def stop(self) -> None:
         self._stop_event.set()
         with self._consumers_lock:

@@ -725,3 +725,33 @@ func TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance(t *testing.
 		})
 	}
 }
+
+// A real native result arriving after transport-unknown must settle its original
+// delivery through the actual websocket/outbox/Hub path, without another turn.
+func TestDeliveryACKActualCLILateWireTerminal(t *testing.T) {
+	e := newAgentEnv(t)
+	p := startRealACKProbe(t, e, "claude", "", map[string]any{"late_terminal_test": true})
+	view := startRealACKView(t, p)
+	id := "dw-dlv-r40-late-wire"
+	p.enqueue(id, "R40_ACK_A")
+	original := p.waitState(id, "injected", "迟到wire：原生isReplay确认注入")
+	waitFor(t, 10*time.Second, "迟到wire：watchdog只记transport unknown不得造终态", func() bool {
+		d := p.record(id)
+		return d != nil && d.State == "injected" && d.LastError == "turn_terminal_unknown" && d.ProcessedAt == nil
+	})
+	local := p.snapshot(id)[id]
+	if local.State != "admitted" || local.Processed != "" {
+		t.Fatalf("迟到wire：unknown不得冒称模型终态: %+v", local)
+	}
+	p.control("release", map[string]any{"label": "R40_ACK_A"})
+	after := p.waitState(id, "processed", "迟到wire：真实原turn终态须经wire补账")
+	if after.TurnID != original.TurnID || after.InjectedAt == nil || original.InjectedAt == nil || !after.InjectedAt.Equal(*original.InjectedAt) {
+		t.Fatalf("迟到wire：必须保留原turn与接纳时间: before=%+v after=%+v", original, after)
+	}
+	p.duplicate(id)
+	time.Sleep(300 * time.Millisecond)
+	if got := len(p.observations().Requests["R40_ACK_A"]); got != 1 {
+		t.Fatalf("迟到wire：不得重派，模型请求=%d", got)
+	}
+	waitFor(t, 5*time.Second, "迟到wire：View须显示迟到确认", func() bool { return strings.Contains(view.snapshot(id).Timeline, "迟到确认") })
+}
