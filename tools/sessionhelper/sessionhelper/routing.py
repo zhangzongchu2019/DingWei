@@ -164,6 +164,7 @@ _CONTROL_META_TYPES = frozenset(
     {
         "delivery",
         "delivery_ack",
+        "delivery_ack_confirm",
         "delivery_cancel",
         "delivery_cancel_ack",
         "mirror_control",

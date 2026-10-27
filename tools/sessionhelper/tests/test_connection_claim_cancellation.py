@@ -34,7 +34,7 @@ class ClaimCancellation(unittest.IsolatedAsyncioTestCase):
         def release(ident):
             self.assertEqual(ident, "synthetic-delivery")
             state["value"] = "received"
-        inbox = SimpleNamespace(claim_next=claim_next, release=release)
+        inbox = SimpleNamespace(claim_next=claim_next, release=release, pending_delivery_acks=lambda: [])
         async def recv():
             self.assertTrue(await asyncio.to_thread(started.wait, 1.0))
         async def worker():
@@ -68,7 +68,7 @@ class ClaimCancellation(unittest.IsolatedAsyncioTestCase):
             state["value"] = "received"
         async def process(*args, **kwargs):
             state["injected"] = True
-        h = SimpleNamespace(delivery_inbox=SimpleNamespace(claim_next=claim_next, release=release),
+        h = SimpleNamespace(delivery_inbox=SimpleNamespace(claim_next=claim_next, release=release, pending_delivery_acks=lambda: []),
                             cfg=SimpleNamespace(mode="driver"), process_inbound_message=process)
         task = asyncio.create_task(worker(h, None))
         try:
@@ -100,7 +100,7 @@ class ClaimCancellation(unittest.IsolatedAsyncioTestCase):
             state["value"] = "received"
         async def process(*args, **kwargs):
             state["injected"] = True
-        h = SimpleNamespace(delivery_inbox=SimpleNamespace(claim_next=claim_next, release=release),
+        h = SimpleNamespace(delivery_inbox=SimpleNamespace(claim_next=claim_next, release=release, pending_delivery_acks=lambda: []),
                             cfg=SimpleNamespace(mode="cli"), adapter=SimpleNamespace(is_idle=is_idle),
                             process_inbound_message=process)
         task = asyncio.create_task(worker(h, None))
@@ -121,7 +121,7 @@ class ClaimCancellation(unittest.IsolatedAsyncioTestCase):
         async def process(*args, **kwargs):
             processing_started.set()
             await asyncio.Future()
-        h = SimpleNamespace(delivery_inbox=SimpleNamespace(claim_next=lambda: ("D", {}), release=released.append),
+        h = SimpleNamespace(delivery_inbox=SimpleNamespace(claim_next=lambda: ("D", {}), release=released.append, pending_delivery_acks=lambda: []),
                             cfg=SimpleNamespace(mode="driver"), process_inbound_message=process)
         task = asyncio.create_task(worker(h, None))
         try:
@@ -154,7 +154,7 @@ class ClaimCancellation(unittest.IsolatedAsyncioTestCase):
                         await asyncio.Future()
                 async def process(*args, **kwargs):
                     state["injected"] = True
-                h = SimpleNamespace(delivery_inbox=SimpleNamespace(claim_next=claim_next, release=release),
+                h = SimpleNamespace(delivery_inbox=SimpleNamespace(claim_next=claim_next, release=release, pending_delivery_acks=lambda: []),
                                     cfg=SimpleNamespace(mode="cli"), adapter=SimpleNamespace(is_idle=lambda: False),
                                     delivery_busy_acked=set(), delivery_ack=lambda *a, **k: {},
                                     process_inbound_message=process)
@@ -207,7 +207,7 @@ class ClaimCancellation(unittest.IsolatedAsyncioTestCase):
 
     async def test_success_keeps_claim_for_dispatch(self):
         released = []
-        inbox = SimpleNamespace(claim_next=lambda: ("D", {}), release=released.append)
+        inbox = SimpleNamespace(claim_next=lambda: ("D", {}), release=released.append, pending_delivery_acks=lambda: [])
         self.assertEqual(await asyncio.wait_for(claim(inbox), 1.0), ("D", {}))
         self.assertEqual(released, [])
 

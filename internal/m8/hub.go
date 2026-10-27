@@ -4697,6 +4697,11 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 			}
 		}
 		protocol, mode := deliveryACKConnectionProtocol(c)
+		// Receipt-only task notices have no driver turn. Keep their transport
+		// semantics separate even on a driver connection capable of ACK v2.
+		if protocol == 2 && (metaString(env.Meta, "kind") == "task_assigned" || (metaString(env.Meta, "kind") == "task_blocker_ready" && !metaBool(env.Meta, "automatic_recheck"))) {
+			protocol, mode = 1, "legacy"
+		}
 		d, err = h.Repo.BindSessionDeliveryACK(ctx, d.ID, c.keyID, c.sessionName, protocol, mode)
 		if err != nil || d == nil || (d.AckProtocol == 2 && protocol != 2) {
 			// Never downgrade an already-dispatched v2 item to an older helper.

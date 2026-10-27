@@ -6,6 +6,7 @@ never acquire model admission/terminal evidence during migration.
 from __future__ import annotations
 
 import sqlite3
+from .inbox_ack import DeliveryACKOutbox, initialize_ack_cursor
 
 
 LIFECYCLE_COLUMNS = """
@@ -22,6 +23,7 @@ LIFECYCLE_COLUMNS = """
 
 
 def migrate_lifecycle(db: sqlite3.Connection) -> None:
+    initialize_ack_cursor(db)
     columns = {row['name'] for row in db.execute('PRAGMA table_info(delivery_inbox)')}
     if 'ack_protocol' not in columns:
         db.execute('ALTER TABLE delivery_inbox RENAME TO delivery_inbox_pre_lifecycle')
@@ -65,7 +67,7 @@ def delivery_protocol(env: dict) -> tuple[int, str, int]:
 
 
 
-class DeliveryLifecycle:
+class DeliveryLifecycle(DeliveryACKOutbox):
     """Lifecycle transitions share the inbox lock/transaction with cancellation."""
 
     def lifecycle(self, delivery_id):
@@ -147,6 +149,13 @@ class DeliveryLifecycle:
             if changed:
                 self._lifecycle_ack(db, delivery_id, 'failed')
 
-    def _lifecycle_ack(self, db, delivery_id, phase):
-        # Durable outbox integration is supplied by the ACK transport step.
-        pass
+
+    def reject_unstarted(self, delivery_id):
+        """A control/notification is known not to have made a driver request."""
+        import time
+        with self._lock, self._connect() as db:
+            changed = db.execute("""UPDATE delivery_inbox SET state='failed',error='session_unavailable',updated_at=?
+                WHERE session_name=? AND delivery_id=? AND state IN ('received','processing')
+                AND dispatch_intent_at IS NULL AND admitted_at IS NULL""", (time.time(), self.session_name, delivery_id)).rowcount
+            if changed:
+                self._lifecycle_ack(db, delivery_id, 'failed')

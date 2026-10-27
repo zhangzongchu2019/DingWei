@@ -250,6 +250,7 @@ class SessionHelper:
         self.adapter = self._build_adapter()
         if self.cfg.mode == "driver":
             self.adapter.delivery_progress = self.delivery_inbox.progress
+            self.adapter.delivery_lifecycle = self.delivery_inbox
         if self.cfg.mode=="driver" and hasattr(self.adapter,"blocker_prepare"):
             self.adapter.blocker_prepare=self._prepare_blocker_driver_wake
         from .agent_disk_metrics import BoundedDiskPublisher
@@ -699,6 +700,8 @@ class SessionHelper:
         return envelope(
             session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
             {"type": "session_capabilities", "delivery_ack_v1": True,
+             "delivery_ack_v2": self.cfg.mode == "driver",
+             "processing_mode": "driver" if self.cfg.mode == "driver" else "desktop" if self.cfg.mode == "desktop" else "legacy",
              "pilot_template_v1": bool(getattr(self,"enroll_credential",None) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False)),
              "spec_clarification_v1": bool(getattr(self,"enroll_credential",None) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False)),
              "pilot_question_v1": bool(getattr(self,"enroll_credential",None) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False)),
@@ -792,6 +795,7 @@ class SessionHelper:
                     await supervise_connection_loops([
                         self.recv_loop(ws),
                         self.delivery_worker_loop(ws),
+                        self.delivery_ack_outbox_loop(ws),
                         self.pending_drain_loop(ws),
                         self.file_inbound_worker_loop(ws),
                         self.terminal_loop(ws),
@@ -835,6 +839,10 @@ class SessionHelper:
             try:
                 env = json.loads(raw)
             except Exception:
+                continue
+            if (env.get('meta') or {}).get('type') == 'delivery_ack_confirm':
+                if env.get('from') == session_addr('workpulse', getattr(self, '_connection_agent_id', '') or self.book.key_id):
+                    await asyncio.to_thread(self.delivery_inbox.confirm_delivery_ack, env['meta'])
                 continue
             if self.outbound_receipts.receive(ws, env):
                 continue
@@ -1188,9 +1196,21 @@ class SessionHelper:
         except Exception as exc:
             print(f"[delivery_cancel] inbox unavailable: {exc}", flush=True)
             return  # 迟到/异常不回退、不回 ACK(避免误导 hub CAS)
-        ack = self.delivery_cancel_ack(message_id, delivery_id, outcome["result"], state=outcome["state"])
+        row = await asyncio.to_thread(self.delivery_inbox.lifecycle, delivery_id)
+        identity = {}
+        if row is not None and row['ack_protocol'] == 2:
+            identity = {'ack_protocol': 2, 'processing_mode': row['processing_mode'], 'ack_generation': row['ack_generation']}
+        ack = self.delivery_cancel_ack(message_id, delivery_id, outcome["result"], state=outcome["state"], **identity)
         await ws.send(json.dumps(ack, ensure_ascii=False))
         print(f"[delivery_cancel] delivery_id={delivery_id} result={outcome['result']}", flush=True)
+
+    async def _skip_v2_model_delivery(self, env):
+        if self.cfg.mode != 'driver' or (env.get('meta') or {}).get('delivery_ack_protocol') != 2:
+            return False
+        did = str(env['meta']['delivery_id'])
+        await asyncio.to_thread(self.delivery_inbox.accept, did, env)
+        await asyncio.to_thread(self.delivery_inbox.reject_unstarted, did)
+        return True
 
     async def accept_delivery(self, ws, env: dict) -> None:
         delivery_id = str((env.get("meta") or {}).get("delivery_id") or "").strip()
@@ -1206,6 +1226,8 @@ class SessionHelper:
             try:
                 m=wake_identity(env)
                 if self.cfg.mode!="driver" or not m["automatic_recheck"] or not getattr(self,"enroll_credential",None) or getattr(self.cfg,"ipc_upload_only",False) or getattr(self.cfg,"ipc_send_body_only",False):
+                    if await self._skip_v2_model_delivery(env):
+                        return
                     await asyncio.to_thread(self.delivery_inbox.accept_notification,delivery_id,env)
                     await ws.send(json.dumps(self.delivery_ack(delivery_id,"processed",reason="blocker_notice_only"),ensure_ascii=False))
                     return
@@ -1214,6 +1236,8 @@ class SessionHelper:
                 return
         if (env.get("meta") or {}).get("kind") == "task_assigned":
             try:
+                if await self._skip_v2_model_delivery(env):
+                    return
                 await asyncio.to_thread(self.delivery_inbox.accept_notification, delivery_id, env)
                 ack = self.delivery_ack(delivery_id, "processed", reason="desktop_inbox_saved" if self.cfg.mode == "desktop" else "")
             except Exception:
@@ -1223,14 +1247,20 @@ class SessionHelper:
         body = str(env.get("body") or "")
         if (env.get("meta") or {}).get("type") == "online_directory" or is_online_directory_text(body):
             await asyncio.to_thread(self.write_online_list, body)
+            if await self._skip_v2_model_delivery(env):
+                return
             await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed", reason="desktop_inbox_saved" if self.cfg.mode == "desktop" else ""), ensure_ascii=False))
             print(f"[roster] delivery list written; skipped cli injection delivery_id={delivery_id}", flush=True)
             return
         if is_client_onboarding_text(body):
+            if await self._skip_v2_model_delivery(env):
+                return
             await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed", reason="desktop_inbox_saved" if self.cfg.mode == "desktop" else ""), ensure_ascii=False))
             print(f"[onboarding] skipped delivery cli injection delivery_id={delivery_id}", flush=True)
             return
         if self.is_agent_network_skill(env):
+            if await self._skip_v2_model_delivery(env):
+                return
             await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed", reason="desktop_inbox_saved" if self.cfg.mode == "desktop" else ""), ensure_ascii=False))
             if self.comm_skill_installed:
                 await ws.send(json.dumps(comm_skill_ack_envelope(self.book), ensure_ascii=False))
@@ -1246,18 +1276,31 @@ class SessionHelper:
             state, position, depth = await asyncio.to_thread(
                 self.delivery_inbox.accept, delivery_id, env, retry_failed
             )
+            if self.cfg.mode == 'driver':
+                row = await asyncio.to_thread(self.delivery_inbox.lifecycle, delivery_id)
+                if row is not None and row['ack_protocol'] is not None:
+                    # Persistent outbox sends the original chain independently
+                    # of worker return and transport reconnect/redelivery.
+                    return
             extra = {"queue_position": position, "queue_depth": depth} if state == "delivered" else {}
             if state == "failed":
                 extra = {"reason": "cli_injection_failed", "retryable": True}
             ack = self.delivery_ack(delivery_id, state, **extra)
         except OverflowError:
-            ack = self.delivery_ack(delivery_id, "failed", reason="queue_full", retryable=True)
+            wire = env.get('meta') or {}
+            extra = {k: wire[v] for k, v in (('ack_protocol','delivery_ack_protocol'),('processing_mode','processing_mode'),('ack_generation','ack_generation')) if v in wire}
+            ack = self.delivery_ack(delivery_id, "busy", reason="queue_full", retryable=True, **extra)
         except Exception as exc:
             print(f"[delivery] inbox unavailable: {exc}", flush=True)
             ack = self.delivery_ack(delivery_id, "failed", reason="inbox_unavailable", retryable=True)
         await ws.send(json.dumps(ack, ensure_ascii=False))
 
     async def delivery_worker_loop(self, ws) -> None:
+        if self.cfg.mode == 'driver':
+            # Reconnect recovery sends/settles prior durable stages before
+            # claiming new inbox work. v1 has no confirmation handshake.
+            while any(item['payload'].get('ack_protocol') == 2 for item in await asyncio.to_thread(self.delivery_inbox.pending_delivery_acks)):
+                await asyncio.sleep(0.05)
         while True:
             item = await claim_delivery_for_connection(self.delivery_inbox)
             if item is None:
@@ -1326,12 +1369,16 @@ class SessionHelper:
                             await ws.send(json.dumps(self.delivery_ack(delivery_id,"busy",reason="blocker_recheck_waiting",retryable=True),ensure_ascii=False))
                             await asyncio.sleep(0.75)
                             continue
+                        if self.cfg.mode == 'driver' and (env.get('meta') or {}).get('delivery_ack_protocol') == 2:
+                            await asyncio.to_thread(self.delivery_inbox.reject_unstarted, delivery_id)
+                            continue
                         await asyncio.to_thread(self.delivery_inbox.finish,delivery_id)
                         await ws.send(json.dumps(self.delivery_ack(delivery_id,"processed",reason=reason),ensure_ascii=False))
                         continue
                     env=safe
                 await self.process_inbound_message(
-                    ws, env, raise_adapter_errors=True, on_injected=acknowledge_injected
+                    ws, env, raise_adapter_errors=True,
+                    on_injected=None if self.cfg.mode == 'driver' else acknowledge_injected
                 )
             except OverflowError:
                 await asyncio.to_thread(self.delivery_inbox.release, delivery_id)
@@ -1341,6 +1388,16 @@ class SessionHelper:
                 await asyncio.sleep(0.75)
                 continue
             except Exception as exc:
+                if self.cfg.mode == 'driver':
+                    row = await asyncio.to_thread(self.delivery_inbox.lifecycle, delivery_id)
+                    if row and row['dispatch_intent_at'] is not None:
+                        await asyncio.to_thread(self.delivery_inbox.record_admission_unknown, delivery_id)
+                    else:
+                        # A dispatch intent is mandatory before a driver RPC;
+                        # failure before that CAS proves this attempt was not sent.
+                        await asyncio.to_thread(self.delivery_inbox.reject_unstarted, delivery_id)
+                    await asyncio.sleep(0.2)
+                    continue
                 busy = False
                 if self.cfg.mode == "cli" and hasattr(self.adapter, "is_idle"):
                     try:
@@ -1366,9 +1423,38 @@ class SessionHelper:
                     delivery_id, "failed", reason=reason, retryable=retryable
                 ), ensure_ascii=False))
             else:
+                if self.cfg.mode == 'driver':
+                    # Adapter return is enqueue-only. Actual receipt/event hooks
+                    # persist admission and terminal, including while offline.
+                    continue
                 await asyncio.to_thread(self.delivery_inbox.finish, delivery_id)
                 self.delivery_busy_acked.discard(delivery_id)
                 await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed", reason="desktop_inbox_saved" if self.cfg.mode == "desktop" else ""), ensure_ascii=False))
+
+    async def delivery_ack_outbox_loop(self, ws):
+        if self.cfg.mode != 'driver':
+            await asyncio.Event().wait()
+        sent_v1 = set()
+        last_sent = {}
+        while True:
+            heads = await asyncio.to_thread(self.delivery_inbox.pending_delivery_acks)
+            legacy = await asyncio.to_thread(self.delivery_inbox.delivery_ack_chain)
+            items = [item for item in heads if item['payload']['ack_protocol'] == 2]
+            items.extend(item for item in legacy if item['payload']['ack_protocol'] == 1)
+            for item in items:
+                payload = item['payload']
+                token = (item['delivery_id'], item['phase'], item['sequence'])
+                if payload['ack_protocol'] == 1 and token in sent_v1:
+                    continue
+                now = time.monotonic()
+                if payload['ack_protocol'] == 2 and now - last_sent.get(token, -10) < 1:
+                    continue
+                ack = envelope(session_addr('workpulse', self.book.key_id), '', self.book.self_addr, payload)
+                await ws.send(json.dumps(ack, ensure_ascii=False))
+                last_sent[token] = now
+                if payload['ack_protocol'] == 1:
+                    sent_v1.add(token)
+            await asyncio.sleep(0.05)
 
     def reply_body(self, env: dict, reply_body: str) -> str:
         prefix = str((env.get("meta") or {}).get("reply_prefix") or f"【{self.cfg.session_name}】")

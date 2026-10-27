@@ -73,6 +73,17 @@ class DeliveryInbox(DeliveryLifecycle):
                     updated_at=? WHERE session_name=? AND state='processing'""",
                 (time.time(), self.session_name),
             )
+            rows = db.execute("SELECT * FROM delivery_inbox WHERE session_name=? AND ack_protocol IS NOT NULL AND state<>'cancelled'", (self.session_name,)).fetchall()
+            for row in rows:
+                self._lifecycle_ack(db, row['delivery_id'], 'queued')
+                if row['admitted_at'] is not None:
+                    self._lifecycle_ack(db, row['delivery_id'], 'injected')
+                    if row['processed_at'] is not None and row['turn_outcome']:
+                        self._lifecycle_ack(db, row['delivery_id'], 'processed')
+                elif row['state'] == 'admission_unknown' and row['dispatch_intent_at'] is not None:
+                    self._lifecycle_ack(db, row['delivery_id'], 'admission_unknown')
+                elif row['state'] == 'failed' and row['error'] == 'session_unavailable':
+                    self._lifecycle_ack(db, row['delivery_id'], 'failed')
 
     def _migrate_schema(self, db: sqlite3.Connection) -> None:
         columns = db.execute("PRAGMA table_info(delivery_inbox)").fetchall()
@@ -312,6 +323,7 @@ class DeliveryInbox(DeliveryLifecycle):
                     (delivery_id, self.session_name, payload, now, now, protocol, mode, generation),
                 )
                 self.progress.accepted(db, delivery_id, now)
+                self._lifecycle_ack(db, delivery_id, 'queued')
                 received_at = now
                 state = "received"
             else:
@@ -423,6 +435,7 @@ class DeliveryInbox(DeliveryLifecycle):
                 (now, delivery_id, self.session_name),
             ).rowcount
             if changed == 1:
+                db.execute("DELETE FROM delivery_ack_outbox WHERE session_name=? AND delivery_id=?", (self.session_name, delivery_id))
                 db.execute("UPDATE delivery_progress SET stage='cancelled',updated_at=? WHERE session_name=? AND delivery_id=?", (now, self.session_name, delivery_id))
                 self.progress.arrivals.pop(delivery_id, None)
                 self.progress.changed.set()

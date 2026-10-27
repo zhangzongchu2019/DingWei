@@ -193,7 +193,11 @@ class BlockerCredentialIdentityTest(unittest.IsolatedAsyncioTestCase):
 
         def inject(env, on_injected):
             h.injected.append(env)
-            on_injected()
+            # Explicit native lifecycle fixture, independent of enqueue return.
+            did = env['meta']['delivery_id']
+            self.assertTrue(h.delivery_inbox.begin_dispatch(did))
+            h.delivery_inbox.record_admitted(did, 'fixture-turn')
+            h.delivery_inbox.record_completed(did, 'fixture-turn', 'completed')
             return ''
 
         h.adapter = types.SimpleNamespace(handle_delivery=inject)
@@ -211,12 +215,15 @@ class BlockerCredentialIdentityTest(unittest.IsolatedAsyncioTestCase):
         ws = types.SimpleNamespace(send=send)
         await h.accept_delivery(ws, env)
         worker = asyncio.create_task(h.delivery_worker_loop(ws))
+        outbox = asyncio.create_task(h.delivery_ack_outbox_loop(ws))
         try:
             await asyncio.wait_for(done.wait(), 3)
         finally:
-            worker.cancel()
+            worker.cancel();outbox.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await worker
+            with contextlib.suppress(asyncio.CancelledError):
+                await outbox
         return [x['meta'] for x in sent]
 
     async def test_real_credential_durable_worker_injects_fixed_wake(self):

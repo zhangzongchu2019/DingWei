@@ -18,6 +18,10 @@ type ackV2Fixture struct {
 }
 
 func newACKV2Fixture(t *testing.T, v2 bool) *ackV2Fixture {
+	return newACKV2FixtureWithKind(t, v2, "", false)
+}
+
+func newACKV2FixtureWithKind(t *testing.T, v2 bool, kind string, automatic bool) *ackV2Fixture {
 	t.Helper()
 	e := newAgentEnv(t)
 	conn, status, raw := e.dial(e.cred, "version=0.2.3.14&os=linux")
@@ -40,6 +44,10 @@ func newACKV2Fixture(t *testing.T, v2 bool) *ackV2Fixture {
 	})
 	now := time.Now().UTC()
 	original := model.Envelope{ID: "ack-source", From: "source#" + AgentKeyID("zzc"), To: "opus50ts#" + AgentKeyID("zzc"), Body: "local ACK lifecycle probe", Meta: map[string]any{"type": "delivery", "delivery_id": "ack-wire", "delivery_ack_protocol": 99, "generation": 7}}
+	if kind != "" {
+		original.Meta["kind"] = kind
+		original.Meta["automatic_recheck"] = automatic
+	}
 	body, err := json.Marshal(original)
 	if err != nil {
 		t.Fatal(err)
@@ -221,4 +229,16 @@ func ackTestOutcome(phase string) string {
 		return "completed"
 	}
 	return ""
+}
+
+func TestDeliveryACKV2ReceiptOnlyNoticeKeepsLegacySemanticsOnDriverConnection(t *testing.T) {
+	f := newACKV2FixtureWithKind(t, true, "task_assigned", false)
+	if metaInt(f.wire.Meta, "delivery_ack_protocol") != 1 || metaString(f.wire.Meta, "processing_mode") != "legacy" {
+		t.Fatalf("receipt-only notification was assigned a model lifecycle: %+v", f.wire.Meta)
+	}
+	f.sendEnv(f.conn, model.Envelope{ID: "notice-ack", To: "workpulse#enrolled", Meta: map[string]any{"type": "delivery_ack", "delivery_id": "ack-wire", "state": "processed"}})
+	waitFor(t, time.Second, "notice receipt without model evidence", func() bool { return f.record().State == "legacy_received" })
+	if d := f.record(); d.InjectedAt != nil || d.ProcessedAt != nil {
+		t.Fatalf("notification receipt invented model evidence: %+v", d)
+	}
 }
