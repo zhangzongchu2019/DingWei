@@ -77,7 +77,11 @@ func parseClarificationReply(text string) (store.ClarificationUpdate, error) {
 		}
 		u.Body = strings.TrimSpace(lines[1])
 	}
-	if strings.HasPrefix(u.Body, "更正") {
+	if strings.HasPrefix(u.Body, "补充：") || strings.HasPrefix(u.Body, "补充:") {
+		u.Kind = "supplement"
+		u.Body = strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(u.Body, "补充："), "补充:"))
+	}
+	if u.Kind == "explanation" && strings.HasPrefix(u.Body, "更正") {
 		m := clarificationCorrection.FindStringSubmatch(u.Body)
 		if m == nil {
 			return u, store.ErrTaskFlowInvalid

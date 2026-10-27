@@ -171,7 +171,7 @@ func (s *SQLite) appendClarificationTx(ctx context.Context, tx *sql.Tx, expected
 		role = "technical"
 	}
 	switch u.Kind {
-	case "technical", "explanation", "scope_change":
+	case "technical", "explanation", "supplement", "scope_change":
 		if u.Corrects != 0 || u.Confirms != 0 {
 			return out, ErrTaskFlowInvalid
 		}

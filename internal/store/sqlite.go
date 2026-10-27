@@ -235,6 +235,14 @@ func (s *SQLite) runMigrations(ctx context.Context) error {
 			continue
 		}
 
+		if name == "0066_spec_clarification_supplement.sql" {
+			if err := s.applyForeignKeyDisabledMigration(ctx, name, string(body), digest); err != nil {
+				return err
+			}
+			legacy = false
+			continue
+		}
+
 		if legacy {
 			state, err := s.migrationObjState(ctx, string(body))
 			if err != nil {

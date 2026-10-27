@@ -321,3 +321,47 @@ func TestClarificationFeishuRejectsBoundNonPMMembers(t *testing.T) {
 		})
 	}
 }
+
+func TestClarificationFeishuExplicitSupplementKindSurvivesNativeReplyPipeline(t *testing.T) {
+	e, q, _, receipts := clarificationReplyFixture(t)
+	e.hub.processQuestions(e.ctx)
+	for i, text := range []string{"原范围解释", "补充：新增原范围内的边界例子"} {
+		msg := clarificationReplyMessage(fmt.Sprintf("om_supplement_%d", i), fmt.Sprintf("ev_supplement_%d", i), text)
+		result, err := e.hub.Dispatch(e.ctx, msg, text)
+		if err != nil || !result.Matched || result.Reply != "" {
+			t.Fatalf("飞书补充离开原通知回写链: %+v %v", result, err)
+		}
+	}
+	posts := clarificationReplyPosts(t, e, q)
+	if len(posts) != 2 || posts[0].Kind != "supplement" || posts[0].Body != "新增原范围内的边界例子" || posts[0].PreviousFloor != 1 || posts[1].Kind != "explanation" || len(*receipts) != 2 {
+		t.Fatalf("补充类型未贯通parser/store/楼层回执: %+v %+v", posts, *receipts)
+	}
+}
+
+func TestParseClarificationReplySupplementAndExistingKinds(t *testing.T) {
+	for _, test := range []struct {
+		body, kind, text string
+		invalid          bool
+	}{
+		{"解释原范围", "explanation", "解释原范围", false},
+		{"补充：边界例子", "supplement", "边界例子", false},
+		{"补充: boundary", "supplement", "boundary", false},
+		{"条目：A1/case-1\n补充：子例", "supplement", "子例", false},
+		{"更正1：原范围边界", "correction", "原范围边界", false},
+		{"补充：", "", "", true},
+		{"需改 Spec：新增范围", "", "", true},
+	} {
+		t.Run(test.body, func(t *testing.T) {
+			u, err := parseClarificationReply(test.body)
+			if test.invalid {
+				if err == nil {
+					t.Fatal("非法回复应拒绝")
+				}
+				return
+			}
+			if err != nil || u.Kind != test.kind || u.Body != test.text {
+				t.Fatalf("回复类型回归: %+v %v", u, err)
+			}
+		})
+	}
+}

@@ -155,7 +155,7 @@ func (s *SQLite) RecordFeishuClarification(ctx context.Context, expected Questio
 	if q.Generation != n.Generation || q.Revision != n.Revision || q.SHA != n.SHA || q.SpecID != n.SpecID {
 		return out, ErrTaskFlowConflict
 	}
-	if u.Kind != "explanation" && u.Kind != "correction" {
+	if u.Kind != "explanation" && u.Kind != "supplement" && u.Kind != "correction" {
 		return out, ErrTaskFlowPermission
 	}
 	u.RequestID = "feishu:" + blockerHash([]string{b.Issuer, b.Tenant, r.MessageID})

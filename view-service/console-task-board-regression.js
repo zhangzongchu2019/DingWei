@@ -7,7 +7,7 @@ const assert = new Proxy(assertModule, {
     return typeof value === 'function' ? (...args) => { assertionCount += 1; return value.apply(target, args); } : value;
   },
 });
-const MIN_ASSERTIONS = 85;
+const MIN_ASSERTIONS = 86;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -118,7 +118,7 @@ const server = http.createServer(async (req, res) => {
     reads.clarifications += 1;
     const taskID = url.pathname.split('/')[4].slice('question-'.length);
     const task = tasks.find((item) => item.proposal_id === taskID);
-    sendJSON(res, { context: { revision: task.revision }, posts: [{ floor: 1, role: 'pm', kind: 'explanation', body: '可持续阅读的解释正文 ' + taskID + ' 修订 ' + task.revision }] }); return;
+    sendJSON(res, { context: { revision: task.revision }, posts: [{ floor: 1, role: 'pm', kind: 'supplement', body: '可持续阅读的解释正文 ' + taskID + ' 修订 ' + task.revision }] }); return;
   }
   if (url.pathname === '/fixture/other-task-status' && req.method === 'POST') { tasks[1].status = 'done'; res.writeHead(204); res.end(); return; }
   if (url.pathname === '/fixture/next-revision' && req.method === 'POST') { tasks[0].revision += 1; res.writeHead(204); res.end(); return; }
@@ -251,6 +251,7 @@ async function main() {
   await clarification.locator('summary').click();
   await clarification.locator('article p').waitFor();
   const clarificationText = await clarification.locator('div').textContent();
+  assert.match(clarificationText, /补充：可持续阅读/, '任务行只读楼层必须显示中文补充类型');
   const beforeRefresh = { ...reads };
   await page.request.post(base + '/fixture/other-task-status');
   await page.waitForTimeout(11000);
