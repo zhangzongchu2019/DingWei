@@ -186,6 +186,8 @@
       padding: 0 4px;
       margin-left: 6px;
     }
+    .waiting-item--model-delay { flex-wrap: wrap; }
+    .model-queued-wait { white-space: normal; display: block; flex-basis: 100%; color: var(--warn, #b45309); font-weight: 600; }
     .waiting-stage { margin-left: 6px; font-size: 11px; color: var(--muted, #888); }
 
     /* C2 待提交区删除/中断确认 */
@@ -1463,6 +1465,7 @@
           const fn = entry.node.querySelector('.c2-note--fail');
           if (fn) fn.remove();
         }
+        if (entry.event?._norm?.ackProtocol === 2 && entry.event._norm.processingMode === 'driver') continue;
         if (entry.staleNoted || now - (entry.touched || now) <= C2_WAIT_STALE_MS) continue;
         entry.staleNoted = true;
         entry.node.insertAdjacentHTML('beforeend', c2Note('投递超时(未确认)'));
@@ -1926,17 +1929,17 @@
     // 优先级:canonical 受保护值永远优先,legacy 迁移值仅缺省回填,legacy source 永不带 trusted。
     // B0 §6:pty_write 与 cli_injected 是 helper_received 后的分支,pty_write(注入未确认)弱于 cli_injected;
     // 顺序必须 pty_write < cli_injected,否则后到的 pty_write 会把"已注入执行"降级成"注入未确认"
-    const C1_STAGE_ORDER = ['generated', 'hub_received', 'helper_received', 'pty_write', 'cli_injected'];
+    const C1_STAGE_ORDER = ['generated', 'hub_received', 'helper_received', 'helper_queued', 'pty_write', 'cli_injected', 'turn_processed'];
     const C1_STAGE_TEXT = {
       generated: '已入队', queued: '已入队',
-      hub_received: 'hub 已收', helper_received: 'helper 已收',
+      hub_received: 'Hub 已收', helper_received: 'helper 已收', helper_queued: 'helper 已排队，未注入', turn_processed: '回合已结束',
       cli_injected: '已注入执行', turn_admitted: '已注入执行', admitted: '已注入执行',
       pty_write: '已写入终端', busy: '暂不可投递', expired: '投递过期',
       failed: '失败', cancelled: '已取消', dead: '已终止', dropped: '已丢弃',
     };
     const C1_STAGE_FOOTER = {
       generated: '已入队', queued: '已入队',
-      hub_received: 'hub 已收', helper_received: 'helper 已收',
+      hub_received: 'Hub 已收', helper_received: 'helper 已收', helper_queued: 'helper 已排队，未注入', turn_processed: '回合已结束',
       cli_injected: '已注入执行', turn_admitted: '已注入执行', admitted: '已注入执行',
       pty_write: '已写入终端(注入未确认)', busy: '暂不可投递(重试中)', expired: '投递过期',
       failed: '失败', cancelled: '已取消', dead: '已终止', dropped: '已丢弃',
@@ -1946,6 +1949,8 @@
       session_unavailable: '会话不在线', page_unauthorized: '写权限失效',
       service_unavailable: '服务临时不可用', cancelled: '已取消',
       injection_unconfirmed: '已写入终端(注入未确认)',
+      model_admission_unknown: '可能已进入会话／暂停自动重投／需核原回合',
+      legacy_injection_unknown: '旧版 helper 已收／状态无法确认',
       // A0 §7-amend-1(冻结 @ 6a33540/4fbd4d61):非法 UTF-8=ingress fail-closed 拒收,诚实态文案;code=invalid_utf8 已经理核 §7 冻结文本逐字确认
       invalid_utf8: '乱码无法识别',
     };
@@ -2052,6 +2057,10 @@
         sourceKind: '', sourceLabel: '', sourceTrusted: false,
         stage: '', reason: '', copyKind: '', deliveryMode: '', cancellable: null,
         targets: [], text: '', stageIdx: -1, conflict: '',
+        ackProtocol: Number.isInteger(ev.ack_protocol) ? ev.ack_protocol : null,
+        processingMode: ev.processing_mode || '', queuedAt: ev.queued_at || '',
+        occurredAt: ev.occurred_at || '', turnOutcome: ev.turn_outcome || '',
+        lifecycleUpdate: ev.kind === 'delivery_update',
       };
       // canonical 受保护字段
       norm.sourceKind = src.kind || '';
@@ -2116,6 +2125,14 @@
         else if (norm.status === 'failed') norm.stage = 'failed';
         else if (norm.status === 'dead' || norm.status === 'dropped') norm.stage = norm.status;  // 终态归一(dev56 分层:hub 补发 dead SSE 后走此径;兼容未来 dropped)
         norm.reason = ev.reason || data.reason || '';
+        if ((norm.stage === 'cli_injected' || norm.stage === 'turn_processed') && norm.ackProtocol === 1) {
+          norm.stage = 'helper_received';
+          norm.reason = 'legacy_injection_unknown';
+        }
+        if (norm.stage === 'turn_processed' && (norm.ackProtocol !== 2 || norm.processingMode !== 'driver')) {
+          norm.stage = 'helper_received';
+          norm.reason = 'legacy_injection_unknown';
+        }
       } else if (ev.kind === 'user_input') {
         // legacy 迁移:lifecycle 映射到 B0 §6 阶段枚举(admitted→cli_injected,其余→generated)
         const lifecycle = String(data.lifecycle || '').toLowerCase();
@@ -2184,6 +2201,14 @@
     }
 
     function stageFooterText(norm) {
+      if (norm.reason === 'desktop_inbox_saved') return '已保存到桌面收件箱';
+      if (norm.reason === 'model_admission_unknown') return C1_REASON_TEXT.model_admission_unknown;
+      if (norm.reason === 'legacy_injection_unknown') return C1_REASON_TEXT.legacy_injection_unknown;
+      if (norm.stage === 'turn_processed') {
+        const outcome = {completed: '完成', interrupted: '中断', failed: '失败'}[norm.turnOutcome] || '状态未知';
+        return `回合已结束（${outcome}）`;
+      }
+      if (norm.stage === 'cli_injected' && norm.ackProtocol === 2) return '已注入执行';
       if (norm.stage === 'failed') {
         const reason = C1_REASON_TEXT[norm.reason] || '投递失败';
         return `失败:${reason}`;
@@ -2226,7 +2251,8 @@
 
     function c1ApplyToEntry(entry, norm) {
       // 阶段单调:只前进,不回退(B0 ACK 单调约束);failed/cancelled/expired=终态直通
-      if (norm.stage === 'failed' || norm.stage === 'cancelled' || norm.stage === 'expired' || norm.stage === 'dead' || norm.stage === 'dropped' || norm.stageIdx > entry.stageIdx) {
+      const admissionEcho = entry.canonicalPrimary && !norm.lifecycleUpdate && ['cli_injected', 'turn_processed'].includes(norm.stage);
+      if (!admissionEcho && (norm.stage === 'failed' || norm.stage === 'cancelled' || norm.stage === 'expired' || norm.stage === 'dead' || norm.stage === 'dropped' || norm.stageIdx > entry.stageIdx || (norm.lifecycleUpdate && norm.stageIdx === entry.stageIdx))) {
         entry.stageIdx = Math.max(entry.stageIdx, norm.stageIdx);
         const text = stageFooterText(norm);
         if (text && entry.stageEl) entry.stageEl.textContent = text;
@@ -2328,7 +2354,7 @@
       if (ev.kind === 'delivery_update' || ev._norm.copyKind === 'feishu_sync' || copyMergable) {
         const norm = ev._norm;
         const wEntry = norm.deliveryId ? waitingDeliveries.get(norm.deliveryId) : null;
-        if (wEntry && ['cli_injected', 'pty_write', 'failed', 'cancelled', 'expired', 'dead', 'dropped'].includes(norm.stage)) {
+        if (wEntry && (['cli_injected', 'turn_processed', 'pty_write', 'failed', 'cancelled', 'expired', 'dead', 'dropped'].includes(norm.stage) || ['legacy_injection_unknown', 'desktop_inbox_saved'].includes(norm.reason))) {
           // 注入/终态(含 expired 投递过期/dead 终止/dropped 丢弃):待提交区移出,以原输入事件建时间线卡(阶段由后续 update 推进)
           wEntry.node.remove();
           waitingDeliveries.delete(norm.deliveryId);
@@ -2348,6 +2374,14 @@
           const rawVer = ev.schema_version ?? ev.meta?.schema_version;
           const canonicalUpdate = ev.kind === 'delivery_update' && (rawVer === 'delivery.v2' || rawVer === 2 || rawVer === '2');
           if (canonicalUpdate) {
+            if (norm.stageIdx >= currentStageIdx) {
+              for (const field of ['ackProtocol','processingMode','occurredAt','turnOutcome']) {
+                if (norm[field] !== null && norm[field] !== '' && current[field] !== norm[field]) {
+                  current[field] = norm[field]; changed = true;
+                }
+              }
+              if (!current.queuedAt && norm.queuedAt) { current.queuedAt = norm.queuedAt; changed = true; }
+            }
             // Explicit denial is fail-closed. Once denied, an older/same-stage
             // update cannot recreate a cancel action for this delivery.
             const canCancel = ev.cancellable;
@@ -2391,6 +2425,14 @@
       // G-LIFECYCLE(张宗楚实测「测试-你好×2」):同一 delivery 的 user_input queued/accepted 阶段事件=在途占位,
       // 与 input_posted primary 的待提交区重复(双份正文+再生一个删除按钮)——flag 开一律不渲;
       // admitted(带 turn)才是单一回显渲染点(生命周期幂等,renderer 自治,不依赖 helper 改)
+      if (ev.kind === 'user_input') {
+        const echoWait = waitingDeliveries.get(ev._norm.originDlv || ev._norm.deliveryId);
+        if (echoWait && echoWait.event.kind === 'input_posted') {
+          // Queue/admission echoes are not the Hub's negotiated ACK evidence.
+          // Keep the primary waiting card until its canonical phase update.
+          rendered += 1; updateMetrics(); return;
+        }
+      }
       if (provFlagOn() && ev.kind === 'user_input') {
         const lc = String((ev.data && ev.data.lifecycle) || '').toLowerCase();
         if (lc === 'queued' || lc === 'accepted') {
@@ -2444,7 +2486,7 @@
       if (norm.deliveryMode === 'control') return false;
       if (norm.key && c1InputCards.has(norm.key)) return false;
       // canonical 注入前阶段入待提交区
-      if (['generated', 'queued', 'hub_received', 'helper_received'].includes(norm.stage)) return true;
+      if (['generated', 'queued', 'hub_received', 'helper_received', 'helper_queued'].includes(norm.stage)) return true;
       const lifecycle = deliveryLifecycle(ev);
       return lifecycle === 'queued' || lifecycle === 'waiting' || lifecycle === 'delivery_queued' ||
         (ev.kind === 'user_input' && (!lifecycle || lifecycle === 'accepted'));
@@ -2473,6 +2515,12 @@
       const badge = provIc ? '' : sourceBadgeHtml(norm);
       const cancelTag = norm.cancellable ? '<span class="cancellable-tag">可取消</span>' : '';
       const stageText = stageFooterText(norm);
+      if (norm.ackProtocol === 2 && norm.processingMode === 'driver' && norm.stage === 'helper_queued' && !entry.queuedClock) {
+        const queuedAt = Date.parse(norm.queuedAt);
+        if (Number.isFinite(queuedAt)) {
+          entry.queuedClock = {mono: performance.now(), elapsed: Math.max(0, Date.now() - queuedAt)};
+        }
+      }
       if (provFlagOn()) {
         // 精简在途条(张宗楚灰度反馈#2):明确「⏳ 投递中」+单行截断,全文进 title——不与「已收到消息」混淆;
         // 删除寻址保留(截断足够辨认),终态仍事件驱动转出
@@ -2495,11 +2543,32 @@
         btn.addEventListener('click', () => c2RequestCancel(waitKey, entry));
         entry.node.appendChild(btn);
       }
+      r40PaintQueuedWait(entry);
       waitingArea.hidden = false;
       requestAnimationFrame(() => {
         waitingArea.scrollTop = waitingArea.scrollHeight;
       });
     }
+
+    function r40PaintQueuedWait(entry) {
+      const norm = entry.event._norm || {};
+      const waiting = norm.ackProtocol === 2 && norm.processingMode === 'driver' && norm.stage === 'helper_queued';
+      let note = entry.node.querySelector('.model-queued-wait');
+      if (!waiting || norm.reason === 'model_admission_unknown' || !entry.queuedClock) {
+        if (note) note.remove();
+        entry.node.classList.remove('waiting-item--model-delay');
+        return;
+      }
+      const seconds = Math.floor((entry.queuedClock.elapsed + Math.max(0, performance.now() - entry.queuedClock.mono)) / 1000);
+      if (seconds < 30) return;
+      entry.node.classList.add('waiting-item--model-delay');
+      if (!note) {
+        note = document.createElement('span'); note.className = 'model-queued-wait';
+        entry.node.appendChild(note);
+      }
+      note.textContent = `已排队 ${seconds} 秒，尚未注入会话；不要按已执行处理，可联系目标会话或等待状态更新。`;
+    }
+    setInterval(() => { for (const entry of waitingDeliveries.values()) r40PaintQueuedWait(entry); }, 1000);
 
     function admitWaitingDelivery(ev) {
       const waitKey = ev._norm?.deliveryId || ev.delivery_id;
@@ -2555,7 +2624,7 @@
       if (st === 'failed') return '✗';
       if (st === 'expired') return '⏰';
       if (st === 'dead' || st === 'dropped') return '■';
-      if (['cli_injected', 'pty_write', 'turn_admitted', 'admitted'].includes(st)) return '';
+      if (['cli_injected', 'turn_processed', 'pty_write', 'turn_admitted', 'admitted'].includes(st)) return '';
       return '⏳';
     }
 
@@ -3582,6 +3651,7 @@
       timeline.appendChild(card);
       if (entry) {
         entry.card = card;
+        entry.canonicalPrimary = ev.kind === 'input_posted';
         entry.content = content;
         entry.footer = footer;
         entry.stageEl = footer.querySelector('.stage-text');
