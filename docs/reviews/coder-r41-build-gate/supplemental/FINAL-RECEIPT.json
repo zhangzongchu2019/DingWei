@@ -1,0 +1,34 @@
+{
+  "utc": "2026-10-27T17:27:38.875461+00:00",
+  "source": "40bbd27fe69767ccc74edcf8015800b2c538174c",
+  "source_tree": "0104dc9a424749cea8ccdf1e99ca43c8c227dc83",
+  "fetched_evidence_commit": "5e1efe7ba04c5a41128157c7a4bde17d52087053",
+  "fetched_evidence_sha256_entries_verified": 9,
+  "profile_results": {
+    "claude": {
+      "files": 87,
+      "expected": 1056,
+      "actual": 1056,
+      "rc": 1
+    },
+    "codex": {
+      "files": 87,
+      "expected": 1056,
+      "actual": 1056,
+      "rc": 0
+    }
+  },
+  "gate_rc": 1,
+  "remaining_reds": [
+    "Guide duplicate: item7 remains open",
+    "Unified queue fixture: fixed separately in item9; intentionally not imported into independent item2 branch"
+  ],
+  "contract_tests": "16 PASS including all87 file/manifest omissions",
+  "nonhelper": "25 Python plus2 shell PASS; original system-Python dependency failure retained with corrected locked-runtime desktop rerun",
+  "integration": "When merging item9, add test_suite_isolation.py to manifest (87 to88), update inventory count contract, retain item7 red until repaired and full combined gate rerun. Source paths are identical to40bb; only documentation merged.",
+  "incomplete_runs": [
+    "canonical-final.log has no completion marker and is not evidence; complete canonical.log retained from fetched Git evidence",
+    "frozen-40bbd27-helper.log redundant rerun stopped after fetching and verifying complete same-source evidence; not counted as PASS"
+  ],
+  "production": "no deployment, version change, production code change or seat stop/restart"
+}
