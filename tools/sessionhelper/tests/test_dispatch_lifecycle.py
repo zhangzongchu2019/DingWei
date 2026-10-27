@@ -29,6 +29,17 @@ class DispatchLifecycleTest(unittest.TestCase):
         adapter._which=which;adapter._started=True;adapter.delivery_lifecycle=self.inbox
         return adapter
 
+    def test_absent_blocker_journal_is_not_reopened_on_each_idle_tick(self):
+        adapter=self.adapter(SimpleNamespace())
+        with patch('sessionhelper.blocker_journal.BlockerJournal.exists',return_value=False) as probe:
+            adapter._restore_blocker_commands();adapter._restore_blocker_commands()
+        self.assertEqual(probe.call_count,1,'空闲探测不得重建已结件inbox的WAL旁文件')
+        journal=SimpleNamespace(recover=lambda:[])
+        adapter._blocker_store=journal
+        with patch.object(journal,'recover',return_value=[]) as recover:
+            adapter._restore_blocker_commands()
+        self.assertEqual(recover.call_count,1,'运行中新建journal仍须进入恢复')
+
     def test_intent_precedes_rpc_and_exception_never_replays(self):
         calls=[]
         def deliver(did,body):
@@ -310,8 +321,20 @@ class AdmissionDeadlineTest(unittest.TestCase):
         adapter._admission_timeout=.1;adapter._terminal_timeout=90
         adapter.handle_delivery(self.env,on_admitted=lambda:callbacks.append('admitted'))
         adapter._commands.enqueue(next_env)
-        started=time.monotonic();adapter._deliver_regular_command(adapter._commands.start_next())
-        self.assertLess(time.monotonic()-started,1,'独立admission截止必须越过阻塞deliver')
+        command=adapter._commands.start_next();finished=threading.Event();errors=[]
+        def run():
+            try:adapter._deliver_regular_command(command)
+            except Exception as exc:errors.append(exc)
+            finally:finished.set()
+        task=threading.Thread(target=run,daemon=True);task.start()
+        on_time=finished.wait(1)
+        if not on_time:
+            # Bound negative-control cleanup; a missing deadline must fail an
+            # assertion instead of hanging the test process for 90 seconds.
+            adapter._terminal_timeout=.001;adapter._admission_timeout=.001
+            stopped.set();task.join(1)
+        self.assertTrue(on_time,'独立admission截止必须越过阻塞deliver')
+        self.assertEqual(errors,[])
         self.assertTrue(entered.is_set())
         row=self.inbox.lifecycle(first)
         self.assertEqual(row['state'],'admission_unknown','未接纳截止必须持久化unknown')

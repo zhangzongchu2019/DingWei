@@ -302,7 +302,15 @@ class DriverAdapter:
     def _restore_blocker_commands(self):
         from .blocker_journal import BlockerJournal
         if not hasattr(self,'cfg'):return
-        if getattr(self,'_blocker_store',None) is None and not BlockerJournal.exists(self._blocker_path()):return
+        if getattr(self,'_blocker_store',None) is None:
+            # Only startup needs to discover an existing journal. A new local
+            # journal is created by _blocker_journal and sets _blocker_store.
+            # Reopening an absent-table WAL DB on every idle tick can recreate
+            # sidecars after the delivery is finished (including during teardown).
+            if getattr(self, '_blocker_absence_checked', False):return
+            if not BlockerJournal.exists(self._blocker_path()):
+                self._blocker_absence_checked=True
+                return
         for env in self._blocker_journal().recover():
             result=self._commands.enqueue(env)
             if result.state=='queued':self._publish_queue_event(result.event)
@@ -502,6 +510,14 @@ class DriverAdapter:
             self._recover_transport(command)
         self._commands.finish(command.delivery_id, 'failed')
 
+    def _finish_settled_command(self, command, outcome):
+        worker = getattr(command, '_delivery_worker', None)
+        if worker is not None and not worker.wait(.1):
+            # Native terminal may race the synchronous call's return. Never let
+            # the next item reuse a writer which has not actually returned.
+            self._recover_transport(command)
+        self._commands.finish(command.delivery_id, outcome)
+
     def _settle_command(self, command: QueuedCommand, receipt) -> None:
         admitted = command.state == "admitted"
         self._dispatch_clock(command)
@@ -524,13 +540,13 @@ class DriverAdapter:
                 if not admitted:
                     self._admit_known_turn(command, persisted['turn_id'])
                 self._turn_progress.pop((command.delivery_id, command.turn_id), None)
-                self._commands.finish(command.delivery_id, persisted['turn_outcome'])
+                self._finish_settled_command(command, persisted['turn_outcome'])
                 return
             if not admitted and receipt.state == "unknown":
                 if ledger is not None:
                     ledger.record_admission_unknown(command.delivery_id)
                 self._fail_admission(command.delivery_id)
-                self._commands.finish(command.delivery_id, "failed")
+                self._finish_settled_command(command, "failed")
                 return
             if not progress_admitted:
                 progress_admitted = self._observe_model_admission(command, receipt)
@@ -573,7 +589,7 @@ class DriverAdapter:
                     f"source={receipt.source} ({str(receipt.detail)[:60]})",
                     flush=True,
                 )
-                self._commands.finish(command.delivery_id, outcome)
+                self._finish_settled_command(command, outcome)
                 return
             key = (command.delivery_id, command.turn_id or self._receipt_turn_id(receipt))
             last_progress = self._turn_progress.get(key, settle_started)
