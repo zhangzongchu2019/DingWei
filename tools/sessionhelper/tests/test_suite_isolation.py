@@ -1,5 +1,8 @@
 import os
 import asyncio
+import json
+import subprocess
+import sys
 from pathlib import Path
 import unittest
 from unittest import mock
@@ -24,18 +27,21 @@ class SuiteIsolationTests(unittest.TestCase):
                  'CODEX_HOME': '/outside-native-config',
                  'CODEX_FUTURE_SETTING': 'fixture',
                  'CLAUDE_FUTURE_SETTING': 'fixture',
-                 'XDG_FUTURE_SETTING': 'fixture'}
+                 'XDG_FUTURE_SETTING': 'fixture',
+                 'ANTHROPIC_FUTURE_SETTING': 'fixture',
+                 'OPENAI_FUTURE_SETTING': 'fixture'}
         self.assertEqual(clean_environment(dirty), {'PATH': '/fixture'})
         with mock.patch.dict(os.environ, dirty):
             with isolated_environment('codex') as directory:
                 assert_isolated(directory, 'codex')
                 self.assertEqual(os.environ['SH_DRIVER'], 'codex')
                 for key in ('SH_SECRET', 'CODEX_FUTURE_SETTING',
-                            'CLAUDE_FUTURE_SETTING', 'XDG_FUTURE_SETTING'):
+                            'CLAUDE_FUTURE_SETTING', 'XDG_FUTURE_SETTING',
+                            'ANTHROPIC_FUTURE_SETTING', 'OPENAI_FUTURE_SETTING'):
                     self.assertNotIn(key, os.environ)
                 # The guard must reject a newly inherited prefixed variable too,
                 # while allowing only the generated native HOME keys.
-                for prefix in ('CODEX_', 'CLAUDE_', 'XDG_'):
+                for prefix in ('CODEX_', 'CLAUDE_', 'ANTHROPIC_', 'OPENAI_', 'XDG_'):
                     with mock.patch.dict(os.environ, {prefix + 'FUTURE_SETTING': 'fixture'}):
                         with self.assertRaisesRegex(AssertionError, 'inherited seat environment'):
                             assert_isolated(directory, 'codex')
@@ -43,6 +49,42 @@ class SuiteIsolationTests(unittest.TestCase):
                 (home / 'sentinel').write_text('fixture')
                 self.assertFalse(Path(os.environ['SH_MCP_IPC_SOCK']).exists())
             self.assertFalse(home.exists())
+
+    def test_native_configuration_child_reads_and_writes_only_case_paths(self):
+        from sessionhelper.config import load_config
+        keys = ('CODEX_HOME', 'CLAUDE_CONFIG_DIR', 'XDG_CONFIG_HOME',
+                'XDG_DATA_HOME', 'XDG_STATE_HOME', 'XDG_CACHE_HOME', 'XDG_RUNTIME_DIR')
+        home = Path(os.environ['HOME']).resolve()
+        self.assertEqual(Path(load_config(dict(os.environ, SH_SESSION_NAME='configprobe',
+                                             SH_OWNER='zzc', SH_KEY_ID='FB-2642',
+                                             SH_SECRET='synthetic')).codex_home).resolve(),
+                         Path(os.environ['CODEX_HOME']).resolve())
+        for key in keys:
+            self.assertIn(home, Path(os.environ[key]).resolve().parents)
+        for key in ('CLAUDE_FOO', 'CODEX_BAR', 'ANTHROPIC_SYNTHETIC',
+                    'OPENAI_SYNTHETIC', 'XDG_SYNTHETIC'):
+            self.assertFalse(key in os.environ, 'inherited native variable: ' + key)
+        self.assertEqual(Path(os.environ['XDG_RUNTIME_DIR']).stat().st_mode & 0o777, 0o700)
+        # Real child configuration I/O through inherited native HOME paths.
+        # It must never discover the caller's sentinel configuration directory.
+        code = """
+import json, os
+from pathlib import Path
+keys = json.loads(os.environ['ISOLATION_CONFIG_KEYS'])
+for key in keys:
+    directory = Path(os.environ[key])
+    directory.mkdir(parents=True, exist_ok=True)
+    config = directory / 'settings.json'
+    config.write_text(json.dumps({'key': key, 'value': 'synthetic'}))
+    assert json.loads(config.read_text()) == {'key': key, 'value': 'synthetic'}
+print(json.dumps({'configurations_written_and_read': len(keys)}))
+"""
+        env = dict(os.environ, ISOLATION_CONFIG_KEYS=json.dumps(keys))
+        result = subprocess.run([sys.executable, '-c', code], env=env, text=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        self.assertEqual(json.loads(result.stdout)['configurations_written_and_read'], len(keys))
+        for key in keys:
+            self.assertTrue((Path(os.environ[key]) / 'settings.json').is_file())
 
     def test_each_case_gets_distinct_home_and_socket_and_restores_environment(self):
         homes, sockets = [], []

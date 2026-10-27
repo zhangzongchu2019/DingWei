@@ -6,9 +6,10 @@ from pathlib import Path
 import tempfile
 from unittest import mock
 
-PREFIXES = ('SH_', 'DW_', 'DINGWEI_', 'DATAD_', 'CODEX_', 'CLAUDE_', 'XDG_')
+PREFIXES = ('SH_', 'DW_', 'DINGWEI_', 'DATAD_', 'CODEX_', 'CLAUDE_', 'ANTHROPIC_', 'OPENAI_', 'XDG_')
 HOME_KEYS = ('CODEX_HOME', 'CLAUDE_CONFIG_DIR', 'XDG_CONFIG_HOME',
-             'XDG_STATE_HOME', 'XDG_CACHE_HOME', 'XDG_DATA_HOME', 'PYTHONUSERBASE')
+             'XDG_STATE_HOME', 'XDG_CACHE_HOME', 'XDG_DATA_HOME', 'XDG_RUNTIME_DIR',
+             'PYTHONUSERBASE')
 
 
 def clean_environment(environment):
@@ -27,6 +28,7 @@ def isolated_environment(driver='unset'):
         environment.update(HOME=str(home), SH_MCP_IPC_SOCK=sock,
                            DINGWEI_MCP_IPC_SOCK=sock, SH_PROVISION_NO_EXIT='1')
         environment.update({key: str(home / key.lower()) for key in HOME_KEYS})
+        Path(environment['XDG_RUNTIME_DIR']).mkdir(mode=0o700)
         if driver != 'unset':
             environment['SH_DRIVER'] = driver
         with mock.patch.dict(os.environ, environment, clear=True):
