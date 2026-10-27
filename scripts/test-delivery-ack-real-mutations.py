@@ -24,13 +24,10 @@ MUTANTS={
   '^TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude$',
   '判据2：A长回合期间B排队不得提前 injected/processed'),
  'return-as-terminal':(
-  '            ledger.record_admitted(command.delivery_id, turn_id)',
-  '''            ledger.record_admitted(command.delivery_id, turn_id)
-            # Keep the first settled command as the native setup barrier. The
-            # negative control removes terminal association for subsequent work,
-            # without hardcoding any delivery ID or weakening criterion 4.
-            if any(prior.state in ('completed', 'interrupted') for prior in self._commands._by_delivery.values()):
-                ledger.record_completed(command.delivery_id, turn_id, 'completed')''',
+  '        return self._admit_known_turn(command, turn_id)',
+  '''        if ledger is not None and any(prior.state in ('completed', 'interrupted') for prior in self._commands._by_delivery.values()):
+            ledger.record_completed(command.delivery_id,turn_id,'completed')
+        return self._admit_known_turn(command, turn_id)''',
   '^TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude$',
   '判据4：B真实终态前不得因函数返回标 processed'),
  'drop-recovery-reconciliation':(

@@ -166,7 +166,7 @@ class DispatchLifecycleTest(unittest.TestCase):
         self.assertIsNone(self.inbox.lifecycle(did)['admitted_at'])
         self.assertIsNone(adapter._commands.current)
 
-    def test_positive_native_failure_receipt_can_recover_original_turn(self):
+    def test_failure_receipt_without_original_times_cannot_reopen_unknown(self):
         did='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
         self.inbox.begin_dispatch(did)
         self.inbox=DeliveryInbox(self.path,session_name='seat')
@@ -175,7 +175,8 @@ class DispatchLifecycleTest(unittest.TestCase):
         adapter=self.adapter(driver,'claude');adapter._restore_delivery_commands()
         command=adapter._commands.start_next();adapter._deliver_regular_command(command)
         row=self.inbox.lifecycle(did)
-        self.assertEqual((row['state'],row['turn_id'],row['turn_outcome']),('processed','original','failed'))
+        self.assertEqual((row['state'],row['turn_id'],row['turn_outcome']),('admission_unknown',None,None))
+        self.assertIsNone(row['admitted_at']);self.assertIsNone(row['processed_at'])
 
     def test_claude_error_result_cannot_be_persisted_as_successful_done(self):
         from sessionhelper.claudeDriver import ClaudeProtocolDriver, _TurnState
@@ -250,7 +251,7 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         row={'dispatch_intent_at':None,'state':'processed','turn_id':'','admitted_at':None,'processed_at':None,'turn_outcome':None}
         calls=[]
         adapter=self.adapter(SimpleNamespace(poll_receipt=lambda identifier:DeliveryReceipt(did,'processing','fixture','submitted, awaiting ack, turn=local')),'claude')
-        adapter.delivery_lifecycle=SimpleNamespace(lifecycle=lambda identifier:row,record_transport_unknown=lambda identifier:calls.append(identifier))
+        adapter.delivery_lifecycle=SimpleNamespace(lifecycle=lambda identifier:row,record_transport_unknown=lambda identifier:calls.append(identifier),expire_admission=lambda identifier,timeout:calls.append(identifier) or True)
         adapter._terminal_timeout=.01;adapter._admission_timeout=.01
         adapter._commands.enqueue({'id':did,'body':'fixture'})
         command=adapter._commands.start_next()
@@ -400,5 +401,65 @@ class AdmissionDeadlineTest(unittest.TestCase):
         self.assertEqual(len(adapter._commands.pending),1)
         self.assertIsNone(adapter._commands.current)
 
+
+class AdmissionDeadlineRaceTest(unittest.TestCase):
+    setUp=DispatchLifecycleTest.setUp
+    adapter=DispatchLifecycleTest.adapter
+
+    def exercise_order(self,mode):
+        import time,threading
+        did=self.env['meta']['delivery_id'];count=0;stop=threading.Event();calls=[]
+        def deliver(ident,body):
+            calls.append(ident);stop.wait(.30)
+            return DeliveryReceipt(ident,'accepted','fixture','isReplay ack, turn=original')
+        def poll(ident):
+            nonlocal count
+            count+=1
+            if mode=='late_poll':time.sleep(.12)
+            if mode=='late_deliver':return DeliveryReceipt(ident,'processing','fixture','submitted')
+            if mode=='early_admitted' and count==2:time.sleep(.12)
+            state='done' if mode=='early_admitted' and count>2 else 'accepted'
+            return DeliveryReceipt(ident,state,'fixture','isReplay ack, turn=original')
+        old=SimpleNamespace(deliver=deliver,poll_receipt=poll,abort_transport=stop.set,stop=lambda:None)
+        new=SimpleNamespace(start=lambda:None)
+        adapter=self.adapter(old,'claude');adapter._admission_timeout=.10;adapter._terminal_timeout=2;adapter._build_driver=lambda which:new
+        adapter._commands.enqueue(self.env);adapter._deliver_regular_command(adapter._commands.start_next())
+        row=self.inbox.lifecycle(did);phases=[x['phase'] for x in self.inbox.delivery_ack_chain() if x['delivery_id']==did]
+        if mode=='early_admitted':
+            self.assertEqual(phases,['queued','injected','processed'],'截止前admitted不得再产生admission unknown')
+            self.assertEqual(row['state'],'processed')
+        else:
+            self.assertEqual(phases,['queued','admission_unknown'],'截止后accepted-only不得写injected或造成ACK矛盾')
+            self.assertEqual(row['state'],'admission_unknown')
+            self.assertIsNone(row['admitted_at']);self.assertIsNone(row['processed_at'])
+            # Direct receipt re-observation is also fenced by the durable row.
+            self.assertFalse(adapter._admit_from_receipt(adapter._commands._by_delivery[did],DeliveryReceipt(did,'accepted','fixture','turn=original')))
+            after_phases=[x['phase'] for x in self.inbox.delivery_ack_chain() if x['delivery_id']==did]
+            self.assertEqual(after_phases,phases,'截止后accepted-only不得写injected或造成ACK矛盾')
+            self.assertEqual(self.inbox.lifecycle(did)['state'],'admission_unknown','截止后accepted-only不得重开admission')
+        if adapter._transport_recovery is not None:self.assertTrue(adapter._transport_recovery.wait(1))
+        stop.set()
+        self.assertEqual(calls,[did],'截止或迟到回执不得重派原件')
+
+    def test_slow_poll_accepted_after_deadline_is_not_admission(self):self.exercise_order('late_poll')
+    def test_blocked_deliver_accepted_after_deadline_is_not_admission(self):self.exercise_order('late_deliver')
+    def test_admission_committed_before_deadline_wins(self):self.exercise_order('early_admitted')
+
+    def test_unknown_requires_complete_native_evidence_to_reconcile_atomically(self):
+        did=self.env['meta']['delivery_id'];self.inbox.begin_dispatch(did)
+        self.assertTrue(self.inbox.expire_admission(did,0))
+        adapter=self.adapter(SimpleNamespace(),'claude')
+        adapter._commands.enqueue(self.env);command=adapter._commands.start_next()
+        self.assertFalse(adapter._admit_from_receipt(command,DeliveryReceipt(did,'accepted','fixture','turn=original')))
+        self.assertEqual(self.inbox.lifecycle(did)['state'],'admission_unknown')
+        for fields in [('original',None,124,'completed'),('original',123,None,'completed'),('',123,124,'completed'),('original',123,124,'unknown')]:
+            with self.assertRaises(ValueError):self.inbox.record_native_terminal(did,*fields)
+        self.inbox.record_native_terminal(did,'original',123,124,'completed')
+        row=self.inbox.lifecycle(did)
+        self.assertEqual((row['state'],row['turn_id'],row['admitted_at'],row['processed_at'],row['turn_outcome']),('processed','original',123,124,'completed'))
+        phases=[x['phase'] for x in self.inbox.delivery_ack_chain() if x['delivery_id']==did]
+        self.assertEqual(phases,['queued','admission_unknown','injected','processed'],'完整原生证据须原子补账并保留原时刻')
+        self.inbox.record_native_terminal(did,'original',200,201,'completed')
+        self.assertEqual(self.inbox.lifecycle(did),row,'重放完整证据不得改写原时刻')
 
 if __name__=='__main__':unittest.main()

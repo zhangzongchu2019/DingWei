@@ -104,11 +104,12 @@ async def main():
         helper.adapter._best_effort_timeout_interrupt=lambda command:None
     helper.enroll_credential=Credential('Opus50TS',boot['secret'])
     if boot.get('fault_window') == 'receipt_before_admitted_persist':
-        native_admitted=helper.delivery_inbox.record_admitted
+        admitted_method='record_admitted_before_deadline' if hasattr(helper.delivery_inbox,'record_admitted_before_deadline') else 'record_admitted'
+        native_admitted=getattr(helper.delivery_inbox,admitted_method)
         def admitted_with_window(*args,**kwargs):
             crash_window('receipt_before_admitted_persist')
             return native_admitted(*args,**kwargs)
-        helper.delivery_inbox.record_admitted=admitted_with_window
+        setattr(helper.delivery_inbox,admitted_method,admitted_with_window)
     original_poll=driver.poll_receipt
     queries=[];atomic_json(root,'recovery-queries.json',queries)
     def poll(identifier):

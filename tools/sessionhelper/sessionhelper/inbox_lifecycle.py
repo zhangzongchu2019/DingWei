@@ -90,6 +90,62 @@ class DeliveryLifecycle(DeliveryACKOutbox):
                 (time.time(), time.time(), self.session_name, delivery_id)).rowcount
             return changed == 1
 
+    def record_admitted_before_deadline(self, delivery_id, turn_id, timeout_seconds):
+        """Accepted-only and expiry have one durable, monotonic winner."""
+        import time
+        if not turn_id:raise ValueError('admission requires a turn ID')
+        with self._lock, self._connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row=db.execute('SELECT * FROM delivery_inbox WHERE session_name=? AND delivery_id=?',
+                           (self.session_name,delivery_id)).fetchone()
+            if row is None or row['dispatch_intent_at'] is None:raise ValueError('admission lacks dispatch intent')
+            if row['admitted_at'] is not None:
+                if row['turn_id'] != turn_id:raise ValueError('admission cannot replace original turn')
+                return True
+            if row['state'] != 'processing':return False
+            now=time.time()
+            if now >= row['dispatch_intent_at'] + timeout_seconds:
+                db.execute("UPDATE delivery_inbox SET state='admission_unknown',error='model_admission_unknown',updated_at=? WHERE session_name=? AND delivery_id=?",(now,self.session_name,delivery_id))
+                self._lifecycle_ack(db,delivery_id,'admission_unknown')
+                return False
+            db.execute("UPDATE delivery_inbox SET state='admitted',turn_id=?,admitted_at=?,error=NULL,updated_at=? WHERE session_name=? AND delivery_id=?",(turn_id,now,now,self.session_name,delivery_id))
+            self._lifecycle_ack(db,delivery_id,'injected')
+            return True
+
+    def expire_admission(self, delivery_id, timeout_seconds):
+        import time
+        with self._lock, self._connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row=db.execute('SELECT * FROM delivery_inbox WHERE session_name=? AND delivery_id=?',
+                           (self.session_name,delivery_id)).fetchone()
+            if row is None or row['admitted_at'] is not None:return False
+            if row['state']=='admission_unknown':return True
+            now=time.time()
+            if row['state']!='processing' or row['dispatch_intent_at'] is None or now < row['dispatch_intent_at']+timeout_seconds:return False
+            db.execute("UPDATE delivery_inbox SET state='admission_unknown',error='model_admission_unknown',updated_at=? WHERE session_name=? AND delivery_id=?",(now,self.session_name,delivery_id))
+            self._lifecycle_ack(db,delivery_id,'admission_unknown')
+            return True
+
+    def record_native_terminal(self, delivery_id, turn_id, admitted_at, processed_at, outcome):
+        """Commit complete native evidence and its two ACK phases together."""
+        if not turn_id or admitted_at is None or processed_at is None or processed_at < admitted_at or outcome not in ('completed','interrupted','failed'):
+            raise ValueError('native terminal requires complete original evidence')
+        with self._lock,self._connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row=db.execute('SELECT * FROM delivery_inbox WHERE session_name=? AND delivery_id=?',(self.session_name,delivery_id)).fetchone()
+            if row is None or row['dispatch_intent_at'] is None or row['state'] in ('cancelled','failed'):raise ValueError('native terminal lacks dispatch intent')
+            if row['admitted_at'] is not None:
+                if row['turn_id']!=turn_id:raise ValueError('native terminal cannot replace original turn')
+                admitted_at=row['admitted_at']
+            if row['state']=='processed':
+                if row['turn_outcome']!=outcome:raise ValueError('native terminal cannot replace original outcome')
+                return
+            if processed_at < admitted_at:raise ValueError('native terminal precedes admission')
+            db.execute("UPDATE delivery_inbox SET state='admitted',turn_id=?,admitted_at=?,error=NULL,updated_at=? WHERE session_name=? AND delivery_id=?",(turn_id,admitted_at,processed_at,self.session_name,delivery_id))
+            self._lifecycle_ack(db,delivery_id,'injected')
+            db.execute("UPDATE delivery_inbox SET state='processed',processed_at=?,turn_outcome=?,error=NULL,updated_at=? WHERE session_name=? AND delivery_id=?",(processed_at,outcome,processed_at,self.session_name,delivery_id))
+            self._lifecycle_ack(db,delivery_id,'processed')
+
     def record_admitted(self, delivery_id, turn_id, occurred_at=None):
         import time
         if not turn_id:
