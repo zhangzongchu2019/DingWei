@@ -2047,7 +2047,9 @@ func scanSessionDelivery(row rowScanner) (*model.SessionDelivery, error) {
 	var d model.SessionDelivery
 	var next, created string
 	var provenance, lease, delivered, processed sql.NullString
-	if err := row.Scan(&d.ID, &d.KeyID, &d.SessionName, &d.Envelope, &d.SourceMessageID, &d.SourceType, &provenance, &d.State, &d.Attempts, &next, &lease, &d.LastError, &created, &delivered, &processed); err != nil {
+	var protocol, generation sql.NullInt64
+	var mode, injected, turnID, outcome sql.NullString
+	if err := row.Scan(&d.ID, &d.KeyID, &d.SessionName, &d.Envelope, &d.SourceMessageID, &d.SourceType, &provenance, &d.State, &d.Attempts, &next, &lease, &d.LastError, &created, &delivered, &processed, &protocol, &mode, &generation, &injected, &turnID, &outcome); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -2069,10 +2071,24 @@ func scanSessionDelivery(row rowScanner) (*model.SessionDelivery, error) {
 		value, _ := time.Parse(time.RFC3339Nano, processed.String)
 		d.ProcessedAt = &value
 	}
+	d.AckProtocol = int(protocol.Int64)
+	d.ProcessingMode = mode.String
+	d.AckGeneration = int(generation.Int64)
+	d.TurnID = turnID.String
+	d.TurnOutcome = outcome.String
+	if injected.Valid {
+		value, err := time.Parse(time.RFC3339Nano, injected.String)
+		if err != nil {
+			return nil, fmt.Errorf("invalid delivery admission timestamp: %w", err)
+		}
+		d.InjectedAt = &value
+	}
 	return &d, nil
 }
 
-const sessionDeliverySelect = `SELECT id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at FROM session_delivery`
+const sessionDeliveryColumns = `id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at,ack_protocol,processing_mode,ack_generation,injected_at,turn_id,turn_outcome`
+
+const sessionDeliverySelect = `SELECT ` + sessionDeliveryColumns + ` FROM session_delivery`
 
 func (s *SQLite) ExpireSessionDeliveries(ctx context.Context, keyID, sessionName string, now time.Time) ([]model.SessionDelivery, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -2084,7 +2100,7 @@ func (s *SQLite) ExpireSessionDeliveries(ctx context.Context, keyID, sessionName
 	rows, err := tx.QueryContext(ctx, `UPDATE session_delivery
 		SET state='dead',last_error='delivery_expired',lease_until=NULL,updated_at=?
 		WHERE key_id=? AND session_name=? AND state NOT IN ('processed','dead','cancelled') AND (attempts>=12 OR created_at<=?)
-		RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`,
+		RETURNING `+sessionDeliveryColumns,
 		nowText, keyID, sessionName, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
 	if err != nil {
 		return nil, err
@@ -2144,7 +2160,7 @@ func (s *SQLite) ResolveCapabilityPendingSessionDeliveries(ctx context.Context, 
 	}
 	if err := collect(`UPDATE session_delivery SET state='dead',last_error='delivery_capability_unconfirmed_expired',lease_until=NULL,updated_at=?
 		WHERE key_id=? AND session_name=? AND state='capability_pending' AND provenance='capability_pending_ack_v1' AND (attempts>=12 OR created_at<=?)
-		RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`, nowText, keyID, sessionName, cutoff); err != nil {
+		RETURNING `+sessionDeliveryColumns, nowText, keyID, sessionName, cutoff); err != nil {
 		return nil, err
 	}
 	if deliveryACK {
@@ -2153,7 +2169,7 @@ func (s *SQLite) ResolveCapabilityPendingSessionDeliveries(ctx context.Context, 
 	} else {
 		err = collect(`UPDATE session_delivery SET state='dead',last_error='delivery_ack_unsupported',lease_until=NULL,updated_at=?
 			WHERE key_id=? AND session_name=? AND state='capability_pending' AND provenance='capability_pending_ack_v1'
-			RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`, nowText, keyID, sessionName)
+			RETURNING `+sessionDeliveryColumns, nowText, keyID, sessionName)
 	}
 	if err != nil {
 		return nil, err
@@ -2181,7 +2197,7 @@ func (s *SQLite) ExpireCapabilityPendingSessionDeliveries(ctx context.Context, n
 	nowText := now.UTC().Format(time.RFC3339Nano)
 	rows, err := tx.QueryContext(ctx, `UPDATE session_delivery SET state='dead',last_error='delivery_capability_unconfirmed_expired',lease_until=NULL,updated_at=?
 		WHERE state='capability_pending' AND provenance='capability_pending_ack_v1' AND (attempts>=12 OR created_at<=?)
-		RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`, nowText, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
+		RETURNING `+sessionDeliveryColumns, nowText, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
 	if err != nil {
 		return nil, err
 	}

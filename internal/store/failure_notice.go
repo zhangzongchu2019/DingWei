@@ -120,7 +120,7 @@ func (s *SQLite) SweepSessionDeliveryFailures(ctx context.Context, now time.Time
 	rows, err := collectFailureRows(ctx, tx, `UPDATE session_delivery SET state='dead',lease_until=NULL,updated_at=?,
  last_error=CASE WHEN state='capability_pending' AND provenance='capability_pending_ack_v1' THEN 'delivery_capability_unconfirmed_expired' ELSE 'delivery_expired' END
  WHERE id IN (SELECT id FROM session_delivery WHERE state NOT IN ('processed','dead','cancelled') AND (attempts>=12 OR created_at<=?) ORDER BY created_at,id LIMIT 1000)
- RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`, stamp, cutoff)
+ RETURNING `+sessionDeliveryColumns, stamp, cutoff)
 	if err != nil {
 		return nil, err
 	}

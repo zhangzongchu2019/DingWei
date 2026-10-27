@@ -138,6 +138,14 @@ type SessionDelivery struct {
 	CreatedAt     time.Time
 	DeliveredAt   *time.Time
 	ProcessedAt   *time.Time
+	// AckProtocol/ProcessingMode/AckGeneration are bound once at first dispatch.
+	// Zero/empty denotes a historical, unknown semantic, never a v2 receipt.
+	AckProtocol    int
+	ProcessingMode string
+	AckGeneration  int
+	InjectedAt     *time.Time
+	TurnID         string
+	TurnOutcome    string
 }
 
 // MessageFilter 最近消息只读筛选条件。
