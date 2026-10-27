@@ -1,0 +1,6 @@
+# github.com/zhangzongchu2019/dingwei/internal/feishu
+# [github.com/zhangzongchu2019/dingwei/internal/feishu]
+vet: internal/feishu/feishu.go:25:11: could not import github.com/larksuite/oapi-sdk-go/v3/service/task/v1 (can't resolve import "")
+{"Time":"2026-10-27T17:45:35.567793544Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu"}
+{"Time":"2026-10-27T17:45:35.567869757Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/feishu [build failed]\n"}
+{"Time":"2026-10-27T17:45:35.567876316Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Elapsed":0}

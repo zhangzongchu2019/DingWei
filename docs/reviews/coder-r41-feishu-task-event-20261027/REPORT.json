@@ -1,0 +1,26 @@
+{
+  "utc": "2026-10-27T17:46:19.959888+00:00",
+  "item": 5,
+  "base": "549f64e280f2c5496bffb506c709c1bf0a1c504d",
+  "source": "6cb24dbfe3ed4f9a4eaf21b0279c38f50534f5cb",
+  "branch": "coder56solzzc/r41-feishu-task-event",
+  "cause": "Feishu tenant task update subscription delivers task.task.update_tenant_v1 to SDK WS dispatcher; Start registered only im read/receive; SDK v3.9.7 dispatcher.Do returns NotFoundEventHandlerErr. SDK task_v1_event_dispatch.go documents tenant-wide update scope. Exact production upstream task author/frequency not sampled; rates reported by leader.",
+  "change": "Register only OnP2TaskUpdateTenantV1 no-op on same dispatcher used by Start. Increment per-gateway atomic taskUpdateIgnored and INFO event_ignored with fixed type/reason, bot/count. No task contents/IDs/users logged, no business enqueue, unrelated unknown events still reject. No subscription administration change.",
+  "validation": {
+    "package.jsonl": {
+      "pass": 18
+    },
+    "reverse.jsonl": {
+      "fail": 1
+    },
+    "reverse-vet-invalid.jsonl": {}
+  },
+  "negative_recipe": "Overlay feishu.go deleting only OnP2TaskUpdateTenantV1 registration and now-unused larktask import; run go test -vet=off -json -overlay=<map> -run=^TestTenantTaskUpdateIgnoredAtRealDispatcher$ ./internal/feishu. Expected rc1 at actual assertion with task.task.update_tenant_v1, not found handler. Positive normal go test includes vet.",
+  "invalid_attempt": "First overlay run without -vet=off hit known overlay vet import line mismatch before tests; raw/reverse-vet-invalid.jsonl is NOT negative assertion evidence. Corrected run compiles and fails actual test assertion. Intermediate docs commit da6995a contained only raw logs and no acceptance report.",
+  "ops_acceptance": "No deployment or live Feishu traffic. Offline real SDK replay now succeeds, no missing-handler error and no business enqueue. Actual postdeploy hourly rate and ignored count delta are ops observations still required; no claim current live errors zero.",
+  "sha256": {
+    "package.jsonl": "e566723c7a35be047f87b5dc68e14a2ac41dd4fdaa47d67a8e749cc88af9a2cf",
+    "reverse.jsonl": "4d770701595fab40f4f21d43c2b1be69ebd1c522eb39766dbb0adfc87f308c2a",
+    "reverse-vet-invalid.jsonl": "e963c2f09eddbb39cb7a7a3462a3549854927b291692f20d1990c37be7510924"
+  }
+}

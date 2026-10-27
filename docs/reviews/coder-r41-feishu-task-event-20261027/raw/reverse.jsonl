@@ -1,6 +1,10 @@
-# github.com/zhangzongchu2019/dingwei/internal/feishu
-# [github.com/zhangzongchu2019/dingwei/internal/feishu]
-vet: internal/feishu/feishu.go:25:11: could not import github.com/larksuite/oapi-sdk-go/v3/service/task/v1 (can't resolve import "")
-{"Time":"2026-10-27T17:45:35.567793544Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu"}
-{"Time":"2026-10-27T17:45:35.567869757Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/feishu [build failed]\n"}
-{"Time":"2026-10-27T17:45:35.567876316Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Elapsed":0}
+{"Time":"2026-10-27T17:46:06.960574776Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu"}
+{"Time":"2026-10-27T17:46:06.963694011Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Test":"TestTenantTaskUpdateIgnoredAtRealDispatcher"}
+{"Time":"2026-10-27T17:46:06.963757425Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Test":"TestTenantTaskUpdateIgnoredAtRealDispatcher","Output":"=== RUN   TestTenantTaskUpdateIgnoredAtRealDispatcher\n"}
+{"Time":"2026-10-27T17:46:06.963765394Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Test":"TestTenantTaskUpdateIgnoredAtRealDispatcher","Output":"2026/10/27 17:46:06 [Info] [event-dispatch is ready]\n"}
+{"Time":"2026-10-27T17:46:06.963854636Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Test":"TestTenantTaskUpdateIgnoredAtRealDispatcher","Output":"    task_event_test.go:26: tenant task event must be acknowledged without SDK missing-handler error: event type: task.task.update_tenant_v1, not found handler\n"}
+{"Time":"2026-10-27T17:46:06.963869414Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Test":"TestTenantTaskUpdateIgnoredAtRealDispatcher","Output":"--- FAIL: TestTenantTaskUpdateIgnoredAtRealDispatcher (0.00s)\n"}
+{"Time":"2026-10-27T17:46:06.963872414Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Test":"TestTenantTaskUpdateIgnoredAtRealDispatcher","Elapsed":0}
+{"Time":"2026-10-27T17:46:06.963881723Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Output":"FAIL\n"}
+{"Time":"2026-10-27T17:46:06.964224849Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/feishu\t0.003s\n"}
+{"Time":"2026-10-27T17:46:06.964246027Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/feishu","Elapsed":0.004}
