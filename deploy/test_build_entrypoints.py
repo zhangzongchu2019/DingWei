@@ -1,4 +1,8 @@
 import pathlib
+import os
+import shutil
+import subprocess
+import tempfile
 import unittest
 
 
@@ -16,6 +20,66 @@ class BuildEntrypointContractTest(unittest.TestCase):
         self.assertIn("internal/version.Commit=${COMMIT}", text)
         self.assertIn('SOURCE_COMMIT', text)
         self.assertIn('部署制品拒绝脏工作树', text)
+
+    def run_build_with_go_version(self, version):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            shutil.copy2(ROOT / "build.sh", root / "build.sh")
+            (root / "scripts").mkdir()
+            (root / "fake-bin").mkdir()
+            scripts = {
+                "scripts/run-build-tests.sh": "#!/bin/sh\nset -eu\ntouch gate-ran\n",
+                "fake-bin/git": "#!/bin/sh\nif [ \"$1\" = rev-parse ]; then printf '%s\\n' 0123456789012345678901234567890123456789; fi\n",
+                "fake-bin/go": """#!/bin/sh
+set -eu
+if [ "$1" = version ]; then printf '%s\\n' "$TEST_GO_VERSION"; exit 0; fi
+if [ "$1" = build ]; then
+  touch build-ran
+  while [ "$#" -gt 0 ]; do
+    if [ "$1" = -o ]; then printf artifact > "$2"; exit 0; fi
+    shift
+  done
+fi
+exit 1
+""",
+            }
+            for name, text in scripts.items():
+                script = root / name
+                script.write_text(text)
+                script.chmod(0o755)
+            result = subprocess.run(
+                ["sh", str(root / "build.sh"), str(root / "out")],
+                cwd=root, capture_output=True, text=True,
+                env={"PATH": str(root / "fake-bin") + os.pathsep + os.defpath,
+                     "TEST_GO_VERSION": version, "LC_ALL": "C.UTF-8"},
+            )
+            return result, (root / "gate-ran").exists(), (root / "build-ran").exists()
+
+    def test_build_rejects_go_126_before_tests_or_artifacts(self):
+        result, gate, built = self.run_build_with_go_version("go version go1.26.0 linux/amd64")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("构建拒绝", result.stderr)
+        self.assertIn("go1.22.2", result.stderr)
+        self.assertIn("go1.26.0", result.stderr)
+        self.assertFalse(gate)
+        self.assertFalse(built)
+
+    def test_build_accepts_exact_go_1222_and_constructs_artifacts(self):
+        result, gate, built = self.run_build_with_go_version("go version go1.22.2 linux/amd64")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(gate)
+        self.assertTrue(built)
+        self.assertIn("commit=0123456789012345678901234567890123456789", result.stdout)
+        self.assertIn("go version go1.22.2 linux/amd64", result.stdout)
+
+    def test_build_checks_entire_go_version_output(self):
+        for version in ("go version go1.22.20 linux/amd64", "go version go1.22.2rc1 linux/amd64",
+                        "go version go1.22.2 linux/amd64 extra", "go version go1.22.2 linux/amd64\nextra"):
+            with self.subTest(version=version):
+                result, gate, built = self.run_build_with_go_version(version)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(gate)
+                self.assertFalse(built)
 
     def test_nodeagent_is_a_peer_release_artifact(self):
         text = self.read("build.sh")

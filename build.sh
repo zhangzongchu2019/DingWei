@@ -24,6 +24,15 @@
 set -eu
 # 所有相对路径都以脚本所在的仓库根为准；调用者可以在任意 cwd 用绝对路径执行。
 cd "$(dirname "$0")"
+# Reject a different toolchain before tests or artifact construction.
+GO_VERSION="$(go version)" || { echo "构建拒绝：无法读取 go version；要求 go1.22.2" >&2; exit 2; }
+if ! printf '%s\n' "$GO_VERSION" | awk '
+  NR == 1 && NF == 4 && $1 == "go" && $2 == "version" && $3 == "go1.22.2" && $4 ~ /^[a-z0-9_]+\/[a-z0-9_]+$/ { valid = 1 }
+  END { exit !(valid && NR == 1) }
+'; then
+  echo "构建拒绝：要求 go version 为 go1.22.2（与上次现网件一致）；实际：$GO_VERSION" >&2
+  exit 2
+fi
 # 🔴 发版构建先过唯一的 Python/shell 测试清单。make test 与 CI 也调用
 # 同一入口，新增测试时不再维护互相漂移的多份名单。
 ./scripts/run-build-tests.sh
