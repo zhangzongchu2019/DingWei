@@ -85,7 +85,7 @@ func TestPublicationDiagnosticAuthenticatedRoutingAndWireNotice(t *testing.T) {
 	ctx, cancel := context.WithTimeout(e.ctx, 10*time.Second)
 	defer cancel()
 	targetCred, targetID := e.enroll("publication-target", "PublicationTarget")
-	_, outsiderID := e.enroll("publication-outsider", "PublicationOutsider")
+	outsiderCred, _ := e.enroll("publication-outsider", "PublicationOutsider")
 	group, err := e.svc.CreateGroup(ctx, "zzc", e.agID, "publication")
 	if err != nil {
 		t.Fatal(err)
@@ -113,12 +113,22 @@ func TestPublicationDiagnosticAuthenticatedRoutingAndWireNotice(t *testing.T) {
 		t.Fatal("target gate not reached")
 	}
 	key := AgentKeyID("zzc")
+	// Publish a real transport: directory broadcasts run independently of routing.
+	// A synthetic client with no connection can panic in a later test's goroutine.
+	outsider, _, _ := e.dial(outsiderCred, "")
+	if outsider == nil {
+		t.Fatal("outsider connection failed")
+	}
+	defer outsider.CloseNow()
+	waitFor(t, 10*time.Second, "outsider published", func() bool { return e.hub.sessionOnline(key, "publicationoutsider") })
 	e.hub.mu.Lock()
 	sourceClient := e.hub.sessionClients[key]["opus50ts"]
-	// A real active identity in its own separate group. Publication lets the
-	// actual ACL branch decide, independent of endpoint-resolution failure.
-	e.hub.sessionClients[key]["publicationoutsider"] = &sessionClient{keyID: key, sessionName: "publicationoutsider", metricsAgentID: outsiderID}
 	e.hub.mu.Unlock()
+	// Exercise the background reader while the independent-group ACL fixture is
+	// present, rather than allowing a nil transport to fail after this test ends.
+	if err := e.hub.broadcastNewPlatformDirectories(ctx); err != nil {
+		t.Fatal(err)
+	}
 	var captured publicationLogCapture
 	previous := log.Writer()
 	log.SetOutput(&captured)
