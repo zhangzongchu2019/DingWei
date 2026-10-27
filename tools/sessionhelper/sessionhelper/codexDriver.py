@@ -925,6 +925,8 @@ class CodexProtocolDriver(Driver):
                 turn_id = turn.get("id", "")
                 if not isinstance(turn_id, str) or not turn_id:
                     return self._admission_failure(envelope_id, body_hash, ThreadUnavailable("missing turn id"), uncertain=True)
+                if not hasattr(self,'_native_turn_admitted_at'):self._native_turn_admitted_at={}
+                self._native_turn_admitted_at.setdefault(turn_id,time.time())
                 state: ReceiptState = "processing" if turn.get("status") == "inProgress" else "accepted"
                 detail = f"turn={turn_id} status={turn.get('status')}"
                 self._store.upsert(self._thread_id, envelope_id, turn_id, body_hash, state, detail)
@@ -1336,6 +1338,9 @@ class CodexProtocolDriver(Driver):
         if method == "turn/started":
             turn = params.get("turn", {})
             self._active_turn_id = turn.get("id", self._active_turn_id)
+            if self._active_turn_id:
+                if not hasattr(self,'_native_turn_admitted_at'):self._native_turn_admitted_at={}
+                self._native_turn_admitted_at.setdefault(self._active_turn_id,time.time())
             return None  # 纯生命周期通知，对用户无意义
 
         if method == "turn/completed":
@@ -1362,7 +1367,9 @@ class CodexProtocolDriver(Driver):
                 self._active_turn_id = ""
             self._interrupt_requested_turns.discard(turn_id)
             # 把 turn 里的 usage/模型信息带到事件数据里,新 view 状态栏用
-            extra = {"change": "turn_completed", "status": status}
+            extra = {"change": "turn_completed", "status": status,
+                     "admitted_at": getattr(self,"_native_turn_admitted_at",{}).get(turn_id),
+                     "processed_at": time.time()}
             model_used = turn.get("model") or params.get("model", "")
             if model_used:
                 extra["model"] = model_used

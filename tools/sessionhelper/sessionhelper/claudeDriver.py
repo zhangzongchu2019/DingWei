@@ -232,6 +232,7 @@ class _TurnState:
     state: ReceiptState = "processing"
     detail: str = ""
     interrupted: bool = False
+    admitted_at: float | None = None  # first native isReplay observation (wall clock)
     submitted_at: float = 0.0
     last_event_at: float = 0.0
     pending_tool_ids: set[str] = field(default_factory=set)
@@ -590,6 +591,7 @@ class ClaudeProtocolDriver(Driver):
         if t == "user" and d.get("isReplay"):
             # 送达 ACK：claude 回吐了我们的 user 帧
             if active is not None and not active.accepted.is_set():
+                active.admitted_at = time.time()
                 active.accepted.set()
             return
 
@@ -644,7 +646,9 @@ class ClaudeProtocolDriver(Driver):
             self._emit(SessionEvent(
                 kind="state_change", text="", data={"change": "turn_completed", "subtype": d.get("subtype"),
                                                      "is_error": d.get("is_error"), "num_turns": d.get("num_turns"),
-                                                     "cost_usd": d.get("total_cost_usd")},
+                                                     "cost_usd": d.get("total_cost_usd"),
+                                                     "admitted_at": active.admitted_at if active else None,
+                                                     "processed_at": time.time()},
                 session_id=self._session_id, delivery_id=delivery_id, turn_id=turn_id,
             ))
             if active is not None:

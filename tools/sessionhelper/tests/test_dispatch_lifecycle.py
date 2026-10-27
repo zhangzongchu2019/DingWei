@@ -82,7 +82,7 @@ class DispatchLifecycleTest(unittest.TestCase):
         adapter=self.adapter(SimpleNamespace())
         self.inbox.begin_dispatch('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
         self.inbox.record_admitted('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','turn',100)
-        event=SessionEvent(kind='state_change',delivery_id='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',turn_id='turn',data={'change':'turn_completed','status':'completed'})
+        event=SessionEvent(kind='state_change',delivery_id='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',turn_id='turn',data={'change':'turn_completed','status':'completed','admitted_at':100,'processed_at':__import__('time').time()})
         adapter._record_event_lifecycle(event)
         first=self.inbox.lifecycle('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
         adapter._record_event_lifecycle(event)
@@ -220,7 +220,7 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
     def test_persisted_native_terminal_advances_despite_stale_poll(self):
         did='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
         def poll(identifier):
-            adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=did,turn_id='native-turn',data={'change':'turn_completed','status':'completed'}))
+            adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=did,turn_id='native-turn',data={'change':'turn_completed','status':'completed','admitted_at':100,'processed_at':__import__('time').time()}))
             return DeliveryReceipt(did,'processing','fixture','turn=native-turn')
         driver=SimpleNamespace(deliver=lambda identifier,body:DeliveryReceipt(did,'processing','fixture','turn=native-turn'),poll_receipt=poll)
         adapter=self.adapter(driver)
@@ -239,7 +239,7 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         adapter._commands.enqueue(self.env)
         command=adapter._commands.start_next()
         self.inbox.begin_dispatch(did)
-        adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=did,turn_id='native-turn',data={'change':'turn_completed','status':'completed'}))
+        adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=did,turn_id='native-turn',data={'change':'turn_completed','status':'completed','admitted_at':100,'processed_at':__import__('time').time()}))
         adapter._admission_callbacks[did]=(lambda:callbacks.append(adapter._commands.current.delivery_id),None)
         adapter._settle_command(command,DeliveryReceipt(did,'processing','fixture','submitted, awaiting ack, turn=native-turn'))
         self.assertEqual(callbacks,[did],'持久原生证据推进前须完成admission回调')
@@ -266,11 +266,16 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         calls=[]
         def deliver(did,body):
             calls.append(did)
+            if did==first and not admitted:adapter._admission_timeout=.1
             return DeliveryReceipt(did,'processing' if did==first else 'done','fixture','turn=turn-first' if did==first else 'turn=turn-second')
         driver=SimpleNamespace(deliver=deliver,poll_receipt=lambda did:DeliveryReceipt(did,'processing','fixture','turn=turn-first'))
         driver.abort_transport=lambda:None;driver.stop=lambda:None;driver.start=lambda:None
-        adapter=self.adapter(driver,which);adapter._build_driver=lambda which:driver
-        adapter._terminal_timeout=.01;adapter._admission_timeout=.01
+        adapter=self.adapter(driver,which)
+        def rebuild(which):
+            adapter._admission_timeout=60
+            return driver
+        adapter._build_driver=rebuild
+        adapter._terminal_timeout=.05;adapter._admission_timeout=60
         adapter._commands.enqueue(self.env);adapter._commands.enqueue(second_env)
         adapter._deliver_regular_command(adapter._commands.start_next())
         self.assertIsNone(adapter._commands.current,'watchdog未知离场必须释放当前件')
@@ -288,7 +293,7 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         adapter._deliver_regular_command(adapter._commands.start_next())
         self.assertEqual(calls,[first,second],'watchdog未知离场必须推进下一件')
         self.assertEqual(self.inbox.lifecycle(second)['state'],'processed')
-        adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=first,turn_id='turn-first',data={'change':'turn_completed','status':'completed'}))
+        adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=first,turn_id='turn-first',data={'change':'turn_completed','status':'completed','admitted_at':100,'processed_at':__import__('time').time()}))
         after=self.inbox.lifecycle(first)
         self.assertEqual(after['state'],'processed','迟到真实终态仍须补记原件')
         self.assertIsNone(after['error'],'真实终态须清除旧transport unknown诊断')
@@ -390,16 +395,22 @@ class AdmissionDeadlineTest(unittest.TestCase):
         self.assertTrue(adapter._transport_recovery.wait(1))
 
     def test_failed_recovery_quarantines_following_pipe_writes(self):
-        import time
         did=self.env['meta']['delivery_id'];calls=[]
-        driver=SimpleNamespace(deliver=lambda *args:calls.append(args) or DeliveryReceipt(did,'processing','fixture','submitted'),poll_receipt=lambda did:DeliveryReceipt(did,'processing','fixture','submitted'))
-        adapter=self.adapter(driver,'claude');adapter._admission_timeout=.01
+        def deliver(*args):
+            calls.append(args)
+            # Start with a safe dispatch budget, shorten only once the writer
+            # was entered; filesystem speed cannot turn this into zero calls.
+            adapter._admission_timeout=.01
+            return DeliveryReceipt(did,'processing','fixture','submitted')
+        driver=SimpleNamespace(deliver=deliver,poll_receipt=lambda did:DeliveryReceipt(did,'processing','fixture','submitted'))
+        adapter=self.adapter(driver,'claude');adapter._admission_timeout=60
         adapter._commands.enqueue(self.env);adapter._commands.enqueue({'id':'next','body':'next'})
         adapter._deliver_regular_command(adapter._commands.start_next())
         adapter._deliver_regular_command(adapter._commands.start_next())
         self.assertEqual(len(calls),1,'CLI未恢复时不得复用旧stdin')
         self.assertEqual(len(adapter._commands.pending),1)
         self.assertIsNone(adapter._commands.current)
+
 
 
 class AdmissionDeadlineRaceTest(unittest.TestCase):
@@ -445,6 +456,18 @@ class AdmissionDeadlineRaceTest(unittest.TestCase):
     def test_blocked_deliver_accepted_after_deadline_is_not_admission(self):self.exercise_order('late_deliver')
     def test_admission_committed_before_deadline_wins(self):self.exercise_order('early_admitted')
 
+    def test_unknown_terminal_without_original_times_is_evidence_only(self):
+        did=self.env['meta']['delivery_id'];self.inbox.begin_dispatch(did);self.inbox.expire_admission(did,0)
+        adapter=self.adapter(SimpleNamespace(),'claude')
+        before=self.inbox.lifecycle(did)
+        for extra in ({},{'admitted_at':123},{'processed_at':124}):
+            adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=did,turn_id='original',data=dict(change='turn_completed',status='completed',**extra)))
+            self.assertEqual(self.inbox.lifecycle(did),before,'缺原始双时刻的终态不得补造完整证据')
+            self.assertEqual([x['phase'] for x in self.inbox.delivery_ack_chain()],['queued','admission_unknown'])
+        adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=did,turn_id='original',data=dict(change='turn_completed',status='completed',admitted_at=123,processed_at=124)))
+        after=self.inbox.lifecycle(did)
+        self.assertEqual((after['state'],after['admitted_at'],after['processed_at']),('processed',123,124),'完整原始双时刻的终态可补账')
+
     def test_unknown_requires_complete_native_evidence_to_reconcile_atomically(self):
         did=self.env['meta']['delivery_id'];self.inbox.begin_dispatch(did)
         self.assertTrue(self.inbox.expire_admission(did,0))
@@ -461,5 +484,32 @@ class AdmissionDeadlineRaceTest(unittest.TestCase):
         self.assertEqual(phases,['queued','admission_unknown','injected','processed'],'完整原生证据须原子补账并保留原时刻')
         self.inbox.record_native_terminal(did,'original',200,201,'completed')
         self.assertEqual(self.inbox.lifecycle(did),row,'重放完整证据不得改写原时刻')
+
+class NativeEvidenceTimeTest(unittest.TestCase):
+    setUp=DispatchLifecycleTest.setUp
+
+    def test_claude_times_are_first_native_receipt_and_result_observations(self):
+        import threading
+        from sessionhelper.claudeDriver import ClaudeProtocolDriver,_TurnState
+        did=self.env['meta']['delivery_id'];driver=ClaudeProtocolDriver(store_path=str(Path(self.tmp.name)/'native-time.db'))
+        driver._store.upsert(did,'turn','hash','processing','sent')
+        driver._active=_TurnState(envelope_id=did,turn_id='turn',accepted=threading.Event(),terminal_seen=threading.Event())
+        with patch('time.time',return_value=101):driver._handle_frame({'type':'user','isReplay':True})
+        with patch('time.time',return_value=103):driver._handle_frame({'type':'user','isReplay':True})
+        with patch('time.time',return_value=105):driver._handle_frame({'type':'result','subtype':'success'})
+        event=driver._history[-1]
+        self.assertEqual((event.data['admitted_at'],event.data['processed_at']),(101,105),'原生时刻在wire观察边界固化且重放不重置')
+
+    def test_codex_times_require_original_started_observation(self):
+        from sessionhelper.codexDriver import CodexProtocolDriver
+        driver=CodexProtocolDriver(store_path=str(Path(self.tmp.name)/'codex-time.db'),workdir=self.tmp.name,transport_mode='direct')
+        driver._thread_id='thread';driver._remember_delivery('delivery','turn','processing')
+        with patch('time.time',return_value=101):driver._map_notification({'method':'turn/started','params':{'turn':{'id':'turn'}}})
+        with patch('time.time',return_value=103):driver._map_notification({'method':'turn/started','params':{'turn':{'id':'turn'}}})
+        with patch('time.time',return_value=105):
+            event=driver._map_notification({'method':'turn/completed','params':{'turn':{'id':'turn','status':'completed'}}})
+            missing=driver._map_notification({'method':'turn/completed','params':{'turn':{'id':'unknown','status':'completed'}}})
+        self.assertEqual((event.data['admitted_at'],event.data['processed_at']),(101,105))
+        self.assertIsNone(missing.data['admitted_at'],'缺原始接纳观察不得在terminal补造')
 
 if __name__=='__main__':unittest.main()

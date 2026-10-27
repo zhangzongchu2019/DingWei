@@ -583,7 +583,9 @@ class DriverAdapter:
                     terminal_outcome = self._receipt_terminal_outcome(receipt)
                     if admitted and terminal_outcome is not None:
                         persisted = ledger.lifecycle(command.delivery_id)
-                        if persisted is not None and persisted['state'] != 'processed':
+                        if (persisted is not None and persisted['state'] != 'processed'
+                                and persisted['error'] != 'turn_terminal_unknown'
+                                and persisted['state'] != 'admission_unknown'):
                             ledger.record_completed(command.delivery_id, command.turn_id, terminal_outcome)
                     elif not admitted and str(receipt.detail).startswith("session_unavailable:"):
                         ledger.record_rejected(command.delivery_id)
@@ -685,12 +687,21 @@ class DriverAdapter:
             return False
         ledger = getattr(self, "delivery_lifecycle", None)
         if ledger is not None and ledger.lifecycle(command.delivery_id) is not None:
-            if not ledger.record_admitted_before_deadline(command.delivery_id,turn_id,getattr(self,'_admission_timeout',60.0)):
+            if not ledger.record_admitted_before_deadline(command.delivery_id,turn_id,getattr(self,'_admission_timeout',60.0),self._native_admission_time(command.delivery_id,turn_id)):
                 print(f'[delivery][LATE_ACCEPTED] id={command.delivery_id}; accepted-only cannot reopen admission',flush=True)
                 return False
         elif time.monotonic()-self._dispatch_clock(command)>=getattr(self,'_admission_timeout',60.0):
             return False
         return self._admit_known_turn(command, turn_id)
+
+    def _native_admission_time(self, delivery_id, turn_id):
+        if self._which=='claude':
+            active=getattr(self.driver,'_active',None)
+            if active is not None and active.envelope_id==delivery_id and active.turn_id==turn_id:
+                return getattr(active,'admitted_at',None)
+        if self._which=='codex':
+            return getattr(self.driver,'_native_turn_admitted_at',{}).get(turn_id)
+        return None
 
     def _admit_known_turn(self, command, turn_id):
         """Publish/callback admission only after a receipt or persisted native proof."""
@@ -727,11 +738,13 @@ class DriverAdapter:
             outcome = 'completed'
         else:
             return
-        # A native terminal implies admission even when receipt delivery raced
-        # ahead of the adapter. Both observations commit before any ACK send.
-        observed=time.time()
-        admitted_at=row['admitted_at'] if row['admitted_at'] is not None else data.get('admitted_at',observed)
-        processed_at=data.get('processed_at',observed)
+        # Only complete original native observations can settle an unknown.
+        # Never manufacture missing receipt times at this adapter boundary.
+        admitted_at=data.get('admitted_at')
+        processed_at=data.get('processed_at')
+        if admitted_at is None or processed_at is None:
+            print(f'[delivery][INCOMPLETE_NATIVE_EVIDENCE] id={ev.delivery_id} turn={ev.turn_id}; missing original native times, no ACK advancement',flush=True)
+            return
         ledger.record_native_terminal(ev.delivery_id,ev.turn_id,admitted_at,processed_at,outcome)
         observe(getattr(self, "delivery_progress", None), ev.delivery_id, "model_admitted")
         observe(getattr(self, "delivery_progress", None), ev.delivery_id, "terminal")

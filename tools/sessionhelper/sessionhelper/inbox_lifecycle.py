@@ -90,7 +90,7 @@ class DeliveryLifecycle(DeliveryACKOutbox):
                 (time.time(), time.time(), self.session_name, delivery_id)).rowcount
             return changed == 1
 
-    def record_admitted_before_deadline(self, delivery_id, turn_id, timeout_seconds):
+    def record_admitted_before_deadline(self, delivery_id, turn_id, timeout_seconds, occurred_at=None):
         """Accepted-only and expiry have one durable, monotonic winner."""
         import time
         if not turn_id:raise ValueError('admission requires a turn ID')
@@ -108,7 +108,9 @@ class DeliveryLifecycle(DeliveryACKOutbox):
                 db.execute("UPDATE delivery_inbox SET state='admission_unknown',error='model_admission_unknown',updated_at=? WHERE session_name=? AND delivery_id=?",(now,self.session_name,delivery_id))
                 self._lifecycle_ack(db,delivery_id,'admission_unknown')
                 return False
-            db.execute("UPDATE delivery_inbox SET state='admitted',turn_id=?,admitted_at=?,error=NULL,updated_at=? WHERE session_name=? AND delivery_id=?",(turn_id,now,now,self.session_name,delivery_id))
+            original=now if occurred_at is None else occurred_at
+            if original > now:raise ValueError('native admission is in the future')
+            db.execute("UPDATE delivery_inbox SET state='admitted',turn_id=?,admitted_at=?,error=NULL,updated_at=? WHERE session_name=? AND delivery_id=?",(turn_id,original,now,self.session_name,delivery_id))
             self._lifecycle_ack(db,delivery_id,'injected')
             return True
 
