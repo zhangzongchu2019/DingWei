@@ -20,7 +20,8 @@ class SuiteIsolationTests(unittest.TestCase):
 
     def test_seat_environment_is_removed_without_reading_values(self):
         dirty = {'SH_SECRET': 'fixture', 'SH_OWNER': 'fixture',
-                 'DINGWEI_REPLY_CONTEXT': 'fixture', 'PATH': '/fixture'}
+                 'DINGWEI_REPLY_CONTEXT': 'fixture', 'PATH': '/fixture',
+                 'CODEX_HOME': '/outside-native-config'}
         self.assertEqual(clean_environment(dirty), {'PATH': '/fixture'})
         with mock.patch.dict(os.environ, dirty):
             with isolated_environment('codex') as directory:

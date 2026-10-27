@@ -7,10 +7,13 @@ import tempfile
 from unittest import mock
 
 PREFIXES = ('SH_', 'DW_', 'DINGWEI_', 'DATAD_')
+HOME_KEYS = ('CODEX_HOME', 'CLAUDE_CONFIG_DIR', 'XDG_CONFIG_HOME',
+             'XDG_STATE_HOME', 'XDG_CACHE_HOME', 'XDG_DATA_HOME', 'PYTHONUSERBASE')
 
 
 def clean_environment(environment):
-    return {k: v for k, v in environment.items() if not k.startswith(PREFIXES)}
+    return {k: v for k, v in environment.items()
+            if not k.startswith(PREFIXES) and k not in HOME_KEYS}
 
 
 @contextmanager
@@ -23,6 +26,7 @@ def isolated_environment(driver='unset'):
         environment = clean_environment(os.environ)
         environment.update(HOME=str(home), SH_MCP_IPC_SOCK=sock,
                            DINGWEI_MCP_IPC_SOCK=sock, SH_PROVISION_NO_EXIT='1')
+        environment.update({key: str(home / key.lower()) for key in HOME_KEYS})
         if driver != 'unset':
             environment['SH_DRIVER'] = driver
         with mock.patch.dict(os.environ, environment, clear=True):
@@ -32,7 +36,7 @@ def isolated_environment(driver='unset'):
 def assert_isolated(directory, driver='unset'):
     """Fail before importing or executing helper code if isolation is removed."""
     root = Path(directory).resolve()
-    for key in ('HOME', 'SH_MCP_IPC_SOCK', 'DINGWEI_MCP_IPC_SOCK'):
+    for key in ('HOME', 'SH_MCP_IPC_SOCK', 'DINGWEI_MCP_IPC_SOCK') + HOME_KEYS:
         path = Path(os.environ.get(key, '/')).resolve()
         assert path != root and root in path.parents, f'isolation boundary: {key}'
     allowed = {'SH_MCP_IPC_SOCK', 'DINGWEI_MCP_IPC_SOCK', 'SH_PROVISION_NO_EXIT'}
