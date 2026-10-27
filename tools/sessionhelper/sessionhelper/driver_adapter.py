@@ -396,7 +396,11 @@ class DriverAdapter:
             # A persisted native terminal is stronger than a stale driver poll.
             # It belongs to this delivery/turn, and never comes from a watchdog.
             persisted = ledger.lifecycle(command.delivery_id) if ledger is not None else None
-            if persisted and persisted['state'] == 'processed' and (not command.turn_id or persisted['turn_id'] == command.turn_id):
+            if (persisted and persisted['state'] == 'processed'
+                    and persisted['turn_id'] and persisted['admitted_at'] is not None
+                    and persisted['processed_at'] is not None
+                    and persisted['turn_outcome'] in ('completed', 'interrupted', 'failed')
+                    and (not command.turn_id or persisted['turn_id'] == command.turn_id)):
                 self._commands.finish(command.delivery_id, persisted['turn_outcome'])
                 self._turn_progress.pop((command.delivery_id, command.turn_id), None)
                 return

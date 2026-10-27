@@ -217,6 +217,19 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         while not adapter._event_q.empty():events.append(json.loads(adapter._event_q.get_nowait()))
         self.assertFalse(any(event.get('data',{}).get('reason')=='terminal_timeout' for event in events))
 
+    def test_historical_processed_is_not_native_terminal_evidence(self):
+        did='legacy-processed'
+        row={'state':'processed','turn_id':'','admitted_at':None,'processed_at':None,'turn_outcome':None}
+        calls=[]
+        adapter=self.adapter(SimpleNamespace(poll_receipt=lambda identifier:DeliveryReceipt(did,'processing','fixture','submitted, awaiting ack, turn=local')),'claude')
+        adapter.delivery_lifecycle=SimpleNamespace(lifecycle=lambda identifier:row,record_transport_unknown=lambda identifier:calls.append(identifier))
+        adapter._terminal_timeout=.01
+        adapter._commands.enqueue({'id':did,'body':'fixture'})
+        command=adapter._commands.start_next()
+        adapter._settle_command(command,DeliveryReceipt(command.delivery_id,'processing','fixture','submitted, awaiting ack, turn=local'))
+        self.assertEqual(command.state,'failed','历史processed不得冒充真实模型终态')
+        self.assertEqual(calls,[command.delivery_id],'缺少原生证据须走transport unknown离场')
+
     def check_watchdog_release(self, which, admitted):
         first='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'; second='dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
         second_env={'id':'next','body':'next','meta':dict(self.env['meta'],delivery_id=second)}
