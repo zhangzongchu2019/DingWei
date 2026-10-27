@@ -1,5 +1,7 @@
 # r40b 交付证据
 
+最新watchdog修复、旧1019环境说明与复现入口见 [WATCHDOG-QUEUE-CLOSURE.md](WATCHDOG-QUEUE-CLOSURE.md)：原阻断专项及当前严格Go门已过，但完整helper仍有1个临时目录清理错误，未报全门PASS，未上线。下文保留历史受测锚与读数。
+
 本页保留原7ab9460交付的受测代码与读数。后续Claude显式命令闭合及**当前完整Go门rc1、Codex接纳超时未定因**，以 [CLAUDE-ARGV-CLOSURE.md](CLAUDE-ARGV-CLOSURE.md) 为准；不得把本页历史rc0作为当前上线结论。
 
 取证截止：`2026-10-27T06:58:35Z`。受测代码锚 `f0d2c87c6fcc95916a852cb76d0ff19629a277e8`，tree `b2af68adf11dd821f202946745f5eaa131006418`；最后追加的本报告提交只含文档。

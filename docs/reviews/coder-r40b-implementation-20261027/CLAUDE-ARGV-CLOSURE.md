@@ -1,5 +1,7 @@
 # ④ Claude 显式启动命令闭合
 
+后续watchdog修复及当前门结果见 [WATCHDOG-QUEUE-CLOSURE.md](WATCHDOG-QUEUE-CLOSURE.md)：当前严格Go门已过、完整helper仍有清理错误。本页保留59b5479历史失败证据，不作为最新上线结论。
+
 本件基于 `7ab946030395101d67423d94705b3615e8b2443a`，按组长追加要求处理④合同，提交只追加。无部署、helper 重启或席位 env 修改；togpt60 独立交叉仍为上线前必需门，本席自测不替代该门。
 
 ## 启动行为

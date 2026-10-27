@@ -15,3 +15,7 @@
 ## 追加闭合验证中的 Codex 第二回合超时
 
 2026-10-27T10:24Z起，候选59b5479干净完整门与单格复跑在B接纳判据3超时；修复前锚7ab9460本轮对照通过。未定因，不并入本次Claude修法；当前完整门rc1，详见 [CLAUDE-ARGV-CLOSURE.md](CLAUDE-ARGV-CLOSURE.md)。
+
+## watchdog追加后的门状态
+
+dd0dd42严格Go1039/0/7、真实CLI15格通过（含此前Codex B接纳格）；原watchdog Claude专项3轮各14项通过。完整helper的私有HOME运行仍有Guide临时目录清理OSError，真实HOME入口另有inbox文件快照变化错误；均未归因、不称为既有，不出额外修法。详见 [WATCHDOG-QUEUE-CLOSURE.md](WATCHDOG-QUEUE-CLOSURE.md)。
