@@ -1,4 +1,5 @@
 import os
+import asyncio
 from pathlib import Path
 import unittest
 from unittest import mock
@@ -52,6 +53,27 @@ class SuiteIsolationTests(unittest.TestCase):
         self.assertEqual(len(set(homes)), 2)
         self.assertEqual(len(set(sockets)), 2)
         self.assertTrue(all(not home.exists() for home in homes))
+        self.assertEqual(dict(os.environ), before)
+
+        cancelled = []
+
+        class AsyncProbe(unittest.IsolatedAsyncioTestCase):
+            async def test_cleanup(inner):
+                home = Path(os.environ['HOME'])
+
+                async def pending():
+                    try:
+                        await asyncio.Future()
+                    finally:
+                        cancelled.append((Path(os.environ['HOME']) == home, home.exists()))
+
+                asyncio.create_task(pending())
+                await asyncio.sleep(0)
+
+        with isolate_test_cases('claude'):
+            unittest.TestSuite([AsyncProbe('test_cleanup')]).run(result)
+        self.assertTrue(result.wasSuccessful(), result.errors + result.failures)
+        self.assertEqual(cancelled, [(True, True)], 'async cleanup escaped the case HOME')
         self.assertEqual(dict(os.environ), before)
 
     def test_removed_isolation_fails_at_boundary_before_helper_execution(self):

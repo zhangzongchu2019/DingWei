@@ -1,5 +1,6 @@
 """Isolation shared by discovery, module fixtures and individual test cases."""
 from contextlib import contextmanager
+from contextvars import ContextVar
 import os
 from pathlib import Path
 import tempfile
@@ -43,12 +44,24 @@ def assert_isolated(directory, driver='unset'):
 @contextmanager
 def isolate_test_cases(driver):
     import unittest
-    original = unittest.TestCase.run
+    current = ContextVar('isolated_test_case', default=None)
 
-    def run(case, result=None):
-        with isolated_environment(driver) as directory:
-            assert_isolated(directory, driver)
-            return original(case, result)
+    def wrap(original):
+        def run(case, result=None):
+            # The async implementation calls the base implementation. Keep
+            # one environment around both, including event-loop shutdown.
+            if current.get() is case:
+                return original(case, result)
+            with isolated_environment(driver) as directory:
+                assert_isolated(directory, driver)
+                token = current.set(case)
+                try:
+                    return original(case, result)
+                finally:
+                    current.reset(token)
+        return run
 
-    with mock.patch.object(unittest.TestCase, 'run', run):
+    with mock.patch.object(unittest.TestCase, 'run', wrap(unittest.TestCase.run)), \
+            mock.patch.object(unittest.IsolatedAsyncioTestCase, 'run',
+                              wrap(unittest.IsolatedAsyncioTestCase.run)):
         yield
