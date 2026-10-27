@@ -378,7 +378,12 @@ class ClaudeProtocolDriver(Driver):
             with self._active_lock:
                 prev = self._active
             if prev is not None and prev.envelope_id != envelope_id and not prev.terminal_seen.is_set():
-                if not prev.terminal_seen.wait(PREV_TURN_WAIT):
+                previous_deadline=time.monotonic()+PREV_TURN_WAIT
+                while not prev.terminal_seen.is_set() and not self._stop.is_set() and time.monotonic()<previous_deadline:
+                    self._stop.wait(min(.05,max(0,previous_deadline-time.monotonic())))
+                if self._stop.is_set():
+                    return DeliveryReceipt(id=envelope_id,state="unknown",source="pipe",detail="transport aborted while waiting for previous turn")
+                if not prev.terminal_seen.is_set():
                     log.warning("[delivery][SERIAL_WAIT_TIMEOUT] prev turn %s not terminal after %.0fs; "
                                 "proceeding may risk merge", prev.envelope_id, PREV_TURN_WAIT)
 

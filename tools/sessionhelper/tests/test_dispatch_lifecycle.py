@@ -376,6 +376,24 @@ class AdmissionDeadlineTest(unittest.TestCase):
         adapter._deliver_regular_command(adapter._commands.start_next())
         self.assertEqual(next_calls,['dw-next'])
 
+    def test_prior_nonterminal_wait_is_aborted_before_replacement_dispatch(self):
+        import sys,threading
+        from sessionhelper.claudeDriver import ClaudeProtocolDriver,_TurnState
+        driver=ClaudeProtocolDriver(store_path=str(Path(self.tmp.name)/'previous.db'),cwd=self.tmp.name,
+            cmd=[sys.executable,'-c','import time;time.sleep(20)'])
+        self.addCleanup(driver.stop)
+        driver.start()
+        previous=_TurnState(envelope_id='previous',turn_id='previous-turn',accepted=threading.Event(),terminal_seen=threading.Event())
+        previous.accepted.set();driver._active=previous
+        replacement=SimpleNamespace(start=lambda:None)
+        adapter=self.adapter(driver,'claude');adapter._build_driver=lambda which:replacement;adapter._admission_timeout=.15
+        adapter._commands.enqueue(self.env)
+        command=adapter._commands.start_next();adapter._deliver_regular_command(command)
+        self.assertEqual(self.inbox.lifecycle(command.delivery_id)['state'],'admission_unknown')
+        self.assertTrue(adapter._transport_recovery.wait(3),'等待旧回合的deliver也必须响应abort并释放旧写线程')
+        self.assertIs(adapter.driver,replacement)
+        self.assertFalse(previous.terminal_seen.is_set(),'abort不得伪造旧回合终态')
+
     def test_clock_includes_time_since_persisted_dispatch_intent(self):
         import time
         calls=[]
