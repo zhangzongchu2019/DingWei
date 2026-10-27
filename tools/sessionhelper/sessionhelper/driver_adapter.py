@@ -423,7 +423,7 @@ class DriverAdapter:
         transport and join this worker before any later command can dispatch.
         """
         self._dispatch_clock(command)
-        if time.monotonic() - self._dispatch_clock(command) >= self._admission_timeout:
+        if time.monotonic() - self._dispatch_clock(command) >= getattr(self, '_admission_timeout', 60.0):
             self._transport_unknown(command, 'admission_timeout', recover=True)
             return None
         old_driver = self.driver
@@ -451,7 +451,7 @@ class DriverAdapter:
                 # delivery call itself is still waiting for its return frame.
                 command._delivery_worker = done
                 return receipt
-            if time.monotonic() - self._dispatch_clock(command) >= self._admission_timeout:
+            if time.monotonic() - self._dispatch_clock(command) >= getattr(self, '_admission_timeout', 60.0):
                 command._delivery_worker = done
                 self._transport_unknown(command, 'admission_timeout', recover=True)
                 return None
@@ -593,7 +593,7 @@ class DriverAdapter:
                 return
             key = (command.delivery_id, command.turn_id or self._receipt_turn_id(receipt))
             last_progress = self._turn_progress.get(key, settle_started)
-            if not admitted and time.monotonic() - self._dispatch_clock(command) >= self._admission_timeout:
+            if not admitted and time.monotonic() - self._dispatch_clock(command) >= getattr(self, '_admission_timeout', 60.0):
                 self._transport_unknown(command, 'admission_timeout', recover=True)
                 return
             if admitted and time.monotonic() - last_progress >= self._terminal_timeout:
