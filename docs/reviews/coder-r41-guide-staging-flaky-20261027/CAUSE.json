@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-27T17:28:53.133711+00:00",
+  "item": "7 S-GUIDE-STAGING-DUPLICATE-FLAKY",
+  "base": "549f64e280f2c5496bffb506c709c1bf0a1c504d",
+  "classification": "timing: assertion observes delivery-call entry before asynchronous admission callback; not shared test state",
+  "evidence": [
+    "item9 source96f4597 full1051 suites: Guide duplicate fails3of4, at first injected list or third injected list assertion",
+    "FakeProtocolDriver.deliver appends calls before returning receipt; DriverAdapter invokes injection/admission callbacks only after receipt processing",
+    "Test waits for len(driver.calls), then asserts injection and guide consumption before callbacks must have run",
+    "Before any fix, controlled baseline receipt gate reproduced original missing same-1 assertion10/10; each rc1, no other errors, exact original assertion; no random sleep schedule"
+  ],
+  "remedy": "wait for actual first and third injected callbacks; wait for queue quiescence before guide-consumed assertion and temporary directory cleanup; keep original duplicate/no-second-injection and one-GUIDE assertions unchanged",
+  "reproduction": "locked private Python scripts/reproduce-guide-staging-race.py --rounds 10 --driver codex --reverse; worker uses new temporary HOME/IPC and prefix-clean environment, original method loaded from immutable baseline Git"
+}

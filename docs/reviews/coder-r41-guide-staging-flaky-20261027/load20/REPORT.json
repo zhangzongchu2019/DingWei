@@ -1,0 +1,61 @@
+{
+  "source": "9d632ac1fca7505c5a567825227e34d4a2b8ba8d",
+  "started_utc": "2026-10-27T17:34:05.709317+00:00",
+  "load_command": "go test -json -count=1 ./...",
+  "load_cwd": "/data/ai-dev-data/r41-inbox-lag-coder-20261027T1732Z",
+  "cores": 16,
+  "results": [
+    {
+      "profile": "claude",
+      "rounds": 20,
+      "rc": 0,
+      "seconds": 10.307569419965148,
+      "concurrent_full_running": true,
+      "load": [
+        6.01123046875,
+        2.841796875,
+        2.2412109375
+      ]
+    },
+    {
+      "profile": "codex",
+      "rounds": 20,
+      "rc": 0,
+      "seconds": 10.572796275024302,
+      "concurrent_full_running": true,
+      "load": [
+        7.54736328125,
+        3.275390625,
+        2.38916015625
+      ]
+    }
+  ],
+  "repeat_finished_utc": "2026-10-27T17:34:28.590336+00:00",
+  "load_source": "549f64e280f2c5496bffb506c709c1bf0a1c504d compiled before item8 edits",
+  "full_suite_outcome": "load generator only; run still active at this evidence snapshot; no whole-suite PASS claim",
+  "change": "only first_injected.wait and third_injected.wait upper bound2->10; no unconditional sleep",
+  "sha256": {
+    "claude-load20.log": "46c48b4ea0d4af4969dfe14fe5633524764b63bc93dfbc4d519001e51edaa0d6",
+    "codex-load20.log": "e7ed8036246fa718d57dc85c3e3a822c59b16c03cd2469c2aa777a1a4d785eb6"
+  },
+  "claude-load20.log_load_min": [
+    3.49560546875,
+    2.27197265625,
+    2.0537109375
+  ],
+  "claude-load20.log_load_max": [
+    6.01123046875,
+    2.841796875,
+    2.2412109375
+  ],
+  "codex-load20.log_load_min": [
+    6.01123046875,
+    2.841796875,
+    2.2412109375
+  ],
+  "codex-load20.log_load_max": [
+    7.54736328125,
+    3.275390625,
+    2.38916015625
+  ]
+}

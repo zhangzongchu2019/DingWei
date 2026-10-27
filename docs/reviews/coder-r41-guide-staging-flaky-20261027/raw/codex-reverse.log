@@ -1,0 +1,261 @@
+ROUND 1/10 driver=codex UTC=2026-10-27T17:30:03.311400+00:00 cores=16 load=(2.05224609375, 2.42236328125, 2.1005859375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+FAIL
+
+======================================================================
+FAIL: test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<original-guide-assertions>", line 429, in test_duplicate_releases_claim_for_next_business_command
+AssertionError: Lists differ: [] != ['same-1']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'same-1'
+
+- []
++ ['same-1'] : duplicate must replay durable ACKs without synthesizing admission
+
+----------------------------------------------------------------------
+Ran 1 test in 0.146s
+
+FAILED (failures=1)
+EXPECTED_ORIGINAL_RACE callback absent after calls.append
+ROUND 2/10 driver=codex UTC=2026-10-27T17:30:03.600173+00:00 cores=16 load=(2.0478515625, 2.4150390625, 2.099609375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+FAIL
+
+======================================================================
+FAIL: test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<original-guide-assertions>", line 429, in test_duplicate_releases_claim_for_next_business_command
+AssertionError: Lists differ: [] != ['same-1']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'same-1'
+
+- []
++ ['same-1'] : duplicate must replay durable ACKs without synthesizing admission
+
+----------------------------------------------------------------------
+Ran 1 test in 0.146s
+
+FAILED (failures=1)
+EXPECTED_ORIGINAL_RACE callback absent after calls.append
+ROUND 3/10 driver=codex UTC=2026-10-27T17:30:03.887264+00:00 cores=16 load=(2.0478515625, 2.4150390625, 2.099609375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+FAIL
+
+======================================================================
+FAIL: test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<original-guide-assertions>", line 429, in test_duplicate_releases_claim_for_next_business_command
+AssertionError: Lists differ: [] != ['same-1']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'same-1'
+
+- []
++ ['same-1'] : duplicate must replay durable ACKs without synthesizing admission
+
+----------------------------------------------------------------------
+Ran 1 test in 0.144s
+
+FAILED (failures=1)
+EXPECTED_ORIGINAL_RACE callback absent after calls.append
+ROUND 4/10 driver=codex UTC=2026-10-27T17:30:04.172626+00:00 cores=16 load=(2.0478515625, 2.4150390625, 2.099609375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+FAIL
+
+======================================================================
+FAIL: test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<original-guide-assertions>", line 429, in test_duplicate_releases_claim_for_next_business_command
+AssertionError: Lists differ: [] != ['same-1']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'same-1'
+
+- []
++ ['same-1'] : duplicate must replay durable ACKs without synthesizing admission
+
+----------------------------------------------------------------------
+Ran 1 test in 0.143s
+
+FAILED (failures=1)
+EXPECTED_ORIGINAL_RACE callback absent after calls.append
+ROUND 5/10 driver=codex UTC=2026-10-27T17:30:04.456225+00:00 cores=16 load=(2.0478515625, 2.4150390625, 2.099609375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+FAIL
+
+======================================================================
+FAIL: test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<original-guide-assertions>", line 429, in test_duplicate_releases_claim_for_next_business_command
+AssertionError: Lists differ: [] != ['same-1']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'same-1'
+
+- []
++ ['same-1'] : duplicate must replay durable ACKs without synthesizing admission
+
+----------------------------------------------------------------------
+Ran 1 test in 0.144s
+
+FAILED (failures=1)
+EXPECTED_ORIGINAL_RACE callback absent after calls.append
+ROUND 6/10 driver=codex UTC=2026-10-27T17:30:04.741733+00:00 cores=16 load=(2.0478515625, 2.4150390625, 2.099609375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+FAIL
+
+======================================================================
+FAIL: test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<original-guide-assertions>", line 429, in test_duplicate_releases_claim_for_next_business_command
+AssertionError: Lists differ: [] != ['same-1']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'same-1'
+
+- []
++ ['same-1'] : duplicate must replay durable ACKs without synthesizing admission
+
+----------------------------------------------------------------------
+Ran 1 test in 0.148s
+
+FAILED (failures=1)
+EXPECTED_ORIGINAL_RACE callback absent after calls.append
+ROUND 7/10 driver=codex UTC=2026-10-27T17:30:05.032690+00:00 cores=16 load=(2.0478515625, 2.4150390625, 2.099609375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+FAIL
+
+======================================================================
+FAIL: test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<original-guide-assertions>", line 429, in test_duplicate_releases_claim_for_next_business_command
+AssertionError: Lists differ: [] != ['same-1']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'same-1'
+
+- []
++ ['same-1'] : duplicate must replay durable ACKs without synthesizing admission
+
+----------------------------------------------------------------------
+Ran 1 test in 0.142s
+
+FAILED (failures=1)
+EXPECTED_ORIGINAL_RACE callback absent after calls.append
+ROUND 8/10 driver=codex UTC=2026-10-27T17:30:05.312423+00:00 cores=16 load=(2.0478515625, 2.4150390625, 2.099609375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+FAIL
+
+======================================================================
+FAIL: test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<original-guide-assertions>", line 429, in test_duplicate_releases_claim_for_next_business_command
+AssertionError: Lists differ: [] != ['same-1']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'same-1'
+
+- []
++ ['same-1'] : duplicate must replay durable ACKs without synthesizing admission
+
+----------------------------------------------------------------------
+Ran 1 test in 0.146s
+
+FAILED (failures=1)
+EXPECTED_ORIGINAL_RACE callback absent after calls.append
+ROUND 9/10 driver=codex UTC=2026-10-27T17:30:05.596660+00:00 cores=16 load=(2.0478515625, 2.4150390625, 2.099609375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+FAIL
+
+======================================================================
+FAIL: test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<original-guide-assertions>", line 429, in test_duplicate_releases_claim_for_next_business_command
+AssertionError: Lists differ: [] != ['same-1']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'same-1'
+
+- []
++ ['same-1'] : duplicate must replay durable ACKs without synthesizing admission
+
+----------------------------------------------------------------------
+Ran 1 test in 0.141s
+
+FAILED (failures=1)
+EXPECTED_ORIGINAL_RACE callback absent after calls.append
+ROUND 10/10 driver=codex UTC=2026-10-27T17:30:05.878227+00:00 cores=16 load=(2.0478515625, 2.4150390625, 2.099609375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+FAIL
+
+======================================================================
+FAIL: test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<original-guide-assertions>", line 429, in test_duplicate_releases_claim_for_next_business_command
+AssertionError: Lists differ: [] != ['same-1']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'same-1'
+
+- []
++ ['same-1'] : duplicate must replay durable ACKs without synthesizing admission
+
+----------------------------------------------------------------------
+Ran 1 test in 0.144s
+
+FAILED (failures=1)
+EXPECTED_ORIGINAL_RACE callback absent after calls.append
+SUMMARY rounds=10 unexpected=0 each_rc=1

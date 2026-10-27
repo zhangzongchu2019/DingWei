@@ -1,0 +1,130 @@
+test_callback_fires_only_after_protocol_turn_admission (test_guide_staging.DriverAdmissionCallbackTest.test_callback_fires_only_after_protocol_turn_admission) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1)
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1)
+ok
+test_duplicate_has_no_new_injection_and_releases_unadmitted_claim (test_guide_staging.DriverAdmissionCallbackTest.test_duplicate_has_no_new_injection_and_releases_unadmitted_claim) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+ok
+test_protocol_failure_before_turn_releases_admission (test_guide_staging.DriverAdmissionCallbackTest.test_protocol_failure_before_turn_releases_admission) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-business-1 -> failed (rejected before turn)
+[delivery] failed id=dw-business-1 source=fixture (rejected before turn)ok
+
+test_slow_protocol_admission_does_not_inject_on_enqueue_return (test_guide_staging.DriverAdmissionCallbackTest.test_slow_protocol_admission_does_not_inject_on_enqueue_return) ... [driver-adapter] started, driver=codex
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1)
+ok
+test_claude_stream_json_user_frame_boundary_counts_zero_one_two (test_guide_staging.GuideRealAdapterBoundaryTest.test_claude_stream_json_user_frame_boundary_counts_zero_one_two) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-business-1 -> accepted (isReplay ack, turn=1350e58411154478ab73901f528074fd)
+[delivery] done id=dw-business-1 source=fixture (turn=1350e58411154478ab73901f528074fd)
+[driver-adapter] deliver id=dw-business-2 -> accepted (isReplay ack, turn=4bd1d7470fe646cbb3c1e630117c715c)
+[delivery] done id=dw-business-2 source=fixture (turn=4bd1d7470fe646cbb3c1e630117c715c)
+ok
+test_codex_turn_start_rpc_boundary_counts_zero_one_two (test_guide_staging.GuideRealAdapterBoundaryTest.test_codex_turn_start_rpc_boundary_counts_zero_one_two) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1 status=inProgress)
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-business-2 -> processing (turn=turn-2 status=inProgress)
+[delivery] done id=dw-business-2 source=fixture (turn=turn-2)
+ok
+test_driver_deliver_exception_releases_claim_for_next_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_driver_deliver_exception_releases_claim_for_next_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter][FAILED] id=dw-business-1 deliver raised: fixture deliver boom
+[driver-adapter] deliver id=dw-business-2 -> processing (turn=turn-2)
+[delivery] done id=dw-business-2 source=fixture (turn=turn-2)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_driver_not_admitted_releases_claim_for_next_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_driver_not_admitted_releases_claim_for_next_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-business-1 -> failed (rejected before turn)
+[delivery] failed id=dw-business-1 source=fixture (rejected before turn)
+[driver-adapter] deliver id=dw-business-2 -> processing (turn=turn-2)
+[delivery] done id=dw-business-2 source=fixture (turn=turn-2)
+ok
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[agent_skill] staged; no model turn
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+test_queue_full_releases_claim_for_next_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_queue_full_releases_claim_for_next_command) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[driver-adapter] deliver id=dw-block -> processing (turn=turn-1)
+[delivery] done id=dw-block source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-after -> processing (turn=turn-2)
+[delivery] done id=dw-after source=fixture (turn=turn-2)
+ok
+test_real_cli_adapter_fake_pty_counts_zero_one_two (test_guide_staging.GuideRealAdapterBoundaryTest.test_real_cli_adapter_fake_pty_counts_zero_one_two) ... [agent_skill] staged; no model turn
+ok
+test_real_driver_adapter_boundary_counts_zero_one_two (test_guide_staging.GuideRealAdapterBoundaryTest.test_real_driver_adapter_boundary_counts_zero_one_two) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-business-1 -> processing (turn=turn-1)
+[delivery] done id=dw-business-1 source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-business-2 -> processing (turn=turn-2)
+[delivery] done id=dw-business-2 source=fixture (turn=turn-2)
+ok
+test_admission_failure_releases_claim_and_retry_merges_once (test_guide_staging.GuideSessionHelperTest.test_admission_failure_releases_claim_and_retry_merges_once) ... [agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+ok
+test_context_boundary_preserves_business_body_and_marks_no_answer (test_guide_staging.GuideSessionHelperTest.test_context_boundary_preserves_business_body_and_marks_no_answer) ... [agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+ok
+test_duplicate_guide_after_restart_does_not_create_second_call (test_guide_staging.GuideSessionHelperTest.test_duplicate_guide_after_restart_does_not_create_second_call) ... [agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+ok
+test_guide_only_zero_calls_and_ack_after_durable_stage_for_all_paths (test_guide_staging.GuideSessionHelperTest.test_guide_only_zero_calls_and_ack_after_durable_stage_for_all_paths) ... [recv] from=workpulse#FB-2642 to=guide#FB-2642 body_len=5
+[agent_skill] staged; no model turn
+[agent_skill] staged + auto-acked
+[recv] from=workpulse#FB-2642 to=guide#FB-2642 body_len=5
+[agent_skill] staged; no model turn
+[agent_skill] staged + auto-acked
+[recv] from=workpulse#FB-2642 to=guide#FB-2642 body_len=5
+[agent_skill] staged; no model turn
+[agent_skill] staged + auto-acked
+ok
+test_guide_plus_first_task_one_call_second_task_total_two_for_all_paths (test_guide_staging.GuideSessionHelperTest.test_guide_plus_first_task_one_call_second_task_total_two_for_all_paths) ... [agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+ok
+test_hub_shape_semantic_body_change_restages_as_expected (test_guide_staging.GuideSessionHelperTest.test_hub_shape_semantic_body_change_restages_as_expected) ... [agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+ok
+test_hub_shape_timestamp_drift_does_not_restage_consumed_guide (test_guide_staging.GuideSessionHelperTest.test_hub_shape_timestamp_drift_does_not_restage_consumed_guide) ... [agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+ok
+test_not_admitted_keeps_staged_and_does_not_prefix_next_concurrently (test_guide_staging.GuideSessionHelperTest.test_not_admitted_keeps_staged_and_does_not_prefix_next_concurrently) ... [agent_skill] staged; no model turn
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+[reply-origin] suppress reply from=peer#FB-2642: no_expect_reply
+ok
+test_stage_failure_sends_no_ack (test_guide_staging.GuideSessionHelperTest.test_stage_failure_sends_no_ack) ... [recv] from=workpulse#FB-2642 to=guide#FB-2642 body_len=5
+[agent_skill] stage failed: disk full
+ok
+test_system_empty_and_control_inputs_do_not_consume_staged_guide (test_guide_staging.GuideSessionHelperTest.test_system_empty_and_control_inputs_do_not_consume_staged_guide) ... [agent_skill] staged; no model turn
+ok
+test_consumed_same_version_does_not_restage_but_new_version_does (test_guide_staging.GuideStoreTest.test_consumed_same_version_does_not_restage_but_new_version_does) ... ok
+test_identity_mismatch_cannot_consume_another_seat_guide (test_guide_staging.GuideStoreTest.test_identity_mismatch_cannot_consume_another_seat_guide) ... ok
+test_stage_is_persistent_versioned_hashed_and_private (test_guide_staging.GuideStoreTest.test_stage_is_persistent_versioned_hashed_and_private) ... ok
+
+----------------------------------------------------------------------
+Ran 25 tests in 2.802s
+
+OK

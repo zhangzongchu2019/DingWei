@@ -1,0 +1,261 @@
+ROUND 1/20 driver=claude UTC=2026-10-27T17:34:07.747061+00:00 cores=16 load=(3.49560546875, 2.27197265625, 2.0537109375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.260s
+
+OK
+ROUND 2/20 driver=claude UTC=2026-10-27T17:34:08.205892+00:00 cores=16 load=(3.49560546875, 2.27197265625, 2.0537109375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.278s
+
+OK
+ROUND 3/20 driver=claude UTC=2026-10-27T17:34:08.715124+00:00 cores=16 load=(4.0966796875, 2.4169921875, 2.10205078125)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.257s
+
+OK
+ROUND 4/20 driver=claude UTC=2026-10-27T17:34:09.225577+00:00 cores=16 load=(4.0966796875, 2.4169921875, 2.10205078125)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.264s
+
+OK
+ROUND 5/20 driver=claude UTC=2026-10-27T17:34:09.686965+00:00 cores=16 load=(4.0966796875, 2.4169921875, 2.10205078125)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.260s
+
+OK
+ROUND 6/20 driver=claude UTC=2026-10-27T17:34:10.141687+00:00 cores=16 load=(4.0966796875, 2.4169921875, 2.10205078125)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.264s
+
+OK
+ROUND 7/20 driver=claude UTC=2026-10-27T17:34:10.591247+00:00 cores=16 load=(4.0966796875, 2.4169921875, 2.10205078125)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.273s
+
+OK
+ROUND 8/20 driver=claude UTC=2026-10-27T17:34:11.074835+00:00 cores=16 load=(4.0966796875, 2.4169921875, 2.10205078125)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.285s
+
+OK
+ROUND 9/20 driver=claude UTC=2026-10-27T17:34:11.605909+00:00 cores=16 load=(4.0966796875, 2.4169921875, 2.10205078125)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.265s
+
+OK
+ROUND 10/20 driver=claude UTC=2026-10-27T17:34:12.086141+00:00 cores=16 load=(4.0966796875, 2.4169921875, 2.10205078125)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.345s
+
+OK
+ROUND 11/20 driver=claude UTC=2026-10-27T17:34:12.674878+00:00 cores=16 load=(4.0966796875, 2.4169921875, 2.10205078125)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)[agent_skill] staged; no model turn
+
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.388s
+
+OK
+ROUND 12/20 driver=claude UTC=2026-10-27T17:34:13.402340+00:00 cores=16 load=(4.0966796875, 2.4169921875, 2.10205078125)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.452s
+
+OK
+ROUND 13/20 driver=claude UTC=2026-10-27T17:34:14.095617+00:00 cores=16 load=(6.01123046875, 2.841796875, 2.2412109375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.302s
+
+OK
+ROUND 14/20 driver=claude UTC=2026-10-27T17:34:14.650415+00:00 cores=16 load=(6.01123046875, 2.841796875, 2.2412109375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.291s
+
+OK
+ROUND 15/20 driver=claude UTC=2026-10-27T17:34:15.165260+00:00 cores=16 load=(6.01123046875, 2.841796875, 2.2412109375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[agent_skill] staged; no model turn
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.276s
+
+OK
+ROUND 16/20 driver=claude UTC=2026-10-27T17:34:15.632616+00:00 cores=16 load=(6.01123046875, 2.841796875, 2.2412109375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.283s
+
+OK
+ROUND 17/20 driver=claude UTC=2026-10-27T17:34:16.097174+00:00 cores=16 load=(6.01123046875, 2.841796875, 2.2412109375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.293s
+
+OK
+ROUND 18/20 driver=claude UTC=2026-10-27T17:34:16.582856+00:00 cores=16 load=(6.01123046875, 2.841796875, 2.2412109375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.285s
+
+OK
+ROUND 19/20 driver=claude UTC=2026-10-27T17:34:17.094755+00:00 cores=16 load=(6.01123046875, 2.841796875, 2.2412109375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.281s
+
+OK
+ROUND 20/20 driver=claude UTC=2026-10-27T17:34:17.569550+00:00 cores=16 load=(6.01123046875, 2.841796875, 2.2412109375)
+test_duplicate_releases_claim_for_next_business_command (test_guide_staging.GuideRealAdapterBoundaryTest.test_duplicate_releases_claim_for_next_business_command) ... [driver-adapter] started, driver=claude
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-1)
+[delivery] done id=dw-same source=fixture (turn=turn-1)
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-third -> processing (turn=turn-2)
+[delivery] done id=dw-third source=fixture (turn=turn-2)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.277s
+
+OK
+SUMMARY rounds=20 unexpected=0 each_rc=0

@@ -1,0 +1,37 @@
+{
+  "source": "d1543b14171a81537a59e2ec1c0a9bf0f9f560b9",
+  "started_utc": "2026-10-27T17:29:43.759170+00:00",
+  "cores": 16,
+  "load": [
+    1.806640625,
+    2.3935546875,
+    2.08642578125
+  ],
+  "results": [
+    {
+      "label": "claude-50",
+      "rc": 0,
+      "expected_rc": 0,
+      "rounds": 50
+    },
+    {
+      "label": "claude-reverse",
+      "rc": 1,
+      "expected_rc": 1,
+      "rounds": 10
+    },
+    {
+      "label": "codex-50",
+      "rc": 0,
+      "expected_rc": 0,
+      "rounds": 50
+    },
+    {
+      "label": "codex-reverse",
+      "rc": 1,
+      "expected_rc": 1,
+      "rounds": 10
+    }
+  ],
+  "finished_utc": "2026-10-27T17:30:06.166595+00:00"
+}
