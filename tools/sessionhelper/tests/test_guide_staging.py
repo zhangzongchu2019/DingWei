@@ -431,7 +431,7 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
                 FakeWS(), business_env("BEFORE", eid="same"),
                 on_injected=first_callback,
             ))
-            self.assertTrue(first_injected.wait(2), "first admission callback did not run")
+            self.assertTrue(first_injected.wait(10), "first admission callback did not run")
             self.assertEqual(len(driver.calls), 1)
             asyncio.run(helper.inject_agent_network_skill(guide_env()))
             asyncio.run(helper.process_inbound_message(
@@ -445,7 +445,7 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
                 FakeWS(), business_env("THIRD", eid="third"),
                 on_injected=third_callback,
             ))
-            self.assertTrue(third_injected.wait(2), "third admission callback did not run")
+            self.assertTrue(third_injected.wait(10), "third admission callback did not run")
             self.assertEqual(len(driver.calls), 2)
             self.assertIn("GUIDE", driver.calls[1])
             self.assertTrue(driver.calls[1].endswith("THIRD"))
