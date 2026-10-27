@@ -1,0 +1,728 @@
+COMPONENT deploy/image/supervisord/test_verify_supervisor_template.py
+test_workpulse_template_comment_matches_target_schema (deploy.image.supervisord.test_verify_supervisor_template.RepositoryTemplateContractTest.test_workpulse_template_comment_matches_target_schema) ... ok
+test_command_path_drift (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_command_path_drift) ... ok
+test_declared_environment_transition_is_exact (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_declared_environment_transition_is_exact) ... ok
+test_environment_transition_does_not_cover_other_drift (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_environment_transition_does_not_cover_other_drift) ... ok
+test_environment_transition_must_be_removed_after_evidence_catches_up (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_environment_transition_must_be_removed_after_evidence_catches_up) ... ok
+test_evidence_digest_anchor (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_evidence_digest_anchor) ... ok
+test_evidence_schema_extra_env_key (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_evidence_schema_extra_env_key) ... ok
+test_evidence_schema_program_gap (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_evidence_schema_program_gap) ... ok
+test_literal_value (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_literal_value) ... ok
+test_placeholder_label_drift (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_placeholder_label_drift) ... ok
+test_positive (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_positive) ... ok
+test_schema_template_env_gap (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_schema_template_env_gap) ... ok
+test_swapped_labels (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_swapped_labels) ... ok
+test_template_env_digest_drift (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_template_env_digest_drift) ... ok
+test_template_extra_program (deploy.image.supervisord.test_verify_supervisor_template.ThreeWayGateTest.test_template_extra_program) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.769s
+
+OK
+COMPONENT deploy/ops/hosted-image/test_start.py
+test_m10_config_follows_current_model (deploy.ops.hosted-image.test_start.StartR4Test.test_m10_config_follows_current_model) ... ok
+test_m11_failure_before_marker_rewrites_next_time (deploy.ops.hosted-image.test_start.StartR4Test.test_m11_failure_before_marker_rewrites_next_time) ... ok
+test_m12_other_bad_markers_are_ignored (deploy.ops.hosted-image.test_start.StartR4Test.test_m12_other_bad_markers_are_ignored) ... ok
+test_m12_symlink_marker_is_ignored (deploy.ops.hosted-image.test_start.StartR4Test.test_m12_symlink_marker_is_ignored) ... ok
+test_m13_equal_mtime_does_not_rewrite (deploy.ops.hosted-image.test_start.StartR4Test.test_m13_equal_mtime_does_not_rewrite) ... ok
+test_m1_no_auth_writes_everything (deploy.ops.hosted-image.test_start.StartR4Test.test_m1_no_auth_writes_everything) ... ok
+test_m2_marker_matches_keeps_renewed_login (deploy.ops.hosted-image.test_start.StartR4Test.test_m2_marker_matches_keeps_renewed_login) ... ok
+test_m3_marker_differs_rewrites (deploy.ops.hosted-image.test_start.StartR4Test.test_m3_marker_differs_rewrites) ... ok
+test_m4_no_marker_older_cred_keeps_auth (deploy.ops.hosted-image.test_start.StartR4Test.test_m4_no_marker_older_cred_keeps_auth) ... ok
+test_m5_no_marker_newer_cred_rewrites (deploy.ops.hosted-image.test_start.StartR4Test.test_m5_no_marker_newer_cred_rewrites) ... ok
+test_m6_api_key_logs_in_only_when_needed (deploy.ops.hosted-image.test_start.StartR4Test.test_m6_api_key_logs_in_only_when_needed) ... ok
+test_m7_marker_mode_and_bad_credential (deploy.ops.hosted-image.test_start.StartR4Test.test_m7_marker_mode_and_bad_credential) ... ok
+test_m8_same_sha_refresh_rewrites (deploy.ops.hosted-image.test_start.StartR4Test.test_m8_same_sha_refresh_rewrites) ... ok
+test_m9_empty_or_broken_auth_rewrites (deploy.ops.hosted-image.test_start.StartR4Test.test_m9_empty_or_broken_auth_rewrites) ... ok
+test_marker_write_failure_does_not_block_boot (deploy.ops.hosted-image.test_start.StartR4Test.test_marker_write_failure_does_not_block_boot) ... ok
+test_no_credential_leaks_on_any_path (deploy.ops.hosted-image.test_start.StartR4Test.test_no_credential_leaks_on_any_path) ... ok
+test_h3_ipc_dir_private_and_env_set_restricted_send (deploy.ops.hosted-image.test_start.StartR5Test.test_h3_ipc_dir_private_and_env_set_restricted_send) ... ok
+test_r5_ipc_dir_mode_tightened_when_preexisting_loose (deploy.ops.hosted-image.test_start.StartR5Test.test_r5_ipc_dir_mode_tightened_when_preexisting_loose) ... ok
+test_r5_ipc_dir_symlink_refused (deploy.ops.hosted-image.test_start.StartR5Test.test_r5_ipc_dir_symlink_refused) ... ok
+test_r5_production_constants_and_wrapper_default_socket_agree (deploy.ops.hosted-image.test_start.StartR5Test.test_r5_production_constants_and_wrapper_default_socket_agree) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 1.083s
+
+OK
+COMPONENT deploy/ops/hosted-image/test_build_definition.py
+test_context_allowlist_assembly_no_source_directory_copy (deploy.ops.hosted-image.test_build_definition.ContextFixtures.test_context_allowlist_assembly_no_source_directory_copy) ... ok
+test_dirty_source_or_wrong_commit_stops_before_inputs (deploy.ops.hosted-image.test_build_definition.ContextFixtures.test_dirty_source_or_wrong_commit_stops_before_inputs) ... ok
+test_exact_deb_set_and_hash (deploy.ops.hosted-image.test_build_definition.ContextFixtures.test_exact_deb_set_and_hash) ... ok
+test_extra_file_duplicate_distribution_symlink_rejected (deploy.ops.hosted-image.test_build_definition.ContextFixtures.test_extra_file_duplicate_distribution_symlink_rejected) ... ok
+test_locked_wheel_matches (deploy.ops.hosted-image.test_build_definition.ContextFixtures.test_locked_wheel_matches) ... ok
+test_native_integrity_and_file_count (deploy.ops.hosted-image.test_build_definition.ContextFixtures.test_native_integrity_and_file_count) ... ok
+test_native_traversal_links_and_duplicate_rejected (deploy.ops.hosted-image.test_build_definition.ContextFixtures.test_native_traversal_links_and_duplicate_rejected) ... ok
+test_source_kit_clean_checkout_without_bytecode_environment (deploy.ops.hosted-image.test_build_definition.ContextFixtures.test_source_kit_clean_checkout_without_bytecode_environment) ... ok
+test_source_kit_loader_failure_restores_bytecode_setting (deploy.ops.hosted-image.test_build_definition.ContextFixtures.test_source_kit_loader_failure_restores_bytecode_setting) ... ok
+test_wrong_hash_or_version_or_missing_pin_rejected (deploy.ops.hosted-image.test_build_definition.ContextFixtures.test_wrong_hash_or_version_or_missing_pin_rejected) ... ok
+test_engine_existing_socket_and_approved_identity_preflight (deploy.ops.hosted-image.test_build_definition.StartupAndDefinition.test_engine_existing_socket_and_approved_identity_preflight) ... ok
+test_existing_update_state_stops_before_credentials_without_read_or_reset (deploy.ops.hosted-image.test_build_definition.StartupAndDefinition.test_existing_update_state_stops_before_credentials_without_read_or_reset) ... ok
+test_factory_only_state_accepts_absent_empty_rejects_redirected_state (deploy.ops.hosted-image.test_build_definition.StartupAndDefinition.test_factory_only_state_accepts_absent_empty_rejects_redirected_state) ... hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+ok
+test_lock_only_restart_metadata_boundary (deploy.ops.hosted-image.test_build_definition.StartupAndDefinition.test_lock_only_restart_metadata_boundary) ... hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+ok
+test_mcp_and_helper_share_restricted_root_and_state (deploy.ops.hosted-image.test_build_definition.StartupAndDefinition.test_mcp_and_helper_share_restricted_root_and_state) ... ok
+test_offline_build_security_contract (deploy.ops.hosted-image.test_build_definition.StartupAndDefinition.test_offline_build_security_contract) ... ok
+test_runtime_metadata_exact_lock_no_build_distributions (deploy.ops.hosted-image.test_build_definition.StartupAndDefinition.test_runtime_metadata_exact_lock_no_build_distributions) ... ok
+test_shell_missing_variables_and_default_engine_refuse_without_docker (deploy.ops.hosted-image.test_build_definition.StartupAndDefinition.test_shell_missing_variables_and_default_engine_refuse_without_docker) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.291s
+
+OK
+COMPONENT deploy/ops/hosted-claude-image/test_claude_start.py
+test_actual_h3_shape_composes_git_claude_overlay_and_common_guard (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_actual_h3_shape_composes_git_claude_overlay_and_common_guard) ... ok
+test_archive_links_traversal_and_duplicates_rejected_even_with_valid_hash (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_archive_links_traversal_and_duplicates_rejected_even_with_valid_hash) ... ok
+test_archive_modes_are_readable_and_executable_for_runtime_user (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_archive_modes_are_readable_and_executable_for_runtime_user) ... ok
+test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_build_entry_build_and_inspect_failures_do_not_retry_or_print_an_id) ... ok
+test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_build_entry_identity_mismatch_and_info_failure_never_build_or_retry) ... ok
+test_build_entry_invalid_materials_are_rejected_before_any_docker (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_build_entry_invalid_materials_are_rejected_before_any_docker) ... ok
+test_build_entry_missing_inputs_stop_before_context_or_docker (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_build_entry_missing_inputs_stop_before_context_or_docker) ... ok
+test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_build_entry_rejects_ambiguous_uri_and_resolved_socket_paths) ... ok
+test_build_entry_socket_alias_and_metadata_refusals_precede_packager (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_build_entry_socket_alias_and_metadata_refusals_precede_packager) ... ok
+test_build_entry_uses_verified_context_offline_parameters_and_inspected_id (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_build_entry_uses_verified_context_offline_parameters_and_inspected_id) ... ok
+test_clean_git_source_and_lock_are_required_before_external_inputs (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_clean_git_source_and_lock_are_required_before_external_inputs) ... ok
+test_default_alias_guard_even_when_default_socket_exists_metadata_model (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_default_alias_guard_even_when_default_socket_exists_metadata_model) ... ok
+test_descriptor_budget_is_constant_and_output_alias_refused (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_descriptor_budget_is_constant_and_output_alias_refused) ... ok
+test_directory_chmod_failure_closes_descriptors_and_removes_new_output (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_directory_chmod_failure_closes_descriptors_and_removes_new_output) ... ok
+test_h3_git_or_locked_content_cannot_self_authorize_by_rehash (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_h3_git_or_locked_content_cannot_self_authorize_by_rehash) ... ok
+test_missing_extra_or_receipt_pollution_rejected (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_missing_extra_or_receipt_pollution_rejected) ... ok
+test_regular_symlink_is_rejected_before_external_read (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_regular_symlink_is_rejected_before_external_read) ... ok
+test_regular_type_does_not_allow_changed_h3_modes (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_regular_type_does_not_allow_changed_h3_modes) ... ok
+test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_runtime_uid10001_traversal_and_directory_receipt_under_private_umask) ... ok
+test_staged_copy_sources_survive_actual_ignore_rules (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_staged_copy_sources_survive_actual_ignore_rules) ... ok
+test_symlinks_specials_hardlinks_and_redirected_roots_never_read (deploy.ops.hosted-claude-image.test_claude_start.ClaudePackager.test_symlinks_specials_hardlinks_and_redirected_roots_never_read) ... ok
+test_definition_keeps_combo_unverified_and_builder_fail_closed (deploy.ops.hosted-claude-image.test_claude_start.ClaudeStart.test_definition_keeps_combo_unverified_and_builder_fail_closed) ... ok
+test_invalid_model_stops_before_credentials_guard_or_cli (deploy.ops.hosted-claude-image.test_claude_start.ClaudeStart.test_invalid_model_stops_before_credentials_guard_or_cli) ... ok
+test_mcp_config_rejects_final_or_temporary_symlink_without_touching_target (deploy.ops.hosted-claude-image.test_claude_start.ClaudeStart.test_mcp_config_rejects_final_or_temporary_symlink_without_touching_target) ... ok
+test_offline_fixture_hashes_and_missing_node_lock_fail_closed (deploy.ops.hosted-claude-image.test_claude_start.ClaudeStart.test_offline_fixture_hashes_and_missing_node_lock_fail_closed) ... ok
+test_package_and_native_metadata_are_pinned (deploy.ops.hosted-claude-image.test_claude_start.ClaudeStart.test_package_and_native_metadata_are_pinned) ... ok
+test_rejects_non_object_or_wrong_cli (deploy.ops.hosted-claude-image.test_claude_start.ClaudeStart.test_rejects_non_object_or_wrong_cli) ... hosted-claude-start: invalid or missing SH_CRED_FILE
+hosted-claude-start: invalid or missing SH_CLI
+ok
+test_restricted_mcp_and_json_object_credential (deploy.ops.hosted-claude-image.test_claude_start.ClaudeStart.test_restricted_mcp_and_json_object_credential) ... ok
+test_selected_model_uses_verified_cli_abi_with_fake_cli_argv (deploy.ops.hosted-claude-image.test_claude_start.ClaudeStart.test_selected_model_uses_verified_cli_abi_with_fake_cli_argv) ... ok
+test_staged_public_guard_rejects_old_update_before_credential_read (deploy.ops.hosted-claude-image.test_claude_start.ClaudeStart.test_staged_public_guard_rejects_old_update_before_credential_read)
+Exercise the actual staged H3 public guard, not a launcher-local substitute. ... hosted-start: invalid or missing HELPER_UPDATE_STATE
+ok
+test_exact_run_checks_hash_before_extraction (deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_checks_hash_before_extraction) ... ok
+test_exact_run_rejects_link_outside_destination (deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_rejects_link_outside_destination) ... ok
+test_exact_run_rejects_parent_traversal (deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_rejects_parent_traversal) ... ok
+test_exact_run_works_without_xz_and_preserves_relative_symlink (deploy.ops.hosted-claude-image.test_claude_start.NodeXZExtraction.test_exact_run_works_without_xz_and_preserves_relative_symlink) ... ok
+
+----------------------------------------------------------------------
+Ran 34 tests in 7.593s
+
+OK
+COMPONENT deploy/test_build_entrypoints.py
+test_build_accepts_exact_go_1222_and_constructs_artifacts (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_build_accepts_exact_go_1222_and_constructs_artifacts) ... ok
+test_build_checks_entire_go_version_output (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_build_checks_entire_go_version_output) ... ok
+test_build_make_and_ci_share_the_canonical_test_entrypoint (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_build_make_and_ci_share_the_canonical_test_entrypoint) ... ok
+test_build_rejects_go_126_before_tests_or_artifacts (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_build_rejects_go_126_before_tests_or_artifacts) ... ok
+test_build_sh_owns_gate_flags_and_deploy_provenance (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_build_sh_owns_gate_flags_and_deploy_provenance) ... ok
+test_docker_builder_runs_gate_and_verifies_embedded_commit (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_docker_builder_runs_gate_and_verifies_embedded_commit) ... ok
+test_every_deploy_and_view_service_test_is_wired_once (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_every_deploy_and_view_service_test_is_wired_once) ... ok
+test_helper_inventory_rejects_each_missing_file_and_manifest_entry (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_helper_inventory_rejects_each_missing_file_and_manifest_entry) ... ok
+test_install_never_reuses_or_directly_builds_an_unverified_binary (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_install_never_reuses_or_directly_builds_an_unverified_binary) ... ok
+test_make_build_and_docker_do_not_copy_build_flags (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_make_build_and_docker_do_not_copy_build_flags) ... ok
+test_missing_helper_file_rejected_before_import_or_execution (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_missing_helper_file_rejected_before_import_or_execution) ... ok
+test_nodeagent_is_a_peer_release_artifact (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_nodeagent_is_a_peer_release_artifact) ... ok
+test_ts3_helper_regressions_are_wired_once (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_ts3_helper_regressions_are_wired_once) ... ok
+test_update_modules_and_canonical_counts_are_wired (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_update_modules_and_canonical_counts_are_wired) ... ok
+test_view_page_store_has_one_configurable_timeout (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_view_page_store_has_one_configurable_timeout) ... ok
+test_view_unlock_integration_has_one_configurable_timeout (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_view_unlock_integration_has_one_configurable_timeout) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.628s
+
+OK
+COMPONENT deploy/test_file_service_deploy.py
+test_direct_link_regex_accepts_canonical_sessions_and_rejects_unsafe_paths (deploy.test_file_service_deploy.FileServiceDeploymentTest.test_direct_link_regex_accepts_canonical_sessions_and_rejects_unsafe_paths) ... ok
+test_direct_links_inline_only_whitelisted_extensions (deploy.test_file_service_deploy.FileServiceDeploymentTest.test_direct_links_inline_only_whitelisted_extensions) ... ok
+test_expiry_methods_distinguish_disposable_from_production_mutation (deploy.test_file_service_deploy.FileServiceDeploymentTest.test_expiry_methods_distinguish_disposable_from_production_mutation) ... ok
+test_local_storage_replaces_minio_and_is_non_executable (deploy.test_file_service_deploy.FileServiceDeploymentTest.test_local_storage_replaces_minio_and_is_non_executable) ... ok
+test_nginx_exposes_only_public_file_routes (deploy.test_file_service_deploy.FileServiceDeploymentTest.test_nginx_exposes_only_public_file_routes) ... ok
+test_nginx_uses_only_the_dedicated_object_read_group (deploy.test_file_service_deploy.FileServiceDeploymentTest.test_nginx_uses_only_the_dedicated_object_read_group) ... ok
+test_owner_selected_limits_are_pinned_in_deployment_contract (deploy.test_file_service_deploy.FileServiceDeploymentTest.test_owner_selected_limits_are_pinned_in_deployment_contract) ... ok
+test_probe_is_continuous_and_targets_only_private_readyz (deploy.test_file_service_deploy.FileServiceDeploymentTest.test_probe_is_continuous_and_targets_only_private_readyz) ... ok
+test_real_storage_probe_is_not_readyz_only (deploy.test_file_service_deploy.FileServiceDeploymentTest.test_real_storage_probe_is_not_readyz_only) ... ok
+test_service_is_supervised_and_write_scope_is_explicit (deploy.test_file_service_deploy.FileServiceDeploymentTest.test_service_is_supervised_and_write_scope_is_explicit) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.002s
+
+OK
+COMPONENT deploy/test_generate_console_seed.py
+test_10_every_owner_identity_gets_explicit_scoped_role (deploy.test_generate_console_seed.T.test_10_every_owner_identity_gets_explicit_scoped_role) ... /data/ai-dev-data/r41-build-gate-verify-40bb/deploy/test_generate_console_seed.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpe7a9r1bo/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_11_management_role_is_explicit_not_inferred (deploy.test_generate_console_seed.T.test_11_management_role_is_explicit_not_inferred) ... /data/ai-dev-data/r41-build-gate-verify-40bb/deploy/test_generate_console_seed.py:116: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpp392m1_z/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_12_unknown_management_principal_blocks (deploy.test_generate_console_seed.T.test_12_unknown_management_principal_blocks) ... ok
+test_13_existing_identity_pairing_is_order_independent (deploy.test_generate_console_seed.T.test_13_existing_identity_pairing_is_order_independent)
+事故最小复现：交换 digest 顺序不得改变库内既有 id↔subject 配对。 ... /data/ai-dev-data/r41-build-gate-verify-40bb/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmph3c8xfi7/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_14_new_identity_id_is_order_independent_or_both_rejected (deploy.test_generate_console_seed.T.test_14_new_identity_id_is_order_independent_or_both_rejected)
+全新 subject 可稳定派生 id，也可要求显式 id；不得由参数位置决定 id。 ... ok
+test_1_happy_path (deploy.test_generate_console_seed.T.test_1_happy_path)
+阳格只证明正常顺序不被误报；它不能证明实现具有顺序无关性。 ... /data/ai-dev-data/r41-build-gate-verify-40bb/deploy/test_generate_console_seed.py:72: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpt0242r3q/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r41-build-gate-verify-40bb/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpt0242r3q/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_2_schema_matches_go_struct (deploy.test_generate_console_seed.T.test_2_schema_matches_go_struct)
+🔴 生产解析器带 DisallowUnknownFields():多一个键就起不来。 ... /data/ai-dev-data/r41-build-gate-verify-40bb/deploy/test_generate_console_seed.py:100: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpqwbxbstn/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_3_file_is_0600 (deploy.test_generate_console_seed.T.test_3_file_is_0600) ... ok
+test_4_no_literal_identity_on_stdout (deploy.test_generate_console_seed.T.test_4_no_literal_identity_on_stdout)
+🔴 回执只许出现摘要,不许出现字面身份值。 ... ok
+test_5_count_mismatch_blocks (deploy.test_generate_console_seed.T.test_5_count_mismatch_blocks)
+名单变了就停,不迁就现状。 ... ok
+test_6_unknown_digest_blocks (deploy.test_generate_console_seed.T.test_6_unknown_digest_blocks) ... ok
+test_7_inactive_channel_identity_not_picked (deploy.test_generate_console_seed.T.test_7_inactive_channel_identity_not_picked)
+🔴 SUBJ_B 在 unifiedrobot(停用)下也有一条;按 issuer 过滤后不得命中它。 ... /data/ai-dev-data/r41-build-gate-verify-40bb/deploy/test_generate_console_seed.py:161: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmp6lj4xfmu/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_8_empty_roster_blocks (deploy.test_generate_console_seed.T.test_8_empty_roster_blocks) ... ok
+test_9_ambiguous_digest_blocks (deploy.test_generate_console_seed.T.test_9_ambiguous_digest_blocks)
+同一摘要在同一 issuer 下命中多条 ⇒ fail-closed,不许挑一个。 ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.571s
+
+OK
+COMPONENT deploy/test_invariants_alert_route.py
+test_runtime_guard_covers_all_keys_and_unix_socket_without_values (deploy.test_invariants_alert_route.AlertRouteInvariantTest.test_runtime_guard_covers_all_keys_and_unix_socket_without_values) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+COMPONENT deploy/test_invariants_expected_hashes.py
+test_hardcoded_repo_file_expectations_stay_retired (deploy.test_invariants_expected_hashes.ExpectedHashesTest.test_hardcoded_repo_file_expectations_stay_retired) ... ok
+test_manifest_expectation_has_positive_wrong_and_missing_poles (deploy.test_invariants_expected_hashes.ExpectedHashesTest.test_manifest_expectation_has_positive_wrong_and_missing_poles) ... ok
+test_manifest_expectation_is_injected_and_fails_closed (deploy.test_invariants_expected_hashes.ExpectedHashesTest.test_manifest_expectation_is_injected_and_fails_closed) ... ok
+test_reverse_mutation_dropping_runtime_manifest_self_check_is_rejected (deploy.test_invariants_expected_hashes.ExpectedHashesTest.test_reverse_mutation_dropping_runtime_manifest_self_check_is_rejected) ... ok
+test_reverse_mutation_restoring_each_hardcoded_assertion_is_rejected (deploy.test_invariants_expected_hashes.ExpectedHashesTest.test_reverse_mutation_restoring_each_hardcoded_assertion_is_rejected) ... ok
+test_runtime_files_are_checked_against_container_manifest (deploy.test_invariants_expected_hashes.ExpectedHashesTest.test_runtime_files_are_checked_against_container_manifest) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.021s
+
+OK
+COMPONENT deploy/test_preview_console.py
+test_1_both_identities_see_the_same_full_set (deploy.test_preview_console.PreviewTest.test_1_both_identities_see_the_same_full_set) ... ok
+test_2_second_identity_missing_grants_is_caught (deploy.test_preview_console.PreviewTest.test_2_second_identity_missing_grants_is_caught)
+🔴 他从第二条身份登录会少看到 —— 而他不会知道。预演必须当场判死。 ... ok
+test_3_count_below_external_expectation_is_caught (deploy.test_preview_console.PreviewTest.test_3_count_below_external_expectation_is_caught) ... ok
+test_4_preview_sql_matches_production_verbatim (deploy.test_preview_console.PreviewTest.test_4_preview_sql_matches_production_verbatim)
+🔴 防漂移:生产侧改了查询而这里没跟 ⇒ 预演会"验证"另一个东西。 ... /data/ai-dev-data/r41-build-gate-verify-40bb/deploy/test_preview_console.py:78: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/r41-build-gate-verify-40bb/internal/store/console_auth.go' mode='r' encoding='utf-8'>
+  go = open(PROD_GO, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/data/ai-dev-data/r41-build-gate-verify-40bb/deploy/test_preview_console.py:83: ResourceWarning: unclosed file <_io.TextIOWrapper name='/data/ai-dev-data/r41-build-gate-verify-40bb/deploy/preview_console_for_principal.py' mode='r' encoding='utf-8'>
+  tool = open(TOOL, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_5_expect_empty_passes_when_principal_sees_nothing (deploy.test_preview_console.PreviewTest.test_5_expect_empty_passes_when_principal_sees_nothing)
+阳性对照:无 grant 的身份在 --expect-empty 下必须【通过】。 ... ok
+test_6_expect_empty_fails_when_principal_sees_anything (deploy.test_preview_console.PreviewTest.test_6_expect_empty_fails_when_principal_sees_anything)
+🔴 阴性对照:看得见 Agent 的身份在 --expect-empty 下必须【失败】。 ... ok
+test_7_absent_principal_passes_when_truly_absent (deploy.test_preview_console.PreviewTest.test_7_absent_principal_passes_when_truly_absent) ... ok
+test_8_absent_principal_fails_when_present (deploy.test_preview_console.PreviewTest.test_8_absent_principal_fails_when_present)
+🔴 阴性对照:本该被排除的身份若在表里,必须判死 —— 它能登进控制台。 ... ok
+test_9_expect_empty_and_expect_total_are_mutually_exclusive (deploy.test_preview_console.PreviewTest.test_9_expect_empty_and_expect_total_are_mutually_exclusive)
+两个 flag 同给 ⇒ 退 3(用法错),🔴 且必须与"闸拦下"的 2 区分开。 ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.328s
+
+OK
+COMPONENT deploy/test_validate_console_seed.py
+test_0_good_seed_passes (deploy.test_validate_console_seed.SeedValidatorTest.test_0_good_seed_passes) ... ok
+test_10_owner_role_must_be_explicit (deploy.test_validate_console_seed.SeedValidatorTest.test_10_owner_role_must_be_explicit) ... ok
+test_1_placeholder_left_in (deploy.test_validate_console_seed.SeedValidatorTest.test_1_placeholder_left_in) ... ok
+test_2_active_omitted (deploy.test_validate_console_seed.SeedValidatorTest.test_2_active_omitted) ... ok
+test_3_key_only_no_session (deploy.test_validate_console_seed.SeedValidatorTest.test_3_key_only_no_session)
+🔴 只给 key_id ⇒ 等于把该 key 下全部会话拉进来(本平台一个 key 数百个)。 ... ok
+test_4_agent_count_below_external_expectation (deploy.test_validate_console_seed.SeedValidatorTest.test_4_agent_count_below_external_expectation)
+🔴 少写一条不会有任何运行期信号 —— 只能靠外部预期发现。 ... ok
+test_5_owner_second_identity_missing (deploy.test_validate_console_seed.SeedValidatorTest.test_5_owner_second_identity_missing)
+🔴 业主第二条身份漏写 ⇒ 他从那条登录时左栏是空的,而他不会知道。 ... ok
+test_6_owner_declared_but_never_granted (deploy.test_validate_console_seed.SeedValidatorTest.test_6_owner_declared_but_never_granted)
+声明了却没有任何 grant —— 比漏写更隐蔽,表里有行、左栏仍空。 ... ok
+test_7_grant_points_at_undeclared_principal (deploy.test_validate_console_seed.SeedValidatorTest.test_7_grant_points_at_undeclared_principal) ... ok
+test_8_duplicate_session (deploy.test_validate_console_seed.SeedValidatorTest.test_8_duplicate_session) ... ok
+test_9_role_prefix_instead_of_full_name (deploy.test_validate_console_seed.SeedValidatorTest.test_9_role_prefix_instead_of_full_name)
+🔴 写成截短的角色前缀 ⇒ 声明到另一条(或不存在的)席位,且不会报错。 ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.290s
+
+OK
+COMPONENT view-service/test_check_public_view_deploy.py
+test_accepts_routing_subset_without_active_sub_filter (view-service.test_check_public_view_deploy.PublicViewDeployPreflightTest.test_accepts_routing_subset_without_active_sub_filter) ... ok
+test_rejects_active_sub_filter (view-service.test_check_public_view_deploy.PublicViewDeployPreflightTest.test_rejects_active_sub_filter) ... ok
+test_rejects_routing_session_missing_from_allowlist (view-service.test_check_public_view_deploy.PublicViewDeployPreflightTest.test_rejects_routing_session_missing_from_allowlist) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+COMPONENT view-service/test_md_render_core.py
+test_broken_marker_hard_fails_not_silently_skips (view-service.test_md_render_core.DriftGateHasTeethTest.test_broken_marker_hard_fails_not_silently_skips) ... ok
+test_clean_pair_is_in_sync (view-service.test_md_render_core.DriftGateHasTeethTest.test_clean_pair_is_in_sync) ... ok
+test_drift_in_core_is_detected_and_named (view-service.test_md_render_core.DriftGateHasTeethTest.test_drift_in_core_is_detected_and_named) ... ok
+test_drift_in_renderer_copy_is_detected_and_named (view-service.test_md_render_core.DriftGateHasTeethTest.test_drift_in_renderer_copy_is_detected_and_named) ... ok
+test_write_mode_repairs_the_copy (view-service.test_md_render_core.DriftGateHasTeethTest.test_write_mode_repairs_the_copy) ... ok
+test_core_has_exactly_one_iife_and_it_is_the_export_hook (view-service.test_md_render_core.ExportSurfaceTest.test_core_has_exactly_one_iife_and_it_is_the_export_hook) ... ok
+test_export_hook_lists_exactly_the_declared_symbols (view-service.test_md_render_core.ExportSurfaceTest.test_export_hook_lists_exactly_the_declared_symbols) ... ok
+test_unique_image_tokens_appear_once_per_file (view-service.test_md_render_core.ExportSurfaceTest.test_unique_image_tokens_appear_once_per_file) ... ok
+test_no_unregistered_section_names_anywhere (view-service.test_md_render_core.MarkerStructureTest.test_no_unregistered_section_names_anywhere) ... ok
+test_sections_are_non_empty_and_match_between_files (view-service.test_md_render_core.MarkerStructureTest.test_sections_are_non_empty_and_match_between_files) ... ok
+test_six_sections_exactly_once_in_contract_order (view-service.test_md_render_core.MarkerStructureTest.test_six_sections_exactly_once_in_contract_order) ... ok
+test_core_loads_standalone_in_node (view-service.test_md_render_core.NodeLoadableTest.test_core_loads_standalone_in_node) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.314s
+
+OK
+COMPONENT view-service/test_provenance_flag_injection.py
+test_env_can_disable (view-service.test_provenance_flag_injection.ProvenanceFlagInjection.test_env_can_disable)
+③ 留回退路:不改代码即可关掉。 ... ok
+test_idempotent (view-service.test_provenance_flag_injection.ProvenanceFlagInjection.test_idempotent)
+② 重复注入只能有一份(VS 对每个请求重读文件,防叠加)。 ... ok
+test_injected_before_head_close (view-service.test_provenance_flag_injection.ProvenanceFlagInjection.test_injected_before_head_close)
+① 默认必须注入,且落在 </head> 之前(晚于渲染器读取就白注入了)。 ... ok
+test_missing_anchor_is_fail_open (view-service.test_provenance_flag_injection.ProvenanceFlagInjection.test_missing_anchor_is_fail_open)
+④ 找不到 </head> 时原样返回 —— 宁可没图标,不可白页。 ... ok
+test_real_renderer_gets_flag (view-service.test_provenance_flag_injection.ProvenanceFlagInjection.test_real_renderer_gets_flag)
+⑤ 拿**线上那份真渲染器**跑,不是拿玩具 HTML —— ... ok
+test_endpoint_rewrite_is_currently_a_noop (view-service.test_provenance_flag_injection.ServeFileInjectsUnconditionally.test_endpoint_rewrite_is_currently_a_noop)
+⑧ 如实记录一处**既有**死代码(非本次引入,已对 git HEAD 核过): ... ok
+test_with_session_header (view-service.test_provenance_flag_injection.ServeFileInjectsUnconditionally.test_with_session_header)
+⑦ 经反代(带 X-DW-Session)时也必须有 flag —— 两条路径都要覆盖。 ... ok
+test_without_session_header (view-service.test_provenance_flag_injection.ServeFileInjectsUnconditionally.test_without_session_header)
+⑥ 直连 VS(无 X-DW-Session):必须也有 flag。 ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.577s
+
+OK
+COMPONENT view-service/test_renderer_iter2.py
+test_activity_uses_extensible_dock_outside_conversation_timeline (view-service.test_renderer_iter2.RendererIter2ContractTest.test_activity_uses_extensible_dock_outside_conversation_timeline) ... ok
+test_canary_revalidates_bfcache_and_terminal_page_state (view-service.test_renderer_iter2.RendererIter2ContractTest.test_canary_revalidates_bfcache_and_terminal_page_state) ... ok
+test_error_toast_does_not_expand_dock_and_history_is_retained (view-service.test_renderer_iter2.RendererIter2ContractTest.test_error_toast_does_not_expand_dock_and_history_is_retained) ... ok
+test_shared_lock_rendering_is_idempotent_and_focus_safe (view-service.test_renderer_iter2.RendererIter2ContractTest.test_shared_lock_rendering_is_idempotent_and_focus_safe) ... ok
+test_shared_waiting_and_progress_markup (view-service.test_renderer_iter2.RendererIter2ContractTest.test_shared_waiting_and_progress_markup) ... ok
+test_v2_status_cannot_override_page_write_authority (view-service.test_renderer_iter2.RendererIter2ContractTest.test_v2_status_cannot_override_page_write_authority) ... ok
+test_view_only_change_keeps_event_transport_out_of_scope (view-service.test_renderer_iter2.RendererIter2ContractTest.test_view_only_change_keeps_event_transport_out_of_scope) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.011s
+
+OK
+COMPONENT view-service/test_view_page_store.py
+test_console_verified_input_can_write_locked_page (view-service.test_view_page_store.ControlHMACTest.test_console_verified_input_can_write_locked_page) ... ok
+test_http_unlock_is_synchronous_and_replay_safe (view-service.test_view_page_store.ControlHMACTest.test_http_unlock_is_synchronous_and_replay_safe) ... ok
+test_mentions_pass_through_and_receipts_return (view-service.test_view_page_store.ControlHMACTest.test_mentions_pass_through_and_receipts_return) ... ok
+test_v2_input_uses_reverse_direction_signature (view-service.test_view_page_store.ControlHMACTest.test_v2_input_uses_reverse_direction_signature) ... ok
+test_valid_signature_then_nonce_replay_rejected (view-service.test_view_page_store.ControlHMACTest.test_valid_signature_then_nonce_replay_rejected) ... ok
+test_wrong_direction_and_stale_timestamp_rejected (view-service.test_view_page_store.ControlHMACTest.test_wrong_direction_and_stale_timestamp_rejected) ... ok
+test_concurrent_same_command_is_exactly_once_and_idempotent (view-service.test_view_page_store.ViewPageStoreTest.test_concurrent_same_command_is_exactly_once_and_idempotent) ... ok
+test_disconnect_grace_revokes_without_token_bypass (view-service.test_view_page_store.ViewPageStoreTest.test_disconnect_grace_revokes_without_token_bypass) ... ok
+test_grant_and_locked_orphan_expiry_boundaries (view-service.test_view_page_store.ViewPageStoreTest.test_grant_and_locked_orphan_expiry_boundaries) ... ok
+test_nonce_and_command_tables_are_bounded (view-service.test_view_page_store.ViewPageStoreTest.test_nonce_and_command_tables_are_bounded) ... ok
+test_only_successful_token_authenticated_write_renews_grant (view-service.test_view_page_store.ViewPageStoreTest.test_only_successful_token_authenticated_write_renews_grant) ... ok
+test_page_token_unlock_cas_and_idempotency (view-service.test_view_page_store.ViewPageStoreTest.test_page_token_unlock_cas_and_idempotency) ... ok
+test_periodic_sweeper_revokes_within_one_cycle (view-service.test_view_page_store.ViewPageStoreTest.test_periodic_sweeper_revokes_within_one_cycle) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 1.812s
+
+OK
+COMPONENT view-service/test_view_service.py
+test_cancel_with_write_permission_forwards_g_addr (view-service.test_view_service.ControlForwardTest.test_cancel_with_write_permission_forwards_g_addr) ... ok
+test_missing_g_addr_rejected (view-service.test_view_service.ControlForwardTest.test_missing_g_addr_rejected) ... ok
+test_no_write_permission_does_not_forward (view-service.test_view_service.ControlForwardTest.test_no_write_permission_does_not_forward) ... ok
+test_unknown_kind_rejected (view-service.test_view_service.ControlForwardTest.test_unknown_kind_rejected) ... ok
+test_v2_authorize_page_fail_is_403_distinct_no_hub (view-service.test_view_service.ControlForwardV2Test.test_v2_authorize_page_fail_is_403_distinct_no_hub) ... ok
+test_v2_authorized_success_forwards_and_records (view-service.test_view_service.ControlForwardV2Test.test_v2_authorized_success_forwards_and_records) ... ok
+test_v2_duplicate_is_idempotent_ok_true (view-service.test_view_service.ControlForwardV2Test.test_v2_duplicate_is_idempotent_ok_true) ... ok
+test_v2_hub_not_cancelable_409_is_ok_false_not_error (view-service.test_view_service.ControlForwardV2Test.test_v2_hub_not_cancelable_409_is_ok_false_not_error) ... ok
+test_v2_hub_unreachable_is_502_not_403 (view-service.test_view_service.ControlForwardV2Test.test_v2_hub_unreachable_is_502_not_403) ... ok
+test_v2_missing_page_credentials_is_400_no_hub (view-service.test_view_service.ControlForwardV2Test.test_v2_missing_page_credentials_is_400_no_hub) ... ok
+test_interrupt_with_write_permission_forwards_g_addr (view-service.test_view_service.InterruptForwardTest.test_interrupt_with_write_permission_forwards_g_addr) ... ok
+test_missing_g_addr_rejected (view-service.test_view_service.InterruptForwardTest.test_missing_g_addr_rejected) ... ok
+test_no_write_permission_does_not_forward (view-service.test_view_service.InterruptForwardTest.test_no_write_permission_does_not_forward) ... ok
+test_v2_authorize_page_fail_is_403_distinct_no_hub (view-service.test_view_service.InterruptForwardV2Test.test_v2_authorize_page_fail_is_403_distinct_no_hub) ... ok
+test_v2_authorized_success_forwards_and_records (view-service.test_view_service.InterruptForwardV2Test.test_v2_authorized_success_forwards_and_records) ... ok
+test_v2_duplicate_is_idempotent_ok_true (view-service.test_view_service.InterruptForwardV2Test.test_v2_duplicate_is_idempotent_ok_true) ... ok
+test_v2_hub_offline_409_is_ok_false_not_error (view-service.test_view_service.InterruptForwardV2Test.test_v2_hub_offline_409_is_ok_false_not_error) ... ok
+test_v2_hub_unreachable_or_sigfail_is_502_not_403 (view-service.test_view_service.InterruptForwardV2Test.test_v2_hub_unreachable_or_sigfail_is_502_not_403) ... ok
+test_v2_missing_page_credentials_is_400_no_hub (view-service.test_view_service.InterruptForwardV2Test.test_v2_missing_page_credentials_is_400_no_hub) ... ok
+test_all_html_artifacts_are_free_of_production_backdoors (view-service.test_view_service.ProductionRendererTest.test_all_html_artifacts_are_free_of_production_backdoors) ... ok
+test_all_sessions_use_single_production_renderer (view-service.test_view_service.ProductionRendererTest.test_all_sessions_use_single_production_renderer) ... ok
+test_default_public_view_base_preserves_main_view_paths (view-service.test_view_service.ProductionRendererTest.test_default_public_view_base_preserves_main_view_paths) ... ok
+test_events_disables_reverse_proxy_buffering (view-service.test_view_service.ProductionRendererTest.test_events_disables_reverse_proxy_buffering) ... ok
+test_events_drops_malformed_after (view-service.test_view_service.ProductionRendererTest.test_events_drops_malformed_after) ... ok
+test_events_forwards_valid_after_to_hub (view-service.test_view_service.ProductionRendererTest.test_events_forwards_valid_after_to_hub) ... ok
+test_events_passes_valid_last_event_id_only (view-service.test_view_service.ProductionRendererTest.test_events_passes_valid_last_event_id_only) ... ok
+test_events_relays_id_and_event_lines_verbatim (view-service.test_view_service.ProductionRendererTest.test_events_relays_id_and_event_lines_verbatim) ... ok
+test_events_upstream_404_becomes_reasoned_sse_not_empty_success (view-service.test_view_service.ProductionRendererTest.test_events_upstream_404_becomes_reasoned_sse_not_empty_success) ... ok
+test_public_view_base_rewrites_canary_api_paths_once (view-service.test_view_service.ProductionRendererTest.test_public_view_base_rewrites_canary_api_paths_once) ... ok
+test_public_view_base_validation_fails_closed (view-service.test_view_service.ProductionRendererTest.test_public_view_base_validation_fails_closed) ... ok
+test_session_query_cannot_select_target_and_missing_session_fails_closed (view-service.test_view_service.ProductionRendererTest.test_session_query_cannot_select_target_and_missing_session_fails_closed) ... ok
+test_status_rejects_request_without_trusted_or_fixed_session (view-service.test_view_service.ProductionRendererTest.test_status_rejects_request_without_trusted_or_fixed_session) ... ok
+test_bad_json_fails_closed (view-service.test_view_service.TasksSnapshotTest.test_bad_json_fails_closed) ... ok
+test_missing_file_fails_closed (view-service.test_view_service.TasksSnapshotTest.test_missing_file_fails_closed) ... ok
+test_no_file_returns_empty_board (view-service.test_view_service.TasksSnapshotTest.test_no_file_returns_empty_board) ... ok
+test_valid_file_returned_verbatim (view-service.test_view_service.TasksSnapshotTest.test_valid_file_returned_verbatim) ... ok
+test_wrong_shape_fails_closed (view-service.test_view_service.TasksSnapshotTest.test_wrong_shape_fails_closed) ... ok
+test_restart_reuses_registered_unlocked_viewer (view-service.test_view_service.ViewStatePersistenceTest.test_restart_reuses_registered_unlocked_viewer) ... ok
+test_parallel_first_requests_register_only_one_viewer (view-service.test_view_service.ViewerStabilityTest.test_parallel_first_requests_register_only_one_viewer) ... ok
+test_transient_authorize_failure_keeps_cached_viewer_and_unlock (view-service.test_view_service.ViewerStabilityTest.test_transient_authorize_failure_keeps_cached_viewer_and_unlock) ... ok
+
+----------------------------------------------------------------------
+Ran 40 tests in 0.033s
+
+OK
+COMPONENT view-service/test_agent_disk_resource.py
+test_entire_read_is_bounded_and_stuck_workers_not_multiplied (view-service.test_agent_disk_resource.BoundedTransport.test_entire_read_is_bounded_and_stuck_workers_not_multiplied) ... ok
+test_oversize_and_parse_failure_unknown (view-service.test_agent_disk_resource.BoundedTransport.test_oversize_and_parse_failure_unknown) ... ok
+test_console_controls_and_manual_lock_preserved (view-service.test_agent_disk_resource.ResourceStatus.test_console_controls_and_manual_lock_preserved) ... ok
+test_full_paused_compatible_active_fail_closed (view-service.test_agent_disk_resource.ResourceStatus.test_full_paused_compatible_active_fail_closed) ... ok
+test_internal_request_signed_and_bound (view-service.test_agent_disk_resource.ResourceStatus.test_internal_request_signed_and_bound) ... ok
+test_legacy_auth_heartbeat_excludes_resources (view-service.test_agent_disk_resource.ResourceStatus.test_legacy_auth_heartbeat_excludes_resources) ... ok
+test_real_signer_preserves_signed_address_contract (view-service.test_agent_disk_resource.ResourceStatus.test_real_signer_preserves_signed_address_contract) ... ok
+test_resource_only_modes_subject_and_no_cost (view-service.test_agent_disk_resource.ResourceStatus.test_resource_only_modes_subject_and_no_cost) ... ok
+test_verified_subject_precedes_resource_fetch (view-service.test_agent_disk_resource.ResourceStatus.test_verified_subject_precedes_resource_fetch) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.254s
+
+OK
+COMPONENT view-service/test_inbox_lag_resource.py
+test_actual_state_40minute_queue_then_stale_unknown_and_epoch (view-service.test_inbox_lag_resource.InboxLagRenderer.test_actual_state_40minute_queue_then_stale_unknown_and_epoch) ... ok
+test_console_controls_and_manual_lock_preserved (view-service.test_inbox_lag_resource.InboxLagResource.test_console_controls_and_manual_lock_preserved) ... ok
+test_full_paused_compatible_active_fail_closed (view-service.test_inbox_lag_resource.InboxLagResource.test_full_paused_compatible_active_fail_closed) ... ok
+test_lag_only_poll_is_subject_bound_and_does_not_sample_resources_or_cost (view-service.test_inbox_lag_resource.InboxLagResource.test_lag_only_poll_is_subject_bound_and_does_not_sample_resources_or_cost) ... ok
+test_lag_resource_subject_binding_and_existing_view_acl (view-service.test_inbox_lag_resource.InboxLagResource.test_lag_resource_subject_binding_and_existing_view_acl) ... ok
+test_legacy_auth_heartbeat_excludes_resources (view-service.test_inbox_lag_resource.InboxLagResource.test_legacy_auth_heartbeat_excludes_resources) ... ok
+test_real_signer_preserves_signed_address_contract (view-service.test_inbox_lag_resource.InboxLagResource.test_real_signer_preserves_signed_address_contract) ... ok
+test_resource_only_modes_subject_and_no_cost (view-service.test_inbox_lag_resource.InboxLagResource.test_resource_only_modes_subject_and_no_cost) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.250s
+
+OK
+COMPONENT view-service/test_view_refresh.py
+test_console_controls_and_manual_lock_preserved (view-service.test_view_refresh.ViewRefreshRecorderTest.test_console_controls_and_manual_lock_preserved) ... ok
+test_full_paused_compatible_active_fail_closed (view-service.test_view_refresh.ViewRefreshRecorderTest.test_full_paused_compatible_active_fail_closed) ... ok
+test_legacy_auth_heartbeat_excludes_resources (view-service.test_view_refresh.ViewRefreshRecorderTest.test_legacy_auth_heartbeat_excludes_resources) ... ok
+test_real_signer_preserves_signed_address_contract (view-service.test_view_refresh.ViewRefreshRecorderTest.test_real_signer_preserves_signed_address_contract) ... ok
+test_resource_only_modes_subject_and_no_cost (view-service.test_view_refresh.ViewRefreshRecorderTest.test_resource_only_modes_subject_and_no_cost) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.164s
+
+OK
+COMPONENT view-service/test_mux_projection.py
+test_canonical_uint64_and_frame_caps (view-service.test_mux_projection.ProjectionTest.test_canonical_uint64_and_frame_caps) ... ok
+test_duplicate_restart_and_concurrent_legacy_aggregate (view-service.test_mux_projection.ProjectionTest.test_duplicate_restart_and_concurrent_legacy_aggregate) ... ok
+test_rollback_cannot_mark_failed_projection_seen (view-service.test_mux_projection.ProjectionTest.test_rollback_cannot_mark_failed_projection_seen) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.070s
+
+OK
+COMPONENT view-service/test_mux_projection_failure.py
+test_aggregate_storage_failure_closes_before_forward (view-service.test_mux_projection_failure.FailureHTTPTest.test_aggregate_storage_failure_closes_before_forward) ... ok
+test_status_storage_failure_is_503_not_zero_success (view-service.test_mux_projection_failure.FailureHTTPTest.test_status_storage_failure_is_503_not_zero_success) ... ok
+test_stream_failed_projection_drops_frame_then_replays (view-service.test_mux_projection_failure.FailureHTTPTest.test_stream_failed_projection_drops_frame_then_replays) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 2.055s
+
+OK
+COMPONENT view-service/test_cost_paused.py
+test_bad_enumeration_v1_and_path_alias_rejected_before_startup (view-service.test_cost_paused.ModeConfigTest.test_bad_enumeration_v1_and_path_alias_rejected_before_startup) ... ok
+test_interpreter_entrypoint_bytecode_boundary (view-service.test_cost_paused.ModeConfigTest.test_interpreter_entrypoint_bytecode_boundary) ... ENTRYPOINT_BOUNDARY {"entry": "unsafe", "actual_rc": 1, "costdir_unchanged": false, "module_cache_in_costdir": true}
+ENTRYPOINT_BOUNDARY {"entry": "flag", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+ENTRYPOINT_BOUNDARY {"entry": "environment", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+ENTRYPOINT_BOUNDARY {"entry": "outside", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+ok
+test_valid_paused_import_does_not_load_or_create_cost_artifacts (view-service.test_cost_paused.ModeConfigTest.test_valid_paused_import_does_not_load_or_create_cost_artifacts) ... ok
+test_bad_legacy_json_and_unwritable_cost_dir_do_not_affect_status (view-service.test_cost_paused.PausedHTTPTest.test_bad_legacy_json_and_unwritable_cost_dir_do_not_affect_status) ... ok
+test_both_template_modes_get_fixed_early_flag (view-service.test_cost_paused.PausedHTTPTest.test_both_template_modes_get_fixed_early_flag) ... ok
+test_concentrated_guards_and_factory_existing_instance (view-service.test_cost_paused.PausedHTTPTest.test_concentrated_guards_and_factory_existing_instance) ... ok
+test_multi_page_unlock_input_replay_and_restart (view-service.test_cost_paused.PausedHTTPTest.test_multi_page_unlock_input_replay_and_restart) ... ok
+test_real_independent_and_aggregate_replay_leave_directory_unchanged (view-service.test_cost_paused.PausedHTTPTest.test_real_independent_and_aggregate_replay_leave_directory_unchanged) ... ok
+test_status_factory_unreachable_and_bad_subject_rejected (view-service.test_cost_paused.PausedHTTPTest.test_status_factory_unreachable_and_bad_subject_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 7.367s
+
+OK
+COMPONENT view-service/test_mux_cost_seed.py
+test_atomic_failure_and_existing_cost_conflict (view-service.test_mux_cost_seed.CostSeedTest.test_atomic_failure_and_existing_cost_conflict) ... ok
+test_historical_nonzero_requires_migration (view-service.test_mux_cost_seed.CostSeedTest.test_historical_nonzero_requires_migration) ... ok
+test_idempotent_repeat_can_validate_advanced_cut_without_overwrite (view-service.test_mux_cost_seed.CostSeedTest.test_idempotent_repeat_can_validate_advanced_cut_without_overwrite) ... ok
+test_old_sse_capture_is_tail_only_and_refuses_gaps (view-service.test_mux_cost_seed.CostSeedTest.test_old_sse_capture_is_tail_only_and_refuses_gaps) ... ok
+test_restart_missing_drain_relabel_and_warm_start_refuse (view-service.test_mux_cost_seed.CostSeedTest.test_restart_missing_drain_relabel_and_warm_start_refuse) ... ok
+test_restart_preserves_old_floor_not_new_epoch (view-service.test_mux_cost_seed.CostSeedTest.test_restart_preserves_old_floor_not_new_epoch) ... ok
+test_seed_replay_restart_growth_and_seen_retention (view-service.test_mux_cost_seed.CostSeedTest.test_seed_replay_restart_growth_and_seen_retention) ... ok
+test_trusted_identity_alias_cut_and_coverage_failures (view-service.test_mux_cost_seed.CostSeedTest.test_trusted_identity_alias_cut_and_coverage_failures) ... ok
+test_unreadable_legacy_cannot_be_treated_as_empty_history (view-service.test_mux_cost_seed.CostSeedTest.test_unreadable_legacy_cannot_be_treated_as_empty_history) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.177s
+
+OK
+COMPONENT view-service/test_view_unlock_v2_integration.py
+test_multi_page_unlock_input_replay_and_restart (view-service.test_view_unlock_v2_integration.ViewUnlockV2IntegrationTest.test_multi_page_unlock_input_replay_and_restart) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 1.060s
+
+OK
+COMPONENT deploy/test-view-service-release.sh
+PACKAGED commit=bf3264e9b3ce400a15667ee16099881582e3911f files=3 output=/tmp/tmp.ROKjTdD6rF/pkg
+VERIFIED files=3 expected_commit=bf3264e9b3ce400a15667ee16099881582e3911f
+PACKAGED commit=d7644f8e196c8d38bd474d52c899f9845df3d2aa files=3 output=/tmp/tmp.ROKjTdD6rF/old
+PACKAGED commit=bf3264e9b3ce400a15667ee16099881582e3911f files=3 output=/tmp/tmp.ROKjTdD6rF/install-pkg
+PACKAGED commit=653a24180c1114b13b60672e43b72f962b99378a files=3 output=/tmp/tmp.ROKjTdD6rF/static-pkg
+PACKAGED commit=902d229dd60c513bfebb616266d4389161f76523 files=3 output=/tmp/tmp.ROKjTdD6rF/two-pkg
+PACKAGED commit=51cd70c752a5bbb9ab2e9a7a55aad44424605c1c files=3 output=/tmp/tmp.ROKjTdD6rF/all-pkg
+PACKAGED commit=1ac290b16e1a402dbd9e99d9f015f0253e002829 files=3 output=/tmp/tmp.ROKjTdD6rF/fail-pkg
+PACKAGED commit=b4a235272929fd971ef7b1aa68c148ec3ef6e353 files=3 output=/tmp/tmp.ROKjTdD6rF/unhealthy-pkg
+PASS view-service release core
+COMPONENT scripts/test-desktop-hub-roundtrip.sh
+go: downloading github.com/coder/websocket v1.8.13
+go: downloading golang.org/x/crypto v0.28.0
+go: downloading github.com/larksuite/oapi-sdk-go/v3 v3.9.7
+go: downloading github.com/jackc/pgx/v5 v5.7.1
+go: downloading modernc.org/sqlite v1.34.1
+go: downloading golang.org/x/sys v0.28.0
+go: downloading github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761
+go: downloading github.com/jackc/pgpassfile v1.0.0
+go: downloading golang.org/x/text v0.19.0
+go: downloading github.com/jackc/puddle/v2 v2.2.2
+go: downloading golang.org/x/sync v0.8.0
+go: downloading github.com/gogo/protobuf v1.3.2
+go: downloading github.com/gorilla/websocket v1.5.0
+go: downloading modernc.org/libc v1.55.3
+go: downloading github.com/google/uuid v1.6.0
+go: downloading modernc.org/mathutil v1.6.0
+go: downloading modernc.org/memory v1.8.0
+go: downloading github.com/dustin/go-humanize v1.0.1
+go: downloading github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec
+=== RUN   TestDeviceClaimAcrossActualClientAndHub
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/new
+2026/10/27 17:20:24 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:24 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/27 17:20:24 session handshake timing key_id=u_newperson session=desktop total=2ms register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/10/27 17:20:24 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/10/27 17:20:24 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:24 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/reuse
+2026/10/27 17:20:24 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:24 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/27 17:20:24 session handshake timing key_id=u_existing session=desktop total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:24 session capability file_upload_v1=true key_id=u_existing session=desktop conn_seq=1
+2026/10/27 17:20:24 session delivery lease release decision=requeue key_id=u_existing session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:24 session delivery lease release decision=requeue key_id=u_existing session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/lost_ack
+2026/10/27 17:20:24 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:24 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/27 17:20:25 session handshake timing key_id=u_newperson session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:25 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/10/27 17:20:25 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:25 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/takeover
+2026/10/27 17:20:25 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:25 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/cancel_then_new
+2026/10/27 17:20:25 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:25 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/27 17:20:25 session handshake timing key_id=u_newperson session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:25 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/10/27 17:20:25 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:25 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+--- PASS: TestDeviceClaimAcrossActualClientAndHub (1.82s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/new (0.49s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/reuse (0.31s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/lost_ack (0.44s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/takeover (0.26s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/cancel_then_new (0.33s)
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/new
+2026/10/27 17:20:26 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:26 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+2026/10/27 17:20:31 session handshake timing key_id=u_newperson session=desktop total=2ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:31 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/10/27 17:20:31 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:31 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/reuse
+2026/10/27 17:20:32 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:32 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+2026/10/27 17:20:34 session handshake timing key_id=u_existing session=desktop total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:34 session capability file_upload_v1=true key_id=u_existing session=desktop conn_seq=1
+2026/10/27 17:20:34 session delivery lease release decision=requeue key_id=u_existing session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:34 session delivery lease release decision=requeue key_id=u_existing session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/lost_ack
+2026/10/27 17:20:35 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:35 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+2026/10/27 17:20:37 session handshake timing key_id=u_newperson session=desktop total=2ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:37 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/10/27 17:20:37 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:37 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/takeover
+2026/10/27 17:20:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/cancel_then_new
+2026/10/27 17:20:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+2026/10/27 17:20:44 session handshake timing key_id=u_newperson session=desktop total=2ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:44 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/10/27 17:20:44 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:44 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:333: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+--- PASS: TestDeviceClaimAcrossActualClientAndPostgres (19.73s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/new (6.54s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/reuse (3.20s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/lost_ack (3.02s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/takeover (2.99s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/cancel_then_new (3.98s)
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub/legacy
+2026/10/27 17:20:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/27 17:20:45 session name warning key_id=FB-synthetic-only-20261027-c91d6266 owner= session=peer: 无法确认该 key 绑定成员 owner_key
+2026/10/27 17:20:45 session version warning key_id=FB-synthetic-only-20261027-c91d6266 owner= session=peer version="" required=0.2.3.14: 未上报版本,要求 0.2.3.14
+2026/10/27 17:20:45 session handshake timing key_id=FB-synthetic-only-20261027-c91d6266 session=peer total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:45 session delivery lease release decision=requeue key_id=FB-synthetic-only-20261027-c91d6266 session=peer conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:45 session name warning key_id=FB-synthetic-only-20261027-c91d6266 owner= session=desktop: 无法确认该 key 绑定成员 owner_key
+2026/10/27 17:20:45 session handshake timing key_id=FB-synthetic-only-20261027-c91d6266 session=desktop total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:45 session capability file_upload_v1=true key_id=FB-synthetic-only-20261027-c91d6266 session=desktop conn_seq=1
+2026/10/27 17:20:45 session delivery lease release decision=requeue key_id=FB-synthetic-only-20261027-c91d6266 session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:46 session route decision=durable_queued key_id=FB-synthetic-only-20261027-c91d6266 session=desktop client_present=true conn_seq=1 delivery_id=dw-dlv_7d585eb5bb95cc710b759e92ade6859f source_message_id=desktop-question
+2026/10/27 17:20:46 session route decision=durable_queued key_id=FB-synthetic-only-20261027-c91d6266 session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_69efe7a7e169d7809359a0465a65853a source_message_id=a7ef57692c2f49938a555b2d42b8c417
+2026/10/27 17:20:46 session delivery lease release decision=requeue key_id=FB-synthetic-only-20261027-c91d6266 session=peer conn_seq=1 reason=session_disconnected released=0
+2026/10/27 17:20:46 session delivery lease release decision=requeue key_id=FB-synthetic-only-20261027-c91d6266 session=desktop conn_seq=1 reason=session_disconnected released=0
+    desktop_mcp_roundtrip_test.go:242: real Hub/SQLite + actual helper receive worker + MCP stdio wait/reply: PASS; synthetic identities, no model or desktop UI
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub/enrolled_leader_only
+2026/10/27 17:20:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/27 17:20:46 session handshake timing key_id=u_zzc session=peer total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:46 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:46 session handshake timing key_id=u_zzc session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:46 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/10/27 17:20:46 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:46 session route decision=durable_queued key_id=u_zzc session=desktop client_present=true conn_seq=1 delivery_id=dw-dlv_8e82c44993f97d42546adaa4a6b23bbe source_message_id=desktop-question
+2026/10/27 17:20:46 session route decision=durable_queued key_id=u_zzc session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_ab99fb80c7afb583aa64449ca1b81233 source_message_id=73440a13055d4416a9f80417c3c56a19
+2026/10/27 17:20:46 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=0
+2026/10/27 17:20:46 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    desktop_mcp_roundtrip_test.go:242: real Hub/SQLite + actual helper receive worker + MCP stdio wait/reply: PASS; synthetic identities, no model or desktop UI
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub/enrolled_group_removed
+2026/10/27 17:20:47 session delivery drain skipped decision=stale_or_offline_client key_id=FB-synthetic-only-20261027-c91d6266 session=desktop conn_seq=1 client_present=false
+2026/10/27 17:20:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/27 17:20:47 session handshake timing key_id=u_zzc session=peer total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:47 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:47 session delivery drain skipped decision=stale_or_offline_client key_id=FB-synthetic-only-20261027-c91d6266 session=peer conn_seq=1 client_present=false
+2026/10/27 17:20:47 session handshake timing key_id=u_zzc session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:47 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/10/27 17:20:47 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:47 session route decision=durable_queued key_id=u_zzc session=desktop client_present=true conn_seq=1 delivery_id=dw-dlv_a3e5beed3113ec0599b462b5017eab51 source_message_id=desktop-question
+2026/10/27 17:20:47 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=0
+2026/10/27 17:20:47 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    desktop_mcp_roundtrip_test.go:190: actual enrolled group removal rejects MCP reply, retains unread, refuses resend: PASS
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub/enrolled_stop_hook
+2026/10/27 17:20:47 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=desktop conn_seq=1 client_present=false
+2026/10/27 17:20:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/27 17:20:47 session handshake timing key_id=u_zzc session=peer total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:47 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:47 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=peer conn_seq=1 client_present=false
+2026/10/27 17:20:47 session handshake timing key_id=u_zzc session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:47 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/10/27 17:20:47 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:47 session route decision=durable_queued key_id=u_zzc session=desktop client_present=true conn_seq=1 delivery_id=dw-dlv_e83751417f2ee1e5c9dcc288390d2aac source_message_id=desktop-question
+2026/10/27 17:20:48 session route decision=durable_queued key_id=u_zzc session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_f81307d7e4cafc32ecb01c8f8bd769a4 source_message_id=09beeeb937274f3c8397a0e0fed144b8
+2026/10/27 17:20:48 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=desktop conn_seq=1 client_present=false
+2026/10/27 17:20:48 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=0
+2026/10/27 17:20:48 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    desktop_mcp_roundtrip_test.go:242: real Hub/SQLite + actual helper receive worker + MCP stdio wait/reply: PASS; synthetic identities, no model or desktop UI
+--- PASS: TestDesktopMCPRoundTripAcrossRealHub (2.85s)
+    --- PASS: TestDesktopMCPRoundTripAcrossRealHub/legacy (0.69s)
+    --- PASS: TestDesktopMCPRoundTripAcrossRealHub/enrolled_leader_only (0.66s)
+    --- PASS: TestDesktopMCPRoundTripAcrossRealHub/enrolled_group_removed (0.66s)
+    --- PASS: TestDesktopMCPRoundTripAcrossRealHub/enrolled_stop_hook (0.84s)
+=== RUN   TestHostedBodySendAcrossRealHub
+2026/10/27 17:20:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/27 17:20:48 session handshake timing key_id=u_zzc session=peer total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:48 session handshake timing key_id=u_zzc session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:48 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/10/27 17:20:48 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:48 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=desktop conn_seq=1 client_present=false
+2026/10/27 17:20:49 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=peer conn_seq=1 client_present=false
+2026/10/27 17:20:50 feishu dispatch rejected reason=cross_group_denied open_id="" target="peer#u_zzc" bot_channel=""
+2026/10/27 17:20:50 restart window signal event=delivery_failure within_restart_window=true hub_uptime_seconds=2 restart_window_seconds=60
+2026/10/27 17:20:53 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    hosted_body_send_test.go:116: restricted MCP body uses actual enrolled Hub routing; group removal blocks delivery; socket receipt is not delivery proof
+--- PASS: TestHostedBodySendAcrossRealHub (4.66s)
+=== RUN   TestProjectContextAcrossRealHTTPHelperIPCMCP
+2026/10/27 17:20:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    project_context_roundtrip_test.go:40: real local Go Hub HTTP, SessionHelper constructor/IPC, actual shim stdio, dedicated credential and bounded projection: PASS; no live Hub or AI
+--- PASS: TestProjectContextAcrossRealHTTPHelperIPCMCP (0.40s)
+=== RUN   TestBlockerAcrossRealHTTPHelperIPCMCP
+2026/10/27 17:20:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    task_blocker_roundtrip_test.go:51: five actual MCP calls through helper/HTTP; current task remains planned; no live Hub, CLI, AI or business execution
+=== RUN   TestBlockerAcrossRealHTTPHelperIPCMCP/missing_identity_ack_returns_to_hub
+2026/10/27 17:20:54 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/27 17:20:54 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/27 17:20:54 session handshake timing key_id=u_zzc session=kimi total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/27 17:20:54 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+2026/10/27 17:20:54 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_cc1860562dc495ddf1ca7ff98ce85b1b69bfaaa68509adbf9d8cca5ae09e7dcf source_message_id=blocker:2872a55dcb616ea7fb323c08fabfe53eec6a005b6ea320b745b073d754c45712
+2026/10/27 17:20:54 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=0
+    task_blocker_roundtrip_test.go:120: actual helper -> WS -> Hub: reason arrives, legacy receipt only, no model timestamps or extra delivery
+--- PASS: TestBlockerAcrossRealHTTPHelperIPCMCP (1.09s)
+    --- PASS: TestBlockerAcrossRealHTTPHelperIPCMCP/missing_identity_ack_returns_to_hub (0.34s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	30.544s
