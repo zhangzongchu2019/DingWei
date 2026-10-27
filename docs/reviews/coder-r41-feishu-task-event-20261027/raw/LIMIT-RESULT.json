@@ -1,0 +1,17 @@
+{
+  "source": "746a3c5f99999f7ed54c7240d84c150e398640c6",
+  "started_utc": "2026-10-27T17:50:46.693640+00:00",
+  "cores": 16,
+  "load": [
+    2.30712890625,
+    2.5703125,
+    2.91796875
+  ],
+  "go": "go1.22.2",
+  "positive_rc": 0,
+  "positive_pass": 18,
+  "skips": [],
+  "negative_rc": 1,
+  "negative_criterion": true,
+  "finished_utc": "2026-10-27T17:50:48.763117+00:00"
+}

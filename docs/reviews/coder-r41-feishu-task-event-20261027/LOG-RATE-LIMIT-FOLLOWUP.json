@@ -1,0 +1,35 @@
+{
+  "utc": "2026-10-27T17:53:20.471867+00:00",
+  "request": "leader2026-10-27T17:47:22Z: first and power-of-two cumulative logs; five events produce1/2/4 and final5; remove-limiter reverse red",
+  "supersedes": "Initial per-event INFO policy and three-event log assertion at6cb24db; dispatcher registration and other unknown-event rejection unchanged",
+  "source": "746a3c5f99999f7ed54c7240d84c150e398640c6",
+  "parent": "4b3d072d2b4c7d5caaef78c95d2efc54701d6f22",
+  "branch": "coder56solzzc/r41-feishu-task-event",
+  "behavior": "all ignored events increment same per-bot atomic counter; log only positive power-of-two totals1,2,4,8...; emit cumulative count without task contents",
+  "positive": "full feishu18 PASS rc0, SKIP0; five exact raw SDK task events acknowledged, no business enqueue; counts logged1/2/4, final ignored5; other unknown event still errors and ordinary message still enqueues",
+  "negative": "overlay removes only power-of-two guard (imports unchanged); go test -vet=off targeted unit rc1 at ignore records=5, not a compile/vet error; positive full package uses normal vet",
+  "environment": {
+    "source": "746a3c5f99999f7ed54c7240d84c150e398640c6",
+    "started_utc": "2026-10-27T17:50:46.693640+00:00",
+    "cores": 16,
+    "load": [
+      2.30712890625,
+      2.5703125,
+      2.91796875
+    ],
+    "go": "go1.22.2",
+    "positive_rc": 0,
+    "positive_pass": 18,
+    "skips": [],
+    "negative_rc": 1,
+    "negative_criterion": true,
+    "finished_utc": "2026-10-27T17:50:48.763117+00:00"
+  },
+  "concurrency": "Implemented in independent fixed-tip worktree; existing mutable task worktree was not edited",
+  "scope": "development only; no deployment, live Feishu replay, subscription modification or seat restart",
+  "sha256": {
+    "limited-package.log": "4a5e813b103d93bc71d7837518e6454e46c2b7be57ffe0ebb6afff05e807d8ab",
+    "remove-limit.log": "735c652e449106bf35fbb2afedb3a0984c84631fd9a05fad2719dc1eaa9d7cbb",
+    "LIMIT-RESULT.json": "8609d9efb806a1bdf5734d1a27a3c4be9dccae3e059188d7eaefb3b68ff34bc8"
+  }
+}
