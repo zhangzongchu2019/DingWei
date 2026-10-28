@@ -1,0 +1,15 @@
+# R42 authenticated local health contract
+
+Authorization: GO-R42-DEV-1, 2026-10-28T03:18:07Z. Base d635aeed97b43f8919e138573c289fc4bd9f6f51. Git development/local tests only; no deployment.
+
+Hub registers GET /internal/health/auth only on internalMux; View serves the same path on its existing localhost listener. No nginx health route is added. Tests pin the internal registration and check every deploy/nginx*.conf for absence of the path. Effective host nginx configuration remains a separate deployment review requirement; repository tests do not inspect or change the host.
+
+Hub configuration: WP_HEALTH_SECRET_FILE, WP_HEALTH_TARGET. View configuration: VS_HEALTH_SECRET_FILE, VS_HEALTH_TARGET. Each instance uses an independent monitor key (never an application/control-plane key), stored outside Git with service-user-only access. Target is required, 1–64 ASCII lowercase letters/digits/underscore/hyphen, e.g. staging-hub. No default credential or target. Keys are reread per request to support rotation, 32–4096 bytes after ASCII whitespace trimming, with a raw-file upper bound of 4096 bytes. Generate a random printable key of at least 32 bytes. No real keys or environment values are stored here.
+
+Headers: X-DW-Health-Timestamp = canonical decimal Unix seconds; X-DW-Health-Nonce = 32 lowercase hex characters generated randomly for each request; X-DW-Health-Signature = hex HMAC-SHA256. Exactly one of each header is accepted. The signed UTF-8/ASCII message has six lines, no final newline: domain dingwei-health/v1, method GET, fixed path /internal/health/auth, configured target, timestamp, nonce. Thus signatures cannot move between targets or paths. Query strings and request bodies are rejected. Constant-time digest comparison is used. Time skew is at most 60 seconds in either direction.
+
+A valid request atomically consumes its nonce until the signed timestamp +60 seconds (including the final second). Invalid signatures cannot reserve a nonce. Per-process cache is bounded to 10,000 entries; full cache fails closed, never evicts live entries. Nonces are process-local, so rotate the monitor key on service restart or wait out the 120-second full skew interval before reusing a key; cross-process durable replay protection is not claimed. Monitoring is read-only, with no restart, DB/session access or application mutation.
+
+Success: HTTP 200 JSON exactly health=ok, version=0.2.3.15, target=<configured target>, Cache-Control: no-store. Invalid/missing signature, stale/future timestamp, replay, missing/unreadable/short/oversized key or missing target: HTTP 401, generic response. No session, secret, signature, error details or data in responses/logs. Version is the release version, not a new docs-tip build stamp.
+
+Local regression includes real HTTP View requests; Hub handler decisions, concurrent replay/capacity, public wiring/config guard; full m8 and Go view-service package count=3 plus all Python test_*.py three rounds. Dedicated mutations remove the digest check in each implementation and must fail the wrong-signature criterion. Independent review is assigned by leader, not claimed by the author.
