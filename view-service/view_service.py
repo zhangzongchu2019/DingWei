@@ -59,9 +59,17 @@ CONTROL_UNLOCK_PATH = "/internal/control/view-page/unlock"
 HEALTH_PATH = "/internal/health/auth"
 HEALTH_SECRET_FILE = os.environ.get("VS_HEALTH_SECRET_FILE", "")
 HEALTH_TARGET = os.environ.get("VS_HEALTH_TARGET", "")
-HEALTH_VERSION = "0.2.3.15"
 _health_nonces = {}
 _health_nonce_lock = threading.Lock()
+
+
+def _health_version():
+    # The deployment supplies its release VERSION as VS_VERSION. Never infer
+    # the running release from a source literal or a neighbouring checkout.
+    version = os.environ.get("VS_VERSION", "").strip()
+    if re.fullmatch(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)", version):
+        return version
+    return None
 
 
 def _health_authorized(handler):
@@ -926,7 +934,10 @@ class _Handler(BaseHTTPRequestHandler):
         if path == HEALTH_PATH:
             if not _health_authorized(self):
                 return self._json_response(401, {"health": "unauthorized"})
-            return self._json_response(200, {"health": "ok", "version": HEALTH_VERSION, "target": HEALTH_TARGET})
+            version = _health_version()
+            if version is None:
+                return self._json_response(503, {"health": "unavailable"})
+            return self._json_response(200, {"health": "ok", "version": version, "target": HEALTH_TARGET})
         if path in ("/", "/index.html"):
             return self._serve_file()
         if path == "/events":

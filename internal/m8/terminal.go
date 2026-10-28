@@ -15,6 +15,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -1147,7 +1148,7 @@ func ownerFromSessionName(sessionName string) string {
 func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, sessionName, target string) bool {
 	// The public wildcard View proxy must never expose internal endpoints,
 	// even to a logged-in caller carrying an otherwise valid monitor signature.
-	publicPath := strings.TrimPrefix(r.URL.Path, "/view/"+sessionName)
+	publicPath := path.Clean(strings.TrimPrefix(r.URL.Path, "/view/"+sessionName))
 	if publicPath == "/internal" || strings.HasPrefix(publicPath, "/internal/") {
 		http.NotFound(w, r)
 		return true

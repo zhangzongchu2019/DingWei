@@ -172,7 +172,16 @@ func TestHealthAuthViewProxyNeverReachesInternalUpstream(t *testing.T) {
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { calls.Add(1); w.WriteHeader(200) }))
 	defer upstream.Close()
 	h := &Hub{}
-	for _, path := range []string{"/view/test/internal/health/auth", "/view/test/internal/control/view-page/unlock", "/view/test/%69nternal/health/auth"} {
+	for _, path := range []string{
+		"/view/test/internal/health/auth",
+		"/view/test/internal/control/view-page/unlock",
+		"/view/test/%69nternal/health/auth",
+		"/view/test//internal/health/auth",
+		"/view/test/./internal/health/auth",
+		"/view/test/x/../internal/health/auth",
+		"/view/test/%2e/internal/health/auth",
+		"/view/test//internal/control/view-page/unlock",
+	} {
 		r := httptest.NewRequest("GET", path, nil)
 		w := httptest.NewRecorder()
 		if !h.proxyToViewService(w, r, "test", upstream.URL) || w.Code != 404 {

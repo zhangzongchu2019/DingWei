@@ -23,7 +23,8 @@ class HealthAuthTest(unittest.TestCase):
             fh.write(self.key)
         os.chmod(self.keyfile, 0o600)
         self.patches = [mock.patch.object(vs, "HEALTH_SECRET_FILE", self.keyfile),
-                        mock.patch.object(vs, "HEALTH_TARGET", "staging-view")]
+                        mock.patch.object(vs, "HEALTH_TARGET", "staging-view"),
+                        mock.patch.dict(os.environ, {"VS_VERSION": "7.8.9.10"})]
         for patch in self.patches:
             patch.start()
         with vs._health_nonce_lock:
@@ -58,7 +59,7 @@ class HealthAuthTest(unittest.TestCase):
     def test_valid_response_allowlist(self):
         status, payload = self.request(self.headers())
         self.assertEqual(status, 200)
-        self.assertEqual(payload, {"health": "ok", "version": "0.2.3.15", "target": "staging-view"})
+        self.assertEqual(payload, {"health": "ok", "version": "7.8.9.10", "target": "staging-view"})
 
     def test_wrong_signature(self):
         self.assertEqual(self.request(self.headers(key=b"wrong-key"))[0], 401)
@@ -101,8 +102,37 @@ class HealthAuthTest(unittest.TestCase):
             self.assertEqual(self.request(self.headers())[0], 401)
 
     def test_version_matches_release_file(self):
+        # The version-bump gate injects the actual deployment VERSION and
+        # checks the HTTP response, rather than comparing source literals.
         with open(os.path.join(vs.BASE_DIR, "..", "VERSION")) as fh:
-            self.assertEqual(vs.HEALTH_VERSION, fh.read().strip())
+            release = fh.read().strip()
+        with mock.patch.dict(os.environ, {"VS_VERSION": release}):
+            status, payload = self.request(self.headers())
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["version"], release)
+
+    def test_version_follows_deployment_without_source_change(self):
+        for index, release in enumerate(("9.8.7.6", "9.8.7.7")):
+            with mock.patch.dict(os.environ, {"VS_VERSION": release}):
+                status, payload = self.request(self.headers(nonce=f"{index:032x}"))
+            self.assertEqual(status, 200)
+            self.assertEqual(payload["version"], release)
+
+    def test_missing_or_invalid_deployment_version_is_unavailable(self):
+        for index, release in enumerate((None, "", "invalid", "1.2.3", "1.2.3.4.5", "01.2.3.4")):
+            with self.subTest(version=release), mock.patch.dict(os.environ):
+                if release is None:
+                    os.environ.pop("VS_VERSION", None)
+                else:
+                    os.environ["VS_VERSION"] = release
+                status, payload = self.request(self.headers(nonce=f"{index:032x}"))
+            self.assertEqual(status, 503)
+            self.assertEqual(payload, {"health": "unavailable"})
+
+    def test_missing_version_does_not_bypass_authentication(self):
+        with mock.patch.dict(os.environ):
+            os.environ.pop("VS_VERSION", None)
+            self.assertEqual(self.request(self.headers(key=b"wrong-key"))[0], 401)
 
     def test_key_size(self):
         for size in (4, 4097):

@@ -17,3 +17,5 @@ The nonce cache is bounded and process-local. As documented in CONTRACT.md, rota
 Final m8 log SHA256: 1d4b57bfda0ba46273a0b9ef5b6c031e6595ff179e86fbb380f4b5601bfea0fc. Raw logs and exact command/result metadata are in evidence/. Python log SHA256: dbe46810037c12785e967699d49a9df9825ba00568cf3adc608e91b14d38e1a8.
 
 Integration note: both independently based R42 branches add one Python file to the canonical runner. When later combined, retain both entries and update the frozen inventory counts together (27 Python files,28 discovered deploy/View Python+shell files). No integration branch is created here.
+
+Leader incremental review follow-up: see INCREMENT-RESULTS.md for the VS_VERSION deployment source, missing-version503, same-version gate and normalized public proxy checks. The preceding full regression numbers remain bound to d4ed802; they are not relabelled as full regression of the incremental change.

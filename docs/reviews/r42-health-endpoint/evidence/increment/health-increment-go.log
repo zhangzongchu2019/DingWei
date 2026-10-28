@@ -1,0 +1,160 @@
+=== RUN   TestHelper02315ReleasePins
+--- PASS: TestHelper02315ReleasePins (0.00s)
+=== RUN   TestVersionMatchesRepositoryVersionFile
+--- PASS: TestVersionMatchesRepositoryVersionFile (0.00s)
+=== RUN   TestViewHealthVersionMatchesDeploymentVersion
+--- PASS: TestViewHealthVersionMatchesDeploymentVersion (1.62s)
+=== RUN   TestVersionIsAheadOfLastReleasedVersion
+--- PASS: TestVersionIsAheadOfLastReleasedVersion (0.00s)
+=== RUN   TestHelperVersionMatchesGoVersion
+--- PASS: TestHelperVersionMatchesGoVersion (0.00s)
+=== RUN   TestHelper02315ReleasePins
+--- PASS: TestHelper02315ReleasePins (0.00s)
+=== RUN   TestVersionMatchesRepositoryVersionFile
+--- PASS: TestVersionMatchesRepositoryVersionFile (0.00s)
+=== RUN   TestViewHealthVersionMatchesDeploymentVersion
+--- PASS: TestViewHealthVersionMatchesDeploymentVersion (1.62s)
+=== RUN   TestVersionIsAheadOfLastReleasedVersion
+--- PASS: TestVersionIsAheadOfLastReleasedVersion (0.00s)
+=== RUN   TestHelperVersionMatchesGoVersion
+--- PASS: TestHelperVersionMatchesGoVersion (0.00s)
+=== RUN   TestHelper02315ReleasePins
+--- PASS: TestHelper02315ReleasePins (0.00s)
+=== RUN   TestVersionMatchesRepositoryVersionFile
+--- PASS: TestVersionMatchesRepositoryVersionFile (0.00s)
+=== RUN   TestViewHealthVersionMatchesDeploymentVersion
+--- PASS: TestViewHealthVersionMatchesDeploymentVersion (1.62s)
+=== RUN   TestVersionIsAheadOfLastReleasedVersion
+--- PASS: TestVersionIsAheadOfLastReleasedVersion (0.00s)
+=== RUN   TestHelperVersionMatchesGoVersion
+--- PASS: TestHelperVersionMatchesGoVersion (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/version	4.863s
+=== RUN   TestConsolePageSourceHasNoDuplicateDOMIDs
+--- PASS: TestConsolePageSourceHasNoDuplicateDOMIDs (0.00s)
+=== RUN   TestConsolePageVersionFollowsProductVersionConstant
+--- PASS: TestConsolePageVersionFollowsProductVersionConstant (0.00s)
+=== RUN   TestConsolePageSourceCarriesNoVersionLiteral
+--- PASS: TestConsolePageSourceCarriesNoVersionLiteral (0.00s)
+=== RUN   TestHealthAuthDecisions
+=== RUN   TestHealthAuthDecisions/valid
+=== RUN   TestHealthAuthDecisions/wrong_signature
+=== RUN   TestHealthAuthDecisions/expired
+=== RUN   TestHealthAuthDecisions/future
+=== RUN   TestHealthAuthDecisions/missing_key
+=== RUN   TestHealthAuthDecisions/short_key
+=== RUN   TestHealthAuthDecisions/oversize_key
+=== RUN   TestHealthAuthDecisions/wrong_target
+=== RUN   TestHealthAuthDecisions/wrong_path
+=== RUN   TestHealthAuthDecisions/query
+=== RUN   TestHealthAuthDecisions/missing_signature
+=== RUN   TestHealthAuthDecisions/duplicate_header
+=== RUN   TestHealthAuthDecisions/malformed_nonce
+=== RUN   TestHealthAuthDecisions/missing_target
+--- PASS: TestHealthAuthDecisions (0.01s)
+    --- PASS: TestHealthAuthDecisions/valid (0.00s)
+    --- PASS: TestHealthAuthDecisions/wrong_signature (0.00s)
+    --- PASS: TestHealthAuthDecisions/expired (0.00s)
+    --- PASS: TestHealthAuthDecisions/future (0.00s)
+    --- PASS: TestHealthAuthDecisions/missing_key (0.00s)
+    --- PASS: TestHealthAuthDecisions/short_key (0.00s)
+    --- PASS: TestHealthAuthDecisions/oversize_key (0.00s)
+    --- PASS: TestHealthAuthDecisions/wrong_target (0.00s)
+    --- PASS: TestHealthAuthDecisions/wrong_path (0.00s)
+    --- PASS: TestHealthAuthDecisions/query (0.00s)
+    --- PASS: TestHealthAuthDecisions/missing_signature (0.00s)
+    --- PASS: TestHealthAuthDecisions/duplicate_header (0.00s)
+    --- PASS: TestHealthAuthDecisions/malformed_nonce (0.00s)
+    --- PASS: TestHealthAuthDecisions/missing_target (0.00s)
+=== RUN   TestHealthAuthConcurrentReplayAndCapacity
+--- PASS: TestHealthAuthConcurrentReplayAndCapacity (0.00s)
+=== RUN   TestHealthAuthPublicRoutingBoundary
+--- PASS: TestHealthAuthPublicRoutingBoundary (0.00s)
+=== RUN   TestHealthAuthViewProxyNeverReachesInternalUpstream
+--- PASS: TestHealthAuthViewProxyNeverReachesInternalUpstream (0.00s)
+=== RUN   TestConsolePageSourceHasNoDuplicateDOMIDs
+--- PASS: TestConsolePageSourceHasNoDuplicateDOMIDs (0.00s)
+=== RUN   TestConsolePageVersionFollowsProductVersionConstant
+--- PASS: TestConsolePageVersionFollowsProductVersionConstant (0.00s)
+=== RUN   TestConsolePageSourceCarriesNoVersionLiteral
+--- PASS: TestConsolePageSourceCarriesNoVersionLiteral (0.00s)
+=== RUN   TestHealthAuthDecisions
+=== RUN   TestHealthAuthDecisions/valid
+=== RUN   TestHealthAuthDecisions/wrong_signature
+=== RUN   TestHealthAuthDecisions/expired
+=== RUN   TestHealthAuthDecisions/future
+=== RUN   TestHealthAuthDecisions/missing_key
+=== RUN   TestHealthAuthDecisions/short_key
+=== RUN   TestHealthAuthDecisions/oversize_key
+=== RUN   TestHealthAuthDecisions/wrong_target
+=== RUN   TestHealthAuthDecisions/wrong_path
+=== RUN   TestHealthAuthDecisions/query
+=== RUN   TestHealthAuthDecisions/missing_signature
+=== RUN   TestHealthAuthDecisions/duplicate_header
+=== RUN   TestHealthAuthDecisions/malformed_nonce
+=== RUN   TestHealthAuthDecisions/missing_target
+--- PASS: TestHealthAuthDecisions (0.01s)
+    --- PASS: TestHealthAuthDecisions/valid (0.00s)
+    --- PASS: TestHealthAuthDecisions/wrong_signature (0.00s)
+    --- PASS: TestHealthAuthDecisions/expired (0.00s)
+    --- PASS: TestHealthAuthDecisions/future (0.00s)
+    --- PASS: TestHealthAuthDecisions/missing_key (0.00s)
+    --- PASS: TestHealthAuthDecisions/short_key (0.00s)
+    --- PASS: TestHealthAuthDecisions/oversize_key (0.00s)
+    --- PASS: TestHealthAuthDecisions/wrong_target (0.00s)
+    --- PASS: TestHealthAuthDecisions/wrong_path (0.00s)
+    --- PASS: TestHealthAuthDecisions/query (0.00s)
+    --- PASS: TestHealthAuthDecisions/missing_signature (0.00s)
+    --- PASS: TestHealthAuthDecisions/duplicate_header (0.00s)
+    --- PASS: TestHealthAuthDecisions/malformed_nonce (0.00s)
+    --- PASS: TestHealthAuthDecisions/missing_target (0.00s)
+=== RUN   TestHealthAuthConcurrentReplayAndCapacity
+--- PASS: TestHealthAuthConcurrentReplayAndCapacity (0.00s)
+=== RUN   TestHealthAuthPublicRoutingBoundary
+--- PASS: TestHealthAuthPublicRoutingBoundary (0.00s)
+=== RUN   TestHealthAuthViewProxyNeverReachesInternalUpstream
+--- PASS: TestHealthAuthViewProxyNeverReachesInternalUpstream (0.00s)
+=== RUN   TestConsolePageSourceHasNoDuplicateDOMIDs
+--- PASS: TestConsolePageSourceHasNoDuplicateDOMIDs (0.00s)
+=== RUN   TestConsolePageVersionFollowsProductVersionConstant
+--- PASS: TestConsolePageVersionFollowsProductVersionConstant (0.00s)
+=== RUN   TestConsolePageSourceCarriesNoVersionLiteral
+--- PASS: TestConsolePageSourceCarriesNoVersionLiteral (0.00s)
+=== RUN   TestHealthAuthDecisions
+=== RUN   TestHealthAuthDecisions/valid
+=== RUN   TestHealthAuthDecisions/wrong_signature
+=== RUN   TestHealthAuthDecisions/expired
+=== RUN   TestHealthAuthDecisions/future
+=== RUN   TestHealthAuthDecisions/missing_key
+=== RUN   TestHealthAuthDecisions/short_key
+=== RUN   TestHealthAuthDecisions/oversize_key
+=== RUN   TestHealthAuthDecisions/wrong_target
+=== RUN   TestHealthAuthDecisions/wrong_path
+=== RUN   TestHealthAuthDecisions/query
+=== RUN   TestHealthAuthDecisions/missing_signature
+=== RUN   TestHealthAuthDecisions/duplicate_header
+=== RUN   TestHealthAuthDecisions/malformed_nonce
+=== RUN   TestHealthAuthDecisions/missing_target
+--- PASS: TestHealthAuthDecisions (0.01s)
+    --- PASS: TestHealthAuthDecisions/valid (0.00s)
+    --- PASS: TestHealthAuthDecisions/wrong_signature (0.00s)
+    --- PASS: TestHealthAuthDecisions/expired (0.00s)
+    --- PASS: TestHealthAuthDecisions/future (0.00s)
+    --- PASS: TestHealthAuthDecisions/missing_key (0.00s)
+    --- PASS: TestHealthAuthDecisions/short_key (0.00s)
+    --- PASS: TestHealthAuthDecisions/oversize_key (0.00s)
+    --- PASS: TestHealthAuthDecisions/wrong_target (0.00s)
+    --- PASS: TestHealthAuthDecisions/wrong_path (0.00s)
+    --- PASS: TestHealthAuthDecisions/query (0.00s)
+    --- PASS: TestHealthAuthDecisions/missing_signature (0.00s)
+    --- PASS: TestHealthAuthDecisions/duplicate_header (0.00s)
+    --- PASS: TestHealthAuthDecisions/malformed_nonce (0.00s)
+    --- PASS: TestHealthAuthDecisions/missing_target (0.00s)
+=== RUN   TestHealthAuthConcurrentReplayAndCapacity
+--- PASS: TestHealthAuthConcurrentReplayAndCapacity (0.00s)
+=== RUN   TestHealthAuthPublicRoutingBoundary
+--- PASS: TestHealthAuthPublicRoutingBoundary (0.00s)
+=== RUN   TestHealthAuthViewProxyNeverReachesInternalUpstream
+--- PASS: TestHealthAuthViewProxyNeverReachesInternalUpstream (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.088s
