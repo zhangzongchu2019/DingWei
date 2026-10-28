@@ -1,0 +1,38 @@
+[
+  {
+    "label": "version-source-literal",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "-m",
+      "unittest",
+      "-v",
+      "test_health_auth.HealthAuthTest.test_version_follows_deployment_without_source_change"
+    ],
+    "utc": "2026-10-28T03:46:19.319098+00:00",
+    "rc": 1,
+    "seconds": 0.615,
+    "criterion": true,
+    "log_sha256": "f968c89edbd9e85c174d82c046e48d6482af586f872566e14c6e6255c2a1ec5b"
+  },
+  {
+    "label": "proxy-without-clean",
+    "command": [
+      "/usr/bin/go",
+      "test",
+      "-overlay",
+      "/tmp/r42-health-version-mutant-vso4qqni/overlay.json",
+      "./internal/m8",
+      "-run",
+      "^TestHealthAuthViewProxyNeverReachesInternalUpstream$",
+      "-count=1",
+      "-v",
+      "-timeout=1m"
+    ],
+    "utc": "2026-10-28T03:46:19.934121+00:00",
+    "rc": 1,
+    "seconds": 7.977,
+    "criterion": true,
+    "log_sha256": "f851534d86ea6d8194c524f2b05778b2d30acd2027347a1218656398168f90ea"
+  }
+]

@@ -80,6 +80,64 @@ CONTROL_CLOCK_SKEW = 60
 HUB_TO_VS_DIRECTION = "hub-to-view-service/v1"
 CONTROL_UNLOCK_PATH = "/internal/control/view-page/unlock"
 
+# Independent monitor credentials; never reuse either control-plane secret.
+HEALTH_PATH = "/internal/health/auth"
+HEALTH_SECRET_FILE = os.environ.get("VS_HEALTH_SECRET_FILE", "")
+HEALTH_TARGET = os.environ.get("VS_HEALTH_TARGET", "")
+_health_nonces = {}
+_health_nonce_lock = threading.Lock()
+
+
+def _health_version():
+    # The deployment supplies its release VERSION as VS_VERSION. Never infer
+    # the running release from a source literal or a neighbouring checkout.
+    version = os.environ.get("VS_VERSION", "").strip()
+    if re.fullmatch(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)", version):
+        return version
+    return None
+
+
+def _health_authorized(handler):
+    if (handler.command != "GET" or handler.path != HEALTH_PATH
+            or handler.headers.get("Transfer-Encoding")
+            or handler.headers.get("Content-Length", "0") != "0"
+            or not re.fullmatch(r"[a-z0-9_-]{1,64}", HEALTH_TARGET)):
+        return False
+    names = ("X-DW-Health-Timestamp", "X-DW-Health-Nonce", "X-DW-Health-Signature")
+    if any(len(handler.headers.get_all(name, [])) != 1 for name in names):
+        return False
+    timestamp, nonce, signature = (handler.headers.get(name, "") for name in names)
+    if not re.fullmatch(r"[0-9]{1,20}", timestamp) or not re.fullmatch(r"[0-9a-f]{32}", nonce):
+        return False
+    ts, now = int(timestamp), int(time.time())
+    if str(ts) != timestamp or abs(now - ts) > 60:
+        return False
+    if not re.fullmatch(r"[0-9a-fA-F]{64}", signature):
+        return False
+    try:
+        with open(HEALTH_SECRET_FILE, "rb") as fh:
+            key = fh.read(4097)
+        if len(key) > 4096:
+            return False
+        key = key.strip()
+    except OSError:
+        return False
+    if not 32 <= len(key) <= 4096:
+        return False
+    message = "\n".join(("dingwei-health/v1", "GET", HEALTH_PATH, HEALTH_TARGET, timestamp, nonce))
+    expected = hmac.new(key, message.encode("ascii"), hashlib.sha256).digest()
+    if not hmac.compare_digest(bytes.fromhex(signature), expected):
+        return False
+    with _health_nonce_lock:
+        for used, expiry in list(_health_nonces.items()):
+            if expiry < now:
+                del _health_nonces[used]
+        if nonce in _health_nonces or len(_health_nonces) >= 10000:
+            return False
+        _health_nonces[nonce] = ts + 60
+    return True
+
+
 # Process-static capability, never inferred from a failed projection or request.
 # No resume/backfill API: returning to active after a paused deployment requires
 # separately approved E2 coverage and explicit exclusion of paused completions.
@@ -910,6 +968,13 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urlparse(self.path).path
+        if path == HEALTH_PATH:
+            if not _health_authorized(self):
+                return self._json_response(401, {"health": "unauthorized"})
+            version = _health_version()
+            if version is None:
+                return self._json_response(503, {"health": "unavailable"})
+            return self._json_response(200, {"health": "ok", "version": version, "target": HEALTH_TARGET})
         if path in ("/", "/index.html"):
             return self._serve_file()
         if path == "/events":

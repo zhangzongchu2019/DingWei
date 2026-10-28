@@ -1,0 +1,56 @@
+# SKIP inventory for final health regression
+Package: github.com/zhangzongchu2019/dingwei/internal/m8
+16 distinct top-level +18 distinct nested SKIP, each observed in all3 rounds. These are retained existing opt-ins/deferred cases, not waivers. No health-auth test skips. No Python skips. Go view-service has no Go test files. Full canonical build not run/claimed by this task.
+
+- TestBlockerAcrossRealHTTPHelperIPCMCP
+  Condition: set locked helper Python; canonical runs this local integration
+- TestConsolePlatformPayloadDump
+  Condition: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)
+- TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel
+  Condition: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically
+- TestDeliveryACKActualCLILateWireTerminal
+  Condition: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- TestDesktopMCPRoundTripAcrossRealHub
+  Condition: run scripts/test-desktop-hub-roundtrip.sh for the cross-runtime gate
+- TestDeviceClaimAcrossActualClientAndHub
+  Condition: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment
+- TestDeviceClaimAcrossActualClientAndPostgres
+  Condition: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime PostgreSQL enrollment
+- TestEnvelopeReadTimeoutEnvironmentChild
+  Condition: subprocess probe only
+- TestGroupReplyMCP
+  Condition: requires locked helper Python; set DW_SPEC_E2E_PYTHON
+- TestHelper0232MixedVersionEndToEnd
+  Condition: explicit immutable release pins required
+- TestHostedBodySendAcrossRealHub
+  Condition: set explicit isolated integration interpreter
+- TestMuxProductHTTP1EightSeats
+  Condition: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration
+- TestPilotQuestionAcrossRealHTTPHelperIPCMCP
+  Condition: set locked helper Python; canonical runs this local integration
+- TestPilotTemplateAcrossRealHTTPHelperIPCMCP
+  Condition: set locked helper Python; canonical runs loopback integration
+- TestProjectContextAcrossRealHTTPHelperIPCMCP
+  Condition: set DW_DESKTOP_INTEGRATION_PYTHON to the locked helper test venv; canonical shell gate runs the cross-runtime set
+- TestSpecMCPEndToEnd
+  Condition: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses
+
+Nested SKIP (15 DeliveryACK cases require DW_ACK_V2_E2E_PYTHON;3 HelperSelfUpdate cases require DW_HELPER_E2E_PYTHON):
+- TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread
+- TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist
+- TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread
+- TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist
+- TestDeliveryACKActualCLICancelAtomicBoundary/claude
+- TestDeliveryACKActualCLICancelAtomicBoundary/codex
+- TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude
+- TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex
+- TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude
+- TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit
+- TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex
+- TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected
+- TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm
+- TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected
+- TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm
+- TestHelperSelfUpdateEndToEnd/install_restart_confirm
+- TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason
+- TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory

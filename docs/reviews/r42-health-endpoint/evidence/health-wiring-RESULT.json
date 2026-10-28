@@ -1,0 +1,22 @@
+{
+  "utc": "2026-10-28T03:31:12.615843+00:00",
+  "source": "d4ed8023c94c4d666d0936b5f012814c61efd856",
+  "cwd": "/data/ai-dev-data/r42-health-endpoint",
+  "command": [
+    "/usr/bin/go",
+    "test",
+    "./cmd/workpulse",
+    "-p",
+    "1",
+    "-run",
+    "^(TestNewPlatformRouteSweep|TestConsoleTasksCompatibilityRoute)$",
+    "-count=1",
+    "-v",
+    "-timeout=3m"
+  ],
+  "environment": "dev uid1001; isolated HOME; Go1.22.2 linux/amd64; locked Python3.12.3; strict embedded PG; explicit DW_FAILURE_NOTICE_PYTHON; no external DSNs/provider env; other opt-ins absent",
+  "end_utc": "2026-10-28T03:31:18.945513+00:00",
+  "rc": 0,
+  "seconds": 6.33,
+  "log_sha256": "32496715a933898ec1cc3ad86a36d18077608eddd9c397b5cd19ae2f48bcdb4e"
+}

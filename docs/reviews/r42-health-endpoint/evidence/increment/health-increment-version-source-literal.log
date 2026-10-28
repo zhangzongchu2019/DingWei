@@ -1,0 +1,17 @@
+test_version_follows_deployment_without_source_change (test_health_auth.HealthAuthTest.test_version_follows_deployment_without_source_change) ... FAIL
+
+======================================================================
+FAIL: test_version_follows_deployment_without_source_change (test_health_auth.HealthAuthTest.test_version_follows_deployment_without_source_change)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r42-health-version-mutant-vso4qqni/view-service/test_health_auth.py", line 119, in test_version_follows_deployment_without_source_change
+    self.assertEqual(payload["version"], release)
+AssertionError: '0.2.3.15' != '9.8.7.6'
+- 0.2.3.15
++ 9.8.7.6
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.503s
+
+FAILED (failures=1)

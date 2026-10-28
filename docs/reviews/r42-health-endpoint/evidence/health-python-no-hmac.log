@@ -1,0 +1,14 @@
+test_wrong_signature (test_health_auth.HealthAuthTest.test_wrong_signature) ... FAIL
+
+======================================================================
+FAIL: test_wrong_signature (test_health_auth.HealthAuthTest.test_wrong_signature)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r42-health-mutation/view-service/test_health_auth.py", line 64, in test_wrong_signature
+    self.assertEqual(self.request(self.headers(key=b"wrong-key"))[0], 401)
+AssertionError: 200 != 401
+
+----------------------------------------------------------------------
+Ran 1 test in 0.503s
+
+FAILED (failures=1)

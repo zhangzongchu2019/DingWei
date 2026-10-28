@@ -1,0 +1,77 @@
+=== RUN   TestUnifiedConsoleAuthCoversEveryViewRouteAndSeparatesSharedKey
+2026/10/28 03:46:22 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:22 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestUnifiedConsoleAuthCoversEveryViewRouteAndSeparatesSharedKey (0.12s)
+=== RUN   TestViewRoutingPrecedenceAndFallback
+2026/10/28 03:46:22 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:22 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/28 03:46:22 [view-routing] target dead (http://127.0.0.1:1) unreachable, fallback to legacy for dead-one-3dd6
+--- PASS: TestViewRoutingPrecedenceAndFallback (0.14s)
+=== RUN   TestViewServiceFullChainIntegration
+2026/10/28 03:46:22 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:22 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/28 03:46:22 session name warning key_id=FB-u1-20261028-95500998 owner= session=home: 无法确认该 key 绑定成员 owner_key
+2026/10/28 03:46:22 session version warning key_id=FB-u1-20261028-95500998 owner= session=home version="" required=0.2.3.15: 未上报版本,要求 0.2.3.15
+2026/10/28 03:46:22 session handshake timing key_id=FB-u1-20261028-95500998 session=home total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/28 03:46:22 session delivery lease release decision=requeue key_id=FB-u1-20261028-95500998 session=home conn_seq=1 reason=session_reconnected released=0
+2026/10/28 03:46:22 session route decision=durable_queued key_id=FB-u1-20261028-95500998 session=home client_present=true conn_seq=1 delivery_id=dw-dlv_e1a6ef8c15b944dbd72744e13358e4ed source_message_id=84281852991ed8a30320f3357caa25ab
+2026/10/28 03:46:22 session delivery lease release decision=requeue key_id=FB-u1-20261028-95500998 session=home conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestViewServiceFullChainIntegration (0.16s)
+=== RUN   TestNewPlatformTerminalCapabilityMakesOwnedViewWritable
+2026/10/28 03:46:22 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:22 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestNewPlatformTerminalCapabilityMakesOwnedViewWritable (0.13s)
+=== RUN   TestNewPlatformViewCapabilityBrowserPayload
+--- PASS: TestNewPlatformViewCapabilityBrowserPayload (0.00s)
+=== RUN   TestNewPlatformConsolePrincipalViewInputReachesAgent
+2026/10/28 03:46:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/28 03:46:23 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestNewPlatformConsolePrincipalViewInputReachesAgent (0.15s)
+=== RUN   TestNewPlatformOwnerInputThroughRealViewServiceModes
+=== RUN   TestNewPlatformOwnerInputThroughRealViewServiceModes/legacy
+2026/10/28 03:46:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/28 03:46:23 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+=== RUN   TestNewPlatformOwnerInputThroughRealViewServiceModes/v2
+2026/10/28 03:46:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/28 03:46:23 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestNewPlatformOwnerInputThroughRealViewServiceModes (0.59s)
+    --- PASS: TestNewPlatformOwnerInputThroughRealViewServiceModes/legacy (0.30s)
+    --- PASS: TestNewPlatformOwnerInputThroughRealViewServiceModes/v2 (0.29s)
+=== RUN   TestNewPlatformLegacyViewControlUsesInternalSession
+2026/10/28 03:46:23 session delivery drain skipped decision=stale_or_offline_client key_id=FB-u1-20261028-95500998 session=home conn_seq=1 client_present=false
+2026/10/28 03:46:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/28 03:46:23 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestNewPlatformLegacyViewControlUsesInternalSession (0.17s)
+=== RUN   TestNewPlatformViewServiceOwnerGrantIsIdempotentDuringInput
+2026/10/28 03:46:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/28 03:46:23 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+=== RUN   TestNewPlatformViewServiceOwnerGrantIsIdempotentDuringInput/repeated_status_keeps_token
+=== RUN   TestNewPlatformViewServiceOwnerGrantIsIdempotentDuringInput/in-flight_input_survives_status_grant
+--- PASS: TestNewPlatformViewServiceOwnerGrantIsIdempotentDuringInput (0.14s)
+    --- PASS: TestNewPlatformViewServiceOwnerGrantIsIdempotentDuringInput/repeated_status_keeps_token (0.00s)
+    --- PASS: TestNewPlatformViewServiceOwnerGrantIsIdempotentDuringInput/in-flight_input_survives_status_grant (0.00s)
+=== RUN   TestNewPlatformViewAuth
+2026/10/28 03:46:24 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:24 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestNewPlatformViewAuth (0.15s)
+=== RUN   TestNewPlatformViewSubpathWithLegacyConsoleAuthOn
+2026/10/28 03:46:24 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:24 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestNewPlatformViewSubpathWithLegacyConsoleAuthOn (0.14s)
+=== RUN   TestNewPlatformViewProxySessionIsCanonicalFullName
+2026/10/28 03:46:24 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:24 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestNewPlatformViewProxySessionIsCanonicalFullName (0.14s)
+=== RUN   TestNewPlatformViewV2CancelResolvesFullName
+2026/10/28 03:46:24 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/28 03:46:24 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestNewPlatformViewV2CancelResolvesFullName (0.16s)
+=== RUN   TestSignViewServiceRequestBindsBody
+--- PASS: TestSignViewServiceRequestBindsBody (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	2.214s

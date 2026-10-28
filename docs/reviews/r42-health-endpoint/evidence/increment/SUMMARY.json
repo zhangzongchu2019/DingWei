@@ -1,0 +1,140 @@
+{
+  "utc": "2026-10-28T03:47:32.939722+00:00",
+  "base": "ab6f4013692f52dac652399cacd15b66e3e4f12c",
+  "authorization": "leader2026-10-28T03:41:03Z: exactly one append after deployment-script review; single writer",
+  "provenance": "Tests ran on this base plus uncommitted incremental runtime/test changes. RESULT.source denotes base HEAD, not clean tested code; exact executed file SHA256 are pinned below. Final single commit includes these bytes plus docs/evidence.",
+  "source_sha256": {
+    "internal/m8/health_auth_test.go": "68df8b96134624dda4ea5dbd765b9f1cce4a5cc8773acd95ae19028a1a2278b2",
+    "internal/m8/terminal.go": "7dd84cc749519ea48b58160345a1260813196effdb2714cef008c4c69f4d0744",
+    "internal/version/version_test.go": "7e6b69a032e6fd2e2002381d9295de842fbe5873b3d0058a669af5c7b0dfa89b",
+    "view-service/test_health_auth.py": "e12b43454d334c1e91870863587ef480c9a53f1e06abb153427afc6eae6297e1",
+    "view-service/view_service.py": "791ec79b1d6e2b8ec2983227a42e676929190543267c4fc72b90476d941a307c"
+  },
+  "positive_results": [
+    {
+      "utc": "2026-10-28T03:45:17.796051+00:00",
+      "source": "ab6f4013692f52dac652399cacd15b66e3e4f12c",
+      "cwd": "/data/ai-dev-data/r42-health-endpoint",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "view-service",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "environment": "dev uid1001; isolated HOME; Go1.22.2 linux/amd64; locked Python3.12.3; strict embedded PG; explicit DW_FAILURE_NOTICE_PYTHON; no external DSNs/provider env; other opt-ins absent",
+      "end_utc": "2026-10-28T03:45:41.525923+00:00",
+      "rc": 0,
+      "seconds": 23.73,
+      "log_sha256": "3de83373e884ea75dbc1a79ad6ac4b03343d2a3b7531b67b7c0e0543e3e50cb9"
+    },
+    {
+      "utc": "2026-10-28T03:45:28.169229+00:00",
+      "source": "ab6f4013692f52dac652399cacd15b66e3e4f12c",
+      "cwd": "/data/ai-dev-data/r42-health-endpoint",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "./internal/version",
+        "./internal/m8",
+        "-p",
+        "1",
+        "-run",
+        "TestViewHealthVersion|TestVersion|TestHelperVersion|TestHelper02315|TestHealthAuth|TestConsolePageVersion|TestConsolePageSource",
+        "-count=3",
+        "-v",
+        "-timeout=3m"
+      ],
+      "environment": "dev uid1001; isolated HOME; Go1.22.2 linux/amd64; locked Python3.12.3; strict embedded PG; explicit DW_FAILURE_NOTICE_PYTHON; no external DSNs/provider env; other opt-ins absent",
+      "end_utc": "2026-10-28T03:45:40.390995+00:00",
+      "rc": 0,
+      "seconds": 12.222,
+      "log_sha256": "f47f67a40d4d23f2bc593ee8477abc5f1d80e252d428ccce682601a4124f5ac2"
+    },
+    {
+      "utc": "2026-10-28T03:46:20.468224+00:00",
+      "source": "ab6f4013692f52dac652399cacd15b66e3e4f12c",
+      "cwd": "/data/ai-dev-data/r42-health-endpoint",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "./internal/m8",
+        "-p",
+        "1",
+        "-run",
+        "TestViewRoutingPrecedenceAndFallback|TestViewServiceFullChainIntegration|TestNewPlatform.*View|TestUnifiedConsoleAuthCoversEveryViewRoute|TestSignViewServiceRequestBindsBody",
+        "-count=1",
+        "-v",
+        "-timeout=3m"
+      ],
+      "environment": "dev uid1001; isolated HOME; Go1.22.2 linux/amd64; locked Python3.12.3; strict embedded PG; explicit DW_FAILURE_NOTICE_PYTHON; no external DSNs/provider env; other opt-ins absent",
+      "end_utc": "2026-10-28T03:46:24.610130+00:00",
+      "rc": 0,
+      "seconds": 4.142,
+      "log_sha256": "70417d5daaddd295b35fdb72f97ece47810c545b0a055c107a46b9a7ee7bdaa7"
+    },
+    {
+      "utc": "2026-10-28T03:46:48.024499+00:00",
+      "source": "ab6f4013692f52dac652399cacd15b66e3e4f12c",
+      "cwd": "/data/ai-dev-data/r42-health-endpoint",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "deploy.test_build_entrypoints"
+      ],
+      "environment": "dev uid1001; isolated HOME; Go1.22.2 linux/amd64; locked Python3.12.3; strict embedded PG; explicit DW_FAILURE_NOTICE_PYTHON; no external DSNs/provider env; other opt-ins absent",
+      "end_utc": "2026-10-28T03:46:48.737441+00:00",
+      "rc": 0,
+      "seconds": 0.713,
+      "log_sha256": "116f563c02a9855db0521ac6f073bca58583c040992be5b8990394a7d5088c01"
+    }
+  ],
+  "negative_controls": [
+    {
+      "label": "version-source-literal",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_health_auth.HealthAuthTest.test_version_follows_deployment_without_source_change"
+      ],
+      "utc": "2026-10-28T03:46:19.319098+00:00",
+      "rc": 1,
+      "seconds": 0.615,
+      "criterion": true,
+      "log_sha256": "f968c89edbd9e85c174d82c046e48d6482af586f872566e14c6e6255c2a1ec5b"
+    },
+    {
+      "label": "proxy-without-clean",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "-overlay",
+        "/tmp/r42-health-version-mutant-vso4qqni/overlay.json",
+        "./internal/m8",
+        "-run",
+        "^TestHealthAuthViewProxyNeverReachesInternalUpstream$",
+        "-count=1",
+        "-v",
+        "-timeout=1m"
+      ],
+      "utc": "2026-10-28T03:46:19.934121+00:00",
+      "rc": 1,
+      "seconds": 7.977,
+      "criterion": true,
+      "log_sha256": "f851534d86ea6d8194c524f2b05778b2d30acd2027347a1218656398168f90ea"
+    }
+  ],
+  "scope": "Local isolated tests only; no deployment/restart/R41 ref changes; no new release number. Full m8/canonical not rerun for this increment.",
+  "positive_skip_names": []
+}

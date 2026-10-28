@@ -1,0 +1,182 @@
+{
+  "rounds": [
+    {
+      "round": 1,
+      "PASS": 775,
+      "SKIP": 16,
+      "FAIL": 0,
+      "nested_SKIP": 18
+    },
+    {
+      "round": 2,
+      "PASS": 775,
+      "SKIP": 16,
+      "FAIL": 0,
+      "nested_SKIP": 18
+    },
+    {
+      "round": 3,
+      "PASS": 775,
+      "SKIP": 16,
+      "FAIL": 0,
+      "nested_SKIP": 18
+    }
+  ],
+  "top_skip": [
+    "TestBlockerAcrossRealHTTPHelperIPCMCP",
+    "TestConsolePlatformPayloadDump",
+    "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+    "TestDeliveryACKActualCLILateWireTerminal",
+    "TestDesktopMCPRoundTripAcrossRealHub",
+    "TestDeviceClaimAcrossActualClientAndHub",
+    "TestDeviceClaimAcrossActualClientAndPostgres",
+    "TestEnvelopeReadTimeoutEnvironmentChild",
+    "TestGroupReplyMCP",
+    "TestHelper0232MixedVersionEndToEnd",
+    "TestHostedBodySendAcrossRealHub",
+    "TestMuxProductHTTP1EightSeats",
+    "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+    "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+    "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+    "TestSpecMCPEndToEnd"
+  ],
+  "nested_skip": [
+    "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+    "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+    "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+    "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+    "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+    "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+    "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+    "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+    "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+    "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+    "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+    "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+    "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+    "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+    "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+    "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+    "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+    "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory"
+  ],
+  "panic_literal_count": 0,
+  "dash_FAIL_literal_count": 0,
+  "failure_notice_driver_passes": 3,
+  "health_cases_passes": {
+    "TestHealthAuthDecisions": 3,
+    "TestHealthAuthConcurrentReplayAndCapacity": 3,
+    "TestHealthAuthPublicRoutingBoundary": 3,
+    "TestHealthAuthViewProxyNeverReachesInternalUpstream": 3
+  },
+  "go_view_service": "Go package has no test files; real View Python suite count=3 is recorded separately",
+  "skip_conditions": {
+    "TestDeviceClaimAcrossActualClientAndHub": "run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment",
+    "TestDeviceClaimAcrossActualClientAndPostgres": "run scripts/test-desktop-hub-roundtrip.sh for cross-runtime PostgreSQL enrollment",
+    "TestMuxProductHTTP1EightSeats": "set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration",
+    "TestConsolePlatformPayloadDump": "仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)",
+    "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel": "K13 deferred: task case record model does not exist, so started state cannot be derived mechanically",
+    "TestDeliveryACKActualCLILateWireTerminal": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "TestDesktopMCPRoundTripAcrossRealHub": "run scripts/test-desktop-hub-roundtrip.sh for the cross-runtime gate",
+    "TestGroupReplyMCP": "requires locked helper Python; set DW_SPEC_E2E_PYTHON",
+    "TestHelper0232MixedVersionEndToEnd": "explicit immutable release pins required",
+    "TestHostedBodySendAcrossRealHub": "set explicit isolated integration interpreter",
+    "TestEnvelopeReadTimeoutEnvironmentChild": "subprocess probe only",
+    "TestPilotQuestionAcrossRealHTTPHelperIPCMCP": "set locked helper Python; canonical runs this local integration",
+    "TestPilotTemplateAcrossRealHTTPHelperIPCMCP": "set locked helper Python; canonical runs loopback integration",
+    "TestProjectContextAcrossRealHTTPHelperIPCMCP": "set DW_DESKTOP_INTEGRATION_PYTHON to the locked helper test venv; canonical shell gate runs the cross-runtime set",
+    "TestSpecMCPEndToEnd": "set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses",
+    "TestBlockerAcrossRealHTTPHelperIPCMCP": "set locked helper Python; canonical runs this local integration"
+  },
+  "result": {
+    "utc": "2026-10-28T03:29:05.054682+00:00",
+    "source": "d4ed8023c94c4d666d0936b5f012814c61efd856",
+    "cwd": "/data/ai-dev-data/r42-health-endpoint",
+    "command": [
+      "/usr/bin/go",
+      "test",
+      "./internal/m8",
+      "./view-service",
+      "-p",
+      "1",
+      "-count=3",
+      "-v",
+      "-timeout=30m"
+    ],
+    "environment": "dev uid1001; isolated HOME; Go1.22.2 linux/amd64; locked Python3.12.3; strict embedded PG; explicit DW_FAILURE_NOTICE_PYTHON; no external DSNs/provider env; other opt-ins absent",
+    "end_utc": "2026-10-28T03:37:20.850896+00:00",
+    "rc": 0,
+    "seconds": 495.796,
+    "log_sha256": "1d4b57bfda0ba46273a0b9ef5b6c031e6595ff179e86fbb380f4b5601bfea0fc"
+  },
+  "python_result": {
+    "utc": "2026-10-28T03:29:31.052270+00:00",
+    "source": "d4ed8023c94c4d666d0936b5f012814c61efd856",
+    "cwd": "/data/ai-dev-data/r42-health-endpoint",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "/data/ai-dev-data/r42-dev-evidence/python-three-rounds.py"
+    ],
+    "environment": "dev uid1001; isolated HOME; Go1.22.2 linux/amd64; locked Python3.12.3; strict embedded PG; explicit DW_FAILURE_NOTICE_PYTHON; no external DSNs/provider env; other opt-ins absent",
+    "end_utc": "2026-10-28T03:30:31.775190+00:00",
+    "rc": 0,
+    "seconds": 60.723,
+    "log_sha256": "dbe46810037c12785e967699d49a9df9825ba00568cf3adc608e91b14d38e1a8"
+  },
+  "python_rounds": 3,
+  "python_tests_per_round": 143,
+  "python_skip_names": [],
+  "scope": "Developer self-test only; no deployment, no binary upload, all R41 refs untouched.",
+  "negative_controls": {
+    "health-go-no-hmac": {
+      "utc": "2026-10-28T03:26:23.457021+00:00",
+      "source": "8bfe4e599e97ecc76764ba0f24298fa27f8022c3",
+      "cwd": "/data/ai-dev-data/r42-health-mutation",
+      "command": [
+        "/usr/bin/go",
+        "test",
+        "./internal/m8",
+        "-p",
+        "1",
+        "-run",
+        "^TestHealthAuthDecisions/wrong_signature$",
+        "-count=1",
+        "-v",
+        "-timeout=2m"
+      ],
+      "environment": "dev uid1001; isolated HOME; Go1.22.2 linux/amd64; locked Python3.12.3; strict embedded PG; explicit DW_FAILURE_NOTICE_PYTHON; no external DSNs/provider env; other opt-ins absent",
+      "end_utc": "2026-10-28T03:26:33.358948+00:00",
+      "rc": 1,
+      "seconds": 9.902,
+      "log_sha256": "2d6105afcc5a07b4da743d3f010f3acf232ceacf5f0d6da64f0ef624954f4b15"
+    },
+    "health-python-no-hmac": {
+      "utc": "2026-10-28T03:26:24.607979+00:00",
+      "source": "8bfe4e599e97ecc76764ba0f24298fa27f8022c3",
+      "cwd": "/data/ai-dev-data/r42-health-mutation",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_health_auth.HealthAuthTest.test_wrong_signature"
+      ],
+      "environment": "dev uid1001; isolated HOME; Go1.22.2 linux/amd64; locked Python3.12.3; strict embedded PG; explicit DW_FAILURE_NOTICE_PYTHON; no external DSNs/provider env; other opt-ins absent",
+      "end_utc": "2026-10-28T03:26:25.234159+00:00",
+      "rc": 1,
+      "seconds": 0.626,
+      "log_sha256": "c4935c7fd2858808b3349a6a3ab498bd6482c738168230495106b1d90a6c883c"
+    }
+  },
+  "negative_controls_provenance": "Mutants use detached 8bfe4e5, then disable only constant-time digest-check predicate in each implementation. Final d4ed802 has byte-identical health_auth.go and View product source to 8bfe; later changes are public-proxy isolation, its test and canonical wiring. Each mutation fails specifically wrong_signature: got200 want401. Main branch never mutated.",
+  "preliminary_interruption": {
+    "source": "8bfe4e599e97ecc76764ba0f24298fa27f8022c3",
+    "label": "health-m8",
+    "rc": 1,
+    "seconds": 234.105,
+    "reason": "developer deliberately sent SIGINT to own preliminary m8 test while addressing newly found generic public View proxy exposure; not counted as final regression",
+    "log_sha256": "b7bbb6e78c1f93a7568fba45ff57a8bced831b48c7c4e0d62c7acdbf337ffbbc"
+  }
+}

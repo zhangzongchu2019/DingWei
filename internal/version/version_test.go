@@ -2,6 +2,7 @@ package version
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -16,6 +17,22 @@ func TestVersionMatchesRepositoryVersionFile(t *testing.T) {
 	}
 	if got, want := Version, strings.TrimSpace(string(data)); got != want {
 		t.Fatalf("version constant=%q VERSION=%q", got, want)
+	}
+}
+
+// Keep View's deployment-supplied health version in the same gate as
+// VERSION/Go/helper. This runs an actual HTTP response check, with no source
+// version literal and no deployment or external service access.
+func TestViewHealthVersionMatchesDeploymentVersion(t *testing.T) {
+	cmd := exec.Command("python3", "-B", "-m", "unittest", "-v",
+		"test_health_auth.HealthAuthTest.test_version_matches_release_file",
+		"test_health_auth.HealthAuthTest.test_version_follows_deployment_without_source_change",
+		"test_health_auth.HealthAuthTest.test_missing_or_invalid_deployment_version_is_unavailable")
+	cmd.Dir = "../../view-service"
+	cmd.Env = []string{"PATH=" + os.Getenv("PATH"), "HOME=" + t.TempDir(), "LANG=C.UTF-8"}
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("View health deployment VERSION gate: %v\n%s", err, output)
 	}
 }
 

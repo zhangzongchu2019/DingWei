@@ -1,0 +1,6 @@
+=== RUN   TestHealthAuthViewProxyNeverReachesInternalUpstream
+    health_auth_test.go:188: internal proxy path /view/test//internal/health/auth status 200
+--- FAIL: TestHealthAuthViewProxyNeverReachesInternalUpstream (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.006s
+FAIL

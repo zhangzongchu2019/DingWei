@@ -316,6 +316,7 @@ func run(logger *slog.Logger) error {
 	// View Service 对接内网口(仅 127.0.0.1 / 内网,不进公开 mux):
 	// C2 事件订阅 / C3 鉴权 / C3 输入回投。View Service 作为内部消费者调用。
 	internalMux := http.NewServeMux()
+	internalMux.Handle("GET "+m8.HealthAuthPath, m8.NewHealthAuthHandler())
 	internalMux.HandleFunc("GET /internal/view/{session}/events", prefixHub.HandleInternalViewEvents)
 	internalMux.HandleFunc("POST /internal/console/cost-seed-authority", prefixHub.HandleConsoleMuxCostSeedAuthority)
 	internalMux.HandleFunc("POST /internal/console/event-feeds/{feed_id}/bridges/{bridge_id}/events", prefixHub.HandleInternalConsoleMuxEvents)

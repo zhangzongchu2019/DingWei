@@ -32,6 +32,7 @@ view-service/test_renderer_iter2.py
 view-service/test_view_page_store.py
 view-service/test_view_service.py
 view-service/test_view_error_logging.py
+view-service/test_health_auth.py
 view-service/test_agent_disk_resource.py
 view-service/test_inbox_lag_resource.py
 view-service/test_view_refresh.py
@@ -57,4 +58,4 @@ printf '%s\n' "$SHELL_TESTS" | while IFS= read -r test_file; do
   echo "TEST shell $test_file"
   bash "$test_file"
 done
-echo 'BUILD_TESTS_OK helper_profiles=2 python=26 shell=2'
+echo 'BUILD_TESTS_OK helper_profiles=2 python=27 shell=2'
