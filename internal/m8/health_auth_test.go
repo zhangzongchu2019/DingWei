@@ -15,6 +15,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
 
 func healthFixture(t *testing.T) (*healthAuthHandler, []byte) {
@@ -93,7 +95,7 @@ func TestHealthAuthDecisions(t *testing.T) {
 				if err := json.Unmarshal(w.Body.Bytes(), &payload); err != nil {
 					t.Fatal(err)
 				}
-				if len(payload) != 3 || payload["health"] != "ok" || payload["target"] != "staging-hub" || payload["version"] != "0.2.3.15" {
+				if len(payload) != 3 || payload["health"] != "ok" || payload["target"] != "staging-hub" || payload["version"] != dwversion.Version {
 					t.Fatalf("response allowlist: %v", payload)
 				}
 			}

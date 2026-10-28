@@ -1,0 +1,11 @@
+# R42 integration 0.2.3.16
+
+Authorization GO-R42-INTEGRATION, leader UTC2026-10-28T04:06:31Z. Git development and local gates only, single writer. No deployment or restart is authorized.
+
+Base d635aeed97b43f8919e138573c289fc4bd9f6f51. Merge order with --no-ff: frozen View error logging3cd4f80c4113f753194e0f96ed0051c49ebceed1, then frozen authenticated health38b6fdaa19e192298d4aa5e29131884210fe8f15. The test-list conflict is resolved by retaining both tests exactly once; canonical count27 Python/2 shell, discovered deploy/View28. Preserve both runtime semantics.
+
+Release VERSION, Go version, helper __version__ and release pin become0.2.3.16; last released version is0.2.3.15. Hub health test expects compiled version dynamically. Page source contains no release literal. View health takes only deployment VS_VERSION; missing/invalid configuration returns503 after authentication, invalid signature401. The same-version gate exercises actual HTTP with repository VERSION and arbitrary future deployment versions.
+
+Future release order: stage first, then production, with one production Hub switch for this combined release. Staging health timer requires the authenticated endpoint. Both the staging plan and any new Hub GO must require VS_VERSION to be populated from the approved deployment VERSION, same0.2.3.16 as Hub/helper, and independent health credentials/target. This document grants no deployment authorization; browser and cross-machine build review remain assigned to other seats.
+
+Final clean source tip must be frozen before SOURCE_COMMIT=tip ./build.sh. Local gates use Go1.22.2, locked Python3.12.3, short private TMPDIR=/tmp/r42t, temporary HOME, strict isolated embedded PG, explicit DW_FAILURE_NOTICE_PYTHON. Preflight computes the longest relevant generated AF_UNIX path against107 bytes before execution. Run full canonical build, full Go ./... -p1 -count1 -timeout30m, and full m8 count3. Record panic: separately from --- FAIL; compare every SKIP name/reason against an independently executed d635aeed baseline under the same environment. Gate logs and final binary version/commit/SHA are bound to this frozen source tip; later evidence must not advance the build source ref.
