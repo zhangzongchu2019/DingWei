@@ -1,0 +1,14 @@
+test_permission_000_returns_500_and_logs_type_and_paths (test_view_error_logging.ViewErrorLoggingTest.test_permission_000_returns_500_and_logs_type_and_paths) ... FAIL
+
+======================================================================
+FAIL: test_permission_000_returns_500_and_logs_type_and_paths (test_view_error_logging.ViewErrorLoggingTest.test_permission_000_returns_500_and_logs_type_and_paths)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r42-logging-mutation/view-service/test_view_error_logging.py", line 40, in test_permission_000_returns_500_and_logs_type_and_paths
+    self.assertTrue(any(r["exception"] == "PermissionError" and r["target_path"] == renderer and r["request_path"] == "/" for r in records), records)
+AssertionError: False is not true : []
+
+----------------------------------------------------------------------
+Ran 1 test in 0.503s
+
+FAILED (failures=1)
