@@ -1,0 +1,73 @@
+{
+  "source_commit": "e47ab370402b2cbe3ef8b6a9207b5f6243f08bd4",
+  "base": "d635aeed97b43f8919e138573c289fc4bd9f6f51",
+  "status": "developer self-test passed; independent review assigned separately",
+  "results": [
+    {
+      "utc": "2026-10-28T03:29:32.212984+00:00",
+      "source": "e47ab370402b2cbe3ef8b6a9207b5f6243f08bd4",
+      "cwd": "/data/ai-dev-data/r42-view-error-logging",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "view-service",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "environment": "dev uid1001; isolated HOME; Go1.22.2 linux/amd64; locked Python3.12.3; strict embedded PG; explicit DW_FAILURE_NOTICE_PYTHON; no external DSNs/provider env; other opt-ins absent",
+      "end_utc": "2026-10-28T03:29:46.599994+00:00",
+      "rc": 0,
+      "seconds": 14.387,
+      "log_sha256": "2aad52c3637765a1628a42db71a4aeea247597a00c6a0ba836903efb248ec98d"
+    },
+    {
+      "utc": "2026-10-28T03:29:33.373666+00:00",
+      "source": "e47ab370402b2cbe3ef8b6a9207b5f6243f08bd4",
+      "cwd": "/data/ai-dev-data/r42-view-error-logging",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "deploy/test_build_entrypoints.py"
+      ],
+      "environment": "dev uid1001; isolated HOME; Go1.22.2 linux/amd64; locked Python3.12.3; strict embedded PG; explicit DW_FAILURE_NOTICE_PYTHON; no external DSNs/provider env; other opt-ins absent",
+      "end_utc": "2026-10-28T03:29:34.069920+00:00",
+      "rc": 0,
+      "seconds": 0.696,
+      "log_sha256": "337df5b11154814ca1eb48677bbe332aeca651a2b6cdcc082b27a95cc0ec4e2f"
+    },
+    {
+      "utc": "2026-10-28T03:26:25.293150+00:00",
+      "source": "ed6c712b4715698694779c104cc5ffdd8eb178fe",
+      "cwd": "/data/ai-dev-data/r42-logging-mutation",
+      "command": [
+        "/tmp/coder-0232-locked-venv/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "-v",
+        "test_view_error_logging.ViewErrorLoggingTest.test_permission_000_returns_500_and_logs_type_and_paths"
+      ],
+      "environment": "dev uid1001; isolated HOME; Go1.22.2 linux/amd64; locked Python3.12.3; strict embedded PG; explicit DW_FAILURE_NOTICE_PYTHON; no external DSNs/provider env; other opt-ins absent",
+      "end_utc": "2026-10-28T03:26:25.913083+00:00",
+      "rc": 1,
+      "seconds": 0.62,
+      "log_sha256": "702f86cfb932832b6755a986133a0f93af86310a6c1c244f4134eae96479ba12"
+    }
+  ],
+  "skip_names": [],
+  "checks": {
+    "real_chmod_000_nonroot_http_500_and_permissionerror_renderer_path": true,
+    "request_query_and_private_response_values_absent": true,
+    "delete_logging_fails_log_criterion_with_http_500_preserved": true
+  },
+  "mutation": "detached ed6c712 worktree; _log_view_failure gets an unconditional early return; main source untouched. ed6c712 -> source_commit changes only canonical test wiring/count contract; product bytes unchanged.",
+  "scope": "Git development/local tests only. No deployment/restart/binary upload/R41 changes."
+}
