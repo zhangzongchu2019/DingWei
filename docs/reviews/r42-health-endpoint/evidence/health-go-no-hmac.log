@@ -1,0 +1,8 @@
+=== RUN   TestHealthAuthDecisions
+=== RUN   TestHealthAuthDecisions/wrong_signature
+    health_auth_test.go:89: wrong_signature decision: got 200 want 401
+--- FAIL: TestHealthAuthDecisions (0.00s)
+    --- FAIL: TestHealthAuthDecisions/wrong_signature (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.005s
+FAIL

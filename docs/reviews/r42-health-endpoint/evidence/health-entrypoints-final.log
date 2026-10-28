@@ -1,0 +1,21 @@
+test_build_accepts_exact_go_1222_and_constructs_artifacts (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_build_accepts_exact_go_1222_and_constructs_artifacts) ... ok
+test_build_checks_entire_go_version_output (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_build_checks_entire_go_version_output) ... ok
+test_build_make_and_ci_share_the_canonical_test_entrypoint (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_build_make_and_ci_share_the_canonical_test_entrypoint) ... ok
+test_build_rejects_go_126_before_tests_or_artifacts (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_build_rejects_go_126_before_tests_or_artifacts) ... ok
+test_build_sh_owns_gate_flags_and_deploy_provenance (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_build_sh_owns_gate_flags_and_deploy_provenance) ... ok
+test_docker_builder_runs_gate_and_verifies_embedded_commit (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_docker_builder_runs_gate_and_verifies_embedded_commit) ... ok
+test_every_deploy_and_view_service_test_is_wired_once (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_every_deploy_and_view_service_test_is_wired_once) ... ok
+test_helper_inventory_rejects_each_missing_file_and_manifest_entry (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_helper_inventory_rejects_each_missing_file_and_manifest_entry) ... ok
+test_install_never_reuses_or_directly_builds_an_unverified_binary (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_install_never_reuses_or_directly_builds_an_unverified_binary) ... ok
+test_make_build_and_docker_do_not_copy_build_flags (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_make_build_and_docker_do_not_copy_build_flags) ... ok
+test_missing_helper_file_rejected_before_import_or_execution (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_missing_helper_file_rejected_before_import_or_execution) ... ok
+test_nodeagent_is_a_peer_release_artifact (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_nodeagent_is_a_peer_release_artifact) ... ok
+test_ts3_helper_regressions_are_wired_once (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_ts3_helper_regressions_are_wired_once) ... ok
+test_update_modules_and_canonical_counts_are_wired (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_update_modules_and_canonical_counts_are_wired) ... ok
+test_view_page_store_has_one_configurable_timeout (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_view_page_store_has_one_configurable_timeout) ... ok
+test_view_unlock_integration_has_one_configurable_timeout (deploy.test_build_entrypoints.BuildEntrypointContractTest.test_view_unlock_integration_has_one_configurable_timeout) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.655s
+
+OK

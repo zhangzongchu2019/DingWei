@@ -1,0 +1,20 @@
+[
+  {
+    "file": "internal/m8/health_auth.go",
+    "source_sha256": "043571e98d2598a47c2ed7506bbb006bdfd700195a03201568b953d1976a362d",
+    "mutant_sha256": "347a10cc1f4c67074ff52fcdfbee19840326102a7c2f4158a26f2c327c7ebfb5",
+    "replace_once": "if !hmac.Equal(supplied, mac.Sum(nil)) {",
+    "with": "if false && !hmac.Equal(supplied, mac.Sum(nil)) {",
+    "test_command": "go test ./internal/m8 -p 1 -run ^TestHealthAuthDecisions/wrong_signature$ -count=1 -v -timeout=2m",
+    "expected_result": "rc1; wrong_signature status got200 want401"
+  },
+  {
+    "file": "view-service/view_service.py",
+    "source_sha256": "9555e3b87b0847654254a570f2a3e2d984a04f1a5a580a89a37a6ea44bfc559d",
+    "mutant_sha256": "27e6597d9b0bc2af7214114d2daf511a3f4f99ecb37463641a4a5c1684408b00",
+    "replace_once": "if not hmac.compare_digest(bytes.fromhex(signature), expected):",
+    "with": "if False and not hmac.compare_digest(bytes.fromhex(signature), expected):",
+    "test_command": "PYTHONPATH=view-service python3 -B -m unittest -v test_health_auth.HealthAuthTest.test_wrong_signature",
+    "expected_result": "rc1; wrong_signature status got200 want401"
+  }
+]
