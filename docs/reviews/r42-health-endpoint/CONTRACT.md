@@ -2,7 +2,7 @@
 
 Authorization: GO-R42-DEV-1, 2026-10-28T03:18:07Z. Base d635aeed97b43f8919e138573c289fc4bd9f6f51. Git development/local tests only; no deployment.
 
-Hub registers GET /internal/health/auth only on internalMux; View serves the same path on its existing localhost listener. No nginx health route is added. Tests pin the internal registration and check every deploy/nginx*.conf for absence of the path. Effective host nginx configuration remains a separate deployment review requirement; repository tests do not inspect or change the host.
+Hub registers GET /internal/health/auth only on internalMux; View serves the same path on its existing localhost listener. The generic public /view/{session}/{rest...} proxy rejects internal paths before any upstream I/O, including percent-encoded internal spellings. No nginx health route is added. Tests pin the internal registration and check every deploy/nginx*.conf for absence of the path. Effective host nginx configuration remains a separate deployment review requirement; repository tests do not inspect or change the host.
 
 Hub configuration: WP_HEALTH_SECRET_FILE, WP_HEALTH_TARGET. View configuration: VS_HEALTH_SECRET_FILE, VS_HEALTH_TARGET. Each instance uses an independent monitor key (never an application/control-plane key), stored outside Git with service-user-only access. Target is required, 1–64 ASCII lowercase letters/digits/underscore/hyphen, e.g. staging-hub. No default credential or target. Keys are reread per request to support rotation, 32–4096 bytes after ASCII whitespace trimming, with a raw-file upper bound of 4096 bytes. Generate a random printable key of at least 32 bytes. No real keys or environment values are stored here.
 

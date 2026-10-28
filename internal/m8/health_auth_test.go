@@ -166,3 +166,20 @@ func TestHealthAuthPublicRoutingBoundary(t *testing.T) {
 		}
 	}
 }
+
+func TestHealthAuthViewProxyNeverReachesInternalUpstream(t *testing.T) {
+	var calls atomic.Int32
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { calls.Add(1); w.WriteHeader(200) }))
+	defer upstream.Close()
+	h := &Hub{}
+	for _, path := range []string{"/view/test/internal/health/auth", "/view/test/internal/control/view-page/unlock", "/view/test/%69nternal/health/auth"} {
+		r := httptest.NewRequest("GET", path, nil)
+		w := httptest.NewRecorder()
+		if !h.proxyToViewService(w, r, "test", upstream.URL) || w.Code != 404 {
+			t.Fatalf("internal proxy path %s status %d", path, w.Code)
+		}
+	}
+	if calls.Load() != 0 {
+		t.Fatalf("internal endpoint forwarded %d times", calls.Load())
+	}
+}

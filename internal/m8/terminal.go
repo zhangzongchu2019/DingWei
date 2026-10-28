@@ -1145,6 +1145,13 @@ func ownerFromSessionName(sessionName string) string {
 // proxyToViewService 反代到 View 服务;剥掉 /view/<名> 前缀 + 带 X-DW-Session 头。
 // 后端不可达时(连接失败)返回 false,调用方兜底老页(不让用户白屏)。
 func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, sessionName, target string) bool {
+	// The public wildcard View proxy must never expose internal endpoints,
+	// even to a logged-in caller carrying an otherwise valid monitor signature.
+	publicPath := strings.TrimPrefix(r.URL.Path, "/view/"+sessionName)
+	if publicPath == "/internal" || strings.HasPrefix(publicPath, "/internal/") {
+		http.NotFound(w, r)
+		return true
+	}
 	u, err := url.Parse(target)
 	if err != nil || u.Scheme == "" || u.Host == "" {
 		return false
