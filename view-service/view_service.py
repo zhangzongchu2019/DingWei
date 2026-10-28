@@ -37,6 +37,31 @@ import stat
 import sys
 from contextlib import contextmanager
 
+_request_log_context = threading.local()
+
+
+def _log_view_failure(kind, target="", status=None):
+    handler = getattr(_request_log_context, "handler", None)
+    # JSON escapes control characters. Query strings, exception messages,
+    # headers, bodies and credential values are deliberately excluded.
+    record = {"event": "view_error", "exception": kind,
+              "target_path": os.fspath(target),
+              "request_path": urlparse(getattr(handler, "path", "")).path}
+    if status is not None:
+        record["status"] = status
+    print(json.dumps(record, ensure_ascii=True), file=sys.stderr, flush=True)
+
+
+@contextmanager
+def _logged_read(path, *args, **kwargs):
+    try:
+        with open(path, *args, **kwargs) as fh:
+            yield fh
+    except OSError as exc:
+        _log_view_failure(type(exc).__name__, path)
+        raise
+
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RENDERER_PATH = os.path.join(BASE_DIR, "renderer-canary-sse.html")
 HUB_INTERNAL = os.environ.get("VS_HUB_INTERNAL", "http://127.0.0.1:8792").rstrip("/")
@@ -188,7 +213,7 @@ def _verify_control_request(headers, method: str, path: str, body: bytes,
     if abs(now - request_time) > CONTROL_CLOCK_SKEW:
         return False, 401
     try:
-        with open(HUB_TO_VS_SECRET_FILE, "rb") as fh:
+        with _logged_read(HUB_TO_VS_SECRET_FILE, "rb") as fh:
             secret = fh.read().strip()
     except OSError:
         return False, 503
@@ -269,7 +294,7 @@ def _agent_disk_from_hub(session: str, subject) -> dict:
         return unavailable
     path = f"/internal/view-v2/{quote(session, safe='')}/resources"
     def request():
-        with open(VS_TO_HUB_SECRET_FILE, "rb") as fh:
+        with _logged_read(VS_TO_HUB_SECRET_FILE, "rb") as fh:
             secret = fh.read(4097).strip()
         if not 32 <= len(secret) <= 4096:
             raise ValueError("service_auth_unavailable")
@@ -296,7 +321,7 @@ def _hub_v2_input(session: str, page_id: str, request_id: str, text: str,
     if not VIEW_TARGET_NAME or not VS_TO_HUB_SECRET_FILE:
         return 0, {"error": "v2 input auth unavailable"}
     try:
-        with open(VS_TO_HUB_SECRET_FILE, "rb") as fh:
+        with _logged_read(VS_TO_HUB_SECRET_FILE, "rb") as fh:
             secret = fh.read().strip()
     except OSError as exc:
         return 0, {"error": str(exc)}
@@ -338,7 +363,7 @@ def _hub_v2_cancel(session: str, page_id: str, request_id: str,
     if not VIEW_TARGET_NAME or not VS_TO_HUB_SECRET_FILE:
         return 0, {"error": "v2 cancel auth unavailable"}
     try:
-        with open(VS_TO_HUB_SECRET_FILE, "rb") as fh:
+        with _logged_read(VS_TO_HUB_SECRET_FILE, "rb") as fh:
             secret = fh.read().strip()
     except OSError as exc:
         return 0, {"error": str(exc)}
@@ -378,7 +403,7 @@ def _hub_v2_interrupt(session: str, page_id: str, request_id: str,
     if not VIEW_TARGET_NAME or not VS_TO_HUB_SECRET_FILE:
         return 0, {"error": "v2 interrupt auth unavailable"}
     try:
-        with open(VS_TO_HUB_SECRET_FILE, "rb") as fh:
+        with _logged_read(VS_TO_HUB_SECRET_FILE, "rb") as fh:
             secret = fh.read().strip()
     except OSError as exc:
         return 0, {"error": str(exc)}
@@ -410,7 +435,7 @@ def _hub_v2_interrupt(session: str, page_id: str, request_id: str,
 
 def _read_renderer() -> bytes:
     # Per-request read keeps the single production renderer hot-updatable.
-    with open(RENDERER_PATH, "rb") as fh:
+    with _logged_read(RENDERER_PATH, "rb") as fh:
         return fh.read()
 
 
@@ -442,7 +467,7 @@ def _read_tasks_snapshot() -> dict:
     一律返 {"project":"","tasks":[]}(渲染器要 tasks 是 list),绝不抛——保证 handler 恒 200。"""
     if VS_TASKS_FILE:
         try:
-            with open(VS_TASKS_FILE, encoding="utf-8") as fh:
+            with _logged_read(VS_TASKS_FILE, encoding="utf-8") as fh:
                 data = json.load(fh)
             if isinstance(data, dict) and isinstance(data.get("tasks"), list):
                 return data
@@ -458,7 +483,7 @@ def _load_state() -> None:
     global _legacy_state_unreadable
     _legacy_state_unreadable = False
     try:
-        with open(STATE_FILE, encoding="utf-8") as fh:
+        with _logged_read(STATE_FILE, encoding="utf-8") as fh:
             saved = json.load(fh)
         if isinstance(saved, dict) and all(isinstance(k,str) and isinstance(v,dict) for k,v in saved.items()):
             _sessions.update(saved)
@@ -685,7 +710,7 @@ def _forward_interrupt_v2(session: str, page_id: str, page_token: str, request_i
 def _read_mem() -> dict:
     try:
         info = {}
-        with open("/proc/meminfo") as fh:
+        with _logged_read("/proc/meminfo") as fh:
             for line in fh:
                 k, _, v = line.partition(":")
                 info[k.strip()] = int(v.strip().split()[0])
@@ -862,6 +887,18 @@ def _bounded_sse_frames(response):
 
 
 class _Handler(BaseHTTPRequestHandler):
+    def handle_one_request(self):
+        _request_log_context.handler = self
+        try:
+            return super().handle_one_request()
+        finally:
+            _request_log_context.handler = None
+
+    def send_response(self, code, message=None):
+        if 500 <= code <= 599:
+            _log_view_failure("HTTPServerError", status=code)
+        return super().send_response(code, message)
+
     def log_message(self, *a):
         pass
 
@@ -895,7 +932,9 @@ class _Handler(BaseHTTPRequestHandler):
                 return self.send_error(400, "session required")
             body = _read_renderer()
         except Exception as exc:
-            return self.send_error(500, str(exc))
+            if not isinstance(exc, OSError):
+                _log_view_failure(type(exc).__name__, RENDERER_PATH)
+            return self.send_error(500, "view unavailable")
         # The trusted router supplies the session. This process-level base is a deployment fact,
         # so the renderer has one path rewriter and request headers cannot choose its public prefix.
         hdr_sess = self.headers.get("X-DW-Session")
@@ -953,7 +992,7 @@ class _Handler(BaseHTTPRequestHandler):
             feed, bridge = request["feed_id"], request["bridge_id"]
             if not re.fullmatch(r"[0-9a-f]{32}", feed) or not re.fullmatch(r"[0-9a-f]{32}", bridge) or request["target"] != VIEW_TARGET_NAME:
                 raise ValueError("bridge identity")
-            with open(VS_TO_HUB_SECRET_FILE, "rb") as fh:
+            with _logged_read(VS_TO_HUB_SECRET_FILE, "rb") as fh:
                 secret = fh.read().strip()
             if len(secret) < 32:
                 raise ValueError("service authentication unavailable")

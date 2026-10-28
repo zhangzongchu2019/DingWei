@@ -1,0 +1,9 @@
+# R42 View error logging
+
+GO-R42-DEV-1 authorizes Git development/local tests only. Base d635aeed97b43f8919e138573c289fc4bd9f6f51; independent from health-endpoint branch. No deployment or service changes.
+
+Read-file OSError exceptions emit one JSON record to stderr with event=view_error, exception=<class name>, target_path=<file path>, request_path=<URL path only>. This includes renderer, state/tasks, monitor/control credential-file reads already present in this baseline, and /proc reads. Only file paths are logged, never file contents, exception messages, request headers/body/query, credentials or responses. Existing FileNotFoundError fallbacks still apply (and now leave an error record). Non-file renderer exceptions also log their type and renderer path.
+
+Every HTTP response with status 500–599 emits an HTTPServerError record with numeric status and request path. Target path is empty when no file target is known. File read failures also carry their concrete exception type/target in the preceding file-error record. Thread-local handler context is cleared after each request; it is not shared between simultaneous clients. JSON encoding escapes newline/control characters in paths. No global logging reconfiguration; stderr is inherited by the existing service manager/journal.
+
+Renderer read failures still return 500, now with a generic view unavailable response rather than exposing the exception message and local filesystem path. Healthy render behavior and response bodies are preserved. Tests run as uid1001 (non-root): real chmod 000, real localhost HTTP request ->500, stderr must contain PermissionError and the actual renderer path and request path. Query and private JSON values must be absent. Removing the logging calls must make this criterion fail. This change does not chmod any release directory or alter host journal/systemd settings.
