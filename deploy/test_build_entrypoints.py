@@ -119,7 +119,7 @@ exit 1
         for directory in (ROOT / "deploy", ROOT / "view-service"):
             for pattern in ("test*.py", "test*.sh"):
                 discovered.update(path.relative_to(ROOT).as_posix() for path in directory.rglob(pattern))
-        self.assertEqual(len(discovered), 26, f"测试文件集合变化，须同步审计清单: {sorted(discovered)}")  # 25→26: inbox lag View resource/renderer coverage added
+        self.assertEqual(len(discovered), 27, f"测试文件集合变化，须同步审计清单: {sorted(discovered)}")  # R42 adds one View test file to the d635aeed inventory
         for test_file in sorted(discovered):
             with self.subTest(test_file=test_file):
                 self.assertEqual(runner.count(test_file), 1, f"测试未接线或重复接线: {test_file}")
@@ -146,9 +146,9 @@ exit 1
             self.assertEqual(helper_inventory.splitlines().count("tools/sessionhelper/tests/" + name), 1)
         python_files = runner.split("PYTHON_TESTS='", 1)[1].split("'", 1)[0].split()
         shell_files = runner.split("SHELL_TESTS='", 1)[1].split("'", 1)[0].split()
-        self.assertEqual(len(python_files), 25)
+        self.assertEqual(len(python_files), 26)
         self.assertEqual(len(shell_files), 2)
-        self.assertIn("BUILD_TESTS_OK helper_profiles=2 python=25 shell=2", runner)
+        self.assertIn("BUILD_TESTS_OK helper_profiles=2 python=26 shell=2", runner)
         self.assertEqual(runner.count('python3 scripts/run-helper-build-tests.py'), 1)
         actual = {p.relative_to(ROOT).as_posix() for p in (ROOT/'tools/sessionhelper').rglob('test*.py')}
         self.assertEqual(set(helper_inventory.splitlines()), actual)
