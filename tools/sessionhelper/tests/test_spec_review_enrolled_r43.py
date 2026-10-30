@@ -112,13 +112,14 @@ class DisconnectClearsPinnedSender(unittest.IsolatedAsyncioTestCase):
         helper.session_capabilities_envelope = lambda _: {}
         return helper
 
-    def connection(self):
+    def connection(self, fail_send=False):
         headers = {'X-DW-Helper-Update-Source': OWNER_SENDER}
 
         class Connection:
             async def __aenter__(self):
                 async def send(text):
-                    pass
+                    if fail_send:
+                        raise ConnectionError('synthetic disconnect on first send')
                 return types.SimpleNamespace(response=types.SimpleNamespace(headers=headers), send=send)
 
             async def __aexit__(self, *args):
@@ -153,6 +154,18 @@ class DisconnectClearsPinnedSender(unittest.IsolatedAsyncioTestCase):
                     await helper._run_once()
                 self.assertEqual(seen, [OWNER_SENDER], 'R43_PIN_NOT_BOUND_WHILE_CONNECTED')
                 self.assertEqual(helper._connection_delivery_ack_source, '', 'R43_PIN_SURVIVES_DISCONNECT')
+
+
+    async def test_first_send_failure_clears_pin(self):
+        for producer in (True, False):
+            with self.subTest(producer=producer):
+                helper = self.helper(producer)
+                with patch('websockets.connect', return_value=self.connection(fail_send=True)), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaises(ConnectionError):
+                        await helper._run_once()
+                self.assertEqual(helper._connection_delivery_ack_source, '', 'R43_PIN_SURVIVES_EARLY_DISCONNECT')
+                self.assertEqual(helper._connection_agent_id, '', 'R43_AGENT_ID_SURVIVES_EARLY_DISCONNECT')
 
 
 class SpecWriteReturnsHubError(unittest.IsolatedAsyncioTestCase):

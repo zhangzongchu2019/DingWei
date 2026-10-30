@@ -65,6 +65,24 @@ from .self_update import (SelfUpdater, UpdateRejected, receipt as update_receipt
 
 
 
+class _ForgetConnectionIdentity:
+    """Clear per-connection identity on every exit from the WS body.
+
+    Covers failures after the handshake pin but before either loop's own
+    finally, such as the first capabilities send."""
+
+    def __init__(self, owner):
+        self.owner = owner
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        self.owner._connection_agent_id = ""
+        self.owner._connection_delivery_ack_source = ""
+        return False
+
+
 async def supervise_connection_loops(coros: "list") -> None:
     """并发跑一组「绑定在同一条 WS 上」的循环,并保证**退出时它们全部被收掉**。
 
@@ -764,7 +782,7 @@ class SessionHelper:
             ping_timeout=20,
             open_timeout=self.cfg.open_timeout,
             proxy=_proxy,
-        ) as ws:
+        ) as ws, _ForgetConnectionIdentity(self):
             if self.cfg.debug:
                 print(f"[sessionHelper][debug] WS 握手成功,耗时 {time.monotonic()-_t0:.2f}s", flush=True)
             print(f"[sessionHelper] connected self={self.book.self_addr} version={__version__}", flush=True)
