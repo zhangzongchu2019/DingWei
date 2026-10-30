@@ -251,11 +251,14 @@ func (s *SQLite) SubmitConsoleSpecReview(ctx context.Context, specID, actor stri
 }
 
 type storedSpecCriterion struct {
-	OwnerRef  string   `json:"owner_ref"`
-	Source    string   `json:"source"`
-	CheckedBy string   `json:"checked_by"`
-	CheckedAt string   `json:"checked_at"`
-	Cases     []string `json:"cases"`
+	// ID is display-only; RawMessage keeps non-string ids decoding as before
+	// (the parent struct had no ID field, so they were ignored).
+	ID        json.RawMessage `json:"id"`
+	OwnerRef  string          `json:"owner_ref"`
+	Source    string          `json:"source"`
+	CheckedBy string          `json:"checked_by"`
+	CheckedAt string          `json:"checked_at"`
+	Cases     []string        `json:"cases"`
 }
 
 type storedSpecAcceptanceBundle struct {
@@ -269,31 +272,128 @@ type storedSpecGateIssue struct {
 	Outcome  string `json:"outcome"`
 }
 
-func validSpecFinalAcceptance(raw string) bool {
+// specGateError keeps errors.Is(err, ErrConsoleSpecGate) while telling the
+// editor which finalize precondition is missing (S-SPEC-GATE-ERROR-DETAIL).
+type specGateError struct{ reason string }
+
+func (e specGateError) Error() string {
+	return "审结未通过：" + e.reason + "（" + ErrConsoleSpecGate.Error() + "）"
+}
+
+func (e specGateError) Unwrap() error { return ErrConsoleSpecGate }
+
+// Display bounds: a short gate message must not grow into a large response
+// because a stored id or status is long.
+const (
+	maxSpecGateLabelRunes  = 40
+	maxSpecGateReasonRunes = 600
+)
+
+func truncateRunes(s string, limit int) string {
+	if r := []rune(s); len(r) > limit {
+		return string(r[:limit]) + "…"
+	}
+	return s
+}
+
+func specGate(reason string) error {
+	return specGateError{reason: truncateRunes(reason, maxSpecGateReasonRunes)}
+}
+
+func specCriterionLabel(raw json.RawMessage, index int) string {
+	var id string
+	if json.Unmarshal(raw, &id) == nil && strings.TrimSpace(id) != "" {
+		return truncateRunes(strings.TrimSpace(id), maxSpecGateLabelRunes)
+	}
+	return fmt.Sprintf("第 %d 条", index+1)
+}
+
+// freshAgentReviewGate mirrors trigger console_spec_agent_fresh_finalize (0056)
+// so the editor gets a reason instead of the raw constraint text; the trigger
+// stays the authority.
+func freshAgentReviewProblem(ctx context.Context, tx *sql.Tx, specID string, revision int) (string, error) {
+	var required, satisfied int
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM console_spec_agent_fresh WHERE spec_id=? AND revision=?) OR EXISTS(SELECT 1 FROM console_spec_agent_gate WHERE spec_id=? AND revision=?)`, specID, revision, specID, revision).Scan(&required); err != nil || required == 0 {
+		return "", err
+	}
+	var latestStatus string
+	err := tx.QueryRowContext(ctx, `SELECT status FROM console_spec_agent_request WHERE spec_id=? AND revision=? AND kind='review' ORDER BY created_at DESC,id DESC LIMIT 1`, specID, revision).Scan(&latestStatus)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "此 spec 须先有一份已完成并经您确认的 Agent 预审；本修订还没有发起过预审", nil
+	} else if err != nil {
+		return "", err
+	}
+	if err = tx.QueryRowContext(ctx, `SELECT count(*) FROM console_spec_agent_gate g JOIN console_spec_agent_request q ON q.id=g.request_id WHERE g.spec_id=? AND g.revision=? AND g.human_confirmed=1 AND q.status='completed' AND q.id=(SELECT latest.id FROM console_spec_agent_request latest WHERE latest.spec_id=? AND latest.revision=? AND latest.kind='review' ORDER BY latest.created_at DESC,latest.id DESC LIMIT 1)`, specID, revision, specID, revision).Scan(&satisfied); err != nil {
+		return "", err
+	}
+	if satisfied > 0 {
+		return "", nil
+	}
+	if latestStatus == "completed" {
+		return "最新一次 Agent 预审已返回，但还没有逐条回复并保存复核", nil
+	}
+	label := map[string]string{"timed_out": "超时未返回", "failed": "失败", "cancelled": "已取消", "pending": "进行中", "awaiting_confirmation": "待确认"}[latestStatus]
+	if label == "" {
+		label = latestStatus
+	}
+	next := "请重新发起预审"
+	if latestStatus == "pending" || latestStatus == "awaiting_confirmation" {
+		next = "请等它返回后逐条回复"
+	}
+	return "此 spec 须先有一份已完成并经您确认的 Agent 预审；最新一次预审" + label + "，" + next, nil
+}
+
+func validSpecFinalAcceptance(raw string) bool { return specFinalAcceptanceProblem(raw) == "" }
+
+// specFinalAcceptanceProblem returns "" when the bundle can be finalized, else
+// a short Chinese reason naming the first criterion and field to fix.
+func specFinalAcceptanceProblem(raw string) string {
 	var legacy []json.RawMessage
 	if json.Unmarshal([]byte(raw), &legacy) == nil {
 		// Pre-S-GEN revisions used a bare array and are explicitly out of backfill
 		// scope. New writes always persist the object bundle below.
-		return len(legacy) > 0
+		if len(legacy) > 0 {
+			return ""
+		}
+		return "没有验收标准"
 	}
 	var bundle storedSpecAcceptanceBundle
 	if json.Unmarshal([]byte(raw), &bundle) != nil || len(bundle.Criteria) == 0 {
-		return false
+		return "没有验收标准"
 	}
-	for _, item := range bundle.Criteria {
-		if strings.TrimSpace(item.OwnerRef) == "" || (item.Source != "owner" && item.Source != "ai") || strings.TrimSpace(item.CheckedBy) == "" || strings.TrimSpace(item.CheckedAt) == "" || len(item.Cases) == 0 {
-			return false
+	var missingChecker []string
+	for i, item := range bundle.Criteria {
+		name := specCriterionLabel(item.ID, i)
+		switch {
+		case strings.TrimSpace(item.OwnerRef) == "":
+			return "验收标准 " + name + " 缺「原文引用」"
+		case item.Source != "owner" && item.Source != "ai":
+			return "验收标准 " + name + " 来源无效"
+		case len(item.Cases) == 0:
+			return "验收标准 " + name + " 缺「证据」"
+		case strings.TrimSpace(item.CheckedBy) == "":
+			missingChecker = append(missingChecker, name)
+			continue
+		case strings.TrimSpace(item.CheckedAt) == "":
+			return "验收标准 " + name + " 缺「核对时刻」"
 		}
 		if _, err := time.Parse(time.RFC3339, item.CheckedAt); err != nil {
-			return false
+			return "验收标准 " + name + " 的「核对时刻」格式无效"
 		}
 		for _, testCase := range item.Cases {
 			if strings.TrimSpace(testCase) == "" {
-				return false
+				return "验收标准 " + name + " 有空的证据行"
 			}
 		}
 	}
-	return true
+	if len(missingChecker) > 0 {
+		list := missingChecker
+		if len(list) > 10 {
+			list = append(append([]string{}, list[:10]...), fmt.Sprintf("等共 %d 条", len(missingChecker)))
+		}
+		return "验收标准缺「核对者」：" + strings.Join(list, "、") + "；请逐条填写核对者后保存"
+	}
+	return ""
 }
 
 func legacySpecAcceptance(raw string) bool {
@@ -434,39 +534,56 @@ func (s *SQLite) FinalizeConsoleSpec(ctx context.Context, specID, actor string, 
 	if flowErr == nil {
 		var currentSHA string
 		if flowState != "review_complete" || frozenRevision != revision {
-			return ErrConsoleSpecGate
+			return specGate("PM 流程尚未完成复核（当前 " + flowState + "）")
 		}
 		if err = tx.QueryRowContext(ctx, `SELECT content_sha256 FROM console_spec_revision WHERE spec_id=? AND revision=?`, specID, revision).Scan(&currentSHA); err != nil {
 			return err
 		}
 		if currentSHA != flowSHA {
-			return ErrConsoleSpecGate
+			return specGate("复核后内容又被修改，请重新复核")
 		}
 	}
 	if err = templateSpecGate(ctx, tx, specID, revision, now); err != nil {
+		if errors.Is(err, ErrConsoleSpecGate) {
+			return specGate("模板绑定、来源或角色回执未齐")
+		}
 		return err
 	}
 	if err = templateFinalReviewGate(ctx, tx, specID, revision); err != nil {
+		if errors.Is(err, ErrConsoleSpecGate) {
+			return specGate("模板 spec 须有已完成、已确认的 Agent 预审，且预审 Agent 不得是执行方")
+		}
 		return err
 	}
 	legacy := legacySpecAcceptance(acceptance)
-	if !validSpecFinalAcceptance(acceptance) {
-		return ErrConsoleSpecGate
+	// Report every missing precondition at once so the editor can fix them in one pass.
+	var problems []string
+	if problem := specFinalAcceptanceProblem(acceptance); problem != "" {
+		problems = append(problems, problem)
 	}
-	if !legacy {
+	reviewProblem, err := freshAgentReviewProblem(ctx, tx, specID, revision)
+	if err != nil {
+		return err
+	}
+	if !legacy && reviewProblem == "" {
 		var issues string
-		if err = tx.QueryRowContext(ctx, `SELECT issues_json FROM console_spec_gate_review WHERE spec_id=? AND revision=? AND operator_principal=?`, specID, revision, actor).Scan(&issues); err != nil {
-			return ErrConsoleSpecGate
-		}
-		if !validCompletedSpecGateReview(issues) {
+		if e := tx.QueryRowContext(ctx, `SELECT issues_json FROM console_spec_gate_review WHERE spec_id=? AND revision=? AND operator_principal=?`, specID, revision, actor).Scan(&issues); e != nil {
+			reviewProblem = "尚未保存本修订的复核（需复核 Agent 与疑点清单）"
+		} else if !validCompletedSpecGateReview(issues) {
 			allowed, e := confirmedEmptySpecAgentGate(ctx, tx, specID, revision, issues)
 			if e != nil {
 				return e
 			}
 			if !allowed {
-				return ErrConsoleSpecGate
+				reviewProblem = "复核疑点未逐条回复（每条须写回复并标为真问题或误报；无疑点时须有已确认的 Agent 预审）"
 			}
 		}
+	}
+	if reviewProblem != "" {
+		problems = append(problems, reviewProblem)
+	}
+	if len(problems) > 0 {
+		return specGate(strings.Join(problems, "；另外，"))
 	}
 	res, err := tx.ExecContext(ctx, `UPDATE console_spec SET state='final',current_editor_id=NULL,updated_at=? WHERE id=? AND current_editor_id=? AND state='review' AND archived=0`, now.UTC().Format(time.RFC3339Nano), specID, actor)
 	if err != nil {

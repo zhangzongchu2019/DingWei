@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -65,7 +66,7 @@ func TestConsoleSpecFinalizeRequiresVerificationIndependentReviewerAndCompleteIs
 	if err := db.TransferConsoleSpec(context.Background(), created.ID, "owner-a", "丙", "review", hub.now()); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.FinalizeConsoleSpec(context.Background(), created.ID, "manager", hub.now()); err != store.ErrConsoleSpecGate {
+	if err := db.FinalizeConsoleSpec(context.Background(), created.ID, "manager", hub.now()); !errors.Is(err, store.ErrConsoleSpecGate) {
 		t.Fatalf("finalize without review err=%v", err)
 	}
 	for _, agent := range []model.ConsoleAgent{
@@ -98,14 +99,14 @@ func TestConsoleSpecFinalizeRequiresVerificationIndependentReviewerAndCompleteIs
 		if err := db.SaveConsoleSpecGateReview(context.Background(), created.ID, "manager", model.ConsoleSpecGateReview{ReviewAgentID: "independent-reviewer", IssuesJSON: empty}, hub.now()); err != nil {
 			t.Fatal(err)
 		}
-		if err := db.FinalizeConsoleSpec(context.Background(), created.ID, "manager", hub.now()); err != store.ErrConsoleSpecGate {
+		if err := db.FinalizeConsoleSpec(context.Background(), created.ID, "manager", hub.now()); !errors.Is(err, store.ErrConsoleSpecGate) {
 			t.Fatalf("empty issues=%s finalize err=%v", empty, err)
 		}
 	}
 	if err := db.SaveConsoleSpecGateReview(context.Background(), created.ID, "manager", model.ConsoleSpecGateReview{ReviewAgentID: "independent-reviewer", IssuesJSON: pending}, hub.now()); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.FinalizeConsoleSpec(context.Background(), created.ID, "manager", hub.now()); err != store.ErrConsoleSpecGate {
+	if err := db.FinalizeConsoleSpec(context.Background(), created.ID, "manager", hub.now()); !errors.Is(err, store.ErrConsoleSpecGate) {
 		t.Fatalf("incomplete response err=%v", err)
 	}
 	complete := `[{"id":"Q1","text":"owner_ref 是否逐条成立","response":"已补逐条引用","outcome":"true_problem"},{"id":"Q2","text":"第二疑点","response":"证据表明无需改","outcome":"false_positive"}]`
