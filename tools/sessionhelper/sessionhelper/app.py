@@ -691,6 +691,11 @@ class SessionHelper:
                             raw = exc.read(4096).decode("utf-8", "replace")
                         except Exception:  # noqa: BLE001 -- the status alone is still reported.
                             raw = ""
+                        # Never echo request credentials, even if a proxy or Hub reflects them.
+                        secrets = {part for v in headers.values() for part in (str(v), str(v).split(" ", 1)[-1]) if len(part) >= 8}
+                        for secret in sorted(secrets, key=len, reverse=True):
+                            raw = raw.replace(secret, "[redacted]")
+                        raw = re.sub(r"(?i)\b(authorization|bearer|x-[a-z0-9-]*(?:token|secret|key))\b\s*[:=]?\s*\S+", r"\1 [redacted]", raw)
                         detail = "".join(c if c.isprintable() else " " for c in raw).strip()[:500]
                         return exc.code, {"_hub_error": detail}
                 # Keep the IPC event loop responsive to its aggregate deadline.
@@ -796,6 +801,7 @@ class SessionHelper:
                     await asyncio.sleep(0.1)
                 finally:
                     self._connection_agent_id = ""
+                    self._connection_delivery_ack_source = ""
                     recv_task.cancel()
                     try:
                         await recv_task
@@ -827,6 +833,7 @@ class SessionHelper:
                     ])
                 finally:
                     self._connection_agent_id = ""
+                    self._connection_delivery_ack_source = ""
                     self.outbound_receipts.abort(ws)
                     hb.cancel()
                     if ipc_task is not None:
@@ -1099,8 +1106,9 @@ class SessionHelper:
             analysis = analysis_envelope(env, self.book.key_id, system_sender)
             if analysis is None:
                 meta = env.get("meta") or {}
+                safe_id = re.sub(r"[^A-Za-z0-9_.-]", "?", str(meta.get("delivery_id", "")))[:96]
                 print(f"[spec_review] dropped type={meta.get('spec_review_type', meta.get('type'))} "
-                      f"delivery_id={meta.get('delivery_id', '')} sender_pinned={bool(system_sender)} "
+                      f"delivery_id={safe_id} sender_pinned={bool(system_sender)} "
                       f"sender_match={env.get('from') == system_sender}", flush=True)
                 return
             env = analysis

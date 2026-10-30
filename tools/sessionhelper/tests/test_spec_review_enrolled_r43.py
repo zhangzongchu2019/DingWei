@@ -12,6 +12,7 @@ import types
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest.mock import patch
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -77,6 +78,15 @@ class AppProcessesEnrolledRequest(unittest.TestCase):
         self.assertIn('sender_pinned=False', log)
         self.assertIn('dw-dlv_r43', log)
 
+    def test_drop_log_neutralizes_hostile_delivery_id(self):
+        helper = self.helper('')
+        env = event()
+        env['meta']['delivery_id'] = 'dw-dlv_x\nAuthorization: Bearer synthetic-r43-log'
+        log = self.run_one(helper, env)
+        self.assertEqual(log.count('\n'), 1, 'R43_DROP_LOG_MULTILINE')
+        self.assertNotIn('Authorization:', log, 'R43_DROP_LOG_INJECTED')
+        self.assertNotIn(' Bearer ', log, 'R43_DROP_LOG_INJECTED')
+
     def test_reconnect_with_different_owner_rejects_old_sender(self):
         helper = self.helper('workpulse#u_after_reconnect')
         log = self.run_one(helper, event())
@@ -87,6 +97,62 @@ class AppProcessesEnrolledRequest(unittest.TestCase):
         helper = self.helper('', enrolled=False, key_id='u_r43owner')
         self.run_one(helper, event())
         self.assertEqual(len(helper.inputs), 1, 'R43_SHARED_KEY_REGRESSION')
+
+
+class DisconnectClearsPinnedSender(unittest.IsolatedAsyncioTestCase):
+    def helper(self, producer):
+        helper = SessionHelper.__new__(SessionHelper)
+        helper.cfg = types.SimpleNamespace(mode='driver', proxy='', debug=False, open_timeout=1,
+                                           producer=producer, mcp_ipc_sock='')
+        helper.book = types.SimpleNamespace(key_id='enrolled', self_addr='fixture#enrolled')
+        helper.enroll_credential = object()
+        helper._connection = lambda: ('ws://127.0.0.1:9/ws', {})
+        helper.provisioner = types.SimpleNamespace(confirm_update_connected=lambda: None)
+        helper.outbound_receipts = types.SimpleNamespace(abort=lambda ws: None)
+        helper.session_capabilities_envelope = lambda _: {}
+        return helper
+
+    def connection(self):
+        headers = {'X-DW-Helper-Update-Source': OWNER_SENDER}
+
+        class Connection:
+            async def __aenter__(self):
+                async def send(text):
+                    pass
+                return types.SimpleNamespace(response=types.SimpleNamespace(headers=headers), send=send)
+
+            async def __aexit__(self, *args):
+                pass
+        return Connection()
+
+    async def test_both_connection_paths_clear_pin_on_disconnect(self):
+        for producer in (True, False):
+            with self.subTest(producer=producer):
+                helper, seen = self.helper(producer), []
+
+                async def produce(ws):
+                    seen.append(helper._connection_delivery_ack_source)
+
+                async def receive(ws):
+                    await asyncio.Future()
+
+                async def heartbeat():
+                    await asyncio.Future()
+
+                async def supervise(coros):
+                    for coro in coros:
+                        coro.close()
+                    seen.append(helper._connection_delivery_ack_source)
+
+                helper.producer_stdin_loop, helper.recv_control_loop = produce, receive
+                helper.online_list_heartbeat_loop = heartbeat
+                with patch('websockets.connect', return_value=self.connection()), \
+                        patch('sessionhelper.app.supervise_connection_loops', supervise), \
+                        patch('sessionhelper.app.update_status_loop', lambda *a: asyncio.sleep(0)), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    await helper._run_once()
+                self.assertEqual(seen, [OWNER_SENDER], 'R43_PIN_NOT_BOUND_WHILE_CONNECTED')
+                self.assertEqual(helper._connection_delivery_ack_source, '', 'R43_PIN_SURVIVES_DISCONNECT')
 
 
 class SpecWriteReturnsHubError(unittest.IsolatedAsyncioTestCase):
@@ -101,8 +167,10 @@ class SpecWriteReturnsHubError(unittest.IsolatedAsyncioTestCase):
 
             def do_POST(self):
                 self.rfile.read(int(self.headers['Content-Length']))
-                body = (outer.HUB_TEXT + '\n\x1b[31m' + 'z' * 1000).encode()
-                status = 400 if self.path.endswith('/specs') else 503
+                echo = 'echo Authorization: ' + self.headers.get('Authorization', '') + ' raw=' + \
+                    self.headers.get('Authorization', '').split(' ', 1)[-1] + ' '
+                body = (outer.HUB_TEXT + (echo if 'echo' in self.path else '') + '\n\x1b[31m' + 'z' * 1000).encode()
+                status = 400 if self.path.endswith('/specs') or 'echo' in self.path else 503
                 self.send_response(status)
                 self.send_header('Content-Type', 'text/plain; charset=utf-8')
                 self.end_headers()
@@ -114,7 +182,7 @@ class SpecWriteReturnsHubError(unittest.IsolatedAsyncioTestCase):
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         owner = types.SimpleNamespace(enroll_credential=object(), _connection=lambda: (
-            'ws://127.0.0.1:%d/ws/agent' % self.server.server_port, {'Authorization': 'Bearer synthetic-r43'}))
+            'ws://127.0.0.1:%d/ws/agent' % self.server.server_port, {'Authorization': 'Bearer synthetic-r43-bearer'}))
         self.handler = SessionHelper._make_spec_write_handler(owner, None)
 
     async def asyncTearDown(self):
@@ -129,7 +197,15 @@ class SpecWriteReturnsHubError(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result.get('hub_error', '').startswith(self.HUB_TEXT), 'R43_HUB_ERROR_DROPPED')
         self.assertLessEqual(len(result['hub_error']), 500, 'R43_HUB_ERROR_UNBOUNDED')
         self.assertFalse(any(not c.isprintable() for c in result['hub_error']), 'R43_CONTROL_CHARS_PASSED')
-        self.assertNotIn('synthetic-r43', json.dumps(result, ensure_ascii=False))
+        self.assertNotIn('synthetic-r43-bearer', json.dumps(result, ensure_ascii=False))
+
+    async def test_4xx_reflected_credentials_are_redacted(self):
+        result = await self.handler(dict(action='update', protocol='direct-v1', spec_id='echo', body={'title': 't'}))
+        self.assertEqual(result['http_status'], 400)
+        self.assertTrue(result.get('hub_error', '').startswith(self.HUB_TEXT), 'R43_HUB_ERROR_DROPPED')
+        text = json.dumps(result, ensure_ascii=False)
+        self.assertNotIn('synthetic-r43-bearer', text, 'R43_HUB_ERROR_LEAKS_CREDENTIAL')
+        self.assertIn('[redacted]', result['hub_error'])
 
     async def test_5xx_does_not_echo_server_text(self):
         result = await self.handler(dict(action='update', protocol='direct-v1', spec_id='spec-x', body={'title': 't'}))
