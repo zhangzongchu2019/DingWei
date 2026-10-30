@@ -251,12 +251,14 @@ func (s *SQLite) SubmitConsoleSpecReview(ctx context.Context, specID, actor stri
 }
 
 type storedSpecCriterion struct {
-	ID        string   `json:"id"`
-	OwnerRef  string   `json:"owner_ref"`
-	Source    string   `json:"source"`
-	CheckedBy string   `json:"checked_by"`
-	CheckedAt string   `json:"checked_at"`
-	Cases     []string `json:"cases"`
+	// ID is display-only; RawMessage keeps non-string ids decoding as before
+	// (the parent struct had no ID field, so they were ignored).
+	ID        json.RawMessage `json:"id"`
+	OwnerRef  string          `json:"owner_ref"`
+	Source    string          `json:"source"`
+	CheckedBy string          `json:"checked_by"`
+	CheckedAt string          `json:"checked_at"`
+	Cases     []string        `json:"cases"`
 }
 
 type storedSpecAcceptanceBundle struct {
@@ -280,7 +282,31 @@ func (e specGateError) Error() string {
 
 func (e specGateError) Unwrap() error { return ErrConsoleSpecGate }
 
-func specGate(reason string) error { return specGateError{reason: reason} }
+// Display bounds: a short gate message must not grow into a large response
+// because a stored id or status is long.
+const (
+	maxSpecGateLabelRunes  = 40
+	maxSpecGateReasonRunes = 600
+)
+
+func truncateRunes(s string, limit int) string {
+	if r := []rune(s); len(r) > limit {
+		return string(r[:limit]) + "…"
+	}
+	return s
+}
+
+func specGate(reason string) error {
+	return specGateError{reason: truncateRunes(reason, maxSpecGateReasonRunes)}
+}
+
+func specCriterionLabel(raw json.RawMessage, index int) string {
+	var id string
+	if json.Unmarshal(raw, &id) == nil && strings.TrimSpace(id) != "" {
+		return truncateRunes(strings.TrimSpace(id), maxSpecGateLabelRunes)
+	}
+	return fmt.Sprintf("第 %d 条", index+1)
+}
 
 // freshAgentReviewGate mirrors trigger console_spec_agent_fresh_finalize (0056)
 // so the editor gets a reason instead of the raw constraint text; the trigger
@@ -337,10 +363,7 @@ func specFinalAcceptanceProblem(raw string) string {
 	}
 	var missingChecker []string
 	for i, item := range bundle.Criteria {
-		name := strings.TrimSpace(item.ID)
-		if name == "" {
-			name = fmt.Sprintf("第 %d 条", i+1)
-		}
+		name := specCriterionLabel(item.ID, i)
 		switch {
 		case strings.TrimSpace(item.OwnerRef) == "":
 			return "验收标准 " + name + " 缺「原文引用」"

@@ -100,3 +100,47 @@ func TestFinalizeReportsAllProblemsForLiveShape(t *testing.T) {
 	}
 	t.Logf("live-shape reason: %v", err)
 }
+
+// coder CR on e26e01fd: the parent ignored criterion ids, so a non-string id
+// must not turn a finalizable bundle into "没有验收标准".
+func TestSpecGateNonStringIDKeepsParentVerdict(t *testing.T) {
+	ok := `{"criteria":[{"id":123,"owner_ref":"T","source":"ai","checked_by":"u","checked_at":"2026-10-30T09:36:42Z","cases":["c"]}]}`
+	if got := specFinalAcceptanceProblem(ok); got != "" || !validSpecFinalAcceptance(ok) {
+		t.Fatalf("GATE_DETAIL_NUMERIC_ID_REJECTED got=%q", got)
+	}
+	for _, id := range []string{`123`, `null`, `{"x":1}`, `["A1"]`} {
+		raw := `{"criteria":[{"id":` + id + `,"owner_ref":"T","source":"ai","checked_at":"2026-10-30T09:36:42Z","cases":["c"]}]}`
+		if got := specFinalAcceptanceProblem(raw); !strings.Contains(got, "第 1 条") {
+			t.Errorf("GATE_DETAIL_NUMERIC_ID_LABEL id=%s got=%q", id, got)
+		}
+	}
+}
+
+// coder CR on e26e01fd: a 100k-rune id must not make the reason 100k long.
+func TestSpecGateReasonLengthBounded(t *testing.T) {
+	long := strings.Repeat("X", 100000)
+	var b strings.Builder
+	b.WriteString(`{"criteria":[`)
+	for i := 0; i < 12; i++ {
+		if i > 0 {
+			b.WriteString(",")
+		}
+		b.WriteString(`{"id":"` + long + `","owner_ref":"T","source":"ai","checked_at":"2026-10-30T09:36:42Z","cases":["c"]}`)
+	}
+	b.WriteString(`]}`)
+	got := specFinalAcceptanceProblem(b.String())
+	if n := len([]rune(got)); n > 10*(maxSpecGateLabelRunes+2)+80 {
+		t.Fatalf("GATE_DETAIL_LABEL_UNBOUNDED runes=%d", n)
+	}
+	single := specFinalAcceptanceProblem(`{"criteria":[{"id":"` + long + `","owner_ref":"","source":"ai","checked_by":"u","checked_at":"2026-10-30T09:36:42Z","cases":["c"]}]}`)
+	if n := len([]rune(single)); n > maxSpecGateLabelRunes+40 {
+		t.Fatalf("GATE_DETAIL_SINGLE_LABEL_UNBOUNDED runes=%d", n)
+	}
+	msg := specGate(long).Error()
+	if n := len([]rune(msg)); n > maxSpecGateReasonRunes+len([]rune(ErrConsoleSpecGate.Error()))+10 {
+		t.Fatalf("GATE_DETAIL_REASON_UNBOUNDED runes=%d", n)
+	}
+	if !errors.Is(specGate(long), ErrConsoleSpecGate) {
+		t.Fatal("GATE_DETAIL_SENTINEL_LOST")
+	}
+}
