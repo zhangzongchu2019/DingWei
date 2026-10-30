@@ -649,7 +649,7 @@ class SessionHelper:
         return handle
 
     def _make_spec_write_handler(self, ws):
-        def failure(status: int) -> dict:
+        def failure(status: int, detail: str = "") -> dict:
             messages = {
                 400: "spec 字段无效，请检查必填项和版本号",
                 403: "仅可更新当前 Agent 自建的 spec，或 Agent／业主已停用",
@@ -657,8 +657,12 @@ class SessionHelper:
                 409: "spec 已被修改，请读取最新 revision 后重试",
                 422: "spec 字段无效，请检查必填项和版本号",
             }
-            return {"status": "error", "http_status": status,
-                    "message": messages.get(status, "服务暂不可用，请稍后重试" if status >= 500 else "spec 操作失败")}
+            result = {"status": "error", "http_status": status,
+                      "message": messages.get(status, "服务暂不可用，请稍后重试" if status >= 500 else "spec 操作失败")}
+            if detail and 400 <= status < 500:
+                # Hub validation text (no secrets) tells the Agent which field to fix.
+                result["hub_error"] = detail
+            return result
 
         async def _spec_write(args: dict) -> dict:
             action = str(args.get("action") or "")
@@ -683,7 +687,12 @@ class SessionHelper:
                             payload = json.loads(http_response.read(2 << 20).decode("utf-8") or "{}")
                             return http_response.status, payload
                     except urllib.error.HTTPError as exc:
-                        return exc.code, {}
+                        try:
+                            raw = exc.read(4096).decode("utf-8", "replace")
+                        except Exception:  # noqa: BLE001 -- the status alone is still reported.
+                            raw = ""
+                        detail = "".join(c if c.isprintable() else " " for c in raw).strip()[:500]
+                        return exc.code, {"_hub_error": detail}
                 # Keep the IPC event loop responsive to its aggregate deadline.
                 # Cancellation does not imply an in-flight HTTP write rolled back.
                 status, payload = await asyncio.to_thread(perform_http)
@@ -692,7 +701,7 @@ class SessionHelper:
                     return result if result["spec_id"] else failure(502)
                 if action == "update" and status == 200:
                     return {"status": "ok", "spec_id": spec_id, "revision": payload.get("revision"), "shared_url": "/api/specs/shared/" + spec_id}
-                return failure(status)
+                return failure(status, str(payload.get("_hub_error") or "") if isinstance(payload, dict) else "")
             except (OSError, ValueError):
                 return {"status":"error", "code":"spec_write_outcome_unknown", "outcome":"unknown", "retryable":False, "message":"写入结果尚未确认；请先查询，勿直接重试"}
         return _spec_write
@@ -1084,9 +1093,17 @@ class SessionHelper:
                                       on_injected=None, enrich_files: bool = True) -> None:
         from .spec_review import is_spec_review, analysis_envelope
         if is_spec_review(env):
-            env = analysis_envelope(env,self.book.key_id)
-            if env is None:
+            system_sender = getattr(self, "_connection_delivery_ack_source", "")
+            if not system_sender and getattr(self, "enroll_credential", None) is None:
+                system_sender = session_addr("workpulse", self.book.key_id)
+            analysis = analysis_envelope(env, self.book.key_id, system_sender)
+            if analysis is None:
+                meta = env.get("meta") or {}
+                print(f"[spec_review] dropped type={meta.get('spec_review_type', meta.get('type'))} "
+                      f"delivery_id={meta.get('delivery_id', '')} sender_pinned={bool(system_sender)} "
+                      f"sender_match={env.get('from') == system_sender}", flush=True)
                 return
+            env = analysis
             enrich_files = False
         if enrich_files:
             env = await self._enrich_small_text_files(ws, env)

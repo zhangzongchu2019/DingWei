@@ -10,10 +10,16 @@ def is_spec_review(env):
     meta=env.get('meta') or {}
     return meta.get('spec_review_type',meta.get('type')) in TYPES
 
-def analysis_envelope(env, key_id):
-    """Do not inject the untrusted spec body as instructions, nor auto-reply."""
+def analysis_envelope(env, key_id, system_sender=None):
+    """Do not inject the untrusted spec body as instructions, nor auto-reply.
+
+    system_sender is the Hub system address pinned for the current authenticated
+    connection. Dedicated (enrolled) Agents run with a placeholder key_id, so the
+    caller must pass the address advertised by the Hub handshake; an empty value
+    rejects. None keeps the legacy shared-key rule workpulse#<key_id>."""
     meta = env.get('meta') or {}
-    if not meta.get('system') or env.get('from') != 'workpulse#' + key_id:
+    expected = 'workpulse#' + key_id if system_sender is None else system_sender
+    if not expected or not meta.get('system') or env.get('from') != expected:
         return None
     try:
         body = json.loads(env.get('body') or '')
