@@ -23,3 +23,8 @@ def size_rejection(actual_bytes, limit_bytes, scope):
 def spec_body_rejection(body):
     actual = len(encode_spec_body(body))
     return size_rejection(actual, SPEC_BODY_MAX_BYTES, "spec_body") if actual > SPEC_BODY_MAX_BYTES else None
+
+
+def ipc_size_rejection(result):
+    """Fail closed for legacy IPC clients while retaining deterministic details."""
+    return {"ok": False, "error": "request_too_large", **result}

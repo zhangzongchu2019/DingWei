@@ -2,6 +2,9 @@
 import asyncio
 import contextlib
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 import tempfile
 import threading
@@ -10,7 +13,7 @@ import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from unittest.mock import patch
 
-from sessionhelper import ipc_listener, mcp_shim
+from sessionhelper import dingwei_file, ipc_listener, mcp_shim
 from sessionhelper.app import SessionHelper
 from sessionhelper.ipc_limits import (IPC_REQUEST_MAX_BYTES, SPEC_BODY_MAX_BYTES,
                                       encode_spec_body)
@@ -33,7 +36,7 @@ def spec_body(size=70760):
 
 class SpecWriteIPCLimit(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.http_bodies, self.sends = [], []
+        self.http_bodies, self.sends, self.files, self.uploads = [], [], [], []
         outer = self
 
         class Hub(BaseHTTPRequestHandler):
@@ -71,8 +74,17 @@ class SpecWriteIPCLimit(unittest.IsolatedAsyncioTestCase):
                 self.sends.append((to, body, meta))
                 return {"sent": True}
 
+            async def file(*args):
+                self.files.append(args)
+                return {}
+
+            async def upload(*args):
+                self.uploads.append(args)
+                return {}
+
             task = asyncio.create_task(ipc_listener.serve_ipc(
-                path, send, spec_handler=self.handler, bound=bound, **mode))
+                path, send, file_handler=file, upload_handler=upload,
+                spec_handler=self.handler, bound=bound, **mode))
             await asyncio.wait_for(bound.wait(), 2)
             try:
                 with patch.object(mcp_shim, "_IPC_SOCK", path):
@@ -100,6 +112,11 @@ class SpecWriteIPCLimit(unittest.IsolatedAsyncioTestCase):
         return json.loads(response.result["content"][0]["text"])
 
     def assert_rejected(self, response, actual, limit):
+        if "ok" in response:
+            self.assertFalse(response["ok"], "OVERSIZE_REPORTED_SUCCESS")
+            if "error" in response:
+                self.assertEqual(response["error"], "request_too_large")
+                response = mcp_shim._decode_ipc_response(json.dumps(response).encode() + b"\n")
         result = response["result"]
         self.assertEqual(result["code"], "request_too_large")
         self.assertEqual(result["outcome"], "rejected")
@@ -133,6 +150,9 @@ class SpecWriteIPCLimit(unittest.IsolatedAsyncioTestCase):
             result = await self.raw_request(path, {"type": "spec_write_v1", "action": "update",
                 "protocol": "direct-v1", "spec_id": "spec-local", "body": spec_body(SPEC_BODY_MAX_BYTES + 1)})
         self.assert_rejected(result, SPEC_BODY_MAX_BYTES + 1, SPEC_BODY_MAX_BYTES)
+        local = self.tool(spec_body(SPEC_BODY_MAX_BYTES + 1))
+        remote = mcp_shim._decode_ipc_response(json.dumps(result).encode() + b"\n")
+        self.assertEqual(local["result"], remote["result"])
         self.assertEqual(self.http_bodies, [])
 
     async def test_non_spec_keeps_exact_64k_boundary(self):
@@ -148,6 +168,60 @@ class SpecWriteIPCLimit(unittest.IsolatedAsyncioTestCase):
                     self.assert_rejected(result, size, IPC_REQUEST_MAX_BYTES)
         self.assertEqual(len(self.sends), 1)
         self.assertEqual(self.http_bodies, [])
+
+    async def test_send_dingwei_oversize_fails_without_dispatch(self):
+        # Run the actual legacy CLI with a private socket and no seat credentials.
+        async with self.ipc() as path:
+            env = {key: value for key, value in os.environ.items()
+                   if not key.startswith(("SH_", "DINGWEI_", "DW_", "DATAD_"))
+                   and key != "PYTHONPATH"}
+            env["SH_MCP_IPC_SOCK"] = path
+            proc = await asyncio.to_thread(subprocess.run,
+                [sys.executable, str(Path(ipc_listener.__file__).with_name("send_dingwei.py")),
+                 "someone.zzc", "中" * 23000], env=env, capture_output=True, text=True, timeout=5)
+        self.assertEqual(self.sends, [])
+        self.assertNotEqual(proc.returncode, 0, "OVERSIZE_SEND_FALSE_SUCCESS")
+        self.assertIn("发送失败", proc.stderr)
+        self.assertNotIn("sent to=", proc.stdout)
+
+    async def test_dingwei_file_oversize_fails_without_dispatch(self):
+        async with self.ipc() as path:
+            with self.assertRaisesRegex(RuntimeError, "request_too_large"):
+                await asyncio.to_thread(dingwei_file.request_file, path, "x" * 69000, "HEAD")
+            # upload_file's name cannot naturally exceed 64 KiB on a filesystem;
+            # inject only the basename to exercise its real SCM_RIGHTS client.
+            with tempfile.NamedTemporaryFile(dir="/tmp") as source:
+                with patch.object(dingwei_file.os.path, "basename", return_value="x" * 69000):
+                    with self.assertRaisesRegex(RuntimeError, "request_too_large"):
+                        await asyncio.to_thread(dingwei_file.upload_file, path, source.name)
+        self.assertEqual(self.sends, [])
+        self.assertEqual(self.files, [])
+        self.assertEqual(self.uploads, [])
+        self.assertEqual(self.http_bodies, [])
+
+    async def test_send_body_only_oversize_is_opaque(self):
+        from sessionhelper.ipc_limits import IPC_BODY_ONLY_MAX_BYTES
+        async with self.ipc(send_body_only=True) as path:
+            response = await self.raw_request(path, {"type": "mcp_send", "body": "x" * (IPC_BODY_ONLY_MAX_BYTES + 1)})
+        self.assertEqual(response, {"ok": False, "error": "invalid_request"})
+        self.assertEqual(self.sends, [])
+
+    async def test_hard_frame_limit_fails_closed_and_restricted_mode_is_opaque(self):
+        from sessionhelper.ipc_limits import SPEC_WRITE_IPC_MAX_BYTES
+        # Just one byte over the hard cap, including a complete newline frame.
+        payload = {"type": "mcp_send", "body": ""}
+        payload["body"] = "x" * (SPEC_WRITE_IPC_MAX_BYTES + 1 - len(json.dumps(payload).encode()))
+        for mode in ({}, {"send_body_only": True}):
+            async with self.ipc(**mode) as path:
+                response = await self.raw_request(path, payload)
+            self.assertFalse(response["ok"])
+            if mode:
+                self.assertEqual(response, {"ok": False, "error": "invalid_request"})
+            else:
+                self.assertEqual(response["error"], "request_too_large")
+                result = mcp_shim._decode_ipc_response(json.dumps(response).encode() + b"\n")["result"]
+                self.assertEqual(result["outcome"], "rejected")
+        self.assertEqual(self.sends, [])
 
     async def test_restricted_modes_do_not_gain_spec_write_permission(self):
         payload = {"type": "spec_write_v1", "action": "create", "protocol": "direct-v1", "body": spec_body()}

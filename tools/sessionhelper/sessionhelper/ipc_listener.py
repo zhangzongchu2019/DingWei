@@ -24,7 +24,7 @@ from typing import Any, Callable, Awaitable
 
 from .file_upload import UploadRejected
 from .ipc_limits import (IPC_REQUEST_MAX_BYTES, IPC_BODY_ONLY_MAX_BYTES,
-                         SPEC_WRITE_IPC_MAX_BYTES, size_rejection, spec_body_rejection)
+                         SPEC_WRITE_IPC_MAX_BYTES, size_rejection, spec_body_rejection, ipc_size_rejection)
 
 
 # Filesystem AF_UNIX addresses require a terminating NUL: Linux sun_path is
@@ -152,7 +152,7 @@ async def _handle_connection(
         msg = await _read_one(reader, request_limit=request_limit,
                              allow_spec_write=not (send_body_only or upload_only))
     except _IPCSizeError as exc:
-        await _write_one(writer, {"ok": True, "result": exc.result})
+        await _write_one(writer, {"ok": False, "error": "invalid_request"} if send_body_only else ipc_size_rejection(exc.result))
         return
     except _IPCError as exc:
         await _write_one(writer, {"ok": False, "error": "invalid_request" if send_body_only else str(exc)})
@@ -356,7 +356,7 @@ async def _handle_spec_write(writer: asyncio.StreamWriter, msg: dict[str, Any], 
         return
     rejection = spec_body_rejection(body or {})
     if rejection is not None:
-        await _write_one(writer, {"ok": True, "result": rejection, "request_id": request_id})
+        await _write_one(writer, {**ipc_size_rejection(rejection), "request_id": request_id})
         return
     try:
         result = await asyncio.wait_for(
@@ -533,7 +533,7 @@ async def _recv_request(loop: asyncio.AbstractEventLoop, conn: socket.socket, fd
     return bytes(buf.split(b"\n", 1)[0] + b"\n") if b"\n" in buf else bytes(buf)
 
 
-async def _serve_socket_connection(conn: socket.socket, dispatch, *, stream_limit: int = SPEC_WRITE_IPC_MAX_BYTES) -> None:
+async def _serve_socket_connection(conn: socket.socket, dispatch, *, stream_limit: int = SPEC_WRITE_IPC_MAX_BYTES, send_body_only: bool = False) -> None:
     loop = asyncio.get_running_loop()
     fds: list[int] = []
     try:
@@ -545,7 +545,7 @@ async def _serve_socket_connection(conn: socket.socket, dispatch, *, stream_limi
             await _write_one(writer, {"ok": False, "error": "read timeout"})
             return
         except _IPCSizeError as exc:
-            await _write_one(writer, {"ok": True, "result": exc.result})
+            await _write_one(writer, {"ok": False, "error": "invalid_request"} if send_body_only else ipc_size_rejection(exc.result))
             return
         except _IPCError as exc:
             await _write_one(writer, {"ok": False, "error": str(exc)})
@@ -654,7 +654,7 @@ async def serve_ipc(
             bound.set()
         while True:
             conn, _ = await loop.sock_accept(listener)
-            task = asyncio.create_task(_serve_socket_connection(conn, dispatch))
+            task = asyncio.create_task(_serve_socket_connection(conn, dispatch, send_body_only=send_body_only))
             tasks.add(task)
             task.add_done_callback(tasks.discard)
     finally:

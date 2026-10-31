@@ -28,13 +28,13 @@ from typing import Any, Callable
 if __package__:
     from . import __version__
     from .ipc_permissions import send_body_only
-    from .ipc_limits import SPEC_WRITE_IPC_MAX_BYTES, size_rejection, spec_body_rejection
+    from .ipc_limits import SPEC_WRITE_IPC_MAX_BYTES, size_rejection, spec_body_rejection, ipc_size_rejection
 else:
     # Preserve existing MCP configurations that execute this file directly.
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from sessionhelper import __version__
     from sessionhelper.ipc_permissions import send_body_only
-    from sessionhelper.ipc_limits import SPEC_WRITE_IPC_MAX_BYTES, size_rejection, spec_body_rejection
+    from sessionhelper.ipc_limits import SPEC_WRITE_IPC_MAX_BYTES, size_rejection, spec_body_rejection, ipc_size_rejection
 
 
 # ── JSON‑RPC 2.0 types ────────────────────────────────────────────────
@@ -117,6 +117,10 @@ def _decode_ipc_response(data: bytes) -> dict[str, Any]:
     if not isinstance(response, dict) or type(response.get("ok")) is not bool:
         raise _IPCFailure("ipc_invalid_response")
     if not response["ok"]:
+        if response.get("error") == "request_too_large" and response.get("outcome") == "rejected":
+            return {"ok": False, "result": {
+                key: value for key, value in response.items() if key not in {"ok", "error", "request_id"}
+            }}
         raise _IPCFailure("helper_rejected")
     return response
 
@@ -147,7 +151,7 @@ def _ipc_request(payload: dict[str, Any], *, timeout=None) -> dict[str, Any]:
         if rejection is None and len(body) - 1 > SPEC_WRITE_IPC_MAX_BYTES:
             rejection = size_rejection(len(body) - 1, SPEC_WRITE_IPC_MAX_BYTES, "ipc_request")
         if rejection is not None:
-            return {"ok": True, "result": rejection}
+            return _decode_ipc_response(json.dumps(ipc_size_rejection(rejection)).encode("utf-8") + b"\n")
 
     sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
     sock.settimeout(_IPC_TIMEOUT if timeout is None else timeout)
