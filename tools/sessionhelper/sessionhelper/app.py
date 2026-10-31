@@ -697,7 +697,8 @@ class SessionHelper:
                 u = urlsplit(ws_url)
                 base = urlunsplit(("https" if u.scheme == "wss" else "http", u.netloc, "", "", ""))
                 path = "/api/agent/console/specs" if action == "create" else "/api/agent/console/specs/" + quote(spec_id, safe="")
-                request = urllib.request.Request(base + path, data=json.dumps(body).encode("utf-8"), method="POST" if action == "create" else "PATCH",
+                from .ipc_limits import encode_spec_body
+                request = urllib.request.Request(base + path, data=encode_spec_body(body), method="POST" if action == "create" else "PATCH",
                     headers={**headers, "Content-Type": "application/json", "X-DW-Spec-Write": "direct-v1"})
                 def perform_http():
                     try:

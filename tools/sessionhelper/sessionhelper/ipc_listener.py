@@ -23,6 +23,8 @@ import sys
 from typing import Any, Callable, Awaitable
 
 from .file_upload import UploadRejected
+from .ipc_limits import (IPC_REQUEST_MAX_BYTES, IPC_BODY_ONLY_MAX_BYTES,
+                         SPEC_WRITE_IPC_MAX_BYTES, size_rejection, spec_body_rejection)
 
 
 # Filesystem AF_UNIX addresses require a terminating NUL: Linux sun_path is
@@ -74,7 +76,18 @@ class _IPCError(Exception):
     server continues accepting new connections."""
 
 
-async def _read_one(reader: asyncio.StreamReader, timeout: float = 5.0) -> dict[str, Any]:
+class _IPCSizeError(_IPCError):
+    def __init__(self, actual, limit, scope="ipc_request", *, lower_bound=False):
+        self.result = size_rejection(actual, limit, scope)
+        if lower_bound:
+            # Stop reading at the hard frame cap; the rest of an unfinished
+            # request is unknown, so never claim the observed count is its total.
+            self.result["observed_bytes"] = self.result.pop("actual_bytes")
+            self.result["message"] = f"{scope} exceeds {limit} bytes; observed at least {actual} bytes; request not dispatched"
+
+
+async def _read_one(reader: asyncio.StreamReader, timeout: float = 5.0, *,
+                    request_limit=IPC_REQUEST_MAX_BYTES, allow_spec_write=True) -> dict[str, Any]:
     """Read one newline-delimited JSON object."""
     try:
         line = await asyncio.wait_for(reader.readline(), timeout)
@@ -85,9 +98,15 @@ async def _read_one(reader: asyncio.StreamReader, timeout: float = 5.0) -> dict[
     if not line:
         raise _IPCError("client disconnected")
     try:
-        return json.loads(line.decode("utf-8"))
+        msg = json.loads(line.decode("utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise _IPCError(f"bad json: {exc}") from exc
+    limit = (SPEC_WRITE_IPC_MAX_BYTES if allow_spec_write and isinstance(msg, dict)
+             and msg.get("type") == "spec_write_v1" else request_limit)
+    actual = len(line) - int(line.endswith(b"\n"))
+    if actual > limit:
+        raise _IPCSizeError(actual, limit)
+    return msg
 
 
 async def _write_one(writer: asyncio.StreamWriter, payload: dict[str, Any]) -> None:
@@ -129,7 +148,12 @@ async def _handle_connection(
     *passed_fds* are descriptors received with the request (SCM_RIGHTS); the caller owns and closes them.
     """
     try:
-        msg = await _read_one(reader)
+        request_limit = IPC_BODY_ONLY_MAX_BYTES if send_body_only and not upload_only else IPC_REQUEST_MAX_BYTES
+        msg = await _read_one(reader, request_limit=request_limit,
+                             allow_spec_write=not (send_body_only or upload_only))
+    except _IPCSizeError as exc:
+        await _write_one(writer, {"ok": True, "result": exc.result})
+        return
     except _IPCError as exc:
         await _write_one(writer, {"ok": False, "error": "invalid_request" if send_body_only else str(exc)})
         return
@@ -330,6 +354,10 @@ async def _handle_spec_write(writer: asyncio.StreamWriter, msg: dict[str, Any], 
     if action == "update" and not spec_id:
         await _write_one(writer, {"ok": False, "error": "invalid spec request"})
         return
+    rejection = spec_body_rejection(body or {})
+    if rejection is not None:
+        await _write_one(writer, {"ok": True, "result": rejection, "request_id": request_id})
+        return
     try:
         result = await asyncio.wait_for(
             handler({"action": action, "protocol":"direct-v1", "spec_id": spec_id, "body": body or {}}),
@@ -497,12 +525,15 @@ async def _recv_request(loop: asyncio.AbstractEventLoop, conn: socket.socket, fd
         if not data:
             break
         buf.extend(data)
-        if len(buf) > 1024 * 1024:
-            raise _IPCError("request too large")
+        # One bounded frame for Spec's 2 MiB HTTP body + 64 KiB envelope + LF.
+        # Other operations retain their previous limits after JSON decoding.
+        actual = len(buf.split(b"\n", 1)[0])
+        if actual > SPEC_WRITE_IPC_MAX_BYTES:
+            raise _IPCSizeError(actual, SPEC_WRITE_IPC_MAX_BYTES, lower_bound=b"\n" not in buf)
     return bytes(buf.split(b"\n", 1)[0] + b"\n") if b"\n" in buf else bytes(buf)
 
 
-async def _serve_socket_connection(conn: socket.socket, dispatch, *, stream_limit: int = 65536) -> None:
+async def _serve_socket_connection(conn: socket.socket, dispatch, *, stream_limit: int = SPEC_WRITE_IPC_MAX_BYTES) -> None:
     loop = asyncio.get_running_loop()
     fds: list[int] = []
     try:
@@ -512,6 +543,9 @@ async def _serve_socket_connection(conn: socket.socket, dispatch, *, stream_limi
             line = await asyncio.wait_for(_recv_request(loop, conn, fds), 5.0)
         except asyncio.TimeoutError:
             await _write_one(writer, {"ok": False, "error": "read timeout"})
+            return
+        except _IPCSizeError as exc:
+            await _write_one(writer, {"ok": True, "result": exc.result})
             return
         except _IPCError as exc:
             await _write_one(writer, {"ok": False, "error": str(exc)})
@@ -620,8 +654,7 @@ async def serve_ipc(
             bound.set()
         while True:
             conn, _ = await loop.sock_accept(listener)
-            task = asyncio.create_task(_serve_socket_connection(
-                conn, dispatch, stream_limit=1024 * 1024 if send_body_only and not upload_only else 65536))
+            task = asyncio.create_task(_serve_socket_connection(conn, dispatch))
             tasks.add(task)
             task.add_done_callback(tasks.discard)
     finally:

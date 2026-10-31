@@ -28,11 +28,13 @@ from typing import Any, Callable
 if __package__:
     from . import __version__
     from .ipc_permissions import send_body_only
+    from .ipc_limits import SPEC_WRITE_IPC_MAX_BYTES, size_rejection, spec_body_rejection
 else:
     # Preserve existing MCP configurations that execute this file directly.
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from sessionhelper import __version__
     from sessionhelper.ipc_permissions import send_body_only
+    from sessionhelper.ipc_limits import SPEC_WRITE_IPC_MAX_BYTES, size_rejection, spec_body_rejection
 
 
 # ── JSON‑RPC 2.0 types ────────────────────────────────────────────────
@@ -140,6 +142,12 @@ def _ipc_request(payload: dict[str, Any], *, timeout=None) -> dict[str, Any]:
     local Unix-domain socket, then return the helperʼs outcome."""
     payload["request_id"] = _uuid.uuid4().hex[:12]
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
+    if payload.get("type") == "spec_write_v1":
+        rejection = spec_body_rejection(payload.get("body") or {})
+        if rejection is None and len(body) - 1 > SPEC_WRITE_IPC_MAX_BYTES:
+            rejection = size_rejection(len(body) - 1, SPEC_WRITE_IPC_MAX_BYTES, "ipc_request")
+        if rejection is not None:
+            return {"ok": True, "result": rejection}
 
     sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
     sock.settimeout(_IPC_TIMEOUT if timeout is None else timeout)
@@ -450,8 +458,6 @@ def _spec_body(args: dict[str, Any], *, update: bool) -> dict[str, Any]:
         raise ValueError("invalid spec inferences")
     if update and (type(body["expected_revision"]) is not int or body["expected_revision"] < 1):
         raise ValueError("invalid expected_revision")
-    if len(json.dumps(body, ensure_ascii=False).encode("utf-8")) > 2 << 20:
-        raise ValueError("spec body exceeds 2 MiB")
     return body
 
 

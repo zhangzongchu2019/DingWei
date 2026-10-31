@@ -69,6 +69,8 @@ class ForwarderTests(unittest.TestCase):
                         self.fixture.base / 'sessionhelper/mcp_shim.py')
         shutil.copyfile(ROOT / 'sessionhelper/ipc_permissions.py',
                         self.fixture.base / 'sessionhelper/ipc_permissions.py')
+        shutil.copyfile(ROOT / 'sessionhelper/ipc_limits.py',
+                        self.fixture.base / 'sessionhelper/ipc_limits.py')
         commit = self.fixture.commit()
         artifact = self.base / 'mcp-release.tgz'
         package_release.build(self.fixture.repo, commit, artifact)
