@@ -47,3 +47,7 @@
 - `/tmp/r11-race-final2.log`：`43a756f1290e2bb5dcb6166e73cabc0c3e4a1376b50165e6ce1bae36b70c8124`
 - `/tmp/r11-build-tests.log`：`3b640c0afcd48455a975e4d6fd9bb8b0b2d12f4af43ebde91fe2bd76cafb5013`
 - `/tmp/r11-db-guard-negative.log`：`59dd1c2b2aa19d4756a91f3127798c9f96c44431047f8b2cc92cb17a2766d976`
+
+## 业主 PM 回写后的验收边界
+
+本表记录 5c0fce04 核心实现交件时的执行结果。2026-11-01T02:23:43Z／02:3xZ 批复将 T-05 缩减为原旧列表仅业主只读、不另建历史查询入口、保留一个月且清理另请。新版 LCS-S003/006 均仍未执行，不能继承旧表结论；LCS-S008 的一个月到期无清理授权不删除检查也未执行。
