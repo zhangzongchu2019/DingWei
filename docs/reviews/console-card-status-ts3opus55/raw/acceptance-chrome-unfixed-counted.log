@@ -1,0 +1,81 @@
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"assistant_text","linked":true,"before":{"waiting":0,"body":"","pending":1,"pendingEvents":1},"after":{"card":false,"sameNode":true,"status":null,"pending":1,"pendingEvents":4,"waiting":0}}
+  FAIL flag=false assistant_text linked=true: pending survives raw event; canonical status reaches same card: turn_processed final card status; actual=null, pending=1
++ actual - expected
+
++ null
+- '回合已结束（完成）'
+
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"assistant_text","linked":false,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=false assistant_text linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"state_change","linked":true,"before":{"waiting":0,"body":"","pending":1,"pendingEvents":1},"after":{"card":false,"sameNode":true,"status":null,"pending":1,"pendingEvents":4,"waiting":0}}
+  FAIL flag=false state_change linked=true: pending survives raw event; canonical status reaches same card: turn_processed final card status; actual=null, pending=1
++ actual - expected
+
++ null
+- '回合已结束（完成）'
+
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"state_change","linked":false,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=false state_change linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"user_input","linked":true,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=false user_input linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"user_input","linked":false,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=false user_input linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"ordered","flag":false,"after":{"status":"回合已结束（完成）","content":"primary request","pending":0,"waiting":0}}
+  PASS flag=false: ordered canonical input and ACK stay unchanged
+CARD_STATUS_CASE {"scenario":"legacy","flag":false,"after":{"waiting":0,"pending":0,"requestVisible":true,"answerVisible":true}}
+  PASS flag=false: legacy pending and output still render
+  PASS flag=false: no browser errors
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"assistant_text","linked":true,"before":{"waiting":0,"body":"","pending":1,"pendingEvents":1},"after":{"card":false,"sameNode":true,"status":null,"pending":1,"pendingEvents":4,"waiting":0}}
+  FAIL flag=true assistant_text linked=true: pending survives raw event; canonical status reaches same card: turn_processed final card status; actual=null, pending=1
++ actual - expected
+
++ null
+- '回合已结束（完成）'
+
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"assistant_text","linked":false,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=true assistant_text linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"state_change","linked":true,"before":{"waiting":0,"body":"","pending":1,"pendingEvents":1},"after":{"card":false,"sameNode":true,"status":null,"pending":1,"pendingEvents":4,"waiting":0}}
+  FAIL flag=true state_change linked=true: pending survives raw event; canonical status reaches same card: turn_processed final card status; actual=null, pending=1
++ actual - expected
+
++ null
+- '回合已结束（完成）'
+
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"state_change","linked":false,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=true state_change linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"user_input","linked":true,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=true user_input linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"user_input","linked":false,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=true user_input linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"ordered","flag":true,"after":{"status":"回合已结束（完成）","content":"primary request","pending":0,"waiting":0}}
+  PASS flag=true: ordered canonical input and ACK stay unchanged
+CARD_STATUS_CASE {"scenario":"legacy","flag":true,"after":{"waiting":0,"pending":0,"requestVisible":true,"answerVisible":true}}
+  PASS flag=true: legacy pending and output still render
+  PASS flag=true: no browser errors
+Error: 4 regression check(s) failed
+flag=false assistant_text linked=true: pending survives raw event; canonical status reaches same card: turn_processed final card status; actual=null, pending=1
++ actual - expected
+
++ null
+- '回合已结束（完成）'
+
+flag=false state_change linked=true: pending survives raw event; canonical status reaches same card: turn_processed final card status; actual=null, pending=1
++ actual - expected
+
++ null
+- '回合已结束（完成）'
+
+flag=true assistant_text linked=true: pending survives raw event; canonical status reaches same card: turn_processed final card status; actual=null, pending=1
++ actual - expected
+
++ null
+- '回合已结束（完成）'
+
+flag=true state_change linked=true: pending survives raw event; canonical status reaches same card: turn_processed final card status; actual=null, pending=1
++ actual - expected
+
++ null
+- '回合已结束（完成）'
+
+    at Object.finish (/data/ai-dev-data/console-card-status-ts3opus55/view-service/renderer-regression-selfhost.js:20:34)
+    at /data/ai-dev-data/console-card-status-ts3opus55/view-service/renderer-card-status-regression.js:104:12
