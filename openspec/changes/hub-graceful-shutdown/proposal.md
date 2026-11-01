@@ -29,9 +29,11 @@
 
 需求来源：组长 opus50tc2k.zzc 于 2026-11-01 派单 **S-HUB-GRACEFUL-SHUTDOWN-PROPOSAL**（本次平台派单；精确消息 ID 未提供，不补造）。定位依据：[停机定位与补遗](https://git.code.tencent.com/wego-ai/dingwei/blob/2b4b624c716676067f2a28297a7a0c3054e58f54/docs/reviews/hub-sigterm-exit1/REPORT.md)。现网事实：[SIGTERM journal](https://git.code.tencent.com/wego-ai/dingwei/blob/67f55bbdf563b3f5d0345963eebf5f7122152afb/docs/reviews/prodops-r45-prod-closeout-20261101/SIGTERM-EXIT1-JOURNAL.md) 与同目录 REPORT.md；现网阻塞的具体请求仍未知。来源不是从 Git 作者推导。
 
+补充配置事实：[prodops 预发/现网有效单位实测](https://git.code.tencent.com/wego-ai/dingwei/blob/e43100e3bdf200caaa67a925e51ca5fd82287bff/docs/reviews/prodops-r5-t08-facts-20261101/REPORT.md)，2026-11-01T14:05～14:08Z只读检查：dingwei-dw123-staging-hub.service与dingwei-dw123-hub.service有效TimeoutStopUSec均为30s，两个fragment均写TimeoutStopSec=30s，DropInPaths均为空。仅引用停机配置事实，不引入同报告的凭据交付任务。
+
 ## 待确认假设
 
-- HLC-A01：现网 systemd 有足够停止预算容纳候选 15 秒应用总预算及 5 秒余量。**待 prodops 实测**有效 TimeoutStopSec、KillSignal、KillMode、SendSIGKILL、WatchdogSec、Restart/SuccessExitStatus，以及 stop 控制器自己的期限；本席未登录生产，不猜值、不请求改配置。
+- HLC-A01（已部分核实）：prodops固定证据e43100e3已核预发/现网有效TimeoutStopSec均30s且无drop-in，外层期限S=30秒不再待测。保留应用总预算T=15秒候选，名义余量15秒，其中必须保证systemd计时/信号交付差及总线开销扣除后仍有至少5秒SIGKILL前安全余量；见design预算公式。**待prodops补测**信号交付差、KillSignal、KillMode、SendSIGKILL、WatchdogSec、Restart/SuccessExitStatus及控制器期限；30秒配置不是实际停机达标证据，不据此假定SIGKILL具体行为已验证。
 - HLC-A02：候选容量（100 个有限 HTTP、100 个 SSE、20 个 mux、20 个会话 WS）可在 8 秒并行排空阶段完成。仅为明确可测的首轮压测规模，不冒称生产峰值或已有实测；须和在线连接数核对。
 - HLC-A03：现有队列的持久确认点、重投/去重语义可支撑“停止消费后保留未完成项”。逐队列代码盘点与故障重启验证前不宣称无丢失；无法证明持久性应报失败，不能清空队列后报成功。
 - HLC-A04：客户端识别 EOF/WS 关闭并按现行重连协议恢复。必须实测 Console、View、helper，各流已收到 200/101 后的断开不会自动变成新 5xx；不承诺 WS 必有正常关闭码。
@@ -41,7 +43,7 @@
 | 编号 | 选项 | 建议与理由 | 冻结条件 |
 | --- | --- | --- | --- |
 | HLC-PM01 | 超时用 2；或其它保留非零值 | 建议 2，正常 0、其它故障 1，便于控制器区分；若已占用则选另一独立非零值，不映射成成功 | 核 CLI/控制器现有码，PM 确认；确认前 2 仅是候选 |
-| HLC-PM02 | 候选总预算 15 秒；或按实测负载另定 | 建议 1+8+3+1+2 秒阶段分配；现有 WS 等待最多 5 秒，8 秒阶段留收尾空间；尾部预留 2 秒避免超时后失去记录/退出机会 | prodops 实测 TimeoutStopSec 等，要求 S≥T+5 秒且控制器期限不短于 S；若不满足必须重议，不自动调 systemd |
+| HLC-PM02 | 候选总预算 15 秒；或按实测负载另定 | 建议 1+8+3+1+2 秒阶段分配；现有 WS 等待最多 5 秒，8 秒阶段留收尾空间；尾部预留 2 秒避免超时后失去记录/退出机会 | 外层S=30秒已核；建议保留T=15秒，名义余量15秒，并核δ+T+5≤30及控制器期限覆盖外层等待；若不满足必须重议，不自动调systemd或用满30秒 |
 | HLC-PM03 | 排空期间新请求拒绝并由客户端重试；或扩大到无感滚动部署 | 建议本轮只做单实例有界停止，已接受有限请求尽量完成、长流主动断开；不引入双实例/自动业务重试，避免扩大幂等性风险 | 确认临时不可用、流重连体验及测试目标；写请求只在已有幂等协议下重投 |
 | HLC-PM04 | 本地冷启动目标 5 秒/恢复 5 秒；或据实测放宽 | 建议按 design 的 stop→ready≤20 秒、helper≤5秒重连、流≤5秒恢复作为候选验收目标；不能把现网一次约350ms回执差当作SLO | 实测启动/客户端退避，PM 定值；不满足不能删格或声称通过 |
 

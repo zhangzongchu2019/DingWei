@@ -13,7 +13,7 @@
 
 ## 现场事实与边界
 
-现网证据锚67f55bbdf563b3f5d0345963eebf5f7122152afb：两次Stopping→exited分别10.011090、10.008936秒，error均context deadline exceeded；具体请求未知。定位及追加解释锚2b4b624c716676067f2a28297a7a0c3054e58f54。现网TimeoutStopSec及全部有效单位配置**待prodops实测**，不从源码默认值推导生产值。
+现网证据锚67f55bbdf563b3f5d0345963eebf5f7122152afb：两次Stopping→exited分别10.011090、10.008936秒，error均context deadline exceeded；具体请求未知。定位及追加解释锚2b4b624c716676067f2a28297a7a0c3054e58f54。补充配置证据e43100e3bdf200caaa67a925e51ca5fd82287bff（prodops-r5-t08-facts-20261101/REPORT.md，2026-11-01T14:05～14:08Z）：预发dingwei-dw123-staging-hub.service与现网dingwei-dw123-hub.service有效TimeoutStopUSec均30s、fragment均为TimeoutStopSec=30s且都无drop-in。30秒是外层配置期限，不是停机完成证据；其它有效停止参数/信号交付差/控制器期限**待prodops补测**，不从源码默认值或无drop-in推导。
 
 ## 读取与依赖
 

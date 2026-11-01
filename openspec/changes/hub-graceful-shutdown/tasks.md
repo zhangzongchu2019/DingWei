@@ -9,7 +9,7 @@
 
 ## 2. 实施前冻结（待另单）
 
-- [ ] T-03 负责人独立审阅HLC-001～008；prodops另单只读实测有效TimeoutStopSec、相关unit/drop-in、watchdog/重启和控制器期限及真实连接规模；PM01～04定值写回并strict。未满足不开放实现/部署。
+- [ ] T-03 负责人独立审阅HLC-001～008；已核e43100e3预发/现网TimeoutStopSec=30s且无drop-in；prodops另单补测信号交付差、其它停止参数、watchdog/重启、控制器期限及真实连接规模；PM01～04定值写回并strict。未满足不开放实现/部署。
 - [ ] T-04 获实现派单后补主规格最小基线/context并冻结队列/事务确认、WS注册屏障与生命周期挂点；确保与r46及其它在途变更无冲突。
 
 ## 3. 实现（未授权）
@@ -35,3 +35,8 @@ strict规划通过不代表实现/业务验收/发布完成；不archive、不�
   - 完成：T-01/02提案编写与结构/仓库检查；OpenSpec1.16.0、Node22.23.1、OPENSPEC_TELEMETRY=0，`openspec validate hub-graceful-shutdown --strict --no-interactive`及`openspec validate --all --strict --no-interactive`均rc=0，全仓13项通过、0失败。8条需求、12个唯一场景，需求正文各不足500字、spec不足30KB。`scripts/run-build-tests.sh` rc=0，helper两profile各1092项、inventory90、Python27组/shell2组；普通dev用户、隔离HOME/临时DB及loopback测试环境，无真实Feishu/生产连接。仅6个本变更目录文档，基线为2af469dd；推送后以ls-remote核同tip并冻结，不自验收。
   - 阻塞：负责人独立审阅；HLC-PM01～04与HLC-A01～04未闭合，尤其systemd TimeoutStopSec待prodops实测。产品生命周期S001～012与变异均未执行；严格结构检查及既有仓库门不代替这些验收。
   - 下一步：工蜂按冻结坐标交审；先另单实测并冻结PM项，再另派实现。不改r46集成分支，不apply/archive，不部署或调整systemd。
+
+- 2026-11-01T14:16:53Z · coder56solzzc.zzc · 本段起点commit 37a414ff050026cc649dcdef13f6633eea252bac，承载本段的追加提交tip见交件消息。
+  - 完成：独立fetch并核review/prodops/r5-t08-facts-20261101完整tip e43100e3bdf200caaa67a925e51ca5fd82287bff；同步proposal/design/spec/context/T-03，关闭“TimeoutStopSec未知”这一子项：预发/现网均30秒、无drop-in。以30秒为外层，保留待批应用15秒候选及名义15秒差额，扣除信号交付差δ后要求仍≥5秒SIGKILL前余量；配置值不作停机完成证据。OpenSpec1.16.0/Node22.23.1/telemetry0全仓strict重验rc0，13/13通过；产品文件未变，既有构建门rc0保持为上一内容提交的记录，不冒称重跑或生命周期验收。
+  - 阻塞：其余单位停止参数、δ、控制器期限及负载/持久边界仍待补测；PM01～04仍待批。旧交接中TimeoutStopSec待测状态由本条新证据覆盖，历史记录保留。S001～012未执行。
+  - 下一步：仅推同一工蜂分支后冻结，按新tip审阅；不实现、不改systemd/部署，不把外层30秒配置写成可在30秒完成的承诺。
