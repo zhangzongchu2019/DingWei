@@ -1,0 +1,47 @@
+SCENARIO disconnected
+SCENARIO remove-throws
+SCENARIO reset-throws
+SCENARIO iframe-null
+SCENARIO iframe-throws
+SCENARIO standalone
+{
+  "mode": "fixed",
+  "results": [
+    {
+      "scenario": "disconnected",
+      "closed": true,
+      "remaining_active": true,
+      "resource_cleanup": true
+    },
+    {
+      "scenario": "remove-throws",
+      "closed": true,
+      "remaining_active": true,
+      "resource_cleanup": true
+    },
+    {
+      "scenario": "reset-throws",
+      "closed": true,
+      "remaining_active": true,
+      "resource_cleanup": true
+    },
+    {
+      "scenario": "iframe-null",
+      "closed": true,
+      "remaining_active": true,
+      "resource_cleanup": true
+    },
+    {
+      "scenario": "iframe-throws",
+      "closed": true,
+      "remaining_active": true,
+      "resource_cleanup": true
+    },
+    {
+      "scenario": "standalone",
+      "closed": true,
+      "remaining_active": true,
+      "resource_cleanup": true
+    }
+  ]
+}

@@ -70,7 +70,7 @@ func TestNewPlatformConsolePrincipalViewInputReachesAgent(t *testing.T) {
 	readCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	env := readEnvelope(t, readCtx, conn)
-	if env.Body != "owner input\r" || metaString(env.Meta, "console_principal_id") != "zzc" {
+	if env.Body != "owner input" || metaString(env.Meta, "console_principal_id") != "zzc" {
 		t.Fatalf("agent envelope: %+v", env)
 	}
 	from, err := parseAddress(env.From)

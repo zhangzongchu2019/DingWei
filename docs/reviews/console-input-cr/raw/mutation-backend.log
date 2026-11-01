@@ -1,0 +1,14 @@
+--- FAIL: TestViewInputNormalization (0.00s)
+    --- FAIL: TestViewInputNormalization/trailing_CR (0.00s)
+        view_input_v2_test.go:138: got "hello\r\r" want "hello"
+    --- FAIL: TestViewInputNormalization/boundary_blank_lines (0.00s)
+        view_input_v2_test.go:138: got "\r\n\nhello\r\n\r\r" want "hello"
+    --- FAIL: TestViewInputNormalization/Windows_multiline (0.00s)
+        view_input_v2_test.go:138: got "first\r\nsecond\r\n\r" want "first\nsecond"
+    --- FAIL: TestViewInputNormalization/internal_blank_lines_and_indent (0.00s)
+        view_input_v2_test.go:138: got "  first\n\n  second\r" want "  first\n\n  second"
+    --- FAIL: TestViewInputNormalization/bare_internal_CR (0.00s)
+        view_input_v2_test.go:138: got "first\rsecond\r" want "first\nsecond"
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.006s
+FAIL

@@ -3,6 +3,7 @@ package m8
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -71,6 +72,12 @@ func TestViewV2InputAuthenticatesReplaysAndIdempotency(t *testing.T) {
 	if wrongDirection.Code != http.StatusUnauthorized {
 		t.Fatalf("wrong direction status=%d", wrongDirection.Code)
 	}
+	for i, text := range []string{"", " \t\r\n ", "\r\n"} {
+		body, _ = json.Marshal(viewV2InputRequest{Session: "alice-dev55-2642", PageID: "page-1", RequestID: "1123456789abcdef0123456789abcdef", Text: text})
+		if got := do(fmt.Sprintf("%032x", i+12345), vsToHubDirection); got.Code != http.StatusBadRequest {
+			t.Fatalf("blank input status=%d body=%s", got.Code, got.Body.String())
+		}
+	}
 }
 
 func TestViewV2RequestIDValidation(t *testing.T) {
@@ -118,9 +125,19 @@ func TestLegacyViewV2InputRejectsNonLegacySessionNames(t *testing.T) {
 	}
 }
 
-func TestViewV2TerminalSubmissionPreservesMultilineAndSubmitsOnce(t *testing.T) {
-	if got, want := terminalSubmission("line1\r\nline2\rline3"), "line1\nline2\nline3\r"; got != want {
-		t.Fatalf("terminal submission=%q want=%q", got, want)
+func TestViewInputNormalization(t *testing.T) {
+	for _, tt := range []struct{ name, input, want string }{
+		{"trailing CR", "hello\r", "hello"},
+		{"boundary blank lines", "\r\n\nhello\r\n\r", "hello"},
+		{"Windows multiline", "first\r\nsecond\r\n", "first\nsecond"},
+		{"internal blank lines and indent", "  first\n\n  second", "  first\n\n  second"},
+		{"bare internal CR", "first\rsecond", "first\nsecond"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := normalizeViewInput(tt.input); got != tt.want {
+				t.Fatalf("got %q want %q", got, tt.want)
+			}
+		})
 	}
 }
 
@@ -133,5 +150,19 @@ func TestViewV2ReplayCachesAreBounded(t *testing.T) {
 	}
 	if len(hub.viewV2Nonces) > viewV2ReplayMax || len(hub.viewV2Requests) > viewV2ReplayMax {
 		t.Fatalf("unbounded caches nonces=%d requests=%d", len(hub.viewV2Nonces), len(hub.viewV2Requests))
+	}
+}
+
+func TestLegacyHTTPViewInputRejectsWhitespace(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	for _, text := range []string{"", " \t\r\n ", "\r\n"} {
+		body, _ := json.Marshal(viewInputRequest{Text: text})
+		req := httptest.NewRequest(http.MethodPost, "/internal/view/alice-dev55-2642/input", bytes.NewReader(body))
+		req.SetPathValue("session", "alice-dev55-2642")
+		rr := httptest.NewRecorder()
+		hub.HandleInternalViewInput(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("blank input got %d", rr.Code)
+		}
 	}
 }

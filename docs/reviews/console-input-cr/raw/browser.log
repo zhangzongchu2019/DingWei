@@ -1,0 +1,4 @@
+PASS {"raw":"hello\r","want":"hello"}
+PASS {"raw":"\r\nfirst\r\n\r\nsecond\r\n","want":"first\n\nsecond"}
+PASS {"raw":"  indented\n  next \n","want":"  indented\n  next"}
+PASS whitespace click/Enter sends nothing; middle newlines/indent retained

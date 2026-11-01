@@ -84,7 +84,7 @@ func (h *Hub) HandleInternalViewV2Input(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	var req viewV2InputRequest
-	if err := json.Unmarshal(body, &req); err != nil || req.Session != session || strings.TrimSpace(req.PageID) == "" || !viewV2RequestIDPattern.MatchString(req.RequestID) || req.Text == "" {
+	if err := json.Unmarshal(body, &req); err != nil || req.Session != session || strings.TrimSpace(req.PageID) == "" || !viewV2RequestIDPattern.MatchString(req.RequestID) || strings.TrimSpace(req.Text) == "" {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
@@ -150,7 +150,7 @@ func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, reques
 		// Stable request ID reaches the helper queue as the delivery identity, so a
 		// Hub restart between response loss and retry cannot create a second turn.
 		ID: requestID, To: sessionAddress(routeSession, keyID), From: sessionAddress("workpulse", keyID),
-		Body: terminalSubmission(text), TS: time.Now().Unix(),
+		Body: normalizeViewInput(text), TS: time.Now().Unix(),
 		Meta: map[string]any{"source_kind": "user", "source_display_name": "View", "reply_policy": replyPolicyNoReply,
 			"auth_mode": "view_page_v2", "page_id": pageID, "request_id": requestID,
 			"console_principal_id": strings.TrimSpace(principalID), hubIngressMetaKey: hubIngressViewV2},
@@ -158,10 +158,9 @@ func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, reques
 	return h.routeToSession(ctx, keyID, routeSession, env, false)
 }
 
-func terminalSubmission(text string) string {
-	// The helper writes terminal_input bytes directly to the PTY. Preserve the
-	// user's internal newlines, normalize CR variants, and submit exactly once.
-	return strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n") + "\r"
+// HTTP view submissions are complete messages, not PTY keystrokes.
+func normalizeViewInput(text string) string {
+	return strings.Trim(strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n"), "\n")
 }
 
 func (h *Hub) claimViewV2Nonce(target, nonce string, now time.Time) bool {

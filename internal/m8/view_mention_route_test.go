@@ -257,11 +257,11 @@ func TestViewMentionRoute(t *testing.T) {
 		if st != 200 || !r.OK {
 			t.Fatalf("status=%d resp=%+v", st, r)
 		}
-		if a := e.a.next(t, "@Beta 格一你好"); a.Body != "@Beta 格一你好\r" {
+		if a := e.a.next(t, "@Beta 格一你好"); a.Body != "@Beta 格一你好" {
 			t.Fatalf("A body=%q", a.Body)
 		}
 		x := e.x.next(t, "@Beta 格一你好")
-		if x.Body != "@Beta 格一你好\r" {
+		if x.Body != "@Beta 格一你好" {
 			t.Fatalf("X body=%q（正文须原样）", x.Body)
 		}
 		for k, want := range map[string]any{"route_source": "view_mention", "mentioned_from": "Kimi.zzc", "source_delivery_id": "11111111111111111111111111111111",
@@ -485,8 +485,10 @@ func TestViewMentionRouteLegacyInput(t *testing.T) {
 	if got := vmReceipts(r); strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("回执=%q", got)
 	}
-	e.a.next(t, "格十一")
-	if x := e.x.next(t, "格十一"); x.Body != "格十一\r" || metaString(x.Meta, "mentioned_from") != "Kimi.zzc" {
+	if primary := e.a.next(t, "格十一"); primary.Body != "格十一" {
+		t.Fatalf("legacy primary body=%q", primary.Body)
+	}
+	if x := e.x.next(t, "格十一"); x.Body != "格十一" || metaString(x.Meta, "mentioned_from") != "Kimi.zzc" {
 		t.Fatalf("X=%+v", x)
 	}
 	assertCrossOwnerView(t, e.y.next(t, "格十一"))

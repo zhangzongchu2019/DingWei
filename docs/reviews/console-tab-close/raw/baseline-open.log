@@ -1,0 +1,75 @@
+SCENARIO disconnected
+SCENARIO remove-throws
+SCENARIO reset-throws
+SCENARIO iframe-null
+SCENARIO iframe-throws
+SCENARIO standalone
+{
+  "mode": "--baseline",
+  "results": [
+    {
+      "scenario": "disconnected",
+      "closed": true,
+      "afterLastClose": {
+        "seats": [],
+        "ready": [],
+        "count": 0,
+        "bytes": 0,
+        "source": true,
+        "transportReady": true,
+        "reconnect": true
+      },
+      "errors": []
+    },
+    {
+      "scenario": "remove-throws",
+      "baseline_reproduced": true,
+      "errors": [
+        "Error: synthetic disconnected remove failure"
+      ]
+    },
+    {
+      "scenario": "reset-throws",
+      "baseline_reproduced": true,
+      "errors": [
+        "Error: synthetic reset cleanup failure"
+      ]
+    },
+    {
+      "scenario": "iframe-null",
+      "closed": true,
+      "afterLastClose": {
+        "seats": [],
+        "ready": [],
+        "count": 0,
+        "bytes": 0,
+        "source": false,
+        "transportReady": false,
+        "reconnect": false
+      },
+      "errors": []
+    },
+    {
+      "scenario": "iframe-throws",
+      "closed": true,
+      "afterLastClose": {
+        "seats": [],
+        "ready": [],
+        "count": 0,
+        "bytes": 0,
+        "source": false,
+        "transportReady": false,
+        "reconnect": false
+      },
+      "errors": []
+    },
+    {
+      "scenario": "standalone",
+      "closed": true,
+      "afterLastClose": {
+        "children": 0
+      },
+      "errors": []
+    }
+  ]
+}

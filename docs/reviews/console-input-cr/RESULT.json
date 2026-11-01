@@ -1,0 +1,38 @@
+{
+  "task": "S-CONSOLE-INPUT-TRAILING-CR",
+  "base": "330a67d1dd47e6891741828f9ed8ab2597a83c20",
+  "branch": "opus50tc2k/console-input-cr",
+  "recorded_at": "2026-11-01T05:06:23.209213+00:00",
+  "validation": {
+    "browser_input": "PASS 3 payload cases + whitespace click/Enter rejection",
+    "browser_mentions": "15 PASS",
+    "python": "47 PASS",
+    "m8_view_terminal_rc": 0,
+    "mutations": {
+      "backend_append_CR": 1,
+      "renderer_remove_normalization": 1
+    },
+    "full_run_build_tests": "not run for this focused followup"
+  },
+  "source_sha256": {
+    "internal/m8/terminal.go": "03220b70d4bbda74d71df1d96503f133e04b70038f99db5069fce4e4c81f859d",
+    "internal/m8/view_input_v2.go": "d5b88aed0a4d7adb628b8132d2f37322c3281b97c58181d12018f5dcc243de6d",
+    "internal/m8/view_mention_route.go": "c086a9d9113c22946b2415a80aeafbcd5d2b75757c0a6065a134b04a104f4f54",
+    "view-service/view_service.py": "8faff3d890022f4160fd64585d699a060a3179887721c293011efb56467f2d67",
+    "view-service/renderer-canary-sse.html": "032c3323c70769d10e2afb5b4efde33d1adcc44af1ebdc29108fd90949491af2",
+    "view-service/renderer-input-cr-regression.js": "ce208e7dcc5e9523a606e68b1fd9699bd801010c4d673515de398f92a956e2dc"
+  },
+  "raw_log_sha256": {
+    "browser-mentions.log": "f20b8fef5bd96297f97a953a918b87c7638fa2d9c963ba15e0acdaff9f32d6ff",
+    "browser.log": "c93f36b56323b58188d8f6763422e25263ad066d289e69ebce39f15cc7401da0",
+    "m8-final.log": "668ff193de4869b13d885dc82649f4bb804d23a2099cf62d00829549fd4791c3",
+    "m8-input.log": "1242fbf1774c6635cf39861c329dee1e1f33b1335b43216e67989a840d2b2c89",
+    "m8-restored.log": "75eeb472a455f5968dc546c15d78712a578f8963c27fabca2016b1ed750ad8db",
+    "m8-view-terminal-final.log": "78b273fb302152cc23b82778e617a6b6be14e986fe5de519641e921fc3cae08e",
+    "m8-view-terminal.log": "71e39830ac49e06f63eab508f4998d294e12f4a8d021dd2bc56c3cc3136c4f16",
+    "mutation-backend.log": "e2ebc3e02bf14a9365a1d99195eae8f23b0ac2d7daac33f1fcbfe3faf14965d7",
+    "mutation-browser.log": "38efb9813848655c06d8e8ddc80c4b4addb76d823e89dfb2e5b01265be7e8cd2",
+    "python.log": "10060d7889484bbcdf4430d07652feaa9e9f428d8ff2874b1d506a3e76826085"
+  },
+  "scope": "complete-message HTTP paths; raw terminal WebSocket/PTY semantics unchanged; no live operations"
+}

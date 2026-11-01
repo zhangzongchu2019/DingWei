@@ -1,0 +1,158 @@
+{
+  "task": "S-CONSOLE-TAB-CLOSE-WHEN-DISCONNECTED",
+  "base": "dfc95fd8b6b2a063edd77f22bd38ecc63b729213",
+  "branch": "opus50tc2k/console-tab-close",
+  "recorded_at": "2026-11-01T04:59:49.595746+00:00",
+  "baseline": {
+    "mode": "--baseline",
+    "results": [
+      {
+        "scenario": "disconnected",
+        "closed": true,
+        "afterLastClose": {
+          "seats": [],
+          "ready": [],
+          "count": 0,
+          "bytes": 0,
+          "source": true,
+          "transportReady": true,
+          "reconnect": true
+        },
+        "errors": []
+      },
+      {
+        "scenario": "remove-throws",
+        "baseline_reproduced": true,
+        "errors": [
+          "Error: synthetic disconnected remove failure"
+        ]
+      },
+      {
+        "scenario": "reset-throws",
+        "baseline_reproduced": true,
+        "errors": [
+          "Error: synthetic reset cleanup failure"
+        ]
+      },
+      {
+        "scenario": "iframe-null",
+        "closed": true,
+        "afterLastClose": {
+          "seats": [],
+          "ready": [],
+          "count": 0,
+          "bytes": 0,
+          "source": false,
+          "transportReady": false,
+          "reconnect": false
+        },
+        "errors": []
+      },
+      {
+        "scenario": "iframe-throws",
+        "closed": true,
+        "afterLastClose": {
+          "seats": [],
+          "ready": [],
+          "count": 0,
+          "bytes": 0,
+          "source": false,
+          "transportReady": false,
+          "reconnect": false
+        },
+        "errors": []
+      },
+      {
+        "scenario": "standalone",
+        "closed": true,
+        "afterLastClose": {
+          "children": 0
+        },
+        "errors": []
+      }
+    ]
+  },
+  "browser_fixed": {
+    "mode": "fixed",
+    "results": [
+      {
+        "scenario": "disconnected",
+        "closed": true,
+        "remaining_active": true,
+        "resource_cleanup": true
+      },
+      {
+        "scenario": "remove-throws",
+        "closed": true,
+        "remaining_active": true,
+        "resource_cleanup": true
+      },
+      {
+        "scenario": "reset-throws",
+        "closed": true,
+        "remaining_active": true,
+        "resource_cleanup": true
+      },
+      {
+        "scenario": "iframe-null",
+        "closed": true,
+        "remaining_active": true,
+        "resource_cleanup": true
+      },
+      {
+        "scenario": "iframe-throws",
+        "closed": true,
+        "remaining_active": true,
+        "resource_cleanup": true
+      },
+      {
+        "scenario": "standalone",
+        "closed": true,
+        "remaining_active": true,
+        "resource_cleanup": true
+      }
+    ]
+  },
+  "source_sha256": {
+    "internal/m8/console_auth.go": "05169ad1372936ed19558dc6f3cb10b5aebf042f6040db58505ddba39955b99e",
+    "internal/m8/console_mux_broker.js": "d282954df861a121cfd6ff99466352b9b7059e1fa8f2c8ad55f366535fd1dc6f",
+    "view-service/console-tab-close-regression.js": "755dac5805510dfb110b028be1a8874f1cb01e153a8c0156fc66f632a8d2be8f"
+  },
+  "browser_mutations": {
+    "close-guard": 1,
+    "release-fallback": 1
+  },
+  "existing_browser": "20 PASS / 0 FAIL",
+  "m8_pages_rc": 0,
+  "canonical_status": "PASS",
+  "boundaries": "local loopback browser fixtures and canonical isolated local Hub/DB tests only; no shared/staging/production operation, dependency/version changes or GitHub push",
+  "canonical_rc": 0,
+  "helper": [
+    {
+      "actual": 1087,
+      "actual_SH_DRIVER": "claude",
+      "expected": 1087,
+      "files": 90,
+      "groups": [
+        1078,
+        9
+      ],
+      "profile": "claude",
+      "rc": 0
+    },
+    {
+      "actual": 1087,
+      "actual_SH_DRIVER": "codex",
+      "expected": 1087,
+      "files": 90,
+      "groups": [
+        1078,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "canonical_marker": "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2",
+  "runtime_lock_check_rc": 0
+}

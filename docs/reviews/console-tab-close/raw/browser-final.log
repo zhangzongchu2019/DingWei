@@ -1,0 +1,5 @@
+SCENARIO disconnected
+page.waitForFunction: Timeout 30000ms exceeded.
+    at /data/ai-dev-data/console-tab-close/view-service/console-tab-close-regression.js:66:15 {
+  name: 'TimeoutError'
+}

@@ -1,0 +1,11 @@
+SCENARIO disconnected
+SCENARIO remove-throws
+AssertionError [ERR_ASSERTION]: remove-throws: clicked close must remove tab, pane and map entry
+    at /data/ai-dev-data/console-tab-close/view-service/console-tab-close-regression.js:80:10 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

@@ -1410,6 +1410,11 @@ func (h *Hub) HandleInternalViewInput(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
+	req.Text = normalizeViewInput(req.Text)
+	if strings.TrimSpace(req.Text) == "" {
+		http.Error(w, "empty input", http.StatusBadRequest)
+		return
+	}
 	keyID, internalSession, found := h.viewInternalSession(r.Context(), sessionName)
 	h.mu.Lock()
 	st := h.terminals[terminalKey(keyID, internalSession)]

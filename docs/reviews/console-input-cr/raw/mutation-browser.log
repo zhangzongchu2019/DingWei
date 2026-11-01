@@ -1,0 +1,15 @@
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+'hello\n' !== 'hello'
+
+    at /data/ai-dev-data/console-input-cr/view-service/renderer-input-cr-regression.js:27:47
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processImmediate (node:internal/timers:452:9)
+    at process.callbackTrampoline (node:internal/async_hooks:130:17) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'hello\n',
+  expected: 'hello',
+  operator: 'strictEqual',
+  diff: 'simple'
+}

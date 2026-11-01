@@ -566,13 +566,20 @@ function activate(session){
   dwTaskBoardNotify();
 }
 function closeTab(session){
-  if(session==='__platform-admin')clearAllAgentView();
   var e=tabs.get(session); if(!e) return;
-  if(e.pane.dataset.viewRefreshInstance){try{e.pane.contentWindow.postMessage({protocol:'dw-view-refresh/v1',instance:e.pane.dataset.viewRefreshInstance,generation:++dwViewRefreshGeneration,kind:'invalidate',active:false,resource:false},location.origin);}catch(_){}}
-  if(CONSOLE_MUX_ENABLED&&window.DWConsoleMux)window.DWConsoleMux.remove(session,true);
-  e.tab.remove(); e.pane.remove(); if(e.offlineReason)e.offlineReason.remove(); tabs.delete(session);   // 🔴 关闭才真正断开那条 SSE
+  function cleanup(label,fn){try{fn();}catch(err){console.warn('Console tab cleanup failed: '+label,err);}}
+  if(session==='__platform-admin')cleanup('admin',function(){clearAllAgentView();});
+  cleanup('view refresh',function(){if(e.pane.dataset.viewRefreshInstance)e.pane.contentWindow.postMessage({protocol:'dw-view-refresh/v1',instance:e.pane.dataset.viewRefreshInstance,generation:++dwViewRefreshGeneration,kind:'invalidate',active:false,resource:false},location.origin);});
+  cleanup('mux unsubscribe',function(){if(CONSOLE_MUX_ENABLED&&window.DWConsoleMux)window.DWConsoleMux.remove(session,true);});
+  // Independent idempotent release also covers a failed unsubscribe/reset step.
+  cleanup('mux release',function(){if(CONSOLE_MUX_ENABLED&&window.DWConsoleMux)window.DWConsoleMux.release(session);});
+  cleanup('iframe stop',function(){e.pane.src='about:blank';});
+  cleanup('tab',function(){if(e.tab.parentNode)e.tab.parentNode.removeChild(e.tab);});
+  cleanup('pane',function(){if(e.pane.parentNode)e.pane.parentNode.removeChild(e.pane);});
+  cleanup('offline notice',function(){if(e.offlineReason&&e.offlineReason.parentNode)e.offlineReason.parentNode.removeChild(e.offlineReason);});
+  tabs.delete(session);
   var last=Array.from(tabs.keys()).pop();
-  if(last) activate(last);
+  if(last) cleanup('activate remaining tab',function(){activate(last);});
   else { var h=document.getElementById('hint'); if(h) h.style.display='block'; }
 }
 function openTab(session){

@@ -256,14 +256,20 @@ func TestNewPlatformOwnerInputThroughRealViewServiceModes(t *testing.T) {
 				}
 				inputPayload = map[string]any{"text": "owner via real view service"}
 			}
+			inputPayload["text"] = "\r\nowner via real view service\r\nsecond line\r"
 			if status, raw := do(http.MethodPost, "/view/kimi.zzc/input", inputPayload, headers); status != http.StatusOK {
 				t.Fatalf("view input: %d %s", status, raw)
 			}
 			readCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 			defer cancel()
 			env := readEnvelope(t, readCtx, agent)
-			if env.Body != "owner via real view service\r" {
+			if env.Body != "owner via real view service\nsecond line" {
 				t.Fatalf("agent body=%q", env.Body)
+			}
+			inputPayload["text"] = " \t\r\n "
+			inputPayload["request_id"] = "fedcba9876543210fedcba9876543210"
+			if status, raw := do(http.MethodPost, "/view/kimi.zzc/input", inputPayload, headers); status != http.StatusForbidden {
+				t.Fatalf("whitespace input forwarded: %d %s", status, raw)
 			}
 			waitEvent("input_posted")
 			eventJSON := `{"kind":"assistant_text","text":"assistant through events","delivery_id":"d1","turn_id":"t1"}`
