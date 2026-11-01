@@ -1,0 +1,66 @@
+{"flag":false,"kind":"assistant_text","linked":true,"before":{"waiting":0,"body":""},"after":{"card":false,"sameNode":true,"pending":1,"waiting":0}}
+  FAIL flag=false assistant_text linked=true: pending survives raw event; canonical status reaches same card: raw output/admission must not remove canonical pending primary
+
+0 !== 1
+
+{"flag":false,"kind":"assistant_text","linked":false,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=false assistant_text linked=false: pending survives raw event; canonical status reaches same card
+{"flag":false,"kind":"state_change","linked":true,"before":{"waiting":0,"body":""},"after":{"card":false,"sameNode":true,"pending":1,"waiting":0}}
+  FAIL flag=false state_change linked=true: pending survives raw event; canonical status reaches same card: raw output/admission must not remove canonical pending primary
+
+0 !== 1
+
+{"flag":false,"kind":"state_change","linked":false,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=false state_change linked=false: pending survives raw event; canonical status reaches same card
+{"flag":false,"kind":"user_input","linked":true,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=false user_input linked=true: pending survives raw event; canonical status reaches same card
+{"flag":false,"kind":"user_input","linked":false,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=false user_input linked=false: pending survives raw event; canonical status reaches same card
+  PASS flag=false: legacy pending and output still render
+  PASS flag=false: no browser errors
+{"flag":true,"kind":"assistant_text","linked":true,"before":{"waiting":0,"body":""},"after":{"card":false,"sameNode":true,"pending":1,"waiting":0}}
+  FAIL flag=true assistant_text linked=true: pending survives raw event; canonical status reaches same card: raw output/admission must not remove canonical pending primary
+
+0 !== 1
+
+{"flag":true,"kind":"assistant_text","linked":false,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=true assistant_text linked=false: pending survives raw event; canonical status reaches same card
+{"flag":true,"kind":"state_change","linked":true,"before":{"waiting":0,"body":""},"after":{"card":false,"sameNode":true,"pending":1,"waiting":0}}
+  FAIL flag=true state_change linked=true: pending survives raw event; canonical status reaches same card: raw output/admission must not remove canonical pending primary
+
+0 !== 1
+
+{"flag":true,"kind":"state_change","linked":false,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=true state_change linked=false: pending survives raw event; canonical status reaches same card
+{"flag":true,"kind":"user_input","linked":true,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=true user_input linked=true: pending survives raw event; canonical status reaches same card
+{"flag":true,"kind":"user_input","linked":false,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=true user_input linked=false: pending survives raw event; canonical status reaches same card
+  FAIL flag=true: legacy pending and output still render: The expression evaluated to a falsy value:
+
+  assert.ok(legacy.text.includes('legacy request'))
+
+  PASS flag=true: no browser errors
+Error: 5 regression check(s) failed
+flag=false assistant_text linked=true: pending survives raw event; canonical status reaches same card: raw output/admission must not remove canonical pending primary
+
+0 !== 1
+
+flag=false state_change linked=true: pending survives raw event; canonical status reaches same card: raw output/admission must not remove canonical pending primary
+
+0 !== 1
+
+flag=true assistant_text linked=true: pending survives raw event; canonical status reaches same card: raw output/admission must not remove canonical pending primary
+
+0 !== 1
+
+flag=true state_change linked=true: pending survives raw event; canonical status reaches same card: raw output/admission must not remove canonical pending primary
+
+0 !== 1
+
+flag=true: legacy pending and output still render: The expression evaluated to a falsy value:
+
+  assert.ok(legacy.text.includes('legacy request'))
+
+    at Object.finish (/data/ai-dev-data/console-card-status-ts3opus55/view-service/renderer-regression-selfhost.js:20:34)
+    at /data/ai-dev-data/console-card-status-ts3opus55/view-service/renderer-card-status-regression.js:74:12
