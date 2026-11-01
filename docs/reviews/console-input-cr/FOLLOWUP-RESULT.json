@@ -1,0 +1,26 @@
+{
+  "recorded_at": "2026-11-01T06:20:16.231197+00:00",
+  "parent": "c93a7cb18567d7991f18265a9116442238a4dad8",
+  "build_gate_rc": 0,
+  "unittest_total": 2476,
+  "unittest_failures": 0,
+  "helper": {
+    "claude": 1087,
+    "codex": 1087
+  },
+  "other_python_files": 27,
+  "other_python_cases": 302,
+  "shell_scripts": 2,
+  "shell_failures": 0,
+  "m8_pages_rc": 0,
+  "m8_pages_seconds": 34.73,
+  "helper_submit_replay": {
+    "passed": 2,
+    "failed": 0
+  },
+  "raw_sha256": {
+    "build-gate-followup.log": "c944dfc56e87bfd219ed61f355d076ce0b76fd0eb0a280cc585a364c19989cad",
+    "m8-pages-followup.log": "1d135778ab0059a80437b0d4b087bad32746bd01f5c3debd25e19bf178b8bbe9",
+    "helper-submit-followup.log": "0976054340dc447d595dd11e090bba038793cf57b1198aa0cdd0a402d5fc8ee4"
+  }
+}

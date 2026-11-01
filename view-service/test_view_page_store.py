@@ -406,7 +406,7 @@ class ControlHMACTest(unittest.TestCase):
                     mock.patch.object(vs, "_ensure_ready", return_value={"viewer_id": "v1", "token": "t1"}), \
                     mock.patch.object(vs, "_hub_post", return_value=(200, {"ok": True, "mentions": receipts})) as legacy:
                 self.assertEqual(post({"text": "@Beta hi", "mentions": ["Beta.zzc"]}), {"ok": True, "mentions": receipts})
-                self.assertEqual(legacy.call_args[0][2], {"viewer_id": "v1", "token": "t1", "text": "@Beta hi\r", "mentions": ["Beta.zzc"]})
+                self.assertEqual(legacy.call_args[0][2], {"viewer_id": "v1", "token": "t1", "text": "@Beta hi", "mentions": ["Beta.zzc"]})
         finally:
             vs._page_store = old_store
             server.shutdown()
