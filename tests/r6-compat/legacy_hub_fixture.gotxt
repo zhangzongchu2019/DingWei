@@ -1,0 +1,25 @@
+package main
+import(
+ "context"
+ "encoding/json"
+ "github.com/zhangzongchu2019/dingwei/internal/identity"
+ "net/http"
+ "net/http/httptest"
+ "os"
+ "os/exec"
+ "path/filepath"
+ "strings"
+ "testing"
+)
+// This test-only bridge is copied into a detached, fixed r46 tree. No product
+// routes are invented: r46 lacks R6 and its actual mux returns HTTP404.
+func TestR6LegacyHubCompatibilityFixture(t *testing.T){
+ python,root:=os.Getenv("DW_R6_COMPAT_PYTHON"),os.Getenv("DW_R6_COMPAT_NEW_TREE");if python==""||root==""{t.Fatal("compatibility harness configuration missing")}
+ ctx:=context.Background();h:=newplatHub(t);defer h.Close();ids:=identity.NewMemStore();if err:=ids.CreateUser(ctx,identity.User{UserID:"zzc",ShortName:"zzc",State:identity.UserActive});err!=nil{t.Fatal(err)}
+ mux:=http.NewServeMux();if err:=wireNewPlatform(ctx,mux,h,newPlatformConfig{publicOrigin:"http://127.0.0.1"},ids,nil);err!=nil{t.Fatal(err)};registerConsoleRoutes(mux,h,true)
+ digest,_:=identity.PairingDigest("000102030405060708090a0b0c0d0e0f","123456");applied,err:=h.Identity.Apply(ctx,identity.ApplyRequest{OwnerUserID:"zzc",PairingSalt:"000102030405060708090a0b0c0d0e0f",PairingDigest:digest,DeviceFingerprint:"compat-only-device",ClientVersion:"0.2.3.21",SourceIP:"127.0.0.1"});if err!=nil{t.Fatal(err)};agent,_,err:=h.Identity.ApproveWithNewGroup(ctx,"zzc",applied.ApplicationID,"123456","Kimi","compat");if err!=nil{t.Fatal(err)};poll,err:=h.Identity.Poll(ctx,applied.ApplicationID,applied.PollToken);if err!=nil{t.Fatal(err)}
+ server:=httptest.NewServer(mux);defer server.Close()
+ config:=filepath.Join(t.TempDir(),"fixture.json");b,_:=json.Marshal(map[string]string{"case":"new-helper-old-hub","origin":server.URL,"credential":poll.Credential,"agent_id":agent.ID,"request_id":"coordreview_"+strings.Repeat("a",64)});if err:=os.WriteFile(config,b,0600);err!=nil{t.Fatal(err)}
+ helperRoot:=os.Getenv("DW_R6_COMPAT_HELPER_TREE");if helperRoot==""{helperRoot=filepath.Join(root,"tools/sessionhelper")}
+ cmd:=exec.Command(python,"-B",filepath.Join(root,"tests/r6-compat/probe.py"),config);cmd.Env=[]string{"PATH="+filepath.Dir(python)+":/usr/bin:/bin","HOME="+t.TempDir(),"PYTHONPATH="+helperRoot,"PYTHONDONTWRITEBYTECODE=1","LANG=C.UTF-8"};out,err:=cmd.CombinedOutput();if err!=nil||!strings.Contains(string(out),"R6_COMPAT_PASS"){t.Fatalf("R6_COMPAT_OLD_HUB_FAILED %v %s",err,out)};t.Log(string(out))
+}

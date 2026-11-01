@@ -27,6 +27,7 @@ def request(request_id, tool='send_message', upload_path=''):
         'dw_inbox': {'operation': 'status'},
         'dw_delivery_status': {'delivery_id': 'dw-dlv_'+'a'*32},
         'dw_spec_review_requests': {'request_id':'specreview_fixture'},
+        'dw_coordinate_review': {'action':'get','request_id':'coordreview_'+'a'*64},
         'dw_spec_review_reply': {'request_id':'specreview_fixture','kind':'review','revision':1,'content_sha256':'a'*64,'issues':[]},
         'dw_task_blocker_list': {'task_id':'fixture'},
         'dw_task_blocker_set': {'task_id':'fixture','request_id':'stable','expected_version':1,'kind':'technical','where':'blocked','expected_input':'facts'},

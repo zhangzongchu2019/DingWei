@@ -135,4 +135,73 @@ class R8SpecReviewTest(unittest.TestCase):
                     try:await task
                     except asyncio.CancelledError:pass
         asyncio.run(exercise())
+
+class R6CoordinateReviewTest(unittest.TestCase):
+    def event(self):
+        return {'from':'workpulse#u_owner','body':json.dumps({'provider':'github','git_instance':'github.com','repository':'1','change_dir':'openspec/changes/example','commit_sha':'a'*40}),
+                'meta':{'system':True,'coordinate_review_type':'coordinate_review_request','coordinate_review_event':'assigned','request_id':'coordreview_'+'b'*64}}
+    def test_coordinate_only_pinned_prompt_and_forgery(self):
+        env=self.event();self.assertTrue(is_spec_review(env));out=analysis_envelope(env,'unused','workpulse#u_owner')
+        self.assertIsNotNone(out,'R6_HELPER_NOT_WIRED');self.assertIn('dw_coordinate_review',out['body']);self.assertIn('UNABLE',out['body']);self.assertIn('context.md',out['body']);self.assertTrue(out['meta']['spec_review_analysis']);self.assertEqual(out['meta']['reply_policy'],'no_reply')
+        env['from']='forged#u_owner';self.assertIsNone(analysis_envelope(env,'unused','workpulse#u_owner'),'R6_HELPER_FORGED_SYSTEM')
+        for field,value in [('source','source body'),('download_url','https://other.invalid'),('commit_sha','main')]:
+            env=self.event();c=json.loads(env['body']);c[field]=value;env['body']=json.dumps(c);self.assertIsNone(analysis_envelope(env,'unused','workpulse#u_owner'),'R6_HELPER_SOURCE_ACCEPTED')
+    def test_coordinate_http_uses_current_agent_credential_no_redirect_or_retry(self):
+        from sessionhelper.spec_review import coordinate_review_request
+        received=[]
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self,*a):pass
+            def do_GET(self):
+                received.append((self.command,self.path,self.headers.get('Authorization')));self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(b'{"request":{"id":"ok"}}')
+            def do_POST(self):
+                received.append((self.command,self.path,self.headers.get('Authorization')));self.send_response(503);self.end_headers();self.wfile.write(b'{}')
+        server=ThreadingHTTPServer(('127.0.0.1',0),Handler);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        try:
+            url='ws://127.0.0.1:'+str(server.server_port)+'/ws/agent';rid='coordreview_'+'a'*64
+            out=coordinate_review_request(url,{'Authorization':'Bearer test-only'},{'action':'get','body':{'request_id':rid}})
+            self.assertEqual(out['status'],'ok');self.assertEqual(received[0],('GET','/api/agent/console/coordinate-reviews/'+rid,'Bearer test-only'))
+            out=coordinate_review_request(url,{'Authorization':'Bearer test-only'},{'action':'open','body':{'request_id':rid}})
+            self.assertEqual(out['outcome'],'unknown');self.assertFalse(out['retryable']);self.assertEqual(len(received),2,'R6_HELPER_BLIND_RETRY')
+            for args in [{'action':'get','body':{'request_id':rid,'source':'bad'}},{'action':'read','body':{'request_id':rid,'path':'openspec/../../secret.md'}},{'action':'get','body':{'request_id':'../../x'}},{'action':'result','body':{'request_id':rid,'commit_sha':'main','operation_id':'id','verdict':'PASS','evidence':'report:x'}}]:
+                with self.assertRaises(ValueError):coordinate_review_request(url,{},args)
+            self.assertEqual(len(received),2)
+        finally:server.shutdown();server.server_close();thread.join()
+    def test_coordinate_mcp_and_actual_app_handler(self):
+        from sessionhelper.app import SessionHelper
+        from types import SimpleNamespace
+        helper=SessionHelper.__new__(SessionHelper);helper.enroll_credential='test';helper._connection=lambda:('ws://127.0.0.1/ws/agent',{'Authorization':'Bearer test'})
+        with patch('sessionhelper.spec_review.coordinate_review_request',return_value={'status':'ok'}) as call:
+            outcome=asyncio.run(helper._make_task_flow_handler()({'type':'coordinate_review_v1','action':'get','body':{'request_id':'coordreview_'+'a'*64}}))
+            self.assertEqual(outcome['status'],'ok');self.assertEqual(call.call_count,1,'R6_APP_COORDINATE_NOT_WIRED')
+        with patch.object(mcp_shim,'_ipc_request',return_value={'status':'ok'}) as ipc:
+            mcp_shim._dw_coordinate_review({'action':'get','request_id':'coordreview_'+'a'*64})
+            self.assertEqual(ipc.call_args.args[0]['type'],'coordinate_review_v1','R6_MCP_COORDINATE_NOT_WIRED')
+    def test_coordinate_actual_app_no_auto_reply(self):
+        from sessionhelper.app import SessionHelper
+        from types import SimpleNamespace
+        async def run():
+            helper=SessionHelper.__new__(SessionHelper);helper.book=SimpleNamespace(key_id='u_owner');helper.adapter_handle_lock=asyncio.Lock();inputs=[]
+            helper.adapter=SimpleNamespace(handle=lambda env:inputs.append(env) or 'must not send')
+            class WS:
+                async def send(self,_):raise AssertionError('R6_APP_AUTOREPLY')
+            await helper.process_inbound_message(WS(),self.event())
+            self.assertEqual(len(inputs),1);self.assertIn('dw_coordinate_review',inputs[0]['body'])
+        asyncio.run(run())
+
+    def test_coordinate_disabled_and_old_hub_are_explicit_without_hiding_uncertainty(self):
+        import io
+        import urllib.error
+        from sessionhelper.spec_review import coordinate_review_request
+        rid='coordreview_'+'a'*64
+        for status,body,disabled in [(404,b'404 page not found',True),(503,b'{"error":"coordinate_review_not_enabled"}',True),(503,b'{"error":"coordinate_review_unavailable"}',False),(503,b'fixture-private-must-not-echo',False),(403,b'{"error":"coordinate_review_denied"}',False)]:
+            error=urllib.error.HTTPError('http://local',status,'closed',{},io.BytesIO(body))
+            with patch('urllib.request.OpenerDirector.open',side_effect=error) as call:
+                result=coordinate_review_request('ws://127.0.0.1/ws/agent',{}, {'action':'open','body':{'request_id':rid}})
+            self.assertEqual(call.call_count,1,'R6_COMPAT_BLIND_RETRY')
+            self.assertEqual(result['error']=='coordinate_review_not_enabled',disabled,'R6_COMPAT_EXPLICIT_DISABLED')
+            if disabled:
+                self.assertIn('坐标派审未启用',result['message']);self.assertEqual(result['outcome'],'rejected')
+            elif status>=500:self.assertEqual(result['outcome'],'unknown','R6_COMPAT_WRITE_UNCERTAINTY_SWALLOWED')
+            self.assertNotIn('fixture-private',json.dumps(result),'R6_COMPAT_UPSTREAM_BODY_ECHO')
+
 if __name__=='__main__':unittest.main()

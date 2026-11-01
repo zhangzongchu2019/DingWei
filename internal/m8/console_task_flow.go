@@ -448,6 +448,7 @@ func (h *Hub) StartTaskFlow(ctx context.Context) {
 			h.dispatchTaskNotifications(ctx)
 			h.dispatchBlockerWakes(ctx)
 			h.processQuestions(ctx)
+			h.processCoordinateReviews(ctx)
 			h.reconcileClarificationReplies(ctx)
 			select {
 			case <-ctx.Done():

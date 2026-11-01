@@ -28,6 +28,7 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/agentmetrics"
 	"github.com/zhangzongchu2019/dingwei/internal/changeflow"
+	"github.com/zhangzongchu2019/dingwei/internal/coordinatereview"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -67,8 +68,14 @@ type ViewPageUnlockRequest struct {
 
 type Hub struct {
 	// Startup-only R7 service. Nil keeps Git/committee operations fail-closed until trusted adapters exist.
-	SpecReader        *specread.Service
-	SpecConfirmations *specconfirm.Service
+	SpecReader               *specread.Service
+	CoordinateReviews        *coordinatereview.Service
+	CoordinateReviewEnabled  bool
+	CoordinateReviewSender   QuestionSender
+	coordinateReviewAuthMu   sync.RWMutex
+	coordinateReviewWorkerMu sync.Mutex
+	coordinateReviewCursor   string
+	SpecConfirmations        *specconfirm.Service
 	// Startup-only provider-neutral R1/R8 core; nil remains unavailable.
 	ChangeEvidence *changeflow.Service
 
@@ -239,34 +246,35 @@ type sessionClient struct {
 	diskMetrics        *agentmetrics.Cache // Access to the pointer is under h.mu.
 	lastMetricsAttempt time.Time           // Read/written under h.mu; rejected attempts do not renew the cache.
 
-	conn            *websocket.Conn
-	mu              sync.Mutex
-	stateMu         sync.Mutex
-	keyID           string
-	ownerKey        string
-	sessionName     string
-	localName       string // 客户端握手上报的原始名；sessionHelper 用它命名本机在线清单文件
-	connSeq         int
-	lastSeenAt      time.Time
-	targetBot       string
-	webTerminal     bool
-	osName          string
-	tool            string
-	version         string
-	skillInstalled  bool
-	skillCancel     context.CancelFunc
-	deliveryACKV1   bool
-	deliveryACKV2   bool
-	taskFlowV1      bool
-	blockerNoticeV1 bool
-	blockerWakeV1   bool
-	specReviewV1    bool
-	pmSpecFlowV1    bool
-	helperUpdateV1  bool // authenticated helper explicitly supports update_self v1
-	desktopInboxV1  bool
-	helperReady     bool
-	deviceID        string
-	deviceIDV1      bool
+	conn               *websocket.Conn
+	mu                 sync.Mutex
+	stateMu            sync.Mutex
+	keyID              string
+	ownerKey           string
+	sessionName        string
+	localName          string // 客户端握手上报的原始名；sessionHelper 用它命名本机在线清单文件
+	connSeq            int
+	lastSeenAt         time.Time
+	targetBot          string
+	webTerminal        bool
+	osName             string
+	tool               string
+	version            string
+	skillInstalled     bool
+	skillCancel        context.CancelFunc
+	deliveryACKV1      bool
+	deliveryACKV2      bool
+	taskFlowV1         bool
+	blockerNoticeV1    bool
+	blockerWakeV1      bool
+	specReviewV1       bool
+	coordinateReviewV1 bool
+	pmSpecFlowV1       bool
+	helperUpdateV1     bool // authenticated helper explicitly supports update_self v1
+	desktopInboxV1     bool
+	helperReady        bool
+	deviceID           string
+	deviceIDV1         bool
 
 	lastTouchWritten time.Time // R-V2-0105 件三：上次把 last_seen 落库的时刻（touchSessionEndpoint 节流）
 
@@ -1288,7 +1296,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, "", "信封解析失败："+err.Error()))
 			continue
 		}
-		if specReviewType(specReviewEnvelopeType(env)) || metaString(env.Meta, "kind") == "task_assigned" || metaString(env.Meta, "kind") == "task_blocker_ready" || metaBool(env.Meta, "task_flow_internal") {
+		if coordinateReviewEnvelope(env) || specReviewType(specReviewEnvelopeType(env)) || metaString(env.Meta, "kind") == "task_assigned" || metaString(env.Meta, "kind") == "task_blocker_ready" || metaBool(env.Meta, "task_flow_internal") {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "task notification is Hub-only"))
 			continue
 		}
@@ -3217,6 +3225,9 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 	if metaString(env.Meta, "kind") == "task_blocker_ready" && ctx.Value(blockerDispatchKey{}) != true {
 		return errors.New("blocker wake is Hub-only")
 	}
+	if coordinateReviewEnvelope(env) && ctx.Value(coordinateReviewDispatchKey{}) != true {
+		return errors.New("coordinate review is Hub-only")
+	}
 	if specReviewType(specReviewEnvelopeType(env)) && ctx.Value(specAgentDispatchContextKey{}) != true {
 		return errors.New("spec review request is Hub-only")
 	}
@@ -4247,6 +4258,10 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		deliveryID := deliveryIDPrefix + randomHex(16)
 		// A crash after enqueue but before marking the blocker outbox must reuse
 		// the durable ID, even after the in-memory envelope claim map is lost.
+		if coordinateReviewEnvelope(env) {
+			sum := sha256.Sum256([]byte("coordinate-review-v1\x00" + keyID + "\x00" + sessionName + "\x00" + env.ID))
+			deliveryID = deliveryIDPrefix + hex.EncodeToString(sum[:])
+		}
 		if metaString(env.Meta, "kind") == "task_blocker_ready" {
 			sum := sha256.Sum256([]byte("blocker-wake-v1\x00" + keyID + "\x00" + sessionName + "\x00" + env.ID))
 			deliveryID = deliveryIDPrefix + hex.EncodeToString(sum[:])
@@ -4301,7 +4316,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			// re-entered synchronously from that callback (the in-memory test store
 			// serializes the authorization lock); the durable queue is safe to wake
 			// just after the dispatch transaction returns.
-			if specReviewEnvelopeType(env) == "console_spec_pm_assist_request" {
+			if specReviewEnvelopeType(env) == "console_spec_pm_assist_request" || coordinateReviewEnvelope(env) {
 				h.scheduleSessionDeliveryDrain(c, 10*time.Millisecond)
 			} else {
 				h.drainSessionDeliveries(ctx, c)
@@ -4351,7 +4366,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 // 即 @ 提及在收件侧与普通消息完全同形;no_mirror 仍保留在 Meta 里,
 // shouldSkipMirror 照旧生效,**不会**因此被镜像到飞书。
 func reliablePrimaryEnvelope(env model.Envelope) bool {
-	if env.ID != "" && specReviewType(specReviewEnvelopeType(env)) && metaBool(env.Meta, "system") {
+	if env.ID != "" && (specReviewType(specReviewEnvelopeType(env)) || coordinateReviewEnvelope(env)) && metaBool(env.Meta, "system") {
 		return true
 	}
 	if env.ID == "" || metaBool(env.Meta, "system") {
@@ -4403,6 +4418,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	c.blockerNoticeV1 = metaBool(env.Meta, "blocker_notice_v1")
 	c.blockerWakeV1 = metaBool(env.Meta, "blocker_wake_v1")
 	c.specReviewV1 = metaBool(env.Meta, "spec_review_v1")
+	c.coordinateReviewV1 = metaBool(env.Meta, "coordinate_review_v1")
 	c.pmSpecFlowV1 = metaBool(env.Meta, "pm_spec_flow_v1")
 	c.helperUpdateV1 = metaBool(env.Meta, "helper_update_v1")
 	c.desktopInboxV1 = metaBool(env.Meta, "desktop_inbox_v1") && metaString(env.Meta, "processed_semantics") == "saved_to_desktop_inbox"
@@ -4712,6 +4728,12 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 			ctx = guarded
 		}
 
+		if coordinateReviewEnvelope(env) && !h.coordinateReviewDeliveryAllowed(ctx, c, env) {
+			if h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", "coordinate_review_unavailable_or_revoked", time.Now().UTC()) != nil {
+				return
+			}
+			continue
+		}
 		if specReviewType(specReviewEnvelopeType(env)) {
 			reviewType := specReviewEnvelopeType(env)
 			c.stateMu.Lock()

@@ -658,6 +658,10 @@ class SessionHelper:
                 from .task_blocker import blocker_request
                 ws_url,headers=self._connection()
                 return await asyncio.to_thread(blocker_request,ws_url,headers,args)
+            if args.get("type")=="coordinate_review_v1":
+                from .spec_review import coordinate_review_request
+                ws_url,headers=self._connection()
+                return await asyncio.to_thread(coordinate_review_request,ws_url,headers,args)
             if args.get("type")=="spec_review_v1":
                 from .spec_review import spec_review_request
                 ws_url, headers = self._connection()
@@ -751,7 +755,7 @@ class SessionHelper:
              "pilot_template_v1": bool(getattr(self,"enroll_credential",None) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False)),
              "spec_clarification_v1": bool(getattr(self,"enroll_credential",None) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False)),
              "pilot_question_v1": bool(getattr(self,"enroll_credential",None) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False)),
-             "persistent_inbox_v1": True, "blocker_notice_v1": bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "blocker_wake_v1": self.cfg.mode=="driver" and bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "project_context_v1": bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "spec_review_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "pm_spec_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,
+             "persistent_inbox_v1": True, "blocker_notice_v1": bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "blocker_wake_v1": self.cfg.mode=="driver" and bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "project_context_v1": bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "coordinate_review_v1": bool(getattr(self,"enroll_credential",None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "spec_review_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "pm_spec_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "task_flow_v1": bool(getattr(self, "enroll_credential", None)) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False), "agent_route_v2": True,
              "unified_queue_v1": self.cfg.mode == "driver",
              "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),
              "desktop_inbox_v1": self.cfg.mode == "desktop",

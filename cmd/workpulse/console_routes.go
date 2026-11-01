@@ -25,6 +25,14 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	mux.HandleFunc("GET /api/console/openspec-bindings", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(prefixHub.HandleOpenSpecBinding)))
 	mux.HandleFunc("PUT /api/console/openspec-bindings", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(prefixHub.HandleOpenSpecBinding)))
 	mux.HandleFunc("DELETE /api/console/openspec-bindings", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(prefixHub.HandleOpenSpecBinding)))
+	mux.HandleFunc("GET /console/coordinate-reviews", prefixHub.RequireConsolePrincipal(prefixHub.HandleCoordinateReviewPage))
+	mux.HandleFunc("GET /api/console/coordinate-reviews", prefixHub.RequireConsolePrincipal(prefixHub.HandleCoordinateReviews))
+	mux.HandleFunc("POST /api/console/coordinate-reviews", prefixHub.RequireConsolePrincipal(prefixHub.HandleCoordinateReviews))
+	mux.HandleFunc("GET /api/console/coordinate-reviews/{requestID}", prefixHub.RequireConsolePrincipal(prefixHub.HandleCoordinateReviews))
+	mux.HandleFunc("POST /api/console/coordinate-reviews/{requestID}/{action}", prefixHub.RequireConsolePrincipal(prefixHub.HandleCoordinateReviews))
+	mux.HandleFunc("GET /api/console/coordinate-review-agent-bindings", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(prefixHub.HandleCoordinateReviewAgentBinding)))
+	mux.HandleFunc("PUT /api/console/coordinate-review-agent-bindings", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(prefixHub.HandleCoordinateReviewAgentBinding)))
+	mux.HandleFunc("DELETE /api/console/coordinate-review-agent-bindings", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(prefixHub.HandleCoordinateReviewAgentBinding)))
 	// R7 requires its own committee + repository authority; platform management is not that authority.
 	mux.HandleFunc("GET /console/openspec-confirmations", prefixHub.RequireConsolePrincipal(prefixHub.HandleOpenSpecConfirmationPage))
 	mux.HandleFunc("GET /api/console/openspec-confirmations", prefixHub.RequireConsolePrincipal(prefixHub.HandleOpenSpecConfirmations))
@@ -72,6 +80,9 @@ var _ httpapi.Mux = (*http.ServeMux)(nil)
 
 // registerSpecTaskRoutes specs 与 task-board 两组功能的全部路由（页面、console 接口、Agent capability 接口、共享链接）。新旧平台都注册。
 func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
+	mux.HandleFunc("GET /api/agent/console/coordinate-reviews", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentCoordinateReviews))
+	mux.HandleFunc("GET /api/agent/console/coordinate-reviews/{requestID}", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentCoordinateReviews))
+	mux.HandleFunc("POST /api/agent/console/coordinate-reviews/{requestID}/{action}", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentCoordinateReviews))
 	// PM spec flow is deliberately dark unless DW_PM_SPEC_FLOW_ENABLED=1.
 	mux.HandleFunc("GET /console/pm-specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandlePMSpecFlowPage)))
 	mux.HandleFunc("GET /api/console/pm-spec-flow/drafts", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandlePMSpecWorkingDraft)))

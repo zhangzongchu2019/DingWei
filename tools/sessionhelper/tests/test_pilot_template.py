@@ -29,5 +29,5 @@ class PilotTemplateTest(unittest.TestCase):
    self.assertEqual(r['outcome'],'unknown','TEMPLATE_UNKNOWN_AUTO_RETRY');self.assertFalse(r['retryable']);self.assertEqual(call.call_count,1);self.assertNotIn('PRIVATE_TOKEN',json.dumps(r))
  def test_one_new_visible_tool(self):
   r=mcp_shim._dispatch(mcp_shim.Request(id=1,jsonrpc='2.0',method='tools/list',params={}))
-  names={x['name'] for x in r.result['tools']};self.assertEqual(len(names),25);self.assertIn('dw_spec_template',names,'TEMPLATE_MCP_UNREGISTERED')
+  names={x['name'] for x in r.result['tools']};self.assertEqual(len(names),26);self.assertIn('dw_spec_template',names,'TEMPLATE_MCP_UNREGISTERED')
 if __name__=='__main__':unittest.main()

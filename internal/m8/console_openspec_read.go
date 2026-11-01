@@ -1,6 +1,7 @@
 package m8
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -137,6 +138,18 @@ func (h *Hub) HandleOpenSpecBinding(w http.ResponseWriter, r *http.Request) {
 		specReadError(w, specread.ErrInvalid, specread.Result{})
 		return
 	}
+	if locker, ok := h.Repo.(interface {
+		BeginCoordinateReview(context.Context) (func(), error)
+	}); ok {
+		release, e := locker.BeginCoordinateReview(r.Context())
+		if e != nil {
+			specReadError(w, specread.ErrUnavailable, specread.Result{})
+			return
+		}
+		defer release()
+	}
+	h.coordinateReviewAuthMu.Lock()
+	defer h.coordinateReviewAuthMu.Unlock()
 	var err error
 	if r.Method == "PUT" {
 		err = h.SpecReader.Bindings.SetSpecReadBinding(r.Context(), actor, b)
