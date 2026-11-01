@@ -177,8 +177,8 @@ func TestR7PolicyAChangesAndUnknownInventories(t *testing.T) {
 	old := snap(a, map[string]string{"tasks.md": "- [ ] T-01\n## 交接记录\nfirst"})
 	for _, body := range []string{"- [x] T-01\n## 交接记录\nfirst", "- [ ] T-01\n## 交接记录\nsecond"} {
 		next := snap(b, map[string]string{"tasks.md": body})
-		if got, e := p.Compare(old, next); e != nil || got != sc.Material {
-			t.Fatalf("unapproved PM exemption silently active %v %v", got, e)
+		if got, e := p.Compare(old, next); e != nil || got != sc.NoMaterial {
+			t.Fatalf("approved PM exemption missing %v %v", got, e)
 		}
 	}
 	for _, s := range []sc.Snapshot{{Coordinate: b}, {Coordinate: b, Files: map[string][]byte{}}, snap(b, map[string]string{"../outside.md": "escape"})} {
@@ -188,8 +188,8 @@ func TestR7PolicyAChangesAndUnknownInventories(t *testing.T) {
 	}
 	archived := b
 	archived.ChangeDir = "openspec/changes/archive/2026-11-01-example"
-	if got, e := p.Compare(old, snap(archived, nil)); e == nil || got != sc.Indeterminate {
-		t.Fatalf("archive exemption silently active %v %v", got, e)
+	if got, e := p.Compare(old, snap(archived, map[string]string{"tasks.md": "- [ ] T-01\n## 交接记录\nfirst"})); e != nil || got != sc.NoMaterial {
+		t.Fatalf("archive exemption missing %v %v", got, e)
 	}
 }
 func TestR7RejectsMutableAndMalformedCoordinates(t *testing.T) {

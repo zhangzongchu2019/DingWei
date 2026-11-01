@@ -71,7 +71,8 @@ type Store interface {
 	ListSpecConfirmations(context.Context, Coordinate) ([]Confirmation, error)
 }
 
-// Authority must validate the controlled repository, current read permission,
+// Authority is supplied by the selected repository-hosting provider adapter.
+// It must validate the controlled repository, current read permission,
 // and commit/directory existence. Writes additionally require trusted committee
 // membership. It must keep authorization valid through fn, not authorize by a
 // client-supplied role, Git author, project membership, or service account ACL.
@@ -188,11 +189,11 @@ func (s *Service) List(ctx context.Context, actor string, current Coordinate) (o
 // are explicitly unknown. It is called only inside the read authorization fence.
 func (s *Service) Assess(ctx context.Context, from, to Coordinate) Assessment {
 	a := Assessment{Status: Unknown, FromCommit: from.Commit, ToCommit: to.Commit, Reason: "待核对：版本比较策略尚未启用"}
-	if from.Validate() != nil || to.Validate() != nil || !from.SameChange(to) {
+	if from.Validate() != nil || to.Validate() != nil || !comparisonPair(from, to) {
 		a.Reason = "待核对：坐标不属于同一变更"
 		return a
 	}
-	if from.Commit == to.Commit {
+	if from.Commit == to.Commit && from.SameChange(to) {
 		a.Status = Confirmed
 		a.PolicyVersion = "exact-commit-v1"
 		a.Reason = "仅确认此完整 commit"
