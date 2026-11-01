@@ -1,0 +1,17 @@
+{
+  "task": "S-HELPER-FROZEN-409-MESSAGE",
+  "base": "dfc95fd8b6b2a063edd77f22bd38ecc63b729213",
+  "branch": "opus50tc2k/helper-frozen-409",
+  "source_evidence": "review/prodops/r44-staging-freeze-stop @ 77816622c460b00dca2e2122d13137bfe506f7c8 : docs/reviews/prodops-r44-staging-freeze-stop-20261101/RESULT.md",
+  "source_sha256": {
+    "tools/sessionhelper/sessionhelper/app.py": "68c2f2ee36e56e3bd192af634bc636553995d8dad3629301ee64bb5cc4abdf61",
+    "tools/sessionhelper/tests/test_spec_direct.py": "4949bb3e0ed7d794361dbaabc0281db85de1ac30a9b05bbdbee2610a6487c3e9",
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+  },
+  "runtime": "/tmp/r31-build-check-venv; lock check rc0",
+  "utc": "2026-11-01T04:36:54.309187+00:00",
+  "targeted_restored": "PYTHONPATH=tools/sessionhelper python3 -m unittest -v tools/sessionhelper/tests/test_spec_direct.py",
+  "canonical": "PATH=/tmp/r31-build-check-venv/bin:$PATH sh scripts/run-build-tests.sh",
+  "mutation": "delete only status==409 mapping block in failure(); run frozen create/update test; rc1 with 8 subcase errors; restore original file in finally; targeted restored rc0",
+  "scope": "local loopback HTTP tests only; no actual Hub/DB or staging writes, deployment, restart, GitHub push, version bump or runtime dependency change"
+}

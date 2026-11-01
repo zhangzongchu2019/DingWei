@@ -1,0 +1,15 @@
+test_first_call_writes_once_no_grant_or_capability (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_first_call_writes_once_no_grant_or_capability) ... ok
+test_fixed_chinese_other_creator_error (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_fixed_chinese_other_creator_error) ... ok
+test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) ... ok
+test_frozen_detail_is_redacted_before_top_level_message (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_detail_is_redacted_before_top_level_message) ... ok
+test_frozen_error_code_on_non409_does_not_use_frozen_mapping (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_error_code_on_non409_does_not_use_frozen_mapping) ... ok
+test_model_schema_has_no_retired_grant (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_model_schema_has_no_retired_grant) ... ok
+test_old_ipc_or_missing_agent_identity_has_zero_http (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_old_ipc_or_missing_agent_identity_has_zero_http) ... ok
+test_revision_conflict_409_keeps_existing_message (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_revision_conflict_409_keeps_existing_message) ... ok
+test_transport_error_is_unknown_and_not_retryable (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_transport_error_is_unknown_and_not_retryable) ... ok
+test_unparseable_409_uses_conservative_message (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_unparseable_409_uses_conservative_message) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 5.073s
+
+OK

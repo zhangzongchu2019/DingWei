@@ -1,0 +1,41 @@
+{
+  "task": "S-HELPER-FROZEN-409-MESSAGE",
+  "helper": [
+    {
+      "actual": 1092,
+      "actual_SH_DRIVER": "claude",
+      "expected": 1092,
+      "files": 90,
+      "groups": [
+        1083,
+        9
+      ],
+      "profile": "claude",
+      "rc": 0
+    },
+    {
+      "actual": 1092,
+      "actual_SH_DRIVER": "codex",
+      "expected": 1092,
+      "files": 90,
+      "groups": [
+        1083,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "canonical_rc": 0,
+  "canonical_marker": "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2",
+  "targeted_tests": 10,
+  "mutation_removed_branch_rc": 1,
+  "mutation_subcase_errors": 8,
+  "restored_targeted_rc": 0,
+  "files_sha256": {
+    "raw/remove-frozen-branch.log": "bdce278f176e9f8fc20ac7c2e3b89de99b6a8ea54176286835c4d0a0b01a1905",
+    "raw/run-build-tests-initial-missing-deps.log": "bf5eb3e1cb5fc3988ffd17100b76de76ad0b5d2ea99fc4ea7a11b0e36f77b761",
+    "raw/run-build-tests.log": "b37d42c0fdada4aad8e805a78cae2b2b890179f38f91d5f0a9c9764f6374edae",
+    "raw/targeted-restored.log": "f88bf77357cd8ad16ec6b9cb27a081de280b3031186b01cffb28b4088c240c5c"
+  }
+}

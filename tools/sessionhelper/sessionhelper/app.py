@@ -677,6 +677,18 @@ class SessionHelper:
             }
             result = {"status": "error", "http_status": status,
                       "message": messages.get(status, "服务暂不可用，请稍后重试" if status >= 500 else "spec 操作失败")}
+            if status == 409:
+                try:
+                    hub = json.loads(detail)
+                except (TypeError, ValueError):
+                    hub = None
+                if isinstance(hub, dict) and hub.get("error") == "legacy_spec_frozen":
+                    message = hub.get("message")
+                    result.update(code="legacy_spec_frozen", outcome="rejected", retryable=False,
+                                  message=message.strip() if isinstance(message, str) and message.strip()
+                                  else "旧规格已冻结，请改用仓库 OpenSpec；本请求未写入。")
+                elif not isinstance(hub, dict) or not isinstance(hub.get("error"), str) or not hub["error"].strip():
+                    result["message"] = "spec 操作被拒绝，原因未能解析；请核对当前状态后再操作，勿直接重试"
             if detail and 400 <= status < 500:
                 # Hub validation text (no secrets) tells the Agent which field to fix.
                 result["hub_error"] = detail
