@@ -1,5 +1,7 @@
 # S-CONSOLE-CARD-STATUS-TS3OPUS55
 
+Latest R46 browser registration/full-run followup: BROWSER-RUNNER.md and BROWSER-SUITES.md. Complete26-suite browser gate is rc2 (24rc0,2red); both red suites reproduce with identical signatures at pre-fix3fd26ba6. New card-status and all three requested shared-state suites pass. This is not an all-browser PASS.
+
 Current final acceptance: see ACCEPTANCE.md and ACCEPTANCE-RESULT.json for the leader-approved criteria, fresh full gate,18-case Chrome comparison and explicit buffer counts. 本地复现同类症状，修复该乱序路径；原故障对齐未证，无更多现场材料待补。 Earlier16-case logs below remain historical evidence.
 
 Base: 3fd26ba67ebc90db4f35449e6968c4f22f89666b (r45 /0.2.3.20). Branch: coder56solzzc/console-card-status-ts3opus55. Single writer, GongFeng only. No version change, helper protocol/ACK semantics, backend changes or deployment.

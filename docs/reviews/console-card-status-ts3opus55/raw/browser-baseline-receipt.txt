@@ -1,0 +1,8 @@
+DW_BROWSER_RECEIPT_V1_BEGIN
+generated_at_utc=2026-11-01T08:19:17Z
+commit_sha=3fd26ba67ebc90db4f35449e6968c4f22f89666b
+overrides=NODE_PATH,PW_CHANNEL
+suite.renderer_0206_file_render.rc=1
+suite.renderer_flood_stress.rc=2
+aggregate_rc=2
+DW_BROWSER_RECEIPT_V1_END

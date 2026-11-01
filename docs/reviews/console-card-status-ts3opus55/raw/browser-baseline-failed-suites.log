@@ -1,0 +1,125 @@
+
+=== browser suite: renderer_0206_file_render ===
+  · 生成 /data/ai-dev-data/console-card-status-browser-baseline-3fd26ba6/view-service/fixtures-0206/sample-large.txt（820000 字节）
+  · 生成 /data/ai-dev-data/console-card-status-browser-baseline-3fd26ba6/view-service/fixtures-0206/oversize-52428801.bin（52428801 字节）
+  ✅ ① 上传入口在界面上可见（文件选择按钮），不是只有隐藏的 paste 监听器
+  ✅ ② 文件选择一次传 6 个不同类型（图片/视频/pdf/文本/office/未知二进制）
+  ✅ ③ 正文区渲染：图片 <img>、视频 <video>、pdf <iframe>、文本 <pre> 内联
+  ✅ ④ 兜底：office 与未知二进制渲染成下载链接（<a download>），不报错也不留裸 URL
+  ✅ ④a 接收方只拿到 URL（页面刷新后 hints 清空）⇒ 靠 HEAD 读服务端声明分派
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+  ✅ ④c HEAD 被拒（405）时按 URL 扩展名降级分派，且标出「已降级」
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ④d HEAD 404 说明文件不存在或链接无效，不把过期当结论
+  ✅ ④e 扩展名与 Content-Type 不一致时，以服务端声明的头为准（分辨 (b)/(b′)）
+  ✅ ④f 服务端声明 text/* 即内联；text/html 以源码文本显示，不得被当 HTML 执行
+  ✅ ④g 服务端声明 image/svg+xml 时不内联，走下载链接（附录 E）
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+  ✅ ④h 降级路径:.svg 仍走下载链接,且 FILE_EXT_KIND 里不得出现永不内联的扩展名
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+  ✅ ④i 判据 9:只测第二道闸——FILE_EXT_KIND 里混入 svg 时,deny-set 必须仍拦住
+  ✅ ④b mp4：能解码则必须内联 <video>，不能解码则降级为下载链接（两种都不得留裸 URL）
+  ✅ ⑨ 上传进行中界面可见:文件名 + 已传/总字节 + 进度在动,多文件逐个一行
+  ✅ ⑩ 草稿附件块:图片出缩略图、非图片出图标;🔴 正文仍保留原样直链
+  ✅ ⑪ R4-V1/V2:本页上传的 docx,下载属性带原名(含空格与括号);V3:服务端不带 filename 时回退不编名
+  ✅ ⑪b R4-V3:接收侧服务端不带 Content-Disposition filename ⇒ 不报错、不编名(回退空 download)
+    [console.error] Failed to load resource: the server responded with a status of 503 (Service Unavailable)
+  ✅ ⑫ 上传失败:该行标为失败并带服务端可读原因,且不清掉用户已输入的文字(R3)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+  ✅ ⑬ 外-A(docx/xlsx/pptx/doc/xls/ppt/zip)在 HEAD 与降级两条路径上都只给下载链接
+  ✅ ⑬b 服务端说 image/png 但带 Content-Disposition: attachment ⇒ 必须下载,不内联
+  ✅ ⑭ P0:中文/emoji/空格括号/含%% 的文件名都能成功上传,且草稿块显示原名
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ⑮ R5-V1/V2/V3/V4:名(链接)→内容 交替;正文中已渲染的 URL 隐藏但仍在 DOM;过期链接保持可见
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  🔴 ⑯ R6-V1/V2/V3/V4:批次行计数递增、全成功后消失、有失败时留住并说清数目、单文件不出批次行 -> page.waitForFunction: Timeout 60000ms exceeded.
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+  ✅ ⑰ B-11:音频两条路径都判成 audio 且必有下载出路;文本降级路径与 HEAD 路径一致;html/svg 仍 download
+  ✅ ⑱ 三个入口(粘贴/选择文件/拖放)各一条,走同一下游 —— 本次回归的根因是只测了一个
+  ✅ ⑲ 🔴 P0 根因:焦点在正文附件链接上时,粘贴必须仍然生效(修复前必红)
+  ✅ ⑳ 扩大作用域的代价必须钉住:全页各处粘贴【纯文本】都不得被接管
+  ✅ ㉑ 只读会话粘贴文件:必须给出可读提示,不得静默
+  ✅ ㉒ 🔴 阴格(业主确认):窄窗口 <880px 下 📎/📷 仍然可见
+  ✅ ㉓ 🔴 断线必须看得见:🕐 那一栏进入断线态、显示第 N 次、点击可立即重试
+  🔴 ㉔ 状态栏精简:移除项不再出现、保留项仍在、无未捕获异常;「归属 归属」不再重复 -> 状态栏必须保留 turnCost(业主保留清单)
+  ✅ ㉕ 页内截屏:抓帧→框选→裁剪→**走既有上传管道**(选源那一步只能人工,见注释)
+  ✅ ㉖ 🔴 未调用测试缝时,走的必须是【真的 getDisplayMedia】(组长 ts-No.6 第①条)
+  ✅ ㉗ 🔴 U7:真实 pointer 拖选后,上传字节的 PNG IHDR 宽高必须 == 选区宽高(传整张即红)
+    · ㉘ 实测: [{"vp":"1280x900","ovTop":0,"ovH":900,"cvBottom":650,"hit":true,"hitTop":"shotCanvas"},{"vp":"1280x1600","ovTop":0,"ovH":1600,"cvBottom":650,"hit":true,"hitTop":"shotWrap"},{"vp":"420x900","ovTop":0,"ovH":900,"cvBottom":371.28,"hit":true,"hitTop":"shotWrap"}]
+  ✅ ㉘ 🔴 截屏遮罩必须铺满【视口】而不是页脚 —— 三档视口各验一次(修复前必红)
+  ✅ ㉙ 🔴 选区 <4px 必须回退整张(不是碎片);刚过阈值必须真按选区裁 —— 两条腿都要有
+  ✅ ㉚ 🔴 截屏必须传 selfBrowserSurface:'include' —— 否则【当前这个 tab】被浏览器故意排除(业主实操撞到的)
+  ✅ ⑤ 拖放一次拖入 2 个文件，两个都上传
+  ✅ ⑥ 粘贴一个 pdf（非图片）也上传 —— 原实现只接 image/*
+  ✅ ⑦ 大文本内联截断并给下载链接（不是整篇灌进正文）
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ⑧ 超过 50 MiB（52428801 字节）在发请求前拒绝，不发上传请求
+
+通过 39 / 失败 2   截图目录 /tmp/dw-browser-gate-qffynefp/shots
+
+=== browser suite: renderer_flood_stress ===
+AssertionError [ERR_ASSERTION]: iframes not found
+    at runScenario (/data/ai-dev-data/console-card-status-browser-baseline-3fd26ba6/view-service/renderer-flood-stress-regression.js:227:12)
+    at async /data/ai-dev-data/console-card-status-browser-baseline-3fd26ba6/view-service/renderer-flood-stress-regression.js:364:17 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+DW_BROWSER_RECEIPT_V1_BEGIN
+generated_at_utc=2026-11-01T08:19:17Z
+commit_sha=3fd26ba67ebc90db4f35449e6968c4f22f89666b
+overrides=NODE_PATH,PW_CHANNEL
+suite.renderer_0206_file_render.rc=1
+suite.renderer_flood_stress.rc=2
+aggregate_rc=2
+DW_BROWSER_RECEIPT_V1_END

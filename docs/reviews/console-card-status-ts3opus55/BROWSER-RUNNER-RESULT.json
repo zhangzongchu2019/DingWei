@@ -1,0 +1,67 @@
+{
+  "recorded_at": "2026-11-01T08:21:01.101648+00:00",
+  "parent": "9f39810941f2b81bb3ea878ce65f5c0288271e6a",
+  "registration": "renderer_card_status in tools/run-browser-regressions.py SUITES",
+  "full_gate": {
+    "aggregate_rc": 2,
+    "suites_executed": 26,
+    "suite_rc0": 24,
+    "nonzero_suites": {
+      "renderer_0206_file_render": 1,
+      "renderer_flood_stress": 2
+    },
+    "new_suite": "rc0 18/18",
+    "requested_shared_state_suites": "sse_reconnect26/26,replay_seq13/13,t0862/2 rc0"
+  },
+  "baseline": {
+    "commit": "3fd26ba67ebc90db4f35449e6968c4f22f89666b",
+    "scope": "ONLY two failed suites; not a complete baseline run",
+    "aggregate_rc": 2,
+    "same_failure_signatures": [
+      {
+        "signature": "⑯ R6-V1/V2/V3/V4:批次行计数递增、全成功后消失、有失败时留住并说清数目、单文件不出批次行 -> page.waitForFunction: Timeout 60000ms exceeded.",
+        "candidate": true,
+        "baseline": true,
+        "identical": true
+      },
+      {
+        "signature": "㉔ 状态栏精简:移除项不再出现、保留项仍在、无未捕获异常;「归属 归属」不再重复 -> 状态栏必须保留 turnCost(业主保留清单)",
+        "candidate": true,
+        "baseline": true,
+        "identical": true
+      },
+      {
+        "signature": "AssertionError [ERR_ASSERTION]: iframes not found",
+        "candidate": true,
+        "baseline": true,
+        "identical": true
+      }
+    ]
+  },
+  "limitations": [
+    "Full browser gate remains RED; no all-pass claim or waiver",
+    "Flood scenario never entered pressure criteria; no stress/performance claim",
+    "C2 retains4 documented T-166 known defects outside its hard-failure rc",
+    "Original TS3OPUS55 incident attribution remains unproven; no new production evidence"
+  ],
+  "environment": "existing Playwright pinned chromium1194/headless installed locally; no dependency/lock changes; overrides NODE_PATH,PW_CHANNEL disclosed",
+  "source_sha256": {
+    "tools/run-browser-regressions.py": "b97aeaee081271cd02d24fe89159de030237702b216c83dae34f11f4b1e1129d",
+    "view-service/renderer-card-status-regression.js": "11b44cbcfbb0da2d6d23fbd1163cb20c864a7064a101cccbb0e1448af25da9e4",
+    "view-service/renderer-canary-sse.html": "437bda022952f1b81e01d6b1a511a9258b411727b7f6aae35a4404e3d5ede270"
+  },
+  "raw_sha256": {
+    "browser-baseline-exit.json": "d1b1d33eab13ea8954f050e434f149a7e68b6909f2de7c388e26157998d3d769",
+    "browser-baseline-failed-suites.log": "6bb47be5717562d306f61623b6ac707f61a3cad8245fa1117a8a186e4fc87efe",
+    "browser-baseline-receipt.txt": "efb120147c361bfc88eac9454c5f51acd0f101985e28e8780f5d2d385cdcc02e",
+    "browser-before-corrected.log": "3eb808f6d409cc8133113227174d05431ca70126e57858537a7d103a6a7643a8",
+    "browser-before.log": "9930e3eedce43e63b3afda9ddc638bd889c934509ab80de1a32c5e6bc232f943",
+    "browser-fixed-final.log": "6f6793c83017a5a13ebbf546cfed18f025db7f5813bbf5cc58c6207f6ea7edf8",
+    "browser-fixed-native-shape.log": "6f6793c83017a5a13ebbf546cfed18f025db7f5813bbf5cc58c6207f6ea7edf8",
+    "browser-fixed.log": "26276e5cbfd47f27dfb87ac5c6307fb64d6d5812910c9dd59a9dcea57479a0de",
+    "browser-runner-exit.json": "d0a08215a76b6dcdbe3018beb39160b5fa3c90e981e2ff7e7608f7bd8867af73",
+    "browser-runner-full.log": "313325d3640448ec0094e947bfac70dceaf372574b49ddd5e06e0a307f15fbac",
+    "browser-runner-install.log": "5fce3e1dc445fdb5c95692c82a35d8963146b28fb3998daa59800213d139506c",
+    "browser-runner-receipt.txt": "dbdbbed784547e40362b1e955377bb57483f92b6fe2204fe8fddb322723109fb"
+  }
+}
