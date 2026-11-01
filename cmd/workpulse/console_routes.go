@@ -17,6 +17,10 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	mux.HandleFunc("GET /view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewPage))
 	mux.HandleFunc("GET /tasks", prefixHub.RequireConsolePrincipal(prefixHub.HandleViewTasks))
 	mux.HandleFunc("GET /console", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsolePage))
+	// R7 requires its own committee + repository authority; platform management is not that authority.
+	mux.HandleFunc("GET /console/openspec-confirmations", prefixHub.RequireConsolePrincipal(prefixHub.HandleOpenSpecConfirmationPage))
+	mux.HandleFunc("GET /api/console/openspec-confirmations", prefixHub.RequireConsolePrincipal(prefixHub.HandleOpenSpecConfirmations))
+	mux.HandleFunc("POST /api/console/openspec-confirmations", prefixHub.RequireConsolePrincipal(prefixHub.HandleOpenSpecConfirmations))
 	// DW123-PER-RELEASE-OBSERVABILITY 首片：全站运维快照只给 active platform_admin（组长 2026-10-13T08:30:38Z 补裁）。
 	mux.HandleFunc("GET /api/console/monitor/snapshot", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(obs.Default.SnapshotHandler)))
 	// 独立监控页（不改 consolePageHTML 与 renderer），与快照接口同一套 guard（组长 2026-10-13T08:59:04Z）。

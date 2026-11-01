@@ -235,6 +235,14 @@ func (s *SQLite) runMigrations(ctx context.Context) error {
 			continue
 		}
 
+		if name == "0068_openspec_commit_confirmation.sql" {
+			if err := s.migrateOpenSpecConfirmation(ctx, name, string(body), digest); err != nil {
+				return err
+			}
+			legacy = false
+			continue
+		}
+
 		if name == "0066_spec_clarification_supplement.sql" {
 			if err := s.applyForeignKeyDisabledMigration(ctx, name, string(body), digest); err != nil {
 				return err

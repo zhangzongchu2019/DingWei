@@ -31,3 +31,21 @@
 ## Open Questions
 
 R7-A01～03、R7-PM01 未闭合。冻结规格和 strict 通过仅证明可交审，不说明判定策略已裁定、API 已核或产品已通过场景。
+
+
+## 本轮授权实现边界（R7 部分实现）
+
+- 依据组长 2026-11-01 对 4b39991c 规格 PASS 后的实施单，只实现无工蜂读取依赖的部分。R7-PM01 的建议 A 和 tasks 勾选/交接、archive 豁免均未获业主批准；R6-PM02 建议的 24h/24h/3 次及 r46 升级也不在本实现激活。
+- `internal/specconfirm` 提供确认事实、坐标校验、服务和可替换 `ChangePolicy`。`ConservativePolicyA` 比较变更目录全部 Markdown 字节（含任务勾选和交接记录），`PolicyApproved` 零值 false；无环境变量、CLI 或 HTTP 接口能开启它。默认不执行 Git 比较；同一完整 SHA 只表示该原版本已确认，不同 SHA 统一待核对。测试中的策略启用只验证候选算法，不是 PM 批准。
+- `Authority.WithAccess` 是启动时注入的可信依赖，必须核受控仓库、该 commit/变更存在性、主体当前仓库 read；确认写入额外核委员会资格，并在回调内保持授权有效。不能用旧 management/owner 角色、Git 作者或服务账号读权限替代。当前主程序不注入此依赖，也不读取工蜂；真实记录读写返回 503，Console 不下发未就绪入口。测试使用独立模拟授权器与真实隔离 SQLite，不声称已验证工蜂 ACL。
+- 接口：`GET /console/openspec-confirmations` 为单独 Console 页面（R7-002/006）；`GET /api/console/openspec-confirmations` 以 git_instance、repository、change_dir、commit_sha 查询该变更历史及相对该明确 commit 的版本关系（R7-003～006）；`POST` 同路径只收上述固定坐标、operation_id 与 meaning（R7-001/002/007）。全部走既有可信 Console principal 中间件，确认人由会话取得，时刻由服务端生成，拒绝未知字段/额外 JSON/分支名/短 SHA/路径混淆。缺失身份/资格/ACL 依赖不放行；依赖详情不出服务端。
+- API 的 400/403/409/503 分别表示无效输入、无权、操作事实冲突与依赖不可验证，对应 R7-001/002/004/006/007 的拒绝边界。POST 限 JSON、16 KiB，并检查跨站来源；历史最多 500 条，超过整体报依赖不可用而不静默截断。此上限是本轮有界读取保护，分页历史体验后续另评审，不能伪造「全部历史」。
+- `openspec_commit_confirmation` 记录独立审计事实，不与旧 Spec 或平台 principal/project 设置级联外键。主键由可信主体与操作编号确定；事务内 insert-if-absent 后比对完整原事实，同操作改坐标/含义拒绝，重试保留原时刻；新版本再确认追加新操作。数据库触发器拒绝 UPDATE/DELETE（R7-001/005/007）。
+- Console 以 textContent 展示原确认的全长 commit、当前浏览 commit、确认人/时刻/含义及比较依据，单独列出 MR 审阅；加载响应有代际校验，避免异步旧结果套到新坐标。入口仅在可信服务依赖装配后下发，可见性不授予委员会资格（R7-002/006）。
+- 本轮不做自动 Git 监听/对账、真实读取/ACL 接入、比较判定的持久审计/批量重判、已批准豁免、完整 R7 生命周期或 R6。`Assessment` 返回两端 SHA/策略版本/原因，启用自动比较前还必须补比较审计持久化与真实 Git 反例验证；不能把此部分交件标作全部 R7 场景 PASS。
+
+## 发布注意
+
+- 本分支仅新增 `0068_openspec_commit_confirmation.sql`，预留独立 R11 冻结分支的 0067，不复制或改写 0067。以本分支独立迁移 SQLite 账为 65→66；与 R11 两条迁移一同集成则为 65→67。集成负责人须按实际发布树调整控制器/manifest 的 MIGRATION_COUNTS，并验证 0067/0068 顺序与回退；本单不改发版版本号或发布控制器。
+- 0068 在表、索引、两条保护触发器均存在且定义相同的无账库上只补账；有残缺或定义不同则拒绝，不能用 IF NOT EXISTS 掩盖保护缺失。迁移与账同事务；已有账 digest 检查沿原执行器。不触碰原确认内容。
+- 旧二进制的迁移遍历规则忽略额外账项，不会消费新确认表；撤回 R7 入口不删除新表/历史。不在本单执行 DROP TRIGGER、删除记录、生产迁移、部署或重启。R11 仍固定 5c0fce04。

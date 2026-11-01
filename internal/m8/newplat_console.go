@@ -51,6 +51,9 @@ func (h *Hub) handleNewPlatformConsolePlatform(w http.ResponseWriter, r *http.Re
 		ID: "agent-groups", Kind: "agent-groups", Title: "Agent 管理",
 		Href: "#agent-groups", Status: "approved", Active: true,
 	}}
+	if h.openSpecConfirmationReady() {
+		items = append(items, model.ConsolePlatformItem{ID: "openspec-confirmations", Kind: "openspec-confirmations", Title: "委员会版本确认", Href: "/console/openspec-confirmations", Target: "_blank", Status: "approved", Active: true})
+	}
 	items = append(items, model.ConsolePlatformItem{ID: "pilot-questions", Kind: "questions", Title: "研发问题待答", Href: "/console/questions", Status: "approved", Active: true})
 	if role == consolePlatformRoleManagement {
 		items = append(items, model.ConsolePlatformItem{

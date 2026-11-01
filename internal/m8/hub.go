@@ -32,6 +32,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/obs"
 	"github.com/zhangzongchu2019/dingwei/internal/router"
+	"github.com/zhangzongchu2019/dingwei/internal/specconfirm"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
@@ -63,6 +64,9 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
+	// Startup-only R7 service. Nil keeps Git/committee operations fail-closed until trusted adapters exist.
+	SpecConfirmations *specconfirm.Service
+
 	projectContextCursorOnce sync.Once
 	projectContextCursorKey  [32]byte
 	projectContextCursorErr  error
