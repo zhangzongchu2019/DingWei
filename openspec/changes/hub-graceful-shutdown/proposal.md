@@ -31,14 +31,16 @@
 
 补充配置事实：[prodops 预发/现网有效单位实测](https://git.code.tencent.com/wego-ai/dingwei/blob/e43100e3bdf200caaa67a925e51ca5fd82287bff/docs/reviews/prodops-r5-t08-facts-20261101/REPORT.md)，2026-11-01T14:05～14:08Z只读检查：dingwei-dw123-staging-hub.service与dingwei-dw123-hub.service有效TimeoutStopUSec均为30s，两个fragment均写TimeoutStopSec=30s，DropInPaths均为空。仅引用停机配置事实，不引入同报告的凭据交付任务。
 
+本轮T-03事实：[控制器与有效停止参数](https://git.code.tencent.com/wego-ai/dingwei/blob/c90f41c2a3e090b34ad17070f5d8beed589cbd7d/docs/reviews/prodops-public-timeout-hub-stop-facts-20261101/REPORT.md)B节；[systemd 259停止期隔离实测](https://git.code.tencent.com/wego-ai/dingwei/blob/ed797ae6de1f49cc2ad755946f1f3db2147bd8af/docs/reviews/prodops-hlc-t03-watchdog-facts-20261101/REPORT.md)及其raw。来源为prodops实测；保留HLC-009防御性要求、S013隔离监督器边界及T-03子项闭合为组长opus50tc2k.zzc本单裁定，不是PM定值，也不新增实现/部署授权。
+
 ## 待确认假设
 
-- HLC-A01（停止超时配置已核）：prodops固定证据e43100e3已核预发/现网两个Hub单元有效TimeoutStopSec均30s且无drop-in，S=30满足S≥T+5（T=15秒候选），名义余量15秒；实际仍计入信号交付差δ，见design。**仍待实测**KillMode、SendSIGKILL、WatchdogSec在停止期的行为、控制器stop轮询期限；r45控制器实际等了约10秒只是一次观测，不是其上限，须核上限不短于S=30秒。30秒配置不是实际停机达标证据。
-- HLC-A02：候选容量（100 个有限 HTTP、100 个 SSE、20 个 mux、20 个会话 WS）可在 8 秒并行排空阶段完成。仅为明确可测的首轮压测规模，不冒称生产峰值或已有实测；须和在线连接数核对。
+- HLC-A01（停止参数/控制器/计时差事实已闭合）：e43100e3已核预发/现网S=30秒且无drop-in；c90f41c2核KillMode=control-group、SendSIGKILL=yes、FinalKillSignal=SIGKILL、WatchdogSec=12s，控制器先以40秒命令期限等待systemctl stop返回，再轮询最多30秒，非并行30秒总上限。ed797ae6核目标systemd259停止期不执行看门狗，C五次stop请求至返回0.106086～0.106635秒、TERM交付约0.010秒；用δ≈0.11秒保守复核δ+15+5=20.11≤30，详见design。该样本不构成任意负载下δ硬上界，GO前须核漂移；30秒配置不是实际Hub停机达标证据。
+- HLC-A02：候选容量（100 个有限 HTTP、100 个 SSE、20 个 mux、20 个会话 WS）可在 8 秒并行排空阶段完成。仅为明确可测的首轮压测规模，不冒称生产峰值或已有实测。ed797ae6的21:08:12Z现网Hub快照为本地8793端口ESTABLISHED 4、443端口1、临时端口28；只闭合当时连接规模事实，不由端口推断SSE/WS类别、请求数或峰值，候选负载排空性能仍未执行。
 - HLC-A03：现有队列的持久确认点、重投/去重语义可支撑“停止消费后保留未完成项”。逐队列代码盘点与故障重启验证前不宣称无丢失；无法证明持久性应报失败，不能清空队列后报成功。
 - HLC-A04：客户端识别 EOF/WS 关闭并按现行重连协议恢复。必须实测 Console、View、helper，各流已收到 200/101 后的断开不会自动变成新 5xx；不承诺 WS 必有正常关闭码。
 
-- HLC-A05（看门狗方案待实测）：本提案选择**排空期间继续喂狗到最终退出**，不依赖“systemd停止期间必然禁用看门狗”。模板deploy/workpulse.service为WatchdogSec=12s、WatchdogSignal=SIGABRT；该模板不是两个现网单元的有效值证明。待验证独立停机喂狗生命周期、真实通知接收间隔及systemd停止期行为；新增HLC-S013覆盖13～15秒收尾与停喂反证。若目标systemd停止期不执行watchdog，实际不触发只能作为环境事实，不能代替选定继续喂狗方案的通知间隔验证。
+- HLC-A05（目标停止期行为已核，Hub通知连续性待实现验证）：ed797ae6在目标systemd259复刻W=12秒、TimeoutStopSec=30秒、KillMode=control-group，A停止期不喂狗25.024786秒正常退出，B持续喂狗24.125013秒正常退出，均无SIGABRT/SIGKILL。按组长裁定，目标停止期不执行看门狗，原“模板W=12秒与15秒预算冲突”已由实测解决、不构成目标环境冲突；停止期最终兜底只有TimeoutStopSec=30s→SIGKILL，不能依赖watchdog。HLC-009继续喂狗保留为跨systemd版本可移植、成本低的防御性要求；S013隔离监督器文字不变，只验Hub自身通知连续性，不推断systemd停止期行为。Hub交接/通知轨迹与S013仍未实现或执行，A/B不是这些产品场景的通过证据。
 
 ## 待 PM 决策
 

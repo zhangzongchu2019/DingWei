@@ -14,7 +14,19 @@
 
 ## 现场事实与边界
 
-现网证据锚67f55bbdf563b3f5d0345963eebf5f7122152afb：两次Stopping→exited分别10.011090、10.008936秒，error均context deadline exceeded；具体请求未知。定位及追加解释锚2b4b624c716676067f2a28297a7a0c3054e58f54。补充配置证据e43100e3bdf200caaa67a925e51ca5fd82287bff（prodops-r5-t08-facts-20261101/REPORT.md，2026-11-01T14:05～14:08Z）：预发dingwei-dw123-staging-hub.service与现网dingwei-dw123-hub.service有效TimeoutStopUSec均30s、fragment均为TimeoutStopSec=30s且都无drop-in。30秒是外层配置期限，不是停机完成证据；其它有效停止参数/信号交付差/控制器期限**待prodops补测**，不从源码默认值或无drop-in推导。
+历史证据锚67f55bbdf563b3f5d0345963eebf5f7122152afb记r44/r45两次约10秒、error=context deadline exceeded，具体请求未知；本轮精确计时统一引用下述ed797ae6原件，不混用不同摘录的起止时间戳。定位及追加解释锚2b4b624c716676067f2a28297a7a0c3054e58f54。e43100e3bdf200caaa67a925e51ca5fd82287bff（prodops-r5-t08-facts-20261101/REPORT.md，2026-11-01T14:05～14:08Z）已核预发dingwei-dw123-staging-hub.service与现网dingwei-dw123-hub.service有效TimeoutStopUSec均30s、fragment均为TimeoutStopSec=30s且都无drop-in。30秒是外层配置期限，不是Hub停机完成证据。
+
+### T-03补测已闭合事实与适用边界
+
+- Git锚c90f41c2a3e090b34ad17070f5d8beed589cbd7d，review/prodops/public-timeout-hub-stop-facts-20261101，docs/reviews/prodops-public-timeout-hub-stop-facts-20261101/REPORT.md B节：预发/现网有效KillMode=control-group、KillSignal=SIGTERM、SendSIGKILL=yes、FinalKillSignal=SIGKILL、WatchdogSec=12s/WatchdogSignal=SIGABRT、TimeoutStopSec=30s。r45控制器继承stop_hub，systemctl stop命令期限40秒，返回后才轮询30秒/间隔1秒；无旧PID与扫描错误等条件才通过，失败进入restore_old/safety_hold。40+30秒是顺序两段上限，不是应用新增预算。
+- Git锚ed797ae6de1f49cc2ad755946f1f3db2147bd8af（父4bfcca6b899665ec24b6b84033692c83742b4850），review/prodops/hlc-t03-watchdog-facts-20261101，docs/reviews/prodops-hlc-t03-watchdog-facts-20261101/REPORT.md及raw：目标dw123为systemd259（259.5-0ubuntu3），在同一systemd实例临时单元复刻W=12s、TimeoutStopSec=30s、KillMode=control-group；未停止/改写真实Hub或View。A停止期不喂狗25.024786秒、B持续喂狗24.125013秒均正常退出，无SIGABRT/SIGKILL；journal的Deactivated successfully为直接终止证据，stop后LoadState=not-found的show默认值不单独作退出码证据。临时单元已清理，journal保留。
+- 目标systemd259停止期不执行看门狗，模板W=12秒与15秒预算的目标环境冲突已由ed797ae6实测解决，不构成冲突。按组长本单裁定，HLC-009作为跨版本可移植、成本低的防御要求保留；不得把停止期watchdog当作兜底，最终强制兜底只有TimeoutStopSec=30s→SIGKILL（control-group）。A/B未触及30秒，不能冒称已实触SIGKILL边界。
+- HLC-S013“隔离监督器”格和反向控制原文不变。目标systemd不在停止期检测；S013只验Hub自身通知连续性，不从隔离监督器行为推断systemd行为，也不以A未收SIGABRT宣称Hub喂狗成功。所有Hub生命周期场景及通知交接仍未实现或执行。
+- C五次立即退出样本：stop请求→返回0.106086～0.106635秒（均值0.106244秒），TERM trap为请求后0.009721～0.010681秒；均为命令/日志观测，不是内核信号时间。按组长要求保守取整个停用开销δ≈0.11秒，δ+T+5≈0.11+15+5=20.11≤30，余量14.89秒，保留5秒后再余9.89秒。该样本不作为任意负载下δ硬上界，GO前须复核漂移；不因此批准T=15秒或其它PM候选。
+- ed797ae6/raw/READONLY.txt的2026-11-01T21:08:12Z现网Hub PID1017258快照：本地8793端口ESTABLISHED 4、443端口1、28个临时端口各1。只计套接字，不推断SSE/WS/HTTP类别、不等于请求数或峰值，不把它当100HTTP/100SSE/20mux/20WS候选负载已通过。
+- 本轮指定r44与r45切换的Stopping→Main process exited分别为10.009208秒（04:46:47.065074Z→04:46:57.074282Z）、10.011406秒（09:24:20.205647Z→09:24:30.217053Z），均status=1；依据ed797ae6/raw/READONLY.txt及VERSION-HISTORY.txt。此前01:27:53Z一轮不列作这两次切换。约10秒观测不等于控制器等待上限，亦不证明已满足拟议新停机协议。
+
+本轮仅闭合T-03事实子项，HLC-PM01～04仍待业主定值、proposal原行保持；不自开实现、apply/archive或部署。实测报告仅Git坐标引用，不向文件服务传源码。
 
 ## 读取与依赖
 
