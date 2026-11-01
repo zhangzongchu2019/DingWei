@@ -38,3 +38,9 @@
 实现位置：internal/specread、internal/store/openspec_read_binding.go 与迁移 0070、internal/m8/console_openspec_read*、cmd/workpulse/console_routes.go。读取 API /api/console/openspec-read；管理员 GET/PUT/DELETE /api/console/openspec-bindings。绑定不授予仓库权限，每次独立核权，无内容/权限缓存。新只读页面不改公共 Markdown 输出。
 
 配置：DW_OPENSPEC_READ_ENABLED 默认关闭；DW_OPENSPEC_GITHUB_CREDENTIAL_FILE 默认未配，服务端受限凭据文件路径；DW_OPENSPEC_GITHUB_REPOSITORY_IDS 受控数字 ID 列表。缺任一即服务不可用且无入口。单文件 2 MiB，API 10 秒/整次 15 秒/并发 4，单响应 8 MiB/tree 10,000 项/截断回退最多 256 子树请求。真实凭据、绑定均未创建；scope、工蜂令牌和 Console/GitHub 绑定仍属真实验收缺口，T-07/T-08 另派。
+
+## S-R5-CRED-SYSTEMD 实现补记（2026-11-01）
+
+internal/specread/github.go 的 credential() 在 systemd 注入的 CREDENTIALS_DIRECTORY 为绝对路径、且与清理后凭据路径父目录完全相等时，按 systemd ACL mask 模型验证文件/父目录：文件普通且非 symlink，属主 root/当前 euid，其他人权限为零；父目录属主 root/当前 euid、组和其他人不可写。组位不作为该分支拒绝条件；其它路径原 &0077==0 不变。大小、内容、逐次读取与提供方核权均沿用原逻辑，无新配置名称、无 ACL 解析。
+
+测试入口 internal/specread/github_systemd_test.go；目标变异 tests/r5-cred-systemd/mutations.py；证据 docs/reviews/r5-cred-systemd/REPORT.md。测试仅合成内容、临时目录和当前 euid，未访问真实凭据；预发/现网 systemd 的修复后 UID 991 实测由组长另行授权。原 T-07/T-08 状态不由本单变更。

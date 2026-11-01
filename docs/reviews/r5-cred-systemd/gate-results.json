@@ -1,0 +1,36 @@
+{
+  "utc": "2026-11-01T18:23:19+00:00",
+  "rc": 0,
+  "python": "/data/ai-dev-data/helper-deps-lock-venv/bin/python3",
+  "inherited_env_stripped": true,
+  "log": "/tmp/r5-cred-gate.log",
+  "sha256": "98ff6e76db776d1d6d51929543aac42341ca7624481dad94d14c97cf1f4e1fbe",
+  "helper_profiles": [
+    {
+      "actual": 1092,
+      "actual_SH_DRIVER": "claude",
+      "expected": 1092,
+      "files": 90,
+      "groups": [
+        1083,
+        9
+      ],
+      "profile": "claude",
+      "rc": 0
+    },
+    {
+      "actual": 1092,
+      "actual_SH_DRIVER": "codex",
+      "expected": 1092,
+      "files": 90,
+      "groups": [
+        1083,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "build_marker": "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2",
+  "openspec": "12 passed, 0 failed; strict rc0"
+}

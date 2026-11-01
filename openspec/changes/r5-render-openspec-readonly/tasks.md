@@ -46,3 +46,10 @@ OpenSpec status 的 planningComplete/isComplete 只说明规划文件齐备，�
 - run-build-tests rc0；完整 m8 与 workpulse 包通过；完整 store 首轮发现 0070 补账缺口，修复后整包 rc0，旧失败保留。新浏览器最终定向 19 检查通过（全套时 18 检查通过）；40 项防护变异均为断言转红。
 - 全浏览器 26 套 24 rc0，aggregate rc2：旧 renderer_0206_file_render 与 renderer_flood_stress 对应已独立冻结的 browser-baseline-fix，未在本分支重复修改；详情与原日志见交件报告。不把全门禁写成全绿，r46 集成须带该独立子片。
 - T-07/T-08 未执行：模拟测试不等于真实平台权限验收；令牌完整 scope、工蜂专用只读凭据与真实 Console/GitHub 绑定仍是后续事实缺口。未部署、重启或启用功能。
+
+## S-R5-CRED-SYSTEMD 交接（2026-11-01T18:23:19+00:00）
+
+- coder56solzzc.zzc 单写，分支 opus50tc2k/r5-cred-systemd，基于 r46 2af469dd；代码与测试提交 85beea907d7511206d08bb7c33a1fd22139189f9（tree a087b9b9a573547a133c53ec7f1902070c25a925）。仅 credential() 安全判定兼容精确 CREDENTIALS_DIRECTORY，外部路径维持 0077；其余读取/授权/开关逻辑不动。
+- 完成：六格必测及额外边界/轮换均通过；13 目标变异均断言红，恢复 0077 令 0440 正格红。PG strict 下 specread 96 pass、m8 1206 pass/36 skip/0 fail；跳过名与条件见 docs/reviews/r5-cred-systemd/SKIPS.md。run-build-tests rc0（lock venv、剥继承变量），两个 profile 各 1092，Python27/shell2；OpenSpec strict 12/12 rc0。完整摘要与原始本地日志位置见同目录 REPORT.md、JSON。
+- 阻塞/限制：本单只用临时目录和合成内容，没有真实 PAT/ACL 或 root:root、UID 991 的修复后实测；不能把单测认作预发验收。T-07/T-08 原状态不由本单改变。
+- 下一步：证据提交后仅推工蜂并核远端 tip，冻结交组长独立审阅；等待另发预发复测令。不部署、不动 r46 或其它冻结分支。最终 tip/tree 以承载本记录的提交及交件消息为准。

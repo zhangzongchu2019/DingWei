@@ -1,0 +1,40 @@
+# m8 整包已有跳过项
+
+2026-11-01，HUB_TEST_PG_STRICT=1；1206 pass / 36 skip / 0 fail（包括子场景）。以下为实际 skip 名称与测试给出的条件；未把 skip 计作通过。无 PostgreSQL 缺依赖跳过。
+
+- `TestDeviceClaimAcrossActualClientAndHub`：claim_client_integration_test.go:33: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment
+- `TestDeviceClaimAcrossActualClientAndPostgres`：claim_client_integration_test.go:45: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime PostgreSQL enrollment
+- `TestChangeEvidenceConsoleBrowser`：console_change_evidence_test.go:128: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration
+- `TestMuxProductHTTP1EightSeats`：console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration
+- `TestConsolePlatformPayloadDump`：console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)
+- `TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel`：console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically
+- `TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude`：delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex`：delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit`：delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected`：delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm`：delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected`：delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm`：delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread`：delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist`：delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread`：delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist`：delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLICancelAtomicBoundary/claude`：delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLICancelAtomicBoundary/codex`：delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude`：delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex`：delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLILateWireTerminal`：delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDesktopMCPRoundTripAcrossRealHub`：desktop_mcp_roundtrip_test.go:25: run scripts/test-desktop-hub-roundtrip.sh for the cross-runtime gate
+- `TestFailureNoticeDriverTurnEndToEnd`：failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime
+- `TestGroupReplyMCP`：group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON
+- `TestHelperSelfUpdateEndToEnd/install_restart_confirm`：helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python
+- `TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory`：helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python
+- `TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason`：helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python
+- `TestHelper0232MixedVersionEndToEnd`：helper_update_e2e_test.go:55: explicit immutable release pins required
+- `TestHostedBodySendAcrossRealHub`：hosted_body_send_test.go:23: set explicit isolated integration interpreter
+- `TestEnvelopeReadTimeoutEnvironmentChild`：hub_timeout_contract_test.go:50: subprocess probe only
+- `TestPilotQuestionAcrossRealHTTPHelperIPCMCP`：pilot_question_roundtrip_test.go:17: set locked helper Python; canonical runs this local integration
+- `TestPilotTemplateAcrossRealHTTPHelperIPCMCP`：pilot_template_roundtrip_test.go:17: set locked helper Python; canonical runs loopback integration
+- `TestProjectContextAcrossRealHTTPHelperIPCMCP`：project_context_roundtrip_test.go:17: set DW_DESKTOP_INTEGRATION_PYTHON to the locked helper test venv; canonical shell gate runs the cross-runtime set
+- `TestSpecMCPEndToEnd`：spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses
+- `TestBlockerAcrossRealHTTPHelperIPCMCP`：task_blocker_roundtrip_test.go:21: set locked helper Python; canonical runs this local integration
