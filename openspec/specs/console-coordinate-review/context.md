@@ -27,3 +27,13 @@
 ## 外部资料
 
 - 固定决议与月计划链接集中在本能力变更 proposal「来源」；从 context → spec → 进行中变更 → 平台时间线读取，不依赖他席聊天或会话记忆。
+
+## r47实施位置（S-R6-IMPL，T-04～T-06）
+
+- `internal/coordinatereview/`：独立坐标派审服务、固定版本读取、R7比较与追加事实、有界提醒；不接旧snapshot字段。`internal/specread/permission.go`复用R5核权；正文仍只由同一R5 `Service.Read`取得。
+- `internal/m8/coordinate_review*.go`：默认关闭装配、当前owner/Agent独立Git授权、Console/Agent API、页面、生命周期调度。`internal/identity/coordinate_review.go`：当前Agent/owner/可信私聊身份事务屏障。
+- `internal/store/coordinate_review.go`、`migrations/0071_coordinate_review.sql`：坐标元数据、历史、独立Agent Git映射与审计、R6/R9事件归属。0070仍属R5；无生产迁移执行。
+- `cmd/workpulse/{main,console_routes,pilot_question_feishu}.go`：身份装配后接入R6及现有飞书personal发送器；总开关`DW_OPENSPEC_REVIEW_ENABLED`只有显式1生效。还依赖R5的`DW_OPENSPEC_READ_ENABLED`、`DW_OPENSPEC_GITHUB_CREDENTIAL_FILE`（只记配置位置，不记值）、受控`DW_OPENSPEC_GITHUB_REPOSITORY_IDS`。真实GitHub凭据/主体映射/渠道回执须T-07核验；工蜂仍不可用。R5 T-08前默认关的发布前置不变。
+- `tools/sessionhelper/sessionhelper/{spec_review,app,ipc_listener,mcp_shim}.py`：新的`coordinate_review_v1`能力与`dw_coordinate_review`工具，保留旧工具；固定Hub来源、请求ID与坐标白名单，不接受正文/下载能力。
+- `view-service/coordinate-review-browser-regression.js`已登记`tools/run-browser-regressions.py` SUITES；核心/HTTP/WS/PG/SQLite测试见相邻`*_test.go`，目标变异runner为`scripts/test-r6-mutations.py`。所有测试隔离HOME、临时DB和loopback；实际构建门用helper-deps-lock-venv，不连接生产。
+- 技术决策/API/状态与需求映射写入变更design的“S-R6-IMPL实施接线”；当前结果不会自动生成委员会确认、验收、发布或合并门。T-07独立验收、T-08预发仍未完成。

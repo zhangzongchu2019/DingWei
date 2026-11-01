@@ -514,6 +514,17 @@ def _dw_task_update(args):
         raise ValueError('invalid task id')
     return _ipc_request({'type':'task_flow_v1','action':'update','task_id':task_id,'body':{k:v for k,v in args.items() if k!='task_id'}},timeout=_SPEC_IPC_TIMEOUT)
 
+@register("dw_coordinate_review", "R6坐标派审：get/open/read/timeline/result。固定原commit依次读context、spec、changes、timeline；不能读则UNABLE，不接受源码附件。打开只停催办；结果未知先get，不新建重试。", {
+    "type":"object","additionalProperties":False,"required":["action","request_id"],
+    "properties":{"action":{"type":"string","enum":["get","open","read","timeline","result"]},"request_id":{"type":"string","pattern":"^coordreview_[a-f0-9]{64}$"},"path":{"type":"string"},"operation_id":{"type":"string","minLength":16,"maxLength":128},"commit_sha":{"type":"string","pattern":"^[a-f0-9]{40}$"},"verdict":{"type":"string","enum":["PASS","FAIL","NEEDS_CHANGE","UNABLE"]},"evidence":{"type":"string","maxLength":2048}}
+})
+def _dw_coordinate_review(args):
+    if not isinstance(args,dict) or set(args)-{'action','request_id','path','operation_id','commit_sha','verdict','evidence'} or not isinstance(args.get('request_id'),str) or not re.fullmatch('coordreview_[a-f0-9]{64}',args['request_id']):
+        raise ValueError('invalid coordinate review arguments')
+    action=args.get('action')
+    if action not in ('get','open','read','timeline','result'):raise ValueError('invalid coordinate review action')
+    return _ipc_request({'type':'coordinate_review_v1','action':action,'body':{k:v for k,v in args.items() if k!='action'}},timeout=25)
+
 @register("dw_spec_review_requests", "读取本人当前有权处理的Console预审/补标准请求；取消或失权后不可读。", {
  "type":"object","properties":{"request_id":{"type":"string"},"cursor":{"type":"string"}},"additionalProperties":False,
 })

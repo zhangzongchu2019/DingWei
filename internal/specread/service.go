@@ -110,23 +110,11 @@ func (s *Service) Read(ctx context.Context, actor string, c Coordinate, ref stri
 	}
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
-	b, err := s.Bindings.SpecReadBinding(ctx, actor, c.Provider, c.Instance)
-	if err != nil {
-		return out, ErrUnavailable
-	}
-	if b == nil || !b.Valid() || b.Principal != actor || b.Provider != c.Provider || b.Instance != c.Instance {
-		return out, ErrForbidden
-	}
-	repo, err := p.Repository(ctx, c.Repository)
+	binding, repo, err := s.AuthorizeRead(ctx, actor, c)
 	if err != nil {
 		return out, err
 	}
-	if repo.ID != c.Repository {
-		return out, ErrInvalid
-	}
-	if err = p.Authorize(ctx, repo, *b); err != nil {
-		return out, err
-	}
+	b := &binding
 	requested := c.Commit
 	if requested == "" {
 		requested = ref

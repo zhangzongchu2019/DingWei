@@ -51,6 +51,9 @@ func (h *Hub) handleNewPlatformConsolePlatform(w http.ResponseWriter, r *http.Re
 		ID: "agent-groups", Kind: "agent-groups", Title: "Agent 管理",
 		Href: "#agent-groups", Status: "approved", Active: true,
 	}}
+	if h.coordinateReviewEntry(r.Context(), platformPrincipal(r)) {
+		items = append(items, model.ConsolePlatformItem{ID: "coordinate-reviews", Kind: "coordinate-reviews", Title: "坐标派审", Href: "/console/coordinate-reviews", Target: "_blank", Status: "approved", Active: true})
+	}
 	if h.openSpecConfirmationReady() {
 		items = append(items, model.ConsolePlatformItem{ID: "openspec-confirmations", Kind: "openspec-confirmations", Title: "委员会版本确认", Href: "/console/openspec-confirmations", Target: "_blank", Status: "approved", Active: true})
 	}

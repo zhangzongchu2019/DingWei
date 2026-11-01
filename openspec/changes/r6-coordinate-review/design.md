@@ -53,3 +53,40 @@ R6负责坐标派审未打开，打开即停该提醒，30分钟首催/最多3�
 ## Open Questions
 
 PM执行口径出处现已核：[rulings 916a9dff34cbf53905bfa31305677d5a79221978 / docs/rulings/S-TEAM-MIGRATE-HOSTED-20261017.md 第⑯条](https://git.code.tencent.com/wego-ai/dingwei/blob/916a9dff34cbf53905bfa31305677d5a79221978/docs/rulings/S-TEAM-MIGRATE-HOSTED-20261017.md)，Hub收信2026-11-01T02:23:43Z、delivery尾号44c3b5bc；补记时间2026-11-01T15:19:01Z。R6-PM02原话与R7依据“其他按建议推进”见proposal；首期飞书私聊及将1小时间隔解释为至少1小时，均按该条组长注/解读执行，不能归为业主逐字原话。R5 GitHub事实/实现已核，但可信Agent/Console映射、工蜂只读账号/API、真实打开回执、私聊收发/对账及持久调度仍待核验/实现。T-03勾选仅表示回写完成，不表示前置全部满足或授予实现/上线权限。
+
+## S-R6-IMPL 实施接线（r47，默认关闭）
+
+本节覆盖前文“待另单实现”的当前状态；出处与PM口径保持bf3ac8a3不变。基于r46 `2af469dd6919d8eb6064aa7da0e646f0851becf8`，普通merge该规格；不接旧snapshot派审，不修改R7政策或委员会确认表。
+
+### 接口、状态和需求映射
+
+| 接口/状态 | 实施语义 | 对应需求 |
+| --- | --- | --- |
+| `GET /console/coordinate-reviews`；平台`coordinate-reviews`项 | 依赖未就绪隐藏且页面503；已审、待审、旧版本、待核对逐Agent展示；文本节点呈现证据，不抓远端资源 | R6-001/008 |
+| Console `GET/POST /api/console/coordinate-reviews`，`GET /{requestID}` | 列表100条keyset分页，逐项重新核权；POST严格JSON，原坐标+Agent+至少16字符operation_id，服务器定ID/UTC时刻；`git_instance`字段沿R7坐标，R5内部转换为`instance` | R6-001/002/004/008 |
+| Console `POST /{requestID}/compare`、`/cancel` | 比较完整当前坐标、同一提供方/实例/仓库；取消仅发起者；JSON写请求核同源，拒夹带字段 | R6-001/004/006/007 |
+| Agent `GET /api/agent/console/coordinate-reviews[/{requestID}]`，POST `/{requestID}/{action}` | 专属bearer认人，无人类cookie替代；action仅open/read/timeline/result；GET/ACK不产生打开或完成 | R6-002～005/008 |
+| `read`、`timeline` | read仅接路径，服务端绑定原SHA，直接调用同一R5 `Service.Read`，无新Git读取通道。成功读取context→spec→本变更proposal后才可记timeline读取；其余必要changes文档由Agent按同C继续读。非UNABLE结果须有四阶段读取记录；技术上不宣称能验证Agent理解全文 | R6-002/003/004 |
+| 管理员 `GET/PUT/DELETE /api/console/coordinate-review-agent-bindings` | 新平台platform_admin配置独立Agent GitHub account_id/login，不接令牌、不自动继承owner绑定；PUT/DELETE同源及审计，不能扩大Git服务账号仓库权限 | R6-002/008 |
+| `queued/attempting/accepted/unknown`、`sent` | 分别为待出站、尝试中、持久传输已受理、结果未知；sent仅在有渠道回执时。进程在attempting中断即结果未知，不自动新ID重发；不当作已读/已审 | R6-004/005 |
+| `opened_at/completed_at/unable_at/cancelled_at/superseded_at` | 可信Agent显式open才停未打开催办；UNABLE独立终止，保留不能审阅结果且不写completed_at；完成/取消/替代也停。修订和迟到结果追加，绝不把C结果改绑C2 | R6-003～006/008 |
+| `assigned_version/no_material_change/old_version/unknown` | R7策略输出映射为派审版本/无实质修改/旧版本/待核对；保存两端SHA、原因、策略版本、检查时刻，不生成委员会确认事实 | R6-006/007 |
+| 400/403/409/503 | 坐标/额外字段无效；当前主体/仓库拒绝；幂等冲突或读取阶段未满足；依赖/提供方不可验证或容量上限。错误仅本地枚举，不回显令牌、源码或上游错误 | R6-001～008 |
+
+### 授权、持久化和并发边界
+
+`DW_OPENSPEC_REVIEW_ENABLED=1`才装配；默认nil，启动时还须R5读取服务、可信新平台身份存储、SQLite接口及既有飞书personal发送器。R5自身仍须其默认关闭开关、受控仓库清单和凭据文件；凭据被撤走时入口与接口停止可用。工蜂适配仍直接失败关闭。
+
+本轮沿现有“当前owner派给自己active Agent”的派审资格；owner与Agent仍以两个独立Git绑定分别核read，owner关系绝非仓库授权。Agent Git绑定由管理员可信配置；接收读取仍按Agent自己的R5主体读取。PG事务对Agent、active owner、当前私聊身份持锁至最终检查/元数据提交/外发；内存适配同样串行。Console和Agent Git绑定变更共用Hub读写屏障，防慢读跨绑定变更提交；每次R5读取及元数据交付重新核权，不缓存ACL或私库正文。远端Git ACL只可能以提供方当次查询为准，不虚构跨提供方原子事务。
+
+迁移0071只加坐标/结果/比较/提醒元数据、独立Agent映射及审计、共享`notification_event_owner`；不迁入源码/凭据，不种映射。共享事件归属不可变，`ClaimNotificationEvent`为R9将来接线必须复用的仲裁点；R6创建与归属校验在同一事务，冲突回滚不留派审。默认event_id取服务端派审ID，显式关联同一平台事件时双方必须传同一稳定事件ID；不同Agent的独立指派取不同事件，不因同仓/SHA合并。R9运行时未实现，本单只提供共用边界及双候选反证，不宣称R9已上线。
+
+单Hub生命周期协调器挂既有5秒tick，每轮至多100条并保留keyset游标；多记录时不承诺5秒全量扫描，30分钟/一小时为不得提前发送的下界。SQLite事务、数据库身份文件锁与服务锁串行open/cancel/replace和槽占用，文件锁跨实际外发持有但不占SQLite连接，跨Hub/Store句柄仍由同一数据库身份串行；GET元数据、R5 Console/Agent绑定管理也参加该屏障。外发不嵌在SQLite事务中；槽先落库，失败/进程中断也消耗预算。正常连续未打开的三个下界为t0+30/90/150分钟，暂停恢复还须距上次实际尝试至少一小时，不能补齐积压连发。一次发送遇缺失/不唯一私聊身份记录unknown，不猜收件人；可信个人身份只取受派owned Agent的owner已验证绑定，绝不取表单中的open_id或群ID。
+
+初次坐标/重审提示用稳定源ID进入既有可靠投递，helper须声明`coordinate_review_v1`与`delivery_ack_v1`；不支持/离线时派审仍有Console待办，但传输尝试记unknown，无自动新ID重发。已入可靠队列的连接恢复由原delivery ID重放，实际socket出站再核当前身份/仓库/指派状态；ACK不清待办。新helper工具`dw_coordinate_review`走同一Hub专属认证入口，限定get/open/read/timeline/result；不改旧snapshot工具语义，不自动回消息或执行仓库正文指令。
+
+比较直接复用`specconfirm.ConservativePolicyA`（A-conservative-exemptions-v2）和R5快照读取；手动compare有结果立即追加，重复同判定只更新检查时刻。有track_ref时周期解析当前head，原SHA永不替换；相同head至少一分钟后重新检查历史可读性，失败持久记unknown，不永远复用绿判定。实质变化追加重审坐标提示并停原未打开催办，新版本须另建明确指派。每指派最多100条结果、1000个不同比较事实、3次外发尝试，聚合元数据上限1MiB；达上限返回503，不删除历史或覆盖结论。原始结果/比较及事件归属有SQLite不可变保护，账缺失须按完整DDL核验才补账。
+
+### 验证范围
+
+测试使用本地HTTP/WS、R5受控提供方夹具、SQLite和临时PG，记录正反格与目标变异；新增浏览器回归已登记SUITES。真实Git权限主体、实际飞书回执和真实浏览器验收仍由T-07独立做；T-08预发另派。本单不部署、不激活开关、不改r46或其它冻结分支。读数与跳过条件见`EVIDENCE-S-R6-IMPL.md`。

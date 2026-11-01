@@ -87,6 +87,7 @@ var consolePlatformItemID = regexp.MustCompile(`^[a-z][a-z0-9-]{1,63}$`)
 var consolePlatformReservedItemIDs = map[string]bool{
 	"agents":                 true,
 	"openspec-confirmations": true,
+	"coordinate-reviews":     true,
 	"change-evidence":        true,
 	"agent-groups":           true,
 	"specs":                  true,
@@ -207,6 +208,9 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.SpecReader != nil {
 		builtins = append(builtins, model.ConsolePlatformItem{ID: "openspec-read", Kind: "openspec-read", Title: "OpenSpec 只读文档", Href: "/console/openspec", Target: "_blank", Status: "approved", Active: true})
+	}
+	if h.coordinateReviewEntry(r.Context(), platformPrincipal(r)) {
+		builtins = append(builtins, model.ConsolePlatformItem{ID: "coordinate-reviews", Kind: "coordinate-reviews", Title: "坐标派审", Href: "/console/coordinate-reviews", Target: "_blank", Status: "approved", Active: true})
 	}
 	if h.openSpecConfirmationReady() {
 		builtins = append(builtins, model.ConsolePlatformItem{ID: "openspec-confirmations", Kind: "openspec-confirmations", Title: "委员会版本确认", Href: "/console/openspec-confirmations", Target: "_blank", Status: "approved", Active: true})

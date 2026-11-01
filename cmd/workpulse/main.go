@@ -312,6 +312,7 @@ func run(logger *slog.Logger) error {
 			return fmt.Errorf("newplat wiring refused to start: %w", err)
 		}
 	}
+	configureCoordinateReviewFeishu(prefixHub, feishuGateway)
 	registerConsoleRoutes(mux, prefixHub, newplatOn)
 	mux.HandleFunc("GET /links/{ownerKey}", prefixHub.HandleOwnerLinksPage)
 	registerRetiredProvisionDownloads(mux)

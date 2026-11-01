@@ -49,6 +49,10 @@ var newPlatformAuthExempt = map[string]string{
 // newPlatformSpecTaskExempt spec／任务路由里【不】按 N3 会话认人的（R-V2-SPEC-TASK-SHIM-IMPL H1），口径同 095：
 // 共享链接与静态资源公开读、写凭链接里的编辑能力令牌；Agent 侧凭专属凭据＋能力令牌。每条下面另有一格钉住无凭据时的应答。
 var newPlatformSpecTaskExempt = map[string]string{
+	"GET /api/agent/console/coordinate-reviews":                       "专属Agent bearer，R6当前逐主体仓库核权",
+	"GET /api/agent/console/coordinate-reviews/{requestID}":           "专属Agent bearer，仅本人原坐标",
+	"POST /api/agent/console/coordinate-reviews/{requestID}/{action}": "专属Agent bearer，可信打开及追加结果，R5固定commit读取",
+
 	"GET /api/agent/console/questions/{questionID}/clarifications":                      "专属Agent凭据；当前任务／编组重核的新楼层只读",
 	"POST /api/agent/console/questions/{questionID}/clarifications":                     "专属Agent凭据；仅带锚点技术说明，不授PM权威",
 	"GET /api/agent/console/questions/{questionID}/clarifications/requests/{requestID}": "专属Agent凭据；仅当前本人提交状态",
@@ -162,8 +166,8 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 			nSpecTask++
 		}
 	}
-	if nSpecTask != len(oldRec.patterns) || nSpecTask != 109 {
-		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 109: prior98 plus11 PM spec-flow routes)", nSpecTask, len(oldRec.patterns))
+	if nSpecTask != len(oldRec.patterns) || nSpecTask != 112 {
+		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 112: prior109 plus3 R6 coordinate-review routes)", nSpecTask, len(oldRec.patterns))
 	}
 	for p := range newPlatformSpecTaskExempt {
 		if !seen[p] {

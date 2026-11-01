@@ -25,3 +25,15 @@ func configurePilotQuestionFeishu(h *m8.Hub, gateway feishu.Gateway) {
 		return feishu.SendPilotQuestion(ctx, gateway, feishu.OutMessage{BotChannelID: issuer, ToID: subject, ToType: "personal", Text: text, RequestID: feishu.DeriveRequestID("reply", noticeID, "pilot-question")})
 	}
 }
+
+// R6 has an independent default-off flag but uses the existing personal gateway.
+func configureCoordinateReviewFeishu(h *m8.Hub, gateway feishu.Gateway) {
+	switch gateway.(type) {
+	case *feishu.Fake, feishu.Stub, *feishu.Stub, nil:
+		h.ConfigureCoordinateReviews(nil)
+		return
+	}
+	h.ConfigureCoordinateReviews(func(ctx context.Context, issuer, subject, id, text string) (string, error) {
+		return feishu.SendPilotQuestion(ctx, gateway, feishu.OutMessage{BotChannelID: issuer, ToID: subject, ToType: "personal", Text: text, RequestID: feishu.DeriveRequestID("reply", id, "coordinate-review")})
+	})
+}
