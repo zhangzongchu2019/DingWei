@@ -1,0 +1,198 @@
+{
+  "task": "R1/R8 r45 provider-neutral first cut",
+  "recorded_at": "2026-11-01T05:48:56.508756+00:00",
+  "base": "dfc95fd8b6b2a063edd77f22bd38ecc63b729213",
+  "spec_anchor": "cc9091aa6d29e5d548bc7934fee1c2031834f9ee",
+  "branch": "opus50tc2k/r1-r8-impl",
+  "scenario_ids_passed": [
+    "R1-001-S01",
+    "R1-001-S02",
+    "R1-002-S01",
+    "R1-002-S02",
+    "R1-003-S01",
+    "R1-003-S02",
+    "R1-004-S01",
+    "R1-004-S02",
+    "R1-005-S01",
+    "R1-005-S02",
+    "R1-006-S01",
+    "R1-006-S02",
+    "R1-006-S03",
+    "R1-006-S04",
+    "R1-006-S05",
+    "R1-007-S01",
+    "R1-007-S02",
+    "R1-008-S01",
+    "R1-008-S02",
+    "R8-001-S01",
+    "R8-001-S02",
+    "R8-002-S01",
+    "R8-002-S02",
+    "R8-002-S03",
+    "R8-002-S04",
+    "R8-002-S05",
+    "R8-002-S06",
+    "R8-003-S01",
+    "R8-003-S02",
+    "R8-004-S01",
+    "R8-004-S02",
+    "R8-005-S01",
+    "R8-005-S02",
+    "R8-006-S01",
+    "R8-006-S02",
+    "R8-007-S01",
+    "R8-007-S02",
+    "R8-008-S01",
+    "R8-008-S02",
+    "R8-009-S01",
+    "R8-009-S02"
+  ],
+  "packages": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/changeflow",
+      "rc": 0,
+      "elapsed": 0.043,
+      "passed_top_level": 6,
+      "passed_subtests": 50,
+      "skips": []
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "rc": 0,
+      "elapsed": 55.392,
+      "passed_top_level": 319,
+      "passed_subtests": 200,
+      "skips": [
+        "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+        "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "rc": 0,
+      "elapsed": 169.576,
+      "passed_top_level": 783,
+      "passed_subtests": 405,
+      "skips": [
+        "TestDeviceClaimAcrossActualClientAndHub",
+        "TestDeviceClaimAcrossActualClientAndPostgres",
+        "TestMuxProductHTTP1EightSeats",
+        "TestConsolePlatformPayloadDump",
+        "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+        "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+        "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+        "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+        "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+        "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+        "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+        "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+        "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+        "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+        "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+        "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+        "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+        "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+        "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+        "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+        "TestDeliveryACKActualCLILateWireTerminal",
+        "TestDesktopMCPRoundTripAcrossRealHub",
+        "TestFailureNoticeDriverTurnEndToEnd",
+        "TestGroupReplyMCP",
+        "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+        "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+        "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+        "TestHelper0232MixedVersionEndToEnd",
+        "TestHostedBodySendAcrossRealHub",
+        "TestEnvelopeReadTimeoutEnvironmentChild",
+        "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+        "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+        "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+        "TestSpecMCPEndToEnd",
+        "TestBlockerAcrossRealHTTPHelperIPCMCP"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "rc": 0,
+      "elapsed": 175.89,
+      "passed_top_level": 139,
+      "passed_subtests": 58,
+      "skips": [
+        "TestR31OldBinarySchemaReadCompatibility"
+      ]
+    }
+  ],
+  "race_rc": 0,
+  "canonical_rc": 0,
+  "helper": [
+    {
+      "actual": 1087,
+      "actual_SH_DRIVER": "claude",
+      "expected": 1087,
+      "files": 90,
+      "groups": [
+        1078,
+        9
+      ],
+      "profile": "claude",
+      "rc": 0
+    },
+    {
+      "actual": 1087,
+      "actual_SH_DRIVER": "codex",
+      "expected": 1087,
+      "files": 90,
+      "groups": [
+        1078,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "canonical_marker": "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2",
+  "strict": "12/12 rc0",
+  "mutations": {
+    "mutations": [
+      {
+        "mutation": "remove-label-route",
+        "test": "TestR1_001_S01",
+        "rc": 1
+      },
+      {
+        "mutation": "carry-ack-after-hit-change",
+        "test": "TestR1_006_S03",
+        "rc": 1
+      },
+      {
+        "mutation": "ignore-FAIL-at-archive",
+        "test": "TestR8_004_S02",
+        "rc": 1
+      }
+    ],
+    "harness_correction": "third initial selector matched two occurrences and was rejected before any edit; narrowed to the archive predicate; all original bytes restored in finally"
+  },
+  "final_source_sha256": {
+    "internal/changeflow/types.go": "9df1ac26339e21f65643be64324ffb672d5e351b6e95a5663e7804eaadae7a13",
+    "internal/changeflow/risk.go": "7a6bc01a54bd82602263b833bcfeb455f3cee113c104312ed1e10d4e2c861aae",
+    "internal/changeflow/service.go": "a5cb5cadd3b3c7e8d3862316c2e321a89468b1acfd0dec58acc41075e38d4650",
+    "internal/changeflow/lifecycle.go": "54b2b7aae01508503864e09f1efa7a71979c62cf1b1c58d36f4c0b70d11f8395",
+    "internal/changeflow/default_risk_paths.yaml": "3a036d159ff12d101c37c4c6de78dd6847987f613b8786940dcf04fb7f720d1b",
+    "internal/store/changeflow_evidence.go": "29ba566aace7f3124a0170b6e9f1ee0336dc0113616b51aa66b1f6c77057cb65",
+    "internal/store/migrations/0069_changeflow_evidence.sql": "d2c0b71f4db9ebc599fa7e7acdc13bc84719bccc2c336eb23a8e5ec9e438378f",
+    "internal/m8/console_change_evidence.go": "fb8286d5cf09bea60c42412a09ab421a9670b5e50af122d542b981f9831c4e4e",
+    "internal/m8/console_change_evidence.html": "0a7cf2e7250b1067e4caaf0a0035e97dc7325087b6ed1f0372f386c01fd7abad",
+    "internal/m8/hub.go": "379aa20f3912899532029e30523dd5e9fdb4030371978c7d75e271711022cab1",
+    "internal/m8/console_platform.go": "5e8b15904122bdf8aac3a39264936d11805821b0182ee3235c1dd4fad8880b73",
+    "cmd/workpulse/console_routes.go": "3568662739b6cc3e6abe493f53146b842b320d32231562abc13baa7096e2a672",
+    "internal/store/sqlite.go": "9c0559daa0b4e09d52466389c7815669f7d83a14d0e04ffba8aadbcdb4ad9101"
+  },
+  "migration": "0069; exact-DDL verification for retained table/ledger recovery; 0067/0068 unchanged",
+  "runtime": "ChangeEvidence nil by default; live provider stubs ErrUnavailable; R7 default 503 unchanged",
+  "not_claimed": [
+    "real GitHub/GongFeng API ACL/comment/approval verification",
+    "actual R7/R9 provider bridges",
+    "independent QA",
+    "staging, migration against shared DB, deployment, restart or production switch"
+  ]
+}

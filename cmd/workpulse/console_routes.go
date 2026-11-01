@@ -17,6 +17,9 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	mux.HandleFunc("GET /view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewPage))
 	mux.HandleFunc("GET /tasks", prefixHub.RequireConsolePrincipal(prefixHub.HandleViewTasks))
 	mux.HandleFunc("GET /console", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsolePage))
+	mux.HandleFunc("GET /console/change-evidence", prefixHub.RequireConsolePrincipal(prefixHub.HandleChangeEvidencePage))
+	mux.HandleFunc("GET /api/console/change-evidence", prefixHub.RequireConsolePrincipal(prefixHub.HandleChangeEvidence))
+	mux.HandleFunc("POST /api/console/change-evidence", prefixHub.RequireConsolePrincipal(prefixHub.HandleChangeEvidence))
 	// R7 requires its own committee + repository authority; platform management is not that authority.
 	mux.HandleFunc("GET /console/openspec-confirmations", prefixHub.RequireConsolePrincipal(prefixHub.HandleOpenSpecConfirmationPage))
 	mux.HandleFunc("GET /api/console/openspec-confirmations", prefixHub.RequireConsolePrincipal(prefixHub.HandleOpenSpecConfirmations))

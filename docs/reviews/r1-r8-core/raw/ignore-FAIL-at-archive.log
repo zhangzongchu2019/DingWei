@@ -1,0 +1,6 @@
+--- FAIL: TestR8_004_S02 (0.66s)
+    --- FAIL: TestR8_004_S02/fail (0.14s)
+        changeflow_scenarios_test.go:695: must reject
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.666s
+FAIL

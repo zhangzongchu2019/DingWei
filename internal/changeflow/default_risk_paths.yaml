@@ -1,0 +1,30 @@
+version: 1
+rules:
+  - id: default-funds
+    category: risk:funds
+    paths: ["cmd/workpulse/*quota*.go", "**/billing/**", "**/payment/**", "**/settlement/**"]
+    keywords: ["金额", "计费", "扣费", "退款", "结算", "price", "billing", "quota"]
+  - id: default-permission
+    category: risk:permission
+    paths: ["internal/identity/**", "internal/secretbox/**", "internal/nodegate/**", "deploy/**/nginx*", "**/*auth*"]
+    keywords: ["权限", "角色", "管理员", "鉴权", "token", "Authorization", "admin", "role", "grant"]
+  - id: default-data-delete
+    category: risk:data-delete
+    paths: ["internal/store/migrations/**", "internal/store/migrate/migrations/**", "**/cleanup/**"]
+    keywords: ["DELETE FROM", "DROP ", "TRUNCATE", "删除", "清理", "retention", "purge"]
+  - id: default-api-contract
+    category: risk:api-contract
+    paths: ["cmd/workpulse/*routes*.go", "internal/m8/*handler*", "tools/sessionhelper/sessionhelper/**"]
+    keywords: ["协议", "API", "HTTP", "envelope", "version negotiation"]
+  - id: default-sla
+    category: risk:sla
+    paths: ["internal/scheduler/**", "internal/schedule/**", "**/*timeout*"]
+    keywords: ["超时", "重试", "限流", "timeout", "retry", "rate", "deadline"]
+  - id: default-migration
+    category: risk:migration
+    paths: ["**/migrations/**", "**/*.sql"]
+    keywords: ["ALTER TABLE", "CREATE TABLE", "RENAME", "迁移", "backfill"]
+  - id: default-privacy
+    category: risk:privacy
+    paths: ["internal/feishu/**", "internal/redact/**", "internal/obs/**", "**/user-profile/**"]
+    keywords: ["手机", "邮箱", "身份证", "地址", "open_id", "个人", "隐私", "跨境", "导出", "export"]

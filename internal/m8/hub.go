@@ -27,6 +27,7 @@ import (
 	"github.com/coder/websocket"
 
 	"github.com/zhangzongchu2019/dingwei/internal/agentmetrics"
+	"github.com/zhangzongchu2019/dingwei/internal/changeflow"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -66,6 +67,8 @@ type ViewPageUnlockRequest struct {
 type Hub struct {
 	// Startup-only R7 service. Nil keeps Git/committee operations fail-closed until trusted adapters exist.
 	SpecConfirmations *specconfirm.Service
+	// Startup-only provider-neutral R1/R8 core; nil remains unavailable.
+	ChangeEvidence *changeflow.Service
 
 	projectContextCursorOnce sync.Once
 	projectContextCursorKey  [32]byte
