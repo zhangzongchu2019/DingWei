@@ -1,0 +1,86 @@
+test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) ... 
+  test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='create', message='旧规格已冻结，请在仓库 OpenSpec 中提交新需求；本请求未写入。') ... ERROR
+  test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='create', message=None) ... ERROR
+  test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='create', message='') ... ERROR
+  test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='create', message=123) ... ERROR
+  test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='update', message='旧规格已冻结，请在仓库 OpenSpec 中提交新需求；本请求未写入。') ... ERROR
+  test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='update', message=None) ... ERROR
+  test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='update', message='') ... ERROR
+  test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='update', message=123) ... ERROR
+
+======================================================================
+ERROR: test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='create', message='旧规格已冻结，请在仓库 OpenSpec 中提交新需求；本请求未写入。')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-frozen-409/tools/sessionhelper/tests/test_spec_direct.py", line 76, in test_frozen_409_create_and_update_are_explicit_rejections
+    self.assertEqual(result["code"], "legacy_spec_frozen")
+                     ~~~~~~^^^^^^^^
+KeyError: 'code'
+
+======================================================================
+ERROR: test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='create', message=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-frozen-409/tools/sessionhelper/tests/test_spec_direct.py", line 76, in test_frozen_409_create_and_update_are_explicit_rejections
+    self.assertEqual(result["code"], "legacy_spec_frozen")
+                     ~~~~~~^^^^^^^^
+KeyError: 'code'
+
+======================================================================
+ERROR: test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='create', message='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-frozen-409/tools/sessionhelper/tests/test_spec_direct.py", line 76, in test_frozen_409_create_and_update_are_explicit_rejections
+    self.assertEqual(result["code"], "legacy_spec_frozen")
+                     ~~~~~~^^^^^^^^
+KeyError: 'code'
+
+======================================================================
+ERROR: test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='create', message=123)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-frozen-409/tools/sessionhelper/tests/test_spec_direct.py", line 76, in test_frozen_409_create_and_update_are_explicit_rejections
+    self.assertEqual(result["code"], "legacy_spec_frozen")
+                     ~~~~~~^^^^^^^^
+KeyError: 'code'
+
+======================================================================
+ERROR: test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='update', message='旧规格已冻结，请在仓库 OpenSpec 中提交新需求；本请求未写入。')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-frozen-409/tools/sessionhelper/tests/test_spec_direct.py", line 76, in test_frozen_409_create_and_update_are_explicit_rejections
+    self.assertEqual(result["code"], "legacy_spec_frozen")
+                     ~~~~~~^^^^^^^^
+KeyError: 'code'
+
+======================================================================
+ERROR: test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='update', message=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-frozen-409/tools/sessionhelper/tests/test_spec_direct.py", line 76, in test_frozen_409_create_and_update_are_explicit_rejections
+    self.assertEqual(result["code"], "legacy_spec_frozen")
+                     ~~~~~~^^^^^^^^
+KeyError: 'code'
+
+======================================================================
+ERROR: test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='update', message='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-frozen-409/tools/sessionhelper/tests/test_spec_direct.py", line 76, in test_frozen_409_create_and_update_are_explicit_rejections
+    self.assertEqual(result["code"], "legacy_spec_frozen")
+                     ~~~~~~^^^^^^^^
+KeyError: 'code'
+
+======================================================================
+ERROR: test_frozen_409_create_and_update_are_explicit_rejections (tools.sessionhelper.tests.test_spec_direct.SpecDirectTests.test_frozen_409_create_and_update_are_explicit_rejections) (action='update', message=123)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-frozen-409/tools/sessionhelper/tests/test_spec_direct.py", line 76, in test_frozen_409_create_and_update_are_explicit_rejections
+    self.assertEqual(result["code"], "legacy_spec_frozen")
+                     ~~~~~~^^^^^^^^
+KeyError: 'code'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.533s
+
+FAILED (errors=8)
