@@ -1,0 +1,7 @@
+--- FAIL: TestReadImmutableRef (0.00s)
+    service_test.go:149: {{github github.com 1 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa openspec/spec.md} https://github.com/owner/repo/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/openspec/spec.md [{openspec/spec.md aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa blob 100644 24}] # CSR-001
+        - [x] T-01
+        END} <nil> [feature/moving feature/moving]
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.002s
+FAIL

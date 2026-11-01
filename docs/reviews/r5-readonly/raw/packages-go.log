@@ -1,0 +1,12 @@
+ok  	github.com/zhangzongchu2019/dingwei/internal/specread	0.043s
+migrate 0044: principal display_name rewritten id=owner-entry-a old="Owner" new="zzc"
+migrate 0044: principal display_name rewritten id=a old="Owner" new="team"
+migrate 0044: principal display_name rewritten id=b old="Owner" new="team-2"
+store: 纯数据迁移 0025_owner_links_page.sql 由 DINGWEI_MIGRATION_LEGACY_ACK 人工确认放行（仅补账，不执行）
+--- FAIL: TestMigrationLedger_LegacyAckBackfillsWithoutReplay (0.15s)
+    migration_ledger_test.go:172: 受控确认后仍拒: migrate 0070_openspec_read_binding.sql: SQL logic error: table openspec_read_binding already exists (1)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	65.460s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	182.710s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	191.646s
+FAIL

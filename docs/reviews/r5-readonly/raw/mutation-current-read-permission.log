@@ -1,0 +1,8 @@
+--- FAIL: TestReadAuthorizationAndCoordinates (0.00s)
+    --- FAIL: TestReadAuthorizationAndCoordinates/no_read (0.00s)
+        service_test.go:114: guard failed: err=<nil> text=24 entries=1
+--- FAIL: TestReadRevocationAndCrossRepository (0.00s)
+    service_test.go:128: revoked read leaked
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.003s
+FAIL

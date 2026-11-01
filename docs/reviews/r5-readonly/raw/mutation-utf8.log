@@ -1,0 +1,6 @@
+--- FAIL: TestReadSizeEncodingAndCompleteness (0.00s)
+    --- FAIL: TestReadSizeEncodingAndCompleteness/invalid_utf8 (0.00s)
+        service_test.go:205: invalid bytes exposed
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.002s
+FAIL

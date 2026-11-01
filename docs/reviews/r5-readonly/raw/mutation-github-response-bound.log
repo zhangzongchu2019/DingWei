@@ -1,0 +1,6 @@
+--- FAIL: TestGitHubResourceBoundsAndRedirectRate (0.07s)
+    --- FAIL: TestGitHubResourceBoundsAndRedirectRate/response_bytes (0.07s)
+        github_test.go:301: unbounded provider result <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.073s
+FAIL

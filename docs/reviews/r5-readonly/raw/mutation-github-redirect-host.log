@@ -1,0 +1,6 @@
+--- FAIL: TestGitHubRepositoryIdentityRedirect (0.00s)
+    --- FAIL: TestGitHubRepositoryIdentityRedirect/cross_host (0.00s)
+        github_test.go:41: credential sent outside GitHub
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.003s
+FAIL

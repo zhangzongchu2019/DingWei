@@ -1,0 +1,8 @@
+--- FAIL: TestGitHubRepositoryIdentityRedirect (0.00s)
+    --- FAIL: TestGitHubRepositoryIdentityRedirect/wrong_id (0.00s)
+        github_test.go:71: unsafe redirect/identity accepted
+    --- FAIL: TestGitHubRepositoryIdentityRedirect/same_host_wrong_id (0.00s)
+        github_test.go:71: unsafe redirect/identity accepted
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.005s
+FAIL

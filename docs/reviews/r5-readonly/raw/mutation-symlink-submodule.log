@@ -1,0 +1,8 @@
+--- FAIL: TestReadPathAndTypes (0.00s)
+    --- FAIL: TestReadPathAndTypes/120000 (0.00s)
+        service_test.go:171: followed nonregular file
+    --- FAIL: TestReadPathAndTypes/160000 (0.00s)
+        service_test.go:171: followed nonregular file
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.002s
+FAIL

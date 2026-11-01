@@ -1,0 +1,6 @@
+--- FAIL: TestGitHubBlobBinding (0.00s)
+    --- FAIL: TestGitHubBlobBinding/hash (0.00s)
+        github_test.go:240: blob guard <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.003s
+FAIL

@@ -1,0 +1,13 @@
+✓ spec/change-lifecycle-evidence
+✓ spec/change-risk-reminders
+✓ spec/console-coordinate-review
+✓ spec/console-spec-reading
+✓ spec/console-version-confirmation
+✓ spec/legacy-console-spec
+✓ change/r1-identify-high-risk-changes
+✓ change/r11-freeze-legacy-console-spec
+✓ change/r5-render-openspec-readonly
+✓ change/r6-coordinate-review
+✓ change/r7-confirm-immutable-version
+✓ change/r8-evidence-driven-change-lifecycle
+Totals: 12 passed, 0 failed (12 items)

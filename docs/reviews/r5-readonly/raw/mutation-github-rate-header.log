@@ -1,0 +1,5 @@
+--- FAIL: TestGitHubRateHeadersAndCredentialRotation (0.00s)
+    github_test.go:138: rate header ignored
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.003s
+FAIL

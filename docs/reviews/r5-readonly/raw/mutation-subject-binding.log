@@ -1,0 +1,6 @@
+--- FAIL: TestReadAuthorizationAndCoordinates (0.00s)
+    --- FAIL: TestReadAuthorizationAndCoordinates/other_principal (0.00s)
+        service_test.go:114: guard failed: err=<nil> text=24 entries=1
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.002s
+FAIL

@@ -1,0 +1,8 @@
+HELPER_INVENTORY_OK files=90
+HELPER_GATE_START profiles=claude,codex python=/usr/bin/python3
+HELPER_GATE_PROFILE selected=claude actual_SH_DRIVER=claude
+helper files without collected cases: ['test_desktop_endpoint', 'test_guide_staging', 'test_ipc_socket_path_isolation', 'test_sessionhelper']
+HELPER_GATE_RESULT {"error": "helper case discovery failed", "profile": "claude", "rc": 1}
+HELPER_GATE_PROFILE selected=codex actual_SH_DRIVER=codex
+helper files without collected cases: ['test_desktop_endpoint', 'test_guide_staging', 'test_ipc_socket_path_isolation', 'test_sessionhelper']
+HELPER_GATE_RESULT {"error": "helper case discovery failed", "profile": "codex", "rc": 1}

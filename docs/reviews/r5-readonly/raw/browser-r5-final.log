@@ -1,0 +1,20 @@
+PASS original requirement and task IDs remain read-only
+PASS no document write controls
+PASS untrusted HTML does not execute
+PASS no executable or remote resource nodes
+PASS render and scroll make zero remote requests
+PASS dangerous schemes credentials and encoded links rejected
+PASS repository escape rejected
+PASS normalized parent link inside openspec allowed
+PASS context source link is external and same commit
+PASS external link isolates opener and referrer
+PASS navigation stays at full SHA
+PASS oversize feedback has immutable source and no truncated body
+PASS denial clears previous content and summaries
+PASS complete byte length 70000 and final marker
+PASS complete byte length 71680 and final marker
+PASS complete byte length 2097152 and final marker
+PASS coordinate edit discards late old response
+PASS browser makes no writes
+PASS source links are never fetched automatically
+R5_BROWSER_OK checks=19 mutation=none

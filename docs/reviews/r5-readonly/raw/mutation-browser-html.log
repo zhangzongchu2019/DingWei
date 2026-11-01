@@ -1,0 +1,5 @@
+PASS original requirement and task IDs remain read-only
+PASS no document write controls
+AssertionError [ERR_ASSERTION]: untrusted HTML does not execute
+    at check (/data/ai-dev-data/r5-impl/view-service/openspec-read-browser-regression.js:19:427)
+    at /data/ai-dev-data/r5-impl/view-service/openspec-read-browser-regression.js:23:2

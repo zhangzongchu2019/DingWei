@@ -1,0 +1,6 @@
+--- FAIL: TestGitHubRepositoryNameReuseAndTimeout (0.00s)
+    --- FAIL: TestGitHubRepositoryNameReuseAndTimeout/name_reused (0.00s)
+        github_test.go:263: name reuse or service failure accepted
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.003s
+FAIL
