@@ -1,0 +1,20 @@
+{
+  "mutations": [
+    {
+      "mutation": "remove-label-route",
+      "test": "TestR1_001_S01",
+      "rc": 1
+    },
+    {
+      "mutation": "carry-ack-after-hit-change",
+      "test": "TestR1_006_S03",
+      "rc": 1
+    },
+    {
+      "mutation": "ignore-FAIL-at-archive",
+      "test": "TestR8_004_S02",
+      "rc": 1
+    }
+  ],
+  "harness_correction": "third initial selector matched two occurrences and was rejected before any edit; narrowed to the archive predicate; all original bytes restored in finally"
+}

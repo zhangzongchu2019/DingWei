@@ -1,0 +1,20 @@
+--- FAIL: TestR1_001_S01 (0.01s)
+    --- FAIL: TestR1_001_S01/risk:funds/label (0.00s)
+        risk_test.go:46: missing risk:funds/label: [] <nil>
+    --- FAIL: TestR1_001_S01/risk:permission/label (0.00s)
+        risk_test.go:46: missing risk:permission/label: [] <nil>
+    --- FAIL: TestR1_001_S01/risk:data-delete/label (0.00s)
+        risk_test.go:46: missing risk:data-delete/label: [] <nil>
+    --- FAIL: TestR1_001_S01/risk:api-contract/label (0.00s)
+        risk_test.go:46: missing risk:api-contract/label: [] <nil>
+    --- FAIL: TestR1_001_S01/risk:sla/label (0.00s)
+        risk_test.go:46: missing risk:sla/label: [] <nil>
+    --- FAIL: TestR1_001_S01/risk:migration/label (0.00s)
+        risk_test.go:46: missing risk:migration/label: [] <nil>
+    --- FAIL: TestR1_001_S01/risk:privacy/label (0.00s)
+        risk_test.go:46: missing risk:privacy/label: [] <nil>
+    --- FAIL: TestR1_001_S01/union-and-rename (0.00s)
+        risk_test.go:57: union [{Category:risk:data-delete Rule:default-data-delete Source:added_line Path:safe.go Line:1} {Category:risk:permission Rule:default-permission Source:path Path:internal/identity/a.go Line:0}] <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/changeflow	0.017s
+FAIL

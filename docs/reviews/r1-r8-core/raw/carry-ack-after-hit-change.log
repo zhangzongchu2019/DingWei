@@ -1,0 +1,16 @@
+--- FAIL: TestR1_006_S03 (0.79s)
+    --- FAIL: TestR1_006_S03/labels/increase (0.14s)
+        changeflow_scenarios_test.go:354: changed set carried knowledge/history lost
+    --- FAIL: TestR1_006_S03/labels/decrease (0.13s)
+        changeflow_scenarios_test.go:354: changed set carried knowledge/history lost
+    --- FAIL: TestR1_006_S03/labels/zero (0.13s)
+        changeflow_scenarios_test.go:354: changed set carried knowledge/history lost
+    --- FAIL: TestR1_006_S03/rules/increase (0.13s)
+        changeflow_scenarios_test.go:354: changed set carried knowledge/history lost
+    --- FAIL: TestR1_006_S03/rules/decrease (0.13s)
+        changeflow_scenarios_test.go:354: changed set carried knowledge/history lost
+    --- FAIL: TestR1_006_S03/rules/zero (0.13s)
+        changeflow_scenarios_test.go:354: changed set carried knowledge/history lost
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.794s
+FAIL

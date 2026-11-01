@@ -1,0 +1,396 @@
+=== RUN   TestR1_001_S01
+=== RUN   TestR1_001_S01/risk:funds/label
+=== RUN   TestR1_001_S01/risk:funds/path
+=== RUN   TestR1_001_S01/risk:funds/added_line
+=== RUN   TestR1_001_S01/risk:permission/label
+=== RUN   TestR1_001_S01/risk:permission/path
+=== RUN   TestR1_001_S01/risk:permission/added_line
+=== RUN   TestR1_001_S01/risk:data-delete/label
+=== RUN   TestR1_001_S01/risk:data-delete/path
+=== RUN   TestR1_001_S01/risk:data-delete/added_line
+=== RUN   TestR1_001_S01/risk:api-contract/label
+=== RUN   TestR1_001_S01/risk:api-contract/path
+=== RUN   TestR1_001_S01/risk:api-contract/added_line
+=== RUN   TestR1_001_S01/risk:sla/label
+=== RUN   TestR1_001_S01/risk:sla/path
+=== RUN   TestR1_001_S01/risk:sla/added_line
+=== RUN   TestR1_001_S01/risk:migration/label
+=== RUN   TestR1_001_S01/risk:migration/path
+=== RUN   TestR1_001_S01/risk:migration/added_line
+=== RUN   TestR1_001_S01/risk:privacy/label
+=== RUN   TestR1_001_S01/risk:privacy/path
+=== RUN   TestR1_001_S01/risk:privacy/added_line
+=== RUN   TestR1_001_S01/union-and-rename
+--- PASS: TestR1_001_S01 (0.01s)
+    --- PASS: TestR1_001_S01/risk:funds/label (0.00s)
+    --- PASS: TestR1_001_S01/risk:funds/path (0.00s)
+    --- PASS: TestR1_001_S01/risk:funds/added_line (0.00s)
+    --- PASS: TestR1_001_S01/risk:permission/label (0.00s)
+    --- PASS: TestR1_001_S01/risk:permission/path (0.00s)
+    --- PASS: TestR1_001_S01/risk:permission/added_line (0.00s)
+    --- PASS: TestR1_001_S01/risk:data-delete/label (0.00s)
+    --- PASS: TestR1_001_S01/risk:data-delete/path (0.00s)
+    --- PASS: TestR1_001_S01/risk:data-delete/added_line (0.00s)
+    --- PASS: TestR1_001_S01/risk:api-contract/label (0.00s)
+    --- PASS: TestR1_001_S01/risk:api-contract/path (0.00s)
+    --- PASS: TestR1_001_S01/risk:api-contract/added_line (0.00s)
+    --- PASS: TestR1_001_S01/risk:sla/label (0.00s)
+    --- PASS: TestR1_001_S01/risk:sla/path (0.00s)
+    --- PASS: TestR1_001_S01/risk:sla/added_line (0.00s)
+    --- PASS: TestR1_001_S01/risk:migration/label (0.00s)
+    --- PASS: TestR1_001_S01/risk:migration/path (0.00s)
+    --- PASS: TestR1_001_S01/risk:migration/added_line (0.00s)
+    --- PASS: TestR1_001_S01/risk:privacy/label (0.00s)
+    --- PASS: TestR1_001_S01/risk:privacy/path (0.00s)
+    --- PASS: TestR1_001_S01/risk:privacy/added_line (0.00s)
+    --- PASS: TestR1_001_S01/union-and-rename (0.00s)
+=== RUN   TestR1_001_S02
+=== RUN   TestR1_001_S02/risk:funds/label
+=== RUN   TestR1_001_S02/risk:funds/path
+=== RUN   TestR1_001_S02/risk:funds/added_line
+=== RUN   TestR1_001_S02/risk:permission/label
+=== RUN   TestR1_001_S02/risk:permission/path
+=== RUN   TestR1_001_S02/risk:permission/added_line
+=== RUN   TestR1_001_S02/risk:data-delete/label
+=== RUN   TestR1_001_S02/risk:data-delete/path
+=== RUN   TestR1_001_S02/risk:data-delete/added_line
+=== RUN   TestR1_001_S02/risk:api-contract/label
+=== RUN   TestR1_001_S02/risk:api-contract/path
+=== RUN   TestR1_001_S02/risk:api-contract/added_line
+=== RUN   TestR1_001_S02/risk:sla/label
+=== RUN   TestR1_001_S02/risk:sla/path
+=== RUN   TestR1_001_S02/risk:sla/added_line
+=== RUN   TestR1_001_S02/risk:migration/label
+=== RUN   TestR1_001_S02/risk:migration/path
+=== RUN   TestR1_001_S02/risk:migration/added_line
+=== RUN   TestR1_001_S02/risk:privacy/label
+=== RUN   TestR1_001_S02/risk:privacy/path
+=== RUN   TestR1_001_S02/risk:privacy/added_line
+--- PASS: TestR1_001_S02 (0.01s)
+    --- PASS: TestR1_001_S02/risk:funds/label (0.00s)
+    --- PASS: TestR1_001_S02/risk:funds/path (0.00s)
+    --- PASS: TestR1_001_S02/risk:funds/added_line (0.00s)
+    --- PASS: TestR1_001_S02/risk:permission/label (0.00s)
+    --- PASS: TestR1_001_S02/risk:permission/path (0.00s)
+    --- PASS: TestR1_001_S02/risk:permission/added_line (0.00s)
+    --- PASS: TestR1_001_S02/risk:data-delete/label (0.00s)
+    --- PASS: TestR1_001_S02/risk:data-delete/path (0.00s)
+    --- PASS: TestR1_001_S02/risk:data-delete/added_line (0.00s)
+    --- PASS: TestR1_001_S02/risk:api-contract/label (0.00s)
+    --- PASS: TestR1_001_S02/risk:api-contract/path (0.00s)
+    --- PASS: TestR1_001_S02/risk:api-contract/added_line (0.00s)
+    --- PASS: TestR1_001_S02/risk:sla/label (0.00s)
+    --- PASS: TestR1_001_S02/risk:sla/path (0.00s)
+    --- PASS: TestR1_001_S02/risk:sla/added_line (0.00s)
+    --- PASS: TestR1_001_S02/risk:migration/label (0.00s)
+    --- PASS: TestR1_001_S02/risk:migration/path (0.00s)
+    --- PASS: TestR1_001_S02/risk:migration/added_line (0.00s)
+    --- PASS: TestR1_001_S02/risk:privacy/label (0.00s)
+    --- PASS: TestR1_001_S02/risk:privacy/path (0.00s)
+    --- PASS: TestR1_001_S02/risk:privacy/added_line (0.00s)
+=== RUN   TestR1_002_S01
+--- PASS: TestR1_002_S01 (0.00s)
+=== RUN   TestR1_002_S02
+=== RUN   TestR1_002_S02/deleted-context-header
+=== RUN   TestR1_002_S02/incomplete
+=== RUN   TestR1_002_S02/file-incomplete
+=== RUN   TestR1_002_S02/truncated
+=== RUN   TestR1_002_S02/wrong-head
+=== RUN   TestR1_002_S02/rules-missing
+=== RUN   TestR1_002_S02/unsafe-path
+--- PASS: TestR1_002_S02 (0.00s)
+    --- PASS: TestR1_002_S02/deleted-context-header (0.00s)
+    --- PASS: TestR1_002_S02/incomplete (0.00s)
+    --- PASS: TestR1_002_S02/file-incomplete (0.00s)
+    --- PASS: TestR1_002_S02/truncated (0.00s)
+    --- PASS: TestR1_002_S02/wrong-head (0.00s)
+    --- PASS: TestR1_002_S02/rules-missing (0.00s)
+    --- PASS: TestR1_002_S02/unsafe-path (0.00s)
+=== RUN   TestRiskRulesSchemaAndIdentity
+--- PASS: TestRiskRulesSchemaAndIdentity (0.00s)
+=== RUN   TestRiskRuleVersionBindsEntries
+--- PASS: TestRiskRuleVersionBindsEntries (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/changeflow	0.044s
+=== RUN   TestR1_003_S01
+=== RUN   TestR1_003_S01/github
+=== RUN   TestR1_003_S01/gongfeng
+--- PASS: TestR1_003_S01 (0.26s)
+    --- PASS: TestR1_003_S01/github (0.14s)
+    --- PASS: TestR1_003_S01/gongfeng (0.12s)
+=== RUN   TestR1_003_S02
+=== RUN   TestR1_003_S02/service-only
+=== RUN   TestR1_003_S02/revoked
+=== RUN   TestR1_003_S02/no-comment
+=== RUN   TestR1_003_S02/wrong-commit
+=== RUN   TestR1_003_S02/wrong-instance
+=== RUN   TestR1_003_S02/wrong-repo
+--- PASS: TestR1_003_S02 (0.77s)
+    --- PASS: TestR1_003_S02/service-only (0.13s)
+    --- PASS: TestR1_003_S02/revoked (0.12s)
+    --- PASS: TestR1_003_S02/no-comment (0.14s)
+    --- PASS: TestR1_003_S02/wrong-commit (0.13s)
+    --- PASS: TestR1_003_S02/wrong-instance (0.13s)
+    --- PASS: TestR1_003_S02/wrong-repo (0.13s)
+=== RUN   TestR1_004_S01
+--- PASS: TestR1_004_S01 (0.15s)
+=== RUN   TestR1_004_S02
+=== RUN   TestR1_004_S02/failed
+=== RUN   TestR1_004_S02/unknown
+=== RUN   TestR1_004_S02/audit-failure
+--- PASS: TestR1_004_S02 (0.41s)
+    --- PASS: TestR1_004_S02/failed (0.16s)
+    --- PASS: TestR1_004_S02/unknown (0.13s)
+    --- PASS: TestR1_004_S02/audit-failure (0.13s)
+=== RUN   TestR1_005_S01
+--- PASS: TestR1_005_S01 (0.14s)
+=== RUN   TestR1_005_S02
+--- PASS: TestR1_005_S02 (0.14s)
+=== RUN   TestR1_006_S01
+--- PASS: TestR1_006_S01 (0.16s)
+=== RUN   TestR1_006_S02
+--- PASS: TestR1_006_S02 (0.13s)
+=== RUN   TestR1_006_S03
+=== RUN   TestR1_006_S03/labels/increase
+=== RUN   TestR1_006_S03/labels/decrease
+=== RUN   TestR1_006_S03/labels/zero
+=== RUN   TestR1_006_S03/rules/increase
+=== RUN   TestR1_006_S03/rules/decrease
+=== RUN   TestR1_006_S03/rules/zero
+--- PASS: TestR1_006_S03 (0.87s)
+    --- PASS: TestR1_006_S03/labels/increase (0.13s)
+    --- PASS: TestR1_006_S03/labels/decrease (0.14s)
+    --- PASS: TestR1_006_S03/labels/zero (0.18s)
+    --- PASS: TestR1_006_S03/rules/increase (0.14s)
+    --- PASS: TestR1_006_S03/rules/decrease (0.14s)
+    --- PASS: TestR1_006_S03/rules/zero (0.13s)
+=== RUN   TestR1_006_S04
+=== RUN   TestR1_006_S04/labels
+=== RUN   TestR1_006_S04/rules
+--- PASS: TestR1_006_S04 (0.29s)
+    --- PASS: TestR1_006_S04/labels (0.15s)
+    --- PASS: TestR1_006_S04/rules (0.14s)
+=== RUN   TestR1_006_S05
+--- PASS: TestR1_006_S05 (0.18s)
+=== RUN   TestR1_007_S01
+--- PASS: TestR1_007_S01 (0.13s)
+=== RUN   TestR1_007_S02
+--- PASS: TestR1_007_S02 (0.13s)
+=== RUN   TestR1_008_S01
+--- PASS: TestR1_008_S01 (0.12s)
+=== RUN   TestR1_008_S02
+--- PASS: TestR1_008_S02 (0.13s)
+=== RUN   TestR8_001_S01
+--- PASS: TestR8_001_S01 (0.13s)
+=== RUN   TestR8_001_S02
+=== RUN   TestR8_001_S02/skip
+=== RUN   TestR8_001_S02/invalid-state
+=== RUN   TestR8_001_S02/wrong-before
+=== RUN   TestR8_001_S02/short-sha
+=== RUN   TestR8_001_S02/branch
+=== RUN   TestR8_001_S02/cross-repo
+--- PASS: TestR8_001_S02 (0.78s)
+    --- PASS: TestR8_001_S02/skip (0.13s)
+    --- PASS: TestR8_001_S02/invalid-state (0.13s)
+    --- PASS: TestR8_001_S02/wrong-before (0.13s)
+    --- PASS: TestR8_001_S02/short-sha (0.13s)
+    --- PASS: TestR8_001_S02/branch (0.13s)
+    --- PASS: TestR8_001_S02/cross-repo (0.14s)
+=== RUN   TestR8_002_S01
+=== RUN   TestR8_002_S01/agree
+=== RUN   TestR8_002_S01/disagree
+=== RUN   TestR8_002_S01/modify
+=== RUN   TestR8_002_S01/zero-points
+--- PASS: TestR8_002_S01 (0.54s)
+    --- PASS: TestR8_002_S01/agree (0.13s)
+    --- PASS: TestR8_002_S01/disagree (0.13s)
+    --- PASS: TestR8_002_S01/modify (0.14s)
+    --- PASS: TestR8_002_S01/zero-points (0.14s)
+=== RUN   TestR8_002_S02
+=== RUN   TestR8_002_S02/head-moved
+=== RUN   TestR8_002_S02/old-approval
+=== RUN   TestR8_002_S02/revoked
+=== RUN   TestR8_002_S02/missing-reviewer
+=== RUN   TestR8_002_S02/missing-pm
+=== RUN   TestR8_002_S02/ambiguous-pm
+=== RUN   TestR8_002_S02/expired-pm
+=== RUN   TestR8_002_S02/old-pm
+=== RUN   TestR8_002_S02/unknown-pm
+=== RUN   TestR8_002_S02/unknown-reviewers
+--- PASS: TestR8_002_S02 (1.32s)
+    --- PASS: TestR8_002_S02/head-moved (0.14s)
+    --- PASS: TestR8_002_S02/old-approval (0.13s)
+    --- PASS: TestR8_002_S02/revoked (0.13s)
+    --- PASS: TestR8_002_S02/missing-reviewer (0.13s)
+    --- PASS: TestR8_002_S02/missing-pm (0.12s)
+    --- PASS: TestR8_002_S02/ambiguous-pm (0.12s)
+    --- PASS: TestR8_002_S02/expired-pm (0.13s)
+    --- PASS: TestR8_002_S02/old-pm (0.13s)
+    --- PASS: TestR8_002_S02/unknown-pm (0.15s)
+    --- PASS: TestR8_002_S02/unknown-reviewers (0.15s)
+=== RUN   TestR8_002_S03
+=== RUN   TestR8_002_S03/label
+=== RUN   TestR8_002_S03/proposal
+=== RUN   TestR8_002_S03/both
+--- PASS: TestR8_002_S03 (0.42s)
+    --- PASS: TestR8_002_S03/label (0.14s)
+    --- PASS: TestR8_002_S03/proposal (0.14s)
+    --- PASS: TestR8_002_S03/both (0.13s)
+=== RUN   TestR8_002_S04
+=== RUN   TestR8_002_S04/missing
+=== RUN   TestR8_002_S04/old
+=== RUN   TestR8_002_S04/unverified-authority
+=== RUN   TestR8_002_S04/unchanged-only
+--- PASS: TestR8_002_S04 (0.55s)
+    --- PASS: TestR8_002_S04/missing (0.14s)
+    --- PASS: TestR8_002_S04/old (0.14s)
+    --- PASS: TestR8_002_S04/unverified-authority (0.13s)
+    --- PASS: TestR8_002_S04/unchanged-only (0.14s)
+=== RUN   TestR8_002_S05
+=== RUN   TestR8_002_S05/risk-label
+=== RUN   TestR8_002_S05/committee-author
+=== RUN   TestR8_002_S05/near-label
+--- PASS: TestR8_002_S05 (0.40s)
+    --- PASS: TestR8_002_S05/risk-label (0.14s)
+    --- PASS: TestR8_002_S05/committee-author (0.13s)
+    --- PASS: TestR8_002_S05/near-label (0.12s)
+=== RUN   TestR8_002_S06
+=== RUN   TestR8_002_S06/head
+=== RUN   TestR8_002_S06/label
+=== RUN   TestR8_002_S06/proposal
+=== RUN   TestR8_002_S06/unknown-labels
+=== RUN   TestR8_002_S06/unknown-reviewers
+--- PASS: TestR8_002_S06 (0.63s)
+    --- PASS: TestR8_002_S06/head (0.12s)
+    --- PASS: TestR8_002_S06/label (0.12s)
+    --- PASS: TestR8_002_S06/proposal (0.13s)
+    --- PASS: TestR8_002_S06/unknown-labels (0.13s)
+    --- PASS: TestR8_002_S06/unknown-reviewers (0.13s)
+=== RUN   TestR8_003_S01
+--- PASS: TestR8_003_S01 (0.13s)
+=== RUN   TestR8_003_S02
+=== RUN   TestR8_003_S02/no-handoff
+=== RUN   TestR8_003_S02/incomplete
+=== RUN   TestR8_003_S02/unknown-set
+=== RUN   TestR8_003_S02/old-task
+=== RUN   TestR8_003_S02/empty-set
+=== RUN   TestR8_003_S02/no-evidence
+=== RUN   TestR8_003_S02/duplicate
+--- PASS: TestR8_003_S02 (0.90s)
+    --- PASS: TestR8_003_S02/no-handoff (0.13s)
+    --- PASS: TestR8_003_S02/incomplete (0.13s)
+    --- PASS: TestR8_003_S02/unknown-set (0.13s)
+    --- PASS: TestR8_003_S02/old-task (0.13s)
+    --- PASS: TestR8_003_S02/empty-set (0.13s)
+    --- PASS: TestR8_003_S02/no-evidence (0.12s)
+    --- PASS: TestR8_003_S02/duplicate (0.12s)
+=== RUN   TestR8_004_S01
+=== RUN   TestR8_004_S01/PASS
+=== RUN   TestR8_004_S01/NOT_RUN
+=== RUN   TestR8_004_S01/NOT_APPLICABLE
+--- PASS: TestR8_004_S01 (0.38s)
+    --- PASS: TestR8_004_S01/PASS (0.13s)
+    --- PASS: TestR8_004_S01/NOT_RUN (0.13s)
+    --- PASS: TestR8_004_S01/NOT_APPLICABLE (0.13s)
+=== RUN   TestR8_004_S02
+=== RUN   TestR8_004_S02/fail
+=== RUN   TestR8_004_S02/missing-scenario
+=== RUN   TestR8_004_S02/no-evidence
+=== RUN   TestR8_004_S02/no-reason
+=== RUN   TestR8_004_S02/unknown-set
+--- PASS: TestR8_004_S02 (0.65s)
+    --- PASS: TestR8_004_S02/fail (0.13s)
+    --- PASS: TestR8_004_S02/missing-scenario (0.13s)
+    --- PASS: TestR8_004_S02/no-evidence (0.13s)
+    --- PASS: TestR8_004_S02/no-reason (0.12s)
+    --- PASS: TestR8_004_S02/unknown-set (0.13s)
+=== RUN   TestR8_005_S01
+--- PASS: TestR8_005_S01 (0.13s)
+=== RUN   TestR8_005_S02
+=== RUN   TestR8_005_S02/archive-only
+=== RUN   TestR8_005_S02/no-environment
+=== RUN   TestR8_005_S02/failed
+=== RUN   TestR8_005_S02/other-change
+=== RUN   TestR8_005_S02/old-commit
+=== RUN   TestR8_005_S02/staging-as-production
+--- PASS: TestR8_005_S02 (0.77s)
+    --- PASS: TestR8_005_S02/archive-only (0.13s)
+    --- PASS: TestR8_005_S02/no-environment (0.13s)
+    --- PASS: TestR8_005_S02/failed (0.13s)
+    --- PASS: TestR8_005_S02/other-change (0.13s)
+    --- PASS: TestR8_005_S02/old-commit (0.13s)
+    --- PASS: TestR8_005_S02/staging-as-production (0.13s)
+=== RUN   TestR8_006_S01
+--- PASS: TestR8_006_S01 (0.13s)
+=== RUN   TestR8_006_S02
+=== RUN   TestR8_006_S02/test-name
+=== RUN   TestR8_006_S02/empty-evidence
+=== RUN   TestR8_006_S02/bad-state
+=== RUN   TestR8_006_S02/unknown-id
+=== RUN   TestR8_006_S02/no-reason
+=== RUN   TestR8_006_S02/forbidden
+=== RUN   TestR8_006_S02/old-tested-commit
+=== RUN   TestR8_006_S02/bad-correction
+--- PASS: TestR8_006_S02 (1.01s)
+    --- PASS: TestR8_006_S02/test-name (0.13s)
+    --- PASS: TestR8_006_S02/empty-evidence (0.13s)
+    --- PASS: TestR8_006_S02/bad-state (0.13s)
+    --- PASS: TestR8_006_S02/unknown-id (0.13s)
+    --- PASS: TestR8_006_S02/no-reason (0.13s)
+    --- PASS: TestR8_006_S02/forbidden (0.12s)
+    --- PASS: TestR8_006_S02/old-tested-commit (0.12s)
+    --- PASS: TestR8_006_S02/bad-correction (0.12s)
+=== RUN   TestR8_007_S01
+--- PASS: TestR8_007_S01 (0.13s)
+=== RUN   TestR8_007_S02
+=== RUN   TestR8_007_S02/head
+=== RUN   TestR8_007_S02/revoked
+=== RUN   TestR8_007_S02/committee
+=== RUN   TestR8_007_S02/pm
+=== RUN   TestR8_007_S02/scenarios
+=== RUN   TestR8_007_S02/dependency
+=== RUN   TestR8_007_S02/new-local-FAIL
+--- PASS: TestR8_007_S02 (0.90s)
+    --- PASS: TestR8_007_S02/head (0.13s)
+    --- PASS: TestR8_007_S02/revoked (0.14s)
+    --- PASS: TestR8_007_S02/committee (0.13s)
+    --- PASS: TestR8_007_S02/pm (0.13s)
+    --- PASS: TestR8_007_S02/scenarios (0.13s)
+    --- PASS: TestR8_007_S02/dependency (0.13s)
+    --- PASS: TestR8_007_S02/new-local-FAIL (0.13s)
+=== RUN   TestR8_008_S01
+--- PASS: TestR8_008_S01 (0.13s)
+=== RUN   TestR8_008_S02
+=== RUN   TestR8_008_S02/FAIL
+=== RUN   TestR8_008_S02/NOT_RUN
+--- PASS: TestR8_008_S02 (0.26s)
+    --- PASS: TestR8_008_S02/FAIL (0.13s)
+    --- PASS: TestR8_008_S02/NOT_RUN (0.13s)
+=== RUN   TestR8_009_S01
+--- PASS: TestR8_009_S01 (0.13s)
+=== RUN   TestR8_009_S02
+=== RUN   TestR8_009_S02/revoked-or-provider-rebound
+=== RUN   TestR8_009_S02/unknown
+=== RUN   TestR8_009_S02/audit-commit-failure
+--- PASS: TestR8_009_S02 (0.37s)
+    --- PASS: TestR8_009_S02/revoked-or-provider-rebound (0.12s)
+    --- PASS: TestR8_009_S02/unknown (0.12s)
+    --- PASS: TestR8_009_S02/audit-commit-failure (0.13s)
+=== RUN   TestChangeflowMigrationRestartAndHistoryFence
+--- PASS: TestChangeflowMigrationRestartAndHistoryFence (0.13s)
+=== RUN   TestChangeflowSQLiteReopen
+--- PASS: TestChangeflowSQLiteReopen (0.13s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	15.073s
+=== RUN   TestChangeEvidenceHTTPAuthorityAndDefaults
+2026/10/31 22:29:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:29:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestChangeEvidenceHTTPAuthorityAndDefaults (0.14s)
+=== RUN   TestChangeEvidenceConsoleBrowser
+2026/10/31 22:29:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:29:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    console_change_evidence_test.go:165: PASS actual Console + service + SQLite: detect, acknowledgement/reset/history, ordinary without R7, four-state evidence, archive/release environment, revoked cache
+        
+--- PASS: TestChangeEvidenceConsoleBrowser (1.66s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	1.812s

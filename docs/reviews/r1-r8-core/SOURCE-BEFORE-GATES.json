@@ -1,0 +1,36 @@
+{
+  "at": "2026-11-01T05:30:18.426994+00:00",
+  "source_sha256": {
+    "internal/changeflow/types.go": "9df1ac26339e21f65643be64324ffb672d5e351b6e95a5663e7804eaadae7a13",
+    "internal/changeflow/risk.go": "7a6bc01a54bd82602263b833bcfeb455f3cee113c104312ed1e10d4e2c861aae",
+    "internal/changeflow/service.go": "4cf3c33c8e1aeee1f2e1100818bfe3b92e34b2056c0d8ec13e6b2e5c8ee270f6",
+    "internal/changeflow/lifecycle.go": "54b2b7aae01508503864e09f1efa7a71979c62cf1b1c58d36f4c0b70d11f8395",
+    "internal/changeflow/default_risk_paths.yaml": "3a036d159ff12d101c37c4c6de78dd6847987f613b8786940dcf04fb7f720d1b",
+    "internal/store/changeflow_evidence.go": "29ba566aace7f3124a0170b6e9f1ee0336dc0113616b51aa66b1f6c77057cb65",
+    "internal/store/migrations/0069_changeflow_evidence.sql": "d2c0b71f4db9ebc599fa7e7acdc13bc84719bccc2c336eb23a8e5ec9e438378f",
+    "internal/m8/console_change_evidence.go": "fb8286d5cf09bea60c42412a09ab421a9670b5e50af122d542b981f9831c4e4e",
+    "internal/m8/console_change_evidence.html": "0a7cf2e7250b1067e4caaf0a0035e97dc7325087b6ed1f0372f386c01fd7abad",
+    "internal/m8/hub.go": "379aa20f3912899532029e30523dd5e9fdb4030371978c7d75e271711022cab1",
+    "internal/m8/console_platform.go": "5e8b15904122bdf8aac3a39264936d11805821b0182ee3235c1dd4fad8880b73",
+    "cmd/workpulse/console_routes.go": "3568662739b6cc3e6abe493f53146b842b320d32231562abc13baa7096e2a672"
+  },
+  "finalization_at": "2026-11-01T05:37:11.623785+00:00",
+  "changes_during_initial_gate": "Display-only completion flag now validates archive prerequisites independently of missing release; committee audit now preserves proposal-positive flag; final Go suites are rerun below. Helper/Python sources unchanged.",
+  "final_source_sha256": {
+    "internal/changeflow/types.go": "9df1ac26339e21f65643be64324ffb672d5e351b6e95a5663e7804eaadae7a13",
+    "internal/changeflow/risk.go": "7a6bc01a54bd82602263b833bcfeb455f3cee113c104312ed1e10d4e2c861aae",
+    "internal/changeflow/service.go": "a5cb5cadd3b3c7e8d3862316c2e321a89468b1acfd0dec58acc41075e38d4650",
+    "internal/changeflow/lifecycle.go": "54b2b7aae01508503864e09f1efa7a71979c62cf1b1c58d36f4c0b70d11f8395",
+    "internal/changeflow/default_risk_paths.yaml": "3a036d159ff12d101c37c4c6de78dd6847987f613b8786940dcf04fb7f720d1b",
+    "internal/store/changeflow_evidence.go": "29ba566aace7f3124a0170b6e9f1ee0336dc0113616b51aa66b1f6c77057cb65",
+    "internal/store/migrations/0069_changeflow_evidence.sql": "d2c0b71f4db9ebc599fa7e7acdc13bc84719bccc2c336eb23a8e5ec9e438378f",
+    "internal/m8/console_change_evidence.go": "fb8286d5cf09bea60c42412a09ab421a9670b5e50af122d542b981f9831c4e4e",
+    "internal/m8/console_change_evidence.html": "0a7cf2e7250b1067e4caaf0a0035e97dc7325087b6ed1f0372f386c01fd7abad",
+    "internal/m8/hub.go": "379aa20f3912899532029e30523dd5e9fdb4030371978c7d75e271711022cab1",
+    "internal/m8/console_platform.go": "5e8b15904122bdf8aac3a39264936d11805821b0182ee3235c1dd4fad8880b73",
+    "cmd/workpulse/console_routes.go": "3568662739b6cc3e6abe493f53146b842b320d32231562abc13baa7096e2a672",
+    "internal/store/sqlite.go": "9c0559daa0b4e09d52466389c7815669f7d83a14d0e04ffba8aadbcdb4ad9101"
+  },
+  "final_gates_started_at": "2026-11-01T05:39:43.218429+00:00",
+  "final_go_recheck_reason": "Final result/release display separation, proposal classification provenance and 0069 exact-DDL ledger-loss recovery are covered by final full package/race reruns; initial failures retained."
+}

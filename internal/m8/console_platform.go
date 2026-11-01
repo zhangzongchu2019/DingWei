@@ -87,6 +87,7 @@ var consolePlatformItemID = regexp.MustCompile(`^[a-z][a-z0-9-]{1,63}$`)
 var consolePlatformReservedItemIDs = map[string]bool{
 	"agents":                 true,
 	"openspec-confirmations": true,
+	"change-evidence":        true,
 	"agent-groups":           true,
 	"specs":                  true,
 	"task-board":             true,
@@ -200,6 +201,9 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 			ID: "admin", Kind: "admin", Title: "旧版后台",
 			Href: "/console/admin", Target: "_blank", Status: "approved", Active: true,
 		})
+	}
+	if h.ChangeEvidence != nil && h.ChangeEvidence.Store != nil && h.ChangeEvidence.Provider != nil {
+		builtins = append(builtins, model.ConsolePlatformItem{ID: "change-evidence", Kind: "change-evidence", Title: "变更风险与验收证据", Href: "/console/change-evidence", Target: "_blank", Status: "approved", Active: true})
 	}
 	if h.openSpecConfirmationReady() {
 		builtins = append(builtins, model.ConsolePlatformItem{ID: "openspec-confirmations", Kind: "openspec-confirmations", Title: "委员会版本确认", Href: "/console/openspec-confirmations", Target: "_blank", Status: "approved", Active: true})
