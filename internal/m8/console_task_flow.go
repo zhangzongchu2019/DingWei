@@ -283,6 +283,14 @@ func (h *Hub) withTaskCandidates(ctx context.Context, owner, group string, tasks
 }
 
 func (h *Hub) HandleConsoleTaskCandidateConfirm(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.taskFlowRepo()
 	if !ok {
 		taskError(w, errors.New("task store unavailable"))

@@ -336,6 +336,14 @@ func (h *Hub) consoleSpecs() (consoleSpecRepository, bool) {
 }
 
 func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.consoleSpecs()
 	if !ok {
 		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
@@ -439,6 +447,14 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.consoleSpecs()
 	if !ok {
 		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
@@ -660,6 +676,14 @@ func (h *Hub) HandleConsoleSpecTaskDelete(w http.ResponseWriter, r *http.Request
 }
 
 func (h *Hub) HandleConsoleSpecTasks(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.consoleSpecs()
 	if !ok {
 		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
@@ -697,6 +721,14 @@ func (h *Hub) HandleConsoleSpecTasks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) HandleConsoleSpecWorkflow(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.consoleSpecs()
 	if !ok {
 		http.Error(w, "console specs unavailable", 503)
@@ -803,12 +835,28 @@ func consoleSpecEditorItem(p model.ConsolePrincipal) (map[string]string, bool) {
 }
 
 func (h *Hub) HandleConsoleSpecNewVersion(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	r = r.WithContext(context.WithValue(r.Context(), consoleSpecOpenNewContextKey{}, true))
 	r.Method = http.MethodPatch
 	h.HandleConsoleSpec(w, r)
 }
 
 func (h *Hub) HandleConsoleSpecDerive(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.consoleSpecs()
 	if !ok {
 		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
@@ -851,6 +899,14 @@ func (h *Hub) HandleConsoleSpecDerive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) HandleConsoleSpecCloseEditing(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.consoleSpecs()
 	if !ok {
 		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
@@ -867,6 +923,14 @@ func (h *Hub) HandleConsoleSpecCloseEditing(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *Hub) HandleConsoleSpecReopenEditing(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.consoleSpecs()
 	if !ok {
 		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
@@ -883,12 +947,36 @@ func (h *Hub) HandleConsoleSpecReopenEditing(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *Hub) HandleConsoleSpecArchive(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	h.setConsoleSpecArchive(w, r, true, false)
 }
 func (h *Hub) HandleConsoleSpecUnarchive(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	h.setConsoleSpecArchive(w, r, false, false)
 }
 func (h *Hub) HandleConsoleSpecsArchiveBatch(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	h.setConsoleSpecArchive(w, r, true, true)
 }
 func (h *Hub) setConsoleSpecArchive(w http.ResponseWriter, r *http.Request, archived, batch bool) {

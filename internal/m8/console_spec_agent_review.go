@@ -105,6 +105,14 @@ func (h *Hub) specAgentCapable(key, name string) (bool, bool) {
 	return true, c.specReviewV1 && c.deliveryACKV1
 }
 func (h *Hub) HandleConsoleSpecAgentRequest(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.Repo.(specAgentRepository)
 	base, bok := h.consoleSpecs()
 	if !ok || !bok {
@@ -230,6 +238,14 @@ func (h *Hub) sendSpecAgentRequest(ctx context.Context, q *store.SpecAgentReques
 	})
 }
 func (h *Hub) HandleConsoleSpecAgentConfirm(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.Repo.(specAgentRepository)
 	if !ok {
 		specAgentError(w, errors.New("store unavailable"))
@@ -313,6 +329,14 @@ func (h *Hub) readSpecAgentAuthorized(ctx context.Context, q *store.SpecAgentReq
 	return out, e
 }
 func (h *Hub) HandleAgentSpecReview(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.Repo.(specAgentRepository)
 	if !ok {
 		specAgentError(w, errors.New("store unavailable"))
@@ -399,6 +423,15 @@ func (h *Hub) HandleAgentSpecReview(w http.ResponseWriter, r *http.Request) {
 	taskJSON(w, 200, out)
 }
 func (h *Hub) handleSpecAgentReviewResult(ctx context.Context, c *sessionClient, env model.Envelope) bool {
+	if metaString(env.Meta, "type") == "console_spec_pm_assist_result" || metaString(env.Meta, "type") == "console_spec_review_result" || metaString(env.Meta, "type") == "console_spec_criteria_result" {
+		guarded, release, err := h.beginLegacySpecWrite(ctx)
+		if err != nil {
+			return true
+		}
+		defer release()
+		ctx = guarded
+	}
+
 	typ := metaString(env.Meta, "type")
 	if typ == "console_spec_pm_assist_result" {
 		return h.handlePMSpecAssistResult(ctx, metaString(env.Meta, "request_id"), c, env.Body)
@@ -431,6 +464,13 @@ func (h *Hub) handleSpecAgentReviewResult(ctx context.Context, c *sessionClient,
 	return true
 }
 func (h *Hub) reconcileSpecAgent(ctx context.Context) {
+	guarded, release, err := h.beginLegacySpecWrite(ctx)
+	if err != nil {
+		return
+	}
+	defer release()
+	ctx = guarded
+
 	repo, ok := h.Repo.(specAgentRepository)
 	if !ok {
 		return

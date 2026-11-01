@@ -24,3 +24,10 @@
 
 ## 外部资料
 - 决议与就绪计划的不可变来源见 R11 proposal「来源」；发布授权不由本上下文或 OpenSpec archive 产生。
+
+## R11 核心实现接线
+- `cmd/workpulse/legacy_spec_freeze.go`：读取 `WP_LEGACY_SPEC_FROZEN`，默认不启用；非法配置拒启动，true 在迁移后/接流前锁存冻结。状态已冻结时 false/漏配不解冻。无公共修改接口。
+- `internal/store/legacy_spec_freeze.go`、`legacy_spec_lock_linux.go`、`migrations/0067_legacy_spec_freeze.sql`：SQLite 冻结位、同数据库锁文件共享/排他租约、26 张业务表的事务级拒写。Linux 部署，锁文件从 SQLite 实际数据库路径派生；不得在服务运行中删锁文件或为同一数据库另建锁路径。内存测试库使用进程锁。
+- `internal/m8/legacy_spec_freeze.go` 与各旧规格/模板 handler：修改请求拒绝为 HTTP409/legacy_spec_frozen；普通消息和任务进度不走该拒写。`hub.go` 覆盖旧生成派发及 durable queue 实际发送，WS 回调和后台重试另有租约。
+- `console_specs_page.go`：冻结后在原页面标注历史只读，不改变读取可见范围。LCS-002 的普通入口移除、独立查询与共享策略仍待后续。
+- 生产旧规格对象实际保存在 SQLite；PostgreSQL 是身份与授权依赖，不存在需要同步冻结的第二份 PG Spec 表。必须先把所有访问该旧规格库的 Hub 更新为含 R11 守卫的版本，再由平台架构组按 GO 开启开关；未升级进程不具备出站共享租约。本文不授权部署或开关操作。

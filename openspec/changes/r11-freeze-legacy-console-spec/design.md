@@ -31,3 +31,27 @@
 ## Open Questions
 
 会改变实现的未决项均在 proposal 的 R11-A01～03、R11-PM01～03 中显式挂起；T-03 实施前必须确认并更新本文，不把建议当成已批准技术方案。
+
+## 本轮核心实现决策（LCS-001/003/004/005）
+
+- 开关 `WP_LEGACY_SPEC_FROZEN` 未配置/false 时不主动冻结；true 在启动迁移后、接流前把 SQLite 单例状态锁存为 frozen。非法值拒绝启动。已冻结数据库不会因下次漏配或 false 自动解冻，无公共解冻接口；切换 GO 仍由架构组执行。HTTP 统一拒绝为 409 / legacy_spec_frozen，说明改用仓库 OpenSpec。
+- 旧规格表和草稿/门/生成请求/模板表的 INSERT/UPDATE/DELETE 由新迁移中的触发器在同一数据库写事务内校验冻结位。正文、历史审计及已有门不被批量改写；任务、任务证据、问答/阻塞数据不是冻结表。SQLite 是实际旧规格存储，PG 承载新平台身份，不能虚构第二份 PG Spec 表。
+- 服务端变更 handler、迟到 WS 结果、后台生成重试和实际生成信封派发持有同数据库锁文件的共享租约；启动冻结先取排他租约再提交冻结位。锁文件与数据库放同目录；独立打开的同库进程共享同一锁 inode，禁止运行中删锁文件。锁采用上下文可取消等待，派发租约覆盖实际送出，已排队生成信封在真正交给 helper 前也重核。数据库提交边界继续覆盖未持租约的直接 store 调用。
+- 在途任务进度、执行证据、问答/阻塞日志和普通消息不持旧规格写租约，也不被规格表触发器阻断；新拆分/生成、模板签核与迟到规格结果不能借这些路径改写旧规格。
+- 本轮不改 LCS-002 的导航、历史查询与共享权限策略，原 GET 权限保留。查询页面的历史标注随 LCS-002 后续一并交付，核心阶段不冒称整个 R11 已完成。
+
+## 核心入口与数据效果清单
+
+| 写入/派发类别 | 守卫落点 | 冻结后效果 |
+| --- | --- | --- |
+| Console 新建/PATCH、shared PATCH/versions、Agent direct/inferences、版本/派生/归档/编辑控制 | `console_specs.go`、`console_spec_inference_assist.go` 的 handler 共享租约；数据库 trigger | HTTP409 明确拒绝，无新修订/历史改写 |
+| workflow、agent-review/criteria/confirm、presplit/候选确认、旧 PM 草稿/派助/结果 | 对应 handler 共享租约；旧规格/flow/request/模板表 trigger | 不执行旧生成门，不伪造定稿或通过 |
+| 旧模板 source/draft/角色回执和模板绑定生成 | `pilot_template.go`；pilot_spec_source 与 pilot_template 表 trigger | 不追加旧模板或借确认创建旧规格 |
+| WS review/criteria/PM/presplit 迟到结果；后台 spec-agent reconciliation | callback/reconciler 共享租约；事务 trigger | 消费旧结果但不修改历史，不再发旧生成请求 |
+| 生成信封直接派发、切换前 durable queue 的延迟送出 | RouteEnvelope 与 drainSessionDeliveries 的实际发送租约 | 冻结后拒发；旧排队信封终止为 dead，原请求业务记录不变 |
+| 直接 store/SQL 写入旧对象 | 26 表 INSERT/UPDATE/DELETE trigger | 与冻结位事务串行，完整提交或拒绝 |
+| 既有任务进度/用例结果/独立确认、问答阻塞日志、普通消息 | 不套旧规格守卫；保持原鉴权 | 原获权调用继续，不能借此修改旧规格表 |
+
+全通道测试定位 `internal/m8/legacy_spec_freeze_test.go`；表清单/原子性/历史/在途测试定位 `internal/store/legacy_spec_freeze_test.go`。旧规格业务表在 SQLite；PG 身份仍走原鉴权链，不能宣称存在两份 Spec 业务库。
+
+此阶段只在现有页面增加历史提示，未变共享可见范围；LCS-002/T-05 及预发 T-08 仍不完成。

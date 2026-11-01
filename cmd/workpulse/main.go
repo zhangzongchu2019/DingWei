@@ -130,6 +130,9 @@ func run(logger *slog.Logger) error {
 	if err := st.Migrate(ctx); err != nil {
 		return err
 	}
+	if err := configureLegacySpecFreeze(ctx, st, os.Getenv("WP_LEGACY_SPEC_FROZEN")); err != nil {
+		return err
+	}
 	consoleAuthMode, err := m8.ParseConsoleAuthEnabled(os.Getenv("WP_CONSOLE_AUTH_ENABLED"))
 	if err != nil {
 		return err

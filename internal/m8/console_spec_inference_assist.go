@@ -16,6 +16,14 @@ import (
 const specInferenceAssistRequestType = "console_spec_inference_assist_request"
 
 func (h *Hub) HandleConsoleSpecInferenceAssist(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.consoleSpecs()
 	authRepo, authOK := h.Repo.(consoleAuthRepository)
 	session, sessionOK := r.Context().Value(consoleSessionContextKey{}).(model.ConsoleSession)
@@ -102,6 +110,14 @@ func (h *Hub) HandleConsoleSpecInferenceAssist(w http.ResponseWriter, r *http.Re
 }
 
 func (h *Hub) HandleConsoleSpecAgentInference(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.consoleSpecs()
 	if !ok {
 		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)

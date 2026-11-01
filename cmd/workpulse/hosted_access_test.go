@@ -299,7 +299,11 @@ func TestHostedAccessMustChangeExpiredAndMissingIdentity(t *testing.T) {
 
 func TestHostedAccessRealAssemblyUnsetEmptyAndNamed(t *testing.T) {
 	for _, policy := range []string{"<unset>", "", "owner"} {
-		t.Run(policy, func(t *testing.T) {
+		name := policy
+		if name == "" {
+			name = "explicit-empty"
+		} // Avoid URI '#' in SQLite's fixture path.
+		t.Run(name, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			key := filepath.Join(t.TempDir(), "fixture.key")
