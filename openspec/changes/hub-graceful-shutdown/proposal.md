@@ -6,7 +6,7 @@
 
 ## What Changes
 
-- 新增 hub-lifecycle 能力 HLC-001～008：单次停机协调、双 server 同时停止接入、注册屏障、流取消/WS 关闭、生产者/队列/DB 顺序、预算与退出、阶段结果和切换验收。
+- 新增 hub-lifecycle 能力 HLC-001～009：单次停机协调、双 server 同时停止接入、注册屏障、流取消/WS 关闭、生产者/队列/DB 顺序、预算与退出、阶段结果和切换验收。
 - 建议正常完成退出 0，超时专用非零值 2，其它关停或持久化失败 1；具体非零值与预算待 PM 决策，绝不忽略 deadline 或放宽 SuccessExitStatus。
 - 提供明确的候选预算、慢请求/活跃流/混合/超时矩阵及撤掉主动取消的反向控制；所有产品场景均尚未执行。
 - 仅写 r47 候选提案。基于 r46 2af469dd6919d8eb6064aa7da0e646f0851becf8；不改产品代码、r46 集成分支、版本、部署、systemd 或控制器。
@@ -33,10 +33,12 @@
 
 ## 待确认假设
 
-- HLC-A01（已部分核实）：prodops固定证据e43100e3已核预发/现网有效TimeoutStopSec均30s且无drop-in，外层期限S=30秒不再待测。保留应用总预算T=15秒候选，名义余量15秒，其中必须保证systemd计时/信号交付差及总线开销扣除后仍有至少5秒SIGKILL前安全余量；见design预算公式。**待prodops补测**信号交付差、KillSignal、KillMode、SendSIGKILL、WatchdogSec、Restart/SuccessExitStatus及控制器期限；30秒配置不是实际停机达标证据，不据此假定SIGKILL具体行为已验证。
+- HLC-A01（停止超时配置已核）：prodops固定证据e43100e3已核预发/现网两个Hub单元有效TimeoutStopSec均30s且无drop-in，S=30满足S≥T+5（T=15秒候选），名义余量15秒；实际仍计入信号交付差δ，见design。**仍待实测**KillMode、SendSIGKILL、WatchdogSec在停止期的行为、控制器stop轮询期限；r45控制器实际等了约10秒只是一次观测，不是其上限，须核上限不短于S=30秒。30秒配置不是实际停机达标证据。
 - HLC-A02：候选容量（100 个有限 HTTP、100 个 SSE、20 个 mux、20 个会话 WS）可在 8 秒并行排空阶段完成。仅为明确可测的首轮压测规模，不冒称生产峰值或已有实测；须和在线连接数核对。
 - HLC-A03：现有队列的持久确认点、重投/去重语义可支撑“停止消费后保留未完成项”。逐队列代码盘点与故障重启验证前不宣称无丢失；无法证明持久性应报失败，不能清空队列后报成功。
 - HLC-A04：客户端识别 EOF/WS 关闭并按现行重连协议恢复。必须实测 Console、View、helper，各流已收到 200/101 后的断开不会自动变成新 5xx；不承诺 WS 必有正常关闭码。
+
+- HLC-A05（看门狗方案待实测）：本提案选择**排空期间继续喂狗到最终退出**，不依赖“systemd停止期间必然禁用看门狗”。模板deploy/workpulse.service为WatchdogSec=12s、WatchdogSignal=SIGABRT；该模板不是两个现网单元的有效值证明。待验证独立停机喂狗生命周期、真实通知接收间隔及systemd停止期行为；新增HLC-S013覆盖13～15秒收尾与停喂反证。若目标systemd停止期不执行watchdog，实际不触发只能作为环境事实，不能代替选定继续喂狗方案的通知间隔验证。
 
 ## 待 PM 决策
 

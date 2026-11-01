@@ -10,6 +10,7 @@
 - internal/m8/console_mux_transport.go、console_mux.go、console_mux_frames.go：mux流/reader依赖各自context与Hub清理；view-service/view_service.py通过HUB_INTERNAL访问内网事件流/bridge，现有EOF/重连行为须按实际客户端验证。
 - main.go的processor/L2/task-flow/outbound/receiver/reminder/scheduler使用运行context；SQLite/新平台PG在run退出defer关闭。当前没有统一的持久工作收尾证明或分阶段结果。
 - Go net/http Shutdown先关该server监听再等活动HTTP；不自动等待或关闭hijacked WS。不能将“一个Shutdown开始”理解为两台server都已关监听。
+- deploy/workpulse.service模板WatchdogSec=12s、WatchdogSignal=SIGABRT；cmd/workpulse/hardening.go:startSystemdWatchdog绑定runCtx，cancelRun会使喂狗循环退出。模板值不是两个环境有效watchdog配置或停止期行为证据；拟议独立停机喂狗尚未实现。
 
 ## 现场事实与边界
 
