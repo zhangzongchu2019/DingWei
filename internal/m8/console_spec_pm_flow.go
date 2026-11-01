@@ -56,6 +56,14 @@ func (h *Hub) pmSpecFlowUnavailable(w http.ResponseWriter, r *http.Request) bool
 }
 
 func (h *Hub) HandlePMSpecWorkingDraft(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	if h.pmSpecFlowUnavailable(w, r) {
 		return
 	}
@@ -103,6 +111,14 @@ func (h *Hub) HandlePMSpecWorkingDraft(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) HandlePMSpecFlowFreeze(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	if h.pmSpecFlowUnavailable(w, r) {
 		return
 	}
@@ -127,6 +143,14 @@ func (h *Hub) HandlePMSpecFlowFreeze(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) HandlePMSpecAssistAction(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	if h.pmSpecFlowUnavailable(w, r) {
 		return
 	}
@@ -264,6 +288,13 @@ func (h *Hub) HandlePMSpecAssistAction(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) handlePMSpecAssistResult(ctx context.Context, requestID string, c *sessionClient, body string) bool {
+	guarded, release, freezeErr := h.beginLegacySpecWrite(ctx)
+	if freezeErr != nil {
+		return true
+	}
+	defer release()
+	ctx = guarded
+
 	repo, ok := h.pmSpecFlowStore()
 	if !ok {
 		return true
@@ -286,6 +317,14 @@ func (h *Hub) handlePMSpecAssistResult(ctx context.Context, requestID string, c 
 }
 
 func (h *Hub) HandleAgentPMSpecAssistResult(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	if h.pmSpecFlowUnavailable(w, r) {
 		return
 	}

@@ -3195,6 +3195,15 @@ func feishuDispatchLogSource(addr address) (openID, botChannel string) {
 }
 
 func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
+	if legacySpecGenerationEnvelope(env) {
+		guarded, release, err := h.beginLegacySpecWrite(ctx)
+		if err != nil {
+			return err
+		}
+		defer release()
+		ctx = guarded
+	}
+
 	if metaString(env.Meta, "kind") == "task_blocker_ready" && ctx.Value(blockerDispatchKey{}) != true {
 		return errors.New("blocker wake is Hub-only")
 	}
@@ -4674,6 +4683,25 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", "malformed_envelope")
 			continue
 		}
+		if legacySpecGenerationEnvelope(env) {
+			guarded, release, freezeErr := h.beginLegacySpecWrite(ctx)
+			if freezeErr != nil {
+				if errors.Is(freezeErr, store.ErrLegacySpecFrozen) {
+					if h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", "legacy_spec_frozen", time.Now().UTC()) != nil {
+						return
+					}
+					continue
+				}
+				_ = h.Repo.UpdateSessionDelivery(ctx, d.ID, "queued", "legacy_spec_freeze_unavailable", time.Now().UTC().Add(5*time.Second))
+				h.scheduleSessionDeliveryDrain(c, 5*time.Second)
+				return
+			}
+			// A drain returns after its first successful send. Keep the lease through
+			// the actual socket write; invalid queued generations may be skipped first.
+			defer release()
+			ctx = guarded
+		}
+
 		if specReviewType(specReviewEnvelopeType(env)) {
 			reviewType := specReviewEnvelopeType(env)
 			c.stateMu.Lock()

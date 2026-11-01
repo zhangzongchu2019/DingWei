@@ -10,9 +10,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -29,8 +31,10 @@ var migrationFS embed.FS
 
 // SQLite 是 Repository 的 SQLite 实现。
 type SQLite struct {
-	db    *sql.DB
-	clock clock.Clock // 可注入时钟（测试用 Fake）；默认 clock.Real
+	legacySpecMu       sync.RWMutex
+	legacySpecLockPath string
+	db                 *sql.DB
+	clock              clock.Clock // 可注入时钟（测试用 Fake）；默认 clock.Real
 }
 
 // SetClock 注入时钟（测试用）。未设置时默认 clock.Real{}。
@@ -61,7 +65,28 @@ func OpenSQLite(path string) (*SQLite, error) {
 	if err := db.Ping(); err != nil {
 		return nil, err
 	}
-	return &SQLite{db: db}, nil
+	lockPath := ""
+	// Use SQLite's actual database identity, including URI/alias handling.
+	var seq int
+	var schema, databaseFile string
+	if err := db.QueryRow(`PRAGMA database_list`).Scan(&seq, &schema, &databaseFile); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if databaseFile != "" {
+		canonical, err := filepath.EvalSymlinks(databaseFile)
+		if err != nil {
+			db.Close()
+			return nil, err
+		}
+		canonical, err = filepath.Abs(canonical)
+		if err != nil {
+			db.Close()
+			return nil, err
+		}
+		lockPath = canonical + ".legacy-spec.lock"
+	}
+	return &SQLite{db: db, legacySpecLockPath: lockPath}, nil
 }
 
 func (s *SQLite) Close() error { return s.db.Close() }

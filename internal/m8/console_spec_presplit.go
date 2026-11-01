@@ -35,6 +35,14 @@ type pmSpecFlowPresplitRepository interface {
 }
 
 func (h *Hub) HandleConsoleSpecPresplit(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, ok := h.consoleSpecs()
 	if !ok {
 		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
@@ -154,6 +162,15 @@ type presplitResultTask struct {
 }
 
 func (h *Hub) handleConsoleSpecPresplitResult(ctx context.Context, c *sessionClient, env model.Envelope) bool {
+	if metaString(env.Meta, "type") == specPresplitResultType {
+		guarded, release, err := h.beginLegacySpecWrite(ctx)
+		if err != nil {
+			return true
+		}
+		defer release()
+		ctx = guarded
+	}
+
 	if metaString(env.Meta, "type") != specPresplitResultType {
 		return false
 	}

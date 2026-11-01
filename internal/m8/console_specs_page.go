@@ -237,15 +237,28 @@ refreshSpecs().then(function(){if(sharedSpecID)return openSpec(sharedSpecID,true
 </script>`
 
 func (h *Hub) HandleConsoleSpecsPage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store")
-	fmt.Fprint(w, renderedConsoleSpecsPage())
+	h.writeLegacySpecPage(w, r)
 }
 
 func (h *Hub) HandleSharedConsoleSpecPage(w http.ResponseWriter, r *http.Request) {
+	h.writeLegacySpecPage(w, r)
+}
+
+func (h *Hub) writeLegacySpecPage(w http.ResponseWriter, r *http.Request) {
+	page := renderedConsoleSpecsPage()
+	if repo, ok := h.Repo.(legacySpecFreezeRepository); ok {
+		frozen, err := repo.LegacySpecsFrozen(r.Context())
+		if err != nil {
+			http.Error(w, "旧规格冻结状态不可用", http.StatusServiceUnavailable)
+			return
+		}
+		if frozen {
+			page = strings.Replace(page, "</style>", "</style><aside id=legacy-spec-frozen role=status>历史只读：旧规格已冻结，仅供历史查询，不代表当前仓库行为。新需求请使用仓库 OpenSpec。</aside>", 1)
+		}
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	fmt.Fprint(w, renderedConsoleSpecsPage())
+	fmt.Fprint(w, page)
 }
 
 func renderedConsoleSpecsPage() string {

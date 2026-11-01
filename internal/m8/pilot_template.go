@@ -95,6 +95,14 @@ func templateAfter(r *http.Request) (string, error) {
 // separately configured, authorized connector exists, link-only imports are
 // explicitly pending_config; a provenance-labelled manual export remains usable.
 func (h *Hub) HandleTemplateSource(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, e := h.templateRepo()
 	if e != nil {
 		taskError(w, e)
@@ -157,6 +165,14 @@ func (h *Hub) HandleTemplateSource(w http.ResponseWriter, r *http.Request) {
 	taskJSON(w, 200, map[string]any{"source": out, "execution_authorized": false})
 }
 func (h *Hub) HandleTemplateDraft(w http.ResponseWriter, r *http.Request) {
+	var releaseLegacySpec func()
+	var legacySpecAllowed bool
+	r, releaseLegacySpec, legacySpecAllowed = h.legacySpecMutationRequest(w, r)
+	if !legacySpecAllowed {
+		return
+	}
+	defer releaseLegacySpec()
+
 	repo, e := h.templateRepo()
 	if e != nil {
 		taskError(w, e)
