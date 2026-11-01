@@ -1,0 +1,110 @@
+[
+  {
+    "mutation": "R6-001-sha",
+    "rc": 1,
+    "expected_assertion": "R6_001_INVALID_ACCEPTED",
+    "matched": true
+  },
+  {
+    "mutation": "R6-001-envelope",
+    "rc": 1,
+    "expected_assertion": "R6_001_SOURCE_IN_ACTUAL_ENVELOPE",
+    "matched": true
+  },
+  {
+    "mutation": "R6-002-agent",
+    "rc": 1,
+    "expected_assertion": "R6_002_REVOKED_READ",
+    "matched": true
+  },
+  {
+    "mutation": "R6-003-version",
+    "rc": 1,
+    "expected_assertion": "R6_003_HEAD_FALLBACK",
+    "matched": true
+  },
+  {
+    "mutation": "R6-003-read-proof",
+    "rc": 1,
+    "expected_assertion": "R6_003_UNREAD_PASS",
+    "matched": true
+  },
+  {
+    "mutation": "R6-004-idempotent",
+    "rc": 1,
+    "expected_assertion": "R6_004_RETRY_OVERWRITE",
+    "matched": true
+  },
+  {
+    "mutation": "R6-005-open-stop",
+    "rc": 1,
+    "expected_assertion": "R6_005_ENDED_STILL_SENT",
+    "matched": true
+  },
+  {
+    "mutation": "R6-005-database-fence",
+    "rc": 1,
+    "expected_assertion": "R6_005_CROSS_SERVICE_OPEN_PASSED_SEND",
+    "matched": true
+  },
+  {
+    "mutation": "R6-005-spacing",
+    "rc": 1,
+    "expected_assertion": "R6_005_RECOVERY_BURST",
+    "matched": true
+  },
+  {
+    "mutation": "R6-005-event-owner",
+    "rc": 1,
+    "expected_assertion": "R6_005_DOUBLE_OWNER",
+    "matched": true
+  },
+  {
+    "mutation": "R6-006-material",
+    "rc": 1,
+    "expected_assertion": "R6_006_NO_REVIEW_PROMPT",
+    "matched": true
+  },
+  {
+    "mutation": "R6-007-unknown",
+    "rc": 1,
+    "expected_assertion": "R6_007_UNREADABLE_GREEN",
+    "matched": true
+  },
+  {
+    "mutation": "R6-007-recheck",
+    "rc": 1,
+    "expected_assertion": "R6_007_HISTORY_CACHE_GREEN",
+    "matched": true
+  },
+  {
+    "mutation": "R6-008-visible",
+    "rc": 1,
+    "expected_assertion": "R6_008_REVOKED_VISIBLE",
+    "matched": true
+  },
+  {
+    "mutation": "browser-html",
+    "rc": 1,
+    "expected_assertion": "R6_008 untrusted evidence text",
+    "matched": true
+  },
+  {
+    "mutation": "browser-state",
+    "rc": 1,
+    "expected_assertion": "R6_007 unknown not green",
+    "matched": true
+  },
+  {
+    "mutation": "browser-sha",
+    "rc": 1,
+    "expected_assertion": "R6_001 exact dispatch SHA",
+    "matched": true
+  },
+  {
+    "mutation": "browser-freshness",
+    "rc": 1,
+    "expected_assertion": "R6_008 late authorized response cannot restore revoked history",
+    "matched": true
+  }
+]
