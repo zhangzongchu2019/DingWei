@@ -111,7 +111,10 @@ func TestR5FeatureConfigurationAllGates(t *testing.T) {
 	}
 }
 
-type r5HTTPProvider struct{ allow bool }
+type r5HTTPProvider struct {
+	allow bool
+	size  int64
+}
 
 func (*r5HTTPProvider) Repository(context.Context, string) (specread.Repository, error) {
 	return specread.Repository{ID: "1", FullName: "owner/repo"}, nil
@@ -125,8 +128,12 @@ func (p *r5HTTPProvider) Authorize(context.Context, specread.Repository, specrea
 func (*r5HTTPProvider) Resolve(context.Context, specread.Repository, string) (string, error) {
 	return strings.Repeat("a", 40), nil
 }
-func (*r5HTTPProvider) Tree(context.Context, specread.Repository, string) ([]specread.Entry, error) {
-	return []specread.Entry{{Path: "openspec/spec.md", SHA: strings.Repeat("b", 40), Mode: "100644", Type: "blob", Size: 70000}}, nil
+func (p *r5HTTPProvider) Tree(context.Context, specread.Repository, string) ([]specread.Entry, error) {
+	size := p.size
+	if size == 0 {
+		size = 70000
+	}
+	return []specread.Entry{{Path: "openspec/spec.md", SHA: strings.Repeat("b", 40), Mode: "100644", Type: "blob", Size: size}}, nil
 }
 func (*r5HTTPProvider) Blob(context.Context, specread.Repository, specread.Entry) ([]byte, error) {
 	return []byte(strings.Repeat("x", 69997) + "END"), nil
@@ -158,6 +165,11 @@ func TestR5ReadHTTPQueriesAndNoOldBodyOnDenial(t *testing.T) {
 		if w := call(query + suffix); w.Code != 400 || strings.Contains(w.Body.String(), "END") {
 			t.Fatal("ambiguous query accepted", w.Code)
 		}
+	}
+	p.size = specread.MaxFile + 1
+	w = call(query)
+	if w.Code != 413 || !strings.Contains(w.Body.String(), "文件过大，请在仓库托管平台查看") || !strings.Contains(w.Body.String(), "https://github.com/owner/repo/blob/"+strings.Repeat("a", 40)+"/openspec/spec.md") || strings.Contains(w.Body.String(), "END") {
+		t.Fatal("oversize feedback missing immutable source", w.Code, w.Body)
 	}
 	p.allow = false
 	w = call(query)
